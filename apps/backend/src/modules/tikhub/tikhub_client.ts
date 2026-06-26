@@ -324,3 +324,45 @@ export function normalizeVideos(payload: any): NormalizedVideo[] {
     .map(normalizeVideoItem)
     .filter((v): v is NormalizedVideo => !!v);
 }
+
+// ============================================================================
+// Скачивание: одно видео по aweme_id через App V3 (даёт ПРЯМУЮ ссылку без
+// водяного знака, не требующую cookie tt_chain_token — в отличие от web-CDN).
+// ============================================================================
+
+export async function fetchOneVideo(apiKey: string, awemeId: string): Promise<TikHubResult<any>> {
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/tiktok/app/v3/fetch_one_video?aweme_id=${encodeURIComponent(awemeId)}`, { timeoutMs: 30000 })
+  );
+}
+
+/** Достаёт сам aweme из ответа fetch_one_video (несколько возможных форм обёртки). */
+function pickAweme(payload: any): any {
+  let root = payload;
+  if (root && typeof root === 'object' && root.data !== undefined) root = root.data;
+  if (!root || typeof root !== 'object') return null;
+  return (
+    root.aweme_detail ||
+    (Array.isArray(root.aweme_details) ? root.aweme_details[0] : null) ||
+    root.aweme_info ||
+    (Array.isArray(root.aweme_list) ? root.aweme_list[0] : null) ||
+    root
+  );
+}
+
+/** Список прямых ссылок-кандидатов для скачивания (no-watermark play_addr — первыми). */
+export function extractDownloadUrls(payload: any): string[] {
+  const aw = pickAweme(payload);
+  const v = (aw && aw.video) || {};
+  const urls: string[] = [];
+  const push = (x: any) => {
+    if (typeof x === 'string' && x.startsWith('http')) urls.push(x);
+    else if (x && Array.isArray(x.url_list)) for (const u of x.url_list) if (typeof u === 'string' && u.startsWith('http')) urls.push(u);
+  };
+  push(v.play_addr);
+  push(v.playAddr);
+  if (Array.isArray(v.bit_rate)) for (const b of v.bit_rate) push(b && b.play_addr);
+  push(v.download_addr);
+  push(v.downloadAddr);
+  return Array.from(new Set(urls));
+}

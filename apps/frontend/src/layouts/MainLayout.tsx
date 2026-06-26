@@ -68,7 +68,7 @@ export function MainLayout() {
   const desktopNav = [
     ...(FEATURES.video ? [{ path: '/',    icon: Languages, label: t('nav.rooms'), exact: true  }] : []),
     ...(FEATURES.sip   ? [{ path: '/sip', icon: Phone,     label: t('nav.sip'),   exact: false }] : []),
-    ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'Botflow',  exact: false }] : []),
+    ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'TrendFlow',  exact: false }] : []),
     ...(FEATURES.trends ? [{ path: '/trends', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }] : []),
   ];
 

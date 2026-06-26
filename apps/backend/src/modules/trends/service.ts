@@ -99,7 +99,9 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     throw new Error(`TikHub вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
   }
 
-  const videos: NormalizedVideo[] = normalizeVideos(resp.data);
+  // Честный «Кол-во»: web-эндпоинты игнорируют count и отдают свою страницу —
+  // обрезаем до запрошенного числа, чтобы UX был предсказуем.
+  const videos: NormalizedVideo[] = normalizeVideos(resp.data).slice(0, count);
   const rawKeys = resp.data && typeof resp.data === 'object'
     ? Object.keys((resp.data as any).data && typeof (resp.data as any).data === 'object' ? (resp.data as any).data : resp.data)
     : [];

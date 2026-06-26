@@ -297,7 +297,7 @@ export default function FlowPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
         <h1 className="text-2xl font-700 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          <Workflow size={24} /> Botflow
+          <Workflow size={24} /> TrendFlow
         </h1>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           {t('flow.subtitle', 'Сценарии бота для каналов (WhatsApp, Instagram, Messenger, веб-виджет).')}

@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play,
+  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -57,6 +57,8 @@ export default function TrendsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [videos, setVideos] = useState<StoredVideo[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDownloading, setBulkDownloading] = useState(false);
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
@@ -105,6 +107,30 @@ export default function TrendsPage() {
       setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'failed' } : x));
       setError(e?.message || 'Не удалось скачать');
     } finally { setDownloadingId(null); }
+  };
+
+  // ── Выбор и пакетная загрузка ──
+  const toggleSelect = (id: string | null) => {
+    if (!id) return;
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectableIds = videos.filter((v) => v.id).map((v) => v.id as string);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
+  const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(selectableIds));
+
+  const downloadSelected = async () => {
+    const targets = videos.filter((v) => v.id && selected.has(v.id) && !v.fileUrl);
+    if (targets.length === 0) return;
+    setBulkDownloading(true);
+    for (const v of targets) {
+      // eslint-disable-next-line no-await-in-loop
+      await handleDownload(v); // последовательно — мягче к CDN и виден прогресс
+    }
+    setBulkDownloading(false);
   };
 
   return (
@@ -230,7 +256,21 @@ export default function TrendsPage() {
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Пока пусто. Введите ключевик и нажмите «Сканировать».</p>
         </AuroraCard>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <>
+          {/* Тулбар: выбрать всё + скачать выбранные одной кнопкой */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <button type="button" onClick={toggleSelectAll}
+              className="inline-flex items-center gap-2 text-sm font-600 px-3 py-2 rounded-xl transition-colors"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+              {allSelected ? <CheckSquare size={16} color="#ff7300" /> : <Square size={16} />}
+              {allSelected ? 'Снять выделение' : 'Выбрать всё'} ({selected.size})
+            </button>
+            <AuroraButton onClick={downloadSelected} disabled={bulkDownloading || selected.size === 0}
+              icon={bulkDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}>
+              {bulkDownloading ? 'Скачиваю выбранные…' : `Скачать выбранные (${selected.size})`}
+            </AuroraButton>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {videos.map((v) => (
             <AuroraCard key={v.id || v.externalId} className="group p-0 overflow-hidden flex flex-col transition-transform duration-150 hover:-translate-y-0.5">
               {/* Cover */}
@@ -254,8 +294,16 @@ export default function TrendsPage() {
                   <span className="absolute bottom-1.5 right-1.5 text-[11px] px-1.5 py-0.5 rounded font-600"
                     style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>{dur(v.durationSec)}</span>
                 )}
+                {/* чекбокс выбора (для пакетной загрузки) */}
+                {v.id && (
+                  <button type="button" onClick={() => toggleSelect(v.id)} title="Выбрать"
+                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20 transition-colors"
+                    style={{ background: selected.has(v.id) ? '#ff7300' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.6)' }}>
+                    {selected.has(v.id) ? <Check size={14} /> : null}
+                  </button>
+                )}
                 {v.status === 'downloaded' && (
-                  <span className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded font-700 inline-flex items-center gap-1"
+                  <span className="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-700 inline-flex items-center gap-1 z-20"
                     style={{ background: 'rgba(16,185,129,0.9)', color: '#fff' }}><CheckCircle2 size={11} /> скачано</span>
                 )}
               </div>
@@ -306,7 +354,8 @@ export default function TrendsPage() {
               </div>
             </AuroraCard>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -31,9 +31,9 @@ export interface StoredFile {
   mime: string;
 }
 
-export async function downloadVideoToDisk(url: string, opts?: { referer?: string }): Promise<StoredFile> {
+async function downloadOne(url: string, opts?: { referer?: string }): Promise<StoredFile> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60000); // 60с на скачивание — чтобы провал виделся быстрее
+  const timer = setTimeout(() => controller.abort(), 60000); // 60с на ссылку
   try {
     const resp = await fetch(url, {
       headers: {
@@ -43,9 +43,7 @@ export async function downloadVideoToDisk(url: string, opts?: { referer?: string
       },
       signal: controller.signal,
     });
-    if (!resp.ok || !resp.body) {
-      throw new Error(`HTTP ${resp.status} при скачивании видео`);
-    }
+    if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
     const ct = resp.headers.get('content-type') || 'video/mp4';
     const ext = ct.includes('webm') ? 'webm' : ct.includes('quicktime') ? 'mov' : 'mp4';
     const filename = `tt-${randomUUID()}.${ext}`;
@@ -53,15 +51,28 @@ export async function downloadVideoToDisk(url: string, opts?: { referer?: string
     await pipeline(Readable.fromWeb(resp.body as any), fs.createWriteStream(filePath));
     const size = fs.statSync(filePath).size;
     if (size < 1024) {
-      // Подозрительно мелкий файл — вероятно отдали HTML-ошибку, а не видео.
       try { fs.unlinkSync(filePath); } catch {}
-      throw new Error('Скачанный файл слишком мал (вероятно, CDN отдал ошибку, а не видео).');
+      throw new Error('файл слишком мал (CDN отдал ошибку, а не видео)');
     }
     return { mediaUrl: `/uploads/source-videos/${filename}`, filePath, size, mime: ct };
   } catch (err: any) {
-    const aborted = err?.name === 'AbortError';
-    throw new Error(aborted ? 'Таймаут скачивания видео' : (err?.message || String(err)));
+    throw new Error(err?.name === 'AbortError' ? 'таймаут' : (err?.message || String(err)));
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Пробует список ссылок-кандидатов по очереди (no-watermark play_addr первыми) —
+ * первая успешная побеждает. На 403/таймаут переходит к следующей.
+ */
+export async function downloadVideoToDisk(urls: string | string[], opts?: { referer?: string }): Promise<StoredFile> {
+  const list = (Array.isArray(urls) ? urls : [urls]).filter((u): u is string => !!u && /^https?:/.test(u));
+  if (list.length === 0) throw new Error('Нет прямых ссылок для скачивания');
+  let lastErr = 'не удалось';
+  for (const url of list) {
+    try { return await downloadOne(url, opts); }
+    catch (e: any) { lastErr = e?.message || String(e); }
+  }
+  throw new Error(`Скачивание не удалось (перебрал ${list.length} ссыл.): ${lastErr}`);
 }

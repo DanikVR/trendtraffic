@@ -13,6 +13,8 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, type TrendKind } from './service.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
+import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
+import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 
 const router = Router();
 
@@ -78,12 +80,25 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
   try {
     const row = await getVideo(req.tenantId!, req.params.id);
     if (!row) return res.status(404).json({ error: 'Видео не найдено' });
-    if (!row.video_url) {
-      return res.status(400).json({ error: 'У видео нет прямой ссылки (CDN-URL пуст). Возможно, потребуется fetch_one_video — добавим в следующем шаге.' });
+
+    // Свежие ПРЯМЫЕ ссылки через App V3 (no-watermark, без cookie tt_chain_token) —
+    // play_addr из поиска/трендов часто истекает или требует cookie → 403.
+    let urls: string[] = [];
+    try {
+      const key = await getEffectiveTikHubKey(req.tenantId!);
+      if (key && row.external_id) {
+        const one = await fetchOneVideo(key, String(row.external_id));
+        if (one.ok) urls = extractDownloadUrls(one.data);
+      }
+    } catch { /* падаем на сохранённую ссылку ниже */ }
+    if (urls.length === 0 && row.video_url) urls = [row.video_url];
+    if (urls.length === 0) {
+      return res.status(400).json({ error: 'Не удалось получить прямую ссылку (App V3 не вернул url).' });
     }
+
     await setVideoStatus(req.tenantId!, req.params.id, { status: 'downloading', error: null });
     try {
-      const file = await downloadVideoToDisk(row.video_url, { referer: row.web_url || undefined });
+      const file = await downloadVideoToDisk(urls, { referer: row.web_url || undefined });
       await setVideoStatus(req.tenantId!, req.params.id, { status: 'downloaded', fileUrl: file.mediaUrl, filePath: file.filePath, error: null });
       res.json({ ok: true, fileUrl: file.mediaUrl, size: file.size });
     } catch (dlErr: any) {
