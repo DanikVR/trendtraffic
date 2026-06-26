@@ -10,13 +10,35 @@
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import { listAssets, createAsset, deleteAsset, deleteAssets, type MediaKind } from '../media/assets.js';
 
 const router = Router();
+
+// Загрузка референс-медиа/аудио в Галерею → отдельные папки uploads/reference и uploads/audio.
+const __tr_dir = path.dirname(fileURLToPath(import.meta.url));
+const REFERENCE_DIR = path.resolve(__tr_dir, '../../../../uploads/reference');
+const AUDIO_DIR = path.resolve(__tr_dir, '../../../../uploads/audio');
+try { fs.mkdirSync(REFERENCE_DIR, { recursive: true }); } catch { /* best-effort */ }
+try { fs.mkdirSync(AUDIO_DIR, { recursive: true }); } catch { /* best-effort */ }
+const kindFromReq = (req: Request): MediaKind => (req.query.kind === 'audio' ? 'audio' : 'reference');
+const uploadMedia = multer({
+  storage: multer.diskStorage({
+    // kind берём из query (?kind=audio|reference) — query доступен ДО парсинга тела.
+    destination: (req, _file, cb) => cb(null, kindFromReq(req) === 'audio' ? AUDIO_DIR : REFERENCE_DIR),
+    filename: (_req, file, cb) => cb(null, `med-${randomUUID()}${path.extname(file.originalname) || ''}`),
+  }),
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200 МБ — видео-референсы бывают крупные
+});
 
 interface AuthedRequest extends Request {
   tenantId?: string;
@@ -128,6 +150,63 @@ router.post('/videos/delete-bulk', async (req: AuthedRequest, res: Response) => 
     if (ids.length === 0) return res.status(400).json({ error: 'Передайте ids[]' });
     const deleted = await deleteVideos(req.tenantId!, ids);
     res.json({ ok: true, deleted });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+// ── Медиа-ассеты Галереи (референс/аудио) ──────────────────────────────────
+
+/** GET /media?kind=reference|audio — список загруженных медиа. */
+router.get('/media', async (req: AuthedRequest, res: Response) => {
+  try {
+    const assets = await listAssets(req.tenantId!, kindFromReq(req));
+    res.json({ assets });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/** POST /media/upload?kind=reference|audio (multipart "file") — загрузить медиа. */
+router.post('/media/upload', uploadMedia.single('file'), async (req: AuthedRequest, res: Response) => {
+  try {
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) return res.status(400).json({ error: 'Файл не передан' });
+    const kind = kindFromReq(req);
+    const mime = file.mimetype || 'application/octet-stream';
+    const mediaType = mime.startsWith('image/') ? 'image'
+      : mime.startsWith('video/') ? 'video'
+      : mime.startsWith('audio/') ? 'audio' : 'file';
+    const subdir = kind === 'audio' ? 'audio' : 'reference';
+    const fileUrl = `/uploads/${subdir}/${path.basename(file.path)}`;
+    const asset = await createAsset(req.tenantId!, {
+      kind, mediaType, originalName: file.originalname, fileUrl, filePath: file.path, mime, size: file.size,
+    });
+    if (!asset) {
+      try { fs.unlinkSync(file.path); } catch {}
+      return res.status(500).json({ error: 'Не удалось сохранить ассет' });
+    }
+    res.status(201).json({ ok: true, asset });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка загрузки' });
+  }
+});
+
+/** DELETE /media/:id — удалить ассет (файл + строку). */
+router.delete('/media/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    res.json({ ok: await deleteAsset(req.tenantId!, req.params.id) });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+/** POST /media/delete-bulk { ids: string[] } — массовое удаление ассетов. */
+router.post('/media/delete-bulk', async (req: AuthedRequest, res: Response) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((x: any) => typeof x === 'string') : [];
+    if (ids.length === 0) return res.status(400).json({ error: 'Передайте ids[]' });
+    res.json({ ok: true, deleted: await deleteAssets(req.tenantId!, ids) });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка удаления' });
   }

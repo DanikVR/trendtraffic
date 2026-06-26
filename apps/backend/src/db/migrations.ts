@@ -603,6 +603,24 @@ const MIGRATIONS: Migration[] = [
   { name: 'trends.tenant_id_varchar', sql: `ALTER TABLE trends ALTER COLUMN tenant_id TYPE VARCHAR(64) USING tenant_id::text` },
   { name: 'source_videos.tenant_id_drop_fk', sql: `ALTER TABLE source_videos DROP CONSTRAINT IF EXISTS source_videos_tenant_id_fkey` },
   { name: 'source_videos.tenant_id_varchar', sql: `ALTER TABLE source_videos ALTER COLUMN tenant_id TYPE VARCHAR(64) USING tenant_id::text` },
+
+  // Загружаемые медиа в Галерею: kind='reference' (изображения/видео) или 'audio'.
+  {
+    name: 'media_assets.create',
+    sql: `CREATE TABLE IF NOT EXISTS media_assets (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      kind VARCHAR(16) NOT NULL,
+      media_type VARCHAR(16) NOT NULL,
+      original_name VARCHAR(255),
+      file_url TEXT NOT NULL,
+      file_path TEXT,
+      mime VARCHAR(128),
+      size BIGINT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'media_assets.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_media_assets_tenant ON media_assets(tenant_id, kind, created_at DESC)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

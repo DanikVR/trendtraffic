@@ -1,31 +1,46 @@
 /**
- * GalleryPage — галерея скачанных видео (TrendTraffic).
+ * GalleryPage — медиа-библиотека (TrendTraffic).
  *
- * Показывает source_videos со статусом 'downloaded' (файл на диске, /uploads/...).
- * Возможности: поиск, проигрывание, удаление одного и массовое удаление.
+ * Три папки (вкладки):
+ *  - Тренды   — скачанные видео из «Трендов» (source_videos, downloaded).
+ *  - Референс — загружаемые изображения/видео (media_assets kind='reference').
+ *  - Аудио    — загружаемые аудиофайлы (media_assets kind='audio').
+ *
+ * Поиск, проигрывание/просмотр, выбор (в т.ч. «выбрать всё»), удаление одного и
+ * массовое. Загрузка медиа/аудио — иконками рядом с «Обновить». Позже блоки
+ * монтажа будут брать файлы отсюда (и догружать сюда же).
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Image, Search, Loader2, Trash2, ExternalLink, CheckSquare, Square, Check, Eye, Heart, RefreshCw,
+  Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
+  CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
 
-interface GalleryVideo {
+type Tab = 'trends' | 'reference' | 'audio';
+
+interface GalleryItem {
   id: string;
-  externalId: string;
-  author: string;
-  authorName?: string;
-  description?: string;
+  mediaType: 'video' | 'image' | 'audio' | 'file';
+  fileUrl: string;
   coverUrl?: string;
+  title: string;       // @author или имя файла
+  subtitle?: string;   // описание
   webUrl?: string;
   durationSec?: number;
-  stats: { play?: number; like?: number; comment?: number; share?: number };
-  fileUrl?: string | null;
+  stats?: { play?: number; like?: number };
+  isTrend: boolean;
 }
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'trends', label: 'Тренды' },
+  { key: 'reference', label: 'Референс' },
+  { key: 'audio', label: 'Аудио' },
+];
 
 function fmt(n?: number): string {
   if (n == null) return '—';
@@ -41,38 +56,55 @@ function dur(s?: number): string {
 
 export default function GalleryPage() {
   const { token } = useAppStore();
-  const [videos, setVideos] = useState<GalleryVideo[]>([]);
+  const [tab, setTab] = useState<Tab>('trends');
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
-  const headers = (): HeadersInit => ({
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  });
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
-  const load = async () => {
-    setLoading(true); setError(null);
+  const authHeader = (): HeadersInit => (token ? { Authorization: `Bearer ${token}` } : {});
+  const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...authHeader() });
+
+  const load = async (which: Tab = tab) => {
+    setLoading(true); setError(null); setSelected(new Set());
     try {
-      const res = await fetch('/api/trends/videos?downloaded=1&limit=200', { headers: headers() });
-      if (res.ok) { const d = await res.json(); setVideos(d.videos || []); }
+      if (which === 'trends') {
+        const res = await fetch('/api/trends/videos?downloaded=1&limit=200', { headers: jsonHeaders() });
+        if (res.ok) {
+          const d = await res.json();
+          setItems((d.videos || []).map((v: any): GalleryItem => ({
+            id: v.id, mediaType: 'video', fileUrl: v.fileUrl, coverUrl: v.coverUrl,
+            title: `@${v.author}`, subtitle: v.description, webUrl: v.webUrl,
+            durationSec: v.durationSec, stats: v.stats, isTrend: true,
+          })));
+        }
+      } else {
+        const res = await fetch(`/api/trends/media?kind=${which}`, { headers: jsonHeaders() });
+        if (res.ok) {
+          const d = await res.json();
+          setItems((d.assets || []).map((a: any): GalleryItem => ({
+            id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
+            title: a.originalName || 'файл', isTrend: false,
+          })));
+        }
+      }
     } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return videos;
-    return videos.filter((v) =>
-      v.author.toLowerCase().includes(q) ||
-      (v.authorName || '').toLowerCase().includes(q) ||
-      (v.description || '').toLowerCase().includes(q)
-    );
-  }, [videos, query]);
+    if (!q) return items;
+    return items.filter((v) => v.title.toLowerCase().includes(q) || (v.subtitle || '').toLowerCase().includes(q));
+  }, [items, query]);
 
   const toggleSelect = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
@@ -83,64 +115,122 @@ export default function GalleryPage() {
   const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
   const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(visibleIds));
 
+  const deleteBase = tab === 'trends' ? '/api/trends/videos' : '/api/trends/media';
+
   const doDeleteOne = async (id: string) => {
     setBusy(true); setError(null);
     try {
-      const res = await fetch(`/api/trends/videos/${id}`, { method: 'DELETE', headers: headers() });
+      const res = await fetch(`${deleteBase}/${id}`, { method: 'DELETE', headers: jsonHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setVideos((prev) => prev.filter((v) => v.id !== id));
+      setItems((prev) => prev.filter((v) => v.id !== id));
       setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
     } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
     finally { setBusy(false); }
   };
-
   const doDeleteSelected = async () => {
     const ids = visibleIds.filter((id) => selected.has(id));
     if (ids.length === 0) return;
     setBusy(true); setError(null);
     try {
-      const res = await fetch('/api/trends/videos/delete-bulk', {
-        method: 'POST', headers: headers(), body: JSON.stringify({ ids }),
-      });
+      const res = await fetch(`${deleteBase}/delete-bulk`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ids }) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const idset = new Set(ids);
-      setVideos((prev) => prev.filter((v) => !idset.has(v.id)));
+      setItems((prev) => prev.filter((v) => !idset.has(v.id)));
       setSelected(new Set());
     } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
     finally { setBusy(false); }
   };
 
-  const askDeleteOne = (v: GalleryVideo) => setConfirm({
-    title: 'Удалить видео?',
-    message: `@${v.author} — файл будет удалён с диска безвозвратно.`,
+  const askDeleteOne = (v: GalleryItem) => setConfirm({
+    title: 'Удалить?', message: `${v.title} — файл будет удалён с диска безвозвратно.`,
     onConfirm: () => { setConfirm(null); doDeleteOne(v.id); },
   });
   const askDeleteSelected = () => setConfirm({
-    title: `Удалить выбранные (${selected.size})?`,
-    message: 'Все выбранные файлы будут удалены с диска безвозвратно.',
+    title: `Удалить выбранные (${selected.size})?`, message: 'Все выбранные файлы будут удалены с диска безвозвратно.',
     onConfirm: () => { setConfirm(null); doDeleteSelected(); },
   });
 
+  const handleFiles = async (files: FileList | null, kind: 'reference' | 'audio') => {
+    if (!files || files.length === 0) return;
+    setUploading(true); setError(null);
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append('file', file);
+        // ВАЖНО: для FormData НЕ задаём Content-Type — браузер сам проставит boundary.
+        const res = await fetch(`/api/trends/media/upload?kind=${kind}`, { method: 'POST', headers: authHeader(), body: fd });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+      }
+      setTab(kind); // load() сработает по смене вкладки
+      if (tab === kind) await load(kind);
+    } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
+    finally {
+      setUploading(false);
+      if (mediaInputRef.current) mediaInputRef.current.value = '';
+      if (audioInputRef.current) audioInputRef.current.value = '';
+    }
+  };
+
+  const renderPreview = (v: GalleryItem) => {
+    if (v.mediaType === 'video') return <video src={v.fileUrl} poster={v.coverUrl || undefined} controls preload="none" className="w-full h-full object-cover" />;
+    if (v.mediaType === 'image') return <img src={v.fileUrl} alt={v.title} loading="lazy" className="w-full h-full object-cover" />;
+    if (v.mediaType === 'audio') return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-3" style={{ background: 'var(--bg-tertiary)' }}>
+        <Music size={32} style={{ color: '#7c5cff' }} />
+        <audio src={v.fileUrl} controls className="w-full" />
+      </div>
+    );
+    return <div className="w-full h-full flex items-center justify-center"><FileText size={28} style={{ color: 'var(--text-muted)' }} /></div>;
+  };
+
   return (
     <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
-      {/* Header */}
+      {/* Header + upload icons + refresh */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-             style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
-          <Image size={20} color="#fff" />
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+          <ImageIcon size={20} color="#fff" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Галерея</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Скачанные видео ({videos.length}). Хранятся на сервере в <code>uploads/source-videos</code>.</p>
+          <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>Медиа-библиотека: тренды, референсы и аудио для монтажа.</p>
         </div>
-        <AuroraButton variant="secondary" onClick={load} disabled={loading} icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}>Обновить</AuroraButton>
+        {/* Загрузка медиа (изображения/видео) */}
+        <input ref={mediaInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files, 'reference')} />
+        <button type="button" onClick={() => mediaInputRef.current?.click()} disabled={uploading} title="Загрузить изображения/видео в «Референс»"
+          className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl disabled:opacity-50"
+          style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
+          {uploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />} Медиа
+        </button>
+        {/* Загрузка аудио */}
+        <input ref={audioInputRef} type="file" accept="audio/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files, 'audio')} />
+        <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploading} title="Загрузить аудио в «Аудио»"
+          className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl disabled:opacity-50"
+          style={{ background: 'rgba(124,92,255,0.12)', color: '#7c5cff' }}>
+          {uploading ? <Loader2 size={16} className="animate-spin" /> : <Music size={16} />} Аудио
+        </button>
+        <AuroraButton variant="secondary" onClick={() => load()} disabled={loading} icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}>Обновить</AuroraButton>
+      </div>
+
+      {/* Папки-вкладки */}
+      <div className="flex gap-1 border-b" style={{ borderColor: 'var(--border-medium)' }}>
+        {TABS.map((tb) => {
+          const active = tab === tb.key;
+          return (
+            <button key={tb.key} onClick={() => setTab(tb.key)}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-700 whitespace-nowrap border-b-2 transition-all"
+              style={{ borderColor: active ? '#10b981' : 'transparent', color: active ? '#10b981' : 'var(--text-muted)', background: active ? 'rgba(16,185,129,0.08)' : 'transparent' }}>
+              {tb.key === 'trends' ? <Video size={15} /> : tb.key === 'reference' ? <ImageIcon size={15} /> : <Music size={15} />}
+              {tb.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Toolbar: search + select all + delete selected */}
       <AuroraCard className="p-4 flex flex-col sm:flex-row gap-3 sm:items-center">
         <div className="flex-1 relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по автору или описанию..."
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по имени/автору/описанию..."
             className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm focus:outline-none"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
         </div>
@@ -164,9 +254,11 @@ export default function GalleryPage() {
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
       ) : filtered.length === 0 ? (
         <AuroraCard className="p-10 text-center">
-          <Image size={28} className="inline-block mb-2" style={{ color: 'var(--text-muted)' }} />
+          <ImageIcon size={28} className="inline-block mb-2" style={{ color: 'var(--text-muted)' }} />
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {videos.length === 0 ? 'Пока пусто. Скачайте видео на странице «Тренды».' : 'Ничего не найдено по запросу.'}
+            {tab === 'trends' ? 'Пока пусто. Скачайте видео на странице «Тренды».'
+              : tab === 'reference' ? 'Пока пусто. Загрузите изображения/видео кнопкой «Медиа».'
+              : 'Пока пусто. Загрузите аудио кнопкой «Аудио».'}
           </p>
         </AuroraCard>
       ) : (
@@ -174,12 +266,7 @@ export default function GalleryPage() {
           {filtered.map((v) => (
             <AuroraCard key={v.id} className="p-0 overflow-hidden flex flex-col">
               <div className="relative aspect-[9/16] w-full" style={{ background: '#000' }}>
-                {v.fileUrl ? (
-                  <video src={v.fileUrl} poster={v.coverUrl || undefined} controls preload="none"
-                    className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center"><Image size={28} style={{ color: 'var(--text-muted)' }} /></div>
-                )}
+                {renderPreview(v)}
                 <button type="button" onClick={() => toggleSelect(v.id)} title="Выбрать"
                   className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20 transition-colors"
                   style={{ background: selected.has(v.id) ? '#10b981' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.6)' }}>
@@ -191,18 +278,26 @@ export default function GalleryPage() {
                 )}
               </div>
               <div className="p-3 flex flex-col gap-2 flex-1">
-                <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.authorName || v.author}>@{v.author}</div>
-                {v.description && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>}
-                <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>
-                  <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
-                </div>
+                <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
+                {v.subtitle && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.subtitle}</p>}
+                {v.stats && (
+                  <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>
+                    <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 mt-auto pt-1">
-                  {v.webUrl && (
+                  {v.webUrl ? (
                     <a href={v.webUrl} target="_blank" rel="noreferrer"
                       className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                       <ExternalLink size={12} /> TikTok
+                    </a>
+                  ) : (
+                    <a href={v.fileUrl} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                      <ExternalLink size={12} /> Открыть
                     </a>
                   )}
                   <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить"
