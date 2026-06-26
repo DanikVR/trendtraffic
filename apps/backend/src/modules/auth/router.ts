@@ -14,7 +14,9 @@ import {
   getChatwootUrl, getChatwootToken,
   getGoogleClientId, getGoogleClientSecret,
   getStripeSecretKey,
+  getTikHubApiKey,
 } from '../../config/systemConfig.js';
+import { validateTikHubKey } from '../tikhub/tikhub_client.js';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import { sendTelegramAdminMessage } from '../notifications/telegram.js';
 import { attributeRegistration } from '../partners/router.js';
@@ -1282,6 +1284,34 @@ router.post('/verify-stripe', requireSuperAdmin, async (req: Request, res: Respo
     return res.status(isInvalidKey ? 401 : 502).json({
       error: `Ошибка подключения к Stripe: ${msg}`,
     });
+  }
+});
+
+/**
+ * POST /api/auth/verify-tikhub
+ * РЕАЛЬНО проверяет ПЛАТФОРМЕННЫЙ ключ TikHub через GET get_user_info.
+ * Принимает { apiKey } из тела — проверяет именно его (можно до сохранения);
+ * если поле пустое/маска — берёт сохранённый платформенный ключ.
+ */
+router.post('/verify-tikhub', requireSuperAdmin, async (req: Request, res: Response) => {
+  try {
+    let { apiKey } = req.body || {};
+    if (!apiKey || apiKey === '***' || apiKey === '********************************') {
+      apiKey = getTikHubApiKey();
+    }
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Ключ TikHub не настроен.' });
+    }
+    const result = await validateTikHubKey(String(apiKey).trim());
+    if (result.ok) {
+      return res.json({ status: 'success', message: result.message, balance: result.balance, email: result.email });
+    }
+    // Невалидный ключ → 401; нехватка баланса/лимит → 402; иначе 502.
+    const httpCode = result.status === 'invalid' ? 401 : result.status === 'quota_exceeded' ? 402 : 502;
+    return res.status(httpCode).json({ error: result.message });
+  } catch (err: any) {
+    console.error('[Verify TikHub] Ошибка:', err);
+    return res.status(502).json({ error: `Ошибка подключения к TikHub: ${err?.message || String(err)}` });
   }
 });
 

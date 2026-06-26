@@ -43,6 +43,12 @@ export interface SystemConfig {
   stripeSecretKey?: string;       // sk_test_... или sk_live_...
   stripeWebhookSecret?: string;   // whsec_...
   stripePublishableKey?: string;  // pk_test_... или pk_live_... (для фронтенда)
+  /**
+   * TikHub.io API key (ПЛАТФОРМЕННЫЙ, pay-as-you-go) — скан трендов + скачивание
+   * видео. Один на весь аккаунт платформы; Enterprise-тенанты могут задать свой
+   * (tenant_settings/tikhub.ts). Bearer-токен. СЕКРЕТ.
+   */
+  tikhubApiKey?: string;
   /** Список chat_id Telegram (приватные / группы / каналы), куда слать уведомления админу.
    *  Хранится массивом строк; в форме админки редактируется кнопкой «Синхронизировать получателей». */
   telegramAdminChatIds?: string[];
@@ -101,6 +107,7 @@ const SECRET_FIELDS: (keyof SystemConfig)[] = [
   'googleClientSecret',
   'stripeSecretKey',
   'stripeWebhookSecret',
+  'tikhubApiKey',
 ];
 
 // ============================================================================================
@@ -248,6 +255,11 @@ export function getStripeWebhookSecret(): string {
 /** Stripe Publishable Key (pk_...) — отдаётся клиенту для Stripe.js */
 export function getStripePublishableKey(): string {
   return get('stripePublishableKey', 'STRIPE_PUBLISHABLE_KEY');
+}
+
+/** TikHub.io API key (платформенный). Источник: system-config.json → env TIKHUB_API_KEY. */
+export function getTikHubApiKey(): string {
+  return get('tikhubApiKey', 'TIKHUB_API_KEY');
 }
 
 /** Telegram Bot API Token */
@@ -411,6 +423,9 @@ export function getSettingsForClient(): Record<string, any> {
     stripeWebhookSecret: getStripeWebhookSecret() ? SECRET_MASK : '',
     hasStripeWebhookSecret: !!getStripeWebhookSecret(),
     stripePublishableKey: getStripePublishableKey(), // не секрет — публичный ключ Stripe
+
+    tikhubApiKey: getTikHubApiKey() ? SECRET_MASK : '',
+    hasTikhubKey: !!getTikHubApiKey(),
   };
 }
 
@@ -447,6 +462,7 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
     { key: 'stripeSecretKey', envFallback: 'STRIPE_SECRET_KEY' },
     { key: 'stripeWebhookSecret', envFallback: 'STRIPE_WEBHOOK_SECRET' },
     { key: 'stripePublishableKey', envFallback: 'STRIPE_PUBLISHABLE_KEY' },
+    { key: 'tikhubApiKey', envFallback: 'TIKHUB_API_KEY' },
     { key: 'voiceFemale', envFallback: 'GEMINI_VOICE_FEMALE' },
     { key: 'voiceMale', envFallback: 'GEMINI_VOICE_MALE' },
   ];

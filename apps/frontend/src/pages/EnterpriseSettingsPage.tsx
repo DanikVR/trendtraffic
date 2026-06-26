@@ -9,7 +9,7 @@
 
 import React, { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, BrainCircuit, Workflow, Boxes, Loader2, Lock, Plug } from 'lucide-react';
+import { Sparkles, BrainCircuit, Workflow, Boxes, Loader2, Lock, Plug, TrendingUp } from 'lucide-react';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
 import { AuroraCard } from '../components/AuroraCard';
 
@@ -19,6 +19,7 @@ const Section2Prompt = lazy(() => import('./enterprise/Section2Prompt'));
 const Section3QuestFlow = lazy(() => import('./enterprise/Section3QuestFlow'));
 const Section4Chatwoot = lazy(() => import('./enterprise/Section4Chatwoot'));
 const Section5Mcp = lazy(() => import('./enterprise/Section5Mcp'));
+const Section6TikHub = lazy(() => import('./enterprise/Section6TikHub'));
 
 interface BuiltSection {
   key: string;
@@ -67,6 +68,13 @@ export function EnterpriseSettingsPage() {
       icon: <Plug size={16} />,
       color: '#f59e0b',
       component: Section5Mcp,
+    },
+    {
+      key: 'tikhub',
+      label: t('enterprise.tabs.tikhub', 'TikHub'),
+      icon: <TrendingUp size={16} />,
+      color: '#f59e0b',
+      component: Section6TikHub,
     },
   ];
 

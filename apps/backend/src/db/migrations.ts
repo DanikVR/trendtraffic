@@ -62,6 +62,20 @@ const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS gemini_api_key_last_check TIMESTAMP WITH TIME ZONE`,
   },
 
+  // tenants — per-tenant TikHub ключ (TrendTraffic: Enterprise BYO для скана трендов)
+  {
+    name: 'tenants.tikhub_api_key_encrypted',
+    sql: `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tikhub_api_key_encrypted TEXT`,
+  },
+  {
+    name: 'tenants.tikhub_api_key_status',
+    sql: `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tikhub_api_key_status VARCHAR(32)`,
+  },
+  {
+    name: 'tenants.tikhub_api_key_last_check',
+    sql: `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tikhub_api_key_last_check TIMESTAMP WITH TIME ZONE`,
+  },
+
   // tenants — per-tenant Chatwoot
   {
     name: 'tenants.chatwoot_url_encrypted',

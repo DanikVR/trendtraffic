@@ -13,13 +13,14 @@ import {
   Terminal,
   CreditCard,
   Gauge,
+  TrendingUp,
 } from 'lucide-react';
 import { AuroraCard } from '../../components/AuroraCard';
 import { AuroraButton } from '../../components/AuroraButton';
 import { AuroraInput } from '../../components/AuroraInput';
 import { useAppStore } from '../../store/useAppStore';
 
-type ServiceType = 'livekit' | 'telegram' | 'google' | 'googleOAuth' | 'stripe';
+type ServiceType = 'livekit' | 'telegram' | 'google' | 'googleOAuth' | 'stripe' | 'tikhub';
 
 interface TestResult {
   status: 'idle' | 'testing' | 'success' | 'error';
@@ -51,6 +52,7 @@ export default function AdminConfigPage() {
   const [stripeSecretKey, setStripeSecretKey] = useState('');
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState('');
   const [stripePublishableKey, setStripePublishableKey] = useState('');
+  const [tikhubApiKey, setTikhubApiKey] = useState('');
   const [syncingProducts, setSyncingProducts] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
@@ -78,6 +80,7 @@ export default function AdminConfigPage() {
     google:      { status: 'idle', message: '', steps: [] },
     googleOAuth: { status: 'idle', message: '', steps: [] },
     stripe:      { status: 'idle', message: '', steps: [] },
+    tikhub:      { status: 'idle', message: '', steps: [] },
   });
 
   // Интервал «шагов» теста подключения держим в ref, чтобы гарантированно
@@ -111,6 +114,7 @@ export default function AdminConfigPage() {
           setStripeSecretKey(data.stripeSecretKey || '');
           setStripeWebhookSecret(data.stripeWebhookSecret || '');
           setStripePublishableKey(data.stripePublishableKey || '');
+          setTikhubApiKey(data.tikhubApiKey || '');
           if (Array.isArray(data.telegramAdminChatIds)) setTgChatIds(data.telegramAdminChatIds);
         }
       } catch (err) {
@@ -259,6 +263,7 @@ export default function AdminConfigPage() {
             : {}),
           googleClientId, googleClientSecret,
           stripeSecretKey, stripeWebhookSecret, stripePublishableKey,
+          tikhubApiKey,
         }),
       });
 
@@ -309,6 +314,9 @@ export default function AdminConfigPage() {
     } else if (service === 'stripe') {
       testSteps = ['Инициализация Stripe SDK...', 'Проверка формата API Key (sk_test_/sk_live_)...', 'Запрос Balance из Stripe API...', 'Определение режима TEST/LIVE...'];
       verifyUrl = '/api/auth/verify-stripe';
+    } else if (service === 'tikhub') {
+      testSteps = ['Подключение к api.tikhub.io...', 'Авторизация Bearer-токеном...', 'Запрос get_user_info...', 'Чтение статуса ключа и баланса...'];
+      verifyUrl = '/api/auth/verify-tikhub';
     }
 
     let currentStepIndex = 0;
@@ -331,6 +339,8 @@ export default function AdminConfigPage() {
             bodyData = { clientId: googleClientId, clientSecret: googleClientSecret };
           } else if (service === 'stripe') {
             bodyData = { secretKey: stripeSecretKey };
+          } else if (service === 'tikhub') {
+            bodyData = { apiKey: tikhubApiKey };
           }
 
           const res = await fetch(verifyUrl, {
@@ -924,6 +934,32 @@ export default function AdminConfigPage() {
                 </div>
               </div>
               {renderTestBlock('stripe')}
+            </AuroraCard>
+
+            {/* TikHub — сканирование трендов и скачивание видео (платформенный ключ) */}
+            <AuroraCard className="p-6 space-y-5 md:col-span-2 flex flex-col justify-between">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
+                    <TrendingUp size={16} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>TikHub (тренды и скачивание видео)</h3>
+                </div>
+                <AuroraInput
+                  label="TikHub API Key"
+                  type="password"
+                  value={tikhubApiKey}
+                  onChange={(e) => setTikhubApiKey(e.target.value)}
+                  placeholder="вставьте ключ TikHub..."
+                  inputId="admin-tikhub-key"
+                />
+                <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
+                  <p>Платформенный ключ для сканирования трендов и скачивания видео (TikTok / Douyin / Instagram / YouTube). Используется всеми тенантами, кроме Enterprise — те могут задать свой ключ в настройках Enterprise.</p>
+                  <p>Получить/проверить ключ и баланс: <a href="https://tikhub.io" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--accent-orange)' }}>tikhub.io</a>. Тарификация — pay-as-you-go (списывается с баланса аккаунта за каждый запрос).</p>
+                  <p>Нажмите «Проверить подключение» — backend реально дёрнет <code style={{ color: 'var(--text-secondary)' }}>get_user_info</code> и покажет статус ключа + баланс.</p>
+                </div>
+              </div>
+              {renderTestBlock('tikhub')}
             </AuroraCard>
           </div>
 

@@ -22,6 +22,12 @@ import {
   validateTenantGeminiKey,
 } from './gemini.js';
 import {
+  getTenantTikHubKeyInfo,
+  setTenantTikHubKey,
+  clearTenantTikHubKey,
+  validateTenantTikHubKey,
+} from './tikhub.js';
+import {
   getOwnerBotToken,
   setOwnerBotToken,
   checkBotToken,
@@ -138,6 +144,60 @@ router.post('/gemini/validate', async (req: AuthedRequest, res: Response) => {
   try {
     const validation = await validateTenantGeminiKey(req.tenantId!);
     const info = await getTenantGeminiKeyInfo(req.tenantId!);
+    res.json({ ...info, validation });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка валидации' });
+  }
+});
+
+// ============================================================================
+// TIKHUB API KEY (TrendTraffic — Enterprise BYO для скана трендов)
+// ============================================================================
+
+router.get('/tikhub', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'tikhub-key'))) return;
+  try {
+    const info = await getTenantTikHubKeyInfo(req.tenantId!);
+    res.json(info);
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+router.put('/tikhub', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'tikhub-key'))) return;
+  try {
+    const { apiKey } = req.body || {};
+    if (typeof apiKey !== 'string' || apiKey.length < 8) {
+      return res.status(400).json({ error: 'Передайте валидный apiKey (string ≥ 8 символов)' });
+    }
+    await setTenantTikHubKey(req.tenantId!, apiKey.trim());
+    // Сразу реально проверяем ключ против TikHub.
+    const validation = await validateTenantTikHubKey(req.tenantId!);
+    const info = await getTenantTikHubKeyInfo(req.tenantId!);
+    res.json({ ...info, validation });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка сохранения' });
+  }
+});
+
+router.delete('/tikhub', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'tikhub-key'))) return;
+  try {
+    await clearTenantTikHubKey(req.tenantId!);
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+router.post('/tikhub/validate', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'tikhub-key'))) return;
+  try {
+    // Если в теле передан apiKey — проверяем именно его (до сохранения); иначе сохранённый.
+    const raw = typeof req.body?.apiKey === 'string' ? req.body.apiKey : undefined;
+    const validation = await validateTenantTikHubKey(req.tenantId!, raw);
+    const info = await getTenantTikHubKeyInfo(req.tenantId!);
     res.json({ ...info, validation });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка валидации' });
