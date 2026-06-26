@@ -11,20 +11,24 @@
  * добавь ключ здесь и в backend, затем оберни её роут/ссылку в `FEATURES.<ключ>`.
  */
 export const FEATURES = {
-  /** Видеозвонки-перевод: RoomPage (/, /room/:id), FAB/CTA «создать комнату». */
-  video: true,
-  /** SIP-телефония: /sip + ссылки в навигации. */
-  sip: true,
+  /** Видеозвонки-перевод: RoomPage (/, /room/:id), FAB/CTA «создать комнату». TrendTraffic: выкл. */
+  video: false,
+  /** SIP-телефония: /sip + ссылки в навигации. TrendTraffic: выкл. */
+  sip: false,
   /** Правила обучения / диалекты (AI Learning Hub): /admin/dialects. */
   learnHub: true,
   /** Партнёрская программа: /admin/partners. */
   partners: true,
   /** Публичная аудио-песочница на лендинге (бэкенд /api/demo). */
   publicDemo: true,
-  /** Омниканал: конструктор цепочек /flow + пункт меню. */
+  /** TrendFlow: визуальный конструктор /flow + пункт меню. */
   flow: true,
   /** TrendTraffic: анализатор трендов /trends + пункт меню. */
   trends: true,
+  /** TrendTraffic: галерея скачанных видео /gallery. */
+  gallery: true,
+  /** TrendTraffic: публикатор в соцсети /publisher. */
+  publisher: true,
 } as const;
 
 export type FeatureName = keyof typeof FEATURES;
@@ -33,5 +37,5 @@ export function isFeatureEnabled(name: FeatureName): boolean {
   return FEATURES[name];
 }
 
-/** Куда вести «/» и логотип, если видеозвонки выключены (RoomPage = домашняя). */
-export const HOME_ROUTE_WHEN_NO_VIDEO = '/settings';
+/** Куда вести «/» и логотип, если видеозвонки выключены (TrendTraffic: домашняя = Тренды). */
+export const HOME_ROUTE_WHEN_NO_VIDEO = '/trends';

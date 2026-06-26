@@ -39,8 +39,8 @@ export interface FeatureFlags {
 
 /** Дефолты — «всё включено». Чтобы отключить функцию в этой сборке: поставь false. */
 const DEFAULTS: FeatureFlags = {
-  video: true,
-  sip: true,
+  video: false, // TrendTraffic: видеоперевод/комнаты выключены
+  sip: false,   // TrendTraffic: SIP выключен
   learnHub: true,
   partners: true,
   publicDemo: true,

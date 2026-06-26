@@ -50,6 +50,8 @@ import PartnersPage from './pages/admin/PartnersPage';
 const FlowPage = React.lazy(() => import('./pages/FlowPage'));
 // TRENDTRAFFIC: анализатор трендов — lazy.
 const TrendsPage = React.lazy(() => import('./pages/TrendsPage'));
+const GalleryPage = React.lazy(() => import('./pages/GalleryPage'));
+const PublisherPage = React.lazy(() => import('./pages/PublisherPage'));
 
 // ============================================================================================
 // Мидлвари защиты роутов
@@ -177,6 +179,22 @@ export const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
                 <TrendsPage />
+              </React.Suspense>
+            ),
+          }] : []),
+          ...(FEATURES.gallery ? [{
+            path: 'gallery',
+            element: (
+              <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
+                <GalleryPage />
+              </React.Suspense>
+            ),
+          }] : []),
+          ...(FEATURES.publisher ? [{
+            path: 'publisher',
+            element: (
+              <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
+                <PublisherPage />
               </React.Suspense>
             ),
           }] : []),

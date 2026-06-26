@@ -11,6 +11,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import fs from 'fs';
 import pool from '../../db/index.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { searchVideos, fetchTrending, normalizeVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
@@ -168,19 +169,40 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   return { trendId, count: videos.length, videos: stored, rawKeys };
 }
 
-export async function listRecentVideos(tenantId: string, limit = 60): Promise<StoredVideo[]> {
-  const lim = Math.min(Math.max(limit, 1), 200);
+export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false): Promise<StoredVideo[]> {
+  const lim = Math.min(Math.max(limit, 1), 500);
+  const where = downloadedOnly ? `AND status = 'downloaded' AND file_url IS NOT NULL` : '';
   try {
     const r = await pool.query(
       `SELECT id, platform, external_id, author, author_name, description, cover_url, video_url,
               web_url, duration_sec, play_count, like_count, comment_count, share_count, status, file_url
-       FROM source_videos WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2`,
+       FROM source_videos WHERE tenant_id = $1 ${where} ORDER BY created_at DESC LIMIT $2`,
       [tenantId, lim]
     );
     return (r.rows as any[]).map(mapRow);
   } catch {
     return [];
   }
+}
+
+/** Удаляет видео: стирает файл с диска (если скачан) и строку из БД. */
+export async function deleteVideo(tenantId: string, id: string): Promise<boolean> {
+  try {
+    const r = await pool.query(`SELECT file_path FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
+    const fp = r.rows[0]?.file_path;
+    if (fp) { try { fs.unlinkSync(fp); } catch { /* файла может не быть */ } }
+    const d = await pool.query(`DELETE FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
+    return (d.rowCount || 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Массовое удаление. Возвращает число удалённых. */
+export async function deleteVideos(tenantId: string, ids: string[]): Promise<number> {
+  let n = 0;
+  for (const id of ids) { if (await deleteVideo(tenantId, id)) n++; }
+  return n;
 }
 
 export async function getVideo(tenantId: string, id: string): Promise<any | null> {

@@ -11,7 +11,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { scanTrends, listRecentVideos, getVideo, setVideoStatus, type TrendKind } from './service.js';
+import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -68,7 +68,8 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
 router.get('/videos', async (req: AuthedRequest, res: Response) => {
   try {
     const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 60;
-    const videos = await listRecentVideos(req.tenantId!, limit);
+    const downloaded = req.query.downloaded === '1' || req.query.downloaded === 'true';
+    const videos = await listRecentVideos(req.tenantId!, limit, downloaded);
     res.json({ videos });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });
@@ -107,6 +108,28 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
     }
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка' });
+  }
+});
+
+/** DELETE /videos/:id — удалить одно видео (файл + строку). */
+router.delete('/videos/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const ok = await deleteVideo(req.tenantId!, req.params.id);
+    res.json({ ok });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+/** POST /videos/delete-bulk { ids: string[] } — массовое удаление. */
+router.post('/videos/delete-bulk', async (req: AuthedRequest, res: Response) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((x: any) => typeof x === 'string') : [];
+    if (ids.length === 0) return res.status(400).json({ error: 'Передайте ids[]' });
+    const deleted = await deleteVideos(req.tenantId!, ids);
+    res.json({ ok: true, deleted });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
   }
 });
 
