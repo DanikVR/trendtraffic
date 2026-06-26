@@ -1,0 +1,206 @@
+/**
+ * TrendTraffic — сервис анализатора трендов (TikHub).
+ *
+ * scanTrends() сканирует тренды через TikHub, нормализует ответ (см.
+ * tikhub_client.normalizeVideos — оборонительный разбор) и сохраняет найденные
+ * видео в source_videos с дедупом по (tenant_id, platform, external_id).
+ *
+ * Ключ берётся через getEffectiveTikHubKey (Enterprise — свой, иначе платформенный).
+ * Только PostgreSQL: в fallback-режиме запись деградирует (try/catch), но
+ * нормализованные видео всё равно возвращаются вызывающему.
+ */
+
+import { randomUUID } from 'crypto';
+import pool from '../../db/index.js';
+import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import { searchVideos, fetchTrending, normalizeVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
+
+export type TrendKind = 'keyword' | 'trending';
+
+export interface ScanParams {
+  kind: TrendKind;
+  query?: string;
+  count?: number;
+  region?: string;
+}
+
+export interface StoredVideo {
+  id: string | null;
+  externalId: string;
+  platform: string;
+  author: string;
+  authorName?: string;
+  description?: string;
+  coverUrl?: string;
+  videoUrl?: string;
+  webUrl?: string;
+  durationSec?: number;
+  stats: { play?: number; like?: number; comment?: number; share?: number };
+  status: string;
+  fileUrl?: string | null;
+}
+
+export interface ScanResult {
+  trendId: string | null;
+  count: number;
+  videos: StoredVideo[];
+  /** debug: верхнеуровневые ключи сырого ответа — помогает доводить нормализатор. */
+  rawKeys: string[];
+}
+
+function num(v: any): number | undefined {
+  if (v == null) return undefined;
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isFinite(n) ? n : undefined;
+}
+
+function mapRow(r: any): StoredVideo {
+  return {
+    id: r.id,
+    externalId: r.external_id,
+    platform: r.platform,
+    author: r.author,
+    authorName: r.author_name || undefined,
+    description: r.description || undefined,
+    coverUrl: r.cover_url || undefined,
+    videoUrl: r.video_url || undefined,
+    webUrl: r.web_url || undefined,
+    durationSec: r.duration_sec ?? undefined,
+    stats: { play: num(r.play_count), like: num(r.like_count), comment: num(r.comment_count), share: num(r.share_count) },
+    status: r.status,
+    fileUrl: r.file_url || null,
+  };
+}
+
+/** Сканирует тренды и сохраняет видео. Бросает понятную ошибку при проблемах с ключом/TikHub. */
+export async function scanTrends(tenantId: string, params: ScanParams): Promise<ScanResult> {
+  const key = await getEffectiveTikHubKey(tenantId);
+  if (!key) {
+    throw new Error('Ключ TikHub не задан. Укажите платформенный ключ в админке или свой в настройках Enterprise.');
+  }
+
+  const count = Math.min(Math.max(params.count ?? 20, 1), 30);
+  let resp;
+  if (params.kind === 'keyword') {
+    const q = (params.query || '').trim();
+    if (!q) throw new Error('Укажите ключевое слово для поиска.');
+    resp = await searchVideos(key, q, { count });
+  } else {
+    resp = await fetchTrending(key, { count });
+  }
+
+  if (!resp.ok) {
+    throw new Error(`TikHub вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
+  }
+
+  const videos: NormalizedVideo[] = normalizeVideos(resp.data);
+  const rawKeys = resp.data && typeof resp.data === 'object'
+    ? Object.keys((resp.data as any).data && typeof (resp.data as any).data === 'object' ? (resp.data as any).data : resp.data)
+    : [];
+
+  // Запись журнала скана (best-effort).
+  let trendId: string | null = randomUUID();
+  try {
+    await pool.query(
+      `INSERT INTO trends (id, tenant_id, platform, query_kind, query_value, region, result_count, payload)
+       VALUES ($1, $2, 'tiktok', $3, $4, $5, $6, $7)`,
+      [trendId, tenantId, params.kind, params.query || null, params.region || null, videos.length, JSON.stringify(resp.data ?? null)]
+    );
+  } catch (e) {
+    console.warn('[trends] не удалось записать trend (fallback?):', (e as Error).message);
+    trendId = null;
+  }
+
+  // Апсерт видео (дедуп по уникальному индексу).
+  const stored: StoredVideo[] = [];
+  for (const v of videos) {
+    try {
+      const r = await pool.query(
+        `INSERT INTO source_videos
+           (id, tenant_id, trend_id, platform, external_id, author, author_name, description,
+            cover_url, video_url, web_url, duration_sec, play_count, like_count, comment_count, share_count, payload)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         ON CONFLICT (tenant_id, platform, external_id) DO UPDATE SET
+           trend_id = EXCLUDED.trend_id,
+           author = EXCLUDED.author,
+           author_name = EXCLUDED.author_name,
+           description = EXCLUDED.description,
+           cover_url = EXCLUDED.cover_url,
+           video_url = EXCLUDED.video_url,
+           web_url = EXCLUDED.web_url,
+           duration_sec = EXCLUDED.duration_sec,
+           play_count = EXCLUDED.play_count,
+           like_count = EXCLUDED.like_count,
+           comment_count = EXCLUDED.comment_count,
+           share_count = EXCLUDED.share_count,
+           payload = EXCLUDED.payload,
+           updated_at = CURRENT_TIMESTAMP
+         RETURNING id, platform, external_id, author, author_name, description, cover_url, video_url,
+                   web_url, duration_sec, play_count, like_count, comment_count, share_count, status, file_url`,
+        [
+          randomUUID(), tenantId, trendId, v.platform, v.externalId, v.author, v.authorName || null,
+          v.description || null, v.coverUrl || null, v.videoUrl || null, v.webUrl || null,
+          v.durationSec ?? null, v.stats.play ?? null, v.stats.like ?? null, v.stats.comment ?? null,
+          v.stats.share ?? null, JSON.stringify(v.raw ?? null),
+        ]
+      );
+      stored.push(mapRow(r.rows[0]));
+    } catch (e) {
+      // Не падаем на одном видео — возвращаем нормализованное без БД-id.
+      console.warn('[trends] upsert видео не удался:', (e as Error).message);
+      stored.push({
+        id: null, externalId: v.externalId, platform: v.platform, author: v.author,
+        authorName: v.authorName, description: v.description, coverUrl: v.coverUrl,
+        videoUrl: v.videoUrl, webUrl: v.webUrl, durationSec: v.durationSec, stats: v.stats,
+        status: 'discovered', fileUrl: null,
+      });
+    }
+  }
+
+  return { trendId, count: videos.length, videos: stored, rawKeys };
+}
+
+export async function listRecentVideos(tenantId: string, limit = 60): Promise<StoredVideo[]> {
+  const lim = Math.min(Math.max(limit, 1), 200);
+  try {
+    const r = await pool.query(
+      `SELECT id, platform, external_id, author, author_name, description, cover_url, video_url,
+              web_url, duration_sec, play_count, like_count, comment_count, share_count, status, file_url
+       FROM source_videos WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2`,
+      [tenantId, lim]
+    );
+    return (r.rows as any[]).map(mapRow);
+  } catch {
+    return [];
+  }
+}
+
+export async function getVideo(tenantId: string, id: string): Promise<any | null> {
+  try {
+    const r = await pool.query(`SELECT * FROM source_videos WHERE tenant_id = $1 AND id = $2 LIMIT 1`, [tenantId, id]);
+    return (r.rows as any[])[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setVideoStatus(
+  tenantId: string,
+  id: string,
+  patch: { status?: string; fileUrl?: string | null; filePath?: string | null; error?: string | null }
+): Promise<void> {
+  try {
+    await pool.query(
+      `UPDATE source_videos
+       SET status = COALESCE($3, status),
+           file_url = COALESCE($4, file_url),
+           file_path = COALESCE($5, file_path),
+           error = $6,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, id, patch.status ?? null, patch.fileUrl ?? null, patch.filePath ?? null, patch.error ?? null]
+    );
+  } catch (e) {
+    console.warn('[trends] setVideoStatus failed:', (e as Error).message);
+  }
+}

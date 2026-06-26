@@ -543,6 +543,59 @@ const MIGRATIONS: Migration[] = [
     name: 'crm_tasks.idx_due',
     sql: `CREATE INDEX IF NOT EXISTS idx_crm_tasks_due ON crm_tasks(due_at) WHERE status = 'todo' AND fired_at IS NULL`,
   },
+
+  // ============================================================================
+  // TRENDTRAFFIC — анализатор трендов (TikHub).
+  //  trends         — журнал сканов (запрос + сырой ответ).
+  //  source_videos  — найденные исходные видео (дедуп по tenant+platform+external_id),
+  //                   статус жизненного цикла: discovered → downloading → downloaded/failed.
+  // Только PostgreSQL (в fallback-режиме модуль деградирует, см. modules/trends).
+  // ============================================================================
+  {
+    name: 'trends.create',
+    sql: `CREATE TABLE IF NOT EXISTS trends (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      platform VARCHAR(32) NOT NULL DEFAULT 'tiktok',
+      query_kind VARCHAR(32) NOT NULL,
+      query_value VARCHAR(255),
+      region VARCHAR(8),
+      result_count INT NOT NULL DEFAULT 0,
+      payload JSONB,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'trends.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_trends_tenant ON trends(tenant_id, created_at DESC)` },
+  {
+    name: 'source_videos.create',
+    sql: `CREATE TABLE IF NOT EXISTS source_videos (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      trend_id UUID REFERENCES trends(id) ON DELETE SET NULL,
+      platform VARCHAR(32) NOT NULL DEFAULT 'tiktok',
+      external_id VARCHAR(128) NOT NULL,
+      author VARCHAR(255),
+      author_name VARCHAR(255),
+      description TEXT,
+      cover_url TEXT,
+      video_url TEXT,
+      web_url TEXT,
+      duration_sec INT,
+      play_count BIGINT,
+      like_count BIGINT,
+      comment_count BIGINT,
+      share_count BIGINT,
+      status VARCHAR(24) NOT NULL DEFAULT 'discovered' CHECK (status IN ('discovered','downloading','downloaded','failed')),
+      file_url TEXT,
+      file_path TEXT,
+      error TEXT,
+      payload JSONB,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'source_videos.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_source_videos_uniq ON source_videos(tenant_id, platform, external_id)` },
+  { name: 'source_videos.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_source_videos_tenant ON source_videos(tenant_id, created_at DESC)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

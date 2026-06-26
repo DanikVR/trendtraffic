@@ -38,6 +38,7 @@ import tiktokRouter from './modules/channels/tiktok/tt_webhook.js';
 import whatsappRouter from './modules/channels/whatsapp/wa_webhook.js';
 import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
+import trendsRouter from './modules/trends/router.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
 import { partnersPublicRouter, partnersAdminRouter } from './modules/partners/router.js';
@@ -155,6 +156,8 @@ app.use('/api/tenant-settings', tenantSettingsRouter);
 app.use('/api/need-tags', needTagsRouter);
 // OMNICHANNEL Фаза 2: конструктор цепочек (JWT + Enterprise внутри роутера)
 app.use('/api/flows', flowsRouter);
+// TRENDTRAFFIC: анализатор трендов (TikHub) — JWT внутри роутера
+app.use('/api/trends', trendsRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)
 app.use('/api/enterprise-chat', enterpriseChatRouter);
 app.use('/api/chatwoot-bridge', express.json(), chatwootBridgeRouter);

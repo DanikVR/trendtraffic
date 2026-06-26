@@ -19,6 +19,7 @@ import {
   Phone,
   Menu,
   Workflow,
+  TrendingUp,
 } from 'lucide-react';
 
 /** Композитная иконка «перевод + телефон» — используется и в шапке баланса,
@@ -68,6 +69,7 @@ export function MainLayout() {
     ...(FEATURES.video ? [{ path: '/',    icon: Languages, label: t('nav.rooms'), exact: true  }] : []),
     ...(FEATURES.sip   ? [{ path: '/sip', icon: Phone,     label: t('nav.sip'),   exact: false }] : []),
     ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'Botflow',  exact: false }] : []),
+    ...(FEATURES.trends ? [{ path: '/trends', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }] : []),
   ];
 
   // При монтировании / смене токена — подтянуть баланс и тариф с бэка.

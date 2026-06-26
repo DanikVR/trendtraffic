@@ -23,6 +23,8 @@ export const FEATURES = {
   publicDemo: true,
   /** Омниканал: конструктор цепочек /flow + пункт меню. */
   flow: true,
+  /** TrendTraffic: анализатор трендов /trends + пункт меню. */
+  trends: true,
 } as const;
 
 export type FeatureName = keyof typeof FEATURES;

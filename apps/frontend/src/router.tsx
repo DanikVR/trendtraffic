@@ -48,6 +48,8 @@ import PartnersPage from './pages/admin/PartnersPage';
 
 // OMNICHANNEL Фаза 2: конструктор цепочек — lazy (React Flow тяжёлый, грузим по входу).
 const FlowPage = React.lazy(() => import('./pages/FlowPage'));
+// TRENDTRAFFIC: анализатор трендов — lazy.
+const TrendsPage = React.lazy(() => import('./pages/TrendsPage'));
 
 // ============================================================================================
 // Мидлвари защиты роутов
@@ -167,6 +169,14 @@ export const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
                 <FlowPage />
+              </React.Suspense>
+            ),
+          }] : []),
+          ...(FEATURES.trends ? [{
+            path: 'trends',
+            element: (
+              <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
+                <TrendsPage />
               </React.Suspense>
             ),
           }] : []),

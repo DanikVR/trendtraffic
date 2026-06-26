@@ -1,0 +1,237 @@
+/**
+ * TrendsPage — анализатор трендов (TikHub).
+ *
+ * Поиск по ключевому слову или выдача трендов → грид найденных видео со
+ * статистикой → скачивание исходника на диск. Данные с /api/trends/*.
+ */
+
+import React, { useEffect, useState } from 'react';
+import {
+  TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle,
+  Eye, Heart, MessageCircle, Share2, Play,
+} from 'lucide-react';
+import { AuroraCard } from '../components/AuroraCard';
+import { AuroraButton } from '../components/AuroraButton';
+import { useAppStore } from '../store/useAppStore';
+
+type Kind = 'keyword' | 'trending';
+
+interface StoredVideo {
+  id: string | null;
+  externalId: string;
+  platform: string;
+  author: string;
+  authorName?: string;
+  description?: string;
+  coverUrl?: string;
+  videoUrl?: string;
+  webUrl?: string;
+  durationSec?: number;
+  stats: { play?: number; like?: number; comment?: number; share?: number };
+  status: string;
+  fileUrl?: string | null;
+}
+
+function fmt(n?: number): string {
+  if (n == null) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+function dur(s?: number): string {
+  if (!s || s <= 0) return '';
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+export default function TrendsPage() {
+  const { token } = useAppStore();
+  const [kind, setKind] = useState<Kind>('keyword');
+  const [query, setQuery] = useState('');
+  const [count, setCount] = useState(20);
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [videos, setVideos] = useState<StoredVideo[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const headers = (): HeadersInit => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/trends/videos?limit=60', { headers: headers() });
+        if (res.ok) { const d = await res.json(); setVideos(d.videos || []); }
+      } catch { /* тихо */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleScan = async () => {
+    if (kind === 'keyword' && !query.trim()) { setError('Введите ключевое слово'); return; }
+    setScanning(true); setError(null); setNotice(null);
+    try {
+      const res = await fetch('/api/trends/scan', {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({ kind, query: query.trim(), count }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setVideos(data.videos || []);
+      if ((data.count ?? 0) === 0) {
+        setNotice(`TikHub ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.`);
+      } else {
+        setNotice(`Найдено видео: ${data.count}.`);
+      }
+    } catch (e: any) { setError(e?.message || 'Ошибка сканирования'); }
+    finally { setScanning(false); }
+  };
+
+  const handleDownload = async (v: StoredVideo) => {
+    if (!v.id) { setError('Видео не сохранено в БД — повторите скан.'); return; }
+    setDownloadingId(v.id); setError(null);
+    try {
+      const res = await fetch(`/api/trends/videos/${v.id}/download`, { method: 'POST', headers: headers() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'downloaded', fileUrl: data.fileUrl } : x));
+    } catch (e: any) {
+      setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'failed' } : x));
+      setError(e?.message || 'Не удалось скачать');
+    } finally { setDownloadingId(null); }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+             style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>
+          <TrendingUp size={20} color="#fff" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Сканирование TikTok-трендов через TikHub: поиск по ключевику или горячая выдача, затем скачивание исходников.</p>
+        </div>
+      </div>
+
+      {/* Search card */}
+      <AuroraCard className="p-5 space-y-4">
+        <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
+          {(['keyword', 'trending'] as Kind[]).map((k) => (
+            <button key={k} onClick={() => setKind(k)}
+              className="px-3 py-1.5 rounded-lg text-sm font-600 transition-colors"
+              style={{ background: kind === k ? 'var(--btn-primary-bg)' : 'transparent', color: kind === k ? '#ff7300' : 'var(--text-muted)' }}>
+              {k === 'keyword' ? 'По ключевику' : 'Тренды'}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          {kind === 'keyword' && (
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleScan(); }}
+                placeholder="например: morning routine, gym, recipe..."
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Кол-во</label>
+            <input type="number" min={1} max={30} value={count}
+              onChange={(e) => setCount(Math.min(30, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+              className="w-20 px-2 py-2.5 rounded-xl text-sm focus:outline-none"
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+          </div>
+          <AuroraButton onClick={handleScan} disabled={scanning} icon={scanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
+            {scanning ? 'Сканирую...' : 'Сканировать'}
+          </AuroraButton>
+        </div>
+
+        {notice && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notice}</p>}
+        {error && (
+          <div className="flex items-start gap-2 text-sm" style={{ color: '#ef4444' }}><XCircle size={16} className="mt-[2px]" /><span>{error}</span></div>
+        )}
+      </AuroraCard>
+
+      {/* Results grid */}
+      {videos.length === 0 ? (
+        <AuroraCard className="p-10 text-center">
+          <TrendingUp size={28} className="inline-block mb-2" style={{ color: 'var(--text-muted)' }} />
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Пока пусто. Введите ключевик и нажмите «Сканировать».</p>
+        </AuroraCard>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {videos.map((v) => (
+            <AuroraCard key={v.id || v.externalId} className="p-0 overflow-hidden flex flex-col">
+              {/* Cover */}
+              <div className="relative aspect-[9/16] w-full" style={{ background: 'var(--bg-tertiary)' }}>
+                {v.coverUrl ? (
+                  <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center"><Play size={28} style={{ color: 'var(--text-muted)' }} /></div>
+                )}
+                {dur(v.durationSec) && (
+                  <span className="absolute bottom-1.5 right-1.5 text-[11px] px-1.5 py-0.5 rounded font-600"
+                    style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>{dur(v.durationSec)}</span>
+                )}
+                {v.status === 'downloaded' && (
+                  <span className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded font-700 inline-flex items-center gap-1"
+                    style={{ background: 'rgba(16,185,129,0.9)', color: '#fff' }}><CheckCircle2 size={11} /> скачано</span>
+                )}
+              </div>
+              {/* Body */}
+              <div className="p-3 flex flex-col gap-2 flex-1">
+                <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.authorName || v.author}>
+                  @{v.author}
+                </div>
+                {v.description && (
+                  <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>
+                )}
+                <div className="flex items-center gap-2 text-[11px] flex-wrap" style={{ color: 'var(--text-muted)' }}>
+                  <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>
+                  <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
+                  <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>
+                  <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-auto pt-1">
+                  {v.webUrl && (
+                    <a href={v.webUrl} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-1.5 rounded-lg flex-1"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                      <ExternalLink size={12} /> TikTok
+                    </a>
+                  )}
+                  {v.fileUrl ? (
+                    <a href={v.fileUrl} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-1.5 rounded-lg flex-1"
+                      style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+                      <Download size={12} /> Файл
+                    </a>
+                  ) : (
+                    <button onClick={() => handleDownload(v)} disabled={downloadingId === v.id || !v.id}
+                      className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-1.5 rounded-lg flex-1 disabled:opacity-50"
+                      style={{ background: 'var(--btn-primary-bg)', color: '#ff7300' }}>
+                      {downloadingId === v.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                      {downloadingId === v.id ? '...' : 'Скачать'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </AuroraCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
