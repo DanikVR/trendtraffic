@@ -29,7 +29,8 @@ interface TikHubInfo {
 
 export function Section6TikHub() {
   const { t } = useTranslation('common');
-  const { token } = useAppStore();
+  const { token, user } = useAppStore();
+  const isSuperadmin = user?.role === 'superadmin';
 
   const [info, setInfo] = useState<TikHubInfo | null>(null);
   const [keyInput, setKeyInput] = useState('');
@@ -135,6 +136,17 @@ export function Section6TikHub() {
           </p>
         </div>
       </div>
+
+      {isSuperadmin && (
+        <AuroraCard className="p-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={16} color="#f59e0b" className="mt-[2px]" />
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Вы суперадмин — этот раздел задаёт ключ для <b>Enterprise-тенантов</b>. Свой платформенный ключ задайте в <b>Админ-панели → «Настройки системных API»</b> (карточка TikHub). У суперадмина нет tenant-аккаунта, поэтому сохранение здесь недоступно.
+            </span>
+          </div>
+        </AuroraCard>
+      )}
 
       {success && (
         <AuroraCard className="p-3"><div className="flex items-center gap-2"><CheckCircle2 size={16} color="#10b981" /><span className="text-sm" style={{ color: 'var(--text-primary)' }}>{success}</span></div></AuroraCard>

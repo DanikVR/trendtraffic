@@ -20,6 +20,17 @@ import { validateTikHubKey, type TikHubKeyInfo, type TikHubKeyStatus } from '../
 
 export type TikHubKeyStatusDb = TikHubKeyStatus | null;
 
+/**
+ * tenants.id — UUID. Суперадмин ходит с tenantId='global_admin' (служебный sentinel,
+ * не UUID), у него нет строки в tenants → per-tenant ключ к нему неприменим.
+ * Проверяем формат, чтобы не ловить сырую ошибку PostgreSQL "invalid input syntax for uuid".
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(v: string | null | undefined): boolean { return !!v && UUID_RE.test(v); }
+
+const NOT_TENANT_MSG =
+  'Собственный ключ TikHub доступен только Enterprise-тенантам. Вы вошли как суперадмин — задайте ПЛАТФОРМЕННЫЙ ключ в Админ-панели → «Настройки системных API».';
+
 export interface TenantTikHubKeyInfo {
   hasKey: boolean;
   status: TikHubKeyStatusDb;
@@ -37,6 +48,7 @@ export async function getTenantTikHubKey(tenantId: string): Promise<{
   status: TikHubKeyStatusDb;
   lastCheckAt: Date | null;
 }> {
+  if (!isUuid(tenantId)) return { key: null, status: null, lastCheckAt: null };
   try {
     const res = await pool.query(
       `SELECT tikhub_api_key_encrypted, tikhub_api_key_status, tikhub_api_key_last_check
@@ -100,6 +112,7 @@ export async function getTenantTikHubKeyInfo(tenantId: string): Promise<TenantTi
 
 /** Сохраняет per-tenant ключ (шифруя). Сбрасывает статус на NULL — валидирует caller. */
 export async function setTenantTikHubKey(tenantId: string, rawKey: string | null): Promise<void> {
+  if (!isUuid(tenantId)) throw new Error(NOT_TENANT_MSG);
   const encrypted = encryptSecret(rawKey);
   await pool.query(
     `UPDATE tenants SET tikhub_api_key_encrypted = $1, tikhub_api_key_status = $2 WHERE id = $3`,
@@ -109,6 +122,7 @@ export async function setTenantTikHubKey(tenantId: string, rawKey: string | null
 
 /** Удаляет per-tenant ключ — tenant возвращается на платформенный fallback (если не Enterprise). */
 export async function clearTenantTikHubKey(tenantId: string): Promise<void> {
+  if (!isUuid(tenantId)) throw new Error(NOT_TENANT_MSG);
   await pool.query(
     `UPDATE tenants SET tikhub_api_key_encrypted = $1, tikhub_api_key_status = $2 WHERE id = $3`,
     [null, null, tenantId]
@@ -117,6 +131,7 @@ export async function clearTenantTikHubKey(tenantId: string): Promise<void> {
 
 /** Записывает статус ключа после валидации (или после неуспешного вызова TikHub). */
 export async function setTenantTikHubKeyStatus(tenantId: string, status: TikHubKeyStatusDb): Promise<void> {
+  if (!isUuid(tenantId)) return;
   await pool.query(
     `UPDATE tenants SET tikhub_api_key_status = $1 WHERE id = $2`,
     [status, tenantId]
