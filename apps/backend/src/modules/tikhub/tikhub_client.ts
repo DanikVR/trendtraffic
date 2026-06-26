@@ -50,9 +50,15 @@ export async function tikhubGet<T = any>(
     let data: any = undefined;
     if (text) { try { data = JSON.parse(text); } catch { data = text; } }
     if (!resp.ok) {
-      const apiMsg =
-        (data && typeof data === 'object' && (data.detail || data.message || data.error)) || '';
-      return { ok: false, status: resp.status, error: apiMsg ? String(apiMsg).slice(0, 300) : `HTTP ${resp.status}` };
+      let apiMsg = '';
+      if (data && typeof data === 'object') {
+        const m = (data as any).detail ?? (data as any).message ?? (data as any).error ?? (data as any).status_msg;
+        // detail у FastAPI-валидации — массив объектов; объект сериализуем в JSON, а не String() → "[object Object]".
+        apiMsg = m == null ? '' : (typeof m === 'string' ? m : JSON.stringify(m));
+      } else if (typeof data === 'string') {
+        apiMsg = data;
+      }
+      return { ok: false, status: resp.status, error: (apiMsg || `HTTP ${resp.status}`).slice(0, 400) };
     }
     return { ok: true, status: resp.status, data: data as T };
   } catch (err: any) {
@@ -188,7 +194,11 @@ export function extractRawItems(payload: any): any[] {
   let root = payload;
   // TikHub оборачивает в { code, router, data: {...} }.
   if (root && typeof root === 'object' && root.data !== undefined) root = root.data;
-  const CANDIDATE_KEYS = ['aweme_list', 'item_list', 'items', 'videos', 'video_list', 'business_list', 'search_item_list', 'data', 'aweme_info'];
+  // И snake_case, и camelCase: web-эндпоинты TikTok отдают itemList (тренды), search — data[]/item_list.
+  const CANDIDATE_KEYS = [
+    'aweme_list', 'awemeList', 'item_list', 'itemList', 'items', 'videos', 'video_list', 'videoList',
+    'business_list', 'businessList', 'search_item_list', 'searchItemList', 'aweme_info', 'data',
+  ];
   const visit = (node: any, depth: number): any[] | null => {
     if (!node || depth > 4) return null;
     if (Array.isArray(node)) return node;
