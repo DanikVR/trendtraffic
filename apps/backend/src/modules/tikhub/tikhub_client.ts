@@ -243,14 +243,21 @@ export function extractRawItems(payload: any): any[] {
     if (!node || depth > 4) return null;
     if (Array.isArray(node)) return node;
     if (typeof node === 'object') {
+      // 1) НЕПУСТОЙ массив-кандидат. Важно: App V3 search кладёт ПУСТОЙ aweme_list
+      //    рядом с непустым search_item_list — нельзя хватать первый попавшийся.
+      for (const k of CANDIDATE_KEYS) {
+        if (Array.isArray(node[k]) && node[k].length > 0) return node[k];
+      }
+      // 2) глубже (массив может быть вложен в объект).
+      for (const k of CANDIDATE_KEYS) {
+        if (node[k] && typeof node[k] === 'object' && !Array.isArray(node[k])) {
+          const found = visit(node[k], depth + 1);
+          if (found && found.length > 0) return found;
+        }
+      }
+      // 3) легитимно пустой результат — отдаём первый найденный массив.
       for (const k of CANDIDATE_KEYS) {
         if (Array.isArray(node[k])) return node[k];
-      }
-      for (const k of CANDIDATE_KEYS) {
-        if (node[k] && typeof node[k] === 'object') {
-          const found = visit(node[k], depth + 1);
-          if (found) return found;
-        }
       }
     }
     return null;

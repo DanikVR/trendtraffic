@@ -49,7 +49,7 @@ export default function TrendsPage() {
   const [kind, setKind] = useState<Kind>('keyword');
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
-  const [mode, setMode] = useState<'video' | 'general' | 'app'>('video');
+  const [mode, setMode] = useState<'video' | 'general' | 'app'>('app');
   const [sortType, setSortType] = useState<0 | 1 | 2>(0);
   const [publishTime, setPublishTime] = useState<0 | 1 | 7 | 30 | 90 | 180>(0);
   const [scanning, setScanning] = useState(false);
@@ -167,9 +167,9 @@ export default function TrendsPage() {
               <select value={mode} onChange={(e) => setMode(e.target.value as any)}
                 className="px-3 py-2 rounded-xl text-sm focus:outline-none"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                <option value="video">Видео</option>
-                <option value="general">Общий</option>
-                <option value="app">С фильтрами (App V3)</option>
+                <option value="app">С фильтрами (App V3) — рекоменд.</option>
+                <option value="video">Видео (web)</option>
+                <option value="general">Общий (web)</option>
               </select>
             </label>
             {mode === 'app' && (
@@ -200,7 +200,7 @@ export default function TrendsPage() {
               </>
             )}
             <p className="text-[11px] flex-1 min-w-[180px]" style={{ color: 'var(--text-muted)' }}>
-              «Видео»/«Общий» — Web API (без фильтров, но стабильнее). «С фильтрами» — App V3: сортировка и период публикации.
+              <b>App V3</b> — поиск с сортировкой/периодом и прямыми ссылками для скачивания (рекомендуется). «Видео»/«Общий» — Web API без фильтров (бывает нестабилен).
             </p>
           </div>
         )}
