@@ -555,7 +555,7 @@ const MIGRATIONS: Migration[] = [
     name: 'trends.create',
     sql: `CREATE TABLE IF NOT EXISTS trends (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      tenant_id VARCHAR(64) NOT NULL,
       platform VARCHAR(32) NOT NULL DEFAULT 'tiktok',
       query_kind VARCHAR(32) NOT NULL,
       query_value VARCHAR(255),
@@ -570,7 +570,7 @@ const MIGRATIONS: Migration[] = [
     name: 'source_videos.create',
     sql: `CREATE TABLE IF NOT EXISTS source_videos (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      tenant_id VARCHAR(64) NOT NULL,
       trend_id UUID REFERENCES trends(id) ON DELETE SET NULL,
       platform VARCHAR(32) NOT NULL DEFAULT 'tiktok',
       external_id VARCHAR(128) NOT NULL,
@@ -596,6 +596,13 @@ const MIGRATIONS: Migration[] = [
   },
   { name: 'source_videos.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_source_videos_uniq ON source_videos(tenant_id, platform, external_id)` },
   { name: 'source_videos.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_source_videos_tenant ON source_videos(tenant_id, created_at DESC)` },
+
+  // tenant_id → VARCHAR (суперадмин ходит с 'global_admin', не UUID; FK на tenants мешает).
+  // Конвертируем уже созданные таблицы (на свежей БД CREATE выше уже строковый — ALTER no-op).
+  { name: 'trends.tenant_id_drop_fk', sql: `ALTER TABLE trends DROP CONSTRAINT IF EXISTS trends_tenant_id_fkey` },
+  { name: 'trends.tenant_id_varchar', sql: `ALTER TABLE trends ALTER COLUMN tenant_id TYPE VARCHAR(64) USING tenant_id::text` },
+  { name: 'source_videos.tenant_id_drop_fk', sql: `ALTER TABLE source_videos DROP CONSTRAINT IF EXISTS source_videos_tenant_id_fkey` },
+  { name: 'source_videos.tenant_id_varchar', sql: `ALTER TABLE source_videos ALTER COLUMN tenant_id TYPE VARCHAR(64) USING tenant_id::text` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

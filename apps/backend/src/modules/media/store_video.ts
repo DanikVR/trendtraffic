@@ -33,7 +33,7 @@ export interface StoredFile {
 
 export async function downloadVideoToDisk(url: string, opts?: { referer?: string }): Promise<StoredFile> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 120000); // видео — до 2 мин на скачивание
+  const timer = setTimeout(() => controller.abort(), 60000); // 60с на скачивание — чтобы провал виделся быстрее
   try {
     const resp = await fetch(url, {
       headers: {

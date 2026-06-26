@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle,
+  TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
   Eye, Heart, MessageCircle, Share2, Play,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
@@ -148,10 +148,22 @@ export default function TrendsPage() {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Кол-во</label>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Кол-во</span>
+            {[1, 5, 10].map((n) => (
+              <button key={n} type="button" onClick={() => setCount(n)}
+                className="w-9 h-9 rounded-lg text-sm font-700 transition-colors"
+                style={{
+                  background: count === n ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)',
+                  color: count === n ? '#ff7300' : 'var(--text-muted)',
+                  border: `1px solid ${count === n ? '#ff7300' : 'var(--border-medium)'}`,
+                }}>
+                {n}
+              </button>
+            ))}
             <input type="number" min={1} max={30} value={count}
               onChange={(e) => setCount(Math.min(30, Math.max(1, parseInt(e.target.value, 10) || 1)))}
-              className="w-20 px-2 py-2.5 rounded-xl text-sm focus:outline-none"
+              title="Своё количество (1–30)"
+              className="w-16 px-2 py-2 rounded-lg text-sm text-center focus:outline-none"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>
           <AuroraButton onClick={handleScan} disabled={scanning} icon={scanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
@@ -220,7 +232,7 @@ export default function TrendsPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {videos.map((v) => (
-            <AuroraCard key={v.id || v.externalId} className="p-0 overflow-hidden flex flex-col">
+            <AuroraCard key={v.id || v.externalId} className="group p-0 overflow-hidden flex flex-col transition-transform duration-150 hover:-translate-y-0.5">
               {/* Cover */}
               <div className="relative aspect-[9/16] w-full" style={{ background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? (
@@ -229,6 +241,14 @@ export default function TrendsPage() {
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center"><Play size={28} style={{ color: 'var(--text-muted)' }} /></div>
+                )}
+                {/* play-оверлей при наведении */}
+                {v.webUrl && (
+                  <a href={v.webUrl} target="_blank" rel="noreferrer"
+                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: 'rgba(0,0,0,0.28)' }} title="Открыть в TikTok">
+                    <Play size={30} color="#fff" fill="#fff" />
+                  </a>
                 )}
                 {dur(v.durationSec) && (
                   <span className="absolute bottom-1.5 right-1.5 text-[11px] px-1.5 py-0.5 rounded font-600"
@@ -256,23 +276,30 @@ export default function TrendsPage() {
                 <div className="flex items-center gap-1.5 mt-auto pt-1">
                   {v.webUrl && (
                     <a href={v.webUrl} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-1.5 rounded-lg flex-1"
+                      className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                       <ExternalLink size={12} /> TikTok
                     </a>
                   )}
+                  {/* Загрузка — ТОЛЬКО по клику на иконку. Зелёная галка = уже скачано. */}
                   {v.fileUrl ? (
-                    <a href={v.fileUrl} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-1.5 rounded-lg flex-1"
+                    <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Скачано — открыть файл"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
-                      <Download size={12} /> Файл
+                      <CheckCircle2 size={16} />
                     </a>
                   ) : (
-                    <button onClick={() => handleDownload(v)} disabled={downloadingId === v.id || !v.id}
-                      className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-1.5 rounded-lg flex-1 disabled:opacity-50"
-                      style={{ background: 'var(--btn-primary-bg)', color: '#ff7300' }}>
-                      {downloadingId === v.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                      {downloadingId === v.id ? '...' : 'Скачать'}
+                    <button type="button" onClick={() => handleDownload(v)}
+                      disabled={!v.id || downloadingId === v.id}
+                      title={!v.id ? 'Видео не сохранено в БД' : v.status === 'failed' ? 'Ошибка скачивания — нажмите, чтобы повторить' : 'Загрузить видео на диск'}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40"
+                      style={{
+                        background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--btn-primary-bg)',
+                        color: v.status === 'failed' ? '#ef4444' : '#ff7300',
+                      }}>
+                      {(v.id && downloadingId === v.id) ? <Loader2 size={15} className="animate-spin" />
+                        : v.status === 'failed' ? <AlertCircle size={15} />
+                        : <Download size={15} />}
                     </button>
                   )}
                 </div>
