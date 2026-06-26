@@ -22,6 +22,12 @@ export interface ScanParams {
   query?: string;
   count?: number;
   region?: string;
+  /** Тип поиска: video (web), general (web общий), app (App V3 с фильтрами). */
+  mode?: 'video' | 'general' | 'app';
+  /** Только для mode='app': 0 релевантность, 1 больше лайков, 2 новее. */
+  sortType?: 0 | 1 | 2;
+  /** Только для mode='app': 0 всё время, 1 24ч, 7 неделя, 30 месяц, 90 3мес, 180 6мес. */
+  publishTime?: 0 | 1 | 7 | 30 | 90 | 180;
 }
 
 export interface StoredVideo {
@@ -84,7 +90,7 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   if (params.kind === 'keyword') {
     const q = (params.query || '').trim();
     if (!q) throw new Error('Укажите ключевое слово для поиска.');
-    resp = await searchVideos(key, q, { count });
+    resp = await searchVideos(key, q, { count, mode: params.mode, sortType: params.sortType, publishTime: params.publishTime });
   } else {
     resp = await fetchTrending(key, { count });
   }

@@ -49,6 +49,9 @@ export default function TrendsPage() {
   const [kind, setKind] = useState<Kind>('keyword');
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
+  const [mode, setMode] = useState<'video' | 'general' | 'app'>('video');
+  const [sortType, setSortType] = useState<0 | 1 | 2>(0);
+  const [publishTime, setPublishTime] = useState<0 | 1 | 7 | 30 | 90 | 180>(0);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -76,7 +79,7 @@ export default function TrendsPage() {
     try {
       const res = await fetch('/api/trends/scan', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ kind, query: query.trim(), count }),
+        body: JSON.stringify({ kind, query: query.trim(), count, mode, sortType, publishTime }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -155,6 +158,52 @@ export default function TrendsPage() {
             {scanning ? 'Сканирую...' : 'Сканировать'}
           </AuroraButton>
         </div>
+
+        {/* Параметры поиска (для режима «По ключевику») */}
+        {kind === 'keyword' && (
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              Тип поиска
+              <select value={mode} onChange={(e) => setMode(e.target.value as any)}
+                className="px-3 py-2 rounded-xl text-sm focus:outline-none"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                <option value="video">Видео</option>
+                <option value="general">Общий</option>
+                <option value="app">С фильтрами (App V3)</option>
+              </select>
+            </label>
+            {mode === 'app' && (
+              <>
+                <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  Сортировка
+                  <select value={sortType} onChange={(e) => setSortType(Number(e.target.value) as any)}
+                    className="px-3 py-2 rounded-xl text-sm focus:outline-none"
+                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                    <option value={0}>По релевантности</option>
+                    <option value={1}>Больше лайков</option>
+                    <option value={2}>Новее</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  Период
+                  <select value={publishTime} onChange={(e) => setPublishTime(Number(e.target.value) as any)}
+                    className="px-3 py-2 rounded-xl text-sm focus:outline-none"
+                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                    <option value={0}>Всё время</option>
+                    <option value={1}>24 часа</option>
+                    <option value={7}>Неделя</option>
+                    <option value={30}>Месяц</option>
+                    <option value={90}>3 месяца</option>
+                    <option value={180}>6 месяцев</option>
+                  </select>
+                </label>
+              </>
+            )}
+            <p className="text-[11px] flex-1 min-w-[180px]" style={{ color: 'var(--text-muted)' }}>
+              «Видео»/«Общий» — Web API (без фильтров, но стабильнее). «С фильтрами» — App V3: сортировка и период публикации.
+            </p>
+          </div>
+        )}
 
         {notice && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notice}</p>}
         {error && (

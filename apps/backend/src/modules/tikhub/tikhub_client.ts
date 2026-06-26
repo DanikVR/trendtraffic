@@ -153,15 +153,53 @@ export interface NormalizedVideo {
   raw: any;
 }
 
+/**
+ * Ретрай транзиентных сбоев TikHub. Их скрапер периодически отвечает
+ * 400 «Request failed. Please retry … You won't be charged for this request»
+ * — это НЕ ошибка параметров, а временный сбой апстрима, лечится повтором.
+ */
+async function withTikhubRetry<T>(fn: () => Promise<TikHubResult<T>>, tries = 3): Promise<TikHubResult<T>> {
+  let last: TikHubResult<T> = { ok: false, status: 0, error: 'нет попытки' };
+  for (let i = 0; i < tries; i++) {
+    last = await fn();
+    if (last.ok) return last;
+    const e = (last.error || '').toLowerCase();
+    const transient =
+      last.status === 429 || last.status >= 500 || last.status === 0 ||
+      /please retry|request failed|try again|timeout|rate limit|временно/.test(e);
+    if (!transient) return last;
+    if (i < tries - 1) await new Promise((r) => setTimeout(r, 700 * (i + 1)));
+  }
+  return last;
+}
+
+export type SearchMode = 'video' | 'general' | 'app';
+export type SortType = 0 | 1 | 2;                       // 0 релевантность, 1 больше лайков, 2 новее
+export type PublishTime = 0 | 1 | 7 | 30 | 90 | 180;   // 0 всё время, 1 24ч, 7 неделя, 30 месяц, 90 3мес, 180 6мес
+
 export async function searchVideos(
   apiKey: string,
   keyword: string,
-  opts?: { count?: number; offset?: number }
+  opts?: { count?: number; offset?: number; mode?: SearchMode; sortType?: SortType; publishTime?: PublishTime }
 ): Promise<TikHubResult<any>> {
   const count = Math.min(Math.max(opts?.count ?? 20, 1), 30);
   const offset = Math.max(opts?.offset ?? 0, 0);
-  const q = `keyword=${encodeURIComponent(keyword)}&count=${count}&offset=${offset}`;
-  return tikhubGet(apiKey, `/api/v1/tiktok/web/fetch_search_video?${q}`, { timeoutMs: 30000 });
+  const kw = encodeURIComponent(keyword);
+  const mode: SearchMode = opts?.mode || 'video';
+
+  let path: string;
+  if (mode === 'general') {
+    // Общий поиск (Web API не принимает count).
+    path = `/api/v1/tiktok/web/fetch_general_search?keyword=${kw}&offset=${offset}`;
+  } else if (mode === 'app') {
+    // App V3 — поддерживает фильтры sort_type/publish_time.
+    const sort = opts?.sortType ?? 0;
+    const pub = opts?.publishTime ?? 0;
+    path = `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${count}&offset=${offset}&sort_type=${sort}&publish_time=${pub}`;
+  } else {
+    path = `/api/v1/tiktok/web/fetch_search_video?keyword=${kw}&count=${count}&offset=${offset}`;
+  }
+  return withTikhubRetry(() => tikhubGet(apiKey, path, { timeoutMs: 30000 }));
 }
 
 export async function fetchTrending(
@@ -170,7 +208,9 @@ export async function fetchTrending(
 ): Promise<TikHubResult<any>> {
   const count = Math.min(Math.max(opts?.count ?? 16, 1), 30);
   const category = opts?.category || '120';
-  return tikhubGet(apiKey, `/api/v1/tiktok/web/fetch_explore_post?count=${count}&categoryType=${encodeURIComponent(category)}`, { timeoutMs: 30000 });
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/tiktok/web/fetch_explore_post?count=${count}&categoryType=${encodeURIComponent(category)}`, { timeoutMs: 30000 })
+  );
 }
 
 // ── Нормализация ответа ──────────────────────────────────────────────────
