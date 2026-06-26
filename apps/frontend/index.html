@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <!--
+      Базовый Content Security Policy.
+      Включены только директивы, не ломающие текущее приложение:
+        base-uri 'self'   — атакующий не может через <base> переадресовать относительные URL
+        object-src 'none' — запрет <object>/<embed>/<applet> (XSS-вектор)
+      script-src / style-src / connect-src сейчас НЕ ограничены, потому что Vite
+      инлайнит чанки, Tailwind/framer-motion инжектят inline styles, а API
+      обращается к LiveKit/Stripe/Telegram. Сужать — отдельной задачей с тестами.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="base-uri 'self'; object-src 'none'" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- SEO defaults (динамически перезаписываются SeoMeta через react-helmet-async по локали) -->
+    <title>VibeVox — Real-time AI translation for video calls and SIP</title>
+    <meta name="description" content="VibeVox is a synchronous voice AI translation platform supporting 100+ languages. Video calls, SIP telephony, customer chat, AI conversation analysis." />
+    <meta name="keywords" content="AI translation, synchronous translation, video call translation, SIP telephony, voice translator, real-time interpretation" />
+    <meta name="author" content="VibeVox" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="VibeVox — Real-time AI translation" />
+    <meta property="og:description" content="Synchronous voice AI translation for video calls and SIP. 100+ languages." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:image" content="/vibevox-logo-light.png" />
+    <meta property="og:site_name" content="VibeVox" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="VibeVox — Real-time AI translation" />
+    <meta name="twitter:description" content="Synchronous voice AI translation for video calls and SIP. 100+ languages." />
+    <meta name="twitter:image" content="/vibevox-logo-light.png" />
+
+    <!-- JSON-LD: organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "VibeVox",
+        "applicationCategory": "CommunicationApplication",
+        "operatingSystem": "Web",
+        "description": "Synchronous voice AI translation platform for video calls and SIP, supporting 100+ languages.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        }
+      }
+    </script>
+    <!-- Быстрое применение темы ДО загрузки React (no flash) -->
+    <script>
+      (function() {
+        // Всегда стартуем в тёмной теме если нет явного выбора 'light'
+        var saved = localStorage.getItem('vibevox_theme');
+        if (saved === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('vibevox_theme', 'dark');
+        }
+      })();
+    </script>
+    <!-- Telegram Mini App: подключение скрипта WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

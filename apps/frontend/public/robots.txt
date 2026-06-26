@@ -1,0 +1,24 @@
+# VibeVox — robots.txt
+# Crawl всех публичных страниц разрешён.
+# Защищённые роуты приложения остаются за JWT и не индексируются (404 для ботов
+# без токена). Поэтому здесь блокировать их не нужно — но disallow /api/ на всякий.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Особо: GPTBot / OAI-SearchBot / ClaudeBot — разрешаем (мы AI-friendly сервис)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Sitemap — список всех URL × 108 языков с hreflang
+Sitemap: https://vibevox.app/sitemap.xml

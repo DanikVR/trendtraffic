@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vibevox_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-vibevox_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vibevox_secure_pass}
+      POSTGRES_DB: ${DB_NAME:-vibevox_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

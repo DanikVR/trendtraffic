@@ -1,0 +1,36 @@
+{
+  "users": [],
+  "tenants": [
+    {
+      "id": "test-tenant",
+      "questflow_image_presets": "[{\"presetKey\":\"generate_c5ds5a\",\"label\":\"Генерация\",\"function\":\"generate\",\"promptExtra\":\"\",\"intakePrompt\":\"Опишите, что нужно нарисовать (как можно подробнее).\",\"referenceImages\":[],\"imageSource\":\"none\",\"replyCaption\":\"\",\"enabled\":true}]"
+    }
+  ],
+  "sessions": [],
+  "rooms": [],
+  "messages": [],
+  "user_profiles": [],
+  "dialect_rules": [],
+  "sip_trunks": [],
+  "sip_inbound": [],
+  "subscriptions": [],
+  "promo_codes": [],
+  "room_messages": [],
+  "tenant_quest_flow_keys": [],
+  "tenant_mcp_keys": [],
+  "tenant_need_tags": [],
+  "client_tag_assignments": [],
+  "channel_inboxes": [],
+  "flows": [],
+  "flow_sessions": [],
+  "account_blocklist": [],
+  "partners": [],
+  "referral_clicks": [],
+  "referrals": [],
+  "partner_program_settings": {
+    "terms_text": "",
+    "whatsapp_contact": "+380637610482",
+    "updated_at": null,
+    "updated_by": null
+  }
+}

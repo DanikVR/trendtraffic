@@ -1,0 +1,43 @@
+name: Deploy to Hostinger VPS
+
+# ── ЦЕПОЧКА: git push → GitHub → (этот workflow) → SSH на VPS → deploy.sh ──
+#
+# По умолчанию запуск ТОЛЬКО вручную (workflow_dispatch), чтобы Action не падал,
+# пока не настроены секреты. Когда проверите первый ручной деплой — раскомментируйте
+# блок `push:` ниже, и тогда КАЖДЫЙ push в ветку будет автоматически деплоиться.
+#
+# СЕКРЕТЫ (Settings → Secrets and variables → Actions → New repository secret):
+#   VPS_HOST     — IP или хост VPS (из hPanel Hostinger)
+#   VPS_USER     — SSH-пользователь (лучше отдельный deploy-юзер, НЕ root)
+#   VPS_SSH_KEY  — ПРИВАТНЫЙ SSH-ключ (его публичную половину кладёте в ~/.ssh/authorized_keys на VPS)
+#   VPS_PORT     — (необязательно) SSH-порт, по умолчанию 22
+# Ничего из этого в коде не лежит — только в GitHub Secrets. Мне (ассистенту) секреты не нужны.
+
+on:
+  workflow_dispatch: {}        # ручной запуск из вкладки Actions
+  # push:                      # ← включить авто-деплой: раскомментировать эти 3 строки
+  #   branches:
+  #     - feat/quest-flow-media-postgres   # (или main, когда смержите)
+
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false    # деплои не накладываются друг на друга
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+            cd /var/www/vibevox
+            git fetch --all
+            git checkout feat/quest-flow-media-postgres
+            bash deploy/deploy.sh

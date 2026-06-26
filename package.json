@@ -1,0 +1,27 @@
+{
+  "name": "vibevox-monorepo",
+  "version": "1.0.0",
+  "description": "VibeVox - Multi-tenant synchronous voice-to-voice & video AI translation SaaS",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:up": "docker-compose up -d",
+    "db:down": "docker-compose down"
+  },
+  "keywords": [
+    "webrtc",
+    "livekit",
+    "gemini-live",
+    "translation",
+    "multi-tenant",
+    "saas"
+  ],
+  "author": "",
+  "license": "ISC"
+}

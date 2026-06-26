@@ -1,0 +1,92 @@
+# Netlify deploy конфиг для VibeVox.
+#
+# - build:full = vite build + sitemap + prerender (108 языков × 4 публичных роута).
+# - редирект всех /{lang}/ путей на соответствующие prerendered файлы.
+# - агрессивное кэширование статики, no-cache для HTML.
+
+[build]
+  command = "npm run build:full"
+  publish = "dist"
+
+# ─── Cache-Control ───────────────────────────────────────────────────────────
+
+# Хешированные ассеты (build artifacts) — кэшируем навсегда
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Локали — обновляем раз в сутки, в фоне через stale-while-revalidate (неделя)
+[[headers]]
+  for = "/locales/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+    Content-Type = "application/json; charset=utf-8"
+
+# Картинки/шрифты — навсегда (имена с хэшами или редко меняются)
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# sitemap.xml — обновляется при каждом build
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Content-Type = "application/xml; charset=utf-8"
+
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "text/plain; charset=utf-8"
+
+# HTML — никогда не кэшируем (чтобы новые версии деплоились мгновенно)
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# ─── Redirects/Rewrites ──────────────────────────────────────────────────────
+
+# /{lang}/ → отдаём pre-rendered HTML с правильным <head>
+# (Netlify не поддерживает regex на :param, используем splat)
+
+[[redirects]]
+  from = "/:lang/auth/login"
+  to = "/:lang/auth/login/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:lang/auth/register"
+  to = "/:lang/auth/register/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:lang/auth/forgot-password"
+  to = "/:lang/auth/forgot-password/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:lang"
+  to = "/:lang/index.html"
+  status = 200
+
+# Остальное — SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
