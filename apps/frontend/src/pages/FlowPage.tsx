@@ -17,8 +17,8 @@ import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
 
-// React Flow канвас — lazy: библиотеку грузим только при открытии редактора.
-const FlowCanvas = React.lazy(() => import('./flow/FlowCanvas'));
+// Радиальный редактор монтажа — lazy.
+const MontageEditor = React.lazy(() => import('./flow/MontageEditor'));
 
 // Брендовый герой карточки (общий для всех сценариев). Основной — кадр higgsfield
 // (человек + кинохлопушка); запасной — самохостящийся SVG в /public на случай
@@ -145,7 +145,7 @@ export default function FlowPage() {
   if (editingId) {
     return (
       <React.Suspense fallback={<div className="py-12 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>}>
-        <FlowCanvas flowId={editingId} onBack={() => { setEditingId(null); load(); }} />
+        <MontageEditor flowId={editingId} onBack={() => { setEditingId(null); load(); }} />
       </React.Suspense>
     );
   }
