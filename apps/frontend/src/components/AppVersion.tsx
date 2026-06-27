@@ -185,6 +185,16 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.6 — ИИ-режиссёр: первый кирпич — Claude-ключ в Enterprise → «Генерация».
+ *         Новый провайдер `anthropic` (группа `llm`) в provider_keys.ts с реальной
+ *         кнопкой «Проверить» (бесплатный пинг GET https://api.anthropic.com/v1/models,
+ *         headers x-api-key + anthropic-version). Хранится в той же таблице
+ *         tenant_provider_keys (AES-256-GCM), доступен рендеру через
+ *         getEffectiveProviderKey(tenantId, 'anthropic'). UI Section7OpenMontage:
+ *         новая секция «ИИ-режиссёр (ЛЛМ)» над платными провайдерами — «мозг» умных
+ *         шагов (ресёрч, выбор момента, сценарий, новости), модель по умолчанию
+ *         Claude Opus 4.8. Базовый CPU-монтаж ключа не требует. Это фундамент:
+ *         сами ✨ЛЛМ-узлы (director-сервис) — следующий шаг.
  * 1.1.5 — Точный маппинг инструментов OpenMontage в рендер-воркере (render-worker/main.py).
  *         По реальным input_schema (сверены из репо calesthio/OpenMontage): video_trimmer
  *         (operation=cut, start/end из диапазона/длительности), auto_reframe (target_aspect),
@@ -218,7 +228,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.5';
+export const APP_VERSION = '1.1.6';
 
 export function AppVersion() {
   return (

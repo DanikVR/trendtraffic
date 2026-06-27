@@ -24,7 +24,7 @@ type ProviderStatus = 'active' | 'invalid' | 'quota_exceeded' | 'unknown' | null
 interface ProviderInfo {
   id: string;
   label: string;
-  group: 'paid' | 'stock';
+  group: 'llm' | 'paid' | 'stock';
   help?: string;
   hasKey: boolean;
   status: ProviderStatus;
@@ -181,6 +181,7 @@ export function Section7OpenMontage() {
     return <div className="py-12 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>;
   }
 
+  const llm = (providers || []).filter((p) => p.group === 'llm');
   const paid = (providers || []).filter((p) => p.group === 'paid');
   const stock = (providers || []).filter((p) => p.group === 'stock');
 
@@ -210,6 +211,18 @@ export function Section7OpenMontage() {
       )}
       {error && (
         <AuroraCard className="p-3"><div className="flex items-start gap-2"><XCircle size={16} color="#ef4444" className="mt-[2px]" /><span className="text-sm" style={{ color: 'var(--text-primary)' }}>{error}</span></div></AuroraCard>
+      )}
+
+      {llm.length > 0 && (
+        <div>
+          <h3 className="text-xs font-700 uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>ИИ-режиссёр (ЛЛМ)</h3>
+          <p className="text-[12px] mb-2" style={{ color: 'var(--text-muted)' }}>
+            «Мозг» умных шагов сценария — ресёрч, выбор лучшего момента, генерация сценария и новостей. Модель по умолчанию — Claude Opus 4.8 (выбор модели — при настройке ✨ЛЛМ-узлов). Базовый монтаж (обрезка/формат/субтитры/экспорт) этого ключа НЕ требует.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {llm.map((p) => <ProviderCard key={p.id} p={p} token={token} onChanged={onChanged} />)}
+          </div>
+        </div>
       )}
 
       <div>

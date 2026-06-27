@@ -29,7 +29,7 @@ export interface VerifyResult { ok: boolean; status: ProviderKeyStatus; message:
 interface ProviderDef {
   id: string;
   label: string;
-  group: 'paid' | 'stock';
+  group: 'llm' | 'paid' | 'stock';
   help?: string;       // ссылка «где взять ключ»
   verify: (key: string) => Promise<VerifyResult>;
 }
@@ -62,6 +62,10 @@ function savedOnly(label: string): VerifyResult {
 
 // ── Реестр провайдеров ──────────────────────────────────────────────────────
 export const PROVIDERS: ProviderDef[] = [
+  // ИИ-режиссёр (LLM-«мозг» умных шагов: ресёрч, сценарий, выбор момента, новости)
+  { id: 'anthropic', label: 'Anthropic Claude (ИИ-режиссёр: ресёрч, сценарий, новости)', group: 'llm', help: 'https://console.anthropic.com/settings/keys',
+    verify: (k) => tryVerify('Anthropic', () => ping('https://api.anthropic.com/v1/models', { headers: { 'x-api-key': k, 'anthropic-version': '2023-06-01' } })) },
+
   // Платные генеративные
   { id: 'fal', label: 'FAL.ai (FLUX, Veo, Kling, MiniMax)', group: 'paid', help: 'https://fal.ai/dashboard/keys',
     verify: async () => savedOnly('FAL') },
@@ -99,7 +103,7 @@ export function isProvider(id: string): boolean { return PROVIDER_IDS.has(id); }
 export interface ProviderKeyInfo {
   id: string;
   label: string;
-  group: 'paid' | 'stock';
+  group: 'llm' | 'paid' | 'stock';
   help?: string;
   hasKey: boolean;
   status: ProviderKeyStatus;
