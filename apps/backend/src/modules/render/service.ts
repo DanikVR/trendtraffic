@@ -28,12 +28,14 @@ export async function createRenderJob(
   if (steps.length === 0) {
     return { error: 'В сценарии нет шагов монтажа. Добавьте узлы процессов и сохраните сценарий.' };
   }
+  // Вход цепочки: явный inputUrl, иначе сохранённый источник из графа (центральный узел).
+  const inputUrl = opts.inputUrl ?? opts.flow.graph?.source?.url ?? null;
   const job = await insertJob({
     tenantId,
     flowId: opts.flow.id,
     flowName: opts.flow.name,
     gpuTarget: getRenderGpuTarget(),
-    inputUrl: opts.inputUrl ?? null,
+    inputUrl,
     steps,
   });
   return { job };

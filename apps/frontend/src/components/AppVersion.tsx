@@ -185,6 +185,11 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.4 — Выбор исходного видео для рендера. Центральный узел «Видео из галереи»
+ *         в MontageEditor теперь кликабелен → пикер (скачанные тренды + видео-референсы
+ *         Галереи). Источник сохраняется в flows.graph.source (FlowGraph.source +
+ *         parseGraph) и передаётся в «Собрать» как inputUrl (createRenderJob берёт явный
+ *         inputUrl, иначе graph.source.url). Без источника шаги идут passthrough.
  * 1.1.3 — Рендер «Собрать» подключён к OpenMontage. (1) Python FastAPI-воркер
  *         render-worker/ (на рендер-VPS): registry.get(tool).execute(inputs), вход/выход
  *         через /uploads, слушает только Tailscale; install.sh = systemd-сервис. (2) Реальный
@@ -205,7 +210,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.3';
+export const APP_VERSION = '1.1.4';
 
 export function AppVersion() {
   return (

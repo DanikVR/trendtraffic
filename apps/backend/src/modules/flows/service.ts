@@ -12,6 +12,8 @@ export interface FlowGraph {
   edges: any[];
   /** Триггеры запуска (Instagram): comment-to-DM, dm-keyword, story. */
   triggers?: any[];
+  /** Исходное видео рендера «Собрать» (выбор центрального узла в MontageEditor). */
+  source?: { url: string; name?: string } | null;
 }
 
 export interface Flow {
@@ -36,6 +38,9 @@ function parseGraph(g: any): FlowGraph {
     nodes: Array.isArray(g.nodes) ? g.nodes : [],
     edges: Array.isArray(g.edges) ? g.edges : [],
     triggers: Array.isArray(g.triggers) ? g.triggers : [],
+    source: (g.source && typeof g.source === 'object' && typeof g.source.url === 'string')
+      ? { url: g.source.url, name: typeof g.source.name === 'string' ? g.source.name : undefined }
+      : null,
   };
 }
 

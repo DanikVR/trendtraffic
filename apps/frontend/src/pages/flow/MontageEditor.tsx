@@ -137,6 +137,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string }[]>([]);
   const [building, setBuilding] = useState(false);
   const [buildJob, setBuildJob] = useState<any | null>(null);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [sourceName, setSourceName] = useState<string | null>(null);
+  const [showSource, setShowSource] = useState(false);
+  const [sources, setSources] = useState<{ url: string; name: string; thumb?: string; type: string }[]>([]);
 
   const update = (fn: (n: MNode[]) => MNode[]) => { setNodes((prev) => fn(prev)); setDirty(true); };
 
@@ -152,6 +156,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           const mapped: MNode[] = g.filter((x: any) => x?.type === 'montage' && x?.data?.kind && META[x.data.kind as MKind])
             .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null, useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
           setNodes(mapped);
+          const src = d.flow.graph?.source;
+          if (src && typeof src.url === 'string') { setSourceUrl(src.url); setSourceName(src.name || 'видео'); }
           if (mapped.length === 0) setShowPresets(true);
         }
       } catch { /* пусто */ }
@@ -163,7 +169,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     setSaving(true);
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [] } }) });
+      const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined } : null;
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -176,7 +183,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     setBuildJob({ status: 'queued', progress: 0, steps: [] });
     try {
       if (dirty) await save();
-      const res = await fetch(`/api/render/flow/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({}) });
+      const res = await fetch(`/api/render/flow/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({ inputUrl: sourceUrl }) });
       const d = await res.json();
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       let job = d.job;
@@ -216,6 +223,23 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       const aud = a.ok ? (await a.json()).assets || [] : [];
       setMedia([...ref, ...aud].map((m: any) => ({ id: m.id, fileUrl: m.fileUrl, title: m.originalName || 'файл', kind: m.mediaType })));
     } catch { setMedia([]); }
+  };
+
+  // Пикер исходного видео: скачанные тренды + видео-референсы из Галереи.
+  const openSourcePicker = async () => {
+    setShowSource(true);
+    try {
+      const [v, r] = await Promise.all([
+        fetch('/api/trends/videos?downloaded=1', { headers: headers() }),
+        fetch('/api/trends/media?kind=reference', { headers: headers() }),
+      ]);
+      const vids = v.ok ? ((await v.json()).videos || []) : [];
+      const refs = r.ok ? ((await r.json()).assets || []) : [];
+      const list: { url: string; name: string; thumb?: string; type: string }[] = [];
+      for (const x of vids) if (x.fileUrl) list.push({ url: x.fileUrl, name: String(x.description || x.authorName || x.author || 'Видео').slice(0, 40), thumb: x.coverUrl, type: 'trend' });
+      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', type: 'reference' });
+      setSources(list);
+    } catch { setSources([]); }
   };
 
   const selected = nodes.find((n) => n.id === selectedId) || null;
@@ -280,14 +304,18 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
         </svg>
 
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center' }}>
-          <div style={{ width: 76, height: 76, borderRadius: '50%', margin: '0 auto',
-            background: 'radial-gradient(circle at 36% 34%, #fff, #ffb066 50%, #ff7300 100%)',
-            boxShadow: '0 0 36px rgba(255,115,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a1500' }}>
-            <Video size={28} />
+        <button onClick={openSourcePicker} title="Выбрать исходное видео"
+          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+          <div style={{ width: 76, height: 76, borderRadius: '50%', margin: '0 auto', overflow: 'hidden',
+            background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #ffb066 50%, #ff7300 100%)',
+            boxShadow: '0 0 36px rgba(255,115,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a1500',
+            border: sourceUrl ? '2px solid #ff7300' : 'none' }}>
+            <Video size={28} color={sourceUrl ? '#ff7300' : undefined} />
           </div>
-          <div className="text-[11px] mt-2" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Видео из галереи</div>
-        </div>
+          <div className="text-[11px] mt-2" style={{ color: sourceUrl ? '#ff7300' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
+          </div>
+        </button>
 
         {nodes.map((n, i) => (
           <button key={n.id} onClick={() => setSelectedId(n.id)} className="me-node me-pop-in"
@@ -449,6 +477,35 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                         : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
                     </div>
                     <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Выбор исходного видео */}
+      {showSource && (
+        <div onClick={() => setShowSource(false)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Исходное видео</span>
+              <button onClick={() => setShowSource(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            {sourceUrl && (
+              <button onClick={() => { setSourceUrl(null); setSourceName(null); setDirty(true); setShowSource(false); }} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>✕ Убрать источник</button>
+            )}
+            {sources.length === 0 ? (
+              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Нет видео. Скачайте тренды (вкладка «Тренды») или загрузите видео в «Референс» Галереи.</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {sources.map((s, i) => (
+                  <button key={i} onClick={() => { setSourceUrl(s.url); setSourceName(s.name); setDirty(true); setShowSource(false); }} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${sourceUrl === s.url ? '#ff7300' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {s.thumb ? <img src={s.thumb} alt="" className="w-full h-full object-cover" /> : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
+                    </div>
+                    <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{s.name}</div>
                   </button>
                 ))}
               </div>
