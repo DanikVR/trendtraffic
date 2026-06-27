@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -15,7 +15,14 @@ export function GoogleCallbackPage() {
   const [error, setError] = useState('');
   const [status, setStatus] = useState(t('auth.googleCallback.loading'));
 
+  const ranRef = useRef(false);
   useEffect(() => {
+    // Google-код одноразовый: если эффект перезапустится (StrictMode в dev или
+    // смена identity у t/i18n), повторный POST с уже использованным кодом даст
+    // ложную «ошибку регистрации» перед редиректом. Гард → строго один запуск.
+    if (ranRef.current) return;
+    ranRef.current = true;
+
     const code = searchParams.get('code');
     if (!code) {
       setError(t('auth.googleCallback.error'));
@@ -67,7 +74,8 @@ export function GoogleCallbackPage() {
     };
 
     processLogin();
-  }, [searchParams, setAuth, navigate, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div

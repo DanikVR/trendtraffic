@@ -185,6 +185,13 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.2.4 — Фикс ложного попапа «ошибка регистрации» при ПЕРВОМ входе через Google.
+ *         Google-код одноразовый, а эффект колбэка мог сработать дважды
+ *         (StrictMode в dev / смена identity у t-i18n) → повторный POST
+ *         /google-login с уже использованным кодом давал ошибку, которая мелькала
+ *         поп-апом перед редиретом (хотя регистрация+вход проходили). Добавлен
+ *         ranRef-гард + пустые deps → строго один запуск processLogin в
+ *         GoogleCallbackPage. Первый вход через Google теперь чистый.
  * 1.2.3 — Google OAuth «The OAuth client was not found»: client_id сохранялся
  *         с ХВОСТОВЫМ ПРОБЕЛОМ (копипаст из Google Console) → Google не узнавал
  *         клиент. Добавлен `.trim()` для clientId/secret: бэкенд auth/router.ts
@@ -294,7 +301,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.2.3';
+export const APP_VERSION = '1.2.4';
 
 export function AppVersion() {
   return (
