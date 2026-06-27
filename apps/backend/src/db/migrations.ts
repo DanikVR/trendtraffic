@@ -624,6 +624,37 @@ const MIGRATIONS: Migration[] = [
     )`,
   },
   { name: 'media_assets.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_media_assets_tenant ON media_assets(tenant_id, kind, created_at DESC)` },
+
+  // ── Рендер «Собрать» (этап D): очередь задач сборки ролика по графу TrendFlow ──
+  // tenant_id VARCHAR(64) без FK — суперадмин ходит с 'global_admin' (не UUID).
+  // steps — снимок плана (RenderStep[]) на момент постановки; gpu_target — снимок
+  // переключателя GPU (home|cloud|off) на момент постановки.
+  {
+    name: 'render_jobs.create',
+    sql: `CREATE TABLE IF NOT EXISTS render_jobs (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      flow_id VARCHAR(64),
+      flow_name VARCHAR(255),
+      status VARCHAR(24) NOT NULL DEFAULT 'queued',
+      gpu_target VARCHAR(16) NOT NULL DEFAULT 'home',
+      input_url TEXT,
+      steps JSONB NOT NULL DEFAULT '[]'::jsonb,
+      step_index INT NOT NULL DEFAULT 0,
+      progress INT NOT NULL DEFAULT 0,
+      result_url TEXT,
+      result_asset_id VARCHAR(64),
+      note TEXT,
+      error TEXT,
+      attempts INT NOT NULL DEFAULT 0,
+      locked_at TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'render_jobs.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_render_jobs_tenant ON render_jobs(tenant_id, created_at DESC)` },
+  // Индекс под выборку очереди воркером (claim самой старой 'queued').
+  { name: 'render_jobs.idx_queue', sql: `CREATE INDEX IF NOT EXISTS idx_render_jobs_queue ON render_jobs(status, created_at) WHERE status = 'queued'` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

@@ -3,7 +3,7 @@
 > Единый справочник: что это, что реализовано, как работает, что дальше. Живой документ —
 > обновляй после каждого блока. Версия приложения — в `apps/frontend/src/components/AppVersion.tsx`
 > (`APP_VERSION`), футер «© TrendTraffic.pro v…». **Правило: бампать версию при каждом изменении**
-> (перенос при 10: 1.0.9 → 1.1.0). Текущая: **v1.0.8**.
+> (перенос при 10: 1.0.9 → 1.1.0). Текущая: **v1.1.0**.
 
 ---
 
@@ -217,8 +217,19 @@ flows VARCHAR → `dba12c6` News preset → `779e9d2` button node config → `0a
 - Деплой приложения — по `docs/DEPLOY_HOSTINGER_VPS.md` (Node 20, локальный Postgres, nginx, `.env`,
   `npm run db:setup`, бэкап `deploy/pg-backup.sh`). Домен **trendtraffic.pro** → A-запись на VPS IP.
 
-**Статус инфры:** пользователь регистрирует Hostinger KVM2; Tailscale согласован; код Этапа D
-(pg-boss + Python-обёртка CPU + переключатель GPU + «Собрать»→очередь) — **ещё не начат**.
+**Статус инфры:** VPS Hostinger развёрнут (`72.62.0.184`, скрипт `deploy/vps-bootstrap.sh` — веб+Postgres+nginx+ffmpeg+python venv, БЕЗ torch/OpenMontage); Tailscale **ещё не настроен** (план — отдельная инструкция). Код Этапа D начат: **скелет очереди рендера готов** (см. ниже), Python-обёртка OpenMontage и GPU-воркер — следующие.
+
+**Скелет очереди рендера (готово, v1.1.0):** модуль `modules/render/*` — лёгкая Postgres-очередь
+(`render_jobs`, `tenant_id VARCHAR`, атомарный claim `FOR UPDATE SKIP LOCKED`, БЕЗ внешних зависимостей;
+тонкий слой, заменяется на pg-boss при деплое). Поток: `planner` (граф flow → `RenderStep[]`, карта
+kind→инструмент OpenMontage + cpu/gpu) → `store.insertJob` → `worker` (поллер, single-flight) →
+`executor` (seam: сейчас `SimulationExecutor`-скелет, реальный OpenMontage-HTTP — следующий блок) →
+финал в `render_jobs`. Маршрут GPU-шагов (avatar/upscale) по переключателю `getRenderGpuTarget()`
+(`home|cloud|off`, в `systemConfig`); при `off` GPU-шаги пропускаются. Эндпоинты `/api/render/*`
+(POST `/flow/:flowId`, GET `/`, GET `/:id`, GET `/config/gpu`). **Проверено сквозным тестом** (план →
+очередь → воркер → done; GPU-шаг при `off` корректно skipped). **Осталось:** фронт-привязка кнопки
+«Собрать» + статус, карточка переключателя GPU в админке, вкладка «Готовые» в Галерее, затем Python-
+воркер OpenMontage (FastAPI CPU) на VPS и GPU-воркер на RTX 5080.
 
 ---
 
@@ -243,9 +254,11 @@ flows VARCHAR → `dba12c6` News preset → `779e9d2` button node config → `0a
 ## 7. Карта новых файлов
 
 - Backend: `modules/tikhub/tikhub_client.ts`, `modules/tenant_settings/tikhub.ts`,
-  `modules/trends/{service.ts,router.ts}`, `modules/media/{assets.ts,store_video.ts}`; правки в
-  `config/{systemConfig.ts,features.ts}`, `modules/auth/router.ts`, `modules/tenant_settings/router.ts`,
-  `db/migrations.ts`, `server.ts`.
+  `modules/trends/{service.ts,router.ts}`, `modules/media/{assets.ts,store_video.ts}`,
+  `modules/render/{types,planner,store,executor,service,worker,router}.ts` (скелет очереди рендера);
+  правки в `config/{systemConfig.ts,features.ts}` (+`renderGpuTarget`/`getRenderGpuTarget`),
+  `modules/auth/router.ts`, `modules/tenant_settings/router.ts`, `db/migrations.ts` (+`render_jobs`),
+  `server.ts` (+mount `/api/render`, +`startRenderWorker`).
 - Frontend: `pages/{TrendsPage,GalleryPage,PublisherPage}.tsx`, `pages/flow/MontageEditor.tsx`,
   `pages/enterprise/Section6TikHub.tsx`, `public/trendflow-hero.svg`; правки в
   `pages/{FlowPage,admin/AdminConfigPage,EnterpriseSettingsPage}.tsx`, `layouts/MainLayout.tsx`,

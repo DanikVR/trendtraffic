@@ -39,6 +39,8 @@ import whatsappRouter from './modules/channels/whatsapp/wa_webhook.js';
 import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
+import renderRouter from './modules/render/router.js';
+import { startRenderWorker } from './modules/render/worker.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
 import { partnersPublicRouter, partnersAdminRouter } from './modules/partners/router.js';
@@ -158,6 +160,8 @@ app.use('/api/need-tags', needTagsRouter);
 app.use('/api/flows', flowsRouter);
 // TRENDTRAFFIC: анализатор трендов (TikHub) — JWT внутри роутера
 app.use('/api/trends', trendsRouter);
+// TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
+app.use('/api/render', renderRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)
 app.use('/api/enterprise-chat', enterpriseChatRouter);
 app.use('/api/chatwoot-bridge', express.json(), chatwootBridgeRouter);
@@ -208,9 +212,14 @@ app.get('/api/health', async (req, res) => {
 const server = app.listen(PORT, () => {
   console.log(`[Backend] Сервер успешно запущен и слушает порт ${PORT}`);
   // 6.0 Миграции БД (идемпотентные ALTER TABLE)
-  runStartupMigrations().catch((err) => {
-    console.warn('[Backend] Миграции прошли с предупреждениями:', err?.message || err);
-  });
+  runStartupMigrations()
+    .catch((err) => {
+      console.warn('[Backend] Миграции прошли с предупреждениями:', err?.message || err);
+    })
+    .finally(() => {
+      // 6.0.1 Рендер «Собрать»: поллер очереди (после миграций — таблица render_jobs создана)
+      startRenderWorker();
+    });
   // 6.1 Биллинг: планировщик rollover минут
   startRolloverScheduler();
   // 6.2 Notifications: ежедневная сводка в Telegram (09:00 Europe/Warsaw)

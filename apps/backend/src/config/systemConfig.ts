@@ -86,6 +86,15 @@ export interface SystemConfig {
   vertexProject?: string;
   /** Регион Vertex AI (например us-central1). Дефолт us-central1. */
   vertexLocation?: string;
+
+  /**
+   * Куда маршрутизировать GPU-шаги рендера (апскейл/аватар/ген):
+   *  'home'  — домашний воркер RTX 5080 по Tailscale (бесплатно, дефолт);
+   *  'cloud' — облачный GPU-фолбэк (Modal/RunPod) по ключу;
+   *  'off'   — GPU-шаги пропускаются (только бесплатная CPU-цепочка на VPS).
+   * Переключатель в Админ-панели (см. рендер «Собрать»).
+   */
+  renderGpuTarget?: 'home' | 'cloud' | 'off';
 }
 
 /** Дефолтная модель Gemini Live (используется, если в админке ничего не выбрано). */
@@ -260,6 +269,16 @@ export function getStripePublishableKey(): string {
 /** TikHub.io API key (платформенный). Источник: system-config.json → env TIKHUB_API_KEY. */
 export function getTikHubApiKey(): string {
   return get('tikhubApiKey', 'TIKHUB_API_KEY');
+}
+
+/**
+ * Цель маршрутизации GPU-шагов рендера: 'home' | 'cloud' | 'off'.
+ * Источник: system-config.json → env RENDER_GPU_TARGET → дефолт 'home'.
+ * Невалидные значения нормализуются к 'home'.
+ */
+export function getRenderGpuTarget(): 'home' | 'cloud' | 'off' {
+  const v = get('renderGpuTarget', 'RENDER_GPU_TARGET', 'home');
+  return v === 'cloud' || v === 'off' ? v : 'home';
 }
 
 /** Telegram Bot API Token */
@@ -445,7 +464,7 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
   // (обрабатываются вручную ниже) — иначе merged[key] = string ломает типы.
   type StringKey = Exclude<
     keyof SystemConfig,
-    'telegramAdminChatIds' | 'maxConcurrentTranslationSessions' | 'geminiApiKeys' | 'geminiUseVertex'
+    'telegramAdminChatIds' | 'maxConcurrentTranslationSessions' | 'geminiApiKeys' | 'geminiUseVertex' | 'renderGpuTarget'
   >;
   const fieldMap: Array<{ key: StringKey; envFallback: string }> = [
     { key: 'livekitUrl', envFallback: 'LIVEKIT_URL' },
@@ -509,6 +528,10 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
   if (typeof incoming.geminiUseVertex === 'boolean') merged.geminiUseVertex = incoming.geminiUseVertex;
   if (typeof incoming.vertexProject === 'string') merged.vertexProject = incoming.vertexProject.trim();
   if (typeof incoming.vertexLocation === 'string') merged.vertexLocation = incoming.vertexLocation.trim();
+  // Переключатель GPU рендера: только из фиксированного набора, иначе игнор (оставляем прежнее).
+  if (typeof incoming.renderGpuTarget === 'string' && ['home', 'cloud', 'off'].includes(incoming.renderGpuTarget)) {
+    merged.renderGpuTarget = incoming.renderGpuTarget as 'home' | 'cloud' | 'off';
+  }
 
   writeConfigFile(merged);
 
