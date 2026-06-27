@@ -185,6 +185,14 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.5 — Точный маппинг инструментов OpenMontage в рендер-воркере (render-worker/main.py).
+ *         По реальным input_schema (сверены из репо calesthio/OpenMontage): video_trimmer
+ *         (operation=cut, start/end из диапазона/длительности), auto_reframe (target_aspect),
+ *         silence_cutter (mode remove/speed_up), subtitle_gen как композит
+ *         transcriber→subtitle_gen→video_compose(burn_subtitles), audio_mixer (segmented_music),
+ *         tts→piper_tts→video_compose(encode audio), video_compose (encode export). Выход
+ *         читается из ToolResult.artifacts. news/research/broll/avatar/upscale → корректный
+ *         passthrough. Простая цепочка (Формат+Экспорт) должна давать ролик без калибровки.
  * 1.1.4 — Выбор исходного видео для рендера. Центральный узел «Видео из галереи»
  *         в MontageEditor теперь кликабелен → пикер (скачанные тренды + видео-референсы
  *         Галереи). Источник сохраняется в flows.graph.source (FlowGraph.source +
@@ -210,7 +218,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.4';
+export const APP_VERSION = '1.1.5';
 
 export function AppVersion() {
   return (
