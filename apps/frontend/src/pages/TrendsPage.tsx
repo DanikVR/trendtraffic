@@ -86,10 +86,11 @@ export default function TrendsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setVideos(data.videos || []);
+      const fb = data.fellBackToApp ? ' Режим «Видео/Общий» был нестабилен — поиск автоматически выполнен через App V3.' : '';
       if ((data.count ?? 0) === 0) {
-        setNotice(`TikHub ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.`);
+        setNotice(`TikHub ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.${fb}`);
       } else {
-        setNotice(`Найдено видео: ${data.count}.`);
+        setNotice(`Найдено видео: ${data.count}.${fb}`);
       }
     } catch (e: any) { setError(e?.message || 'Ошибка сканирования'); }
     finally { setScanning(false); }
@@ -143,7 +144,7 @@ export default function TrendsPage() {
         </div>
         <div>
           <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Сканирование TikTok-трендов через TikHub: поиск по ключевику или горячая выдача, затем скачивание исходников.</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Сканирование TikTok-трендов: поиск по ключевику или горячая выдача, затем скачивание исходников.</p>
         </div>
       </div>
 

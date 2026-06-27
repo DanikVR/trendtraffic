@@ -53,6 +53,8 @@ export interface ScanResult {
   videos: StoredVideo[];
   /** debug: верхнеуровневые ключи сырого ответа — помогает доводить нормализатор. */
   rawKeys: string[];
+  /** true, если выбранный web-режим упал и мы молча переключились на App V3. */
+  fellBackToApp?: boolean;
 }
 
 function num(v: any): number | undefined {
@@ -88,6 +90,7 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
 
   const count = Math.min(Math.max(params.count ?? 20, 1), 30);
   let resp;
+  let fellBackToApp = false;
   if (params.kind === 'keyword') {
     const q = (params.query || '').trim();
     if (!q) throw new Error('Укажите ключевое слово для поиска.');
@@ -96,6 +99,14 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     // (одна оплата TikHub за запрос — count не влияет на цену), потом режем до count.
     const fetchCount = params.mode === 'app' ? 30 : count;
     resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime });
+    // Web-эндпоинты TikHub (Видео/Общий) периодически отдают «Request failed, please
+    // retry» даже после ретраев — это нестабильность их скрапера, не наша ошибка.
+    // Чтобы поиск «всегда работал», молча падаем на стабильный App V3 (умный,
+    // устойчивый к опечаткам). Так пользователь получает результат, а не ошибку.
+    if (!resp.ok && params.mode !== 'app') {
+      const fb = await searchVideos(key, q, { count: 30, mode: 'app', publishTime: params.publishTime });
+      if (fb.ok) { resp = fb; fellBackToApp = true; }
+    }
   } else {
     resp = await fetchTrending(key, { count });
   }
@@ -179,7 +190,7 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     }
   }
 
-  return { trendId, count: videos.length, videos: stored, rawKeys };
+  return { trendId, count: videos.length, videos: stored, rawKeys, fellBackToApp };
 }
 
 export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false): Promise<StoredVideo[]> {
