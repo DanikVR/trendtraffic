@@ -447,7 +447,7 @@ const MIGRATIONS: Migration[] = [
     name: 'flows.create',
     sql: `CREATE TABLE IF NOT EXISTS flows (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      tenant_id VARCHAR(64) NOT NULL,
       name VARCHAR(255) NOT NULL DEFAULT 'Без названия',
       status VARCHAR(16) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),
       graph JSONB NOT NULL DEFAULT '{"nodes":[],"edges":[]}'::jsonb,
@@ -461,6 +461,9 @@ const MIGRATIONS: Migration[] = [
   { name: 'flows.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_flows_tenant ON flows(tenant_id)` },
   { name: 'flows.idx_active', sql: `CREATE INDEX IF NOT EXISTS idx_flows_active ON flows(tenant_id, status) WHERE status = 'active'` },
   { name: 'flows.idx_inbox', sql: `CREATE INDEX IF NOT EXISTS idx_flows_inbox ON flows(chatwoot_inbox_id) WHERE chatwoot_inbox_id IS NOT NULL` },
+  // tenant_id → VARCHAR (суперадмин ходит с 'global_admin', не UUID; FK на tenants мешает).
+  { name: 'flows.tenant_id_drop_fk', sql: `ALTER TABLE flows DROP CONSTRAINT IF EXISTS flows_tenant_id_fkey` },
+  { name: 'flows.tenant_id_varchar', sql: `ALTER TABLE flows ALTER COLUMN tenant_id TYPE VARCHAR(64) USING tenant_id::text` },
 
   // ============================================================================
   // OMNICHANNEL IG-0.5 — прямое подключение Instagram (OAuth, токен per-tenant).
