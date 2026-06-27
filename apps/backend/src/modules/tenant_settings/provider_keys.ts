@@ -84,7 +84,22 @@ export const PROVIDERS: ProviderDef[] = [
   { id: 'doubao', label: 'Doubao Speech (TTS)', group: 'paid', help: 'https://console.volcengine.com',
     verify: async () => savedOnly('Doubao') },
   { id: 'google', label: 'Google (Imagen, Cloud TTS)', group: 'paid', help: 'https://aistudio.google.com/app/apikey',
-    verify: (k) => tryVerify('Google', () => ping(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k)}`)) },
+    verify: async (k) => {
+      try {
+        const r = await ping(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k.trim())}`);
+        if (r.ok) return { ok: true, status: 'active', message: 'Google: ключ активен' };
+        const body: any = await r.json().catch(() => ({}));
+        const reason = String(body?.error?.details?.[0]?.reason || body?.error?.status || '');
+        if (r.status === 403 && /BLOCKED|DISABLED|SERVICE|PERMISSION/i.test(reason)) {
+          return { ok: false, status: 'invalid',
+            message: 'Google: ключ распознан, но Generative Language API заблокирован/не включён в проекте. Включите «Generative Language API» и снимите ограничения ключа (Cloud Console → Credentials → API restrictions), либо возьмите ключ на aistudio.google.com/app/apikey.' };
+        }
+        if (r.status === 400) return { ok: false, status: 'invalid', message: 'Google: ключ невалиден (API key not valid).' };
+        return fromResp(r, 'Google');
+      } catch (e: any) {
+        return { ok: false, status: 'unknown', message: `Google: сеть/таймаут — ${e?.message || e}` };
+      }
+    } },
 
   // Бесплатные сток-источники
   { id: 'pexels', label: 'Pexels (сток видео/фото)', group: 'stock', help: 'https://www.pexels.com/api/',

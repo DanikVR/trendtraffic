@@ -185,6 +185,11 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.2.5 — Понятное сообщение при проверке Google-ключа (Imagen/Cloud TTS). Раньше
+ *         403 от Google показывался как общий «невалиден». Теперь verify читает
+ *         тело ответа: при API_KEY_SERVICE_BLOCKED / PERMISSION_DENIED сообщает,
+ *         что ключ распознан, но Generative Language API заблокирован/не включён —
+ *         с подсказкой включить API и снять ограничения ключа. Плюс .trim() ключа.
  * 1.2.4 — Фикс ложного попапа «ошибка регистрации» при ПЕРВОМ входе через Google.
  *         Google-код одноразовый, а эффект колбэка мог сработать дважды
  *         (StrictMode в dev / смена identity у t-i18n) → повторный POST
@@ -301,7 +306,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.2.4';
+export const APP_VERSION = '1.2.5';
 
 export function AppVersion() {
   return (
