@@ -179,7 +179,8 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
         return str(work / f"o_{uuid.uuid4().hex[:6]}{sfx}")
 
     needs_video = step_tool in ("video_trimmer", "auto_reframe", "silence_cutter",
-                                "subtitle_gen", "color_grade", "video_compose", "audio_mixer", "tts")
+                                "subtitle_gen", "color_grade", "video_compose", "audio_mixer",
+                                "tts", "upscale")
     if needs_video and not input_path:
         return None, "нет входного видео — passthrough"
 
@@ -264,8 +265,32 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
         f, _, n = run_tool("video_compose", inp)
         return (f, n or "экспорт")
 
-    # broll(clip_search) / news_source / web_research / talking_head / upscale
-    return None, f"{step_tool}: на CPU-воркере не выполняется — passthrough"
+    if step_tool == "upscale":  # upscale (GPU RealESRGAN; есть CPU-фолбэк)
+        sc = (choices.get("scale") or ["off"])[0]
+        if sc == "off":
+            return None, "апскейл: выключен — passthrough"
+        scale = 4 if sc == "4" else 2
+        f, _, n = run_tool("upscale", {"input_path": input_path, "output_path": out(), "scale": scale})
+        return (f, n or f"апскейл ×{scale}")
+
+    if step_tool == "talking_head":  # avatar (GPU SadTalker): фото + озвучка → говорящая голова
+        if not media:
+            return None, "аватар: нужна фото/аватар (медиа узла) — passthrough"
+        img = _download_media(base_url, media, work, default_ext=".jpg")
+        if not img:
+            return None, "аватар: фото не скачалось"
+        if not text:
+            return None, "аватар: нет сценария для озвучки — passthrough"
+        # Локальный движок — только SadTalker; engine=heygen (облако) тут недоступен.
+        wav, _, tn = run_tool("piper_tts", {"text": text, "output_path": out(".wav")})
+        if not wav:
+            return None, f"аватар: озвучка не создана ({tn or ''})"
+        f, _, n = run_tool("talking_head", {"image_path": img, "audio_path": wav,
+                                            "output_path": out(), "model": "sadtalker"})
+        return (f, n or "аватар (говорящая голова)")
+
+    # broll(clip_search) / news_source / web_research — наша LLM-сторона / стоки (passthrough)
+    return None, f"{step_tool}: на воркере не выполняется — passthrough"
 
 
 @app.post("/execute")

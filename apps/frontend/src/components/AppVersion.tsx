@@ -185,6 +185,19 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.8 — GPU-рендер: переключатель в админке + домашний GPU-воркер.
+ *         (1) Карточка «Рендер: GPU и воркеры» в AdminConfigPage — тумблер
+ *         Дом/Облако/Выкл (renderGpuTarget) + адреса CPU- и GPU-воркеров
+ *         (renderWorkerUrl/renderGpuWorkerUrl). Бэкенд: getSettingsForClient
+ *         отдаёт render-поля, saveSettings принимает оба URL (renderGpuTarget уже
+ *         был). Раньше управлялось только через .env/system-config.json без UI.
+ *         (2) Домашний GPU-воркер: render-worker/main.py получил точный диспетчер
+ *         GPU-шагов — upscale (Real-ESRGAN, scale 2/4) и talking_head (аватар:
+ *         фото+piper-озвучка→SadTalker), по реальным input_schema OpenMontage.
+ *         install-gpu.sh (Linux/WSL2 NVIDIA): клон OpenMontage + make install/
+ *         install-gpu (torch/CUDA) + systemd trendtraffic-render-gpu на
+ *         100.122.182.97:8801 (Tailscale). README обновлён. Запустить/проверить —
+ *         на домашнем ПК с RTX 5080 (torch из песочницы не проверить).
  * 1.1.7 — ИИ-режиссёр заработал (director-сервис). Умные ✨ЛЛМ-узлы на Claude
  *         (Anthropic SDK, динамический импорт; ключ tenant 'anthropic' → fallback
  *         системный ANTHROPIC_API_KEY; модель по умолчанию claude-opus-4-8):
@@ -242,7 +255,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.7';
+export const APP_VERSION = '1.1.8';
 
 export function AppVersion() {
   return (

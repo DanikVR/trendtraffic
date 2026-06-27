@@ -464,6 +464,11 @@ export function getSettingsForClient(): Record<string, any> {
 
     tikhubApiKey: getTikHubApiKey() ? SECRET_MASK : '',
     hasTikhubKey: !!getTikHubApiKey(),
+
+    // Рендер «Собрать» — не секреты (Tailscale-адреса воркеров + переключатель GPU).
+    renderGpuTarget: getRenderGpuTarget(),
+    renderWorkerUrl: getRenderWorkerUrl(),
+    renderGpuWorkerUrl: getRenderGpuWorkerUrl(),
   };
 }
 
@@ -503,6 +508,9 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
     { key: 'tikhubApiKey', envFallback: 'TIKHUB_API_KEY' },
     { key: 'voiceFemale', envFallback: 'GEMINI_VOICE_FEMALE' },
     { key: 'voiceMale', envFallback: 'GEMINI_VOICE_MALE' },
+    // Рендер «Собрать»: адреса воркеров (не секрет, Tailscale).
+    { key: 'renderWorkerUrl', envFallback: 'RENDER_WORKER_URL' },
+    { key: 'renderGpuWorkerUrl', envFallback: 'RENDER_GPU_WORKER_URL' },
   ];
 
   for (const { key, envFallback } of fieldMap) {

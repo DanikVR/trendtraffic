@@ -32,7 +32,21 @@ RENDER_WORKER_URL=http://100.81.35.75:8800
 ## Эндпоинты
 - `GET /health` → `{ ok, tools }` — реестр загружен, число инструментов.
 - `POST /execute` → один шаг: скачать вход, вызвать инструмент, вернуть `{ output_name | skipped | note }`.
+- `POST /transcribe` → `{ input_url }` → `{ segments: [{start,end,text}] }` — транскрипт (faster-whisper)
+  для ИИ-режиссёра (выбор лучшего момента в узле «Длина»).
 - `GET /files/<name>` — отдать произведённый файл (web-VPS его забирает).
+
+## GPU-воркер (домашний ПК, RTX 5080) — для аватара/апскейла
+Тот же `main.py`, но с GPU-цепочкой OpenMontage (torch/CUDA). Обрабатывает шаги
+`talking_head` (аватар, SadTalker) и `upscale` (Real-ESRGAN). Ставится на домашний
+ПК (Linux/WSL2 с NVIDIA), от root:
+```
+WORKER_HOST=100.122.182.97 bash /opt/tt/render-worker/install-gpu.sh
+```
+Поднимает systemd-сервис `trendtraffic-render-gpu` на `100.122.182.97:8801` (только
+Tailscale). Затем в **Админ-панели → Конфигурация → «Рендер: GPU и воркеры»**: GPU =
+«Домашний ПК», GPU-воркер = `http://100.122.182.97:8801` → Сохранить. (Эквивалент в
+`.env` web-VPS: `RENDER_GPU_TARGET=home`, `RENDER_GPU_WORKER_URL=...`.)
 
 ## Управление
 ```
@@ -47,5 +61,7 @@ systemctl restart trendtraffic-render
   реальных прогонах — это видно по `note` каждого шага в статусе задачи.
 - Любая неуверенность/ошибка инструмента → **passthrough** (вход=выход) + note, чтобы
   не падал весь конвейер.
-- GPU-инструменты (avatar/upscale) сюда НЕ маршрутизируются (это CPU-воркер) — они идут
-  на домашнюю RTX 5080 (отдельный GPU-воркер, позже).
+- GPU-шаги (avatar/upscale) на CPU-VPS не маршрутизируются — web-VPS шлёт их на
+  GPU-воркер (домашняя RTX 5080) по `RENDER_GPU_WORKER_URL`, с учётом переключателя
+  GPU в админке. Тот же `main.py` обслуживает оба (CPU/GPU) — отличаются лишь
+  установленные зависимости (torch на GPU-машине) и какие шаги им маршрутизируются.

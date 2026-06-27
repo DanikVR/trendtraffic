@@ -56,6 +56,11 @@ export default function AdminConfigPage() {
   const [syncingProducts, setSyncingProducts] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
+  // Рендер «Собрать»: переключатель GPU + адреса воркеров (Tailscale).
+  const [renderGpuTarget, setRenderGpuTarget] = useState<'home' | 'cloud' | 'off'>('home');
+  const [renderWorkerUrl, setRenderWorkerUrl] = useState('');
+  const [renderGpuWorkerUrl, setRenderGpuWorkerUrl] = useState('');
+
   // Произвольные коды сайта (cookie-consent / аналитика / пиксели)
   const [customHeadCode, setCustomHeadCode] = useState('');
   const [customBodyCode, setCustomBodyCode] = useState('');
@@ -115,6 +120,9 @@ export default function AdminConfigPage() {
           setStripeWebhookSecret(data.stripeWebhookSecret || '');
           setStripePublishableKey(data.stripePublishableKey || '');
           setTikhubApiKey(data.tikhubApiKey || '');
+          if (data.renderGpuTarget === 'home' || data.renderGpuTarget === 'cloud' || data.renderGpuTarget === 'off') setRenderGpuTarget(data.renderGpuTarget);
+          if (typeof data.renderWorkerUrl === 'string') setRenderWorkerUrl(data.renderWorkerUrl);
+          if (typeof data.renderGpuWorkerUrl === 'string') setRenderGpuWorkerUrl(data.renderGpuWorkerUrl);
           if (Array.isArray(data.telegramAdminChatIds)) setTgChatIds(data.telegramAdminChatIds);
         }
       } catch (err) {
@@ -264,6 +272,7 @@ export default function AdminConfigPage() {
           googleClientId, googleClientSecret,
           stripeSecretKey, stripeWebhookSecret, stripePublishableKey,
           tikhubApiKey,
+          renderGpuTarget, renderWorkerUrl, renderGpuWorkerUrl,
         }),
       });
 
@@ -960,6 +969,45 @@ export default function AdminConfigPage() {
                 </div>
               </div>
               {renderTestBlock('tikhub')}
+            </AuroraCard>
+
+            {/* Рендер «Собрать»: переключатель GPU (Дом/Облако/Выкл) + адреса воркеров (Tailscale) */}
+            <AuroraCard className="p-6 space-y-5 md:col-span-2 flex flex-col justify-between">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
+                    <Server size={16} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Рендер «Собрать»: GPU и воркеры</h3>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-600 mb-2" style={{ color: 'var(--text-secondary)' }}>Куда слать GPU-шаги (аватар / апскейл)</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {([
+                      { v: 'home', label: 'Домашний ПК', hint: 'RTX 5080 по Tailscale (бесплатно)' },
+                      { v: 'cloud', label: 'Облако', hint: 'облачный GPU-фолбэк' },
+                      { v: 'off', label: 'Выключить', hint: 'только бесплатный CPU' },
+                    ] as const).map((o) => (
+                      <button key={o.v} type="button" onClick={() => setRenderGpuTarget(o.v)}
+                        className="flex-1 px-3 py-2.5 rounded-xl text-sm font-600 transition-colors text-left"
+                        style={{ background: renderGpuTarget === o.v ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: renderGpuTarget === o.v ? 'var(--accent-orange)' : 'var(--text-secondary)', border: `1px solid ${renderGpuTarget === o.v ? 'var(--accent-orange)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        <span className="flex items-center gap-1.5">{renderGpuTarget === o.v && <Check size={13} />}{o.label}</span>
+                        <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{o.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <AuroraInput label="GPU-воркер (домашний ПК, Tailscale)" value={renderGpuWorkerUrl} onChange={(e) => setRenderGpuWorkerUrl(e.target.value)} placeholder="http://100.122.182.97:8801" inputId="admin-render-gpu-url" />
+                <AuroraInput label="CPU-воркер (рендер-VPS, Tailscale)" value={renderWorkerUrl} onChange={(e) => setRenderWorkerUrl(e.target.value)} placeholder="http://100.81.35.75:8800" inputId="admin-render-cpu-url" />
+
+                <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
+                  <p><b style={{ color: 'var(--text-secondary)' }}>Домашний ПК</b> — тяжёлые шаги (говорящая голова, апскейл) идут на вашу RTX 5080 по Tailscale. Нужен запущенный GPU-воркер на ПК и его адрес выше. «Выключить» или пустой адрес — эти шаги пропускаются, базовый монтаж работает на CPU-воркере.</p>
+                  <p><b style={{ color: 'var(--text-secondary)' }}>CPU-воркер</b> — бесплатная ffmpeg-цепочка (обрезка/формат/субтитры/озвучка/экспорт) на рендер-VPS. Пусто — рендер идёт в режиме симуляции (без файла).</p>
+                  <p>Адреса — по сети Tailscale (<code style={{ color: 'var(--text-secondary)' }}>100.x</code>). Применяется после «Сохранить» и нового запуска рендера.</p>
+                </div>
+              </div>
             </AuroraCard>
           </div>
 
