@@ -187,7 +187,7 @@
  *         значения. Теперь требует явное `FROM dialect_rules`.
  */
 
-export const APP_VERSION = '1.0.6';
+export const APP_VERSION = '1.0.7';
 
 export function AppVersion() {
   return (
@@ -204,7 +204,7 @@ export function AppVersion() {
         width: '100%',
       }}
     >
-      © VibeVox&nbsp;&nbsp;v{APP_VERSION}
+      © TrendTraffic.pro&nbsp;&nbsp;v{APP_VERSION}
     </div>
   );
 }
