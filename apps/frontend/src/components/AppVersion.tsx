@@ -185,6 +185,14 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.2.2 — КРИТ-фикс «Failed to fetch» при входе/регистрации. LoginPage,
+ *         RegisterPage, ForgotPassword слали запрос на ЗАХАРДКОЖЕННЫЙ
+ *         `http://localhost:3001/api/auth/...` (остаток локальной разработки) —
+ *         браузер на app.trendtraffic.pro стучался в localhost:3001 НА МАШИНЕ
+ *         ПОЛЬЗОВАТЕЛЯ (+ mixed-content https→http) → «Failed to fetch», вообще
+ *         никто не мог войти/зарегистрироваться. Заменено на относительные
+ *         `/api/auth/login|register|forgot-password` (тот же origin → nginx-прокси
+ *         → backend). DialectPlayground/DialectsPage уже были защищены `port===3000`.
  * 1.2.1 — Google OAuth: убран захардкоженный redirect_uri `vibevox.pro` (остаток
  *         шаблона) → теперь динамический `${window.location.origin}/auth/google/
  *         callback`, т.е. на app.trendtraffic.pro редирект идёт на свой домен.
@@ -279,7 +287,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.2.2';
 
 export function AppVersion() {
   return (
