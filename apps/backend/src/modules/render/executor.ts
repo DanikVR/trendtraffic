@@ -22,6 +22,8 @@ export interface StepContext {
   gpuTarget: 'home' | 'cloud' | 'off';
   /** URL текущего «рабочего» медиа (выход предыдущего шага → вход следующего). */
   currentUrl: string | null;
+  /** Общий «блокнот» задачи: ИИ-режиссёр пишет сюда ресёрч/новости, озвучка читает. */
+  scratchpad?: Record<string, any>;
 }
 
 export interface StepResult {

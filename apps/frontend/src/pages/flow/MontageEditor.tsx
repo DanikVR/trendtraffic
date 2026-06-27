@@ -78,6 +78,14 @@ const META: Record<MKind, Meta> = {
 
 const KIND_ORDER: MKind[] = ['news', 'research', 'length', 'format', 'silence', 'subtitles', 'audio', 'voiceover', 'color', 'broll', 'avatar', 'upscale', 'export'];
 
+// Что делает ИИ-режиссёр (Claude), когда у узла включён ✨ЛЛМ.
+const DIR_HINT: Partial<Record<MKind, string>> = {
+  voiceover: 'Claude напишет сценарий по вашему брифу выше, затем Piper его озвучит.',
+  research: 'Claude найдёт материал по теме в вебе — он станет опорой для озвучки.',
+  news: 'Claude соберёт свежую новость по источнику/теме (веб-поиск) для озвучки.',
+  length: 'Claude выберет самый сильный момент по транскрипту и обрежет под длительность.',
+};
+
 interface Preset { name: string; kinds: MKind[]; }
 const NEWS_CHAIN: MKind[] = ['news', 'voiceover', 'broll', 'subtitles', 'audio', 'format', 'export'];
 const PRESET_GROUPS: { group: string; presets: Preset[] }[] = [
@@ -405,6 +413,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   </button>
                 )}
               </div>
+            )}
+
+            {/* Что сделает ИИ-режиссёр при включённом ЛЛМ */}
+            {META[selected.kind].llm && selected.useLlm && DIR_HINT[selected.kind] && (
+              <p className="text-[11px] mb-4 flex items-start gap-1.5" style={{ color: '#7c5cff' }}>
+                <Sparkles size={12} className="mt-[1px] flex-shrink-0" /> {DIR_HINT[selected.kind]}
+              </p>
             )}
 
             <button onClick={() => setSelectedId(null)} className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"

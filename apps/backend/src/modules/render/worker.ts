@@ -81,7 +81,9 @@ async function tick(): Promise<void> {
 async function processJob(job: RenderJob): Promise<void> {
   const steps = job.steps.slice();
   let currentUrl = job.inputUrl;
-  const ctxBase = { jobId: job.id, tenantId: job.tenantId, gpuTarget: job.gpuTarget };
+  // Один «блокнот» на задачу: ИИ-режиссёр (research/news) пишет, озвучка читает.
+  const scratchpad: Record<string, any> = {};
+  const ctxBase = { jobId: job.id, tenantId: job.tenantId, gpuTarget: job.gpuTarget, scratchpad };
 
   try {
     for (let i = 0; i < steps.length; i++) {

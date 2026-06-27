@@ -73,6 +73,11 @@ class ExecBody(BaseModel):
     tenant_id: Optional[str] = None
 
 
+class TranscribeBody(BaseModel):
+    input_url: str
+    base_url: Optional[str] = None
+
+
 @app.get("/health")
 def health():
     return {"ok": registry is not None, "tools": len(TOOLS), "openmontage_dir": OPENMONTAGE_DIR}
@@ -292,6 +297,36 @@ def execute(body: ExecBody):
     name = f"{job}-{uuid.uuid4().hex[:8]}{os.path.splitext(out_file)[1] or '.mp4'}"
     shutil.copyfile(out_file, FILES_DIR / name)
     return {"skipped": False, "output_name": name, "note": note}
+
+
+@app.post("/transcribe")
+def transcribe(body: TranscribeBody):
+    """Транскрибирует вход (faster-whisper) и отдаёт сегменты — для ЛЛМ-выбора момента."""
+    if registry is None:
+        return {"segments": [], "note": "registry не загружен"}
+    job = uuid.uuid4().hex
+    work = WORK_DIR / job
+    work.mkdir(parents=True, exist_ok=True)
+    url = _abs_url(body.base_url, body.input_url) or body.input_url
+    ext = os.path.splitext(urllib.parse.urlparse(url).path)[1] or ".mp4"
+    input_path = str(work / f"input{ext}")
+    try:
+        _download(url, Path(input_path))
+    except Exception as e:  # noqa: BLE001
+        return {"segments": [], "note": f"вход не скачался: {e}"}
+    _, data, note = run_tool("transcriber", {"input_path": input_path, "output_dir": str(work)})
+    raw = (data or {}).get("segments") or []
+    segs = []
+    for s in raw:
+        try:
+            segs.append({
+                "start": float(s.get("start", 0) or 0),
+                "end": float(s.get("end", 0) or 0),
+                "text": str(s.get("text", "") or "").strip(),
+            })
+        except Exception:  # noqa: BLE001
+            continue
+    return {"segments": segs, "note": note}
 
 
 @app.get("/files/{name}")

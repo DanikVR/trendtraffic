@@ -42,6 +42,8 @@ import trendsRouter from './modules/trends/router.js';
 import renderRouter from './modules/render/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
 import { HttpWorkerExecutor } from './modules/render/executor_http.js';
+import { SimulationExecutor } from './modules/render/executor.js';
+import { DirectorExecutor } from './modules/render/executor_director.js';
 import { getRenderWorkerUrl } from './config/systemConfig.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
@@ -219,12 +221,14 @@ const server = app.listen(PORT, () => {
       console.warn('[Backend] Миграции прошли с предупреждениями:', err?.message || err);
     })
     .finally(() => {
-      // 6.0.1 Рендер «Собрать»: подключаем реальный OpenMontage-воркер, если задан URL
-      // (RENDER_WORKER_URL — рендер-VPS по Tailscale). Иначе остаётся симуляция.
-      if (getRenderWorkerUrl()) {
-        setRenderExecutor(new HttpWorkerExecutor());
-        console.log('[render] HTTP-исполнитель подключён →', getRenderWorkerUrl());
-      }
+      // 6.0.1 Рендер «Собрать»: базовый исполнитель — реальный OpenMontage-воркер
+      // (если задан RENDER_WORKER_URL — рендер-VPS по Tailscale), иначе симуляция.
+      // Поверх — ИИ-режиссёр (умные ЛЛМ-шаги: сценарий/ресёрч/новости/выбор момента).
+      const renderWorkerUrl = getRenderWorkerUrl();
+      const renderBase = renderWorkerUrl ? new HttpWorkerExecutor() : new SimulationExecutor();
+      setRenderExecutor(new DirectorExecutor(renderBase));
+      console.log('[render] исполнитель:', renderBase.constructor.name, '+ ИИ-режиссёр',
+        renderWorkerUrl ? `→ ${renderWorkerUrl}` : '(симуляция)');
       // поллер очереди (после миграций — таблица render_jobs создана)
       startRenderWorker();
     });

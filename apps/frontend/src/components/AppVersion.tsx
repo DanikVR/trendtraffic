@@ -185,6 +185,20 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.7 — ИИ-режиссёр заработал (director-сервис). Умные ✨ЛЛМ-узлы на Claude
+ *         (Anthropic SDK, динамический импорт; ключ tenant 'anthropic' → fallback
+ *         системный ANTHROPIC_API_KEY; модель по умолчанию claude-opus-4-8):
+ *         (1) Озвучка — Claude пишет сценарий по брифу → Piper озвучивает;
+ *         (2) Ресёрч/Новости — Claude + web_search собирает материал/новость в
+ *         ctx.scratchpad → озвучка берёт как опору; (3) Длина — Claude по
+ *         транскрипту (новый /transcribe в рендер-воркере) выбирает лучший момент
+ *         → video_trimmer режет именно его. Реализация: render/director.ts +
+ *         executor_director.ts (decorator над базовым исполнителем), StepContext
+ *         получил scratchpad (worker.ts прокидывает один на задачу), server.ts
+ *         оборачивает базовый исполнитель в DirectorExecutor. Мягкая деградация:
+ *         нет ключа/ошибка → passthrough с заметкой. UI MontageEditor: подсказка
+ *         под ✨ЛЛМ что именно сделает режиссёр для узла. Все шаги уже были в
+ *         редакторе (тумблер ЛЛМ + бриф) — UI почти не менялся.
  * 1.1.6 — ИИ-режиссёр: первый кирпич — Claude-ключ в Enterprise → «Генерация».
  *         Новый провайдер `anthropic` (группа `llm`) в provider_keys.ts с реальной
  *         кнопкой «Проверить» (бесплатный пинг GET https://api.anthropic.com/v1/models,
@@ -228,7 +242,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.6';
+export const APP_VERSION = '1.1.7';
 
 export function AppVersion() {
   return (

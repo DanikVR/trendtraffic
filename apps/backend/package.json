@@ -12,6 +12,7 @@
     "test": "tsx --env-file=.env.test --test tests/*.test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
     "@google/genai": "^2.6.0",
     "@livekit/rtc-node": "^0.13.28",
     "@types/multer": "^2.1.0",
