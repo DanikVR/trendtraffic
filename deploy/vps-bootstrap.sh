@@ -175,7 +175,17 @@ server {
         proxy_set_header Host $host;
         proxy_read_timeout 600s;
     }
+    # Хеш-ассеты Vite — immutable, кэш навсегда; index.html/sw.js — без кэша,
+    # чтобы после деплоя браузер брал свежую оболочку (иначе stale-chunk 404).
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    location = /sw.js {
+        add_header Cache-Control "no-cache";
+    }
     location / {
+        add_header Cache-Control "no-cache";
         try_files $uri $uri/ /index.html;
     }
 }
