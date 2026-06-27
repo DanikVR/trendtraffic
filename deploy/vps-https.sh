@@ -21,15 +21,9 @@ PM2_NAME="trendtraffic-api"
 
 log(){ echo -e "\n\033[1;36m== $* ==\033[0m"; }
 
-### 0. Проверка, что домен резолвится на этот сервер (предупреждение, не блок) ─
-SRV_IP="$(curl -fsS https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')"
-DNS_IP="$(getent hosts "$DOMAIN" | awk '{print $1}' | head -n1 || true)"
-echo "Сервер IP: ${SRV_IP} ; DNS ${DOMAIN} → ${DNS_IP:-(нет A-записи)}"
-if [ -z "$DNS_IP" ]; then
-  echo "⚠ A-запись для ${DOMAIN} ещё не видна. Если certbot упадёт — подожди прогрузки DNS и запусти скрипт снова."
-elif [ "$DNS_IP" != "$SRV_IP" ]; then
-  echo "⚠ ${DOMAIN} указывает на ${DNS_IP}, а не на ${SRV_IP}. certbot, скорее всего, не выдаст сертификат."
-fi
+### 0. (info) DNS уже должен указывать на этот VPS — проверку домена делает сам certbot
+###    через ACME HTTP-01. Никаких unbound-переменных под `set -u`.
+echo "Включаю HTTPS для ${DOMAIN}${ALT_DOMAIN:+ и ${ALT_DOMAIN}} (валидацию домена выполнит certbot)."
 
 ### 1. nginx: server_name = домен ─────────────────────────────────────────────
 log "nginx: server_name → ${DOMAIN}${ALT_DOMAIN:+ ${ALT_DOMAIN}}"
