@@ -187,7 +187,7 @@
  *         значения. Теперь требует явное `FROM dialect_rules`.
  */
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.1.1';
 
 export function AppVersion() {
   return (

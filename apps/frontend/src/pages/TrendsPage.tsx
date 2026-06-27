@@ -44,6 +44,20 @@ function dur(s?: number): string {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
+/**
+ * Превращает «Failed to fetch» (TypeError при недоступном сервере) в понятное
+ * сообщение. Это НЕ ошибка TikHub: значит не отвечает backend (:3001) или
+ * dev-сервер фронта (:3000). Частая причина — dev-сервер остановился, а вкладка
+ * осталась открытой со старой загрузки.
+ */
+function friendlyError(e: any, fallback: string): string {
+  const msg = typeof e?.message === 'string' ? e.message : '';
+  if (e instanceof TypeError || /failed to fetch|networkerror|load failed|err_connection/i.test(msg)) {
+    return 'Сервер недоступен (нет связи с API). Проверьте, что запущены backend (apps/backend → npm run dev, порт 3001) и dev-сервер фронта (порт 3000), затем обновите страницу.';
+  }
+  return msg || fallback;
+}
+
 export default function TrendsPage() {
   const { token } = useAppStore();
   const [kind, setKind] = useState<Kind>('keyword');
@@ -92,7 +106,7 @@ export default function TrendsPage() {
       } else {
         setNotice(`Найдено видео: ${data.count}.${fb}`);
       }
-    } catch (e: any) { setError(e?.message || 'Ошибка сканирования'); }
+    } catch (e: any) { setError(friendlyError(e, 'Ошибка сканирования')); }
     finally { setScanning(false); }
   };
 
@@ -106,7 +120,7 @@ export default function TrendsPage() {
       setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'downloaded', fileUrl: data.fileUrl } : x));
     } catch (e: any) {
       setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'failed' } : x));
-      setError(e?.message || 'Не удалось скачать');
+      setError(friendlyError(e, 'Не удалось скачать'));
     } finally { setDownloadingId(null); }
   };
 
