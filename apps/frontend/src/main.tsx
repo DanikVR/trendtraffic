@@ -13,6 +13,11 @@ import App from './App';
 import './index.css';
 import './config/i18n'; // Инициализация i18next (побочный эффект)
 import { useAppStore } from './store/useAppStore';
+import { installAuthInterceptor } from './lib/authInterceptor';
+
+// Глобальный перехватчик 401 (истёкшая сессия → logout + /auth/login). Ставим
+// ДО рендера, чтобы он стоял раньше любых /api-запросов компонентов.
+installAuthInterceptor();
 
 // ============================================================================================
 // Инициализация Telegram Mini App SDK
