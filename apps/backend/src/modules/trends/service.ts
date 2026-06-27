@@ -91,7 +91,11 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   if (params.kind === 'keyword') {
     const q = (params.query || '').trim();
     if (!q) throw new Error('Укажите ключевое слово для поиска.');
-    resp = await searchVideos(key, q, { count, mode: params.mode, sortType: params.sortType, publishTime: params.publishTime });
+    // App-поиск всегда тянет по релевантности (опечатко-устойчивый матч). Чтобы
+    // «Новее»/«Больше лайков» пересортировывались осмысленно, тянем ПОЛНЫЙ пул
+    // (одна оплата TikHub за запрос — count не влияет на цену), потом режем до count.
+    const fetchCount = params.mode === 'app' ? 30 : count;
+    resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime });
   } else {
     resp = await fetchTrending(key, { count });
   }
@@ -100,9 +104,18 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     throw new Error(`TikHub вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
   }
 
-  // Честный «Кол-во»: web-эндпоинты игнорируют count и отдают свою страницу —
-  // обрезаем до запрошенного числа, чтобы UX был предсказуем.
-  const videos: NormalizedVideo[] = normalizeVideos(resp.data).slice(0, count);
+  // Клиентская сортировка поверх relevance-набора (TikHub отдаёт его по релевантности —
+  // единственный режим с устойчивым к опечаткам тематическим матчем, см. searchVideos):
+  //   sortType 2 — новее (по дате публикации), 1 — больше лайков, 0 — как вернул TikTok.
+  let normalized: NormalizedVideo[] = normalizeVideos(resp.data);
+  if (params.kind === 'keyword' && params.sortType === 2) {
+    normalized = [...normalized].sort((a, b) => (b.createTime ?? 0) - (a.createTime ?? 0));
+  } else if (params.kind === 'keyword' && params.sortType === 1) {
+    normalized = [...normalized].sort((a, b) => (b.stats.like ?? 0) - (a.stats.like ?? 0));
+  }
+  // Честный «Кол-во»: web-эндпоинты игнорируют count и отдают свою страницу,
+  // app-режим мы намеренно перетянули пулом — обрезаем до запрошенного числа.
+  const videos: NormalizedVideo[] = normalized.slice(0, count);
   const rawKeys = resp.data && typeof resp.data === 'object'
     ? Object.keys((resp.data as any).data && typeof (resp.data as any).data === 'object' ? (resp.data as any).data : resp.data)
     : [];

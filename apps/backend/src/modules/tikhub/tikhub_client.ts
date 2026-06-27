@@ -149,6 +149,8 @@ export interface NormalizedVideo {
   videoUrl?: string;
   webUrl?: string;
   durationSec?: number;
+  /** Unix-время публикации (сек). Нужно для клиентской сортировки «Новее». */
+  createTime?: number;
   stats: { play?: number; like?: number; comment?: number; share?: number };
   raw: any;
 }
@@ -180,22 +182,26 @@ export type PublishTime = 0 | 1 | 7 | 30 | 90 | 180;   // 0 всё время, 1
 export async function searchVideos(
   apiKey: string,
   keyword: string,
-  opts?: { count?: number; offset?: number; mode?: SearchMode; sortType?: SortType; publishTime?: PublishTime }
+  opts?: { count?: number; offset?: number; mode?: SearchMode; publishTime?: PublishTime }
 ): Promise<TikHubResult<any>> {
   const count = Math.min(Math.max(opts?.count ?? 20, 1), 30);
   const offset = Math.max(opts?.offset ?? 0, 0);
   const kw = encodeURIComponent(keyword);
-  const mode: SearchMode = opts?.mode || 'video';
+  const mode: SearchMode = opts?.mode || 'app';
 
   let path: string;
   if (mode === 'general') {
     // Общий поиск (Web API не принимает count).
     path = `/api/v1/tiktok/web/fetch_general_search?keyword=${kw}&offset=${offset}`;
   } else if (mode === 'app') {
-    // App V3 — поддерживает фильтры sort_type/publish_time.
-    const sort = opts?.sortType ?? 0;
+    // ВАЖНО: всегда sort_type=0 (по релевантности). У TikTok только этот режим даёт
+    // ИНТЕЛЛЕКТУАЛЬНЫЙ, устойчивый к опечаткам topical-матч ("wordpres" → WordPress).
+    // sort_type=1/2 матчат строго: при опечатке/широком запросе отдают свежий мусор,
+    // не относящийся к теме. Поэтому «Новее»/«Больше лайков» применяем как клиентскую
+    // пересортировку relevance-набора (см. service.scanTrends). publish_time с sort_type=0
+    // работает корректно — даёт «релевантные за период».
     const pub = opts?.publishTime ?? 0;
-    path = `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${count}&offset=${offset}&sort_type=${sort}&publish_time=${pub}`;
+    path = `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${count}&offset=${offset}&sort_type=0&publish_time=${pub}`;
   } else {
     path = `/api/v1/tiktok/web/fetch_search_video?keyword=${kw}&count=${count}&offset=${offset}`;
   }
@@ -287,6 +293,10 @@ export function normalizeVideoItem(el: any): NormalizedVideo | null {
   const dRaw = N(video.duration) ?? N(it.duration);
   const durationSec = dRaw == null ? undefined : (dRaw > 1000 ? Math.round(dRaw / 1000) : dRaw);
 
+  // Время публикации (App V3 — create_time сек; web — createTime). Для сортировки «Новее».
+  const ctRaw = N(it.create_time) ?? N(it.createTime) ?? N(it.create_time_str);
+  const createTime = ctRaw == null ? undefined : (ctRaw > 1e12 ? Math.round(ctRaw / 1000) : ctRaw);
+
   const coverUrl = firstStr(
     video.cover, video.origin_cover, video.originCover, video.dynamic_cover, video.dynamicCover,
     it.cover, it.thumbnail
@@ -308,6 +318,7 @@ export function normalizeVideoItem(el: any): NormalizedVideo | null {
     videoUrl,
     webUrl,
     durationSec,
+    createTime,
     stats: {
       play: N(stat.play_count) ?? N(stat.playCount) ?? N(stat.play),
       like: N(stat.digg_count) ?? N(stat.diggCount) ?? N(stat.like_count) ?? N(stat.likeCount),

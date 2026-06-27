@@ -69,7 +69,7 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
     const kind: TrendKind = body.kind === 'trending' ? 'trending' : 'keyword';
     const query = typeof body.query === 'string' ? body.query : undefined;
     const count = Number.isFinite(body.count) ? Number(body.count) : undefined;
-    const mode = ['video', 'general', 'app'].includes(body.mode) ? body.mode : 'video';
+    const mode = ['video', 'general', 'app'].includes(body.mode) ? body.mode : 'app';
     const sortType = [0, 1, 2].includes(Number(body.sortType)) ? (Number(body.sortType) as 0 | 1 | 2) : 0;
     const publishTime = [0, 1, 7, 30, 90, 180].includes(Number(body.publishTime))
       ? (Number(body.publishTime) as 0 | 1 | 7 | 30 | 90 | 180) : 0;

@@ -14,13 +14,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
-  UserRound, Search, Maximize2, Share2,
+  UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 type MKind =
-  | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
+  | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
   | 'voiceover' | 'color' | 'broll' | 'avatar' | 'upscale' | 'export';
 
 interface MNode {
@@ -35,6 +35,7 @@ interface MNode {
 interface Meta { label: string; icon: React.ReactNode; hint: string; media: boolean; llm: boolean; ph: string; }
 
 const META: Record<MKind, Meta> = {
+  news:      { label: 'Новости',      icon: <Newspaper size={18} />,   hint: 'Источник: RSS / Telegram / сайт / рубрика → текст + фото',  media: false, llm: true,  ph: 'RSS-URL, @telegram-канал, ссылка на сайт или рубрику' },
   research:  { label: 'Исследование', icon: <Search size={18} />,     hint: 'Веб-поиск темы + источники (ЛЛМ)', media: false, llm: true,  ph: 'Тема для ресёрча…' },
   length:    { label: 'Длина',        icon: <Scissors size={18} />,    hint: 'Обрезка / лучший момент',         media: false, llm: true,  ph: 'напр. 0:10–0:40 или «лучший момент 30 сек»' },
   format:    { label: 'Формат',       icon: <Crop size={18} />,        hint: 'Вертикаль / гориз / квадрат',     media: false, llm: false, ph: 'вертикаль 9:16 / гориз 16:9 / 1:1 / 4:5' },
@@ -49,10 +50,16 @@ const META: Record<MKind, Meta> = {
   export:    { label: 'Экспорт',      icon: <Share2 size={18} />,      hint: 'Площадки вывода',                 media: false, llm: false, ph: 'TikTok, Reels, Shorts, YouTube' },
 };
 
-const KIND_ORDER: MKind[] = ['research', 'length', 'format', 'silence', 'subtitles', 'audio', 'voiceover', 'color', 'broll', 'avatar', 'upscale', 'export'];
+const KIND_ORDER: MKind[] = ['news', 'research', 'length', 'format', 'silence', 'subtitles', 'audio', 'voiceover', 'color', 'broll', 'avatar', 'upscale', 'export'];
 
 interface Preset { name: string; kinds: MKind[]; }
+const NEWS_CHAIN: MKind[] = ['news', 'voiceover', 'broll', 'subtitles', 'audio', 'format', 'export'];
 const PRESET_GROUPS: { group: string; presets: Preset[] }[] = [
+  { group: 'Новости', presets: [
+    { name: 'Новости из RSS', kinds: NEWS_CHAIN },
+    { name: 'Из Telegram-канала', kinds: NEWS_CHAIN },
+    { name: 'С сайта (рубрика)', kinds: NEWS_CHAIN },
+  ] },
   { group: 'Короткие ролики', presets: [
     { name: 'Клип-фабрика', kinds: ['length', 'format', 'silence', 'subtitles', 'audio', 'export'] },
     { name: 'Подкаст → шортс', kinds: ['length', 'format', 'subtitles', 'audio', 'export'] },
