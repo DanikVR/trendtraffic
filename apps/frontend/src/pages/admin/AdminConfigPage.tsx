@@ -345,7 +345,7 @@ export default function AdminConfigPage() {
           } else if (service === 'google') {
             bodyData = { apiKey: geminiApiKey };
           } else if (service === 'googleOAuth') {
-            bodyData = { clientId: googleClientId, clientSecret: googleClientSecret };
+            bodyData = { clientId: googleClientId.trim(), clientSecret: googleClientSecret.trim() };
           } else if (service === 'stripe') {
             bodyData = { secretKey: stripeSecretKey };
           } else if (service === 'tikhub') {

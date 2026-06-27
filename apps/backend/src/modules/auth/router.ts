@@ -43,7 +43,9 @@ function loadGoogleOAuthSettings(): GoogleOAuthSettings {
   try {
     if (fs.existsSync(GOOGLE_OAUTH_FILE)) {
       const raw = fs.readFileSync(GOOGLE_OAUTH_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw) || {};
+      // .trim() — частая беда: client_id/secret копируют из Google Console с хвостовым пробелом.
+      return { clientId: String(parsed.clientId || '').trim(), clientSecret: String(parsed.clientSecret || '').trim() };
     }
   } catch (err) {
     console.warn('[Google OAuth Settings]: Не удалось загрузить google-oauth.json:', err);
@@ -675,7 +677,8 @@ router.post('/change-password', requireAuth, async (req: Request, res: Response)
  * Вызывается из AdminConfigPage при нажатии «Сохранить настройки».
  */
 router.post('/google-settings', requireSuperAdmin, (req: Request, res: Response) => {
-  const { clientId, clientSecret } = req.body;
+  const clientId = String(req.body?.clientId || '').trim();
+  const clientSecret = String(req.body?.clientSecret || '').trim();
   if (!clientId || !clientSecret) {
     return res.status(400).json({ error: 'Client ID и Client Secret обязательны.' });
   }
@@ -702,6 +705,9 @@ router.get('/google-settings', (req: Request, res: Response) => {
  */
 router.post('/verify-google-oauth', requireSuperAdmin, async (req: Request, res: Response) => {
   let { clientId, clientSecret } = req.body;
+  // Срезаем пробелы: client_id часто копируют с хвостовым пробелом → Google «client was not found».
+  if (typeof clientId === 'string') clientId = clientId.trim();
+  if (typeof clientSecret === 'string') clientSecret = clientSecret.trim();
 
   // Если не передано в body, пробуем загрузить из сохраненных настроек
   if (!clientId || !clientSecret) {
