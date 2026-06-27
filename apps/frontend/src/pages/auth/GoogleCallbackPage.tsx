@@ -30,7 +30,7 @@ export function GoogleCallbackPage() {
         const clientSecretVal = localStorage.getItem('sys_google_client_secret') || '';
         const redirectUri = window.location.origin === 'http://localhost:3000'
           ? 'http://localhost:3000/api/auth/callback/google'
-          : 'https://vibevox.pro/auth/google/callback';
+          : `${window.location.origin}/auth/google/callback`;
 
         setStatus(t('auth.googleCallback.loading'));
         // Передаём clientId/clientSecret как фолбэк — сервер автоматически сохранит их

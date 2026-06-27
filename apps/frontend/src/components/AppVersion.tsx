@@ -185,6 +185,15 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.2.1 — Google OAuth: убран захардкоженный redirect_uri `vibevox.pro` (остаток
+ *         шаблона) → теперь динамический `${window.location.origin}/auth/google/
+ *         callback`, т.е. на app.trendtraffic.pro редирект идёт на свой домен.
+ *         Исправлено в LoginPage, RegisterPage, GoogleCallbackPage (initial-запрос
+ *         и token-exchange совпадают, как требует Google) + подсказка Redirect URIs
+ *         в AdminConfigPage стала динамической. Для Google Console: Authorized
+ *         JavaScript origins = https://app.trendtraffic.pro; Authorized redirect
+ *         URIs = https://app.trendtraffic.pro/auth/google/callback. Client ID/Secret
+ *         нового клиента — в Админ → Конфигурация → Google OAuth.
  * 1.2.0 — КРИТ-фикс: регистрация падала с 500 («Failed to fetch» в браузере).
  *         Причина: при регистрации создавалась подписка со status='inactive',
  *         а CHECK-констрейнт `subscriptions_status_check` разрешает только
@@ -270,7 +279,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 
 export function AppVersion() {
   return (

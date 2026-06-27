@@ -692,7 +692,7 @@ export default function AdminConfigPage() {
                 <div className="space-y-1.5 p-3 rounded-xl border text-[11px]" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
                   <div className="font-bold uppercase tracking-wider text-zinc-500" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Разрешенные URI перенаправления (Redirect URIs):</div>
                   <div className="space-y-1 font-mono text-zinc-400" style={{ color: 'var(--text-secondary)' }}>
-                    <div className="flex justify-between items-center gap-1.5 hover:text-white transition-colors"><span className="truncate select-all">https://vibevox.pro/auth/google/callback</span></div>
+                    <div className="flex justify-between items-center gap-1.5 hover:text-white transition-colors"><span className="truncate select-all">{`${window.location.origin}/auth/google/callback`}</span></div>
                     <div className="flex justify-between items-center gap-1.5 hover:text-white transition-colors"><span className="truncate select-all">http://localhost:3000/api/auth/callback/google</span></div>
                   </div>
                 </div>

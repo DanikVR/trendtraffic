@@ -207,7 +207,7 @@ export function LoginPage() {
                   const clientId = serverClientId || localStorage.getItem('sys_google_client_id') || '806003116741-g21eif131a93hgr294mmu13pdrgbegjq.apps.googleusercontent.com';
                   const redirectUri = window.location.origin === 'http://localhost:3000'
                     ? 'http://localhost:3000/api/auth/callback/google'
-                    : 'https://vibevox.pro/auth/google/callback';
+                    : `${window.location.origin}/auth/google/callback`;
                   const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&prompt=select_account`;
                   window.location.href = googleUrl;
                 }}
