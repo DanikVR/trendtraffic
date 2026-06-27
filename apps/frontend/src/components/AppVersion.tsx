@@ -185,6 +185,14 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.2.0 — КРИТ-фикс: регистрация падала с 500 («Failed to fetch» в браузере).
+ *         Причина: при регистрации создавалась подписка со status='inactive',
+ *         а CHECK-констрейнт `subscriptions_status_check` разрешает только
+ *         ('active','trialing','canceled','past_due','incomplete'). В dev не
+ *         всплывало (JSON-fallback не проверяет констрейнты), в проде с реальным
+ *         Postgres — нарушение → транзакция откат → 500. Исправлено на 'incomplete'
+ *         во всех 3 местах: auth/register (email), auth google-login, admin
+ *         ensureSubscription. Теперь человек может зарегистрироваться.
  * 1.1.9 — Фикс «401-шторма» в консоли при истёкшей сессии. Стор восстанавливал
  *         сессию из localStorage без проверки токена → RequireAuth пускал по
  *         наличию токена, а каждый /api-запрос ловил 401 (десятки в консоли,
@@ -262,7 +270,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.9';
+export const APP_VERSION = '1.2.0';
 
 export function AppVersion() {
   return (

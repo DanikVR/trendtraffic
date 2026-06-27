@@ -289,7 +289,7 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
       `INSERT INTO subscriptions (tenant_id, tier, status, translation_minutes_balance)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (tenant_id) DO NOTHING`,
-      [tenantId, 'trial', 'inactive', 0]
+      [tenantId, 'trial', 'incomplete', 0]
     );
 
     // Завершаем транзакцию
@@ -940,7 +940,7 @@ router.post('/google-login', async (req: Request, res: Response) => {
           `INSERT INTO subscriptions (tenant_id, tier, status, translation_minutes_balance)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (tenant_id) DO NOTHING`,
-          [tenantId, 'trial', 'inactive', 0]
+          [tenantId, 'trial', 'incomplete', 0]
         );
 
         await dbClient.query('COMMIT');

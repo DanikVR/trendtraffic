@@ -106,7 +106,7 @@ async function ensureSubscription(tenantId: string): Promise<void> {
     `INSERT INTO subscriptions (tenant_id, tier, status, translation_minutes_balance)
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (tenant_id) DO NOTHING`,
-    [tenantId, 'trial', 'inactive', 0]
+    [tenantId, 'trial', 'incomplete', 0]
   );
 }
 
