@@ -466,6 +466,25 @@ const MIGRATIONS: Migration[] = [
   { name: 'flows.tenant_id_varchar', sql: `ALTER TABLE flows ALTER COLUMN tenant_id TYPE VARCHAR(64) USING tenant_id::text` },
 
   // ============================================================================
+  // RENDER — BYO-ключи генеративных провайдеров OpenMontage (per-tenant).
+  // tenant_id VARCHAR(64) без FK (суперадмин ходит с 'global_admin', не UUID).
+  // Одна строка = один (tenant, provider). Ключ зашифрован (SIP_ENCRYPTION_KEY).
+  // ============================================================================
+  {
+    name: 'tenant_provider_keys.create',
+    sql: `CREATE TABLE IF NOT EXISTS tenant_provider_keys (
+      tenant_id VARCHAR(64) NOT NULL,
+      provider VARCHAR(48) NOT NULL,
+      key_encrypted TEXT,
+      status VARCHAR(32),
+      last_check TIMESTAMP WITH TIME ZONE,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (tenant_id, provider)
+    )`,
+  },
+  { name: 'tenant_provider_keys.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_tenant_provider_keys_tenant ON tenant_provider_keys(tenant_id)` },
+
+  // ============================================================================
   // OMNICHANNEL IG-0.5 — прямое подключение Instagram (OAuth, токен per-tenant).
   // Webhook резолвит tenant по ig_id; токен зашифрован (SIP_ENCRYPTION_KEY).
   // ============================================================================

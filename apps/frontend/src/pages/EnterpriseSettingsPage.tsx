@@ -9,17 +9,16 @@
 
 import React, { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, BrainCircuit, Workflow, Boxes, Loader2, Lock, Plug, TrendingUp } from 'lucide-react';
+import { Sparkles, Workflow, Loader2, Lock, Plug, TrendingUp, Wand2 } from 'lucide-react';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
 import { AuroraCard } from '../components/AuroraCard';
 
 // Lazy-load каждой секции — стартовая страница лёгкая, тяжёлые формы грузятся по требованию.
 const Section1Gemini = lazy(() => import('./enterprise/Section1Gemini'));
-const Section2Prompt = lazy(() => import('./enterprise/Section2Prompt'));
 const Section3QuestFlow = lazy(() => import('./enterprise/Section3QuestFlow'));
-const Section4Chatwoot = lazy(() => import('./enterprise/Section4Chatwoot'));
 const Section5Mcp = lazy(() => import('./enterprise/Section5Mcp'));
 const Section6TikHub = lazy(() => import('./enterprise/Section6TikHub'));
+const Section7OpenMontage = lazy(() => import('./enterprise/Section7OpenMontage'));
 
 interface BuiltSection {
   key: string;
@@ -42,25 +41,11 @@ export function EnterpriseSettingsPage() {
       component: Section1Gemini,
     },
     {
-      key: 'prompt',
-      label: t('enterprise.tabs.prompts'),
-      icon: <BrainCircuit size={16} />,
-      color: '#8B5CF6',
-      component: Section2Prompt,
-    },
-    {
       key: 'questflow',
       label: t('enterprise.tabs.ai', 'AI'),
       icon: <Workflow size={16} />,
       color: '#22d3ee',
       component: Section3QuestFlow,
-    },
-    {
-      key: 'chatwoot',
-      label: t('enterprise.tabs.chatwoot'),
-      icon: <Boxes size={16} />,
-      color: '#10b981',
-      component: Section4Chatwoot,
     },
     {
       key: 'mcp',
@@ -75,6 +60,13 @@ export function EnterpriseSettingsPage() {
       icon: <TrendingUp size={16} />,
       color: '#f59e0b',
       component: Section6TikHub,
+    },
+    {
+      key: 'openmontage',
+      label: t('enterprise.tabs.generation', 'Генерация'),
+      icon: <Wand2 size={16} />,
+      color: '#ec4899',
+      component: Section7OpenMontage,
     },
   ];
 

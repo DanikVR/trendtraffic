@@ -185,9 +185,18 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.2 — Enterprise: новая вкладка «Генерация» — BYO-ключи провайдеров OpenMontage
+ *         (FAL, OpenAI, ElevenLabs, HeyGen, Runway, Suno, xAI, Doubao, Google +
+ *         сток Pexels/Pixabay/Unsplash + HF), каждый с реальной кнопкой «Проверить»
+ *         (пинг API провайдера). Единая таблица tenant_provider_keys (tenant_id
+ *         VARCHAR(64), AES-256-GCM). Удалены вкладки «Подсказки» (Section2Prompt) и
+ *         «CRM/Chatwoot» (Section4Chatwoot) + per-tenant CRM-эндпоинты — наследие
+ *         VibeVox-омниканала, не нужны TrendTraffic. Глубокий Chatwoot-backend
+ *         (омниканальный вебхук, crm-tasks) оставлен инактивным: он сцеплен с
+ *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.1';
+export const APP_VERSION = '1.1.2';
 
 export function AppVersion() {
   return (

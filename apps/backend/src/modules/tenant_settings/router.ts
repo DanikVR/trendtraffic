@@ -37,12 +37,13 @@ import {
   removeSubscriber,
 } from './owner_telegram.js';
 import {
-  getTenantChatwoot,
-  getTenantChatwootInfo,
-  setTenantChatwoot,
-  setTenantChatwootEnabled,
-  testChatwootConnection,
-} from './chatwoot.js';
+  isProvider,
+  listProviderKeys,
+  getProviderKeyInfo,
+  setProviderKey,
+  clearProviderKey,
+  validateProviderKey,
+} from './provider_keys.js';
 import {
   requireEnterprise,
   EnterpriseFeatureRequiredError,
@@ -357,67 +358,61 @@ router.post('/owner-telegram/test', async (req: AuthedRequest, res: Response) =>
 });
 
 // ============================================================================
-// CHATWOOT
+// OPENMONTAGE PROVIDER KEYS (Enterprise BYO — генеративные провайдеры рендера)
 // ============================================================================
 
-router.get('/chatwoot', async (req: AuthedRequest, res: Response) => {
-  if (!(await ensureEnterprise(req, res, 'chatwoot'))) return;
+router.get('/provider-keys', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'provider-keys'))) return;
   try {
-    const info = await getTenantChatwootInfo(req.tenantId!);
-    res.json(info);
+    res.json({ providers: await listProviderKeys(req.tenantId!) });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });
   }
 });
 
-router.put('/chatwoot', async (req: AuthedRequest, res: Response) => {
-  if (!(await ensureEnterprise(req, res, 'chatwoot'))) return;
+router.put('/provider-keys/:provider', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'provider-keys'))) return;
   try {
-    const { url, token, enabled } = req.body || {};
-    if (url !== null && (typeof url !== 'string' || !url.startsWith('http'))) {
-      return res.status(400).json({ error: 'url должен начинаться с http:// или https://' });
+    const provider = String(req.params.provider || '');
+    if (!isProvider(provider)) return res.status(404).json({ error: 'Неизвестный провайдер' });
+    const { apiKey } = req.body || {};
+    if (typeof apiKey !== 'string' || apiKey.trim().length < 4) {
+      return res.status(400).json({ error: 'Передайте валидный apiKey (string ≥ 4 символов)' });
     }
-    if (token !== null && typeof token !== 'string') {
-      return res.status(400).json({ error: 'token должен быть строкой' });
-    }
-    await setTenantChatwoot(
-      req.tenantId!,
-      url ? String(url).trim() : null,
-      token ? String(token).trim() : null,
-      typeof enabled === 'boolean' ? enabled : undefined
-    );
-    const info = await getTenantChatwootInfo(req.tenantId!);
-    res.json(info);
+    await setProviderKey(req.tenantId!, provider, apiKey.trim());
+    // Сразу реально проверяем ключ против API провайдера (где это возможно).
+    const validation = await validateProviderKey(req.tenantId!, provider);
+    const info = await getProviderKeyInfo(req.tenantId!, provider);
+    res.json({ ...info, validation });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка сохранения' });
   }
 });
 
-router.post('/chatwoot/test', async (req: AuthedRequest, res: Response) => {
-  if (!(await ensureEnterprise(req, res, 'chatwoot'))) return;
+router.delete('/provider-keys/:provider', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'provider-keys'))) return;
   try {
-    // Если в body передали url+token — тестируем их (для проверки до сохранения).
-    // Иначе тестируем сохранённые.
-    const { url, token } = req.body || {};
-    const cfg = (url && token)
-      ? { url: String(url).trim(), token: String(token).trim(), enabled: true }
-      : await getTenantChatwoot(req.tenantId!);
-    const result = await testChatwootConnection(cfg);
-    res.json(result);
+    const provider = String(req.params.provider || '');
+    if (!isProvider(provider)) return res.status(404).json({ error: 'Неизвестный провайдер' });
+    await clearProviderKey(req.tenantId!, provider);
+    res.json({ ok: true });
   } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка теста' });
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
   }
 });
 
-router.put('/chatwoot/enabled', async (req: AuthedRequest, res: Response) => {
-  if (!(await ensureEnterprise(req, res, 'chatwoot'))) return;
+router.post('/provider-keys/:provider/validate', async (req: AuthedRequest, res: Response) => {
+  if (!(await ensureEnterprise(req, res, 'provider-keys'))) return;
   try {
-    const { enabled } = req.body || {};
-    if (typeof enabled !== 'boolean') return res.status(400).json({ error: 'enabled (boolean) обязателен' });
-    await setTenantChatwootEnabled(req.tenantId!, enabled);
-    res.json({ ok: true, enabled });
+    const provider = String(req.params.provider || '');
+    if (!isProvider(provider)) return res.status(404).json({ error: 'Неизвестный провайдер' });
+    // Если в теле передан apiKey — проверяем именно его (до сохранения); иначе сохранённый.
+    const raw = typeof req.body?.apiKey === 'string' ? req.body.apiKey : undefined;
+    const validation = await validateProviderKey(req.tenantId!, provider, raw);
+    const info = await getProviderKeyInfo(req.tenantId!, provider);
+    res.json({ ...info, validation });
   } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка' });
+    res.status(500).json({ error: err?.message || 'Ошибка валидации' });
   }
 });
 
