@@ -46,12 +46,33 @@ import PromocodesPage from './pages/admin/PromocodesPage';
 import UsersPage from './pages/admin/UsersPage';
 import PartnersPage from './pages/admin/PartnersPage';
 
+/**
+ * Ленивая загрузка с авто-перезагрузкой при «Failed to fetch dynamically imported
+ * module». Это бывает ПОСЛЕ ДЕПЛОЯ: открытая вкладка ссылается на старый
+ * хеш-чанк (напр. FlowPage-Bk_VdDJI.js), которого в новой сборке уже нет (404).
+ * Один раз перезагружаем страницу за свежим index.html+чанками. Защита от цикла —
+ * не чаще раза в 10с (sessionStorage-таймстамп).
+ */
+function lazyWithRetry<T extends React.ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return React.lazy(() =>
+    factory().catch((err) => {
+      const last = Number(sessionStorage.getItem('vv_chunk_reload_ts') || '0');
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem('vv_chunk_reload_ts', String(Date.now()));
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {}); // страница перезагружается — не резолвим
+      }
+      throw err;
+    })
+  );
+}
+
 // OMNICHANNEL Фаза 2: конструктор цепочек — lazy (React Flow тяжёлый, грузим по входу).
-const FlowPage = React.lazy(() => import('./pages/FlowPage'));
+const FlowPage = lazyWithRetry(() => import('./pages/FlowPage'));
 // TRENDTRAFFIC: анализатор трендов — lazy.
-const TrendsPage = React.lazy(() => import('./pages/TrendsPage'));
-const GalleryPage = React.lazy(() => import('./pages/GalleryPage'));
-const PublisherPage = React.lazy(() => import('./pages/PublisherPage'));
+const TrendsPage = lazyWithRetry(() => import('./pages/TrendsPage'));
+const GalleryPage = lazyWithRetry(() => import('./pages/GalleryPage'));
+const PublisherPage = lazyWithRetry(() => import('./pages/PublisherPage'));
 
 // ============================================================================================
 // Мидлвари защиты роутов
@@ -86,6 +107,21 @@ function RequireAdmin() {
 function LayoutSwitcher() {
   const isMiniApp = useAppStore((state) => state.isMiniApp);
   return isMiniApp ? <MiniAppLayout /> : <MainLayout />;
+}
+
+/** Дружелюбный экран ошибки роутера (вместо dev «Hey developer»). */
+function RouteErrorElement() {
+  return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+      <div style={{ fontSize: 18, fontWeight: 700 }}>Что-то пошло не так</div>
+      <div style={{ fontSize: 14, color: 'var(--text-muted)', maxWidth: 380, lineHeight: 1.5 }}>
+        Возможно, вышло обновление приложения. Обновите страницу — обычно это решает проблему.
+      </div>
+      <button onClick={() => window.location.reload()} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: 'var(--btn-primary-bg, #ff7300)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+        Обновить страницу
+      </button>
+    </div>
+  );
 }
 
 // ============================================================================================
@@ -133,6 +169,7 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <RequireAuth />,
+    errorElement: <RouteErrorElement />,
     children: [
       {
         element: <LayoutSwitcher />,

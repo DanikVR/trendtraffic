@@ -185,6 +185,13 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.2.6 — Фикс «Failed to fetch dynamically imported module» (TrendFlow/Тренды/
+ *         Галерея/Publisher). После деплоя открытая вкладка ссылалась на старый
+ *         хеш-чанк (его в новой сборке нет → 404 → краш страницы). Добавлен
+ *         lazyWithRetry в router.tsx: при ошибке загрузки чанка один раз
+ *         перезагружает страницу за свежим билдом (защита от цикла — раз в 10с).
+ *         Плюс дружелюбный errorElement (вместо dev «Hey developer») с кнопкой
+ *         «Обновить».
  * 1.2.5 — Понятное сообщение при проверке Google-ключа (Imagen/Cloud TTS). Раньше
  *         403 от Google показывался как общий «невалиден». Теперь verify читает
  *         тело ответа: при API_KEY_SERVICE_BLOCKED / PERMISSION_DENIED сообщает,
@@ -306,7 +313,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.2.5';
+export const APP_VERSION = '1.2.6';
 
 export function AppVersion() {
   return (
