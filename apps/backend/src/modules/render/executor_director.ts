@@ -56,8 +56,10 @@ export class DirectorExecutor implements StepExecutor {
       return { ...base, note: joinNotes(r.note, base.note) };
     }
 
-    // length (+ЛЛМ) и без явного диапазона в тексте → выбор момента
-    if (step.kind === 'length' && step.llm && !/\d\s*[-–—]\s*\d/.test(text)) {
+    // length: выбор момента, если включён ЛЛМ ИЛИ выбрана длительность «Лучший момент»,
+    // и в тексте нет явного диапазона (явный диапазон — приоритетнее ЛЛМ).
+    const wantsBest = step.llm || (step.params?.choices?.duration || []).includes('best');
+    if (step.kind === 'length' && wantsBest && !/\d\s*[-–—]\s*\d/.test(text)) {
       const r = await pickBestMoment({
         tenantId: ctx.tenantId, sourceUrl: ctx.currentUrl, targetSec: targetSeconds(step.params), model,
       });
