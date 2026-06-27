@@ -95,6 +95,11 @@ export interface SystemConfig {
    * Переключатель в Админ-панели (см. рендер «Собрать»).
    */
   renderGpuTarget?: 'home' | 'cloud' | 'off';
+
+  /** URL CPU-воркера OpenMontage (рендер-VPS по Tailscale, напр. http://100.81.35.75:8800). */
+  renderWorkerUrl?: string;
+  /** URL GPU-воркера (домашний RTX 5080 по Tailscale). */
+  renderGpuWorkerUrl?: string;
 }
 
 /** Дефолтная модель Gemini Live (используется, если в админке ничего не выбрано). */
@@ -279,6 +284,20 @@ export function getTikHubApiKey(): string {
 export function getRenderGpuTarget(): 'home' | 'cloud' | 'off' {
   const v = get('renderGpuTarget', 'RENDER_GPU_TARGET', 'home');
   return v === 'cloud' || v === 'off' ? v : 'home';
+}
+
+/**
+ * URL CPU-воркера OpenMontage (рендер-VPS по Tailscale, напр. http://100.81.35.75:8800).
+ * Пусто → рендер идёт в режиме симуляции (executor не подключён). Источник:
+ * system-config.json → env RENDER_WORKER_URL.
+ */
+export function getRenderWorkerUrl(): string {
+  return String(get('renderWorkerUrl', 'RENDER_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
+}
+
+/** URL GPU-воркера (домашний RTX 5080 по Tailscale). Пусто → GPU-шаги пропускаются. */
+export function getRenderGpuWorkerUrl(): string {
+  return String(get('renderGpuWorkerUrl', 'RENDER_GPU_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
 }
 
 /** Telegram Bot API Token */

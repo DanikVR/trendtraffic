@@ -185,6 +185,15 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.1.3 — Рендер «Собрать» подключён к OpenMontage. (1) Python FastAPI-воркер
+ *         render-worker/ (на рендер-VPS): registry.get(tool).execute(inputs), вход/выход
+ *         через /uploads, слушает только Tailscale; install.sh = systemd-сервис. (2) Реальный
+ *         executor_http.ts вместо симуляции: CPU-шаги → RENDER_WORKER_URL, GPU → RENDER_GPU_WORKER_URL
+ *         (с учётом getRenderGpuTarget); результат скачивается в uploads/renders. (3) worker.ts:
+ *         готовый ролик регистрируется в Галерею (media_assets, kind=reference). (4) Кнопка
+ *         «Собрать» в MontageEditor: сохранение → POST /api/render/flow/:id → поллинг прогресса
+ *         с модалкой по шагам. Конфиг getRenderWorkerUrl/getRenderGpuWorkerUrl. Без RENDER_WORKER_URL
+ *         — режим симуляции (конвейер работает, файла нет).
  * 1.1.2 — Enterprise: новая вкладка «Генерация» — BYO-ключи провайдеров OpenMontage
  *         (FAL, OpenAI, ElevenLabs, HeyGen, Runway, Suno, xAI, Doubao, Google +
  *         сток Pexels/Pixabay/Unsplash + HF), каждый с реальной кнопкой «Проверить»
@@ -196,7 +205,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.1.2';
+export const APP_VERSION = '1.1.3';
 
 export function AppVersion() {
   return (

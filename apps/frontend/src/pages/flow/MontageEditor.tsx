@@ -135,6 +135,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [showPresets, setShowPresets] = useState(false);
   const [attachFor, setAttachFor] = useState<string | null>(null);
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string }[]>([]);
+  const [building, setBuilding] = useState(false);
+  const [buildJob, setBuildJob] = useState<any | null>(null);
 
   const update = (fn: (n: MNode[]) => MNode[]) => { setNodes((prev) => fn(prev)); setDirty(true); };
 
@@ -165,6 +167,30 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
+  };
+
+  // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
+  const build = async () => {
+    if (building) return;
+    setBuilding(true);
+    setBuildJob({ status: 'queued', progress: 0, steps: [] });
+    try {
+      if (dirty) await save();
+      const res = await fetch(`/api/render/flow/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({}) });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+      let job = d.job;
+      setBuildJob(job);
+      for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
+        if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
+      }
+    } catch (e: any) {
+      setBuildJob({ status: 'failed', error: e?.message || 'Ошибка', progress: 0, steps: [] });
+    } finally {
+      setBuilding(false);
+    }
   };
 
   const addNode = (kind: MKind) => { const n = newNode(kind); update((p) => [...p, n]); setShowPicker(false); setSelectedId(n.id); };
@@ -224,9 +250,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
         </button>
-        <button className="inline-flex items-center gap-1.5 text-sm font-700 px-3 py-1.5 rounded-lg" title="Скоро"
-          style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', cursor: 'pointer' }} onClick={() => alert('Сборка ролика — следующий этап (рендер-воркер).')}>
-          <Wand2 size={15} /> Собрать
+        <button disabled={building || nodes.length === 0} title="Собрать ролик из сценария"
+          className="inline-flex items-center gap-1.5 text-sm font-700 px-3 py-1.5 rounded-lg disabled:opacity-50"
+          style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', cursor: building ? 'wait' : 'pointer' }} onClick={build}>
+          {building ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Собрать
         </button>
       </div>
 
@@ -425,6 +452,43 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   </button>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Прогресс сборки «Собрать» */}
+      {buildJob && (
+        <div onClick={() => { if (!building) setBuildJob(null); }} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 460, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                {buildJob.status === 'done' ? 'Готово ✓' : buildJob.status === 'failed' ? 'Ошибка' : 'Собираю ролик…'}
+              </span>
+              {!building && <button onClick={() => setBuildJob(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>}
+            </div>
+            <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-tertiary)', overflow: 'hidden', marginBottom: 10 }}>
+              <div style={{ height: '100%', width: `${buildJob.progress || 0}%`, background: '#ff7300', transition: 'width .3s' }} />
+            </div>
+            <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+              Шагов: {buildJob.steps?.length || 0} · статус: {buildJob.status}
+            </div>
+            {Array.isArray(buildJob.steps) && buildJob.steps.length > 0 && (
+              <div className="space-y-1 mb-2" style={{ maxHeight: 200, overflow: 'auto' }}>
+                {buildJob.steps.map((s: any, i: number) => (
+                  <div key={i} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <span style={{ color: s.status === 'done' ? '#10b981' : s.status === 'skipped' ? '#f59e0b' : s.status === 'running' ? '#ff7300' : 'var(--text-muted)' }}>●</span>
+                    {META[s.kind as MKind]?.label || s.kind}
+                    <span style={{ color: 'var(--text-muted)' }}>{s.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {buildJob.error && <p className="text-xs" style={{ color: '#ef4444' }}>{buildJob.error}</p>}
+            {buildJob.status === 'done' && (
+              <p className="text-xs mt-1" style={{ color: buildJob.resultAssetId ? '#10b981' : 'var(--text-muted)' }}>
+                {buildJob.resultAssetId ? 'Ролик добавлен в Галерею → вкладка «Референс».' : (buildJob.note || 'Конвейер выполнен.')}
+              </p>
             )}
           </div>
         </div>

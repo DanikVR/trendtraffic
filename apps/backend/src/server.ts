@@ -40,7 +40,9 @@ import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
 import renderRouter from './modules/render/router.js';
-import { startRenderWorker } from './modules/render/worker.js';
+import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
+import { HttpWorkerExecutor } from './modules/render/executor_http.js';
+import { getRenderWorkerUrl } from './config/systemConfig.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
 import { partnersPublicRouter, partnersAdminRouter } from './modules/partners/router.js';
@@ -217,7 +219,13 @@ const server = app.listen(PORT, () => {
       console.warn('[Backend] Миграции прошли с предупреждениями:', err?.message || err);
     })
     .finally(() => {
-      // 6.0.1 Рендер «Собрать»: поллер очереди (после миграций — таблица render_jobs создана)
+      // 6.0.1 Рендер «Собрать»: подключаем реальный OpenMontage-воркер, если задан URL
+      // (RENDER_WORKER_URL — рендер-VPS по Tailscale). Иначе остаётся симуляция.
+      if (getRenderWorkerUrl()) {
+        setRenderExecutor(new HttpWorkerExecutor());
+        console.log('[render] HTTP-исполнитель подключён →', getRenderWorkerUrl());
+      }
+      // поллер очереди (после миграций — таблица render_jobs создана)
       startRenderWorker();
     });
   // 6.1 Биллинг: планировщик rollover минут
