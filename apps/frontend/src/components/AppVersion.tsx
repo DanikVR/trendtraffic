@@ -185,6 +185,10 @@
  *         раньше он перехватывал ВСЕ COUNT-запросы (включая COUNT(*) FROM
  *         referral_clicks) и возвращал длину dialect_rules вместо реального
  *         значения. Теперь требует явное `FROM dialect_rules`.
+ * 1.3.1 — Enterprise → Генерация: добавлен ключ «Google Omni / Gemini (генерация
+ *         видео, Veo/Omni)» (provider google_omni). Тот же Gemini API-ключ
+ *         (AIzaSy…), проверка через generativelanguage models. Фундамент под
+ *         будущую ноду «Google Omni» в TrendFlow (генерация/преобразование видео).
  * 1.3.0 — Редактор TrendFlow: добавление процессов переосмыслено. Убраны
  *         верхние чипы-палитра (дублировали добавление) и «+ Добавить» на узлах.
  *         Вместо нижней полосы — ПЛАВАЮЩАЯ «+» в левом верхнем углу холста: клик
@@ -342,7 +346,7 @@
  *         Quest Flow и чатом видео-комнат (их оставляем).
  */
 
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.3.1';
 
 export function AppVersion() {
   return (

@@ -100,6 +100,23 @@ export const PROVIDERS: ProviderDef[] = [
         return { ok: false, status: 'unknown', message: `Google: сеть/таймаут — ${e?.message || e}` };
       }
     } },
+  { id: 'google_omni', label: 'Google Omni / Gemini (генерация видео, Veo/Omni)', group: 'paid', help: 'https://aistudio.google.com/app/apikey',
+    verify: async (k) => {
+      try {
+        const r = await ping(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k.trim())}`);
+        if (r.ok) return { ok: true, status: 'active', message: 'Google Omni: ключ активен' };
+        const body: any = await r.json().catch(() => ({}));
+        const reason = String(body?.error?.details?.[0]?.reason || body?.error?.status || '');
+        if (r.status === 403 && /BLOCKED|DISABLED|SERVICE|PERMISSION/i.test(reason)) {
+          return { ok: false, status: 'invalid',
+            message: 'Google Omni: ключ распознан, но Generative Language API заблокирован/не включён. Включите API и снимите ограничения ключа, либо возьмите ключ на aistudio.google.com/app/apikey.' };
+        }
+        if (r.status === 400) return { ok: false, status: 'invalid', message: 'Google Omni: ключ невалиден (API key not valid).' };
+        return fromResp(r, 'Google Omni');
+      } catch (e: any) {
+        return { ok: false, status: 'unknown', message: `Google Omni: сеть/таймаут — ${e?.message || e}` };
+      }
+    } },
 
   // Бесплатные сток-источники
   { id: 'pexels', label: 'Pexels (сток видео/фото)', group: 'stock', help: 'https://www.pexels.com/api/',
