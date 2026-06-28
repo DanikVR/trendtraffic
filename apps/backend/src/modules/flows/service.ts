@@ -17,6 +17,8 @@ export interface FlowGraph {
   /** Облачные узлы графа (Google Omni, Контент-план): позиции/настройки + связи. */
   cloud?: Record<string, any>;
   cloudEdges?: any[];
+  /** Omni: спецификация преобразования исходного видео по таймлайну (сегменты Omni-генерации / V2V-ре-стайла). */
+  omni?: { mode: string; segments: any[] };
 }
 
 export interface Flow {
@@ -46,6 +48,9 @@ function parseGraph(g: any): FlowGraph {
       : null,
     cloud: (g.cloud && typeof g.cloud === 'object') ? g.cloud : undefined,
     cloudEdges: Array.isArray(g.cloudEdges) ? g.cloudEdges : [],
+    omni: (g.omni && typeof g.omni === 'object' && Array.isArray(g.omni.segments))
+      ? { mode: typeof g.omni.mode === 'string' ? g.omni.mode : 'whole', segments: g.omni.segments }
+      : undefined,
   };
 }
 

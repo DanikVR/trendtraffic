@@ -16,7 +16,7 @@ import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
-  Cloud, CalendarDays, Download, Link2,
+  Cloud, CalendarDays, Download, Link2, Film,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -93,6 +93,29 @@ const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: stri
   omni: { label: 'Google Omni', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
 };
+
+// ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
+// engine: 'omni' — сгенерировать новый клип (Veo 3.1, 4/6/8с, текст/кадр→видео);
+//         'v2v'  — ре-стайл реального фрагмента (Runway Gen-4 / FAL-Kling).
+type OmniEngine = 'omni' | 'v2v';
+type OmniMode = 'whole' | 'part' | 'inserts';
+type V2VProvider = 'runway' | 'fal';
+interface OmniSeg {
+  id: string;
+  start: number;          // доля таймлайна 0..1
+  end: number;            // доля таймлайна 0..1
+  engine: OmniEngine;
+  prompt: string;         // «как преобразовать»
+  lenSec: 4 | 6 | 8;      // длина генерации (engine=omni)
+  seedFrame: boolean;     // omni: взять кадр из start как первый кадр
+  provider: V2VProvider;  // engine=v2v: чем ре-стайлить
+}
+interface OmniSpec { mode: OmniMode; segments: OmniSeg[]; }
+let omniSeq = 0;
+const newSeg = (start: number, end: number): OmniSeg =>
+  ({ id: `seg${++omniSeq}`, start, end, engine: 'omni', prompt: '', lenSec: 8, seedFrame: true, provider: 'runway' });
+const OMNI_DEFAULT: OmniSpec = { mode: 'whole', segments: [newSeg(0, 1)] };
+const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
 interface Preset { name: string; kinds: MKind[]; }
 const NEWS_CHAIN: MKind[] = ['news', 'voiceover', 'broll', 'subtitles', 'audio', 'format', 'export'];
@@ -179,6 +202,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
   const [cloudPanel, setCloudPanel] = useState<CloudId | null>(null);
+  // Omni: спецификация преобразования исходного видео по таймлайну.
+  const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
+  const [srcDuration, setSrcDuration] = useState<number>(0);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<CloudId | null>(null);
   const movedRef = useRef(false);
@@ -201,6 +227,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           if (src && typeof src.url === 'string') { setSourceUrl(src.url); setSourceName(src.name || 'видео'); }
           if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
           if (Array.isArray(d.flow.graph?.cloudEdges)) setCloudEdges(d.flow.graph.cloudEdges);
+          if (d.flow.graph?.omni && typeof d.flow.graph.omni === 'object') {
+            const segs = Array.isArray(d.flow.graph.omni.segments) ? d.flow.graph.omni.segments : [];
+            setOmniSpec({ mode: d.flow.graph.omni.mode || 'whole', segments: segs.length ? segs : [newSeg(0, 1)] });
+          }
           if (mapped.length === 0) setShowPresets(true);
         }
       } catch { /* пусто */ }
@@ -213,11 +243,30 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
   };
+
+  // ── Omni: редактирование спецификации преобразования ──
+  const omniMutate = (fn: (s: OmniSpec) => OmniSpec) => { setOmniSpec((s) => fn(s)); setDirty(true); };
+  const setOmniMode = (mode: OmniMode) => omniMutate((s) => {
+    if (mode === 'whole') return { mode, segments: [{ ...(s.segments[0] || newSeg(0, 1)), start: 0, end: 1 }] };
+    if (mode === 'part') return { mode, segments: [s.segments[0] ? { ...s.segments[0] } : newSeg(0, 0.34)] };
+    return { mode, segments: s.segments.length ? s.segments.slice(0, 3) : [newSeg(0, 0.25)] }; // inserts
+  });
+  const updateSeg = (id: string, patch: Partial<OmniSeg>) =>
+    omniMutate((s) => ({ ...s, segments: s.segments.map((g) => g.id === id ? { ...g, ...patch } : g) }));
+  const addInsert = () => omniMutate((s) => {
+    if (s.segments.length >= 3) return s;
+    const last = s.segments[s.segments.length - 1];
+    const start = last ? Math.min(0.9, last.end + 0.05) : 0;
+    return { ...s, segments: [...s.segments, newSeg(start, Math.min(1, start + 0.2))] };
+  });
+  const removeSeg = (id: string) => omniMutate((s) => ({ ...s, segments: s.segments.filter((g) => g.id !== id) }));
+  const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
+  const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + g.lenSec, 0);
 
   // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
   const build = async () => {
@@ -719,7 +768,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
       {cloudPanel && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 460, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'omni' ? 600 : 460, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
                 <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
@@ -727,9 +776,165 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <button onClick={() => setCloudPanel(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             {cloudPanel === 'omni' ? (
-              <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
-                <p>Генерация и преобразование видео через <b>Google Omni / Gemini</b> (текст→видео, фото→видео, аватары, нативное аудио).</p>
-                <p style={{ color: 'var(--text-muted)' }}>Ключ — в <b>Enterprise → Генерация → «Google Omni»</b>. Реальная генерация — этап B. Сейчас узел можно ставить в цепочку: <b>Видео из галереи → Omni → Контент-план</b> (связь стрелкой по кнопке 🔗 на узле).</p>
+              <div className="space-y-3.5">
+                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  Преобразование видео по ленте. <b style={{ color: '#4285F4' }}>Omni</b> — генерирует новый клип
+                  (Veo 3.1, 4/6/8с). <b style={{ color: '#a855f7' }}>V2V</b> — ре-стайл реального фрагмента (Runway/Kling).
+                  Ключи — в <b style={{ color: 'var(--text-secondary)' }}>Enterprise → Генерация</b>.
+                </p>
+
+                {!sourceUrl ? (
+                  <button onClick={() => { setCloudPanel(null); openSourcePicker(); }}
+                    className="w-full py-3 rounded-xl text-sm font-600 inline-flex items-center justify-center gap-2"
+                    style={{ background: 'var(--bg-tertiary)', color: '#ff7300', border: '1px dashed #ff7300', cursor: 'pointer' }}>
+                    <Video size={16} /> Сначала выберите исходное видео →
+                  </button>
+                ) : (
+                  <>
+                    {/* Превью исходника */}
+                    <video src={sourceUrl} controls preload="metadata"
+                      onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
+                      style={{ width: '100%', maxHeight: 190, borderRadius: 10, background: '#000' }} />
+
+                    {/* Режим выбора */}
+                    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                      {([['whole', 'Всё видео'], ['part', 'Часть'], ['inserts', '2–3 вставки']] as [OmniMode, string][]).map(([m, lbl]) => (
+                        <button key={m} onClick={() => setOmniMode(m)}
+                          className="py-2 rounded-lg text-[12px] font-600 transition-all"
+                          style={{ background: omniSpec.mode === m ? 'var(--bg-secondary)' : 'transparent', color: omniSpec.mode === m ? '#ff7300' : 'var(--text-muted)', boxShadow: omniSpec.mode === m ? '0 1px 3px rgba(0,0,0,0.12)' : 'none' }}>
+                          {lbl}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Лента-таймлайн: визуализация выбранных кусков */}
+                    <div>
+                      <div className="relative w-full" style={{ height: 38, borderRadius: 8, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
+                        {/* засечки */}
+                        {[0.25, 0.5, 0.75].map((t) => (
+                          <div key={t} style={{ position: 'absolute', left: `${t * 100}%`, top: 0, bottom: 0, width: 1, background: 'var(--border-medium)' }} />
+                        ))}
+                        {omniSpec.segments.map((g, i) => (
+                          <div key={g.id} title={g.engine === 'omni' ? 'Omni-генерация' : 'V2V ре-стайл'}
+                            style={{ position: 'absolute', top: 3, bottom: 3, left: `${g.start * 100}%`, width: `${Math.max(0.02, g.end - g.start) * 100}%`,
+                              background: g.engine === 'omni' ? 'rgba(66,133,244,0.85)' : 'rgba(168,85,247,0.85)', borderRadius: 5,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, overflow: 'hidden' }}>
+                            {i + 1}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                        <span>0с</span><span>{srcDuration > 0 ? `${srcDuration.toFixed(0)}с` : 'длительность'}</span>
+                      </div>
+                    </div>
+
+                    {/* Карточки кусков */}
+                    <div className="space-y-2.5">
+                      {omniSpec.segments.map((g, i) => (
+                        <div key={g.id} className="rounded-xl p-3 space-y-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[12px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                              <span style={{ width: 16, height: 16, borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', background: g.engine === 'omni' ? '#4285F4' : '#a855f7' }}>{i + 1}</span>
+                              {omniSpec.mode === 'inserts' ? `Вставка ${i + 1}` : omniSpec.mode === 'whole' ? 'Всё видео' : 'Фрагмент'}
+                            </span>
+                            {omniSpec.mode === 'inserts' && omniSpec.segments.length > 1 && (
+                              <button onClick={() => removeSeg(g.id)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><Trash2 size={13} /></button>
+                            )}
+                          </div>
+
+                          {/* Движок: Omni / V2V */}
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {([['omni', 'Сгенерировать', '#4285F4', <Sparkles size={13} key="s" />], ['v2v', 'Ре-стайл (V2V)', '#a855f7', <Scissors size={13} key="c" />]] as [OmniEngine, string, string, React.ReactNode][]).map(([eng, lbl, col, ic]) => (
+                              <button key={eng} onClick={() => updateSeg(g.id, { engine: eng })}
+                                className="py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 transition-all"
+                                style={{ background: g.engine === eng ? col : 'var(--bg-secondary)', color: g.engine === eng ? '#fff' : 'var(--text-muted)', border: `1px solid ${g.engine === eng ? col : 'var(--border-medium)'}` }}>
+                                {ic} {lbl}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Промт «как» */}
+                          <textarea value={g.prompt} onChange={(e) => updateSeg(g.id, { prompt: e.target.value })}
+                            placeholder={g.engine === 'omni' ? 'Как сгенерировать: «киношный закат над городом, медленный пролёт…»' : 'Как переделать фрагмент: «в стиле аниме», «зимняя ночь», «акварель…»'}
+                            rows={2}
+                            className="w-full px-2.5 py-2 rounded-lg text-[12px] focus:outline-none resize-none"
+                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+
+                          {/* Параметры движка */}
+                          {g.engine === 'omni' ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина</span>
+                              {([4, 6, 8] as const).map((sec) => (
+                                <button key={sec} onClick={() => updateSeg(g.id, { lenSec: sec })}
+                                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-700"
+                                  style={{ background: g.lenSec === sec ? 'var(--btn-primary-bg)' : 'var(--bg-secondary)', color: g.lenSec === sec ? '#ff7300' : 'var(--text-muted)', border: `1px solid ${g.lenSec === sec ? '#ff7300' : 'var(--border-medium)'}` }}>
+                                  {sec}с
+                                </button>
+                              ))}
+                              <button onClick={() => updateSeg(g.id, { seedFrame: !g.seedFrame })}
+                                className="px-2.5 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center gap-1.5"
+                                style={{ background: g.seedFrame ? 'rgba(66,133,244,0.14)' : 'var(--bg-secondary)', color: g.seedFrame ? '#4285F4' : 'var(--text-muted)', border: `1px solid ${g.seedFrame ? '#4285F4' : 'var(--border-medium)'}` }}>
+                                {g.seedFrame ? <Check size={12} /> : <Plus size={12} />} кадр отсюда как старт
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Провайдер</span>
+                              {(['runway', 'fal'] as V2VProvider[]).map((p) => (
+                                <button key={p} onClick={() => updateSeg(g.id, { provider: p })}
+                                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center gap-1.5"
+                                  style={{ background: g.provider === p ? 'rgba(168,85,247,0.16)' : 'var(--bg-secondary)', color: g.provider === p ? '#a855f7' : 'var(--text-muted)', border: `1px solid ${g.provider === p ? '#a855f7' : 'var(--border-medium)'}` }}>
+                                  <Film size={12} /> {V2V_LABEL[p]}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Диапазон по ленте (для part/inserts) */}
+                          {omniSpec.mode !== 'whole' && (
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                                <span>Начало: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}</b></span>
+                                <span>Конец: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.end)}</b></span>
+                              </div>
+                              <input type="range" min={0} max={1} step={0.01} value={g.start}
+                                onChange={(e) => { const v = Math.min(parseFloat(e.target.value), g.end - 0.02); updateSeg(g.id, { start: Math.max(0, v) }); }}
+                                className="w-full" style={{ accentColor: g.engine === 'omni' ? '#4285F4' : '#a855f7' }} />
+                              <input type="range" min={0} max={1} step={0.01} value={g.end}
+                                onChange={(e) => { const v = Math.max(parseFloat(e.target.value), g.start + 0.02); updateSeg(g.id, { end: Math.min(1, v) }); }}
+                                className="w-full" style={{ accentColor: g.engine === 'omni' ? '#4285F4' : '#a855f7' }} />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {omniSpec.mode === 'inserts' && omniSpec.segments.length < 3 && (
+                        <button onClick={addInsert}
+                          className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                          <Plus size={14} /> Добавить вставку ({omniSpec.segments.length}/3)
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Сводка + стоимость */}
+                    <div className="rounded-xl p-3 text-[11px] space-y-1" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+                      {omniGenSeconds > 0 && (
+                        <div>Omni-генерация: <b style={{ color: 'var(--text-secondary)' }}>{omniGenSeconds}с</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)}–${(omniGenSeconds * 0.40).toFixed(2)} <span style={{ opacity: 0.7 }}>(Veo Fast…Standard, 720p/1080p)</span></div>
+                      )}
+                      {omniSpec.segments.some((g) => g.engine === 'v2v') && (
+                        <div>V2V ре-стайл: по тарифу провайдера (Runway/Kling).</div>
+                      )}
+                      <div style={{ opacity: 0.8 }}>Спецификация сохраняется в сценарий. Реальная генерация (вызов Veo/Runway и склейка в монтаж) — следующий деплой; нужны ключи в Enterprise → Генерация.</div>
+                    </div>
+
+                    <button onClick={() => { save(); setCloudPanel(null); }}
+                      className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
+                      style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', cursor: 'pointer' }}>
+                      <Save size={15} /> Сохранить преобразование
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
