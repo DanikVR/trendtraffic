@@ -1,7 +1,7 @@
 /**
  * PublisherPage — публикатор (TrendTraffic).
  *
- * Заглушка под следующий этап: публикация готовых видео в соцсети через Ayrshare
+ * Заглушка под следующий этап: публикация готовых видео в соцсети
  * (профили бренда, контент-план/календарь, отложенный постинг). Пока — описание
  * предстоящего функционала, чтобы пункт меню жил и был понятен.
  */
@@ -11,10 +11,10 @@ import { Send, Calendar, Share2, Clock, CheckCircle2 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 
 const STEPS = [
-  { icon: <Share2 size={16} />, title: 'Профили соцсетей', body: 'Подключение профилей бренда через Ayrshare (TikTok, Instagram, YouTube, Facebook, X и др.).' },
+  { icon: <Share2 size={16} />, title: 'Профили соцсетей', body: 'Подключение профилей бренда (TikTok, Instagram, YouTube, Facebook, X и др.).' },
   { icon: <Calendar size={16} />, title: 'Контент-план', body: 'Календарь-сетка: перетаскивание роликов на дату и время публикации.' },
   { icon: <Clock size={16} />, title: 'Отложенный постинг', body: 'Авто-публикация по расписанию + «лучшее время для поста».' },
-  { icon: <CheckCircle2 size={16} />, title: 'Статусы и аналитика', body: 'Отслеживание статусов публикаций и охватов через вебхуки Ayrshare.' },
+  { icon: <CheckCircle2 size={16} />, title: 'Статусы и аналитика', body: 'Отслеживание статусов публикаций и охватов в реальном времени.' },
 ];
 
 export default function PublisherPage() {
@@ -27,7 +27,7 @@ export default function PublisherPage() {
         </div>
         <div>
           <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Публикатор</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Публикация готовых видео в соцсети через Ayrshare.</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Публикация готовых видео в соцсети.</p>
         </div>
       </div>
 
@@ -38,8 +38,8 @@ export default function PublisherPage() {
         </div>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Здесь появится публикация роликов из <b>Галереи</b> в соцсети: подключение профилей, контент-план
-          в виде календаря и отложенный постинг. Тариф Ayrshare <b>Launch</b> покрывает до 10 профилей бренда;
-          Enterprise-тенанты смогут подключить свой ключ Ayrshare.
+          в виде календаря и отложенный постинг. Базовый тариф покрывает до <b>10 профилей</b> бренда;
+          Enterprise-тенанты смогут подключить собственные интеграции.
         </p>
       </AuroraCard>
 

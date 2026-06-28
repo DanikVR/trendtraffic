@@ -455,7 +455,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <Video size={28} color={sourceUrl ? '#ff7300' : undefined} className={building ? 'animate-pulse' : undefined} />
             </div>
           </div>
-          <div className="text-[11px] mt-2" style={{ color: building ? '#ff7300' : sourceUrl ? '#ff7300' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div className="text-[11px] mt-2" style={{ color: building ? '#ff7300' : sourceUrl ? '#ff7300' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
             {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
           </div>
         </button>
@@ -473,9 +473,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             <span style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? '#ff7300' : 'var(--border-strong)'}`,
               color: selectedId === n.id ? '#ff7300' : 'var(--text-secondary)' }}>{META[n.kind].icon}</span>
-            <span className="text-[11px]" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{META[n.kind].label}</span>
+            <span className="text-[11px]" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{META[n.kind].label}</span>
             {nodeSummary(n) && (
-              <span style={{ fontSize: 9, lineHeight: 1.15, color: '#ff7300', maxWidth: 92, textAlign: 'center', whiteSpace: 'normal', fontWeight: 600 }}>{nodeSummary(n)}</span>
+              <span style={{ fontSize: 9, lineHeight: 1.15, color: '#ff7300', maxWidth: 96, textAlign: 'center', whiteSpace: 'normal', fontWeight: 600, background: 'var(--bg-primary)', padding: '1px 5px', borderRadius: 5 }}>{nodeSummary(n)}</span>
             )}
             {(n.mediaUrl || n.useLlm) && (
               <span style={{ position: 'absolute', top: -2, right: 4, display: 'inline-flex', gap: 2 }}>
@@ -524,7 +524,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   border: `2px solid ${pending?.from === id ? '#ff7300' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
                 {cfg.icon}
               </button>
-              <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{cfg.label}</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{cfg.label}</span>
               <button onPointerDown={(e) => startConnect(id, e)} title="Потяните, чтобы провести стрелку"
                 style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: pending?.from === id ? '#ff7300' : 'var(--bg-secondary)', border: '1px solid #ff7300', color: pending?.from === id ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, touchAction: 'none' }}>
                 <Link2 size={11} />

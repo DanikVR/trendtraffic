@@ -148,146 +148,196 @@ export default function TrendsPage() {
     setBulkDownloading(false);
   };
 
+  const selectedCount = videos.filter((v) => v.id && selected.has(v.id) && !v.fileUrl).length;
+
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
+    <div className="max-w-6xl mx-auto py-5 sm:py-6 px-3 sm:px-4 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
              style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>
           <TrendingUp size={20} color="#fff" />
         </div>
-        <div>
-          <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Сканирование TikTok-трендов: поиск по ключевику или горячая выдача, затем скачивание исходников.</p>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
+          <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>Найдите горячие видео и скачайте исходники для монтажа.</p>
         </div>
       </div>
 
       {/* Search card */}
-      <AuroraCard className="p-5 space-y-4">
-        <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
+      <AuroraCard className="p-4 sm:p-5 space-y-4">
+        {/* Сегмент-контрол: что ищем */}
+        <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl"
+             style={{ background: 'var(--bg-tertiary)' }}>
           {(['keyword', 'trending'] as Kind[]).map((k) => (
             <button key={k} onClick={() => setKind(k)}
-              className="px-3 py-1.5 rounded-lg text-sm font-600 transition-colors"
-              style={{ background: kind === k ? 'var(--btn-primary-bg)' : 'transparent', color: kind === k ? '#ff7300' : 'var(--text-muted)' }}>
-              {k === 'keyword' ? 'По ключевику' : 'Тренды'}
+              className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+              style={{
+                background: kind === k ? 'var(--bg-secondary)' : 'transparent',
+                color: kind === k ? '#ff7300' : 'var(--text-muted)',
+                boxShadow: kind === k ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+              }}>
+              {k === 'keyword' ? '🔍 По ключевику' : '🔥 Горячее'}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Главная строка: поиск + кнопка */}
+        <div className="flex flex-col sm:flex-row gap-2.5">
           {kind === 'keyword' && (
             <div className="flex-1 relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleScan(); }}
-                placeholder="например: morning routine, gym, recipe..."
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                placeholder="например: morning routine, рецепт, gym…"
+                className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40 transition-shadow"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
               />
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Кол-во</span>
-            {[1, 5, 10].map((n) => (
-              <button key={n} type="button" onClick={() => setCount(n)}
-                className="w-9 h-9 rounded-lg text-sm font-700 transition-colors"
-                style={{
-                  background: count === n ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)',
-                  color: count === n ? '#ff7300' : 'var(--text-muted)',
-                  border: `1px solid ${count === n ? '#ff7300' : 'var(--border-medium)'}`,
-                }}>
-                {n}
-              </button>
-            ))}
-            <input type="number" min={1} max={30} value={count}
-              onChange={(e) => setCount(Math.min(30, Math.max(1, parseInt(e.target.value, 10) || 1)))}
-              title="Своё количество (1–30)"
-              className="w-16 px-2 py-2 rounded-lg text-sm text-center focus:outline-none"
-              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-          </div>
-          <AuroraButton onClick={handleScan} disabled={scanning} icon={scanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
-            {scanning ? 'Сканирую...' : 'Сканировать'}
+          <AuroraButton onClick={handleScan} disabled={scanning} fullWidth
+            className="sm:!w-auto"
+            icon={scanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
+            {scanning ? 'Сканирую…' : 'Сканировать'}
           </AuroraButton>
         </div>
 
-        {/* Параметры поиска (для режима «По ключевику») */}
-        {kind === 'keyword' && (
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        {/* Параметры: количество + (для ключевика) тип / сортировка / период */}
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-3">
+          {/* Количество */}
+          <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            Сколько видео
+            <div className="flex items-center gap-1.5">
+              {[10, 20, 30].map((n) => (
+                <button key={n} type="button" onClick={() => setCount(n)}
+                  className="w-10 h-10 rounded-lg text-sm font-700 transition-colors"
+                  style={{
+                    background: count === n ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)',
+                    color: count === n ? '#ff7300' : 'var(--text-muted)',
+                    border: `1px solid ${count === n ? '#ff7300' : 'var(--border-medium)'}`,
+                  }}>
+                  {n}
+                </button>
+              ))}
+              <input type="number" min={1} max={30} value={count}
+                onChange={(e) => setCount(Math.min(30, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+                title="Своё количество (1–30)"
+                className="w-14 h-10 px-2 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+            </div>
+          </label>
+
+          {kind === 'keyword' && (
+            <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[150px]" style={{ color: 'var(--text-muted)' }}>
               Тип поиска
               <select value={mode} onChange={(e) => setMode(e.target.value as any)}
-                className="px-3 py-2 rounded-xl text-sm focus:outline-none"
+                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
                 <option value="app">Умный поиск</option>
                 <option value="video">Поиск по слову</option>
                 <option value="general">Около-тематика</option>
               </select>
             </label>
-            {mode === 'app' && (
-              <>
-                <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  Сортировка
-                  <select value={sortType} onChange={(e) => setSortType(Number(e.target.value) as any)}
-                    className="px-3 py-2 rounded-xl text-sm focus:outline-none"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                    <option value={0}>По релевантности</option>
-                    <option value={1}>Больше лайков</option>
-                    <option value={2}>Новее</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  Период
-                  <select value={publishTime} onChange={(e) => setPublishTime(Number(e.target.value) as any)}
-                    className="px-3 py-2 rounded-xl text-sm focus:outline-none"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                    <option value={0}>Всё время</option>
-                    <option value={1}>24 часа</option>
-                    <option value={7}>Неделя</option>
-                    <option value={30}>Месяц</option>
-                    <option value={90}>3 месяца</option>
-                    <option value={180}>6 месяцев</option>
-                  </select>
-                </label>
-              </>
-            )}
-            <p className="text-[11px] flex-1 min-w-[180px]" style={{ color: 'var(--text-muted)' }}>
-              <b>Умный поиск</b> — по теме, устойчив к опечаткам (напр. «wordpres» → WordPress), с периодом и прямыми ссылками для скачивания (рекомендуется). «Новее»/«Больше лайков» сортируют найденное. <b>Поиск по слову</b> / <b>Около-тематика</b> — Web API без фильтров (бывает нестабилен).
+          )}
+          {kind === 'keyword' && mode === 'app' && (
+            <>
+              <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[140px]" style={{ color: 'var(--text-muted)' }}>
+                Сортировка
+                <select value={sortType} onChange={(e) => setSortType(Number(e.target.value) as any)}
+                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                  <option value={0}>По релевантности</option>
+                  <option value={1}>Больше лайков</option>
+                  <option value={2}>Новее</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[130px]" style={{ color: 'var(--text-muted)' }}>
+                Период
+                <select value={publishTime} onChange={(e) => setPublishTime(Number(e.target.value) as any)}
+                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                  <option value={0}>Всё время</option>
+                  <option value={1}>24 часа</option>
+                  <option value={7}>Неделя</option>
+                  <option value={30}>Месяц</option>
+                  <option value={90}>3 месяца</option>
+                  <option value={180}>6 месяцев</option>
+                </select>
+              </label>
+            </>
+          )}
+        </div>
+
+        {/* Сворачиваемая подсказка по типам поиска */}
+        {kind === 'keyword' && (
+          <details className="group/help text-[12px]">
+            <summary className="inline-flex items-center gap-1.5 cursor-pointer select-none font-600 list-none"
+                     style={{ color: 'var(--text-muted)' }}>
+              <AlertCircle size={13} /> Чем отличаются типы поиска?
+            </summary>
+            <p className="mt-2 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              <b style={{ color: 'var(--text-secondary)' }}>Умный поиск</b> — по теме, устойчив к опечаткам
+              («wordpres» → WordPress), с фильтрами «Период»/«Сортировка» и прямыми ссылками для скачивания
+              <i> (рекомендуется)</i>. <b style={{ color: 'var(--text-secondary)' }}>Поиск по слову</b> и{' '}
+              <b style={{ color: 'var(--text-secondary)' }}>Около-тематика</b> — Web-выдача без фильтров,
+              шире охват, но иногда нестабильна.
             </p>
-          </div>
+          </details>
         )}
 
-        {notice && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notice}</p>}
+        {notice && (
+          <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+            <CheckCircle2 size={16} className="mt-[2px] flex-shrink-0" style={{ color: '#10b981' }} /><span>{notice}</span>
+          </div>
+        )}
         {error && (
-          <div className="flex items-start gap-2 text-sm" style={{ color: '#ef4444' }}><XCircle size={16} className="mt-[2px]" /><span>{error}</span></div>
+          <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
+            <XCircle size={16} className="mt-[2px] flex-shrink-0" /><span>{error}</span>
+          </div>
         )}
       </AuroraCard>
 
-      {/* Results grid */}
+      {/* Results */}
       {videos.length === 0 ? (
-        <AuroraCard className="p-10 text-center">
-          <TrendingUp size={28} className="inline-block mb-2" style={{ color: 'var(--text-muted)' }} />
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Пока пусто. Введите ключевик и нажмите «Сканировать».</p>
+        <AuroraCard className="p-10 sm:p-14 text-center">
+          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center"
+               style={{ background: 'var(--bg-tertiary)' }}>
+            <TrendingUp size={26} style={{ color: 'var(--text-muted)' }} />
+          </div>
+          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Пока пусто</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            Введите ключевик (или выберите «Горячее») и нажмите «Сканировать».
+          </p>
         </AuroraCard>
       ) : (
         <>
-          {/* Тулбар: выбрать всё + скачать выбранные одной кнопкой */}
+          {/* Тулбар: счётчик + выбрать всё + скачать выбранные */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <button type="button" onClick={toggleSelectAll}
-              className="inline-flex items-center gap-2 text-sm font-600 px-3 py-2 rounded-xl transition-colors"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-              {allSelected ? <CheckSquare size={16} color="#ff7300" /> : <Square size={16} />}
-              {allSelected ? 'Снять выделение' : 'Выбрать всё'} ({selected.size})
-            </button>
-            <AuroraButton onClick={downloadSelected} disabled={bulkDownloading || selected.size === 0}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+                Найдено: {videos.length}
+              </span>
+              <button type="button" onClick={toggleSelectAll}
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                {allSelected ? <CheckSquare size={15} color="#ff7300" /> : <Square size={15} />}
+                {allSelected ? 'Снять выделение' : 'Выбрать всё'}{selected.size > 0 ? ` · ${selected.size}` : ''}
+              </button>
+            </div>
+            <AuroraButton onClick={downloadSelected} disabled={bulkDownloading || selectedCount === 0}
               icon={bulkDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}>
-              {bulkDownloading ? 'Скачиваю выбранные…' : `Скачать выбранные (${selected.size})`}
+              {bulkDownloading ? 'Скачиваю…' : `Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
             </AuroraButton>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {videos.map((v) => (
-            <AuroraCard key={v.id || v.externalId} className="group p-0 overflow-hidden flex flex-col transition-transform duration-150 hover:-translate-y-0.5">
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {videos.map((v) => {
+            const isSel = !!(v.id && selected.has(v.id));
+            return (
+            <AuroraCard key={v.id || v.externalId}
+              className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[#ff7300] ring-inset' : ''}`}>
               {/* Cover */}
               <div className="relative aspect-[9/16] w-full" style={{ background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? (
@@ -297,29 +347,39 @@ export default function TrendsPage() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center"><Play size={28} style={{ color: 'var(--text-muted)' }} /></div>
                 )}
+                {/* нижний скрим — для читаемости просмотров/длительности на ярких обложках */}
+                <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
+                     style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
                 {/* play-оверлей при наведении */}
                 {v.webUrl && (
                   <a href={v.webUrl} target="_blank" rel="noreferrer"
                     className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ background: 'rgba(0,0,0,0.28)' }} title="Открыть в TikTok">
-                    <Play size={30} color="#fff" fill="#fff" />
+                    <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}>
+                      <Play size={24} color="#fff" fill="#fff" />
+                    </span>
                   </a>
                 )}
+                {/* просмотры — главный «трендовый» метрик, слева снизу */}
+                <span className="absolute bottom-2 left-2 text-[11px] px-1.5 py-0.5 rounded-md font-700 inline-flex items-center gap-1 z-10"
+                  style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
+                  <Eye size={12} /> {fmt(v.stats.play)}
+                </span>
                 {dur(v.durationSec) && (
-                  <span className="absolute bottom-1.5 right-1.5 text-[11px] px-1.5 py-0.5 rounded font-600"
-                    style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>{dur(v.durationSec)}</span>
+                  <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10"
+                    style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>
                 )}
                 {/* чекбокс выбора (для пакетной загрузки) */}
                 {v.id && (
                   <button type="button" onClick={() => toggleSelect(v.id)} title="Выбрать"
-                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20 transition-colors"
-                    style={{ background: selected.has(v.id) ? '#ff7300' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.6)' }}>
-                    {selected.has(v.id) ? <Check size={14} /> : null}
+                    className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
+                    style={{ background: isSel ? '#ff7300' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                    {isSel ? <Check size={15} /> : null}
                   </button>
                 )}
                 {v.status === 'downloaded' && (
-                  <span className="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-700 inline-flex items-center gap-1 z-20"
-                    style={{ background: 'rgba(16,185,129,0.9)', color: '#fff' }}><CheckCircle2 size={11} /> скачано</span>
+                  <span className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded font-700 inline-flex items-center gap-1 z-20"
+                    style={{ background: 'rgba(16,185,129,0.92)', color: '#fff' }}><CheckCircle2 size={11} /> скачано</span>
                 )}
               </div>
               {/* Body */}
@@ -330,13 +390,12 @@ export default function TrendsPage() {
                 {v.description && (
                   <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>
                 )}
-                <div className="flex items-center gap-2 text-[11px] flex-wrap" style={{ color: 'var(--text-muted)' }}>
-                  <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>
+                <div className="flex items-center gap-2.5 text-[11px] flex-wrap mt-auto" style={{ color: 'var(--text-muted)' }}>
                   <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
                   <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>
                   <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-auto pt-1">
+                <div className="flex items-center gap-1.5 pt-1">
                   {v.webUrl && (
                     <a href={v.webUrl} target="_blank" rel="noreferrer"
                       className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
@@ -368,7 +427,8 @@ export default function TrendsPage() {
                 </div>
               </div>
             </AuroraCard>
-          ))}
+            );
+          })}
           </div>
         </>
       )}
