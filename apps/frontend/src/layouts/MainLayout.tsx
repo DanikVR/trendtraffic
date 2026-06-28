@@ -22,7 +22,6 @@ import {
   TrendingUp,
   Image,
   Send,
-  Boxes,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -79,8 +78,11 @@ export function MainLayout() {
   const desktopNav = [
     ...(FEATURES.video ? [{ path: '/',    icon: Languages, label: t('nav.rooms'), exact: true  }] : []),
     ...(FEATURES.sip   ? [{ path: '/sip', icon: Phone,     label: t('nav.sip'),   exact: false }] : []),
-    ...(FEATURES.trends ? [{ path: '/trends', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }] : []),
-    ...((FEATURES.socialMediaExt && isEnterprise) ? [{ path: '/social-extension', icon: Boxes, label: t('nav.socialExt', 'Social Media Extension'), exact: false }] : []),
+    // «Тренды»: Enterprise → расширение (/social-extension, поиск+аналитика),
+    // остальные тарифы → прежняя страница /trends. Один пункт, маршрут по тарифу.
+    ...((FEATURES.socialMediaExt && isEnterprise)
+      ? [{ path: '/social-extension', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }]
+      : (FEATURES.trends ? [{ path: '/trends', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }] : [])),
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: Image, label: t('nav.gallery', 'Галерея'), exact: false }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: Send, label: t('nav.publisher', 'Публикатор'), exact: false }] : []),
     ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'TrendFlow',  exact: false }] : []),

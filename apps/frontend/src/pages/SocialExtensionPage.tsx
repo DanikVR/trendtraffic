@@ -1,27 +1,31 @@
 /**
- * SocialExtensionPage — вкладка «Social Media Extension».
+ * SocialExtensionPage — вкладка «Тренды» (рехостинг TikHub-расширения).
  *
- * Две секции (как на «Тренды»):
- *   1) «Поиск горячих видео» — переиспользуемый TrendSearch (тот же, что на «Тренды»).
+ * Две секции:
+ *   1) «Поиск горячих видео» — переиспользуемый TrendSearch.
  *   2) «Аналитика» — рехостнутое TikHub-расширение один-в-один в iframe (/social-ext).
+ *      Пока ссылка не выбрана — вместо экрана расширения «Open a supported platform»
+ *      показываем плитку недавних видео (клик → анализ).
  *
  * Поток: нашёл тренды → «Аналитика» на карточке (или «Анализировать выбранные»
- * массово) → переключаемся во вкладку «Аналитика» и скармливаем ссылку расширению
- * через postMessage (polyfill эмулирует переход таба). Массовый разбор — список
- * чипов над расширением, клик по чипу анализирует следующую ссылку.
- *
- * Доступ — только Enterprise (роут гейтится в router.tsx, прокси — на бэке).
- * AI-функции расширения (промпт из обложки, разборы) идут через наш ai-прокси на
- * ключе из настроек Enterprise (см. chrome-polyfill.js + backend social-ext).
+ * массово → чипы) → ссылка уходит расширению через postMessage (polyfill эмулирует
+ * переход таба). Доступ — только Enterprise (роут — router.tsx, прокси — на бэке).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Boxes, Search, X, ImagePlus, Loader2 } from 'lucide-react';
+import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
-import TrendSearch from '../components/TrendSearch';
+import TrendSearch, { type StoredVideo } from '../components/TrendSearch';
 
 type Tab = 'search' | 'analytics';
+
+function fmt(n?: number): string {
+  if (n == null) return '';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
 
 export default function SocialExtensionPage() {
   const { token } = useAppStore();
@@ -31,10 +35,21 @@ export default function SocialExtensionPage() {
   const [queue, setQueue] = useState<{ url: string; cover?: string }[]>([]);
   const appliedRef = useRef<string>('');
   const [appliedUrl, setAppliedUrl] = useState('');
+  const [recent, setRecent] = useState<StoredVideo[]>([]);
 
   // «Добавить в галерею» — текущее анализируемое видео в Галерею (media_assets).
   const [adding, setAdding] = useState(false);
   const [galleryNote, setGalleryNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Недавние видео для плитки пустого состояния аналитики.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/trends/videos?limit=60', { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+        if (res.ok) { const d = await res.json(); setRecent(((d.videos || []) as StoredVideo[]).filter((v) => v.webUrl)); }
+      } catch { /* тихо */ }
+    })();
+  }, [token]);
 
   const postToIframe = useCallback((type: string, value?: string) => {
     const win = iframeRef.current?.contentWindow;
@@ -68,32 +83,22 @@ export default function SocialExtensionPage() {
     postToIframe('social-ext:set-url', value);
   }, [postToIframe]);
 
-  // Анализ одной ссылки → переключиться в «Аналитику» и скормить расширению.
   const analyzeOne = useCallback((webUrl: string) => {
-    setQueue([]);
-    setUrl(webUrl);
-    setTab('analytics');
-    apply(webUrl);
+    setQueue([]); setUrl(webUrl); setTab('analytics'); apply(webUrl);
   }, [apply]);
 
-  // Массовый анализ → чипы + первая ссылка сразу в работу.
   const analyzeBulk = useCallback((items: { url: string; cover?: string }[]) => {
     if (!items.length) return;
-    setQueue(items);
-    setUrl(items[0].url);
-    setTab('analytics');
-    apply(items[0].url);
+    setQueue(items); setUrl(items[0].url); setTab('analytics'); apply(items[0].url);
   }, [apply]);
 
   const handleAnalyzeInput = useCallback(() => {
-    const v = url.trim();
-    if (!v) return;
-    setQueue([]);
-    apply(v);
+    const v = url.trim(); if (!v) return;
+    setQueue([]); apply(v);
   }, [url, apply]);
 
   const handleClear = useCallback(() => {
-    setUrl(''); setQueue([]); appliedRef.current = '';
+    setUrl(''); setQueue([]); appliedRef.current = ''; setAppliedUrl('');
     postToIframe('social-ext:clear-url');
   }, [postToIframe]);
 
@@ -113,22 +118,6 @@ export default function SocialExtensionPage() {
 
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
-      {/* Шапка */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-          <Boxes size={20} color="#fff" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>
-            Social Media Extension
-          </h1>
-          <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-            Поиск горячих видео + TikHub-аналитика TikTok / Douyin / Instagram / X по любой публичной ссылке.
-          </p>
-        </div>
-      </div>
-
       {/* Переключатель секций */}
       <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
         {([['search', '🔥 Поиск горячих видео'], ['analytics', '📊 Аналитика']] as [Tab, string][]).map(([v, lbl]) => (
@@ -201,17 +190,52 @@ export default function SocialExtensionPage() {
             </div>
           )}
 
-          {/* Само расширение — из собственной сборки в iframe */}
-          <div className="flex-1 min-h-0 rounded-2xl overflow-hidden"
+          {/* Расширение в iframe; пока ссылка не выбрана — плитка недавних видео поверх */}
+          <div className="flex-1 min-h-0 rounded-2xl overflow-hidden relative"
                style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)' }}>
             <iframe
               ref={iframeRef}
               src="/social-ext/sidepanel.html"
-              title="Social Media Extension"
+              title="Тренды — аналитика"
               className="w-full h-full block"
               style={{ border: 0 }}
-              allow="clipboard-read; clipboard-write; downloads"
+              allow="clipboard-read; clipboard-write"
             />
+            {!appliedUrl && (
+              <div className="absolute inset-0 overflow-y-auto p-3" style={{ background: 'var(--bg-secondary)' }}>
+                {recent.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center gap-1 px-6">
+                    <Play size={26} style={{ color: 'var(--text-muted)' }} />
+                    <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Вставьте ссылку выше</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>или найдите видео во вкладке «Поиск горячих видео» — оно появится здесь.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Видео из поиска — нажмите, чтобы проанализировать:</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                      {recent.map((v) => (
+                        <button key={v.id || v.externalId} type="button" onClick={() => analyzeOne(v.webUrl!)}
+                          title={v.description || v.author}
+                          className="relative rounded-lg overflow-hidden group transition-transform hover:-translate-y-0.5"
+                          style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                          {v.coverUrl ? (
+                            <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center"><Play size={18} style={{ color: 'var(--text-muted)' }} /></div>
+                          )}
+                          <span className="absolute inset-x-0 bottom-0 h-8 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+                          <span className="absolute bottom-1 left-1 text-[10px] font-700 inline-flex items-center gap-0.5" style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.7)' }}>
+                            <Eye size={10} /> {fmt(v.stats?.play)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

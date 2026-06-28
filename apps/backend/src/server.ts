@@ -136,6 +136,10 @@ app.use('/api/messenger', express.json({ limit: '30mb', verify: (req, _res, buf)
 // (Bearer MCP-ключ для протокола, JWT+Enterprise для управления ключами).
 app.use('/api/mcp', express.json({ limit: '30mb' }), mcpRouter);
 
+// 2.4 AI-прокси «Social Media Extension» — «Анализ видеоконтента» отправляет видео
+// inline base64 в Gemini, поэтому свой большой json-лимит ДО глобального (иначе 413).
+app.use('/api/social-ext/ai-proxy', express.json({ limit: '64mb' }), socialExtAiRouter);
+
 // 3. Подключение глобального парсера JSON-данных для остальных эндпоинтов
 app.use(express.json());
 
@@ -170,8 +174,8 @@ app.use('/api/trends', trendsRouter);
 app.use('/api/social-ext/proxy', socialExtProxyRouter);
 // Медиа-прокси расширения (скачивание видео/обложек с CDN с нужным Referer) — те же гейты
 app.use('/api/social-ext/media', socialExtMediaRouter);
-// AI-прокси расширения (промпт из обложки, разборы) на ключе из настроек Enterprise
-app.use('/api/social-ext/ai-proxy', socialExtAiRouter);
+// AI-прокси расширения смонтирован ВЫШЕ (до глобального json, с лимитом 64mb —
+// «Анализ видеоконтента» шлёт видео inline base64, иначе 413 Payload Too Large).
 // «Добавить в галерею» из расширения — разбор ссылки + скачивание + media_assets
 app.use('/api/social-ext/to-gallery', socialExtGalleryRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера

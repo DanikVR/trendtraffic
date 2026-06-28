@@ -516,9 +516,17 @@
  *         работают: засев ai.apiKeys.gemini/geminiVideoKey + ai-прокси с ключом
  *         Gemini из учётки Enterprise (фолбэк на платформенный). «Конфигурация ИИ»
  *         убрана, вместо неё «Добавить в галерею» (POST /api/social-ext/to-gallery).
+ * 1.5.5 — «Тренды» консолидированы: старый пункт меню «Тренды» убран, вкладка
+ *         расширения переименована в «Тренды» (иконка TrendingUp), маршрут по
+ *         тарифу (Enterprise → /social-extension, остальные → /trends). В самой
+ *         вкладке убрана внутренняя шапка. В «Аналитике» вместо экрана расширения
+ *         «Open a supported platform» — плитка недавних видео (клик → анализ).
+ *         Фикс «Анализ видеоконтента» 413 Payload Too Large: ai-прокси смонтирован
+ *         с json-лимитом 64mb (видео уходит inline base64 в Gemini). Убран
+ *         невалидный allow="downloads" у iframe (лишний warning в консоли).
  */
 
-export const APP_VERSION = '1.5.4';
+export const APP_VERSION = '1.5.5';
 
 export function AppVersion() {
   return (
