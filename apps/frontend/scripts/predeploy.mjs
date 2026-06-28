@@ -71,6 +71,22 @@ async function main() {
   console.log(`   • check-only:     ${CHECK_ONLY}`);
   console.log(`   • no-build:       ${NO_BUILD}`);
 
+  // ── Шаг 0: вкладка «Social Media Extension» — рехостнутая сборка должна быть в public/ ──
+  // Бандл расширения лежит в public/social-ext и копируется vite в dist. Если файлы
+  // не закоммичены (чистый clone на CI/VPS), вкладка молча отдаёт SPA вместо расширения.
+  // Падаем громко на деплое, а не тихо в проде.
+  {
+    const { existsSync } = await import('node:fs');
+    const required = ['sidepanel.html', 'chrome-polyfill.js', 'background.js',
+      'chunks/sidepanel-Cwb5u47-.js', 'assets/sidepanel-D7mOmkRS.css'];
+    const missing = required.filter((f) => !existsSync(path.join(ROOT, 'public/social-ext', f)));
+    if (missing.length) {
+      throw new Error(`Social Media Extension: в public/social-ext нет файлов: ${missing.join(', ')}. ` +
+        `Закоммитьте каталog apps/frontend/public/social-ext (см. scripts/rehost-social-ext.mjs).`);
+    }
+    console.log('✓ 0/7  social-ext bundle present');
+  }
+
   // ── Шаг 1: i18n coverage ──────────────────────────────────────────────────
   await runStep('1/7  i18n coverage check', 'node', ['scripts/check-i18n-coverage.mjs']);
 

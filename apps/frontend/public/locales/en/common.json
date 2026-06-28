@@ -4,6 +4,7 @@
   "nav": {
     "rooms": "Rooms",
     "sip": "SIP Telephony",
+    "socialExt": "Social Media Extension",
     "flow": "Flow Builder",
     "enterpriseSettings": "Enterprise Settings",
     "admin": "Admin Panel",
@@ -106,6 +107,10 @@
     "settings": {
       "label": "Settings",
       "sub": "Profile and security"
+    },
+    "socialExt": {
+      "label": "Social Media Extension",
+      "sub": "TikHub social analytics"
     },
     "enterprise": {
       "label": "Enterprise Settings",

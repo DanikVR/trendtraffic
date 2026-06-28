@@ -8,6 +8,7 @@
 import React from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
+import { useIsEnterprise } from './hooks/useIsEnterprise';
 import { FEATURES, HOME_ROUTE_WHEN_NO_VIDEO } from './config/features';
 import { MainLayout } from './layouts/MainLayout';
 import { MiniAppLayout } from './layouts/MiniAppLayout';
@@ -73,6 +74,8 @@ const FlowPage = lazyWithRetry(() => import('./pages/FlowPage'));
 const TrendsPage = lazyWithRetry(() => import('./pages/TrendsPage'));
 const GalleryPage = lazyWithRetry(() => import('./pages/GalleryPage'));
 const PublisherPage = lazyWithRetry(() => import('./pages/PublisherPage'));
+// TRENDTRAFFIC: вкладка «Social Media Extension» (рехостинг TikHub-расширения) — lazy.
+const SocialExtensionPage = lazyWithRetry(() => import('./pages/SocialExtensionPage'));
 
 // ============================================================================================
 // Мидлвари защиты роутов
@@ -96,6 +99,18 @@ function RequireAdmin() {
   const user = useAppStore((state) => state.user);
   if (!user || user.role !== 'superadmin') {
     return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
+}
+
+/**
+ * Защита Enterprise-фич: пускает superadmin или активный тариф Enterprise
+ * (правило-зеркало MainLayout.tsx). Иначе — на «Тренды».
+ */
+function RequireEnterprise() {
+  const isEnterprise = useIsEnterprise();
+  if (!isEnterprise) {
+    return <Navigate to="/trends" replace />;
   }
   return <Outlet />;
 }
@@ -234,6 +249,18 @@ export const router = createBrowserRouter([
                 <PublisherPage />
               </React.Suspense>
             ),
+          }] : []),
+          ...(FEATURES.socialMediaExt ? [{
+            // Только Enterprise (+superadmin). Гейт — RequireEnterprise.
+            element: <RequireEnterprise />,
+            children: [{
+              path: 'social-extension',
+              element: (
+                <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
+                  <SocialExtensionPage />
+                </React.Suspense>
+              ),
+            }],
           }] : []),
         ],
       },

@@ -1,0 +1,8 @@
+{
+   "extDescription": {
+      "message": "自分の API キーで使う TikHub クライアント。TikTok、Douyin、Instagram、X、Bilibili のコメント収集、プロフィール分析、レポート生成に対応します。"
+   },
+   "extName": {
+      "message": "TikHub - ソーシャルメディアツールキット"
+   }
+}

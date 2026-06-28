@@ -1,0 +1,8 @@
+{
+   "extDescription": {
+      "message": "사용자 API 키로 쓰는 TikHub 클라이언트입니다. TikTok, Douyin, Instagram, X, Bilibili에서 댓글 수집, 프로필 분석, 보고서 생성을 지원합니다."
+   },
+   "extName": {
+      "message": "TikHub - 소셜 미디어 툴킷"
+   }
+}

@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Image,
   Send,
+  Boxes,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -59,6 +60,7 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { MinutesDisplay } from '../components/MinutesDisplay';
 import { PWAInstallPrompt, usePWAInstall } from '../components/PWAInstallPrompt';
 import { useAppStore }   from '../store/useAppStore';
+import { useIsEnterprise } from '../hooks/useIsEnterprise';
 import { FEATURES }      from '../config/features';
 
 export function MainLayout() {
@@ -66,13 +68,19 @@ export function MainLayout() {
   const { user, translationBalance, subscriptionTier, subscriptionTierName, refreshBilling, setMoreSheetOpen } = useAppStore();
   // Конструктор цепочек (/flow) — на всю ширину (холст React Flow), без центрирующего max-w.
   const { pathname } = useLocation();
-  const fullBleed = pathname.startsWith('/flow');
+  // /flow (холст React Flow) и /social-extension (iframe расширения) — на всю ширину.
+  const iframeFull = pathname.startsWith('/social-extension');
+  const fullBleed = pathname.startsWith('/flow') || iframeFull;
+
+  // ENTERPRISE: видимость Enterprise-пунктов — единый источник истины (хук).
+  const isEnterprise = useIsEnterprise();
 
   // Фич-флаги: пункты навигации появляются только для включённых функций.
   const desktopNav = [
     ...(FEATURES.video ? [{ path: '/',    icon: Languages, label: t('nav.rooms'), exact: true  }] : []),
     ...(FEATURES.sip   ? [{ path: '/sip', icon: Phone,     label: t('nav.sip'),   exact: false }] : []),
     ...(FEATURES.trends ? [{ path: '/trends', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }] : []),
+    ...((FEATURES.socialMediaExt && isEnterprise) ? [{ path: '/social-extension', icon: Boxes, label: t('nav.socialExt', 'Social Media Extension'), exact: false }] : []),
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: Image, label: t('nav.gallery', 'Галерея'), exact: false }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: Send, label: t('nav.publisher', 'Публикатор'), exact: false }] : []),
     ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'TrendFlow',  exact: false }] : []),
@@ -81,12 +89,6 @@ export function MainLayout() {
   // При монтировании / смене токена — подтянуть баланс и тариф с бэка.
   React.useEffect(() => { refreshBilling(); }, [refreshBilling]);
 
-  // ENTERPRISE v0.10.4: видимость пункта «Настройки Enterprise».
-  // superadmin или активный тариф Enterprise. case-insensitive на всякий случай.
-  const isEnterprise =
-    user?.role === 'superadmin' ||
-    (subscriptionTierName || '').toLowerCase() === 'enterprise' ||
-    (subscriptionTier || '').toLowerCase() === 'enterprise';
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains('dark')
@@ -465,7 +467,9 @@ export function MainLayout() {
 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto hide-scrollbar-mobile" id="main-scroll">
-          <div className={fullBleed ? 'px-3 py-3 lg:px-4 lg:py-4 animate-fade-in' : 'max-w-2xl mx-auto px-4 py-5 lg:px-8 lg:py-8 lg:max-w-5xl animate-fade-in'}>
+          {/* iframeFull (/social-extension): даём обёртке полную высоту, чтобы iframe-страница
+              растянулась через flex/h-full без магического calc(100dvh - …). */}
+          <div className={(fullBleed ? 'px-3 py-3 lg:px-4 lg:py-4 animate-fade-in' : 'max-w-2xl mx-auto px-4 py-5 lg:px-8 lg:py-8 lg:max-w-5xl animate-fade-in') + (iframeFull ? ' h-full' : '')}>
             <Outlet />
           </div>
         </div>

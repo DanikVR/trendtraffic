@@ -29,6 +29,8 @@ export const FEATURES = {
   gallery: true,
   /** TrendTraffic: публикатор в соцсети /publisher. */
   publisher: true,
+  /** TrendTraffic: вкладка «Social Media Extension» (рехостинг TikHub-расширения). Только Enterprise. */
+  socialMediaExt: true,
 } as const;
 
 export type FeatureName = keyof typeof FEATURES;

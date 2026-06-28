@@ -492,9 +492,17 @@
  *         num_comments→комменты, author, selftext), глубина поиска 7→11. Reddit-
  *         карточки получают ссылку (webUrl из id) → появляется кнопка «Аналитика».
  *         Бэкенд логирует скелет ответа ([TREND_SHAPE]) для точечной донастройки.
+ * 1.5.2 — Новая вкладка «Social Media Extension» (только Enterprise/superadmin):
+ *         рехостинг открытого TikHub-расширения один-в-один внутри iframe — его
+ *         собственные sidepanel+background в /social-ext/, мост chrome-polyfill.js
+ *         (chrome.*→web + fetch на api.tikhub.io переписывается на наш прокси с JWT
+ *         приложения). Backend: /api/social-ext/proxy (TikHub API) + /api/social-ext/media
+ *         (скачивание с CDN), оба JWT+rate-limit+Enterprise, ключ TikHub подставляется
+ *         на сервере (в браузер не попадает). URL для анализа вводится в строке (в вебе
+ *         нет «активного таба»). Роут /social-extension, пункт меню после «Тренды».
  */
 
-export const APP_VERSION = '1.5.1';
+export const APP_VERSION = '1.5.2';
 
 export function AppVersion() {
   return (

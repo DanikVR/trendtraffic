@@ -28,5 +28,6 @@ export function useIsEnterprise(): boolean {
   const tier = useAppStore((s) => s.subscriptionTier);
   const tierName = useAppStore((s) => s.subscriptionTierName);
   if (role === 'superadmin') return true;
-  return tier === 'enterprise' || tierName === 'enterprise';
+  // case-insensitive: subscriptionTierName — raw имя из БД, регистр может «гулять».
+  return (tier || '').toLowerCase() === 'enterprise' || (tierName || '').toLowerCase() === 'enterprise';
 }

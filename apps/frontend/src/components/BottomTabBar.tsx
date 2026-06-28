@@ -27,6 +27,7 @@ import {
   TrendingUp,
   Image,
   Send,
+  Boxes,
 } from 'lucide-react';
 import { AvatarCircle } from './AvatarCircle';
 import { StatusPill } from './StatusPill';
@@ -48,19 +49,20 @@ export function BottomTabBar() {
   const { user, translationBalance, moreSheetOpen, setMoreSheetOpen } = useAppStore();
   const { showInstallDialog, isAvailable: pwaInstallAvailable } = usePWAInstall();
 
+  // ENTERPRISE: видимость Enterprise-пунктов. Каноничный хук — true для
+  // tier === 'enterprise' и для superadmin.
+  const isEnterprise = useIsEnterprise();
+
   // Локализованные пункты More-sheet — i18n заново резолвится при смене языка.
   const moreItems = [
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
     ...(FEATURES.flow ? [{ path: '/flow', icon: <Workflow size={20} strokeWidth={1.5} />, label: 'TrendFlow', sublabel: t('moreSheet.flow.sub', 'Сценарии бота для каналов'), accent: '#7c5cff' }] : []),
     ...(FEATURES.trends ? [{ path: '/trends', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Сканирование TikTok-трендов'), accent: '#f59e0b' }] : []),
+    ...((FEATURES.socialMediaExt && isEnterprise) ? [{ path: '/social-extension', icon: <Boxes size={20} strokeWidth={1.5} />, label: t('nav.socialExt', 'Social Media Extension'), sublabel: t('moreSheet.socialExt.sub', 'TikHub-аналитика соцсетей'), accent: '#8b5cf6' }] : []),
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Галерея'), sublabel: t('moreSheet.gallery.sub', 'Скачанные видео'), accent: '#10b981' }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('moreSheet.publisher.sub', 'Публикация в соцсети'), accent: '#7c5cff' }] : []),
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
-
-  // ENTERPRISE: видимость пункта «Настройки Enterprise» в More-sheet.
-  // Каноничный хук — true для tier === 'enterprise' и для superadmin.
-  const isEnterprise = useIsEnterprise();
 
   // FAB не показываем на странице чата — она имеет свою кнопку «Отправить»,
   // и плавающая FAB перекрывает её.
