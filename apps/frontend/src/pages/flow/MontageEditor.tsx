@@ -410,6 +410,12 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
           </div>
         </button>
+        {/* 🔗 связать стрелкой ОТ «Видео из галереи» */}
+        <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setConnectFrom(connectFrom === 'center' ? null : 'center'); }}
+          title="Связать стрелкой от видео"
+          style={{ position: 'absolute', left: 'calc(50% + 32px)', top: 'calc(50% - 32px)', transform: 'translate(-50%,-50%)', zIndex: 9, width: 24, height: 24, borderRadius: '50%', background: connectFrom === 'center' ? '#ff7300' : 'var(--bg-secondary)', border: '2px solid #ff7300', color: connectFrom === 'center' ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+          <Link2 size={13} />
+        </button>
 
         {nodes.map((n, i) => (
           <button key={n.id} onClick={() => setSelectedId(n.id)} className="me-node me-node-in"
@@ -475,7 +481,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         })}
         {connectFrom && (
           <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#ff7300', fontWeight: 600, whiteSpace: 'nowrap' }}>
-            Кликните узел (видео / Omni / план), чтобы связать · <span onClick={() => setConnectFrom(null)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>отмена</span>
+            Теперь кликните, КУДА вести стрелку: «Видео», «Google Omni» или «Контент-план» · <span onClick={() => setConnectFrom(null)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>отмена</span>
           </div>
         )}
       </div>
