@@ -120,9 +120,17 @@
       var changed = false;
       if (!prev.apiKey) { prev.apiKey = AI_PLACEHOLDER; changed = true; }
       if (prev.apiBaseUrl !== 'https://api.tikhub.io') { prev.apiBaseUrl = 'https://api.tikhub.io'; changed = true; }
-      if (!prev.ai || !prev.ai.apiKey) {
-        prev.ai = Object.assign({ provider: 'gemini', model: '' }, prev.ai || {}, { apiKey: AI_PLACEHOLDER });
-        changed = true;
+      // Расширение читает ключ из ai.apiKeys[provider] и ai.geminiVideoKey (видео-анализ),
+      // а не из ai.apiKey. Засеваем ВСЕ поля плейсхолдером (реальный ключ ставит ai-прокси).
+      var ai = prev.ai || {};
+      if (!ai.apiKey || !(ai.apiKeys && ai.apiKeys.gemini) || !ai.geminiVideoKey) {
+        ai.provider = ai.provider || 'gemini';
+        if (typeof ai.model !== 'string') ai.model = '';
+        ai.apiKey = ai.apiKey || AI_PLACEHOLDER;
+        ai.apiKeys = Object.assign({ gemini: '', openai: '', anthropic: '' }, ai.apiKeys || {});
+        if (!ai.apiKeys.gemini) ai.apiKeys.gemini = AI_PLACEHOLDER;
+        if (!ai.geminiVideoKey) ai.geminiVideoKey = AI_PLACEHOLDER;
+        prev.ai = ai; changed = true;
       }
       if (changed) localArea.set({ settings: prev });
     });

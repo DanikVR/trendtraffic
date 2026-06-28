@@ -65,11 +65,11 @@ if (!fs.existsSync(SRC)) {
   process.exit(1);
 }
 
-// Сохраняем наш chrome-polyfill.js через пересоздание каталога.
-const POLY = path.join(DEST, 'chrome-polyfill.js');
-const polySaved = fs.existsSync(POLY) ? fs.readFileSync(POLY) : null;
+// Сохраняем наши файлы (chrome-polyfill.js, custom.js) через пересоздание каталога.
+const KEEP = ['chrome-polyfill.js', 'custom.js'];
+const saved = KEEP.map((f) => { const p = path.join(DEST, f); return fs.existsSync(p) ? fs.readFileSync(p) : null; });
 rmrf(DEST); ensure(DEST);
-if (polySaved) fs.writeFileSync(POLY, polySaved);
+saved.forEach((buf, i) => { if (buf) fs.writeFileSync(path.join(DEST, KEEP[i]), buf); });
 
 for (const d of COPY_DIRS) { const s = path.join(SRC, d); if (fs.existsSync(s)) copyTree(s, path.join(DEST, d)); }
 for (const f of COPY_FILES) {
@@ -85,7 +85,7 @@ for (const html of ['sidepanel.html']) {
   if (!fs.existsSync(p)) continue;
   let s = fs.readFileSync(p, 'utf8');
   if (!s.includes('chrome-polyfill.js')) {
-    const inject = '<script src="/social-ext/chrome-polyfill.js"></script>\n    <script src="/social-ext/background.js"></script>\n    ';
+    const inject = '<script src="/social-ext/chrome-polyfill.js"></script>\n    <script src="/social-ext/background.js"></script>\n    <script src="/social-ext/custom.js"></script>\n    ';
     s = s.replace(/(<script\s+type="module")/, inject + '$1');
     fs.writeFileSync(p, s);
   }

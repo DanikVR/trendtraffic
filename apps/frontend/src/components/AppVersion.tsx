@@ -508,9 +508,17 @@
  *         из обложки, разборы) идут через новый ai-прокси на ключе Enterprise
  *         (модалка «Конфигурация ИИ»: облако или свой ключ). Обложки/скачивание —
  *         через медиа-прокси (Referer на сервере). options.html удалён (дублировал).
+ * 1.5.4 — Доработки «Social Media Extension» по фидбэку: лента трендов 6 в ряд +
+ *         кнопка «Удалить» рядом с «Выбрать всё»; в аналитике скрыта верхняя
+ *         панель расширения (логотип/кэш/язык/шестерёнка), вкладки Info/Comments/
+ *         Analysis липкие, блоки Metrics и Fake Views Detection перенесены сразу
+ *         после Music (custom.js в iframe). AI-разборы (Viral/Video) теперь реально
+ *         работают: засев ai.apiKeys.gemini/geminiVideoKey + ai-прокси с ключом
+ *         Gemini из учётки Enterprise (фолбэк на платформенный). «Конфигурация ИИ»
+ *         убрана, вместо неё «Добавить в галерею» (POST /api/social-ext/to-gallery).
  */
 
-export const APP_VERSION = '1.5.3';
+export const APP_VERSION = '1.5.4';
 
 export function AppVersion() {
   return (

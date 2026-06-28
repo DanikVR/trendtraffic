@@ -22,11 +22,15 @@ import rateLimit from 'express-rate-limit';
 import { Readable } from 'node:stream';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { getTikHubApiKey } from '../../config/systemConfig.js';
+import { getTikHubApiKey, getGeminiApiKey } from '../../config/systemConfig.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
+import { analyzeUrl, detectUrl } from '../trends/analytics.js';
+import { extractDownloadUrls } from '../tikhub/tikhub_client.js';
+import { downloadVideoToDisk } from '../media/store_video.js';
+import { createAsset } from '../media/assets.js';
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
 const UA = 'TrendTraffic/1.0';
@@ -238,7 +242,8 @@ aiRouter.all('/*', async (req: AuthedRequest, res: Response) => {
   const headers: Record<string, string> = { Accept: 'application/json', 'User-Agent': UA };
   let key: string | null = null;
   if (host === 'generativelanguage.googleapis.com') {
-    key = await getEffectiveGeminiKey(req.tenantId);
+    // Ключ Gemini с учётки тенанта (Enterprise → Генерация), иначе платформенный.
+    key = (await getEffectiveGeminiKey(req.tenantId)) || getGeminiApiKey() || null;
     if (key) {
       headers['x-goog-api-key'] = key;
       // Убираем возможный ?key=<placeholder> из расширения, чтобы не перебил наш ключ.
@@ -286,3 +291,46 @@ aiRouter.all('/*', async (req: AuthedRequest, res: Response) => {
 });
 
 export { aiRouter };
+
+// ============================================================================
+// «Добавить в галерею»  →  POST /api/social-ext/to-gallery { url }
+// ----------------------------------------------------------------------------
+// Разбирает ссылку (TikHub нашим ключом), качает видео на диск и заводит запись
+// в Галерее (media_assets, kind=reference). JWT + rate-limit + Enterprise.
+// ============================================================================
+
+const REFERER_BY_PLATFORM: Record<string, string> = {
+  tiktok: 'https://www.tiktok.com/', douyin: 'https://www.douyin.com/',
+  instagram: 'https://www.instagram.com/', twitter: 'https://x.com/', bilibili: 'https://www.bilibili.com/',
+};
+
+const galleryRouter = Router();
+galleryRouter.use(requireAuth);
+galleryRouter.use(proxyLimiter);
+galleryRouter.use(requireEnterprise);
+
+galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+  try {
+    const det = detectUrl(url);
+    const result: any = await analyzeUrl(req.tenantId!, url);
+    const dlUrls = extractDownloadUrls(result?.blocks?.video?.data);
+    if (!dlUrls.length) {
+      return res.status(422).json({ error: 'Не удалось получить прямую ссылку на видео для этой платформы.' });
+    }
+    const platform = result?.detected?.platform || det?.platform || 'tiktok';
+    const stored: any = await downloadVideoToDisk(dlUrls, { referer: REFERER_BY_PLATFORM[platform] || REFERER_BY_PLATFORM.tiktok });
+    const vid = result?.detected?.videoId || det?.videoId || 'video';
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'reference', mediaType: 'video',
+      originalName: `${platform}-${vid}.mp4`,
+      fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
+    });
+    res.json({ ok: true, fileUrl: stored.fileUrl, asset });
+  } catch (err: any) {
+    res.status(502).json({ error: err?.message || 'Не удалось добавить в галерею' });
+  }
+});
+
+export { galleryRouter };

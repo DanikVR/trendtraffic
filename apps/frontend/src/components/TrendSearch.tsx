@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3,
+  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
@@ -145,6 +145,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
@@ -233,6 +234,20 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
       await handleDownload(v);
     }
     setBulkDownloading(false);
+  };
+
+  const deleteSelected = async () => {
+    const ids = videos.filter((v) => v.id && selected.has(v.id)).map((v) => v.id as string);
+    if (ids.length === 0) return;
+    if (!window.confirm(`Удалить выбранные видео из списка (${ids.length})?`)) return;
+    setBulkDeleting(true); setError(null);
+    try {
+      const res = await fetch('/api/trends/videos/delete-bulk', { method: 'POST', headers: headers(), body: JSON.stringify({ ids }) });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
+      setVideos((prev) => prev.filter((v) => !(v.id && selected.has(v.id))));
+      setSelected(new Set());
+    } catch (e: any) { setError(friendlyError(e, 'Не удалось удалить')); }
+    finally { setBulkDeleting(false); }
   };
 
   const analyzeSelected = () => {
@@ -443,6 +458,13 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                 {allSelected ? <CheckSquare size={15} color="#ff7300" /> : <Square size={15} />}
                 {allSelected ? 'Снять выделение' : 'Выбрать всё'}{selected.size > 0 ? ` · ${selected.size}` : ''}
               </button>
+              <button type="button" onClick={deleteSelected} disabled={selected.size === 0 || bulkDeleting}
+                title="Удалить выбранные из списка"
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
+                style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                {bulkDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                Удалить{selected.size > 0 ? ` · ${selected.size}` : ''}
+              </button>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {onAnalyzeBulk && (
@@ -458,7 +480,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {videos.slice(0, page * PAGE_SIZE).map((v) => {
             const isSel = !!(v.id && selected.has(v.id));
             return (
