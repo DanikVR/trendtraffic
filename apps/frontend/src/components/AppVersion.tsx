@@ -410,9 +410,11 @@
  *         кнопка в шапке → общий замысел ролика; сохраняется в graph.brief и
  *         прокидывается ИИ-режиссёру во ВСЕ ЛЛМ-шаги (research/news/voiceover).
  *         (8) Enterprise: вкладка/ключ «TikHub» → «Trend» (ссылка на tikhub.io).
+ * 1.3.10 — Экспорт: кнопки «Подключить площадку» теперь переключают статус
+ *         подключения (мок до этапа C) вместо выхода из редактора.
  */
 
-export const APP_VERSION = '1.3.9';
+export const APP_VERSION = '1.3.10';
 
 export function AppVersion() {
   return (

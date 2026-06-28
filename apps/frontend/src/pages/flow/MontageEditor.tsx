@@ -213,6 +213,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
   const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
   const [exportPct, setExportPct] = useState(0);
+  const [connected, setConnected] = useState<Set<string>>(new Set()); // подключённые аккаунты площадок (мок до этапа C)
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<CloudId | null>(null);
   const movedRef = useRef(false);
@@ -743,13 +744,17 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 <div className="flex flex-wrap gap-1.5">
                   {(selected.choices.platforms || []).length === 0 ? (
                     <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Выберите площадки выше.</span>
-                  ) : (selected.choices.platforms || []).map((p) => (
-                    <button key={p} onClick={() => onBack()} title="Подключить аккаунт (Публикатор)"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                      <Link2 size={12} /> Подключить {p}
-                    </button>
-                  ))}
+                  ) : (selected.choices.platforms || []).map((p) => {
+                    const on = connected.has(p);
+                    return (
+                      <button key={p} onClick={() => setConnected((s) => { const n = new Set(s); n.has(p) ? n.delete(p) : n.add(p); return n; })}
+                        title={on ? 'Аккаунт подключён (нажмите, чтобы отвязать)' : 'Подключить аккаунт площадки'}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg"
+                        style={{ background: on ? 'rgba(16,185,129,0.12)' : 'var(--bg-tertiary)', color: on ? '#10b981' : 'var(--text-secondary)', border: `1px solid ${on ? 'rgba(16,185,129,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        {on ? <Check size={12} /> : <Link2 size={12} />} {on ? `${p} ✓` : `Подключить ${p}`}
+                      </button>
+                    );
+                  })}
                 </div>
                 <button onClick={startExport} disabled={exporting || (selected.choices.platforms || []).length === 0}
                   className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
