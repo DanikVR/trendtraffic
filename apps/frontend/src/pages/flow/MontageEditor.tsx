@@ -15,7 +15,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
-  Plus, Pencil, X, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
+  Plus, Pencil, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -145,6 +145,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string }[]>([]);
   const [building, setBuilding] = useState(false);
   const [buildJob, setBuildJob] = useState<any | null>(null);
+  const [buildMinimized, setBuildMinimized] = useState(false); // свернуть прогресс → рендер в фоне
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
@@ -188,6 +189,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const build = async () => {
     if (building) return;
     setBuilding(true);
+    setBuildMinimized(false);
     setBuildJob({ status: 'queued', progress: 0, steps: [] });
     try {
       if (dirty) await save();
@@ -267,10 +269,28 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   return (
     <div className="flex flex-col" style={{ height: 'calc(100dvh - 8px)', position: 'relative' }}>
       <style>{`
-        .me-node{transition:transform .15s ease, filter .15s ease;}
-        .me-node:hover{transform:translate(-50%,-50%) scale(1.10);filter:brightness(1.25);}
-        .me-pop-in{animation:mePop .18s ease;}
+        .me-node{transition:transform .18s cubic-bezier(.34,1.56,.64,1), filter .18s ease;}
+        .me-node:hover{transform:translate(-50%,-50%) scale(1.12);filter:brightness(1.3);}
+        .me-node-in{animation:meNodeIn .45s cubic-bezier(.34,1.56,.64,1) backwards;}
+        @keyframes meNodeIn{from{opacity:0;transform:translate(-50%,-50%) scale(.3)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+        .me-pop-in{animation:mePop .2s ease;}
         @keyframes mePop{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+        /* центр — обработка */
+        .me-build{animation:meBuildPulse 1.6s ease-in-out infinite!important;}
+        @keyframes meBuildPulse{0%,100%{box-shadow:0 0 30px rgba(255,115,0,.5)}50%{box-shadow:0 0 64px rgba(255,115,0,1)}}
+        .me-ring{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;border:3px solid transparent;border-top-color:#ff7300;border-right-color:rgba(255,115,0,.35);animation:meSpin 1s linear infinite;pointer-events:none;}
+        @keyframes meSpin{to{transform:rotate(360deg)}}
+        /* шиммер прогресса */
+        .me-shimmer{background:linear-gradient(90deg,#ff7300,#ffd9b3,#ff7300);background-size:200% 100%;animation:meShimmer 1.3s linear infinite;}
+        @keyframes meShimmer{to{background-position:-200% 0}}
+        /* нижнее поле */
+        .me-addbar{transition:box-shadow .25s ease, transform .2s ease, border-color .25s ease;}
+        .me-addbar:hover,.me-addbar:focus-within{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,115,0,.18);border-color:#ff7300!important;}
+        /* плавающая пилюля рендера */
+        .me-float-in{animation:meFloatIn .3s cubic-bezier(.34,1.56,.64,1);}
+        @keyframes meFloatIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+        .me-dot{animation:meDot 1.4s ease-in-out infinite;}
+        @keyframes meDot{0%,100%{opacity:.3}50%{opacity:1}}
       `}</style>
 
       {/* Верхняя панель */}
@@ -332,22 +352,25 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
         </svg>
 
-        <button onClick={openSourcePicker} title="Выбрать исходное видео"
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-          <div style={{ width: 76, height: 76, borderRadius: '50%', margin: '0 auto', overflow: 'hidden',
-            background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #ffb066 50%, #ff7300 100%)',
-            boxShadow: '0 0 36px rgba(255,115,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a1500',
-            border: sourceUrl ? '2px solid #ff7300' : 'none' }}>
-            <Video size={28} color={sourceUrl ? '#ff7300' : undefined} />
+        <button onClick={openSourcePicker} title={building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
+          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: building ? 'default' : 'pointer' }}>
+          <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
+            {building && <span className="me-ring" />}
+            <div className={building ? 'me-build' : undefined} style={{ width: 76, height: 76, borderRadius: '50%', overflow: 'hidden',
+              background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #ffb066 50%, #ff7300 100%)',
+              boxShadow: '0 0 36px rgba(255,115,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a1500',
+              border: sourceUrl ? '2px solid #ff7300' : 'none' }}>
+              <Video size={28} color={sourceUrl ? '#ff7300' : undefined} className={building ? 'animate-pulse' : undefined} />
+            </div>
           </div>
-          <div className="text-[11px] mt-2" style={{ color: sourceUrl ? '#ff7300' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
+          <div className="text-[11px] mt-2" style={{ color: building ? '#ff7300' : sourceUrl ? '#ff7300' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
           </div>
         </button>
 
         {nodes.map((n, i) => (
-          <button key={n.id} onClick={() => setSelectedId(n.id)} className="me-node me-pop-in"
-            style={{ position: 'absolute', left: `${positions[i].left}%`, top: `${positions[i].top}%`, transform: 'translate(-50%,-50%)',
+          <button key={n.id} onClick={() => setSelectedId(n.id)} className="me-node me-node-in"
+            style={{ position: 'absolute', left: `${positions[i].left}%`, top: `${positions[i].top}%`, transform: 'translate(-50%,-50%)', animationDelay: `${i * 0.05}s`,
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', cursor: 'pointer' }}>
             <span style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? '#ff7300' : 'var(--border-strong)'}`,
@@ -372,7 +395,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
       {/* Нижняя строка «Добавить параметр» */}
       <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border-medium)' }}>
-        <div className="flex items-center gap-2 mx-auto" style={{ maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid var(--border-strong)', borderRadius: 999, padding: '6px 6px 6px 8px' }}>
+        <div className="me-addbar flex items-center gap-2 mx-auto" style={{ maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid var(--border-strong)', borderRadius: 999, padding: '6px 6px 6px 8px' }}>
           <button onClick={() => setShowPicker(true)} title="Добавить процесс" className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={18} /></button>
           <input readOnly onClick={() => setShowPicker(true)} placeholder="Добавить параметр или процесс…" className="flex-1 text-sm outline-none" style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }} />
           <button onClick={() => setShowPicker(true)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Plus size={18} /></button>
@@ -550,17 +573,24 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       )}
 
       {/* Прогресс сборки «Собрать» */}
-      {buildJob && (
-        <div onClick={() => { if (!building) setBuildJob(null); }} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      {buildJob && !buildMinimized && (
+        <div onClick={() => (building ? setBuildMinimized(true) : setBuildJob(null))} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 460, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                {building && <Loader2 size={16} className="animate-spin" style={{ color: '#ff7300' }} />}
                 {buildJob.status === 'done' ? 'Готово ✓' : buildJob.status === 'failed' ? 'Ошибка' : 'Собираю ролик…'}
               </span>
-              {!building && <button onClick={() => setBuildJob(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>}
+              <button onClick={() => (building ? setBuildMinimized(true) : setBuildJob(null))}
+                title={building ? 'Свернуть — рендер продолжится в фоне' : 'Закрыть'}
+                className="inline-flex items-center gap-1 text-xs font-600 px-2 py-1 rounded-lg"
+                style={{ background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                {building ? <><Minus size={14} /> Свернуть</> : <X size={18} />}
+              </button>
             </div>
             <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-tertiary)', overflow: 'hidden', marginBottom: 10 }}>
-              <div style={{ height: '100%', width: `${buildJob.progress || 0}%`, background: '#ff7300', transition: 'width .3s' }} />
+              <div className={building ? 'me-shimmer' : undefined} style={{ height: '100%', width: `${buildJob.status === 'done' ? 100 : (buildJob.progress || 0)}%`,
+                background: building ? undefined : (buildJob.status === 'failed' ? '#ef4444' : '#10b981'), transition: 'width .4s' }} />
             </div>
             <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
               Шагов: {buildJob.steps?.length || 0} · статус: {buildJob.status}
@@ -582,8 +612,30 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {buildJob.resultAssetId ? 'Ролик добавлен в Галерею → вкладка «Референс».' : (buildJob.note || 'Конвейер выполнен.')}
               </p>
             )}
+            {building && (
+              <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
+                Можно свернуть — ролик соберётся в фоне и появится в Галерее.
+              </p>
+            )}
           </div>
         </div>
+      )}
+
+      {/* Плавающая пилюля: рендер в фоне (свернули прогресс) */}
+      {buildJob && buildMinimized && (
+        <button onClick={() => setBuildMinimized(false)} className="me-float-in"
+          style={{ position: 'absolute', right: 16, bottom: 84, zIndex: 96, display: 'inline-flex', alignItems: 'center', gap: 10,
+            background: 'var(--bg-secondary)', border: `1px solid ${buildJob.status === 'failed' ? '#ef4444' : buildJob.status === 'done' ? '#10b981' : '#ff7300'}`,
+            borderRadius: 999, padding: '8px 14px 8px 10px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.4)' }}>
+          {buildJob.status === 'done'
+            ? <Check size={16} style={{ color: '#10b981' }} />
+            : buildJob.status === 'failed'
+            ? <X size={16} style={{ color: '#ef4444' }} />
+            : <Loader2 size={16} className="animate-spin" style={{ color: '#ff7300' }} />}
+          <span className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>
+            {buildJob.status === 'done' ? 'Ролик готов' : buildJob.status === 'failed' ? 'Ошибка сборки' : `Собираю… ${buildJob.progress || 0}%`}
+          </span>
+        </button>
       )}
     </div>
   );
