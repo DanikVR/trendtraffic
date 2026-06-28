@@ -62,7 +62,7 @@ export function Section6TikHub() {
   }, []);
 
   const handleSave = async () => {
-    if (!keyInput.trim()) { setError(t('enterprise.tikhub.errEnterKey', 'Введите ключ TikHub')); return; }
+    if (!keyInput.trim()) { setError(t('enterprise.tikhub.errEnterKey', 'Введите ключ Trend')); return; }
     setSaving(true); setError(null); setSuccess(null);
     try {
       const res = await fetch('/api/tenant-settings/tikhub', {
@@ -141,7 +141,7 @@ export function Section6TikHub() {
           <div className="flex items-start gap-2">
             <AlertTriangle size={16} color="#f59e0b" className="mt-[2px]" />
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Вы суперадмин — этот раздел задаёт ключ для <b>Enterprise-тенантов</b>. Свой платформенный ключ задайте в <b>Админ-панели → «Настройки системных API»</b> (карточка TikHub). У суперадмина нет tenant-аккаунта, поэтому сохранение здесь недоступно.
+              Вы суперадмин — этот раздел задаёт ключ для <b>Enterprise-тенантов</b>. Свой платформенный ключ задайте в <b>Админ-панели → «Настройки системных API»</b> (карточка Trend). У суперадмина нет tenant-аккаунта, поэтому сохранение здесь недоступно.
             </span>
           </div>
         </AuroraCard>
@@ -159,7 +159,7 @@ export function Section6TikHub() {
           <h3 className="text-sm font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>{t('enterprise.tikhub.keyLabel', 'API-ключ Trend')}</h3>
           {renderStatus()}
         </div>
-        <ApiKeyField value={keyInput} onChange={setKeyInput} hasSaved={info?.hasKey} savedPrefix={info?.prefix || null} placeholder={t('enterprise.tikhub.keyPlaceholder', 'вставьте ключ TikHub...')} showCopyButton={false} />
+        <ApiKeyField value={keyInput} onChange={setKeyInput} hasSaved={info?.hasKey} savedPrefix={info?.prefix || null} placeholder={t('enterprise.tikhub.keyPlaceholder', 'вставьте ключ Trend...')} showCopyButton={false} />
         {info?.lastCheckAt && (
           <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('enterprise.tikhub.lastCheck', 'Последняя проверка')}: {new Date(info.lastCheckAt).toLocaleString()}</p>
         )}
@@ -176,7 +176,7 @@ export function Section6TikHub() {
 
       <ConfirmModal
         open={confirmOpen}
-        title={t('enterprise.tikhub.confirmDeleteTitle', 'Удалить ключ TikHub?')}
+        title={t('enterprise.tikhub.confirmDeleteTitle', 'Удалить ключ Trend?')}
         message={t('enterprise.tikhub.confirmDeleteBody', 'Тенант вернётся на платформенный ключ (если тариф это позволяет).')}
         confirmLabel={t('enterprise.tikhub.delete', 'Удалить')}
         variant="danger"

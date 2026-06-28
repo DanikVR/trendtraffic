@@ -117,7 +117,7 @@ ${s.desc ? `<p>${esc(s.desc)}</p>` : ''}
 ${words.length ? `<h2>Облако слов в комментариях</h2><div class="cloud">${cloud}</div>` : ''}
 ${bars ? `<h2>Распределение лайков · топ-комментарии</h2>${bars}` : ''}
 ${sent}
-<footer>Сгенерировано в TrendTraffic · данные TikHub. Всего комментариев в выборке: ${r.normalized.comments.length}.</footer>
+<footer>Сгенерировано в TrendTraffic · данные Trend. Всего комментариев в выборке: ${r.normalized.comments.length}.</footer>
 </div></body></html>`;
 }
 
@@ -198,7 +198,7 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
           </AuroraButton>
         </div>
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          Метрики видео, комментарии, профиль и история публикаций — через ваш ключ Trend. Каждый анализ тратит кредиты TikHub.
+          Метрики видео, комментарии, профиль и история публикаций — через ваш ключ Trend. Каждый анализ тратит кредиты Trend.
         </p>
         {error && (
           <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>

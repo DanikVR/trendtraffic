@@ -324,7 +324,7 @@ export default function AdminConfigPage() {
       testSteps = ['Инициализация Stripe SDK...', 'Проверка формата API Key (sk_test_/sk_live_)...', 'Запрос Balance из Stripe API...', 'Определение режима TEST/LIVE...'];
       verifyUrl = '/api/auth/verify-stripe';
     } else if (service === 'tikhub') {
-      testSteps = ['Подключение к api.tikhub.io...', 'Авторизация Bearer-токеном...', 'Запрос get_user_info...', 'Чтение статуса ключа и баланса...'];
+      testSteps = ['Подключение к API Trend...', 'Авторизация Bearer-токеном...', 'Запрос статуса ключа...', 'Чтение статуса ключа и баланса...'];
       verifyUrl = '/api/auth/verify-tikhub';
     }
 
@@ -952,19 +952,19 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <TrendingUp size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>TikHub (тренды и скачивание видео)</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Trend (тренды и скачивание видео)</h3>
                 </div>
                 <AuroraInput
-                  label="TikHub API Key"
+                  label="Trend API Key"
                   type="password"
                   value={tikhubApiKey}
                   onChange={(e) => setTikhubApiKey(e.target.value)}
-                  placeholder="вставьте ключ TikHub..."
+                  placeholder="вставьте ключ Trend..."
                   inputId="admin-tikhub-key"
                 />
                 <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
                   <p>Платформенный ключ для сканирования трендов и скачивания видео (TikTok / Douyin / Instagram / YouTube). Используется всеми тенантами, кроме Enterprise — те могут задать свой ключ в настройках Enterprise.</p>
-                  <p>Получить/проверить ключ и баланс: <a href="https://tikhub.io" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--accent-orange)' }}>tikhub.io</a>. Тарификация — pay-as-you-go (списывается с баланса аккаунта за каждый запрос).</p>
+                  <p>Платформенный ключ поставщика данных. Тарификация — pay-as-you-go (списывается с баланса за каждый запрос).</p>
                   <p>Нажмите «Проверить подключение» — backend реально дёрнет <code style={{ color: 'var(--text-secondary)' }}>get_user_info</code> и покажет статус ключа + баланс.</p>
                 </div>
               </div>

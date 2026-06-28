@@ -85,7 +85,7 @@ function mapRow(r: any): StoredVideo {
 export async function scanTrends(tenantId: string, params: ScanParams): Promise<ScanResult> {
   const key = await getEffectiveTikHubKey(tenantId);
   if (!key) {
-    throw new Error('Ключ TikHub не задан. Укажите платформенный ключ в админке или свой в настройках Enterprise.');
+    throw new Error('Ключ Trend не задан. Укажите платформенный ключ в админке или свой в настройках Enterprise.');
   }
 
   const count = Math.min(Math.max(params.count ?? 20, 1), 30);
@@ -112,7 +112,7 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   }
 
   if (!resp.ok) {
-    throw new Error(`TikHub вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
+    throw new Error(`Trend вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
   }
 
   // Клиентская сортировка поверх relevance-набора (TikHub отдаёт его по релевантности —

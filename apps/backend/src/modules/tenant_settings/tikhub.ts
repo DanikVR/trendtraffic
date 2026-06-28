@@ -29,7 +29,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 function isUuid(v: string | null | undefined): boolean { return !!v && UUID_RE.test(v); }
 
 const NOT_TENANT_MSG =
-  'Собственный ключ TikHub доступен только Enterprise-тенантам. Вы вошли как суперадмин — задайте ПЛАТФОРМЕННЫЙ ключ в Админ-панели → «Настройки системных API».';
+  'Собственный ключ Trend доступен только Enterprise-тенантам. Вы вошли как суперадмин — задайте ПЛАТФОРМЕННЫЙ ключ в Админ-панели → «Настройки системных API».';
 
 export interface TenantTikHubKeyInfo {
   hasKey: boolean;

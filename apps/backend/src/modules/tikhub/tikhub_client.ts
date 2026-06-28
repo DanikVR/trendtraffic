@@ -63,7 +63,7 @@ export async function tikhubGet<T = any>(
     return { ok: true, status: resp.status, data: data as T };
   } catch (err: any) {
     const aborted = err?.name === 'AbortError';
-    return { ok: false, status: 0, error: aborted ? 'Таймаут запроса к TikHub' : (err?.message || String(err)) };
+    return { ok: false, status: 0, error: aborted ? 'Таймаут запроса к Trend' : (err?.message || String(err)) };
   } finally {
     clearTimeout(timer);
   }
@@ -101,7 +101,7 @@ export async function validateTikHubKey(apiKey: string): Promise<TikHubKeyInfo> 
     const k = r.data.api_key_data || {};
     const disabled = u.account_disabled === true || u.is_active === false;
     if (disabled) {
-      return { ok: false, status: 'invalid', message: 'Аккаунт TikHub отключён или ключ неактивен.', error: 'account_disabled' };
+      return { ok: false, status: 'invalid', message: 'Аккаунт Trend отключён или ключ неактивен.', error: 'account_disabled' };
     }
     const balance = typeof u.balance === 'number' ? u.balance : undefined;
     const freeCredit = typeof u.free_credit === 'number' ? u.free_credit : undefined;
@@ -123,10 +123,10 @@ export async function validateTikHubKey(apiKey: string): Promise<TikHubKeyInfo> 
 
   // 401/403 — невалидный ключ; 402/429 — недостаточно баланса / лимит; иначе сетевая ошибка.
   if (r.status === 401 || r.status === 403) {
-    return { ok: false, status: 'invalid', message: `TikHub отверг ключ (HTTP ${r.status})${r.error ? ': ' + r.error : ''}.`, error: r.error };
+    return { ok: false, status: 'invalid', message: `Trend отверг ключ (HTTP ${r.status})${r.error ? ': ' + r.error : ''}.`, error: r.error };
   }
   if (r.status === 402 || r.status === 429) {
-    return { ok: false, status: 'quota_exceeded', message: `Недостаточно баланса или превышен лимит TikHub (HTTP ${r.status}).`, error: r.error };
+    return { ok: false, status: 'quota_exceeded', message: `Недостаточно баланса или превышен лимит Trend (HTTP ${r.status}).`, error: r.error };
   }
   return { ok: false, status: 'invalid', message: `Не удалось проверить ключ: ${r.error || `HTTP ${r.status}`}.`, error: r.error };
 }

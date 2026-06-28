@@ -104,7 +104,7 @@ export default function TrendsPage() {
       setVideos(data.videos || []);
       const fb = data.fellBackToApp ? ' Режим «Поиск по слову/Около-тематика» был нестабилен — поиск автоматически выполнен «Умным поиском».' : '';
       if ((data.count ?? 0) === 0) {
-        setNotice(`TikHub ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.${fb}`);
+        setNotice(`Trend ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.${fb}`);
       } else {
         setNotice(`Найдено видео: ${data.count}.${fb}`);
       }
