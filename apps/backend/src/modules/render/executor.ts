@@ -24,6 +24,8 @@ export interface StepContext {
   currentUrl: string | null;
   /** Общий «блокнот» задачи: ИИ-режиссёр пишет сюда ресёрч/новости, озвучка читает. */
   scratchpad?: Record<string, any>;
+  /** Главный промт — общий сценарий ролика (graph.brief), контекст для всех ЛЛМ-шагов. */
+  brief?: string;
 }
 
 export interface StepResult {

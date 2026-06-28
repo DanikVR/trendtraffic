@@ -56,7 +56,7 @@ export function EnterpriseSettingsPage() {
     },
     {
       key: 'tikhub',
-      label: t('enterprise.tabs.tikhub', 'TikHub'),
+      label: t('enterprise.tabs.tikhub', 'Trend'),
       icon: <TrendingUp size={16} />,
       color: '#f59e0b',
       component: Section6TikHub,

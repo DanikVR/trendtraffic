@@ -19,6 +19,8 @@ export interface FlowGraph {
   cloudEdges?: any[];
   /** Omni: спецификация преобразования исходного видео по таймлайну (сегменты Omni-генерации / V2V-ре-стайла). */
   omni?: { mode: string; segments: any[] };
+  /** Главный промт — общий сценарий ролика (контекст для ИИ-режиссёра во всех ЛЛМ-шагах). */
+  brief?: string;
 }
 
 export interface Flow {
@@ -51,6 +53,7 @@ function parseGraph(g: any): FlowGraph {
     omni: (g.omni && typeof g.omni === 'object' && Array.isArray(g.omni.segments))
       ? { mode: typeof g.omni.mode === 'string' ? g.omni.mode : 'whole', segments: g.omni.segments }
       : undefined,
+    brief: typeof g.brief === 'string' ? g.brief : undefined,
   };
 }
 

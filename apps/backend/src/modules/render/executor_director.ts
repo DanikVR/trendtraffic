@@ -36,12 +36,16 @@ export class DirectorExecutor implements StepExecutor {
     const scratch = ctx.scratchpad || {};
     const model = directorModel(step.params);
     const text = String(step.params?.text || '').trim();
+    // Главный промт (общий сценарий ролика) — общий контекст для всех ЛЛМ-шагов.
+    const scenario = String((step.params as any)?.brief || ctx.brief || '').trim();
+    const withScenario = (t: string) =>
+      scenario ? (t ? `Общий сценарий ролика: ${scenario}\n\nЗадача этого шага: ${t}` : `Общий сценарий ролика: ${scenario}`) : t;
 
     // research / news → текст в scratchpad, видео не меняем
     if ((step.kind === 'research' || step.kind === 'news') && step.llm) {
       const r = step.kind === 'research'
-        ? await runResearch({ tenantId: ctx.tenantId, topic: text, model })
-        : await writeNews({ tenantId: ctx.tenantId, topic: text, model });
+        ? await runResearch({ tenantId: ctx.tenantId, topic: withScenario(text), model })
+        : await writeNews({ tenantId: ctx.tenantId, topic: withScenario(text), model });
       if (r.text) scratch[step.kind] = r.text;
       return { outputUrl: ctx.currentUrl, note: r.note };
     }
@@ -49,7 +53,7 @@ export class DirectorExecutor implements StepExecutor {
     // voiceover (+ЛЛМ) → сценарий → базовый tts
     if (step.kind === 'voiceover' && step.llm) {
       const r = await generateVoiceoverScript({
-        tenantId: ctx.tenantId, brief: text, notes: scratch.research || scratch.news, model,
+        tenantId: ctx.tenantId, brief: withScenario(text), notes: scratch.research || scratch.news, model,
       });
       const enriched = r.text ? { ...step, params: { ...step.params, text: r.text } } : step;
       const base = await this.base.execute(enriched, ctx);

@@ -129,9 +129,9 @@ export function Section6TikHub() {
           <TrendingUp size={20} color="#fff" />
         </div>
         <div>
-          <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('enterprise.tikhub.heading', 'Свой ключ TikHub')}</h2>
+          <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('enterprise.tikhub.heading', 'Свой ключ Trend')}</h2>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {t('enterprise.tikhub.lead', 'Ваш собственный ключ TikHub. Получить — на ')}
+            {t('enterprise.tikhub.lead', 'Ваш собственный ключ Trend. Получить — на ')}
             <a href="https://tikhub.io" target="_blank" rel="noreferrer" style={{ color: '#f59e0b', textDecoration: 'underline' }}>tikhub.io</a>.
           </p>
         </div>
@@ -157,7 +157,7 @@ export function Section6TikHub() {
 
       <AuroraCard className="p-5 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-sm font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>{t('enterprise.tikhub.keyLabel', 'API-ключ TikHub')}</h3>
+          <h3 className="text-sm font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>{t('enterprise.tikhub.keyLabel', 'API-ключ Trend')}</h3>
           {renderStatus()}
         </div>
         <ApiKeyField value={keyInput} onChange={setKeyInput} hasSaved={info?.hasKey} savedPrefix={info?.prefix || null} placeholder={t('enterprise.tikhub.keyPlaceholder', 'вставьте ключ TikHub...')} showCopyButton={false} />

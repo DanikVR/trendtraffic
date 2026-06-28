@@ -53,7 +53,7 @@ const META: Record<MKind, Meta> = {
     choices: [
       { id: 'style', label: 'Стиль', def: ['word'], opts: [{ v: 'none', label: 'Без' }, { v: 'word', label: 'По словам' }, { v: 'karaoke', label: 'Караоке' }, { v: 'plain', label: 'Обычные' }] },
       { id: 'pos', label: 'Позиция', def: ['bottom'], opts: [{ v: 'bottom', label: 'Низ' }, { v: 'center', label: 'Центр' }, { v: 'top', label: 'Верх' }] },
-    ], llm: true },
+    ], text: 'Пожелания к титрам: шрифт, кегль, межбуквенный и межстрочный интервал, обводка, цвет, тень…', llm: true },
   audio:     { label: 'Аудио', icon: <Music size={18} />, hint: 'Музыка + баланс с голосом',
     choices: [
       { id: 'vol', label: 'Громкость музыки', def: ['mid'], opts: [{ v: 'low', label: 'Тихо' }, { v: 'mid', label: 'Средне' }, { v: 'high', label: 'Громко' }] },
@@ -64,7 +64,7 @@ const META: Record<MKind, Meta> = {
     text: 'текст для озвучки…', media: 'Референс голоса', llm: true },
   color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки',
     choices: [{ id: 'preset', label: 'Пресет', def: ['none'], opts: [{ v: 'none', label: 'Без' }, { v: 'warm', label: 'Тёплый' }, { v: 'cold', label: 'Холодный' }, { v: 'cinema', label: 'Кино' }, { v: 'bw', label: 'Ч/Б' }, { v: 'vivid', label: 'Яркий' }] }],
-    media: 'LUT (.cube)' },
+    text: 'Опишите цвет: «тёплый плёночный закат, мягкие тени, лёгкое зерно»…', media: 'LUT (.cube) или референс' },
   broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки / вставки',
     choices: [{ id: 'src', label: 'Откуда брать', def: ['reference'], opts: [{ v: 'reference', label: 'Из Референса' }, { v: 'ai', label: 'AI-генерация' }, { v: 'stock', label: 'Стоки' }] }],
     text: 'что вставить и когда…', media: 'Медиа из Галереи', llm: true },
@@ -179,6 +179,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
 
   const [name, setName] = useState('Сценарий');
+  const [brief, setBrief] = useState('');          // главный промт: общий сценарий ролика (для ИИ-режиссёра)
+  const [showBrief, setShowBrief] = useState(false);
   const [nodes, setNodes] = useState<MNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -189,6 +191,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [showPresets, setShowPresets] = useState(false);
   const [attachFor, setAttachFor] = useState<string | null>(null);
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string }[]>([]);
+  const [uploading, setUploading] = useState(false);   // загрузка медиа с устройства
+  const [dragOver, setDragOver] = useState(false);     // подсветка зоны drag-and-drop
+  const attachInputRef = useRef<HTMLInputElement | null>(null);
   const [building, setBuilding] = useState(false);
   const [buildJob, setBuildJob] = useState<any | null>(null);
   const [buildMinimized, setBuildMinimized] = useState(false); // свернуть прогресс → рендер в фоне
@@ -205,6 +210,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   const [srcDuration, setSrcDuration] = useState<number>(0);
+  const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
+  const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
+  const [exportPct, setExportPct] = useState(0);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<CloudId | null>(null);
   const movedRef = useRef(false);
@@ -219,6 +227,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         const d = await res.json();
         if (res.ok && d.flow) {
           setName(d.flow.name || 'Сценарий');
+          if (typeof d.flow.graph?.brief === 'string') setBrief(d.flow.graph.brief);
           const g = d.flow.graph?.nodes || [];
           const mapped: MNode[] = g.filter((x: any) => x?.type === 'montage' && x?.data?.kind && META[x.data.kind as MKind])
             .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null, useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
@@ -243,7 +252,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -267,6 +276,41 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const removeSeg = (id: string) => omniMutate((s) => ({ ...s, segments: s.segments.filter((g) => g.id !== id) }));
   const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
   const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + g.lenSec, 0);
+
+  // ── Длина: визуальный выбор отрезка на ленте → пишет диапазон m:ss–m:ss в текст узла ──
+  const toClock = (sec: number) => { const m = Math.floor(sec / 60), s = Math.round(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; };
+  const parseRange = (txt: string, dur: number): { start: number; end: number } | null => {
+    const m = txt.match(/(\d+):(\d\d)\s*[-–—]\s*(\d+):(\d\d)/);
+    if (m && dur > 0) {
+      const a = (+m[1] * 60 + +m[2]) / dur, b = (+m[3] * 60 + +m[4]) / dur;
+      if (b > a) return { start: Math.max(0, Math.min(1, a)), end: Math.max(0, Math.min(1, b)) };
+    }
+    return null;
+  };
+  const writeLenRange = (id: string, sel: { start: number; end: number }) => {
+    setLenSel(sel);
+    if (srcDuration > 0) patchNode(id, { text: `${toClock(sel.start * srcDuration)}–${toClock(sel.end * srcDuration)}` });
+  };
+
+  // ── Экспорт: «Начать экспорт» с имитацией тайминга (реальная передача в API — этап C) ──
+  const startExport = () => {
+    if (exporting) return;
+    setExporting(true); setExportPct(0);
+    const tick = () => setExportPct((p) => {
+      if (p >= 100) { setExporting(false); return 100; }
+      const next = Math.min(100, p + 7 + Math.round(p / 12));
+      setTimeout(tick, 220);
+      return next;
+    });
+    setTimeout(tick, 220);
+  };
+
+  // При открытии узла «Длина» — подтянуть отрезок из его текста (если задан диапазон).
+  useEffect(() => {
+    const n = nodes.find((x) => x.id === selectedId);
+    if (n?.kind === 'length') setLenSel(parseRange(n.text || '', srcDuration) || { start: 0, end: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, srcDuration]);
 
   // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
   const build = async () => {
@@ -305,8 +349,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   const applyPreset = (preset: Preset) => { setName(preset.name); setNodes(preset.kinds.map(newNode)); setDirty(true); setShowPresets(false); };
 
-  const openAttach = async (id: string) => {
-    setAttachFor(id);
+  const loadMedia = async () => {
     try {
       const [r, a] = await Promise.all([
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
@@ -316,6 +359,33 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       const aud = a.ok ? (await a.json()).assets || [] : [];
       setMedia([...ref, ...aud].map((m: any) => ({ id: m.id, fileUrl: m.fileUrl, title: m.originalName || 'файл', kind: m.mediaType })));
     } catch { setMedia([]); }
+  };
+  const openAttach = (id: string) => { setAttachFor(id); loadMedia(); };
+
+  // Загрузка файлов с устройства (или drag-and-drop) прямо из блока узла → в Галерею + привязка к узлу.
+  const uploadMediaFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files).filter(Boolean);
+    if (!list.length || !attachFor) return;
+    const node = nodes.find((x) => x.id === attachFor);
+    const kind = node?.kind === 'audio' ? 'audio' : 'reference';
+    setUploading(true);
+    let lastAsset: any = null;
+    try {
+      for (const f of list) {
+        const fd = new FormData();
+        fd.append('file', f);
+        // eslint-disable-next-line no-await-in-loop
+        const res = await fetch(`/api/trends/media/upload?kind=${kind}`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: fd,
+        });
+        if (res.ok) { const d = await res.json(); if (d.asset) lastAsset = d.asset; }
+      }
+      await loadMedia();
+      if (lastAsset) patchNode(attachFor, { mediaUrl: lastAsset.fileUrl, mediaName: lastAsset.originalName || 'файл' });
+    } catch { /* тихо */ }
+    finally { setUploading(false); }
   };
 
   // Пикер исходного видео: скачанные тренды + видео-референсы из Галереи.
@@ -431,6 +501,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         /* шиммер прогресса */
         .me-shimmer{background:linear-gradient(90deg,#ff7300,#ffd9b3,#ff7300);background-size:200% 100%;animation:meShimmer 1.3s linear infinite;}
         @keyframes meShimmer{to{background-position:-200% 0}}
+        .me-fab{transition:transform .15s ease, filter .15s ease, box-shadow .15s ease;}
+        .me-fab:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 12px 32px rgba(255,94,0,.6);}
+        .me-fab:active:not(:disabled){transform:translateY(0) scale(.97);}
         /* нижнее поле */
         .me-addbar{transition:box-shadow .25s ease, transform .2s ease, border-color .25s ease;}
         .me-addbar:hover,.me-addbar:focus-within{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,115,0,.18);border-color:#ff7300!important;}
@@ -453,14 +526,14 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         <button onClick={onBack} title="Назад" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
         <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{name}</span>
         <div className="flex-1" />
+        <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра"
+          className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg"
+          style={{ background: brief.trim() ? 'rgba(124,92,255,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? '#7c5cff' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(124,92,255,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+          <Sparkles size={15} /> Сценарий{brief.trim() ? ' ✓' : ''}
+        </button>
         <button onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
-        </button>
-        <button disabled={building || nodes.length === 0} title="Собрать ролик из сценария"
-          className="inline-flex items-center gap-1.5 text-sm font-700 px-3 py-1.5 rounded-lg disabled:opacity-50"
-          style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', cursor: building ? 'wait' : 'pointer' }} onClick={build}>
-          {building ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Собрать
         </button>
       </div>
 
@@ -488,6 +561,19 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             </div>
           )}
         </div>
+
+        {/* Плавающая кнопка «Собрать видео» — всегда под рукой (правый нижний угол холста) */}
+        <button onClick={build} disabled={building || nodes.length === 0}
+          title={nodes.length === 0 ? 'Добавьте процессы в сценарий' : 'Собрать ролик из сценария'}
+          className="me-fab"
+          style={{ position: 'absolute', right: 18, bottom: 18, zIndex: 45, display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '13px 20px', borderRadius: 999, border: 'none', fontSize: 15, fontWeight: 800,
+            background: 'linear-gradient(135deg, #ff8a2b, #ff5e00)', color: '#fff',
+            boxShadow: '0 8px 26px rgba(255,94,0,0.5)', cursor: building ? 'wait' : nodes.length === 0 ? 'not-allowed' : 'pointer',
+            opacity: nodes.length === 0 ? 0.5 : 1 }}>
+          {building ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />}
+          {building ? `Собираю… ${buildJob?.progress || 0}%` : 'Собрать видео'}
+        </button>
 
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} aria-hidden="true">
           {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
@@ -616,6 +702,68 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               </div>
             ))}
 
+            {/* Длина: визуальная нарезка на ленте исходного видео */}
+            {selected.kind === 'length' && (
+              <div className="mb-3">
+                <div className="text-[11px] font-600 mb-1.5" style={{ color: 'var(--text-muted)' }}>Нарезка на ленте</div>
+                {!sourceUrl ? (
+                  <button onClick={() => { setSelectedId(null); openSourcePicker(); }}
+                    className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                    style={{ background: 'var(--bg-tertiary)', color: '#ff7300', border: '1px dashed #ff7300', cursor: 'pointer' }}>
+                    <Video size={14} /> Выберите исходное видео, чтобы резать по ленте →
+                  </button>
+                ) : (
+                  <>
+                    <video src={sourceUrl} controls preload="metadata"
+                      onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
+                      style={{ width: '100%', maxHeight: 170, borderRadius: 10, background: '#000', marginBottom: 8 }} />
+                    <div className="relative w-full mb-1.5" style={{ height: 30, borderRadius: 7, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 2, bottom: 2, left: `${lenSel.start * 100}%`, width: `${Math.max(0.02, lenSel.end - lenSel.start) * 100}%`, background: 'rgba(255,115,0,0.85)', borderRadius: 5 }} />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      <span>С: <b style={{ color: '#ff7300' }}>{fmtT(lenSel.start)}</b></span>
+                      <span>По: <b style={{ color: '#ff7300' }}>{fmtT(lenSel.end)}</b></span>
+                    </div>
+                    <input type="range" min={0} max={1} step={0.005} value={lenSel.start}
+                      onChange={(e) => { const v = Math.min(parseFloat(e.target.value), lenSel.end - 0.02); writeLenRange(selected.id, { start: Math.max(0, v), end: lenSel.end }); }}
+                      className="w-full" style={{ accentColor: '#ff7300' }} />
+                    <input type="range" min={0} max={1} step={0.005} value={lenSel.end}
+                      onChange={(e) => { const v = Math.max(parseFloat(e.target.value), lenSel.start + 0.02); writeLenRange(selected.id, { start: lenSel.start, end: Math.min(1, v) }); }}
+                      className="w-full" style={{ accentColor: '#ff7300' }} />
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Отрезок пишется в поле диапазона ниже. Пресеты «15/30/60с», «Лучший момент» и «Весь» — альтернатива нарезке.</p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Экспорт: подключение аккаунтов + запуск передачи в API площадок */}
+            {selected.kind === 'export' && (
+              <div className="mb-3 space-y-2.5">
+                <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Аккаунты площадок</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(selected.choices.platforms || []).length === 0 ? (
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Выберите площадки выше.</span>
+                  ) : (selected.choices.platforms || []).map((p) => (
+                    <button key={p} onClick={() => onBack()} title="Подключить аккаунт (Публикатор)"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                      <Link2 size={12} /> Подключить {p}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={startExport} disabled={exporting || (selected.choices.platforms || []).length === 0}
+                  className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
+                  style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', cursor: exporting ? 'wait' : 'pointer' }}>
+                  {exporting && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${exportPct}%`, background: 'rgba(255,115,0,0.18)', transition: 'width .2s' }} />}
+                  <span className="relative inline-flex items-center gap-2">
+                    {exporting ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
+                    {exporting ? `Передаю в API… ${exportPct}%` : exportPct === 100 ? 'Отправлено ✓ — повторить' : 'Начать экспорт'}
+                  </span>
+                </button>
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Реальная публикация в соцсети — раздел «Публикатор» (этап C). Здесь — постановка площадок и запуск передачи.</p>
+              </div>
+            )}
+
             {/* Текст (опц.) */}
             {META[selected.kind].text && (
               <textarea value={selected.text} onChange={(e) => patchNode(selected.id, { text: e.target.value })} rows={2} placeholder={META[selected.kind].text}
@@ -708,16 +856,33 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         </div>
       )}
 
-      {/* Выбор медиа из Галереи */}
+      {/* Выбор медиа: из Галереи + загрузка с устройства + drag-and-drop */}
       {attachFor && (
-        <div onClick={() => setAttachFor(null)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
+        <div onClick={() => { setAttachFor(null); setDragOver(false); }} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in"
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer?.files?.length) uploadMediaFiles(e.dataTransfer.files); }}
+            style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: `1px solid ${dragOver ? '#ff7300' : 'var(--border-medium)'}`, borderRadius: 16, padding: 16, transform: 'none', outline: dragOver ? '2px dashed #ff7300' : 'none', outlineOffset: -6 }}>
+            <input ref={attachInputRef} type="file" multiple accept="image/*,video/*,audio/*" style={{ display: 'none' }}
+              onChange={(e) => { if (e.target.files?.length) uploadMediaFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Медиа из Галереи</span>
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Медиа</span>
               <button onClick={() => setAttachFor(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
+
+            {/* Зона загрузки с устройства / drag-and-drop */}
+            <button onClick={() => attachInputRef.current?.click()} disabled={uploading}
+              className="w-full mb-3 rounded-xl flex flex-col items-center justify-center gap-1.5 py-5 transition-colors"
+              style={{ background: dragOver ? 'rgba(255,115,0,0.08)' : 'var(--bg-tertiary)', border: `1.5px dashed ${dragOver ? '#ff7300' : 'var(--border-strong)'}`, color: dragOver ? '#ff7300' : 'var(--text-secondary)', cursor: uploading ? 'wait' : 'pointer' }}>
+              {uploading ? <Loader2 size={20} className="animate-spin" style={{ color: '#ff7300' }} /> : <Plus size={20} style={{ color: '#ff7300' }} />}
+              <span className="text-[13px] font-600">{uploading ? 'Загружаю…' : 'Загрузить с устройства'}</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>с компьютера/телефона или перетащите файлы сюда → попадут в Галерею</span>
+            </button>
+
+            <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи</div>
             {media.length === 0 ? (
-              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пусто. Загрузите файлы во вкладках «Референс» / «Аудио» Галереи.</p>
+              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пока пусто. Загрузите файл выше или добавьте во вкладке «Галерея».</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {media.map((m) => (
@@ -761,6 +926,33 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Главный промт — общий сценарий ролика (для ИИ-режиссёра) */}
+      {showBrief && (
+        <div onClick={() => setShowBrief(false)} style={{ position: 'absolute', inset: 0, zIndex: 92, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 520, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><Sparkles size={18} style={{ color: '#7c5cff' }} /> Сценарий ролика</span>
+              <button onClick={() => setShowBrief(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Опишите ролик одним абзацем — это <b>главный промт</b>. ИИ-режиссёр учитывает его во всех ✨ЛЛМ-шагах
+              (озвучка, исследование, выбор момента, субтитры). Узлы ниже — точечные настройки поверх этого замысла.
+            </p>
+            <textarea value={brief} onChange={(e) => { setBrief(e.target.value); setDirty(true); }} rows={6}
+              placeholder="Напр.: «Динамичный вертикальный ролик про утреннюю рутину продуктивного человека. Энергичный тон, разговорный язык, хук в первые 2 секунды, призыв подписаться в конце»."
+              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none mb-3"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+            <div className="flex items-center gap-2">
+              {brief.trim() && (
+                <button onClick={() => { setBrief(''); setDirty(true); }} className="text-sm font-600 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>Очистить</button>
+              )}
+              <button onClick={() => { save(); setShowBrief(false); }} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
+                style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
+            </div>
           </div>
         </div>
       )}
