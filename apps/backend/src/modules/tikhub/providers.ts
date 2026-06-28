@@ -29,10 +29,14 @@ function num(v: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 function urlFrom(v: any, depth = 0): string | undefined {
-  if (v == null || depth > 4) return undefined;
-  if (typeof v === 'string') return /^https?:\/\//.test(v) ? v : undefined;
+  if (v == null || depth > 5) return undefined;
+  if (typeof v === 'string') return /^https?:\/\//.test(v) ? v.replace(/&amp;/g, '&') : undefined;
   if (Array.isArray(v)) { for (const x of v) { const u = urlFrom(x, depth + 1); if (u) return u; } return undefined; }
-  if (typeof v === 'object') return urlFrom(v.url_list, depth + 1) || urlFrom(v.url, depth + 1) || urlFrom(v.uri, depth + 1) || urlFrom(v.src, depth + 1);
+  if (typeof v === 'object') {
+    return urlFrom(v.url_list, depth + 1) || urlFrom(v.url, depth + 1) || urlFrom(v.uri, depth + 1) || urlFrom(v.src, depth + 1)
+      || urlFrom(v.media_url_https, depth + 1) || urlFrom(v.source, depth + 1) || urlFrom(v.images, depth + 1)
+      || urlFrom(v.candidates, depth + 1) || urlFrom(v.thumbnails, depth + 1);
+  }
   return undefined;
 }
 function findUrl(obj: any, keys: string[], depth = 0): string | undefined {
@@ -79,15 +83,17 @@ export function genericNormalize(platform: TrendPlatform, raw: any): NormalizedV
     if (!it || typeof it !== 'object') continue;
     const externalId = String(deepFind(it, ['aweme_id', 'video_id', 'id_str', 'rest_id', 'tweet_id', 'pk', 'code', 'id']) ?? '');
     if (!externalId) continue;
-    const handle = str(deepFind(it, ['unique_id', 'username', 'screen_name', 'channel_handle']));
-    const authorName = str(deepFind(it, ['nickname', 'full_name', 'name', 'channel', 'author_name', 'channel_name', 'author']));
+    const handle = str(deepFind(it, ['unique_id', 'username', 'screen_name', 'channel_handle']))
+      || (typeof it.author === 'string' ? it.author : str(deepFind(it.author, ['name', 'username'])))
+      || str(deepFind(it, ['author_fullname']));
+    const authorName = str(deepFind(it, ['nickname', 'full_name', 'name', 'channel', 'author_name', 'channel_name']));
     out.push({
       externalId,
       platform,
       author: handle || authorName || '',
       authorName,
       description: pickText(it),
-      coverUrl: findUrl(it, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'thumbnails', 'image_versions2', 'preview']),
+      coverUrl: findUrl(it, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'image_versions2', 'preview', 'media_url_https', 'images', 'source']),
       videoUrl: findUrl(it, ['play_addr', 'download_addr', 'video_url', 'video_versions', 'play_url', 'contentUrl']),
       webUrl: webUrlFor(platform, externalId, handle, it),
       durationSec: num(deepFind(it, ['duration', 'length_seconds', 'video_duration'])),
@@ -105,6 +111,97 @@ export function genericNormalize(platform: TrendPlatform, raw: any): NormalizedV
 }
 
 export type SearchFilters = Record<string, string>;
+// Собирает все вложенные объекты по ключу (для renderer-деревьев YouTube).
+function collectByKey(obj: any, keys: string[], out: any[], depth = 0): void {
+  if (obj == null || depth > 14) return;
+  if (Array.isArray(obj)) { for (const it of obj) collectByKey(it, keys, out, depth + 1); return; }
+  if (typeof obj === 'object') {
+    for (const k of keys) { if (obj[k] && typeof obj[k] === 'object') out.push(obj[k]); }
+    for (const kk of Object.keys(obj)) collectByKey(obj[kk], keys, out, depth + 1);
+  }
+}
+// YouTube innertube текст: {simpleText} | {runs:[{text}]} | строка.
+function ytText(v: any): string | undefined {
+  if (v == null) return undefined;
+  if (typeof v === 'string') return v;
+  if (typeof v.simpleText === 'string') return v.simpleText;
+  if (Array.isArray(v.runs)) return v.runs.map((r: any) => r?.text || '').join('');
+  return undefined;
+}
+/** YouTube: достаём videoRenderer/reelItemRenderer из дерева contents. */
+export function normalizeYoutube(raw: any): NormalizedVideo[] {
+  const renderers: any[] = [];
+  collectByKey(raw, ['videoRenderer', 'reelItemRenderer', 'compactVideoRenderer', 'gridVideoRenderer'], renderers);
+  const out: NormalizedVideo[] = [];
+  const seen = new Set<string>();
+  for (const r of renderers) {
+    const id = String(r.videoId || '');
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const author = ytText(r.ownerText) || ytText(r.longBylineText) || ytText(r.shortBylineText);
+    const thumbs = r.thumbnail?.thumbnails;
+    const cover = Array.isArray(thumbs) && thumbs.length ? thumbs[thumbs.length - 1]?.url : undefined;
+    const lenTxt = ytText(r.lengthText);
+    let durationSec: number | undefined;
+    if (lenTxt && /\d/.test(lenTxt)) durationSec = lenTxt.split(':').map((x) => parseInt(x, 10) || 0).reduce((a, b) => a * 60 + b, 0);
+    out.push({
+      externalId: id, platform: 'youtube',
+      author: author || '', authorName: author,
+      description: ytText(r.title) || ytText(r.headline),
+      coverUrl: typeof cover === 'string' ? cover : undefined,
+      videoUrl: undefined,
+      webUrl: `https://www.youtube.com/watch?v=${id}`,
+      durationSec, createTime: undefined,
+      stats: { play: num(ytText(r.viewCountText) || ytText(r.shortViewCountText)) },
+      raw: r,
+    });
+  }
+  return out;
+}
+// X/Twitter: собираем объекты-твиты (есть legacy.full_text + rest_id/id_str).
+function collectTweets(obj: any, out: any[], depth = 0): void {
+  if (obj == null || depth > 16) return;
+  if (Array.isArray(obj)) { for (const it of obj) collectTweets(it, out, depth + 1); return; }
+  if (typeof obj === 'object') {
+    const lg = obj.legacy;
+    if (lg && typeof lg === 'object' && typeof lg.full_text === 'string' && (obj.rest_id || lg.id_str)) out.push(obj);
+    for (const kk of Object.keys(obj)) collectTweets(obj[kk], out, depth + 1);
+  }
+}
+/** X/Twitter: твиты из GraphQL-таймлайна. */
+export function normalizeTwitter(raw: any): NormalizedVideo[] {
+  const tweets: any[] = [];
+  collectTweets(raw, tweets);
+  const out: NormalizedVideo[] = [];
+  const seen = new Set<string>();
+  for (const t of tweets) {
+    const lg = t.legacy || {};
+    const id = String(t.rest_id || lg.id_str || '');
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const user = t.core?.user_results?.result?.legacy || t.core?.user_results?.result?.core || {};
+    const screen = str(user.screen_name) || str(user.username);
+    const media = (lg.extended_entities?.media || lg.entities?.media || [])[0];
+    const variants: any[] = media?.video_info?.variants || [];
+    const mp4 = variants.filter((v) => v?.content_type === 'video/mp4').sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+    let createTime: number | undefined;
+    if (lg.created_at) { const ts = Date.parse(lg.created_at); if (Number.isFinite(ts)) createTime = Math.floor(ts / 1000); }
+    out.push({
+      externalId: id, platform: 'twitter',
+      author: screen || str(user.name) || '', authorName: str(user.name),
+      description: lg.full_text,
+      coverUrl: urlFrom(media?.media_url_https) || urlFrom(media),
+      videoUrl: mp4?.url,
+      webUrl: screen ? `https://x.com/${screen}/status/${id}` : `https://x.com/i/status/${id}`,
+      durationSec: media?.video_info?.duration_millis ? Math.round(media.video_info.duration_millis / 1000) : undefined,
+      createTime,
+      stats: { play: num(t.views?.count ?? lg.view_count), like: num(lg.favorite_count), comment: num(lg.reply_count), share: num(lg.retweet_count) },
+      raw: t,
+    });
+  }
+  return out;
+}
+
 export interface TrendProvider {
   /** Есть ли у площадки лента «горячее»/explore (иначе только поиск по ключевику). */
   hasTrending: boolean;
@@ -140,14 +237,14 @@ export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
     // get_general_search: sort_by / upload_time / duration.
     search: (k, q, o) => tikhubGet(k, `/api/v1/youtube/web/get_general_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time', 'duration'])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/youtube/web/get_trending_videos?section=Now`, { timeoutMs: 30000 }),
-    normalize: (raw) => genericNormalize('youtube', raw),
+    normalize: (raw) => normalizeYoutube(raw),
   },
   twitter: {
     hasTrending: false, // fetch_trending отдаёт ТЕМЫ, а не посты — ленту постов даём только через поиск
     // search_type: Top / Latest / Media.
     search: (k, q, o) => tikhubGet(k, `/api/v1/twitter/web/fetch_search_timeline?${qs({ keyword: q, search_type: o.filters?.search_type || 'Top' }, undefined, [])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/twitter/web/fetch_trending?country=UnitedStates`, { timeoutMs: 30000 }),
-    normalize: (raw) => genericNormalize('twitter', raw),
+    normalize: (raw) => normalizeTwitter(raw),
   },
   reddit: {
     hasTrending: true,

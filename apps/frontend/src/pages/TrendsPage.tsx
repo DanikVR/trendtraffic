@@ -123,6 +123,8 @@ export default function TrendsPage() {
   const selectPlatform = (id: Source) => {
     setPlatform(id);
     setFilters(defaultFilters(id));
+    setQuery(perPlatform[id]?.query ?? '');   // вернуть последний ключевик этой площадки
+    setPage(1); setSelected(new Set()); setNotice(null); setError(null);
     const p = PLATFORMS.find((x) => x.id === id);
     if (p && !p.trending && kind === 'trending') setKind('keyword'); // у X нет «Горячее»
   };
@@ -134,7 +136,22 @@ export default function TrendsPage() {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [videos, setVideos] = useState<StoredVideo[]>([]);
+  // По каждой площадке храним свой ключевик + накопленную ленту результатов.
+  const [perPlatform, setPerPlatform] = useState<Record<string, { query: string; videos: StoredVideo[] }>>({});
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 12;
+  const videos = perPlatform[platform]?.videos ?? [];
+  const setVideos = (updater: StoredVideo[] | ((prev: StoredVideo[]) => StoredVideo[])) =>
+    setPerPlatform((s) => {
+      const cur = s[platform] || { query: '', videos: [] };
+      const next = typeof updater === 'function' ? (updater as (p: StoredVideo[]) => StoredVideo[])(cur.videos) : updater;
+      return { ...s, [platform]: { query: cur.query, videos: next } };
+    });
+  const dedupVideos = (list: StoredVideo[]): StoredVideo[] => {
+    const seen = new Set<string>(); const out: StoredVideo[] = [];
+    for (const v of list) { const k = v.externalId || v.id || ''; if (!k || seen.has(k)) continue; seen.add(k); out.push(v); }
+    return out;
+  };
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
@@ -148,8 +165,16 @@ export default function TrendsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/trends/videos?limit=60', { headers: headers() });
-        if (res.ok) { const d = await res.json(); setVideos(d.videos || []); }
+        const res = await fetch('/api/trends/videos?limit=200', { headers: headers() });
+        if (res.ok) {
+          const d = await res.json();
+          const buckets: Record<string, { query: string; videos: StoredVideo[] }> = {};
+          for (const v of (d.videos || []) as StoredVideo[]) {
+            const p = v.platform || 'tiktok';
+            (buckets[p] = buckets[p] || { query: '', videos: [] }).videos.push(v);
+          }
+          setPerPlatform(buckets);
+        }
       } catch { /* тихо */ }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,7 +190,14 @@ export default function TrendsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      setVideos(data.videos || []);
+      const found: StoredVideo[] = data.videos || [];
+      // Накопление: новые сверху, дедуп по externalId; запоминаем ключевик площадки.
+      const q = query.trim();
+      setPerPlatform((s) => {
+        const cur = s[platform] || { query: '', videos: [] };
+        return { ...s, [platform]: { query: q, videos: dedupVideos([...found, ...cur.videos]) } };
+      });
+      setPage(1);
       const fb = data.fellBackToApp ? ' Режим «Поиск по слову/Около-тематика» был нестабилен — поиск автоматически выполнен «Умным поиском».' : '';
       if ((data.count ?? 0) === 0) {
         setNotice(`Trend ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.${fb}`);
@@ -482,7 +514,7 @@ export default function TrendsPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-          {videos.map((v) => {
+          {videos.slice(0, page * PAGE_SIZE).map((v) => {
             const isSel = !!(v.id && selected.has(v.id));
             return (
             <AuroraCard key={v.id || v.externalId}
@@ -586,6 +618,15 @@ export default function TrendsPage() {
             );
           })}
           </div>
+
+          {/* Пагинация ленты */}
+          {videos.length > page * PAGE_SIZE && (
+            <div className="flex justify-center pt-1">
+              <AuroraButton variant="secondary" onClick={() => setPage((p) => p + 1)}>
+                Показать ещё ({videos.length - page * PAGE_SIZE})
+              </AuroraButton>
+            </div>
+          )}
         </>
       )}
       </>
