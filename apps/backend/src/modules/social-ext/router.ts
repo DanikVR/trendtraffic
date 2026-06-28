@@ -24,6 +24,8 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { getTikHubApiKey } from '../../config/systemConfig.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
+import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
@@ -207,3 +209,80 @@ mediaRouter.get('/', async (req: AuthedRequest, res: Response) => {
 });
 
 export { mediaRouter };
+
+// ============================================================================
+// AI-прокси  →  /api/social-ext/ai-proxy/<host>/<path>?<query>
+// ----------------------------------------------------------------------------
+// AI-функции расширения (промпт из обложки, разборы видео/профиля/виральности,
+// сводка отчёта) ходят к gemini/openai/anthropic. Polyfill переписывает их сюда,
+// а мы подставляем ключ из настроек Enterprise (cloud) — браузеру ключ не виден.
+// По умолчанию провайдер gemini → ключ getEffectiveGeminiKey (тенант → платформа).
+// ============================================================================
+
+const AI_HOSTS = new Set(['generativelanguage.googleapis.com', 'api.openai.com', 'api.anthropic.com']);
+
+const aiRouter = Router();
+aiRouter.use(requireAuth);
+aiRouter.use(proxyLimiter);
+aiRouter.use(requireEnterprise);
+
+aiRouter.all('/*', async (req: AuthedRequest, res: Response) => {
+  // req.url = «/<host>/<rest>?<query>». Первый сегмент — хост провайдера.
+  const raw = (req.url || '/').replace(/^\/+/, '');
+  const slash = raw.indexOf('/');
+  const host = slash === -1 ? raw.split('?')[0] : raw.slice(0, slash);
+  let rest = slash === -1 ? '' : raw.slice(slash); // начинается с «/», включает query
+  if (!AI_HOSTS.has(host)) return res.status(400).json({ error: 'Недопустимый AI-хост' });
+
+  // Подбор ключа + заголовка авторизации по провайдеру.
+  const headers: Record<string, string> = { Accept: 'application/json', 'User-Agent': UA };
+  let key: string | null = null;
+  if (host === 'generativelanguage.googleapis.com') {
+    key = await getEffectiveGeminiKey(req.tenantId);
+    if (key) {
+      headers['x-goog-api-key'] = key;
+      // Убираем возможный ?key=<placeholder> из расширения, чтобы не перебил наш ключ.
+      const qIdx = rest.indexOf('?');
+      if (qIdx !== -1) {
+        const qs = new URLSearchParams(rest.slice(qIdx + 1));
+        qs.delete('key');
+        const q = qs.toString();
+        rest = rest.slice(0, qIdx) + (q ? `?${q}` : '');
+      }
+    }
+  } else if (host === 'api.openai.com') {
+    key = await getEffectiveProviderKey(req.tenantId, 'openai');
+    if (key) headers['Authorization'] = `Bearer ${key}`;
+  } else if (host === 'api.anthropic.com') {
+    key = await getEffectiveProviderKey(req.tenantId, 'anthropic');
+    if (key) {
+      headers['x-api-key'] = key;
+      headers['anthropic-version'] = (req.headers['anthropic-version'] as string) || '2023-06-01';
+    }
+  }
+  if (!key) {
+    return res.status(400).json({ error: 'AI-ключ не настроен. Задайте ключ Gemini в Enterprise → Генерация.' });
+  }
+
+  const method = (req.method || 'GET').toUpperCase();
+  const hasBody = method !== 'GET' && method !== 'HEAD' && req.body && Object.keys(req.body).length > 0;
+  let body: string | undefined;
+  if (hasBody) { body = JSON.stringify(req.body); headers['Content-Type'] = 'application/json'; }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const upstream = await fetch(`https://${host}${rest}`, { method, headers, body, signal: controller.signal });
+    const buf = Buffer.from(await upstream.arrayBuffer());
+    const ct = upstream.headers.get('content-type');
+    if (ct) res.setHeader('Content-Type', ct);
+    res.status(upstream.status).send(buf);
+  } catch (err: any) {
+    const aborted = err?.name === 'AbortError';
+    res.status(aborted ? 504 : 502).json({ error: aborted ? 'Таймаут запроса к AI' : (err?.message || 'AI proxy error') });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+export { aiRouter };

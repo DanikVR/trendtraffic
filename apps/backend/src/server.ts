@@ -39,7 +39,7 @@ import whatsappRouter from './modules/channels/whatsapp/wa_webhook.js';
 import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
-import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter } from './modules/social-ext/router.js';
+import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
 import { HttpWorkerExecutor } from './modules/render/executor_http.js';
@@ -170,6 +170,8 @@ app.use('/api/trends', trendsRouter);
 app.use('/api/social-ext/proxy', socialExtProxyRouter);
 // Медиа-прокси расширения (скачивание видео/обложек с CDN с нужным Referer) — те же гейты
 app.use('/api/social-ext/media', socialExtMediaRouter);
+// AI-прокси расширения (промпт из обложки, разборы) на ключе из настроек Enterprise
+app.use('/api/social-ext/ai-proxy', socialExtAiRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
 app.use('/api/render', renderRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)

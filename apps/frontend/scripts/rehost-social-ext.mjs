@@ -31,7 +31,10 @@ const SRC = process.env.SOCIAL_EXT_SRC || 'C:/Users/pl761/Downloads/0.8.18_0';
 const DEST = path.resolve(__dirname, '../public/social-ext');
 
 const COPY_DIRS = ['chunks', 'assets', 'fonts', '_locales'];
-const COPY_FILES = ['sidepanel.html', 'options.html', 'background.js',
+// options.html НЕ копируем: настройки (ключ TikHub) дублируются нашим прокси, а
+// «Конфигурация ИИ» вынесена в модалку приложения (SocialExtensionPage). Шестерёнка
+// внутри расширения открывает её через postMessage (см. chrome-polyfill openOptionsPage).
+const COPY_FILES = ['sidepanel.html', 'background.js',
   'icon-16.png', 'icon-32.png', 'icon-48.png', 'icon-128.png', 'logo.jpeg', 'favicon.ico'];
 
 // Переписываем абсолютные пути ТОЛЬКО в .html и .css (см. шапку — .js не трогаем).
@@ -77,7 +80,7 @@ for (const f of COPY_FILES) {
 }
 
 // Вставляем polyfill + background перед первым module-скриптом (порядок важен).
-for (const html of ['sidepanel.html', 'options.html']) {
+for (const html of ['sidepanel.html']) {
   const p = path.join(DEST, html);
   if (!fs.existsSync(p)) continue;
   let s = fs.readFileSync(p, 'utf8');

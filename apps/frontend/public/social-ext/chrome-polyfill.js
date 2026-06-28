@@ -24,8 +24,23 @@
 
   var EXT_BASE = '/social-ext/';
   var PROXY_PREFIX = '/api/social-ext/proxy';
+  var AI_PROXY_PREFIX = '/api/social-ext/ai-proxy';
+  var MEDIA_PREFIX = '/api/social-ext/media';
   var TIKHUB_HOSTS = { 'api.tikhub.io': 1, 'api.tikhub.dev': 1 };
+  var AI_HOSTS = { 'generativelanguage.googleapis.com': 1, 'api.openai.com': 1, 'api.anthropic.com': 1 };
+  var AI_PLACEHOLDER = 'managed-by-trendtraffic'; // settings.ai.apiKey == это → «облачный» режим (ключ Enterprise)
+  // Хосты CDN изображений/видео (НЕ сами сайты) — их fetch роутим через медиа-прокси (Referer + same-origin).
+  var CDN_SUFFIXES = ['tiktokcdn.com', 'tiktokcdn-us.com', 'tiktokcdn-eu.com', 'tiktokv.us', 'tiktokv.com',
+    'ibyteimg.com', 'byteimg.com', 'muscdn.com', 'bytecdntp.com', 'bytedance.com', 'bdstatic.com', 'zjcdn.com', 'snssdk.com',
+    'douyinpic.com', 'douyincdn.com', 'douyinstatic.com', 'cdninstagram.com', 'fbcdn.net', 'twimg.com',
+    'hdslb.com', 'biliimg.com', 'bilivideo.com'];
   var TOKEN_KEY = 'vibevox_token';
+  var SETTINGS_KEY = 'sx_local_settings'; // localStorage-ключ объекта settings
+  function appToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function readSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (e) { return {}; } }
+  // «Облако» по умолчанию: ai.apiKey пуст/плейсхолдер → AI идёт через наш ai-прокси (ключ Enterprise).
+  function aiIsCloud() { var s = readSettings(); return !s.ai || !s.ai.apiKey || s.ai.apiKey === AI_PLACEHOLDER; }
+  function isCdnHost(host) { host = (host || '').toLowerCase(); for (var i = 0; i < CDN_SUFFIXES.length; i++) { var s = CDN_SUFFIXES[i]; if (host === s || host.slice(-(s.length + 1)) === '.' + s) return true; } return false; }
 
   // ── Событие в стиле chrome.* (addListener/removeListener/hasListener + _emit) ──
   function makeEvent() {
@@ -97,17 +112,33 @@
   var localArea = makeStorageArea('sx_local_', function (changes) { onChangedEvt._emit(changes, 'local'); });
   var syncArea = makeStorageArea('sx_sync_', function (changes) { onChangedEvt._emit(changes, 'sync'); });
 
-  // ── Засев settings (один раз), чтобы пропустить онбординг и пройти проверку base-url ──
+  // ── Засев settings (один раз): пропускаем онбординг (TikHub) + включаем AI на
+  //    «облачном» (Enterprise) ключе. Реальные ключи подставляют наши прокси. ──
   try {
     localArea.get('settings', function (r) {
-      if (!r || !r.settings || !r.settings.apiKey) {
-        var prev = (r && r.settings) || {};
-        prev.apiKey = prev.apiKey || 'managed-by-trendtraffic';
-        prev.apiBaseUrl = 'https://api.tikhub.io';
-        localArea.set({ settings: prev });
+      var prev = (r && r.settings) || {};
+      var changed = false;
+      if (!prev.apiKey) { prev.apiKey = AI_PLACEHOLDER; changed = true; }
+      if (prev.apiBaseUrl !== 'https://api.tikhub.io') { prev.apiBaseUrl = 'https://api.tikhub.io'; changed = true; }
+      if (!prev.ai || !prev.ai.apiKey) {
+        prev.ai = Object.assign({ provider: 'gemini', model: '' }, prev.ai || {}, { apiKey: AI_PLACEHOLDER });
+        changed = true;
       }
+      if (changed) localArea.set({ settings: prev });
     });
   } catch (e) { console.error('[social-ext] seed settings', e); }
+
+  // Записать AI-настройки извне (модалка «Конфигурация ИИ» родителя): cloud (placeholder) или свой ключ.
+  function setAiSettings(ai) {
+    try {
+      localArea.get('settings', function (r) {
+        var s = (r && r.settings) || {};
+        s.ai = Object.assign({ provider: 'gemini', model: '' }, s.ai || {}, ai || {});
+        if (!s.ai.apiKey) s.ai.apiKey = AI_PLACEHOLDER;
+        localArea.set({ settings: s });
+      });
+    } catch (e) { console.error('[social-ext] setAiSettings', e); }
+  }
 
   // ── runtime messaging: внутри-страничный мост (sidepanel ↔ background) ──
   var onMessageEvt = makeEvent();
@@ -146,7 +177,7 @@
     getURL: function (p) { return EXT_BASE + String(p || '').replace(/^\/+/, ''); },
     getManifest: function () { return { version: '0.8.18', manifest_version: 3, name: 'TikHub - Social Media Toolkit' }; },
     getPlatformInfo: function (cb) { var info = { os: 'win', arch: 'x86-64', nacl_arch: 'x86-64' }; return cb ? cb(info) : Promise.resolve(info); },
-    openOptionsPage: function (cb) { try { window.open(EXT_BASE + 'options.html', '_blank', 'noopener'); } catch (e) {} if (cb) cb(); return Promise.resolve(); },
+    openOptionsPage: function (cb) { try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'social-ext:open-settings' }, location.origin); } catch (e) {} if (cb) cb(); return Promise.resolve(); },
     sendMessage: sendMessage,
     connect: function () { return { name: '', postMessage: function () {}, disconnect: function () {}, onMessage: makeEvent(), onDisconnect: makeEvent() }; },
     onMessage: onMessageEvt,
@@ -265,32 +296,46 @@
   c.downloads = downloads;
   c.action = c.action || { onClicked: makeEvent(), setBadgeText: function () { return Promise.resolve(); }, setIcon: function () { return Promise.resolve(); } };
 
-  // ── fetch-override: api.tikhub.io|dev → same-origin прокси + JWT приложения ──
+  // ── fetch-override: переписываем запросы расширения на наши same-origin прокси ──
+  //   • api.tikhub.io|dev            → /api/social-ext/proxy        (TikHub API, наш ключ)
+  //   • AI-хосты (в облачном режиме)  → /api/social-ext/ai-proxy/... (ключ Enterprise)
+  //   • CDN изображений/видео         → /api/social-ext/media?url=   (Referer на сервере)
+  //  Ко всем добавляем JWT приложения. Остальное — без изменений.
   var _fetch = window.fetch ? window.fetch.bind(window) : null;
   if (_fetch) {
     window.fetch = function (input, init) {
       try {
         var url = (typeof input === 'string') ? input : (input && input.url ? input.url : String(input));
         var u = new URL(url, location.href);
-        if (TIKHUB_HOSTS[u.hostname]) {
-          var proxied = PROXY_PREFIX + u.pathname + u.search;
-          var token = '';
-          try { token = localStorage.getItem(TOKEN_KEY) || ''; } catch (e) {}
+        var host = u.hostname;
+        var proxied = null, mediaGet = false;
+        if (TIKHUB_HOSTS[host]) {
+          proxied = PROXY_PREFIX + u.pathname + u.search;
+        } else if (AI_HOSTS[host] && aiIsCloud()) {
+          proxied = AI_PROXY_PREFIX + '/' + host + u.pathname + u.search;
+        } else if (isCdnHost(host)) {
+          proxied = MEDIA_PREFIX + '?url=' + encodeURIComponent(u.href);
+          mediaGet = true;
+        }
+        if (proxied) {
+          var token = appToken();
+          if (mediaGet) {
+            // картинка/видео с CDN → простой GET через медиа-прокси (Referer ставит сервер)
+            return _fetch(proxied, { headers: { Authorization: 'Bearer ' + token }, credentials: 'same-origin', mode: 'same-origin' });
+          }
           if (input && typeof input === 'object' && input.url) {
-            // Request-объект → пересоздаём на новый URL
             var headers = new Headers(input.headers || {});
             headers.set('Authorization', 'Bearer ' + token);
             var hasBody = input.method && ['GET', 'HEAD'].indexOf(input.method.toUpperCase()) < 0;
             var reqInit = { method: input.method || 'GET', headers: headers, mode: 'same-origin', credentials: 'same-origin', cache: input.cache, redirect: input.redirect };
             if (hasBody) { reqInit.body = input.body; reqInit.duplex = 'half'; }
             return _fetch(new Request(proxied, reqInit));
-          } else {
-            init = init ? Object.assign({}, init) : {};
-            var h = new Headers((init && init.headers) || {});
-            h.set('Authorization', 'Bearer ' + token);
-            init.headers = h; init.mode = 'same-origin'; init.credentials = 'same-origin';
-            return _fetch(proxied, init);
           }
+          init = init ? Object.assign({}, init) : {};
+          var h = new Headers((init && init.headers) || {});
+          h.set('Authorization', 'Bearer ' + token);
+          init.headers = h; init.mode = 'same-origin'; init.credentials = 'same-origin';
+          return _fetch(proxied, init);
         }
       } catch (e) { /* не наш запрос — пропускаем как есть */ }
       return _fetch(input, init);
@@ -305,6 +350,7 @@
       if (!d || typeof d !== 'object') return;
       if (d.type === 'social-ext:set-url') { setCurrentUrl(d.url); }
       else if (d.type === 'social-ext:clear-url') { setCurrentUrl(''); }
+      else if (d.type === 'social-ext:set-ai') { setAiSettings(d.ai); }
     });
     // Сообщаем родителю, что polyfill готов — пусть пришлёт текущий URL (гонка загрузки).
     if (window.parent && window.parent !== window) {
