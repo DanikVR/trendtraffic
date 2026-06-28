@@ -158,7 +158,14 @@ export function normalizeYoutube(raw: any): NormalizedVideo[] {
       num(ytText(r.viewCountText) || ytText(r.shortViewCountText)),
       clockToSec(ytText(r.lengthText) || ''));
   }
-  // 2) плоский videos[] (trending / упрощённый формат)
+  // 2) Shorts (новый формат get_shorts_search): shortsLockupViewModel (videoId/заголовок/обложка вложены).
+  const lockups: any[] = [];
+  collectByKey(raw, ['shortsLockupViewModel'], lockups);
+  for (const l of lockups) {
+    push(String(deepFind(l, ['videoId']) || ''), str(deepFind(l, ['content'])), undefined,
+      findUrl(l, ['sources', 'thumbnail', 'thumbnails']), num(deepFind(l, ['viewCount', 'view_count'])), undefined);
+  }
+  // 3) плоский videos[] (trending / упрощённый формат)
   const flat = findArrayOfObjects(raw, ['video_id']) || [];
   for (const v of flat) {
     const lt = v.duration ?? v.length ?? v.length_text ?? v.lengthSeconds;

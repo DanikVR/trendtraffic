@@ -18,7 +18,7 @@ import { tikhubGet } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { resolveAnthropicKey, DEFAULT_DIRECTOR_MODEL } from '../render/director.js';
 
-export type Platform = 'tiktok' | 'douyin' | 'instagram' | 'twitter' | 'bilibili';
+export type Platform = 'tiktok' | 'douyin' | 'instagram' | 'twitter' | 'bilibili' | 'youtube' | 'reddit';
 export type ContentType = 'video' | 'account';
 
 export interface Detected {
@@ -30,6 +30,7 @@ export interface Detected {
 
 const PLATFORM_LABEL: Record<Platform, string> = {
   tiktok: 'TikTok', douyin: 'Douyin', instagram: 'Instagram', twitter: 'X (Twitter)', bilibili: 'Bilibili',
+  youtube: 'YouTube', reddit: 'Reddit',
 };
 
 /** Разбирает публичную ссылку → платформа + тип (видео/аккаунт) + идентификатор. */
@@ -55,6 +56,17 @@ export function detectUrl(input: string): Detected | null {
   if (/bilibili\.com/i.test(u) || /b23\.tv/i.test(u)) {
     if ((m = u.match(/\/video\/(BV[\w]+)/i))) return { platform: 'bilibili', type: 'video', videoId: m[1] };
     if ((m = u.match(/space\.bilibili\.com\/(\d+)/))) return { platform: 'bilibili', type: 'account', username: m[1] };
+  }
+  if (/youtube\.com/i.test(u) || /youtu\.be/i.test(u)) {
+    if ((m = u.match(/[?&]v=([\w-]{8,})/))) return { platform: 'youtube', type: 'video', videoId: m[1] };
+    if ((m = u.match(/\/(?:shorts|embed|live)\/([\w-]{8,})/))) return { platform: 'youtube', type: 'video', videoId: m[1] };
+    if ((m = u.match(/youtu\.be\/([\w-]{8,})/))) return { platform: 'youtube', type: 'video', videoId: m[1] };
+    if ((m = u.match(/\/channel\/(UC[\w-]+)/))) return { platform: 'youtube', type: 'account', username: m[1] };
+  }
+  if (/reddit\.com/i.test(u) || /redd\.it/i.test(u)) {
+    if ((m = u.match(/\/comments\/([a-z0-9]+)/i))) return { platform: 'reddit', type: 'video', videoId: m[1] };
+    if ((m = u.match(/redd\.it\/([a-z0-9]+)/i))) return { platform: 'reddit', type: 'video', videoId: m[1] };
+    if ((m = u.match(/\/(?:user|u)\/([\w\-]+)/i))) return { platform: 'reddit', type: 'account', username: m[1] };
   }
   return null;
 }
@@ -89,6 +101,14 @@ function planCalls(d: Detected): { label: string; path: string }[] {
         { label: 'video', path: `/api/v1/bilibili/app/fetch_one_video?bv_id=${enc(v)}` },
         { label: 'comments', path: `/api/v1/bilibili/app/fetch_video_comments?bv_id=${enc(v)}` },
       ];
+      case 'youtube': return [
+        { label: 'video', path: `/api/v1/youtube/web_v2/get_video_info?video_id=${enc(v)}&need_format=true` },
+        { label: 'comments', path: `/api/v1/youtube/web_v2/get_video_comments?video_id=${enc(v)}&need_format=true` },
+      ];
+      case 'reddit': return [
+        { label: 'video', path: `/api/v1/reddit/app/fetch_post_details?post_id=${enc(v)}&need_format=true` },
+        { label: 'comments', path: `/api/v1/reddit/app/fetch_post_comments?post_id=${enc(v)}&need_format=true` },
+      ];
     }
   } else {
     switch (d.platform) {
@@ -111,6 +131,14 @@ function planCalls(d: Detected): { label: string; path: string }[] {
       case 'bilibili': return [
         { label: 'account', path: `/api/v1/bilibili/app/fetch_user_info?user_id=${enc(u)}` },
         { label: 'posts', path: `/api/v1/bilibili/app/fetch_user_videos?user_id=${enc(u)}` },
+      ];
+      case 'youtube': return [
+        { label: 'account', path: `/api/v1/youtube/web/get_channel_info?channel_id=${enc(u)}` },
+        { label: 'posts', path: `/api/v1/youtube/web/get_channel_videos?channel_id=${enc(u)}` },
+      ];
+      case 'reddit': return [
+        { label: 'account', path: `/api/v1/reddit/app/fetch_user_profile?username=${enc(u)}&need_format=true` },
+        { label: 'posts', path: `/api/v1/reddit/app/fetch_user_posts?username=${enc(u)}&need_format=true` },
       ];
     }
   }
@@ -263,7 +291,7 @@ export interface AnalyzeResult {
 export async function analyzeUrl(tenantId: string, url: string): Promise<AnalyzeResult> {
   const detected = detectUrl(url);
   if (!detected) {
-    throw new Error('Не распознал ссылку. Вставьте ссылку на видео/пост или аккаунт: TikTok, Douyin, Instagram, X (Twitter) или Bilibili.');
+    throw new Error('Не распознал ссылку. Вставьте ссылку на видео/пост или аккаунт: TikTok, Douyin, Instagram, X, YouTube, Reddit или Bilibili.');
   }
   const key = await getEffectiveTikHubKey(tenantId);
   if (!key) throw new Error('Ключ Trend не задан. Укажите свой ключ в настройках Enterprise или платформенный в админке.');

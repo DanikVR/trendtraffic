@@ -246,7 +246,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           <div className="flex-1 relative">
             <Link2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
             <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') analyze(); }}
-              placeholder="Ссылка: TikTok / Douyin / Instagram / X / Bilibili — видео или аккаунт"
+              placeholder="Ссылка: TikTok / Instagram / YouTube / X / Reddit / Douyin / Bilibili — видео или аккаунт"
               className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>

@@ -477,9 +477,15 @@
  *         Shorts» (get_shorts_search). «Анализировать выбранные» больше НЕ скачивает
  *         CSV — открывает «Аналитику» и показывает выбранные списком со сводкой,
  *         «Подробно» → полная аналитика, «← К списку».
+ * 1.4.9 — (1) Аналитика по ссылке теперь понимает YouTube и Reddit (раньше —
+ *         только TikTok/Douyin/IG/X/Bilibili), поэтому «Подробно» и «Анализировать
+ *         выбранные» по YouTube/Reddit больше не «не распознано»: get_video_info/
+ *         get_video_comments (YT), fetch_post_details/comments (Reddit), профили/
+ *         ленты. (2) YouTube Shorts: разбор нового рендера shortsLockupViewModel —
+ *         «Горячее»/Shorts больше не пустые.
  */
 
-export const APP_VERSION = '1.4.8';
+export const APP_VERSION = '1.4.9';
 
 export function AppVersion() {
   return (
