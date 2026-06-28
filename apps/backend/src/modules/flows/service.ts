@@ -14,6 +14,9 @@ export interface FlowGraph {
   triggers?: any[];
   /** Исходное видео рендера «Собрать» (выбор центрального узла в MontageEditor). */
   source?: { url: string; name?: string } | null;
+  /** Облачные узлы графа (Google Omni, Контент-план): позиции/настройки + связи. */
+  cloud?: Record<string, any>;
+  cloudEdges?: any[];
 }
 
 export interface Flow {
@@ -41,6 +44,8 @@ function parseGraph(g: any): FlowGraph {
     source: (g.source && typeof g.source === 'object' && typeof g.source.url === 'string')
       ? { url: g.source.url, name: typeof g.source.name === 'string' ? g.source.name : undefined }
       : null,
+    cloud: (g.cloud && typeof g.cloud === 'object') ? g.cloud : undefined,
+    cloudEdges: Array.isArray(g.cloudEdges) ? g.cloudEdges : [],
   };
 }
 

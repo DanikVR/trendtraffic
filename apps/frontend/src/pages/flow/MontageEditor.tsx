@@ -11,11 +11,12 @@
  *
  * Хранение — в flows.graph.nodes (JSONB).
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
+  Cloud, CalendarDays, Download, Link2,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -86,6 +87,13 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
   length: 'Claude выберет самый сильный момент по транскрипту и обрежет под длительность.',
 };
 
+// Облачные узлы графа (перетаскиваемые): Google Omni (генерация видео) и Контент-план.
+type CloudId = 'omni' | 'plan';
+const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
+  omni: { label: 'Google Omni', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
+  plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
+};
+
 interface Preset { name: string; kinds: MKind[]; }
 const NEWS_CHAIN: MKind[] = ['news', 'voiceover', 'broll', 'subtitles', 'audio', 'format', 'export'];
 const PRESET_GROUPS: { group: string; presets: Preset[] }[] = [
@@ -151,6 +159,14 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sources, setSources] = useState<{ url: string; name: string; thumb?: string; type: string }[]>([]);
+  // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def } });
+  const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
+  const [connectFrom, setConnectFrom] = useState<string | null>(null);
+  const [cloudPanel, setCloudPanel] = useState<CloudId | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<CloudId | null>(null);
+  const movedRef = useRef(false);
 
   const update = (fn: (n: MNode[]) => MNode[]) => { setNodes((prev) => fn(prev)); setDirty(true); };
 
@@ -168,6 +184,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           setNodes(mapped);
           const src = d.flow.graph?.source;
           if (src && typeof src.url === 'string') { setSourceUrl(src.url); setSourceName(src.name || 'видео'); }
+          if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
+          if (Array.isArray(d.flow.graph?.cloudEdges)) setCloudEdges(d.flow.graph.cloudEdges);
           if (mapped.length === 0) setShowPresets(true);
         }
       } catch { /* пусто */ }
@@ -180,7 +198,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -255,6 +273,37 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   const selected = nodes.find((n) => n.id === selectedId) || null;
 
+  // ── Облачные узлы: позиции, связи-стрелки, перетаскивание ──────────────────
+  const cloudPoint = (id: string): { x: number; y: number } | null =>
+    id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan') ? cloud[id] : null;
+
+  const addEdge = (from: string, to: string) => {
+    if (from === to) return;
+    setCloudEdges((es) => (es.some((e) => e.from === from && e.to === to) ? es : [...es, { from, to }]));
+    setDirty(true);
+  };
+
+  const onCloudClick = (id: CloudId) => {
+    if (movedRef.current) { movedRef.current = false; return; } // был drag — не открываем панель
+    if (connectFrom && connectFrom !== id) { addEdge(connectFrom, id); setConnectFrom(null); }
+    else setCloudPanel(id);
+  };
+
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      if (!dragRef.current || !canvasRef.current) return;
+      movedRef.current = true;
+      const r = canvasRef.current.getBoundingClientRect();
+      const x = Math.max(5, Math.min(95, ((e.clientX - r.left) / r.width) * 100));
+      const y = Math.max(5, Math.min(95, ((e.clientY - r.top) / r.height) * 100));
+      setCloud((c) => ({ ...c, [dragRef.current as CloudId]: { x, y } }));
+    };
+    const up = () => { if (dragRef.current && movedRef.current) setDirty(true); dragRef.current = null; };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  }, []);
+
   const positions = useMemo(() => {
     const n = nodes.length;
     return nodes.map((_, i) => {
@@ -318,7 +367,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       </div>
 
       {/* Холст-паутина (верхние чипы убраны — добавление через плавающую «+» слева сверху) */}
-      <div className="flex-1" style={{ position: 'relative', overflow: 'hidden',
+      <div ref={canvasRef} className="flex-1" style={{ position: 'relative', overflow: 'hidden',
         background: 'radial-gradient(circle at 50% 42%, rgba(255,115,0,0.05), transparent 60%), var(--bg-primary)',
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
 
@@ -346,7 +395,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
         </svg>
 
-        <button onClick={openSourcePicker} title={building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
+        <button onClick={() => { if (connectFrom) { addEdge(connectFrom, 'center'); setConnectFrom(null); } else openSourcePicker(); }} title={connectFrom ? 'Связать сюда' : building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
           style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: building ? 'default' : 'pointer' }}>
           <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
             {building && <span className="me-ring" />}
@@ -383,6 +432,50 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           <div style={{ position: 'absolute', left: '50%', top: '64%', transform: 'translateX(-50%)', textAlign: 'center' }}>
             <button onClick={() => setShowPresets(true)} className="text-sm font-600 px-4 py-2 rounded-xl"
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Выбрать пресет сценария</button>
+          </div>
+        )}
+
+        {/* ── Облачные узлы (Omni / Контент-план) + связи-стрелки ── */}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }} aria-hidden="true">
+          {cloudEdges.map((e, i) => {
+            const p = cloudPoint(e.from), q = cloudPoint(e.to);
+            if (!p || !q) return null;
+            return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="#ff7300" strokeWidth="0.35" strokeDasharray="1.4 0.9" />;
+          })}
+        </svg>
+        {cloudEdges.map((e, i) => {
+          const p = cloudPoint(e.from), q = cloudPoint(e.to);
+          if (!p || !q) return null;
+          const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
+          return (
+            <button key={'ce' + i} onClick={() => { setCloudEdges((es) => es.filter((_, j) => j !== i)); setDirty(true); }} title="Удалить связь"
+              style={{ position: 'absolute', left: `${mx}%`, top: `${my}%`, transform: 'translate(-50%,-50%)', zIndex: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid #ff7300', color: '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+              <X size={11} />
+            </button>
+          );
+        })}
+        {(['omni', 'plan'] as CloudId[]).map((id) => {
+          const pos = cloud[id]; const cfg = CLOUD[id];
+          return (
+            <div key={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
+              style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
+              <button onClick={() => onCloudClick(id)} title={cfg.label}
+                style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: connectFrom === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
+                  border: `2px solid ${connectFrom === id ? '#ff7300' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
+                {cfg.icon}
+              </button>
+              <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{cfg.label}</span>
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setConnectFrom(connectFrom === id ? null : id); }} title="Связать стрелкой"
+                style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid #ff7300', color: '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                <Link2 size={11} />
+              </button>
+            </div>
+          );
+        })}
+        {connectFrom && (
+          <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#ff7300', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            Кликните узел (видео / Omni / план), чтобы связать · <span onClick={() => setConnectFrom(null)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>отмена</span>
           </div>
         )}
       </div>
@@ -564,6 +657,31 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         </div>
       )}
 
+      {/* Панель облачного узла (Omni / Контент-план) — каркас */}
+      {cloudPanel && (
+        <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 460, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
+              </span>
+              <button onClick={() => setCloudPanel(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            {cloudPanel === 'omni' ? (
+              <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
+                <p>Генерация и преобразование видео через <b>Google Omni / Gemini</b> (текст→видео, фото→видео, аватары, нативное аудио).</p>
+                <p style={{ color: 'var(--text-muted)' }}>Ключ — в <b>Enterprise → Генерация → «Google Omni»</b>. Реальная генерация — этап B. Сейчас узел можно ставить в цепочку: <b>Видео из галереи → Omni → Контент-план</b> (связь стрелкой по кнопке 🔗 на узле).</p>
+              </div>
+            ) : (
+              <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
+                <p><b>Контент-план</b> — расписание и публикация готовых роликов по соцсетям.</p>
+                <p style={{ color: 'var(--text-muted)' }}>Календарь + публикатор — этап C. Сейчас узел можно связывать: по стрелке сюда попадёт готовое видео из цепочки.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Прогресс сборки «Собрать» */}
       {buildJob && !buildMinimized && (
         <div onClick={() => (building ? setBuildMinimized(true) : setBuildJob(null))} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -603,6 +721,12 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <p className="text-xs mt-1" style={{ color: buildJob.resultAssetId ? '#10b981' : 'var(--text-muted)' }}>
                 {buildJob.resultAssetId ? 'Ролик добавлен в Галерею → вкладка «Референс».' : (buildJob.note || 'Конвейер выполнен.')}
               </p>
+            )}
+            {buildJob.status === 'done' && buildJob.resultUrl && (
+              <a href={buildJob.resultUrl} download className="mt-3 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 px-4 rounded-xl w-full"
+                style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', textDecoration: 'none' }}>
+                <Download size={16} /> Скачать видео
+              </a>
             )}
             {building && (
               <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
