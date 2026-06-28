@@ -15,7 +15,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
-  Plus, Pencil, Trash2, X, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
+  Plus, Pencil, X, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -289,20 +289,40 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         </button>
       </div>
 
-      {/* Чипы применённых процессов */}
-      {nodes.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
-          {nodes.map((n) => (
-            <button key={n.id} onClick={() => setSelectedId(n.id)}
-              className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-full transition-colors"
-              style={{ background: selectedId === n.id ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: selectedId === n.id ? '#ff7300' : 'var(--text-secondary)', border: `1px solid ${selectedId === n.id ? '#ff7300' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-              <span style={{ display: 'inline-flex' }}>{React.cloneElement(META[n.kind].icon as any, { size: 13 })}</span>
-              {META[n.kind].label}
-              <Pencil size={11} style={{ opacity: 0.7 }} />
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Палитра процессов: ВСЕ типы. Активные (в сценарии) — карандаш (редактировать)
+          + ✕ (убрать); недостающие — «+» (добавить в воздействие на видео). */}
+      <div className="flex items-center gap-2 px-4 py-2 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
+        {KIND_ORDER.map((k) => {
+          const node = nodes.find((n) => n.kind === k);
+          const active = !!node;
+          const sel = active && selectedId === node!.id;
+          return (
+            <span key={k} className="inline-flex items-center text-xs font-600 rounded-full overflow-hidden transition-colors"
+              style={{
+                background: sel ? 'var(--btn-primary-bg)' : active ? 'var(--bg-tertiary)' : 'transparent',
+                color: sel ? '#ff7300' : active ? 'var(--text-secondary)' : 'var(--text-muted)',
+                border: active ? `1px solid ${sel ? '#ff7300' : 'var(--border-medium)'}` : '1px dashed var(--border-strong)',
+                opacity: active ? 1 : 0.85,
+              }}>
+              <button onClick={() => (active ? setSelectedId(node!.id) : addNode(k))}
+                title={active ? 'Редактировать' : 'Добавить в сценарий'}
+                className="inline-flex items-center gap-1.5 pl-2.5 py-1.5"
+                style={{ paddingRight: active ? 5 : 10, background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}>
+                <span style={{ display: 'inline-flex' }}>{React.cloneElement(META[k].icon as any, { size: 13 })}</span>
+                {META[k].label}
+                {active ? <Pencil size={11} style={{ opacity: 0.7 }} /> : <Plus size={12} style={{ opacity: 0.85 }} />}
+              </button>
+              {active && (
+                <button onClick={() => removeNode(node!.id)} title="Убрать из сценария"
+                  className="inline-flex items-center justify-center pr-2 pl-1 py-1.5"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <X size={12} />
+                </button>
+              )}
+            </span>
+          );
+        })}
+      </div>
 
       {/* Холст-паутина */}
       <div className="flex-1" style={{ position: 'relative', overflow: 'hidden',
@@ -365,7 +385,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, margin: '0 12px 84px', maxHeight: '72vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
             <div className="flex items-center justify-between mb-1">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><span style={{ color: '#ff7300' }}>{META[selected.kind].icon}</span> {META[selected.kind].label}</span>
-              <button onClick={() => removeNode(selected.id)} title="Удалить" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><Trash2 size={15} /></button>
+              <button onClick={() => setSelectedId(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{META[selected.kind].hint}</p>
 

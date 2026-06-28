@@ -22,6 +22,8 @@ import {
   TrendingUp,
   Image,
   Send,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 /** Композитная иконка «перевод + телефон» — используется и в шапке баланса,
@@ -89,6 +91,15 @@ export function MainLayout() {
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains('dark')
   );
+  // Левый сайдбар: по умолчанию свёрнут (только иконки), раскрывается по клику.
+  const [navCollapsed, setNavCollapsed] = useState(
+    () => localStorage.getItem('vv_sidebar_collapsed') !== 'false'
+  );
+  const toggleNav = () => setNavCollapsed((c) => {
+    const n = !c;
+    localStorage.setItem('vv_sidebar_collapsed', String(n));
+    return n;
+  });
 
   // PWA install — кнопка показывается всегда, кроме случаев:
   //  - приложение уже запущено как установленная PWA (standalone)
@@ -104,39 +115,58 @@ export function MainLayout() {
        * DESKTOP: Slim Left Sidebar (lg+)
        * ──────────────────────────────────── */}
       <aside
-        className="hidden lg:flex flex-col w-64 border-r flex-shrink-0"
+        className={`hidden lg:flex flex-col ${navCollapsed ? 'w-[68px]' : 'w-64'} border-r flex-shrink-0 transition-[width] duration-200`}
         style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}
       >
-        {/* Logo (clickable → /) */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="flex items-center flex-1 min-w-0 no-select"
-            aria-label={t('sidebar.logoAria')}
-          >
-            <VibeVoxLogo height={30} />
-          </button>
-          {/* Переключатели языка и темы */}
+        {/* Свёрнутый режим: прячем подписи у пунктов навигации и центруем иконки. */}
+        <style>{`
+          .vv-nav-collapsed > a, .vv-nav-collapsed > button { justify-content: center; padding-left: 0; padding-right: 0; }
+          .vv-nav-collapsed > a > span, .vv-nav-collapsed > button > span { display: none; }
+        `}</style>
+        {/* Header: лого + переключатели + кнопка сворачивания */}
+        <div className={`flex items-center border-b ${navCollapsed ? 'flex-col gap-2 px-2 py-4' : 'gap-3 px-5 py-5'}`} style={{ borderColor: 'var(--border-subtle)' }}>
+          {navCollapsed ? (
+            <button type="button" onClick={() => navigate('/')} className="no-select" aria-label={t('sidebar.logoAria')}>
+              <VibeVoxIcon size={32} bordered />
+            </button>
+          ) : (
+            <button type="button" onClick={() => navigate('/')} className="flex items-center flex-1 min-w-0 no-select" aria-label={t('sidebar.logoAria')}>
+              <VibeVoxLogo height={30} />
+            </button>
+          )}
+          {/* Переключатели языка и темы (скрыты в свёрнутом) + сворачивание */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <LanguageSwitcher />
+            {!navCollapsed && <LanguageSwitcher />}
+            {!navCollapsed && (
+              <button
+                id="sidebar-theme-toggle"
+                onClick={() => toggleGlobalTheme(isDark, setIsDark)}
+                title={isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')}
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+              >
+                {isDark
+                  ? <Sun  size={15} strokeWidth={1.5} />
+                  : <Moon size={15} strokeWidth={1.5} />
+                }
+              </button>
+            )}
             <button
-              id="sidebar-theme-toggle"
-              onClick={() => toggleGlobalTheme(isDark, setIsDark)}
-              title={isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')}
+              onClick={toggleNav}
+              title={navCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
               className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
             >
-              {isDark
-                ? <Sun  size={15} strokeWidth={1.5} />
-                : <Moon size={15} strokeWidth={1.5} />
+              {navCollapsed
+                ? <PanelLeftOpen  size={15} strokeWidth={1.5} />
+                : <PanelLeftClose size={15} strokeWidth={1.5} />
               }
             </button>
           </div>
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+        <nav className={`flex-1 px-3 py-4 flex flex-col gap-1 ${navCollapsed ? 'vv-nav-collapsed' : ''}`}>
           {desktopNav.map((item) => {
             const Icon = item.icon;
             return (
@@ -252,7 +282,7 @@ export function MainLayout() {
             Слева — фирменный VibeVoxIcon (даёт понять что именно "VibeVox"
             окажется на устройстве). Описание без truncate — переносится на
             нужное число строк, чтобы влезло полностью на любом языке. */}
-        {pwaInstallAvailable && (
+        {!navCollapsed && pwaInstallAvailable && (
           <div className="px-3 pb-3">
             <button
               type="button"
@@ -277,7 +307,19 @@ export function MainLayout() {
           </div>
         )}
 
-        {/* Объединённая карточка: User + Тариф + Баланс */}
+        {/* Объединённая карточка: User + Тариф + Баланс. В свёрнутом — только аватар + тариф. */}
+        {navCollapsed ? (
+          <div className="p-2 pb-4 flex flex-col items-center gap-2">
+            <button type="button" onClick={() => navigate('/billing')} title={t('balance.tariffs')}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: '#ff7300' }}>
+              <CreditCard size={16} strokeWidth={1.5} />
+            </button>
+            <button type="button" onClick={() => navigate('/settings')} title={user?.email || ''} className="no-select">
+              <AvatarCircle name={user?.name || user?.email} size="sm" status="online" />
+            </button>
+          </div>
+        ) : (
         <div className="p-3 pb-5">
           <div className="rounded-2xl overflow-hidden"
                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
@@ -366,6 +408,7 @@ export function MainLayout() {
           {/* Версия приложения */}
           <AppVersion />
         </div>
+        )}
       </aside>
 
       {/* ────────────────────────────────────
