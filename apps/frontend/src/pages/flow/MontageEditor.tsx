@@ -140,6 +140,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [dirty, setDirty] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [addOpen, setAddOpen] = useState(false); // нижнее поле «Добавить»: свёрнуто/раскрыто
   const [showPresets, setShowPresets] = useState(false);
   const [attachFor, setAttachFor] = useState<string | null>(null);
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string }[]>([]);
@@ -258,7 +259,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     const n = nodes.length;
     return nodes.map((_, i) => {
       const ang = (-90 + (360 / Math.max(n, 1)) * i) * Math.PI / 180;
-      return { left: 50 + 33 * Math.cos(ang), top: 50 + 36 * Math.sin(ang) };
+      return { left: 50 + 27 * Math.cos(ang), top: 50 + 30 * Math.sin(ang) };
     });
   }, [nodes]);
 
@@ -291,6 +292,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         @keyframes meFloatIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
         .me-dot{animation:meDot 1.4s ease-in-out infinite;}
         @keyframes meDot{0%,100%{opacity:.3}50%{opacity:1}}
+        /* раскрытие — пружинка (быстро, мультяшно) */
+        .me-grow{animation:meGrow .26s cubic-bezier(.34,1.7,.5,1);transform-origin:bottom center;}
+        @keyframes meGrow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+        /* «+ Добавить» на узле — по ховеру узла */
+        .me-add-pill{opacity:0;transform:translate(-50%,5px) scale(.8);transition:opacity .15s ease, transform .18s cubic-bezier(.34,1.6,.64,1);pointer-events:none;}
+        .me-node:hover .me-add-pill{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto;}
+        .me-add-pill:hover{filter:brightness(1.12);}
       `}</style>
 
       {/* Верхняя панель */}
@@ -382,6 +390,11 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {n.useLlm && <Sparkles size={11} style={{ color: '#7c5cff' }} />}
               </span>
             )}
+            {/* + Добавить — появляется по наведению на узел */}
+            <span className="me-add-pill" onClick={(e) => { e.stopPropagation(); setAddOpen(true); setShowPicker(true); }}
+              style={{ position: 'absolute', left: '50%', top: '100%', marginTop: 6, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999, background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', cursor: 'pointer' }}>
+              <Plus size={11} /> Добавить
+            </span>
           </button>
         ))}
 
@@ -393,13 +406,22 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         )}
       </div>
 
-      {/* Нижняя строка «Добавить параметр» */}
-      <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border-medium)' }}>
-        <div className="me-addbar flex items-center gap-2 mx-auto" style={{ maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid var(--border-strong)', borderRadius: 999, padding: '6px 6px 6px 8px' }}>
-          <button onClick={() => setShowPicker(true)} title="Добавить процесс" className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={18} /></button>
-          <input readOnly onClick={() => setShowPicker(true)} placeholder="Добавить параметр или процесс…" className="flex-1 text-sm outline-none" style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }} />
-          <button onClick={() => setShowPicker(true)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Plus size={18} /></button>
-        </div>
+      {/* Нижняя строка «Добавить» — сворачиваемая (закрыта → клик → раскрывается пружинкой) */}
+      <div className="px-4 py-3 flex justify-center" style={{ borderTop: '1px solid var(--border-medium)' }}>
+        {!addOpen ? (
+          <button onClick={() => { setAddOpen(true); setShowPicker(true); }}
+            className="me-addbar inline-flex items-center gap-2 text-sm font-600 pl-2 pr-4 py-1.5 rounded-full"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--btn-primary-bg)', color: '#ff7300' }}><Plus size={16} /></span>
+            Добавить параметр или процесс
+          </button>
+        ) : (
+          <div className="me-addbar me-grow flex items-center gap-2 w-full" style={{ maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '6px 6px 6px 8px' }}>
+            <button onClick={() => setShowPicker(true)} title="Список процессов" className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={18} /></button>
+            <input autoFocus readOnly onClick={() => setShowPicker(true)} placeholder="Выберите процесс…" className="flex-1 text-sm outline-none" style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }} />
+            <button onClick={() => setAddOpen(false)} title="Свернуть" className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+          </div>
+        )}
       </div>
 
       {/* Панель раскрытого узла */}
@@ -474,7 +496,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       {/* Выбор процесса */}
       {showPicker && (
         <div onClick={() => setShowPicker(false)} style={{ position: 'absolute', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, margin: '0 12px 96px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-grow" style={{ width: '100%', maxWidth: 560, margin: '0 12px 88px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
             <div className="text-sm font-700 mb-3" style={{ color: 'var(--text-primary)' }}>Добавить процесс</div>
             <div className="grid grid-cols-3 gap-2">
               {KIND_ORDER.map((k) => (
