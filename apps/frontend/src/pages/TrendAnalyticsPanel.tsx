@@ -121,11 +121,15 @@ ${sent}
 </div></body></html>`;
 }
 
-export default function TrendAnalyticsPanel({ token, initialUrl, initialCover }: { token: string | null; initialUrl?: string | null; initialCover?: string | null }) {
+interface BulkRow { url: string; cover?: string; platform?: string; type?: string; summary: Record<string, any>; error?: string }
+
+export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, bulkItems }: { token: string | null; initialUrl?: string | null; initialCover?: string | null; bulkItems?: { url: string; cover?: string }[] | null }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [bulkRows, setBulkRows] = useState<BulkRow[] | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [cardCover, setCardCover] = useState<string | null>(null); // обложка, переданная с карточки тренда (грузится надёжно)
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -153,9 +157,32 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover }:
 
   // Клик «Аналитика» на карточке тренда → подставить ссылку (+ обложку) и сразу запустить анализ.
   useEffect(() => {
-    if (initialUrl && initialUrl.trim()) { setUrl(initialUrl); setCardCover(initialCover || null); analyze(initialUrl); }
+    if (initialUrl && initialUrl.trim()) { setUrl(initialUrl); setCardCover(initialCover || null); setBulkRows(null); analyze(initialUrl); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialUrl, initialCover]);
+
+  // «Анализировать выбранные» → список сводок по всем выбранным видео.
+  useEffect(() => {
+    if (!bulkItems || bulkItems.length === 0) return;
+    setResult(null); setError(null); setBulkLoading(true); setBulkRows(null);
+    (async () => {
+      try {
+        const res = await fetch('/api/trends/analyze/bulk', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ urls: bulkItems.map((i) => i.url) }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+        const coverByUrl = new Map(bulkItems.map((i) => [i.url, i.cover]));
+        setBulkRows((data.rows || []).map((r: BulkRow) => ({ ...r, cover: r.cover || coverByUrl.get(r.url) })));
+      } catch (e: any) { setError(e?.message || 'Ошибка массового анализа'); }
+      finally { setBulkLoading(false); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkItems]);
+
+  // Открыть полную аналитику одной строки из списка.
+  const openOne = (u: string, cover?: string) => { setUrl(u); setCardCover(cover || null); analyze(u); };
 
   // Скачать проанализированное видео в Галерею (как «Скачать» в трендах).
   const saveToGallery = async () => {
@@ -238,8 +265,49 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover }:
         )}
       </AuroraCard>
 
+      {/* Массовый анализ выбранных — список */}
+      {bulkLoading && (
+        <div className="flex items-center justify-center gap-2 py-8" style={{ color: 'var(--text-muted)' }}>
+          <Loader2 size={18} className="animate-spin" /> Анализирую выбранные…
+        </div>
+      )}
+      {!result && bulkRows && (
+        <>
+          <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Анализ выбранных: {bulkRows.length}</div>
+          <div className="space-y-2">
+            {bulkRows.map((r, i) => {
+              const s = r.summary || {};
+              return (
+                <AuroraCard key={i} className="p-3 flex items-center gap-3">
+                  <div className="flex-shrink-0 rounded-lg overflow-hidden" style={{ width: 56, height: 56, background: 'var(--bg-tertiary)' }}>
+                    {(r.cover || s.cover) ? <img src={r.cover || s.cover} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} /> : null}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-600 truncate" style={{ color: 'var(--text-primary)' }}>{s.author || r.platform || '—'}</div>
+                    {s.desc && <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{String(s.desc)}</div>}
+                    <div className="flex items-center gap-2.5 text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(s.views)}</span>
+                      <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(s.likes)}</span>
+                      <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(s.comments)}</span>
+                      {s.engagementRate != null && <span style={{ color: '#10b981' }}>{s.engagementRate}% ER</span>}
+                      {r.error && <span style={{ color: '#ef4444' }}>{r.error}</span>}
+                    </div>
+                  </div>
+                  <AuroraButton size="sm" variant="secondary" onClick={() => openOne(r.url, r.cover)} icon={<BarChart3 size={14} />}>Подробно</AuroraButton>
+                </AuroraCard>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       {result && (
         <>
+          {bulkRows && (
+            <button onClick={() => setResult(null)} className="inline-flex items-center gap-1.5 text-[12px] font-600" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+              ← К списку выбранных ({bulkRows.length})
+            </button>
+          )}
           {/* Распознано */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 text-[12px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,115,0,0.12)', color: '#ff7300' }}>

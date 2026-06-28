@@ -128,33 +128,45 @@ function ytText(v: any): string | undefined {
   if (Array.isArray(v.runs)) return v.runs.map((r: any) => r?.text || '').join('');
   return undefined;
 }
-/** YouTube: достаём videoRenderer/reelItemRenderer из дерева contents. */
+function clockToSec(s: string): number | undefined {
+  if (!s || !/\d/.test(s)) return undefined;
+  return s.split(':').map((x) => parseInt(x, 10) || 0).reduce((a, b) => a * 60 + b, 0);
+}
+/** YouTube: и renderer-дерево (поиск), и плоский videos[] (тренды/get_trending_videos). */
 export function normalizeYoutube(raw: any): NormalizedVideo[] {
-  const renderers: any[] = [];
-  collectByKey(raw, ['videoRenderer', 'reelItemRenderer', 'compactVideoRenderer', 'gridVideoRenderer'], renderers);
   const out: NormalizedVideo[] = [];
   const seen = new Set<string>();
-  for (const r of renderers) {
-    const id = String(r.videoId || '');
-    if (!id || seen.has(id)) continue;
+  const push = (id: string, desc?: string, author?: string, cover?: string, views?: number, dur?: number) => {
+    if (!id || seen.has(id)) return;
     seen.add(id);
-    const author = ytText(r.ownerText) || ytText(r.longBylineText) || ytText(r.shortBylineText);
+    out.push({
+      externalId: id, platform: 'youtube', author: author || '', authorName: author,
+      description: desc, coverUrl: cover, videoUrl: undefined,
+      webUrl: `https://www.youtube.com/watch?v=${id}`, durationSec: dur, createTime: undefined,
+      stats: { play: views }, raw: { video_id: id },
+    });
+  };
+  // 1) renderer-дерево (search)
+  const renderers: any[] = [];
+  collectByKey(raw, ['videoRenderer', 'reelItemRenderer', 'compactVideoRenderer', 'gridVideoRenderer'], renderers);
+  for (const r of renderers) {
     const thumbs = r.thumbnail?.thumbnails;
     const cover = Array.isArray(thumbs) && thumbs.length ? thumbs[thumbs.length - 1]?.url : undefined;
-    const lenTxt = ytText(r.lengthText);
-    let durationSec: number | undefined;
-    if (lenTxt && /\d/.test(lenTxt)) durationSec = lenTxt.split(':').map((x) => parseInt(x, 10) || 0).reduce((a, b) => a * 60 + b, 0);
-    out.push({
-      externalId: id, platform: 'youtube',
-      author: author || '', authorName: author,
-      description: ytText(r.title) || ytText(r.headline),
-      coverUrl: typeof cover === 'string' ? cover : undefined,
-      videoUrl: undefined,
-      webUrl: `https://www.youtube.com/watch?v=${id}`,
-      durationSec, createTime: undefined,
-      stats: { play: num(ytText(r.viewCountText) || ytText(r.shortViewCountText)) },
-      raw: r,
-    });
+    push(String(r.videoId || ''), ytText(r.title) || ytText(r.headline),
+      ytText(r.ownerText) || ytText(r.longBylineText) || ytText(r.shortBylineText),
+      typeof cover === 'string' ? cover : undefined,
+      num(ytText(r.viewCountText) || ytText(r.shortViewCountText)),
+      clockToSec(ytText(r.lengthText) || ''));
+  }
+  // 2) плоский videos[] (trending / упрощённый формат)
+  const flat = findArrayOfObjects(raw, ['video_id']) || [];
+  for (const v of flat) {
+    const lt = v.duration ?? v.length ?? v.length_text ?? v.lengthSeconds;
+    const dur = typeof lt === 'number' ? lt : (typeof lt === 'string' && lt.includes(':') ? clockToSec(lt) : num(lt));
+    push(String(v.video_id || v.videoId || ''), str(v.title) || str(v.description),
+      str(v.channel_name) || str(v.channel) || str(v.author) || str(v.author_name) || str(deepFind(v, ['channel', 'author'])),
+      findUrl(v, ['cover', 'thumbnail', 'thumbnails', 'thumbnail_url', 'cover_url']),
+      num(deepFind(v, ['view_count', 'views', 'viewCount', 'play_count'])), dur);
   }
   return out;
 }
@@ -168,12 +180,38 @@ function collectTweets(obj: any, out: any[], depth = 0): void {
     for (const kk of Object.keys(obj)) collectTweets(obj[kk], out, depth + 1);
   }
 }
-/** X/Twitter: твиты из GraphQL-таймлайна. */
+/** X/Twitter: плоский timeline[] (формат TikHub) ИЛИ GraphQL-legacy. */
 export function normalizeTwitter(raw: any): NormalizedVideo[] {
-  const tweets: any[] = [];
-  collectTweets(raw, tweets);
   const out: NormalizedVideo[] = [];
   const seen = new Set<string>();
+  // 1) Плоский формат: объекты с tweet_id (timeline[]).
+  const flat = findArrayOfObjects(raw, ['tweet_id']) || [];
+  for (const it of flat) {
+    const id = String(it.tweet_id || it.id_str || it.id || '');
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const author = it.author || it.user || {};
+    const screen = str(author.screen_name) || str(author.username) || str(it.screen_name);
+    const media = (it.media || it.medias || it.extended_entities?.media || it.entities?.media || [])[0];
+    let createTime: number | undefined;
+    if (it.created_at) { const ts = Date.parse(it.created_at); if (Number.isFinite(ts)) createTime = Math.floor(ts / 1000); }
+    out.push({
+      externalId: id, platform: 'twitter',
+      author: screen || str(author.name) || '', authorName: str(author.name),
+      description: str(it.text) || str(it.full_text),
+      coverUrl: urlFrom(it.cover) || urlFrom(media) || urlFrom(it.media_url) || urlFrom(it.thumbnail),
+      videoUrl: str(it.video_url) || urlFrom(media?.video_info?.variants),
+      webUrl: screen ? `https://x.com/${screen}/status/${id}` : `https://x.com/i/status/${id}`,
+      durationSec: media?.video_info?.duration_millis ? Math.round(media.video_info.duration_millis / 1000) : num(it.duration),
+      createTime: createTime ?? num(it.created_timestamp),
+      stats: { play: num(it.views ?? it.view_count ?? it.view_count_info), like: num(it.favorite_count ?? it.like_count), comment: num(it.reply_count), share: num(it.retweet_count) },
+      raw: it,
+    });
+  }
+  if (out.length) return out;
+  // 2) GraphQL-таймлайн (legacy.*).
+  const tweets: any[] = [];
+  collectTweets(raw, tweets);
   for (const t of tweets) {
     const lg = t.legacy || {};
     const id = String(t.rest_id || lg.id_str || '');
@@ -234,8 +272,10 @@ export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
   },
   youtube: {
     hasTrending: true,
-    // get_general_search: sort_by / upload_time / duration.
-    search: (k, q, o) => tikhubGet(k, `/api/v1/youtube/web/get_general_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time', 'duration'])}`, { timeoutMs: 30000 }),
+    // yt_kind=shorts → get_shorts_search; иначе get_general_search (sort_by/upload_time/duration).
+    search: (k, q, o) => o.filters?.yt_kind === 'shorts'
+      ? tikhubGet(k, `/api/v1/youtube/web/get_shorts_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time'])}`, { timeoutMs: 30000 })
+      : tikhubGet(k, `/api/v1/youtube/web/get_general_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time', 'duration'])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/youtube/web/get_trending_videos?section=Now`, { timeoutMs: 30000 }),
     normalize: (raw) => normalizeYoutube(raw),
   },
@@ -248,9 +288,9 @@ export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
   },
   reddit: {
     hasTrending: true,
-    // fetch_dynamic_search: sort / time_range.
-    search: (k, q, o) => tikhubGet(k, `/api/v1/reddit/app/fetch_dynamic_search?${qs({ query: q, search_type: 'post' }, o.filters, ['sort', 'time_range'])}`, { timeoutMs: 30000 }),
-    trending: (k) => tikhubGet(k, `/api/v1/reddit/app/fetch_popular_feed`, { timeoutMs: 30000 }),
+    // fetch_dynamic_search: sort / time_range. need_format=true → чистый формат поста.
+    search: (k, q, o) => tikhubGet(k, `/api/v1/reddit/app/fetch_dynamic_search?${qs({ query: q, search_type: 'post', need_format: 'true' }, o.filters, ['sort', 'time_range'])}`, { timeoutMs: 30000 }),
+    trending: (k) => tikhubGet(k, `/api/v1/reddit/app/fetch_popular_feed?need_format=true`, { timeoutMs: 30000 }),
     normalize: (raw) => genericNormalize('reddit', raw),
   },
 };

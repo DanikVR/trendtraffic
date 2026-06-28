@@ -41,6 +41,8 @@ const PLATFORMS: { id: Source; name: string; bg: string; trending: boolean; icon
 interface FilterDef { key: string; label: string; def: string; options: { v: string; label: string }[] }
 const PLATFORM_FILTERS: Partial<Record<Source, FilterDef[]>> = {
   youtube: [
+    { key: 'yt_kind', label: 'Формат', def: 'video', options: [
+      { v: 'video', label: 'Видео' }, { v: 'shorts', label: 'Shorts' }] },
     { key: 'sort_by', label: 'Сортировка', def: 'relevance', options: [
       { v: 'relevance', label: 'По релевантности' }, { v: 'upload_date', label: 'Новые' },
       { v: 'view_count', label: 'Больше просмотров' }, { v: 'rating', label: 'По рейтингу' }] },
@@ -116,7 +118,7 @@ export default function TrendsPage() {
   const [view, setView] = useState<'trends' | 'analytics'>('trends');
   const [analyzeUrl, setAnalyzeUrl] = useState<string | null>(null);
   const [analyzeCover, setAnalyzeCover] = useState<string | null>(null);
-  const openAnalytics = (videoUrl: string, cover?: string | null) => { setAnalyzeUrl(videoUrl); setAnalyzeCover(cover || null); setView('analytics'); };
+  const openAnalytics = (videoUrl: string, cover?: string | null) => { setAnalyzeUrl(videoUrl); setAnalyzeCover(cover || null); setBulkItems(null); setView('analytics'); };
   const [platform, setPlatform] = useState<Source>('tiktok');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [kind, setKind] = useState<Kind>('keyword');
@@ -141,6 +143,8 @@ export default function TrendsPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 12;
   const videos = perPlatform[platform]?.videos ?? [];
+  // YouTube — горизонтальные обложки (16:9), Shorts и остальные площадки — вертикаль 9:16.
+  const cardAspect = platform === 'youtube' ? (filters.yt_kind === 'shorts' ? '9 / 16' : '16 / 9') : '9 / 16';
   const setVideos = (updater: StoredVideo[] | ((prev: StoredVideo[]) => StoredVideo[])) =>
     setPerPlatform((s) => {
       const cur = s[platform] || { query: '', videos: [] };
@@ -155,7 +159,7 @@ export default function TrendsPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
-  const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
+  const [bulkItems, setBulkItems] = useState<{ url: string; cover?: string }[] | null>(null);
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
@@ -246,31 +250,13 @@ export default function TrendsPage() {
     setBulkDownloading(false);
   };
 
-  // Массовый анализ выбранных → таблица-сравнение в CSV.
-  const analyzeSelected = async () => {
-    const urls = videos.filter((v) => v.id && selected.has(v.id) && v.webUrl).map((v) => v.webUrl as string);
-    if (urls.length === 0) return;
-    setBulkAnalyzing(true); setError(null); setNotice(null);
-    try {
-      const res = await fetch('/api/trends/analyze/bulk', {
-        method: 'POST', headers: headers(), body: JSON.stringify({ urls }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      const rows: any[] = data.rows || [];
-      const head = ['url', 'platform', 'author', 'views', 'likes', 'comments', 'shares', 'engagementRate', 'error'];
-      const csv = '﻿' + [head.join(','), ...rows.map((r) => {
-        const s = r.summary || {};
-        return [r.url, r.platform || '', s.author || '', s.views ?? '', s.likes ?? '', s.comments ?? '', s.shares ?? '', s.engagementRate ?? '', r.error || '']
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',');
-      })].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = `trends-analytics-${rows.length}.csv`; a.click();
-      URL.revokeObjectURL(a.href);
-      setNotice(`Проанализировано: ${rows.length}. Таблица-сравнение скачана (CSV).`);
-    } catch (e: any) { setError(friendlyError(e, 'Ошибка массового анализа')); }
-    finally { setBulkAnalyzing(false); }
+  // Анализировать выбранные → открыть вкладку «Аналитика» и показать их списком.
+  const analyzeSelected = () => {
+    const items = videos.filter((v) => v.id && selected.has(v.id) && v.webUrl).map((v) => ({ url: v.webUrl as string, cover: v.coverUrl }));
+    if (items.length === 0) return;
+    setBulkItems(items);
+    setAnalyzeUrl(null);
+    setView('analytics');
   };
 
   const selectedCount = videos.filter((v) => v.id && selected.has(v.id) && !v.fileUrl).length;
@@ -301,7 +287,7 @@ export default function TrendsPage() {
       </div>
 
       {view === 'analytics' ? (
-        <TrendAnalyticsPanel token={token} initialUrl={analyzeUrl} initialCover={analyzeCover} />
+        <TrendAnalyticsPanel token={token} initialUrl={analyzeUrl} initialCover={analyzeCover} bulkItems={bulkItems} />
       ) : (
       <>
       {/* Search card */}
@@ -502,9 +488,9 @@ export default function TrendsPage() {
               </button>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <AuroraButton variant="secondary" onClick={analyzeSelected} disabled={bulkAnalyzing || selected.size === 0}
-                icon={bulkAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <BarChart3 size={16} />}>
-                {bulkAnalyzing ? 'Анализирую…' : `Анализировать выбранные${selected.size > 0 ? ` (${selected.size})` : ''}`}
+              <AuroraButton variant="secondary" onClick={analyzeSelected} disabled={selected.size === 0}
+                icon={<BarChart3 size={16} />}>
+                {`Анализировать выбранные${selected.size > 0 ? ` (${selected.size})` : ''}`}
               </AuroraButton>
               <AuroraButton onClick={downloadSelected} disabled={bulkDownloading || selectedCount === 0}
                 icon={bulkDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}>
@@ -520,7 +506,7 @@ export default function TrendsPage() {
             <AuroraCard key={v.id || v.externalId}
               className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[#ff7300] ring-inset' : ''}`}>
               {/* Cover */}
-              <div className="relative aspect-[9/16] w-full" style={{ background: 'var(--bg-tertiary)' }}>
+              <div className="relative w-full" style={{ aspectRatio: cardAspect, background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? (
                   <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
                     className="w-full h-full object-cover"
