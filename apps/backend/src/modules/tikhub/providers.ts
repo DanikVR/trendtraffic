@@ -70,7 +70,7 @@ function webUrlFor(platform: TrendPlatform, id: string, handle: string | undefin
     case 'instagram': { const code = deepFind(item, ['code', 'shortcode']); return code ? `https://www.instagram.com/p/${code}/` : undefined; }
     case 'youtube': return id ? `https://www.youtube.com/watch?v=${id}` : undefined;
     case 'twitter': { const sn = handle || deepFind(item, ['screen_name']); return sn && id ? `https://x.com/${sn}/status/${id}` : (id ? `https://x.com/i/status/${id}` : undefined); }
-    case 'reddit': { const pl = deepFind(item, ['permalink']); return pl ? `https://www.reddit.com${pl}` : undefined; }
+    case 'reddit': { const pl = deepFind(item, ['permalink']); if (pl) return /^https?:/.test(String(pl)) ? String(pl) : `https://www.reddit.com${pl}`; return id ? `https://www.reddit.com/comments/${String(id).replace(/^t3_/, '')}/` : undefined; }
     default: return undefined;
   }
 }

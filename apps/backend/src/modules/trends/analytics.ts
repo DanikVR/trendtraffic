@@ -147,7 +147,7 @@ function planCalls(d: Detected): { label: string; path: string }[] {
 
 // ── Оборонительная сводка: глубокий поиск типовых полей по ответу ──
 function deepFind(obj: any, keys: string[], depth = 0): any {
-  if (obj == null || depth > 7) return undefined;
+  if (obj == null || depth > 11) return undefined;
   if (Array.isArray(obj)) {
     for (const it of obj) { const r = deepFind(it, keys, depth + 1); if (r !== undefined) return r; }
     return undefined;
@@ -207,13 +207,13 @@ function findUrl(obj: any, keys: string[], depth = 0): string | undefined {
 function buildSummary(blocks: Record<string, AnalyzeBlock>): Record<string, any> {
   const root = blocks.video?.data ?? blocks.account?.data;
   if (!root) return {};
-  const views = num(deepFind(root, ['play_count', 'playCount', 'view_count', 'viewCount', 'views', 'stat_view_count', 'play']));
-  const likes = num(deepFind(root, ['digg_count', 'diggCount', 'like_count', 'likeCount', 'favorite_count', 'favoriteCount', 'likes']));
-  const comments = num(deepFind(root, ['comment_count', 'commentCount', 'reply_count', 'comments']));
-  const shares = num(deepFind(root, ['share_count', 'shareCount', 'forward_count', 'retweet_count', 'shares']));
-  const followers = num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'total']));
-  const desc = deepFind(root, ['desc', 'title', 'caption', 'full_text', 'content', 'text', 'signature']);
-  const author = deepFind(root, ['nickname', 'unique_id', 'uniqueId', 'screen_name', 'username', 'name']);
+  const views = num(deepFind(root, ['play_count', 'playCount', 'view_count', 'viewCount', 'views', 'stat_view_count', 'play', 'view_count_int']));
+  const likes = num(deepFind(root, ['digg_count', 'diggCount', 'like_count', 'likeCount', 'favorite_count', 'favoriteCount', 'likes', 'score', 'ups', 'upvotes', 'vote_count']));
+  const comments = num(deepFind(root, ['comment_count', 'commentCount', 'reply_count', 'comments', 'num_comments', 'comments_count']));
+  const shares = num(deepFind(root, ['share_count', 'shareCount', 'forward_count', 'retweet_count', 'shares', 'repost_count']));
+  const followers = num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'subscriber_count', 'subscribers']));
+  const desc = deepFind(root, ['title', 'desc', 'caption', 'full_text', 'selftext', 'text', 'content', 'description', 'signature']);
+  const author = deepFind(root, ['nickname', 'unique_id', 'uniqueId', 'screen_name', 'username', 'channel_name', 'channel', 'author', 'name']);
   const handle = deepFind(root, ['unique_id', 'uniqueId', 'screen_name', 'username']);
   // Визуальные поля для «карточки поста» (как в расширении).
   const cover = findUrl(root, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'pic', 'first_frame']);
@@ -326,6 +326,11 @@ export async function analyzeUrl(tenantId: string, url: string): Promise<Analyze
     const r = await tikhubGet(key, c.path, { timeoutMs: 30000 });
     blocks[c.label] = r.ok ? { ok: true, data: r.data } : { ok: false, error: r.error };
   }
+  // Диагностика разбора (только имена полей+типы) — для точной настройки нормализаторов.
+  try {
+    const vb = blocks.video || blocks.account;
+    console.log(`[TREND_SHAPE] analyze ${detected.platform}/${detected.type} video=${JSON.stringify(vb?.ok ? shapeOf(vb.data) : { error: vb?.error })} comments=${JSON.stringify(blocks.comments?.ok ? shapeOf(blocks.comments.data) : (blocks.comments?.error || 'n/a'))}`.slice(0, 6000));
+  } catch { /* */ }
   return {
     detected: { ...detected, platformLabel: PLATFORM_LABEL[detected.platform] },
     blocks,

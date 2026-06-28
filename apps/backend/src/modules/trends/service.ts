@@ -203,6 +203,9 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   }
 
   const shape = videos.length === 0 ? shapeOf(resp.data) : undefined;
+  if (videos.length === 0) {
+    try { console.log(`[TREND_SHAPE] scan ${platform}/${params.kind} ${JSON.stringify(shape).slice(0, 6000)}`); } catch { /* */ }
+  }
   return { trendId, count: videos.length, videos: stored, rawKeys, fellBackToApp, shape };
 }
 

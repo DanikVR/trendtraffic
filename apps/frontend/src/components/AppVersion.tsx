@@ -488,9 +488,13 @@
  *         площадки (имена полей + типы, без значений) — раскрывашка «🔧 Структура
  *         ответа». По нему точно настраиваются нормализаторы вместо угадывания
  *         имён полей. backend: shapeOf() в trends/analytics.ts.
+ * 1.5.1 — Разбор полей усилен: buildSummary понимает Reddit (score/ups→лайки,
+ *         num_comments→комменты, author, selftext), глубина поиска 7→11. Reddit-
+ *         карточки получают ссылку (webUrl из id) → появляется кнопка «Аналитика».
+ *         Бэкенд логирует скелет ответа ([TREND_SHAPE]) для точечной донастройки.
  */
 
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.5.1';
 
 export function AppVersion() {
   return (
