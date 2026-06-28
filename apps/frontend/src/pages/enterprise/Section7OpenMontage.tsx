@@ -192,7 +192,7 @@ export function Section7OpenMontage() {
           <Wand2 size={20} color="#fff" />
         </div>
         <div>
-          <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Ключи генерации (OpenMontage)</h2>
+          <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Ключи генерации</h2>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Ваши ключи платных/облачных шагов рендера (ИИ-видео, картинки, озвучка, аватары). Бесплатная CPU-цепочка ключей не требует.
           </p>

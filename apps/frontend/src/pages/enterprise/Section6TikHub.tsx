@@ -131,7 +131,7 @@ export function Section6TikHub() {
         <div>
           <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('enterprise.tikhub.heading', 'Свой ключ TikHub')}</h2>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {t('enterprise.tikhub.lead', 'Ваш собственный ключ TikHub для сканирования трендов и скачивания видео. Получить — на ')}
+            {t('enterprise.tikhub.lead', 'Ваш собственный ключ TikHub. Получить — на ')}
             <a href="https://tikhub.io" target="_blank" rel="noreferrer" style={{ color: '#f59e0b', textDecoration: 'underline' }}>tikhub.io</a>.
           </p>
         </div>
