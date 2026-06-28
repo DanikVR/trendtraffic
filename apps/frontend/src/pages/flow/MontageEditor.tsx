@@ -162,7 +162,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
   const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
-  const [connectFrom, setConnectFrom] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
+  const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
   const [cloudPanel, setCloudPanel] = useState<CloudId | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<CloudId | null>(null);
@@ -284,11 +285,19 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   };
 
   const onCloudClick = (id: CloudId) => {
-    if (movedRef.current) { movedRef.current = false; return; } // был drag — не открываем панель
-    if (connectFrom && connectFrom !== id) { addEdge(connectFrom, id); setConnectFrom(null); }
-    else setCloudPanel(id);
+    if (movedRef.current) { movedRef.current = false; return; } // был drag узла — не открываем панель
+    setCloudPanel(id);
   };
 
+  const setPend = (v: { from: string; x: number; y: number } | null) => { pendingRef.current = v; setPending(v); };
+  // Старт перетягивания СТРЕЛКИ от точки 🔗 узла.
+  const startConnect = (from: string, e: React.PointerEvent) => {
+    e.stopPropagation(); e.preventDefault();
+    const p = cloudPoint(from);
+    setPend({ from, x: p?.x ?? 50, y: p?.y ?? 50 });
+  };
+
+  // Перетаскивание САМОГО УЗЛА (Omni/Контент-план).
   useEffect(() => {
     const move = (e: PointerEvent) => {
       if (!dragRef.current || !canvasRef.current) return;
@@ -302,6 +311,29 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  }, []);
+
+  // Перетаскивание СТРЕЛКИ: тянем от 🔗 — линия следует за курсором; отпустили на узле → связь.
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      if (!pendingRef.current || !canvasRef.current) return;
+      const r = canvasRef.current.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+      setPend({ ...pendingRef.current, x, y });
+    };
+    const up = (e: PointerEvent) => {
+      if (!pendingRef.current) return;
+      const from = pendingRef.current.from;
+      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+      const to = el?.closest('[data-node-id]')?.getAttribute('data-node-id') || null;
+      if (to && to !== from) addEdge(from, to);
+      setPend(null);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const positions = useMemo(() => {
@@ -395,7 +427,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
         </svg>
 
-        <button onClick={() => { if (connectFrom) { addEdge(connectFrom, 'center'); setConnectFrom(null); } else openSourcePicker(); }} title={connectFrom ? 'Связать сюда' : building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
+        <button data-node-id="center" onClick={() => openSourcePicker()} title={building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
           style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: building ? 'default' : 'pointer' }}>
           <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
             {building && <span className="me-ring" />}
@@ -411,9 +443,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           </div>
         </button>
         {/* 🔗 связать стрелкой ОТ «Видео из галереи» */}
-        <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setConnectFrom(connectFrom === 'center' ? null : 'center'); }}
-          title="Связать стрелкой от видео"
-          style={{ position: 'absolute', left: 'calc(50% + 32px)', top: 'calc(50% - 32px)', transform: 'translate(-50%,-50%)', zIndex: 9, width: 24, height: 24, borderRadius: '50%', background: connectFrom === 'center' ? '#ff7300' : 'var(--bg-secondary)', border: '2px solid #ff7300', color: connectFrom === 'center' ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+        <button onPointerDown={(e) => startConnect('center', e)}
+          title="Потяните, чтобы провести стрелку"
+          style={{ position: 'absolute', left: 'calc(50% + 32px)', top: 'calc(50% - 32px)', transform: 'translate(-50%,-50%)', zIndex: 9, width: 24, height: 24, borderRadius: '50%', background: pending?.from === 'center' ? '#ff7300' : 'var(--bg-secondary)', border: '2px solid #ff7300', color: pending?.from === 'center' ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)', touchAction: 'none' }}>
           <Link2 size={13} />
         </button>
 
@@ -448,6 +480,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             if (!p || !q) return null;
             return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="#ff7300" strokeWidth="0.35" strokeDasharray="1.4 0.9" />;
           })}
+          {pending && (() => { const p = cloudPoint(pending.from); return p ? <line x1={p.x} y1={p.y} x2={pending.x} y2={pending.y} stroke="#ff7300" strokeWidth="0.4" strokeDasharray="1.4 0.9" /> : null; })()}
         </svg>
         {cloudEdges.map((e, i) => {
           const p = cloudPoint(e.from), q = cloudPoint(e.to);
@@ -463,25 +496,25 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         {(['omni', 'plan'] as CloudId[]).map((id) => {
           const pos = cloud[id]; const cfg = CLOUD[id];
           return (
-            <div key={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
+            <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: connectFrom === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
-                  border: `2px solid ${connectFrom === id ? '#ff7300' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
+                  background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
+                  border: `2px solid ${pending?.from === id ? '#ff7300' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
                 {cfg.icon}
               </button>
               <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{cfg.label}</span>
-              <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setConnectFrom(connectFrom === id ? null : id); }} title="Связать стрелкой"
-                style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid #ff7300', color: '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+              <button onPointerDown={(e) => startConnect(id, e)} title="Потяните, чтобы провести стрелку"
+                style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: pending?.from === id ? '#ff7300' : 'var(--bg-secondary)', border: '1px solid #ff7300', color: pending?.from === id ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, touchAction: 'none' }}>
                 <Link2 size={11} />
               </button>
             </div>
           );
         })}
-        {connectFrom && (
-          <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#ff7300', fontWeight: 600, whiteSpace: 'nowrap' }}>
-            Теперь кликните, КУДА вести стрелку: «Видео», «Google Omni» или «Контент-план» · <span onClick={() => setConnectFrom(null)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>отмена</span>
+        {pending && (
+          <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#ff7300', fontWeight: 600, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+            Тяните к узлу и отпустите, чтобы связать
           </div>
         )}
       </div>
