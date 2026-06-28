@@ -287,6 +287,26 @@ export async function analyzeUrl(tenantId: string, url: string): Promise<Analyze
   };
 }
 
+// ── Массовый анализ: по каждой ссылке ОДИН вызов (video/account) → сводка. Дёшево. ──
+export interface BulkRow { url: string; platform?: string; type?: string; summary: Record<string, any>; error?: string; }
+export async function analyzeBulk(tenantId: string, urls: string[]): Promise<BulkRow[]> {
+  const key = await getEffectiveTikHubKey(tenantId);
+  if (!key) throw new Error('Ключ Trend не задан.');
+  const list = (urls || []).filter((u) => typeof u === 'string' && u.trim()).slice(0, 40);
+  const out: BulkRow[] = [];
+  for (const url of list) {
+    const d = detectUrl(url);
+    if (!d) { out.push({ url, summary: {}, error: 'не распознано' }); continue; }
+    const call = planCalls(d)[0];
+    if (!call) { out.push({ url, platform: d.platform, type: d.type, summary: {}, error: 'нет вызова' }); continue; }
+    // eslint-disable-next-line no-await-in-loop
+    const r = await tikhubGet(key, call.path, { timeoutMs: 25000 });
+    const blocks: Record<string, AnalyzeBlock> = { [call.label]: r.ok ? { ok: true, data: r.data } : { ok: false, error: r.error } };
+    out.push({ url, platform: d.platform, type: d.type, summary: r.ok ? buildSummary(blocks) : {}, error: r.ok ? undefined : r.error });
+  }
+  return out;
+}
+
 // ── ИИ-анализ тональности комментариев (Claude) ──
 export interface SentimentResult {
   positive: number; negative: number; neutral: number;

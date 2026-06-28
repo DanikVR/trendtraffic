@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
-import { analyzeUrl, detectUrl, analyzeCommentsSentiment } from './analytics.js';
+import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -93,6 +93,43 @@ router.post('/analyze/sentiment', async (req: AuthedRequest, res: Response) => {
     const msg = err?.message || 'Ошибка анализа тональности';
     const code = /ключ|комментари|Укажите/i.test(msg) ? 400 : 502;
     res.status(code).json({ error: msg });
+  }
+});
+
+/** POST /analyze/bulk — { urls: string[] } → массовая сводка (по одному вызову на ссылку). */
+router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
+  try {
+    const urls = Array.isArray(req.body?.urls) ? req.body.urls : [];
+    if (urls.length === 0) return res.status(400).json({ error: 'Передайте urls[].' });
+    const rows = await analyzeBulk(req.tenantId!, urls);
+    res.json({ rows });
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка массового анализа';
+    res.status(/ключ|Укажите/i.test(msg) ? 400 : 502).json({ error: msg });
+  }
+});
+
+/** POST /analyze/save — { url } → скачать проанализированное видео в Галерею (TikTok, no-watermark). */
+router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
+  try {
+    const url = typeof req.body?.url === 'string' ? req.body.url : '';
+    const d = detectUrl(url);
+    if (!d || d.type !== 'video') return res.status(400).json({ error: 'Нужна ссылка на видео/пост.' });
+    if (d.platform !== 'tiktok') return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok.' });
+    const key = await getEffectiveTikHubKey(req.tenantId!);
+    if (!key) return res.status(400).json({ error: 'Ключ Trend не задан.' });
+    const one = await fetchOneVideo(key, String(d.videoId));
+    const urls = one.ok ? extractDownloadUrls(one.data) : [];
+    if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео.' });
+    const file = await downloadVideoToDisk(urls, { referer: url });
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'reference', mediaType: 'video', originalName: `tiktok-${d.videoId}.mp4`,
+      fileUrl: file.mediaUrl, filePath: file.filePath, mime: 'video/mp4', size: file.size,
+    });
+    if (!asset) return res.status(500).json({ error: 'Не удалось сохранить в Галерею.' });
+    res.json({ ok: true, asset, fileUrl: file.mediaUrl });
+  } catch (err: any) {
+    res.status(502).json({ error: err?.message || 'Ошибка скачивания' });
   }
 });
 

@@ -63,7 +63,8 @@ export default function TrendsPage() {
   const { token } = useAppStore();
   const [view, setView] = useState<'trends' | 'analytics'>('trends');
   const [analyzeUrl, setAnalyzeUrl] = useState<string | null>(null);
-  const openAnalytics = (videoUrl: string) => { setAnalyzeUrl(videoUrl); setView('analytics'); };
+  const [analyzeCover, setAnalyzeCover] = useState<string | null>(null);
+  const openAnalytics = (videoUrl: string, cover?: string | null) => { setAnalyzeUrl(videoUrl); setAnalyzeCover(cover || null); setView('analytics'); };
   const [kind, setKind] = useState<Kind>('keyword');
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
@@ -77,6 +78,7 @@ export default function TrendsPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
@@ -152,6 +154,33 @@ export default function TrendsPage() {
     setBulkDownloading(false);
   };
 
+  // Массовый анализ выбранных → таблица-сравнение в CSV.
+  const analyzeSelected = async () => {
+    const urls = videos.filter((v) => v.id && selected.has(v.id) && v.webUrl).map((v) => v.webUrl as string);
+    if (urls.length === 0) return;
+    setBulkAnalyzing(true); setError(null); setNotice(null);
+    try {
+      const res = await fetch('/api/trends/analyze/bulk', {
+        method: 'POST', headers: headers(), body: JSON.stringify({ urls }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      const rows: any[] = data.rows || [];
+      const head = ['url', 'platform', 'author', 'views', 'likes', 'comments', 'shares', 'engagementRate', 'error'];
+      const csv = '﻿' + [head.join(','), ...rows.map((r) => {
+        const s = r.summary || {};
+        return [r.url, r.platform || '', s.author || '', s.views ?? '', s.likes ?? '', s.comments ?? '', s.shares ?? '', s.engagementRate ?? '', r.error || '']
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',');
+      })].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `trends-analytics-${rows.length}.csv`; a.click();
+      URL.revokeObjectURL(a.href);
+      setNotice(`Проанализировано: ${rows.length}. Таблица-сравнение скачана (CSV).`);
+    } catch (e: any) { setError(friendlyError(e, 'Ошибка массового анализа')); }
+    finally { setBulkAnalyzing(false); }
+  };
+
   const selectedCount = videos.filter((v) => v.id && selected.has(v.id) && !v.fileUrl).length;
 
   return (
@@ -180,7 +209,7 @@ export default function TrendsPage() {
       </div>
 
       {view === 'analytics' ? (
-        <TrendAnalyticsPanel token={token} initialUrl={analyzeUrl} />
+        <TrendAnalyticsPanel token={token} initialUrl={analyzeUrl} initialCover={analyzeCover} />
       ) : (
       <>
       {/* Search card */}
@@ -345,10 +374,16 @@ export default function TrendsPage() {
                 {allSelected ? 'Снять выделение' : 'Выбрать всё'}{selected.size > 0 ? ` · ${selected.size}` : ''}
               </button>
             </div>
-            <AuroraButton onClick={downloadSelected} disabled={bulkDownloading || selectedCount === 0}
-              icon={bulkDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}>
-              {bulkDownloading ? 'Скачиваю…' : `Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
-            </AuroraButton>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <AuroraButton variant="secondary" onClick={analyzeSelected} disabled={bulkAnalyzing || selected.size === 0}
+                icon={bulkAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <BarChart3 size={16} />}>
+                {bulkAnalyzing ? 'Анализирую…' : `Анализировать выбранные${selected.size > 0 ? ` (${selected.size})` : ''}`}
+              </AuroraButton>
+              <AuroraButton onClick={downloadSelected} disabled={bulkDownloading || selectedCount === 0}
+                icon={bulkDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}>
+                {bulkDownloading ? 'Скачиваю…' : `Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
+              </AuroraButton>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -416,7 +451,7 @@ export default function TrendsPage() {
                 </div>
                 <div className="flex items-center gap-1.5 pt-1">
                   {v.webUrl && (
-                    <button type="button" onClick={() => openAnalytics(v.webUrl!)} title="Открыть в Аналитике и проанализировать"
+                    <button type="button" onClick={() => openAnalytics(v.webUrl!, v.coverUrl)} title="Открыть в Аналитике и проанализировать"
                       className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
                       style={{ background: 'rgba(255,115,0,0.12)', color: '#ff7300', border: '1px solid rgba(255,115,0,0.3)' }}>
                       <BarChart3 size={12} /> Аналитика

@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, ChevronDown, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink, Code2 } from 'lucide-react';
+import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 
@@ -121,13 +121,14 @@ ${sent}
 </div></body></html>`;
 }
 
-export default function TrendAnalyticsPanel({ token, initialUrl }: { token: string | null; initialUrl?: string | null }) {
+export default function TrendAnalyticsPanel({ token, initialUrl, initialCover }: { token: string | null; initialUrl?: string | null; initialCover?: string | null }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
-  const [showRaw, setShowRaw] = useState(false);
-  const [openRaw, setOpenRaw] = useState<Record<string, boolean>>({});
+  const [cardCover, setCardCover] = useState<string | null>(null); // обложка, переданная с карточки тренда (грузится надёжно)
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [sentLoading, setSentLoading] = useState(false);
   const [sentErr, setSentErr] = useState<string | null>(null);
@@ -135,7 +136,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
   const analyze = async (override?: string) => {
     const u = (override ?? url).trim();
     if (!u) { setError('Вставьте ссылку на видео/пост или аккаунт.'); return; }
-    setLoading(true); setError(null); setResult(null); setSentiment(null); setSentErr(null); setShowRaw(false);
+    setLoading(true); setError(null); setResult(null); setSentiment(null); setSentErr(null); setSaved(false);
     try {
       const res = await fetch('/api/trends/analyze', {
         method: 'POST',
@@ -150,11 +151,28 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
     } finally { setLoading(false); }
   };
 
-  // Клик «Аналитика» на карточке тренда → подставить ссылку и сразу запустить анализ.
+  // Клик «Аналитика» на карточке тренда → подставить ссылку (+ обложку) и сразу запустить анализ.
   useEffect(() => {
-    if (initialUrl && initialUrl.trim()) { setUrl(initialUrl); analyze(initialUrl); }
+    if (initialUrl && initialUrl.trim()) { setUrl(initialUrl); setCardCover(initialCover || null); analyze(initialUrl); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialUrl]);
+  }, [initialUrl, initialCover]);
+
+  // Скачать проанализированное видео в Галерею (как «Скачать» в трендах).
+  const saveToGallery = async () => {
+    if (!result || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/trends/analyze/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setSaved(true);
+    } catch (e: any) { setError(e?.message || 'Не удалось скачать в Галерею'); }
+    finally { setSaving(false); }
+  };
 
   const comments = result?.normalized?.comments || [];
   const words = useMemo(() => wordFreq(comments.map((c) => c.text), 30), [comments]);
@@ -185,6 +203,8 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
   const fmtDur = (sec?: number) => { if (!sec) return ''; const x = sec > 1000 ? Math.round(sec / 1000) : Math.round(sec); return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; };
 
   const s = result?.summary || {};
+  const coverSrc = cardCover || s.cover;
+  const isVideo = result?.detected.type === 'video';
   const stat = (icon: React.ReactNode, label: string, val?: number) => (
     <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)' }}>
       <div className="flex items-center gap-1.5 text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{icon} {label}</div>
@@ -203,7 +223,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
               className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>
-          <AuroraButton onClick={() => analyze()} disabled={loading} fullWidth className="sm:!w-auto"
+          <AuroraButton onClick={() => { setCardCover(null); analyze(); }} disabled={loading} fullWidth className="sm:!w-auto"
             icon={loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
             {loading ? 'Анализирую…' : 'Анализировать'}
           </AuroraButton>
@@ -240,9 +260,9 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
           {/* Карточка поста / профиля */}
           <AuroraCard className="p-4">
             <div className="flex gap-4">
-              {s.cover && (
+              {coverSrc && (
                 <a href={url || undefined} target="_blank" rel="noreferrer" className="flex-shrink-0 block rounded-xl overflow-hidden" style={{ width: 92 }}>
-                  <img src={s.cover} alt="" referrerPolicy="no-referrer" loading="lazy"
+                  <img src={coverSrc} alt="" referrerPolicy="no-referrer" loading="lazy"
                     className="w-full object-cover" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}
                     onError={(e) => { const p = (e.currentTarget.parentElement as HTMLElement); if (p) p.style.display = 'none'; }} />
                 </a>
@@ -257,6 +277,14 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
                     {s.handle && <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{String(s.handle)}</div>}
                   </div>
                   <div className="flex-1" />
+                  {isVideo && (
+                    <button onClick={saveToGallery} disabled={saving || saved} title="Скачать видео в Галерею"
+                      className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-60"
+                      style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--btn-primary-bg)', color: saved ? '#10b981' : '#ff7300', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>
+                      {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Download size={12} />}
+                      {saving ? 'Скачиваю…' : saved ? 'В Галерее' : 'Скачать'}
+                    </button>
+                  )}
                   <a href={url || undefined} target="_blank" rel="noreferrer" className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ExternalLink size={12} /> Открыть</a>
                 </div>
                 {s.desc && <p className="text-[13px] leading-snug mb-1.5" style={{ color: 'var(--text-secondary)' }}>{String(s.desc)}</p>}
@@ -358,35 +386,11 @@ export default function TrendAnalyticsPanel({ token, initialUrl }: { token: stri
             </AuroraCard>
           )}
 
-          {/* Сырые данные (для разработчика) — свёрнуто */}
-          <div>
-            <button onClick={() => setShowRaw((v) => !v)}
-              className="inline-flex items-center gap-1.5 text-[12px] font-600" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-              <Code2 size={14} /> Сырые данные
-              <ChevronDown size={14} style={{ transform: showRaw ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
-              <span style={{ opacity: 0.7 }}>· {Object.values(result.blocks).filter((b) => b.ok).length}/{Object.keys(result.blocks).length} ответов</span>
-            </button>
-          </div>
-          {showRaw && (
-          <div className="space-y-2">
-            {Object.entries(result.blocks).map(([key, b]) => (
-              <AuroraCard key={key} className="p-0 overflow-hidden">
-                <button onClick={() => setOpenRaw((o) => ({ ...o, [key]: !o[key] }))}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-left" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                  {b.ok ? <CheckCircle2 size={15} style={{ color: '#10b981' }} /> : <XCircle size={15} style={{ color: '#ef4444' }} />}
-                  <span className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>{BLOCK_LABEL[key] || key}</span>
-                  {!b.ok && <span className="text-[11px]" style={{ color: '#ef4444' }}>{b.error}</span>}
-                  <div className="flex-1" />
-                  <ChevronDown size={16} style={{ color: 'var(--text-muted)', transform: openRaw[key] ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
-                </button>
-                {openRaw[key] && b.data != null && (
-                  <pre className="text-[11px] px-4 pb-3 overflow-auto" style={{ maxHeight: 320, color: 'var(--text-secondary)' }}>
-                    {JSON.stringify(b.data, null, 2)}
-                  </pre>
-                )}
-              </AuroraCard>
-            ))}
-          </div>
+          {/* Если какой-то источник не ответил — компактная заметка (без сырого JSON) */}
+          {Object.entries(result.blocks).some(([, b]) => !b.ok) && (
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              Не загрузилось: {Object.entries(result.blocks).filter(([, b]) => !b.ok).map(([k]) => BLOCK_LABEL[k] || k).join(', ')}. Полные данные — кнопкой «JSON».
+            </p>
           )}
         </>
       )}
