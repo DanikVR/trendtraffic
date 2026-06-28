@@ -6,8 +6,8 @@
  * (просмотры/лайки/комменты/шеры + ER), статусы вызовов и сырые данные с экспортом JSON.
  */
 
-import React, { useState, useMemo } from 'react';
-import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, ChevronDown, Sparkles, FileText, FileSpreadsheet } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, ChevronDown, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink, Code2 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 
@@ -121,24 +121,26 @@ ${sent}
 </div></body></html>`;
 }
 
-export default function TrendAnalyticsPanel({ token }: { token: string | null }) {
+export default function TrendAnalyticsPanel({ token, initialUrl }: { token: string | null; initialUrl?: string | null }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
   const [openRaw, setOpenRaw] = useState<Record<string, boolean>>({});
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [sentLoading, setSentLoading] = useState(false);
   const [sentErr, setSentErr] = useState<string | null>(null);
 
-  const analyze = async () => {
-    if (!url.trim()) { setError('Вставьте ссылку на видео/пост или аккаунт.'); return; }
-    setLoading(true); setError(null); setResult(null); setSentiment(null); setSentErr(null);
+  const analyze = async (override?: string) => {
+    const u = (override ?? url).trim();
+    if (!u) { setError('Вставьте ссылку на видео/пост или аккаунт.'); return; }
+    setLoading(true); setError(null); setResult(null); setSentiment(null); setSentErr(null); setShowRaw(false);
     try {
       const res = await fetch('/api/trends/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: u }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -147,6 +149,12 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
       setError(e instanceof TypeError ? 'Сервер недоступен. Обновите страницу.' : (e?.message || 'Ошибка анализа'));
     } finally { setLoading(false); }
   };
+
+  // Клик «Аналитика» на карточке тренда → подставить ссылку и сразу запустить анализ.
+  useEffect(() => {
+    if (initialUrl && initialUrl.trim()) { setUrl(initialUrl); analyze(initialUrl); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl]);
 
   const comments = result?.normalized?.comments || [];
   const words = useMemo(() => wordFreq(comments.map((c) => c.text), 30), [comments]);
@@ -173,6 +181,9 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
   const exportCsv = () => comments.length && downloadFile(`comments-${baseName}.csv`, commentsCsv(comments), 'text/csv;charset=utf-8');
   const exportReport = () => result && downloadFile(`report-${baseName}.html`, buildReportHtml(result, words, sentiment), 'text/html;charset=utf-8');
 
+  const fmtDate = (ts?: number) => { if (!ts) return ''; const ms = ts > 1e12 ? ts : ts * 1000; try { return new Date(ms).toLocaleDateString('ru'); } catch { return ''; } };
+  const fmtDur = (sec?: number) => { if (!sec) return ''; const x = sec > 1000 ? Math.round(sec / 1000) : Math.round(sec); return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; };
+
   const s = result?.summary || {};
   const stat = (icon: React.ReactNode, label: string, val?: number) => (
     <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)' }}>
@@ -192,7 +203,7 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
               className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>
-          <AuroraButton onClick={analyze} disabled={loading} fullWidth className="sm:!w-auto"
+          <AuroraButton onClick={() => analyze()} disabled={loading} fullWidth className="sm:!w-auto"
             icon={loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
             {loading ? 'Анализирую…' : 'Анализировать'}
           </AuroraButton>
@@ -226,8 +237,43 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
             </div>
           </div>
 
-          {/* Сводка */}
-          {s.desc && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{String(s.desc)}</p>}
+          {/* Карточка поста / профиля */}
+          <AuroraCard className="p-4">
+            <div className="flex gap-4">
+              {s.cover && (
+                <a href={url || undefined} target="_blank" rel="noreferrer" className="flex-shrink-0 block rounded-xl overflow-hidden" style={{ width: 92 }}>
+                  <img src={s.cover} alt="" referrerPolicy="no-referrer" loading="lazy"
+                    className="w-full object-cover" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}
+                    onError={(e) => { const p = (e.currentTarget.parentElement as HTMLElement); if (p) p.style.display = 'none'; }} />
+                </a>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1.5">
+                  {s.avatar && <img src={s.avatar} referrerPolicy="no-referrer" alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />}
+                  <div className="min-w-0">
+                    <div className="text-sm font-700 truncate inline-flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
+                      {s.author || s.handle || '—'}{s.verified && <BadgeCheck size={14} style={{ color: '#3b82f6' }} />}
+                    </div>
+                    {s.handle && <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{String(s.handle)}</div>}
+                  </div>
+                  <div className="flex-1" />
+                  <a href={url || undefined} target="_blank" rel="noreferrer" className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ExternalLink size={12} /> Открыть</a>
+                </div>
+                {s.desc && <p className="text-[13px] leading-snug mb-1.5" style={{ color: 'var(--text-secondary)' }}>{String(s.desc)}</p>}
+                {Array.isArray(s.hashtags) && s.hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1.5">{s.hashtags.map((h: string, i: number) => <span key={i} className="text-[11px] font-600" style={{ color: '#ff7300' }}>{h}</span>)}</div>
+                )}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  {s.music && <span className="inline-flex items-center gap-1 min-w-0"><Music2 size={11} /><span className="truncate" style={{ maxWidth: 160 }}>{String(s.music)}</span></span>}
+                  {fmtDur(s.duration) && <span className="inline-flex items-center gap-1"><Clock size={11} /> {fmtDur(s.duration)}</span>}
+                  {fmtDate(s.createTime) && <span>{fmtDate(s.createTime)}</span>}
+                  {s.region && <span className="inline-flex items-center gap-1"><MapPin size={11} /> {String(s.region)}</span>}
+                </div>
+              </div>
+            </div>
+          </AuroraCard>
+
+          {/* Метрики */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
             {stat(<Eye size={12} />, 'Просмотры', s.views)}
             {stat(<Heart size={12} />, 'Лайки', s.likes)}
@@ -242,6 +288,18 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
                 </div>
               )}
           </div>
+
+          {/* Ключевые слова (аналитика Trend) */}
+          {result.normalized.keywords.length > 0 && (
+            <div>
+              <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Ключевые слова</div>
+              <div className="flex flex-wrap gap-1.5">
+                {result.normalized.keywords.map((k, i) => (
+                  <span key={i} className="text-[12px] px-2 py-0.5 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>{k.word}{k.count ? ` ·${k.count}` : ''}</span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Облако слов + тональность + топ-комментарии */}
           {comments.length > 0 && (
@@ -300,7 +358,16 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
             </AuroraCard>
           )}
 
-          {/* Блоки (статус + сырые данные) */}
+          {/* Сырые данные (для разработчика) — свёрнуто */}
+          <div>
+            <button onClick={() => setShowRaw((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-[12px] font-600" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+              <Code2 size={14} /> Сырые данные
+              <ChevronDown size={14} style={{ transform: showRaw ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+              <span style={{ opacity: 0.7 }}>· {Object.values(result.blocks).filter((b) => b.ok).length}/{Object.keys(result.blocks).length} ответов</span>
+            </button>
+          </div>
+          {showRaw && (
           <div className="space-y-2">
             {Object.entries(result.blocks).map(([key, b]) => (
               <AuroraCard key={key} className="p-0 overflow-hidden">
@@ -320,6 +387,7 @@ export default function TrendAnalyticsPanel({ token }: { token: string | null })
               </AuroraCard>
             ))}
           </div>
+          )}
         </>
       )}
     </div>

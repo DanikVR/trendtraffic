@@ -136,6 +136,25 @@ function num(v: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+// Достаёт URL из значения (строка-http / {url_list:[]} / {url} / {uri}).
+function urlFrom(v: any, depth = 0): string | undefined {
+  if (v == null || depth > 4) return undefined;
+  if (typeof v === 'string') return /^https?:\/\//.test(v) ? v : undefined;
+  if (Array.isArray(v)) { for (const x of v) { const u = urlFrom(x, depth + 1); if (u) return u; } return undefined; }
+  if (typeof v === 'object') return urlFrom(v.url_list, depth + 1) || urlFrom(v.url, depth + 1) || urlFrom(v.uri, depth + 1) || urlFrom(v.src, depth + 1);
+  return undefined;
+}
+// Глубокий поиск первого поля из keys, значение которого превращается в URL.
+function findUrl(obj: any, keys: string[], depth = 0): string | undefined {
+  if (obj == null || depth > 7) return undefined;
+  if (Array.isArray(obj)) { for (const it of obj) { const r = findUrl(it, keys, depth + 1); if (r) return r; } return undefined; }
+  if (typeof obj === 'object') {
+    for (const k of keys) { if (obj[k] != null) { const u = urlFrom(obj[k]); if (u) return u; } }
+    for (const kk of Object.keys(obj)) { const r = findUrl(obj[kk], keys, depth + 1); if (r) return r; }
+  }
+  return undefined;
+}
+
 function buildSummary(blocks: Record<string, AnalyzeBlock>): Record<string, any> {
   const root = blocks.video?.data ?? blocks.account?.data;
   if (!root) return {};
@@ -146,10 +165,26 @@ function buildSummary(blocks: Record<string, AnalyzeBlock>): Record<string, any>
   const followers = num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'total']));
   const desc = deepFind(root, ['desc', 'title', 'caption', 'full_text', 'content', 'text', 'signature']);
   const author = deepFind(root, ['nickname', 'unique_id', 'uniqueId', 'screen_name', 'username', 'name']);
+  const handle = deepFind(root, ['unique_id', 'uniqueId', 'screen_name', 'username']);
+  // Визуальные поля для «карточки поста» (как в расширении).
+  const cover = findUrl(root, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'pic', 'first_frame']);
+  const avatar = findUrl(root, ['avatar_thumb', 'avatar_medium', 'avatar_larger', 'avatar_168x168', 'avatar', 'profile_pic_url', 'face']);
+  const music = deepFind(root, ['music_title']) ?? (root?.music && typeof root.music === 'object' ? deepFind(root.music, ['title']) : undefined);
+  const createTime = num(deepFind(root, ['create_time', 'createTime', 'taken_at', 'created_at', 'timestamp', 'pubdate', 'ctime']));
+  const duration = num(deepFind(root, ['duration']));
+  const region = deepFind(root, ['region', 'create_country', 'location']);
+  const verified = !!deepFind(root, ['is_verified', 'verified', 'custom_verify', 'enterprise_verify_reason']);
+  const bio = deepFind(root, ['signature', 'biography', 'bio', 'description']);
+  const descStr = typeof desc === 'string' ? desc : '';
+  const hashtags = (descStr.match(/#[\p{L}\p{N}_]+/gu) || []).slice(0, 12);
   const er = views && views > 0
     ? Number((((likes || 0) + (comments || 0) + (shares || 0)) / views * 100).toFixed(2))
     : undefined;
-  return { author, desc: typeof desc === 'string' ? desc.slice(0, 400) : desc, views, likes, comments, shares, followers, engagementRate: er };
+  return {
+    author, handle, desc: descStr.slice(0, 600), views, likes, comments, shares, followers, engagementRate: er,
+    cover, avatar, music, createTime, duration, region, verified,
+    bio: typeof bio === 'string' ? bio.slice(0, 300) : undefined, hashtags,
+  };
 }
 
 // ── Нормализаторы (кросс-платформенные, оборонительные) ──

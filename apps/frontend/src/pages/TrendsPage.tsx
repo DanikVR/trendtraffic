@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check,
+  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -62,6 +62,8 @@ function friendlyError(e: any, fallback: string): string {
 export default function TrendsPage() {
   const { token } = useAppStore();
   const [view, setView] = useState<'trends' | 'analytics'>('trends');
+  const [analyzeUrl, setAnalyzeUrl] = useState<string | null>(null);
+  const openAnalytics = (videoUrl: string) => { setAnalyzeUrl(videoUrl); setView('analytics'); };
   const [kind, setKind] = useState<Kind>('keyword');
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
@@ -178,7 +180,7 @@ export default function TrendsPage() {
       </div>
 
       {view === 'analytics' ? (
-        <TrendAnalyticsPanel token={token} />
+        <TrendAnalyticsPanel token={token} initialUrl={analyzeUrl} />
       ) : (
       <>
       {/* Search card */}
@@ -414,10 +416,17 @@ export default function TrendsPage() {
                 </div>
                 <div className="flex items-center gap-1.5 pt-1">
                   {v.webUrl && (
-                    <a href={v.webUrl} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-1 text-[11px] font-600 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
+                    <button type="button" onClick={() => openAnalytics(v.webUrl!)} title="Открыть в Аналитике и проанализировать"
+                      className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
+                      style={{ background: 'rgba(255,115,0,0.12)', color: '#ff7300', border: '1px solid rgba(255,115,0,0.3)' }}>
+                      <BarChart3 size={12} /> Аналитика
+                    </button>
+                  )}
+                  {v.webUrl && (
+                    <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть в TikTok"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                      <ExternalLink size={12} /> TikTok
+                      <ExternalLink size={14} />
                     </a>
                   )}
                   {/* Загрузка — ТОЛЬКО по клику на иконку. Зелёная галка = уже скачано. */}
