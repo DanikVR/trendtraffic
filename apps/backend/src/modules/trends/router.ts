@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
+import { analyzeUrl, detectUrl } from './analytics.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -61,6 +62,26 @@ function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
 }
 
 router.use(requireAuth);
+
+/** POST /analyze — { url } → аналитика по ссылке (видео/аккаунт) для TikTok/Douyin/IG/X/Bilibili. */
+router.post('/analyze', async (req: AuthedRequest, res: Response) => {
+  try {
+    const url = typeof req.body?.url === 'string' ? req.body.url : '';
+    if (!url.trim()) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+    const result = await analyzeUrl(req.tenantId!, url);
+    res.json(result);
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка анализа';
+    const code = /распозн|ключ|Укажите/i.test(msg) ? 400 : 502;
+    res.status(code).json({ error: msg });
+  }
+});
+
+/** GET /analyze/detect?url= — только распознавание платформы/типа (без вызовов TikHub). */
+router.get('/analyze/detect', (req: AuthedRequest, res: Response) => {
+  const url = typeof req.query.url === 'string' ? req.query.url : '';
+  res.json({ detected: detectUrl(url) });
+});
 
 /** POST /scan — { kind: 'keyword'|'trending', query?, count? } */
 router.post('/scan', async (req: AuthedRequest, res: Response) => {

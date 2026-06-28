@@ -13,6 +13,7 @@ import {
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
+import TrendAnalyticsPanel from './TrendAnalyticsPanel';
 
 type Kind = 'keyword' | 'trending';
 
@@ -60,6 +61,7 @@ function friendlyError(e: any, fallback: string): string {
 
 export default function TrendsPage() {
   const { token } = useAppStore();
+  const [view, setView] = useState<'trends' | 'analytics'>('trends');
   const [kind, setKind] = useState<Kind>('keyword');
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
@@ -160,10 +162,25 @@ export default function TrendsPage() {
         </div>
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
-          <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>Найдите горячие видео и скачайте исходники для монтажа.</p>
+          <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>Поиск горячих видео + аналитика по любой публичной ссылке.</p>
         </div>
       </div>
 
+      {/* Переключатель: поиск трендов / аналитика по ссылке */}
+      <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+        {([['trends', '🔎 Поиск трендов'], ['analytics', '📊 Аналитика по ссылке']] as [typeof view, string][]).map(([v, lbl]) => (
+          <button key={v} onClick={() => setView(v)}
+            className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+            style={{ background: view === v ? 'var(--bg-secondary)' : 'transparent', color: view === v ? '#ff7300' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {view === 'analytics' ? (
+        <TrendAnalyticsPanel token={token} />
+      ) : (
+      <>
       {/* Search card */}
       <AuroraCard className="p-4 sm:p-5 space-y-4">
         {/* Сегмент-контрол: что ищем */}
@@ -431,6 +448,8 @@ export default function TrendsPage() {
           })}
           </div>
         </>
+      )}
+      </>
       )}
     </div>
   );

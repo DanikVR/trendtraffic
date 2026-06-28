@@ -414,9 +414,17 @@
  *         подключения (мок до этапа C) вместо выхода из редактора.
  * 1.3.11 — Enterprise → Trend: убрана внешняя ссылка на tikhub.io (не светим
  *         поставщика в UI), лид-текст нейтральный.
+ * 1.4.0 — Тренды → «Аналитика по ссылке» (порт расширения TikHub Toolkit в веб).
+ *         Вставляешь публичную ссылку на видео/пост или аккаунт (TikTok, Douyin,
+ *         Instagram, X, Bilibili) → backend определяет платформу/тип и дёргает
+ *         нужные эндпоинты TikHub НАШИМ ключом (analytics/fetch_video_metrics,
+ *         fetch_comment_keywords, fetch_one_video, профиль, лента, комментарии —
+ *         пути и параметры сверены с openapi.json). Показываем сводку (просмотры/
+ *         лайки/комменты/шеры + engagement-rate), статусы вызовов и сырые данные
+ *         с экспортом JSON. Backend: trends/analytics.ts + POST /api/trends/analyze.
  */
 
-export const APP_VERSION = '1.3.11';
+export const APP_VERSION = '1.4.0';
 
 export function AppVersion() {
   return (
