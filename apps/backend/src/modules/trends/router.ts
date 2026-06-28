@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
-import { analyzeUrl, detectUrl } from './analytics.js';
+import { analyzeUrl, detectUrl, analyzeCommentsSentiment } from './analytics.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -81,6 +81,19 @@ router.post('/analyze', async (req: AuthedRequest, res: Response) => {
 router.get('/analyze/detect', (req: AuthedRequest, res: Response) => {
   const url = typeof req.query.url === 'string' ? req.query.url : '';
   res.json({ detected: detectUrl(url) });
+});
+
+/** POST /analyze/sentiment — { comments: string[] } → ИИ-анализ тональности (Claude). */
+router.post('/analyze/sentiment', async (req: AuthedRequest, res: Response) => {
+  try {
+    const comments = Array.isArray(req.body?.comments) ? req.body.comments : [];
+    const result = await analyzeCommentsSentiment(req.tenantId!, comments);
+    res.json(result);
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка анализа тональности';
+    const code = /ключ|комментари|Укажите/i.test(msg) ? 400 : 502;
+    res.status(code).json({ error: msg });
+  }
 });
 
 /** POST /scan — { kind: 'keyword'|'trending', query?, count? } */

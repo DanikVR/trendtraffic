@@ -16,6 +16,7 @@
 
 import { tikhubGet } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import { resolveAnthropicKey, DEFAULT_DIRECTOR_MODEL } from '../render/director.js';
 
 export type Platform = 'tiktok' | 'douyin' | 'instagram' | 'twitter' | 'bilibili';
 export type ContentType = 'video' | 'account';
@@ -151,11 +152,76 @@ function buildSummary(blocks: Record<string, AnalyzeBlock>): Record<string, any>
   return { author, desc: typeof desc === 'string' ? desc.slice(0, 400) : desc, views, likes, comments, shares, followers, engagementRate: er };
 }
 
+// ── Нормализаторы (кросс-платформенные, оборонительные) ──
+// Ищем первый массив объектов, у элементов которого есть одно из текстовых полей
+// (text / content.message / full_text …) — это и есть список комментариев/постов.
+function findArrayOfObjects(obj: any, keys: string[], depth = 0): any[] | null {
+  if (obj == null || depth > 7) return null;
+  if (Array.isArray(obj)) {
+    const hit = obj.some((it) => it && typeof it === 'object' &&
+      keys.some((k) => k.split('.').reduce((o: any, p) => (o == null ? o : o[p]), it) != null));
+    if (obj.length && hit) return obj;
+    for (const it of obj) { const r = findArrayOfObjects(it, keys, depth + 1); if (r) return r; }
+    return null;
+  }
+  if (typeof obj === 'object') {
+    for (const kk of Object.keys(obj)) { const r = findArrayOfObjects(obj[kk], keys, depth + 1); if (r) return r; }
+  }
+  return null;
+}
+function pickText(c: any): string {
+  const cands = [c?.text, c?.content?.message, typeof c?.content === 'string' ? c.content : undefined,
+    c?.full_text, c?.message, c?.comment, c?.caption?.text, c?.desc, c?.title];
+  const v = cands.find((x) => typeof x === 'string' && x.trim());
+  return v ? String(v).trim() : '';
+}
+function authorOf(c: any): string | undefined {
+  const u = c?.user || c?.member || c?.author || c?.owner || c;
+  const v = deepFind(u, ['nickname', 'unique_id', 'uniqueId', 'username', 'uname', 'screen_name', 'name']);
+  return typeof v === 'string' ? v : undefined;
+}
+
+export interface NormComment { author?: string; text: string; likes?: number; replies?: number; }
+function extractComments(blocks: Record<string, AnalyzeBlock>): NormComment[] {
+  const data = blocks.comments?.data;
+  if (!data) return [];
+  const arr = findArrayOfObjects(data, ['text', 'content.message', 'full_text', 'message', 'comment']) || [];
+  return arr.map((c: any) => ({
+    author: authorOf(c),
+    text: pickText(c),
+    likes: num(c?.digg_count ?? c?.like_count ?? c?.like ?? c?.favorite_count ?? c?.likes),
+    replies: num(c?.reply_comment_total ?? c?.reply_count ?? c?.rcount ?? c?.child_comment_count ?? c?.total),
+  })).filter((c) => c.text).slice(0, 200);
+}
+export interface NormPost { desc?: string; views?: number; likes?: number; comments?: number; shares?: number; }
+function extractPosts(blocks: Record<string, AnalyzeBlock>): NormPost[] {
+  const data = blocks.posts?.data;
+  if (!data) return [];
+  const arr = findArrayOfObjects(data, ['desc', 'title', 'caption', 'aweme_id', 'full_text', 'id']) || [];
+  return arr.map((p: any) => ({
+    desc: (pickText(p) || String(deepFind(p, ['desc', 'title', 'caption']) || '')).slice(0, 200),
+    views: num(deepFind(p, ['play_count', 'playCount', 'view_count', 'viewCount', 'play'])),
+    likes: num(deepFind(p, ['digg_count', 'like_count', 'favorite_count', 'likes'])),
+    comments: num(deepFind(p, ['comment_count', 'commentCount', 'reply_count'])),
+    shares: num(deepFind(p, ['share_count', 'shareCount', 'forward_count', 'retweet_count'])),
+  })).slice(0, 60);
+}
+function extractKeywords(blocks: Record<string, AnalyzeBlock>): { word: string; count?: number }[] {
+  const data = blocks.commentKeywords?.data;
+  if (!data) return [];
+  const arr = findArrayOfObjects(data, ['keyword', 'word', 'term', 'text']) || [];
+  return arr.map((k: any) => ({
+    word: String(k?.keyword ?? k?.word ?? k?.term ?? k?.text ?? '').trim(),
+    count: num(k?.count ?? k?.freq ?? k?.frequency ?? k?.weight),
+  })).filter((k) => k.word).slice(0, 60);
+}
+
 interface AnalyzeBlock { ok: boolean; error?: string; data?: any; }
 export interface AnalyzeResult {
   detected: Detected & { platformLabel: string };
   blocks: Record<string, AnalyzeBlock>;
   summary: Record<string, any>;
+  normalized: { comments: NormComment[]; posts: NormPost[]; keywords: { word: string; count?: number }[] };
 }
 
 /** Главная точка: ссылка → аналитика. Бросает понятную ошибку при проблемах ключа/распознавания. */
@@ -178,5 +244,57 @@ export async function analyzeUrl(tenantId: string, url: string): Promise<Analyze
     detected: { ...detected, platformLabel: PLATFORM_LABEL[detected.platform] },
     blocks,
     summary: buildSummary(blocks),
+    normalized: {
+      comments: extractComments(blocks),
+      posts: extractPosts(blocks),
+      keywords: extractKeywords(blocks),
+    },
+  };
+}
+
+// ── ИИ-анализ тональности комментариев (Claude) ──
+export interface SentimentResult {
+  positive: number; negative: number; neutral: number;
+  overall: string; themes: string[]; topPositive: string[]; topNegative: string[];
+}
+function parseJsonLoose(txt: string): any {
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { return null; }
+}
+export async function analyzeCommentsSentiment(tenantId: string, comments: string[]): Promise<SentimentResult> {
+  const clean = (comments || []).map((c) => String(c || '').trim()).filter(Boolean).slice(0, 150);
+  if (clean.length === 0) throw new Error('Нет комментариев для анализа.');
+  const apiKey = await resolveAnthropicKey(tenantId);
+  if (!apiKey) throw new Error('Ключ Claude не задан (Enterprise → Генерация → ИИ-режиссёр).');
+  const mod: any = await import('@anthropic-ai/sdk');
+  const Anthropic = mod.default || mod.Anthropic || mod;
+  const client = new Anthropic({ apiKey });
+  const sample = clean.map((c, i) => `${i + 1}. ${c.slice(0, 200)}`).join('\n');
+  const system =
+    'Ты — аналитик аудитории соцсетей. По списку комментариев оцени тональность и темы. ' +
+    'Отвечай СТРОГО одним JSON-объектом без пояснений и без markdown.';
+  const user =
+    `Комментарии (${clean.length}):\n${sample}\n\n` +
+    'Верни JSON: {"positive": <0-100>, "negative": <0-100>, "neutral": <0-100>, ' +
+    '"overall": "<1-2 предложения вывода на русском>", ' +
+    '"themes": ["<3-6 ключевых тем/запросов аудитории>"], ' +
+    '"topPositive": ["<до 3 ярких позитивных комментариев дословно>"], ' +
+    '"topNegative": ["<до 3 ярких негативных/критичных комментариев дословно>"]}. ' +
+    'positive+negative+neutral должны давать 100.';
+  const res = await client.messages.create({
+    model: DEFAULT_DIRECTOR_MODEL, max_tokens: 2000, thinking: { type: 'adaptive' },
+    system, messages: [{ role: 'user', content: user }],
+  });
+  const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
+  const j = parseJsonLoose(txt);
+  if (!j) throw new Error('ИИ вернул неразборчивый ответ — повторите.');
+  const n = (x: any) => Math.max(0, Math.min(100, Math.round(Number(x) || 0)));
+  return {
+    positive: n(j.positive), negative: n(j.negative), neutral: n(j.neutral),
+    overall: String(j.overall || '').slice(0, 600),
+    themes: Array.isArray(j.themes) ? j.themes.map((t: any) => String(t)).slice(0, 8) : [],
+    topPositive: Array.isArray(j.topPositive) ? j.topPositive.map((t: any) => String(t)).slice(0, 3) : [],
+    topNegative: Array.isArray(j.topNegative) ? j.topNegative.map((t: any) => String(t)).slice(0, 3) : [],
   };
 }
