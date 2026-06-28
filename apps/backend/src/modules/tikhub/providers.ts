@@ -104,15 +104,22 @@ export function genericNormalize(platform: TrendPlatform, raw: any): NormalizedV
   return out;
 }
 
+export type SearchFilters = Record<string, string>;
 export interface TrendProvider {
   /** Есть ли у площадки лента «горячее»/explore (иначе только поиск по ключевику). */
   hasTrending: boolean;
-  search(key: string, query: string, opts: { count: number }): Promise<TikHubResult<any>>;
+  search(key: string, query: string, opts: { count: number; filters?: SearchFilters }): Promise<TikHubResult<any>>;
   trending(key: string, opts: { count: number }): Promise<TikHubResult<any>>;
   normalize(raw: any): NormalizedVideo[];
 }
 
 const enc = encodeURIComponent;
+/** Собирает query-string из базовых пар + непустых фильтров (whitelist ключей). */
+function qs(base: Record<string, string>, filters: SearchFilters | undefined, allow: string[]): string {
+  const parts = Object.entries(base).map(([k, v]) => `${k}=${enc(v)}`);
+  for (const k of allow) { const v = filters?.[k]; if (v != null && String(v).trim()) parts.push(`${k}=${enc(String(v))}`); }
+  return parts.join('&');
+}
 
 export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
   tiktok: {
@@ -123,25 +130,29 @@ export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
   },
   instagram: {
     hasTrending: true,
+    // Instagram-поиск принимает только keyword — фильтров у API нет.
     search: (k, q) => tikhubGet(k, `/api/v1/instagram/v2/search_reels?keyword=${enc(q)}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/instagram/v3/get_explore`, { timeoutMs: 30000 }),
     normalize: (raw) => genericNormalize('instagram', raw),
   },
   youtube: {
     hasTrending: true,
-    search: (k, q) => tikhubGet(k, `/api/v1/youtube/web/search_video?search_query=${enc(q)}`, { timeoutMs: 30000 }),
+    // get_general_search: sort_by / upload_time / duration.
+    search: (k, q, o) => tikhubGet(k, `/api/v1/youtube/web/get_general_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time', 'duration'])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/youtube/web/get_trending_videos?section=Now`, { timeoutMs: 30000 }),
     normalize: (raw) => genericNormalize('youtube', raw),
   },
   twitter: {
     hasTrending: false, // fetch_trending отдаёт ТЕМЫ, а не посты — ленту постов даём только через поиск
-    search: (k, q) => tikhubGet(k, `/api/v1/twitter/web/fetch_search_timeline?keyword=${enc(q)}&search_type=Top`, { timeoutMs: 30000 }),
+    // search_type: Top / Latest / Media.
+    search: (k, q, o) => tikhubGet(k, `/api/v1/twitter/web/fetch_search_timeline?${qs({ keyword: q, search_type: o.filters?.search_type || 'Top' }, undefined, [])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/twitter/web/fetch_trending?country=UnitedStates`, { timeoutMs: 30000 }),
     normalize: (raw) => genericNormalize('twitter', raw),
   },
   reddit: {
     hasTrending: true,
-    search: (k, q) => tikhubGet(k, `/api/v1/reddit/app/fetch_dynamic_search?query=${enc(q)}&search_type=post`, { timeoutMs: 30000 }),
+    // fetch_dynamic_search: sort / time_range.
+    search: (k, q, o) => tikhubGet(k, `/api/v1/reddit/app/fetch_dynamic_search?${qs({ query: q, search_type: 'post' }, o.filters, ['sort', 'time_range'])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/reddit/app/fetch_popular_feed`, { timeoutMs: 30000 }),
     normalize: (raw) => genericNormalize('reddit', raw),
   },

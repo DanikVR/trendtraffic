@@ -139,6 +139,12 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
     const body = req.body || {};
     const kind: TrendKind = body.kind === 'trending' ? 'trending' : 'keyword';
     const platform = ['tiktok', 'instagram', 'youtube', 'twitter', 'reddit'].includes(body.platform) ? body.platform : 'tiktok';
+    const filters: Record<string, string> = {};
+    if (body.filters && typeof body.filters === 'object') {
+      for (const [k, v] of Object.entries(body.filters)) {
+        if (typeof v === 'string' && v && /^[\w-]{1,30}$/.test(k) && v.length <= 40) filters[k] = v;
+      }
+    }
     const query = typeof body.query === 'string' ? body.query : undefined;
     const count = Number.isFinite(body.count) ? Number(body.count) : undefined;
     const mode = ['video', 'general', 'app'].includes(body.mode) ? body.mode : 'app';
@@ -148,7 +154,7 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
     if (kind === 'keyword' && !query?.trim()) {
       return res.status(400).json({ error: 'Для поиска по ключевому слову передайте query.' });
     }
-    const result = await scanTrends(req.tenantId!, { kind, query, count, mode, sortType, publishTime, platform });
+    const result = await scanTrends(req.tenantId!, { kind, query, count, mode, sortType, publishTime, platform, filters });
     res.json(result);
   } catch (err: any) {
     const msg = err?.message || 'Ошибка сканирования';

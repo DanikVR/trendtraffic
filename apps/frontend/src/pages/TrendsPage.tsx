@@ -37,6 +37,38 @@ const PLATFORMS: { id: Source; name: string; bg: string; trending: boolean; icon
   ) },
 ];
 
+// Расширенные фильтры поиска по площадкам (у Instagram своих нет — только ключевик).
+interface FilterDef { key: string; label: string; def: string; options: { v: string; label: string }[] }
+const PLATFORM_FILTERS: Partial<Record<Source, FilterDef[]>> = {
+  youtube: [
+    { key: 'sort_by', label: 'Сортировка', def: 'relevance', options: [
+      { v: 'relevance', label: 'По релевантности' }, { v: 'upload_date', label: 'Новые' },
+      { v: 'view_count', label: 'Больше просмотров' }, { v: 'rating', label: 'По рейтингу' }] },
+    { key: 'upload_time', label: 'Период', def: '', options: [
+      { v: '', label: 'Всё время' }, { v: 'hour', label: 'Час' }, { v: 'today', label: 'Сегодня' },
+      { v: 'week', label: 'Неделя' }, { v: 'month', label: 'Месяц' }, { v: 'year', label: 'Год' }] },
+    { key: 'duration', label: 'Длительность', def: '', options: [
+      { v: '', label: 'Любая' }, { v: 'short', label: 'Короткие' }, { v: 'medium', label: 'Средние' }, { v: 'long', label: 'Длинные' }] },
+  ],
+  twitter: [
+    { key: 'search_type', label: 'Тип', def: 'Top', options: [
+      { v: 'Top', label: 'Топ' }, { v: 'Latest', label: 'Свежие' }, { v: 'Media', label: 'С медиа' }] },
+  ],
+  reddit: [
+    { key: 'sort', label: 'Сортировка', def: 'relevance', options: [
+      { v: 'relevance', label: 'По релевантности' }, { v: 'hot', label: 'Горячее' }, { v: 'top', label: 'Топ' },
+      { v: 'new', label: 'Новое' }, { v: 'comments', label: 'Обсуждаемые' }] },
+    { key: 'time_range', label: 'Период', def: '', options: [
+      { v: '', label: 'Всё время' }, { v: 'day', label: 'День' }, { v: 'week', label: 'Неделя' },
+      { v: 'month', label: 'Месяц' }, { v: 'year', label: 'Год' }] },
+  ],
+};
+const defaultFilters = (id: Source): Record<string, string> => {
+  const out: Record<string, string> = {};
+  (PLATFORM_FILTERS[id] || []).forEach((f) => { if (f.def) out[f.key] = f.def; });
+  return out;
+};
+
 interface StoredVideo {
   id: string | null;
   externalId: string;
@@ -86,9 +118,11 @@ export default function TrendsPage() {
   const [analyzeCover, setAnalyzeCover] = useState<string | null>(null);
   const openAnalytics = (videoUrl: string, cover?: string | null) => { setAnalyzeUrl(videoUrl); setAnalyzeCover(cover || null); setView('analytics'); };
   const [platform, setPlatform] = useState<Source>('tiktok');
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [kind, setKind] = useState<Kind>('keyword');
   const selectPlatform = (id: Source) => {
     setPlatform(id);
+    setFilters(defaultFilters(id));
     const p = PLATFORMS.find((x) => x.id === id);
     if (p && !p.trending && kind === 'trending') setKind('keyword'); // у X нет «Горячее»
   };
@@ -127,7 +161,7 @@ export default function TrendsPage() {
     try {
       const res = await fetch('/api/trends/scan', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ kind, query: query.trim(), count, mode, sortType, publishTime, platform }),
+        body: JSON.stringify({ kind, query: query.trim(), count, mode, sortType, publishTime, platform, filters }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -361,6 +395,21 @@ export default function TrendsPage() {
                 </select>
               </label>
             </>
+          )}
+
+          {/* Расширенные фильтры площадки (YouTube / X / Reddit) */}
+          {kind === 'keyword' && platform !== 'tiktok' && (PLATFORM_FILTERS[platform] || []).map((f) => (
+            <label key={f.key} className="flex flex-col gap-1 text-[11px] flex-1 min-w-[140px]" style={{ color: 'var(--text-muted)' }}>
+              {f.label}
+              <select value={filters[f.key] ?? f.def} onChange={(e) => setFilters((s) => ({ ...s, [f.key]: e.target.value }))}
+                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                {f.options.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
+              </select>
+            </label>
+          ))}
+          {kind === 'keyword' && platform === 'instagram' && (
+            <p className="text-[11px] flex items-end pb-2.5" style={{ color: 'var(--text-muted)' }}>Instagram: фильтров нет — только поиск по ключевику.</p>
           )}
         </div>
 

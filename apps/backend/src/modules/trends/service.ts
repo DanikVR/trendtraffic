@@ -26,6 +26,8 @@ export interface ScanParams {
   region?: string;
   /** Источник трендов: tiktok | instagram | youtube | twitter | reddit. По умолчанию tiktok. */
   platform?: TrendPlatform;
+  /** Расширенные фильтры площадки (youtube: sort_by/upload_time/duration; x: search_type; reddit: sort/time_range). */
+  filters?: Record<string, string>;
   /** Тип поиска: video (web), general (web общий), app (App V3 с фильтрами). */
   mode?: 'video' | 'general' | 'app';
   /** Только для mode='app': 0 релевантность, 1 больше лайков, 2 новее. */
@@ -111,7 +113,7 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
         if (fb.ok) { resp = fb; fellBackToApp = true; }
       }
     } else {
-      resp = await provider.search(key, q, { count });
+      resp = await provider.search(key, q, { count, filters: params.filters });
     }
   } else {
     if (!provider.hasTrending) {
