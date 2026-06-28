@@ -412,9 +412,11 @@
  *         (8) Enterprise: вкладка/ключ «TikHub» → «Trend» (ссылка на tikhub.io).
  * 1.3.10 — Экспорт: кнопки «Подключить площадку» теперь переключают статус
  *         подключения (мок до этапа C) вместо выхода из редактора.
+ * 1.3.11 — Enterprise → Trend: убрана внешняя ссылка на tikhub.io (не светим
+ *         поставщика в UI), лид-текст нейтральный.
  */
 
-export const APP_VERSION = '1.3.10';
+export const APP_VERSION = '1.3.11';
 
 export function AppVersion() {
   return (
