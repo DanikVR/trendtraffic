@@ -15,7 +15,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
-  Plus, Pencil, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
+  Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -295,10 +295,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         /* раскрытие — пружинка (быстро, мультяшно) */
         .me-grow{animation:meGrow .26s cubic-bezier(.34,1.7,.5,1);transform-origin:bottom center;}
         @keyframes meGrow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
-        /* «+ Добавить» на узле — по ховеру узла */
-        .me-add-pill{opacity:0;transform:translate(-50%,5px) scale(.8);transition:opacity .15s ease, transform .18s cubic-bezier(.34,1.6,.64,1);pointer-events:none;}
-        .me-node:hover .me-add-pill{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto;}
-        .me-add-pill:hover{filter:brightness(1.12);}
+        /* веер иконок процессов из плавающей «+» */
+        .me-fan-item{animation:meFan .28s cubic-bezier(.34,1.6,.64,1) backwards;transition:transform .12s ease, border-color .12s ease;}
+        @keyframes meFan{from{opacity:0;transform:translate(-16px,-16px) scale(.4)}to{opacity:1;transform:translate(0,0) scale(1)}}
+        .me-fan-item:hover{border-color:#ff7300!important;transform:scale(1.1);}
       `}</style>
 
       {/* Верхняя панель */}
@@ -317,45 +317,31 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         </button>
       </div>
 
-      {/* Палитра процессов: ВСЕ типы. Активные (в сценарии) — карандаш (редактировать)
-          + ✕ (убрать); недостающие — «+» (добавить в воздействие на видео). */}
-      <div className="flex items-center gap-2 px-4 py-2 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
-        {KIND_ORDER.map((k) => {
-          const node = nodes.find((n) => n.kind === k);
-          const active = !!node;
-          const sel = active && selectedId === node!.id;
-          return (
-            <span key={k} className="inline-flex items-center text-xs font-600 rounded-full overflow-hidden transition-colors"
-              style={{
-                background: sel ? 'var(--btn-primary-bg)' : active ? 'var(--bg-tertiary)' : 'transparent',
-                color: sel ? '#ff7300' : active ? 'var(--text-secondary)' : 'var(--text-muted)',
-                border: active ? `1px solid ${sel ? '#ff7300' : 'var(--border-medium)'}` : '1px dashed var(--border-strong)',
-                opacity: active ? 1 : 0.85,
-              }}>
-              <button onClick={() => (active ? setSelectedId(node!.id) : addNode(k))}
-                title={active ? 'Редактировать' : 'Добавить в сценарий'}
-                className="inline-flex items-center gap-1.5 pl-2.5 py-1.5"
-                style={{ paddingRight: active ? 5 : 10, background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-                <span style={{ display: 'inline-flex' }}>{React.cloneElement(META[k].icon as any, { size: 13 })}</span>
-                {META[k].label}
-                {active ? <Pencil size={11} style={{ opacity: 0.7 }} /> : <Plus size={12} style={{ opacity: 0.85 }} />}
-              </button>
-              {active && (
-                <button onClick={() => removeNode(node!.id)} title="Убрать из сценария"
-                  className="inline-flex items-center justify-center pr-2 pl-1 py-1.5"
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                  <X size={12} />
-                </button>
-              )}
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Холст-паутина */}
+      {/* Холст-паутина (верхние чипы убраны — добавление через плавающую «+» слева сверху) */}
       <div className="flex-1" style={{ position: 'relative', overflow: 'hidden',
         background: 'radial-gradient(circle at 50% 42%, rgba(255,115,0,0.05), transparent 60%), var(--bg-primary)',
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
+
+        {/* Плавающая «+» (левый верхний угол): клик → веером выезжают иконки процессов (без подписей) */}
+        <div style={{ position: 'absolute', left: 14, top: 14, zIndex: 40 }}>
+          <button onClick={() => setAddOpen((o) => !o)} title={addOpen ? 'Закрыть' : 'Добавить процесс'}
+            className="w-11 h-11 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', boxShadow: '0 6px 20px rgba(255,115,0,.3)', cursor: 'pointer', transition: 'transform .25s cubic-bezier(.34,1.6,.64,1)', transform: addOpen ? 'rotate(135deg)' : 'none' }}>
+            <Plus size={22} />
+          </button>
+          {addOpen && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, maxWidth: 176 }}>
+              {KIND_ORDER.map((k, i) => (
+                <button key={k} onClick={() => { addNode(k); setAddOpen(false); }} title={META[k].label}
+                  className="me-fan-item w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: '#ff7300', cursor: 'pointer', animationDelay: `${i * 0.03}s` }}>
+                  {React.cloneElement(META[k].icon as any, { size: 17 })}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} aria-hidden="true">
           {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
         </svg>
@@ -390,11 +376,6 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {n.useLlm && <Sparkles size={11} style={{ color: '#7c5cff' }} />}
               </span>
             )}
-            {/* + Добавить — появляется по наведению на узел */}
-            <span className="me-add-pill" onClick={(e) => { e.stopPropagation(); setAddOpen(true); setShowPicker(true); }}
-              style={{ position: 'absolute', left: '50%', top: '100%', marginTop: 6, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999, background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', cursor: 'pointer' }}>
-              <Plus size={11} /> Добавить
-            </span>
           </button>
         ))}
 
@@ -402,24 +383,6 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           <div style={{ position: 'absolute', left: '50%', top: '64%', transform: 'translateX(-50%)', textAlign: 'center' }}>
             <button onClick={() => setShowPresets(true)} className="text-sm font-600 px-4 py-2 rounded-xl"
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Выбрать пресет сценария</button>
-          </div>
-        )}
-      </div>
-
-      {/* Нижняя строка «Добавить» — сворачиваемая (закрыта → клик → раскрывается пружинкой) */}
-      <div className="px-4 py-3 flex justify-center" style={{ borderTop: '1px solid var(--border-medium)' }}>
-        {!addOpen ? (
-          <button onClick={() => { setAddOpen(true); setShowPicker(true); }}
-            className="me-addbar inline-flex items-center gap-2 text-sm font-600 pl-2 pr-4 py-1.5 rounded-full"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--btn-primary-bg)', color: '#ff7300' }}><Plus size={16} /></span>
-            Добавить параметр или процесс
-          </button>
-        ) : (
-          <div className="me-addbar me-grow flex items-center gap-2 w-full" style={{ maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '6px 6px 6px 8px' }}>
-            <button onClick={() => setShowPicker(true)} title="Список процессов" className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={18} /></button>
-            <input autoFocus readOnly onClick={() => setShowPicker(true)} placeholder="Выберите процесс…" className="flex-1 text-sm outline-none" style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }} />
-            <button onClick={() => setAddOpen(false)} title="Свернуть" className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
           </div>
         )}
       </div>
@@ -487,8 +450,15 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               </p>
             )}
 
-            <button onClick={() => setSelectedId(null)} className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-              style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => removeNode(selected.id)} title="Удалить узел из сценария"
+                className="inline-flex items-center justify-center gap-1.5 text-sm font-600 px-3 py-2.5 rounded-xl flex-shrink-0"
+                style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
+                <Trash2 size={15} /> Удалить
+              </button>
+              <button onClick={() => setSelectedId(null)} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
+                style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
+            </div>
           </div>
         </div>
       )}
