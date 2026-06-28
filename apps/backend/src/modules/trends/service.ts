@@ -14,7 +14,8 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import pool from '../../db/index.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
-import { searchVideos, fetchTrending, normalizeVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
+import { searchVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
+import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
 
 export type TrendKind = 'keyword' | 'trending';
 
@@ -23,6 +24,8 @@ export interface ScanParams {
   query?: string;
   count?: number;
   region?: string;
+  /** Источник трендов: tiktok | instagram | youtube | twitter | reddit. По умолчанию tiktok. */
+  platform?: TrendPlatform;
   /** Тип поиска: video (web), general (web общий), app (App V3 с фильтрами). */
   mode?: 'video' | 'general' | 'app';
   /** Только для mode='app': 0 релевантность, 1 больше лайков, 2 новее. */
@@ -88,37 +91,41 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     throw new Error('Ключ Trend не задан. Укажите платформенный ключ в админке или свой в настройках Enterprise.');
   }
 
+  const platform: TrendPlatform = isTrendPlatform(params.platform) ? params.platform : 'tiktok';
+  const provider = TREND_PROVIDERS[platform];
   const count = Math.min(Math.max(params.count ?? 20, 1), 30);
   let resp;
   let fellBackToApp = false;
   if (params.kind === 'keyword') {
     const q = (params.query || '').trim();
     if (!q) throw new Error('Укажите ключевое слово для поиска.');
-    // App-поиск всегда тянет по релевантности (опечатко-устойчивый матч). Чтобы
-    // «Новее»/«Больше лайков» пересортировывались осмысленно, тянем ПОЛНЫЙ пул
-    // (одна оплата TikHub за запрос — count не влияет на цену), потом режем до count.
-    const fetchCount = params.mode === 'app' ? 30 : count;
-    resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime });
-    // Web-эндпоинты TikHub (Видео/Общий) периодически отдают «Request failed, please
-    // retry» даже после ретраев — это нестабильность их скрапера, не наша ошибка.
-    // Чтобы поиск «всегда работал», молча падаем на стабильный App V3 (умный,
-    // устойчивый к опечаткам). Так пользователь получает результат, а не ошибку.
-    if (!resp.ok && params.mode !== 'app') {
-      const fb = await searchVideos(key, q, { count: 30, mode: 'app', publishTime: params.publishTime });
-      if (fb.ok) { resp = fb; fellBackToApp = true; }
+    if (platform === 'tiktok') {
+      // App-поиск всегда тянет по релевантности (опечатко-устойчивый матч). Чтобы
+      // «Новее»/«Больше лайков» пересортировывались осмысленно, тянем ПОЛНЫЙ пул
+      // (одна оплата за запрос — count не влияет на цену), потом режем до count.
+      const fetchCount = params.mode === 'app' ? 30 : count;
+      resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime });
+      // Web-эндпоинты (Видео/Общий) периодически нестабильны — молча падаем на App V3.
+      if (!resp.ok && params.mode !== 'app') {
+        const fb = await searchVideos(key, q, { count: 30, mode: 'app', publishTime: params.publishTime });
+        if (fb.ok) { resp = fb; fellBackToApp = true; }
+      }
+    } else {
+      resp = await provider.search(key, q, { count });
     }
   } else {
-    resp = await fetchTrending(key, { count });
+    if (!provider.hasTrending) {
+      throw new Error('У этой площадки нет ленты «Горячее» — переключитесь на «По ключевику».');
+    }
+    resp = await provider.trending(key, { count });
   }
 
   if (!resp.ok) {
     throw new Error(`Trend вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
   }
 
-  // Клиентская сортировка поверх relevance-набора (TikHub отдаёт его по релевантности —
-  // единственный режим с устойчивым к опечаткам тематическим матчем, см. searchVideos):
-  //   sortType 2 — новее (по дате публикации), 1 — больше лайков, 0 — как вернул TikTok.
-  let normalized: NormalizedVideo[] = normalizeVideos(resp.data);
+  // Клиентская сортировка (для TikTok app-поиска): 2 — новее, 1 — больше лайков, 0 — как есть.
+  let normalized: NormalizedVideo[] = provider.normalize(resp.data);
   if (params.kind === 'keyword' && params.sortType === 2) {
     normalized = [...normalized].sort((a, b) => (b.createTime ?? 0) - (a.createTime ?? 0));
   } else if (params.kind === 'keyword' && params.sortType === 1) {
@@ -136,8 +143,8 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   try {
     await pool.query(
       `INSERT INTO trends (id, tenant_id, platform, query_kind, query_value, region, result_count, payload)
-       VALUES ($1, $2, 'tiktok', $3, $4, $5, $6, $7)`,
-      [trendId, tenantId, params.kind, params.query || null, params.region || null, videos.length, JSON.stringify(resp.data ?? null)]
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [trendId, tenantId, platform, params.kind, params.query || null, params.region || null, videos.length, JSON.stringify(resp.data ?? null)]
     );
   } catch (e) {
     console.warn('[trends] не удалось записать trend (fallback?):', (e as Error).message);

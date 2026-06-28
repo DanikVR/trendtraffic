@@ -138,6 +138,7 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
   try {
     const body = req.body || {};
     const kind: TrendKind = body.kind === 'trending' ? 'trending' : 'keyword';
+    const platform = ['tiktok', 'instagram', 'youtube', 'twitter', 'reddit'].includes(body.platform) ? body.platform : 'tiktok';
     const query = typeof body.query === 'string' ? body.query : undefined;
     const count = Number.isFinite(body.count) ? Number(body.count) : undefined;
     const mode = ['video', 'general', 'app'].includes(body.mode) ? body.mode : 'app';
@@ -147,7 +148,7 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
     if (kind === 'keyword' && !query?.trim()) {
       return res.status(400).json({ error: 'Для поиска по ключевому слову передайте query.' });
     }
-    const result = await scanTrends(req.tenantId!, { kind, query, count, mode, sortType, publishTime });
+    const result = await scanTrends(req.tenantId!, { kind, query, count, mode, sortType, publishTime, platform });
     res.json(result);
   } catch (err: any) {
     const msg = err?.message || 'Ошибка сканирования';

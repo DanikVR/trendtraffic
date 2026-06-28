@@ -16,6 +16,26 @@ import { useAppStore } from '../store/useAppStore';
 import TrendAnalyticsPanel from './TrendAnalyticsPanel';
 
 type Kind = 'keyword' | 'trending';
+type Source = 'tiktok' | 'instagram' | 'youtube' | 'twitter' | 'reddit';
+
+// Источники трендов с фирменными значками. У X нет ленты «Горячее» — только поиск.
+const PLATFORMS: { id: Source; name: string; bg: string; trending: boolean; icon: React.ReactNode }[] = [
+  { id: 'tiktok', name: 'TikTok', bg: '#000', trending: true, icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M16.6 5.8c-.9-.6-1.5-1.6-1.7-2.8h-2.6v11.4c0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3 1-2.3 2.3-2.3c.2 0 .5 0 .7.1v-2.7c-.2 0-.5-.1-.7-.1A5 5 0 1 0 14.9 14V8.7c1 .7 2.2 1.1 3.5 1.1V7.2c-.7 0-1.3-.2-1.8-.5z"/></svg>
+  ) },
+  { id: 'instagram', name: 'Instagram', bg: 'linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7)', trending: true, icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="#fff" stroke="none"/></svg>
+  ) },
+  { id: 'youtube', name: 'YouTube', bg: '#FF0000', trending: true, icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M9.5 8.5l6 3.5-6 3.5z"/></svg>
+  ) },
+  { id: 'twitter', name: 'X', bg: '#000', trending: false, icon: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M18.9 2H22l-7.3 8.3L23 22h-6.8l-5.3-6.9L4.8 22H1.7l7.8-8.9L1 2h7l4.8 6.3L18.9 2zm-2.4 18h1.9L7.6 4H5.6l10.9 16z"/></svg>
+  ) },
+  { id: 'reddit', name: 'Reddit', bg: '#FF4500', trending: true, icon: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="13" r="6.3"/><circle cx="9.6" cy="12.6" r="1" fill="#FF4500"/><circle cx="14.4" cy="12.6" r="1" fill="#FF4500"/><path d="M9.6 15.4c1.3.9 3.5.9 4.8 0" stroke="#FF4500" strokeWidth="1.1" fill="none" strokeLinecap="round"/></svg>
+  ) },
+];
 
 interface StoredVideo {
   id: string | null;
@@ -65,7 +85,13 @@ export default function TrendsPage() {
   const [analyzeUrl, setAnalyzeUrl] = useState<string | null>(null);
   const [analyzeCover, setAnalyzeCover] = useState<string | null>(null);
   const openAnalytics = (videoUrl: string, cover?: string | null) => { setAnalyzeUrl(videoUrl); setAnalyzeCover(cover || null); setView('analytics'); };
+  const [platform, setPlatform] = useState<Source>('tiktok');
   const [kind, setKind] = useState<Kind>('keyword');
+  const selectPlatform = (id: Source) => {
+    setPlatform(id);
+    const p = PLATFORMS.find((x) => x.id === id);
+    if (p && !p.trending && kind === 'trending') setKind('keyword'); // у X нет «Горячее»
+  };
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
   const [mode, setMode] = useState<'video' | 'general' | 'app'>('app');
@@ -101,7 +127,7 @@ export default function TrendsPage() {
     try {
       const res = await fetch('/api/trends/scan', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ kind, query: query.trim(), count, mode, sortType, publishTime }),
+        body: JSON.stringify({ kind, query: query.trim(), count, mode, sortType, publishTime, platform }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -214,12 +240,31 @@ export default function TrendsPage() {
       <>
       {/* Search card */}
       <AuroraCard className="p-4 sm:p-5 space-y-4">
+        {/* Источник трендов — логотипы соцсетей */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] font-600 mr-1" style={{ color: 'var(--text-muted)' }}>Источник:</span>
+          {PLATFORMS.map((p) => {
+            const on = platform === p.id;
+            return (
+              <button key={p.id} onClick={() => selectPlatform(p.id)} title={p.name}
+                className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full transition-all"
+                style={{ background: on ? 'var(--bg-secondary)' : 'var(--bg-tertiary)', border: `1.5px solid ${on ? '#ff7300' : 'var(--border-medium)'}`, boxShadow: on ? '0 1px 5px rgba(255,115,0,0.2)' : 'none' }}>
+                <span className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: p.bg }}>{p.icon}</span>
+                <span className="text-[12px] font-600" style={{ color: on ? '#ff7300' : 'var(--text-secondary)' }}>{p.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Сегмент-контрол: что ищем */}
         <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl"
              style={{ background: 'var(--bg-tertiary)' }}>
-          {(['keyword', 'trending'] as Kind[]).map((k) => (
-            <button key={k} onClick={() => setKind(k)}
-              className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+          {(['keyword', 'trending'] as Kind[]).map((k) => {
+            const disabled = k === 'trending' && !(PLATFORMS.find((p) => p.id === platform)?.trending);
+            return (
+            <button key={k} onClick={() => !disabled && setKind(k)} disabled={disabled}
+              title={disabled ? 'У этой площадки нет ленты «Горячее»' : undefined}
+              className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: kind === k ? 'var(--bg-secondary)' : 'transparent',
                 color: kind === k ? '#ff7300' : 'var(--text-muted)',
@@ -227,7 +272,8 @@ export default function TrendsPage() {
               }}>
               {k === 'keyword' ? '🔍 По ключевику' : '🔥 Горячее'}
             </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* Главная строка: поиск + кнопка */}
@@ -277,7 +323,7 @@ export default function TrendsPage() {
             </div>
           </label>
 
-          {kind === 'keyword' && (
+          {kind === 'keyword' && platform === 'tiktok' && (
             <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[150px]" style={{ color: 'var(--text-muted)' }}>
               Тип поиска
               <select value={mode} onChange={(e) => setMode(e.target.value as any)}
@@ -289,7 +335,7 @@ export default function TrendsPage() {
               </select>
             </label>
           )}
-          {kind === 'keyword' && mode === 'app' && (
+          {kind === 'keyword' && platform === 'tiktok' && mode === 'app' && (
             <>
               <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[140px]" style={{ color: 'var(--text-muted)' }}>
                 Сортировка
@@ -319,7 +365,7 @@ export default function TrendsPage() {
         </div>
 
         {/* Сворачиваемая подсказка по типам поиска */}
-        {kind === 'keyword' && (
+        {kind === 'keyword' && platform === 'tiktok' && (
           <details className="group/help text-[12px]">
             <summary className="inline-flex items-center gap-1.5 cursor-pointer select-none font-600 list-none"
                      style={{ color: 'var(--text-muted)' }}>
