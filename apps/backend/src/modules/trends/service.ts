@@ -16,6 +16,7 @@ import pool from '../../db/index.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { searchVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
+import { shapeOf } from './analytics.js';
 
 export type TrendKind = 'keyword' | 'trending';
 
@@ -60,6 +61,8 @@ export interface ScanResult {
   rawKeys: string[];
   /** true, если выбранный web-режим упал и мы молча переключились на App V3. */
   fellBackToApp?: boolean;
+  /** Скелет структуры ответа (имена полей + типы) — показываем, когда ничего не распозналось. */
+  shape?: any;
 }
 
 function num(v: any): number | undefined {
@@ -199,7 +202,8 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     }
   }
 
-  return { trendId, count: videos.length, videos: stored, rawKeys, fellBackToApp };
+  const shape = videos.length === 0 ? shapeOf(resp.data) : undefined;
+  return { trendId, count: videos.length, videos: stored, rawKeys, fellBackToApp, shape };
 }
 
 export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false): Promise<StoredVideo[]> {

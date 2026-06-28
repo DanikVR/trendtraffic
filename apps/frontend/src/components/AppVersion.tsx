@@ -483,9 +483,14 @@
  *         get_video_comments (YT), fetch_post_details/comments (Reddit), профили/
  *         ленты. (2) YouTube Shorts: разбор нового рендера shortsLockupViewModel —
  *         «Горячее»/Shorts больше не пустые.
+ * 1.5.0 — Диагностика разбора: и аналитика (по блокам video/account/comments),
+ *         и поиск трендов (при 0 распознанных) возвращают СКЕЛЕТ структуры ответа
+ *         площадки (имена полей + типы, без значений) — раскрывашка «🔧 Структура
+ *         ответа». По нему точно настраиваются нормализаторы вместо угадывания
+ *         имён полей. backend: shapeOf() в trends/analytics.ts.
  */
 
-export const APP_VERSION = '1.4.9';
+export const APP_VERSION = '1.5.0';
 
 export function AppVersion() {
   return (

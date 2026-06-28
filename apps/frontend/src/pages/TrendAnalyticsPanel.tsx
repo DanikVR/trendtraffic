@@ -18,6 +18,7 @@ interface AnalyzeResult {
   blocks: Record<string, Block>;
   summary: Record<string, any>;
   normalized: { comments: NormComment[]; posts: any[]; keywords: { word: string; count?: number }[] };
+  debug?: Record<string, any>;
 }
 interface Sentiment {
   positive: number; negative: number; neutral: number;
@@ -459,6 +460,19 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
             <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
               Не загрузилось: {Object.entries(result.blocks).filter(([, b]) => !b.ok).map(([k]) => BLOCK_LABEL[k] || k).join(', ')}. Полные данные — кнопкой «JSON».
             </p>
+          )}
+
+          {/* Диагностика: структура ответа (имена полей + типы, без значений) */}
+          {result.debug && (
+            <details className="text-[11px]">
+              <summary className="inline-flex items-center gap-1.5 cursor-pointer select-none font-600" style={{ color: 'var(--text-muted)' }}>
+                🔧 Структура ответа (для разработчика)
+              </summary>
+              <pre className="mt-2 p-3 rounded-lg overflow-auto" style={{ maxHeight: 360, background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                {JSON.stringify(result.debug, null, 1)}
+              </pre>
+              <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Скопируйте и пришлите — точно настрою извлечение полей этой площадки.</p>
+            </details>
           )}
         </>
       )}

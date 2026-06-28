@@ -164,6 +164,27 @@ function num(v: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/**
+ * Скелет структуры ответа (имена полей + типы, БЕЗ значений) — для отладки
+ * нормализаторов: видно, где у площадки лежат views/likes/title/обложка.
+ * Приватных данных не раскрывает (строки → 'str', числа → 'num').
+ */
+export function shapeOf(v: any, depth = 0): any {
+  if (v == null) return 'null';
+  if (Array.isArray(v)) return v.length ? [shapeOf(v[0], depth + 1)] : '[]';
+  if (typeof v === 'object') {
+    if (depth > 5) return '{…}';
+    const o: Record<string, any> = {};
+    const keys = Object.keys(v);
+    keys.slice(0, 40).forEach((k) => { o[k] = shapeOf(v[k], depth + 1); });
+    if (keys.length > 40) o['…'] = `+${keys.length - 40} keys`;
+    return o;
+  }
+  if (typeof v === 'number') return 'num';
+  if (typeof v === 'boolean') return 'bool';
+  return 'str';
+}
+
 // Достаёт URL из значения (строка-http / {url_list:[]} / {url} / {uri}).
 function urlFrom(v: any, depth = 0): string | undefined {
   if (v == null || depth > 4) return undefined;
@@ -285,6 +306,8 @@ export interface AnalyzeResult {
   blocks: Record<string, AnalyzeBlock>;
   summary: Record<string, any>;
   normalized: { comments: NormComment[]; posts: NormPost[]; keywords: { word: string; count?: number }[] };
+  /** Скелет структуры ответа (для отладки нормализаторов). */
+  debug: Record<string, any>;
 }
 
 /** Главная точка: ссылка → аналитика. Бросает понятную ошибку при проблемах ключа/распознавания. */
@@ -311,6 +334,11 @@ export async function analyzeUrl(tenantId: string, url: string): Promise<Analyze
       comments: extractComments(blocks),
       posts: extractPosts(blocks),
       keywords: extractKeywords(blocks),
+    },
+    debug: {
+      video: blocks.video ? (blocks.video.ok ? shapeOf(blocks.video.data) : { error: blocks.video.error }) : undefined,
+      account: blocks.account ? (blocks.account.ok ? shapeOf(blocks.account.data) : { error: blocks.account.error }) : undefined,
+      comments: blocks.comments ? (blocks.comments.ok ? shapeOf(blocks.comments.data) : { error: blocks.comments.error }) : undefined,
     },
   };
 }

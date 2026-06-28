@@ -138,6 +138,7 @@ export default function TrendsPage() {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [scanShape, setScanShape] = useState<any>(null); // структура ответа при 0 распознанных (отладка)
   // По каждой площадке храним свой ключевик + накопленную ленту результатов.
   const [perPlatform, setPerPlatform] = useState<Record<string, { query: string; videos: StoredVideo[] }>>({});
   const [page, setPage] = useState(1);
@@ -204,9 +205,11 @@ export default function TrendsPage() {
       setPage(1);
       const fb = data.fellBackToApp ? ' Режим «Поиск по слову/Около-тематика» был нестабилен — поиск автоматически выполнен «Умным поиском».' : '';
       if ((data.count ?? 0) === 0) {
-        setNotice(`Trend ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.${fb}`);
+        setNotice(`Trend ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}].${fb}`);
+        setScanShape(data.shape || null);
       } else {
         setNotice(`Найдено видео: ${data.count}.${fb}`);
+        setScanShape(null);
       }
     } catch (e: any) { setError(friendlyError(e, 'Ошибка сканирования')); }
     finally { setScanning(false); }
@@ -452,6 +455,16 @@ export default function TrendsPage() {
           <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
             <CheckCircle2 size={16} className="mt-[2px] flex-shrink-0" style={{ color: '#10b981' }} /><span>{notice}</span>
           </div>
+        )}
+        {scanShape && (
+          <details className="text-[11px]">
+            <summary className="inline-flex items-center gap-1.5 cursor-pointer select-none font-600" style={{ color: 'var(--text-muted)' }}>
+              🔧 Структура ответа (пришлите для настройки разбора)
+            </summary>
+            <pre className="mt-2 p-3 rounded-lg overflow-auto" style={{ maxHeight: 360, background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+              {JSON.stringify(scanShape, null, 1)}
+            </pre>
+          </details>
         )}
         {error && (
           <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
