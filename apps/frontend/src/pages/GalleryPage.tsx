@@ -172,7 +172,7 @@ export default function GalleryPage() {
   };
 
   const renderPreview = (v: GalleryItem) => {
-    if (v.mediaType === 'video') return <video src={v.fileUrl} poster={v.coverUrl || undefined} controls preload="none" className="w-full h-full object-cover" />;
+    if (v.mediaType === 'video') return <video src={v.coverUrl ? v.fileUrl : `${v.fileUrl}#t=0.1`} poster={v.coverUrl || undefined} controls preload="metadata" className="w-full h-full object-cover" />;
     if (v.mediaType === 'image') return <img src={v.fileUrl} alt={v.title} loading="lazy" className="w-full h-full object-cover" />;
     if (v.mediaType === 'audio') return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-3" style={{ background: 'var(--bg-tertiary)' }}>

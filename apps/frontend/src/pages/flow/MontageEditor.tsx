@@ -137,6 +137,20 @@ function hydrate(kind: MKind, choices: any): Record<string, string[]> {
   return out;
 }
 
+/** Краткая сводка выбранных параметров узла (для мелкой подписи под кружком). */
+function nodeSummary(n: MNode): string {
+  const parts: string[] = [];
+  (META[n.kind].choices || []).forEach((c) => {
+    const labels = (n.choices[c.id] || [])
+      .map((v) => c.opts.find((o) => o.v === v)?.label)
+      .filter((x): x is string => !!x && x !== 'Без' && x !== 'Не трогать' && x !== 'Выкл');
+    if (labels.length) parts.push(labels.join(', '));
+  });
+  if (n.useLlm) parts.unshift('✨ИИ');
+  const s = parts.join(' · ');
+  return s.length > 40 ? s.slice(0, 39) + '…' : s;
+}
+
 export default function MontageEditor({ flowId, onBack }: { flowId: string; onBack: () => void }) {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
@@ -275,8 +289,11 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const selected = nodes.find((n) => n.id === selectedId) || null;
 
   // ── Облачные узлы: позиции, связи-стрелки, перетаскивание ──────────────────
-  const cloudPoint = (id: string): { x: number; y: number } | null =>
-    id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan') ? cloud[id] : null;
+  const cloudPoint = (id: string): { x: number; y: number } | null => {
+    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan') ? cloud[id] : null;
+    // Точка соединения 🔗 — у верх-правого края узла (лента идёт от неё, не из центра).
+    return base ? { x: base.x + 2.6, y: base.y - 3 } : null;
+  };
 
   const addEdge = (from: string, to: string) => {
     if (from === to) return;
@@ -457,6 +474,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? '#ff7300' : 'var(--border-strong)'}`,
               color: selectedId === n.id ? '#ff7300' : 'var(--text-secondary)' }}>{META[n.kind].icon}</span>
             <span className="text-[11px]" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{META[n.kind].label}</span>
+            {nodeSummary(n) && (
+              <span style={{ fontSize: 9, lineHeight: 1.15, color: '#ff7300', maxWidth: 92, textAlign: 'center', whiteSpace: 'normal', fontWeight: 600 }}>{nodeSummary(n)}</span>
+            )}
             {(n.mediaUrl || n.useLlm) && (
               <span style={{ position: 'absolute', top: -2, right: 4, display: 'inline-flex', gap: 2 }}>
                 {n.mediaUrl && <Paperclip size={11} style={{ color: '#10b981' }} />}

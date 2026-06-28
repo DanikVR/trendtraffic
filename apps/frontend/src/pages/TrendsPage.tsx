@@ -100,7 +100,7 @@ export default function TrendsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setVideos(data.videos || []);
-      const fb = data.fellBackToApp ? ' Режим «Видео/Общий» был нестабилен — поиск автоматически выполнен через App V3.' : '';
+      const fb = data.fellBackToApp ? ' Режим «Поиск по слову/Около-тематика» был нестабилен — поиск автоматически выполнен «Умным поиском».' : '';
       if ((data.count ?? 0) === 0) {
         setNotice(`TikHub ответил, но видео не распознаны. Ключи ответа: [${(data.rawKeys || []).join(', ')}]. Пришлите это — доуточню разбор.${fb}`);
       } else {
@@ -220,9 +220,9 @@ export default function TrendsPage() {
               <select value={mode} onChange={(e) => setMode(e.target.value as any)}
                 className="px-3 py-2 rounded-xl text-sm focus:outline-none"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                <option value="app">С фильтрами (App V3) — рекоменд.</option>
-                <option value="video">Видео (web)</option>
-                <option value="general">Общий (web)</option>
+                <option value="app">Умный поиск</option>
+                <option value="video">Поиск по слову</option>
+                <option value="general">Около-тематика</option>
               </select>
             </label>
             {mode === 'app' && (
@@ -253,7 +253,7 @@ export default function TrendsPage() {
               </>
             )}
             <p className="text-[11px] flex-1 min-w-[180px]" style={{ color: 'var(--text-muted)' }}>
-              <b>App V3</b> — умный поиск по теме, устойчивый к опечаткам (напр. «wordpres» → WordPress), с периодом и прямыми ссылками для скачивания (рекомендуется). «Новее»/«Больше лайков» сортируют уже найденные по теме видео. «Видео»/«Общий» — Web API без фильтров (бывает нестабилен).
+              <b>Умный поиск</b> — по теме, устойчив к опечаткам (напр. «wordpres» → WordPress), с периодом и прямыми ссылками для скачивания (рекомендуется). «Новее»/«Больше лайков» сортируют найденное. <b>Поиск по слову</b> / <b>Около-тематика</b> — Web API без фильтров (бывает нестабилен).
             </p>
           </div>
         )}
