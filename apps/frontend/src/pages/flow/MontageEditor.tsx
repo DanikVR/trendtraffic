@@ -174,6 +174,75 @@ function nodeSummary(n: MNode): string {
   return s.length > 40 ? s.slice(0, 39) + '…' : s;
 }
 
+// ── ДНК тренда (Фаза 2): автозаполнение блоков из сохранённого анализа ──────────
+interface DnaBeat { t: number; desc: string; intensity?: 'low' | 'mid' | 'high' }
+interface TrendDNA {
+  hookType: string; whyItWorks: string; targetAudience: string; viralFactors: string[];
+  copyReadyScript: string; howToAdapt: string[];
+  summary: string; sceneBeats: DnaBeat[]; hookAnalysis: string; visualStyle: string;
+  audioDialogue: string; whyResonates: string[]; howToReplicate: string[];
+  keywords: string[]; brief: string;
+  meta?: { platform?: string; author?: string; durationSec?: number; music?: string };
+}
+
+function dnaDuration(sec?: number): string {
+  if (!sec || sec <= 0) return '30';
+  if (sec <= 20) return '15';
+  if (sec <= 45) return '30';
+  return '60';
+}
+function dnaColorPreset(style: string): string {
+  const s = (style || '').toLowerCase();
+  if (/ярк|насыщ|vivid|bright|колор/.test(s)) return 'vivid';
+  if (/тёпл|тепл|warm|закат|золот/.test(s)) return 'warm';
+  if (/холод|cold|синий|blue/.test(s)) return 'cold';
+  if (/кино|cinema|cinematic|плён|плен|\bfilm/.test(s)) return 'cinema';
+  if (/ч\/б|чёрно|черно|\bbw\b|monochrome|black.?and.?white/.test(s)) return 'bw';
+  return 'none';
+}
+function dnaPlatforms(platform?: string): string[] {
+  switch (platform) {
+    case 'instagram': return ['reels', 'instagram'];
+    case 'youtube': return ['shorts', 'youtube'];
+    case 'tiktok': return ['tiktok'];
+    default: return ['tiktok', 'reels', 'shorts'];
+  }
+}
+/** Создаёт узел заданного типа с переопределением текста/ЛЛМ/одиночных выборов. */
+function mkNode(kind: MKind, over: { text?: string; useLlm?: boolean; choices?: Record<string, string> }): MNode {
+  const n = newNode(kind);
+  if (over.text != null) n.text = over.text;
+  if (over.useLlm != null) n.useLlm = over.useLlm;
+  if (over.choices) for (const [k, v] of Object.entries(over.choices)) n.choices[k] = [v];
+  return n;
+}
+/** Раскладывает ДНК тренда по блокам TrendFlow + отдаёт скомпилированный бриф. */
+function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
+  const kw = (d.keywords || []).slice(0, 8).join(', ');
+  const beatsHint = (d.sceneBeats || []).slice(0, 8).map((b) => `${Math.round(b.t)}с — ${b.desc}`).join('\n');
+  const nodes: MNode[] = [
+    mkNode('length', { useLlm: true, choices: { duration: dnaDuration(d.meta?.durationSec) },
+      text: beatsHint ? `Ритм оригинала:\n${beatsHint}` : '' }),
+    mkNode('format', { choices: { orient: '9:16' } }),
+    mkNode('voiceover', {
+      text: d.copyReadyScript || '',
+      useLlm: !d.copyReadyScript,        // есть готовый скрипт → читаем как есть; нет → пишет Claude по брифу
+      choices: { voice: 'female' },
+    }),
+    mkNode('subtitles', { useLlm: true, choices: { style: 'word', pos: 'bottom' },
+      text: d.hookType ? `Усилить хук «${d.hookType}» в первые секунды` : '' }),
+    mkNode('audio', { choices: { vol: 'mid', duck: 'on' },
+      text: d.audioDialogue || (d.meta?.music ? `Звук оригинала: ${d.meta.music}` : '') }),
+    mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) }, text: d.visualStyle || '' }),
+    mkNode('broll', { useLlm: true, choices: { src: 'ai' },
+      text: kw ? `Вставки по теме: ${kw}` : (d.howToReplicate || []).slice(0, 2).join('; ') }),
+  ];
+  const exportNode = newNode('export');
+  exportNode.choices.platforms = dnaPlatforms(d.meta?.platform); // мультивыбор площадок
+  nodes.push(exportNode);
+  return { nodes, brief: d.brief || '' };
+}
+
 export default function MontageEditor({ flowId, onBack }: { flowId: string; onBack: () => void }) {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
@@ -200,7 +269,12 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
-  const [sources, setSources] = useState<{ url: string; name: string; thumb?: string; type: string }[]>([]);
+  const [sources, setSources] = useState<{ url: string; name: string; thumb?: string; type: string; assetId?: string }[]>([]);
+  // ДНК тренда (Фаза 2): анализ выбранного источника + панель автозаполнения блоков.
+  const [sourceAssetId, setSourceAssetId] = useState<string | null>(null);
+  const [dna, setDna] = useState<TrendDNA | null>(null);
+  const [dnaLoading, setDnaLoading] = useState(false);
+  const [showDnaPanel, setShowDnaPanel] = useState(false);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
   const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
@@ -234,7 +308,17 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null, useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
           setNodes(mapped);
           const src = d.flow.graph?.source;
-          if (src && typeof src.url === 'string') { setSourceUrl(src.url); setSourceName(src.name || 'видео'); }
+          if (src && typeof src.url === 'string') {
+            setSourceUrl(src.url); setSourceName(src.name || 'видео');
+            if (typeof src.assetId === 'string' && src.assetId) {
+              setSourceAssetId(src.assetId);
+              // Подтянуть сохранённую ДНК этого видео → покажем чип «Из тренда» (без авто-применения).
+              try {
+                const ar = await fetch(`/api/trends/media/${src.assetId}/analysis`, { headers: headers() });
+                if (ar.ok) { const adn = (await ar.json()).analysis?.dna; if (adn) setDna(adn as TrendDNA); }
+              } catch { /* нет анализа — не страшно */ }
+            }
+          }
           if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
           if (Array.isArray(d.flow.graph?.cloudEdges)) setCloudEdges(d.flow.graph.cloudEdges);
           if (d.flow.graph?.omni && typeof d.flow.graph.omni === 'object') {
@@ -252,7 +336,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     setSaving(true);
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
-      const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined } : null;
+      const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
       await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, brief } }) });
       setDirty(false);
     } catch { /* */ }
@@ -389,21 +473,61 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     finally { setUploading(false); }
   };
 
-  // Пикер исходного видео: скачанные тренды + видео-референсы из Галереи.
+  // Пикер исходного видео: проанализированные (с ДНК) + скачанные тренды + видео-референсы.
   const openSourcePicker = async () => {
     setShowSource(true);
     try {
-      const [v, r] = await Promise.all([
+      const [an, v, r] = await Promise.all([
+        fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
         fetch('/api/trends/videos?downloaded=1', { headers: headers() }),
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
       ]);
+      const analyzed = an.ok ? ((await an.json()).assets || []) : [];
       const vids = v.ok ? ((await v.json()).videos || []) : [];
       const refs = r.ok ? ((await r.json()).assets || []) : [];
-      const list: { url: string; name: string; thumb?: string; type: string }[] = [];
+      const list: { url: string; name: string; thumb?: string; type: string; assetId?: string }[] = [];
+      // Проанализированные («Из анализа») первыми — у них есть ДНК для автозаполнения блоков.
+      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', type: 'analyzed', assetId: m.id });
       for (const x of vids) if (x.fileUrl) list.push({ url: x.fileUrl, name: String(x.description || x.authorName || x.author || 'Видео').slice(0, 40), thumb: x.coverUrl, type: 'trend' });
       for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', type: 'reference' });
       setSources(list);
     } catch { setSources([]); }
+  };
+
+  // ── ДНК тренда: применить к графу / подтянуть по ассету / выбрать источник ──
+  /** Раскладывает ДНК по блокам сценария + задаёт общий «Сценарий» (brief). */
+  const applyDna = (d: TrendDNA) => {
+    const { nodes: nn, brief: bb } = dnaToGraph(d);
+    setNodes(nn);
+    if (bb) setBrief(bb);
+    if (d.meta?.author) setName(`По тренду: ${d.meta.author}`.slice(0, 60));
+    setDirty(true);
+    setShowDnaPanel(false);
+    setShowPresets(false);
+    setSelectedId(null);
+  };
+  /** Загружает сохранённую ДНК ассета. Пустой сценарий → авто-заполнение; иначе — панель подтверждения. */
+  const fetchDna = async (assetId: string) => {
+    setDnaLoading(true);
+    try {
+      const r = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: headers() });
+      if (!r.ok) { setDna(null); return; }
+      const d = (await r.json()).analysis?.dna as TrendDNA | undefined;
+      if (!d) { setDna(null); return; }
+      setDna(d);
+      if (nodes.length === 0) applyDna(d);   // пустой сценарий → данные «приезжают вместе с видео»
+      else setShowDnaPanel(true);            // есть блоки → спросим перед заменой
+    } catch { setDna(null); }
+    finally { setDnaLoading(false); }
+  };
+  const selectSource = (s: { url: string; name: string; assetId?: string }) => {
+    setSourceUrl(s.url); setSourceName(s.name); setSourceAssetId(s.assetId || null);
+    setDna(null); setDirty(true); setShowSource(false);
+    if (s.assetId) fetchDna(s.assetId);
+  };
+  const clearSource = () => {
+    setSourceUrl(null); setSourceName(null); setSourceAssetId(null); setDna(null);
+    setDirty(true); setShowSource(false);
   };
 
   const selected = nodes.find((n) => n.id === selectedId) || null;
@@ -532,6 +656,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           style={{ background: brief.trim() ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
           <Sparkles size={15} /> Сценарий{brief.trim() ? ' ✓' : ''}
         </button>
+        {(dna || dnaLoading) && (
+          <button onClick={() => dna && setShowDnaPanel(true)} disabled={!dna} title="Заполнить блоки сценария по данным тренда"
+            className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-60"
+            style={{ background: 'rgba(99,102,241,0.14)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.4)', cursor: dna ? 'pointer' : 'wait' }}>
+            {dnaLoading ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Из тренда
+          </button>
+        )}
         <button onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
@@ -915,14 +1046,20 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <button onClick={() => setShowSource(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             {sourceUrl && (
-              <button onClick={() => { setSourceUrl(null); setSourceName(null); setDirty(true); setShowSource(false); }} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>✕ Убрать источник</button>
+              <button onClick={clearSource} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>✕ Убрать источник</button>
             )}
+            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
+              <Sparkles size={11} style={{ color: 'var(--brand)', display: 'inline', verticalAlign: '-1px' }} /> — есть анализ: выбор такого видео заполнит блоки сценария по тренду.
+            </p>
             {sources.length === 0 ? (
               <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Нет видео. Скачайте тренды (вкладка «Тренды») или загрузите видео в «Референс» Галереи.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {sources.map((s, i) => (
-                  <button key={i} onClick={() => { setSourceUrl(s.url); setSourceName(s.name); setDirty(true); setShowSource(false); }} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                  <button key={i} onClick={() => selectSource(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `1px solid ${sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    {s.assetId && (
+                      <span title="Есть анализ (ДНК тренда)" style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
+                    )}
                     <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {s.thumb ? <img src={s.thumb} alt="" className="w-full h-full object-cover" /> : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
                     </div>
@@ -957,6 +1094,52 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               )}
               <button onClick={() => { save(); setShowBrief(false); }} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
                 style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Заполнить из тренда — раскладка ДНК по блокам */}
+      {showDnaPanel && dna && (
+        <div onClick={() => setShowDnaPanel(false)} style={{ position: 'absolute', inset: 0, zIndex: 93, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 540, maxHeight: '86vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><Wand2 size={18} style={{ color: 'var(--brand)' }} /> Заполнить из тренда</span>
+              <button onClick={() => setShowDnaPanel(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Разложим анализ тренда по блокам сценария и зададим общий «Сценарий». Дальше правьте в блоках — это единый источник правды для сборки.
+            </p>
+
+            {/* Сводка ДНК */}
+            <div className="rounded-xl p-3 mb-3 text-[12px] space-y-1" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+              {dna.hookType && <div><b style={{ color: 'var(--text-primary)' }}>Хук:</b> {dna.hookType}</div>}
+              {dna.targetAudience && <div><b style={{ color: 'var(--text-primary)' }}>Аудитория:</b> {dna.targetAudience}</div>}
+              <div style={{ color: 'var(--text-muted)' }}>
+                Сцен: {dna.sceneBeats?.length || 0} · Скрипт озвучки: {dna.copyReadyScript ? 'есть' : '—'} · Ключи: {(dna.keywords || []).length}
+              </div>
+            </div>
+
+            {/* Что будет создано */}
+            <div className="text-[11px] font-600 mb-1.5" style={{ color: 'var(--text-muted)' }}>Блоки сценария</div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {dnaToGraph(dna).nodes.map((n, i) => (
+                <span key={i} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
+                  <span style={{ color: 'var(--brand)', display: 'inline-flex' }}>{React.cloneElement(META[n.kind].icon as any, { size: 13 })}</span>{META[n.kind].label}
+                </span>
+              ))}
+            </div>
+
+            {nodes.length > 0 && (
+              <p className="text-[11px] mb-3 inline-flex items-start gap-1.5" style={{ color: '#f59e0b' }}>
+                <Minus size={12} className="mt-[1px] flex-shrink-0" /> Текущие блоки ({nodes.length}) и «Сценарий» будут заменены.
+              </p>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowDnaPanel(false)} className="text-sm font-600 px-3 py-2.5 rounded-xl" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Отмена</button>
+              <button onClick={() => applyDna(dna)} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
+                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Wand2 size={16} /> Заполнить блоки</button>
             </div>
           </div>
         </div>

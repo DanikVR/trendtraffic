@@ -132,17 +132,27 @@ function clockToSec(s: string): number | undefined {
   if (!s || !/\d/.test(s)) return undefined;
   return s.split(':').map((x) => parseInt(x, 10) || 0).reduce((a, b) => a * 60 + b, 0);
 }
+/** YouTube published_time — относительный ("3 days ago", "2 weeks ago", "1 month ago", "5 years ago",
+ *  "Streamed 2 days ago") → приблизительный unix-таймстамп (для фильтра «за период»). */
+function parseRelativeTime(v: any): number | undefined {
+  const m = String(v ?? '').match(/(\d+)\s*(second|minute|hour|day|week|month|year)/i);
+  if (!m) return undefined;
+  const n = parseInt(m[1], 10);
+  const mult: Record<string, number> = { second: 1, minute: 60, hour: 3600, day: 86400, week: 604800, month: 2592000, year: 31536000 };
+  const sec = n * (mult[m[2].toLowerCase()] || 0);
+  return Number.isFinite(sec) ? Math.floor(Date.now() / 1000) - sec : undefined;
+}
 /** YouTube: и renderer-дерево (поиск), и плоский videos[] (тренды/get_trending_videos). */
 export function normalizeYoutube(raw: any): NormalizedVideo[] {
   const out: NormalizedVideo[] = [];
   const seen = new Set<string>();
-  const push = (id: string, desc?: string, author?: string, cover?: string, views?: number, dur?: number) => {
+  const push = (id: string, desc?: string, author?: string, cover?: string, views?: number, dur?: number, createTime?: number) => {
     if (!id || seen.has(id)) return;
     seen.add(id);
     out.push({
       externalId: id, platform: 'youtube', author: author || '', authorName: author,
       description: desc, coverUrl: cover, videoUrl: undefined,
-      webUrl: `https://www.youtube.com/watch?v=${id}`, durationSec: dur, createTime: undefined,
+      webUrl: `https://www.youtube.com/watch?v=${id}`, durationSec: dur, createTime,
       stats: { play: views }, raw: { video_id: id },
     });
   };
@@ -174,7 +184,8 @@ export function normalizeYoutube(raw: any): NormalizedVideo[] {
     push(String(v.video_id || v.videoId || ''), str(v.title) || str(v.description),
       str(v.channel_name) || str(v.channel) || str(v.author) || str(v.author_name) || str(deepFind(v, ['channel', 'author'])),
       findUrl(v, ['cover', 'thumbnail', 'thumbnails', 'thumbnail_url', 'cover_url']),
-      num(deepFind(v, ['view_count', 'views', 'viewCount', 'play_count', 'number_of_views'])), dur);
+      num(deepFind(v, ['view_count', 'views', 'viewCount', 'play_count', 'number_of_views'])), dur,
+      parseRelativeTime(v.published_time ?? v.published_at ?? v.publish_time));
   }
   return out;
 }

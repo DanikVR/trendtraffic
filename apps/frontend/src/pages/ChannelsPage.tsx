@@ -34,7 +34,7 @@ interface WatchedVideo {
 }
 interface OnDemand {
   profile: { platform: string; handle: string; displayName?: string; avatarUrl?: string; bio?: string; followers?: number; verified?: boolean; url?: string };
-  videos: { externalId: string; isShort?: boolean; author?: string; description?: string; coverUrl?: string; webUrl?: string; durationSec?: number; stats: { play?: number; like?: number; comment?: number; share?: number } }[];
+  videos: { externalId: string; isShort?: boolean; author?: string; description?: string; coverUrl?: string; webUrl?: string; durationSec?: number; createTime?: number; stats: { play?: number; like?: number; comment?: number; share?: number } }[];
   count: number; hasMore: boolean; note?: string;
 }
 
@@ -44,6 +44,8 @@ function fmt(n?: number | null): string {
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   return String(n);
 }
+/** Точное число с разделителями тысяч (для просмотров — пользователь хочет полное число, не «1K»). */
+function fmtViews(n?: number | null): string { return n == null ? '—' : n.toLocaleString('ru-RU'); }
 function dur(s?: number | null): string {
   if (!s || s <= 0) return '';
   const m = Math.floor(s / 60), sec = s % 60;
@@ -115,9 +117,24 @@ export default function ChannelsPage() {
 
   const [analysis, setAnalysis] = useState<OnDemand | null>(null);
   const [detail, setDetail] = useState<{ channel: WatchedChannel; videos: WatchedVideo[] } | null>(null);
-  // YouTube: переключатель Видео / Shorts (для лент с обоими типами).
+  // Лента канала: вкладка Видео/Shorts (YouTube) + сортировка по просмотрам + фильтр по периоду.
   const [ytTab, setYtTab] = useState<'videos' | 'shorts'>('videos');
-  const filterYt = (platform: string, vids: any[]) => platform === 'youtube' ? vids.filter((v) => (ytTab === 'shorts' ? v.isShort : !v.isShort)) : vids;
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [period, setPeriod] = useState<'all' | 'day' | 'week' | 'month' | '45d'>('all');
+  const PERIOD_DAYS: Record<string, number> = { all: 0, day: 1, week: 7, month: 30, '45d': 45 };
+
+  // Готовит ленту к показу: фильтр Видео/Shorts (YouTube) → фильтр по периоду публикации → сортировка по просмотрам.
+  function prepareVideos<T extends { isShort?: boolean | null; createTime?: number | null; stats: { play?: number | null } }>(platform: string, vids: T[]): T[] {
+    let list = platform === 'youtube' ? vids.filter((v) => (ytTab === 'shorts' ? v.isShort : !v.isShort)) : vids.slice();
+    const days = PERIOD_DAYS[period] || 0;
+    if (days > 0) {
+      const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
+      list = list.filter((v) => v.createTime != null && v.createTime >= cutoff);
+    }
+    list.sort((a, b) => { const av = a.stats.play || 0, bv = b.stats.play || 0; return sortOrder === 'asc' ? av - bv : bv - av; });
+    return list;
+  }
+
   const ytToggle = (platform: string, vids: { isShort?: boolean | null }[]) => {
     if (platform !== 'youtube') return null;
     const reg = vids.filter((v) => !v.isShort).length, sh = vids.filter((v) => v.isShort).length;
@@ -131,6 +148,25 @@ export default function ChannelsPage() {
       </div>
     );
   };
+  const selCls = 'h-9 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40';
+  const selStyle: React.CSSProperties = { background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' };
+  // Панель управления лентой: вкладка Видео/Shorts + сортировка + период.
+  const controlsBar = (platform: string, vids: { isShort?: boolean | null }[]) => (
+    <div className="flex items-center gap-2 flex-wrap">
+      {ytToggle(platform, vids)}
+      <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className={selCls} style={selStyle} title="Сортировка">
+        <option value="desc">Больше просмотров</option>
+        <option value="asc">Меньше просмотров</option>
+      </select>
+      <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className={selCls} style={selStyle} title="Период публикации">
+        <option value="all">Всё время</option>
+        <option value="day">За день</option>
+        <option value="week">За неделю</option>
+        <option value="month">За месяц</option>
+        <option value="45d">За 45 дней</option>
+      </select>
+    </div>
+  );
 
   const loadChannels = useCallback(async () => {
     setLoadingList(true);
@@ -292,9 +328,9 @@ export default function ChannelsPage() {
               )}
             </AuroraCard>
 
-            {ytToggle(ch!.platform, detail.videos)}
+            {controlsBar(ch!.platform, detail.videos)}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-              {filterYt(ch!.platform, detail.videos).map((v: WatchedVideo) => (
+              {prepareVideos(ch!.platform, detail.videos).map((v: WatchedVideo) => (
                 <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
                   <div className="relative w-full" style={{ aspectRatio: cardAspect(v.platform, v.durationSec, v.isShort), background: 'var(--bg-tertiary)' }}>
                     {v.coverUrl ? <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
@@ -306,17 +342,19 @@ export default function ChannelsPage() {
                       </a>
                     )}
                     <span className="absolute bottom-2 left-2 text-[11px] font-700 inline-flex items-center gap-1 z-10" style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                      <Eye size={12} /> {fmt(v.stats.play)}<Delta cur={v.stats.play} prev={v.prev.play} />
+                      <Eye size={12} /> {fmtViews(v.stats.play)}<Delta cur={v.stats.play} prev={v.prev.play} />
                     </span>
                     {dur(v.durationSec) && <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>}
                   </div>
                   <div className="p-3 flex flex-col gap-2 flex-1">
                     {v.description && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>}
+                    {v.platform !== 'youtube' && (
                     <div className="flex items-center gap-2.5 text-[11px] flex-wrap mt-auto" style={{ color: 'var(--text-muted)' }}>
                       <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}<Delta cur={v.stats.like} prev={v.prev.like} /></span>
                       <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}<Delta cur={v.stats.comment} prev={v.prev.comment} /></span>
                       <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}<Delta cur={v.stats.share} prev={v.prev.share} /></span>
                     </div>
+                    )}
                   </div>
                 </AuroraCard>
               ))}
@@ -365,23 +403,25 @@ export default function ChannelsPage() {
           </div>
           {a.note && <div className="flex items-start gap-2 text-[12px] rounded-xl p-3 mt-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><AlertCircle size={14} className="mt-[2px]" style={{ color: '#f59e0b' }} /><span>{a.note}</span></div>}
         </AuroraCard>
-        {ytToggle(a.profile.platform, a.videos)}
+        {controlsBar(a.profile.platform, a.videos)}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-          {filterYt(a.profile.platform, a.videos).map((v: OnDemand['videos'][number]) => (
+          {prepareVideos(a.profile.platform, a.videos).map((v: OnDemand['videos'][number]) => (
             <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
               <div className="relative w-full" style={{ aspectRatio: cardAspect(a.profile.platform, v.durationSec, v.isShort), background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   : <div className="w-full h-full flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>}
-                <span className="absolute bottom-2 left-2 text-[11px] font-700 inline-flex items-center gap-1 z-10" style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}><Eye size={12} /> {fmt(v.stats.play)}</span>
+                <span className="absolute bottom-2 left-2 text-[11px] font-700 inline-flex items-center gap-1 z-10" style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}><Eye size={12} /> {fmtViews(v.stats.play)}</span>
                 {dur(v.durationSec) && <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>}
               </div>
               <div className="p-3 flex flex-col gap-2 flex-1">
                 {v.description && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>}
+                {a.profile.platform !== 'youtube' && (
                 <div className="flex items-center gap-2.5 text-[11px] flex-wrap mt-auto" style={{ color: 'var(--text-muted)' }}>
                   <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
                   <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>
                   <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>
                 </div>
+                )}
               </div>
             </AuroraCard>
           ))}
