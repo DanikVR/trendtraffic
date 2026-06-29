@@ -56,10 +56,10 @@ export function BottomTabBar() {
   const moreItems = [
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
     ...(FEATURES.flow ? [{ path: '/flow', icon: <Workflow size={20} strokeWidth={1.5} />, label: 'TrendFlow', sublabel: t('moreSheet.flow.sub', 'Сценарии бота для каналов'), accent: '#7c5cff' }] : []),
-    // «Тренды»: Enterprise → расширение (/social-extension), остальные → /trends.
-    ...((FEATURES.socialMediaExt && isEnterprise)
+    // «Тренды» → расширение (/social-extension). Не-Enterprise редиректит на Тарифы. /trends удалён.
+    ...(FEATURES.socialMediaExt
       ? [{ path: '/social-extension', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Поиск горячих видео + аналитика'), accent: '#f59e0b' }]
-      : (FEATURES.trends ? [{ path: '/trends', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Сканирование TikTok-трендов'), accent: '#f59e0b' }] : [])),
+      : []),
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Галерея'), sublabel: t('moreSheet.gallery.sub', 'Скачанные видео'), accent: '#10b981' }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('moreSheet.publisher.sub', 'Публикация в соцсети'), accent: '#7c5cff' }] : []),
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },

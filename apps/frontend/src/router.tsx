@@ -70,8 +70,6 @@ function lazyWithRetry<T extends React.ComponentType<any>>(factory: () => Promis
 
 // OMNICHANNEL Фаза 2: конструктор цепочек — lazy (React Flow тяжёлый, грузим по входу).
 const FlowPage = lazyWithRetry(() => import('./pages/FlowPage'));
-// TRENDTRAFFIC: анализатор трендов — lazy.
-const TrendsPage = lazyWithRetry(() => import('./pages/TrendsPage'));
 const GalleryPage = lazyWithRetry(() => import('./pages/GalleryPage'));
 const PublisherPage = lazyWithRetry(() => import('./pages/PublisherPage'));
 // TRENDTRAFFIC: вкладка «Social Media Extension» (рехостинг TikHub-расширения) — lazy.
@@ -105,12 +103,12 @@ function RequireAdmin() {
 
 /**
  * Защита Enterprise-фич: пускает superadmin или активный тариф Enterprise
- * (правило-зеркало MainLayout.tsx). Иначе — на «Тренды».
+ * (правило-зеркало MainLayout.tsx). Иначе — на «Тарифы» (апселл; /trends удалён).
  */
 function RequireEnterprise() {
   const isEnterprise = useIsEnterprise();
   if (!isEnterprise) {
-    return <Navigate to="/trends" replace />;
+    return <Navigate to="/billing" replace />;
   }
   return <Outlet />;
 }
@@ -223,14 +221,6 @@ export const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
                 <FlowPage />
-              </React.Suspense>
-            ),
-          }] : []),
-          ...(FEATURES.trends ? [{
-            path: 'trends',
-            element: (
-              <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
-                <TrendsPage />
               </React.Suspense>
             ),
           }] : []),

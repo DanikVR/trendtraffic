@@ -570,7 +570,12 @@
  *         под карточкой фильтров (перед лентой видео), в «Аналитике» — над строкой URL.
  *         Реализовано слотом sectionTabs у TrendSearch + общий renderTabs() в
  *         SocialExtensionPage (одна разметка вкладок на оба режима). */
-export const APP_VERSION = '1.5.10';
+/* 1.5.11 — Удалена старая страница /trends (TrendsPage): «Тренды» у всех ведут на
+ *         /social-extension. Роут /trends и его пункты меню (MainLayout, BottomTabBar)
+ *         убраны, файл TrendsPage.tsx удалён. RequireEnterprise для не-Enterprise теперь
+ *         редиректит на /billing (Тарифы) вместо /trends (иначе была бы петля, т.к.
+ *         HOME_ROUTE_WHEN_NO_VIDEO=/social-extension). */
+export const APP_VERSION = '1.5.11';
 
 export function AppVersion() {
   return (
