@@ -676,7 +676,17 @@
  *         тренда (ER/лайки/сохранения) показывается как цель. Чип «Из тренда» в топбаре,
  *         панель подтверждения замены блоков. Бэкенд (Фаза 1) уже в проде: `video_analyses`,
  *         `POST /analyze/breakdown`, ДНК сохраняется к видео при «Добавить в галерею». */
-export const APP_VERSION = '1.5.25';
+
+/* 1.5.26 — Метрики YouTube в аналитике РЕАЛЬНО заполняются (сверено по живому ответу
+ *         TikHub get_video_info): числовые view_count/like_count приходят ПУСТЫМИ, данные —
+ *         в view_count_text/like_count_text («185,955次观看», «3585»). (1) deepFind теперь
+ *         пропускает пустые строки (раньше '' считался «найдено» и обрывал поиск — поэтому
+ *         просмотры/лайки были «—», а comment_count «102» проходил). (2) В списки добавлены
+ *         view_count_text/like_count_text (short_view_count НЕ берём — сокращён «18万»→18).
+ *         NB: часть видео TikHub отдаёт пустым стабом (нефетчабельны) — тогда метрик нет, это
+ *         ограничение TikHub. Скачивание YouTube недоступно: get_video_info?need_format=true
+ *         не возвращает ссылок на потоки (0 format/googlevideo URL). */
+export const APP_VERSION = '1.5.26';
 
 export function AppVersion() {
   return (

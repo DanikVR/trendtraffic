@@ -153,7 +153,9 @@ function deepFind(obj: any, keys: string[], depth = 0): any {
     return undefined;
   }
   if (typeof obj === 'object') {
-    for (const k of keys) { const val = obj[k]; if (val != null && (typeof val === 'number' || typeof val === 'string')) return val; }
+    // Пустую строку считаем «не найдено» и ищем дальше: YouTube отдаёт числовые
+    // view_count/like_count пустыми (''), а реальные значения — в *_count_text.
+    for (const k of keys) { const val = obj[k]; if (val != null && (typeof val === 'number' || (typeof val === 'string' && val.trim() !== ''))) return val; }
     for (const kk of Object.keys(obj)) { const r = deepFind(obj[kk], keys, depth + 1); if (r !== undefined) return r; }
   }
   return undefined;
@@ -242,11 +244,12 @@ function findUrl(obj: any, keys: string[], depth = 0): string | undefined {
 function buildSummary(blocks: Record<string, AnalyzeBlock>): Record<string, any> {
   const root = blocks.video?.data ?? blocks.account?.data;
   if (!root) return {};
-  // YouTube (web_v2 get_video_info) использует свою номенклатуру number_of_* /
-  // video_* — добавлены в конец списков (deepFind берёт первое совпадение по порядку,
-  // у других площадок этих полей нет, так что регрессии не будет).
-  const views = num(deepFind(root, ['play_count', 'playCount', 'view_count', 'viewCount', 'views', 'stat_view_count', 'play', 'view_count_int', 'number_of_views']));
-  const likes = num(deepFind(root, ['digg_count', 'diggCount', 'like_count', 'likeCount', 'favorite_count', 'favoriteCount', 'likes', 'score', 'ups', 'upvotes', 'vote_count', 'number_of_likes']));
+  // YouTube (web_v2 get_video_info): своя номенклатура. Числовые view_count/like_count
+  // приходят ПУСТЫМИ — реальные значения в *_count_text («185,955次观看», «3585»);
+  // num() выдёргивает цифры. short_view_count НЕ берём — он сокращённый («18万» → 18).
+  // Поля добавлены в конец (deepFind пропускает пустые и берёт первое непустое по порядку).
+  const views = num(deepFind(root, ['play_count', 'playCount', 'view_count', 'viewCount', 'views', 'stat_view_count', 'play', 'view_count_int', 'number_of_views', 'view_count_text']));
+  const likes = num(deepFind(root, ['digg_count', 'diggCount', 'like_count', 'likeCount', 'favorite_count', 'favoriteCount', 'likes', 'score', 'ups', 'upvotes', 'vote_count', 'number_of_likes', 'like_count_text']));
   const comments = num(deepFind(root, ['comment_count', 'commentCount', 'reply_count', 'comments', 'num_comments', 'comments_count', 'number_of_comments']));
   const shares = num(deepFind(root, ['share_count', 'shareCount', 'forward_count', 'retweet_count', 'shares', 'repost_count', 'number_of_shares']));
   const followers = num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'subscriber_count', 'subscribers', 'number_of_subscribers']));
