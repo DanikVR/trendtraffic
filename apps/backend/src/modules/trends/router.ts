@@ -18,6 +18,7 @@ import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
+import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset } from './dna.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -96,6 +97,36 @@ router.post('/analyze/sentiment', async (req: AuthedRequest, res: Response) => {
   }
 });
 
+/**
+ * POST /analyze/breakdown — нативный «рецепт успеха» тренда (TrendDNA).
+ *   Принимает либо { url } (тогда сам соберёт данные через analyzeUrl),
+ *   либо уже готовые { summary, comments, keywords, platform } (без повторных вызовов TikHub).
+ */
+router.post('/analyze/breakdown', async (req: AuthedRequest, res: Response) => {
+  try {
+    const body = req.body || {};
+    let summary = body.summary;
+    let comments = Array.isArray(body.comments) ? body.comments : undefined;
+    let keywords = Array.isArray(body.keywords) ? body.keywords : undefined;
+    let platform: string | undefined = typeof body.platform === 'string' ? body.platform : undefined;
+    const url = typeof body.url === 'string' ? body.url : '';
+    if (!summary) {
+      if (!url.trim()) return res.status(400).json({ error: 'Передайте url или summary.' });
+      const a = await analyzeUrl(req.tenantId!, url);
+      summary = a.summary;
+      comments = a.normalized.comments;
+      keywords = a.normalized.keywords;
+      platform = a.detected.platform;
+    }
+    const dna = await generateTrendDNA(req.tenantId!, { summary, comments, keywords, platform, sourceUrl: url || undefined });
+    res.json({ dna });
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка разбора';
+    const code = /ключ|распозн|Передайте|Укажите|неразборч/i.test(msg) ? 400 : 502;
+    res.status(code).json({ error: msg });
+  }
+});
+
 /** POST /analyze/bulk — { urls: string[] } → массовая сводка (по одному вызову на ссылку). */
 router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
   try {
@@ -128,7 +159,24 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
       folder: ANALYZED_FOLDER, // сохранено из аналитики → папка «Из анализа»
     });
     if (!asset) return res.status(500).json({ error: 'Не удалось сохранить в Галерею.' });
-    res.json({ ok: true, asset, fileUrl: file.mediaUrl });
+
+    // ДНК тренда едет ВМЕСТЕ с видео: в фоне собираем рецепт и кладём в video_analyses,
+    // привязав к этому ассету. Best-effort — скачивание уже успешно, анализ не должен его ронять.
+    const tId = req.tenantId!, assetId = asset.id, dPlatform = d.platform, dVideoId = String(d.videoId);
+    void (async () => {
+      try {
+        const a = await analyzeUrl(tId, url);
+        const dna = await generateTrendDNA(tId, {
+          summary: a.summary, comments: a.normalized.comments, keywords: a.normalized.keywords,
+          platform: a.detected.platform, sourceUrl: url,
+        });
+        await saveTrendDNA(tId, { mediaAssetId: assetId, platform: dPlatform, externalId: dVideoId, sourceUrl: url, dna });
+      } catch (e) {
+        console.warn('[trends] save→DNA:', (e as Error).message);
+      }
+    })();
+
+    res.json({ ok: true, asset, fileUrl: file.mediaUrl, analyzing: true });
   } catch (err: any) {
     res.status(502).json({ error: err?.message || 'Ошибка скачивания' });
   }
@@ -273,6 +321,17 @@ router.get('/media', async (req: AuthedRequest, res: Response) => {
       ? await listFolder(req.tenantId!, folder)
       : await listAssets(req.tenantId!, kindFromReq(req));
     res.json({ assets });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/** GET /media/:id/analysis — сохранённая ДНК тренда по видео Галереи (для автозаполнения TrendFlow). */
+router.get('/media/:id/analysis', async (req: AuthedRequest, res: Response) => {
+  try {
+    const rec = await getTrendDNAByAsset(req.tenantId!, req.params.id);
+    if (!rec) return res.status(404).json({ error: 'Анализ для этого видео не найден.' });
+    res.json({ analysis: rec });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });
   }

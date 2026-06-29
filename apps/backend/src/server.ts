@@ -40,6 +40,7 @@ import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
 import channelsRouter from './modules/channels/router.js';
+import channelsCoverRouter from './modules/channels/cover_proxy.js';
 import { startChannelSnapshotScheduler } from './modules/channels/scheduler.js';
 import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
@@ -171,6 +172,9 @@ app.use('/api/need-tags', needTagsRouter);
 app.use('/api/flows', flowsRouter);
 // TRENDTRAFFIC: анализатор трендов (TikHub) — JWT внутри роутера
 app.use('/api/trends', trendsRouter);
+// TRENDTRAFFIC: «Каналы» — прокси обложек/аватаров (публичный, белый список CDN) —
+// ДО auth-роутера /api/channels, чтобы <img src> грузился без JWT.
+app.use('/api/channels/cover', channelsCoverRouter);
 // TRENDTRAFFIC: «Каналы» — анализ всех видео канала по ссылке (JWT внутри роутера)
 app.use('/api/channels', express.json({ limit: '1mb' }), channelsRouter);
 // TRENDTRAFFIC: прозрачный прокси для вкладки «Social Media Extension» (рехостинг

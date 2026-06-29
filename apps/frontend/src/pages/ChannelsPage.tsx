@@ -56,6 +56,16 @@ function cardAspect(platform?: string, durationSec?: number | null): string {
   if (platform === 'youtube') return durationSec != null && durationSec > 0 && durationSec <= 60 ? '9 / 16' : '16 / 9';
   return '9 / 16';
 }
+/** TikTok/Instagram отдают подписанные CDN-обложки, которые браузер блокирует при прямой
+ *  загрузке через <img> → гоним их через наш прокси /api/channels/cover (с нужным Referer).
+ *  YouTube (ytimg) и прочие — напрямую. */
+function coverSrc(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (/tiktokcdn|ibyteimg|byteimg|muscdn|tiktokv|pstatp|cdninstagram|fbcdn/i.test(url)) {
+    return `/api/channels/cover?u=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
 function ago(iso: string | null): string {
   if (!iso) return 'ещё не обновлялся';
   const ms = Date.now() - new Date(iso).getTime();
@@ -217,7 +227,7 @@ export default function ChannelsPage() {
   if (view === 'detail') {
     const ch = detail?.channel;
     return (
-      <div className="max-w-6xl mx-auto py-5 sm:py-6 px-3 sm:px-4 space-y-5">
+      <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
         <div className="flex items-center gap-2">
           <button onClick={() => { setView('list'); setDetail(null); }} title="Назад"
             className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
@@ -233,7 +243,7 @@ export default function ChannelsPage() {
             <AuroraCard className="p-4 sm:p-5">
               <div className="flex items-start gap-4 flex-wrap">
                 <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-                  {ch!.avatarUrl ? <img src={ch!.avatarUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  {ch!.avatarUrl ? <img src={coverSrc(ch!.avatarUrl)} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                     : <div className="w-full h-full flex items-center justify-center"><Users size={26} style={{ color: 'var(--text-muted)' }} /></div>}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -262,11 +272,11 @@ export default function ChannelsPage() {
               )}
             </AuroraCard>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
               {detail.videos.map((v) => (
                 <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
                   <div className="relative w-full" style={{ aspectRatio: cardAspect(v.platform, v.durationSec), background: 'var(--bg-tertiary)' }}>
-                    {v.coverUrl ? <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                    {v.coverUrl ? <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                       : <div className="w-full h-full flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>}
                     <div className="absolute inset-x-0 bottom-0 h-14 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
                     {v.webUrl && (
@@ -302,7 +312,7 @@ export default function ChannelsPage() {
     const a = analysis;
     const agg = a.videos.reduce((s, v) => { s.views += v.stats.play || 0; s.likes += v.stats.like || 0; return s; }, { views: 0, likes: 0 });
     return (
-      <div className="max-w-6xl mx-auto py-5 sm:py-6 px-3 sm:px-4 space-y-5">
+      <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
         <div className="flex items-center gap-2">
           <button onClick={() => { setView('list'); setAnalysis(null); }} title="Назад" className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ArrowLeft size={17} /></button>
           <h1 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Разовый разбор</h1>
@@ -311,7 +321,7 @@ export default function ChannelsPage() {
         <AuroraCard className="p-4 sm:p-5">
           <div className="flex items-start gap-4 flex-wrap">
             <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-              {a.profile.avatarUrl ? <img src={a.profile.avatarUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              {a.profile.avatarUrl ? <img src={coverSrc(a.profile.avatarUrl)} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 : <div className="w-full h-full flex items-center justify-center"><Users size={26} style={{ color: 'var(--text-muted)' }} /></div>}
             </div>
             <div className="min-w-0 flex-1">
@@ -334,11 +344,11 @@ export default function ChannelsPage() {
           </div>
           {a.note && <div className="flex items-start gap-2 text-[12px] rounded-xl p-3 mt-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><AlertCircle size={14} className="mt-[2px]" style={{ color: '#f59e0b' }} /><span>{a.note}</span></div>}
         </AuroraCard>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
           {a.videos.map((v) => (
             <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
               <div className="relative w-full" style={{ aspectRatio: cardAspect(a.profile.platform, v.durationSec), background: 'var(--bg-tertiary)' }}>
-                {v.coverUrl ? <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                {v.coverUrl ? <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   : <div className="w-full h-full flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>}
                 <span className="absolute bottom-2 left-2 text-[11px] font-700 inline-flex items-center gap-1 z-10" style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}><Eye size={12} /> {fmt(v.stats.play)}</span>
                 {dur(v.durationSec) && <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>}
@@ -361,7 +371,7 @@ export default function ChannelsPage() {
 
   // ───────────────────────── СПИСОК ОТСЛЕЖИВАЕМЫХ ─────────────────────────
   return (
-    <div className="max-w-6xl mx-auto py-5 sm:py-6 px-3 sm:px-4 space-y-5">
+    <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
       {Header}
 
       <AuroraCard className="p-4 sm:p-5 space-y-3">
@@ -401,7 +411,7 @@ export default function ChannelsPage() {
             <AuroraCard key={c.id} className="p-4 flex flex-col gap-3">
               <button onClick={() => openDetail(c.id)} className="flex items-start gap-3 text-left">
                 <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-                  {c.avatarUrl ? <img src={c.avatarUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  {c.avatarUrl ? <img src={coverSrc(c.avatarUrl)} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                     : <div className="w-full h-full flex items-center justify-center"><Users size={20} style={{ color: 'var(--text-muted)' }} /></div>}
                 </div>
                 <div className="min-w-0 flex-1">

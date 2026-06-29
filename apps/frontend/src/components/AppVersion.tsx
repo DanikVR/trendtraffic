@@ -612,7 +612,14 @@
  *         соотношение сторон зависит от площадки/типа: YouTube-ролики горизонтальные 16:9,
  *         YouTube Shorts (вертикаль ≤60с) и TikTok/Instagram — 9:16 (helper cardAspect по
  *         platform+durationSec). Раньше все карточки были жёстко 9:16 → YouTube обрезался. */
-export const APP_VERSION = '1.5.16';
+
+/* 1.5.17 — «Каналы»: (1) обложки/аватары TikTok и Instagram теперь видны — подписанные
+ *         CDN-ссылки браузер блокировал при прямой <img>-загрузке, гоним их через бэкенд-
+ *         прокси /api/channels/cover (белый список CDN-хостов + нужный Referer, публичный,
+ *         rate-limit). (2) Лента «Каналов» расширена на всю ширину (как «Тренды»): /channels
+ *         сделан full-bleed в MainLayout, контейнер до 1760px, до 7 карточек в ряд на широких
+ *         экранах. */
+export const APP_VERSION = '1.5.17';
 
 export function AppVersion() {
   return (

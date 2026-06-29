@@ -773,6 +773,34 @@ const MIGRATIONS: Migration[] = [
   },
   { name: 'video_metric_snapshots.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_video_snap_uniq ON video_metric_snapshots(video_id, snapshot_date)` },
   { name: 'video_metric_snapshots.idx_channel_date', sql: `CREATE INDEX IF NOT EXISTS idx_video_snap_channel_date ON video_metric_snapshots(channel_id, snapshot_date DESC)` },
+
+  // ============================================================================
+  // TRENDTRAFFIC — «ДНК тренда» (Фаза 1): мост Аналитика → TrendFlow.
+  //  video_analyses — структурный «рецепт успеха» (Viral Breakdown + Content
+  //                   Analysis), сохранённый ВМЕСТЕ с видео. Привязка к media_assets
+  //                   (видео Галереи) и/или source_videos. dna JSONB = TrendDNA.
+  //  Одна актуальная аналитика на видео: upsert по media_asset_id (частичный уник-индекс).
+  //  tenant_id VARCHAR(64) без FK (суперадмин — 'global_admin', не UUID).
+  // ============================================================================
+  {
+    name: 'video_analyses.create',
+    sql: `CREATE TABLE IF NOT EXISTS video_analyses (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      media_asset_id UUID REFERENCES media_assets(id) ON DELETE CASCADE,
+      source_video_id UUID REFERENCES source_videos(id) ON DELETE SET NULL,
+      platform VARCHAR(32),
+      external_id VARCHAR(128),
+      source_url TEXT,
+      dna JSONB NOT NULL,
+      model VARCHAR(64),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'video_analyses.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_video_analyses_tenant ON video_analyses(tenant_id, created_at DESC)` },
+  // Частичный уник-индекс под upsert «одна ДНК на видео Галереи» (ON CONFLICT (media_asset_id)).
+  { name: 'video_analyses.idx_asset_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_video_analyses_asset ON video_analyses(media_asset_id) WHERE media_asset_id IS NOT NULL` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {
