@@ -40,7 +40,8 @@ import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
 import channelsRouter from './modules/channels/router.js';
-import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter } from './modules/social-ext/router.js';
+import { startChannelSnapshotScheduler } from './modules/channels/scheduler.js';
+import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
 import { HttpWorkerExecutor } from './modules/render/executor_http.js';
@@ -183,6 +184,8 @@ app.use('/api/social-ext/media', socialExtMediaRouter);
 app.use('/api/social-ext/to-gallery', socialExtGalleryRouter);
 // Музыкальная дорожка (раздел Music): перейти по play_url / скачать аудио в Галерею
 app.use('/api/social-ext/music', socialExtMusicRouter);
+// Скачать видео БЕЗ водяного знака (кнопка «Download video»): App V3 play_addr → стрим
+app.use('/api/social-ext/download', socialExtVideoRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
 app.use('/api/render', renderRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)
@@ -257,6 +260,8 @@ const server = app.listen(PORT, () => {
   startDailySummaryScheduler();
   // 6.3 CRM-задачи: планировщик авто-сообщений/напоминаний (БД-таймер, раз в минуту)
   startCrmTaskScheduler();
+  // 6.4 «Каналы»: авто-обновление отслеживаемых каналов (тик/час, снимок раз в сутки)
+  startChannelSnapshotScheduler();
 });
 
 export { app, server };

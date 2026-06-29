@@ -5,7 +5,11 @@
  *
  *  • Прячем верхнюю панель (логотип TikHub + кэш + язык + шестерёнка).
  *  • Делаем липкой ленту вкладок Info / Comments / Analysis.
- *  • Переносим блоки «Metrics» и «Fake Views Detection» сразу после «Music».
+ *  • Кнопку «Download video» перехватываем → скачивание БЕЗ водяного знака (родитель).
+ *  • В строку скачивания добавляем кнопку «Скачать аудио».
+ *  • В разделе «Music» — одна кнопка «Скачать» (аудио-дорожка на устройство).
+ *  • «Cover variants» переносим ПЕРЕД блоком скачивания, «Metrics» (+«Fake Views
+ *    Detection») — сразу ПОСЛЕ блока скачивания.
  */
 (function () {
   'use strict';
@@ -62,28 +66,61 @@
     return null;
   }
 
-  function reorderBlocks(doc) {
-    var hMusic = h4ByText(doc, 'Music');
-    var hMetrics = h4ByText(doc, 'Metrics');
-    var hFake = h4ByText(doc, 'Fake Views Detection');
-    if (!hMusic || (!hMetrics && !hFake)) return;
-    // Общий контейнер-колонка: ближайший общий предок Music и одного из переносимых.
-    var anc = []; var x = hMusic; while (x) { anc.push(x); x = x.parentElement; }
-    var probe = hMetrics || hFake, col = null, y = probe;
-    while (y) { if (anc.indexOf(y) >= 0) { col = y; break; } y = y.parentElement; }
-    if (!col) return;
-    function block(h) { var e = h; while (e && e.parentElement !== col) e = e.parentElement; return (e && e.parentElement === col) ? e : null; }
-    var mb = block(hMusic), me = hMetrics ? block(hMetrics) : null, fb = hFake ? block(hFake) : null;
-    if (!mb) return;
-    // Идемпотентно: двигаем только если ещё не на месте (иначе бесконечный цикл наблюдателя).
-    if (me && me !== mb && mb.nextElementSibling !== me) { col.insertBefore(me, mb.nextElementSibling); }
-    var afterEl = (me && me.parentElement === col) ? me : mb;
-    if (fb && fb !== mb && afterEl.nextElementSibling !== fb) { col.insertBefore(fb, afterEl.nextElementSibling); }
+  function buttonByText(doc, text) {
+    var bs = doc.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) { if (bs[i].textContent.trim() === text) return bs[i]; }
+    return null;
   }
 
-  // Вставляем в раздел «Music» две кнопки: «Скачать музыку» (на устройство) и
-  // «Скачать и посмотреть» (скачать + открыть трек). Клик → postMessage родителю
-  // (он знает анализируемый URL и дёргает backend, который стримит аудио).
+  // Ближайший общий предок двух узлов.
+  function lca(a, b) {
+    var anc = []; var x = a; while (x) { anc.push(x); x = x.parentElement; }
+    var y = b; while (y) { if (anc.indexOf(y) >= 0) return y; y = y.parentElement; }
+    return null;
+  }
+  // Прямой ребёнок col на пути к node (сам «блок-секция» в колонке).
+  function childOf(col, node) { var e = node; while (e && e.parentElement !== col) e = e.parentElement; return (e && e.parentElement === col) ? e : null; }
+
+  // Переупорядочиваем секции вокруг блока скачивания: «Cover variants» — ПЕРЕД ним,
+  // «Metrics» (+ «Fake Views Detection») — сразу ПОСЛЕ. Колонку выводим из общего
+  // предка заголовка «Music» и нативной кнопки «Download video» (оба есть всегда).
+  function reorderBlocks(doc) {
+    var hMusic = h4ByText(doc, 'Music');
+    var dlBtn = buttonByText(doc, 'Download video');
+    if (!hMusic || !dlBtn) return;
+    var col = lca(hMusic, dlBtn);
+    if (!col) return;
+    var dlBlock = childOf(col, dlBtn);
+    if (!dlBlock) return;
+
+    // (4) Cover variants → перед блоком скачивания.
+    var hCover = h4ByText(doc, 'Cover variants');
+    var coverBlock = hCover ? childOf(col, hCover) : null;
+    if (coverBlock && coverBlock !== dlBlock && dlBlock.previousElementSibling !== coverBlock) {
+      col.insertBefore(coverBlock, dlBlock);
+    }
+
+    // (5) Metrics (+ Fake Views Detection) → сразу после блока скачивания.
+    var hMetrics = h4ByText(doc, 'Metrics');
+    var metricsBlock = hMetrics ? childOf(col, hMetrics) : null;
+    var hFake = h4ByText(doc, 'Fake Views Detection');
+    var fakeBlock = hFake ? childOf(col, hFake) : null;
+    // Идемпотентно: двигаем только если ещё не на месте (иначе бесконечный цикл наблюдателя).
+    if (metricsBlock && metricsBlock !== dlBlock && dlBlock.nextElementSibling !== metricsBlock) {
+      col.insertBefore(metricsBlock, dlBlock.nextElementSibling);
+    }
+    var afterEl = (metricsBlock && metricsBlock.parentElement === col) ? metricsBlock : dlBlock;
+    if (fakeBlock && fakeBlock !== dlBlock && afterEl.nextElementSibling !== fakeBlock) {
+      col.insertBefore(fakeBlock, afterEl.nextElementSibling);
+    }
+  }
+
+  // Просим родителя скачать аудио-дорожку (он знает анализируемый URL и стримит её).
+  function postMusicDownload() {
+    try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'social-ext:music', action: 'download' }, location.origin); } catch (e) {}
+  }
+
+  // Раздел «Music»: одна кнопка «Скачать» — скачивает аудио-дорожку на устройство.
   function musicButtons(doc) {
     var hMusic = h4ByText(doc, 'Music');
     if (!hMusic) return;
@@ -94,18 +131,46 @@
     var row = doc.createElement('div');
     row.setAttribute('data-tt-music', '1');
     row.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
-    function mk(label, action, primary) {
-      var b = doc.createElement('button');
-      b.type = 'button'; b.textContent = label;
-      b.style.cssText = 'flex:1;padding:9px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;'
-        + 'border:1px solid ' + (primary ? '#6366f1' : 'var(--color-border)') + ';'
-        + 'background:' + (primary ? '#6366f1' : 'transparent') + ';color:' + (primary ? '#fff' : 'var(--color-foreground)') + ';';
-      b.onclick = function () { try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'social-ext:music', action: action }, location.origin); } catch (e) {} };
-      return b;
-    }
-    row.appendChild(mk('⬇ Скачать музыку', 'download', false));
-    row.appendChild(mk('👁 Скачать и посмотреть', 'view', true));
+    var b = doc.createElement('button');
+    b.type = 'button'; b.textContent = '⬇ Скачать';
+    b.style.cssText = 'flex:1;padding:9px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;'
+      + 'border:1px solid #6366f1;background:#6366f1;color:#fff;';
+    b.onclick = postMusicDownload;
+    row.appendChild(b);
     card.appendChild(row);
+  }
+
+  // Строка скачивания (нативные «Download video» + «Download cover»):
+  //  • «Download video» перехватываем → родитель качает видео БЕЗ водяного знака;
+  //  • добавляем третью кнопку «Скачать аудио» (1:1 со стилем нативных кнопок).
+  function enhanceDownloadRow(doc) {
+    var dlBtn = buttonByText(doc, 'Download video');
+    if (!dlBtn) return;
+
+    // (1) Перехват «Download video» (bubble на самой кнопке → раньше делегированного
+    //     onClick расширения; stopImmediatePropagation не пускает событие к React-корню).
+    if (!dlBtn.hasAttribute('data-tt-nowm')) {
+      dlBtn.setAttribute('data-tt-nowm', '1');
+      dlBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'social-ext:download-video' }, location.origin); } catch (e2) {}
+      });
+    }
+
+    // (2) Кнопка «Скачать аудио» в той же строке.
+    var row = dlBtn.parentElement;
+    if (!row || row.querySelector('[data-tt-audio]')) return; // уже добавили
+    var coverBtn = buttonByText(doc, 'Download cover');
+    var audio = doc.createElement('button');
+    audio.type = 'button';
+    audio.setAttribute('data-tt-audio', '1');
+    audio.className = (coverBtn || dlBtn).className; // стиль 1:1 с нативной кнопкой
+    audio.textContent = '⬇ Скачать аудио';
+    audio.onclick = postMusicDownload;
+    // Строка была 2-колоночной (grid-cols-2) — расширяем до 3 равных колонок.
+    try { row.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important'); } catch (e) {}
+    row.appendChild(audio);
   }
 
   function apply() {
@@ -113,6 +178,7 @@
       hideTopBar(document);
       stickyTabs(document);
       musicButtons(document);
+      enhanceDownloadRow(document);
       reorderBlocks(document);
     } catch (e) { /* тихо */ }
   }

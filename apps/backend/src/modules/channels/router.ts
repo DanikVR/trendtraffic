@@ -14,6 +14,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeChannel } from './service.js';
+import { listWatchedChannels, getWatchedChannel, addWatchedChannel, removeWatchedChannel, refreshWatchedChannel } from './watchlist.js';
 
 const router = Router();
 
@@ -76,6 +77,48 @@ router.post('/analyze', async (req: AuthedRequest, res: Response) => {
     const code = /распозн|ключ|задайте|укажите/i.test(msg) ? 400 : 502;
     res.status(code).json({ error: msg });
   }
+});
+
+// ── Watchlist (Фаза 2): отслеживаемые каналы с историей метрик и дельтами ──
+
+/** GET /watch — список отслеживаемых каналов тенанта. */
+router.get('/watch', async (req: AuthedRequest, res: Response) => {
+  try { res.json({ channels: await listWatchedChannels(req.tenantId!) }); }
+  catch (err: any) { res.status(500).json({ error: err?.message || 'Ошибка' }); }
+});
+
+/** POST /watch — { url } → добавить канал в watchlist + собрать базовый снимок. */
+router.post('/watch', async (req: AuthedRequest, res: Response) => {
+  try {
+    const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+    if (!url) return res.status(400).json({ error: 'Передайте ссылку на канал в поле url.' });
+    if (url.length > 2048) return res.status(400).json({ error: 'Слишком длинная ссылка.' });
+    res.json({ channel: await addWatchedChannel(req.tenantId!, url) });
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка добавления канала';
+    res.status(/распозн|ключ|задайте|укажите/i.test(msg) ? 400 : 502).json({ error: msg });
+  }
+});
+
+/** GET /watch/:id — канал + его видео с метриками и предыдущими значениями (для дельт). */
+router.get('/watch/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const d = await getWatchedChannel(req.tenantId!, req.params.id);
+    if (!d) return res.status(404).json({ error: 'Канал не найден' });
+    res.json(d);
+  } catch (err: any) { res.status(500).json({ error: err?.message || 'Ошибка' }); }
+});
+
+/** DELETE /watch/:id — убрать канал из watchlist (вместе с историей, CASCADE). */
+router.delete('/watch/:id', async (req: AuthedRequest, res: Response) => {
+  try { res.json({ ok: await removeWatchedChannel(req.tenantId!, req.params.id) }); }
+  catch (err: any) { res.status(500).json({ error: err?.message || 'Ошибка' }); }
+});
+
+/** POST /watch/:id/refresh — «Обновить сейчас»: пере-собрать канал + снимок + дельты. */
+router.post('/watch/:id/refresh', async (req: AuthedRequest, res: Response) => {
+  try { res.json(await refreshWatchedChannel(req.tenantId!, req.params.id)); }
+  catch (err: any) { res.status(502).json({ error: err?.message || 'Ошибка обновления' }); }
 });
 
 export default router;

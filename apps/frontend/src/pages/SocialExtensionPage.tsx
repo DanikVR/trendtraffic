@@ -129,6 +129,28 @@ export default function SocialExtensionPage() {
     }
   }, [token]);
 
+  // Кнопка «Download video» расширения — перехватываем (custom.js) и качаем БЕЗ
+  // водяного знака через наш бэкенд (App V3 play_addr), стримом на устройство.
+  const downloadVideoNoWm = useCallback(async () => {
+    const target = appliedRef.current;
+    if (!target) return;
+    const authJson = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    try {
+      setGalleryNote({ ok: true, text: 'Скачиваю видео без водяного знака…' });
+      const res = await fetch('/api/social-ext/download', { method: 'POST', headers: authJson, body: JSON.stringify({ url: target }) });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') || '';
+      const m = /filename="?([^"]+)"?/.exec(cd);
+      downloadBlob(blob, (m && m[1]) || 'video.mp4');
+      setGalleryNote({ ok: true, text: 'Видео скачано ✓' });
+      setTimeout(() => setGalleryNote(null), 5000);
+    } catch (e: any) {
+      setGalleryNote({ ok: false, text: e?.message || 'Не удалось скачать видео' });
+      setTimeout(() => setGalleryNote(null), 6000);
+    }
+  }, [token]);
+
   const apply = useCallback((value: string) => {
     appliedRef.current = value;
     setAppliedUrl(value);
@@ -163,11 +185,13 @@ export default function SocialExtensionPage() {
       } else if (ev.data?.type === 'social-ext:music') {
         const a = ev.data.action;
         handleMusic(a === 'download' || a === 'view' ? a : 'open');
+      } else if (ev.data?.type === 'social-ext:download-video') {
+        downloadVideoNoWm();
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [postToIframe, handleMusic]);
+  }, [postToIframe, handleMusic, downloadVideoNoWm]);
 
   const shortUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 36);
 

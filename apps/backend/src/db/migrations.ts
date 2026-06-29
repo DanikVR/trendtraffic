@@ -678,6 +678,101 @@ const MIGRATIONS: Migration[] = [
   { name: 'render_jobs.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_render_jobs_tenant ON render_jobs(tenant_id, created_at DESC)` },
   // Индекс под выборку очереди воркером (claim самой старой 'queued').
   { name: 'render_jobs.idx_queue', sql: `CREATE INDEX IF NOT EXISTS idx_render_jobs_queue ON render_jobs(status, created_at) WHERE status = 'queued'` },
+
+  // ============================================================================
+  // TRENDTRAFFIC — «Каналы» (Фаза 2): отслеживаемые каналы + история метрик (дельты).
+  //  watched_channels        — список каналов на авто-обновлении (watchlist).
+  //  channel_videos          — видео канала: ТЕКУЩИЕ метрики + ПРЕДЫДУЩИЕ (для дельт «было→стало»).
+  //  channel_metric_snapshots / video_metric_snapshots — полная история по датам (для графиков).
+  // tenant_id VARCHAR(64) без FK (суперадмин — 'global_admin'). Дельта = текущее − prev_*.
+  // ============================================================================
+  {
+    name: 'watched_channels.create',
+    sql: `CREATE TABLE IF NOT EXISTS watched_channels (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      platform VARCHAR(32) NOT NULL,
+      handle VARCHAR(255) NOT NULL,
+      display_name VARCHAR(255),
+      avatar_url TEXT,
+      url TEXT,
+      verified BOOLEAN DEFAULT false,
+      followers BIGINT,
+      prev_followers BIGINT,
+      videos_count INT DEFAULT 0,
+      enabled BOOLEAN NOT NULL DEFAULT true,
+      last_refreshed_at TIMESTAMP WITH TIME ZONE,
+      prev_refreshed_at TIMESTAMP WITH TIME ZONE,
+      last_error TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'watched_channels.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_watched_channels_uniq ON watched_channels(tenant_id, platform, handle)` },
+  { name: 'watched_channels.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_watched_channels_tenant ON watched_channels(tenant_id, created_at DESC)` },
+  { name: 'watched_channels.idx_due', sql: `CREATE INDEX IF NOT EXISTS idx_watched_channels_due ON watched_channels(enabled, last_refreshed_at) WHERE enabled = true` },
+  {
+    name: 'channel_videos.create',
+    sql: `CREATE TABLE IF NOT EXISTS channel_videos (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      channel_id UUID NOT NULL REFERENCES watched_channels(id) ON DELETE CASCADE,
+      platform VARCHAR(32) NOT NULL,
+      external_id VARCHAR(128) NOT NULL,
+      author VARCHAR(255),
+      author_name VARCHAR(255),
+      description TEXT,
+      cover_url TEXT,
+      web_url TEXT,
+      duration_sec INT,
+      create_time BIGINT,
+      play_count BIGINT,
+      like_count BIGINT,
+      comment_count BIGINT,
+      share_count BIGINT,
+      prev_play_count BIGINT,
+      prev_like_count BIGINT,
+      prev_comment_count BIGINT,
+      prev_share_count BIGINT,
+      prev_snapshot_at TIMESTAMP WITH TIME ZONE,
+      first_seen_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'channel_videos.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_channel_videos_uniq ON channel_videos(channel_id, external_id)` },
+  { name: 'channel_videos.idx_channel', sql: `CREATE INDEX IF NOT EXISTS idx_channel_videos_channel ON channel_videos(channel_id, play_count DESC NULLS LAST)` },
+  {
+    name: 'channel_metric_snapshots.create',
+    sql: `CREATE TABLE IF NOT EXISTS channel_metric_snapshots (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      channel_id UUID NOT NULL REFERENCES watched_channels(id) ON DELETE CASCADE,
+      snapshot_date DATE NOT NULL,
+      followers BIGINT,
+      videos_count INT,
+      total_views BIGINT,
+      total_likes BIGINT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'channel_metric_snapshots.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_channel_snap_uniq ON channel_metric_snapshots(channel_id, snapshot_date)` },
+  {
+    name: 'video_metric_snapshots.create',
+    sql: `CREATE TABLE IF NOT EXISTS video_metric_snapshots (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id VARCHAR(64) NOT NULL,
+      channel_id UUID NOT NULL REFERENCES watched_channels(id) ON DELETE CASCADE,
+      video_id UUID NOT NULL REFERENCES channel_videos(id) ON DELETE CASCADE,
+      snapshot_date DATE NOT NULL,
+      play_count BIGINT,
+      like_count BIGINT,
+      comment_count BIGINT,
+      share_count BIGINT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'video_metric_snapshots.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_video_snap_uniq ON video_metric_snapshots(video_id, snapshot_date)` },
+  { name: 'video_metric_snapshots.idx_channel_date', sql: `CREATE INDEX IF NOT EXISTS idx_video_snap_channel_date ON video_metric_snapshots(channel_id, snapshot_date DESC)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

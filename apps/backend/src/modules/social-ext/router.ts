@@ -413,3 +413,65 @@ musicRouter.post('/', async (req: AuthedRequest, res: Response) => {
 });
 
 export { musicRouter };
+
+// ============================================================================
+// Скачивание видео БЕЗ водяного знака  →  POST /api/social-ext/download { url }
+// ----------------------------------------------------------------------------
+// Нативная кнопка «Download video» расширения может отдавать поток С водяным
+// знаком (download_addr). Здесь резолвим ПРЯМУЮ ссылку без знака через App V3
+// (fetch_one_video → extractDownloadUrls: play_addr первым) и стримим на устройство
+// как attachment. Тот же проверенный путь, что и у «Добавить в галерею».
+// ============================================================================
+
+const videoRouter = Router();
+videoRouter.use(requireAuth);
+videoRouter.use(proxyLimiter);
+videoRouter.use(requireEnterprise);
+
+videoRouter.post('/', async (req: AuthedRequest, res: Response) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+  try {
+    const det = detectUrl(url);
+    const vid = det?.videoId;
+    if (!vid) return res.status(422).json({ error: 'Не удалось определить видео из ссылки.' });
+    const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
+    if (!key) return res.status(400).json({ error: 'TikHub API key не настроен.' });
+
+    const one = await fetchOneVideo(key, String(vid));
+    const dlUrls = one.ok ? extractDownloadUrls(one.data) : [];
+    if (!dlUrls.length) {
+      return res.status(422).json({ error: 'Прямая ссылка без водяного знака не найдена (поддерживается TikTok/Douyin).' });
+    }
+    const platform = det?.platform || 'tiktok';
+    const referer = REFERER_BY_PLATFORM[platform] || REFERER_BY_PLATFORM.tiktok;
+
+    // Пробуем кандидаты по очереди: пайпим ТОЛЬКО после успешного ответа, чтобы при
+    // сбое первой ссылки можно было откатиться на следующую (заголовки ещё не ушли).
+    for (let i = 0; i < dlUrls.length; i++) {
+      const dlController = new AbortController();
+      const dlTimer = setTimeout(() => dlController.abort(), 60000);
+      try {
+        const up = await fetch(dlUrls[i], {
+          headers: { 'User-Agent': UA, Referer: referer, Accept: '*/*' },
+          signal: dlController.signal,
+        });
+        if (!up.ok || !up.body) { clearTimeout(dlTimer); continue; }
+        res.setHeader('Content-Type', up.headers.get('content-type') || 'video/mp4');
+        const cl = up.headers.get('content-length'); if (cl) res.setHeader('Content-Length', cl);
+        res.setHeader('Content-Disposition', `attachment; filename="${platform}-${vid}.mp4"`);
+        Readable.fromWeb(up.body as any).pipe(res).on('finish', () => clearTimeout(dlTimer));
+        res.on('close', () => { clearTimeout(dlTimer); try { dlController.abort(); } catch { /* noop */ } });
+        return;
+      } catch {
+        clearTimeout(dlTimer);
+        // следующая ссылка-кандидат
+      }
+    }
+    if (!res.headersSent) res.status(502).json({ error: 'Не удалось получить видео ни по одной ссылке.' });
+  } catch (err: any) {
+    if (!res.headersSent) res.status(502).json({ error: err?.message || 'Не удалось скачать видео' });
+  }
+});
+
+export { videoRouter };
