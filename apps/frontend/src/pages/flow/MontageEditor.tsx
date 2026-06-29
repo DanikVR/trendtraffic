@@ -183,7 +183,10 @@ interface TrendDNA {
   audioDialogue: string; whyResonates: string[]; howToReplicate: string[];
   keywords: string[]; brief: string;
   meta?: { platform?: string; author?: string; durationSec?: number; music?: string };
+  quality?: { lufs?: number; brightness?: number; vqScore?: number; originW?: number; originH?: number; needUpscale?: boolean };
+  benchmark?: { engagementRate?: number; likeRate?: number; saveRate?: number };
 }
+const secToClock = (sec: number) => { const m = Math.floor(sec / 60), s = Math.round(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; };
 
 function dnaDuration(sec?: number): string {
   if (!sec || sec <= 0) return '30';
@@ -219,10 +222,37 @@ function mkNode(kind: MKind, over: { text?: string; useLlm?: boolean; choices?: 
 /** Раскладывает ДНК тренда по блокам TrendFlow + отдаёт скомпилированный бриф. */
 function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
   const kw = (d.keywords || []).slice(0, 8).join(', ');
-  const beatsHint = (d.sceneBeats || []).slice(0, 8).map((b) => `${Math.round(b.t)}с — ${b.desc}`).join('\n');
+  const beats = (d.sceneBeats || []).filter((b) => Number.isFinite(b.t));
+
+  // Длина: из тайм-кодов сцен — реальный диапазон нарезки (его читает video_trimmer);
+  // нет тайм-кодов → отдаём пресет длительности + ЛЛМ «лучший момент».
+  let lenText = ''; let lenLlm = true;
+  if (beats.length) {
+    const start = Math.max(0, Math.floor(Math.min(...beats.map((b) => b.t))));
+    let end = Math.ceil(Math.max(...beats.map((b) => b.t)));
+    if (d.meta?.durationSec) end = Math.min(Math.ceil(d.meta.durationSec), end + 1);
+    if (end <= start) end = start + (d.meta?.durationSec ? Math.ceil(d.meta.durationSec) : 15);
+    lenText = `${secToClock(start)}–${secToClock(end)}`; lenLlm = false;
+  }
+
+  // Аудио: стратегия звука + целевая громкость (LUFS) для loudnorm.
+  const audioBits: string[] = [];
+  if (d.audioDialogue) audioBits.push(d.audioDialogue);
+  else if (d.meta?.music) audioBits.push(`Звук оригинала: ${d.meta.music}`);
+  if (d.quality?.lufs != null) audioBits.push(`громкость ≈ ${d.quality.lufs} LUFS`);
+
+  // Цвет: стиль + ориентир яркости.
+  const colorBits: string[] = [];
+  if (d.visualStyle) colorBits.push(d.visualStyle);
+  if (d.quality?.brightness != null) colorBits.push(`яркость ~${Math.round(d.quality.brightness)}/255`);
+
+  // B-roll: тема (ключи) + тайминг вставок по ритму оригинала.
+  const brollBits: string[] = [];
+  if (kw) brollBits.push(`Вставки по теме: ${kw}`);
+  if (beats.length >= 2) brollBits.push(`Тайминг по ритму: ${beats.slice(0, 4).map((b) => secToClock(b.t)).join(', ')}`);
+
   const nodes: MNode[] = [
-    mkNode('length', { useLlm: true, choices: { duration: dnaDuration(d.meta?.durationSec) },
-      text: beatsHint ? `Ритм оригинала:\n${beatsHint}` : '' }),
+    mkNode('length', { useLlm: lenLlm, choices: { duration: dnaDuration(d.meta?.durationSec) }, text: lenText }),
     mkNode('format', { choices: { orient: '9:16' } }),
     mkNode('voiceover', {
       text: d.copyReadyScript || '',
@@ -231,12 +261,13 @@ function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
     }),
     mkNode('subtitles', { useLlm: true, choices: { style: 'word', pos: 'bottom' },
       text: d.hookType ? `Усилить хук «${d.hookType}» в первые секунды` : '' }),
-    mkNode('audio', { choices: { vol: 'mid', duck: 'on' },
-      text: d.audioDialogue || (d.meta?.music ? `Звук оригинала: ${d.meta.music}` : '') }),
-    mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) }, text: d.visualStyle || '' }),
+    mkNode('audio', { choices: { vol: 'mid', duck: 'on' }, text: audioBits.join(' · ') }),
+    mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) }, text: colorBits.join(' · ') }),
     mkNode('broll', { useLlm: true, choices: { src: 'ai' },
-      text: kw ? `Вставки по теме: ${kw}` : (d.howToReplicate || []).slice(0, 2).join('; ') }),
+      text: brollBits.join(' · ') || (d.howToReplicate || []).slice(0, 2).join('; ') }),
   ];
+  // Апскейл — только если оригинал низкого качества / <1080p (GPU-шаг, добавляем по делу).
+  if (d.quality?.needUpscale) nodes.push(mkNode('upscale', { choices: { scale: '2' } }));
   const exportNode = newNode('export');
   exportNode.choices.platforms = dnaPlatforms(d.meta?.platform); // мультивыбор площадок
   nodes.push(exportNode);
@@ -1119,6 +1150,30 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 Сцен: {dna.sceneBeats?.length || 0} · Скрипт озвучки: {dna.copyReadyScript ? 'есть' : '—'} · Ключи: {(dna.keywords || []).length}
               </div>
             </div>
+
+            {/* Цель (бенчмарк тренда) + технические таргеты качества */}
+            {(dna.benchmark || dna.quality) && (
+              <div className="rounded-xl p-3 mb-3 text-[12px] space-y-1.5" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                {dna.benchmark && (dna.benchmark.engagementRate != null || dna.benchmark.likeRate != null || dna.benchmark.saveRate != null) && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color: 'var(--text-secondary)' }}>
+                    <span><b style={{ color: 'var(--brand)' }}>Цель — превзойти тренд:</b></span>
+                    {dna.benchmark.engagementRate != null && <span>ER {dna.benchmark.engagementRate}%</span>}
+                    {dna.benchmark.likeRate != null && <span>лайки {dna.benchmark.likeRate}%</span>}
+                    {dna.benchmark.saveRate != null && <span>сохранения {dna.benchmark.saveRate}%</span>}
+                  </div>
+                )}
+                {dna.quality && (dna.quality.lufs != null || dna.quality.brightness != null || dna.quality.vqScore != null || dna.quality.needUpscale) && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color: 'var(--text-muted)' }}>
+                    <span>Качество:</span>
+                    {dna.quality.lufs != null && <span>{dna.quality.lufs} LUFS</span>}
+                    {dna.quality.brightness != null && <span>яркость {Math.round(dna.quality.brightness)}</span>}
+                    {dna.quality.vqScore != null && <span>VQ {dna.quality.vqScore}</span>}
+                    {dna.quality.originH ? <span>{dna.quality.originW ? `${dna.quality.originW}×` : ''}{dna.quality.originH}</span> : null}
+                    {dna.quality.needUpscale && <span style={{ color: 'var(--brand)' }}>→ апскейл 2×</span>}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Что будет создано */}
             <div className="text-[11px] font-600 mb-1.5" style={{ color: 'var(--text-muted)' }}>Блоки сценария</div>

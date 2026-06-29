@@ -34,10 +34,28 @@ export interface TrendMeta {
   likes?: number;
   comments?: number;
   shares?: number;
+  favorites?: number;
   engagementRate?: number;
   music?: string;
   hashtags?: string[];
   cover?: string;
+}
+
+/** Технические метрики качества оригинала → таргеты блоков audio/color/upscale/export. */
+export interface TrendQuality {
+  lufs?: number;        // целевая громкость микса (audio loudnorm)
+  brightness?: number;  // ориентир яркости (color)
+  vqScore?: number;     // оценка качества видео
+  originW?: number;
+  originH?: number;
+  needUpscale?: boolean; // низкий VQ / <1080p → включить апскейл
+}
+
+/** Бенчмарк тренда — цель, которую должно превзойти наше видео (обратная связь, Фаза 3). */
+export interface TrendBenchmark {
+  engagementRate?: number;
+  likeRate?: number;
+  saveRate?: number;
 }
 
 /**
@@ -65,6 +83,9 @@ export interface TrendDNA {
   brief: string;             // скомпилированный мастер-сценарий → flow.graph.brief (идёт во ВСЕ блоки)
   // — Снимок метаданных —
   meta: TrendMeta;
+  // — Технические таргеты и бенчмарк (Фаза 3) —
+  quality?: TrendQuality;
+  benchmark?: TrendBenchmark;
   // — Происхождение —
   model: string;
   generatedAt: string;       // ISO
@@ -73,9 +94,10 @@ export interface TrendDNA {
 
 function num(v: any): number | undefined {
   if (v == null) return undefined;
-  const n = typeof v === 'number' ? v : parseInt(String(v).replace(/[^\d.-]/g, ''), 10);
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.+-]/g, ''));
   return Number.isFinite(n) ? n : undefined;
 }
+const round2 = (n: number) => Math.round(n * 100) / 100;
 function strArr(v: any, max: number, cap = 280): string[] {
   return Array.isArray(v)
     ? v.map((x) => String(x ?? '').trim()).filter(Boolean).map((s) => s.slice(0, cap)).slice(0, max)
@@ -95,10 +117,31 @@ function metaFromSummary(summary: Record<string, any>, platform?: string): Trend
     author: typeof s.author === 'string' ? s.author : undefined,
     durationSec: num(s.duration),
     views: num(s.views), likes: num(s.likes), comments: num(s.comments), shares: num(s.shares),
+    favorites: num(s.favorites),
     engagementRate: num(s.engagementRate),
     music: typeof s.music === 'string' ? s.music : undefined,
     hashtags: Array.isArray(s.hashtags) ? s.hashtags.map((h: any) => String(h)).slice(0, 12) : [],
     cover: typeof s.cover === 'string' ? s.cover : undefined,
+  };
+}
+
+/** Технические таргеты из summary.quality (+ решение об апскейле). */
+function qualityFromSummary(summary: Record<string, any>): TrendQuality {
+  const q = (summary?.quality && typeof summary.quality === 'object') ? summary.quality as Record<string, number> : {};
+  const out: TrendQuality = {
+    lufs: num(q.lufs), brightness: num(q.brightness), vqScore: num(q.vqScore),
+    originW: num(q.originW), originH: num(q.originH),
+  };
+  out.needUpscale = (out.vqScore != null && out.vqScore < 55) || (out.originH != null && out.originH < 1080);
+  return out;
+}
+/** Бенчмарк-цель из метрик (доли от просмотров). */
+function benchmarkFromMeta(m: TrendMeta): TrendBenchmark {
+  const v = m.views;
+  return {
+    engagementRate: m.engagementRate,
+    likeRate: v && m.likes != null ? round2(m.likes / v * 100) : undefined,
+    saveRate: v && m.favorites != null ? round2(m.favorites / v * 100) : undefined,
   };
 }
 
@@ -113,6 +156,10 @@ function mergeKeywords(meta: TrendMeta, commentKeywords: { word: string }[], llm
 
 /** Скомпилированный бриф — высший рычаг: инъектится в КАЖДЫЙ LLM-шаг рендера. */
 function compileBrief(d: Omit<TrendDNA, 'brief' | 'model' | 'generatedAt'>): string {
+  const tech: string[] = [];
+  if (d.quality?.lufs != null) tech.push(`громкость ≈ ${d.quality.lufs} LUFS`);
+  if (d.quality?.brightness != null) tech.push(`яркость ~${Math.round(d.quality.brightness)}/255`);
+  if (d.quality?.originH) tech.push(`разрешение ≥ ${d.quality.originH}p`);
   const lines = [
     'Цель: воспроизвести вирусную формулу тренда на нашем материале (не копировать исходник).',
     d.hookType && `Хук: ${d.hookType}${d.whyItWorks ? ` — ${d.whyItWorks}` : ''}`,
@@ -122,8 +169,10 @@ function compileBrief(d: Omit<TrendDNA, 'brief' | 'model' | 'generatedAt'>): str
     d.audioDialogue && `Звук/подача: ${d.audioDialogue}`,
     d.howToAdapt?.length && `Адаптировать: ${d.howToAdapt.join('; ')}`,
     d.keywords?.length && `Ключевые слова: ${d.keywords.join(', ')}`,
+    tech.length && `Технические цели: ${tech.join(', ')}`,
+    d.benchmark?.engagementRate != null && `Цель по вовлечённости: превзойти ER тренда ${d.benchmark.engagementRate}%.`,
   ].filter(Boolean);
-  return lines.join('\n').slice(0, 2000);
+  return lines.join('\n').slice(0, 2200);
 }
 
 function commentText(c: string | NormComment): string {
@@ -226,6 +275,8 @@ export async function generateTrendDNA(tenantId: string, input: GenerateDNAInput
     howToReplicate: strArr(j.howToReplicate, 6),
     keywords,
     meta,
+    quality: qualityFromSummary(summary),
+    benchmark: benchmarkFromMeta(meta),
     sourceUrl: input.sourceUrl,
   };
   return { ...core, brief: compileBrief(core), model: DEFAULT_DIRECTOR_MODEL, generatedAt: new Date().toISOString() };
