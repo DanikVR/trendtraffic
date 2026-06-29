@@ -49,6 +49,13 @@ function dur(s?: number | null): string {
   const m = Math.floor(s / 60), sec = s % 60;
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
+/** Соотношение сторон карточки — один-в-один с «Трендами» (social-extension):
+ *  YouTube-ролики горизонтальные 16:9, YouTube Shorts (вертикаль ≤60с) и
+ *  TikTok/Instagram — вертикальные 9:16. */
+function cardAspect(platform?: string, durationSec?: number | null): string {
+  if (platform === 'youtube') return durationSec != null && durationSec > 0 && durationSec <= 60 ? '9 / 16' : '16 / 9';
+  return '9 / 16';
+}
 function ago(iso: string | null): string {
   if (!iso) return 'ещё не обновлялся';
   const ms = Date.now() - new Date(iso).getTime();
@@ -258,7 +265,7 @@ export default function ChannelsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {detail.videos.map((v) => (
                 <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-                  <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                  <div className="relative w-full" style={{ aspectRatio: cardAspect(v.platform, v.durationSec), background: 'var(--bg-tertiary)' }}>
                     {v.coverUrl ? <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                       : <div className="w-full h-full flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>}
                     <div className="absolute inset-x-0 bottom-0 h-14 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
@@ -330,7 +337,7 @@ export default function ChannelsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {a.videos.map((v) => (
             <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-              <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+              <div className="relative w-full" style={{ aspectRatio: cardAspect(a.profile.platform, v.durationSec), background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   : <div className="w-full h-full flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>}
                 <span className="absolute bottom-2 left-2 text-[11px] font-700 inline-flex items-center gap-1 z-10" style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}><Eye size={12} /> {fmt(v.stats.play)}</span>

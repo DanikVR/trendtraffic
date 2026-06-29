@@ -607,7 +607,12 @@
  *         устройство; «Скачать музыку»/«Скачать и посмотреть» убраны). «Cover variants»
  *         перенесён ПЕРЕД блоком скачивания, «Metrics» (+«Fake Views Detection») — сразу
  *         ПОСЛЕ него (правки в public/social-ext/custom.js + SocialExtensionPage). */
-export const APP_VERSION = '1.5.15';
+
+/* 1.5.16 — «Каналы»: карточки видео — один-в-один с «Трендами» (social-extension),
+ *         соотношение сторон зависит от площадки/типа: YouTube-ролики горизонтальные 16:9,
+ *         YouTube Shorts (вертикаль ≤60с) и TikTok/Instagram — 9:16 (helper cardAspect по
+ *         platform+durationSec). Раньше все карточки были жёстко 9:16 → YouTube обрезался. */
+export const APP_VERSION = '1.5.16';
 
 export function AppVersion() {
   return (
