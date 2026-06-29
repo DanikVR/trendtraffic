@@ -991,7 +991,7 @@ export default function AdminConfigPage() {
                     ] as const).map((o) => (
                       <button key={o.v} type="button" onClick={() => setRenderGpuTarget(o.v)}
                         className="flex-1 px-3 py-2.5 rounded-xl text-sm font-600 transition-colors text-left"
-                        style={{ background: renderGpuTarget === o.v ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: renderGpuTarget === o.v ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${renderGpuTarget === o.v ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        style={{ background: renderGpuTarget === o.v ? 'var(--brand)' : 'var(--bg-tertiary)', color: renderGpuTarget === o.v ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: `1px solid ${renderGpuTarget === o.v ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                         <span className="flex items-center gap-1.5">{renderGpuTarget === o.v && <Check size={13} />}{o.label}</span>
                         <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{o.hint}</span>
                       </button>

@@ -349,7 +349,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                   {isVideo && (
                     <button onClick={saveToGallery} disabled={saving || saved} title="Скачать видео в Галерею"
                       className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-60"
-                      style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--btn-primary-bg)', color: saved ? '#10b981' : 'var(--brand)', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>
+                      style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--brand)', color: saved ? '#10b981' : 'var(--brand-contrast)', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>
                       {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Download size={12} />}
                       {saving ? 'Скачиваю…' : saved ? 'В Галерее' : 'Скачать'}
                     </button>

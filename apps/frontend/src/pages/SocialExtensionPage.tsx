@@ -150,7 +150,7 @@ export default function SocialExtensionPage() {
         {([['search', '🔥 Поиск горячих видео'], ['analytics', '📊 Аналитика']] as [Tab, string][]).map(([v, lbl]) => (
           <button key={v} onClick={() => setTab(v)}
             className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
-            style={{ background: tab === v ? 'var(--btn-primary-bg)' : 'transparent', color: tab === v ? 'var(--btn-primary-text)' : 'var(--text-muted)', boxShadow: tab === v ? 'var(--btn-primary-shadow)' : 'none' }}>
+            style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
             {lbl}
           </button>
         ))}

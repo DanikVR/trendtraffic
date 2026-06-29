@@ -361,8 +361,8 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                 <button key={n} type="button" onClick={() => setCount(n)}
                   className="w-10 h-10 rounded-lg text-sm font-700 transition-colors"
                   style={{
-                    background: count === n ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)',
-                    color: count === n ? 'var(--brand)' : 'var(--text-muted)',
+                    background: count === n ? 'var(--brand)' : 'var(--bg-tertiary)',
+                    color: count === n ? 'var(--brand-contrast)' : 'var(--text-muted)',
                     border: `1px solid ${count === n ? 'var(--brand)' : 'var(--border-medium)'}`,
                   }}>
                   {n}
@@ -612,7 +612,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                     <button type="button" onClick={() => handleDownload(v)} disabled={!v.id}
                       title={!v.id ? 'Видео не сохранено в БД' : v.status === 'failed' ? 'Ошибка скачивания — нажмите, чтобы повторить' : 'Скачать (в фоне → появится в Галерее)'}
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors disabled:opacity-40"
-                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--btn-primary-bg)', color: v.status === 'failed' ? '#ef4444' : 'var(--brand)' }}>
+                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--brand)', color: v.status === 'failed' ? '#ef4444' : 'var(--brand-contrast)' }}>
                       {v.status === 'failed' ? <AlertCircle size={15} /> : <Download size={15} />}
                     </button>
                   )}

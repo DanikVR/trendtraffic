@@ -45,7 +45,7 @@ export default function TrendsPage() {
         {([['trends', '🔎 Поиск трендов'], ['analytics', '📊 Аналитика по ссылке']] as [typeof view, string][]).map(([v, lbl]) => (
           <button key={v} onClick={() => setView(v)}
             className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
-            style={{ background: view === v ? 'var(--btn-primary-bg)' : 'transparent', color: view === v ? 'var(--btn-primary-text)' : 'var(--text-muted)', boxShadow: view === v ? 'var(--btn-primary-shadow)' : 'none' }}>
+            style={{ background: view === v ? 'var(--brand)' : 'transparent', color: view === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: view === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
             {lbl}
           </button>
         ))}

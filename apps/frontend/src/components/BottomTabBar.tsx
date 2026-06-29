@@ -80,7 +80,7 @@ export function BottomTabBar() {
         id="floating-action-glyph"
         onClick={() => navigate('/?create=true')}
         className="fixed bottom-6 right-6 z-30 flex items-center gap-1 px-3.5 py-3 rounded-2xl transition-transform active:scale-95 no-select touch-target"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)' }}
+        style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}
         animate={{
           boxShadow: [
             '0 0 16px rgba(99,102,241,0.45), 0 4px 12px rgba(0,0,0,0.30)',

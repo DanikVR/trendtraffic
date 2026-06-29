@@ -547,7 +547,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         <div style={{ position: 'absolute', left: 14, top: 14, zIndex: 40 }}>
           <button onClick={() => setAddOpen((o) => !o)} title={addOpen ? 'Закрыть' : 'Добавить процесс'}
             className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: '1px solid var(--brand)', boxShadow: '0 6px 20px rgba(99,102,241,.3)', cursor: 'pointer', transition: 'transform .25s cubic-bezier(.34,1.6,.64,1)', transform: addOpen ? 'rotate(135deg)' : 'none' }}>
+            style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', boxShadow: '0 6px 20px rgba(99,102,241,.3)', cursor: 'pointer', transition: 'transform .25s cubic-bezier(.34,1.6,.64,1)', transform: addOpen ? 'rotate(135deg)' : 'none' }}>
             <Plus size={22} />
           </button>
           {addOpen && (
@@ -694,7 +694,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                     const sel = (selected.choices[c.id] || []).includes(o.v);
                     return (
                       <button key={o.v} onClick={() => setChoice(selected.id, c, o.v)} className="inline-flex items-center gap-1 text-xs font-600 px-2.5 py-1.5 rounded-lg transition-colors"
-                        style={{ background: sel ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: sel ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${sel ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        style={{ background: sel ? 'var(--brand)' : 'var(--bg-tertiary)', color: sel ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: `1px solid ${sel ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                         {sel && <Check size={12} />}{o.label}
                       </button>
                     );
@@ -758,7 +758,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 </div>
                 <button onClick={startExport} disabled={exporting || (selected.choices.platforms || []).length === 0}
                   className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
-                  style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: '1px solid var(--brand)', cursor: exporting ? 'wait' : 'pointer' }}>
+                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', cursor: exporting ? 'wait' : 'pointer' }}>
                   {exporting && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${exportPct}%`, background: 'rgba(99,102,241,0.18)', transition: 'width .2s' }} />}
                   <span className="relative inline-flex items-center gap-2">
                     {exporting ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
@@ -811,7 +811,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 <Trash2 size={15} /> Удалить
               </button>
               <button onClick={() => setSelectedId(null)} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
+                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
             </div>
           </div>
         </div>
@@ -956,7 +956,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 <button onClick={() => { setBrief(''); setDirty(true); }} className="text-sm font-600 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>Очистить</button>
               )}
               <button onClick={() => { save(); setShowBrief(false); }} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
+                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
             </div>
           </div>
         </div>
@@ -1064,7 +1064,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                               {([4, 6, 8] as const).map((sec) => (
                                 <button key={sec} onClick={() => updateSeg(g.id, { lenSec: sec })}
                                   className="px-2.5 py-1.5 rounded-lg text-[11px] font-700"
-                                  style={{ background: g.lenSec === sec ? 'var(--btn-primary-bg)' : 'var(--bg-secondary)', color: g.lenSec === sec ? 'var(--brand)' : 'var(--text-muted)', border: `1px solid ${g.lenSec === sec ? 'var(--brand)' : 'var(--border-medium)'}` }}>
+                                  style={{ background: g.lenSec === sec ? 'var(--brand)' : 'var(--bg-secondary)', color: g.lenSec === sec ? 'var(--brand-contrast)' : 'var(--text-muted)', border: `1px solid ${g.lenSec === sec ? 'var(--brand)' : 'var(--border-medium)'}` }}>
                                   {sec}с
                                 </button>
                               ))}
@@ -1127,7 +1127,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
                     <button onClick={() => { save(); setCloudPanel(null); }}
                       className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
-                      style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: '1px solid var(--brand)', cursor: 'pointer' }}>
+                      style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', cursor: 'pointer' }}>
                       <Save size={15} /> Сохранить преобразование
                     </button>
                   </>
@@ -1185,7 +1185,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             )}
             {buildJob.status === 'done' && buildJob.resultUrl && (
               <a href={buildJob.resultUrl} download className="mt-3 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 px-4 rounded-xl w-full"
-                style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', textDecoration: 'none' }}>
+                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', textDecoration: 'none' }}>
                 <Download size={16} /> Скачать видео
               </a>
             )}
