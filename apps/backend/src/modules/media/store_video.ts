@@ -31,9 +31,15 @@ export interface StoredFile {
   mime: string;
 }
 
-async function downloadOne(url: string, opts?: { referer?: string }): Promise<StoredFile> {
+async function downloadOne(url: string, opts?: { referer?: string; signal?: AbortSignal }): Promise<StoredFile> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60000); // 60с на ссылку
+  // Внешний сигнал отмены (фоновое скачивание/«отменить»): пробрасываем в наш controller.
+  const onExtAbort = () => controller.abort();
+  if (opts?.signal) {
+    if (opts.signal.aborted) controller.abort();
+    else opts.signal.addEventListener('abort', onExtAbort, { once: true });
+  }
   try {
     const resp = await fetch(url, {
       headers: {
@@ -56,9 +62,16 @@ async function downloadOne(url: string, opts?: { referer?: string }): Promise<St
     }
     return { mediaUrl: `/uploads/source-videos/${filename}`, filePath, size, mime: ct };
   } catch (err: any) {
-    throw new Error(err?.name === 'AbortError' ? 'таймаут' : (err?.message || String(err)));
+    if (err?.name === 'AbortError') {
+      // отличаем отмену пользователем от таймаута
+      const e: any = new Error(opts?.signal?.aborted ? 'отменено' : 'таймаут');
+      e.name = opts?.signal?.aborted ? 'AbortError' : 'TimeoutError';
+      throw e;
+    }
+    throw new Error(err?.message || String(err));
   } finally {
     clearTimeout(timer);
+    if (opts?.signal) opts.signal.removeEventListener('abort', onExtAbort);
   }
 }
 
@@ -66,7 +79,7 @@ async function downloadOne(url: string, opts?: { referer?: string }): Promise<St
  * Пробует список ссылок-кандидатов по очереди (no-watermark play_addr первыми) —
  * первая успешная побеждает. На 403/таймаут переходит к следующей.
  */
-export async function downloadVideoToDisk(urls: string | string[], opts?: { referer?: string }): Promise<StoredFile> {
+export async function downloadVideoToDisk(urls: string | string[], opts?: { referer?: string; signal?: AbortSignal }): Promise<StoredFile> {
   const list = (Array.isArray(urls) ? urls : [urls]).filter((u): u is string => !!u && /^https?:/.test(u));
   if (list.length === 0) throw new Error('Нет прямых ссылок для скачивания');
   let lastErr = 'не удалось';

@@ -227,13 +227,22 @@ export async function listRecentVideos(tenantId: string, limit = 60, downloadedO
 
 /** Удаляет видео: стирает файл с диска (если скачан) и строку из БД. */
 export async function deleteVideo(tenantId: string, id: string): Promise<boolean> {
+  // 1. Файл с диска — best-effort и ИЗОЛИРОВАННО: ошибка чтения file_path не должна
+  //    мешать удалению строки (раньше SELECT и DELETE были в одном try → сбой SELECT
+  //    тихо отменял DELETE, и видео «воскресало» после перезагрузки).
   try {
     const r = await pool.query(`SELECT file_path FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
     const fp = r.rows[0]?.file_path;
     if (fp) { try { fs.unlinkSync(fp); } catch { /* файла может не быть */ } }
+  } catch (e) {
+    console.warn('[trends] deleteVideo: чтение file_path не удалось (продолжаем):', (e as Error).message);
+  }
+  // 2. Удаление строки — КРИТИЧНО, со своей обработкой ошибок.
+  try {
     const d = await pool.query(`DELETE FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
     return (d.rowCount || 0) > 0;
-  } catch {
+  } catch (e) {
+    console.warn('[trends] deleteVideo: DELETE не удался:', (e as Error).message);
     return false;
   }
 }

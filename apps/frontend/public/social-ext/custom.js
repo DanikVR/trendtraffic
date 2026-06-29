@@ -33,13 +33,26 @@
       if (tb.tagName === 'DIV' && /Comments/.test(tb.textContent) && /Analysis/.test(tb.textContent)) break;
       tb = tb.parentElement;
     }
-    if (tb && tb.tagName === 'DIV') {
-      tb.style.position = 'sticky';
-      tb.style.top = '0';
-      tb.style.zIndex = '20';
-      tb.style.paddingTop = '8px';
-      tb.style.paddingBottom = '8px';
-      if (!tb.style.backgroundColor) tb.style.backgroundColor = 'var(--color-background)';
+    if (!tb || tb.tagName !== 'DIV') return;
+    var s = tb.style;
+    // !important — чтобы перебить собственное позиционирование расширения (оно вешало
+    // на ленту вкладок sticky с отступом под скрытую нами верхнюю панель).
+    s.setProperty('position', 'sticky', 'important');
+    s.setProperty('top', '0px', 'important');
+    s.setProperty('z-index', '30', 'important');
+    s.setProperty('margin-top', '0', 'important');
+    s.paddingTop = '8px';
+    s.paddingBottom = '8px';
+    s.backgroundColor = 'var(--color-background)';
+    s.boxShadow = '0 6px 12px -8px rgba(0,0,0,0.35)';
+    // sticky ломается, если предок между лентой и скроллером клиппит overflow.
+    // Снимаем клип у предков ДО первого скроллера (его не трогаем).
+    var p = tb.parentElement, hops = 0;
+    while (p && hops < 5) {
+      var cs = window.getComputedStyle(p);
+      if (/auto|scroll/.test(cs.overflowY)) break;
+      if (/hidden|clip/.test(cs.overflowY)) p.style.setProperty('overflow-y', 'visible', 'important');
+      p = p.parentElement; hops++;
     }
   }
 

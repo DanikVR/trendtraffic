@@ -11,10 +11,11 @@
 import React, { useEffect, useState } from 'react';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2,
+  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
+import { ConfirmModal } from './ConfirmModal';
 
 type Kind = 'keyword' | 'trending';
 type Source = 'tiktok' | 'instagram' | 'youtube' | 'twitter';
@@ -142,33 +143,43 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
     for (const v of list) { const k = v.externalId || v.id || ''; if (!k || seen.has(k)) continue; seen.add(k); out.push(v); }
     return out;
   };
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  // Подтверждение удаления — внутренняя модалка (вместо браузерного confirm).
+  const [confirm, setConfirm] = useState<{ title: string; message?: string; onConfirm: () => void } | null>(null);
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
 
+  // Загрузка/обновление списка с сервера (источник истины). После удаления и при
+  // фоновом скачивании UI приводим в соответствие с БД — без оптимистичных фантомов.
+  const loadVideos = async () => {
+    try {
+      const res = await fetch('/api/trends/videos?limit=200', { headers: headers() });
+      if (!res.ok) return;
+      const d = await res.json();
+      const buckets: Record<string, { query: string; videos: StoredVideo[] }> = {};
+      for (const v of (d.videos || []) as StoredVideo[]) {
+        const p = v.platform || 'tiktok';
+        (buckets[p] = buckets[p] || { query: '', videos: [] }).videos.push(v);
+      }
+      setPerPlatform(buckets);
+    } catch { /* тихо */ }
+  };
+
+  useEffect(() => { loadVideos(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  // Фоновое скачивание идёт на сервере → опрашиваем статусы, пока что-то качается.
+  const anyDownloading = Object.values(perPlatform).some((b) => b.videos.some((v) => v.status === 'downloading'));
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/trends/videos?limit=200', { headers: headers() });
-        if (res.ok) {
-          const d = await res.json();
-          const buckets: Record<string, { query: string; videos: StoredVideo[] }> = {};
-          for (const v of (d.videos || []) as StoredVideo[]) {
-            const p = v.platform || 'tiktok';
-            (buckets[p] = buckets[p] || { query: '', videos: [] }).videos.push(v);
-          }
-          setPerPlatform(buckets);
-        }
-      } catch { /* тихо */ }
-    })();
+    if (!anyDownloading) return;
+    const t = setInterval(() => { loadVideos(); }, 3000);
+    return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [anyDownloading]);
 
   const handleScan = async () => {
     if (kind === 'keyword' && !query.trim()) { setError('Введите ключевое слово'); return; }
@@ -199,18 +210,26 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
     finally { setScanning(false); }
   };
 
+  // Скачивание идёт ФОНОВО на сервере (можно уйти со страницы) и попадает в Галерею.
+  // Статус обновляет поллинг loadVideos. Здесь — только запуск + мгновенный отклик.
   const handleDownload = async (v: StoredVideo) => {
     if (!v.id) { setError('Видео не сохранено в БД — повторите скан.'); return; }
-    setDownloadingId(v.id); setError(null);
+    setError(null);
+    setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'downloading' } : x));
     try {
       const res = await fetch(`/api/trends/videos/${v.id}/download`, { method: 'POST', headers: headers() });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'downloaded', fileUrl: data.fileUrl } : x));
     } catch (e: any) {
       setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'failed' } : x));
       setError(friendlyError(e, 'Не удалось скачать'));
-    } finally { setDownloadingId(null); }
+    }
+  };
+
+  const cancelDownload = async (v: StoredVideo) => {
+    if (!v.id) return;
+    setVideos((prev) => prev.map((x) => x.id === v.id ? { ...x, status: 'discovered' } : x));
+    try { await fetch(`/api/trends/videos/${v.id}/download/cancel`, { method: 'POST', headers: headers() }); } catch { /* тихо */ }
   };
 
   const toggleSelect = (id: string | null) => {
@@ -236,18 +255,35 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
     setBulkDownloading(false);
   };
 
-  const deleteSelected = async () => {
-    const ids = videos.filter((v) => v.id && selected.has(v.id)).map((v) => v.id as string);
-    if (ids.length === 0) return;
-    if (!window.confirm(`Удалить выбранные видео из списка (${ids.length})?`)) return;
+  const doDeleteBulk = async (ids: string[]) => {
     setBulkDeleting(true); setError(null);
     try {
       const res = await fetch('/api/trends/videos/delete-bulk', { method: 'POST', headers: headers(), body: JSON.stringify({ ids }) });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
-      setVideos((prev) => prev.filter((v) => !(v.id && selected.has(v.id))));
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       setSelected(new Set());
+      await loadVideos(); // источник истины — БД (без оптимистичного удаления из UI)
+      if ((d.deleted ?? 0) < ids.length) setNotice(`Удалено: ${d.deleted ?? 0} из ${ids.length}.`);
     } catch (e: any) { setError(friendlyError(e, 'Не удалось удалить')); }
     finally { setBulkDeleting(false); }
+  };
+  const deleteSelected = () => {
+    const ids = videos.filter((v) => v.id && selected.has(v.id)).map((v) => v.id as string);
+    if (ids.length === 0) return;
+    setConfirm({ title: 'Удалить видео?', message: `Удалить выбранные видео из списка (${ids.length})? Действие необратимо.`, onConfirm: () => { setConfirm(null); doDeleteBulk(ids); } });
+  };
+  const deleteOne = (v: StoredVideo) => {
+    if (!v.id) return;
+    setConfirm({ title: 'Удалить видео?', message: 'Удалить это видео из списка?', onConfirm: () => {
+      setConfirm(null); setError(null);
+      (async () => {
+        try {
+          const res = await fetch(`/api/trends/videos/${v.id}`, { method: 'DELETE', headers: headers() });
+          if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
+          await loadVideos();
+        } catch (e: any) { setError(friendlyError(e, 'Не удалось удалить')); }
+      })();
+    } });
   };
 
   const analyzeSelected = () => {
@@ -537,39 +573,47 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                   <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>
                   <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>
                 </div>
-                <div className="flex items-center gap-1.5 pt-1">
+                <div className="flex items-center gap-1 pt-1">
                   {v.webUrl && (
-                    <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Открыть в Аналитике и проанализировать"
-                      className="inline-flex items-center justify-center gap-1 text-[11px] font-700 px-2 py-2 rounded-lg flex-1 transition-colors hover:opacity-80"
+                    <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Аналитика"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
                       style={{ background: 'rgba(255,115,0,0.12)', color: '#ff7300', border: '1px solid rgba(255,115,0,0.3)' }}>
-                      <BarChart3 size={12} /> Аналитика
+                      <BarChart3 size={15} />
+                    </button>
+                  )}
+                  {v.id && (
+                    <button type="button" onClick={() => deleteOne(v)} title="Удалить это видео из списка"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                      style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                      <Trash2 size={14} />
                     </button>
                   )}
                   {v.webUrl && (
                     <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
-                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                       <ExternalLink size={14} />
                     </a>
                   )}
                   {v.fileUrl ? (
                     <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Скачано — открыть файл"
-                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto"
                       style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
-                      <CheckCircle2 size={16} />
+                      <CheckCircle2 size={15} />
                     </a>
+                  ) : v.status === 'downloading' ? (
+                    <button type="button" onClick={() => cancelDownload(v)} title="Скачивается в фоне — нажмите, чтобы отменить"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto group/dl transition-colors"
+                      style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                      <Loader2 size={14} className="animate-spin group-hover/dl:hidden" />
+                      <X size={15} className="hidden group-hover/dl:block" />
+                    </button>
                   ) : (
-                    <button type="button" onClick={() => handleDownload(v)}
-                      disabled={!v.id || downloadingId === v.id}
-                      title={!v.id ? 'Видео не сохранено в БД' : v.status === 'failed' ? 'Ошибка скачивания — нажмите, чтобы повторить' : 'Загрузить видео на диск'}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40"
-                      style={{
-                        background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--btn-primary-bg)',
-                        color: v.status === 'failed' ? '#ef4444' : '#ff7300',
-                      }}>
-                      {(v.id && downloadingId === v.id) ? <Loader2 size={15} className="animate-spin" />
-                        : v.status === 'failed' ? <AlertCircle size={15} />
-                        : <Download size={15} />}
+                    <button type="button" onClick={() => handleDownload(v)} disabled={!v.id}
+                      title={!v.id ? 'Видео не сохранено в БД' : v.status === 'failed' ? 'Ошибка скачивания — нажмите, чтобы повторить' : 'Скачать (в фоне → появится в Галерее)'}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors disabled:opacity-40"
+                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--btn-primary-bg)', color: v.status === 'failed' ? '#ef4444' : '#ff7300' }}>
+                      {v.status === 'failed' ? <AlertCircle size={15} /> : <Download size={15} />}
                     </button>
                   )}
                 </div>
@@ -588,6 +632,15 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirm}
+        title={confirm?.title || ''}
+        message={confirm?.message}
+        variant="danger"
+        onConfirm={() => confirm?.onConfirm()}
+        onCancel={() => setConfirm(null)}
+      />
     </>
   );
 }

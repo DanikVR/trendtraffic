@@ -176,19 +176,25 @@ router.get('/videos', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /videos/:id/download — скачать исходник на диск (стримом). */
+// Реестр идущих скачиваний для отмены (ключ tenant:id → AbortController).
+const downloadRegistry = new Map<string, AbortController>();
+
+/** POST /videos/:id/download — ФОНОВОЕ скачивание исходника на диск + в Галерею. */
 router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) => {
   try {
-    const row = await getVideo(req.tenantId!, req.params.id);
+    const tId = req.tenantId!, vId = req.params.id;
+    const row = await getVideo(tId, vId);
     if (!row) return res.status(404).json({ error: 'Видео не найдено' });
 
-    // Свежие ПРЯМЫЕ ссылки через App V3 (no-watermark, без cookie tt_chain_token) —
-    // play_addr из поиска/трендов часто истекает или требует cookie → 403.
+    const key = `${tId}:${vId}`;
+    if (downloadRegistry.has(key)) return res.json({ ok: true, status: 'downloading' }); // уже качается
+
+    // Свежие ПРЯМЫЕ ссылки через App V3 (no-watermark, без cookie tt_chain_token).
     let urls: string[] = [];
     try {
-      const key = await getEffectiveTikHubKey(req.tenantId!);
-      if (key && row.external_id) {
-        const one = await fetchOneVideo(key, String(row.external_id));
+      const apiKey = await getEffectiveTikHubKey(tId);
+      if (apiKey && row.external_id) {
+        const one = await fetchOneVideo(apiKey, String(row.external_id));
         if (one.ok) urls = extractDownloadUrls(one.data);
       }
     } catch { /* падаем на сохранённую ссылку ниже */ }
@@ -197,18 +203,41 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
       return res.status(400).json({ error: 'Не удалось получить прямую ссылку (App V3 не вернул url).' });
     }
 
-    await setVideoStatus(req.tenantId!, req.params.id, { status: 'downloading', error: null });
-    try {
-      const file = await downloadVideoToDisk(urls, { referer: row.web_url || undefined });
-      await setVideoStatus(req.tenantId!, req.params.id, { status: 'downloaded', fileUrl: file.mediaUrl, filePath: file.filePath, error: null });
-      res.json({ ok: true, fileUrl: file.mediaUrl, size: file.size });
-    } catch (dlErr: any) {
-      await setVideoStatus(req.tenantId!, req.params.id, { status: 'failed', error: dlErr?.message || 'download error' });
-      res.status(502).json({ error: dlErr?.message || 'Не удалось скачать видео' });
-    }
+    await setVideoStatus(tId, vId, { status: 'downloading', error: null });
+    const ctrl = new AbortController();
+    downloadRegistry.set(key, ctrl);
+    const referer = row.web_url || undefined, platform = row.platform, extId = row.external_id;
+
+    // Скачивание продолжается на сервере, даже если клиент ушёл со страницы.
+    // По завершении — статус 'downloaded' + запись в Галерею (media_assets).
+    void (async () => {
+      try {
+        const file = await downloadVideoToDisk(urls, { referer, signal: ctrl.signal });
+        await setVideoStatus(tId, vId, { status: 'downloaded', fileUrl: file.mediaUrl, filePath: file.filePath, error: null });
+        try {
+          await createAsset(tId, { kind: 'reference', mediaType: 'video', originalName: `${platform}-${extId || vId}.mp4`, fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime, size: file.size });
+        } catch (e) { console.warn('[trends] download→gallery createAsset:', (e as Error).message); }
+      } catch (dlErr: any) {
+        const aborted = dlErr?.name === 'AbortError';
+        await setVideoStatus(tId, vId, { status: aborted ? 'discovered' : 'failed', error: aborted ? null : (dlErr?.message || 'download error') });
+      } finally {
+        downloadRegistry.delete(key);
+      }
+    })();
+
+    res.json({ ok: true, status: 'downloading' }); // отвечаем сразу — идёт в фоне
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка' });
   }
+});
+
+/** POST /videos/:id/download/cancel — отменить идущее фоновое скачивание. */
+router.post('/videos/:id/download/cancel', async (req: AuthedRequest, res: Response) => {
+  const key = `${req.tenantId}:${req.params.id}`;
+  const ctrl = downloadRegistry.get(key);
+  if (ctrl) ctrl.abort();
+  try { await setVideoStatus(req.tenantId!, req.params.id, { status: 'discovered', error: null }); } catch { /* noop */ }
+  res.json({ ok: true, canceled: !!ctrl });
 });
 
 /** DELETE /videos/:id — удалить одно видео (файл + строку). */
