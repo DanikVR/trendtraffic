@@ -74,6 +74,8 @@ const GalleryPage = lazyWithRetry(() => import('./pages/GalleryPage'));
 const PublisherPage = lazyWithRetry(() => import('./pages/PublisherPage'));
 // TRENDTRAFFIC: вкладка «Social Media Extension» (рехостинг TikHub-расширения) — lazy.
 const SocialExtensionPage = lazyWithRetry(() => import('./pages/SocialExtensionPage'));
+// TRENDTRAFFIC: «Каналы» — анализ всех видео канала по ссылке — lazy.
+const ChannelsPage = lazyWithRetry(() => import('./pages/ChannelsPage'));
 
 // ============================================================================================
 // Мидлвари защиты роутов
@@ -248,6 +250,18 @@ export const router = createBrowserRouter([
               element: (
                 <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
                   <SocialExtensionPage />
+                </React.Suspense>
+              ),
+            }],
+          }] : []),
+          ...(FEATURES.channels ? [{
+            // «Каналы» — только Enterprise (+superadmin). Гейт — RequireEnterprise.
+            element: <RequireEnterprise />,
+            children: [{
+              path: 'channels',
+              element: (
+                <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
+                  <ChannelsPage />
                 </React.Suspense>
               ),
             }],

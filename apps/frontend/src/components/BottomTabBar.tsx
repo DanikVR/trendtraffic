@@ -25,6 +25,7 @@ import {
   Download,
   Workflow,
   TrendingUp,
+  Users,
   Image,
   Send,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ export function BottomTabBar() {
       : []),
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Галерея'), sublabel: t('moreSheet.gallery.sub', 'Скачанные видео'), accent: '#10b981' }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('moreSheet.publisher.sub', 'Публикация в соцсети'), accent: '#7c5cff' }] : []),
+    ...(FEATURES.channels ? [{ path: '/channels', icon: <Users size={20} strokeWidth={1.5} />, label: t('nav.channels', 'Каналы'), sublabel: t('moreSheet.channels.sub', 'Аналитика каналов'), accent: '#6366f1' }] : []),
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
 

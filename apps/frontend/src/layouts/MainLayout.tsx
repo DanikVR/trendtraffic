@@ -20,6 +20,7 @@ import {
   Menu,
   Workflow,
   TrendingUp,
+  Users,
   Image,
   Send,
   PanelLeftClose,
@@ -86,6 +87,8 @@ export function MainLayout() {
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: Image, label: t('nav.gallery', 'Галерея'), exact: false }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: Send, label: t('nav.publisher', 'Публикатор'), exact: false }] : []),
     ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'TrendFlow',  exact: false }] : []),
+    // «Каналы» → анализ всех видео канала (/channels). Гейт Enterprise — RequireEnterprise.
+    ...(FEATURES.channels ? [{ path: '/channels', icon: Users, label: t('nav.channels', 'Каналы'), exact: false }] : []),
   ];
 
   // При монтировании / смене токена — подтянуть баланс и тариф с бэка.

@@ -31,6 +31,8 @@ export const FEATURES = {
   publisher: true,
   /** TrendTraffic: вкладка «Social Media Extension» (рехостинг TikHub-расширения). Только Enterprise. */
   socialMediaExt: true,
+  /** TrendTraffic: «Каналы» — анализ всех видео канала по ссылке (/channels). Только Enterprise. */
+  channels: true,
 } as const;
 
 export type FeatureName = keyof typeof FEATURES;

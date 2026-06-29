@@ -39,6 +39,7 @@ import whatsappRouter from './modules/channels/whatsapp/wa_webhook.js';
 import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
+import channelsRouter from './modules/channels/router.js';
 import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
@@ -169,6 +170,8 @@ app.use('/api/need-tags', needTagsRouter);
 app.use('/api/flows', flowsRouter);
 // TRENDTRAFFIC: анализатор трендов (TikHub) — JWT внутри роутера
 app.use('/api/trends', trendsRouter);
+// TRENDTRAFFIC: «Каналы» — анализ всех видео канала по ссылке (JWT внутри роутера)
+app.use('/api/channels', express.json({ limit: '1mb' }), channelsRouter);
 // TRENDTRAFFIC: прозрачный прокси для вкладки «Social Media Extension» (рехостинг
 // TikHub-расширения) — JWT + Enterprise-гейт + rate-limit внутри роутера, ключ на сервере
 app.use('/api/social-ext/proxy', socialExtProxyRouter);
