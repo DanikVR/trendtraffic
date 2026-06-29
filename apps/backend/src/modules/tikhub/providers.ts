@@ -206,12 +206,20 @@ export function normalizeTwitter(raw: any): NormalizedVideo[] {
       externalId: id, platform: 'twitter',
       author: screen || str(author.name) || '', authorName: str(author.name),
       description: str(it.text) || str(it.full_text),
-      coverUrl: urlFrom(it.cover) || urlFrom(media) || urlFrom(it.media_url) || urlFrom(it.thumbnail),
+      coverUrl: urlFrom(it.cover) || urlFrom(media?.media_url_https) || urlFrom(media) || urlFrom(it.media_url) || urlFrom(it.thumbnail)
+        || urlFrom(deepFind(it, ['media_url_https', 'media_url', 'thumbnail_url', 'cover_url']))
+        // текстовый твит без медиа → аватар автора, чтобы плитка не была пустой
+        || urlFrom(author.profile_image_url_https) || urlFrom(author.avatar) || urlFrom(author.profile_image_url),
       videoUrl: str(it.video_url) || urlFrom(media?.video_info?.variants),
       webUrl: screen ? `https://x.com/${screen}/status/${id}` : `https://x.com/i/status/${id}`,
       durationSec: media?.video_info?.duration_millis ? Math.round(media.video_info.duration_millis / 1000) : num(it.duration),
       createTime: createTime ?? num(it.created_timestamp),
-      stats: { play: num(it.views ?? it.view_count ?? it.view_count_info), like: num(it.favorite_count ?? it.like_count), comment: num(it.reply_count), share: num(it.retweet_count) },
+      stats: {
+        play: num(it.views ?? it.view_count ?? deepFind(it, ['view_count', 'views'])),
+        like: num(it.favorite_count ?? it.favourites_count ?? it.like_count ?? it.likes ?? deepFind(it, ['favorite_count', 'favourites_count', 'like_count'])),
+        comment: num(it.reply_count ?? it.replies ?? deepFind(it, ['reply_count'])),
+        share: num(it.retweet_count ?? it.retweets ?? it.quote_count ?? deepFind(it, ['retweet_count'])),
+      },
       raw: it,
     });
   }
@@ -235,7 +243,9 @@ export function normalizeTwitter(raw: any): NormalizedVideo[] {
       externalId: id, platform: 'twitter',
       author: screen || str(user.name) || '', authorName: str(user.name),
       description: lg.full_text,
-      coverUrl: urlFrom(media?.media_url_https) || urlFrom(media),
+      coverUrl: urlFrom(media?.media_url_https) || urlFrom(media) || urlFrom(deepFind(lg, ['media_url_https', 'media_url']))
+        // текстовый твит без медиа → аватар автора
+        || urlFrom(user.profile_image_url_https) || urlFrom(user.profile_image_url) || urlFrom(deepFind(t.core?.user_results?.result, ['profile_image_url_https', 'image_url'])),
       videoUrl: mp4?.url,
       webUrl: screen ? `https://x.com/${screen}/status/${id}` : `https://x.com/i/status/${id}`,
       durationSec: media?.video_info?.duration_millis ? Math.round(media.video_info.duration_millis / 1000) : undefined,

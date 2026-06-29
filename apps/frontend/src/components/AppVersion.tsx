@@ -553,7 +553,17 @@
  *         таргет в админке и «Скачать в Галерею» переведены с моно-primary (--btn-primary-bg)
  *         на брендовый индиго (var(--brand)/--brand-contrast, как .btn-accent) — одинаково
  *         красиво и читаемо в светлой и тёмной темах. */
-export const APP_VERSION = '1.5.8';
+/* 1.5.9 — Доработки «Тренды» (Social Ext): (1) X/Twitter — анализ X ведётся в нашей
+ *         нативной панели (TrendAnalyticsPanel, проп hideSearch), а не в iframe-расширении
+ *         (оно требует обложку и падает «Ошибкой» на твитах); в normalizeTwitter добавлены
+ *         фолбэки обложек (медиа + аватар автора для текстовых твитов) и лайков/просмотров.
+ *         (2) Music: «Скачать музыку» реально скачивает трек НА УСТРОЙСТВО (бэкенд
+ *         /api/social-ext/music action=download стримит audio как attachment + заголовок
+ *         X-Music-Url), «Перейти к музыке» → «Скачать и посмотреть» (скачать + открыть).
+ *         (3) Лента вкладок Info/Comments/Analysis закреплена жёстче (z-index 40).
+ *         (4) Галерея: новая папка «Из анализа» — видео, сохранённые из аналитики
+ *         (media_assets.folder='analyzed'), больше не смешиваются с «Референс». */
+export const APP_VERSION = '1.5.9';
 
 export function AppVersion() {
   return (

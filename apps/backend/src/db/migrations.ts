@@ -643,6 +643,10 @@ const MIGRATIONS: Migration[] = [
     )`,
   },
   { name: 'media_assets.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_media_assets_tenant ON media_assets(tenant_id, kind, created_at DESC)` },
+  // Папка/категория ассета. NULL = обычная (Референс/Аудио). 'analyzed' = «Из анализа»
+  // (сохранено со страницы аналитики — складывается в отдельную папку Галереи).
+  { name: 'media_assets.folder', sql: `ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS folder VARCHAR(64)` },
+  { name: 'media_assets.idx_folder', sql: `CREATE INDEX IF NOT EXISTS idx_media_assets_folder ON media_assets(tenant_id, folder, created_at DESC)` },
 
   // ── Рендер «Собрать» (этап D): очередь задач сборки ролика по графу TrendFlow ──
   // tenant_id VARCHAR(64) без FK — суперадмин ходит с 'global_admin' (не UUID).

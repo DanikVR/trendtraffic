@@ -14,14 +14,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
-  CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText,
+  CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
 
-type Tab = 'trends' | 'reference' | 'audio';
+type Tab = 'trends' | 'reference' | 'audio' | 'analyzed';
 
 interface GalleryItem {
   id: string;
@@ -40,6 +40,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'trends', label: 'Тренды' },
   { key: 'reference', label: 'Референс' },
   { key: 'audio', label: 'Аудио' },
+  { key: 'analyzed', label: 'Из анализа' },
 ];
 
 function fmt(n?: number): string {
@@ -86,7 +87,9 @@ export default function GalleryPage() {
           })));
         }
       } else {
-        const res = await fetch(`/api/trends/media?kind=${which}`, { headers: jsonHeaders() });
+        // 'analyzed' → папка «Из анализа» (folder=analyzed, любой kind); иначе по kind.
+        const qsMedia = which === 'analyzed' ? 'folder=analyzed' : `kind=${which}`;
+        const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
           const d = await res.json();
           setItems((d.assets || []).map((a: any): GalleryItem => ({
@@ -219,7 +222,7 @@ export default function GalleryPage() {
             <button key={tb.key} onClick={() => setTab(tb.key)}
               className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-700 whitespace-nowrap border-b-2 transition-all"
               style={{ borderColor: active ? '#10b981' : 'transparent', color: active ? '#10b981' : 'var(--text-muted)', background: active ? 'rgba(16,185,129,0.08)' : 'transparent' }}>
-              {tb.key === 'trends' ? <Video size={15} /> : tb.key === 'reference' ? <ImageIcon size={15} /> : <Music size={15} />}
+              {tb.key === 'trends' ? <Video size={15} /> : tb.key === 'reference' ? <ImageIcon size={15} /> : tb.key === 'audio' ? <Music size={15} /> : <Sparkles size={15} />}
               {tb.label}
             </button>
           );
@@ -258,7 +261,8 @@ export default function GalleryPage() {
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             {tab === 'trends' ? 'Пока пусто. Скачайте видео на странице «Тренды».'
               : tab === 'reference' ? 'Пока пусто. Загрузите изображения/видео кнопкой «Медиа».'
-              : 'Пока пусто. Загрузите аудио кнопкой «Аудио».'}
+              : tab === 'audio' ? 'Пока пусто. Загрузите аудио кнопкой «Аудио».'
+              : 'Пока пусто. Сохраняйте видео из «Аналитики» (вкладка «Тренды» → «Добавить в галерею») — они появятся здесь.'}
           </p>
         </AuroraCard>
       ) : (

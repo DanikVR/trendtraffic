@@ -30,7 +30,7 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeUrl, detectUrl } from '../trends/analytics.js';
 import { extractDownloadUrls, fetchOneVideo } from '../tikhub/tikhub_client.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
-import { createAsset } from '../media/assets.js';
+import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
 const UA = 'TrendTraffic/1.0';
@@ -326,6 +326,7 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
       kind: 'reference', mediaType: 'video',
       originalName: `${platform}-${vid}.mp4`,
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
+      folder: ANALYZED_FOLDER, // из аналитики → папка «Из анализа»
     });
     res.json({ ok: true, fileUrl: stored.fileUrl, asset });
   } catch (err: any) {
@@ -383,13 +384,29 @@ musicRouter.post('/', async (req: AuthedRequest, res: Response) => {
 
     if (action === 'open') return res.json({ ok: true, url: musicUrl });
 
-    // download → в Галерею как аудио
-    const stored: any = await downloadVideoToDisk([musicUrl], { referer: 'https://www.tiktok.com/' });
-    const asset = await createAsset(req.tenantId!, {
-      kind: 'audio', mediaType: 'audio', originalName: `music-${vid}.mp3`,
-      fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
-    });
-    res.json({ ok: true, fileUrl: stored.fileUrl, asset });
+    // download → стримим аудио НА УСТРОЙСТВО (attachment), в Галерею не сохраняем.
+    const dlController = new AbortController();
+    const dlTimer = setTimeout(() => dlController.abort(), 60000);
+    try {
+      const up = await fetch(musicUrl, {
+        headers: { 'User-Agent': UA, Referer: 'https://www.tiktok.com/', Accept: '*/*' },
+        signal: dlController.signal,
+      });
+      if (!up.ok || !up.body) {
+        clearTimeout(dlTimer);
+        return res.status(up.status || 502).json({ error: `Источник вернул HTTP ${up.status}` });
+      }
+      const ct = up.headers.get('content-type') || 'audio/mpeg';
+      res.setHeader('Content-Type', ct);
+      const cl = up.headers.get('content-length'); if (cl) res.setHeader('Content-Length', cl);
+      res.setHeader('Content-Disposition', `attachment; filename="music-${vid}.mp3"`);
+      res.setHeader('X-Music-Url', musicUrl); // фронт читает, чтобы «посмотреть» (открыть тот же трек)
+      Readable.fromWeb(up.body as any).pipe(res).on('finish', () => clearTimeout(dlTimer));
+      res.on('close', () => { clearTimeout(dlTimer); try { dlController.abort(); } catch { /* noop */ } });
+    } catch (e: any) {
+      clearTimeout(dlTimer);
+      if (!res.headersSent) res.status(502).json({ error: e?.message || 'Не удалось скачать музыку' });
+    }
   } catch (err: any) {
     res.status(502).json({ error: err?.message || 'Не удалось обработать музыку' });
   }

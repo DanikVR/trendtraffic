@@ -124,7 +124,7 @@ ${sent}
 
 interface BulkRow { url: string; cover?: string; platform?: string; type?: string; summary: Record<string, any>; error?: string }
 
-export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, bulkItems }: { token: string | null; initialUrl?: string | null; initialCover?: string | null; bulkItems?: { url: string; cover?: string }[] | null }) {
+export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, bulkItems, hideSearch }: { token: string | null; initialUrl?: string | null; initialCover?: string | null; bulkItems?: { url: string; cover?: string }[] | null; hideSearch?: boolean }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +242,13 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
 
   return (
     <div className="space-y-5">
+      {/* hideSearch (встроено в «Тренды» для X): поле URL ведёт родитель; тут только ошибка + результат */}
+      {hideSearch && (loading || error) && (
+        <div className="flex items-center gap-2 text-sm rounded-xl p-3" style={{ background: error ? 'rgba(239,68,68,0.08)' : 'var(--bg-tertiary)', color: error ? '#ef4444' : 'var(--text-muted)' }}>
+          {loading ? <><Loader2 size={16} className="animate-spin flex-shrink-0" /><span>Анализирую…</span></> : <><XCircle size={16} className="flex-shrink-0" /><span>{error}</span></>}
+        </div>
+      )}
+      {!hideSearch && (
       <AuroraCard className="p-4 sm:p-5 space-y-3">
         <div className="flex flex-col sm:flex-row gap-2.5">
           <div className="flex-1 relative">
@@ -265,6 +272,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           </div>
         )}
       </AuroraCard>
+      )}
 
       {/* Массовый анализ выбранных — список */}
       {bulkLoading && (

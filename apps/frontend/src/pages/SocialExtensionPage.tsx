@@ -17,6 +17,7 @@ import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { type StoredVideo } from '../components/TrendSearch';
+import TrendAnalyticsPanel from './TrendAnalyticsPanel';
 
 type Tab = 'search' | 'analytics';
 
@@ -25,6 +26,21 @@ function fmt(n?: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   return String(n);
+}
+
+/** X (Twitter): анализ ведём в НАШЕЙ нативной панели, а не в iframe-расширении
+ *  (расширение требует обложку и падает «Ошибкой» на твитах). */
+function isXUrl(u?: string | null): boolean {
+  return /(?:^https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\b/i.test((u || '').trim());
+}
+
+/** Скачать blob как файл на устройство. */
+function downloadBlob(blob: Blob, filename: string) {
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 4000);
 }
 
 export default function SocialExtensionPage() {
@@ -77,25 +93,36 @@ export default function SocialExtensionPage() {
     }
   }, [url, token]);
 
-  // Кнопки «Перейти/Скачать музыку» из раздела Music расширения (через postMessage).
-  const handleMusic = useCallback(async (action: 'open' | 'download') => {
+  // Кнопки раздела Music расширения (через postMessage):
+  //  • 'download' — скачать трек на устройство;
+  //  • 'view'     — скачать на устройство И открыть его (послушать) в новой вкладке;
+  //  • 'open'     — только открыть трек в новой вкладке.
+  const handleMusic = useCallback(async (action: 'open' | 'download' | 'view') => {
     const target = appliedRef.current;
     if (!target) return;
-    if (action === 'download') setGalleryNote({ ok: true, text: 'Скачиваю музыку…' });
+    const authJson = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     try {
-      const res = await fetch('/api/social-ext/music', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: target, action }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       if (action === 'open') {
+        const res = await fetch('/api/social-ext/music', { method: 'POST', headers: authJson, body: JSON.stringify({ url: target, action: 'open' }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
         if (d.url) window.open(d.url, '_blank', 'noopener'); else throw new Error('Ссылка на музыку не найдена');
-      } else {
-        setGalleryNote({ ok: true, text: 'Музыка добавлена в Галерею ✓' });
-        setTimeout(() => setGalleryNote(null), 6000);
+        return;
       }
+      // download | view → бэкенд стримит аудио как attachment (+ заголовок X-Music-Url)
+      setGalleryNote({ ok: true, text: action === 'view' ? 'Скачиваю и открываю музыку…' : 'Скачиваю музыку…' });
+      const res = await fetch('/api/social-ext/music', { method: 'POST', headers: authJson, body: JSON.stringify({ url: target, action: 'download' }) });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') || '';
+      const m = /filename="?([^"]+)"?/.exec(cd);
+      downloadBlob(blob, (m && m[1]) || 'music.mp3');
+      if (action === 'view') {
+        const musicUrl = res.headers.get('X-Music-Url');
+        if (musicUrl) window.open(musicUrl, '_blank', 'noopener');
+      }
+      setGalleryNote({ ok: true, text: 'Музыка скачана ✓' });
+      setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
       setGalleryNote({ ok: false, text: e?.message || 'Не удалось обработать музыку' });
       setTimeout(() => setGalleryNote(null), 6000);
@@ -134,7 +161,8 @@ export default function SocialExtensionPage() {
       if (ev.data?.type === 'social-ext:ready' && appliedRef.current) {
         postToIframe('social-ext:set-url', appliedRef.current);
       } else if (ev.data?.type === 'social-ext:music') {
-        handleMusic(ev.data.action === 'download' ? 'download' : 'open');
+        const a = ev.data.action;
+        handleMusic(a === 'download' || a === 'view' ? a : 'open');
       }
     };
     window.addEventListener('message', onMsg);
@@ -217,7 +245,14 @@ export default function SocialExtensionPage() {
             </div>
           )}
 
-          {/* Расширение в iframe; пока ссылка не выбрана — плитка недавних видео поверх */}
+          {isXUrl(appliedUrl) ? (
+            /* X (Twitter): НАША нативная панель аналитики вместо iframe-расширения */
+            <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl p-3 sm:p-4"
+                 style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)' }}>
+              <TrendAnalyticsPanel token={token} initialUrl={appliedUrl} hideSearch />
+            </div>
+          ) : (
+          /* Остальные площадки — рехостнутое расширение в iframe; пока ссылка не выбрана — плитка недавних видео поверх */
           <div className="flex-1 min-h-0 rounded-2xl overflow-hidden relative"
                style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)' }}>
             <iframe
@@ -264,6 +299,7 @@ export default function SocialExtensionPage() {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>

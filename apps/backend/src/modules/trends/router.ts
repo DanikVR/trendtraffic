@@ -21,7 +21,7 @@ import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
-import { listAssets, createAsset, deleteAsset, deleteAssets, type MediaKind } from '../media/assets.js';
+import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, type MediaKind } from '../media/assets.js';
 
 const router = Router();
 
@@ -125,6 +125,7 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video', originalName: `tiktok-${d.videoId}.mp4`,
       fileUrl: file.mediaUrl, filePath: file.filePath, mime: 'video/mp4', size: file.size,
+      folder: ANALYZED_FOLDER, // сохранено из аналитики → папка «Из анализа»
     });
     if (!asset) return res.status(500).json({ error: 'Не удалось сохранить в Галерею.' });
     res.json({ ok: true, asset, fileUrl: file.mediaUrl });
@@ -264,10 +265,13 @@ router.post('/videos/delete-bulk', async (req: AuthedRequest, res: Response) => 
 
 // ── Медиа-ассеты Галереи (референс/аудио) ──────────────────────────────────
 
-/** GET /media?kind=reference|audio — список загруженных медиа. */
+/** GET /media?kind=reference|audio  ИЛИ  ?folder=analyzed — список загруженных медиа. */
 router.get('/media', async (req: AuthedRequest, res: Response) => {
   try {
-    const assets = await listAssets(req.tenantId!, kindFromReq(req));
+    const folder = typeof req.query.folder === 'string' ? req.query.folder.trim() : '';
+    const assets = folder
+      ? await listFolder(req.tenantId!, folder)
+      : await listAssets(req.tenantId!, kindFromReq(req));
     res.json({ assets });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });

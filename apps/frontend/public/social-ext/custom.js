@@ -39,7 +39,7 @@
     // на ленту вкладок sticky с отступом под скрытую нами верхнюю панель).
     s.setProperty('position', 'sticky', 'important');
     s.setProperty('top', '0px', 'important');
-    s.setProperty('z-index', '30', 'important');
+    s.setProperty('z-index', '40', 'important');
     s.setProperty('margin-top', '0', 'important');
     s.paddingTop = '8px';
     s.paddingBottom = '8px';
@@ -81,8 +81,9 @@
     if (fb && fb !== mb && afterEl.nextElementSibling !== fb) { col.insertBefore(fb, afterEl.nextElementSibling); }
   }
 
-  // Вставляем в раздел «Music» две кнопки: «Перейти к музыке» и «Скачать музыку».
-  // Клик → postMessage родителю (он знает анализируемый URL и дёргает backend).
+  // Вставляем в раздел «Music» две кнопки: «Скачать музыку» (на устройство) и
+  // «Скачать и посмотреть» (скачать + открыть трек). Клик → postMessage родителю
+  // (он знает анализируемый URL и дёргает backend, который стримит аудио).
   function musicButtons(doc) {
     var hMusic = h4ByText(doc, 'Music');
     if (!hMusic) return;
@@ -102,8 +103,8 @@
       b.onclick = function () { try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'social-ext:music', action: action }, location.origin); } catch (e) {} };
       return b;
     }
-    row.appendChild(mk('↗ Перейти к музыке', 'open', false));
-    row.appendChild(mk('⬇ Скачать музыку', 'download', true));
+    row.appendChild(mk('⬇ Скачать музыку', 'download', false));
+    row.appendChild(mk('👁 Скачать и посмотреть', 'view', true));
     card.appendChild(row);
   }
 
