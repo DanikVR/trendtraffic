@@ -33,8 +33,9 @@ export interface ChannelProfile {
   verified?: boolean;
   url?: string;
 }
-/** Видео без тяжёлого сырого ответа TikHub (raw не шлём на фронт — экономия трафика). */
-export type ChannelVideo = Omit<NormalizedVideo, 'raw'>;
+/** Видео без тяжёлого сырого ответа TikHub (raw не шлём на фронт). isShort — для YouTube
+ *  (Shorts vs обычные ролики, чтобы развести по вкладкам). */
+export type ChannelVideo = Omit<NormalizedVideo, 'raw'> & { isShort?: boolean };
 export interface ChannelAnalysis {
   profile: ChannelProfile;
   videos: ChannelVideo[];
@@ -156,6 +157,15 @@ const PAGE: Record<ChannelPlatform, PageCfg> = {
   },
 };
 
+// YouTube Shorts — отдельный список (get_channel_short_videos), пагинация как у видео.
+const YT_SHORTS: PageCfg = {
+  profilePath: (h) => PAGE.youtube.profilePath(h),
+  postsPath: (h, c) => `/api/v1/youtube/web/get_channel_short_videos?channel_id=${enc(h)}${c ? `&continuation_token=${enc(c)}` : ''}`,
+  normalize: (raw) => normalizeYoutube(raw),
+  cursorKeys: ['continuation_token', 'continuation', 'next_page_token', 'nextPageToken', 'token'],
+  hasMoreKeys: [],
+};
+
 function channelUrl(platform: ChannelPlatform, handle: string): string {
   switch (platform) {
     case 'tiktok': return `https://www.tiktok.com/@${handle.replace(/^@/, '')}`;
@@ -196,8 +206,7 @@ async function fetchProfile(key: string, platform: ChannelPlatform, handle: stri
 }
 
 interface PostsResult { videos: NormalizedVideo[]; hasMore: boolean; pages: number; error?: string }
-async function fetchAllPosts(key: string, platform: ChannelPlatform, handle: string, maxVideos: number): Promise<PostsResult> {
-  const cfg = PAGE[platform];
+async function fetchAllPosts(key: string, cfg: PageCfg, platform: ChannelPlatform, handle: string, maxVideos: number): Promise<PostsResult> {
   const MAX_PAGES = 13;                  // потолок вызовов TikHub (защита ключа); хватает на
                                          // ~120 видео даже у площадок с мелкой страницей (TikTok ~10/стр)
   const out: NormalizedVideo[] = [];
@@ -260,19 +269,34 @@ export async function analyzeChannel(
   if (!key) throw new Error('Ключ Trend не задан. Укажите свой ключ в настройках Enterprise или платформенный в админке.');
 
   const maxVideos = Math.min(Math.max(opts?.maxVideos ?? 120, 1), 300);
+  // raw не отдаём на фронт (он огромный); isShort проставляем для YouTube.
+  const strip = (v: NormalizedVideo, isShort?: boolean): ChannelVideo => { const { raw, ...rest } = v; return isShort == null ? rest : { ...rest, isShort }; };
+
+  // YouTube: тянем И обычные ролики (get_channel_videos), И Shorts (get_channel_short_videos)
+  // — отдельными списками; помечаем isShort, чтобы фронт развёл по вкладкам.
+  if (det.platform === 'youtube') {
+    const [profile, reg, shorts] = await Promise.all([
+      fetchProfile(key, 'youtube', det.handle),
+      fetchAllPosts(key, PAGE.youtube, 'youtube', det.handle, maxVideos),
+      fetchAllPosts(key, YT_SHORTS, 'youtube', det.handle, maxVideos),
+    ]);
+    const seen = new Set<string>();
+    const videos: ChannelVideo[] = [];
+    for (const v of reg.videos) { if (v.externalId && !seen.has(v.externalId)) { seen.add(v.externalId); videos.push(strip(v, false)); } }
+    for (const v of shorts.videos) { if (v.externalId && !seen.has(v.externalId)) { seen.add(v.externalId); videos.push(strip(v, true)); } }
+    let note: string | undefined;
+    if (videos.length === 0) note = (reg.error || shorts.error) ? `Не удалось получить видео: ${reg.error || shorts.error}` : 'Видео не найдены. Для YouTube надёжнее ссылка вида youtube.com/channel/UC…';
+    return { profile, videos, count: videos.length, hasMore: reg.hasMore || shorts.hasMore, pagesFetched: reg.pages + shorts.pages, note };
+  }
+
   const [profile, posts] = await Promise.all([
     fetchProfile(key, det.platform, det.handle),
-    fetchAllPosts(key, det.platform, det.handle, maxVideos),
+    fetchAllPosts(key, PAGE[det.platform], det.platform, det.handle, maxVideos),
   ]);
-
-  // raw не отдаём на фронт (он огромный: KB на видео × сотни видео).
-  const videos: ChannelVideo[] = posts.videos.map(({ raw, ...rest }) => rest);
+  const videos: ChannelVideo[] = posts.videos.map((v) => strip(v));
   let note: string | undefined;
   if (videos.length === 0) {
-    if (posts.error) note = `Не удалось получить видео: ${posts.error}`;
-    else note = det.platform === 'youtube'
-      ? 'Видео не найдены. Для YouTube надёжнее ссылка вида youtube.com/channel/UC…'
-      : 'Видео не найдены — возможно, профиль приватный или ссылка неверна.';
+    note = posts.error ? `Не удалось получить видео: ${posts.error}` : 'Видео не найдены — возможно, профиль приватный или ссылка неверна.';
   }
   return { profile, videos, count: videos.length, hasMore: posts.hasMore, pagesFetched: posts.pages, note };
 }

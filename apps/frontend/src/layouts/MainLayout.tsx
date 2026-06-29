@@ -70,8 +70,9 @@ export function MainLayout() {
   const { pathname } = useLocation();
   // /flow (холст React Flow) и /social-extension (iframe расширения) — на всю ширину.
   const iframeFull = pathname.startsWith('/social-extension');
-  // /channels — широкая лента (как «Тренды»), но без iframe-h-full.
-  const fullBleed = pathname.startsWith('/flow') || pathname.startsWith('/channels') || iframeFull;
+  // Широкая лента (как «Тренды»), но без iframe-h-full: /channels, /gallery, /publisher, /flow.
+  const fullBleed = pathname.startsWith('/flow') || pathname.startsWith('/channels')
+    || pathname.startsWith('/gallery') || pathname.startsWith('/publisher') || iframeFull;
 
   // ENTERPRISE: видимость Enterprise-пунктов — единый источник истины (хук).
   const isEnterprise = useIsEnterprise();

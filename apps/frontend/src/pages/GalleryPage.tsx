@@ -215,7 +215,7 @@ export default function GalleryPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-5 sm:py-6 px-3 sm:px-4 space-y-4">
+    <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-4">
       {/* Header: иконка + заголовок + загрузка + обновить */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center flex-shrink-0"

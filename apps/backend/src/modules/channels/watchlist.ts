@@ -33,6 +33,7 @@ export interface WatchedChannel {
 export interface WatchedVideo {
   externalId: string;
   platform: string;
+  isShort: boolean | null;
   author: string | null;
   description: string | null;
   coverUrl: string | null;
@@ -59,6 +60,9 @@ function mapChannel(r: any): WatchedChannel {
   };
 }
 const bn = (v: any): number | null => (v == null ? null : Number(v));
+/** Целое для INT/BIGINT-колонок: округляем (Instagram отдаёт дробную длительность видео,
+ *  напр. 70.008 → 70). Иначе Postgres падает «invalid input syntax for type integer». */
+const I = (v: any): number | null => { if (v == null) return null; const n = Math.round(Number(v)); return Number.isFinite(n) ? n : null; };
 
 /** Список отслеживаемых каналов тенанта (со сводными дельтами подписчиков). */
 export async function listWatchedChannels(tenantId: string): Promise<WatchedChannel[]> {
@@ -75,7 +79,7 @@ export async function getWatchedChannel(tenantId: string, channelId: string): Pr
     [channelId, tenantId]
   );
   const videos: WatchedVideo[] = v.rows.map((r: any) => ({
-    externalId: r.external_id, platform: r.platform, author: r.author_name || r.author,
+    externalId: r.external_id, platform: r.platform, isShort: r.is_short ?? null, author: r.author_name || r.author,
     description: r.description, coverUrl: r.cover_url, webUrl: r.web_url,
     durationSec: r.duration_sec, createTime: r.create_time == null ? null : Number(r.create_time),
     stats: { play: bn(r.play_count), like: bn(r.like_count), comment: bn(r.comment_count), share: bn(r.share_count) },
@@ -149,15 +153,15 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
          verified = $4, videos_count = $5, last_error = NULL,
          last_refreshed_at = NOW(), updated_at = NOW()
        WHERE id = $6`,
-      [p.followers ?? null, p.displayName ?? null, p.avatarUrl ?? null, !!p.verified, analysis.videos.length, channelId]
+      [I(p.followers), p.displayName ?? null, p.avatarUrl ?? null, !!p.verified, analysis.videos.length, channelId]
     );
     // Видео: upsert с переносом current→prev; + снимок дня для каждого.
     for (const v of analysis.videos) {
       const up = await client.query(
         `INSERT INTO channel_videos
            (tenant_id, channel_id, platform, external_id, author, author_name, description, cover_url, web_url,
-            duration_sec, create_time, play_count, like_count, comment_count, share_count, last_seen_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, NOW())
+            duration_sec, create_time, play_count, like_count, comment_count, share_count, is_short, last_seen_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, NOW())
          ON CONFLICT (channel_id, external_id) DO UPDATE SET
            prev_play_count = channel_videos.play_count,
            prev_like_count = channel_videos.like_count,
@@ -166,6 +170,7 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
            prev_snapshot_at = channel_videos.last_seen_at,
            play_count = EXCLUDED.play_count, like_count = EXCLUDED.like_count,
            comment_count = EXCLUDED.comment_count, share_count = EXCLUDED.share_count,
+           is_short = EXCLUDED.is_short,
            description = COALESCE(EXCLUDED.description, channel_videos.description),
            cover_url = COALESCE(EXCLUDED.cover_url, channel_videos.cover_url),
            web_url = COALESCE(EXCLUDED.web_url, channel_videos.web_url),
@@ -173,8 +178,8 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
            last_seen_at = NOW()
          RETURNING id`,
         [tenantId, channelId, v.platform, v.externalId, v.author ?? null, v.authorName ?? null, v.description ?? null,
-         v.coverUrl ?? null, v.webUrl ?? null, v.durationSec ?? null, v.createTime ?? null,
-         v.stats.play ?? null, v.stats.like ?? null, v.stats.comment ?? null, v.stats.share ?? null]
+         v.coverUrl ?? null, v.webUrl ?? null, I(v.durationSec), I(v.createTime),
+         I(v.stats.play), I(v.stats.like), I(v.stats.comment), I(v.stats.share), v.isShort ?? null]
       );
       const vid = up.rows[0].id;
       await client.query(
@@ -183,7 +188,7 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
          ON CONFLICT (video_id, snapshot_date) DO UPDATE SET
            play_count = EXCLUDED.play_count, like_count = EXCLUDED.like_count,
            comment_count = EXCLUDED.comment_count, share_count = EXCLUDED.share_count`,
-        [tenantId, channelId, vid, v.stats.play ?? null, v.stats.like ?? null, v.stats.comment ?? null, v.stats.share ?? null]
+        [tenantId, channelId, vid, I(v.stats.play), I(v.stats.like), I(v.stats.comment), I(v.stats.share)]
       );
     }
     // Снимок канала за день.
@@ -193,7 +198,7 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
        ON CONFLICT (channel_id, snapshot_date) DO UPDATE SET
          followers = EXCLUDED.followers, videos_count = EXCLUDED.videos_count,
          total_views = EXCLUDED.total_views, total_likes = EXCLUDED.total_likes`,
-      [tenantId, channelId, p.followers ?? null, analysis.videos.length, totalViews, totalLikes]
+      [tenantId, channelId, I(p.followers), analysis.videos.length, I(totalViews), I(totalLikes)]
     );
     await client.query('COMMIT');
   } catch (err) {

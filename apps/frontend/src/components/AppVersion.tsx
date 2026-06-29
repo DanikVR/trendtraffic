@@ -624,7 +624,16 @@
  *         приходят в HEIC (Chrome/Yandex не рендерят <img>), а формат залочен подписью
  *         URL (rewrite на .jpeg → 403). Решение: для TikTok берём dynamic_cover (jpeg) и
  *         гоним через cover-прокси. */
-export const APP_VERSION = '1.5.18';
+
+/* 1.5.19 — «Каналы», правки по фидбэку: (1) Instagram больше не падает —
+ *         «invalid input syntax for type integer» (IG отдавал дробную длительность 70.008…);
+ *         все числа приводятся к целому на границе БД (хелпер I()). (2) YouTube: появились
+ *         просмотры по видео — нормализатор читал view_count, а поле зовётся number_of_views
+ *         (+ длительность video_length). (3) YouTube Shorts: тянем отдельным списком
+ *         (get_channel_short_videos), помечаем isShort (новая колонка channel_videos.is_short)
+ *         — в ленте канала появился переключатель «Видео / Shorts». Лайки/комменты по видео
+ *         YouTube в списке канала не отдаёт (ограничение API) — показываем просмотры. */
+export const APP_VERSION = '1.5.19';
 
 export function AppVersion() {
   return (

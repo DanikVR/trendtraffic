@@ -19,7 +19,7 @@ const STEPS = [
 
 export default function PublisherPage() {
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4 space-y-5">
+    <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
              style={{ background: 'linear-gradient(135deg, #7c5cff, #6366F1)' }}>
@@ -43,7 +43,7 @@ export default function PublisherPage() {
         </p>
       </AuroraCard>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {STEPS.map((s, i) => (
           <AuroraCard key={i} className="p-4 flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"

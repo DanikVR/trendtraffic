@@ -28,13 +28,13 @@ interface WatchedChannel {
   videosCount: number; enabled: boolean; lastRefreshedAt: string | null; prevRefreshedAt: string | null; lastError: string | null;
 }
 interface WatchedVideo {
-  externalId: string; platform: string; author: string | null; description: string | null;
+  externalId: string; platform: string; isShort?: boolean | null; author: string | null; description: string | null;
   coverUrl: string | null; webUrl: string | null; durationSec: number | null; createTime: number | null;
   stats: Nums; prev: Nums; prevSnapshotAt: string | null;
 }
 interface OnDemand {
   profile: { platform: string; handle: string; displayName?: string; avatarUrl?: string; bio?: string; followers?: number; verified?: boolean; url?: string };
-  videos: { externalId: string; author?: string; description?: string; coverUrl?: string; webUrl?: string; durationSec?: number; stats: { play?: number; like?: number; comment?: number; share?: number } }[];
+  videos: { externalId: string; isShort?: boolean; author?: string; description?: string; coverUrl?: string; webUrl?: string; durationSec?: number; stats: { play?: number; like?: number; comment?: number; share?: number } }[];
   count: number; hasMore: boolean; note?: string;
 }
 
@@ -111,6 +111,22 @@ export default function ChannelsPage() {
 
   const [analysis, setAnalysis] = useState<OnDemand | null>(null);
   const [detail, setDetail] = useState<{ channel: WatchedChannel; videos: WatchedVideo[] } | null>(null);
+  // YouTube: переключатель Видео / Shorts (для лент с обоими типами).
+  const [ytTab, setYtTab] = useState<'videos' | 'shorts'>('videos');
+  const filterYt = (platform: string, vids: any[]) => platform === 'youtube' ? vids.filter((v) => (ytTab === 'shorts' ? v.isShort : !v.isShort)) : vids;
+  const ytToggle = (platform: string, vids: { isShort?: boolean | null }[]) => {
+    if (platform !== 'youtube') return null;
+    const reg = vids.filter((v) => !v.isShort).length, sh = vids.filter((v) => v.isShort).length;
+    if (!sh) return null;   // нет Shorts — без переключателя
+    return (
+      <div className="inline-grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+        {([['videos', `Видео (${reg})`], ['shorts', `Shorts (${sh})`]] as ['videos' | 'shorts', string][]).map(([k, lbl]) => (
+          <button key={k} onClick={() => setYtTab(k)} className="px-4 py-1.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+            style={{ background: ytTab === k ? 'var(--brand)' : 'transparent', color: ytTab === k ? 'var(--brand-contrast)' : 'var(--text-muted)' }}>{lbl}</button>
+        ))}
+      </div>
+    );
+  };
 
   const loadChannels = useCallback(async () => {
     setLoadingList(true);
@@ -272,8 +288,9 @@ export default function ChannelsPage() {
               )}
             </AuroraCard>
 
+            {ytToggle(ch!.platform, detail.videos)}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-              {detail.videos.map((v) => (
+              {filterYt(ch!.platform, detail.videos).map((v: WatchedVideo) => (
                 <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
                   <div className="relative w-full" style={{ aspectRatio: cardAspect(v.platform, v.durationSec), background: 'var(--bg-tertiary)' }}>
                     {v.coverUrl ? <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
@@ -344,8 +361,9 @@ export default function ChannelsPage() {
           </div>
           {a.note && <div className="flex items-start gap-2 text-[12px] rounded-xl p-3 mt-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><AlertCircle size={14} className="mt-[2px]" style={{ color: '#f59e0b' }} /><span>{a.note}</span></div>}
         </AuroraCard>
+        {ytToggle(a.profile.platform, a.videos)}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-          {a.videos.map((v) => (
+          {filterYt(a.profile.platform, a.videos).map((v: OnDemand['videos'][number]) => (
             <AuroraCard key={v.externalId} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
               <div className="relative w-full" style={{ aspectRatio: cardAspect(a.profile.platform, v.durationSec), background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />

@@ -153,7 +153,7 @@ export default function FlowPage() {
   const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
+    <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c5cff, #6366F1)' }}>
           <Workflow size={20} color="#fff" />
@@ -169,7 +169,7 @@ export default function FlowPage() {
       {loading ? (
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
           {/* Создать сценарий */}
           <button type="button" onClick={createAndOpen} disabled={creating}
             className="rounded-2xl flex flex-col items-center justify-center gap-3 min-h-[248px] transition-colors hover:border-[var(--border-stronger)]"

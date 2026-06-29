@@ -741,6 +741,7 @@ const MIGRATIONS: Migration[] = [
   },
   { name: 'channel_videos.idx_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_channel_videos_uniq ON channel_videos(channel_id, external_id)` },
   { name: 'channel_videos.idx_channel', sql: `CREATE INDEX IF NOT EXISTS idx_channel_videos_channel ON channel_videos(channel_id, play_count DESC NULLS LAST)` },
+  { name: 'channel_videos.is_short', sql: `ALTER TABLE channel_videos ADD COLUMN IF NOT EXISTS is_short BOOLEAN` },
   {
     name: 'channel_metric_snapshots.create',
     sql: `CREATE TABLE IF NOT EXISTS channel_metric_snapshots (

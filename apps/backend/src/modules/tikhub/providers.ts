@@ -168,12 +168,13 @@ export function normalizeYoutube(raw: any): NormalizedVideo[] {
   // 3) плоский videos[] (trending / упрощённый формат)
   const flat = findArrayOfObjects(raw, ['video_id']) || [];
   for (const v of flat) {
-    const lt = v.duration ?? v.length ?? v.length_text ?? v.lengthSeconds;
+    // get_channel_videos/short_videos: длительность в video_length, просмотры в number_of_views.
+    const lt = v.duration ?? v.length ?? v.video_length ?? v.length_text ?? v.lengthSeconds;
     const dur = typeof lt === 'number' ? lt : (typeof lt === 'string' && lt.includes(':') ? clockToSec(lt) : num(lt));
     push(String(v.video_id || v.videoId || ''), str(v.title) || str(v.description),
       str(v.channel_name) || str(v.channel) || str(v.author) || str(v.author_name) || str(deepFind(v, ['channel', 'author'])),
       findUrl(v, ['cover', 'thumbnail', 'thumbnails', 'thumbnail_url', 'cover_url']),
-      num(deepFind(v, ['view_count', 'views', 'viewCount', 'play_count'])), dur);
+      num(deepFind(v, ['view_count', 'views', 'viewCount', 'play_count', 'number_of_views'])), dur);
   }
   return out;
 }
