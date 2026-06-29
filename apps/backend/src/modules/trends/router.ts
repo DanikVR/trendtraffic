@@ -20,7 +20,7 @@ import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, de
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset } from './dna.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
-import { fetchOneVideo, extractDownloadUrls } from '../tikhub/tikhub_client.js';
+import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, type MediaKind } from '../media/assets.js';
 
@@ -140,22 +140,34 @@ router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /analyze/save — { url } → скачать проанализированное видео в Галерею (TikTok, no-watermark). */
+/** POST /analyze/save — { url } → скачать проанализированное видео в Галерею.
+ *  TikTok — no-watermark play_addr; X/Twitter — лучший mp4-вариант твита. */
 router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
   try {
     const url = typeof req.body?.url === 'string' ? req.body.url : '';
     const d = detectUrl(url);
     if (!d || d.type !== 'video') return res.status(400).json({ error: 'Нужна ссылка на видео/пост.' });
-    if (d.platform !== 'tiktok') return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok.' });
     const key = await getEffectiveTikHubKey(req.tenantId!);
     if (!key) return res.status(400).json({ error: 'Ключ Trend не задан.' });
-    const one = await fetchOneVideo(key, String(d.videoId));
-    const urls = one.ok ? extractDownloadUrls(one.data) : [];
-    if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео.' });
-    const file = await downloadVideoToDisk(urls, { referer: url });
+
+    // Прямые ссылки-кандидаты + нужный Referer по площадке.
+    let urls: string[] = [];
+    let referer = url;
+    if (d.platform === 'tiktok') {
+      const one = await fetchOneVideo(key, String(d.videoId));
+      urls = one.ok ? extractDownloadUrls(one.data) : [];
+    } else if (d.platform === 'twitter') {
+      const one = await fetchTweetDetail(key, String(d.videoId));
+      urls = one.ok ? extractTwitterVideoUrls(one.data) : [];
+      referer = 'https://x.com/';
+    } else {
+      return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok и X.' });
+    }
+    if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео (для постов-картинок без видео скачивание недоступно).' });
+    const file = await downloadVideoToDisk(urls, { referer });
     const asset = await createAsset(req.tenantId!, {
-      kind: 'reference', mediaType: 'video', originalName: `tiktok-${d.videoId}.mp4`,
-      fileUrl: file.mediaUrl, filePath: file.filePath, mime: 'video/mp4', size: file.size,
+      kind: 'reference', mediaType: 'video', originalName: `${d.platform}-${d.videoId}.mp4`,
+      fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime || 'video/mp4', size: file.size,
       folder: ANALYZED_FOLDER, // сохранено из аналитики → папка «Из анализа»
     });
     if (!asset) return res.status(500).json({ error: 'Не удалось сохранить в Галерею.' });

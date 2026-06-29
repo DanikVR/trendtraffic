@@ -28,10 +28,15 @@ function fmt(n?: number): string {
   return String(n);
 }
 
-/** X (Twitter): анализ ведём в НАШЕЙ нативной панели, а не в iframe-расширении
- *  (расширение требует обложку и падает «Ошибкой» на твитах). */
-function isXUrl(u?: string | null): boolean {
-  return /(?:^https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\b/i.test((u || '').trim());
+/** Площадки, которые ведём в НАШЕЙ нативной панели, а не в iframe-расширении:
+ *  iframe-расширение их не открывает (YouTube/Reddit — нет в списке «supported
+ *  platforms», показывает заглушку) или падает «Ошибкой» (X/Twitter — требует
+ *  обложку на твитах). Остальное (TikTok/Douyin/Instagram/Bilibili) — в расширении. */
+function isNativePanelUrl(u?: string | null): boolean {
+  const s = (u || '').trim();
+  return /(?:twitter\.com|x\.com)\b/i.test(s)
+    || /(?:youtube\.com|youtu\.be)\b/i.test(s)
+    || /(?:reddit\.com|redd\.it)\b/i.test(s);
 }
 
 /** Скачать blob как файл на устройство. */
@@ -327,8 +332,9 @@ export default function SocialExtensionPage() {
             </div>
           )}
 
-          {isXUrl(appliedUrl) ? (
-            /* X (Twitter): НАША нативная панель аналитики вместо iframe-расширения */
+          {isNativePanelUrl(appliedUrl) ? (
+            /* X / YouTube / Reddit: НАША нативная панель аналитики вместо iframe-расширения
+               (расширение их не открывает — показывает «Open a supported platform») */
             <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl p-3 sm:p-4"
                  style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)' }}>
               <TrendAnalyticsPanel token={token} initialUrl={appliedUrl} hideSearch />

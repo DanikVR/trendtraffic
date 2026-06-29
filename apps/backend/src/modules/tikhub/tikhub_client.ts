@@ -377,3 +377,36 @@ export function extractDownloadUrls(payload: any): string[] {
   push(v.downloadAddr);
   return Array.from(new Set(urls));
 }
+
+/** Деталь твита (X) для скачивания видео — структура иная, чем у TikTok. */
+export async function fetchTweetDetail(apiKey: string, tweetId: string): Promise<TikHubResult<any>> {
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/twitter/web/fetch_tweet_detail?tweet_id=${encodeURIComponent(tweetId)}`, { timeoutMs: 30000 })
+  );
+}
+
+/** Прямые mp4-ссылки твита, МАКСИМАЛЬНЫЙ битрейт первым. Глубокий обход payload:
+ *  любые массивы `variants` с content_type video/mp4 (у X/Twitter медиа лежат в
+ *  extended_entities.media[].video_info.variants[], путь варьируется). */
+export function extractTwitterVideoUrls(payload: any): string[] {
+  const out: { url: string; bitrate: number }[] = [];
+  const seen = new Set<string>();
+  const walk = (o: any, depth = 0): void => {
+    if (!o || typeof o !== 'object' || depth > 12) return;
+    if (Array.isArray(o)) { for (const it of o) walk(it, depth + 1); return; }
+    if (Array.isArray(o.variants)) {
+      for (const v of o.variants) {
+        const u = v && typeof v.url === 'string' ? v.url : '';
+        const isMp4 = v?.content_type === 'video/mp4' || /\.mp4(?:\?|$)/i.test(u);
+        if (u && /^https?:/.test(u) && isMp4 && !seen.has(u)) {
+          seen.add(u);
+          out.push({ url: u, bitrate: Number(v.bitrate || 0) });
+        }
+      }
+    }
+    for (const k of Object.keys(o)) walk(o[k], depth + 1);
+  };
+  walk(payload);
+  out.sort((a, b) => b.bitrate - a.bitrate);
+  return out.map((x) => x.url);
+}
