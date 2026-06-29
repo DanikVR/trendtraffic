@@ -293,14 +293,14 @@ export function MainLayout() {
               onClick={showInstallDialog}
               className="w-full flex items-start gap-3 p-3 rounded-2xl text-left transition-colors hover:bg-[var(--bg-elevated)]"
               style={{
-                background: 'rgba(255,115,0,0.06)',
-                border: '1px solid rgba(255,115,0,0.22)',
+                background: 'rgba(99,102,241,0.06)',
+                border: '1px solid rgba(99,102,241,0.22)',
               }}
               aria-label={t('pwaInstall.buttonAria')}
             >
               <VibeVoxIcon size={36} bordered />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-600" style={{ color: '#ff7300' }}>
+                <p className="text-xs font-600" style={{ color: 'var(--brand)' }}>
                   {t('pwaInstall.buttonLabel')}
                 </p>
                 <p className="text-[10px] leading-snug mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -316,7 +316,7 @@ export function MainLayout() {
           <div className="p-2 pb-4 flex flex-col items-center gap-2">
             <button type="button" onClick={() => navigate('/billing')} title={t('balance.tariffs')}
               className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: '#ff7300' }}>
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--brand)' }}>
               <CreditCard size={16} strokeWidth={1.5} />
             </button>
             <button type="button" onClick={() => navigate('/settings')} title={user?.email || ''} className="no-select">
@@ -383,9 +383,9 @@ export function MainLayout() {
                 <MinutesDisplay
                   count={Math.floor(translationBalance / 60)}
                   numberClassName="text-2xl font-700"
-                  numberStyle={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.03em', color: '#ff7300' }}
+                  numberStyle={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em', color: 'var(--brand)' }}
                   unitClassName="text-sm font-600"
-                  unitStyle={{ color: '#ff7300' }}
+                  unitStyle={{ color: 'var(--brand)' }}
                 />
               </div>
               <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
@@ -446,7 +446,7 @@ export function MainLayout() {
               <span style={{ color: 'var(--text-primary)' }}>
                 <TranslationPhoneGlyph size={11} strokeWidth={1.5} />
               </span>
-              <span className="text-xs font-600" style={{ color: '#ff7300' }}>
+              <span className="text-xs font-600" style={{ color: 'var(--brand)' }}>
                 <MinutesDisplay count={Math.floor(translationBalance / 60)} />
               </span>
             </button>

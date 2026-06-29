@@ -95,7 +95,7 @@ export function RegisterPage() {
             <h1
               className="text-2xl font-800 mb-0.5 text-aurora"
               style={{
-                fontFamily: 'Space Grotesk, sans-serif',
+                fontFamily: 'Geist Sans, sans-serif',
                 letterSpacing: '-0.03em',
               }}
             >

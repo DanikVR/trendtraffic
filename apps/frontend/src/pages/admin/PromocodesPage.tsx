@@ -341,7 +341,7 @@ export default function PromocodesPage() {
                     onChange={(e) => setForm((f) => ({ ...f, percent: parseInt(e.target.value, 10) }))}
                     className="flex-1"
                   />
-                  <span className="text-lg font-700 w-14 text-right" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <span className="text-lg font-700 w-14 text-right" style={{ color: 'var(--text-primary)', fontFamily: 'Geist Sans, sans-serif' }}>
                     {form.percent}%
                   </span>
                 </div>
@@ -419,9 +419,9 @@ export default function PromocodesPage() {
                         onClick={() => setForm((f) => ({ ...f, tiers: [] }))}
                         className="text-xs px-3 py-1.5 rounded-xl font-600 transition-all"
                         style={{
-                          background: form.tiers.length === 0 ? 'rgba(139,92,246,0.18)' : 'var(--bg-tertiary)',
-                          border: `1px solid ${form.tiers.length === 0 ? 'rgba(139,92,246,0.50)' : 'var(--border-medium)'}`,
-                          color: form.tiers.length === 0 ? '#a78bfa' : 'var(--text-secondary)',
+                          background: form.tiers.length === 0 ? 'rgba(99,102,241,0.18)' : 'var(--bg-tertiary)',
+                          border: `1px solid ${form.tiers.length === 0 ? 'rgba(99,102,241,0.50)' : 'var(--border-medium)'}`,
+                          color: form.tiers.length === 0 ? 'var(--brand)' : 'var(--text-secondary)',
                         }}>
                   {form.tiers.length === 0 ? '✓ ' : ''}На все тарифы
                 </button>
@@ -484,7 +484,7 @@ export default function PromocodesPage() {
                       )}
                       {c.appliesToTiers && c.appliesToTiers.length > 0 && c.appliesToTiers.length < 3 && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-600"
-                              style={{ background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.25)', color: '#a78bfa' }}>
+                              style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.25)', color: 'var(--brand)' }}>
                           {c.appliesToTiers.join(', ')}
                         </span>
                       )}
@@ -509,9 +509,9 @@ export default function PromocodesPage() {
                       <button type="button" onClick={() => openEditFor(c)}
                               className="px-3 py-2 rounded-xl text-xs font-600 transition-colors flex items-center gap-1.5"
                               style={{
-                                background: 'rgba(59,130,246,0.10)',
-                                color: '#60A5FA',
-                                border: '1px solid rgba(59,130,246,0.20)',
+                                background: 'rgba(99,102,241,0.10)',
+                                color: 'var(--brand)',
+                                border: '1px solid rgba(99,102,241,0.20)',
                               }}>
                         <Pencil size={12} strokeWidth={1.5} />
                         Редактировать

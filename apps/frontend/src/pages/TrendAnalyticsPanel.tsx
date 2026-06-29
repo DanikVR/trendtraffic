@@ -248,7 +248,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
             <Link2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
             <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') analyze(); }}
               placeholder="Ссылка: TikTok / Instagram / YouTube / X / Reddit / Douyin / Bilibili — видео или аккаунт"
-              className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+              className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>
           <AuroraButton onClick={() => { setCardCover(null); analyze(); }} disabled={loading} fullWidth className="sm:!w-auto"
@@ -311,7 +311,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           )}
           {/* Распознано */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,115,0,0.12)', color: '#ff7300' }}>
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}>
               {result.detected.platformLabel}
             </span>
             <span className="text-[12px] px-2.5 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
@@ -349,7 +349,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                   {isVideo && (
                     <button onClick={saveToGallery} disabled={saving || saved} title="Скачать видео в Галерею"
                       className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-60"
-                      style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--btn-primary-bg)', color: saved ? '#10b981' : '#ff7300', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>
+                      style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--btn-primary-bg)', color: saved ? '#10b981' : 'var(--brand)', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>
                       {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Download size={12} />}
                       {saving ? 'Скачиваю…' : saved ? 'В Галерее' : 'Скачать'}
                     </button>
@@ -358,7 +358,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 </div>
                 {s.desc && <p className="text-[13px] leading-snug mb-1.5" style={{ color: 'var(--text-secondary)' }}>{String(s.desc)}</p>}
                 {Array.isArray(s.hashtags) && s.hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1.5">{s.hashtags.map((h: string, i: number) => <span key={i} className="text-[11px] font-600" style={{ color: '#ff7300' }}>{h}</span>)}</div>
+                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1.5">{s.hashtags.map((h: string, i: number) => <span key={i} className="text-[11px] font-600" style={{ color: 'var(--brand)' }}>{h}</span>)}</div>
                 )}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                   {s.music && <span className="inline-flex items-center gap-1 min-w-0"><Music2 size={11} /><span className="truncate" style={{ maxWidth: 160 }}>{String(s.music)}</span></span>}
@@ -415,7 +415,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                   <div className="flex flex-wrap gap-x-2 gap-y-1 items-baseline">
                     {words.map((w) => {
                       const sz = 11 + Math.round((w.count / (words[0]?.count || 1)) * 16);
-                      return <span key={w.word} title={`${w.count}`} style={{ fontSize: sz, fontWeight: 700, color: '#ff7300', opacity: 0.55 + (w.count / (words[0]?.count || 1)) * 0.45 }}>{w.word}</span>;
+                      return <span key={w.word} title={`${w.count}`} style={{ fontSize: sz, fontWeight: 700, color: 'var(--brand)', opacity: 0.55 + (w.count / (words[0]?.count || 1)) * 0.45 }}>{w.word}</span>;
                     })}
                   </div>
                 </div>
@@ -446,7 +446,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 <div className="space-y-1.5">
                   {topComments.map((c, i) => (
                     <div key={i} className="flex items-start gap-2 text-[12px]">
-                      <span className="inline-flex items-center gap-0.5 flex-shrink-0 font-700" style={{ color: '#ff7300' }}><Heart size={11} /> {fmt(c.likes)}</span>
+                      <span className="inline-flex items-center gap-0.5 flex-shrink-0 font-700" style={{ color: 'var(--brand)' }}><Heart size={11} /> {fmt(c.likes)}</span>
                       <span style={{ color: 'var(--text-secondary)' }}>{c.text}{c.author ? <span style={{ color: 'var(--text-muted)' }}> — {c.author}</span> : null}</span>
                     </div>
                   ))}

@@ -2,7 +2,7 @@
  * LandingPage — заглавная публичная страница VibeVox.
  *
  * НОВАЯ страница, изолирована от существующего приложения (своя обёртка,
- * свои компоненты, тёплый оранжевый акцент #ff7300). Не меняет общие токены
+ * свои компоненты, индиго-акцент var(--brand)). Не меняет общие токены
  * и готовые страницы. Контент пока на русском (эталон для отладки).
  */
 
@@ -307,8 +307,8 @@ function LanguageGrid() {
 function SectionLabel({ n, children }: { n: string; children: string }) {
   return (
     <div className="flex items-center gap-3 mb-5">
-      <span className="font-display font-700 text-sm tabular-nums" style={{ color: '#ff7300' }}>{n}</span>
-      <span className="h-px w-8" style={{ background: 'rgba(255,115,0,0.55)' }} />
+      <span className="font-display font-700 text-sm tabular-nums" style={{ color: 'var(--brand)' }}>{n}</span>
+      <span className="h-px w-8" style={{ background: 'rgba(99,102,241,0.55)' }} />
       <span className="text-xs font-700 uppercase tracking-[0.2em] text-white/50">{children}</span>
     </div>
   );
@@ -335,11 +335,11 @@ export function LandingPage() {
       {/* Тёплые ambient-пятна */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-48 left-1/2 -translate-x-1/2 h-[40rem] w-[55rem] rounded-full blur-[150px] animate-aurora-drift"
-             style={{ background: 'radial-gradient(circle, rgba(255,115,0,0.16), transparent 70%)' }} />
+             style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.16), transparent 70%)' }} />
         <div className="absolute top-1/3 -right-40 h-[34rem] w-[34rem] rounded-full blur-[150px] animate-float"
-             style={{ background: 'radial-gradient(circle, rgba(255,77,0,0.10), transparent 70%)' }} />
+             style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.10), transparent 70%)' }} />
         <div className="absolute bottom-0 -left-32 h-[30rem] w-[30rem] rounded-full blur-[140px]"
-             style={{ background: 'radial-gradient(circle, rgba(255,181,71,0.08), transparent 70%)' }} />
+             style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.08), transparent 70%)' }} />
       </div>
       {/* Зерно */}
       <div className="pointer-events-none fixed inset-0 z-[1] opacity-[0.035]" aria-hidden="true"
@@ -351,17 +351,17 @@ export function LandingPage() {
         {/* ===== HERO ===== */}
         <section className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-12 text-center">
           <motion.div {...fadeUp} className="flex items-center justify-center gap-3 mb-7">
-            <span className="h-px w-6" style={{ background: 'rgba(255,115,0,0.6)' }} />
-            <span className="text-xs font-700 uppercase tracking-[0.22em]" style={{ color: '#ff8a2b' }}>
+            <span className="h-px w-6" style={{ background: 'rgba(99,102,241,0.6)' }} />
+            <span className="text-xs font-700 uppercase tracking-[0.22em]" style={{ color: 'var(--brand)' }}>
               Синхронный ИИ-перевод видеозвонков
             </span>
-            <span className="h-px w-6" style={{ background: 'rgba(255,115,0,0.6)' }} />
+            <span className="h-px w-6" style={{ background: 'rgba(99,102,241,0.6)' }} />
           </motion.div>
 
           <motion.h1 {...fadeUp} transition={{ duration: 0.6, delay: 0.05 }}
             className="font-display font-800 tracking-[-0.03em] text-[2.65rem] leading-[1.04] sm:text-6xl lg:text-[4.75rem] mb-6">
             Стираем языковые барьеры<br />
-            <span style={{ color: '#ff7300' }}>в реальном времени</span>
+            <span style={{ color: 'var(--brand)' }}>в реальном времени</span>
           </motion.h1>
 
           <motion.p {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
@@ -373,7 +373,7 @@ export function LandingPage() {
           <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.15 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
             <a href="/" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-700 text-white transition-all hover:brightness-110 w-full sm:w-auto justify-center"
-               style={{ background: '#ff7300', boxShadow: '0 12px 40px rgba(255,115,0,0.4)' }}>
+               style={{ background: 'var(--brand)', boxShadow: '0 12px 40px rgba(99,102,241,0.4)' }}>
               Создать демо-комнату <ArrowRight size={18} />
             </a>
             <a href="#pricing" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-700 text-white/85 transition-all hover:bg-white/5 w-full sm:w-auto justify-center"
@@ -388,7 +388,7 @@ export function LandingPage() {
             style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.07)' }}>
             {STATS.map((s) => (
               <div key={s.l} className="px-4 py-5" style={{ background: '#0A0A0B' }}>
-                <div className="font-display font-800 text-2xl sm:text-3xl" style={{ color: '#ff7300' }}>{s.v}</div>
+                <div className="font-display font-800 text-2xl sm:text-3xl" style={{ color: 'var(--brand)' }}>{s.v}</div>
                 <div className="text-xs text-white/45 mt-1">{s.l}</div>
               </div>
             ))}
@@ -401,7 +401,7 @@ export function LandingPage() {
             <SectionLabel n="01">Возможности</SectionLabel>
             <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] max-w-3xl mb-5">
               Без приложений. Без настроек.<br className="hidden sm:block" />
-              <span style={{ color: '#ff7300' }}>Просто поделитесь ссылкой.</span>
+              <span style={{ color: 'var(--brand)' }}>Просто поделитесь ссылкой.</span>
             </h2>
             <p className="text-white/55 max-w-2xl text-lg leading-relaxed">
               VibeVox работает прямо в браузере. Создайте переговорную комнату за 1 клик,
@@ -416,10 +416,10 @@ export function LandingPage() {
               <motion.div key={f.title} {...fadeUp} transition={{ duration: 0.5, delay: (i % 3) * 0.07 }}
                 className="group relative rounded-2xl p-6 transition-all hover:-translate-y-1 overflow-hidden"
                 style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="absolute inset-x-0 top-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: '#ff7300' }} />
+                <div className="absolute inset-x-0 top-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--brand)' }} />
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl mb-4"
-                     style={{ background: 'rgba(255,115,0,0.12)', border: '1px solid rgba(255,115,0,0.28)' }}>
-                  <f.icon size={20} style={{ color: '#ff8a2b' }} strokeWidth={1.9} />
+                     style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.28)' }}>
+                  <f.icon size={20} style={{ color: 'var(--brand)' }} strokeWidth={1.9} />
                 </div>
                 <h3 className="font-700 text-lg mb-2">{f.title}</h3>
                 <p className="text-sm text-white/50 leading-relaxed">{f.text}</p>
@@ -428,10 +428,10 @@ export function LandingPage() {
 
             <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.1 }}
               className="sm:col-span-2 lg:col-span-3 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5"
-              style={{ background: 'linear-gradient(135deg, rgba(255,115,0,0.08), rgba(255,77,0,0.04))', border: '1px solid rgba(255,115,0,0.2)' }}>
+              style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04))', border: '1px solid rgba(99,102,241,0.2)' }}>
               <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                   style={{ background: 'rgba(255,115,0,0.18)', border: '1px solid rgba(255,115,0,0.32)' }}>
-                <MessagesSquare size={20} style={{ color: '#ff8a2b' }} strokeWidth={1.9} />
+                   style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.32)' }}>
+                <MessagesSquare size={20} style={{ color: 'var(--brand)' }} strokeWidth={1.9} />
               </div>
               <div>
                 <h3 className="font-700 text-lg mb-1.5">Умные подсказки прямо во время звонка</h3>
@@ -449,7 +449,7 @@ export function LandingPage() {
         <section id="languages" className="relative py-20 overflow-hidden">
           {/* Фоновый акцент */}
           <div className="pointer-events-none absolute inset-0" aria-hidden="true"
-            style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255,115,0,0.06) 0%, transparent 70%)' }} />
+            style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(99,102,241,0.06) 0%, transparent 70%)' }} />
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center">
             <motion.div {...fadeUp}>
@@ -458,7 +458,7 @@ export function LandingPage() {
                 Безупречный перевод{' '}
                 <span className="inline-flex items-center gap-2 align-middle">
                   <LangFlag country={browserLang.country} w={40} />
-                  <span style={{ color: '#ff7300' }}>{browserLang.name}</span>
+                  <span style={{ color: 'var(--brand)' }}>{browserLang.name}</span>
                 </span>
                 <br />
                 на 107 языков мира — и обратно.
@@ -475,7 +475,7 @@ export function LandingPage() {
                   'Региональные диалекты',
                 ].map((t) => (
                   <span key={t} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-600"
-                    style={{ background: 'rgba(255,115,0,0.1)', border: '1px solid rgba(255,115,0,0.3)', color: '#ffb574' }}>
+                    style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: 'var(--brand)' }}>
                     {t}
                   </span>
                 ))}
@@ -510,7 +510,7 @@ export function LandingPage() {
               {[...ROW2, ...ROW2].map((l, i) => (
                 <span key={`r2-${i}`}
                   className="inline-flex items-center gap-2 mx-1.5 px-4 py-2.5 rounded-full text-sm font-500 whitespace-nowrap shrink-0"
-                  style={{ background: 'rgba(255,115,0,0.07)', border: '1px solid rgba(255,115,0,0.22)', color: 'rgba(255,255,255,0.82)' }}>
+                  style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.22)', color: 'rgba(255,255,255,0.82)' }}>
                   <LangFlag country={l.country} w={20} />
                   <span>{l.name}</span>
                 </span>
@@ -537,11 +537,11 @@ export function LandingPage() {
                   их на следующий — вы не теряете ни секунды оплаченного времени.
                 </p>
                 <div className="flex items-baseline gap-2 mb-6">
-                  <span className="font-display font-800 text-5xl" style={{ color: '#ff7300' }}>€0.17</span>
+                  <span className="font-display font-800 text-5xl" style={{ color: 'var(--brand)' }}>€0.17</span>
                   <span className="text-white/45">/ минута</span>
                 </div>
                 <a href="/" className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-700 text-white transition-all hover:brightness-110"
-                   style={{ background: '#ff7300', boxShadow: '0 10px 32px rgba(255,115,0,0.35)' }}>
+                   style={{ background: 'var(--brand)', boxShadow: '0 10px 32px rgba(99,102,241,0.35)' }}>
                   Купить пакет минут <ArrowRight size={18} />
                 </a>
               </div>
@@ -555,12 +555,12 @@ export function LandingPage() {
                     <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> До $1.20–2.50 за минуту</li>
                   </ul>
                 </div>
-                <div className="rounded-2xl p-5" style={{ background: 'rgba(255,115,0,0.07)', border: '1px solid rgba(255,115,0,0.3)' }}>
-                  <div className="flex items-center gap-2 font-700 mb-3" style={{ color: '#ff8a2b' }}><RefreshCw size={18} /> VibeVox</div>
+                <div className="rounded-2xl p-5" style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.3)' }}>
+                  <div className="flex items-center gap-2 font-700 mb-3" style={{ color: 'var(--brand)' }}><RefreshCw size={18} /> VibeVox</div>
                   <ul className="space-y-2 text-sm text-white/75">
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: '#ff8a2b' }} /> Перенос минут (roll-over)</li>
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: '#ff8a2b' }} /> Оплата по факту, без контрактов</li>
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: '#ff8a2b' }} /> €0.17 за минуту</li>
+                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> Перенос минут (roll-over)</li>
+                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> Оплата по факту, без контрактов</li>
+                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> €0.17 за минуту</li>
                   </ul>
                 </div>
               </div>
@@ -587,7 +587,7 @@ export function LandingPage() {
                   <X size={16} className="text-magenta-400 shrink-0 mt-0.5" /> {c.them}
                 </div>
                 <div className="flex items-start gap-2 text-sm text-white/80">
-                  <Check size={16} className="shrink-0 mt-0.5" style={{ color: '#ff8a2b' }} /> {c.us}
+                  <Check size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {c.us}
                 </div>
               </motion.div>
             ))}
@@ -597,9 +597,9 @@ export function LandingPage() {
         {/* ===== ФИНАЛЬНЫЙ CTA ===== */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
           <motion.div {...fadeUp} className="rounded-[2rem] p-10 sm:p-16 text-center relative overflow-hidden"
-            style={{ background: 'rgba(255,115,0,0.07)', border: '1px solid rgba(255,115,0,0.28)' }}>
+            style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.28)' }}>
             <div className="absolute inset-0 blur-[110px] opacity-50" aria-hidden="true"
-                 style={{ background: 'radial-gradient(ellipse at center, rgba(255,115,0,0.3), transparent 70%)' }} />
+                 style={{ background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.3), transparent 70%)' }} />
             <div className="relative">
               <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] mb-4">
                 Говорите на одном языке со всем миром
@@ -608,7 +608,7 @@ export function LandingPage() {
                 Запуск комнаты за 1 клик. Без регистрации для демо.
               </p>
               <a href="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-700 text-white transition-all hover:brightness-110"
-                 style={{ background: '#ff7300', boxShadow: '0 12px 44px rgba(255,115,0,0.45)' }}>
+                 style={{ background: 'var(--brand)', boxShadow: '0 12px 44px rgba(99,102,241,0.45)' }}>
                 Создать демо-комнату <ArrowRight size={20} />
               </a>
             </div>

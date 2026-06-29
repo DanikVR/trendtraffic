@@ -72,7 +72,7 @@ export function BottomTabBar() {
   return (
     <>
       {/* ── Плавающая FAB справа-снизу, чуть приподнятая (на всех размерах) ── */}
-      {/* Иконки и glow — оранжевые (#ff7300) в обеих темах. Фон theme-adaptive,
+      {/* Иконки и glow — индиго-акцент (var(--brand)) в обеих темах. Фон theme-adaptive,
           чтобы контраст работал и на светлом, и на тёмном. */}
       {FEATURES.video && !isOnChatPage && (
       <motion.button
@@ -80,12 +80,12 @@ export function BottomTabBar() {
         id="floating-action-glyph"
         onClick={() => navigate('/?create=true')}
         className="fixed bottom-6 right-6 z-30 flex items-center gap-1 px-3.5 py-3 rounded-2xl transition-transform active:scale-95 no-select touch-target"
-        style={{ background: 'var(--btn-primary-bg)', color: '#ff7300' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)' }}
         animate={{
           boxShadow: [
-            '0 0 16px rgba(255,115,0,0.45), 0 4px 12px rgba(0,0,0,0.30)',
-            '0 0 28px rgba(255,115,0,0.80), 0 4px 12px rgba(0,0,0,0.30)',
-            '0 0 16px rgba(255,115,0,0.45), 0 4px 12px rgba(0,0,0,0.30)',
+            '0 0 16px rgba(99,102,241,0.45), 0 4px 12px rgba(0,0,0,0.30)',
+            '0 0 28px rgba(99,102,241,0.80), 0 4px 12px rgba(0,0,0,0.30)',
+            '0 0 16px rgba(99,102,241,0.45), 0 4px 12px rgba(0,0,0,0.30)',
           ],
         }}
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -136,7 +136,7 @@ export function BottomTabBar() {
               >
                 <AvatarCircle name={user?.name || user?.email} size="md" status="online" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-600 truncate" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <p className="text-sm font-600 truncate" style={{ color: 'var(--text-primary)', fontFamily: 'Geist Sans, sans-serif' }}>
                     {user?.name || t('moreSheet.userFallback')}
                   </p>
                   <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
@@ -235,15 +235,15 @@ export function BottomTabBar() {
                   </button>
                 )}
 
-                {/* Logout — оранжевый */}
+                {/* Logout — индиго-акцент */}
                 <button
                   onClick={() => { setMoreSheetOpen(false); useAppStore.getState().logout(); }}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl text-left mt-1"
-                  style={{ background: 'rgba(255,115,0,0.06)', border: '1px solid rgba(255,115,0,0.18)', color: '#ff7300' }}
+                  style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)', color: 'var(--brand)' }}
                 >
                   <div
                     className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(255,115,0,0.14)' }}
+                    style={{ background: 'rgba(99,102,241,0.14)' }}
                   >
                     <X size={18} strokeWidth={1.5} />
                   </div>
@@ -261,21 +261,21 @@ export function BottomTabBar() {
                     onClick={() => { setMoreSheetOpen(false); showInstallDialog(); }}
                     className="w-full flex items-center gap-4 p-4 rounded-2xl text-left mt-3"
                     style={{
-                      background: 'rgba(255,115,0,0.06)',
-                      border: '1px solid rgba(255,115,0,0.22)',
+                      background: 'rgba(99,102,241,0.06)',
+                      border: '1px solid rgba(99,102,241,0.22)',
                     }}
                     aria-label={t('pwaInstall.buttonAria')}
                   >
                     <VibeVoxIcon size={40} bordered />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-600" style={{ color: '#ff7300' }}>
+                      <p className="text-sm font-600" style={{ color: 'var(--brand)' }}>
                         {t('pwaInstall.buttonLabel')}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                         {t('pwaInstall.buttonSubtitle')}
                       </p>
                     </div>
-                    <Download size={18} strokeWidth={1.75} style={{ color: '#ff7300', flexShrink: 0 }} />
+                    <Download size={18} strokeWidth={1.75} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                   </button>
                 )}
               </div>

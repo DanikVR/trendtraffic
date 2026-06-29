@@ -81,10 +81,37 @@
     if (fb && fb !== mb && afterEl.nextElementSibling !== fb) { col.insertBefore(fb, afterEl.nextElementSibling); }
   }
 
+  // Вставляем в раздел «Music» две кнопки: «Перейти к музыке» и «Скачать музыку».
+  // Клик → postMessage родителю (он знает анализируемый URL и дёргает backend).
+  function musicButtons(doc) {
+    var hMusic = h4ByText(doc, 'Music');
+    if (!hMusic) return;
+    var card = hMusic;
+    for (var i = 0; i < 5 && card.parentElement; i++) { card = card.parentElement; if (/rounded-xl/.test((card.className || '').toString())) break; }
+    if (!card) card = hMusic.parentElement;
+    if (!card || card.querySelector('[data-tt-music]')) return; // уже добавили
+    var row = doc.createElement('div');
+    row.setAttribute('data-tt-music', '1');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+    function mk(label, action, primary) {
+      var b = doc.createElement('button');
+      b.type = 'button'; b.textContent = label;
+      b.style.cssText = 'flex:1;padding:9px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;'
+        + 'border:1px solid ' + (primary ? '#6366f1' : 'var(--color-border)') + ';'
+        + 'background:' + (primary ? '#6366f1' : 'transparent') + ';color:' + (primary ? '#fff' : 'var(--color-foreground)') + ';';
+      b.onclick = function () { try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'social-ext:music', action: action }, location.origin); } catch (e) {} };
+      return b;
+    }
+    row.appendChild(mk('↗ Перейти к музыке', 'open', false));
+    row.appendChild(mk('⬇ Скачать музыку', 'download', true));
+    card.appendChild(row);
+  }
+
   function apply() {
     try {
       hideTopBar(document);
       stickyTabs(document);
+      musicButtons(document);
       reorderBlocks(document);
     } catch (e) { /* тихо */ }
   }

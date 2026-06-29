@@ -99,7 +99,7 @@ export function InsightsModal({ roomId, open, onClose }: InsightsModalProps) {
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {loading && !insights && (
             <div className="py-12 text-center">
-              <Loader2 size={28} className="animate-spin inline-block" style={{ color: '#8B5CF6' }} />
+              <Loader2 size={28} className="animate-spin inline-block" style={{ color: 'var(--brand)' }} />
               <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
                 {t('insights.thinking')}
               </p>
@@ -171,7 +171,7 @@ export function InsightsModal({ roomId, open, onClose }: InsightsModalProps) {
                   <div className="flex flex-wrap gap-1.5">
                     {insights.tags.map((t, i) => (
                       <span key={i} className="text-[11px] px-2 py-0.5 rounded-full font-600"
-                            style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
+                            style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--brand)' }}>
                         <Tag size={9} className="inline mr-1" />
                         {t}
                       </span>
@@ -186,7 +186,7 @@ export function InsightsModal({ roomId, open, onClose }: InsightsModalProps) {
                   <ul className="space-y-1.5">
                     {insights.nextSteps.map((s, i) => (
                       <li key={i} className="text-sm flex items-start gap-2" style={{ color: 'var(--text-primary)' }}>
-                        <span className="text-[10px] mt-[5px]" style={{ color: '#8B5CF6' }}>●</span>
+                        <span className="text-[10px] mt-[5px]" style={{ color: 'var(--brand)' }}>●</span>
                         <span>{s}</span>
                       </li>
                     ))}

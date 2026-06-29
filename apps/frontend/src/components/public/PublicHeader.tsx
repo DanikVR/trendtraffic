@@ -36,7 +36,7 @@ export function PublicHeader() {
           <a
             href="/"
             className="hidden sm:inline-flex items-center px-4 py-2 rounded-full text-sm font-700 text-white transition-all hover:brightness-110"
-            style={{ background: '#ff7300', boxShadow: '0 6px 22px rgba(255,115,0,0.35)' }}
+            style={{ background: 'var(--brand)', boxShadow: '0 6px 22px rgba(99,102,241,0.35)' }}
           >
             Создать демо-комнату
           </a>

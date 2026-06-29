@@ -39,5 +39,10 @@ export function isFeatureEnabled(name: FeatureName): boolean {
   return FEATURES[name];
 }
 
-/** Куда вести «/» и логотип, если видеозвонки выключены (TrendTraffic: домашняя = Тренды). */
-export const HOME_ROUTE_WHEN_NO_VIDEO = '/trends';
+/**
+ * Куда вести «/» и логотип, если видеозвонки выключены. Домашняя = «Тренды»
+ * (=/social-extension для Enterprise: поиск горячих видео + аналитика-расширение).
+ * Не-Enterprise попадает на /trends (RequireEnterprise-редирект) — поэтому роут
+ * /trends ОСТАВЛЕН как fallback (он связан программно), хотя в меню его нет.
+ */
+export const HOME_ROUTE_WHEN_NO_VIDEO = '/social-extension';

@@ -132,7 +132,7 @@ function RouteErrorElement() {
       <div style={{ fontSize: 14, color: 'var(--text-muted)', maxWidth: 380, lineHeight: 1.5 }}>
         Возможно, вышло обновление приложения. Обновите страницу — обычно это решает проблему.
       </div>
-      <button onClick={() => window.location.reload()} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: 'var(--btn-primary-bg, #ff7300)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={() => window.location.reload()} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: 'var(--btn-primary-bg, var(--brand))', color: 'var(--brand-contrast)', fontWeight: 700, cursor: 'pointer' }}>
         Обновить страницу
       </button>
     </div>

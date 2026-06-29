@@ -340,7 +340,7 @@ export default function UsersPage() {
       {/* Заголовок */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-             style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' }}>
+             style={{ background: 'linear-gradient(135deg,#6366f1,#818cf8)' }}>
           <Users size={20} color="#fff" />
         </div>
         <div>
@@ -415,7 +415,7 @@ export default function UsersPage() {
                 <select
                   value={tierFilter}
                   onChange={(e) => setTierFilter(e.target.value)}
-                  className="w-full pl-3 pr-9 py-2.5 rounded-xl text-sm appearance-none transition-colors focus:outline-none focus:border-violet-400"
+                  className="w-full pl-3 pr-9 py-2.5 rounded-xl text-sm appearance-none transition-colors focus:outline-none focus:border-[var(--brand)]"
                   style={{
                     background: 'var(--bg-tertiary)',
                     border: '1px solid var(--border-medium)',
@@ -438,7 +438,7 @@ export default function UsersPage() {
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-violet-400"
+                className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)]"
                 style={{
                   background: 'var(--bg-tertiary)',
                   border: '1px solid var(--border-medium)',
@@ -454,7 +454,7 @@ export default function UsersPage() {
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-violet-400"
+                className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)]"
                 style={{
                   background: 'var(--bg-tertiary)',
                   border: '1px solid var(--border-medium)',
@@ -558,7 +558,7 @@ export default function UsersPage() {
                                 onClick={() => openCredit(u)}
                                 title="Зачислить минуты"
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
-                                style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.24)' }}>
+                                style={{ background: 'rgba(99, 102, 241, 0.12)', color: 'var(--brand)', border: '1px solid rgba(99, 102, 241, 0.24)' }}>
                           <Gift size={14} />
                         </button>
                         <button type="button"
@@ -615,8 +615,8 @@ export default function UsersPage() {
         <Modal onClose={closeCredit}>
           <form onSubmit={submitCredit} className="space-y-5">
             <ModalHeader
-              icon={<Gift size={18} color="#A78BFA" />}
-              iconBg="rgba(139, 92, 246, 0.15)"
+              icon={<Gift size={18} color="var(--brand)" />}
+              iconBg="rgba(99, 102, 241, 0.15)"
               title="Добавить минуты"
               subtitle={creditUser.email || creditUser.userId}
               onClose={closeCredit}
@@ -637,9 +637,9 @@ export default function UsersPage() {
                           onClick={() => setCreditMinutes(String(v))}
                           className="text-xs px-2.5 py-1.5 rounded-lg font-600 transition-all"
                           style={{
-                            background: creditMinutes === String(v) ? 'rgba(139, 92, 246, 0.18)' : 'var(--bg-tertiary)',
-                            border: `1px solid ${creditMinutes === String(v) ? 'rgba(139, 92, 246, 0.4)' : 'var(--border-subtle)'}`,
-                            color: creditMinutes === String(v) ? '#a78bfa' : 'var(--text-secondary)',
+                            background: creditMinutes === String(v) ? 'rgba(99, 102, 241, 0.18)' : 'var(--bg-tertiary)',
+                            border: `1px solid ${creditMinutes === String(v) ? 'rgba(99, 102, 241, 0.4)' : 'var(--border-subtle)'}`,
+                            color: creditMinutes === String(v) ? 'var(--brand)' : 'var(--text-secondary)',
                           }}>
                     +{v}
                   </button>

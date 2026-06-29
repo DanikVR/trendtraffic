@@ -473,7 +473,7 @@ export default function AdminConfigPage() {
 
         {/* Шапка */}
         <div className="pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-          <h1 className="text-xl font-800 text-aurora" style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.03em' }}>
+          <h1 className="text-xl font-800 text-aurora" style={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em' }}>
             ⚙️ Настройки системных API
           </h1>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -502,11 +502,11 @@ export default function AdminConfigPage() {
           {/* AI Learning Hub — Quick Link */}
           <AuroraCard className="p-5">
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }} onClick={() => navigate('/admin/dialects')}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)', flexShrink: 0 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#818cf8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(99,102,241,0.3)', flexShrink: 0 }}>
                 <Bot size={24} strokeWidth={1.5} color="#fff" />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', margin: 0 }}>AI Learning Hub — Обучение диалектам</h3>
+                <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', margin: 0 }}>AI Learning Hub — Обучение диалектам</h3>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Управление глоссариями и правилами перевода диалектов для Gemini Live API</p>
               </div>
               <AuroraButton variant="secondary" size="sm" id="btn-go-dialects" onClick={(e: React.MouseEvent) => { e.stopPropagation(); navigate('/admin/dialects'); }}>Перейти</AuroraButton>
@@ -522,7 +522,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <Server size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>LiveKit WebRTC Server</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>LiveKit WebRTC Server</h3>
                 </div>
                 <AuroraInput label="Server URL" value={livekitUrl} onChange={(e) => setLivekitUrl(e.target.value)} placeholder="ws://localhost:7880" inputId="admin-livekit-url" />
                 <AuroraInput label="API Key" value={livekitKey} onChange={(e) => setLivekitKey(e.target.value)} placeholder="devkey" inputId="admin-livekit-key" />
@@ -538,7 +538,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <Bot size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Telegram Bot</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Telegram Bot</h3>
                 </div>
                 <AuroraInput label="Bot API Token" type="password" value={telegramToken} onChange={(e) => setTelegramToken(e.target.value)} placeholder="123456789:ABC..." inputId="admin-telegram-token" />
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Используется для авторизации шлюза Telegram REST и рассылки уведомлений.</p>
@@ -621,9 +621,9 @@ export default function AdminConfigPage() {
                     disabled={tgBusy}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-700 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+                      background: 'linear-gradient(135deg,#6366f1,#818cf8)',
                       color: '#fff',
-                      boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
+                      boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
                     }}
                     title="Отправит 5 примеров: регистрация, оплата, докупка, админ-кредит, утренняя сводка"
                   >
@@ -684,7 +684,7 @@ export default function AdminConfigPage() {
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor" style={{ color: 'var(--text-primary)' }}/>
                     </svg>
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Google OAuth Авторизация</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Google OAuth Авторизация</h3>
                 </div>
                 <AuroraInput label="Google Client ID" value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="123456789-abc.apps.googleusercontent.com" inputId="admin-google-client-id" />
                 <AuroraInput label="Google Client Secret" type="password" value={googleClientSecret} onChange={(e) => setGoogleClientSecret(e.target.value)} placeholder="GOCSPX-..." inputId="admin-google-client-secret" />
@@ -707,7 +707,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <Key size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Google Gemini API (AI Studio)</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Google Gemini API (AI Studio)</h3>
                 </div>
                 <div className="space-y-4">
                   <AuroraInput label="Gemini API Key" type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="AIzaSy..." inputId="admin-gemini-key" />
@@ -779,7 +779,7 @@ export default function AdminConfigPage() {
                   <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
                     <p>Ключ используется одновременно: для онлайн-перевода в комнатах (модель Live API выше), для AI-помощника по субтитрам и для пост-анализа звонков (gemini-3.5-flash).</p>
                     <p><strong style={{ color: 'var(--text-secondary)' }}>3.1 Live Preview</strong> — новейшее поколение, лучшее понимание контекста. Если будут глюки — переключитесь на <strong style={{ color: 'var(--text-secondary)' }}>2.5 latest</strong>, она стабильнее.</p>
-                    <p>Получить ключ:{' '}<a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--accent-orange)' }}>aistudio.google.com/api-keys</a>.</p>
+                    <p>Получить ключ:{' '}<a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--brand)' }}>aistudio.google.com/api-keys</a>.</p>
                   </div>
                 </div>
               </div>
@@ -792,7 +792,7 @@ export default function AdminConfigPage() {
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                   <Gauge size={16} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Масштабирование видеоперевода</h3>
+                <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Масштабирование видеоперевода</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -834,7 +834,7 @@ export default function AdminConfigPage() {
                     checked={geminiUseVertex}
                     onChange={(e) => setGeminiUseVertex(e.target.checked)}
                     className="w-4 h-4 rounded"
-                    style={{ accentColor: 'var(--accent-orange)' }}
+                    style={{ accentColor: 'var(--brand)' }}
                   />
                   <span className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>
                     Использовать Vertex AI (1000 одновременных сессий + 4M TPM на проект)
@@ -871,7 +871,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <CreditCard size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Stripe (биллинг подписок)</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Stripe (биллинг подписок)</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <AuroraInput
@@ -900,7 +900,7 @@ export default function AdminConfigPage() {
                 />
                 <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
                   <p>Используется для оплаты подписок (тарифы Plus, Standard) и докупки минут пользователями.</p>
-                  <p>Ключи на странице <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--accent-orange)' }}>Stripe Dashboard → API Keys</a>.</p>
+                  <p>Ключи на странице <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--brand)' }}>Stripe Dashboard → API Keys</a>.</p>
                   <p>Webhook URL для регистрации в Stripe: <code style={{ color: 'var(--text-secondary)' }}>https://&lt;ваш-домен&gt;/api/billing/webhook</code></p>
                 </div>
 
@@ -952,7 +952,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <TrendingUp size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Trend (тренды и скачивание видео)</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Trend (тренды и скачивание видео)</h3>
                 </div>
                 <AuroraInput
                   label="Trend API Key"
@@ -978,7 +978,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <Server size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Рендер «Собрать»: GPU и воркеры</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Рендер «Собрать»: GPU и воркеры</h3>
                 </div>
 
                 <div>
@@ -991,7 +991,7 @@ export default function AdminConfigPage() {
                     ] as const).map((o) => (
                       <button key={o.v} type="button" onClick={() => setRenderGpuTarget(o.v)}
                         className="flex-1 px-3 py-2.5 rounded-xl text-sm font-600 transition-colors text-left"
-                        style={{ background: renderGpuTarget === o.v ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: renderGpuTarget === o.v ? 'var(--accent-orange)' : 'var(--text-secondary)', border: `1px solid ${renderGpuTarget === o.v ? 'var(--accent-orange)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        style={{ background: renderGpuTarget === o.v ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: renderGpuTarget === o.v ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${renderGpuTarget === o.v ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                         <span className="flex items-center gap-1.5">{renderGpuTarget === o.v && <Check size={13} />}{o.label}</span>
                         <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{o.hint}</span>
                       </button>
@@ -1025,7 +1025,7 @@ export default function AdminConfigPage() {
               <Terminal size={16} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-base font-700" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>Аналитика и пользовательские коды</h3>
+              <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Аналитика и пользовательские коды</h3>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 Cookie-consent, Google Analytics, Meta Pixel, метатеги верификации, чат-виджеты
               </p>

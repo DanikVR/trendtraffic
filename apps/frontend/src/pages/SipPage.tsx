@@ -560,8 +560,8 @@ export function SipPage() {
         <>
           <AuroraCard className="overflow-hidden">
             <div className="px-4 py-3.5 flex items-center gap-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(34,211,238,0.12)' }}>
-                <Server size={16} strokeWidth={1.5} style={{ color: '#38BDF8' }} />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                <Server size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
               </div>
               <span className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>{t('sip.sections.serverParams')}</span>
             </div>
@@ -582,8 +582,8 @@ export function SipPage() {
 
           <AuroraCard className="overflow-hidden">
             <div className="px-4 py-3.5 flex items-center gap-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.12)' }}>
-                <Shield size={16} strokeWidth={1.5} style={{ color: '#3B82F6' }} />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                <Shield size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
               </div>
               <span className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>{t('sip.sections.security')}</span>
             </div>
@@ -648,7 +648,7 @@ export function SipPage() {
           <AuroraCard className="p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                   style={{ background: 'rgba(59,130,246,0.10)', color: '#60A5FA' }}>
+                   style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)' }}>
                 <PhoneIncoming size={22} strokeWidth={1.5} />
               </div>
               <div>
@@ -722,8 +722,8 @@ export function SipPage() {
             {/* Данные для копирования в провайдер */}
             <AuroraCard className="overflow-hidden">
               <div className="px-4 py-3.5 flex items-center gap-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.12)' }}>
-                  <Server size={16} strokeWidth={1.5} style={{ color: '#60A5FA' }} />
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                  <Server size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
                 </div>
                 <span className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>
                   {t('sip.sections.providerData')}
@@ -776,8 +776,8 @@ export function SipPage() {
                       onClick={() => copyText(('realValue' in item ? item.realValue : item.value) as string, item.field)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
                       style={{
-                        background: copiedField === item.field ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.10)',
-                        color: copiedField === item.field ? '#34D399' : '#60A5FA',
+                        background: copiedField === item.field ? 'rgba(16,185,129,0.18)' : 'rgba(99,102,241,0.10)',
+                        color: copiedField === item.field ? '#34D399' : 'var(--brand)',
                       }}
                       title={t('sip.incoming.copy')}
                     >
@@ -794,7 +794,7 @@ export function SipPage() {
             <AuroraCard className="p-5">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                     style={{ background: 'rgba(96,165,250,0.10)', color: '#60A5FA' }}>
+                     style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)' }}>
                   <Wifi size={18} strokeWidth={1.5} />
                 </div>
                 <div className="space-y-1.5">
@@ -982,7 +982,7 @@ export function SipPage() {
                 <Trash2 size={22} strokeWidth={1.5} />
               </div>
               <h3 className="text-base font-700"
-                  style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                  style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                 {t('sip.confirm.deleteInboundTitle')}
               </h3>
             </div>
@@ -1039,7 +1039,7 @@ export function SipPage() {
                 <Trash2 size={22} strokeWidth={1.5} />
               </div>
               <h3 className="text-base font-700"
-                  style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                  style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                 {t('sip.confirm.deleteTrunkTitle')}
               </h3>
             </div>
@@ -1082,7 +1082,7 @@ export function SipPage() {
         <AuroraCard className="p-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: 'rgba(59,130,246,0.10)', color: '#60A5FA' }}>
+                 style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)' }}>
               <Wifi size={18} strokeWidth={1.5} />
             </div>
             <div className="space-y-1">

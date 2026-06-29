@@ -39,7 +39,7 @@ import whatsappRouter from './modules/channels/whatsapp/wa_webhook.js';
 import messengerRouter from './modules/channels/messenger/msg_webhook.js';
 import flowsRouter from './modules/flows/router.js';
 import trendsRouter from './modules/trends/router.js';
-import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter } from './modules/social-ext/router.js';
+import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
 import { HttpWorkerExecutor } from './modules/render/executor_http.js';
@@ -178,6 +178,8 @@ app.use('/api/social-ext/media', socialExtMediaRouter);
 // «Анализ видеоконтента» шлёт видео inline base64, иначе 413 Payload Too Large).
 // «Добавить в галерею» из расширения — разбор ссылки + скачивание + media_assets
 app.use('/api/social-ext/to-gallery', socialExtGalleryRouter);
+// Музыкальная дорожка (раздел Music): перейти по play_url / скачать аудио в Галерею
+app.use('/api/social-ext/music', socialExtMusicRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
 app.use('/api/render', renderRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)

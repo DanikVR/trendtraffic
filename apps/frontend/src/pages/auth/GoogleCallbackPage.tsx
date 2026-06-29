@@ -107,7 +107,7 @@ export function GoogleCallbackPage() {
               <div className="flex justify-center text-[var(--accent-magenta)] animate-bounce">
                 <AlertCircle size={40} strokeWidth={1.5} />
               </div>
-              <h2 className="text-lg font-700 text-[var(--text-primary)]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h2 className="text-lg font-700 text-[var(--text-primary)]" style={{ fontFamily: 'Geist Sans, sans-serif' }}>
                 {t('auth.googleCallback.error')}
               </h2>
               <p className="text-sm text-[var(--text-muted)] leading-relaxed">
@@ -124,7 +124,7 @@ export function GoogleCallbackPage() {
               <div className="flex justify-center">
                 <Loader2 size={36} className="animate-spin" style={{ color: '#A78BFA' }} />
               </div>
-              <h2 className="text-lg font-700 text-[var(--text-primary)]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h2 className="text-lg font-700 text-[var(--text-primary)]" style={{ fontFamily: 'Geist Sans, sans-serif' }}>
                 {t('auth.common.googleSignIn')}
               </h2>
               <p className="text-sm text-[var(--text-muted)] leading-relaxed">

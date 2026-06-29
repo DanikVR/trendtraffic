@@ -51,11 +51,11 @@ export function ConfirmModal({
 
   if (!open) return null;
 
-  const accentColor = variant === 'danger' ? '#ef4444' : '#8B5CF6';
-  const accentBg = variant === 'danger' ? 'rgba(239,68,68,0.10)' : 'rgba(139,92,246,0.10)';
+  const accentColor = variant === 'danger' ? '#ef4444' : 'var(--brand)';
+  const accentBg = variant === 'danger' ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)';
   const confirmBg = variant === 'danger'
     ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-    : 'linear-gradient(135deg, #8B5CF6, #6366F1)';
+    : 'linear-gradient(135deg, #6366f1, #818cf8)';
 
   return (
     <div

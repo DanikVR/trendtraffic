@@ -90,7 +90,7 @@ export function ResetPassword() {
           <div className="text-center">
             <h1
               className="text-2xl font-800 mb-0.5 text-aurora"
-              style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.03em' }}
+              style={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em' }}
             >
               {t('auth.reset.title')}
             </h1>
@@ -120,7 +120,7 @@ export function ResetPassword() {
               </div>
               <h2
                 className="text-lg font-700 mb-2"
-                style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+                style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
               >
                 {t('auth.reset.successTitle')}
               </h2>

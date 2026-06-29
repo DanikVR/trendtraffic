@@ -22,11 +22,11 @@ interface AuraVisualizerProps {
   className?: string;
 }
 
-// Тёплая палитра VibeVox (оранжевый акцент)
-const C_ORANGE = '#ff7300';
-const C_EMBER = '#ff4d00';
-const C_AMBER = '#ffb547';
-const C_GLOW = '#ff8a2b';
+// Индиго-палитра (брендовый акцент)
+const C_ORANGE = '#6366f1';
+const C_EMBER = '#4f46e5';
+const C_AMBER = '#818cf8';
+const C_GLOW = '#818cf8';
 
 export function AuraVisualizer({
   mode = 'aura',

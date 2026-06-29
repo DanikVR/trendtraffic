@@ -305,9 +305,9 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
             return (
               <button key={p.id} onClick={() => selectPlatform(p.id)} title={p.name}
                 className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full transition-all"
-                style={{ background: on ? 'var(--bg-secondary)' : 'var(--bg-tertiary)', border: `1.5px solid ${on ? '#ff7300' : 'var(--border-medium)'}`, boxShadow: on ? '0 1px 5px rgba(255,115,0,0.2)' : 'none' }}>
+                style={{ background: on ? 'var(--bg-secondary)' : 'var(--bg-tertiary)', border: `1.5px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}`, boxShadow: on ? '0 1px 5px rgba(99,102,241,0.2)' : 'none' }}>
                 <span className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: p.bg }}>{p.icon}</span>
-                <span className="text-[12px] font-600" style={{ color: on ? '#ff7300' : 'var(--text-secondary)' }}>{p.name}</span>
+                <span className="text-[12px] font-600" style={{ color: on ? 'var(--brand)' : 'var(--text-secondary)' }}>{p.name}</span>
               </button>
             );
           })}
@@ -323,7 +323,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
               className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: kind === k ? 'var(--bg-secondary)' : 'transparent',
-                color: kind === k ? '#ff7300' : 'var(--text-muted)',
+                color: kind === k ? 'var(--brand)' : 'var(--text-muted)',
                 boxShadow: kind === k ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
               }}>
               {k === 'keyword' ? '🔍 По ключевику' : '🔥 Горячее'}
@@ -341,7 +341,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleScan(); }}
                 placeholder="например: morning routine, рецепт, gym…"
-                className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40 transition-shadow"
+                className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 transition-shadow"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
               />
             </div>
@@ -362,8 +362,8 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                   className="w-10 h-10 rounded-lg text-sm font-700 transition-colors"
                   style={{
                     background: count === n ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)',
-                    color: count === n ? '#ff7300' : 'var(--text-muted)',
-                    border: `1px solid ${count === n ? '#ff7300' : 'var(--border-medium)'}`,
+                    color: count === n ? 'var(--brand)' : 'var(--text-muted)',
+                    border: `1px solid ${count === n ? 'var(--brand)' : 'var(--border-medium)'}`,
                   }}>
                   {n}
                 </button>
@@ -371,7 +371,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
               <input type="number" min={1} max={30} value={count}
                 onChange={(e) => setCount(Math.min(30, Math.max(1, parseInt(e.target.value, 10) || 1)))}
                 title="Своё количество (1–30)"
-                className="w-14 h-10 px-2 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                className="w-14 h-10 px-2 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
             </div>
           </label>
@@ -380,7 +380,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
             <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[150px]" style={{ color: 'var(--text-muted)' }}>
               Тип поиска
               <select value={mode} onChange={(e) => setMode(e.target.value as any)}
-                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
                 <option value="app">Умный поиск</option>
                 <option value="video">Поиск по слову</option>
@@ -393,7 +393,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
               <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[140px]" style={{ color: 'var(--text-muted)' }}>
                 Сортировка
                 <select value={sortType} onChange={(e) => setSortType(Number(e.target.value) as any)}
-                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
                   <option value={0}>По релевантности</option>
                   <option value={1}>Больше лайков</option>
@@ -403,7 +403,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
               <label className="flex flex-col gap-1 text-[11px] flex-1 min-w-[130px]" style={{ color: 'var(--text-muted)' }}>
                 Период
                 <select value={publishTime} onChange={(e) => setPublishTime(Number(e.target.value) as any)}
-                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
                   <option value={0}>Всё время</option>
                   <option value={1}>24 часа</option>
@@ -420,7 +420,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
             <label key={f.key} className="flex flex-col gap-1 text-[11px] flex-1 min-w-[140px]" style={{ color: 'var(--text-muted)' }}>
               {f.label}
               <select value={filters[f.key] ?? f.def} onChange={(e) => setFilters((s) => ({ ...s, [f.key]: e.target.value }))}
-                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7300]/40"
+                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
                 {f.options.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
               </select>
@@ -491,7 +491,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
               <button type="button" onClick={toggleSelectAll}
                 className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                {allSelected ? <CheckSquare size={15} color="#ff7300" /> : <Square size={15} />}
+                {allSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
                 {allSelected ? 'Снять выделение' : 'Выбрать всё'}{selected.size > 0 ? ` · ${selected.size}` : ''}
               </button>
               <button type="button" onClick={deleteSelected} disabled={selected.size === 0 || bulkDeleting}
@@ -521,7 +521,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
             const isSel = !!(v.id && selected.has(v.id));
             return (
             <AuroraCard key={v.id || v.externalId}
-              className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[#ff7300] ring-inset' : ''}`}>
+              className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
               <div className="relative w-full" style={{ aspectRatio: cardAspect, background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? (
                   <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
@@ -552,7 +552,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                 {v.id && (
                   <button type="button" onClick={() => toggleSelect(v.id)} title="Выбрать"
                     className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                    style={{ background: isSel ? '#ff7300' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                    style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                     {isSel ? <Check size={15} /> : null}
                   </button>
                 )}
@@ -577,7 +577,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                   {v.webUrl && (
                     <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Аналитика"
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                      style={{ background: 'rgba(255,115,0,0.12)', color: '#ff7300', border: '1px solid rgba(255,115,0,0.3)' }}>
+                      style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.3)' }}>
                       <BarChart3 size={15} />
                     </button>
                   )}
@@ -612,7 +612,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
                     <button type="button" onClick={() => handleDownload(v)} disabled={!v.id}
                       title={!v.id ? 'Видео не сохранено в БД' : v.status === 'failed' ? 'Ошибка скачивания — нажмите, чтобы повторить' : 'Скачать (в фоне → появится в Галерее)'}
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors disabled:opacity-40"
-                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--btn-primary-bg)', color: v.status === 'failed' ? '#ef4444' : '#ff7300' }}>
+                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--btn-primary-bg)', color: v.status === 'failed' ? '#ef4444' : 'var(--brand)' }}>
                       {v.status === 'failed' ? <AlertCircle size={15} /> : <Download size={15} />}
                     </button>
                   )}

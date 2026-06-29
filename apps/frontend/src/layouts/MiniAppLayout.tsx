@@ -42,7 +42,7 @@ export function MiniAppLayout() {
           <span
             className="text-base font-700"
             style={{
-              fontFamily: 'Space Grotesk, sans-serif',
+              fontFamily: 'Geist Sans, sans-serif',
               letterSpacing: '-0.03em',
               background: 'linear-gradient(135deg, #60A5FA, #38BDF8)',
               WebkitBackgroundClip: 'text',

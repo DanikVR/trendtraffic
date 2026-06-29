@@ -301,7 +301,7 @@ export function Section3QuestFlow() {
         {/* ──── ТЕГИ ──── */}
         <AuroraCard className="p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <TagIcon size={16} color="#8B5CF6" />
+            <TagIcon size={16} color="var(--brand)" />
             <h3 className="text-sm font-700 uppercase tracking-wider"
                 style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
               {t('enterprise.questFlow.tagsHeading')}

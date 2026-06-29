@@ -496,18 +496,18 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         @keyframes mePop{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         /* центр — обработка */
         .me-build{animation:meBuildPulse 1.6s ease-in-out infinite!important;}
-        @keyframes meBuildPulse{0%,100%{box-shadow:0 0 30px rgba(255,115,0,.5)}50%{box-shadow:0 0 64px rgba(255,115,0,1)}}
-        .me-ring{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;border:3px solid transparent;border-top-color:#ff7300;border-right-color:rgba(255,115,0,.35);animation:meSpin 1s linear infinite;pointer-events:none;}
+        @keyframes meBuildPulse{0%,100%{box-shadow:0 0 30px rgba(99,102,241,.5)}50%{box-shadow:0 0 64px rgba(99,102,241,1)}}
+        .me-ring{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;border:3px solid transparent;border-top-color:var(--brand);border-right-color:rgba(99,102,241,.35);animation:meSpin 1s linear infinite;pointer-events:none;}
         @keyframes meSpin{to{transform:rotate(360deg)}}
         /* шиммер прогресса */
-        .me-shimmer{background:linear-gradient(90deg,#ff7300,#ffd9b3,#ff7300);background-size:200% 100%;animation:meShimmer 1.3s linear infinite;}
+        .me-shimmer{background:linear-gradient(90deg,var(--brand),#c7d2fe,var(--brand));background-size:200% 100%;animation:meShimmer 1.3s linear infinite;}
         @keyframes meShimmer{to{background-position:-200% 0}}
         .me-fab{transition:transform .15s ease, filter .15s ease, box-shadow .15s ease;}
-        .me-fab:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 12px 32px rgba(255,94,0,.6);}
+        .me-fab:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 12px 32px rgba(99,102,241,.6);}
         .me-fab:active:not(:disabled){transform:translateY(0) scale(.97);}
         /* нижнее поле */
         .me-addbar{transition:box-shadow .25s ease, transform .2s ease, border-color .25s ease;}
-        .me-addbar:hover,.me-addbar:focus-within{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,115,0,.18);border-color:#ff7300!important;}
+        .me-addbar:hover,.me-addbar:focus-within{transform:translateY(-2px);box-shadow:0 10px 30px rgba(99,102,241,.18);border-color:var(--brand)!important;}
         /* плавающая пилюля рендера */
         .me-float-in{animation:meFloatIn .3s cubic-bezier(.34,1.56,.64,1);}
         @keyframes meFloatIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -519,7 +519,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         /* веер иконок процессов из плавающей «+» */
         .me-fan-item{animation:meFan .28s cubic-bezier(.34,1.6,.64,1) backwards;transition:transform .12s ease, border-color .12s ease;}
         @keyframes meFan{from{opacity:0;transform:translate(-16px,-16px) scale(.4)}to{opacity:1;transform:translate(0,0) scale(1)}}
-        .me-fan-item:hover{border-color:#ff7300!important;transform:scale(1.1);}
+        .me-fan-item:hover{border-color:var(--brand)!important;transform:scale(1.1);}
       `}</style>
 
       {/* Верхняя панель */}
@@ -529,7 +529,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         <div className="flex-1" />
         <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра"
           className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg"
-          style={{ background: brief.trim() ? 'rgba(124,92,255,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? '#7c5cff' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(124,92,255,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+          style={{ background: brief.trim() ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
           <Sparkles size={15} /> Сценарий{brief.trim() ? ' ✓' : ''}
         </button>
         <button onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
@@ -540,14 +540,14 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
       {/* Холст-паутина (верхние чипы убраны — добавление через плавающую «+» слева сверху) */}
       <div ref={canvasRef} className="flex-1" style={{ position: 'relative', overflow: 'hidden',
-        background: 'radial-gradient(circle at 50% 42%, rgba(255,115,0,0.05), transparent 60%), var(--bg-primary)',
+        background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.05), transparent 60%), var(--bg-primary)',
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
 
         {/* Плавающая «+» (левый верхний угол): клик → веером выезжают иконки процессов (без подписей) */}
         <div style={{ position: 'absolute', left: 14, top: 14, zIndex: 40 }}>
           <button onClick={() => setAddOpen((o) => !o)} title={addOpen ? 'Закрыть' : 'Добавить процесс'}
             className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', boxShadow: '0 6px 20px rgba(255,115,0,.3)', cursor: 'pointer', transition: 'transform .25s cubic-bezier(.34,1.6,.64,1)', transform: addOpen ? 'rotate(135deg)' : 'none' }}>
+            style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: '1px solid var(--brand)', boxShadow: '0 6px 20px rgba(99,102,241,.3)', cursor: 'pointer', transition: 'transform .25s cubic-bezier(.34,1.6,.64,1)', transform: addOpen ? 'rotate(135deg)' : 'none' }}>
             <Plus size={22} />
           </button>
           {addOpen && (
@@ -555,7 +555,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               {KIND_ORDER.map((k, i) => (
                 <button key={k} onClick={() => { addNode(k); setAddOpen(false); }} title={META[k].label}
                   className="me-fan-item w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: '#ff7300', cursor: 'pointer', animationDelay: `${i * 0.03}s` }}>
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--brand)', cursor: 'pointer', animationDelay: `${i * 0.03}s` }}>
                   {React.cloneElement(META[k].icon as any, { size: 17 })}
                 </button>
               ))}
@@ -569,8 +569,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           className="me-fab"
           style={{ position: 'absolute', right: 18, bottom: 18, zIndex: 45, display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '13px 20px', borderRadius: 999, border: 'none', fontSize: 15, fontWeight: 800,
-            background: 'linear-gradient(135deg, #ff8a2b, #ff5e00)', color: '#fff',
-            boxShadow: '0 8px 26px rgba(255,94,0,0.5)', cursor: building ? 'wait' : nodes.length === 0 ? 'not-allowed' : 'pointer',
+            background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: 'var(--brand-contrast)',
+            boxShadow: '0 8px 26px rgba(99,102,241,0.5)', cursor: building ? 'wait' : nodes.length === 0 ? 'not-allowed' : 'pointer',
             opacity: nodes.length === 0 ? 0.5 : 1 }}>
           {building ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />}
           {building ? `Собираю… ${buildJob?.progress || 0}%` : 'Собрать видео'}
@@ -585,20 +585,20 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
             {building && <span className="me-ring" />}
             <div className={building ? 'me-build' : undefined} style={{ width: 76, height: 76, borderRadius: '50%', overflow: 'hidden',
-              background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #ffb066 50%, #ff7300 100%)',
-              boxShadow: '0 0 36px rgba(255,115,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a1500',
-              border: sourceUrl ? '2px solid #ff7300' : 'none' }}>
-              <Video size={28} color={sourceUrl ? '#ff7300' : undefined} className={building ? 'animate-pulse' : undefined} />
+              background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #818cf8 50%, var(--brand) 100%)',
+              boxShadow: '0 0 36px rgba(99,102,241,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-contrast)',
+              border: sourceUrl ? '2px solid var(--brand)' : 'none' }}>
+              <Video size={28} color={sourceUrl ? 'var(--brand)' : undefined} className={building ? 'animate-pulse' : undefined} />
             </div>
           </div>
-          <div className="text-[11px] mt-2" style={{ color: building ? '#ff7300' : sourceUrl ? '#ff7300' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
+          <div className="text-[11px] mt-2" style={{ color: building ? 'var(--brand)' : sourceUrl ? 'var(--brand)' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
             {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
           </div>
         </button>
         {/* 🔗 связать стрелкой ОТ «Видео из галереи» */}
         <button onPointerDown={(e) => startConnect('center', e)}
           title="Потяните, чтобы провести стрелку"
-          style={{ position: 'absolute', left: 'calc(50% + 32px)', top: 'calc(50% - 32px)', transform: 'translate(-50%,-50%)', zIndex: 9, width: 24, height: 24, borderRadius: '50%', background: pending?.from === 'center' ? '#ff7300' : 'var(--bg-secondary)', border: '2px solid #ff7300', color: pending?.from === 'center' ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)', touchAction: 'none' }}>
+          style={{ position: 'absolute', left: 'calc(50% + 32px)', top: 'calc(50% - 32px)', transform: 'translate(-50%,-50%)', zIndex: 9, width: 24, height: 24, borderRadius: '50%', background: pending?.from === 'center' ? 'var(--brand)' : 'var(--bg-secondary)', border: '2px solid var(--brand)', color: pending?.from === 'center' ? '#fff' : 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)', touchAction: 'none' }}>
           <Link2 size={13} />
         </button>
 
@@ -607,16 +607,16 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             style={{ position: 'absolute', left: `${positions[i].left}%`, top: `${positions[i].top}%`, transform: 'translate(-50%,-50%)', animationDelay: `${i * 0.05}s`,
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', cursor: 'pointer' }}>
             <span style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? '#ff7300' : 'var(--border-strong)'}`,
-              color: selectedId === n.id ? '#ff7300' : 'var(--text-secondary)' }}>{META[n.kind].icon}</span>
+              background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? 'var(--brand)' : 'var(--border-strong)'}`,
+              color: selectedId === n.id ? 'var(--brand)' : 'var(--text-secondary)' }}>{META[n.kind].icon}</span>
             <span className="text-[11px]" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{META[n.kind].label}</span>
             {nodeSummary(n) && (
-              <span style={{ fontSize: 9, lineHeight: 1.15, color: '#ff7300', maxWidth: 96, textAlign: 'center', whiteSpace: 'normal', fontWeight: 600, background: 'var(--bg-primary)', padding: '1px 5px', borderRadius: 5 }}>{nodeSummary(n)}</span>
+              <span style={{ fontSize: 9, lineHeight: 1.15, color: 'var(--brand)', maxWidth: 96, textAlign: 'center', whiteSpace: 'normal', fontWeight: 600, background: 'var(--bg-primary)', padding: '1px 5px', borderRadius: 5 }}>{nodeSummary(n)}</span>
             )}
             {(n.mediaUrl || n.useLlm) && (
               <span style={{ position: 'absolute', top: -2, right: 4, display: 'inline-flex', gap: 2 }}>
                 {n.mediaUrl && <Paperclip size={11} style={{ color: '#10b981' }} />}
-                {n.useLlm && <Sparkles size={11} style={{ color: '#7c5cff' }} />}
+                {n.useLlm && <Sparkles size={11} style={{ color: 'var(--brand)' }} />}
               </span>
             )}
           </button>
@@ -634,9 +634,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           {cloudEdges.map((e, i) => {
             const p = cloudPoint(e.from), q = cloudPoint(e.to);
             if (!p || !q) return null;
-            return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="#ff7300" strokeWidth="0.35" strokeDasharray="1.4 0.9" />;
+            return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="var(--brand)" strokeWidth="0.35" strokeDasharray="1.4 0.9" />;
           })}
-          {pending && (() => { const p = cloudPoint(pending.from); return p ? <line x1={p.x} y1={p.y} x2={pending.x} y2={pending.y} stroke="#ff7300" strokeWidth="0.4" strokeDasharray="1.4 0.9" /> : null; })()}
+          {pending && (() => { const p = cloudPoint(pending.from); return p ? <line x1={p.x} y1={p.y} x2={pending.x} y2={pending.y} stroke="var(--brand)" strokeWidth="0.4" strokeDasharray="1.4 0.9" /> : null; })()}
         </svg>
         {cloudEdges.map((e, i) => {
           const p = cloudPoint(e.from), q = cloudPoint(e.to);
@@ -644,7 +644,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
           return (
             <button key={'ce' + i} onClick={() => { setCloudEdges((es) => es.filter((_, j) => j !== i)); setDirty(true); }} title="Удалить связь"
-              style={{ position: 'absolute', left: `${mx}%`, top: `${my}%`, transform: 'translate(-50%,-50%)', zIndex: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid #ff7300', color: '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+              style={{ position: 'absolute', left: `${mx}%`, top: `${my}%`, transform: 'translate(-50%,-50%)', zIndex: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid var(--brand)', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
               <X size={11} />
             </button>
           );
@@ -657,19 +657,19 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
-                  border: `2px solid ${pending?.from === id ? '#ff7300' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
+                  border: `2px solid ${pending?.from === id ? 'var(--brand)' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
                 {cfg.icon}
               </button>
               <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{cfg.label}</span>
               <button onPointerDown={(e) => startConnect(id, e)} title="Потяните, чтобы провести стрелку"
-                style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: pending?.from === id ? '#ff7300' : 'var(--bg-secondary)', border: '1px solid #ff7300', color: pending?.from === id ? '#fff' : '#ff7300', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, touchAction: 'none' }}>
+                style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: pending?.from === id ? 'var(--brand)' : 'var(--bg-secondary)', border: '1px solid var(--brand)', color: pending?.from === id ? '#fff' : 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, touchAction: 'none' }}>
                 <Link2 size={11} />
               </button>
             </div>
           );
         })}
         {pending && (
-          <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid #ff7300', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#ff7300', fontWeight: 600, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid var(--brand)', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: 'var(--brand)', fontWeight: 600, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
             Тяните к узлу и отпустите, чтобы связать
           </div>
         )}
@@ -680,7 +680,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         <div onClick={() => setSelectedId(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, margin: '0 12px 84px', maxHeight: '72vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><span style={{ color: '#ff7300' }}>{META[selected.kind].icon}</span> {META[selected.kind].label}</span>
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><span style={{ color: 'var(--brand)' }}>{META[selected.kind].icon}</span> {META[selected.kind].label}</span>
               <button onClick={() => setSelectedId(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{META[selected.kind].hint}</p>
@@ -694,7 +694,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                     const sel = (selected.choices[c.id] || []).includes(o.v);
                     return (
                       <button key={o.v} onClick={() => setChoice(selected.id, c, o.v)} className="inline-flex items-center gap-1 text-xs font-600 px-2.5 py-1.5 rounded-lg transition-colors"
-                        style={{ background: sel ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: sel ? '#ff7300' : 'var(--text-secondary)', border: `1px solid ${sel ? '#ff7300' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        style={{ background: sel ? 'var(--btn-primary-bg)' : 'var(--bg-tertiary)', color: sel ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${sel ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                         {sel && <Check size={12} />}{o.label}
                       </button>
                     );
@@ -710,7 +710,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {!sourceUrl ? (
                   <button onClick={() => { setSelectedId(null); openSourcePicker(); }}
                     className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                    style={{ background: 'var(--bg-tertiary)', color: '#ff7300', border: '1px dashed #ff7300', cursor: 'pointer' }}>
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
                     <Video size={14} /> Выберите исходное видео, чтобы резать по ленте →
                   </button>
                 ) : (
@@ -719,18 +719,18 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                       onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
                       style={{ width: '100%', maxHeight: 170, borderRadius: 10, background: '#000', marginBottom: 8 }} />
                     <div className="relative w-full mb-1.5" style={{ height: 30, borderRadius: 7, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 2, bottom: 2, left: `${lenSel.start * 100}%`, width: `${Math.max(0.02, lenSel.end - lenSel.start) * 100}%`, background: 'rgba(255,115,0,0.85)', borderRadius: 5 }} />
+                      <div style={{ position: 'absolute', top: 2, bottom: 2, left: `${lenSel.start * 100}%`, width: `${Math.max(0.02, lenSel.end - lenSel.start) * 100}%`, background: 'rgba(99,102,241,0.85)', borderRadius: 5 }} />
                     </div>
                     <div className="flex items-center justify-between text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      <span>С: <b style={{ color: '#ff7300' }}>{fmtT(lenSel.start)}</b></span>
-                      <span>По: <b style={{ color: '#ff7300' }}>{fmtT(lenSel.end)}</b></span>
+                      <span>С: <b style={{ color: 'var(--brand)' }}>{fmtT(lenSel.start)}</b></span>
+                      <span>По: <b style={{ color: 'var(--brand)' }}>{fmtT(lenSel.end)}</b></span>
                     </div>
                     <input type="range" min={0} max={1} step={0.005} value={lenSel.start}
                       onChange={(e) => { const v = Math.min(parseFloat(e.target.value), lenSel.end - 0.02); writeLenRange(selected.id, { start: Math.max(0, v), end: lenSel.end }); }}
-                      className="w-full" style={{ accentColor: '#ff7300' }} />
+                      className="w-full" style={{ accentColor: 'var(--brand)' }} />
                     <input type="range" min={0} max={1} step={0.005} value={lenSel.end}
                       onChange={(e) => { const v = Math.max(parseFloat(e.target.value), lenSel.start + 0.02); writeLenRange(selected.id, { start: lenSel.start, end: Math.min(1, v) }); }}
-                      className="w-full" style={{ accentColor: '#ff7300' }} />
+                      className="w-full" style={{ accentColor: 'var(--brand)' }} />
                     <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Отрезок пишется в поле диапазона ниже. Пресеты «15/30/60с», «Лучший момент» и «Весь» — альтернатива нарезке.</p>
                   </>
                 )}
@@ -758,8 +758,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 </div>
                 <button onClick={startExport} disabled={exporting || (selected.choices.platforms || []).length === 0}
                   className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
-                  style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', cursor: exporting ? 'wait' : 'pointer' }}>
-                  {exporting && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${exportPct}%`, background: 'rgba(255,115,0,0.18)', transition: 'width .2s' }} />}
+                  style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: '1px solid var(--brand)', cursor: exporting ? 'wait' : 'pointer' }}>
+                  {exporting && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${exportPct}%`, background: 'rgba(99,102,241,0.18)', transition: 'width .2s' }} />}
                   <span className="relative inline-flex items-center gap-2">
                     {exporting ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
                     {exporting ? `Передаю в API… ${exportPct}%` : exportPct === 100 ? 'Отправлено ✓ — повторить' : 'Начать экспорт'}
@@ -790,7 +790,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 ))}
                 {META[selected.kind].llm && (
                   <button onClick={() => patchNode(selected.id, { useLlm: !selected.useLlm })} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg"
-                    style={{ background: selected.useLlm ? 'rgba(124,92,255,0.15)' : 'var(--bg-tertiary)', color: selected.useLlm ? '#7c5cff' : 'var(--text-secondary)', border: `1px solid ${selected.useLlm ? 'rgba(124,92,255,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    style={{ background: selected.useLlm ? 'rgba(99,102,241,0.15)' : 'var(--bg-tertiary)', color: selected.useLlm ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${selected.useLlm ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     <Sparkles size={13} /> ЛЛМ {selected.useLlm ? 'вкл' : 'выкл'}
                   </button>
                 )}
@@ -799,7 +799,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
             {/* Что сделает ИИ-режиссёр при включённом ЛЛМ */}
             {META[selected.kind].llm && selected.useLlm && DIR_HINT[selected.kind] && (
-              <p className="text-[11px] mb-4 flex items-start gap-1.5" style={{ color: '#7c5cff' }}>
+              <p className="text-[11px] mb-4 flex items-start gap-1.5" style={{ color: 'var(--brand)' }}>
                 <Sparkles size={12} className="mt-[1px] flex-shrink-0" /> {DIR_HINT[selected.kind]}
               </p>
             )}
@@ -811,7 +811,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 <Trash2 size={15} /> Удалить
               </button>
               <button onClick={() => setSelectedId(null)} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
+                style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
             </div>
           </div>
         </div>
@@ -825,7 +825,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             <div className="grid grid-cols-3 gap-2">
               {KIND_ORDER.map((k) => (
                 <button key={k} onClick={() => addNode(k)} className="flex flex-col items-center gap-1.5 py-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }} title={META[k].hint}>
-                  <span style={{ color: '#ff7300' }}>{META[k].icon}</span>
+                  <span style={{ color: 'var(--brand)' }}>{META[k].icon}</span>
                   <span className="text-[11px]">{META[k].label}</span>
                 </button>
               ))}
@@ -868,7 +868,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer?.files?.length) uploadMediaFiles(e.dataTransfer.files); }}
-            style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: `1px solid ${dragOver ? '#ff7300' : 'var(--border-medium)'}`, borderRadius: 16, padding: 16, transform: 'none', outline: dragOver ? '2px dashed #ff7300' : 'none', outlineOffset: -6 }}>
+            style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: `1px solid ${dragOver ? 'var(--brand)' : 'var(--border-medium)'}`, borderRadius: 16, padding: 16, transform: 'none', outline: dragOver ? '2px dashed var(--brand)' : 'none', outlineOffset: -6 }}>
             <input ref={attachInputRef} type="file" multiple accept="image/*,video/*,audio/*" style={{ display: 'none' }}
               onChange={(e) => { if (e.target.files?.length) uploadMediaFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
@@ -879,8 +879,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             {/* Зона загрузки с устройства / drag-and-drop */}
             <button onClick={() => attachInputRef.current?.click()} disabled={uploading}
               className="w-full mb-3 rounded-xl flex flex-col items-center justify-center gap-1.5 py-5 transition-colors"
-              style={{ background: dragOver ? 'rgba(255,115,0,0.08)' : 'var(--bg-tertiary)', border: `1.5px dashed ${dragOver ? '#ff7300' : 'var(--border-strong)'}`, color: dragOver ? '#ff7300' : 'var(--text-secondary)', cursor: uploading ? 'wait' : 'pointer' }}>
-              {uploading ? <Loader2 size={20} className="animate-spin" style={{ color: '#ff7300' }} /> : <Plus size={20} style={{ color: '#ff7300' }} />}
+              style={{ background: dragOver ? 'rgba(99,102,241,0.08)' : 'var(--bg-tertiary)', border: `1.5px dashed ${dragOver ? 'var(--brand)' : 'var(--border-strong)'}`, color: dragOver ? 'var(--brand)' : 'var(--text-secondary)', cursor: uploading ? 'wait' : 'pointer' }}>
+              {uploading ? <Loader2 size={20} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Plus size={20} style={{ color: 'var(--brand)' }} />}
               <span className="text-[13px] font-600">{uploading ? 'Загружаю…' : 'Загрузить с устройства'}</span>
               <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>с компьютера/телефона или перетащите файлы сюда → попадут в Галерею</span>
             </button>
@@ -894,7 +894,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   <button key={m.id} onClick={() => { patchNode(attachFor, { mediaUrl: m.fileUrl, mediaName: m.title }); setAttachFor(null); }} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
                     <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
-                        : m.kind === 'audio' ? <Music size={22} style={{ color: '#7c5cff' }} />
+                        : m.kind === 'audio' ? <Music size={22} style={{ color: 'var(--brand)' }} />
                         : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
                     </div>
                     <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
@@ -922,7 +922,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {sources.map((s, i) => (
-                  <button key={i} onClick={() => { setSourceUrl(s.url); setSourceName(s.name); setDirty(true); setShowSource(false); }} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${sourceUrl === s.url ? '#ff7300' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                  <button key={i} onClick={() => { setSourceUrl(s.url); setSourceName(s.name); setDirty(true); setShowSource(false); }} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {s.thumb ? <img src={s.thumb} alt="" className="w-full h-full object-cover" /> : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
                     </div>
@@ -940,7 +940,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         <div onClick={() => setShowBrief(false)} style={{ position: 'absolute', inset: 0, zIndex: 92, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 520, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><Sparkles size={18} style={{ color: '#7c5cff' }} /> Сценарий ролика</span>
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><Sparkles size={18} style={{ color: 'var(--brand)' }} /> Сценарий ролика</span>
               <button onClick={() => setShowBrief(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
@@ -956,7 +956,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 <button onClick={() => { setBrief(''); setDirty(true); }} className="text-sm font-600 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>Очистить</button>
               )}
               <button onClick={() => { save(); setShowBrief(false); }} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
+                style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
             </div>
           </div>
         </div>
@@ -983,7 +983,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {!sourceUrl ? (
                   <button onClick={() => { setCloudPanel(null); openSourcePicker(); }}
                     className="w-full py-3 rounded-xl text-sm font-600 inline-flex items-center justify-center gap-2"
-                    style={{ background: 'var(--bg-tertiary)', color: '#ff7300', border: '1px dashed #ff7300', cursor: 'pointer' }}>
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
                     <Video size={16} /> Сначала выберите исходное видео →
                   </button>
                 ) : (
@@ -998,7 +998,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                       {([['whole', 'Всё видео'], ['part', 'Часть'], ['inserts', '2–3 вставки']] as [OmniMode, string][]).map(([m, lbl]) => (
                         <button key={m} onClick={() => setOmniMode(m)}
                           className="py-2 rounded-lg text-[12px] font-600 transition-all"
-                          style={{ background: omniSpec.mode === m ? 'var(--bg-secondary)' : 'transparent', color: omniSpec.mode === m ? '#ff7300' : 'var(--text-muted)', boxShadow: omniSpec.mode === m ? '0 1px 3px rgba(0,0,0,0.12)' : 'none' }}>
+                          style={{ background: omniSpec.mode === m ? 'var(--bg-secondary)' : 'transparent', color: omniSpec.mode === m ? 'var(--brand)' : 'var(--text-muted)', boxShadow: omniSpec.mode === m ? '0 1px 3px rgba(0,0,0,0.12)' : 'none' }}>
                           {lbl}
                         </button>
                       ))}
@@ -1064,7 +1064,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                               {([4, 6, 8] as const).map((sec) => (
                                 <button key={sec} onClick={() => updateSeg(g.id, { lenSec: sec })}
                                   className="px-2.5 py-1.5 rounded-lg text-[11px] font-700"
-                                  style={{ background: g.lenSec === sec ? 'var(--btn-primary-bg)' : 'var(--bg-secondary)', color: g.lenSec === sec ? '#ff7300' : 'var(--text-muted)', border: `1px solid ${g.lenSec === sec ? '#ff7300' : 'var(--border-medium)'}` }}>
+                                  style={{ background: g.lenSec === sec ? 'var(--btn-primary-bg)' : 'var(--bg-secondary)', color: g.lenSec === sec ? 'var(--brand)' : 'var(--text-muted)', border: `1px solid ${g.lenSec === sec ? 'var(--brand)' : 'var(--border-medium)'}` }}>
                                   {sec}с
                                 </button>
                               ))}
@@ -1127,7 +1127,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
                     <button onClick={() => { save(); setCloudPanel(null); }}
                       className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
-                      style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', border: '1px solid #ff7300', cursor: 'pointer' }}>
+                      style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', border: '1px solid var(--brand)', cursor: 'pointer' }}>
                       <Save size={15} /> Сохранить преобразование
                     </button>
                   </>
@@ -1149,7 +1149,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 460, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                {building && <Loader2 size={16} className="animate-spin" style={{ color: '#ff7300' }} />}
+                {building && <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} />}
                 {buildJob.status === 'done' ? 'Готово ✓' : buildJob.status === 'failed' ? 'Ошибка' : 'Собираю ролик…'}
               </span>
               <button onClick={() => (building ? setBuildMinimized(true) : setBuildJob(null))}
@@ -1170,7 +1170,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <div className="space-y-1 mb-2" style={{ maxHeight: 200, overflow: 'auto' }}>
                 {buildJob.steps.map((s: any, i: number) => (
                   <div key={i} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ color: s.status === 'done' ? '#10b981' : s.status === 'skipped' ? '#f59e0b' : s.status === 'running' ? '#ff7300' : 'var(--text-muted)' }}>●</span>
+                    <span style={{ color: s.status === 'done' ? '#10b981' : s.status === 'skipped' ? '#f59e0b' : s.status === 'running' ? 'var(--brand)' : 'var(--text-muted)' }}>●</span>
                     {META[s.kind as MKind]?.label || s.kind}
                     <span style={{ color: 'var(--text-muted)' }}>{s.status}</span>
                   </div>
@@ -1185,7 +1185,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             )}
             {buildJob.status === 'done' && buildJob.resultUrl && (
               <a href={buildJob.resultUrl} download className="mt-3 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 px-4 rounded-xl w-full"
-                style={{ background: 'var(--btn-primary-bg)', color: '#ff7300', textDecoration: 'none' }}>
+                style={{ background: 'var(--btn-primary-bg)', color: 'var(--brand)', textDecoration: 'none' }}>
                 <Download size={16} /> Скачать видео
               </a>
             )}
@@ -1202,13 +1202,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       {buildJob && buildMinimized && (
         <button onClick={() => setBuildMinimized(false)} className="me-float-in"
           style={{ position: 'absolute', right: 16, bottom: 84, zIndex: 96, display: 'inline-flex', alignItems: 'center', gap: 10,
-            background: 'var(--bg-secondary)', border: `1px solid ${buildJob.status === 'failed' ? '#ef4444' : buildJob.status === 'done' ? '#10b981' : '#ff7300'}`,
+            background: 'var(--bg-secondary)', border: `1px solid ${buildJob.status === 'failed' ? '#ef4444' : buildJob.status === 'done' ? '#10b981' : 'var(--brand)'}`,
             borderRadius: 999, padding: '8px 14px 8px 10px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.4)' }}>
           {buildJob.status === 'done'
             ? <Check size={16} style={{ color: '#10b981' }} />
             : buildJob.status === 'failed'
             ? <X size={16} style={{ color: '#ef4444' }} />
-            : <Loader2 size={16} className="animate-spin" style={{ color: '#ff7300' }} />}
+            : <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} />}
           <span className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>
             {buildJob.status === 'done' ? 'Ролик готов' : buildJob.status === 'failed' ? 'Ошибка сборки' : `Собираю… ${buildJob.progress || 0}%`}
           </span>

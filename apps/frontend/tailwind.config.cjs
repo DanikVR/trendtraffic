@@ -11,8 +11,9 @@ module.exports = {
       // Inter        — основной текст (читаемость)
       // ============================================================
       fontFamily: {
-        sans:     ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        display:  ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+        sans:     ['Geist Sans', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display:  ['Geist Sans', 'Inter', 'system-ui', 'sans-serif'],
+        mono:     ['Geist Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
 
       // ============================================================
@@ -87,6 +88,24 @@ module.exports = {
           amber:  '#ffb547',   // тёплый светлый
           glow:   '#ff8a2b',   // свечение
           gold:   '#f5c24b',   // акцент-золото
+        },
+
+        // ============================================================
+        // БРЕНД-АКЦЕНТ — индиго панели (1:1). Используется как text-brand /
+        // bg-brand / border-brand. Светлая #6366F1, тёмная #818CF8.
+        // ============================================================
+        brand: {
+          DEFAULT: '#6366f1',
+          light:   '#818cf8',
+          dark:    '#4f46e5',
+          50:  '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
         },
       },
 

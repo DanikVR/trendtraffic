@@ -28,7 +28,7 @@ import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeUrl, detectUrl } from '../trends/analytics.js';
-import { extractDownloadUrls } from '../tikhub/tikhub_client.js';
+import { extractDownloadUrls, fetchOneVideo } from '../tikhub/tikhub_client.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { createAsset } from '../media/assets.js';
 
@@ -334,3 +334,65 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
 });
 
 export { galleryRouter };
+
+// ============================================================================
+// Музыкальная дорожка  →  POST /api/social-ext/music { url, action: 'open'|'download' }
+// ----------------------------------------------------------------------------
+// Из раздела «Music» аналитики: «Перейти» (вернуть play_url трека) или «Скачать»
+// (скачать только аудио-дорожку в Галерею, kind=audio). Резолвим через TikHub.
+// ============================================================================
+
+/** Глубокий поиск ссылки на аудио-дорожку в payload TikHub (music.play_url). */
+function extractMusicUrl(payload: any): string | null {
+  function walk(o: any, depth = 0): string | null {
+    if (!o || depth > 9 || typeof o !== 'object') return null;
+    if (o.music && typeof o.music === 'object') {
+      const pu = o.music.play_url ?? o.music.playUrl;
+      if (pu) {
+        if (Array.isArray(pu.url_list) && pu.url_list.find((u: any) => typeof u === 'string' && /^https?:/.test(u))) {
+          return pu.url_list.find((u: any) => typeof u === 'string' && /^https?:/.test(u));
+        }
+        if (typeof pu.uri === 'string' && /^https?:/.test(pu.uri)) return pu.uri;
+        if (typeof pu === 'string' && /^https?:/.test(pu)) return pu;
+      }
+    }
+    for (const k of Object.keys(o)) { const r = walk(o[k], depth + 1); if (r) return r; }
+    return null;
+  }
+  return walk(payload);
+}
+
+const musicRouter = Router();
+musicRouter.use(requireAuth);
+musicRouter.use(proxyLimiter);
+musicRouter.use(requireEnterprise);
+
+musicRouter.post('/', async (req: AuthedRequest, res: Response) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  const action = req.body?.action === 'download' ? 'download' : 'open';
+  if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+  try {
+    const det = detectUrl(url);
+    const vid = det?.videoId;
+    if (!vid) return res.status(422).json({ error: 'Не удалось определить видео из ссылки.' });
+    const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
+    if (!key) return res.status(400).json({ error: 'TikHub API key не настроен.' });
+    const one = await fetchOneVideo(key, String(vid));
+    const musicUrl = one.ok ? extractMusicUrl(one.data) : null;
+    if (!musicUrl) return res.status(422).json({ error: 'Аудио-дорожка не найдена (поддерживается TikTok/Douyin).' });
+
+    if (action === 'open') return res.json({ ok: true, url: musicUrl });
+
+    // download → в Галерею как аудио
+    const stored: any = await downloadVideoToDisk([musicUrl], { referer: 'https://www.tiktok.com/' });
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'audio', mediaType: 'audio', originalName: `music-${vid}.mp3`,
+      fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
+    });
+    res.json({ ok: true, fileUrl: stored.fileUrl, asset });
+  } catch (err: any) {
+    res.status(502).json({ error: err?.message || 'Не удалось обработать музыку' });
+  }
+});
+
+export { musicRouter };

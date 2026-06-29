@@ -195,7 +195,7 @@ export function MessageBubble({ message, onToneClick, onDelete }: MessageBubbleP
           {(message.sender === 'client' || message.sender === 'ai') && message.content && onToneClick && (
             <button onClick={handleToneClick}
                     className="text-[10px] inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-600 transition-opacity hover:opacity-80"
-                    style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
+                    style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--brand)' }}
                     title={t('chat.explainTone')}>
               <Sparkles size={9} /> {t('chat.tone')}
             </button>

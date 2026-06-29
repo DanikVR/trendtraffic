@@ -67,13 +67,13 @@ export function AdminLayout() {
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' }}
+              style={{ background: 'linear-gradient(135deg,#6366f1,#818cf8)' }}
             >
               <Zap size={18} strokeWidth={2} color="#fff" />
             </div>
             <span
               className="flex-1 text-lg font-700"
-              style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}
+              style={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}
             >
               VibeVox
             </span>
@@ -90,9 +90,9 @@ export function AdminLayout() {
             <span
               className="px-2 py-0.5 text-[10px] font-700 tracking-wider rounded-full uppercase"
               style={{
-                background: 'rgba(139, 92, 246, 0.12)',
-                color: '#A78BFA',
-                border: '1px solid rgba(139, 92, 246, 0.24)',
+                background: 'rgba(99, 102, 241, 0.12)',
+                color: 'var(--brand)',
+                border: '1px solid rgba(99, 102, 241, 0.24)',
               }}
             >
               Суперадмин-панель
@@ -294,13 +294,13 @@ export function AdminLayout() {
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' }}
+              style={{ background: 'linear-gradient(135deg,#6366f1,#818cf8)' }}
             >
               <Zap size={15} strokeWidth={2} color="#fff" />
             </div>
             <span
               className="text-base font-700"
-              style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}
+              style={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}
             >
               VibeVox Admin
             </span>

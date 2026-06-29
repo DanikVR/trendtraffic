@@ -1407,7 +1407,7 @@ export function RoomPage() {
           </div>
           <h2
             className="text-xl font-700 mb-2"
-            style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+            style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
           >
             {t.accessDenied}
           </h2>

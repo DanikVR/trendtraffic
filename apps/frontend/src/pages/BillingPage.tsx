@@ -176,7 +176,7 @@ function TopupCalculator({ token, promotionCodeId, promoCode, promoPercentOff }:
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <p className="text-3xl font-800"
                style={{
-                 fontFamily: 'Space Grotesk, sans-serif',
+                 fontFamily: 'Geist Sans, sans-serif',
                  color: hasDiscount ? '#10b981' : 'var(--text-primary)',
                  letterSpacing: '-0.03em',
                }}>
@@ -184,7 +184,7 @@ function TopupCalculator({ token, promotionCodeId, promoCode, promoPercentOff }:
             </p>
             {hasDiscount && (
               <span className="text-sm font-600 line-through"
-                    style={{ color: 'var(--text-disabled)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                    style={{ color: 'var(--text-disabled)', fontFamily: 'Geist Sans, sans-serif' }}>
                 €{baseTotalLabel}
               </span>
             )}
@@ -559,14 +559,14 @@ export function BillingPage() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: 'rgba(59,130,246,0.10)', color: '#60A5FA' }}>
+                 style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)' }}>
               <Zap size={22} strokeWidth={1.5} />
             </div>
             <div>
               <p className="text-xs uppercase font-600" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
                 {t('billingPage.balanceLabel')}
               </p>
-              <p className="text-2xl font-700" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk, sans-serif' }}>
+              <p className="text-2xl font-700" style={{ color: 'var(--text-primary)', fontFamily: 'Geist Sans, sans-serif' }}>
                 {balanceMin} <span className="text-sm font-500" style={{ color: 'var(--text-muted)' }}>{t('billingPage.balanceMinutes')}</span>
                 {subscriptionInfo && subscriptionInfo.rolloverMinutes > 0 && (
                   <span className="text-xs ml-2 px-2 py-0.5 rounded-full font-600"
@@ -717,7 +717,7 @@ export function BillingPage() {
               onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(null); }}
               onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPromo(); }}
               placeholder={t('billingPage.promoPlaceholder')}
-              className="flex-1 px-3 py-2.5 rounded-xl text-sm font-600 outline-none focus:border-violet-400"
+              className="flex-1 px-3 py-2.5 rounded-xl text-sm font-600 outline-none focus:border-indigo-400"
               style={{
                 background: 'var(--bg-tertiary)',
                 border: `1px solid ${promoError ? 'rgba(239,68,68,0.45)' : 'var(--border-medium)'}`,
@@ -765,22 +765,22 @@ export function BillingPage() {
               className="relative rounded-3xl p-6 flex flex-col"
               style={{
                 background: plan.highlighted
-                  ? 'linear-gradient(180deg, rgba(59,130,246,0.06) 0%, var(--card-bg) 100%)'
+                  ? 'linear-gradient(180deg, rgba(99,102,241,0.06) 0%, var(--card-bg) 100%)'
                   : 'var(--card-bg)',
                 border: plan.highlighted
-                  ? '1.5px solid rgba(59,130,246,0.40)'
+                  ? '1.5px solid rgba(99,102,241,0.40)'
                   : '1px solid var(--card-border)',
-                boxShadow: plan.highlighted ? '0 16px 48px rgba(59,130,246,0.10)' : 'none',
+                boxShadow: plan.highlighted ? '0 16px 48px rgba(99,102,241,0.10)' : 'none',
               }}
             >
               {plan.highlighted && (
                 <div
                   className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-700 uppercase tracking-wider"
                   style={{
-                    background: 'linear-gradient(135deg, #3B82F6, #38BDF8)',
+                    background: 'linear-gradient(135deg,#6366f1,#818cf8)',
                     color: '#FFFFFF',
                     letterSpacing: '0.08em',
-                    boxShadow: '0 4px 14px rgba(59,130,246,0.40)',
+                    boxShadow: '0 4px 14px rgba(99,102,241,0.40)',
                   }}
                 >
                   {t('paywall.popular')}
@@ -790,12 +790,12 @@ export function BillingPage() {
               {/* Заголовок плана */}
               <div className="mb-5">
                 <div className="flex items-center gap-2 mb-2">
-                  {plan.id === 'plus' && <Zap size={20} strokeWidth={1.5} style={{ color: '#60A5FA' }} />}
-                  {plan.id === 'standard' && <Sparkles size={20} strokeWidth={1.5} style={{ color: '#60A5FA' }} />}
+                  {plan.id === 'plus' && <Zap size={20} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />}
+                  {plan.id === 'standard' && <Sparkles size={20} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />}
                   {plan.id === 'enterprise' && <Crown size={20} strokeWidth={1.5} style={{ color: '#FBBF24' }} />}
                   <h3
                     className="text-lg font-700"
-                    style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+                    style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
                   >
                     {plan.name}
                   </h3>
@@ -811,7 +811,7 @@ export function BillingPage() {
                   <span
                     className="text-3xl font-800"
                     style={{
-                      fontFamily: 'Space Grotesk, sans-serif',
+                      fontFamily: 'Geist Sans, sans-serif',
                       color: disc.applied ? '#10b981' : 'var(--text-primary)',
                       letterSpacing: '-0.03em',
                     }}
@@ -821,7 +821,7 @@ export function BillingPage() {
                   {disc.applied && (
                     <span
                       className="text-base font-600 line-through"
-                      style={{ color: 'var(--text-disabled)', fontFamily: 'Space Grotesk, sans-serif' }}
+                      style={{ color: 'var(--text-disabled)', fontFamily: 'Geist Sans, sans-serif' }}
                     >
                       {originalPriceLabel}
                     </span>
@@ -866,7 +866,7 @@ export function BillingPage() {
                     <li
                       key={idx}
                       className="flex items-center justify-center gap-3 py-2.5 my-1 rounded-xl"
-                      style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.30)', color: '#60A5FA' }}
+                      style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.30)', color: 'var(--brand)' }}
                       aria-hidden
                     >
                       {f.icon}
@@ -876,8 +876,8 @@ export function BillingPage() {
                       <div
                         className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                         style={{
-                          background: f.highlight ? 'rgba(59,130,246,0.14)' : 'rgba(255,255,255,0.04)',
-                          color: f.highlight ? '#60A5FA' : 'var(--text-muted)',
+                          background: f.highlight ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.04)',
+                          color: f.highlight ? 'var(--brand)' : 'var(--text-muted)',
                         }}
                       >
                         {f.icon}
@@ -966,7 +966,7 @@ export function BillingPage() {
             value={langSearch}
             onChange={(e) => setLangSearch(e.target.value)}
             placeholder=""
-            className="w-full pl-9 pr-9 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-violet-400"
+            className="w-full pl-9 pr-9 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-indigo-400"
             style={{
               background: 'var(--bg-tertiary)',
               border: '1px solid var(--border-medium)',

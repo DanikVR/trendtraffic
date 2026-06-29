@@ -145,7 +145,7 @@ export default function DialectPlayground({ dialectRuleId }: DialectPlaygroundPr
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
         <div style={{ width:38, height:38, borderRadius:12, background:'linear-gradient(135deg,#F59E0B,#EF4444)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(245,158,11,0.3)' }}><Scissors size={20} color="#fff" strokeWidth={1.5}/></div>
         <div>
-          <h3 style={{ fontFamily:'Space Grotesk,sans-serif', fontSize:18, fontWeight:700, color:'var(--text-primary)', margin:0, letterSpacing:'-0.02em' }}>ИИ-Полигон</h3>
+          <h3 style={{ fontFamily:'Geist Sans,sans-serif', fontSize:18, fontWeight:700, color:'var(--text-primary)', margin:0, letterSpacing:'-0.02em' }}>ИИ-Полигон</h3>
           <p style={{ fontSize:12, color:'var(--text-muted)', margin:'2px 0 0' }}>Загрузите аудио, выделите фрагмент и протестируйте распознавание ИИ</p>
         </div>
       </div>

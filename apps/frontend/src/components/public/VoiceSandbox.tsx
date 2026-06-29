@@ -29,7 +29,7 @@ const SILENCE_MS = 750;         // авто-стоп после паузы в р
 const MIN_SPEECH_MS = 250;      // минимальная длительность речи
 const VOICE_RMS = 0.014;        // порог «есть речь»
 const REQUEST_TIMEOUT_MS = 20000;
-const ORANGE = '255,115,0';
+const ORANGE = '99,102,241';
 
 // ── Аудио-утилиты ──
 function concatFloat32(parts: Float32Array[]): Float32Array {
@@ -341,7 +341,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
               style={{
                 background: on ? `rgba(${ORANGE},0.16)` : 'rgba(255,255,255,0.04)',
                 borderColor: on ? `rgba(${ORANGE},0.6)` : 'rgba(255,255,255,0.1)',
-                color: on ? '#ffb574' : 'rgba(255,255,255,0.6)',
+                color: on ? 'var(--brand)' : 'rgba(255,255,255,0.6)',
                 boxShadow: on ? `0 0 20px rgba(${ORANGE},0.3)` : 'none',
               }}
             >
@@ -358,7 +358,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
             type="button"
             onClick={startRecording}
             className="group w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-700 text-white transition-all hover:brightness-110"
-            style={{ background: '#ff7300', boxShadow: `0 10px 34px rgba(${ORANGE},0.4)` }}
+            style={{ background: 'var(--brand)', boxShadow: `0 10px 34px rgba(${ORANGE},0.4)` }}
           >
             <Mic size={20} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
             {state === 'error' ? 'Попробовать снова' : 'Записать голос'}
@@ -379,8 +379,8 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
           style={{ background: `rgba(${ORANGE},0.14)`, border: `1px solid rgba(${ORANGE},0.55)`, boxShadow: `0 0 32px rgba(${ORANGE},0.3)` }}
         >
           <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#ff7300' }} />
-            <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: '#ff7300' }} />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--brand)' }} />
+            <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: 'var(--brand)' }} />
           </span>
           Слушаю… говорите фразу
           <span className="text-xs font-500 opacity-70">или нажмите, чтобы перевести</span>
@@ -407,7 +407,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
           className="w-full rounded-2xl p-5 text-center animate-scale-in"
           style={{ background: `rgba(${ORANGE},0.08)`, border: `1px solid rgba(${ORANGE},0.4)`, boxShadow: `0 0 40px rgba(${ORANGE},0.15)` }}
         >
-          <div className="flex items-center justify-center gap-2 font-700 mb-1.5" style={{ color: '#ffb574' }}>
+          <div className="flex items-center justify-center gap-2 font-700 mb-1.5" style={{ color: 'var(--brand)' }}>
             <Sparkles size={18} />
             Ваш голос переведён на {target.flag} {target.label}
           </div>

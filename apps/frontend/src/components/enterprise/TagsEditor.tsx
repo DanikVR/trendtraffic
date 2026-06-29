@@ -221,7 +221,7 @@ export function TagsEditor() {
       {/* New draft */}
       {draft && (
         <div className="rounded-xl p-3"
-             style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.30)' }}>
+             style={{ background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.30)' }}>
           <EditTagRow
             draft={draft}
             onChange={setDraft}
@@ -315,7 +315,7 @@ function EditTagRow({ draft, onChange, onSave, onCancel, saving }: EditTagRowPro
           value={draft.name}
           onChange={(e) => onChange({ ...draft, name: e.target.value.slice(0, 64) })}
           maxLength={64}
-          className="flex-1 min-w-[160px] px-2 py-1.5 rounded-lg text-sm focus:outline-none focus:border-violet-400"
+          className="flex-1 min-w-[160px] px-2 py-1.5 rounded-lg text-sm focus:outline-none focus:border-[var(--brand)]"
           style={{
             background: 'var(--bg-primary)',
             border: '1px solid var(--border-medium)',
@@ -344,7 +344,7 @@ function EditTagRow({ draft, onChange, onSave, onCancel, saving }: EditTagRowPro
         value={draft.description}
         onChange={(e) => onChange({ ...draft, description: e.target.value.slice(0, 1000) })}
         maxLength={1000}
-        className="w-full min-h-[60px] p-2 rounded-lg text-xs resize-y focus:outline-none focus:border-violet-400"
+        className="w-full min-h-[60px] p-2 rounded-lg text-xs resize-y focus:outline-none focus:border-[var(--brand)]"
         style={{
           background: 'var(--bg-primary)',
           border: '1px solid var(--border-medium)',

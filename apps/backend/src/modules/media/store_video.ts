@@ -51,7 +51,7 @@ async function downloadOne(url: string, opts?: { referer?: string; signal?: Abor
     });
     if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
     const ct = resp.headers.get('content-type') || 'video/mp4';
-    const ext = ct.includes('webm') ? 'webm' : ct.includes('quicktime') ? 'mov' : 'mp4';
+    const ext = /audio|mpeg|mp3/.test(ct) ? 'mp3' : ct.includes('webm') ? 'webm' : ct.includes('quicktime') ? 'mov' : 'mp4';
     const filename = `tt-${randomUUID()}.${ext}`;
     const filePath = path.join(OUTPUT_DIR, filename);
     await pipeline(Readable.fromWeb(resp.body as any), fs.createWriteStream(filePath));

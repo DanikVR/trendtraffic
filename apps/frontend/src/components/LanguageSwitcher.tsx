@@ -211,7 +211,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
                     aria-selected={isActive}
                     onClick={() => handleSelect(lang.code)}
                     className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--bg-tertiary)]"
-                    style={{ color: isActive ? '#ff7300' : 'var(--text-primary)' }}
+                    style={{ color: isActive ? 'var(--brand)' : 'var(--text-primary)' }}
                     dir={isRtl ? 'rtl' : 'ltr'}
                   >
                     <span className="text-xs font-700 w-9 uppercase opacity-70 tabular-nums">
@@ -221,7 +221,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
                     <span className="text-[10px] opacity-50 truncate hidden sm:inline" style={{ maxWidth: '90px' }}>
                       {lang.englishName}
                     </span>
-                    {isActive && <Check size={14} style={{ color: '#ff7300' }} />}
+                    {isActive && <Check size={14} style={{ color: 'var(--brand)' }} />}
                   </button>
                 );
               })

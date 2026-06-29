@@ -175,7 +175,7 @@ export function RoomLobbyPage({ roomName, onJoin, isCreator, onClose, lobbyError
             <h1
               className="text-xl font-700 leading-tight"
               style={{
-                fontFamily: 'Space Grotesk, sans-serif',
+                fontFamily: 'Geist Sans, sans-serif',
                 letterSpacing: '-0.03em',
                 color: 'var(--text-primary)',
               }}
@@ -205,7 +205,7 @@ export function RoomLobbyPage({ roomName, onJoin, isCreator, onClose, lobbyError
             </div>
             <p
               className="text-base font-700 mb-1.5"
-              style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+              style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
             >
               {t('lobby.roomFullTitle')}
             </p>
@@ -246,7 +246,7 @@ export function RoomLobbyPage({ roomName, onJoin, isCreator, onClose, lobbyError
             </div>
             <p
               className="text-base font-700 mb-1.5"
-              style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+              style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
             >
               {t('lobby.overloadedTitle')}
             </p>

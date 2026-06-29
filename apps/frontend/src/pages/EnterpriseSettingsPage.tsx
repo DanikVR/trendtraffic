@@ -78,7 +78,7 @@ export function EnterpriseSettingsPage() {
       <div className="max-w-2xl mx-auto py-12 px-4">
         <AuroraCard className="p-8 text-center">
           <div className="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-4"
-               style={{ background: 'rgba(139,92,246,0.10)', color: '#8B5CF6' }}>
+               style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)' }}>
             <Lock size={24} />
           </div>
           <h2 className="text-lg font-700 mb-2" style={{ color: 'var(--text-primary)' }}>
@@ -88,7 +88,7 @@ export function EnterpriseSettingsPage() {
             {t('enterprise.page.upsellBody')}
           </p>
           <a href="/billing" className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-700"
-             style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)', color: '#fff' }}>
+             style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff' }}>
             {t('enterprise.page.upsellCta')}
           </a>
         </AuroraCard>

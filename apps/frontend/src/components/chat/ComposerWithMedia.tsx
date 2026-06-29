@@ -80,7 +80,7 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
       {stagedFile && (
         <div className="px-3 py-2 flex items-center gap-2 border-b"
              style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-medium)' }}>
-          <Paperclip size={14} style={{ color: '#8B5CF6' }} />
+          <Paperclip size={14} style={{ color: 'var(--brand)' }} />
           <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
             <b>{stagedFile.name}</b> · {(stagedFile.size / 1024).toFixed(0)} KB
           </span>
@@ -94,7 +94,7 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
           />
           <button onClick={handleSendMedia} disabled={sending}
                   className="px-3 py-1 rounded-lg text-xs font-700"
-                  style={{ background: '#8B5CF6', color: '#fff' }}>
+                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
             {sending ? <Loader2 size={12} className="animate-spin" /> : 'Отправить'}
           </button>
           <button onClick={() => { setStagedFile(null); setStagedCaption(''); }}
@@ -125,7 +125,7 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
           placeholder="Напишите сообщение клиенту..."
           rows={1}
           disabled={disabled || sending}
-          className="flex-1 px-3 py-2 rounded-xl text-sm leading-relaxed resize-none focus:outline-none focus:border-violet-400"
+          className="flex-1 px-3 py-2 rounded-xl text-sm leading-relaxed resize-none focus:outline-none focus:border-[var(--brand)]"
           style={{
             background: 'var(--bg-tertiary)',
             border: '1px solid var(--border-medium)',
@@ -137,8 +137,8 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
         <button onClick={handleSendText} disabled={disabled || sending || !text.trim()}
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
                 style={{
-                  background: text.trim() ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : 'var(--bg-tertiary)',
-                  color: text.trim() ? '#fff' : 'var(--text-muted)',
+                  background: text.trim() ? 'linear-gradient(135deg,#6366f1,#818cf8)' : 'var(--bg-tertiary)',
+                  color: text.trim() ? 'var(--brand-contrast)' : 'var(--text-muted)',
                 }}
                 title="Отправить (Enter)">
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}

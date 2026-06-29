@@ -283,7 +283,7 @@ export function PaywallModal({ open, onClose, title, returnUrl }: PaywallModalPr
                   value={topupMinutes}
                   onChange={(e) => setTopupMinutes(parseInt(e.target.value, 10))}
                   className="w-full"
-                  style={{ accentColor: '#8B5CF6' }}
+                  style={{ accentColor: 'var(--brand)' }}
                 />
                 <div className="flex justify-between text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
                   <span>60 мин</span>
@@ -297,9 +297,9 @@ export function PaywallModal({ open, onClose, title, returnUrl }: PaywallModalPr
                           onClick={() => setTopupMinutes(v)}
                           className="text-xs px-2.5 py-1 rounded-lg font-600 transition-all"
                           style={{
-                            background: topupMinutes === v ? 'rgba(139, 92, 246, 0.18)' : 'var(--bg-secondary)',
-                            border: `1px solid ${topupMinutes === v ? 'rgba(139, 92, 246, 0.4)' : 'var(--border-subtle)'}`,
-                            color: topupMinutes === v ? '#a78bfa' : 'var(--text-secondary)',
+                            background: topupMinutes === v ? 'rgba(99, 102, 241, 0.18)' : 'var(--bg-secondary)',
+                            border: `1px solid ${topupMinutes === v ? 'rgba(99, 102, 241, 0.4)' : 'var(--border-subtle)'}`,
+                            color: topupMinutes === v ? 'var(--brand)' : 'var(--text-secondary)',
                           }}>
                     {t('balance.minutes', { count: v })}
                   </button>
@@ -348,7 +348,7 @@ export function PaywallModal({ open, onClose, title, returnUrl }: PaywallModalPr
                     <div className="h-px my-1" style={{ background: 'var(--border-subtle)' }} />
                     <div className="flex justify-between text-base">
                       <span className="font-700" style={{ color: 'var(--text-primary)' }}>{t('paywall.total')}</span>
-                      <span className="font-700 tabular-nums" style={{ color: '#a78bfa' }}>
+                      <span className="font-700 tabular-nums" style={{ color: 'var(--brand)' }}>
                         €{(preview.totalPriceCents / 100).toFixed(2)}
                       </span>
                     </div>
@@ -362,9 +362,9 @@ export function PaywallModal({ open, onClose, title, returnUrl }: PaywallModalPr
                 disabled={submittingTopup || !preview}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-700 transition-all disabled:opacity-50"
                 style={{
-                  background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+                  background: 'linear-gradient(135deg, #6366f1, #818cf8)',
                   color: '#fff',
-                  boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
+                  boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
                 }}>
                 {submittingTopup
                   ? <Loader2 size={16} className="animate-spin" />

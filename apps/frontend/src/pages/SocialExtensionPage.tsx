@@ -77,6 +77,31 @@ export default function SocialExtensionPage() {
     }
   }, [url, token]);
 
+  // Кнопки «Перейти/Скачать музыку» из раздела Music расширения (через postMessage).
+  const handleMusic = useCallback(async (action: 'open' | 'download') => {
+    const target = appliedRef.current;
+    if (!target) return;
+    if (action === 'download') setGalleryNote({ ok: true, text: 'Скачиваю музыку…' });
+    try {
+      const res = await fetch('/api/social-ext/music', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ url: target, action }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+      if (action === 'open') {
+        if (d.url) window.open(d.url, '_blank', 'noopener'); else throw new Error('Ссылка на музыку не найдена');
+      } else {
+        setGalleryNote({ ok: true, text: 'Музыка добавлена в Галерею ✓' });
+        setTimeout(() => setGalleryNote(null), 6000);
+      }
+    } catch (e: any) {
+      setGalleryNote({ ok: false, text: e?.message || 'Не удалось обработать музыку' });
+      setTimeout(() => setGalleryNote(null), 6000);
+    }
+  }, [token]);
+
   const apply = useCallback((value: string) => {
     appliedRef.current = value;
     setAppliedUrl(value);
@@ -108,11 +133,13 @@ export default function SocialExtensionPage() {
       if (ev.source !== iframeRef.current?.contentWindow) return;
       if (ev.data?.type === 'social-ext:ready' && appliedRef.current) {
         postToIframe('social-ext:set-url', appliedRef.current);
+      } else if (ev.data?.type === 'social-ext:music') {
+        handleMusic(ev.data.action === 'download' ? 'download' : 'open');
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [postToIframe]);
+  }, [postToIframe, handleMusic]);
 
   const shortUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 36);
 
@@ -123,7 +150,7 @@ export default function SocialExtensionPage() {
         {([['search', '🔥 Поиск горячих видео'], ['analytics', '📊 Аналитика']] as [Tab, string][]).map(([v, lbl]) => (
           <button key={v} onClick={() => setTab(v)}
             className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
-            style={{ background: tab === v ? 'var(--bg-secondary)' : 'transparent', color: tab === v ? '#ff7300' : 'var(--text-muted)', boxShadow: tab === v ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' }}>
+            style={{ background: tab === v ? 'var(--btn-primary-bg)' : 'transparent', color: tab === v ? 'var(--btn-primary-text)' : 'var(--text-muted)', boxShadow: tab === v ? 'var(--btn-primary-shadow)' : 'none' }}>
             {lbl}
           </button>
         ))}
@@ -148,7 +175,7 @@ export default function SocialExtensionPage() {
                   <button key={q.url + i} onClick={() => { setUrl(q.url); apply(q.url); }}
                     className="text-[11px] px-2 py-1 rounded-lg font-600 transition-colors truncate max-w-[200px]"
                     title={q.url}
-                    style={{ background: active ? 'rgba(255,115,0,0.14)' : 'var(--bg-tertiary)', color: active ? '#ff7300' : 'var(--text-secondary)', border: `1px solid ${active ? '#ff7300' : 'var(--border-medium)'}` }}>
+                    style={{ background: active ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: active ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${active ? 'rgba(99,102,241,1)' : 'var(--border-medium)'}` }}>
                     {i + 1}. {shortUrl(q.url)}
                   </button>
                 );
@@ -165,7 +192,7 @@ export default function SocialExtensionPage() {
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAnalyzeInput(); }}
                 placeholder="https://www.tiktok.com/@user/video/…  ·  instagram.com/p/…  ·  x.com/…"
-                className="w-full pl-11 pr-10 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/40 transition-shadow"
+                className="w-full pl-11 pr-10 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(99,102,241,0.4)] transition-shadow"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
               />
               {url && (

@@ -225,7 +225,7 @@ export function LanguagePicker({
                 <div className="flex items-center justify-between px-5 py-3">
                   <h3
                     className="text-lg font-700"
-                    style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+                    style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
                   >
                     {title}
                   </h3>

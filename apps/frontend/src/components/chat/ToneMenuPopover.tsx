@@ -112,7 +112,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
       <div className="px-3 py-2 flex items-center justify-between border-b"
            style={{ borderColor: 'var(--border-medium)' }}>
         <div className="flex items-center gap-2">
-          <Sparkles size={14} color="#8B5CF6" />
+          <Sparkles size={14} color="var(--brand)" />
           <span className="text-xs font-700 uppercase tracking-wider"
                 style={{ color: 'var(--text-muted)' }}>
             Объяснить в тоне
@@ -147,7 +147,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
 
         {explaining && (
           <div className="py-6 text-center">
-            <Loader2 size={20} className="animate-spin inline-block" style={{ color: '#8B5CF6' }} />
+            <Loader2 size={20} className="animate-spin inline-block" style={{ color: 'var(--brand)' }} />
             <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>AI генерирует пояснение…</p>
           </div>
         )}
@@ -156,7 +156,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-700 uppercase tracking-wider px-1.5 py-0.5 rounded"
-                    style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
+                    style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--brand)' }}>
                 {explanation.tone}
               </span>
               <button onClick={() => setExplanation(null)}

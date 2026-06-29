@@ -302,7 +302,7 @@ export default function PartnersPage() {
               onChange={(e) => setTermsText(e.target.value)}
               rows={10}
               placeholder={programLoaded ? 'Опишите условия партнёрства: что получает партнёр, как происходят выплаты, сроки…' : 'Загрузка…'}
-              className="w-full px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-violet-400 resize-y"
+              className="w-full px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)] resize-y"
               style={{
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border-medium)',
@@ -342,7 +342,7 @@ export default function PartnersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по email или коду партнёра…"
-              className="w-full pl-9 pr-9 py-2 rounded-xl text-sm transition-colors focus:outline-none focus:border-violet-400"
+              className="w-full pl-9 pr-9 py-2 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)]"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
             />
             {search && (
@@ -457,9 +457,9 @@ export default function PartnersPage() {
                                 title="Сбросить статистику (переходы/регистрации/оплаты) — например, после выплаты"
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
                                 style={{
-                                  background: 'rgba(59, 130, 246, 0.10)',
-                                  color: '#3b82f6',
-                                  border: '1px solid rgba(59, 130, 246, 0.20)',
+                                  background: 'rgba(99, 102, 241, 0.10)',
+                                  color: 'var(--brand)',
+                                  border: '1px solid rgba(99, 102, 241, 0.20)',
                                 }}>
                           {actioning === p.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                         </button>
@@ -524,7 +524,7 @@ export default function PartnersPage() {
                 rows={6}
                 autoFocus
                 placeholder="Например: договорённость по выплате, контакт, контекст по этому партнёру…"
-                className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-violet-400 resize-y"
+                className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[var(--brand)] resize-y"
                 style={{
                   background: 'var(--bg-tertiary)',
                   border: '1px solid var(--border-medium)',
@@ -551,7 +551,7 @@ export default function PartnersPage() {
       {pendingAction && (() => {
         const isDelete = pendingAction.type === 'delete';
         const p = pendingAction.partner;
-        const accent = isDelete ? '#ef4444' : '#3b82f6';
+        const accent = isDelete ? '#ef4444' : 'var(--brand)';
         return (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4"
                style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
@@ -560,7 +560,7 @@ export default function PartnersPage() {
               <AuroraCard className="p-5 sm:p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                       style={{ background: isDelete ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)' }}>
+                       style={{ background: isDelete ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.12)' }}>
                     {isDelete ? <Trash2 size={18} style={{ color: accent }} /> : <RotateCcw size={18} style={{ color: accent }} />}
                   </div>
                   <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>

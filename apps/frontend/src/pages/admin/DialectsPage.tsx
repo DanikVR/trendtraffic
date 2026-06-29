@@ -558,9 +558,9 @@ export default function DialectsPage() {
           <div
             style={{
               width: 48, height: 48, borderRadius: 14,
-              background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+              background: 'linear-gradient(135deg, #6366f1, #818cf8)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
+              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.3)',
             }}
           >
             <Brain size={24} strokeWidth={1.5} color="#fff" />
@@ -568,7 +568,7 @@ export default function DialectsPage() {
           <div>
             <h1
               style={{
-                fontFamily: 'Space Grotesk, sans-serif', fontSize: 22, fontWeight: 700,
+                fontFamily: 'Geist Sans, sans-serif', fontSize: 22, fontWeight: 700,
                 color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: 0,
               }}
             >
@@ -585,7 +585,7 @@ export default function DialectsPage() {
       <AuroraCard>
         <div style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Languages size={18} strokeWidth={1.5} style={{ color: 'var(--accent-orange)' }} />
+            <Languages size={18} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
             <span style={{
               fontSize: 13, fontWeight: 700, textTransform: 'uppercase' as const,
               letterSpacing: '0.08em', color: 'var(--text-muted)',
@@ -663,7 +663,7 @@ export default function DialectsPage() {
                   {count > 0 && (
                     <span style={{
                       fontSize: 11, padding: '1px 6px', borderRadius: 10,
-                      background: isActive ? 'var(--accent-green)' : 'var(--accent-orange)',
+                      background: isActive ? 'var(--accent-green)' : 'var(--brand)',
                       color: '#fff', fontWeight: 700, minWidth: 18, textAlign: 'center' as const,
                     }}>
                       {count}
@@ -722,7 +722,7 @@ export default function DialectsPage() {
                   {/* Flag + info */}
                   <span style={{ fontSize: 28 }}>{lang?.flag || '🌐'}</span>
                   <div style={{ flex: 1, minWidth: 180 }}>
-                    <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', margin: 0, fontFamily: 'Geist Sans, sans-serif' }}>
                       {rule.dialect_name}
                     </p>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>
@@ -803,13 +803,13 @@ export default function DialectsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 38, height: 38, borderRadius: 12,
-                  background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
+                  background: 'linear-gradient(135deg, #6366f1, #818cf8)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <GraduationCap size={20} color="#fff" />
                 </div>
                 <h2 style={{
-                  fontFamily: 'Space Grotesk, sans-serif', fontSize: 20, fontWeight: 700,
+                  fontFamily: 'Geist Sans, sans-serif', fontSize: 20, fontWeight: 700,
                   color: 'var(--text-primary)', margin: 0,
                 }}>
                   {editingId ? 'Редактирование правила' : 'Новое правило обучения'}
@@ -975,7 +975,7 @@ export default function DialectsPage() {
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                       padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                       cursor: 'pointer', border: '1px dashed var(--border-medium)',
-                      background: 'transparent', color: 'var(--accent-orange)',
+                      background: 'transparent', color: 'var(--brand)',
                       fontFamily: 'Inter, sans-serif',
                     }}
                   >

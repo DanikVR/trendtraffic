@@ -214,7 +214,7 @@ export function SettingsPage() {
                   onBlur={commitNameEdit}
                   className="flex-1 min-w-0 text-base font-700 bg-transparent outline-none border-b"
                   style={{
-                    fontFamily: 'Space Grotesk, sans-serif',
+                    fontFamily: 'Geist Sans, sans-serif',
                     color: 'var(--text-primary)',
                     letterSpacing: '-0.02em',
                     borderColor: 'var(--border-medium)',
@@ -244,7 +244,7 @@ export function SettingsPage() {
             ) : (
               <div className="flex items-center gap-1.5 min-w-0">
                 <p className="text-base font-700 truncate"
-                  style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                  style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                   {user?.name || t('moreSheet.userFallback')}
                 </p>
                 <button

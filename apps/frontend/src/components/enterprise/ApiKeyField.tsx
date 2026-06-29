@@ -74,7 +74,7 @@ export function ApiKeyField({
         disabled={disabled}
         autoComplete="off"
         spellCheck={false}
-        className="w-full px-3 py-2 pr-20 rounded-xl text-sm transition-colors focus:outline-none focus:border-violet-400"
+        className="w-full px-3 py-2 pr-20 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)]"
         style={{
           background: 'var(--bg-tertiary)',
           border: '1px solid var(--border-medium)',
