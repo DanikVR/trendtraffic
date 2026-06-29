@@ -42,7 +42,7 @@ import trendsRouter from './modules/trends/router.js';
 import channelsRouter from './modules/channels/router.js';
 import channelsCoverRouter from './modules/channels/cover_proxy.js';
 import { startChannelSnapshotScheduler } from './modules/channels/scheduler.js';
-import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter } from './modules/social-ext/router.js';
+import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter, manifestRouter as socialExtManifestRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
 import { HttpWorkerExecutor } from './modules/render/executor_http.js';
@@ -190,6 +190,8 @@ app.use('/api/social-ext/to-gallery', socialExtGalleryRouter);
 app.use('/api/social-ext/music', socialExtMusicRouter);
 // Скачать видео БЕЗ водяного знака (кнопка «Download video»): App V3 play_addr → стрим
 app.use('/api/social-ext/download', socialExtVideoRouter);
+// Манифест медиа Instagram (кнопки «Скачать» в IG-аналитике): прямые ссылки макс. качества
+app.use('/api/social-ext/ig-manifest', socialExtManifestRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
 app.use('/api/render', renderRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)

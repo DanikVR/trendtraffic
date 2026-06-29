@@ -28,7 +28,7 @@ import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeUrl, detectUrl } from '../trends/analytics.js';
-import { extractDownloadUrls, fetchOneVideo } from '../tikhub/tikhub_client.js';
+import { extractDownloadUrls, fetchOneVideo, tikhubGet } from '../tikhub/tikhub_client.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
 
@@ -475,3 +475,107 @@ videoRouter.post('/', async (req: AuthedRequest, res: Response) => {
 });
 
 export { videoRouter };
+
+// ============================================================================
+// Манифест медиа Instagram  →  POST /api/social-ext/ig-manifest { url }
+// ----------------------------------------------------------------------------
+// Для кнопок «Скачать» в IG-аналитике (custom.js): по посту/каруселе возвращает
+// прямые ссылки МАКСИМАЛЬНОГО качества — каждое медиа (видео/фото) в порядке
+// карусели + аудио-дорожку (если её можно скачать). Фронт стримит выбранный
+// элемент через /api/social-ext/media (allow-list cdninstagram/fbcdn). Один вызов
+// TikHub на пост; фронт кэширует манифест на время анализа ссылки.
+// Нормализация 1:1 с рехостнутым бандлом: media_type 2=видео, 8=карусель, иначе
+// фото; видео — video_versions, фото — image_versions2.candidates.
+// ============================================================================
+
+interface IgManifestItem { type: 'video' | 'photo'; url: string; width: number; height: number; }
+
+/** Ссылка максимального качества из массива версий: наибольшая площадь, при
+ *  равенстве — первая (IG отдаёт по убыванию качества). */
+function pickBestUrl(arr: any): string {
+  const list = (Array.isArray(arr) ? arr : []).filter((v) => v && typeof v.url === 'string' && /^https?:/.test(v.url));
+  if (!list.length) return '';
+  let best = list[0];
+  let bestArea = Number(best.width || 0) * Number(best.height || 0);
+  for (const v of list) {
+    const area = Number(v.width || 0) * Number(v.height || 0);
+    if (area > bestArea) { best = v; bestArea = area; }
+  }
+  return String(best.url);
+}
+
+/** Узел IG (пост или элемент карусели) → нормализованный медиа-элемент. */
+function igMediaFromNode(node: any): IgManifestItem | null {
+  if (!node || typeof node !== 'object') return null;
+  if (Number(node.media_type ?? 0) === 2) {
+    const url = pickBestUrl(node.video_versions);
+    return url ? { type: 'video', url, width: Number(node.original_width || 0), height: Number(node.original_height || 0) } : null;
+  }
+  const url = pickBestUrl(node?.image_versions2?.candidates);
+  return url ? { type: 'photo', url, width: Number(node.original_width || 0), height: Number(node.original_height || 0) } : null;
+}
+
+/** Прямая ссылка на аудио-дорожку поста (оригинальный звук / лицензионный трек). */
+function extractIgAudio(post: any): { url: string; title: string } | null {
+  const c = post?.clips_metadata;
+  if (!c || typeof c !== 'object') return null;
+  const orig = c.original_sound_info ?? null;
+  const lic = c.music_info?.music_asset_info ?? c.music_info ?? null;
+  const pick = (o: any): string => {
+    if (!o || typeof o !== 'object') return '';
+    const u = o.progressive_download_url || o.fast_start_progressive_download_url || o.web_30s_preview_download_url || '';
+    return typeof u === 'string' && /^https?:/.test(u) ? u : '';
+  };
+  let url = pick(orig) || pick(lic);
+  if (!url) {
+    // глубокий фолбэк: первый *_download_url внутри clips_metadata
+    const walk = (o: any, depth = 0): string => {
+      if (!o || typeof o !== 'object' || depth > 6) return '';
+      for (const k of Object.keys(o)) {
+        const val = o[k];
+        if (/download_url/i.test(k) && typeof val === 'string' && /^https?:/.test(val)) return val;
+        const r = walk(val, depth + 1);
+        if (r) return r;
+      }
+      return '';
+    };
+    url = walk(c);
+  }
+  const title = String(orig?.original_audio_title || lic?.title || lic?.display_artist || '');
+  return url ? { url, title } : null;
+}
+
+const manifestRouter = Router();
+manifestRouter.use(requireAuth);
+manifestRouter.use(proxyLimiter);
+manifestRouter.use(requireEnterprise);
+
+manifestRouter.post('/', async (req: AuthedRequest, res: Response) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+  const det = detectUrl(url);
+  if (det?.platform !== 'instagram' || !det.videoId) {
+    return res.status(422).json({ error: 'Манифест медиа поддерживается только для Instagram.' });
+  }
+  const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
+  if (!key) return res.status(400).json({ error: 'TikHub API key не настроен.' });
+  try {
+    const r = await tikhubGet<any>(key, `/api/v1/instagram/v3/get_post_info_by_code?code=${encodeURIComponent(det.videoId)}`);
+    if (!r.ok) return res.status(502).json({ error: r.error || 'Не удалось получить пост Instagram.' });
+    const items = r.data?.data?.items ?? r.data?.items ?? [];
+    const post = Array.isArray(items) ? items[0] : null;
+    if (!post) return res.status(422).json({ error: 'Пост Instagram не найден.' });
+    const carousel = Array.isArray(post.carousel_media) ? post.carousel_media : [];
+    const media: IgManifestItem[] = [];
+    if (carousel.length) {
+      for (const n of carousel) { const m = igMediaFromNode(n); if (m) media.push(m); }
+    } else {
+      const m = igMediaFromNode(post); if (m) media.push(m);
+    }
+    res.json({ ok: true, platform: 'instagram', shortcode: det.videoId, audio: extractIgAudio(post), items: media });
+  } catch (err: any) {
+    res.status(502).json({ error: err?.message || 'Не удалось собрать манифест медиа.' });
+  }
+});
+
+export { manifestRouter };

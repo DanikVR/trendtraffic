@@ -10,6 +10,10 @@
  *  • В разделе «Music» — одна кнопка «Скачать» (аудио-дорожка на устройство).
  *  • «Cover variants» переносим ПЕРЕД блоком скачивания, «Metrics» (+«Fake Views
  *    Detection») — сразу ПОСЛЕ блока скачивания.
+ *  • Instagram (отдельные секции MEDIA/AUDIO): кнопка «Скачать медиа (макс.
+ *    качество)» под галереей — качает ТЕКУЩИЙ элемент карусели (видео/фото) — и
+ *    кнопка «Скачать аудио» в разделе AUDIO. Прямые ссылки резолвит родитель
+ *    через /api/social-ext/ig-manifest, стрим — через /api/social-ext/media.
  */
 (function () {
   'use strict';
@@ -173,6 +177,87 @@
     row.appendChild(audio);
   }
 
+  // ── Instagram: кнопки «Скачать» (медиа макс. качества + аудио) ──────────────
+  // IG-аналитика — отдельный компонент бандла (секции MEDIA/AUDIO, а НЕ Music/
+  // Download video, как у TikTok). Прямые ссылки знает только бэкенд → шлём в
+  // родитель тип элемента: текущий индекс карусели (из бейджа «N / M») или audio.
+  // Родитель тянет манифест (один вызов TikHub на пост) и стримит файл.
+
+  function postIg(kind, index) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'social-ext:ig-download', kind: kind, index: index | 0 }, location.origin);
+      }
+    } catch (e) { /* тихо */ }
+  }
+
+  // Текущий индекс карусели из бейджа «N / M» внутри карточки; -1 если бейджа нет.
+  function igCurrentIndex(card) {
+    var divs = card.querySelectorAll('div');
+    for (var i = 0; i < divs.length; i++) {
+      if (divs[i].children.length === 0) {
+        var m = /^(\d+)\s*\/\s*(\d+)$/.exec((divs[i].textContent || '').trim());
+        if (m) return parseInt(m[1], 10) - 1;
+      }
+    }
+    return -1;
+  }
+
+  // Секция IG = карточка .rounded-xl, внутри <h4> с заголовком (matchRe).
+  function igCardByH4(doc, matchRe) {
+    var hs = doc.querySelectorAll('h4');
+    for (var i = 0; i < hs.length; i++) {
+      if (matchRe.test((hs[i].textContent || '').trim())) {
+        var card = hs[i];
+        for (var j = 0; j < 4 && card.parentElement; j++) {
+          card = card.parentElement;
+          if (/rounded-xl/.test((card.className || '').toString())) return card;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Это карточка медиа именно Instagram? (CDN-ссылка IG внутри или бейдж карусели)
+  function isIgMediaCard(card) {
+    var nodes = card.querySelectorAll('img,a');
+    for (var i = 0; i < nodes.length; i++) {
+      var v = (nodes[i].getAttribute('src') || '') + ' ' + (nodes[i].getAttribute('href') || '');
+      if (/cdninstagr|fbcdn|instagram/i.test(v)) return true;
+    }
+    return igCurrentIndex(card) >= 0;
+  }
+
+  function igDlButton(doc, label) {
+    var b = doc.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.style.cssText = 'display:block;width:100%;margin-top:10px;padding:9px 10px;border-radius:10px;'
+      + 'font-size:12px;font-weight:600;cursor:pointer;border:1px solid #6366f1;background:#6366f1;color:#fff;';
+    return b;
+  }
+
+  // MEDIA: кнопка «Скачать текущее медиа (макс. качество)» под галереей. Индекс
+  // читаем В МОМЕНТ КЛИКА (из бейджа) — при листании карусели качается тот, что виден.
+  function igMediaButton(doc) {
+    var card = igCardByH4(doc, /^media/i);
+    if (!card || !isIgMediaCard(card) || card.querySelector('[data-tt-ig-media]')) return;
+    var b = igDlButton(doc, '⬇ Скачать медиа (макс. качество)');
+    b.setAttribute('data-tt-ig-media', '1');
+    b.onclick = function () { var idx = igCurrentIndex(card); postIg('media', idx < 0 ? 0 : idx); };
+    card.appendChild(b);
+  }
+
+  // AUDIO: кнопка «Скачать аудио» (оригинальный звук; лицензионный трек может быть недоступен).
+  function igAudioButton(doc) {
+    var card = igCardByH4(doc, /^audio$/i);
+    if (!card || card.querySelector('[data-tt-ig-audio]')) return;
+    var b = igDlButton(doc, '⬇ Скачать аудио');
+    b.setAttribute('data-tt-ig-audio', '1');
+    b.onclick = function () { postIg('audio', 0); };
+    card.appendChild(b);
+  }
+
   function apply() {
     try {
       hideTopBar(document);
@@ -180,6 +265,8 @@
       musicButtons(document);
       enhanceDownloadRow(document);
       reorderBlocks(document);
+      igMediaButton(document);
+      igAudioButton(document);
     } catch (e) { /* тихо */ }
   }
 

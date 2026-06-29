@@ -151,6 +151,55 @@ export default function SocialExtensionPage() {
     }
   }, [token]);
 
+  // Манифест IG-медиа (прямые ссылки макс. качества) — один вызов на пост, кэш по ссылке.
+  const igManifestRef = useRef<{ url: string; data: any } | null>(null);
+  const getIgManifest = useCallback(async (): Promise<any> => {
+    const target = appliedRef.current;
+    if (!target) throw new Error('Сначала выберите ссылку.');
+    if (igManifestRef.current?.url === target) return igManifestRef.current.data;
+    const res = await fetch('/api/social-ext/ig-manifest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ url: target }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+    igManifestRef.current = { url: target, data: d };
+    return d;
+  }, [token]);
+
+  // Стрим CDN-ссылки на устройство через медиа-прокси (allow-list + Referer + auth-заголовок).
+  const streamViaMediaProxy = useCallback(async (cdnUrl: string, filename: string) => {
+    const q = `/api/social-ext/media?url=${encodeURIComponent(cdnUrl)}&filename=${encodeURIComponent(filename)}`;
+    const res = await fetch(q, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
+    downloadBlob(await res.blob(), filename);
+  }, [token]);
+
+  // IG-кнопки «Скачать» (custom.js): медиа по индексу карусели (макс. качество) или аудио.
+  const handleIgDownload = useCallback(async (kind: 'media' | 'audio', index: number) => {
+    try {
+      setGalleryNote({ ok: true, text: kind === 'audio' ? 'Скачиваю аудио…' : 'Скачиваю медиа в максимальном качестве…' });
+      const manifest = await getIgManifest();
+      const sc = manifest.shortcode || 'instagram';
+      if (kind === 'audio') {
+        if (!manifest.audio?.url) throw new Error('У этого трека нет файла для скачивания (лицензионная музыка).');
+        await streamViaMediaProxy(manifest.audio.url, `instagram-audio-${sc}.mp3`);
+      } else {
+        const arr = Array.isArray(manifest.items) ? manifest.items : [];
+        const item = arr[index] || arr[0];
+        if (!item?.url) throw new Error('Не удалось получить ссылку на медиа.');
+        const ext = item.type === 'video' ? 'mp4' : 'jpg';
+        await streamViaMediaProxy(item.url, `instagram-${sc}-${(index || 0) + 1}.${ext}`);
+      }
+      setGalleryNote({ ok: true, text: kind === 'audio' ? 'Аудио скачано ✓' : 'Медиа скачано ✓' });
+      setTimeout(() => setGalleryNote(null), 5000);
+    } catch (e: any) {
+      setGalleryNote({ ok: false, text: e?.message || 'Не удалось скачать' });
+      setTimeout(() => setGalleryNote(null), 6000);
+    }
+  }, [getIgManifest, streamViaMediaProxy]);
+
   const apply = useCallback((value: string) => {
     appliedRef.current = value;
     setAppliedUrl(value);
@@ -187,11 +236,13 @@ export default function SocialExtensionPage() {
         handleMusic(a === 'download' || a === 'view' ? a : 'open');
       } else if (ev.data?.type === 'social-ext:download-video') {
         downloadVideoNoWm();
+      } else if (ev.data?.type === 'social-ext:ig-download') {
+        handleIgDownload(ev.data.kind === 'audio' ? 'audio' : 'media', Number(ev.data.index) || 0);
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [postToIframe, handleMusic, downloadVideoNoWm]);
+  }, [postToIframe, handleMusic, downloadVideoNoWm, handleIgDownload]);
 
   const shortUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 36);
 

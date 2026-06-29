@@ -638,7 +638,16 @@
  *         get_channel_videos уже включает Shorts; теперь isShort ставится по членству в
  *         shortIds). Карточки Shorts вертикальные 9:16 (по флагу isShort, а не длительности —
  *         у Shorts её часто нет). */
-export const APP_VERSION = '1.5.20';
+
+/* 1.5.21 — Аналитика Instagram: кнопки «Скачать». Под галереей MEDIA — «Скачать медиа
+ *         (макс. качество)»: качает ТЕКУЩИЙ элемент карусели (видео — video_versions,
+ *         фото — image_versions2.candidates наибольшего размера); листаешь карусель →
+ *         качается тот, что виден. В разделе AUDIO — «Скачать аудио» (оригинальный звук;
+ *         лицензионный трек без файла → понятное сообщение). Прямые ссылки собирает новый
+ *         POST /api/social-ext/ig-manifest (один вызов TikHub на пост, кэш по ссылке),
+ *         стрим — через существующий медиа-прокси /api/social-ext/media. UI добавлен в
+ *         custom.js (DOM-инъекция в рехостнутый бандл, секции MEDIA/AUDIO). */
+export const APP_VERSION = '1.5.21';
 
 export function AppVersion() {
   return (
