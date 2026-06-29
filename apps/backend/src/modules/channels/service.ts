@@ -59,6 +59,19 @@ function num(v: any): number | undefined {
   const n = typeof v === 'number' ? v : parseInt(String(v).replace(/[^\d]/g, ''), 10);
   return Number.isFinite(n) ? n : undefined;
 }
+/** Парсит счётчик, который площадка может отдать строкой: "505M subscribers", "1.2K", "104,402,180". */
+function parseCount(v: any): number | undefined {
+  if (v == null) return undefined;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : undefined;
+  const s = String(v).trim().replace(/,/g, '');
+  const m = s.match(/([\d.]+)\s*([kKmMbB])?/);
+  if (!m) return undefined;
+  let n = parseFloat(m[1]);
+  if (!Number.isFinite(n)) return undefined;
+  const suf = (m[2] || '').toLowerCase();
+  if (suf === 'k') n *= 1e3; else if (suf === 'm') n *= 1e6; else if (suf === 'b') n *= 1e9;
+  return Math.round(n);
+}
 /**
  * Достаёт поле пагинации (курсор/флаг «есть ещё») с КОРНЯ ответа и обёртки `.data`
  * (TikHub: `{ code, data:{ aweme_list, max_cursor, has_more } }`), НЕ уходя в массивы-
@@ -134,9 +147,11 @@ const PAGE: Record<ChannelPlatform, PageCfg> = {
   },
   youtube: {
     profilePath: (h) => `/api/v1/youtube/web/get_channel_info?channel_id=${enc(h)}`,
-    postsPath: (h, c) => `/api/v1/youtube/web/get_channel_videos?channel_id=${enc(h)}${c ? `&continuation=${enc(c)}` : ''}`,
+    // Пагинация YouTube — параметр continuation_token (param `continuation` ИГНОРИРУЕТСЯ и
+    // отдаёт ту же страницу); токен лежит в data.continuation_token (сверено вживую).
+    postsPath: (h, c) => `/api/v1/youtube/web/get_channel_videos?channel_id=${enc(h)}${c ? `&continuation_token=${enc(c)}` : ''}`,
     normalize: (raw) => normalizeYoutube(raw),
-    cursorKeys: ['continuation', 'continuation_token', 'next_page_token', 'nextPageToken', 'token'],
+    cursorKeys: ['continuation_token', 'continuation', 'next_page_token', 'nextPageToken', 'token'],
     hasMoreKeys: [],
   },
 };
@@ -174,7 +189,7 @@ async function fetchProfile(key: string, platform: ChannelPlatform, handle: stri
     displayName: str(deepFind(root, ['nickname', 'full_name', 'channel_name', 'title', 'name', 'display_name', 'fullname'])),
     avatarUrl: findUrl(root, ['avatar_larger', 'avatar_medium', 'avatar_thumb', 'avatar_168x168', 'avatar', 'profile_pic_url_hd', 'profile_pic_url', 'avatar_url', 'thumbnail']),
     bio: clip(str(deepFind(root, ['signature', 'biography', 'bio', 'description'])), 300),
-    followers: num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'subscriber_count', 'subscribers', 'subscriberCount', 'edge_followed_by'])),
+    followers: parseCount(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'subscriber_count', 'subscribers', 'subscriberCount', 'edge_followed_by'])),
     verified: !!deepFind(root, ['is_verified', 'verified', 'custom_verify', 'enterprise_verify_reason']),
     url: channelUrl(platform, handle),
   };
@@ -183,7 +198,8 @@ async function fetchProfile(key: string, platform: ChannelPlatform, handle: stri
 interface PostsResult { videos: NormalizedVideo[]; hasMore: boolean; pages: number; error?: string }
 async function fetchAllPosts(key: string, platform: ChannelPlatform, handle: string, maxVideos: number): Promise<PostsResult> {
   const cfg = PAGE[platform];
-  const MAX_PAGES = 10;                  // потолок вызовов TikHub (защита ключа от runaway)
+  const MAX_PAGES = 13;                  // потолок вызовов TikHub (защита ключа); хватает на
+                                         // ~120 видео даже у площадок с мелкой страницей (TikTok ~10/стр)
   const out: NormalizedVideo[] = [];
   const seen = new Set<string>();
   let cursor: string | undefined;
