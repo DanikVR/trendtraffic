@@ -633,7 +633,12 @@
  *         (get_channel_short_videos), помечаем isShort (новая колонка channel_videos.is_short)
  *         — в ленте канала появился переключатель «Видео / Shorts». Лайки/комменты по видео
  *         YouTube в списке канала не отдаёт (ограничение API) — показываем просмотры. */
-export const APP_VERSION = '1.5.19';
+
+/* 1.5.20 — «Каналы»: YouTube Shorts наполняются корректно (раньше отбрасывались дедупом —
+ *         get_channel_videos уже включает Shorts; теперь isShort ставится по членству в
+ *         shortIds). Карточки Shorts вертикальные 9:16 (по флагу isShort, а не длительности —
+ *         у Shorts её часто нет). */
+export const APP_VERSION = '1.5.20';
 
 export function AppVersion() {
   return (
