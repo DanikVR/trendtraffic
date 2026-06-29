@@ -135,12 +135,23 @@ function clockToSec(s: string): number | undefined {
 /** YouTube published_time — относительный ("3 days ago", "2 weeks ago", "1 month ago", "5 years ago",
  *  "Streamed 2 days ago") → приблизительный unix-таймстамп (для фильтра «за период»). */
 function parseRelativeTime(v: any): number | undefined {
-  const m = String(v ?? '').match(/(\d+)\s*(second|minute|hour|day|week|month|year)/i);
+  // YouTube отдаёт и полные, и СОКРАЩЁННЫЕ формы: "3 days ago" / "2w ago" / "1mo ago" /
+  // "5y ago" / "3h ago" / "10min" / "30s". "mo"/"month" — раньше bare "m" (минута).
+  const s = String(v ?? '').toLowerCase();
+  const m = s.match(/(\d+)\s*(mo|month|min|sec|hour|week|year|day|[hdwyms])/);
   if (!m) return undefined;
   const n = parseInt(m[1], 10);
-  const mult: Record<string, number> = { second: 1, minute: 60, hour: 3600, day: 86400, week: 604800, month: 2592000, year: 31536000 };
-  const sec = n * (mult[m[2].toLowerCase()] || 0);
-  return Number.isFinite(sec) ? Math.floor(Date.now() / 1000) - sec : undefined;
+  if (!Number.isFinite(n)) return undefined;
+  const u = m[2];
+  const sec =
+    u === 'mo' || u === 'month' ? 2592000 :
+    u === 'min' || u === 'm' ? 60 :
+    u === 'sec' || u === 's' ? 1 :
+    u === 'hour' || u === 'h' ? 3600 :
+    u === 'day' || u === 'd' ? 86400 :
+    u === 'week' || u === 'w' ? 604800 :
+    u === 'year' || u === 'y' ? 31536000 : 0;
+  return sec ? Math.floor(Date.now() / 1000) - n * sec : undefined;
 }
 /** YouTube: и renderer-дерево (поиск), и плоский videos[] (тренды/get_trending_videos). */
 export function normalizeYoutube(raw: any): NormalizedVideo[] {
