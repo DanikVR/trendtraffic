@@ -619,7 +619,12 @@
  *         rate-limit). (2) Лента «Каналов» расширена на всю ширину (как «Тренды»): /channels
  *         сделан full-bleed в MainLayout, контейнер до 1760px, до 7 карточек в ряд на широких
  *         экранах. */
-export const APP_VERSION = '1.5.17';
+
+/* 1.5.18 — «Каналы»: TikTok-обложки реально видны. Static cover/origin_cover у TikTok
+ *         приходят в HEIC (Chrome/Yandex не рендерят <img>), а формат залочен подписью
+ *         URL (rewrite на .jpeg → 403). Решение: для TikTok берём dynamic_cover (jpeg) и
+ *         гоним через cover-прокси. */
+export const APP_VERSION = '1.5.18';
 
 export function AppVersion() {
   return (

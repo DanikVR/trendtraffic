@@ -212,6 +212,14 @@ async function fetchAllPosts(key: string, platform: ChannelPlatform, handle: str
     pages++;
     if (!r.ok) { if (i === 0) firstError = r.error; break; }
     const batch = cfg.normalize(r.data);
+    // TikTok: static cover/origin_cover приходят в HEIC (браузер не рендерит в <img>) —
+    // берём dynamic_cover (jpeg). Подписанный CDN-URL всё равно идёт через cover-прокси.
+    if (platform === 'tiktok') {
+      for (const v of batch) {
+        const dyn = (v.raw?.video?.dynamic_cover || v.raw?.video?.dynamicCover)?.url_list?.[0];
+        if (typeof dyn === 'string' && /^https?:/.test(dyn)) v.coverUrl = dyn;
+      }
+    }
     let added = 0;
     for (const v of batch) {
       const k = v.externalId;
