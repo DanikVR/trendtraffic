@@ -171,28 +171,35 @@ export default function SocialExtensionPage() {
 
   const shortUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 36);
 
+  // Переключатель секций. Рендерим функцией, чтобы вставить в две точки: в режиме «Поиск»
+  // он встроен в TrendSearch (под карточкой фильтров, перед лентой видео), в режиме
+  // «Аналитика» — сверху, над строкой URL. Так строка вкладок ушла из самого верха страницы.
+  const renderTabs = () => (
+    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
+      {([['search', '🔥 Поиск горячих видео'], ['analytics', '📊 Аналитика']] as [Tab, string][]).map(([v, lbl]) => (
+        <button key={v} onClick={() => setTab(v)}
+          className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+          style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
+          {lbl}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
-      {/* Переключатель секций */}
-      <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-        {([['search', '🔥 Поиск горячих видео'], ['analytics', '📊 Аналитика']] as [Tab, string][]).map(([v, lbl]) => (
-          <button key={v} onClick={() => setTab(v)}
-            className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
-            style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {/* Контент: обе секции смонтированы, скрытая прячется (iframe не перезагружается) */}
+      {/* Контент: обе секции смонтированы, скрытая прячется (iframe не перезагружается).
+          Переключатель секций (renderTabs) встроен в каждую секцию: в «Поиске» — под
+          карточкой фильтров перед лентой, в «Аналитике» — сверху над строкой URL. */}
       <div className="flex-1 min-h-0 relative">
         {/* Поиск */}
         <div className={tab === 'search' ? 'h-full overflow-y-auto space-y-5 pr-0.5' : 'hidden'}>
-          <TrendSearch token={token} onAnalyze={(u) => analyzeOne(u)} onAnalyzeBulk={analyzeBulk} />
+          <TrendSearch token={token} sectionTabs={renderTabs()} onAnalyze={(u) => analyzeOne(u)} onAnalyzeBulk={analyzeBulk} />
         </div>
 
         {/* Аналитика (расширение) */}
         <div className={tab === 'analytics' ? 'h-full flex flex-col gap-2' : 'hidden'}>
+          {renderTabs()}
           {/* Очередь массового разбора */}
           {queue.length > 1 && (
             <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">

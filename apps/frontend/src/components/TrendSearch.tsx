@@ -104,9 +104,11 @@ export interface TrendSearchProps {
   onAnalyze: (webUrl: string, cover?: string | null) => void;
   /** Открыть аналитику по списку выбранных ссылок (массовый разбор). */
   onAnalyzeBulk?: (items: { url: string; cover?: string }[]) => void;
+  /** Слот между карточкой поиска и лентой результатов (напр. переключатель секций). */
+  sectionTabs?: React.ReactNode;
 }
 
-export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSearchProps) {
+export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTabs }: TrendSearchProps) {
   const [platform, setPlatform] = useState<Source>('tiktok');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [kind, setKind] = useState<Kind>('keyword');
@@ -419,11 +421,27 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
           {kind === 'keyword' && platform !== 'tiktok' && (PLATFORM_FILTERS[platform] || []).map((f) => (
             <label key={f.key} className="flex flex-col gap-1 text-[11px] flex-1 min-w-[140px]" style={{ color: 'var(--text-muted)' }}>
               {f.label}
-              <select value={filters[f.key] ?? f.def} onChange={(e) => setFilters((s) => ({ ...s, [f.key]: e.target.value }))}
-                className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                {f.options.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
-              </select>
+              {f.options.length <= 2 ? (
+                /* Мало вариантов (YouTube «Формат» Видео/Shorts) — сегмент-кнопки вместо выпадашки. */
+                <div className="flex items-center gap-1.5">
+                  {f.options.map((o) => {
+                    const on = (filters[f.key] ?? f.def) === o.v;
+                    return (
+                      <button key={o.v} type="button" onClick={() => setFilters((s) => ({ ...s, [f.key]: o.v }))}
+                        className="flex-1 h-10 px-3 rounded-lg text-sm font-600 transition-colors whitespace-nowrap"
+                        style={{ background: on ? 'var(--brand)' : 'var(--bg-tertiary)', color: on ? 'var(--brand-contrast)' : 'var(--text-muted)', border: `1px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}` }}>
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <select value={filters[f.key] ?? f.def} onChange={(e) => setFilters((s) => ({ ...s, [f.key]: e.target.value }))}
+                  className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                  {f.options.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
+                </select>
+              )}
             </label>
           ))}
           {kind === 'keyword' && platform === 'instagram' && (
@@ -468,6 +486,8 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk }: TrendSe
           </div>
         )}
       </AuroraCard>
+
+      {sectionTabs}
 
       {/* Results */}
       {videos.length === 0 ? (
