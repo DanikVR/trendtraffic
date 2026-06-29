@@ -660,7 +660,15 @@
  *         (2) YouTube/Reddit-ссылки больше НЕ упираются в заглушку «Open a supported
  *         platform» расширения — ведём их в нашу нативную панель аналитики сразу (как X);
  *         iframe-расширение оставлено для TikTok/Douyin/Instagram/Bilibili. */
-export const APP_VERSION = '1.5.23';
+
+/* 1.5.24 — Аналитика YouTube: (1) метрики больше не пустые — нормализатор сводки
+ *         (`buildSummary`) читал только TikTok-имена полей; добавлены YouTube-варианты
+ *         number_of_views/likes/comments/subscribers, video_title, video_length,
+ *         thumbnails (deepFind берёт первое совпадение → у других площадок без регрессий).
+ *         (2) Кнопка «Скачать» в нативной панели теперь показывается только для TikTok/X
+ *         (где скачивание в Галерею реально работает) — для YouTube/Reddit её нет, чтобы
+ *         не упираться в ошибку «поддержано для TikTok и X». */
+export const APP_VERSION = '1.5.24';
 
 export function AppVersion() {
   return (

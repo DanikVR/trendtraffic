@@ -163,6 +163,41 @@ function num(v: any): number | undefined {
   const n = typeof v === 'number' ? v : parseInt(String(v).replace(/[^\d]/g, ''), 10);
   return Number.isFinite(n) ? n : undefined;
 }
+/** Дробный парсер (для метрик качества: LUFS −8.2, brightness 169.9 …) — сохраняет знак и точку. */
+function fnum(v: any): number | undefined {
+  if (v == null) return undefined;
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.+-]/g, ''));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * Метрики «AUDIO & VIDEO QUALITY» (как в расширении): LUFS/яркость/VQ/origin size.
+ * Имена полей у TikHub плавают — ищем оборонительно (deepFind). Найдём что есть; остальное опускаем.
+ */
+function buildQuality(blocks: Record<string, AnalyzeBlock>): Record<string, number> {
+  const root = blocks.metrics?.data ?? blocks.video?.data;
+  if (!root) return {};
+  const q: Record<string, number> = {};
+  const put = (k: string, keys: string[]) => { const v = fnum(deepFind(root, keys)); if (v != null) q[k] = v; };
+  put('lufs', ['loudness', 'lufs', 'integrated_loudness', 'loudness_lufs']);
+  put('loudnessRange', ['loudness_range', 'lra']);
+  put('peak', ['peak', 'true_peak', 'peak_level']);
+  put('maxShortTerm', ['max_short_term', 'short_term_max']);
+  put('brightness', ['brightness', 'luminance', 'avg_brightness', 'lightness']);
+  put('vqScore', ['vq_score', 'vqscore', 'video_quality_score', 'vq']);
+  put('srScore', ['sr_score', 'srscore', 'super_resolution_score']);
+  // Origin size: строка "WxH" либо отдельные поля ширины/высоты исходника.
+  const os = deepFind(root, ['origin_size', 'originSize', 'origin_resolution']);
+  if (typeof os === 'string') {
+    const m = os.match(/(\d{3,5})\s*[x×]\s*(\d{3,5})/);
+    if (m) { q.originW = +m[1]; q.originH = +m[2]; }
+  } else {
+    const w = num(deepFind(root, ['origin_width', 'width'])), h = num(deepFind(root, ['origin_height', 'height']));
+    if (w && w >= 240) q.originW = w;
+    if (h && h >= 240) q.originH = h;
+  }
+  return q;
+}
 
 /**
  * Скелет структуры ответа (имена полей + типы, БЕЗ значений) — для отладки
@@ -207,32 +242,38 @@ function findUrl(obj: any, keys: string[], depth = 0): string | undefined {
 function buildSummary(blocks: Record<string, AnalyzeBlock>): Record<string, any> {
   const root = blocks.video?.data ?? blocks.account?.data;
   if (!root) return {};
-  const views = num(deepFind(root, ['play_count', 'playCount', 'view_count', 'viewCount', 'views', 'stat_view_count', 'play', 'view_count_int']));
-  const likes = num(deepFind(root, ['digg_count', 'diggCount', 'like_count', 'likeCount', 'favorite_count', 'favoriteCount', 'likes', 'score', 'ups', 'upvotes', 'vote_count']));
-  const comments = num(deepFind(root, ['comment_count', 'commentCount', 'reply_count', 'comments', 'num_comments', 'comments_count']));
-  const shares = num(deepFind(root, ['share_count', 'shareCount', 'forward_count', 'retweet_count', 'shares', 'repost_count']));
-  const followers = num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'subscriber_count', 'subscribers']));
-  const desc = deepFind(root, ['title', 'desc', 'caption', 'full_text', 'selftext', 'text', 'content', 'description', 'signature']);
+  // YouTube (web_v2 get_video_info) использует свою номенклатуру number_of_* /
+  // video_* — добавлены в конец списков (deepFind берёт первое совпадение по порядку,
+  // у других площадок этих полей нет, так что регрессии не будет).
+  const views = num(deepFind(root, ['play_count', 'playCount', 'view_count', 'viewCount', 'views', 'stat_view_count', 'play', 'view_count_int', 'number_of_views']));
+  const likes = num(deepFind(root, ['digg_count', 'diggCount', 'like_count', 'likeCount', 'favorite_count', 'favoriteCount', 'likes', 'score', 'ups', 'upvotes', 'vote_count', 'number_of_likes']));
+  const comments = num(deepFind(root, ['comment_count', 'commentCount', 'reply_count', 'comments', 'num_comments', 'comments_count', 'number_of_comments']));
+  const shares = num(deepFind(root, ['share_count', 'shareCount', 'forward_count', 'retweet_count', 'shares', 'repost_count', 'number_of_shares']));
+  const followers = num(deepFind(root, ['follower_count', 'followerCount', 'followers', 'fans', 'subscriber_count', 'subscribers', 'number_of_subscribers']));
+  const desc = deepFind(root, ['title', 'desc', 'caption', 'full_text', 'selftext', 'text', 'content', 'description', 'signature', 'video_title']);
   const author = deepFind(root, ['nickname', 'unique_id', 'uniqueId', 'screen_name', 'username', 'channel_name', 'channel', 'author', 'name']);
   const handle = deepFind(root, ['unique_id', 'uniqueId', 'screen_name', 'username']);
   // Визуальные поля для «карточки поста» (как в расширении).
-  const cover = findUrl(root, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'pic', 'first_frame']);
+  const cover = findUrl(root, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'thumbnails', 'cover_url', 'pic', 'first_frame']);
   const avatar = findUrl(root, ['avatar_thumb', 'avatar_medium', 'avatar_larger', 'avatar_168x168', 'avatar', 'profile_pic_url', 'face']);
   const music = deepFind(root, ['music_title']) ?? (root?.music && typeof root.music === 'object' ? deepFind(root.music, ['title']) : undefined);
   const createTime = num(deepFind(root, ['create_time', 'createTime', 'taken_at', 'created_at', 'timestamp', 'pubdate', 'ctime']));
-  const duration = num(deepFind(root, ['duration']));
+  const duration = num(deepFind(root, ['duration', 'video_length', 'length_seconds', 'lengthSeconds']));
   const region = deepFind(root, ['region', 'create_country', 'location']);
   const verified = !!deepFind(root, ['is_verified', 'verified', 'custom_verify', 'enterprise_verify_reason']);
   const bio = deepFind(root, ['signature', 'biography', 'bio', 'description']);
   const descStr = typeof desc === 'string' ? desc : '';
   const hashtags = (descStr.match(/#[\p{L}\p{N}_]+/gu) || []).slice(0, 12);
+  const favorites = num(deepFind(root, ['collect_count', 'collected_count', 'favorite_count', 'favorites', 'collect']));
   const er = views && views > 0
     ? Number((((likes || 0) + (comments || 0) + (shares || 0)) / views * 100).toFixed(2))
     : undefined;
+  const quality = buildQuality(blocks);
   return {
-    author, handle, desc: descStr.slice(0, 600), views, likes, comments, shares, followers, engagementRate: er,
+    author, handle, desc: descStr.slice(0, 600), views, likes, comments, shares, favorites, followers, engagementRate: er,
     cover, avatar, music, createTime, duration, region, verified,
     bio: typeof bio === 'string' ? bio.slice(0, 300) : undefined, hashtags,
+    quality: Object.keys(quality).length ? quality : undefined,
   };
 }
 
