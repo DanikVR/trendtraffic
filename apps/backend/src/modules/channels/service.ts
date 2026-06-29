@@ -280,10 +280,14 @@ export async function analyzeChannel(
       fetchAllPosts(key, PAGE.youtube, 'youtube', det.handle, maxVideos),
       fetchAllPosts(key, YT_SHORTS, 'youtube', det.handle, maxVideos),
     ]);
+    // get_channel_videos часто УЖЕ включает Shorts → помечаем по членству в shortIds
+    // (а не по тому, из какого списка пришёл), и Shorts добавляем первыми, чтобы не потерять при дедупе.
+    const shortIds = new Set(shorts.videos.map((v) => v.externalId).filter(Boolean));
     const seen = new Set<string>();
     const videos: ChannelVideo[] = [];
-    for (const v of reg.videos) { if (v.externalId && !seen.has(v.externalId)) { seen.add(v.externalId); videos.push(strip(v, false)); } }
-    for (const v of shorts.videos) { if (v.externalId && !seen.has(v.externalId)) { seen.add(v.externalId); videos.push(strip(v, true)); } }
+    const addAll = (list: NormalizedVideo[]) => { for (const v of list) { if (!v.externalId || seen.has(v.externalId)) continue; seen.add(v.externalId); videos.push(strip(v, shortIds.has(v.externalId))); } };
+    addAll(shorts.videos);
+    addAll(reg.videos);
     let note: string | undefined;
     if (videos.length === 0) note = (reg.error || shorts.error) ? `Не удалось получить видео: ${reg.error || shorts.error}` : 'Видео не найдены. Для YouTube надёжнее ссылка вида youtube.com/channel/UC…';
     return { profile, videos, count: videos.length, hasMore: reg.hasMore || shorts.hasMore, pagesFetched: reg.pages + shorts.pages, note };
