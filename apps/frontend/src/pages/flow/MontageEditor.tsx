@@ -16,7 +16,7 @@ import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
-  Cloud, CalendarDays, Download, Link2, Film,
+  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -447,6 +447,54 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     } catch { /* */ }
     finally { setSaving(false); }
   };
+
+  // ── Undo/Redo: история снимков редактируемого «документа» ──────────────────────
+  const histRef = useRef<{ stack: string[]; idx: number }>({ stack: [], idx: -1 });
+  const restoringRef = useRef(false);
+  const [, setHistTick] = useState(0);
+  const docSnap = useCallback((): string => JSON.stringify({
+    name, brief, nodes, pod, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId,
+  }), [name, brief, nodes, pod, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId]);
+  const applyDoc = (s: string) => {
+    let d: any; try { d = JSON.parse(s); } catch { return; }
+    restoringRef.current = true;
+    setName(d.name); setBrief(d.brief); setNodes(d.nodes); setPod(d.pod); setOmniSpec(d.omniSpec);
+    setCloud(d.cloud); setCloudEdges(d.cloudEdges);
+    setSourceUrl(d.sourceUrl); setSourceName(d.sourceName); setSourceAssetId(d.sourceAssetId);
+    setDirty(true);
+  };
+  // захват снимка при изменениях (дебаунс; пропускаем, если это восстановление undo/redo).
+  useEffect(() => {
+    if (restoringRef.current) { restoringRef.current = false; return; }
+    const h = setTimeout(() => {
+      const snap = docSnap();
+      const st = histRef.current;
+      if (st.stack[st.idx] === snap) return;
+      st.stack = st.stack.slice(0, st.idx + 1);
+      st.stack.push(snap);
+      if (st.stack.length > 120) st.stack.shift();
+      st.idx = st.stack.length - 1;
+      setHistTick((t) => t + 1);
+    }, 350);
+    return () => clearTimeout(h);
+  }, [docSnap]);
+  const undo = () => { const st = histRef.current; if (st.idx > 0) { st.idx -= 1; applyDoc(st.stack[st.idx]); setHistTick((t) => t + 1); } };
+  const redo = () => { const st = histRef.current; if (st.idx < st.stack.length - 1) { st.idx += 1; applyDoc(st.stack[st.idx]); setHistTick((t) => t + 1); } };
+  const canUndo = histRef.current.idx > 0;
+  const canRedo = histRef.current.idx < histRef.current.stack.length - 1;
+  // Ctrl/Cmd+Z — назад, Ctrl/Cmd+Shift+Z — вперёд (не мешаем, когда курсор в поле ввода).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Omni: редактирование спецификации преобразования ──
   const omniMutate = (fn: (s: OmniSpec) => OmniSpec) => { setOmniSpec((s) => fn(s)); setDirty(true); };
@@ -1142,6 +1190,12 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           </button>
         )}
         <div className="flex-1" />
+        <button onClick={undo} disabled={!canUndo} title="Назад (Ctrl+Z)"
+          className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40"
+          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canUndo ? 'pointer' : 'not-allowed' }}><Undo2 size={15} /></button>
+        <button onClick={redo} disabled={!canRedo} title="Вперёд (Ctrl+Shift+Z)"
+          className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40"
+          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canRedo ? 'pointer' : 'not-allowed' }}><Redo2 size={15} /></button>
         <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра"
           className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg"
           style={{ background: brief.trim() ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
