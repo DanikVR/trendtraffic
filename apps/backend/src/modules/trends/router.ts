@@ -22,6 +22,7 @@ import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset } from './dna.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, type MediaKind } from '../media/assets.js';
 
 const router = Router();
@@ -33,6 +34,14 @@ const AUDIO_DIR = path.resolve(__tr_dir, '../../../../uploads/audio');
 try { fs.mkdirSync(REFERENCE_DIR, { recursive: true }); } catch { /* best-effort */ }
 try { fs.mkdirSync(AUDIO_DIR, { recursive: true }); } catch { /* best-effort */ }
 const kindFromReq = (req: Request): MediaKind => (req.query.kind === 'audio' ? 'audio' : 'reference');
+/** Имя файла из multipart приходит в latin1 (busboy) → кириллица «кракозяблится». Восстанавливаем UTF-8. */
+function fixUploadName(name: string | undefined | null): string {
+  if (!name) return '';
+  try {
+    const utf8 = Buffer.from(name, 'latin1').toString('utf8');
+    return utf8.includes('�') ? name : utf8; // невалидный UTF-8 (имя реально было latin1) → оставляем как есть
+  } catch { return name; }
+}
 const uploadMedia = multer({
   storage: multer.diskStorage({
     // kind берём из query (?kind=audio|reference) — query доступен ДО парсинга тела.
@@ -62,7 +71,17 @@ function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   }
 }
 
+/** Полный доступ (Премиум/Энтерпрайз/триал/superadmin). Без него — 402: неоплаченный
+ *  пользователь не должен дёргать платные API напрямую (защита нашего TikHub-бюджета). */
+async function requireFullAccess(req: AuthedRequest, res: Response, next: NextFunction) {
+  try {
+    if (await hasEnterpriseAccess(req.tenantId, req.userRole as any)) return next();
+  } catch { /* ниже 402 */ }
+  return res.status(402).json({ error: 'Доступно на тарифе Премиум или Энтерпрайз. Оформите подписку.' });
+}
+
 router.use(requireAuth);
+router.use(requireFullAccess);
 
 /** POST /analyze — { url } → аналитика по ссылке (видео/аккаунт) для TikTok/Douyin/IG/X/Bilibili. */
 // YouTube: аналитика и скачивание отключены (TikHub не отдаёт надёжных потоков —
@@ -380,7 +399,7 @@ router.post('/media/upload', uploadMedia.single('file'), async (req: AuthedReque
     const subdir = kind === 'audio' ? 'audio' : 'reference';
     const fileUrl = `/uploads/${subdir}/${path.basename(file.path)}`;
     const asset = await createAsset(req.tenantId!, {
-      kind, mediaType, originalName: file.originalname, fileUrl, filePath: file.path, mime, size: file.size,
+      kind, mediaType, originalName: fixUploadName(file.originalname), fileUrl, filePath: file.path, mime, size: file.size,
     });
     if (!asset) {
       try { fs.unlinkSync(file.path); } catch {}
