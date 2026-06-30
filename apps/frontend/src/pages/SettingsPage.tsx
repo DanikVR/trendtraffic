@@ -263,7 +263,7 @@ export function SettingsPage() {
             <div className="mt-1.5">
               <StatusPill
                 status={subscriptionTier === 'trial' ? 'trial' : 'online'}
-                label={(subscriptionTierName || '').toLowerCase() === 'premium' ? 'Премиум' : subscriptionTier === 'enterprise' ? t('tier.enterprise') : subscriptionTier === 'trial' ? t('tier.trial') : t('tier.standard')}
+                label={(subscriptionTierName || '').toLowerCase() === 'premium' ? 'Premium' : subscriptionTier === 'enterprise' ? 'Enterprise' : subscriptionTier === 'trial' ? t('tier.trial') : t('tier.standard')}
               />
             </div>
           </div>

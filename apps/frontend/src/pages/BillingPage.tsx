@@ -2,8 +2,8 @@
  * BillingPage — тарифы TrendTraffic.
  *
  * Два тарифа:
- *   • Премиум (€120/мес, Stripe) — полный самостоятельный доступ ко ВСЕМ функциям.
- *   • Энтерпрайз (по запросу) — то же + индивидуальная настройка и массовое ведение
+ *   • Premium (€120/мес, Stripe) — полный самостоятельный доступ ко ВСЕМ функциям.
+ *   • Enterprise (по запросу) — то же + индивидуальная настройка и массовое ведение
  *     соцсетей «под ключ» через наш API.
  * Функции у тарифов идентичны; различие — в уровне сервиса.
  *
@@ -15,7 +15,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Check, ArrowRight, Crown, Sparkles, TrendingUp, BarChart3, Users, Image as ImageIcon,
   Workflow, Send, Video, KeyRound, MessageSquare, Tags, Loader2, X, Ban, RotateCcw,
-  Calendar, Settings, Headphones, Gauge, Layers,
+  Calendar, Settings, Headphones, Gauge, Layers, Gift, Plug,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -29,20 +29,22 @@ import { showToast } from '../components/Toast';
 interface PlanFeature { icon: React.ReactNode; text: string; strong?: boolean }
 
 const PREMIUM_FEATURES: PlanFeature[] = [
-  { icon: <TrendingUp size={14} />, text: 'Безлимитный поиск вирусных трендов: TikTok, Instagram, YouTube, X, Reddit, Douyin, Bilibili', strong: true },
+  { icon: <TrendingUp size={14} />, text: 'Безлимитный поиск вирусных трендов: TikTok, Instagram, YouTube, X, Reddit, Douyin, Bilibili' },
   { icon: <BarChart3 size={14} />, text: 'Безлимитная аналитика по ссылке: просмотры, лайки, вовлечённость, тональность (ИИ), облако слов, топ-комментарии' },
   { icon: <Users size={14} />, text: '«Каналы» — анализ всех роликов канала + вотчлист с историей метрик и приростами' },
   { icon: <ImageIcon size={14} />, text: 'Галерея + скачивание видео без водяного знака (TikTok, X, Instagram)' },
   { icon: <Workflow size={14} />, text: 'TrendFlow — сборка роликов по сценам: монтаж, формат 9:16/1:1/16:9, субтитры, озвучка, цвет, экспорт' },
-  { icon: <Video size={14} />, text: 'Генерация видео через ВАШИ подключённые API: видео, аватары, озвучка, рестайл', strong: true },
+  { icon: <Video size={14} />, text: 'Генерация видео через ВАШИ подключённые API: видео, аватары, озвучка, рестайл (Anthropic Claude, FAL.ai, OpenAI, ElevenLabs, HeyGen и др.)' },
+  { icon: <Gift size={14} />, text: 'Подключение бесплатных API для генерации и видео: Pexels, Pixabay, Unsplash, HuggingFace' },
   { icon: <Send size={14} />, text: 'Публикатор — публикация роликов в TikTok, Instagram, YouTube, Facebook, X (скоро)' },
   { icon: <Tags size={14} />, text: 'Промокоды и реферальная система' },
 ];
 
 const ENTERPRISE_FEATURES: PlanFeature[] = [
-  { icon: <Check size={14} />, text: 'Всё из тарифа Премиум', strong: true },
+  { icon: <Check size={14} />, text: 'Всё из тарифа Premium' },
+  { icon: <Plug size={14} />, text: 'Подключение ваших API для генерации (платные и бесплатные)' },
   { icon: <Settings size={14} />, text: 'Индивидуальная настройка сервиса под ваш бренд и задачи' },
-  { icon: <Layers size={14} />, text: 'Массовое ведение соцсетей «под ключ» через наш API — ведём аккаунты за вас', strong: true },
+  { icon: <Layers size={14} />, text: 'Массовое ведение соцсетей «под ключ» через наш API — ведём аккаунты за вас' },
   { icon: <KeyRound size={14} />, text: 'Индивидуальные интеграции и доработки под ваш пайплайн' },
   { icon: <Gauge size={14} />, text: 'Приоритетная очередь генерации и рендера' },
   { icon: <Headphones size={14} />, text: 'Выделенная поддержка и персональный менеджер' },
@@ -60,8 +62,8 @@ export function BillingPage() {
   // Текущий тариф для показа в карточке статуса.
   const tierDisplay = (() => {
     const raw = (subscriptionTierName || subscriptionTier || '').toLowerCase();
-    if (raw === 'premium') return 'Премиум';
-    if (raw === 'enterprise') return 'Энтерпрайз';
+    if (raw === 'premium') return 'Premium';
+    if (raw === 'enterprise') return 'Enterprise';
     if (raw === 'plus') return 'Plus';
     if (raw === 'standard') return 'Standard';
     if (raw === 'standard_yearly') return 'Standard (год)';
@@ -200,7 +202,7 @@ export function BillingPage() {
   })();
   const fmtPrice = (eur: number) => Number.isInteger(eur) ? `€${eur}` : `€${eur.toFixed(2)}`;
 
-  // ── Stripe Checkout (Премиум) ──
+  // ── Stripe Checkout (Premium) ──
   const handleCheckout = async () => {
     setCheckoutLoading(true);
     try {
@@ -222,7 +224,7 @@ export function BillingPage() {
   };
 
   const handleContactEnterprise = () => {
-    const msg = 'Здравствуйте! Хочу узнать про тариф Энтерпрайз в TrendTraffic (индивидуальная настройка и ведение соцсетей).';
+    const msg = 'Здравствуйте! Хочу узнать про тариф Enterprise в TrendTraffic (индивидуальная настройка и ведение соцсетей).';
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -329,12 +331,12 @@ export function BillingPage() {
           </div>
         )}
         {promoError && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{promoError}</p>}
-        <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>Скидка применится к подписке Премиум при оплате.</p>
+        <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>Скидка применится к подписке Premium при оплате.</p>
       </AuroraCard>
 
       {/* Карточки тарифов */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* ── Премиум ── */}
+        {/* ── Premium ── */}
         <div className="relative rounded-3xl p-6 flex flex-col"
              style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.06) 0%, var(--card-bg) 100%)',
                       border: '1.5px solid rgba(99,102,241,0.40)', boxShadow: '0 16px 48px rgba(99,102,241,0.10)' }}>
@@ -345,7 +347,7 @@ export function BillingPage() {
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles size={20} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
-              <h3 className="text-lg font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Премиум</h3>
+              <h3 className="text-lg font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Premium</h3>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               Полный самостоятельный доступ ко всем функциям сервиса.
@@ -382,19 +384,19 @@ export function BillingPage() {
           <AuroraButton fullWidth onClick={handleCheckout} disabled={checkoutLoading}
             iconRight={checkoutLoading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} strokeWidth={2} />}
             id="billing-cta-premium">
-            {checkoutLoading ? 'Открываю Stripe…' : 'Оформить Премиум'}
+            {checkoutLoading ? 'Открываю Stripe…' : 'Оформить Premium'}
           </AuroraButton>
         </div>
 
-        {/* ── Энтерпрайз ── */}
+        {/* ── Enterprise ── */}
         <div className="relative rounded-3xl p-6 flex flex-col" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Crown size={20} strokeWidth={1.5} style={{ color: '#FBBF24' }} />
-              <h3 className="text-lg font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Энтерпрайз</h3>
+              <h3 className="text-lg font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Enterprise</h3>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-              Всё из Премиум + индивидуальная настройка и ведение соцсетей «под ключ».
+              Всё из Premium + индивидуальная настройка и ведение соцсетей «под ключ».
             </p>
           </div>
           <div className="mb-5">
@@ -446,11 +448,11 @@ export function BillingPage() {
       <div className="space-y-3">
         <h2 className="section-title text-lg">Частые вопросы</h2>
         {[
-          { q: 'Чем Премиум отличается от Энтерпрайз?', a: 'Набор функций одинаковый — оба тарифа открывают полный доступ ко всему сервису. Энтерпрайз дополнительно включает индивидуальную настройку под ваш бренд и массовое ведение соцсетей «под ключ» через наш API (мы ведём аккаунты за вас).' },
+          { q: 'Чем Premium отличается от Enterprise?', a: 'Набор функций одинаковый — оба тарифа открывают полный доступ ко всему сервису. Enterprise дополнительно включает индивидуальную настройку под ваш бренд и массовое ведение соцсетей «под ключ» через наш API (мы ведём аккаунты за вас).' },
           { q: 'Что значит «генерация через подключённые API»?', a: 'Вы подключаете свои ключи внешних сервисов (Google Veo, FAL/Kling, Runway, OpenAI, ElevenLabs, HeyGen, Claude). TrendFlow использует их для генерации видео/озвучки/аватаров. Оплата этим сервисам идёт напрямую по их ценам.' },
-          { q: 'Анализ трендов правда безлимитный?', a: 'Да — поиск и аналитика трендов на Премиум и Энтерпрайз не ограничены по количеству.' },
+          { q: 'Анализ трендов правда безлимитный?', a: 'Да — поиск и аналитика трендов на Premium и Enterprise не ограничены по количеству.' },
           { q: 'Можно ли отменить подписку?', a: 'Да, в любой момент в карточке тарифа выше — автопродление отключится, а доступ сохранится до конца оплаченного периода.' },
-          { q: 'Действуют ли промокоды?', a: 'Да. Введите промокод выше — скидка применится при оформлении Премиум через Stripe.' },
+          { q: 'Действуют ли промокоды?', a: 'Да. Введите промокод выше — скидка применится при оформлении Premium через Stripe.' },
         ].map((item, idx) => (
           <AuroraCard key={idx} className="p-4">
             <p className="text-sm font-600 mb-1" style={{ color: 'var(--text-primary)' }}>{item.q}</p>

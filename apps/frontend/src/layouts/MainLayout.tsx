@@ -361,8 +361,8 @@ export function MainLayout() {
               {(() => {
                 const raw = (subscriptionTierName || '').toLowerCase();
                 const map: Record<string, { bg: string; fg: string; label: string }> = {
-                  premium:         { bg: 'rgba(99,102,241,0.15)',  fg: '#818cf8', label: 'Премиум' },
-                  enterprise:      { bg: 'rgba(167,139,250,0.15)', fg: '#a78bfa', label: 'Энтерпрайз' },
+                  premium:         { bg: 'rgba(99,102,241,0.15)',  fg: '#818cf8', label: 'Premium' },
+                  enterprise:      { bg: 'rgba(167,139,250,0.15)', fg: '#a78bfa', label: 'Enterprise' },
                   standard_yearly: { bg: 'rgba(34,211,238,0.15)',  fg: '#22d3ee', label: 'Standard (год)' },
                   standard:        { bg: 'rgba(16,185,129,0.15)',  fg: '#10b981', label: 'Standard' },
                   plus:            { bg: 'rgba(59,130,246,0.15)',  fg: '#3b82f6', label: 'Plus' },

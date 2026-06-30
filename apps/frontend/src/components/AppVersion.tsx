@@ -778,7 +778,16 @@
  *         нативная «копировать» скрыты, вместо них тройка кнопок: открыть по ссылке · скачать
  *         (стрим через /api/social-ext/media) · скопировать ссылку. Реализация — custom.js
  *         (DOM-инъекция) + новый postMessage social-ext:media-url в SocialExtensionPage. */
-export const APP_VERSION = '1.5.35';
+
+/* 1.5.36 — Тарифы, правки по фидбэку: (1) иконки в карточках Premium/Enterprise приведены
+ *         к ОДНОМУ стилю (убран цветной highlight у «strong»-строк — все muted). (2) Названия
+ *         тарифов НЕ переводятся — «Premium»/«Enterprise» на английском на всех языках
+ *         (BillingPage, сайдбар MainLayout, SettingsPage; больше не через t('tier.*')).
+ *         (3) Premium: добавлена строка про бесплатные API (Pexels, Pixabay, Unsplash,
+ *         HuggingFace) + в строку генерации дописаны провайдеры (Anthropic Claude, FAL.ai,
+ *         OpenAI, ElevenLabs, HeyGen и др.). (4) Enterprise: добавлено «Подключение ваших API
+ *         для генерации (платные и бесплатные)». */
+export const APP_VERSION = '1.5.36';
 
 export function AppVersion() {
   return (
