@@ -321,10 +321,10 @@ export function LandingPage() {
   return (
     <div id="top" className="dark relative min-h-screen overflow-x-hidden text-white" style={{ background: '#0A0A0B' }}>
       <Helmet>
-        <title>VibeVox — синхронный ИИ-перевод видеовстреч и звонков за €0.17/мин</title>
+        <title>TrendTraffic — умный видео-маркетинг</title>
         <meta
           name="description"
-          content="VibeVox: мгновенный двусторонний ИИ-перевод видеовстреч и SIP-звонков на 107 языков. HD-голоса, задержка менее 0.5 секунды, €0.17 за минуту, минуты не сгорают."
+          content="TrendTraffic — поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео."
         />
         <style>{`
           @keyframes vv-mq-l { from { transform: translateX(0) } to { transform: translateX(-50%) } }

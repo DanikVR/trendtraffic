@@ -787,7 +787,14 @@
  *         HuggingFace) + в строку генерации дописаны провайдеры (Anthropic Claude, FAL.ai,
  *         OpenAI, ElevenLabs, HeyGen и др.). (4) Enterprise: добавлено «Подключение ваших API
  *         для генерации (платные и бесплатные)». */
-export const APP_VERSION = '1.5.36';
+/* 1.5.37 — Ребрендинг вкладки браузера VibeVox → TrendTraffic: (1) заголовок и мета —
+ *         SeoMeta теперь отдаёт фиксированный «TrendTraffic — умный видео-маркетинг» на
+ *         ВСЕХ языках (раньше брал i18n seo.* = легаси VibeVox-перевод в 108 локалях);
+ *         index.html static <title>/og/twitter/JSON-LD/author → TrendTraffic. (2) Фавиконы
+ *         перегенерированы из Content/falicon.png (favicon-16/32, favicon.png корневой —
+ *         он оставался старым VibeVox-значком! — apple-touch на белом, vibevox-icon.png) +
+ *         cache-bust ?v=tt2 в index.html. (3) Заголовки публичных Landing/Legal → TrendTraffic. */
+export const APP_VERSION = '1.5.37';
 
 export function AppVersion() {
   return (

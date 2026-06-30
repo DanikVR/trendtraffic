@@ -48,11 +48,11 @@ export function SeoMeta() {
   const lang = (i18n.language || DEFAULT_LANG).split('-')[0];
   const isRtl = RTL_LANGUAGES.includes(lang);
 
-  const title = t('seo.title', { defaultValue: 'VibeVox' }) as string;
-  const description = t('seo.description', {
-    defaultValue: 'VibeVox — synchronous AI voice translation platform.',
-  }) as string;
-  const keywords = t('seo.keywords', { defaultValue: 'AI translation, voice' }) as string;
+  // Бренд и описание — ФИКСИРОВАННЫЕ TrendTraffic на всех языках (название тарифа/
+  // продукта не переводится). Раньше брались из i18n seo.* (легаси VibeVox-перевод).
+  const title = 'TrendTraffic — умный видео-маркетинг';
+  const description = 'Поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео.';
+  const keywords = 'тренды, вирусные видео, аналитика соцсетей, TikTok, Instagram, YouTube, генерация видео, видео маркетинг, trendtraffic';
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vibevox.app';
   const rawPath = typeof window !== 'undefined' ? window.location.pathname : '/';

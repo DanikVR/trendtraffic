@@ -32,7 +32,7 @@ export function LegalLayout({ title, updated, intro, children, metaDescription }
   return (
     <div className="dark relative min-h-screen text-white" style={{ background: '#0A0A0B' }}>
       <Helmet>
-        <title>{`${title} — VibeVox`}</title>
+        <title>{`${title} — TrendTraffic`}</title>
         <meta name="description" content={metaDescription} />
         <style>{LEGAL_STYLES}</style>
       </Helmet>
