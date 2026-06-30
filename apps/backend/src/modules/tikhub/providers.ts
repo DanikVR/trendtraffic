@@ -157,19 +157,19 @@ function parseRelativeTime(v: any): number | undefined {
 export function normalizeYoutube(raw: any): NormalizedVideo[] {
   const out: NormalizedVideo[] = [];
   const seen = new Set<string>();
-  const push = (id: string, desc?: string, author?: string, cover?: string, views?: number, dur?: number, createTime?: number) => {
+  const push = (id: string, desc?: string, author?: string, cover?: string, views?: number, dur?: number, createTime?: number, isShort?: boolean) => {
     if (!id || seen.has(id)) return;
     seen.add(id);
     out.push({
       externalId: id, platform: 'youtube', author: author || '', authorName: author,
       description: desc, coverUrl: cover, videoUrl: undefined,
-      webUrl: `https://www.youtube.com/watch?v=${id}`, durationSec: dur, createTime,
+      webUrl: `https://www.youtube.com/watch?v=${id}`, durationSec: dur, createTime, isShort,
       stats: { play: views }, raw: { video_id: id },
     });
   };
-  // 1) renderer-дерево (search)
+  // 1) обычные видео (videoRenderer/compact/grid) — НЕ shorts.
   const renderers: any[] = [];
-  collectByKey(raw, ['videoRenderer', 'reelItemRenderer', 'compactVideoRenderer', 'gridVideoRenderer'], renderers);
+  collectByKey(raw, ['videoRenderer', 'compactVideoRenderer', 'gridVideoRenderer'], renderers);
   for (const r of renderers) {
     const thumbs = r.thumbnail?.thumbnails;
     const cover = Array.isArray(thumbs) && thumbs.length ? thumbs[thumbs.length - 1]?.url : undefined;
@@ -179,12 +179,23 @@ export function normalizeYoutube(raw: any): NormalizedVideo[] {
       num(ytText(r.viewCountText) || ytText(r.shortViewCountText)),
       clockToSec(ytText(r.lengthText) || ''));
   }
-  // 2) Shorts (новый формат get_shorts_search): shortsLockupViewModel (videoId/заголовок/обложка вложены).
+  // 1b) Shorts-рендереры из ОБЩЕГО поиска (reelItemRenderer) — помечаем isShort,
+  //     чтобы при поиске «Видео» их можно было отфильтровать (см. service.ts).
+  const reels: any[] = [];
+  collectByKey(raw, ['reelItemRenderer'], reels);
+  for (const r of reels) {
+    const thumbs = r.thumbnail?.thumbnails;
+    const cover = Array.isArray(thumbs) && thumbs.length ? thumbs[thumbs.length - 1]?.url : undefined;
+    push(String(r.videoId || ''), ytText(r.headline) || ytText(r.title), undefined,
+      typeof cover === 'string' ? cover : undefined,
+      num(ytText(r.viewCountText) || ytText(r.shortViewCountText)), undefined, undefined, true);
+  }
+  // 2) Shorts (формат get_shorts_search): shortsLockupViewModel — тоже isShort.
   const lockups: any[] = [];
   collectByKey(raw, ['shortsLockupViewModel'], lockups);
   for (const l of lockups) {
     push(String(deepFind(l, ['videoId']) || ''), str(deepFind(l, ['content'])), undefined,
-      findUrl(l, ['sources', 'thumbnail', 'thumbnails']), num(deepFind(l, ['viewCount', 'view_count'])), undefined);
+      findUrl(l, ['sources', 'thumbnail', 'thumbnails']), num(deepFind(l, ['viewCount', 'view_count'])), undefined, undefined, true);
   }
   // 3) плоский videos[] (trending / упрощённый формат)
   const flat = findArrayOfObjects(raw, ['video_id']) || [];

@@ -151,6 +151,8 @@ export interface NormalizedVideo {
   durationSec?: number;
   /** Unix-время публикации (сек). Нужно для клиентской сортировки «Новее». */
   createTime?: number;
+  /** YouTube: это Shorts (вертикальный) — чтобы при поиске «Видео» отфильтровать. */
+  isShort?: boolean;
   stats: { play?: number; like?: number; comment?: number; share?: number };
   raw: any;
 }

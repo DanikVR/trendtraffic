@@ -731,7 +731,14 @@
  *         публикация вирусных видео из соцсетей. Генерируйте массовые просмотры, используя
  *         чужой популярный контент.» (ru/common.json pwaInstall.description/installCta +
  *         manifest.json description). Имя баннера без изменений. */
-export const APP_VERSION = '1.5.30';
+
+/* 1.5.31 — «Тренды», правки по фидбэку: (1) на карточках поиска лайки/комменты/шеры
+ *         показываем только если есть значение — у YouTube их нет в списке, иконки с «—»
+ *         убраны (TrendSearch). (2) Поиск YouTube «Видео» больше НЕ подмешивает Shorts:
+ *         get_general_search отдаёт их вместе с видео (reelItemRenderer/shortsLockupViewModel)
+ *         — помечаем isShort в normalizeYoutube и фильтруем в scanTrends при yt_kind != shorts.
+ *         Это же чинило «анализируется не тот ролик» (выбор сбивался подмешанными шортами). */
+export const APP_VERSION = '1.5.31';
 
 export function AppVersion() {
   return (

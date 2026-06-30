@@ -131,6 +131,11 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
 
   // Клиентская сортировка (для TikTok app-поиска): 2 — новее, 1 — больше лайков, 0 — как есть.
   let normalized: NormalizedVideo[] = provider.normalize(resp.data);
+  // YouTube: при поиске «Видео» (yt_kind != shorts) убираем подмешанные Shorts —
+  // get_general_search возвращает их вместе с обычными видео (помечены isShort).
+  if (platform === 'youtube' && params.filters?.yt_kind !== 'shorts') {
+    normalized = normalized.filter((v) => !v.isShort);
+  }
   if (params.kind === 'keyword' && params.sortType === 2) {
     normalized = [...normalized].sort((a, b) => (b.createTime ?? 0) - (a.createTime ?? 0));
   } else if (params.kind === 'keyword' && params.sortType === 1) {
