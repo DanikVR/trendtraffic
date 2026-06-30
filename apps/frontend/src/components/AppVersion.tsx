@@ -767,7 +767,18 @@
  *         CHECK subscriptions.tier += 'premium' (иначе оплата Премиума падала бы), sentinel
  *         реф-минут для безлимита, SettingsPage-лейбл, promo-маппинг premium, aria-label.
  *         NB ДЕПЛОЙ: после выката запустить синк тарифов Stripe (создаёт vibevox_premium_eur). */
-export const APP_VERSION = '1.5.34';
+
+/* 1.5.35 — Тренды (Instagram) + Аналитика «Quality variants», по фидбэку: (1) на карточке
+ *         Instagram убрано «мусорное» число — это была длительность видео, которую IG отдаёт
+ *         дробными секундами («0:32.972…»); dur() теперь округляет → чистое «0:33» (фикс и
+ *         визуального наложения на счётчик просмотров). (2) Чекбокс выбора теперь на КАЖДОЙ
+ *         карточке: ключ выбора keyOf() = БД-id, а для несохранённых (Instagram) — externalId;
+ *         массовая аналитика работает по webUrl. Скачивание/удаление по-прежнему требуют БД-id.
+ *         (3) В разделе «Quality variants» (рехостнутое расширение, IG/X) сам длинный URL и
+ *         нативная «копировать» скрыты, вместо них тройка кнопок: открыть по ссылке · скачать
+ *         (стрим через /api/social-ext/media) · скопировать ссылку. Реализация — custom.js
+ *         (DOM-инъекция) + новый postMessage social-ext:media-url в SocialExtensionPage. */
+export const APP_VERSION = '1.5.35';
 
 export function AppVersion() {
   return (

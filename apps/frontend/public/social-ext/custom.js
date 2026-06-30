@@ -14,6 +14,9 @@
  *    качество)» под галереей — качает ТЕКУЩИЙ элемент карусели (видео/фото) — и
  *    кнопка «Скачать аудио» в разделе AUDIO. Прямые ссылки резолвит родитель
  *    через /api/social-ext/ig-manifest, стрим — через /api/social-ext/media.
+ *  • «Quality variants» (IG/X): прячем длинный URL-текст строки и нативную копию,
+ *    добавляем тройку кнопок: открыть по ссылке · скачать (через медиа-прокси
+ *    родителя) · скопировать ссылку.
  */
 (function () {
   'use strict';
@@ -258,6 +261,73 @@
     card.appendChild(b);
   }
 
+  // ── Quality variants (IG/X): прячем сам URL, даём три кнопки ─────────────────
+  // Каждая строка варианта (разрешение · type · URL · нативная «копировать»)
+  // показывает прямой CDN-URL текстом — длинный и бесполезный в UI. Прячем строку
+  // URL и нативную копию, добавляем компактную тройку: открыть · скачать · копировать.
+  // «Скачать» стримит ссылку родителем через медиа-прокси (allow-list + Referer).
+
+  function postMediaUrl(url, filename) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'social-ext:media-url', url: url, filename: filename }, location.origin);
+      }
+    } catch (e) { /* тихо */ }
+  }
+
+  // Имя файла из разрешения и типа варианта: instagram-720x1280-101.mp4
+  function qvFilename(res, type) {
+    var r = (res || '').replace(/\s*×\s*/, 'x').replace(/[^\dx]/g, '');
+    var t = (type || '').replace(/\D/g, '');
+    return 'instagram-' + (r || 'video') + (t ? '-' + t : '') + '.mp4';
+  }
+
+  function qvIconBtn(doc, label, title, onClick) {
+    var b = doc.createElement('button');
+    b.type = 'button';
+    b.title = title;
+    b.textContent = label;
+    b.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;'
+      + 'width:26px;height:26px;flex-shrink:0;border-radius:8px;font-size:13px;line-height:1;cursor:pointer;'
+      + 'border:1px solid var(--color-border);background:var(--color-card);color:var(--color-foreground);';
+    b.onclick = onClick;
+    return b;
+  }
+
+  function enhanceQualityVariants(doc) {
+    // Строка варианта = <span class="truncate"> c текстом-URL внутри flex-строки,
+    // где рядом есть <span> с разрешением «WxH» (так не заденем прочие ссылки UI).
+    var spans = doc.querySelectorAll('span.truncate');
+    for (var i = 0; i < spans.length; i++) {
+      var urlSpan = spans[i];
+      var url = (urlSpan.textContent || '').trim();
+      if (!/^https?:\/\//i.test(url)) continue;
+      var row = urlSpan.parentElement;
+      if (!row || row.getAttribute('data-tt-qv') === '1') continue;
+      var res = '', type = '', kids = row.children;
+      for (var j = 0; j < kids.length; j++) {
+        var txt = (kids[j].textContent || '').trim();
+        if (/^\d+\s*×\s*\d+$/.test(txt)) res = txt;
+        else if (/type/i.test(txt) && /\d/.test(txt)) type = txt;
+      }
+      if (!res) continue; // не строка варианта качества
+      row.setAttribute('data-tt-qv', '1');
+      urlSpan.style.display = 'none';                       // прячем сам URL
+      var nativeCopy = row.querySelector('button');
+      if (nativeCopy) nativeCopy.style.display = 'none';    // прячем нативную «копировать» (заменим тройкой)
+      var fname = qvFilename(res, type);
+      var wrap = doc.createElement('div');
+      wrap.style.cssText = 'display:flex;gap:6px;margin-left:auto;flex-shrink:0;';
+      wrap.appendChild(qvIconBtn(doc, '↗', 'Открыть по ссылке',
+        (function (u) { return function () { try { window.open(u, '_blank', 'noopener'); } catch (e) {} }; })(url)));
+      wrap.appendChild(qvIconBtn(doc, '⬇', 'Скачать',
+        (function (u, f) { return function () { postMediaUrl(u, f); }; })(url, fname)));
+      wrap.appendChild(qvIconBtn(doc, '⧉', 'Скопировать ссылку',
+        (function (u) { return function () { try { navigator.clipboard.writeText(u); } catch (e) {} }; })(url)));
+      row.appendChild(wrap);
+    }
+  }
+
   function apply() {
     try {
       hideTopBar(document);
@@ -267,6 +337,7 @@
       reorderBlocks(document);
       igMediaButton(document);
       igAudioButton(document);
+      enhanceQualityVariants(document);
     } catch (e) { /* тихо */ }
   }
 

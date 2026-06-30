@@ -205,6 +205,20 @@ export default function SocialExtensionPage() {
     }
   }, [getIgManifest, streamViaMediaProxy]);
 
+  // Кнопка «Скачать» в строке «Quality variants» (custom.js): качаем КОНКРЕТНУЮ
+  // CDN-ссылку варианта через медиа-прокси (allow-list + Referer), стримом на устройство.
+  const handleMediaUrl = useCallback(async (cdnUrl: string, filename: string) => {
+    try {
+      setGalleryNote({ ok: true, text: 'Скачиваю файл…' });
+      await streamViaMediaProxy(cdnUrl, filename || 'media.mp4');
+      setGalleryNote({ ok: true, text: 'Файл скачан ✓' });
+      setTimeout(() => setGalleryNote(null), 5000);
+    } catch (e: any) {
+      setGalleryNote({ ok: false, text: e?.message || 'Не удалось скачать файл' });
+      setTimeout(() => setGalleryNote(null), 6000);
+    }
+  }, [streamViaMediaProxy]);
+
   const apply = useCallback((value: string) => {
     appliedRef.current = value;
     setAppliedUrl(value);
@@ -243,11 +257,14 @@ export default function SocialExtensionPage() {
         downloadVideoNoWm();
       } else if (ev.data?.type === 'social-ext:ig-download') {
         handleIgDownload(ev.data.kind === 'audio' ? 'audio' : 'media', Number(ev.data.index) || 0);
+      } else if (ev.data?.type === 'social-ext:media-url') {
+        const u = String(ev.data.url || '');
+        if (u) handleMediaUrl(u, String(ev.data.filename || 'media.mp4'));
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [postToIframe, handleMusic, downloadVideoNoWm, handleIgDownload]);
+  }, [postToIframe, handleMusic, downloadVideoNoWm, handleIgDownload, handleMediaUrl]);
 
   const shortUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 36);
 

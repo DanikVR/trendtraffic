@@ -88,7 +88,8 @@ function fmt(n?: number): string {
 }
 function dur(s?: number): string {
   if (!s || s <= 0) return '';
-  const m = Math.floor(s / 60), sec = s % 60;
+  const t = Math.round(s); // Instagram отдаёт дробные секунды → округляем (иначе «0:32.972…»)
+  const m = Math.floor(t / 60), sec = t % 60;
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
@@ -236,6 +237,10 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
     try { await fetch(`/api/trends/videos/${v.id}/download/cancel`, { method: 'POST', headers: headers() }); } catch { /* тихо */ }
   };
 
+  // Ключ выбора: БД-id, а если видео ещё не сохранено в БД (напр. Instagram) —
+  // externalId. Так чекбокс работает на КАЖДОЙ карточке (выбор → массовая аналитика);
+  // скачивание/удаление по-прежнему требуют БД-id (фильтруются ниже).
+  const keyOf = (v: StoredVideo): string => v.id || v.externalId || '';
   const toggleSelect = (id: string | null) => {
     if (!id) return;
     setSelected((prev) => {
@@ -244,12 +249,12 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
       return next;
     });
   };
-  const selectableIds = videos.filter((v) => v.id).map((v) => v.id as string);
+  const selectableIds = videos.map(keyOf).filter(Boolean);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
   const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(selectableIds));
 
   const downloadSelected = async () => {
-    const targets = videos.filter((v) => v.id && selected.has(v.id) && !v.fileUrl);
+    const targets = videos.filter((v) => v.id && selected.has(keyOf(v)) && !v.fileUrl);
     if (targets.length === 0) return;
     setBulkDownloading(true);
     for (const v of targets) {
@@ -272,7 +277,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
     finally { setBulkDeleting(false); }
   };
   const deleteSelected = () => {
-    const ids = videos.filter((v) => v.id && selected.has(v.id)).map((v) => v.id as string);
+    const ids = videos.filter((v) => v.id && selected.has(keyOf(v))).map((v) => v.id as string);
     if (ids.length === 0) return;
     setConfirm({ title: 'Удалить видео?', message: `Удалить выбранные видео из списка (${ids.length})? Действие необратимо.`, onConfirm: () => { setConfirm(null); doDeleteBulk(ids); } });
   };
@@ -291,12 +296,13 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
   };
 
   const analyzeSelected = () => {
-    const items = videos.filter((v) => v.id && selected.has(v.id) && v.webUrl).map((v) => ({ url: v.webUrl as string, cover: v.coverUrl }));
+    // Аналитике нужен только webUrl — работает и для несохранённых (Instagram без БД-id).
+    const items = videos.filter((v) => selected.has(keyOf(v)) && v.webUrl).map((v) => ({ url: v.webUrl as string, cover: v.coverUrl }));
     if (items.length === 0 || !onAnalyzeBulk) return;
     onAnalyzeBulk(items);
   };
 
-  const selectedCount = videos.filter((v) => v.id && selected.has(v.id) && !v.fileUrl).length;
+  const selectedCount = videos.filter((v) => v.id && selected.has(keyOf(v)) && !v.fileUrl).length;
 
   return (
     <>
@@ -545,7 +551,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {videos.slice(0, page * PAGE_SIZE).map((v) => {
-            const isSel = !!(v.id && selected.has(v.id));
+            const isSel = !!(keyOf(v) && selected.has(keyOf(v)));
             return (
             <AuroraCard key={v.id || v.externalId}
               className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
@@ -576,8 +582,8 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
                   <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10"
                     style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>
                 )}
-                {v.id && (
-                  <button type="button" onClick={() => toggleSelect(v.id)} title="Выбрать"
+                {keyOf(v) && (
+                  <button type="button" onClick={() => toggleSelect(keyOf(v))} title="Выбрать"
                     className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
                     style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                     {isSel ? <Check size={15} /> : null}
