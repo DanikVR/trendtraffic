@@ -13,7 +13,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, X, ImagePlus, Loader2, Play, Eye, TrendingUp } from 'lucide-react';
+import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { type StoredVideo } from '../components/TrendSearch';
@@ -270,10 +270,8 @@ export default function SocialExtensionPage() {
     <div className="flex flex-col gap-3 h-full min-h-0">
       {/* Header: иконка + заголовок + строка-пояснение — единообразно с другими разделами. */}
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-             style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)' }}>
-          <TrendingUp size={20} color="#fff" />
-        </div>
+        <img src="/icons/nav-trends.png" alt="" draggable={false}
+             className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
           <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Поиск вирусных видео в TikTok, Instagram, YouTube и X — и аналитика трендов.</p>

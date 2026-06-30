@@ -12,7 +12,7 @@
  * сценариев они не нужны.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { Workflow, Plus, Pencil, Check, X, MoreVertical, Copy, Trash2, Power, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Check, X, MoreVertical, Copy, Trash2, Power, Loader2 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
@@ -155,9 +155,8 @@ export default function FlowPage() {
   return (
     <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c5cff, #6366F1)' }}>
-          <Workflow size={20} color="#fff" />
-        </div>
+        <img src="/icons/nav-flow.png" alt="" draggable={false}
+             className="w-10 h-10 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div>
           <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>TrendFlow</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Сценарии производства видео. Создайте сценарий и соберите его в редакторе.</p>

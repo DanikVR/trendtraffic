@@ -266,10 +266,8 @@ export default function ChannelsPage() {
   // ── Шапка страницы ──
   const Header = (
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-           style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)' }}>
-        <Users size={20} color="#fff" />
-      </div>
+      <img src="/icons/nav-channels.png" alt="" draggable={false}
+           className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Каналы</h1>
         <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>

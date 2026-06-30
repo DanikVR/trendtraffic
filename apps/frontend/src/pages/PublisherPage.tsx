@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { Send, Calendar, Share2, Clock, CheckCircle2 } from 'lucide-react';
+import { Calendar, Share2, Clock, CheckCircle2 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 
 const STEPS = [
@@ -21,10 +21,8 @@ export default function PublisherPage() {
   return (
     <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-             style={{ background: 'linear-gradient(135deg, #7c5cff, #6366F1)' }}>
-          <Send size={20} color="#fff" />
-        </div>
+        <img src="/icons/nav-publisher.png" alt="" draggable={false}
+             className="w-10 h-10 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div>
           <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Публикатор</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Публикация готовых видео в соцсети.</p>

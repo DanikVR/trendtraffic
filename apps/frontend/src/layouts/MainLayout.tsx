@@ -140,21 +140,32 @@ export function MainLayout() {
           .vv-nav-collapsed > a, .vv-nav-collapsed > button { justify-content: center; padding-left: 0; padding-right: 0; }
           .vv-nav-collapsed > a > span, .vv-nav-collapsed > button > span { display: none; }
         `}</style>
-        {/* Header: лого + переключатели + кнопка сворачивания */}
-        <div className={`flex items-center border-b ${navCollapsed ? 'flex-col gap-2 px-2 py-4' : 'gap-3 px-5 py-5'}`} style={{ borderColor: 'var(--border-subtle)' }}>
-          {navCollapsed ? (
+        {/* Header: лого + переключатели + кнопка сворачивания.
+            Развёрнутый режим — лого на ОТДЕЛЬНОЙ строке (крупно, на всю ширину),
+            под ним строка контролов. Так логотип не зажат справа кнопками. */}
+        {navCollapsed ? (
+          <div className="flex flex-col items-center gap-2 px-2 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
             <button type="button" onClick={() => navigate('/')} className="no-select" aria-label={t('sidebar.logoAria')}>
               <VibeVoxIcon size={32} bordered />
             </button>
-          ) : (
-            <button type="button" onClick={() => navigate('/')} className="flex items-center flex-1 min-w-0 no-select" aria-label={t('sidebar.logoAria')}>
-              <VibeVoxLogo height={30} />
+            <button
+              onClick={toggleNav}
+              title="Развернуть меню"
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200"
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+            >
+              <PanelLeftOpen size={15} strokeWidth={1.5} />
             </button>
-          )}
-          {/* Переключатели языка и темы (скрыты в свёрнутом) + сворачивание */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {!navCollapsed && <LanguageSwitcher />}
-            {!navCollapsed && (
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 px-5 py-5 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+            {/* Лого — отдельной строкой, на всю ширину сайдбара */}
+            <button type="button" onClick={() => navigate('/')} className="flex items-center no-select" aria-label={t('sidebar.logoAria')}>
+              <VibeVoxLogo height={44} />
+            </button>
+            {/* Переключатели языка и темы + сворачивание */}
+            <div className="flex items-center gap-1">
+              <LanguageSwitcher />
               <button
                 id="sidebar-theme-toggle"
                 onClick={() => toggleGlobalTheme(isDark, setIsDark)}
@@ -167,20 +178,17 @@ export function MainLayout() {
                   : <Moon size={15} strokeWidth={1.5} />
                 }
               </button>
-            )}
-            <button
-              onClick={toggleNav}
-              title={navCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200"
-              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-            >
-              {navCollapsed
-                ? <PanelLeftOpen  size={15} strokeWidth={1.5} />
-                : <PanelLeftClose size={15} strokeWidth={1.5} />
-              }
-            </button>
+              <button
+                onClick={toggleNav}
+                title="Свернуть меню"
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 ml-auto"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+              >
+                <PanelLeftClose size={15} strokeWidth={1.5} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Nav items */}
         <nav className={`flex-1 px-3 py-4 flex flex-col gap-1 ${navCollapsed ? 'vv-nav-collapsed' : ''}`}>
@@ -447,7 +455,7 @@ export function MainLayout() {
             className="flex items-center no-select touch-target"
             aria-label={t('sidebar.logoAria')}
           >
-            <VibeVoxLogo height={26} />
+            <VibeVoxLogo height={30} />
           </button>
 
           {/* Balance · hamburger — без обводок */}
