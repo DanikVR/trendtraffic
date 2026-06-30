@@ -52,6 +52,7 @@ async function buildProductToTiersMap(): Promise<Map<string, string[]>> {
       const key = p.metadata?.vibevox_key;
       if (!key) continue;
       const tiers: string[] = [];
+      if (key === 'premium') tiers.push('premium');
       if (key === 'plus') tiers.push('plus');
       if (key === 'standard') tiers.push('standard', 'standard_yearly');
       out.set(p.id, tiers);
