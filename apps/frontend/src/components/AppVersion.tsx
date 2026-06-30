@@ -723,7 +723,15 @@
  *         Каналы/Тренды — градиентный бокс с lucide заменён на /icons/nav-*.png
  *         (objectFit contain). Убраны ставшие неиспользуемыми импорты Send/Workflow/
  *         TrendingUp. */
-export const APP_VERSION = '1.5.29';
+
+/* 1.5.30 — Иконки навигации: брендовые PNG (/icons/nav-*.png) оставлены ТОЛЬКО в шапках
+ *         разделов; боковые иконки сайдбара (MainLayout) и мобильного меню (BottomTabBar)
+ *         возвращены на стандартные lucide (TrendingUp/Image/Send/Workflow/Users) — как
+ *         было до ребрендинга. Текст PWA-баннера заменён: «Автоматический поиск и
+ *         публикация вирусных видео из соцсетей. Генерируйте массовые просмотры, используя
+ *         чужой популярный контент.» (ru/common.json pwaInstall.description/installCta +
+ *         manifest.json description). Имя баннера без изменений. */
+export const APP_VERSION = '1.5.30';
 
 export function AppVersion() {
   return (

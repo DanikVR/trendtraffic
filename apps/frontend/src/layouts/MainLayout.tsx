@@ -78,27 +78,20 @@ export function MainLayout() {
   const isEnterprise = useIsEnterprise();
 
   // Фич-флаги: пункты навигации появляются только для включённых функций.
-  // img (если задан) — брендовая PNG-иконка раздела (из /icons/nav-*.png); иначе lucide-икона.
-  type NavItem = {
-    path: string;
-    icon: React.ElementType;
-    img?: string;
-    label: string;
-    exact: boolean;
-  };
-  const desktopNav: NavItem[] = [
+  // Боковые иконки — стандартные lucide (брендовые PNG используются только в шапках разделов).
+  const desktopNav = [
     ...(FEATURES.video ? [{ path: '/',    icon: Languages, label: t('nav.rooms'), exact: true  }] : []),
     ...(FEATURES.sip   ? [{ path: '/sip', icon: Phone,     label: t('nav.sip'),   exact: false }] : []),
     // «Тренды» → расширение (/social-extension). Гейт Enterprise — RequireEnterprise
     // (не-Enterprise редиректит на Тарифы). Старая страница /trends удалена.
     ...(FEATURES.socialMediaExt
-      ? [{ path: '/social-extension', icon: TrendingUp, img: '/icons/nav-trends.png', label: t('nav.trends', 'Тренды'), exact: false }]
+      ? [{ path: '/social-extension', icon: TrendingUp, label: t('nav.trends', 'Тренды'), exact: false }]
       : []),
-    ...(FEATURES.gallery ? [{ path: '/gallery', icon: Image, img: '/icons/nav-gallery.png', label: t('nav.gallery', 'Галерея'), exact: false }] : []),
-    ...(FEATURES.publisher ? [{ path: '/publisher', icon: Send, img: '/icons/nav-publisher.png', label: t('nav.publisher', 'Публикатор'), exact: false }] : []),
-    ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, img: '/icons/nav-flow.png', label: 'TrendFlow',  exact: false }] : []),
+    ...(FEATURES.gallery ? [{ path: '/gallery', icon: Image, label: t('nav.gallery', 'Галерея'), exact: false }] : []),
+    ...(FEATURES.publisher ? [{ path: '/publisher', icon: Send, label: t('nav.publisher', 'Публикатор'), exact: false }] : []),
+    ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'TrendFlow',  exact: false }] : []),
     // «Каналы» → анализ всех видео канала (/channels). Гейт Enterprise — RequireEnterprise.
-    ...(FEATURES.channels ? [{ path: '/channels', icon: Users, img: '/icons/nav-channels.png', label: t('nav.channels', 'Каналы'), exact: false }] : []),
+    ...(FEATURES.channels ? [{ path: '/channels', icon: Users, label: t('nav.channels', 'Каналы'), exact: false }] : []),
   ];
 
   // При монтировании / смене токена — подтянуть баланс и тариф с бэка.
@@ -218,10 +211,7 @@ export function MainLayout() {
               >
                 {({ isActive }) => (
                   <>
-                    {item.img
-                      ? <img src={item.img} alt="" draggable={false}
-                             style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0 }} />
-                      : <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />}
+                    <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
                     <span>{item.label}</span>
                   </>
                 )}

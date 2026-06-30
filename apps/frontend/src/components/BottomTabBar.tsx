@@ -23,6 +23,11 @@ import {
   Zap,
   ShieldAlert,
   Download,
+  Workflow,
+  TrendingUp,
+  Users,
+  Image,
+  Send,
 } from 'lucide-react';
 import { AvatarCircle } from './AvatarCircle';
 import { StatusPill } from './StatusPill';
@@ -49,20 +54,16 @@ export function BottomTabBar() {
   const isEnterprise = useIsEnterprise();
 
   // Локализованные пункты More-sheet — i18n заново резолвится при смене языка.
-  // navImg — брендовая PNG-иконка раздела (из /icons/nav-*.png), 26px contain.
-  const navImg = (src: string) => (
-    <img src={src} alt="" draggable={false} style={{ width: 26, height: 26, objectFit: 'contain' }} />
-  );
   const moreItems = [
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
-    ...(FEATURES.flow ? [{ path: '/flow', icon: navImg('/icons/nav-flow.png'), label: 'TrendFlow', sublabel: t('moreSheet.flow.sub', 'Сценарии бота для каналов'), accent: '#7c5cff' }] : []),
+    ...(FEATURES.flow ? [{ path: '/flow', icon: <Workflow size={20} strokeWidth={1.5} />, label: 'TrendFlow', sublabel: t('moreSheet.flow.sub', 'Сценарии бота для каналов'), accent: '#7c5cff' }] : []),
     // «Тренды» → расширение (/social-extension). Не-Enterprise редиректит на Тарифы. /trends удалён.
     ...(FEATURES.socialMediaExt
-      ? [{ path: '/social-extension', icon: navImg('/icons/nav-trends.png'), label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Поиск горячих видео + аналитика'), accent: '#f59e0b' }]
+      ? [{ path: '/social-extension', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Поиск горячих видео + аналитика'), accent: '#f59e0b' }]
       : []),
-    ...(FEATURES.gallery ? [{ path: '/gallery', icon: navImg('/icons/nav-gallery.png'), label: t('nav.gallery', 'Галерея'), sublabel: t('moreSheet.gallery.sub', 'Скачанные видео'), accent: '#10b981' }] : []),
-    ...(FEATURES.publisher ? [{ path: '/publisher', icon: navImg('/icons/nav-publisher.png'), label: t('nav.publisher', 'Публикатор'), sublabel: t('moreSheet.publisher.sub', 'Публикация в соцсети'), accent: '#7c5cff' }] : []),
-    ...(FEATURES.channels ? [{ path: '/channels', icon: navImg('/icons/nav-channels.png'), label: t('nav.channels', 'Каналы'), sublabel: t('moreSheet.channels.sub', 'Аналитика каналов'), accent: '#6366f1' }] : []),
+    ...(FEATURES.gallery ? [{ path: '/gallery', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Галерея'), sublabel: t('moreSheet.gallery.sub', 'Скачанные видео'), accent: '#10b981' }] : []),
+    ...(FEATURES.publisher ? [{ path: '/publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('moreSheet.publisher.sub', 'Публикация в соцсети'), accent: '#7c5cff' }] : []),
+    ...(FEATURES.channels ? [{ path: '/channels', icon: <Users size={20} strokeWidth={1.5} />, label: t('nav.channels', 'Каналы'), sublabel: t('moreSheet.channels.sub', 'Аналитика каналов'), accent: '#6366f1' }] : []),
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
 

@@ -588,11 +588,15 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
                 {v.description && (
                   <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>
                 )}
-                <div className="flex items-center gap-2.5 text-[11px] flex-wrap mt-auto" style={{ color: 'var(--text-muted)' }}>
-                  <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
-                  <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>
-                  <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>
-                </div>
+                {/* Показываем только те метрики, что реально есть (YouTube не отдаёт
+                    лайки/комменты/шеры в списке поиска → иконки с «—» убираем). */}
+                {(v.stats.like != null || v.stats.comment != null || v.stats.share != null) && (
+                  <div className="flex items-center gap-2.5 text-[11px] flex-wrap mt-auto" style={{ color: 'var(--text-muted)' }}>
+                    {v.stats.like != null && <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>}
+                    {v.stats.comment != null && <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>}
+                    {v.stats.share != null && <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>}
+                  </div>
+                )}
                 <div className="flex items-center gap-1 pt-1">
                   {v.webUrl && (
                     <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Аналитика"
