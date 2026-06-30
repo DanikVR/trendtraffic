@@ -431,6 +431,99 @@ def _pod_concat(segments: list, out_path: str, work: Path) -> Optional[str]:
     return out_path
 
 
+def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str, img_b: str,
+                 rec_path: Optional[str], base_url: Optional[str], work: Path) -> Tuple[Optional[str], str]:
+    """
+    Фаза 2 (таймлайн с НАЛОЖЕНИЕМ): каждая реплика — клип со своей позицией на выходном
+    таймлайне (l['tStart'], сек). Дорожки микшируются (adelay по tStart + amix), поэтому
+    клипы могут накладываться — один «перебивает» другого. Видео — сплит-скрин (статичные
+    фото) на всю длину; картинки реплик показываются во время своего клипа.
+    """
+    def out(sfx=".mp4") -> str:
+        return str(work / f"m_{uuid.uuid4().hex[:6]}{sfx}")
+
+    half = POD_W // 2
+    clips: list = []
+    notes: list = []
+    used_real = 0
+    used_imgs = 0
+    for i, l in enumerate(lines):
+        spk = "B" if l.get("speaker") == "B" else "A"
+        text = str(l.get("text") or "").strip()
+        wav = None
+        st = None
+        if rec_path:
+            try:
+                st, en = float(l.get("start")), float(l.get("end"))
+            except (TypeError, ValueError):
+                st = en = None
+            if st is not None and en is not None and en > st:
+                wav = _cut_audio(rec_path, st, en, out(".wav"))
+                if wav:
+                    used_real += 1
+        if not wav:
+            voice = (host_b if spk == "B" else host_a).get("voice") or "female"
+            wav, _, _ = _tts(text, voice, out(".wav"))
+        if not wav:
+            notes.append(f"реплика {i + 1}: озвучка не создана")
+            continue
+        d = _media_duration(wav) or 1.0
+        try:
+            t = float(l.get("tStart"))
+        except (TypeError, ValueError):
+            t = None
+        if t is None:  # нет позиции — берём исходный таймкод, иначе встык за предыдущим
+            t = st if st is not None else (clips[-1]["t"] + clips[-1]["dur"] if clips else 0.0)
+        img = _download_media(base_url, l.get("image"), work, default_ext=".jpg") if l.get("image") else None
+        if img:
+            used_imgs += 1
+        clips.append({"wav": wav, "t": max(0.0, t), "dur": d, "image": img})
+    if not clips:
+        tail = "; ".join(notes) if notes else "нет клипов"
+        return None, f"подкаст(таймлайн): {tail}"
+
+    total = max(c["t"] + c["dur"] for c in clips) + 0.2
+    inputs: list = ["-loop", "1", "-t", f"{total:.3f}", "-i", img_a,   # 0
+                    "-loop", "1", "-t", f"{total:.3f}", "-i", img_b]   # 1
+    for c in clips:                                                    # 2 .. 2+N-1 — аудио клипов
+        inputs += ["-i", c["wav"]]
+    img_clips = [c for c in clips if c["image"]]
+    img_start = 2 + len(clips)
+    for c in img_clips:                                               # картинки — после аудио
+        inputs += ["-loop", "1", "-i", c["image"]]
+
+    fc = (
+        f"[0:v]scale={half}:{POD_H}:force_original_aspect_ratio=increase,crop={half}:{POD_H},fps=30,setsar=1[l];"
+        f"[1:v]scale={half}:{POD_H}:force_original_aspect_ratio=increase,crop={half}:{POD_H},fps=30,setsar=1[r];"
+        f"[l][r]hstack=inputs=2[v0];"
+    )
+    last_v = "v0"
+    side = int(POD_W * 0.62)
+    for k, c in enumerate(img_clips):
+        idx = img_start + k
+        t0, t1 = c["t"], c["t"] + c["dur"]
+        fc += (f"[{idx}:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1[ci{k}];"
+               f"[{last_v}][ci{k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\\,{t0:.3f}\\,{t1:.3f})'[vi{k}];")
+        last_v = f"vi{k}"
+    for k, c in enumerate(clips):
+        ms = int(c["t"] * 1000)
+        fc += f"[{2 + k}:a]adelay={ms}|{ms}[a{k}];"
+    fc += "".join(f"[a{k}]" for k in range(len(clips)))
+    fc += f"amix=inputs={len(clips)}:normalize=0:duration=longest[aout]"
+
+    out_path = out()
+    cmd = [FFMPEG, "-y", *inputs, "-filter_complex", fc,
+           "-map", f"[{last_v}]", "-map", "[aout]",
+           "-t", f"{total:.3f}", "-r", "30", "-pix_fmt", "yuv420p",
+           "-c:v", "libx264", "-preset", "veryfast", "-c:a", "aac", "-ac", "2", out_path]
+    ok, err = _run(cmd, timeout=1800)
+    if not (ok and os.path.exists(out_path)):
+        print(f"[worker] pod mix ffmpeg failed: {err[:400]}")
+        return None, "подкаст(таймлайн): ffmpeg-микс не удался"
+    extra = ("; " + "; ".join(notes)) if notes else ""
+    return out_path, f"подкаст-таймлайн (наложение): {len(clips)} клип., реальный голос {used_real}, картинок {used_imgs}{extra}"
+
+
 def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple[Optional[str], str]:
     """
     Собирает подкаст-сцену (сплит-скрин, 2 ведущих) из спецификации params['podcast']:
@@ -488,6 +581,12 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
     if len(lines) > POD_MAX_LINES:
         lines = lines[:POD_MAX_LINES]
         truncated += f"; обрезано до {POD_MAX_LINES} реплик (MVP)"
+
+    # Фаза 2: режим таймлайна с наложением (микс дорожек). Иначе — обычная последовательная сборка.
+    if pod.get("timeline"):
+        mf, mnote = _podcast_mix(pod, lines, host_a, host_b, img_a, img_b, rec_path, base_url, work)
+        if mf:
+            return mf, mnote + truncated
 
     has_talking = registry.get("talking_head") is not None
     segments: list = []
