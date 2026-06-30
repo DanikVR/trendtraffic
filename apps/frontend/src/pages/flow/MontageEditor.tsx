@@ -102,11 +102,15 @@ type PodLayout = 'overlay' | 'topbar'; // где картинка в сплит-
 interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string }
 interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number }
 interface PodCutaway { url: string; name: string }
+// Лицо на групповом фото: бокс в долях изображения (0..1) + назначенный спикер.
+interface PodFace { id: string; box: { x: number; y: number; w: number; h: number }; speaker: 'A' | 'B' }
 interface PodcastSpec {
   hostA: PodHost; hostB: PodHost;
   source: PodSource; brief: string; dialogue: PodLine[];
   recordingUrl: string | null; recordingName: string | null;
   cutaways: PodCutaway[]; layout: PodLayout; segSec: number; platforms: string[];
+  // Фаза 1 «Студия лиц»: групповое фото → детекция/разметка лиц → кадры-ракурсы.
+  groupPhotoUrl: string | null; groupPhotoName: string | null; faces: PodFace[];
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -114,6 +118,7 @@ const POD_DEFAULT: PodcastSpec = {
   source: 'gen', brief: '', dialogue: [],
   recordingUrl: null, recordingName: null,
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
+  groupPhotoUrl: null, groupPhotoName: null, faces: [],
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -338,10 +343,14 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
-  const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload'>(null);
+  const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
   const [podNote, setPodNote] = useState<string | null>(null);
-  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording'>(null);
+  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group'>(null);
   const podPickInputRef = useRef<HTMLInputElement | null>(null);
+  // «Студия лиц»: рисование боксов поверх группового фото.
+  const faceWrapRef = useRef<HTMLDivElement | null>(null);
+  const [drawBox, setDrawBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const drawStartRef = useRef<{ x: number; y: number } | null>(null);
   const [srcDuration, setSrcDuration] = useState<number>(0);
   const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
   const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
@@ -392,6 +401,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               hostB: { ...POD_DEFAULT.hostB, ...(pp.hostB || {}) },
               dialogue: Array.isArray(pp.dialogue) ? pp.dialogue : [],
               cutaways: Array.isArray(pp.cutaways) ? pp.cutaways : [],
+              faces: Array.isArray(pp.faces) ? pp.faces : [],
             });
           }
           if (mapped.length === 0) setShowPresets(true);
@@ -536,12 +546,14 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const podCutawayDel = (i: number) => podMutate((p) => ({ ...p, cutaways: p.cutaways.filter((_, j) => j !== i) }));
 
   // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
-  const openPodPick = (target: 'hostA' | 'hostB' | 'cutaway' | 'recording') => { setPodPick(target); loadMedia(); };
-  const applyPodMedia = (target: 'hostA' | 'hostB' | 'cutaway' | 'recording', m: { fileUrl: string; title: string }) => {
+  type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group';
+  const openPodPick = (target: PodPickTarget) => { setPodPick(target); loadMedia(); };
+  const applyPodMedia = (target: PodPickTarget, m: { fileUrl: string; title: string }) => {
     podMutate((p) => {
       if (target === 'hostA') return { ...p, hostA: { ...p.hostA, photoUrl: m.fileUrl, photoName: m.title } };
       if (target === 'hostB') return { ...p, hostB: { ...p.hostB, photoUrl: m.fileUrl, photoName: m.title } };
       if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title };
+      if (target === 'group') return { ...p, groupPhotoUrl: m.fileUrl, groupPhotoName: m.title, faces: [] };
       return { ...p, cutaways: [...p.cutaways, { url: m.fileUrl, name: m.title }] };
     });
     setPodPick(null);
@@ -560,6 +572,110 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       await loadMedia();
       if (last) applyPodMedia(target, { fileUrl: last.fileUrl, title: last.originalName || 'файл' });
     } catch { /* тихо */ }
+    finally { setPodBusy(null); }
+  };
+
+  // ── Студия лиц (Фаза 1): групповое фото → детекция/разметка → кроп крупных планов ──
+  /** Координаты события → доли изображения (0..1) внутри обёртки фото. */
+  const faceXY = (e: React.PointerEvent) => {
+    const r = faceWrapRef.current?.getBoundingClientRect();
+    if (!r) return { x: 0, y: 0 };
+    return { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) };
+  };
+  const nextSpeaker = (): 'A' | 'B' => (pod.faces.some((f) => f.speaker === 'A') ? 'B' : 'A');
+  const faceDown = (e: React.PointerEvent) => {
+    if (pod.faces.length >= 4) return;
+    drawStartRef.current = faceXY(e);
+    setDrawBox({ ...drawStartRef.current, w: 0, h: 0 });
+  };
+  const faceMove = (e: React.PointerEvent) => {
+    if (!drawStartRef.current) return;
+    const p = faceXY(e); const s = drawStartRef.current;
+    setDrawBox({ x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
+  };
+  const faceUp = () => {
+    const b = drawBox; drawStartRef.current = null; setDrawBox(null);
+    if (b && b.w > 0.03 && b.h > 0.03) {
+      podMutate((p) => ({ ...p, faces: [...p.faces, { id: `f${Date.now().toString(36)}${p.faces.length}`, box: b, speaker: nextSpeaker() }] }));
+    }
+  };
+  const faceAssign = (id: string, speaker: 'A' | 'B') => podMutate((p) => ({ ...p, faces: p.faces.map((f) => (f.id === id ? { ...f, speaker } : f)) }));
+  const faceDel = (id: string) => podMutate((p) => ({ ...p, faces: p.faces.filter((f) => f.id !== id) }));
+
+  /** Грузит HTMLImageElement из URL (same-origin → canvas не «грязнится»). */
+  const loadImage = (url: string): Promise<HTMLImageElement> => new Promise((resolve, reject) => {
+    const img = new window.Image(); img.crossOrigin = 'anonymous'; // window.Image — DOM-конструктор (Image затенён иконкой lucide)
+    img.onload = () => resolve(img); img.onerror = reject; img.src = url;
+  });
+
+  /** Авто-распознавание лиц через браузерный FaceDetector (если доступен). */
+  const detectFaces = async () => {
+    if (!pod.groupPhotoUrl || podBusy) return;
+    const FD = (window as any).FaceDetector;
+    if (!FD) { setPodNote('Авто-распознавание в этом браузере недоступно — обведите лица рамкой по фото (мышью).'); return; }
+    setPodBusy('detect'); setPodNote(null);
+    try {
+      const img = await loadImage(pod.groupPhotoUrl);
+      const faces = await new FD({ fastMode: true, maxDetectedFaces: 4 }).detect(img);
+      const W = img.naturalWidth || 1, H = img.naturalHeight || 1;
+      const boxes: PodFace[] = (faces || []).slice(0, 4).map((f: any, i: number) => ({
+        id: `f${Date.now().toString(36)}${i}`,
+        box: { x: f.boundingBox.x / W, y: f.boundingBox.y / H, w: f.boundingBox.width / W, h: f.boundingBox.height / H },
+        speaker: (i % 2 === 0 ? 'A' : 'B'),
+      }));
+      if (!boxes.length) setPodNote('Лица не найдены — обведите вручную.');
+      else { podMutate((p) => ({ ...p, faces: boxes })); setPodNote(`Найдено лиц: ${boxes.length}. Поправьте назначение A/B при необходимости.`); }
+    } catch { setPodNote('Не удалось распознать — обведите вручную.'); }
+    finally { setPodBusy(null); }
+  };
+
+  /** Кроп области (бокс в долях, расширенный под голову/плечи) → квадратный JPEG-Blob. */
+  const cropBox = (img: HTMLImageElement, box: { x: number; y: number; w: number; h: number }, out = 640): Promise<Blob | null> => {
+    const W = img.naturalWidth, H = img.naturalHeight;
+    let x = (box.x - box.w * 0.7) * W, y = (box.y - box.h * 0.9) * H;
+    let w = box.w * 2.4 * W, h = box.h * 3.3 * H;
+    x = Math.max(0, x); y = Math.max(0, y); w = Math.min(W - x, w); h = Math.min(H - y, h);
+    const c = document.createElement('canvas'); c.width = out; c.height = out;
+    const ctx = c.getContext('2d'); if (!ctx) return Promise.resolve(null);
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, out, out);
+    const scale = Math.max(out / w, out / h);
+    const dw = w * scale, dh = h * scale;
+    ctx.drawImage(img, x, y, w, h, (out - dw) / 2, (out - dh) / 2, dw, dh);
+    return new Promise((resolve) => c.toBlob((b) => resolve(b), 'image/jpeg', 0.9));
+  };
+
+  const uploadBlob = async (blob: Blob, filename: string): Promise<any | null> => {
+    const fd = new FormData(); fd.append('file', new File([blob], filename, { type: blob.type || 'image/jpeg' }));
+    const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
+    if (!res.ok) return null;
+    return (await res.json()).asset || null;
+  };
+
+  /** «Сделать кадры»: кроп крупных планов A/B → фото ведущих; общий план → вставка. */
+  const applyFaces = async () => {
+    if (!pod.groupPhotoUrl || podBusy) return;
+    if (!pod.faces.some((f) => f.speaker === 'A') && !pod.faces.some((f) => f.speaker === 'B')) {
+      setPodNote('Назначьте лица ведущим A/B (обведите лицо и выберите A или B).'); return;
+    }
+    setPodBusy('apply'); setPodNote(null);
+    try {
+      const img = await loadImage(pod.groupPhotoUrl);
+      const patch: Partial<PodcastSpec> = {};
+      for (const sp of ['A', 'B'] as const) {
+        const face = pod.faces.find((f) => f.speaker === sp);
+        if (!face) continue;
+        const blob = await cropBox(img, face.box);
+        if (!blob) continue;
+        const asset = await uploadBlob(blob, `host-${sp}.jpg`);
+        if (!asset) continue;
+        if (sp === 'A') patch.hostA = { ...pod.hostA, photoUrl: asset.fileUrl, photoName: 'Ведущий A (кадр)' };
+        else patch.hostB = { ...pod.hostB, photoUrl: asset.fileUrl, photoName: 'Ведущий B (кадр)' };
+      }
+      const wide = { url: pod.groupPhotoUrl, name: pod.groupPhotoName || 'Общий план' };
+      const cutaways = pod.cutaways.some((c) => c.url === wide.url) ? pod.cutaways : [...pod.cutaways, wide];
+      podMutate((p) => ({ ...p, ...patch, cutaways }));
+      setPodNote('Готово: крупные планы ведущих созданы, общий план добавлен во вставки.');
+    } catch { setPodNote('Не удалось сделать кадры из фото.'); }
     finally { setPodBusy(null); }
   };
 
@@ -1210,7 +1326,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               onChange={(e) => { if (e.target.files?.length) uploadPodFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'cutaway' ? 'Картинка-вставка' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
+                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
               </span>
               <button onClick={() => setPodPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
@@ -1556,33 +1672,84 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   или <b>разобрать</b> готовую запись на 2 голоса.
                 </p>
 
-                {/* Ведущие */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {(['hostA', 'hostB'] as const).map((hk) => {
-                    const h = pod[hk]; const label = hk === 'hostA' ? 'A' : 'B';
-                    return (
-                      <div key={hk} className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                        <button onClick={() => openPodPick(hk)} title="Фото ведущего"
-                          className="w-full rounded-lg overflow-hidden flex items-center justify-center"
-                          style={{ aspectRatio: '1 / 1', background: '#000', border: `1px solid ${h.photoUrl ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                          {h.photoUrl ? <img src={h.photoUrl} alt="" className="w-full h-full object-cover" />
-                            : <span className="flex flex-col items-center gap-1" style={{ color: 'var(--text-muted)' }}><UserRound size={26} /><span className="text-[10px]">Фото {label}</span></span>}
-                        </button>
-                        <input value={h.name} onChange={(e) => podMutate((p) => ({ ...p, [hk]: { ...p[hk], name: e.target.value } }))}
-                          className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                        <div className="grid grid-cols-2 gap-1">
-                          {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
-                            <button key={v} onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], voice: v } }))}
-                              className="py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1"
-                              style={{ background: h.voice === v ? '#ec4899' : 'var(--bg-secondary)', color: h.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${h.voice === v ? '#ec4899' : 'var(--border-medium)'}` }}>
-                              <Mic size={11} /> {lbl}
-                            </button>
-                          ))}
-                        </div>
+                {/* Студия лиц: одно групповое фото → детекция/разметка → назначение A/B → кадры */}
+                <div className="space-y-2.5">
+                  <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Студия лиц — одно фото обоих ведущих</div>
+                  {!pod.groupPhotoUrl ? (
+                    <button onClick={() => openPodPick('group')}
+                      className="w-full py-6 rounded-xl text-[12px] font-600 inline-flex flex-col items-center justify-center gap-1.5"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+                      <Image size={22} style={{ color: '#ec4899' }} />
+                      Загрузить общее фото ведущих
+                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>распознаем/обведём лица и сделаем крупные планы</span>
+                    </button>
+                  ) : (
+                    <>
+                      <div ref={faceWrapRef}
+                        onPointerDown={faceDown} onPointerMove={faceMove} onPointerUp={faceUp} onPointerLeave={faceUp}
+                        style={{ position: 'relative', width: '100%', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-medium)', cursor: 'crosshair', touchAction: 'none', userSelect: 'none' }}>
+                        <img src={pod.groupPhotoUrl} alt="" draggable={false} style={{ width: '100%', display: 'block', pointerEvents: 'none' }} />
+                        {pod.faces.map((f) => (
+                          <div key={f.id} style={{ position: 'absolute', left: `${f.box.x * 100}%`, top: `${f.box.y * 100}%`, width: `${f.box.w * 100}%`, height: `${f.box.h * 100}%`, border: `2px solid ${f.speaker === 'A' ? '#ec4899' : '#8b5cf6'}`, borderRadius: 4 }}>
+                            <div style={{ position: 'absolute', top: -21, left: -2, display: 'flex', gap: 2 }}>
+                              {(['A', 'B'] as const).map((sp) => (
+                                <button key={sp} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); faceAssign(f.id, sp); }}
+                                  style={{ fontSize: 10, fontWeight: 700, width: 20, height: 18, borderRadius: 4, border: 'none', cursor: 'pointer', background: f.speaker === sp ? (sp === 'A' ? '#ec4899' : '#8b5cf6') : 'rgba(0,0,0,0.6)', color: '#fff' }}>{sp}</button>
+                              ))}
+                              <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); faceDel(f.id); }}
+                                style={{ width: 18, height: 18, borderRadius: 4, border: 'none', cursor: 'pointer', background: 'rgba(0,0,0,0.6)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={11} /></button>
+                            </div>
+                          </div>
+                        ))}
+                        {drawBox && (
+                          <div style={{ position: 'absolute', left: `${drawBox.x * 100}%`, top: `${drawBox.y * 100}%`, width: `${drawBox.w * 100}%`, height: `${drawBox.h * 100}%`, border: '2px dashed #ec4899', borderRadius: 4, background: 'rgba(236,72,153,0.12)', pointerEvents: 'none' }} />
+                        )}
                       </div>
-                    );
-                  })}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button onClick={detectFaces} disabled={!!podBusy}
+                          className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
+                          style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                          {podBusy === 'detect' ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Распознать лица
+                        </button>
+                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите лицо рамкой · до 4 · A — розовый, B — фиолетовый</span>
+                        <div className="flex-1" />
+                        <button onClick={() => openPodPick('group')} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сменить фото</button>
+                      </div>
+                      <button onClick={applyFaces} disabled={!!podBusy}
+                        className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                        style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                        {podBusy === 'apply' ? <Loader2 size={15} className="animate-spin" /> : <Crop size={15} />} Сделать кадры ведущих
+                      </button>
+                    </>
+                  )}
+
+                  {/* Спикеры A/B: крупный план + имя + голос */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {(['hostA', 'hostB'] as const).map((hk) => {
+                      const h = pod[hk]; const label = hk === 'hostA' ? 'A' : 'B';
+                      return (
+                        <div key={hk} className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                          <div className="w-full rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000', border: `1px solid ${h.photoUrl ? (label === 'A' ? '#ec4899' : '#8b5cf6') : 'var(--border-medium)'}` }}>
+                            {h.photoUrl ? <img src={h.photoUrl} alt="" className="w-full h-full object-cover" />
+                              : <span className="flex flex-col items-center gap-1" style={{ color: 'var(--text-muted)' }}><UserRound size={22} /><span className="text-[10px]">Крупный план {label}</span></span>}
+                          </div>
+                          <input value={h.name} onChange={(e) => podMutate((p) => ({ ...p, [hk]: { ...p[hk], name: e.target.value } }))}
+                            className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                          <div className="grid grid-cols-2 gap-1">
+                            {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
+                              <button key={v} onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], voice: v } }))}
+                                className="py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1"
+                                style={{ background: h.voice === v ? '#ec4899' : 'var(--bg-secondary)', color: h.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${h.voice === v ? '#ec4899' : 'var(--border-medium)'}` }}>
+                                <Mic size={11} /> {lbl}
+                              </button>
+                            ))}
+                          </div>
+                          <button onClick={() => openPodPick(hk)} className="w-full text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>выбрать фото вручную</button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Источник дорожек */}
