@@ -700,7 +700,20 @@
  *         байт, обрыв+чистка), лимит 3 параллельных склейки (503 при перегрузе), реальная
  *         причина сбоя вместо общей ошибки, ffmpeg по FFMPEG_PATH, подпись через
  *         withTikhubRetry, чистка недокачанных файлов при обрыве. */
-export const APP_VERSION = '1.5.27';
+
+/* 1.5.28 — Ребрендинг VibeVox → TrendTraffic (визуал). (1) Новый фавикон (Content/falicon.png)
+ *         во всех размерах: favicon-16/32, apple-touch-180, icon-192/512, maskable-192/512,
+ *         favicon.png, vibevox-icon.png (maskable/apple-touch на белом фоне — iOS/Android не
+ *         поддерживают прозрачность). (2) Логотипы: тёмная тема vibevox-logo-dark.png ← «LOGO
+ *         SMART VIDE MARKETING DARK», светлая vibevox-logo-light.png ← «LOGO SMART VIDE
+ *         MARKETING» (ужаты до 420×120); публичная шапка vibevox-logo.png — тёмный вариант.
+ *         (3) Брендовые PNG-иконки разделов в сайдбаре (MainLayout) и мобильном меню
+ *         (BottomTabBar): Тренды/Галерея/Публикатор/TrendFlow/Каналы → /icons/nav-*.png.
+ *         (4) Раздел «Тренды» (SocialExtensionPage) получил заголовок «иконка + название +
+ *         строка-пояснение», как у других разделов. (5) PWA-баннер: имя «TrendTraffic — Умный
+ *         видео маркетинг» + текст «Сканируют тренды в соцсетях…» (ru/common.json pwaInstall +
+ *         manifest.json name/short_name/description); иконка баннера = новый фавикон. */
+export const APP_VERSION = '1.5.28';
 
 export function AppVersion() {
   return (

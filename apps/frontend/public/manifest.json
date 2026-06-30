@@ -1,7 +1,7 @@
 {
-  "name": "VibeVox — AI Voice & Video Translator",
-  "short_name": "VibeVox",
-  "description": "VibeVox is a synchronous AI translator for voice and video calls in 100+ languages. WebRTC and SIP telephony, AI assistant, real-time speech-to-speech — works on every device.",
+  "name": "TrendTraffic — Умный видео маркетинг",
+  "short_name": "TrendTraffic",
+  "description": "Сканируют тренды в соцсетях. Собирают видео и публикуют. Сервис массовой генерации просмотров за счёт чужого вирусного контента.",
   "start_url": "/",
   "scope": "/",
   "id": "/",
