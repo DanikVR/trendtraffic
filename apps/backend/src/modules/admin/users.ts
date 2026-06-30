@@ -381,7 +381,12 @@ adminUsersRouter.patch('/:userId/tier', async (req: Request, res: Response) => {
     const tenantId = row.tenant_id;
     const email = row.email;
 
-    const status = tier === 'trial' ? 'inactive' : 'active';
+    // 'trial' = «Без тарифа» = отзыв доступа. status='canceled' — ВАЖНО: CHECK
+    // subscriptions_status_check допускает active/trialing/canceled/past_due/incomplete,
+    // но НЕ 'inactive' (на реальном PostgreSQL UPDATE со status='inactive' падал бы).
+    // Доступ режется в feature_gate по tier+status (trial не в FULL_ACCESS_TIERS).
+    const isRevoke = tier === 'trial';
+    const status = isRevoke ? 'canceled' : 'active';
     const billingPeriod = tier === 'standard_yearly' ? 'yearly' : (tier === 'enterprise' ? 'one_time' : 'monthly');
     const secondsForTier = TIER_SECONDS_MAP[tier] ?? 0;
     const minutesForTier = Math.round(secondsForTier / 60);
@@ -389,9 +394,19 @@ adminUsersRouter.patch('/:userId/tier', async (req: Request, res: Response) => {
     // Гарантируем что подписка существует, иначе UPDATE тихо ничего не сделает.
     await ensureSubscription(tenantId);
 
-    // Меняем тариф + статус. translation_minutes_balance: если addMinutes — обнуляем и заполняем по тарифу,
-    // иначе оставляем как есть (только меняем tier/status). Для enterprise всегда заполняем "безлимит".
-    if (addMinutes) {
+    if (isRevoke) {
+      // Отзыв: меняем тариф/статус и обнуляем баланс. НЕ начисляем минуты и НЕ пишем
+      // фейковый last_payment, даже если чекбокс «начислить» был включён. (Та же форма
+      // запроса, что и в ветке начисления, — чтобы fallback-handler в db/index.ts совпал.)
+      await pool.query(
+        `UPDATE subscriptions
+         SET tier = $1, status = $2, billing_period = $3,
+             translation_minutes_balance = $4,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE tenant_id = $5`,
+        [tier, status, billingPeriod, 0, tenantId]
+      );
+    } else if (addMinutes) {
       await pool.query(
         `UPDATE subscriptions
          SET tier = $1, status = $2, billing_period = $3,
@@ -419,16 +434,17 @@ adminUsersRouter.patch('/:userId/tier', async (req: Request, res: Response) => {
       );
     }
 
+    const creditedMinutes = !isRevoke && addMinutes;
     const adminEmail = (req as any).adminEmail || 'superadmin';
     sendTelegramAdminMessage(
       `🔧 <b>Админ изменил тариф</b>\n` +
       `<b>Кому:</b> ${escapeHtml(email || '—')}\n` +
       `<b>Новый тариф:</b> ${escapeHtml(tier)} (${escapeHtml(billingPeriod)})\n` +
-      (addMinutes ? `<b>Минут начислено:</b> ${minutesForTier}\n` : `<b>Баланс не изменён</b>\n`) +
+      (isRevoke ? `<b>Доступ отозван</b>\n` : creditedMinutes ? `<b>Минут начислено:</b> ${minutesForTier}\n` : `<b>Баланс не изменён</b>\n`) +
       `<b>Кто:</b> ${escapeHtml(adminEmail)}`
     ).catch(() => {});
 
-    return res.json({ status: 'success', tier, addMinutes, minutesAdded: addMinutes ? minutesForTier : 0 });
+    return res.json({ status: 'success', tier, addMinutes: creditedMinutes, minutesAdded: creditedMinutes ? minutesForTier : 0 });
   } catch (err: any) {
     console.error('[AdminUsers] tier change error:', err);
     return send500(res, err, 'admin.users');

@@ -58,6 +58,15 @@ interface AppState {
   subscriptionTier: 'trial' | 'monthly' | 'annual' | 'enterprise' | null;
   /** Сырое имя тарифа из БД (plus / standard / standard_yearly / enterprise / trial). */
   subscriptionTierName: string | null;
+  /** Статус подписки из БД (active / trialing / canceled / past_due / incomplete). Нужен,
+   *  чтобы фронт-гейт был зеркалом feature_gate: tier='premium'+status='canceled' = НЕТ доступа. */
+  subscriptionStatus: string | null;
+  /**
+   * true после того, как refreshBilling() хотя бы раз ОТРАБОТАЛ (успех или ошибка).
+   * Нужен гейту оплаты (RequirePaid): пока false — статус подписки ещё не известен,
+   * и нельзя редиректить платного юзера на /billing при перезагрузке закрытой страницы.
+   */
+  billingLoaded: boolean;
   /** Баланс секунд перевода */
   translationBalance: number;
   /** Флаг: приложение запущено внутри Telegram Mini App */
@@ -102,6 +111,8 @@ const initialState = {
   tenantId: null,
   subscriptionTier: null as AppState['subscriptionTier'],
   subscriptionTierName: null as string | null,
+  subscriptionStatus: null as string | null,
+  billingLoaded: false,
   translationBalance: 0,
   isMiniApp: false,
   sidebarOpen: true,
@@ -177,11 +188,11 @@ export const useAppStore = create<AppState>((set) => ({
       const res = await fetch('/api/billing/me', {
         headers: { 'Authorization': `Bearer ${state.token}` },
       });
-      if (!res.ok) return;
+      if (!res.ok) { set({ billingLoaded: true }); return; }
       const data = await readJson<BillingMeResponse>(res);
       const sub = data.subscription;
       if (!sub) {
-        set({ translationBalance: 0, subscriptionTierName: null });
+        set({ translationBalance: 0, subscriptionTierName: null, subscriptionTier: 'trial', subscriptionStatus: null, billingLoaded: true });
         return;
       }
       const balanceSeconds = (Number(sub.balanceSeconds) || 0) + (Number(sub.rolloverSeconds) || 0);
@@ -199,9 +210,12 @@ export const useAppStore = create<AppState>((set) => ({
         translationBalance: balanceSeconds,
         subscriptionTier: tierMap[sub.tier] ?? 'trial',
         subscriptionTierName: sub.tier || null,
+        subscriptionStatus: sub.status || null,
+        billingLoaded: true,
       });
     } catch {
-      // silent
+      // Сеть упала — статус неизвестен, но гейт нельзя держать в «загрузке» вечно.
+      set({ billingLoaded: true });
     }
   },
 }));
@@ -213,6 +227,10 @@ try {
   if (savedToken && savedUser) {
     const parsedUser = JSON.parse(savedUser);
     useAppStore.getState().setAuth(savedToken, parsedUser);
+    // Сразу подгружаем тариф при восстановлении сессии — чтобы гейт оплаты (RequirePaid)
+    // знал статус до монтирования MainLayout и не выбрасывал платного юзера на /billing
+    // при перезагрузке закрытой страницы. setAuth ставит лишь временный 'trial'.
+    void useAppStore.getState().refreshBilling();
   }
 } catch (e) {
   console.error('Ошибка восстановления сессии:', e);

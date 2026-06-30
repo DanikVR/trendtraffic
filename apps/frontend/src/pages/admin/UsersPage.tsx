@@ -49,30 +49,35 @@ interface UserRow {
   canceledAt?: string | null;
 }
 
+// Назначаемые суперадмином тарифы TrendTraffic. Только наши два полнодоступных тарифа
+// (Premium / Enterprise) + «Без тарифа» для отзыва доступа (status=inactive → гейт на /billing).
+// Легаси VibeVox (plus/standard/standard_yearly) убраны — больше не назначаются.
 const TIER_OPTIONS: { value: string; label: string; minutes: number; color: string }[] = [
-  { value: 'trial',            label: 'Триал (0 мин)',           minutes: 0,    color: '#94a3b8' },
-  { value: 'plus',             label: 'Plus (60 мин/мес)',       minutes: 60,   color: '#3b82f6' },
-  { value: 'standard',         label: 'Standard (120 мин/мес)',  minutes: 120,  color: '#10b981' },
-  { value: 'standard_yearly',  label: 'Standard Yearly (1440 мин/год)', minutes: 1440, color: '#22d3ee' },
-  { value: 'enterprise',       label: 'Enterprise (безлимит)',   minutes: -1,   color: '#a78bfa' },
+  { value: 'premium',    label: 'Premium (полный доступ)',     minutes: -1, color: '#6366f1' },
+  { value: 'enterprise', label: 'Enterprise (полный доступ)',  minutes: -1, color: '#a78bfa' },
+  { value: 'trial',      label: 'Без тарифа (нет доступа)',    minutes: 0,  color: '#94a3b8' },
 ];
 
+// Подписи для отображения тарифа в таблице. Легаси-ключи оставлены, чтобы старые записи
+// (если есть) показывались осмысленно, а не сырым значением.
 const TIER_LABELS: Record<string, string> = {
-  trial: 'Триал',
+  premium: 'Premium',
+  enterprise: 'Enterprise',
+  trial: 'Без тарифа',
   plus: 'Plus',
   standard: 'Standard',
   standard_yearly: 'Standard Yearly',
-  enterprise: 'Enterprise',
   monthly: 'Monthly',
   annual: 'Annual',
 };
 
 const TIER_COLORS: Record<string, string> = {
+  premium: '#6366f1',
+  enterprise: '#a78bfa',
   trial: '#94a3b8',
   plus: '#3b82f6',
   standard: '#10b981',
   standard_yearly: '#22d3ee',
-  enterprise: '#a78bfa',
 };
 
 function fmtDate(iso: string | null): string {
@@ -115,7 +120,7 @@ export default function UsersPage() {
 
   // ── модал: смена тарифа ──
   const [tierUser, setTierUser] = useState<UserRow | null>(null);
-  const [tierValue, setTierValue] = useState<string>('plus');
+  const [tierValue, setTierValue] = useState<string>('premium');
   const [tierAddMinutes, setTierAddMinutes] = useState(true);
   const [tierSubmitting, setTierSubmitting] = useState(false);
 
@@ -224,7 +229,7 @@ export default function UsersPage() {
   // ── tier ──
   const openTier = (user: UserRow) => {
     setTierUser(user);
-    setTierValue(user.tier && TIER_OPTIONS.some(o => o.value === user.tier) ? user.tier : 'plus');
+    setTierValue(user.tier && TIER_OPTIONS.some(o => o.value === user.tier) ? user.tier : 'premium');
     setTierAddMinutes(true);
   };
   const closeTier = () => { setTierUser(null); setTierSubmitting(false); };

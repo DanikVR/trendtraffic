@@ -146,9 +146,13 @@ billingAdminRouter.post('/sync-products', requireSuperAdmin, async (req: Request
       currency,
       products: synced,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Billing] sync-products error:', err);
-    return send500(res, err, 'billing');
+    // Это superadmin-операция (операторский эндпоинт) — показываем РЕАЛЬНУЮ причину
+    // (ошибка Stripe / «ключ не настроен»), а не generic «Internal server error»,
+    // иначе синхронизацию невозможно диагностировать.
+    const msg = err?.raw?.message || err?.message || String(err);
+    return res.status(500).json({ error: `Не удалось синхронизировать со Stripe: ${msg}` });
   }
 });
 
@@ -189,7 +193,7 @@ billingAdminRouter.get('/products', requireSuperAdmin, async (req: Request, res:
 billingAdminRouter.post('/checkout', requireTenant, async (req: Request, res: Response) => {
   const tenantId = (req as any).tenantId;
   const userEmail = (req as any).userEmail;
-  const { tier, currency = 'eur', promotionCodeId } = req.body || {};
+  const { tier, currency = 'eur', promotionCodeId, trial } = req.body || {};
 
   const allowedTiers = ['premium', 'plus', 'standard', 'standard_yearly'];
   if (!tier || !allowedTiers.includes(tier)) {
@@ -219,15 +223,27 @@ billingAdminRouter.post('/checkout', requireTenant, async (req: Request, res: Re
       line_items: [{ price: price.id, quantity: 1 }],
       success_url: `${origin}/billing?success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/billing?canceled=1`,
+      // ВСЕГДА собираем карту (даже при триале/100%-промо, когда первый счёт €0) —
+      // иначе Stripe ставит payment_method_collection='if_required' и карты не будет,
+      // что сломает авто-списание после пробного периода.
+      payment_method_collection: 'always',
       metadata: {
         tenant_id: tenantId,
         tier,
         billing_period: tier === 'standard_yearly' ? 'yearly' : 'monthly',
+        ...(trial ? { trial: '7' } : {}),
       },
       subscription_data: {
         metadata: { tenant_id: tenantId, tier },
       },
     };
+    // 7 дней бесплатно: подписка стартует в статусе trialing (без списания), карта
+    // обязательна (выше), через 7 дней Stripe сам выставит счёт €120. Если карты нет —
+    // подписка отменяется (а не висит без оплаты).
+    if (trial) {
+      sessionParams.subscription_data.trial_period_days = 7;
+      sessionParams.subscription_data.trial_settings = { end_behavior: { missing_payment_method: 'cancel' } };
+    }
     // Если юзер уже применил промокод на /billing — передаём его как discount.
     // Иначе оставляем allow_promotion_codes:true чтобы юзер мог ввести в самом Stripe Checkout.
     if (promotionCodeId) {

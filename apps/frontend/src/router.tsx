@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import { useIsEnterprise } from './hooks/useIsEnterprise';
 import { FEATURES, HOME_ROUTE_WHEN_NO_VIDEO } from './config/features';
@@ -115,6 +115,38 @@ function RequireEnterprise() {
   return <Outlet />;
 }
 
+/** Простой полноэкранный лоадер на время, пока подгружается статус подписки. */
+function PaidGateLoader() {
+  return (
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="animate-spin" aria-label="Загрузка"
+           style={{ width: 28, height: 28, border: '3px solid var(--border-medium)',
+                    borderTopColor: 'var(--brand)', borderRadius: '50%' }} />
+    </div>
+  );
+}
+
+/**
+ * RequirePaid — единый гейт «неоплачен → только тарифы». Пускает superadmin и активный
+ * платный тариф (Премиум/Энтерпрайз, включая 7-дневный триал). Неоплаченному открыты
+ * ТОЛЬКО /billing (оплатить/промокод/триал) и /settings (аккаунт/выход) — всё остальное
+ * редиректит на /billing. Это закрывает «дыры» (/flow, /gallery, /publisher и т.д.).
+ *
+ * Пока статус подписки ещё не загружен (billingLoaded=false) — НЕ редиректим, показываем
+ * лоадер. Иначе платного юзера при перезагрузке закрытой страницы выбросило бы на /billing
+ * (setAuth ставит временный 'trial' до того, как refreshBilling вернёт реальный тариф).
+ */
+function RequirePaid() {
+  const isEnterprise = useIsEnterprise();
+  const billingLoaded = useAppStore((s) => s.billingLoaded);
+  const token = useAppStore((s) => s.token);
+  const { pathname } = useLocation();
+  const allowedWhenUnpaid = pathname === '/billing' || pathname.startsWith('/settings');
+  if (isEnterprise || allowedWhenUnpaid) return <Outlet />;
+  if (token && !billingLoaded) return <PaidGateLoader />;
+  return <Navigate to="/billing" replace />;
+}
+
 // ============================================================================================
 // LayoutSwitcher — переключатель Layout'ов
 // ============================================================================================
@@ -186,6 +218,10 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     errorElement: <RouteErrorElement />,
     children: [
+      {
+        // Гейт оплаты: неоплаченный видит только /billing и /settings.
+        element: <RequirePaid />,
+        children: [
       {
         element: <LayoutSwitcher />,
         children: [
@@ -266,6 +302,8 @@ export const router = createBrowserRouter([
               ),
             }],
           }] : []),
+        ],
+      },
         ],
       },
       // Маршруты суперадмина (требуют роль superadmin)

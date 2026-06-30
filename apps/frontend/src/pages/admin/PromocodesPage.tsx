@@ -59,10 +59,12 @@ const EMPTY_FORM: FormState = {
   tiers: [],
 };
 
+// Промокоды применяются к Stripe-продуктам. Единственный самостоятельно оплачиваемый
+// тариф TrendTraffic — Premium (Enterprise — «по запросу», без Stripe-checkout, скидка
+// к нему неприменима). Легаси VibeVox (plus/standard/standard_yearly) убраны.
+// Выбрать «Premium» = скидка только на Premium; «На все тарифы» (пусто) = без ограничения.
 const TIER_OPTIONS = [
-  { v: 'plus', label: 'Plus', color: '#3b82f6' },
-  { v: 'standard', label: 'Standard (мес)', color: '#10b981' },
-  { v: 'standard_yearly', label: 'Standard Yearly', color: '#22d3ee' },
+  { v: 'premium', label: 'Premium', color: '#6366f1' },
 ] as const;
 
 export default function PromocodesPage() {
@@ -73,6 +75,8 @@ export default function PromocodesPage() {
   const [editingFrom, setEditingFrom] = useState<PromoCode | null>(null); // null = новый код, иначе — пересоздаём
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Мягкое (НЕ блокирующее) уведомление, если Stripe ещё не подключён — форма остаётся доступной.
+  const [stripeNotice, setStripeNotice] = useState<string | null>(null);
 
   // Кастомный confirm-диалог (вместо браузерного confirm())
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -101,6 +105,11 @@ export default function PromocodesPage() {
       if (text.trim()) { try { data = JSON.parse(text); } catch { /* */ } }
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setCodes(data.codes || []);
+      setStripeNotice(
+        data.stripeConfigured === false
+          ? (data.notice || 'Stripe не подключён. Подключите его в «Настройки API → Stripe», чтобы промокоды реально создавались.')
+          : null
+      );
     } catch (err: any) {
       setError(err.message || 'Не удалось загрузить промокоды');
     } finally {
@@ -180,7 +189,8 @@ export default function PromocodesPage() {
       if (form.duration === 'repeating') body.durationInMonths = form.durationMonths;
       if (form.maxRedemptions) body.maxRedemptions = parseInt(form.maxRedemptions, 10);
       if (form.expiresAt) body.expiresAt = new Date(form.expiresAt).toISOString();
-      if (form.tiers.length > 0 && form.tiers.length < 3) body.tiers = form.tiers;
+      // Пусто = «На все тарифы» (без ограничения). Выбран Premium = ограничить им.
+      if (form.tiers.length > 0) body.tiers = form.tiers;
 
       const res = await fetch('/api/admin/promocodes', {
         method: 'POST',
@@ -287,6 +297,15 @@ export default function PromocodesPage() {
           </AuroraButton>
         </div>
       </div>
+
+      {stripeNotice && (
+        <AuroraCard className="p-4">
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#FBBF24' }}>
+            <AlertCircle size={14} strokeWidth={1.5} />
+            {stripeNotice}
+          </div>
+        </AuroraCard>
+      )}
 
       {error && !editorOpen && (
         <AuroraCard className="p-4">
@@ -482,7 +501,7 @@ export default function PromocodesPage() {
                           Неактивен
                         </span>
                       )}
-                      {c.appliesToTiers && c.appliesToTiers.length > 0 && c.appliesToTiers.length < 3 && (
+                      {c.appliesToTiers && c.appliesToTiers.length > 0 && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-600"
                               style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.25)', color: 'var(--brand)' }}>
                           {c.appliesToTiers.join(', ')}

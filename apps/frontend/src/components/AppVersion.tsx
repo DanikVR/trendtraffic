@@ -808,7 +808,20 @@
  *         крупных планов ведущих (→ фото A/B) + общий план в картинки-вставки. Чистый
  *         фронт; кормит существующий podcast_compose (сплит-скрин). Дальше — таймлайн
  *         голосов и cloud-аватары (lip-sync). */
-export const APP_VERSION = '1.5.39';
+/* 1.5.40 — Платный гейт + 7-дн триал + защита от затрат + чистка тарифов в админке.
+ *         ГЕЙТ: RequirePaid (router.tsx) — неоплаченному открыты только /billing и /settings,
+ *         остальное → /billing; флаг billingLoaded + refreshBilling при восстановлении сессии
+ *         (анти-deadlock на перезагрузке). ТРИАЛ: кнопка «7 дней бесплатно» на Premium, /checkout
+ *         trial_period_days=7 + payment_method_collection:'always' + trial_settings cancel; webhook
+ *         триал-aware (не платит рефералке/статистике). НОЛЬ ЗАТРАТ в триал: trends-API 402 для
+ *         неоплаченных, resolveAnthropicKey full-access→null, закрыты 5 утечек платформенного ключа
+ *         в social-ext (proxy/ai-proxy/music/download/ig-manifest). АДМИНКА: «Сменить тариф» — только
+ *         Premium / Enterprise + «Без тарифа» (revoke→status=canceled, НЕ inactive — его нет в CHECK);
+ *         промокоды — Premium + «На все тарифы»; легаси VibeVox убраны. ГЕЙТ=ЗЕРКАЛО БЭКА:
+ *         useIsEnterprise требует status∈{active,trialing}. STRIPE-ОПЕРАЦИИ: sync создаёт только
+ *         Premium и показывает реальную ошибку Stripe (не «Internal server error»); страница промокодов
+ *         не блокируется при неподключённом Stripe (мягкое уведомление, форма доступна). */
+export const APP_VERSION = '1.5.40';
 
 export function AppVersion() {
   return (

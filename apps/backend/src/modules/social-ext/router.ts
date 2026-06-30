@@ -22,7 +22,6 @@ import rateLimit from 'express-rate-limit';
 import { Readable } from 'node:stream';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { getTikHubApiKey, getGeminiApiKey } from '../../config/systemConfig.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
@@ -96,9 +95,12 @@ router.all('/*', async (req: AuthedRequest, res: Response) => {
   }
   const upstreamUrl = `${TIKHUB_BASE}${upstreamPath}`;
 
-  const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
+  // Полный доступ (Premium/Enterprise/триал) ходит ТОЛЬКО своим ключом TikHub —
+  // платформенный не подставляем (иначе мы несём затраты, в т.ч. в пробный период).
+  // Суперадмину getEffectiveTikHubKey сам отдаёт платформенный ключ (он не full-access).
+  const key = await getEffectiveTikHubKey(req.tenantId);
   if (!key) {
-    return res.status(400).json({ error: 'TikHub API key не настроен на платформе' });
+    return res.status(402).json({ error: 'Задайте свой TikHub API ключ в настройках — на вашем тарифе платформенный ключ не используется.' });
   }
 
   const method = (req.method || 'GET').toUpperCase();
@@ -220,7 +222,8 @@ export { mediaRouter };
 // AI-функции расширения (промпт из обложки, разборы видео/профиля/виральности,
 // сводка отчёта) ходят к gemini/openai/anthropic. Polyfill переписывает их сюда,
 // а мы подставляем ключ из настроек Enterprise (cloud) — браузеру ключ не виден.
-// По умолчанию провайдер gemini → ключ getEffectiveGeminiKey (тенант → платформа).
+// Провайдер по умолчанию — gemini → ключ getEffectiveGeminiKey (ТОЛЬКО ключ тенанта;
+// платформенный fallback убран, чтобы не нести затраты на платных тарифах и в триал).
 // ============================================================================
 
 const AI_HOSTS = new Set(['generativelanguage.googleapis.com', 'api.openai.com', 'api.anthropic.com']);
@@ -242,8 +245,11 @@ aiRouter.all('/*', async (req: AuthedRequest, res: Response) => {
   const headers: Record<string, string> = { Accept: 'application/json', 'User-Agent': UA };
   let key: string | null = null;
   if (host === 'generativelanguage.googleapis.com') {
-    // Ключ Gemini с учётки тенанта (Enterprise → Генерация), иначе платформенный.
-    key = (await getEffectiveGeminiKey(req.tenantId)) || getGeminiApiKey() || null;
+    // Ключ Gemini берём ТОЛЬКО с учётки тенанта (Enterprise → Генерация). Платформенный
+    // не подставляем: full-access (Premium/Enterprise/триал) платит за Gemini сам, иначе
+    // мы несём затраты в т.ч. в пробный период. Суперадмину getEffectiveGeminiKey сам отдаёт
+    // ключ из платформенного пула (он не full-access). null → ниже 400 «задайте свой ключ».
+    key = (await getEffectiveGeminiKey(req.tenantId)) || null;
     if (key) {
       headers['x-goog-api-key'] = key;
       // Убираем возможный ?key=<placeholder> из расширения, чтобы не перебил наш ключ.
@@ -390,8 +396,11 @@ musicRouter.post('/', async (req: AuthedRequest, res: Response) => {
     const det = detectUrl(url);
     const vid = det?.videoId;
     if (!vid) return res.status(422).json({ error: 'Не удалось определить видео из ссылки.' });
-    const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
-    if (!key) return res.status(400).json({ error: 'TikHub API key не настроен.' });
+    // Полный доступ (Premium/Enterprise/триал) ходит ТОЛЬКО своим ключом TikHub —
+    // платформенный не подставляем (иначе мы несём затраты, в т.ч. в пробный период).
+    // Суперадмину getEffectiveTikHubKey сам отдаёт платформенный ключ (он не full-access).
+    const key = await getEffectiveTikHubKey(req.tenantId);
+    if (!key) return res.status(402).json({ error: 'Задайте свой TikHub API ключ в настройках — на вашем тарифе платформенный ключ не используется.' });
     const one = await fetchOneVideo(key, String(vid));
     const musicUrl = one.ok ? extractMusicUrl(one.data) : null;
     if (!musicUrl) return res.status(422).json({ error: 'Аудио-дорожка не найдена (поддерживается TikTok/Douyin).' });
@@ -449,8 +458,11 @@ videoRouter.post('/', async (req: AuthedRequest, res: Response) => {
     const det = detectUrl(url);
     const vid = det?.videoId;
     if (!vid) return res.status(422).json({ error: 'Не удалось определить видео из ссылки.' });
-    const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
-    if (!key) return res.status(400).json({ error: 'TikHub API key не настроен.' });
+    // Полный доступ (Premium/Enterprise/триал) ходит ТОЛЬКО своим ключом TikHub —
+    // платформенный не подставляем (иначе мы несём затраты, в т.ч. в пробный период).
+    // Суперадмину getEffectiveTikHubKey сам отдаёт платформенный ключ (он не full-access).
+    const key = await getEffectiveTikHubKey(req.tenantId);
+    if (!key) return res.status(402).json({ error: 'Задайте свой TikHub API ключ в настройках — на вашем тарифе платформенный ключ не используется.' });
 
     const one = await fetchOneVideo(key, String(vid));
     const dlUrls = one.ok ? extractDownloadUrls(one.data) : [];
@@ -571,8 +583,11 @@ manifestRouter.post('/', async (req: AuthedRequest, res: Response) => {
   if (det?.platform !== 'instagram' || !det.videoId) {
     return res.status(422).json({ error: 'Манифест медиа поддерживается только для Instagram.' });
   }
-  const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
-  if (!key) return res.status(400).json({ error: 'TikHub API key не настроен.' });
+  // Полный доступ (Premium/Enterprise/триал) ходит ТОЛЬКО своим ключом TikHub —
+  // платформенный не подставляем (иначе мы несём затраты, в т.ч. в пробный период).
+  // Суперадмину getEffectiveTikHubKey сам отдаёт платформенный ключ (он не full-access).
+  const key = await getEffectiveTikHubKey(req.tenantId);
+  if (!key) return res.status(402).json({ error: 'Задайте свой TikHub API ключ в настройках — на вашем тарифе платформенный ключ не используется.' });
   try {
     const r = await tikhubGet<any>(key, `/api/v1/instagram/v3/get_post_info_by_code?code=${encodeURIComponent(det.videoId)}`);
     if (!r.ok) return res.status(502).json({ error: r.error || 'Не удалось получить пост Instagram.' });

@@ -12,6 +12,13 @@ import { getStripeSecretKey } from '../../config/systemConfig.js';
 let stripeInstance: Stripe | null = null;
 let stripeKeySnapshot = '';
 
+// Тарифы, которые РЕАЛЬНО продаём через Stripe (создаём Products/Prices). Сейчас только
+// Premium: Enterprise оформляется «по запросу» (без Stripe-price), легаси VibeVox
+// (plus/standard/standard_yearly) в LIVE-аккаунт НЕ заводим. TIER_PRICES оставлен полным —
+// он нужен прочим (легаси) код-путям; синхронизируем же только это подмножество.
+const SYNCABLE_TIERS = new Set(['premium']);
+const SYNCABLE_PRICES = TIER_PRICES.filter((t) => SYNCABLE_TIERS.has(t.tier));
+
 /** Получаем актуальный экземпляр Stripe SDK (с проверкой ключа на каждом запросе). */
 export function getStripe(): Stripe {
   const key = getStripeSecretKey();
@@ -48,11 +55,11 @@ export async function syncStripeProducts(currency: 'eur' | 'usd' = 'eur'): Promi
   const stripe = getStripe();
   const results: SyncedProductInfo[] = [];
 
-  // Группируем по productKey: Standard month + Standard yearly = один Product, два Price.
-  const productKeys = Array.from(new Set(TIER_PRICES.map(t => t.productKey)));
+  // Синхронизируем только реально продаваемые тарифы (Premium).
+  const productKeys = Array.from(new Set(SYNCABLE_PRICES.map(t => t.productKey)));
 
   for (const productKey of productKeys) {
-    const tiersForProduct = TIER_PRICES.filter(t => t.productKey === productKey);
+    const tiersForProduct = SYNCABLE_PRICES.filter(t => t.productKey === productKey);
     const firstTier = tiersForProduct[0];
 
     // Ищем существующий Product по metadata.vibevox_key
@@ -136,7 +143,7 @@ export async function listSyncedProducts(currency: 'eur' | 'usd' = 'eur'): Promi
 
   const products = await stripe.products.list({ active: true, limit: 100 });
 
-  for (const tierCfg of TIER_PRICES) {
+  for (const tierCfg of SYNCABLE_PRICES) {
     const product = products.data.find(p => p.metadata?.vibevox_key === tierCfg.productKey);
     if (!product) continue;
 

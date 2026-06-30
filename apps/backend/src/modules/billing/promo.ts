@@ -68,8 +68,15 @@ async function buildProductToTiersMap(): Promise<Map<string, string[]>> {
  * Активные коды идут первыми, затем неактивные.
  */
 promoRouter.get('/', async (_req: Request, res: Response) => {
+  // Stripe ещё не настроен — НЕ блокируем страницу промокодов. Отдаём пустой список и флаг,
+  // чтобы фронт показал мягкое уведомление, а форма создания осталась доступной.
+  let stripe;
   try {
-    const stripe = getStripe();
+    stripe = getStripe();
+  } catch (e: any) {
+    return res.status(200).json({ codes: [], stripeConfigured: false, notice: e?.message || 'Stripe не подключён.' });
+  }
+  try {
     const codes = await stripe.promotionCodes.list({ limit: 100, expand: ['data.coupon', 'data.coupon.applies_to'] });
     const productToTiers = await buildProductToTiersMap();
 
@@ -111,7 +118,7 @@ promoRouter.get('/', async (_req: Request, res: Response) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    return res.status(200).json({ codes: items });
+    return res.status(200).json({ codes: items, stripeConfigured: true });
   } catch (err) {
     return res.status(500).json({
       error: err instanceof Error ? err.message : String(err),
@@ -167,8 +174,9 @@ promoRouter.post('/', async (req: Request, res: Response) => {
     };
     if (duration === 'repeating') couponParams.duration_in_months = durationInMonths;
 
-    // v0.9.0: Ограничение на тарифы через applies_to.products
-    if (Array.isArray(tiers) && tiers.length > 0 && tiers.length < 3) {
+    // Ограничение на тарифы через applies_to.products. Непустой список tiers = ограничить
+    // купон этими продуктами; пусто = на все тарифы (фронт шлёт только ['premium'] либо ничего).
+    if (Array.isArray(tiers) && tiers.length > 0) {
       try {
         const products = await stripe.products.list({ active: true, limit: 100 });
         const wantedKeys = new Set(tiers.map((t: string) => (t === 'standard_yearly' ? 'standard' : t)));
@@ -177,6 +185,10 @@ promoRouter.post('/', async (req: Request, res: Response) => {
           .map((p) => p.id);
         if (productIds.length > 0) {
           couponParams.applies_to = { products: productIds };
+        } else {
+          // Тариф(ы) выбран(ы), но соответствующий Stripe-продукт не найден (sync EUR/USD
+          // ещё не запускался) → купон создаётся БЕЗ ограничения = действует на все продукты.
+          console.warn(`[Promo] applies_to: продукт(ы) для тарифов [${tiers.join(', ')}] не найдены в Stripe — купон будет без ограничения по тарифу. Запустите «Синхронизировать EUR/USD».`);
         }
       } catch (e) {
         console.warn('[Promo] applies_to: не удалось получить products:', e);

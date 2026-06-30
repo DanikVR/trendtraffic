@@ -57,7 +57,9 @@ const WHATSAPP_NUMBER = '380637610482';
 
 export function BillingPage() {
   const { subscriptionTier, subscriptionTierName, token, refreshBilling } = useAppStore();
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  // null = простой; 'paid' = оформляет сразу; 'trial' = оформляет 7-дневный триал.
+  const [checkoutMode, setCheckoutMode] = useState<null | 'paid' | 'trial'>(null);
+  const checkoutLoading = checkoutMode !== null;
 
   // Текущий тариф для показа в карточке статуса.
   const tierDisplay = (() => {
@@ -203,13 +205,14 @@ export function BillingPage() {
   const fmtPrice = (eur: number) => Number.isInteger(eur) ? `€${eur}` : `€${eur.toFixed(2)}`;
 
   // ── Stripe Checkout (Premium) ──
-  const handleCheckout = async () => {
-    setCheckoutLoading(true);
+  // trial=true → 7 дней бесплатно с обязательным подтверждением карты; списание €120 после.
+  const handleCheckout = async (trial = false) => {
+    setCheckoutMode(trial ? 'trial' : 'paid');
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ tier: 'premium', currency: 'eur', promotionCodeId: appliedPromo?.promotionCodeId }),
+        body: JSON.stringify({ tier: 'premium', currency: 'eur', promotionCodeId: appliedPromo?.promotionCodeId, trial }),
       });
       const text = await res.text();
       let data: any = {};
@@ -219,7 +222,7 @@ export function BillingPage() {
       else throw new Error('Stripe не вернул ссылку на оплату.');
     } catch (err: any) {
       showToast(`Не удалось открыть оплату: ${err.message || err}`, 'error');
-      setCheckoutLoading(false);
+      setCheckoutMode(null);
     }
   };
 
@@ -381,11 +384,27 @@ export function BillingPage() {
               </li>
             ))}
           </ul>
-          <AuroraButton fullWidth onClick={handleCheckout} disabled={checkoutLoading}
-            iconRight={checkoutLoading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} strokeWidth={2} />}
-            id="billing-cta-premium">
-            {checkoutLoading ? 'Открываю Stripe…' : 'Оформить Premium'}
-          </AuroraButton>
+          <div className="space-y-2.5">
+            {/* Главный CTA — 7 дней бесплатно (карта обязательна, без списания в триал) */}
+            <AuroraButton fullWidth onClick={() => handleCheckout(true)} disabled={checkoutLoading}
+              iconRight={checkoutMode === 'trial' ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} strokeWidth={2} />}
+              id="billing-cta-premium-trial">
+              {checkoutMode === 'trial' ? 'Открываю Stripe…' : 'Попробовать 7 дней бесплатно'}
+            </AuroraButton>
+            {/* Вторичный — оформить сразу без пробного периода */}
+            <button type="button" onClick={() => handleCheckout(false)} disabled={checkoutLoading}
+              className="w-full text-xs font-700 py-2.5 rounded-xl transition-all disabled:opacity-50"
+              style={{ background: 'transparent', border: '1px solid rgba(99,102,241,0.35)', color: 'var(--brand)' }}
+              id="billing-cta-premium">
+              {checkoutMode === 'paid'
+                ? 'Открываю Stripe…'
+                : `Оформить сразу — ${fmtPrice(discounted.applied ? discounted.final : PREMIUM_EUR)}/мес`}
+            </button>
+            <p className="text-[11px] leading-relaxed text-center" style={{ color: 'var(--text-muted)' }}>
+              При оформлении нужно подтвердить банковскую карту. Первые 7 дней — бесплатно, списаний нет.
+              Затем автоматически {fmtPrice(discounted.applied ? discounted.final : PREMIUM_EUR)}/мес. Отмена в любой момент до конца пробного периода.
+            </p>
+          </div>
         </div>
 
         {/* ── Enterprise ── */}
@@ -448,6 +467,7 @@ export function BillingPage() {
       <div className="space-y-3">
         <h2 className="section-title text-lg">Частые вопросы</h2>
         {[
+          { q: 'Как работает пробный период 7 дней?', a: 'При оформлении нужно подтвердить банковскую карту — это обязательно. В течение 7 дней доступ полностью открыт и деньги не списываются. По окончании пробного периода автоматически спишется €120/мес. Если отменить подписку до конца 7 дней — списания не будет.' },
           { q: 'Чем Premium отличается от Enterprise?', a: 'Набор функций одинаковый — оба тарифа открывают полный доступ ко всему сервису. Enterprise дополнительно включает индивидуальную настройку под ваш бренд и массовое ведение соцсетей «под ключ» через наш API (мы ведём аккаунты за вас).' },
           { q: 'Что значит «генерация через подключённые API»?', a: 'Вы подключаете свои ключи внешних сервисов (Google Veo, FAL/Kling, Runway, OpenAI, ElevenLabs, HeyGen, Claude). TrendFlow использует их для генерации видео/озвучки/аватаров. Оплата этим сервисам идёт напрямую по их ценам.' },
           { q: 'Анализ трендов правда безлимитный?', a: 'Да — поиск и аналитика трендов на Premium и Enterprise не ограничены по количеству.' },

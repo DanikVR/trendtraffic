@@ -79,7 +79,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
     ? (product as Stripe.Product).metadata
     : {};
   const priceMeta = priceItem?.price?.metadata || {};
-  const tier = productMeta?.tier || priceMeta?.tier || 'plus';
+  // Фолбэк на subscription.metadata.tier — его кладём в subscription_data.metadata при
+  // /checkout, поэтому tier определится верно даже если на цене нет metadata.tier.
+  const tier = productMeta?.tier || priceMeta?.tier || subscription.metadata?.tier || 'plus';
   const billingPeriod = priceMeta?.billing_period || productMeta?.billing_period || 'monthly';
 
   const freshSeconds = TIER_SECONDS_MAP[tier] ?? TIER_SECONDS_MAP['plus'] ?? 3600;
@@ -164,8 +166,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
       [tenantId, stripeSubId, tier, status, newBalance, newRollover, newPeriodEnd, billingPeriod, cancelAtPeriodEnd, isRenewal]
     );
 
-    // Статистика оплат — только при initial и renewal (реальные платежи), не mid-cycle.
-    if ((status === 'active' || status === 'trialing') && !isMidCycle) {
+    // Статистика оплат — только при РЕАЛЬНОМ списании (status='active'), не на старте
+    // триала (trialing → денег ещё нет) и не mid-cycle.
+    if (status === 'active' && !isMidCycle) {
       // Безлимитные тарифы (premium/enterprise) держат символические 999999с — в
       // статистику «оплаченных минут» кладём 1 (факт оплаты), без инфляции отчётов.
       const minutes = (tier === 'enterprise' || tier === 'premium') ? 1 : Math.round(freshSeconds / 60);
@@ -181,9 +184,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
     }
   });
 
-  // Партнёрская атрибуция: если этого юзера привёл партнёр — кредитуем партнёру оплату.
-  // Только при реальных платежах (initial/renewal), не на mid-cycle обновлениях.
-  if ((status === 'active' || status === 'trialing') && !isMidCycle) {
+  // Партнёрская атрибуция: кредитуем партнёру оплату ТОЛЬКО при реальном списании
+  // (status='active'), НЕ на старте триала — иначе платим комиссию за бесплатный триал.
+  if (status === 'active' && !isMidCycle) {
     const minutes = (tier === 'enterprise' || tier === 'premium') ? 1 : Math.round(freshSeconds / 60);
     creditReferralPayment(tenantId, minutes).catch(() => {});
   }
@@ -191,19 +194,20 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
   const reason = isRenewal ? 'renewal' : (isInitial ? 'initial' : 'mid_cycle_update');
   console.log(`[Billing] Subscription synced: tenant=${tenantId}, tier=${tier}, period=${billingPeriod}, reason=${reason}, balance=${newBalance}s, rollover=${newRollover}s, cancel_at_period_end=${cancelAtPeriodEnd}`);
 
-  // Telegram: только при активной/триал-активации с реальным платежом (не mid-cycle).
+  // Telegram-уведомление: на старте триала, реальной оплате и продлении (не mid-cycle).
   if ((status === 'active' || status === 'trialing') && !isMidCycle) {
     const email = await getTenantPrimaryEmail(tenantId);
-    const minutes = Math.round(freshSeconds / 60);
-    const rolloverMin = Math.round(newRollover / 60);
-    const headline = isRenewal ? '🔁 <b>Продление подписки</b>' : '💳 <b>Оплачена подписка</b>';
+    const isUnlimited = tier === 'premium' || tier === 'enterprise';
+    const headline = status === 'trialing'
+      ? '🆓 <b>Начался пробный период (7 дней)</b>'
+      : isRenewal ? '🔁 <b>Продление подписки</b>' : '💳 <b>Оплачена подписка</b>';
     sendTelegramAdminMessage(
       `${headline}\n` +
       `<b>Email:</b> ${escapeHtml(email || '—')}\n` +
-      `<b>Тариф:</b> ${escapeHtml(tier)} (${escapeHtml(billingPeriod)})\n` +
-      `<b>Минут начислено:</b> ${minutes}` +
-      (isRenewal && rolloverMin > 0 ? `\n<b>Перенесено (rollover):</b> ${rolloverMin} мин` : '') +
+      `<b>Тариф:</b> ${escapeHtml(tier)} (${escapeHtml(billingPeriod)})` +
+      (isUnlimited ? '' : `\n<b>Минут начислено:</b> ${Math.round(freshSeconds / 60)}`) +
       `\n<b>Статус:</b> ${escapeHtml(status)}` +
+      (status === 'trialing' ? `\n<i>Спишется €120 ${periodEnd.toLocaleDateString('ru-RU')} (если не отменит)</i>` : '') +
       (cancelAtPeriodEnd ? `\n⚠️ <i>Будет отменена ${periodEnd.toLocaleDateString('ru-RU')}</i>` : '')
     ).catch(() => {});
   }

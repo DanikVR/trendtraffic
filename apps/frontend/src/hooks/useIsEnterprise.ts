@@ -27,9 +27,15 @@ export function useIsEnterprise(): boolean {
   const role = useAppStore((s) => s.user?.role);
   const tier = useAppStore((s) => s.subscriptionTier);
   const tierName = useAppStore((s) => s.subscriptionTierName);
+  const status = useAppStore((s) => s.subscriptionStatus);
   if (role === 'superadmin') return true;
-  // Полный доступ к фичам дают и Premium, и Enterprise (функции идентичны).
+  // Полный доступ дают и Premium, и Enterprise (функции идентичны), НО только при активном
+  // или триал-статусе. Это зеркало backend feature_gate (tier∈{premium,enterprise} &&
+  // status∈{active,trialing}). Без проверки статуса отменённый Premium (tier='premium',
+  // status='canceled') ложно пускал бы в UI, где каждый API-вызов отвечает 402.
   // case-insensitive: subscriptionTierName — raw имя из БД, регистр может «гулять».
   const FULL = ['enterprise', 'premium'];
-  return FULL.includes((tier || '').toLowerCase()) || FULL.includes((tierName || '').toLowerCase());
+  const hasFullTier = FULL.includes((tier || '').toLowerCase()) || FULL.includes((tierName || '').toLowerCase());
+  const isActive = status === 'active' || status === 'trialing';
+  return hasFullTier && isActive;
 }
