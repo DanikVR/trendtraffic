@@ -563,8 +563,16 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
         rec_path = _download_media(base_url, pod.get("recordingUrl"), work, default_ext=".mp3")
 
     truncated = ""
-    lines = [l for l in (pod.get("dialogue") or [])
-             if isinstance(l, dict) and str(l.get("text") or "").strip()]
+    def _has_clip(l) -> bool:
+        if not isinstance(l, dict):
+            return False
+        if str(l.get("text") or "").strip():
+            return True
+        try:  # клип без текста, но с аудио-диапазоном (после разреза / только запись) — валиден
+            return float(l.get("start")) < float(l.get("end"))
+        except (TypeError, ValueError):
+            return False
+    lines = [l for l in (pod.get("dialogue") or []) if _has_clip(l)]
     # Реплик нет, но это разбор записи → диаризуем сами (одной кнопки «Собрать» достаточно).
     if not lines and rec_path:
         src = rec_path
