@@ -657,31 +657,60 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   });
   const tlSetStart = (i: number, t: number) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, tStart: Math.max(0, Math.round(t * 20) / 20) } : l)) }));
-  /** Ножницы: разрезать клип i пополам на две реплики (к разрезу можно прикрепить картинку). */
-  const splitLine = (i: number) => podMutate((p) => {
+  /** Разрезать клип i в позиции tCut (сек на таймлайне) на две реплики. */
+  const splitLineAt = (i: number, tCut: number) => podMutate((p) => {
     const l = p.dialogue[i]; if (!l) return p;
     const t = Number.isFinite(l.tStart) ? (l.tStart as number) : 0;
     const d = lineDur(l);
-    const half = d / 2;
+    const off = tCut - t;
+    if (off <= 0.1 || off >= d - 0.1) return p; // слишком близко к краю — не режем
+    const frac = off / d;
     const words = (l.text || '').split(/\s+/).filter(Boolean);
-    const cut = Math.max(1, Math.floor(words.length / 2));
+    const cw = Math.max(1, Math.round(words.length * frac));
     const hasTC = Number.isFinite(l.start) && Number.isFinite(l.end);
-    const mid = hasTC ? (l.start as number) + (l.end as number - (l.start as number)) / 2 : undefined;
-    const a: PodLine = { ...l, text: words.slice(0, cut).join(' ') || l.text, tStart: t, ...(hasTC ? { end: mid } : {}) };
-    const b: PodLine = { ...l, text: words.slice(cut).join(' '), tStart: Math.round((t + half) * 20) / 20, image: undefined, imageName: undefined, anim: undefined, ...(hasTC ? { start: mid } : {}) };
+    const mid = hasTC ? (l.start as number) + (l.end as number - (l.start as number)) * frac : undefined;
+    const a: PodLine = { ...l, text: words.slice(0, cw).join(' ') || l.text, tStart: t, ...(hasTC ? { end: mid } : {}) };
+    const b: PodLine = { ...l, text: words.slice(cw).join(' '), tStart: Math.round((t + off) * 20) / 20, image: undefined, imageName: undefined, anim: undefined, ...(hasTC ? { start: mid } : {}) };
     return { ...p, dialogue: [...p.dialogue.slice(0, i), a, b, ...p.dialogue.slice(i + 1)] };
   });
   const tlDragRef = useRef<{ i: number; startX: number; startT: number } | null>(null);
   const [tlPps, setTlPps] = useState(44); // пикселей на секунду — масштаб таймлайна (зум)
   const tlPpsRef = useRef(44);
   useEffect(() => { tlPpsRef.current = tlPps; }, [tlPps]);
+  const [tlPlayhead, setTlPlayhead] = useState(0);     // бегунок (сек) — где режут ножницы
+  const tlPlayDragRef = useRef(false);
+  const tlMovedRef = useRef(false); // был ли драг клипа (чтобы клик ≠ перетаскивание)
+  const tlWrapRef = useRef<HTMLDivElement | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false); // список реплик свёрнут/раскрыт
+  const [selLine, setSelLine] = useState<number | null>(null); // выбранная реплика (клик по клипу)
+  const tlMmss = (s: number): string => { const m = Math.floor(s / 60); const ss = Math.floor(s % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
+  /** Разрезать клип, над которым стоит бегунок, в его позиции. */
+  const cutAtPlayhead = () => {
+    const arr = pod.dialogue;
+    const idx = arr.findIndex((l, i) => { const t = lineT(l, i, arr); return tlPlayhead > t + 0.1 && tlPlayhead < t + lineDur(l) - 0.1; });
+    if (idx >= 0) splitLineAt(idx, tlPlayhead);
+  };
+  /** Вместить весь таймлайн в видимую ширину (минимальный масштаб). */
+  const fitTimeline = () => {
+    const arr = pod.dialogue;
+    const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+    const w = (tlWrapRef.current?.clientWidth || 520) - 48;
+    setTlPps(Math.max(3, Math.min(160, w / total)));
+  };
   useEffect(() => {
     const move = (e: PointerEvent) => {
-      const d = tlDragRef.current; if (!d) return;
-      const nt = Math.max(0, Math.round((d.startT + (e.clientX - d.startX) / tlPpsRef.current) * 20) / 20);
-      setPod((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === d.i ? { ...l, tStart: nt } : l)) }));
+      const d = tlDragRef.current;
+      if (d) {
+        tlMovedRef.current = true;
+        const nt = Math.max(0, Math.round((d.startT + (e.clientX - d.startX) / tlPpsRef.current) * 20) / 20);
+        setPod((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === d.i ? { ...l, tStart: nt } : l)) }));
+      } else if (tlPlayDragRef.current && tlWrapRef.current) {
+        const r = tlWrapRef.current.getBoundingClientRect();
+        const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32; // 32 = отступ подписи дорожки
+        setTlPlayhead(Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20));
+      }
     };
-    const up = () => { if (tlDragRef.current) { tlDragRef.current = null; setDirty(true); } };
+    const up = () => { if (tlDragRef.current) { tlDragRef.current = null; setDirty(true); } tlPlayDragRef.current = false; };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
@@ -1214,6 +1243,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         @keyframes meDot{0%,100%{opacity:.3}50%{opacity:1}}
         .me-ready{animation:meReady 1.1s ease-in-out infinite;}
         @keyframes meReady{0%,100%{box-shadow:0 8px 26px rgba(16,185,129,.4);transform:scale(1)}50%{box-shadow:0 10px 40px rgba(16,185,129,.95);transform:scale(1.05)}}
+        /* переливающийся контур блока во время генерации */
+        .me-busyring{position:absolute;width:72px;height:72px;border-radius:50%;top:-7px;left:50%;transform:translateX(-50%);background:conic-gradient(from 0deg,#ec4899,#818cf8,#34d399,#fbbf24,#ec4899);animation:meSpin 1.3s linear infinite;-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none;z-index:7;}
         /* раскрытие — пружинка (быстро, мультяшно) */
         .me-grow{animation:meGrow .26s cubic-bezier(.34,1.7,.5,1);transform-origin:bottom center;}
         @keyframes meGrow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
@@ -1381,6 +1412,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
+              {id === 'podcast' && (!!podBusy || building || !!angleBusy) && <span className="me-busyring" />}
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
@@ -2201,58 +2233,21 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   </div>
                 )}
 
-                {/* Диалог + картинки к фразам (B-roll с выездом) */}
+                {/* Таймлайн (Фаза 2) — вверху; наложение голосовых дорожек */}
                 {pod.dialogue.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Реплики ({pod.dialogue.length}) — нажми 🖼 чтобы прикрепить картинку к фразе</div>
-                    {pod.dialogue.map((l, i) => (
-                      <div key={i} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                        <div className="flex items-start gap-1.5">
-                          <button onClick={() => podLineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить ведущего"
-                            className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5"
-                            style={{ background: l.speaker === 'A' ? '#ec4899' : '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
-                          <textarea value={l.text} onChange={(e) => podLineMutate(i, { text: e.target.value })} rows={1}
-                            className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                            style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                          {l.image ? (
-                            <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
-                              <img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
-                              <button onClick={() => setLineImage(i, null)} title="Убрать картинку" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
-                            </div>
-                          ) : (
-                            <button onClick={() => openPodLineImage(i)} title="Прикрепить картинку к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Image size={13} /></button>
-                          )}
-                          <button onClick={() => podLineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
-                        </div>
-                        {l.image && (
-                          <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
-                            {POD_ANIMS.map((a) => {
-                              const sel = (l.anim || 'auto') === a.v;
-                              return (
-                                <button key={a.v} onClick={() => setLineAnim(i, a.v)}
-                                  className="text-[10px] font-600 px-2 py-1 rounded-md"
-                                  style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{a.label}</button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <button onClick={podLineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#ec4899', background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
-                  </div>
-                )}
-
-                {/* Таймлайн (Фаза 2): наложение голосовых дорожек */}
-                {pod.dialogue.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Таймлайн (наложение голосов)</span>
+                    <div className="flex items-center justify-between flex-wrap gap-1.5">
+                      <span className="text-[11px] font-600 inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                        Таймлайн (наложение голосов)
+                        {pod.timeline && (() => { const arr = pod.dialogue; const total = Math.max(0, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l))); return <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{tlMmss(tlPlayhead)} / {tlMmss(total)}</span>; })()}
+                      </span>
                       <div className="inline-flex items-center gap-1.5">
                         {pod.timeline && (
                           <>
-                            <button onClick={() => setTlPps((v) => Math.max(12, Math.round(v / 1.4)))} title="Уменьшить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
+                            <button onClick={cutAtPlayhead} title="Разрезать по бегунку (✂)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
+                            <button onClick={() => setTlPps((v) => Math.max(3, Math.round(v / 1.4)))} title="Уменьшить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
                             <button onClick={() => setTlPps((v) => Math.min(160, Math.round(v * 1.4)))} title="Увеличить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
+                            <button onClick={fitTimeline} title="Вместить всё на экран" className="text-[10px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>вместить</button>
                           </>
                         )}
                         <button onClick={toggleTimeline}
@@ -2266,13 +2261,16 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                       const arr = pod.dialogue;
                       const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
                       const W = Math.ceil(total) * tlPps + 40;
+                      const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
+                      const phLeft = 32 + tlPlayhead * tlPps;
                       return (
-                        <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)' }}>
+                        <div ref={tlWrapRef} style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)' }}>
                           <div style={{ position: 'relative', width: W, padding: '4px 0' }}>
-                            <div style={{ position: 'relative', height: 14, marginLeft: 32 }}>
-                              {Array.from({ length: Math.ceil(total) + 1 }).map((_, s) => (
-                                <span key={s} style={{ position: 'absolute', left: s * tlPps, top: 0, fontSize: 8, color: 'var(--text-muted)' }}>{s}s</span>
-                              ))}
+                            <div onPointerDown={(e) => { tlPlayDragRef.current = true; const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect(); setTlPlayhead(Math.max(0, Math.round(((e.clientX - rect.left - 32) / tlPps) * 20) / 20)); }}
+                              style={{ position: 'relative', height: 16, marginLeft: 32, cursor: 'col-resize', touchAction: 'none' }}>
+                              {Array.from({ length: Math.floor(total / step) + 1 }).map((_, k) => { const s = k * step; return (
+                                <span key={k} style={{ position: 'absolute', left: s * tlPps, top: 1, fontSize: 8, color: 'var(--text-muted)' }}>{tlMmss(s)}</span>
+                              ); })}
                             </div>
                             {(['A', 'B'] as const).map((trk) => (
                               <div key={trk} style={{ position: 'relative', height: 34, marginTop: 4 }}>
@@ -2281,20 +2279,18 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                                   {arr.map((l, i) => {
                                     if ((l.speaker === 'B' ? 'B' : 'A') !== trk) return null;
                                     const t = lineT(l, i, arr); const d = lineDur(l);
-                                    const w = Math.max(20, d * tlPps - 2);
+                                    const w = Math.max(14, d * tlPps - 2);
+                                    const sel = selLine === i;
                                     return (
-                                      <div key={i} onPointerDown={(e) => { e.preventDefault(); tlDragRef.current = { i, startX: e.clientX, startT: t }; }}
+                                      <div key={i}
+                                        onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startT: t }; }}
+                                        onClick={() => { if (tlMovedRef.current) { tlMovedRef.current = false; return; } setSelLine(i); setDialogOpen(true); setTimeout(() => document.getElementById(`pl-${i}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60); }}
                                         title={l.text}
                                         style={{ position: 'absolute', left: t * tlPps, width: w, top: 2, height: 30, borderRadius: 6,
                                           background: trk === 'A' ? 'rgba(236,72,153,0.9)' : 'rgba(139,92,246,0.9)', color: '#fff', fontSize: 9, lineHeight: '30px',
-                                          padding: '0 5px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none' }}>
+                                          padding: '0 5px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none',
+                                          boxShadow: sel ? '0 0 0 2px #fff, 0 0 0 4px #ec4899' : 'none' }}>
                                         {l.image && <img src={l.image} alt="" style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, objectFit: 'cover', borderRadius: 4 }} />}
-                                        {w > 44 && (
-                                          <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); splitLine(i); }} title="Разрезать (ножницы)"
-                                            style={{ position: 'absolute', left: w / 2 - 8, top: 7, width: 16, height: 16, borderRadius: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', cursor: 'col-resize', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                                            <Scissors size={10} />
-                                          </button>
-                                        )}
                                         <span style={{ pointerEvents: 'none' }}>{l.text || `реплика ${i + 1}`}</span>
                                       </div>
                                     );
@@ -2302,11 +2298,58 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                                 </div>
                               </div>
                             ))}
+                            <div style={{ position: 'absolute', left: phLeft, top: 0, bottom: 0, width: 2, background: '#fbbf24', zIndex: 5, pointerEvents: 'none' }}>
+                              <span onPointerDown={(e) => { e.stopPropagation(); tlPlayDragRef.current = true; }} style={{ position: 'absolute', top: 0, left: -6, width: 14, height: 14, borderRadius: '50%', background: '#fbbf24', cursor: 'col-resize', pointerEvents: 'auto', touchAction: 'none' }} />
+                            </div>
                           </div>
                         </div>
                       );
                     })()}
-                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Тащи клипы по времени; ✂ режет клип пополам; −/+ масштаб. Наложение A/B = перебивание; «Собрать» смикширует. К клипу можно прикрепить картинку (🖼 в списке реплик).</p>}
+                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Тащи клипы по времени; жёлтый бегунок ведёшь и ✂ режет по нему; −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = перебивание.</p>}
+                  </div>
+                )}
+
+                {/* Реплики — свёрнуты, открываются; клик по клипу подсвечивает */}
+                {pod.dialogue.length > 0 && (
+                  <div className="space-y-1.5">
+                    <button onClick={() => setDialogOpen((o) => !o)} className="w-full flex items-center justify-between text-[11px] font-600 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                      <span>Реплики ({pod.dialogue.length}) — открыть/свернуть</span>
+                      <span>{dialogOpen ? '▾' : '▸'}</span>
+                    </button>
+                    {dialogOpen && (
+                      <div className="space-y-1.5" style={{ maxHeight: 280, overflowY: 'auto' }}>
+                        {pod.dialogue.map((l, i) => (
+                          <div key={i} id={`pl-${i}`} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${selLine === i ? '#ec4899' : 'var(--border-medium)'}` }}>
+                            <div className="flex items-start gap-1.5">
+                              <button onClick={() => podLineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить ведущего"
+                                className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5"
+                                style={{ background: l.speaker === 'A' ? '#ec4899' : '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
+                              <textarea value={l.text} onChange={(e) => podLineMutate(i, { text: e.target.value })} rows={1}
+                                className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+                              {l.image ? (
+                                <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
+                                  <img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
+                                  <button onClick={() => setLineImage(i, null)} title="Убрать картинку" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
+                                </div>
+                              ) : (
+                                <button onClick={() => openPodLineImage(i)} title="Прикрепить картинку к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Image size={13} /></button>
+                              )}
+                              <button onClick={() => podLineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                            </div>
+                            {l.image && (
+                              <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
+                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
+                                {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a.v; return (
+                                  <button key={a.v} onClick={() => setLineAnim(i, a.v)} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{a.label}</button>
+                                ); })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <button onClick={podLineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#ec4899', background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
+                      </div>
+                    )}
                   </div>
                 )}
 
