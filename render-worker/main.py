@@ -512,9 +512,11 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
             left, left_v, right, right_v = (speak_clip or img_a), bool(speak_clip), img_b, False
         else:
             left, left_v, right, right_v = img_a, False, (speak_clip or img_b), bool(speak_clip)
-        # картинка к фразе (B-roll) с выездом
+        # картинка к фразе (B-roll) с выездом; «auto» → со стороны говорящего (A слева, B справа)
         limg = _download_media(base_url, l.get("image"), work, default_ext=".jpg") if l.get("image") else None
         lanim = str(l.get("anim") or "auto")
+        if lanim == "auto":
+            lanim = "slide-left" if spk == "A" else "slide-right"
         if limg:
             used_imgs += 1
         seg = _pod_segment(left, left_v, right, right_v, wav, limg, lanim, out())
