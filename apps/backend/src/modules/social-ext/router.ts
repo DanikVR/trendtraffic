@@ -28,8 +28,8 @@ import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeUrl, detectUrl } from '../trends/analytics.js';
-import { extractDownloadUrls, fetchOneVideo, tikhubGet } from '../tikhub/tikhub_client.js';
-import { downloadVideoToDisk } from '../media/store_video.js';
+import { extractDownloadUrls, fetchOneVideo, tikhubGet, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
+import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
 import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
@@ -314,23 +314,39 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
   if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
   try {
     const det = detectUrl(url);
-    const result: any = await analyzeUrl(req.tenantId!, url);
-    const dlUrls = extractDownloadUrls(result?.blocks?.video?.data);
-    if (!dlUrls.length) {
-      return res.status(422).json({ error: 'Не удалось получить прямую ссылку на видео для этой платформы.' });
+    let stored: any;
+    let platform = det?.platform || 'tiktok';
+    let vid = det?.videoId || 'video';
+
+    if (det?.platform === 'youtube' && det.videoId) {
+      // YouTube: get_video_streams_v2 + подпись + склейка ffmpeg (без analyzeUrl).
+      const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
+      if (!key) return res.status(400).json({ error: 'TikHub API key не настроен на платформе' });
+      stored = await downloadYoutubeToDisk(key, String(det.videoId));
+    } else {
+      const result: any = await analyzeUrl(req.tenantId!, url);
+      let dlUrls = extractDownloadUrls(result?.blocks?.video?.data);
+      // X/Twitter: иная структура — лучший mp4-вариант твита.
+      if (!dlUrls.length && (result?.detected?.platform || det?.platform) === 'twitter') {
+        dlUrls = extractTwitterVideoUrls(result?.blocks?.video?.data);
+      }
+      if (!dlUrls.length) {
+        return res.status(422).json({ error: 'Не удалось получить прямую ссылку на видео для этой платформы.' });
+      }
+      platform = result?.detected?.platform || det?.platform || 'tiktok';
+      vid = result?.detected?.videoId || det?.videoId || 'video';
+      stored = await downloadVideoToDisk(dlUrls, { referer: REFERER_BY_PLATFORM[platform] || REFERER_BY_PLATFORM.tiktok });
     }
-    const platform = result?.detected?.platform || det?.platform || 'tiktok';
-    const stored: any = await downloadVideoToDisk(dlUrls, { referer: REFERER_BY_PLATFORM[platform] || REFERER_BY_PLATFORM.tiktok });
-    const vid = result?.detected?.videoId || det?.videoId || 'video';
+
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video',
       originalName: `${platform}-${vid}.mp4`,
-      fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
+      fileUrl: stored.mediaUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
       folder: ANALYZED_FOLDER, // из аналитики → папка «Из анализа»
     });
-    res.json({ ok: true, fileUrl: stored.fileUrl, asset });
+    res.json({ ok: true, fileUrl: stored.mediaUrl, asset });
   } catch (err: any) {
-    res.status(502).json({ error: err?.message || 'Не удалось добавить в галерею' });
+    res.status(err?.status || 502).json({ error: err?.message || 'Не удалось добавить в галерею' });
   }
 });
 

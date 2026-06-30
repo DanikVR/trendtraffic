@@ -354,9 +354,9 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                     {s.handle && <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{String(s.handle)}</div>}
                   </div>
                   <div className="flex-1" />
-                  {/* Скачивание в Галерею пока умеет TikTok (no-watermark) и X (mp4-вариант).
-                      Для остальных площадок кнопку не показываем — иначе вводит в заблуждение. */}
-                  {isVideo && ['tiktok', 'twitter'].includes(result.detected.platform) && (
+                  {/* Скачивание в Галерею: TikTok (no-watermark), X (mp4-вариант твита),
+                      YouTube (потоки + склейка ffmpeg, до 1080p). Для остальных — скрыто. */}
+                  {isVideo && ['tiktok', 'twitter', 'youtube'].includes(result.detected.platform) && (
                     <button onClick={saveToGallery} disabled={saving || saved} title="Скачать видео в Галерею"
                       className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-60"
                       style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--brand)', color: saved ? '#10b981' : 'var(--brand-contrast)', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>

@@ -410,3 +410,50 @@ export function extractTwitterVideoUrls(payload: any): string[] {
   out.sort((a, b) => b.bitrate - a.bitrate);
   return out.map((x) => x.url);
 }
+
+// ── YouTube: скачивание (потоки + подписанные ссылки) ───────────────────────
+// get_video_streams_v2 отдаёт список форматов (itag/качество), но СЫРЫЕ url
+// IP-привязаны к серверам TikHub → с нашего IP отдают 403. get_signed_stream_url
+// по itag возвращает ссылку, которая реально качается с нашего сервера (проверено).
+// Прогрессив (formats[]) даёт audio+video одним файлом (обычно ≤360p); 1080p —
+// только раздельными adaptive-потоками (видео H.264 + аудио AAC) под склейку ffmpeg.
+
+export async function fetchYoutubeStreams(apiKey: string, videoId: string): Promise<TikHubResult<any>> {
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/youtube/web_v2/get_video_streams_v2?video_id=${encodeURIComponent(videoId)}`, { timeoutMs: 30000 })
+  );
+}
+
+/** Подписанная (скачиваемая с нашего IP) ссылка на конкретный itag. Эндпоинт изредка
+ *  флапает 400 «please retry» → withTikhubRetry (3 попытки с бэкоффом, как у всех вызовов
+ *  клиента). '' если не получилось. */
+export async function fetchYoutubeSignedUrl(apiKey: string, videoId: string, itag: number): Promise<string> {
+  const r = await withTikhubRetry(() =>
+    tikhubGet<any>(apiKey, `/api/v1/youtube/web_v2/get_signed_stream_url?video_id=${encodeURIComponent(videoId)}&itag=${itag}`, { timeoutMs: 30000 })
+  );
+  const u = r.ok ? (r.data?.data?.url ?? r.data?.data?.signed_url ?? '') : '';
+  return typeof u === 'string' && /^https?:/.test(u) ? u : '';
+}
+
+export interface YoutubePick { videoItag?: number; audioItag?: number; progItag?: number; height?: number }
+
+/** Выбор itag'ов из get_video_streams_v2: лучший H.264-видео ≤1080p (avc1) + лучшее
+ *  AAC-аудио (mp4a) для склейки в совместимый mp4 (-c copy); прогрессивный mp4
+ *  (audio+video одним файлом) — для фолбэка. */
+export function pickYoutubeItags(streamsData: any): YoutubePick {
+  const d = streamsData?.data ?? streamsData ?? {};
+  const prog: any[] = Array.isArray(d.formats) ? d.formats : [];
+  const adap: any[] = Array.isArray(d.adaptive_formats) ? d.adaptive_formats : [];
+  const H = (f: any) => Number(f?.height || 0);
+  const mime = (f: any) => String(f?.mime_type || '');
+  const itag = (f: any) => (f && f.itag != null && Number.isFinite(Number(f.itag)) ? Number(f.itag) : undefined);
+  const vids = adap.filter((f) => /avc1/i.test(mime(f)) && H(f) <= 1080 && itag(f) != null).sort((a, b) => H(b) - H(a));
+  const auds = adap.filter((f) => /mp4a/i.test(mime(f)) && itag(f) != null).sort((a, b) => Number(b?.bitrate || 0) - Number(a?.bitrate || 0));
+  const progs = prog.filter((f) => /mp4/i.test(mime(f)) && itag(f) != null).sort((a, b) => H(b) - H(a));
+  return {
+    videoItag: vids[0] ? itag(vids[0]) : undefined,
+    audioItag: auds[0] ? itag(auds[0]) : undefined,
+    progItag: progs[0] ? itag(progs[0]) : undefined,
+    height: vids[0] ? H(vids[0]) : (progs[0] ? H(progs[0]) : undefined),
+  };
+}

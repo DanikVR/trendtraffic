@@ -19,7 +19,7 @@ import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset } from './dna.js';
-import { downloadVideoToDisk } from '../media/store_video.js';
+import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, type MediaKind } from '../media/assets.js';
@@ -141,7 +141,8 @@ router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
 });
 
 /** POST /analyze/save — { url } → скачать проанализированное видео в Галерею.
- *  TikTok — no-watermark play_addr; X/Twitter — лучший mp4-вариант твита. */
+ *  TikTok — no-watermark play_addr; X/Twitter — лучший mp4-вариант твита;
+ *  YouTube — потоки get_video_streams_v2 + подпись + склейка ffmpeg (1080p H.264+AAC). */
 router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
   try {
     const url = typeof req.body?.url === 'string' ? req.body.url : '';
@@ -150,21 +151,26 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
     const key = await getEffectiveTikHubKey(req.tenantId!);
     if (!key) return res.status(400).json({ error: 'Ключ Trend не задан.' });
 
-    // Прямые ссылки-кандидаты + нужный Referer по площадке.
-    let urls: string[] = [];
-    let referer = url;
-    if (d.platform === 'tiktok') {
-      const one = await fetchOneVideo(key, String(d.videoId));
-      urls = one.ok ? extractDownloadUrls(one.data) : [];
-    } else if (d.platform === 'twitter') {
-      const one = await fetchTweetDetail(key, String(d.videoId));
-      urls = one.ok ? extractTwitterVideoUrls(one.data) : [];
-      referer = 'https://x.com/';
+    // Скачиваем по площадке: TikTok/X — прямой mp4; YouTube — потоки+склейка ffmpeg.
+    let file;
+    if (d.platform === 'tiktok' || d.platform === 'twitter') {
+      let urls: string[] = [];
+      let referer = url;
+      if (d.platform === 'tiktok') {
+        const one = await fetchOneVideo(key, String(d.videoId));
+        urls = one.ok ? extractDownloadUrls(one.data) : [];
+      } else {
+        const one = await fetchTweetDetail(key, String(d.videoId));
+        urls = one.ok ? extractTwitterVideoUrls(one.data) : [];
+        referer = 'https://x.com/';
+      }
+      if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео (для постов-картинок без видео скачивание недоступно).' });
+      file = await downloadVideoToDisk(urls, { referer });
+    } else if (d.platform === 'youtube') {
+      file = await downloadYoutubeToDisk(key, String(d.videoId));
     } else {
-      return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok и X.' });
+      return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok, X и YouTube.' });
     }
-    if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео (для постов-картинок без видео скачивание недоступно).' });
-    const file = await downloadVideoToDisk(urls, { referer });
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video', originalName: `${d.platform}-${d.videoId}.mp4`,
       fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime || 'video/mp4', size: file.size,
@@ -190,7 +196,7 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
 
     res.json({ ok: true, asset, fileUrl: file.mediaUrl, analyzing: true });
   } catch (err: any) {
-    res.status(502).json({ error: err?.message || 'Ошибка скачивания' });
+    res.status(err?.status || 502).json({ error: err?.message || 'Ошибка скачивания' });
   }
 });
 
