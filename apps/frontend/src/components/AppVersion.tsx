@@ -738,7 +738,15 @@
  *         get_general_search отдаёт их вместе с видео (reelItemRenderer/shortsLockupViewModel)
  *         — помечаем isShort в normalizeYoutube и фильтруем в scanTrends при yt_kind != shorts.
  *         Это же чинило «анализируется не тот ролик» (выбор сбивался подмешанными шортами). */
-export const APP_VERSION = '1.5.31';
+
+/* 1.5.32 — Редизайн кнопок-источников в «Трендах» (TrendSearch): сплошные брендовые
+ *         круги (чёрный/градиент/красный) выбивались из indigo/light-стиля. Стало:
+ *         брендовый глиф (currentColor) в мягком тонированном «app-icon» чипе
+ *         (rounded-[9px], tint-фон) + indigo-выделение активной пилюли (как у вкладок).
+ *         TikTok/X монохромны (var(--text-primary) на --bg-elevated), Instagram #E1306C,
+ *         YouTube #FF0000 на лёгкой подложке; SVG переведены на currentColor, у YouTube —
+ *         нормальный логотип (скруг. прямоугольник + play вместо голого треугольника). */
+export const APP_VERSION = '1.5.32';
 
 export function AppVersion() {
   return (
