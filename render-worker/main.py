@@ -359,11 +359,12 @@ def _pad_audio(wav: str, min_sec: float, out_path: str) -> str:
 
 
 def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
-                 audio: str, cut: Optional[str], layout: str, out_path: str) -> Optional[str]:
+                 audio: str, cut: Optional[str], anim: str, out_path: str) -> Optional[str]:
     """
     Один сегмент сплит-скрина: ведущий A слева, B справа (каждый half×H), общая дорожка —
-    озвучка реплики. Картинка-вставка (если есть) — по центру шва (overlay) или плашкой
-    сверху (topbar). Говорящая сторона — видео-голова или статичное фото (loop).
+    озвучка реплики. Если к фразе прикреплена картинка (cut) — она эффектно «выезжает»
+    карточкой по центру с анимацией anim (slide-left/right/up | fade | zoom | auto).
+    Говорящая сторона — видео-голова или статичное фото (loop).
     """
     half = POD_W // 2
     dur = _media_duration(audio) or 4.0
@@ -380,15 +381,21 @@ def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
     )
     last = "base"
     if cut:
-        inputs += ["-loop", "1", "-i", cut]  # 3: картинка-вставка
-        if layout == "topbar":
-            bh = int(POD_H * 0.34)
-            fc += (f"[3:v]scale={POD_W}:{bh}:force_original_aspect_ratio=increase,"
-                   f"crop={POD_W}:{bh},setsar=1[cut];[base][cut]overlay=0:0[v];")
-        else:  # overlay по центру
-            side = int(POD_W * 0.56)
-            fc += (f"[3:v]scale={side}:{side}:force_original_aspect_ratio=increase,"
-                   f"crop={side}:{side},setsar=1[cut];[base][cut]overlay=(W-w)/2:(H-h)/2[v];")
+        inputs += ["-loop", "1", "-i", cut]  # 3: картинка к фразе
+        side = int(POD_W * 0.62)
+        d = 0.45  # длительность входа
+        cx, cy = "(W-w)/2", "(H-h)/2"
+        pre = (f"[3:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1")
+        if anim == "slide-left":
+            x, y = f"(W-w)/2-((W-w)/2+w)*(1-min(1\\,t/{d}))", cy
+        elif anim == "slide-right":
+            x, y = f"(W-w)/2+(W-(W-w)/2)*(1-min(1\\,t/{d}))", cy
+        elif anim == "slide-up":
+            x, y = cx, f"(H-h)/2+(H-(H-h)/2)*(1-min(1\\,t/{d}))"
+        else:  # fade / zoom / auto → проявление
+            x, y = cx, cy
+            pre += f",format=yuva420p,fade=in:st=0:d={d}:alpha=1"
+        fc += f"{pre}[cut];[{last}][cut]overlay=x={x}:y={y}[v];"
         last = "v"
     cmd = [FFMPEG, "-y", *inputs,
            "-filter_complex", fc.rstrip("; "),
@@ -463,23 +470,12 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
     if not lines:
         return None, "подкаст: нет реплик (разберите запись / сгенерируйте диалог) — passthrough"
 
-    # Картинки-вставки → скачиваем и равномерно распределяем по репликам.
-    cut_paths: list = []
-    for c in (pod.get("cutaways") or []):
-        if isinstance(c, dict) and c.get("url"):
-            cp = _download_media(base_url, c.get("url"), work, default_ext=".jpg")
-            if cp:
-                cut_paths.append(cp)
-    n = len(lines)
-    cut_at: dict = {}
-    for j, cp in enumerate(cut_paths):
-        cut_at[min(n - 1, int((j + 1) * n / (len(cut_paths) + 1)))] = cp
-
     has_talking = registry.get("talking_head") is not None
     segments: list = []
     notes: list = []
     used_heads = 0
     used_real = 0
+    used_imgs = 0
     for i, l in enumerate(lines):
         spk = "B" if l.get("speaker") == "B" else "A"
         voice = (host_b if spk == "B" else host_a).get("voice") or "female"
@@ -516,7 +512,12 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
             left, left_v, right, right_v = (speak_clip or img_a), bool(speak_clip), img_b, False
         else:
             left, left_v, right, right_v = img_a, False, (speak_clip or img_b), bool(speak_clip)
-        seg = _pod_segment(left, left_v, right, right_v, wav, cut_at.get(i), layout, out())
+        # картинка к фразе (B-roll) с выездом
+        limg = _download_media(base_url, l.get("image"), work, default_ext=".jpg") if l.get("image") else None
+        lanim = str(l.get("anim") or "auto")
+        if limg:
+            used_imgs += 1
+        seg = _pod_segment(left, left_v, right, right_v, wav, limg, lanim, out())
         if seg:
             segments.append(seg)
         else:
@@ -534,7 +535,7 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
                  if has_talking else "статичные фото (нет GPU talking_head)")
     audio_note = f"реальный голос {used_real}/{len(lines)}" if rec_path else "озвучка TTS"
     extra = ("; " + "; ".join(notes)) if notes else ""
-    return final, f"подкаст-сплит-скрин: {len(segments)} сегм., {head_note}, {audio_note}{extra}"
+    return final, f"подкаст-сплит-скрин: {len(segments)} сегм., {head_note}, {audio_note}, картинок {used_imgs}{extra}"
 
 
 @app.post("/execute")

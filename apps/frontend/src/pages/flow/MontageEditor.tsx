@@ -100,7 +100,14 @@ type PodVoice = 'female' | 'male';
 type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
 type PodLayout = 'overlay' | 'topbar'; // где картинка в сплит-скрине
 interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string }
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number }
+// Анимация «выезда» картинки, прикреплённой к реплике.
+type PodAnim = 'auto' | 'slide-left' | 'slide-right' | 'slide-up' | 'fade' | 'zoom';
+const POD_ANIMS: { v: PodAnim; label: string }[] = [
+  { v: 'auto', label: 'Авто' }, { v: 'slide-left', label: '← Слева' }, { v: 'slide-right', label: 'Справа →' },
+  { v: 'slide-up', label: '↑ Снизу' }, { v: 'zoom', label: 'Зум' }, { v: 'fade', label: 'Проявление' },
+];
+// Реплика: спикер + текст (+ таймкоды) + опц. картинка, показываемая на этой фразе с выездом.
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim }
 interface PodCutaway { url: string; name: string }
 // Лицо на групповом фото: бокс в долях изображения (0..1) + назначенный спикер.
 interface PodFace { id: string; box: { x: number; y: number; w: number; h: number }; speaker: 'A' | 'B' }
@@ -345,7 +352,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
   const [podNote, setPodNote] = useState<string | null>(null);
-  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group'>(null);
+  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg'>(null);
+  const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
   const podPickInputRef = useRef<HTMLInputElement | null>(null);
   // «Студия лиц»: рисование боксов поверх группового фото.
   const faceWrapRef = useRef<HTMLDivElement | null>(null);
@@ -543,10 +551,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
   const podLineAdd = () => podMutate((p) => ({ ...p, dialogue: [...p.dialogue, { speaker: p.dialogue.length % 2 ? 'B' : 'A', text: '' }] }));
   const podLineDel = (i: number) => podMutate((p) => ({ ...p, dialogue: p.dialogue.filter((_, j) => j !== i) }));
-  const podCutawayDel = (i: number) => podMutate((p) => ({ ...p, cutaways: p.cutaways.filter((_, j) => j !== i) }));
 
   // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
-  type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group';
+  type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg';
   const openPodPick = (target: PodPickTarget) => { setPodPick(target); loadMedia(); };
   const applyPodMedia = (target: PodPickTarget, m: { fileUrl: string; title: string }) => {
     podMutate((p) => {
@@ -554,6 +561,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       if (target === 'hostB') return { ...p, hostB: { ...p.hostB, photoUrl: m.fileUrl, photoName: m.title } };
       if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title };
       if (target === 'group') return { ...p, groupPhotoUrl: m.fileUrl, groupPhotoName: m.title, faces: [] };
+      if (target === 'lineimg' && podLineIdx != null) return { ...p, dialogue: p.dialogue.map((l, j) => (j === podLineIdx ? { ...l, image: m.fileUrl, imageName: m.title } : l)) };
       return { ...p, cutaways: [...p.cutaways, { url: m.fileUrl, name: m.title }] };
     });
     setPodPick(null);
@@ -584,7 +592,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   };
   const nextSpeaker = (): 'A' | 'B' => (pod.faces.some((f) => f.speaker === 'A') ? 'B' : 'A');
   const faceDown = (e: React.PointerEvent) => {
-    if (pod.faces.length >= 4) return;
+    if (pod.faces.length >= 2) return; // только два персонажа
     drawStartRef.current = faceXY(e);
     setDrawBox({ ...drawStartRef.current, w: 0, h: 0 });
   };
@@ -599,7 +607,11 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       podMutate((p) => ({ ...p, faces: [...p.faces, { id: `f${Date.now().toString(36)}${p.faces.length}`, box: b, speaker: nextSpeaker() }] }));
     }
   };
-  const faceAssign = (id: string, speaker: 'A' | 'B') => podMutate((p) => ({ ...p, faces: p.faces.map((f) => (f.id === id ? { ...f, speaker } : f)) }));
+  // Роли взаимоисключающие: назначили A одному лицу → второе автоматически становится B (персонажей всего 2).
+  const faceAssign = (id: string, speaker: 'A' | 'B') => podMutate((p) => ({
+    ...p,
+    faces: p.faces.map((f) => (f.id === id ? { ...f, speaker } : { ...f, speaker: speaker === 'A' ? 'B' : 'A' })),
+  }));
   const faceDel = (id: string) => podMutate((p) => ({ ...p, faces: p.faces.filter((f) => f.id !== id) }));
 
   /** Грузит HTMLImageElement из URL (same-origin → canvas не «грязнится»). */
@@ -608,23 +620,44 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     img.onload = () => resolve(img); img.onerror = reject; img.src = url;
   });
 
-  /** Авто-распознавание лиц через браузерный FaceDetector (если доступен). */
+  /** Детекция лиц через MediaPipe (надёжно, любой современный браузер) → [{x,y,w,h}] в долях. */
+  const detectMediapipe = async (img: HTMLImageElement): Promise<{ x: number; y: number; w: number; h: number }[]> => {
+    const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18';
+    const vision: any = await import(/* @vite-ignore */ `${CDN}/vision_bundle.mjs`);
+    const fileset = await vision.FilesetResolver.forVisionTasks(`${CDN}/wasm`);
+    const detector = await vision.FaceDetector.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite' },
+      runningMode: 'IMAGE',
+    });
+    const W = img.naturalWidth || 1, H = img.naturalHeight || 1;
+    const res = detector.detect(img);
+    return (res?.detections || []).map((d: any) => {
+      const b = d.boundingBox; return { x: b.originX / W, y: b.originY / H, w: b.width / W, h: b.height / H };
+    });
+  };
+  /** Детекция через браузерный FaceDetector (фолбэк). */
+  const detectNative = async (img: HTMLImageElement): Promise<{ x: number; y: number; w: number; h: number }[]> => {
+    const FD = (window as any).FaceDetector;
+    if (!FD) return [];
+    const faces = await new FD({ fastMode: true, maxDetectedFaces: 2 }).detect(img);
+    const W = img.naturalWidth || 1, H = img.naturalHeight || 1;
+    return (faces || []).map((f: any) => ({ x: f.boundingBox.x / W, y: f.boundingBox.y / H, w: f.boundingBox.width / W, h: f.boundingBox.height / H }));
+  };
+  /** Авто-распознавание: MediaPipe → FaceDetector → ручная обводка. Берём 2 крупнейших лица слева→направо. */
   const detectFaces = async () => {
     if (!pod.groupPhotoUrl || podBusy) return;
-    const FD = (window as any).FaceDetector;
-    if (!FD) { setPodNote('Авто-распознавание в этом браузере недоступно — обведите лица рамкой по фото (мышью).'); return; }
     setPodBusy('detect'); setPodNote(null);
     try {
       const img = await loadImage(pod.groupPhotoUrl);
-      const faces = await new FD({ fastMode: true, maxDetectedFaces: 4 }).detect(img);
-      const W = img.naturalWidth || 1, H = img.naturalHeight || 1;
-      const boxes: PodFace[] = (faces || []).slice(0, 4).map((f: any, i: number) => ({
-        id: `f${Date.now().toString(36)}${i}`,
-        box: { x: f.boundingBox.x / W, y: f.boundingBox.y / H, w: f.boundingBox.width / W, h: f.boundingBox.height / H },
-        speaker: (i % 2 === 0 ? 'A' : 'B'),
-      }));
-      if (!boxes.length) setPodNote('Лица не найдены — обведите вручную.');
-      else { podMutate((p) => ({ ...p, faces: boxes })); setPodNote(`Найдено лиц: ${boxes.length}. Поправьте назначение A/B при необходимости.`); }
+      let raw: { x: number; y: number; w: number; h: number }[] = [];
+      try { raw = await detectMediapipe(img); } catch { raw = []; }
+      if (!raw.length) { try { raw = await detectNative(img); } catch { raw = []; } }
+      if (!raw.length) { setPodNote('Лица не найдены автоматически — обведите их рамкой по фото (мышью).'); return; }
+      // 2 крупнейших лица, упорядоченные слева→направо → A, B
+      const top = raw.sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 2).sort((a, b) => a.x - b.x);
+      const boxes: PodFace[] = top.map((box, i) => ({ id: `f${Date.now().toString(36)}${i}`, box, speaker: i === 0 ? 'A' : 'B' }));
+      podMutate((p) => ({ ...p, faces: boxes }));
+      setPodNote(`Найдено лиц: ${boxes.length}. Слева — A, справа — B (можно поменять).`);
     } catch { setPodNote('Не удалось распознать — обведите вручную.'); }
     finally { setPodBusy(null); }
   };
@@ -671,13 +704,18 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         if (sp === 'A') patch.hostA = { ...pod.hostA, photoUrl: asset.fileUrl, photoName: 'Ведущий A (кадр)' };
         else patch.hostB = { ...pod.hostB, photoUrl: asset.fileUrl, photoName: 'Ведущий B (кадр)' };
       }
-      const wide = { url: pod.groupPhotoUrl, name: pod.groupPhotoName || 'Общий план' };
-      const cutaways = pod.cutaways.some((c) => c.url === wide.url) ? pod.cutaways : [...pod.cutaways, wide];
-      podMutate((p) => ({ ...p, ...patch, cutaways }));
-      setPodNote('Готово: крупные планы ведущих созданы, общий план добавлен во вставки.');
+      podMutate((p) => ({ ...p, ...patch }));
+      setPodNote('Готово: крупные планы ведущих созданы из общего фото.');
     } catch { setPodNote('Не удалось сделать кадры из фото.'); }
     finally { setPodBusy(null); }
   };
+
+  // ── Картинки к фразам (B-roll): прикрепляем картинку к реплике, выезжает на этой фразе ──
+  const openPodLineImage = (i: number) => { setPodLineIdx(i); setPodPick('lineimg'); loadMedia(); };
+  const setLineImage = (i: number, url: string | null, name?: string) =>
+    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, image: url || undefined, imageName: name } : l)) }));
+  const setLineAnim = (i: number, anim: PodAnim) =>
+    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, anim } : l)) }));
 
   /** «Собрать подкаст» — сохранить спеку, поставить задачу podcast_compose, поллить прогресс. */
   const buildPodcast = async () => {
@@ -1668,8 +1706,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                   Сцена-подкаст: <b style={{ color: '#ec4899' }}>два ведущих</b> в сплит-скрине, у каждого — своя
-                  голосовая дорожка, между ними показывается картинка. Дорожки можно <b>сгенерировать</b> (диалог + TTS)
-                  или <b>разобрать</b> готовую запись на 2 голоса.
+                  голосовая дорожка. Дорожки можно <b>сгенерировать</b> (диалог + TTS) или <b>разобрать</b> готовую
+                  запись на 2 голоса. К каждой фразе можно прикрепить <b>картинку</b> — она эффектно выезжает в этот момент.
                 </p>
 
                 {/* Студия лиц: одно групповое фото → детекция/разметка → назначение A/B → кадры */}
@@ -1797,82 +1835,57 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   </div>
                 )}
 
-                {/* Диалог */}
+                {/* Диалог + картинки к фразам (B-roll с выездом) */}
                 {pod.dialogue.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Реплики ({pod.dialogue.length})</div>
+                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Реплики ({pod.dialogue.length}) — нажми 🖼 чтобы прикрепить картинку к фразе</div>
                     {pod.dialogue.map((l, i) => (
-                      <div key={i} className="flex items-start gap-1.5">
-                        <button onClick={() => podLineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить ведущего"
-                          className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5"
-                          style={{ background: l.speaker === 'A' ? '#ec4899' : '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
-                        <textarea value={l.text} onChange={(e) => podLineMutate(i, { text: e.target.value })} rows={1}
-                          className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                        <button onClick={() => podLineDel(i)} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-tertiary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                      <div key={i} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        <div className="flex items-start gap-1.5">
+                          <button onClick={() => podLineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить ведущего"
+                            className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5"
+                            style={{ background: l.speaker === 'A' ? '#ec4899' : '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
+                          <textarea value={l.text} onChange={(e) => podLineMutate(i, { text: e.target.value })} rows={1}
+                            className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                            style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+                          {l.image ? (
+                            <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
+                              <img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
+                              <button onClick={() => setLineImage(i, null)} title="Убрать картинку" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => openPodLineImage(i)} title="Прикрепить картинку к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Image size={13} /></button>
+                          )}
+                          <button onClick={() => podLineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                        </div>
+                        {l.image && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
+                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
+                            {POD_ANIMS.map((a) => {
+                              const sel = (l.anim || 'auto') === a.v;
+                              return (
+                                <button key={a.v} onClick={() => setLineAnim(i, a.v)}
+                                  className="text-[10px] font-600 px-2 py-1 rounded-md"
+                                  style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{a.label}</button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     ))}
                     <button onClick={podLineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#ec4899', background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
                   </div>
                 )}
 
-                {/* Картинки-вставки */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Картинки между ведущими ({pod.cutaways.length})</div>
-                  <div className="flex flex-wrap gap-2">
-                    {pod.cutaways.map((c, i) => (
-                      <div key={i} className="relative rounded-lg overflow-hidden" style={{ width: 56, height: 56, border: '1px solid var(--border-medium)' }}>
-                        <img src={c.url} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => podCutawayDel(i)} className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
-                      </div>
+                {/* Мин. длина реплики */}
+                <div className="space-y-1">
+                  <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Мин. длина реплики</div>
+                  <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)', maxWidth: 220 }}>
+                    {([[0, 'Авто'], [4, '4с'], [6, '6с']] as [number, string][]).map(([s, lbl]) => (
+                      <button key={s} onClick={() => podMutate((p) => ({ ...p, segSec: s }))}
+                        className="py-1.5 rounded-lg text-[11px] font-700"
+                        style={{ background: pod.segSec === s ? 'var(--bg-secondary)' : 'transparent', color: pod.segSec === s ? '#ec4899' : 'var(--text-muted)' }}>{lbl}</button>
                     ))}
-                    <button onClick={() => openPodPick('cutaway')} className="rounded-lg flex items-center justify-center" style={{ width: 56, height: 56, background: 'var(--bg-tertiary)', border: '1px dashed var(--border-medium)', color: '#ec4899', cursor: 'pointer' }}><Plus size={18} /></button>
-                  </div>
-                </div>
-
-                {/* Раскладка + длительность сегмента */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Картинка</div>
-                    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                      {([['overlay', 'По центру'], ['topbar', 'Сверху']] as [PodLayout, string][]).map(([lay, lbl]) => (
-                        <button key={lay} onClick={() => podMutate((p) => ({ ...p, layout: lay }))}
-                          className="py-1.5 rounded-lg text-[11px] font-600"
-                          style={{ background: pod.layout === lay ? 'var(--bg-secondary)' : 'transparent', color: pod.layout === lay ? '#ec4899' : 'var(--text-muted)' }}>{lbl}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Мин. длина реплики</div>
-                    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                      {([[0, 'Авто'], [4, '4с'], [6, '6с']] as [number, string][]).map(([s, lbl]) => (
-                        <button key={s} onClick={() => podMutate((p) => ({ ...p, segSec: s }))}
-                          className="py-1.5 rounded-lg text-[11px] font-700"
-                          style={{ background: pod.segSec === s ? 'var(--bg-secondary)' : 'transparent', color: pod.segSec === s ? '#ec4899' : 'var(--text-muted)' }}>{lbl}</button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Живое превью сплит-скрина */}
-                <div className="flex justify-center">
-                  <div className="relative overflow-hidden rounded-xl" style={{ width: 124, aspectRatio: '9 / 16', background: '#000', border: '1px solid var(--border-medium)' }}>
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-                      <div style={{ flex: 1, overflow: 'hidden', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
-                        {pod.hostA.photoUrl ? <img src={pod.hostA.photoUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><UserRound size={20} /></div>}
-                      </div>
-                      <div style={{ flex: 1, overflow: 'hidden' }}>
-                        {pod.hostB.photoUrl ? <img src={pod.hostB.photoUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><UserRound size={20} /></div>}
-                      </div>
-                    </div>
-                    {pod.cutaways[0] && (
-                      pod.layout === 'overlay' ? (
-                        <img src={pod.cutaways[0].url} alt="" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: '56%', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: 8, border: '2px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }} />
-                      ) : (
-                        <img src={pod.cutaways[0].url} alt="" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '34%', width: '100%', objectFit: 'cover', borderBottom: '2px solid #fff' }} />
-                      )
-                    )}
-                    <div style={{ position: 'absolute', left: 4, bottom: 4, fontSize: 8, color: '#fff', background: 'rgba(0,0,0,0.5)', padding: '1px 4px', borderRadius: 4 }}>9:16</div>
                   </div>
                 </div>
 
