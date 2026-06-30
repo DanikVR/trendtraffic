@@ -29,7 +29,7 @@ import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeUrl, detectUrl } from '../trends/analytics.js';
 import { extractDownloadUrls, fetchOneVideo, tikhubGet, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
-import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
+import { downloadVideoToDisk } from '../media/store_video.js';
 import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
@@ -318,11 +318,9 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
     let platform = det?.platform || 'tiktok';
     let vid = det?.videoId || 'video';
 
-    if (det?.platform === 'youtube' && det.videoId) {
-      // YouTube: get_video_streams_v2 + подпись + склейка ffmpeg (без analyzeUrl).
-      const key = (await getEffectiveTikHubKey(req.tenantId)) || getTikHubApiKey();
-      if (!key) return res.status(400).json({ error: 'TikHub API key не настроен на платформе' });
-      stored = await downloadYoutubeToDisk(key, String(det.videoId));
+    if (det?.platform === 'youtube') {
+      // YouTube-скачивание отключено (подпись потоков TikHub ненадёжна).
+      return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
     } else {
       const result: any = await analyzeUrl(req.tenantId!, url);
       let dlUrls = extractDownloadUrls(result?.blocks?.video?.data);

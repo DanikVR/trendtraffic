@@ -19,7 +19,7 @@ import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset } from './dna.js';
-import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
+import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, type MediaKind } from '../media/assets.js';
@@ -65,10 +65,15 @@ function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
 router.use(requireAuth);
 
 /** POST /analyze — { url } → аналитика по ссылке (видео/аккаунт) для TikTok/Douyin/IG/X/Bilibili. */
+// YouTube: аналитика и скачивание отключены (TikHub не отдаёт надёжных потоков —
+// подпись get_signed_stream_url ненадёжна). YouTube остаётся только для ПОИСКА трендов.
+const YT_OFF = 'Анализ YouTube недоступен — YouTube доступен только для поиска трендов.';
+
 router.post('/analyze', async (req: AuthedRequest, res: Response) => {
   try {
     const url = typeof req.body?.url === 'string' ? req.body.url : '';
     if (!url.trim()) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+    if (detectUrl(url)?.platform === 'youtube') return res.status(400).json({ error: YT_OFF });
     const result = await analyzeUrl(req.tenantId!, url);
     res.json(result);
   } catch (err: any) {
@@ -130,9 +135,14 @@ router.post('/analyze/breakdown', async (req: AuthedRequest, res: Response) => {
 /** POST /analyze/bulk — { urls: string[] } → массовая сводка (по одному вызову на ссылку). */
 router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
   try {
-    const urls = Array.isArray(req.body?.urls) ? req.body.urls : [];
+    const urls: string[] = Array.isArray(req.body?.urls) ? req.body.urls : [];
     if (urls.length === 0) return res.status(400).json({ error: 'Передайте urls[].' });
-    const rows = await analyzeBulk(req.tenantId!, urls);
+    // YouTube не анализируем (без вызова TikHub) — сразу строка-ошибка; остальное как обычно.
+    const isYt = (u: string) => detectUrl(u)?.platform === 'youtube';
+    const okUrls = urls.filter((u) => !isYt(u));
+    const okRows = okUrls.length ? await analyzeBulk(req.tenantId!, okUrls) : [];
+    const byUrl = new Map(okRows.map((r: any) => [r.url, r]));
+    const rows = urls.map((u) => isYt(u) ? { url: u, platform: 'youtube', summary: {}, error: YT_OFF } : (byUrl.get(u) || { url: u, platform: 'unknown', summary: {}, error: 'не обработано' }));
     res.json({ rows });
   } catch (err: any) {
     const msg = err?.message || 'Ошибка массового анализа';
@@ -167,9 +177,10 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
       if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео (для постов-картинок без видео скачивание недоступно).' });
       file = await downloadVideoToDisk(urls, { referer });
     } else if (d.platform === 'youtube') {
-      file = await downloadYoutubeToDisk(key, String(d.videoId));
+      // YouTube-скачивание отключено (подпись потоков TikHub ненадёжна, см. YT_OFF).
+      return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
     } else {
-      return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok, X и YouTube.' });
+      return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok и X.' });
     }
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video', originalName: `${d.platform}-${d.videoId}.mp4`,
@@ -252,6 +263,7 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
     const tId = req.tenantId!, vId = req.params.id;
     const row = await getVideo(tId, vId);
     if (!row) return res.status(404).json({ error: 'Видео не найдено' });
+    if (row.platform === 'youtube') return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
 
     const key = `${tId}:${vId}`;
     if (downloadRegistry.has(key)) return res.json({ ok: true, status: 'downloading' }); // уже качается

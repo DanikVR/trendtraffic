@@ -746,7 +746,16 @@
  *         TikTok/X монохромны (var(--text-primary) на --bg-elevated), Instagram #E1306C,
  *         YouTube #FF0000 на лёгкой подложке; SVG переведены на currentColor, у YouTube —
  *         нормальный логотип (скруг. прямоугольник + play вместо голого треугольника). */
-export const APP_VERSION = '1.5.32';
+
+/* 1.5.33 — YouTube: аналитика и скачивание ОТКЛЮЧЕНЫ (решение по фидбэку — подпись
+ *         потоков TikHub `get_signed_stream_url` ненадёжна, падает на части видео).
+ *         YouTube остаётся ТОЛЬКО для поиска трендов. При попытке анализа/скачивания —
+ *         сообщение «Анализ YouTube недоступен — YouTube доступен только для поиска
+ *         трендов». Гарды: фронт TrendAnalyticsPanel.analyze (без вызова бэка) + бэк
+ *         /trends/analyze, /analyze/bulk (строка-ошибка на YT, без вызова TikHub),
+ *         /analyze/save, /videos/:id/download, /social-ext/to-gallery → «Скачивание
+ *         YouTube недоступно». Кнопка «Скачать» в панели снова только tiktok/twitter. */
+export const APP_VERSION = '1.5.33';
 
 export function AppVersion() {
   return (
