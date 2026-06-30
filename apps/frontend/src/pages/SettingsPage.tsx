@@ -39,7 +39,7 @@ interface PartnerProgram {
 
 export function SettingsPage() {
   const { t } = useTranslation('common');
-  const { user, logout, subscriptionTier, token } = useAppStore();
+  const { user, logout, subscriptionTier, subscriptionTierName, token } = useAppStore();
   const navigate = useNavigate();
 
   const [darkMode, setDarkMode] = useState(
@@ -263,7 +263,7 @@ export function SettingsPage() {
             <div className="mt-1.5">
               <StatusPill
                 status={subscriptionTier === 'trial' ? 'trial' : 'online'}
-                label={subscriptionTier === 'enterprise' ? t('tier.enterprise') : subscriptionTier === 'trial' ? t('tier.trial') : t('tier.standard')}
+                label={(subscriptionTierName || '').toLowerCase() === 'premium' ? 'Премиум' : subscriptionTier === 'enterprise' ? t('tier.enterprise') : subscriptionTier === 'trial' ? t('tier.trial') : t('tier.standard')}
               />
             </div>
           </div>

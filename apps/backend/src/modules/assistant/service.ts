@@ -128,7 +128,7 @@ export async function checkEnterpriseTier(tenantId: string): Promise<void> {
     }
 
     const tier = res.rows[0].tier;
-    if (tier !== 'enterprise') {
+    if (tier !== 'enterprise' && tier !== 'premium') {
       throw new FeatureNotAvailableError('CRM/Calendar');
     }
   });

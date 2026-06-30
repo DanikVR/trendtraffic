@@ -28,6 +28,8 @@ export function useIsEnterprise(): boolean {
   const tier = useAppStore((s) => s.subscriptionTier);
   const tierName = useAppStore((s) => s.subscriptionTierName);
   if (role === 'superadmin') return true;
+  // Полный доступ к фичам дают и Premium, и Enterprise (функции идентичны).
   // case-insensitive: subscriptionTierName — raw имя из БД, регистр может «гулять».
-  return (tier || '').toLowerCase() === 'enterprise' || (tierName || '').toLowerCase() === 'enterprise';
+  const FULL = ['enterprise', 'premium'];
+  return FULL.includes((tier || '').toLowerCase()) || FULL.includes((tierName || '').toLowerCase());
 }

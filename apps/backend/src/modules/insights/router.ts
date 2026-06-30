@@ -72,10 +72,10 @@ insightsRouter.post('/analyze/:roomId', async (req: Request, res: Response) => {
     // 2. Проверка: tier == enterprise
     const subRes = await pool.query('SELECT tier FROM subscriptions WHERE tenant_id = $1 LIMIT 1', [tenantId]);
     const tier = (subRes.rows as any[])[0]?.tier;
-    if (tier !== 'enterprise') {
+    if (tier !== 'enterprise' && tier !== 'premium') {
       return res.status(402).json({
-        error: 'Анализ разговора доступен только на тарифе Enterprise.',
-        requiredTier: 'enterprise',
+        error: 'Доступно на тарифах Премиум и Энтерпрайз.',
+        requiredTier: 'premium',
         currentTier: tier || null,
       });
     }

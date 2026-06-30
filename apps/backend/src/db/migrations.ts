@@ -802,6 +802,14 @@ const MIGRATIONS: Migration[] = [
   { name: 'video_analyses.idx_tenant', sql: `CREATE INDEX IF NOT EXISTS idx_video_analyses_tenant ON video_analyses(tenant_id, created_at DESC)` },
   // Частичный уник-индекс под upsert «одна ДНК на видео Галереи» (ON CONFLICT (media_asset_id)).
   { name: 'video_analyses.idx_asset_uniq', sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_video_analyses_asset ON video_analyses(media_asset_id) WHERE media_asset_id IS NOT NULL` },
+  // TrendTraffic тариф «premium» (€120/мес, полный доступ): CHECK на subscriptions.tier
+  // его не разрешал → оплата Премиума падала бы (юзер платит, доступ не выдаётся).
+  // Пересоздаём constraint с 'premium' (имя авто-генерится Postgres как subscriptions_tier_check).
+  {
+    name: 'subscriptions.tier_add_premium',
+    sql: `ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_tier_check;
+          ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_tier_check CHECK (tier IN ('premium', 'plus', 'standard', 'standard_yearly', 'enterprise', 'trial', 'monthly', 'annual'))`,
+  },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

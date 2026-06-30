@@ -25,7 +25,7 @@ const __au_filename = fileURLToPath(import.meta.url);
 const __au_dirname = path.dirname(__au_filename);
 const UPLOADS_DIR = path.resolve(__au_dirname, '../../../../uploads/enterprise-chat');
 
-const ALLOWED_TIERS = ['plus', 'standard', 'standard_yearly', 'enterprise', 'trial'] as const;
+const ALLOWED_TIERS = ['premium', 'plus', 'standard', 'standard_yearly', 'enterprise', 'trial'] as const;
 type AllowedTier = typeof ALLOWED_TIERS[number];
 
 const adminUsersRouter = Router();

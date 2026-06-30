@@ -166,7 +166,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
 
     // Статистика оплат — только при initial и renewal (реальные платежи), не mid-cycle.
     if ((status === 'active' || status === 'trialing') && !isMidCycle) {
-      const minutes = Math.round(freshSeconds / 60);
+      // Безлимитные тарифы (premium/enterprise) держат символические 999999с — в
+      // статистику «оплаченных минут» кладём 1 (факт оплаты), без инфляции отчётов.
+      const minutes = (tier === 'enterprise' || tier === 'premium') ? 1 : Math.round(freshSeconds / 60);
       await client.query(
         `UPDATE subscriptions
          SET total_paid_minutes = total_paid_minutes + $1,
@@ -182,7 +184,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
   // Партнёрская атрибуция: если этого юзера привёл партнёр — кредитуем партнёру оплату.
   // Только при реальных платежах (initial/renewal), не на mid-cycle обновлениях.
   if ((status === 'active' || status === 'trialing') && !isMidCycle) {
-    const minutes = Math.round(freshSeconds / 60);
+    const minutes = (tier === 'enterprise' || tier === 'premium') ? 1 : Math.round(freshSeconds / 60);
     creditReferralPayment(tenantId, minutes).catch(() => {});
   }
 

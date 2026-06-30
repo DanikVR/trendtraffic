@@ -96,7 +96,7 @@ export async function consumeSeconds(tenantId: string, secondsToConsume: number)
   }
 }
 
-/** Помечает Enterprise-тариф — для них baланс символический и не списывается. */
+/** Тарифы с безлимитом (Premium/Enterprise) — баланс символический и не списывается. */
 export function isUnlimitedTier(tier: string): boolean {
-  return tier === 'enterprise';
+  return tier === 'enterprise' || tier === 'premium';
 }

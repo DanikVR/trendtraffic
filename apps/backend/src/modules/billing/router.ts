@@ -13,7 +13,7 @@ import { TOPUP_PRICE_PER_MINUTE_EUR_CENTS, TOPUP_MIN_MINUTES, TOPUP_MAX_MINUTES,
 import { send500 } from '../../utils/http_error.js';
 
 /** Тарифы, которые считаются «активной подпиской» — не требуют автодобавления Plus. */
-const ACTIVE_PAID_TIERS = new Set(['plus', 'standard', 'standard_yearly', 'enterprise']);
+const ACTIVE_PAID_TIERS = new Set(['premium', 'plus', 'standard', 'standard_yearly', 'enterprise']);
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
 /** Получить запись текущей подписки tenant'а (или null). */
@@ -191,7 +191,7 @@ billingAdminRouter.post('/checkout', requireTenant, async (req: Request, res: Re
   const userEmail = (req as any).userEmail;
   const { tier, currency = 'eur', promotionCodeId } = req.body || {};
 
-  const allowedTiers = ['plus', 'standard', 'standard_yearly'];
+  const allowedTiers = ['premium', 'plus', 'standard', 'standard_yearly'];
   if (!tier || !allowedTiers.includes(tier)) {
     return res.status(400).json({ error: `tier должен быть одним из: ${allowedTiers.join(', ')}` });
   }
@@ -313,6 +313,7 @@ billingAdminRouter.post('/promo-validate', requireTenant, async (req: Request, r
         for (const prodId of appliesToProducts) {
           const prod = products.data.find((p) => p.id === prodId);
           const key = prod?.metadata?.vibevox_key;
+          if (key === 'premium') tiers.add('premium');
           if (key === 'plus') tiers.add('plus');
           if (key === 'standard') { tiers.add('standard'); tiers.add('standard_yearly'); }
         }

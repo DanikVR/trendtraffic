@@ -6,9 +6,10 @@ import { z } from 'zod';
 //   Standard — 120 минут/мес (€29) или 1440 минут/год (€289)
 //   Enterprise — не лимитируется ('∞' в UI, технически 999999 сек = 16к минут)
 export const TIER_SECONDS_MAP: Record<string, number> = {
-  plus:               60  * 60,    // 60 мин
-  standard:           120 * 60,    // 120 мин
-  standard_yearly:    1440 * 60,   // 1440 мин — годовой план Standard
+  premium:            999999,      // TrendTraffic Premium — полный доступ, без метрии
+  plus:               60  * 60,    // 60 мин (легаси)
+  standard:           120 * 60,    // 120 мин (легаси)
+  standard_yearly:    1440 * 60,   // 1440 мин — годовой план Standard (легаси)
   enterprise:         999999,      // практически безлимит
   // Обратная совместимость со старыми значениями (если в БД где-то остались)
   trial:              60 * 60,
@@ -29,6 +30,16 @@ export interface TierPriceConfig {
 }
 
 export const TIER_PRICES: TierPriceConfig[] = [
+  {
+    tier: 'premium',
+    name: 'TrendTraffic Premium',
+    description: 'Полный доступ ко всем функциям сервиса: безлимитный анализ трендов, аналитика, генерация видео через подключённые API, публикация в соцсети.',
+    amountEur: 12000,   // €120 / мес
+    amountUsd: 13000,   // ≈ $130 / мес
+    billingPeriod: 'monthly',
+    minutes: 999999,    // без метрии минут (TrendTraffic минуты не тратит)
+    productKey: 'premium',
+  },
   {
     tier: 'plus',
     name: 'VibeVox Plus',

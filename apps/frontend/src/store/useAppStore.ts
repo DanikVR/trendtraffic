@@ -186,6 +186,7 @@ export const useAppStore = create<AppState>((set) => ({
       }
       const balanceSeconds = (Number(sub.balanceSeconds) || 0) + (Number(sub.rolloverSeconds) || 0);
       const tierMap: Record<string, AppState['subscriptionTier']> = {
+        premium: 'enterprise',      // Premium = полный доступ (категория «enterprise»); raw-имя 'premium' для отображения
         plus: 'monthly',
         standard: 'monthly',
         standard_yearly: 'annual',

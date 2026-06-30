@@ -755,7 +755,19 @@
  *         /trends/analyze, /analyze/bulk (строка-ошибка на YT, без вызова TikHub),
  *         /analyze/save, /videos/:id/download, /social-ext/to-gallery → «Скачивание
  *         YouTube недоступно». Кнопка «Скачать» в панели снова только tiktok/twitter. */
-export const APP_VERSION = '1.5.33';
+
+/* 1.5.34 — Тарифы переделаны под TrendTraffic: ДВА тарифа вместо трёх легаси VibeVox.
+ *         Премиум (€120/мес, Stripe) — полный доступ ко ВСЕМ функциям; Энтерпрайз
+ *         (по запросу) — то же + индивидуальная настройка и ведение соцсетей «под ключ».
+ *         Функции идентичны: новый тариф `premium` в FULL_ACCESS_TIERS (feature_gate) +
+ *         расширены все прямые проверки (checkout/usage/rooms/assistant/insights/admin) +
+ *         фронт useIsEnterprise/store. BillingPage переписана (реальные функции, блок
+ *         «генерация через подключённые API», FAQ), удалено легаси (языки, докупка минут,
+ *         баланс минут в сайдбаре). Адверсариал-ревью → 6 правок, в т.ч. КРИТ: миграция
+ *         CHECK subscriptions.tier += 'premium' (иначе оплата Премиума падала бы), sentinel
+ *         реф-минут для безлимита, SettingsPage-лейбл, promo-маппинг premium, aria-label.
+ *         NB ДЕПЛОЙ: после выката запустить синк тарифов Stripe (создаёт vibevox_premium_eur). */
+export const APP_VERSION = '1.5.34';
 
 export function AppVersion() {
   return (

@@ -10,7 +10,7 @@ const roomsRouter = Router();
 import { JWT_SECRET } from '../../config/secrets.js';
 
 /** Тарифы, у которых минуты не ограничены — им guard баланса не нужен. */
-const UNLIMITED_TIERS = new Set(['enterprise']);
+const UNLIMITED_TIERS = new Set(['enterprise', 'premium']);
 
 /**
  * Проверка баланса минут tenant'а перед созданием комнаты.

@@ -20,6 +20,7 @@ import pool from '../../db/index.js';
 // ============================================================================
 
 export type SubscriptionTier =
+  | 'premium'
   | 'plus'
   | 'standard'
   | 'standard_yearly'
@@ -27,6 +28,16 @@ export type SubscriptionTier =
   | 'trial'
   | 'monthly'
   | 'annual';
+
+/** Тарифы с ПОЛНЫМ доступом ко всем функциям сервиса (Премиум = Энтерпрайз по
+ *  функциям; различие — в уровне сервиса/«под ключ», а не в наборе фич). */
+export const FULL_ACCESS_TIERS = new Set<string>(['premium', 'enterprise']);
+
+/** Тариф даёт полный доступ к фичам (Premium или Enterprise)? Для прямых проверок
+ *  tier-строки вне getFeatureAccess (assistant/insights/usage/rooms). */
+export function isFullAccessTier(tier: string | null | undefined): boolean {
+  return !!tier && FULL_ACCESS_TIERS.has(tier);
+}
 
 export type UserRole = 'superadmin' | 'tenant_admin' | 'user';
 
@@ -90,13 +101,14 @@ export async function getFeatureAccess(
     const tier = (row?.tier as SubscriptionTier) || null;
     const status = (row?.status as string) || null;
 
-    const isEnterpriseTier = tier === 'enterprise';
+    const hasFullAccessTier = tier ? FULL_ACCESS_TIERS.has(tier) : false;
     const isActive = status === 'active' || status === 'trialing';
 
     return {
       tier,
       status,
-      enterprise: isSuper || (isEnterpriseTier && isActive),
+      // «enterprise» здесь = «полный доступ к фичам». Его даёт и Premium, и Enterprise.
+      enterprise: isSuper || (hasFullAccessTier && isActive),
       superadmin: isSuper,
     };
   } catch (err) {

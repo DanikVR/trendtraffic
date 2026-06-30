@@ -86,7 +86,7 @@ CREATE TABLE subscriptions (
     stripe_subscription_id VARCHAR(255) UNIQUE,
     stripe_customer_id VARCHAR(255), -- Stripe customer для checkout/portal
     tier VARCHAR(50) NOT NULL DEFAULT 'plus' CHECK (
-      tier IN ('plus', 'standard', 'standard_yearly', 'enterprise', 'trial', 'monthly', 'annual')
+      tier IN ('premium', 'plus', 'standard', 'standard_yearly', 'enterprise', 'trial', 'monthly', 'annual')
     ),
     status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'trialing', 'canceled', 'past_due', 'incomplete')),
     billing_period VARCHAR(50) DEFAULT 'monthly' CHECK (billing_period IN ('monthly', 'yearly', 'one_time')),

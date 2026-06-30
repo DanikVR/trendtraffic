@@ -27,17 +27,6 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 
-/** Композитная иконка «перевод + телефон» — используется и в шапке баланса,
- *  и на плавающей FAB. Размер настраивается через size, отступы остаются плотными. */
-function TranslationPhoneGlyph({ size = 12, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }) {
-  return (
-    <span className="inline-flex items-center" style={{ gap: '1px' }} aria-hidden>
-      <Languages size={size} strokeWidth={strokeWidth} />
-      <Phone size={size} strokeWidth={strokeWidth} />
-    </span>
-  );
-}
-
 // ── Функция переключения темы (глобальная, без re-render всего layout) ──
 function toggleGlobalTheme(current: boolean, setCurrent: (v: boolean) => void) {
   const html = document.documentElement;
@@ -57,7 +46,6 @@ import { AppVersion }    from '../components/AppVersion';
 import { VibeVoxLogo }   from '../components/VibeVoxLogo';
 import { VibeVoxIcon }   from '../components/VibeVoxIcon';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { MinutesDisplay } from '../components/MinutesDisplay';
 import { PWAInstallPrompt, usePWAInstall } from '../components/PWAInstallPrompt';
 import { useAppStore }   from '../store/useAppStore';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
@@ -65,7 +53,7 @@ import { FEATURES }      from '../config/features';
 
 export function MainLayout() {
   const { t } = useTranslation('common');
-  const { user, translationBalance, subscriptionTier, subscriptionTierName, refreshBilling, setMoreSheetOpen } = useAppStore();
+  const { user, subscriptionTier, subscriptionTierName, refreshBilling, setMoreSheetOpen } = useAppStore();
   // Конструктор цепочек (/flow) — на всю ширину (холст React Flow), без центрирующего max-w.
   const { pathname } = useLocation();
   // /flow (холст React Flow) и /social-extension (iframe расширения) — на всю ширину.
@@ -361,56 +349,32 @@ export function MainLayout() {
             {/* Separator */}
             <div className="h-px mx-3" style={{ background: 'var(--border-subtle)' }} />
 
-            {/* Balance + Tier */}
+            {/* Тариф (минуты убраны — TrendTraffic их не использует) */}
             <button
               type="button"
               onClick={() => navigate('/billing')}
               className="block w-full p-3 text-left transition-colors hover:bg-[var(--bg-elevated)]"
             >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-[10px] font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                  {t('balance.label')}
-                </span>
-                {subscriptionTierName && (
-                  <span className="text-[10px] font-700 px-2 py-0.5 rounded-full"
-                        style={{
-                          background: subscriptionTierName === 'enterprise' ? 'rgba(167, 139, 250, 0.15)'
-                                    : subscriptionTierName === 'standard_yearly' ? 'rgba(34, 211, 238, 0.15)'
-                                    : subscriptionTierName === 'standard' ? 'rgba(16, 185, 129, 0.15)'
-                                    : subscriptionTierName === 'plus' ? 'rgba(59, 130, 246, 0.15)'
-                                    : 'rgba(148, 163, 184, 0.15)',
-                          color: subscriptionTierName === 'enterprise' ? '#a78bfa'
-                               : subscriptionTierName === 'standard_yearly' ? '#22d3ee'
-                               : subscriptionTierName === 'standard' ? '#10b981'
-                               : subscriptionTierName === 'plus' ? '#3b82f6'
-                               : 'var(--text-muted)',
-                        }}>
-                    {subscriptionTierName === 'plus' ? t('tier.plus')
-                     : subscriptionTierName === 'standard' ? t('tier.standard')
-                     : subscriptionTierName === 'standard_yearly' ? t('tier.standardYearly')
-                     : subscriptionTierName === 'enterprise' ? t('tier.enterprise')
-                     : t('tier.trial')}
+              <span className="text-[10px] font-700 uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+                {t('balance.tariffLabel', 'Тариф')}
+              </span>
+              {(() => {
+                const raw = (subscriptionTierName || '').toLowerCase();
+                const map: Record<string, { bg: string; fg: string; label: string }> = {
+                  premium:         { bg: 'rgba(99,102,241,0.15)',  fg: '#818cf8', label: 'Премиум' },
+                  enterprise:      { bg: 'rgba(167,139,250,0.15)', fg: '#a78bfa', label: 'Энтерпрайз' },
+                  standard_yearly: { bg: 'rgba(34,211,238,0.15)',  fg: '#22d3ee', label: 'Standard (год)' },
+                  standard:        { bg: 'rgba(16,185,129,0.15)',  fg: '#10b981', label: 'Standard' },
+                  plus:            { bg: 'rgba(59,130,246,0.15)',  fg: '#3b82f6', label: 'Plus' },
+                };
+                const m = map[raw];
+                return (
+                  <span className="text-sm font-700 px-2.5 py-1 rounded-lg inline-block"
+                        style={{ background: m ? m.bg : 'rgba(148,163,184,0.12)', color: m ? m.fg : 'var(--text-muted)', fontFamily: 'Geist Sans, sans-serif' }}>
+                    {m ? m.label : 'Не активна'}
                   </span>
-                )}
-              </div>
-              <div className="flex items-baseline gap-1">
-                <MinutesDisplay
-                  count={Math.floor(translationBalance / 60)}
-                  numberClassName="text-2xl font-700"
-                  numberStyle={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em', color: 'var(--brand)' }}
-                  unitClassName="text-sm font-600"
-                  unitStyle={{ color: 'var(--brand)' }}
-                />
-              </div>
-              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min(100, (translationBalance / 18000) * 100)}%`,
-                    background: 'linear-gradient(90deg, var(--text-secondary), var(--accent))',
-                  }}
-                />
-              </div>
+                );
+              })()}
 
               {/* CTA-индикатор: вся карточка ведёт в /billing */}
               <div
@@ -455,14 +419,9 @@ export function MainLayout() {
               type="button"
               onClick={() => navigate('/billing')}
               className="flex items-center gap-1 px-1.5 py-1.5 no-select touch-target"
-              aria-label={t('balance.openPlans')}
+              aria-label={t('balance.tariffs')}
             >
-              <span style={{ color: 'var(--text-primary)' }}>
-                <TranslationPhoneGlyph size={11} strokeWidth={1.5} />
-              </span>
-              <span className="text-xs font-600" style={{ color: 'var(--brand)' }}>
-                <MinutesDisplay count={Math.floor(translationBalance / 60)} />
-              </span>
+              <CreditCard size={18} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
             </button>
 
             {/* Переключатель языка */}
