@@ -24,6 +24,7 @@ import {
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { VideoViewer } from '../components/VideoViewer';
 import { useAppStore } from '../store/useAppStore';
 
 type Tab = 'trends' | 'reference' | 'audio' | 'analyzed';
@@ -78,6 +79,7 @@ export default function GalleryPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [viewer, setViewer] = useState<{ url: string; title: string } | null>(null);
 
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -202,7 +204,17 @@ export default function GalleryPage() {
 
   const renderPreview = (v: GalleryItem) => {
     if (v.mediaType === 'video') return (
-      <video src={v.coverUrl ? v.fileUrl : `${v.fileUrl}#t=0.1`} poster={v.coverUrl || undefined} controls preload="metadata" className="w-full h-full object-cover" />
+      <button type="button" onClick={() => setViewer({ url: v.fileUrl, title: v.title })}
+        className="group/vid block w-full h-full relative" title="Открыть в просмотрщике (с обрезкой)">
+        <video src={`${v.fileUrl}#t=0.1`} poster={v.coverUrl || undefined} preload="metadata" muted
+          className="w-full h-full object-cover pointer-events-none" />
+        <span className="absolute inset-0 flex items-center justify-center transition-opacity opacity-90 group-hover/vid:opacity-100">
+          <span className="w-12 h-12 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', backdropFilter: 'blur(4px)' }}>
+            <Play size={22} className="ml-0.5" />
+          </span>
+        </span>
+      </button>
     );
     if (v.mediaType === 'image') return <img src={v.fileUrl} alt={v.title} loading="lazy" className="w-full h-full object-cover" />;
     if (v.mediaType === 'audio') return (
@@ -383,6 +395,15 @@ export default function GalleryPage() {
         variant="danger"
         onConfirm={() => confirm?.onConfirm()}
         onCancel={() => setConfirm(null)}
+      />
+
+      {/* Единый просмотрщик-редактор видео (плеер + обрезка) */}
+      <VideoViewer
+        open={!!viewer}
+        url={viewer?.url || ''}
+        title={viewer?.title}
+        onClose={() => setViewer(null)}
+        onSaved={() => { void load(); }}
       />
     </div>
   );

@@ -19,6 +19,7 @@ import {
   Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { VideoViewer } from '../../components/VideoViewer';
 
 type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
@@ -88,11 +89,12 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
 };
 
 // Облачные узлы графа (перетаскиваемые): Google Omni (генерация видео), Контент-план, Подкаст.
-type CloudId = 'omni' | 'plan' | 'podcast';
+type CloudId = 'omni' | 'plan' | 'podcast' | 'editor';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
   omni: { label: 'Google Omni', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
   podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
+  editor: { label: 'Редактор', icon: <Scissors size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
 };
 
 // ── Подкаст-сцена (2 ведущих): спецификация облачного узла «Подкаст» ──
@@ -351,11 +353,20 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [batchMinimized, setBatchMinimized] = useState(false);
   const [batchNote, setBatchNote] = useState<string | null>(null);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
-  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def } });
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
   const [cloudPanel, setCloudPanel] = useState<CloudId | null>(null);
+  // Облако «Редактор»: выбранные видео-клипы, результат склейки, открытый просмотрщик, инлайн-пикер.
+  const [editorClips, setEditorClips] = useState<{ url: string; name: string }[]>([]);
+  const [editorResult, setEditorResult] = useState<{ url: string; name: string } | null>(null);
+  const [editorView, setEditorView] = useState<{ url: string; name: string } | null>(null);
+  const [editorPick, setEditorPick] = useState(false);
+  const [editorGallery, setEditorGallery] = useState<{ url: string; name: string; cover?: string }[]>([]);
+  const [editorGalLoading, setEditorGalLoading] = useState(false);
+  const [editorMerging, setEditorMerging] = useState(false);
+  const [editorNote, setEditorNote] = useState<string | null>(null);
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
@@ -430,6 +441,11 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               faces: Array.isArray(pp.faces) ? pp.faces : [],
             });
           }
+          if (d.flow.graph?.editor && typeof d.flow.graph.editor === 'object') {
+            const ed = d.flow.graph.editor;
+            if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео' })));
+            if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || 'Результат' });
+          }
           if (mapped.length === 0) setShowPresets(true);
         }
       } catch { /* пусто */ }
@@ -442,7 +458,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -1057,7 +1073,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   // ── Облачные узлы: позиции, связи-стрелки, перетаскивание ──────────────────
   const cloudPoint = (id: string): { x: number; y: number } | null => {
-    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan' || id === 'podcast') ? cloud[id] : null;
+    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan' || id === 'podcast' || id === 'editor') ? cloud[id] : null;
     // Точка соединения 🔗 — у верх-правого края узла (лента идёт от неё, не из центра).
     return base ? { x: base.x + 2.6, y: base.y - 3 } : null;
   };
@@ -1072,6 +1088,41 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     if (movedRef.current) { movedRef.current = false; return; } // был drag узла — не открываем панель
     if (id === 'podcast') setDiarizeDone(false); // открыли — мигание погасло
     setCloudPanel(id);
+  };
+
+  // ── Облако «Редактор»: пикер видео из Галереи + склейка ──
+  const loadEditorGallery = async () => {
+    setEditorPick(true); setEditorGalLoading(true); setEditorNote(null);
+    try {
+      const [v, r] = await Promise.all([
+        fetch('/api/trends/videos?downloaded=1&limit=200', { headers: headers() }),
+        fetch('/api/trends/media?kind=reference', { headers: headers() }),
+      ]);
+      const vids = v.ok ? ((await v.json()).videos || []) : [];
+      const refs = r.ok ? ((await r.json()).assets || []) : [];
+      const list = [
+        ...vids.filter((x: any) => x.fileUrl).map((x: any) => ({ url: x.fileUrl, name: x.title || x.author || 'видео', cover: x.coverUrl })),
+        ...refs.filter((x: any) => x.mediaType === 'video' && x.fileUrl).map((x: any) => ({ url: x.fileUrl, name: x.originalName || 'видео' })),
+      ];
+      setEditorGallery(list);
+    } catch { setEditorGallery([]); }
+    finally { setEditorGalLoading(false); }
+  };
+  const addEditorClip = (c: { url: string; name: string }) => { setEditorClips((cs) => (cs.some((x) => x.url === c.url) ? cs : [...cs, c])); setDirty(true); };
+  const removeEditorClip = (url: string) => { setEditorClips((cs) => cs.filter((x) => x.url !== url)); setDirty(true); };
+  const mergeEditorClips = async () => {
+    if (editorClips.length < 2 || editorMerging) return;
+    setEditorMerging(true); setEditorNote(null);
+    try {
+      const res = await fetch('/api/video-edit/merge', {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({ clips: editorClips.map((c) => ({ inputUrl: c.url })), name: name ? `Склейка — ${name}` : 'Склейка видео' }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
+      setEditorResult({ url: d.fileUrl, name: 'Склейка видео' }); setDirty(true);
+    } catch (e: any) { setEditorNote(e?.message || 'Не удалось склеить'); }
+    finally { setEditorMerging(false); }
   };
 
   const setPend = (v: { from: string; x: number; y: number } | null) => { pendingRef.current = v; setPending(v); };
@@ -1325,7 +1376,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             </button>
           );
         })}
-        {(['omni', 'plan', 'podcast'] as CloudId[]).map((id) => {
+        {(['omni', 'plan', 'podcast', 'editor'] as CloudId[]).map((id) => {
           const pos = cloud[id]; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
@@ -2292,6 +2343,82 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                   <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>{podBuildHint()}</p>
                 )}
               </div>
+            ) : cloudPanel === 'editor' ? (
+              <div className="space-y-3">
+                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  Просмотр и обрезка: обрезать начало/конец, вырезать куски, повернуть, склеить несколько роликов.
+                  Сохранение неразрушающее — результат уходит в Галерею.
+                </p>
+
+                {editorClips.length > 0 && (
+                  <div className="space-y-1.5">
+                    {editorClips.map((c, i) => (
+                      <div key={c.url} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                        <span className="text-[11px] font-700" style={{ color: 'var(--text-muted)' }}>{i + 1}</span>
+                        <span className="text-xs truncate flex-1" style={{ color: 'var(--text-primary)' }} title={c.name}>{c.name}</span>
+                        <button onClick={() => setEditorView(c)} title="Открыть в редакторе" className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Scissors size={13} /></button>
+                        <button onClick={() => removeEditorClip(c.url)} title="Убрать" className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button onClick={loadEditorGallery} className="w-full py-2.5 rounded-xl text-sm font-600 inline-flex items-center justify-center gap-2"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
+                  <Plus size={16} /> {editorClips.length ? 'Добавить ещё видео' : 'Выбрать видео'}
+                </button>
+
+                {editorClips.length === 1 && (
+                  <button onClick={() => setEditorView(editorClips[0])} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
+                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                    <Film size={16} /> Открыть редактор
+                  </button>
+                )}
+                {editorClips.length >= 2 && (
+                  <button onClick={mergeEditorClips} disabled={editorMerging} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                    {editorMerging ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />} Склеить {editorClips.length} видео
+                  </button>
+                )}
+                {editorNote && <p className="text-[11px]" style={{ color: '#ef4444' }}>{editorNote}</p>}
+
+                {editorResult && (
+                  <div className="p-2.5 rounded-xl space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="text-xs font-600 inline-flex items-center gap-1.5" style={{ color: '#10b981' }}><Check size={14} /> Результат в Галерее</div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditorView(editorResult)} className="flex-1 py-2 rounded-lg text-xs font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Film size={13} /> Открыть</button>
+                      <a href={editorResult.url} target="_blank" rel="noreferrer" className="flex-1 py-2 rounded-lg text-xs font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', textDecoration: 'none' }}><Download size={13} /> Скачать</a>
+                    </div>
+                  </div>
+                )}
+
+                {editorPick && (
+                  <div className="rounded-xl p-2" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Видео из Галереи (клик — добавить)</span>
+                      <button onClick={() => setEditorPick(false)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Закрыть</button>
+                    </div>
+                    {editorGalLoading ? (
+                      <div className="py-6 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
+                    ) : editorGallery.length === 0 ? (
+                      <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Видео не найдены. Скачайте тренды или загрузите видео в Галерею.</p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1.5" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                        {editorGallery.map((g) => {
+                          const sel = editorClips.some((c) => c.url === g.url);
+                          return (
+                            <button key={g.url} onClick={() => addEditorClip({ url: g.url, name: g.name })} title={g.name}
+                              className="relative rounded-lg overflow-hidden" style={{ aspectRatio: '9/16', background: 'var(--bg-tertiary)', border: sel ? '2px solid var(--brand)' : '1px solid var(--border-medium)', cursor: 'pointer', padding: 0 }}>
+                              {g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                              {sel && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: '#fff' }}><Check size={12} /></span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
                 <p><b>Контент-план</b> — расписание и публикация готовых роликов по соцсетям.</p>
@@ -2301,6 +2428,15 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           </div>
         </div>
       )}
+
+      {/* Единый просмотрщик-редактор видео (плеер + обрезка), вызывается из облака «Редактор» */}
+      <VideoViewer
+        open={!!editorView}
+        url={editorView?.url || ''}
+        title={editorView?.name}
+        onClose={() => setEditorView(null)}
+        onSaved={(r) => { setEditorResult({ url: r.fileUrl, name: 'Обрезанное видео' }); setDirty(true); }}
+      />
 
       {/* Прогресс сборки «Собрать» */}
       {buildJob && !buildMinimized && (
