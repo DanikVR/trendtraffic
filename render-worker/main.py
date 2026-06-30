@@ -785,7 +785,8 @@ def _diarize_audio(input_path: str, work: Path, hf_token: Optional[str] = None) 
                 continue
             lbl = _overlap_speaker(turns, start, end)
             spk = to_ab(lbl) if lbl is not None else (lines[-1]["speaker"] if lines else "A")
-            if lines and lines[-1]["speaker"] == spk:
+            # не склеиваем клип дольше ~7с — иначе на таймлайне один гигантский блок вместо реплик
+            if lines and lines[-1]["speaker"] == spk and (end - lines[-1]["start"]) <= 7.0:
                 lines[-1]["text"] += " " + text; lines[-1]["end"] = end
             else:
                 lines.append({"speaker": spk, "text": text, "start": start, "end": end})
@@ -804,7 +805,8 @@ def _diarize_audio(input_path: str, work: Path, hf_token: Optional[str] = None) 
                 continue
             if prev_end is not None and (start - prev_end) > GAP:
                 speaker = "B" if speaker == "A" else "A"
-            if lines and lines[-1]["speaker"] == speaker:
+            # не склеиваем клип дольше ~7с — для дробного таймлайна
+            if lines and lines[-1]["speaker"] == speaker and (end - lines[-1]["start"]) <= 7.0:
                 lines[-1]["text"] += " " + text; lines[-1]["end"] = end
             else:
                 lines.append({"speaker": speaker, "text": text, "start": start, "end": end})
