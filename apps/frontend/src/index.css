@@ -318,6 +318,20 @@
     border-color: var(--border-medium);
   }
 
+  /* Google — белая кнопка по гайдлайну Google Sign-In.
+     На тёмной карточке выглядит ярко и не «теряется» (бывший btn-ghost сливался с фоном). */
+  .btn-google {
+    background: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.30);
+    font-weight: 600;
+  }
+  .btn-google:hover:not(:disabled) {
+    background: #F5F6F7;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.40);
+  }
+
   /* Danger — красный */
   .btn-danger {
     background: rgba(239,68,68,0.10);

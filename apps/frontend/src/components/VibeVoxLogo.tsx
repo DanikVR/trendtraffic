@@ -48,7 +48,17 @@ export function VibeVoxLogo({ height = 32, className, alt = 'VibeVox', variant }
       src={src}
       alt={alt}
       className={className}
-      style={{ height, width: 'auto', display: 'block', userSelect: 'none' }}
+      // Исходник 700×200 (3.5:1). Жёстко фиксируем пропорции: даже если родитель
+      // ограничит ширину, aspect-ratio + object-fit:contain не дадут «сплющить» логотип.
+      style={{
+        height,
+        width: 'auto',
+        aspectRatio: '700 / 200',
+        objectFit: 'contain',
+        maxWidth: '100%',
+        display: 'block',
+        userSelect: 'none',
+      }}
       draggable={false}
     />
   );

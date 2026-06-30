@@ -60,13 +60,18 @@ export function GoogleCallbackPage() {
         }
 
         const data = await res.json();
-        setStatus(t('auth.googleCallback.redirecting'));
         setAuth(data.token, data.user);
 
+        // Подгружаем тариф ДО перехода на '/'. Без этого вход через Google «зависал» на
+        // спиннере: гейт оплаты (RequirePaid) ждал billingLoaded, а обновить статус было
+        // некому — MainLayout (который дёргает refreshBilling) сам находится за гейтом.
+        await useAppStore.getState().refreshBilling();
+
+        setStatus(t('auth.googleCallback.redirecting'));
         // Небольшая задержка перед редиректом для плавности перехода
         setTimeout(() => {
           navigate('/');
-        }, 1000);
+        }, 600);
       } catch (err: any) {
         console.error('[GoogleCallbackPage Error]:', err);
         setError(err.message || t('auth.googleCallback.error'));

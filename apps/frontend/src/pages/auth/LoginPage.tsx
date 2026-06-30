@@ -52,6 +52,10 @@ export function LoginPage() {
       }
       const { token, user } = await res.json();
       setAuth(token, user);
+      // Подгружаем тариф ДО перехода: гейт оплаты (RequirePaid) принимает решение по
+      // billingLoaded. Без этого свежий вход «зависал» на спиннере (loader ждал статус,
+      // а обновить его было некому — MainLayout за гейтом). Ошибки внутри не бросает.
+      await useAppStore.getState().refreshBilling();
       navigate('/');
     } catch (err: any) {
       setError(err?.message || t('auth.login.networkError'));
@@ -75,10 +79,10 @@ export function LoginPage() {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <VibeVoxLogo height={48} />
+          <VibeVoxLogo height={60} />
           <div className="text-center">
             <h1
-              className="text-2xl font-800 mb-0.5 text-aurora"
+              className="text-2xl font-800 text-aurora"
               style={{
                 fontFamily: 'Geist Sans, sans-serif',
                 letterSpacing: '-0.03em',
@@ -86,9 +90,6 @@ export function LoginPage() {
             >
               {t('auth.login.title')}
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {t('auth.login.subtitle')}
-            </p>
           </div>
         </div>
 
@@ -202,9 +203,9 @@ export function LoginPage() {
                 key={social.id}
                 id={social.id}
                 type="button"
-                className="btn btn-ghost btn-full flex items-center gap-3"
+                className="btn btn-google btn-full btn-lg flex items-center gap-3"
                 onClick={() => {
-                  const clientId = serverClientId || localStorage.getItem('sys_google_client_id') || '806003116741-g21eif131a93hgr294mmu13pdrgbegjq.apps.googleusercontent.com';
+                  const clientId = serverClientId || localStorage.getItem('sys_google_client_id') || '813706901561-ndnndbssl6im5e4hrjnjnljf7fcmmva3.apps.googleusercontent.com';
                   const redirectUri = window.location.origin === 'http://localhost:3000'
                     ? 'http://localhost:3000/api/auth/callback/google'
                     : `${window.location.origin}/auth/google/callback`;
