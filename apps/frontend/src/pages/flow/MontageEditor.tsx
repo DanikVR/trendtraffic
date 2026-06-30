@@ -106,8 +106,8 @@ const POD_ANIMS: { v: PodAnim; label: string }[] = [
   { v: 'auto', label: 'Авто' }, { v: 'slide-left', label: '← Слева' }, { v: 'slide-right', label: 'Справа →' },
   { v: 'slide-up', label: '↑ Снизу' }, { v: 'zoom', label: 'Зум' }, { v: 'fade', label: 'Проявление' },
 ];
-// Реплика: спикер + текст (+ таймкоды) + опц. картинка, показываемая на этой фразе с выездом.
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim }
+// Реплика: спикер + текст (+ таймкоды) + опц. картинка + tStart (позиция на таймлайне Фазы 2).
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number }
 interface PodCutaway { url: string; name: string }
 // Лицо на групповом фото: бокс в долях изображения (0..1) + назначенный спикер.
 interface PodFace { id: string; box: { x: number; y: number; w: number; h: number }; speaker: 'A' | 'B' }
@@ -118,6 +118,8 @@ interface PodcastSpec {
   cutaways: PodCutaway[]; layout: PodLayout; segSec: number; platforms: string[];
   // Фаза 1 «Студия лиц»: групповое фото → детекция/разметка лиц → кадры-ракурсы.
   groupPhotoUrl: string | null; groupPhotoName: string | null; faces: PodFace[];
+  // Фаза 2 «Таймлайн»: режим наложения дорожек (микс в воркере по tStart реплик).
+  timeline?: boolean;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -126,6 +128,7 @@ const POD_DEFAULT: PodcastSpec = {
   recordingUrl: null, recordingName: null,
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
+  timeline: false,
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -565,6 +568,41 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
   const podLineAdd = () => podMutate((p) => ({ ...p, dialogue: [...p.dialogue, { speaker: p.dialogue.length % 2 ? 'B' : 'A', text: '' }] }));
   const podLineDel = (i: number) => podMutate((p) => ({ ...p, dialogue: p.dialogue.filter((_, j) => j !== i) }));
+
+  // ── Таймлайн (Фаза 2): длительность/позиция клипа, вкл. режим наложения, перетаскивание ──
+  const lineDur = (l: PodLine): number => {
+    if (Number.isFinite(l.start) && Number.isFinite(l.end) && (l.end as number) > (l.start as number)) return (l.end as number) - (l.start as number);
+    return Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)); // оценка для TTS (нет реальной длины)
+  };
+  /** Позиция клипа на таймлайне: tStart → исходный start → встык за предыдущим того же набора. */
+  const lineT = (l: PodLine, i: number, arr: PodLine[]): number => {
+    if (Number.isFinite(l.tStart)) return l.tStart as number;
+    if (Number.isFinite(l.start)) return l.start as number;
+    let acc = 0;
+    for (let j = 0; j < i; j++) acc += lineDur(arr[j]);
+    return acc;
+  };
+  /** Включить/выключить режим таймлайна; при включении проставляем tStart по умолчанию. */
+  const toggleTimeline = () => podMutate((p) => {
+    const on = !p.timeline;
+    const dialogue = on ? p.dialogue.map((l, i, arr) => ({ ...l, tStart: lineT(l, i, arr) })) : p.dialogue;
+    return { ...p, timeline: on, dialogue };
+  });
+  const tlSetStart = (i: number, t: number) =>
+    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, tStart: Math.max(0, Math.round(t * 20) / 20) } : l)) }));
+  const tlDragRef = useRef<{ i: number; startX: number; startT: number } | null>(null);
+  const TL_PPS = 44; // пикселей на секунду в таймлайне
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      const d = tlDragRef.current; if (!d) return;
+      const nt = Math.max(0, Math.round((d.startT + (e.clientX - d.startX) / TL_PPS) * 20) / 20);
+      setPod((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === d.i ? { ...l, tStart: nt } : l)) }));
+    };
+    const up = () => { if (tlDragRef.current) { tlDragRef.current = null; setDirty(true); } };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  }, []);
 
   // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
   type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg';
@@ -2074,6 +2112,57 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                       </div>
                     ))}
                     <button onClick={podLineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#ec4899', background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
+                  </div>
+                )}
+
+                {/* Таймлайн (Фаза 2): наложение голосовых дорожек */}
+                {pod.dialogue.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Таймлайн (наложение голосов)</span>
+                      <button onClick={toggleTimeline}
+                        className="text-[11px] font-600 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5"
+                        style={{ background: pod.timeline ? '#ec4899' : 'var(--bg-tertiary)', color: pod.timeline ? '#fff' : 'var(--text-secondary)', border: `1px solid ${pod.timeline ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        <Film size={12} /> {pod.timeline ? 'Таймлайн вкл' : 'Включить таймлайн'}
+                      </button>
+                    </div>
+                    {pod.timeline && (() => {
+                      const arr = pod.dialogue;
+                      const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+                      const W = Math.ceil(total) * TL_PPS + 40;
+                      return (
+                        <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)' }}>
+                          <div style={{ position: 'relative', width: W, padding: '4px 0' }}>
+                            <div style={{ position: 'relative', height: 14, marginLeft: 32 }}>
+                              {Array.from({ length: Math.ceil(total) + 1 }).map((_, s) => (
+                                <span key={s} style={{ position: 'absolute', left: s * TL_PPS, top: 0, fontSize: 8, color: 'var(--text-muted)' }}>{s}s</span>
+                              ))}
+                            </div>
+                            {(['A', 'B'] as const).map((trk) => (
+                              <div key={trk} style={{ position: 'relative', height: 34, marginTop: 4 }}>
+                                <span style={{ position: 'absolute', left: 6, top: 9, fontSize: 10, fontWeight: 700, color: trk === 'A' ? '#ec4899' : '#8b5cf6' }}>{trk}</span>
+                                <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
+                                  {arr.map((l, i) => {
+                                    if ((l.speaker === 'B' ? 'B' : 'A') !== trk) return null;
+                                    const t = lineT(l, i, arr); const d = lineDur(l);
+                                    return (
+                                      <div key={i} onPointerDown={(e) => { e.preventDefault(); tlDragRef.current = { i, startX: e.clientX, startT: t }; }}
+                                        title={l.text}
+                                        style={{ position: 'absolute', left: t * TL_PPS, width: Math.max(18, d * TL_PPS - 2), top: 2, height: 30, borderRadius: 6,
+                                          background: trk === 'A' ? 'rgba(236,72,153,0.9)' : 'rgba(139,92,246,0.9)', color: '#fff', fontSize: 9, lineHeight: '30px',
+                                          padding: '0 5px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none' }}>
+                                        {l.text || `реплика ${i + 1}`}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Тащи клипы по времени; наложение дорожек A/B = перебивание. «Собрать» смикширует.</p>}
                   </div>
                 )}
 
