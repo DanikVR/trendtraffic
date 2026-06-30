@@ -794,7 +794,15 @@
  *         перегенерированы из Content/falicon.png (favicon-16/32, favicon.png корневой —
  *         он оставался старым VibeVox-значком! — apple-touch на белом, vibevox-icon.png) +
  *         cache-bust ?v=tt2 в index.html. (3) Заголовки публичных Landing/Legal → TrendTraffic. */
-export const APP_VERSION = '1.5.37';
+/* 1.5.38 — TrendFlow: подкаст-сцена (2 ведущих, сплит-скрин). Облачный узел «Подкаст»
+ *         в MontageEditor: два ведущих (фото→аватар), сплит-скрин (A слева, B справа) с
+ *         картинкой между ними, две голосовые дорожки. Источник дорожек — генерация диалога
+ *         (Claude + Piper TTS на 2 голоса) или разбор готовой записи на 2 спикера (pyannote
+ *         3.1 через HF при наличии ключа, иначе разбивка по паузам — реальный голос режется
+ *         по таймкодам). Воркер podcast_compose собирает сплит-скрин 1080×1920 через ffmpeg
+ *         (talking_head/SadTalker на GPU либо статичные фото), картинка overlay/topbar, склейка
+ *         сегментов; результат → Галерея. Бэкенд: MKind podcast, /api/render/podcast/*. */
+export const APP_VERSION = '1.5.38';
 
 export function AppVersion() {
   return (
