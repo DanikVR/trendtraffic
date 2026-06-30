@@ -6,8 +6,8 @@
  * (просмотры/лайки/комменты/шеры + ER), статусы вызовов и сырые данные с экспортом JSON.
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink, RotateCw, Flame, Film } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 
@@ -23,6 +23,15 @@ interface AnalyzeResult {
 interface Sentiment {
   positive: number; negative: number; neutral: number;
   overall: string; themes: string[]; topPositive: string[]; topNegative: string[];
+}
+// Разбор вирусности (ИИ) — нативный аналог Viral Breakdown + Video Content Analysis.
+interface DnaBeat { t: number; desc: string; intensity?: 'low' | 'mid' | 'high' }
+interface TrendDNA {
+  hookType: string; whyItWorks: string; targetAudience: string; viralFactors: string[];
+  copyReadyScript: string; howToAdapt: string[];
+  summary: string; sceneBeats: DnaBeat[]; hookAnalysis: string; visualStyle: string;
+  audioDialogue: string; whyResonates: string[]; howToReplicate: string[];
+  keywords: string[];
 }
 
 function fmt(n?: number): string {
@@ -137,6 +146,11 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [sentLoading, setSentLoading] = useState(false);
   const [sentErr, setSentErr] = useState<string | null>(null);
+  // Разбор вирусности (ИИ): авто-запуск в фоне после анализа видео + крутилка.
+  const [breakdown, setBreakdown] = useState<TrendDNA | null>(null);
+  const [bdLoading, setBdLoading] = useState(false);
+  const [bdError, setBdError] = useState<string | null>(null);
+  const bdReqRef = useRef(0); // токен запроса: применяем только результат последнего анализа
 
   const analyze = async (override?: string) => {
     const u = (override ?? url).trim();
@@ -161,6 +175,33 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       setError(e instanceof TypeError ? 'Сервер недоступен. Обновите страницу.' : (e?.message || 'Ошибка анализа'));
     } finally { setLoading(false); }
   };
+
+  // Разбор вирусности (ИИ): дёргаем /analyze/breakdown по уже собранным данным (без повторного TikHub).
+  const runBreakdown = async (r: AnalyzeResult, srcUrl: string) => {
+    const myReq = ++bdReqRef.current;
+    setBdLoading(true); setBdError(null); setBreakdown(null);
+    try {
+      const res = await fetch('/api/trends/analyze/breakdown', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ summary: r.summary, comments: r.normalized.comments, keywords: r.normalized.keywords, platform: r.detected.platform, url: srcUrl || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      if (bdReqRef.current === myReq) setBreakdown((data.dna as TrendDNA) || null);
+    } catch (e: any) {
+      if (bdReqRef.current === myReq) setBdError(e instanceof TypeError ? 'Сервер недоступен.' : (e?.message || 'Не удалось собрать разбор'));
+    } finally {
+      if (bdReqRef.current === myReq) setBdLoading(false);
+    }
+  };
+
+  // Авто-запуск разбора в фоне, как только готов анализ ВИДЕО (без кнопки). Аккаунты — пропускаем.
+  useEffect(() => {
+    if (result && result.detected.type === 'video') runBreakdown(result, url);
+    else { bdReqRef.current++; setBreakdown(null); setBdError(null); setBdLoading(false); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   // Клик «Аналитика» на карточке тренда → подставить ссылку (+ обложку) и сразу запустить анализ.
   useEffect(() => {
@@ -245,6 +286,26 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       <div className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{fmt(val)}</div>
     </div>
   );
+
+  // Блоки разбора вирусности (ИИ): подпись + абзац / маркированный список.
+  const bdField = (label: string, text?: string) => (text ? (
+    <div>
+      <div className="text-[11px] font-700 mb-0.5" style={{ color: 'var(--brand)' }}>{label}</div>
+      <p className="text-[13px] leading-snug" style={{ color: 'var(--text-secondary)' }}>{text}</p>
+    </div>
+  ) : null);
+  const bdList = (label: string, items?: string[]) => (items && items.length ? (
+    <div>
+      <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{label}</div>
+      <ul className="space-y-1">
+        {items.map((it, i) => (
+          <li key={i} className="text-[13px] leading-snug flex gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+            <span style={{ color: 'var(--brand)' }}>•</span><span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null);
 
   return (
     <div className="space-y-5">
@@ -401,6 +462,79 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 </div>
               )}
           </div>
+
+          {/* Разбор вирусности (ИИ): Viral Breakdown + Контент-анализ — авто-запуск в фоне, крутилка пока не готово */}
+          {isVideo && (bdLoading || bdError || breakdown) && (
+            <AuroraCard className="p-4 sm:p-5 space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Sparkles size={16} style={{ color: 'var(--brand)' }} />
+                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Разбор вирусности (ИИ)</span>
+                {bdLoading && <Loader2 size={14} className="animate-spin" style={{ color: 'var(--brand)' }} />}
+                <div className="flex-1" />
+                {!bdLoading && (bdError || breakdown) && (
+                  <button onClick={() => runBreakdown(result, url)} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                    <RotateCw size={12} /> Пересобрать
+                  </button>
+                )}
+              </div>
+
+              {bdLoading && !breakdown && (
+                <div className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                  <Loader2 size={14} className="animate-spin flex-shrink-0" />
+                  Собираю разбор: хук, аудитория, сценарий озвучки, сцены, как повторить…
+                </div>
+              )}
+
+              {bdError && !bdLoading && (
+                <div className="flex items-start gap-2 text-[12px] rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
+                  <XCircle size={14} className="mt-[2px] flex-shrink-0" /><span>{bdError}</span>
+                </div>
+              )}
+
+              {breakdown && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Viral Breakdown */}
+                  <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Flame size={14} style={{ color: 'var(--brand)' }} /> Разбор вирусности</div>
+                    {bdField(`Хук${breakdown.hookType ? ` · ${breakdown.hookType}` : ''}`, breakdown.whyItWorks)}
+                    {bdField('Целевая аудитория', breakdown.targetAudience)}
+                    {bdList('Факторы вирусности', breakdown.viralFactors)}
+                    {breakdown.copyReadyScript && (
+                      <div>
+                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>Готовый скрипт озвучки</div>
+                        <p className="text-[13px] leading-snug rounded-lg p-2.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{breakdown.copyReadyScript}</p>
+                      </div>
+                    )}
+                    {bdList('Как адаптировать под нас', breakdown.howToAdapt)}
+                  </div>
+
+                  {/* Video Content Analysis */}
+                  <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Film size={14} style={{ color: 'var(--brand)' }} /> Контент-анализ</div>
+                    {bdField('Кратко о видео', breakdown.summary)}
+                    {bdField('Разбор первых секунд', breakdown.hookAnalysis)}
+                    {bdField('Визуальный стиль', breakdown.visualStyle)}
+                    {bdField('Звук и подача', breakdown.audioDialogue)}
+                    {breakdown.sceneBeats && breakdown.sceneBeats.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>Сцены</div>
+                        <div className="space-y-1">
+                          {breakdown.sceneBeats.map((b, i) => (
+                            <div key={i} className="flex gap-2 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                              <span className="font-700 tabular-nums flex-shrink-0" style={{ color: 'var(--brand)' }}>{fmtDur(b.t) || `${b.t}с`}</span>
+                              <span>{b.desc}{b.intensity ? <span style={{ color: 'var(--text-muted)' }}> · {b.intensity}</span> : null}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {bdList('Почему резонирует', breakdown.whyResonates)}
+                    {bdList('Как повторить', breakdown.howToReplicate)}
+                  </div>
+                </div>
+              )}
+            </AuroraCard>
+          )}
 
           {/* Ключевые слова (аналитика Trend) */}
           {result.normalized.keywords.length > 0 && (
