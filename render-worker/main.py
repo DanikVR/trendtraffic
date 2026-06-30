@@ -442,11 +442,6 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
     if not img_a or not img_b:
         return None, "подкаст: не скачались фото ведущих — passthrough"
 
-    lines = [l for l in (pod.get("dialogue") or [])
-             if isinstance(l, dict) and str(l.get("text") or "").strip()]
-    if not lines:
-        return None, "подкаст: нет реплик диалога — passthrough"
-
     layout = pod.get("layout") if pod.get("layout") in ("overlay", "topbar") else "overlay"
     try:
         seg_sec = float(pod.get("segSec") or 0)
@@ -458,6 +453,15 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
     rec_path = None
     if pod.get("source") == "diarize" and pod.get("recordingUrl"):
         rec_path = _download_media(base_url, pod.get("recordingUrl"), work, default_ext=".mp3")
+
+    lines = [l for l in (pod.get("dialogue") or [])
+             if isinstance(l, dict) and str(l.get("text") or "").strip()]
+    # Реплик нет, но это разбор записи → диаризуем сами (одной кнопки «Собрать» достаточно).
+    if not lines and rec_path:
+        dlines, _m = _diarize_audio(rec_path, work, None)
+        lines = [l for l in dlines if str(l.get("text") or "").strip()]
+    if not lines:
+        return None, "подкаст: нет реплик (разберите запись / сгенерируйте диалог) — passthrough"
 
     # Картинки-вставки → скачиваем и равномерно распределяем по репликам.
     cut_paths: list = []
@@ -630,6 +634,64 @@ def _overlap_speaker(turns: list, start: float, end: float) -> Optional[str]:
     return best
 
 
+def _diarize_audio(input_path: str, work: Path, hf_token: Optional[str] = None) -> Tuple[list, str]:
+    """
+    Транскрипция (faster-whisper) + разбивка на 2 спикера → ([{speaker,text,start,end}], method).
+    С hf_token+pyannote — настоящая диаризация (сопоставление по перекрытию); иначе — по паузам.
+    Общая для эндпоинта /diarize и сборки podcast_compose (одной кнопки «Собрать» достаточно).
+    """
+    _, data, note = run_tool("transcriber", {"input_path": input_path, "output_dir": str(work)})
+    raw = (data or {}).get("segments") or []
+    if not raw:
+        return [], f"транскрипт пуст ({note or 'нет речи'})"
+    turns = _pyannote_turns(input_path, hf_token)
+    lines: list = []
+    if turns:
+        label_map: dict = {}
+
+        def to_ab(lbl: str) -> str:
+            if lbl not in label_map:
+                label_map[lbl] = "A" if len(label_map) == 0 else "B"
+            return label_map[lbl]
+
+        for s in raw:
+            try:
+                start = float(s.get("start", 0) or 0); end = float(s.get("end", 0) or 0)
+                text = str(s.get("text", "") or "").strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if not text:
+                continue
+            lbl = _overlap_speaker(turns, start, end)
+            spk = to_ab(lbl) if lbl is not None else (lines[-1]["speaker"] if lines else "A")
+            if lines and lines[-1]["speaker"] == spk:
+                lines[-1]["text"] += " " + text; lines[-1]["end"] = end
+            else:
+                lines.append({"speaker": spk, "text": text, "start": start, "end": end})
+        method = "pyannote 3.1 (HF)"
+    else:
+        GAP = 0.8
+        speaker = "A"
+        prev_end = None
+        for s in raw:
+            try:
+                start = float(s.get("start", 0) or 0); end = float(s.get("end", 0) or 0)
+                text = str(s.get("text", "") or "").strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if not text:
+                continue
+            if prev_end is not None and (start - prev_end) > GAP:
+                speaker = "B" if speaker == "A" else "A"
+            if lines and lines[-1]["speaker"] == speaker:
+                lines[-1]["text"] += " " + text; lines[-1]["end"] = end
+            else:
+                lines.append({"speaker": speaker, "text": text, "start": start, "end": end})
+            prev_end = end
+        method = "whisper+паузы" + (" (pyannote недоступен)" if hf_token else "")
+    return lines, method
+
+
 @app.post("/diarize")
 def diarize(body: DiarizeBody):
     """
@@ -652,64 +714,9 @@ def diarize(body: DiarizeBody):
     except Exception as e:  # noqa: BLE001
         return {"lines": [], "tracks": [], "note": f"вход не скачался: {e}"}
 
-    _, data, note = run_tool("transcriber", {"input_path": input_path, "output_dir": str(work)})
-    raw = (data or {}).get("segments") or []
-    if not raw:
-        return {"lines": [], "tracks": [], "note": f"диаризация: транскрипт пуст ({note or ''})"}
-
-    turns = _pyannote_turns(input_path, body.hf_token)
-    lines: list = []
-    if turns:
-        # pyannote: сопоставляем whisper-сегменты со спикерами по перекрытию → 2 голоса A/B
-        # (первый по появлению спикер → A, второй → B).
-        label_map: dict = {}
-
-        def to_ab(lbl: str) -> str:
-            if lbl not in label_map:
-                label_map[lbl] = "A" if len(label_map) == 0 else "B"
-            return label_map[lbl]
-
-        for s in raw:
-            try:
-                start = float(s.get("start", 0) or 0)
-                end = float(s.get("end", 0) or 0)
-                text = str(s.get("text", "") or "").strip()
-            except Exception:  # noqa: BLE001
-                continue
-            if not text:
-                continue
-            lbl = _overlap_speaker(turns, start, end)
-            spk = to_ab(lbl) if lbl is not None else (lines[-1]["speaker"] if lines else "A")
-            if lines and lines[-1]["speaker"] == spk:
-                lines[-1]["text"] += " " + text
-                lines[-1]["end"] = end
-            else:
-                lines.append({"speaker": spk, "text": text, "start": start, "end": end})
-        method = "pyannote 3.1 (HF)"
-    else:
-        # фолбэк: наивное разделение по паузам (смена говорящего при паузе > 0.8с).
-        GAP = 0.8
-        speaker = "A"
-        prev_end = None
-        for s in raw:
-            try:
-                start = float(s.get("start", 0) or 0)
-                end = float(s.get("end", 0) or 0)
-                text = str(s.get("text", "") or "").strip()
-            except Exception:  # noqa: BLE001
-                continue
-            if not text:
-                continue
-            if prev_end is not None and (start - prev_end) > GAP:
-                speaker = "B" if speaker == "A" else "A"
-            if lines and lines[-1]["speaker"] == speaker:
-                lines[-1]["text"] += " " + text
-                lines[-1]["end"] = end
-            else:
-                lines.append({"speaker": speaker, "text": text, "start": start, "end": end})
-            prev_end = end
-        method = "whisper+паузы (pyannote недоступен)" if body.hf_token else "whisper+паузы (наивно)"
-
+    lines, method = _diarize_audio(input_path, work, body.hf_token)
+    if not lines:
+        return {"lines": [], "tracks": [], "note": f"диаризация: {method}"}
     return {"lines": lines, "tracks": [], "note": f"диаризация: {len(lines)} реплик ({method})"}
 
 
