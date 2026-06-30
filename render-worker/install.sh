@@ -51,7 +51,8 @@ WantedBy=multi-user.target
 UNIT
 
 systemctl daemon-reload
-systemctl enable --now trendtraffic-render.service
+systemctl enable trendtraffic-render.service
+systemctl restart trendtraffic-render.service   # restart, а не enable --now: иначе уже запущенный сервис держит старый код
 sleep 2
 
 echo "== health =="
