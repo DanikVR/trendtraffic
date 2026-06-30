@@ -1908,22 +1908,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                           <Sparkles size={12} style={{ color: '#ec4899' }} /> AI-ракурсы студии — те же ведущие, другой вид камеры
                         </div>
 
-                        {/* база генерации: общее фото или своя картинка с диска */}
                         <input ref={angleInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                           onChange={(e) => { if (e.target.files?.length) uploadAngleSrc(e.target.files); e.currentTarget.value = ''; }} />
-                        <div className="flex items-center gap-2">
-                          <div className="rounded-md overflow-hidden flex-shrink-0" style={{ width: 40, height: 40, background: '#000', border: '1px solid var(--border-medium)' }}>
-                            {(angleSrc?.url || pod.groupPhotoUrl) && <img src={angleSrc?.url || pod.groupPhotoUrl || ''} alt="" className="w-full h-full object-cover" />}
-                          </div>
-                          <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--text-muted)' }}>Вход: {angleSrc ? (angleSrc.name || 'своя картинка') : 'общее фото студии'}</span>
-                          <button onClick={() => angleInputRef.current?.click()} disabled={angleBusy === 'upload'}
-                            className="text-[11px] font-600 px-2 py-1 rounded-lg inline-flex items-center gap-1"
-                            style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                            {angleBusy === 'upload' ? <Loader2 size={11} className="animate-spin" /> : <Paperclip size={11} />} своё фото
-                          </button>
-                          {angleSrc && <button onClick={() => setAngleSrc(null)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сброс</button>}
-                        </div>
-
                         <textarea value={anglePromptText}
                           onChange={(e) => { setAnglePromptText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }}
                           rows={1} placeholder="свой промт (необязательно): «приблизь, в кадре только женщина, мужчина — лишь рука»…"
@@ -1935,8 +1921,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                           {angleBusy === 'custom' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Применить свой промт
                         </button>
 
-                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>или быстрые ракурсы:</div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>ракурсы:</span>
                           {([['left', '← Левее'], ['right', 'Правее →'], ['up', '↑ Сверху'], ['down', '↓ Снизу'], ['back', 'Сзади'], ['closeup', 'Крупнее']] as [string, string][]).map(([p, lbl]) => (
                             <button key={p} onClick={() => genAngle(p)} disabled={!!angleBusy}
                               className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5 disabled:opacity-60"
@@ -1944,9 +1930,21 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                               {angleBusy === p ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {lbl}
                             </button>
                           ))}
+                          <button onClick={() => angleInputRef.current?.click()} disabled={angleBusy === 'upload'}
+                            className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5"
+                            style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px dashed var(--border-strong)', cursor: 'pointer' }}>
+                            {angleBusy === 'upload' ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />} своё фото
+                          </button>
                         </div>
-                        {podAngles.length > 0 && (
+                        {(angleSrc || podAngles.length > 0) && (
                           <div className="flex flex-wrap gap-2">
+                            {angleSrc && (
+                              <div className="relative rounded-lg overflow-hidden" style={{ width: 64, height: 64, border: '2px solid #ec4899' }}>
+                                <img src={angleSrc.url} alt="" className="w-full h-full object-cover" />
+                                <span style={{ position: 'absolute', left: 0, bottom: 0, fontSize: 8, color: '#fff', background: 'rgba(236,72,153,0.9)', padding: '0 3px', borderTopRightRadius: 4 }}>вход</span>
+                                <button onClick={() => setAngleSrc(null)} className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
+                              </div>
+                            )}
                             {podAngles.map((a, i) => (
                               <div key={i} className="relative rounded-lg overflow-hidden" style={{ width: 64, height: 64, border: '1px solid var(--border-medium)' }}>
                                 <img src={a.url} alt="" className="w-full h-full object-cover" />

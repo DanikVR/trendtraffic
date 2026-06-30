@@ -12,7 +12,7 @@
  * сценариев они не нужны.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Check, X, MoreVertical, Copy, Trash2, Power, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Check, X, MoreVertical, Copy, Trash2, Power, Loader2, Mic, Cloud, Film } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
@@ -46,6 +46,21 @@ function fmtDate(iso?: string): string {
   catch { return ''; }
 }
 
+// Иконки-бейджи содержимого сценария (по графу): подкаст / Google Omni / монтаж.
+function graphKinds(graph: any): string[] {
+  const out: string[] = [];
+  const p = graph?.podcast;
+  if (p && (p.hostA?.photoUrl || p.groupPhotoUrl || p.recordingUrl || (Array.isArray(p.dialogue) && p.dialogue.length))) out.push('podcast');
+  if (graph?.omni && Array.isArray(graph.omni.segments) && graph.omni.segments.some((s: any) => (s?.prompt || '').trim())) out.push('omni');
+  if (Array.isArray(graph?.nodes) && graph.nodes.some((n: any) => n?.type === 'montage')) out.push('montage');
+  return out.slice(0, 3);
+}
+const KIND_BADGE: Record<string, { icon: React.ReactNode; color: string }> = {
+  podcast: { icon: <Mic size={13} />, color: '#ec4899' },
+  omni: { icon: <Cloud size={13} />, color: '#4285F4' },
+  montage: { icon: <Film size={13} />, color: '#818cf8' },
+};
+
 export default function FlowPage() {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({
@@ -63,6 +78,7 @@ export default function FlowPage() {
   const [editName, setEditName] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FlowRow | null>(null);
+  const [flowKinds, setFlowKinds] = useState<Record<string, string[]>>({}); // иконки-бейджи содержимого по графу
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -75,6 +91,24 @@ export default function FlowPage() {
     finally { setLoading(false); }
   }, [headers]);
   useEffect(() => { load(); }, [load]);
+
+  // Подтянуть графы сценариев и вычислить иконки-бейджи содержимого (для обложек).
+  useEffect(() => {
+    if (!flows.length) { setFlowKinds({}); return; }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(flows.map(async (f) => {
+        try {
+          const r = await fetch(`/api/flows/${f.id}`, { headers: headers() });
+          if (!r.ok) return [f.id, [] as string[]] as const;
+          const d = await r.json();
+          return [f.id, graphKinds(d.flow?.graph)] as const;
+        } catch { return [f.id, [] as string[]] as const; }
+      }));
+      if (!cancelled) setFlowKinds(Object.fromEntries(entries));
+    })();
+    return () => { cancelled = true; };
+  }, [flows, headers]);
 
   const createAndOpen = async () => {
     setCreating(true); setError(null);
@@ -232,10 +266,19 @@ export default function FlowPage() {
                   )}
                 </div>
               </div>
-              {/* Герой */}
-              <div className="mx-3 mb-3 rounded-xl overflow-hidden" style={{ aspectRatio: '3 / 4', background: '#2a0a10' }}>
+              {/* Герой + иконки-бейджи содержимого сверху */}
+              <div className="mx-3 mb-3 rounded-xl overflow-hidden" style={{ position: 'relative', aspectRatio: '3 / 4', background: '#2a0a10' }}>
                 <img src={HERO} alt="" loading="lazy" className="w-full h-full object-cover"
                   onError={(e) => { const img = e.currentTarget; if (!img.src.endsWith(HERO_FALLBACK)) img.src = HERO_FALLBACK; }} />
+                {(flowKinds[f.id]?.length ?? 0) > 0 && (
+                  <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', gap: 4, zIndex: 2 }}>
+                    {flowKinds[f.id].map((k) => KIND_BADGE[k] && (
+                      <span key={k} title={k} style={{ width: 24, height: 24, borderRadius: 7, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: KIND_BADGE[k].color, border: '1px solid rgba(255,255,255,0.15)' }}>
+                        {KIND_BADGE[k].icon}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
