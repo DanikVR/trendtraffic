@@ -34,7 +34,20 @@ RENDER_WORKER_URL=http://100.81.35.75:8800
 - `POST /execute` → один шаг: скачать вход, вызвать инструмент, вернуть `{ output_name | skipped | note }`.
 - `POST /transcribe` → `{ input_url }` → `{ segments: [{start,end,text}] }` — транскрипт (faster-whisper)
   для ИИ-режиссёра (выбор лучшего момента в узле «Длина»).
+- `POST /diarize` → `{ input_url, hf_token? }` → `{ lines: [{speaker,text,start,end}] }` — разбор записи
+  подкаста на 2 голоса. С `hf_token` и установленным `pyannote.audio` — настоящая диаризация
+  pyannote 3.1; иначе фолбэк: транскрипт + разделение по паузам.
 - `GET /files/<name>` — отдать произведённый файл (web-VPS его забирает).
+
+## Подкаст-сцена (`podcast_compose`)
+Узел «Подкаст» в TrendFlow собирается одним шагом `podcast_compose` (см. `_podcast_compose`):
+озвучка реплик (реальный голос из записи при диаризации, иначе Piper TTS) → говорящая сторона
+(`talking_head`/SadTalker на GPU-воркере, иначе статичное фото) + статичное фото второго ведущего
+→ **сплит-скрин 1080×1920 через ffmpeg** (`hstack`, картинка-вставка overlay/topbar) → склейка
+сегментов (`concat`). Требует **ffmpeg + ffprobe** в PATH (ставятся `install.sh`/`install-gpu.sh`).
+Для настоящей диаризации: на GPU-воркере `pip install pyannote.audio`, HF-токен в Enterprise-ключах
+(provider `hf`) и принятые условия gated-моделей `pyannote/speaker-diarization-3.1` +
+`pyannote/segmentation-3.0` на HuggingFace.
 
 ## GPU-воркер (домашний ПК, RTX 5080) — для аватара/апскейла
 Тот же `main.py`, но с GPU-цепочкой OpenMontage (torch/CUDA). Обрабатывает шаги

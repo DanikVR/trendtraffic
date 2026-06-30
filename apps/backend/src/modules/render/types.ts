@@ -12,7 +12,48 @@
 /** Типы узлов монтажа (совпадают с MKind во фронтовом MontageEditor). */
 export type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles'
-  | 'audio' | 'voiceover' | 'color' | 'broll' | 'avatar' | 'upscale' | 'export';
+  | 'audio' | 'voiceover' | 'color' | 'broll' | 'avatar' | 'upscale' | 'export'
+  | 'podcast';
+
+// ── Подкаст-сцена (2 ведущих): спецификация сборки ────────────────────────────
+/** Один ведущий: фото + голос TTS (+опц. имя). */
+export interface PodcastHost {
+  photoUrl: string | null;
+  photoName: string | null;
+  voice: 'female' | 'male';
+  name?: string;
+}
+/** Реплика диалога: какой ведущий и что говорит (+ таймкоды для нарезки реального голоса при диаризации). */
+export interface PodcastLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number }
+/** Картинка-вставка, показываемая между ведущими. */
+export interface PodcastCutaway { url: string; name?: string }
+/**
+ * Спецификация подкаст-сцены (хранится в flows.graph.podcast, исполняется
+ * инструментом podcast_compose на воркере). Дорожки берутся либо генерацией
+ * диалога (source='gen' → Claude+Piper на 2 голоса), либо разбором готовой
+ * записи (source='diarize' → диаризация на 2 спикеров).
+ */
+export interface PodcastSpec {
+  hostA: PodcastHost;
+  hostB: PodcastHost;
+  /** Откуда дорожки: 'gen' — сгенерировать диалог; 'diarize' — разобрать запись. */
+  source: 'gen' | 'diarize';
+  /** Бриф/тема для генерации диалога (source='gen'). */
+  brief: string;
+  /** Реплики диалога (source='gen'). */
+  dialogue: PodcastLine[];
+  /** Загруженная запись подкаста для диаризации (source='diarize'). */
+  recordingUrl: string | null;
+  recordingName: string | null;
+  /** Картинки, показываемые между ведущими (сплит-скрин). */
+  cutaways: PodcastCutaway[];
+  /** Где картинка в сплит-скрине: 'overlay' — по центру шва; 'topbar' — плашкой сверху. */
+  layout: 'overlay' | 'topbar';
+  /** Длительность сегмента-реплики (сек) для стилл-фолбэка и показа картинок. */
+  segSec: number;
+  /** Площадки экспорта. */
+  platforms: string[];
+}
 
 /** Где исполнять шаг: cpu — бесплатно на VPS; gpu — на воркере (дом/облако). */
 export type StepTarget = 'cpu' | 'gpu';

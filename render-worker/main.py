@@ -19,6 +19,7 @@ import re
 import sys
 import uuid
 import shutil
+import subprocess
 import mimetypes
 import urllib.request
 import urllib.parse
@@ -76,6 +77,12 @@ class ExecBody(BaseModel):
 class TranscribeBody(BaseModel):
     input_url: str
     base_url: Optional[str] = None
+
+
+class DiarizeBody(BaseModel):
+    input_url: str
+    base_url: Optional[str] = None
+    hf_token: Optional[str] = None
 
 
 @app.get("/health")
@@ -289,8 +296,241 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
                                             "output_path": out(), "model": "sadtalker"})
         return (f, n or "аватар (говорящая голова)")
 
+    if step_tool == "podcast_compose":  # подкаст-сцена (2 ведущих): TTS на 2 голоса → головы → сшивка
+        return _podcast_compose(params, work, base_url)
+
     # broll(clip_search) / news_source / web_research — наша LLM-сторона / стоки (passthrough)
     return None, f"{step_tool}: на воркере не выполняется — passthrough"
+
+
+def _tts(text: str, voice: Optional[str], out_path: str):
+    """Piper TTS с попыткой выбрать голос; фолбэк — без него (схема может не поддерживать voice)."""
+    if voice:
+        f, d, n = run_tool("piper_tts", {"text": text, "voice": voice, "output_path": out_path})
+        if f:
+            return f, d, n
+    return run_tool("piper_tts", {"text": text, "output_path": out_path})
+
+
+# ── ffmpeg-обёртки для сборки сплит-скрина (ffmpeg есть на VPS — см. docs §5) ──
+FFMPEG = os.environ.get("FFMPEG_BIN", "ffmpeg")
+FFPROBE = os.environ.get("FFPROBE_BIN", "ffprobe")
+POD_W, POD_H = 1080, 1920  # вертикаль 9:16
+
+
+def _run(cmd: list, timeout: int = 900) -> Tuple[bool, str]:
+    try:
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+        return p.returncode == 0, (p.stderr.decode("utf-8", "ignore") if p.returncode != 0 else "")
+    except Exception as e:  # noqa: BLE001
+        return False, str(e)
+
+
+def _media_duration(path: str) -> float:
+    try:
+        p = subprocess.run([FFPROBE, "-v", "error", "-show_entries", "format=duration",
+                            "-of", "default=nw=1:nk=1", path],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+        return float((p.stdout or b"").decode().strip() or 0)
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+def _cut_audio(src: str, start: float, end: float, out_path: str) -> Optional[str]:
+    """Вырезает [start,end] из записи в моно-wav 22.05кГц (для сохранения реального голоса)."""
+    dur = max(0.15, end - start)
+    cmd = [FFMPEG, "-y", "-ss", f"{start:.3f}", "-t", f"{dur:.3f}", "-i", src,
+           "-vn", "-ac", "1", "-ar", "22050", "-c:a", "pcm_s16le", out_path]
+    ok, err = _run(cmd, timeout=300)
+    if not (ok and os.path.exists(out_path)):
+        print(f"[worker] cut_audio failed: {err[:200]}")
+        return None
+    return out_path
+
+
+def _pad_audio(wav: str, min_sec: float, out_path: str) -> str:
+    """Дополняет короткую озвучку тишиной до min_sec (чтобы короткие реплики не мелькали)."""
+    if min_sec <= 0 or _media_duration(wav) >= min_sec:
+        return wav
+    cmd = [FFMPEG, "-y", "-i", wav, "-af", "apad", "-t", f"{min_sec:.3f}",
+           "-ac", "1", "-ar", "22050", "-c:a", "pcm_s16le", out_path]
+    ok, _ = _run(cmd, timeout=120)
+    return out_path if ok and os.path.exists(out_path) else wav
+
+
+def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
+                 audio: str, cut: Optional[str], layout: str, out_path: str) -> Optional[str]:
+    """
+    Один сегмент сплит-скрина: ведущий A слева, B справа (каждый half×H), общая дорожка —
+    озвучка реплики. Картинка-вставка (если есть) — по центру шва (overlay) или плашкой
+    сверху (topbar). Говорящая сторона — видео-голова или статичное фото (loop).
+    """
+    half = POD_W // 2
+    dur = _media_duration(audio) or 4.0
+    inputs: list = []
+    inputs += (["-i", left] if left_v else ["-loop", "1", "-i", left])      # 0: левый
+    inputs += (["-i", right] if right_v else ["-loop", "1", "-i", right])   # 1: правый
+    inputs += ["-i", audio]                                                 # 2: звук
+    fc = (
+        f"[0:v]scale={half}:{POD_H}:force_original_aspect_ratio=increase,"
+        f"crop={half}:{POD_H},fps=30,setsar=1[l];"
+        f"[1:v]scale={half}:{POD_H}:force_original_aspect_ratio=increase,"
+        f"crop={half}:{POD_H},fps=30,setsar=1[r];"
+        f"[l][r]hstack=inputs=2[base];"
+    )
+    last = "base"
+    if cut:
+        inputs += ["-loop", "1", "-i", cut]  # 3: картинка-вставка
+        if layout == "topbar":
+            bh = int(POD_H * 0.34)
+            fc += (f"[3:v]scale={POD_W}:{bh}:force_original_aspect_ratio=increase,"
+                   f"crop={POD_W}:{bh},setsar=1[cut];[base][cut]overlay=0:0[v];")
+        else:  # overlay по центру
+            side = int(POD_W * 0.56)
+            fc += (f"[3:v]scale={side}:{side}:force_original_aspect_ratio=increase,"
+                   f"crop={side}:{side},setsar=1[cut];[base][cut]overlay=(W-w)/2:(H-h)/2[v];")
+        last = "v"
+    cmd = [FFMPEG, "-y", *inputs,
+           "-filter_complex", fc.rstrip("; "),
+           "-map", f"[{last}]", "-map", "2:a",
+           "-t", f"{dur:.3f}", "-r", "30", "-pix_fmt", "yuv420p",
+           "-c:v", "libx264", "-preset", "veryfast", "-c:a", "aac", "-ac", "2",
+           out_path]
+    ok, err = _run(cmd, timeout=900)
+    if not (ok and os.path.exists(out_path)):
+        print(f"[worker] pod segment ffmpeg failed: {err[:300]}")
+        return None
+    return out_path
+
+
+def _pod_concat(segments: list, out_path: str, work: Path) -> Optional[str]:
+    if len(segments) == 1:
+        return segments[0]
+    lst = work / f"concat_{uuid.uuid4().hex[:6]}.txt"
+    with open(lst, "w", encoding="utf-8") as f:
+        for s in segments:
+            f.write("file '%s'\n" % str(s).replace("'", "'\\''"))
+    cmd = [FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(lst),
+           "-r", "30", "-pix_fmt", "yuv420p",
+           "-c:v", "libx264", "-preset", "veryfast", "-c:a", "aac", out_path]
+    ok, err = _run(cmd, timeout=1800)
+    if not (ok and os.path.exists(out_path)):
+        print(f"[worker] pod concat ffmpeg failed: {err[:300]}")
+        return None
+    return out_path
+
+
+def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple[Optional[str], str]:
+    """
+    Собирает подкаст-сцену (сплит-скрин, 2 ведущих) из спецификации params['podcast']:
+      • TTS каждой реплики голосом её ведущего (Piper);
+      • говорящая сторона — talking_head (если есть GPU-воркер с SadTalker), иначе статичное фото;
+      • НЕговорящая сторона — статичное фото второго ведущего → оба в кадре одновременно;
+      • картинки-вставки распределяются по репликам (центр-overlay / topbar);
+      • покадровая сборка и склейка сегментов через ffmpeg (вертикаль 9:16).
+
+    Мягкая деградация: ошибка сегмента → пропуск + заметка, конвейер не падает.
+    """
+    def out(sfx=".mp4") -> str:
+        return str(work / f"p_{uuid.uuid4().hex[:6]}{sfx}")
+
+    pod = params.get("podcast") or {}
+    host_a = pod.get("hostA") or {}
+    host_b = pod.get("hostB") or {}
+    img_a = _download_media(base_url, host_a.get("photoUrl"), work, default_ext=".jpg")
+    img_b = _download_media(base_url, host_b.get("photoUrl"), work, default_ext=".jpg")
+    if not img_a or not img_b:
+        return None, "подкаст: не скачались фото ведущих — passthrough"
+
+    lines = [l for l in (pod.get("dialogue") or [])
+             if isinstance(l, dict) and str(l.get("text") or "").strip()]
+    if not lines:
+        return None, "подкаст: нет реплик диалога — passthrough"
+
+    layout = pod.get("layout") if pod.get("layout") in ("overlay", "topbar") else "overlay"
+    try:
+        seg_sec = float(pod.get("segSec") or 0)
+    except Exception:  # noqa: BLE001
+        seg_sec = 0.0
+
+    # Разбор записи: при source='diarize' и наличии записи берём РЕАЛЬНЫЙ голос —
+    # нарезаем дорожку по таймкодам реплик (а не ре-синтез TTS).
+    rec_path = None
+    if pod.get("source") == "diarize" and pod.get("recordingUrl"):
+        rec_path = _download_media(base_url, pod.get("recordingUrl"), work, default_ext=".mp3")
+
+    # Картинки-вставки → скачиваем и равномерно распределяем по репликам.
+    cut_paths: list = []
+    for c in (pod.get("cutaways") or []):
+        if isinstance(c, dict) and c.get("url"):
+            cp = _download_media(base_url, c.get("url"), work, default_ext=".jpg")
+            if cp:
+                cut_paths.append(cp)
+    n = len(lines)
+    cut_at: dict = {}
+    for j, cp in enumerate(cut_paths):
+        cut_at[min(n - 1, int((j + 1) * n / (len(cut_paths) + 1)))] = cp
+
+    has_talking = registry.get("talking_head") is not None
+    segments: list = []
+    notes: list = []
+    used_heads = 0
+    used_real = 0
+    for i, l in enumerate(lines):
+        spk = "B" if l.get("speaker") == "B" else "A"
+        voice = (host_b if spk == "B" else host_a).get("voice") or "female"
+        text = str(l.get("text")).strip()
+        # источник звука реплики: реальный фрагмент записи (диаризация) либо TTS.
+        wav, tn = None, ""
+        if rec_path:
+            try:
+                st, en = float(l.get("start")), float(l.get("end"))
+            except (TypeError, ValueError):
+                st = en = None
+            if st is not None and en is not None and en > st:
+                wav = _cut_audio(rec_path, st, en, out(".wav"))
+                if wav:
+                    used_real += 1
+        if not wav:
+            wav, _, tn = _tts(text, voice, out(".wav"))
+        if not wav:
+            notes.append(f"реплика {i + 1}: озвучка не создана ({tn or ''})")
+            continue
+        wav = _pad_audio(wav, seg_sec, out(".wav"))  # короткие реплики → не мельтешат
+        # говорящая сторона: голова (GPU) либо статичное фото
+        speak_img = img_b if spk == "B" else img_a
+        speak_clip = None
+        if has_talking:
+            speak_clip, _, hn = run_tool("talking_head", {"image_path": speak_img, "audio_path": wav,
+                                                          "output_path": out(), "model": "sadtalker"})
+            if speak_clip:
+                used_heads += 1
+            else:
+                notes.append(f"реплика {i + 1}: голова не создана ({hn or ''})")
+        # раскладка: A слева, B справа — у говорящего видео/фото, у второго статичное фото
+        if spk == "A":
+            left, left_v, right, right_v = (speak_clip or img_a), bool(speak_clip), img_b, False
+        else:
+            left, left_v, right, right_v = img_a, False, (speak_clip or img_b), bool(speak_clip)
+        seg = _pod_segment(left, left_v, right, right_v, wav, cut_at.get(i), layout, out())
+        if seg:
+            segments.append(seg)
+        else:
+            notes.append(f"реплика {i + 1}: сегмент не собран (ffmpeg)")
+
+    if not segments:
+        tail = "; ".join(notes) if notes else "нет сегментов"
+        return None, f"подкаст: не собрано ни одного сегмента — {tail}"
+
+    final = _pod_concat(segments, out(), work)
+    if not final:
+        return None, "подкаст: склейка сегментов не удалась (ffmpeg concat)"
+
+    head_note = (f"говорящие головы {used_heads}/{len(lines)}"
+                 if has_talking else "статичные фото (нет GPU talking_head)")
+    audio_note = f"реальный голос {used_real}/{len(lines)}" if rec_path else "озвучка TTS"
+    extra = ("; " + "; ".join(notes)) if notes else ""
+    return final, f"подкаст-сплит-скрин: {len(segments)} сегм., {head_note}, {audio_note}{extra}"
 
 
 @app.post("/execute")
@@ -352,6 +592,125 @@ def transcribe(body: TranscribeBody):
         except Exception:  # noqa: BLE001
             continue
     return {"segments": segs, "note": note}
+
+
+def _pyannote_turns(audio_path: str, hf_token: Optional[str]) -> Optional[list]:
+    """
+    pyannote speaker-diarization-3.1 → [(start, end, label)]. Требует установленных
+    torch + pyannote.audio И валидного hf_token (модель gated — нужно принять условия
+    на HuggingFace). Недоступно / ошибка → None (тогда /diarize падает на разделение по
+    паузам). Так «настоящая» диаризация включается там, где есть torch (GPU-воркер).
+    """
+    if not hf_token:
+        return None
+    try:
+        from pyannote.audio import Pipeline  # type: ignore  # noqa: WPS433
+    except Exception:  # noqa: BLE001
+        print("[worker] pyannote.audio не установлен — диаризация по паузам")
+        return None
+    try:
+        pipe = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=hf_token)
+        diar = pipe(audio_path, num_speakers=2)
+        turns = [(float(t.start), float(t.end), str(spk))
+                 for t, _, spk in diar.itertracks(yield_label=True)]
+        turns.sort(key=lambda x: x[0])
+        return turns or None
+    except Exception as e:  # noqa: BLE001
+        print(f"[worker] pyannote diarize error: {e}")
+        return None
+
+
+def _overlap_speaker(turns: list, start: float, end: float) -> Optional[str]:
+    """Метка спикера pyannote с наибольшим перекрытием по времени для [start, end]."""
+    best, best_ov = None, 0.0
+    for ts, te, spk in turns:
+        ov = min(end, te) - max(start, ts)
+        if ov > best_ov:
+            best_ov, best = ov, spk
+    return best
+
+
+@app.post("/diarize")
+def diarize(body: DiarizeBody):
+    """
+    Разбирает запись подкаста на 2 голоса → реплики [{speaker:'A'|'B', text, start, end}].
+
+    При наличии hf_token и установленного pyannote.audio — настоящая диаризация
+    pyannote/speaker-diarization-3.1 (HuggingFace), спикеры сопоставляются с whisper-
+    сегментами по перекрытию. Иначе — фолбэк: транскрипция + разделение по паузам.
+    """
+    if registry is None:
+        return {"lines": [], "tracks": [], "note": "registry не загружен"}
+    job = uuid.uuid4().hex
+    work = WORK_DIR / job
+    work.mkdir(parents=True, exist_ok=True)
+    url = _abs_url(body.base_url, body.input_url) or body.input_url
+    ext = os.path.splitext(urllib.parse.urlparse(url).path)[1] or ".mp3"
+    input_path = str(work / f"input{ext}")
+    try:
+        _download(url, Path(input_path))
+    except Exception as e:  # noqa: BLE001
+        return {"lines": [], "tracks": [], "note": f"вход не скачался: {e}"}
+
+    _, data, note = run_tool("transcriber", {"input_path": input_path, "output_dir": str(work)})
+    raw = (data or {}).get("segments") or []
+    if not raw:
+        return {"lines": [], "tracks": [], "note": f"диаризация: транскрипт пуст ({note or ''})"}
+
+    turns = _pyannote_turns(input_path, body.hf_token)
+    lines: list = []
+    if turns:
+        # pyannote: сопоставляем whisper-сегменты со спикерами по перекрытию → 2 голоса A/B
+        # (первый по появлению спикер → A, второй → B).
+        label_map: dict = {}
+
+        def to_ab(lbl: str) -> str:
+            if lbl not in label_map:
+                label_map[lbl] = "A" if len(label_map) == 0 else "B"
+            return label_map[lbl]
+
+        for s in raw:
+            try:
+                start = float(s.get("start", 0) or 0)
+                end = float(s.get("end", 0) or 0)
+                text = str(s.get("text", "") or "").strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if not text:
+                continue
+            lbl = _overlap_speaker(turns, start, end)
+            spk = to_ab(lbl) if lbl is not None else (lines[-1]["speaker"] if lines else "A")
+            if lines and lines[-1]["speaker"] == spk:
+                lines[-1]["text"] += " " + text
+                lines[-1]["end"] = end
+            else:
+                lines.append({"speaker": spk, "text": text, "start": start, "end": end})
+        method = "pyannote 3.1 (HF)"
+    else:
+        # фолбэк: наивное разделение по паузам (смена говорящего при паузе > 0.8с).
+        GAP = 0.8
+        speaker = "A"
+        prev_end = None
+        for s in raw:
+            try:
+                start = float(s.get("start", 0) or 0)
+                end = float(s.get("end", 0) or 0)
+                text = str(s.get("text", "") or "").strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if not text:
+                continue
+            if prev_end is not None and (start - prev_end) > GAP:
+                speaker = "B" if speaker == "A" else "A"
+            if lines and lines[-1]["speaker"] == speaker:
+                lines[-1]["text"] += " " + text
+                lines[-1]["end"] = end
+            else:
+                lines.append({"speaker": speaker, "text": text, "start": start, "end": end})
+            prev_end = end
+        method = "whisper+паузы (pyannote недоступен)" if body.hf_token else "whisper+паузы (наивно)"
+
+    return {"lines": lines, "tracks": [], "note": f"диаризация: {len(lines)} реплик ({method})"}
 
 
 @app.get("/files/{name}")

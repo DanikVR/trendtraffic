@@ -30,6 +30,10 @@ const TOOL_MAP: Record<MKind, ToolSpec> = {
   avatar:    { tool: 'talking_head',   target: 'gpu' }, // SadTalker/Wav2Lip — GPU
   upscale:   { tool: 'upscale',        target: 'gpu' }, // Real-ESRGAN — GPU
   export:    { tool: 'video_compose',  target: 'cpu' }, // media-profile, мультиплатформа
+  // Подкаст-сцена (2 ведущих) собирается одним шагом podcast_compose. target=cpu:
+  // конвейерная работа (TTS, сшивка, реренфрейм) идёт на VPS; говорящие головы
+  // (talking_head) — апгрейд, когда шаг исполняется на GPU-воркере с SadTalker.
+  podcast:   { tool: 'podcast_compose', target: 'cpu' },
 };
 
 /** Известен ли тип узла планировщику (есть ли он в карте инструментов). */

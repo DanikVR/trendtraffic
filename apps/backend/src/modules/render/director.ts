@@ -16,6 +16,7 @@
  */
 
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
+import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { getRenderWorkerUrl } from '../../config/systemConfig.js';
 
 export const DEFAULT_DIRECTOR_MODEL = 'claude-opus-4-8';
@@ -30,10 +31,15 @@ export function directorModel(params: Record<string, any> | undefined | null): s
   return typeof m === 'string' && ALLOWED_MODELS.has(m) ? m : DEFAULT_DIRECTOR_MODEL;
 }
 
-/** Эффективный ключ Claude: tenant → системный ANTHROPIC_API_KEY → null. */
+/** Эффективный ключ Claude: tenant-ключ; если нет — для Премиум/Энтерпрайз (вкл. триал)
+ *  НЕ падаем на наш платформенный ANTHROPIC_API_KEY (иначе несём их затраты, в т.ч. в
+ *  пробный период) → null. Платформенный фолбэк остаётся только вне полного доступа
+ *  (например superadmin-тенант 'global_admin' для теста). */
 export async function resolveAnthropicKey(tenantId: string | null | undefined): Promise<string | null> {
   const tk = tenantId ? await getEffectiveProviderKey(tenantId, 'anthropic') : null;
-  return tk || process.env.ANTHROPIC_API_KEY || null;
+  if (tk) return tk;
+  if (tenantId && await hasEnterpriseAccess(tenantId)) return null;
+  return process.env.ANTHROPIC_API_KEY || null;
 }
 
 // Клиент SDK кэшируем (конструктор), сам инстанс — на ключ.
@@ -160,6 +166,53 @@ export async function writeNews(opts: {
       : { text: null, note: 'новости: пустой ответ' };
   } catch (e: any) {
     return { text: null, note: `новости: ошибка — ${e?.message || e}` };
+  }
+}
+
+// ── Подкаст: генерация диалога двух ведущих ───────────────────────────────────
+export interface PodcastLine { speaker: 'A' | 'B'; text: string }
+export interface PodcastDialogueResult { lines: PodcastLine[]; note: string }
+
+/** Достаёт первый JSON-массив из ответа модели (на случай обрамляющего текста). */
+function extractJsonArray(raw: string): any[] | null {
+  const m = raw.match(/\[[\s\S]*\]/);
+  if (!m) return null;
+  try { const v = JSON.parse(m[0]); return Array.isArray(v) ? v : null; } catch { return null; }
+}
+
+/**
+ * По брифу/теме пишет диалог двух ведущих подкаста для озвучки на 2 голоса.
+ * Возвращает реплики [{speaker:'A'|'B', text}]; деградирует мягко (пустой список + заметка).
+ */
+export async function generatePodcastDialogue(opts: {
+  tenantId: string; brief: string; nameA?: string; nameB?: string; turns?: number; model?: string;
+}): Promise<PodcastDialogueResult> {
+  const brief = (opts.brief || '').trim();
+  if (!brief) return { lines: [], note: 'диалог: пустой бриф — укажите тему подкаста' };
+  const apiKey = await resolveAnthropicKey(opts.tenantId);
+  if (!apiKey) return { lines: [], note: 'ИИ-режиссёр: ключ Claude не задан — диалог не сгенерирован' };
+  const turns = Math.min(Math.max(opts.turns ?? 8, 2), 20);
+  const A = (opts.nameA || 'Ведущий A').trim();
+  const B = (opts.nameB || 'Ведущий B').trim();
+  const system =
+    'Ты — сценарист коротких подкастов на русском для вертикальных видео (Reels/Shorts). ' +
+    `Пиши живой диалог ДВУХ ведущих: A (${A}) и B (${B}). Разговорно, по делу, с цепляющим стартом. ` +
+    'Реплики короткие (1–2 предложения), чтобы хорошо звучали в озвучке. Без ремарок и эмодзи. ' +
+    'Чередуй говорящих, начни с A. ' +
+    `Верни СТРОГО JSON-массив из ~${turns} реплик и ничего больше: ` +
+    '[{"speaker":"A","text":"…"},{"speaker":"B","text":"…"}, …].';
+  try {
+    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user: `Тема подкаста: ${brief}`, maxTokens: 3000 });
+    const arr = extractJsonArray(raw);
+    if (!arr) return { lines: [], note: 'диалог: модель не вернула JSON — попробуйте ещё раз' };
+    const lines: PodcastLine[] = arr
+      .map((x: any) => ({ speaker: x?.speaker === 'B' ? 'B' : 'A', text: String(x?.text || '').trim() } as PodcastLine))
+      .filter((l) => l.text);
+    return lines.length
+      ? { lines, note: `диалог ИИ: ${lines.length} реплик` }
+      : { lines: [], note: 'диалог: пустой ответ' };
+  } catch (e: any) {
+    return { lines: [], note: `диалог: ошибка — ${e?.message || e}` };
   }
 }
 

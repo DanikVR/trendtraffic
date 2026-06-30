@@ -87,11 +87,33 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
   length: 'Claude выберет самый сильный момент по транскрипту и обрежет под длительность.',
 };
 
-// Облачные узлы графа (перетаскиваемые): Google Omni (генерация видео) и Контент-план.
-type CloudId = 'omni' | 'plan';
+// Облачные узлы графа (перетаскиваемые): Google Omni (генерация видео), Контент-план, Подкаст.
+type CloudId = 'omni' | 'plan' | 'podcast';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
   omni: { label: 'Google Omni', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
+  podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
+};
+
+// ── Подкаст-сцена (2 ведущих): спецификация облачного узла «Подкаст» ──
+type PodVoice = 'female' | 'male';
+type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
+type PodLayout = 'overlay' | 'topbar'; // где картинка в сплит-скрине
+interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string }
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number }
+interface PodCutaway { url: string; name: string }
+interface PodcastSpec {
+  hostA: PodHost; hostB: PodHost;
+  source: PodSource; brief: string; dialogue: PodLine[];
+  recordingUrl: string | null; recordingName: string | null;
+  cutaways: PodCutaway[]; layout: PodLayout; segSec: number; platforms: string[];
+}
+const POD_DEFAULT: PodcastSpec = {
+  hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
+  hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B' },
+  source: 'gen', brief: '', dialogue: [],
+  recordingUrl: null, recordingName: null,
+  cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -307,13 +329,19 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [dnaLoading, setDnaLoading] = useState(false);
   const [showDnaPanel, setShowDnaPanel] = useState(false);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
-  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def } });
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
   const [cloudPanel, setCloudPanel] = useState<CloudId | null>(null);
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
+  // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
+  const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
+  const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload'>(null);
+  const [podNote, setPodNote] = useState<string | null>(null);
+  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording'>(null);
+  const podPickInputRef = useRef<HTMLInputElement | null>(null);
   const [srcDuration, setSrcDuration] = useState<number>(0);
   const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
   const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
@@ -356,6 +384,16 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             const segs = Array.isArray(d.flow.graph.omni.segments) ? d.flow.graph.omni.segments : [];
             setOmniSpec({ mode: d.flow.graph.omni.mode || 'whole', segments: segs.length ? segs : [newSeg(0, 1)] });
           }
+          if (d.flow.graph?.podcast && typeof d.flow.graph.podcast === 'object') {
+            const pp = d.flow.graph.podcast;
+            setPod({
+              ...POD_DEFAULT, ...pp,
+              hostA: { ...POD_DEFAULT.hostA, ...(pp.hostA || {}) },
+              hostB: { ...POD_DEFAULT.hostB, ...(pp.hostB || {}) },
+              dialogue: Array.isArray(pp.dialogue) ? pp.dialogue : [],
+              cutaways: Array.isArray(pp.cutaways) ? pp.cutaways : [],
+            });
+          }
           if (mapped.length === 0) setShowPresets(true);
         }
       } catch { /* пусто */ }
@@ -368,7 +406,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -441,6 +479,102 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       let job = d.job;
       setBuildJob(job);
+      for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
+        if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
+      }
+    } catch (e: any) {
+      setBuildJob({ status: 'failed', error: e?.message || 'Ошибка', progress: 0, steps: [] });
+    } finally {
+      setBuilding(false);
+    }
+  };
+
+  // ── Подкаст: мутации спеки, диалог/диаризация, медиа, сборка ──────────────────
+  const podMutate = (fn: (p: PodcastSpec) => PodcastSpec) => { setPod((p) => fn(p)); setDirty(true); };
+
+  /** Сгенерировать диалог двух ведущих по брифу (Claude). */
+  const genDialogue = async () => {
+    if (podBusy) return;
+    if (!pod.brief.trim()) { setPodNote('Опишите тему подкаста для генерации диалога.'); return; }
+    setPodBusy('dialogue'); setPodNote(null);
+    try {
+      const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(),
+        body: JSON.stringify({ brief: pod.brief, nameA: pod.hostA.name, nameB: pod.hostB.name }) });
+      const d = await res.json();
+      if (res.ok && Array.isArray(d.lines) && d.lines.length) { podMutate((p) => ({ ...p, dialogue: d.lines })); setPodNote(d.note || null); }
+      else setPodNote(d?.note || d?.error || 'Не удалось сгенерировать диалог.');
+    } catch { setPodNote('Ошибка сети при генерации диалога.'); }
+    finally { setPodBusy(null); }
+  };
+
+  /** Разобрать загруженную запись на 2 голоса (диаризация). */
+  const runDiarize = async () => {
+    if (podBusy || !pod.recordingUrl) return;
+    setPodBusy('diarize'); setPodNote(null);
+    try {
+      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(),
+        body: JSON.stringify({ recordingUrl: pod.recordingUrl }) });
+      const d = await res.json();
+      if (res.ok && Array.isArray(d.lines) && d.lines.length) {
+        podMutate((p) => ({ ...p, dialogue: d.lines.map((l: any) => ({
+          speaker: l.speaker === 'B' ? 'B' : 'A', text: String(l.text || ''),
+          ...(Number.isFinite(l.start) ? { start: l.start } : {}),
+          ...(Number.isFinite(l.end) ? { end: l.end } : {}),
+        })) }));
+        setPodNote(d.note || null);
+      } else setPodNote(d?.note || d?.error || 'Не удалось разобрать запись.');
+    } catch { setPodNote('Ошибка сети при разборе записи.'); }
+    finally { setPodBusy(null); }
+  };
+
+  const podLineMutate = (i: number, patch: Partial<PodLine>) =>
+    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
+  const podLineAdd = () => podMutate((p) => ({ ...p, dialogue: [...p.dialogue, { speaker: p.dialogue.length % 2 ? 'B' : 'A', text: '' }] }));
+  const podLineDel = (i: number) => podMutate((p) => ({ ...p, dialogue: p.dialogue.filter((_, j) => j !== i) }));
+  const podCutawayDel = (i: number) => podMutate((p) => ({ ...p, cutaways: p.cutaways.filter((_, j) => j !== i) }));
+
+  // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
+  const openPodPick = (target: 'hostA' | 'hostB' | 'cutaway' | 'recording') => { setPodPick(target); loadMedia(); };
+  const applyPodMedia = (target: 'hostA' | 'hostB' | 'cutaway' | 'recording', m: { fileUrl: string; title: string }) => {
+    podMutate((p) => {
+      if (target === 'hostA') return { ...p, hostA: { ...p.hostA, photoUrl: m.fileUrl, photoName: m.title } };
+      if (target === 'hostB') return { ...p, hostB: { ...p.hostB, photoUrl: m.fileUrl, photoName: m.title } };
+      if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title };
+      return { ...p, cutaways: [...p.cutaways, { url: m.fileUrl, name: m.title }] };
+    });
+    setPodPick(null);
+  };
+  const uploadPodFiles = async (files: FileList | File[]) => {
+    const target = podPick; const list = Array.from(files || []).filter(Boolean);
+    if (!target || !list.length) return;
+    const kind = target === 'recording' ? 'audio' : 'reference';
+    setPodBusy('upload'); let last: any = null;
+    try {
+      for (const f of list) {
+        // eslint-disable-next-line no-await-in-loop
+        const res = await fetch(`/api/trends/media/upload?kind=${kind}`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: (() => { const fd = new FormData(); fd.append('file', f); return fd; })() });
+        if (res.ok) { const d = await res.json(); if (d.asset) last = d.asset; }
+      }
+      await loadMedia();
+      if (last) applyPodMedia(target, { fileUrl: last.fileUrl, title: last.originalName || 'файл' });
+    } catch { /* тихо */ }
+    finally { setPodBusy(null); }
+  };
+
+  /** «Собрать подкаст» — сохранить спеку, поставить задачу podcast_compose, поллить прогресс. */
+  const buildPodcast = async () => {
+    if (building) return;
+    setCloudPanel(null);
+    setBuilding(true); setBuildMinimized(false);
+    setBuildJob({ status: 'queued', progress: 0, steps: [] });
+    try {
+      if (dirty) await save();
+      const res = await fetch(`/api/render/podcast/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod }) });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+      let job = d.job; setBuildJob(job);
       for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
         await new Promise((r) => setTimeout(r, 2000));
         const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
@@ -565,7 +699,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   // ── Облачные узлы: позиции, связи-стрелки, перетаскивание ──────────────────
   const cloudPoint = (id: string): { x: number; y: number } | null => {
-    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan') ? cloud[id] : null;
+    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan' || id === 'podcast') ? cloud[id] : null;
     // Точка соединения 🔗 — у верх-правого края узла (лента идёт от неё, не из центра).
     return base ? { x: base.x + 2.6, y: base.y - 3 } : null;
   };
@@ -811,7 +945,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             </button>
           );
         })}
-        {(['omni', 'plan'] as CloudId[]).map((id) => {
+        {(['omni', 'plan', 'podcast'] as CloudId[]).map((id) => {
           const pos = cloud[id]; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
@@ -1068,6 +1202,49 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         </div>
       )}
 
+      {/* Подкаст: выбор медиа (фото ведущих / картинка-вставка / запись) */}
+      {podPick && (
+        <div onClick={() => setPodPick(null)} style={{ position: 'absolute', inset: 0, zIndex: 94, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
+            <input ref={podPickInputRef} type="file" multiple accept={podPick === 'recording' ? 'audio/*,video/*' : 'image/*'} style={{ display: 'none' }}
+              onChange={(e) => { if (e.target.files?.length) uploadPodFiles(e.target.files); e.currentTarget.value = ''; }} />
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'cutaway' ? 'Картинка-вставка' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
+              </span>
+              <button onClick={() => setPodPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <button onClick={() => podPickInputRef.current?.click()} disabled={podBusy === 'upload'}
+              className="w-full mb-3 rounded-xl flex flex-col items-center justify-center gap-1.5 py-5"
+              style={{ background: 'var(--bg-tertiary)', border: '1.5px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: podBusy === 'upload' ? 'wait' : 'pointer' }}>
+              {podBusy === 'upload' ? <Loader2 size={20} className="animate-spin" style={{ color: '#ec4899' }} /> : <Plus size={20} style={{ color: '#ec4899' }} />}
+              <span className="text-[13px] font-600">{podBusy === 'upload' ? 'Загружаю…' : 'Загрузить с устройства'}</span>
+            </button>
+            <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи</div>
+            {(() => {
+              const wantAudio = podPick === 'recording';
+              const items = media.filter((m) => (wantAudio ? (m.kind === 'audio' || m.kind === 'video') : m.kind === 'image'));
+              return items.length === 0 ? (
+                <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пусто. Загрузите файл выше или добавьте в «Галерею».</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {items.map((m) => (
+                    <button key={m.id} onClick={() => applyPodMedia(podPick, { fileUrl: m.fileUrl, title: m.title })} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                      <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
+                          : m.kind === 'audio' ? <Music size={22} style={{ color: '#ec4899' }} />
+                          : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
+                      </div>
+                      <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Выбор исходного видео */}
       {showSource && (
         <div onClick={() => setShowSource(false)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -1203,7 +1380,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
       {cloudPanel && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'omni' ? 600 : 460, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : 600, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
                 <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
@@ -1370,6 +1547,185 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                     </button>
                   </>
                 )}
+              </div>
+            ) : cloudPanel === 'podcast' ? (
+              <div className="space-y-3.5">
+                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  Сцена-подкаст: <b style={{ color: '#ec4899' }}>два ведущих</b> в сплит-скрине, у каждого — своя
+                  голосовая дорожка, между ними показывается картинка. Дорожки можно <b>сгенерировать</b> (диалог + TTS)
+                  или <b>разобрать</b> готовую запись на 2 голоса.
+                </p>
+
+                {/* Ведущие */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {(['hostA', 'hostB'] as const).map((hk) => {
+                    const h = pod[hk]; const label = hk === 'hostA' ? 'A' : 'B';
+                    return (
+                      <div key={hk} className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        <button onClick={() => openPodPick(hk)} title="Фото ведущего"
+                          className="w-full rounded-lg overflow-hidden flex items-center justify-center"
+                          style={{ aspectRatio: '1 / 1', background: '#000', border: `1px solid ${h.photoUrl ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                          {h.photoUrl ? <img src={h.photoUrl} alt="" className="w-full h-full object-cover" />
+                            : <span className="flex flex-col items-center gap-1" style={{ color: 'var(--text-muted)' }}><UserRound size={26} /><span className="text-[10px]">Фото {label}</span></span>}
+                        </button>
+                        <input value={h.name} onChange={(e) => podMutate((p) => ({ ...p, [hk]: { ...p[hk], name: e.target.value } }))}
+                          className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                        <div className="grid grid-cols-2 gap-1">
+                          {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
+                            <button key={v} onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], voice: v } }))}
+                              className="py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1"
+                              style={{ background: h.voice === v ? '#ec4899' : 'var(--bg-secondary)', color: h.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${h.voice === v ? '#ec4899' : 'var(--border-medium)'}` }}>
+                              <Mic size={11} /> {lbl}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Источник дорожек */}
+                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                  {([['gen', 'Сгенерировать диалог'], ['diarize', 'Разобрать запись']] as [PodSource, string][]).map(([s, lbl]) => (
+                    <button key={s} onClick={() => podMutate((p) => ({ ...p, source: s }))}
+                      className="py-2 rounded-lg text-[12px] font-600 transition-all"
+                      style={{ background: pod.source === s ? 'var(--bg-secondary)' : 'transparent', color: pod.source === s ? '#ec4899' : 'var(--text-muted)', boxShadow: pod.source === s ? '0 1px 3px rgba(0,0,0,0.12)' : 'none' }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+
+                {pod.source === 'gen' ? (
+                  <div className="space-y-2">
+                    <textarea value={pod.brief} onChange={(e) => podMutate((p) => ({ ...p, brief: e.target.value }))} rows={2}
+                      placeholder="Тема подкаста: «Спор о том, нужен ли людям ИИ-ассистент в быту»…"
+                      className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+                    <button onClick={genDialogue} disabled={podBusy === 'dialogue'}
+                      className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                      style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                      {podBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать диалог
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {pod.recordingUrl ? (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        <Music size={15} style={{ color: '#ec4899' }} />
+                        <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{pod.recordingName || 'запись'}</span>
+                        <button onClick={() => podMutate((p) => ({ ...p, recordingUrl: null, recordingName: null }))} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => openPodPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                        <Paperclip size={14} /> Загрузить запись подкаста (аудио/видео)
+                      </button>
+                    )}
+                    <button onClick={runDiarize} disabled={podBusy === 'diarize' || !pod.recordingUrl}
+                      className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                      style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                      {podBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} Разобрать на 2 голоса
+                    </button>
+                  </div>
+                )}
+
+                {/* Диалог */}
+                {pod.dialogue.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Реплики ({pod.dialogue.length})</div>
+                    {pod.dialogue.map((l, i) => (
+                      <div key={i} className="flex items-start gap-1.5">
+                        <button onClick={() => podLineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить ведущего"
+                          className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5"
+                          style={{ background: l.speaker === 'A' ? '#ec4899' : '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
+                        <textarea value={l.text} onChange={(e) => podLineMutate(i, { text: e.target.value })} rows={1}
+                          className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+                        <button onClick={() => podLineDel(i)} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-tertiary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                      </div>
+                    ))}
+                    <button onClick={podLineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#ec4899', background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
+                  </div>
+                )}
+
+                {/* Картинки-вставки */}
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Картинки между ведущими ({pod.cutaways.length})</div>
+                  <div className="flex flex-wrap gap-2">
+                    {pod.cutaways.map((c, i) => (
+                      <div key={i} className="relative rounded-lg overflow-hidden" style={{ width: 56, height: 56, border: '1px solid var(--border-medium)' }}>
+                        <img src={c.url} alt="" className="w-full h-full object-cover" />
+                        <button onClick={() => podCutawayDel(i)} className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
+                      </div>
+                    ))}
+                    <button onClick={() => openPodPick('cutaway')} className="rounded-lg flex items-center justify-center" style={{ width: 56, height: 56, background: 'var(--bg-tertiary)', border: '1px dashed var(--border-medium)', color: '#ec4899', cursor: 'pointer' }}><Plus size={18} /></button>
+                  </div>
+                </div>
+
+                {/* Раскладка + длительность сегмента */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Картинка</div>
+                    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                      {([['overlay', 'По центру'], ['topbar', 'Сверху']] as [PodLayout, string][]).map(([lay, lbl]) => (
+                        <button key={lay} onClick={() => podMutate((p) => ({ ...p, layout: lay }))}
+                          className="py-1.5 rounded-lg text-[11px] font-600"
+                          style={{ background: pod.layout === lay ? 'var(--bg-secondary)' : 'transparent', color: pod.layout === lay ? '#ec4899' : 'var(--text-muted)' }}>{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Мин. длина реплики</div>
+                    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                      {([[0, 'Авто'], [4, '4с'], [6, '6с']] as [number, string][]).map(([s, lbl]) => (
+                        <button key={s} onClick={() => podMutate((p) => ({ ...p, segSec: s }))}
+                          className="py-1.5 rounded-lg text-[11px] font-700"
+                          style={{ background: pod.segSec === s ? 'var(--bg-secondary)' : 'transparent', color: pod.segSec === s ? '#ec4899' : 'var(--text-muted)' }}>{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Живое превью сплит-скрина */}
+                <div className="flex justify-center">
+                  <div className="relative overflow-hidden rounded-xl" style={{ width: 124, aspectRatio: '9 / 16', background: '#000', border: '1px solid var(--border-medium)' }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+                      <div style={{ flex: 1, overflow: 'hidden', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
+                        {pod.hostA.photoUrl ? <img src={pod.hostA.photoUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><UserRound size={20} /></div>}
+                      </div>
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        {pod.hostB.photoUrl ? <img src={pod.hostB.photoUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><UserRound size={20} /></div>}
+                      </div>
+                    </div>
+                    {pod.cutaways[0] && (
+                      pod.layout === 'overlay' ? (
+                        <img src={pod.cutaways[0].url} alt="" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: '56%', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: 8, border: '2px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }} />
+                      ) : (
+                        <img src={pod.cutaways[0].url} alt="" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '34%', width: '100%', objectFit: 'cover', borderBottom: '2px solid #fff' }} />
+                      )
+                    )}
+                    <div style={{ position: 'absolute', left: 4, bottom: 4, fontSize: 8, color: '#fff', background: 'rgba(0,0,0,0.5)', padding: '1px 4px', borderRadius: 4 }}>9:16</div>
+                  </div>
+                </div>
+
+                {podNote && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{podNote}</p>}
+
+                <div className="rounded-xl p-3 text-[11px]" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+                  Сплит-скрин собирается на воркере (ffmpeg): без GPU — статичные фото + 2 голоса,
+                  на GPU — говорящие головы (SadTalker). «Разобрать запись» использует pyannote при
+                  наличии HF-ключа (иначе — разбивка по паузам).
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button onClick={() => save()} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Save size={15} /> Сохранить</button>
+                  <button onClick={buildPodcast} disabled={building}
+                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg,#ec4899,#f472b6)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    {building ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} Собрать подкаст
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>

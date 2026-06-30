@@ -51,6 +51,9 @@ cd "${OM_DIR}"
 "${VENV}/bin/pip" install diffusers transformers accelerate
 # Озвучка для аватара (как на CPU-воркере)
 "${VENV}/bin/pip" install piper-tts || echo "(piper-tts не установился — аватар-озвучка может не работать)"
+# Диаризация подкаста на 2 голоса (pyannote — нужен torch, есть здесь). Требует HF-токен
+# и принятые условия gated-моделей pyannote/speaker-diarization-3.1 + pyannote/segmentation-3.0.
+"${VENV}/bin/pip" install "pyannote.audio>=3.1" || echo "(pyannote.audio не установился — /diarize упадёт на разбивку по паузам)"
 
 echo
 echo "== проверка torch видит GPU =="
