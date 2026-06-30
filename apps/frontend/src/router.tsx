@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, useLocation, useRouteError } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import { useIsEnterprise } from './hooks/useIsEnterprise';
 import { FEATURES, HOME_ROUTE_WHEN_NO_VIDEO } from './config/features';
@@ -141,6 +141,17 @@ function RequirePaid() {
   const billingLoaded = useAppStore((s) => s.billingLoaded);
   const token = useAppStore((s) => s.token);
   const { pathname } = useLocation();
+
+  // САМОЛЕЧЕНИЕ ГЕЙТА: если есть токен, но статус подписки ещё не загружен —
+  // запускаем refreshBilling прямо отсюда. Раньше это делал только MainLayout, но он
+  // сам находится за этим гейтом → при свежем входе (email/Google) loader висел вечно
+  // (deadlock: ждём billingLoaded, а обновить его некому). Теперь гейт всегда разрешится.
+  React.useEffect(() => {
+    if (token && !billingLoaded) {
+      void useAppStore.getState().refreshBilling();
+    }
+  }, [token, billingLoaded]);
+
   const allowedWhenUnpaid = pathname === '/billing' || pathname.startsWith('/settings');
   if (isEnterprise || allowedWhenUnpaid) return <Outlet />;
   if (token && !billingLoaded) return <PaidGateLoader />;
@@ -158,6 +169,21 @@ function LayoutSwitcher() {
 
 /** Дружелюбный экран ошибки роутера (вместо dev «Hey developer»). */
 function RouteErrorElement() {
+  // Частая причина — устаревший lazy-чанк после деплоя (хеши сменились, а вкладка старая).
+  // Авто-перезагружаемся один раз (с защитой от петли), чтобы пользователь не видел белый экран.
+  const err = useRouteError() as any;
+  React.useEffect(() => {
+    const msg = String(err?.message || err?.toString?.() || err || '');
+    const isChunk = err?.name === 'ChunkLoadError'
+      || /dynamically imported module|Failed to fetch|module script failed|error loading dynamically|Loading chunk/i.test(msg);
+    if (!isChunk) return;
+    const KEY = 'tt_chunk_reload_at';
+    const last = Number(sessionStorage.getItem(KEY) || 0);
+    if (Date.now() - last > 12000) { // не чаще раза в 12с → без бесконечной петли
+      sessionStorage.setItem(KEY, String(Date.now()));
+      window.location.reload();
+    }
+  }, [err]);
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       <div style={{ fontSize: 18, fontWeight: 700 }}>Что-то пошло не так</div>

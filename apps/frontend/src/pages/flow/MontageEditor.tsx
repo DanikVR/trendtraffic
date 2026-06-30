@@ -717,6 +717,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const setLineAnim = (i: number, anim: PodAnim) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, anim } : l)) }));
 
+  /** Чего не хватает для сборки подкаста (null = можно собирать). */
+  const podBuildHint = (): string | null => {
+    if (!pod.hostA.photoUrl || !pod.hostB.photoUrl) return 'Сделайте кадры обоих ведущих (или выберите фото вручную).';
+    if (pod.source === 'diarize') return pod.recordingUrl ? null : 'Загрузите запись (можно сразу «Собрать» — разберём сами).';
+    return pod.dialogue.some((l) => l.text.trim()) ? null : 'Сгенерируйте или впишите диалог ведущих.';
+  };
+
   /** «Собрать подкаст» — сохранить спеку, поставить задачу podcast_compose, поллить прогресс. */
   const buildPodcast = async () => {
     if (building) return;
@@ -956,6 +963,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         @keyframes meFloatIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
         .me-dot{animation:meDot 1.4s ease-in-out infinite;}
         @keyframes meDot{0%,100%{opacity:.3}50%{opacity:1}}
+        .me-ready{animation:meReady 1.1s ease-in-out infinite;}
+        @keyframes meReady{0%,100%{box-shadow:0 8px 26px rgba(16,185,129,.4);transform:scale(1)}50%{box-shadow:0 10px 40px rgba(16,185,129,.95);transform:scale(1.05)}}
         /* раскрытие — пружинка (быстро, мультяшно) */
         .me-grow{animation:meGrow .26s cubic-bezier(.34,1.7,.5,1);transform-origin:bottom center;}
         @keyframes meGrow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
@@ -1752,6 +1761,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                         <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите лицо рамкой · до 4 · A — розовый, B — фиолетовый</span>
                         <div className="flex-1" />
                         <button onClick={() => openPodPick('group')} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сменить фото</button>
+                        <button onClick={() => podMutate((p) => ({ ...p, groupPhotoUrl: null, groupPhotoName: null, faces: [] }))} className="text-[11px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>удалить</button>
                       </div>
                       <button onClick={applyFaces} disabled={!!podBusy}
                         className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
@@ -1783,7 +1793,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                               </button>
                             ))}
                           </div>
-                          <button onClick={() => openPodPick(hk)} className="w-full text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>выбрать фото вручную</button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button onClick={() => openPodPick(hk)} className="text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>выбрать вручную</button>
+                            {h.photoUrl && <button onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], photoUrl: null, photoName: null } }))} className="text-[10px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>убрать кадр</button>}
+                          </div>
                         </div>
                       );
                     })}
@@ -1900,12 +1913,15 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 <div className="flex items-center gap-2">
                   <button onClick={() => save()} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5"
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Save size={15} /> Сохранить</button>
-                  <button onClick={buildPodcast} disabled={building}
-                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg,#ec4899,#f472b6)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                  <button onClick={buildPodcast} disabled={building || !!podBuildHint()} title={podBuildHint() || ''}
+                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#ec4899,#f472b6)', color: '#fff', border: 'none', cursor: podBuildHint() ? 'not-allowed' : 'pointer' }}>
                     {building ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} Собрать подкаст
                   </button>
                 </div>
+                {podBuildHint() && !building && (
+                  <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>{podBuildHint()}</p>
+                )}
               </div>
             ) : (
               <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
@@ -1974,7 +1990,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
       {/* Плавающая пилюля: рендер в фоне (свернули прогресс) */}
       {buildJob && buildMinimized && (
-        <button onClick={() => setBuildMinimized(false)} className="me-float-in"
+        <button onClick={() => setBuildMinimized(false)} className={`me-float-in${buildJob.status === 'done' ? ' me-ready' : ''}`}
+          title={buildJob.status === 'done' ? 'Ролик готов — открыть' : 'Идёт сборка — открыть'}
           style={{ position: 'absolute', right: 16, bottom: 84, zIndex: 96, display: 'inline-flex', alignItems: 'center', gap: 10,
             background: 'var(--bg-secondary)', border: `1px solid ${buildJob.status === 'failed' ? '#ef4444' : buildJob.status === 'done' ? '#10b981' : 'var(--brand)'}`,
             borderRadius: 999, padding: '8px 14px 8px 10px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.4)' }}>
