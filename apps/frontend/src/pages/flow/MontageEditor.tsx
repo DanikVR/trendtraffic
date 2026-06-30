@@ -340,6 +340,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const [dna, setDna] = useState<TrendDNA | null>(null);
   const [dnaLoading, setDnaLoading] = useState(false);
   const [showDnaPanel, setShowDnaPanel] = useState(false);
+  // Пакетная сборка: выбор нескольких источников → по ролику на каждый (одна цепочка блоков).
+  const [picked, setPicked] = useState<{ url: string; name: string; assetId?: string }[]>([]);
+  const [batchJobs, setBatchJobs] = useState<{ source: string; job: any }[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [showBatch, setShowBatch] = useState(false);
+  const [batchMinimized, setBatchMinimized] = useState(false);
+  const [batchNote, setBatchNote] = useState<string | null>(null);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
   const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
@@ -359,10 +366,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const faceWrapRef = useRef<HTMLDivElement | null>(null);
   const [drawBox, setDrawBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const drawStartRef = useRef<{ x: number; y: number } | null>(null);
-  // AI-ракурсы студии (Gemini): кастомный промт + сгенерированные превью.
+  // AI-ракурсы студии: кастомный промт, своя картинка-вход (с диска), сгенерированные превью.
   const [angleBusy, setAngleBusy] = useState<string | null>(null);
   const [anglePromptText, setAnglePromptText] = useState('');
   const [podAngles, setPodAngles] = useState<{ url: string; preset: string }[]>([]);
+  const [angleSrc, setAngleSrc] = useState<{ url: string; name: string } | null>(null); // своя картинка-вход (иначе групповое фото)
+  const angleInputRef = useRef<HTMLInputElement | null>(null);
+  const [nameEdit, setNameEdit] = useState(false); // инлайн-редактирование имени сценария
   const [srcDuration, setSrcDuration] = useState<number>(0);
   const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
   const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
@@ -428,7 +438,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -490,7 +500,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
   const build = async () => {
-    if (building) return;
+    if (building || batchRunning) return;
     setBuilding(true);
     setBuildMinimized(false);
     setBuildJob({ status: 'queued', progress: 0, steps: [] });
@@ -716,15 +726,28 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   /** AI-ракурс студии (Gemini Nano Banana Pro): перерисовать групповое фото под другим ракурсом. */
   const genAngle = async (preset: string) => {
-    if (!pod.groupPhotoUrl || angleBusy) return;
+    const baseUrl = angleSrc?.url || pod.groupPhotoUrl;
+    if (!baseUrl || angleBusy) return;
     setAngleBusy(preset); setPodNote(null);
     try {
       const res = await fetch('/api/render/podcast/angle', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ imageUrl: pod.groupPhotoUrl, preset, prompt: anglePromptText }) });
+        body: JSON.stringify({ imageUrl: baseUrl, preset, prompt: anglePromptText }) });
       const d = await res.json();
       if (res.ok && d.mediaUrl) setPodAngles((prev) => [{ url: d.mediaUrl, preset }, ...prev]);
       else setPodNote(d?.error || 'Не удалось сгенерировать ракурс.');
     } catch { setPodNote('Ошибка сети при генерации ракурса.'); }
+    finally { setAngleBusy(null); }
+  };
+  /** Загрузить свою картинку-вход для AI-ракурсов (с диска). */
+  const uploadAngleSrc = async (files: FileList | File[]) => {
+    const f = Array.from(files || [])[0];
+    if (!f) return;
+    setAngleBusy('upload'); setPodNote(null);
+    try {
+      const asset = await uploadBlob(f, f.name || 'image.jpg');
+      if (asset) setAngleSrc({ url: asset.fileUrl, name: asset.originalName || 'фото' });
+      else setPodNote('Не удалось загрузить картинку.');
+    } catch { setPodNote('Ошибка загрузки картинки.'); }
     finally { setAngleBusy(null); }
   };
 
@@ -820,6 +843,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   // Пикер исходного видео: проанализированные (с ДНК) + скачанные тренды + видео-референсы.
   const openSourcePicker = async () => {
     setShowSource(true);
+    setPicked([]); setBatchNote(null);
     try {
       const [an, v, r] = await Promise.all([
         fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
@@ -872,6 +896,56 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const clearSource = () => {
     setSourceUrl(null); setSourceName(null); setSourceAssetId(null); setDna(null);
     setDirty(true); setShowSource(false);
+  };
+
+  // ── Пакетная сборка: один сценарий (цепочка блоков) → по ролику на каждый источник ──
+  const togglePick = (s: { url: string; name: string; assetId?: string }) => {
+    setBatchNote(null);
+    setPicked((p) => (p.some((x) => x.url === s.url) ? p.filter((x) => x.url !== s.url) : [...p, s]));
+  };
+  /**
+   * Ставит в очередь по одной задаче рендера на каждый выбранный источник — все
+   * через текущую цепочку блоков (граф flow). Воркер берёт их по очереди
+   * (single-flight): «сначала одно, потом второе…». Поллит прогресс всех задач.
+   */
+  const runBatch = async (items: { url: string; name: string }[]) => {
+    if (batchRunning || building) return;
+    if (nodes.length === 0) { setBatchNote('Сначала добавьте блоки в сценарий — по ним соберётся каждый ролик.'); return; }
+    if (items.length === 0) return;
+    setShowSource(false);
+    setBatchRunning(true); setBatchMinimized(false); setShowBatch(true);
+    const jobs: { source: string; job: any }[] = items.map((s) => ({ source: s.name, job: { status: 'queued', progress: 0, steps: [] } }));
+    setBatchJobs(jobs.map((j) => ({ ...j })));
+    try {
+      if (dirty) await save();
+      // Ставим задачи по порядку — чтобы очередь сохранила «первое, второе, третье».
+      for (let k = 0; k < items.length; k++) {
+        try {
+          const res = await fetch(`/api/render/flow/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({ inputUrl: items[k].url }) });
+          const d = await res.json();
+          jobs[k].job = res.ok && d.job ? d.job : { status: 'failed', error: d?.error || `HTTP ${res.status}`, progress: 0, steps: [] };
+        } catch (e: any) {
+          jobs[k].job = { status: 'failed', error: e?.message || 'Ошибка', progress: 0, steps: [] };
+        }
+        setBatchJobs(jobs.map((j) => ({ ...j })));
+      }
+      // Поллим все незавершённые, пока не дойдут до done/failed (или таймаут поллера).
+      const terminal = (st?: string) => st === 'done' || st === 'failed';
+      for (let i = 0; i < 1200; i++) {
+        if (jobs.every((j) => terminal(j.job?.status))) break;
+        await new Promise((r) => setTimeout(r, 3000));
+        await Promise.all(jobs.map(async (entry) => {
+          if (!entry.job?.id || terminal(entry.job.status)) return;
+          try {
+            const pr = await fetch(`/api/render/${entry.job.id}`, { headers: headers() });
+            if (pr.ok) entry.job = (await pr.json()).job;
+          } catch { /* пропустим тик */ }
+        }));
+        setBatchJobs(jobs.map((j) => ({ ...j })));
+      }
+    } finally {
+      setBatchRunning(false);
+    }
   };
 
   const selected = nodes.find((n) => n.id === selectedId) || null;
@@ -995,7 +1069,20 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       {/* Верхняя панель */}
       <div className="flex items-center gap-2 px-4 py-3 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
         <button onClick={onBack} title="Назад" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
-        <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{name}</span>
+        {nameEdit ? (
+          <input autoFocus value={name}
+            onChange={(e) => { setName(e.target.value); setDirty(true); }}
+            onBlur={() => { setNameEdit(false); save(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setNameEdit(false); save(); } }}
+            className="text-base font-700 px-2 py-1 rounded-lg outline-none"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--brand)', maxWidth: 320 }} />
+        ) : (
+          <button onClick={() => setNameEdit(true)} title="Переименовать сценарий"
+            className="inline-flex items-center gap-1.5 text-base font-700"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+            {name} <Pencil size={14} style={{ color: 'var(--text-muted)' }} />
+          </button>
+        )}
         <div className="flex-1" />
         <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра"
           className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg"
@@ -1041,7 +1128,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         </div>
 
         {/* Плавающая кнопка «Собрать видео» — всегда под рукой (правый нижний угол холста) */}
-        <button onClick={build} disabled={building || nodes.length === 0}
+        <button onClick={build} disabled={building || batchRunning || nodes.length === 0}
           title={nodes.length === 0 ? 'Добавьте процессы в сценарий' : 'Собрать ролик из сценария'}
           className="me-fab"
           style={{ position: 'absolute', right: 18, bottom: 18, zIndex: 45, display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -1438,23 +1525,51 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
               <button onClick={clearSource} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>✕ Убрать источник</button>
             )}
             <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-              <Sparkles size={11} style={{ color: 'var(--brand)', display: 'inline', verticalAlign: '-1px' }} /> — есть анализ: выбор такого видео заполнит блоки сценария по тренду.
+              <Sparkles size={11} style={{ color: 'var(--brand)', display: 'inline', verticalAlign: '-1px' }} /> — есть анализ: одно такое видео заполнит блоки по тренду.
+              Отметьте <b>несколько</b> — соберём по ролику на каждое (одна цепочка блоков).
             </p>
             {sources.length === 0 ? (
               <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Нет видео. Скачайте тренды (вкладка «Тренды») или загрузите видео в «Референс» Галереи.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {sources.map((s, i) => (
-                  <button key={i} onClick={() => selectSource(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `1px solid ${sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                {sources.map((s, i) => {
+                  const isPicked = picked.some((x) => x.url === s.url);
+                  const order = picked.findIndex((x) => x.url === s.url);
+                  return (
+                  <button key={i} onClick={() => togglePick(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${isPicked || sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     {s.assetId && (
                       <span title="Есть анализ (ДНК тренда)" style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
                     )}
-                    <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {isPicked && (
+                      <span title={`В пакете №${order + 1}`} style={{ position: 'absolute', top: 4, left: 4, zIndex: 2, minWidth: 20, height: 20, padding: '0 5px', borderRadius: 999, background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, fontSize: 10, fontWeight: 800, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Check size={11} />{order + 1}</span>
+                    )}
+                    <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPicked ? 0.85 : 1 }}>
                       {s.thumb ? <img src={s.thumb} alt="" className="w-full h-full object-cover" /> : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
                     </div>
                     <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{s.name}</div>
                   </button>
-                ))}
+                  );
+                })}
+              </div>
+            )}
+            {batchNote && <p className="text-[11px] mt-2" style={{ color: '#f59e0b' }}>{batchNote}</p>}
+            {sources.length > 0 && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>Выбрано: {picked.length}</span>
+                {picked.length === 1 && (
+                  <button onClick={() => selectSource(picked[0])} className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
+                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                    <Check size={16} /> Выбрать видео
+                  </button>
+                )}
+                {picked.length >= 2 && (
+                  <button onClick={() => runBatch(picked)} disabled={nodes.length === 0}
+                    title={nodes.length === 0 ? 'Сначала добавьте блоки в сценарий' : `Собрать ${picked.length} роликов`}
+                    className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
+                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: nodes.length === 0 ? 'not-allowed' : 'pointer', opacity: nodes.length === 0 ? 0.5 : 1 }}>
+                    <Film size={16} /> Собрать пакет ({picked.length})
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1787,15 +1902,40 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                         {podBusy === 'apply' ? <Loader2 size={15} className="animate-spin" /> : <Crop size={15} />} Сделать кадры ведущих
                       </button>
 
-                      {/* AI-ракурсы студии (Gemini) — другой вид той же студии для разнообразия */}
+                      {/* AI-ракурсы студии — другой вид той же студии для разнообразия */}
                       <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                         <div className="text-[11px] font-600 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                          <Sparkles size={12} style={{ color: '#ec4899' }} /> AI-ракурсы студии (Gemini) — те же ведущие, другой вид камеры
+                          <Sparkles size={12} style={{ color: '#ec4899' }} /> AI-ракурсы студии — те же ведущие, другой вид камеры
                         </div>
-                        <textarea value={anglePromptText} onChange={(e) => setAnglePromptText(e.target.value)} rows={1}
-                          placeholder="свой промт (необязательно): «чуть дальше, виден весь стол»…"
+
+                        {/* база генерации: общее фото или своя картинка с диска */}
+                        <input ref={angleInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={(e) => { if (e.target.files?.length) uploadAngleSrc(e.target.files); e.currentTarget.value = ''; }} />
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-md overflow-hidden flex-shrink-0" style={{ width: 40, height: 40, background: '#000', border: '1px solid var(--border-medium)' }}>
+                            {(angleSrc?.url || pod.groupPhotoUrl) && <img src={angleSrc?.url || pod.groupPhotoUrl || ''} alt="" className="w-full h-full object-cover" />}
+                          </div>
+                          <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--text-muted)' }}>Вход: {angleSrc ? (angleSrc.name || 'своя картинка') : 'общее фото студии'}</span>
+                          <button onClick={() => angleInputRef.current?.click()} disabled={angleBusy === 'upload'}
+                            className="text-[11px] font-600 px-2 py-1 rounded-lg inline-flex items-center gap-1"
+                            style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                            {angleBusy === 'upload' ? <Loader2 size={11} className="animate-spin" /> : <Paperclip size={11} />} своё фото
+                          </button>
+                          {angleSrc && <button onClick={() => setAngleSrc(null)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сброс</button>}
+                        </div>
+
+                        <textarea value={anglePromptText}
+                          onChange={(e) => { setAnglePromptText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }}
+                          rows={1} placeholder="свой промт (необязательно): «приблизь, в кадре только женщина, мужчина — лишь рука»…"
                           className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', resize: 'vertical' }} />
+                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', resize: 'none', overflow: 'hidden', minHeight: 34 }} />
+                        <button onClick={() => genAngle('custom')} disabled={!!angleBusy || !anglePromptText.trim()}
+                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: anglePromptText.trim() ? 'pointer' : 'not-allowed' }}>
+                          {angleBusy === 'custom' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Применить свой промт
+                        </button>
+
+                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>или быстрые ракурсы:</div>
                         <div className="flex flex-wrap gap-1.5">
                           {([['left', '← Левее'], ['right', 'Правее →'], ['up', '↑ Сверху'], ['down', '↓ Снизу'], ['back', 'Сзади'], ['closeup', 'Крупнее']] as [string, string][]).map(([p, lbl]) => (
                             <button key={p} onClick={() => genAngle(p)} disabled={!!angleBusy}
@@ -2054,6 +2194,79 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           </span>
         </button>
       )}
+
+      {/* Прогресс ПАКЕТНОЙ сборки (N источников → N роликов) */}
+      {showBatch && batchJobs.length > 0 && !batchMinimized && (() => {
+        const done = batchJobs.filter((b) => b.job?.status === 'done').length;
+        const failed = batchJobs.filter((b) => b.job?.status === 'failed').length;
+        const total = batchJobs.length;
+        return (
+        <div onClick={() => (batchRunning ? setBatchMinimized(true) : setShowBatch(false))} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 480, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                {batchRunning ? <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Film size={16} style={{ color: 'var(--brand)' }} />}
+                Пакет: {done}/{total} готово{failed ? ` · ${failed} с ошибкой` : ''}
+              </span>
+              <button onClick={() => (batchRunning ? setBatchMinimized(true) : setShowBatch(false))}
+                title={batchRunning ? 'Свернуть — сборка продолжится в фоне' : 'Закрыть'}
+                className="inline-flex items-center gap-1 text-xs font-600 px-2 py-1 rounded-lg"
+                style={{ background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                {batchRunning ? <><Minus size={14} /> Свернуть</> : <X size={18} />}
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              {batchJobs.map((b, i) => {
+                const st = b.job?.status; const pct = st === 'done' ? 100 : (b.job?.progress || 0);
+                const col = st === 'failed' ? '#ef4444' : st === 'done' ? '#10b981' : 'var(--brand)';
+                return (
+                  <div key={i} className="rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[11px] font-700" style={{ color: 'var(--text-muted)' }}>#{i + 1}</span>
+                      <span className="text-xs font-600 flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{b.source}</span>
+                      <span className="text-[11px] font-700" style={{ color: col }}>
+                        {st === 'done' ? 'Готово ✓' : st === 'failed' ? 'Ошибка' : st === 'queued' ? 'В очереди' : `${pct}%`}
+                      </span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 999, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+                      <div className={st !== 'done' && st !== 'failed' && batchRunning ? 'me-shimmer' : undefined}
+                        style={{ height: '100%', width: `${pct}%`, background: st === 'failed' ? '#ef4444' : st === 'done' ? '#10b981' : undefined, transition: 'width .4s' }} />
+                    </div>
+                    {b.job?.error && <p className="text-[11px] mt-1" style={{ color: '#ef4444' }}>{b.job.error}</p>}
+                    {st === 'done' && b.job?.resultUrl && (
+                      <a href={b.job.resultUrl} download className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-700" style={{ color: 'var(--brand)', textDecoration: 'none' }}>
+                        <Download size={12} /> Скачать
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
+              {batchRunning
+                ? 'Ролики собираются по очереди. Можно свернуть — всё доделается в фоне и появится в Галерее («Референс»).'
+                : 'Готовые ролики добавлены в Галерею → вкладка «Референс».'}
+            </p>
+          </div>
+        </div>
+        );
+      })()}
+
+      {/* Плавающая пилюля: пакетная сборка в фоне */}
+      {showBatch && batchJobs.length > 0 && batchMinimized && (() => {
+        const done = batchJobs.filter((b) => b.job?.status === 'done').length;
+        const total = batchJobs.length;
+        return (
+        <button onClick={() => setBatchMinimized(false)} className={`me-float-in${!batchRunning ? ' me-ready' : ''}`}
+          title={batchRunning ? 'Идёт пакетная сборка — открыть' : 'Пакет готов — открыть'}
+          style={{ position: 'absolute', right: 16, bottom: 140, zIndex: 96, display: 'inline-flex', alignItems: 'center', gap: 10,
+            background: 'var(--bg-secondary)', border: `1px solid ${batchRunning ? 'var(--brand)' : '#10b981'}`,
+            borderRadius: 999, padding: '8px 14px 8px 10px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.4)' }}>
+          {batchRunning ? <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Check size={16} style={{ color: '#10b981' }} />}
+          <span className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>Пакет {done}/{total}</span>
+        </button>
+        );
+      })()}
     </div>
   );
 }
