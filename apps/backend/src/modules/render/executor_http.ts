@@ -34,7 +34,7 @@ function toAbsolute(url: string | null): string | null {
   return base ? base + (url.startsWith('/') ? url : '/' + url) : url;
 }
 
-async function postJson(url: string, body: unknown, timeoutMs = 900_000): Promise<any> {
+async function postJson(url: string, body: unknown, timeoutMs = 1_200_000): Promise<any> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {

@@ -417,10 +417,14 @@ def _pod_concat(segments: list, out_path: str, work: Path) -> Optional[str]:
     with open(lst, "w", encoding="utf-8") as f:
         for s in segments:
             f.write("file '%s'\n" % str(s).replace("'", "'\\''"))
-    cmd = [FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(lst),
-           "-r", "30", "-pix_fmt", "yuv420p",
-           "-c:v", "libx264", "-preset", "veryfast", "-c:a", "aac", out_path]
-    ok, err = _run(cmd, timeout=1800)
+    base = [FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(lst)]
+    # быстрый путь: stream-copy (сегменты с одинаковыми параметрами кодирования)
+    ok, _ = _run(base + ["-c", "copy", out_path], timeout=600)
+    if ok and os.path.exists(out_path):
+        return out_path
+    # фолбэк: переэнкод (если copy не сошёлся по таймингам)
+    ok, err = _run(base + ["-r", "30", "-pix_fmt", "yuv420p",
+                           "-c:v", "libx264", "-preset", "veryfast", "-c:a", "aac", out_path], timeout=1800)
     if not (ok and os.path.exists(out_path)):
         print(f"[worker] pod concat ffmpeg failed: {err[:300]}")
         return None
@@ -455,20 +459,35 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
     except Exception:  # noqa: BLE001
         seg_sec = 0.0
 
+    # Лимиты MVP: синхронный рендер должен уложиться в таймаут — длинные подкасты режем.
+    POD_MAX_SEC = 180   # не диаризуем/не собираем дольше ~3 мин
+    POD_MAX_LINES = 40
+
     # Разбор записи: при source='diarize' и наличии записи берём РЕАЛЬНЫЙ голос —
     # нарезаем дорожку по таймкодам реплик (а не ре-синтез TTS).
     rec_path = None
     if pod.get("source") == "diarize" and pod.get("recordingUrl"):
         rec_path = _download_media(base_url, pod.get("recordingUrl"), work, default_ext=".mp3")
 
+    truncated = ""
     lines = [l for l in (pod.get("dialogue") or [])
              if isinstance(l, dict) and str(l.get("text") or "").strip()]
     # Реплик нет, но это разбор записи → диаризуем сами (одной кнопки «Собрать» достаточно).
     if not lines and rec_path:
-        dlines, _m = _diarize_audio(rec_path, work, None)
+        src = rec_path
+        dur = _media_duration(rec_path)
+        if dur and dur > POD_MAX_SEC:  # длинную запись режем до POD_MAX_SEC, чтобы whisper+сборка успели
+            cut = _cut_audio(rec_path, 0, POD_MAX_SEC, out(".wav"))
+            if cut:
+                src = cut
+                truncated += f"; запись обрезана до {POD_MAX_SEC}с (MVP)"
+        dlines, _m = _diarize_audio(src, work, None)
         lines = [l for l in dlines if str(l.get("text") or "").strip()]
     if not lines:
         return None, "подкаст: нет реплик (разберите запись / сгенерируйте диалог) — passthrough"
+    if len(lines) > POD_MAX_LINES:
+        lines = lines[:POD_MAX_LINES]
+        truncated += f"; обрезано до {POD_MAX_LINES} реплик (MVP)"
 
     has_talking = registry.get("talking_head") is not None
     segments: list = []
@@ -537,7 +556,7 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
                  if has_talking else "статичные фото (нет GPU talking_head)")
     audio_note = f"реальный голос {used_real}/{len(lines)}" if rec_path else "озвучка TTS"
     extra = ("; " + "; ".join(notes)) if notes else ""
-    return final, f"подкаст-сплит-скрин: {len(segments)} сегм., {head_note}, {audio_note}, картинок {used_imgs}{extra}"
+    return final, f"подкаст-сплит-скрин: {len(segments)} сегм., {head_note}, {audio_note}, картинок {used_imgs}{truncated}{extra}"
 
 
 @app.post("/execute")
