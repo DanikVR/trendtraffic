@@ -359,6 +359,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const faceWrapRef = useRef<HTMLDivElement | null>(null);
   const [drawBox, setDrawBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const drawStartRef = useRef<{ x: number; y: number } | null>(null);
+  // AI-ракурсы студии (Gemini): кастомный промт + сгенерированные превью.
+  const [angleBusy, setAngleBusy] = useState<string | null>(null);
+  const [anglePromptText, setAnglePromptText] = useState('');
+  const [podAngles, setPodAngles] = useState<{ url: string; preset: string }[]>([]);
   const [srcDuration, setSrcDuration] = useState<number>(0);
   const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
   const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
@@ -708,6 +712,20 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       setPodNote('Готово: крупные планы ведущих созданы из общего фото.');
     } catch { setPodNote('Не удалось сделать кадры из фото.'); }
     finally { setPodBusy(null); }
+  };
+
+  /** AI-ракурс студии (Gemini Nano Banana Pro): перерисовать групповое фото под другим ракурсом. */
+  const genAngle = async (preset: string) => {
+    if (!pod.groupPhotoUrl || angleBusy) return;
+    setAngleBusy(preset); setPodNote(null);
+    try {
+      const res = await fetch('/api/render/podcast/angle', { method: 'POST', headers: headers(),
+        body: JSON.stringify({ imageUrl: pod.groupPhotoUrl, preset, prompt: anglePromptText }) });
+      const d = await res.json();
+      if (res.ok && d.mediaUrl) setPodAngles((prev) => [{ url: d.mediaUrl, preset }, ...prev]);
+      else setPodNote(d?.error || 'Не удалось сгенерировать ракурс.');
+    } catch { setPodNote('Ошибка сети при генерации ракурса.'); }
+    finally { setAngleBusy(null); }
   };
 
   // ── Картинки к фразам (B-roll): прикрепляем картинку к реплике, выезжает на этой фразе ──
@@ -1768,6 +1786,37 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                         style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: 'pointer' }}>
                         {podBusy === 'apply' ? <Loader2 size={15} className="animate-spin" /> : <Crop size={15} />} Сделать кадры ведущих
                       </button>
+
+                      {/* AI-ракурсы студии (Gemini) — другой вид той же студии для разнообразия */}
+                      <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        <div className="text-[11px] font-600 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                          <Sparkles size={12} style={{ color: '#ec4899' }} /> AI-ракурсы студии (Gemini) — те же ведущие, другой вид камеры
+                        </div>
+                        <textarea value={anglePromptText} onChange={(e) => setAnglePromptText(e.target.value)} rows={1}
+                          placeholder="свой промт (необязательно): «чуть дальше, виден весь стол»…"
+                          className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', resize: 'vertical' }} />
+                        <div className="flex flex-wrap gap-1.5">
+                          {([['left', '← Левее'], ['right', 'Правее →'], ['up', '↑ Сверху'], ['down', '↓ Снизу'], ['back', 'Сзади'], ['closeup', 'Крупнее']] as [string, string][]).map(([p, lbl]) => (
+                            <button key={p} onClick={() => genAngle(p)} disabled={!!angleBusy}
+                              className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5 disabled:opacity-60"
+                              style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                              {angleBusy === p ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {lbl}
+                            </button>
+                          ))}
+                        </div>
+                        {podAngles.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {podAngles.map((a, i) => (
+                              <div key={i} className="relative rounded-lg overflow-hidden" style={{ width: 64, height: 64, border: '1px solid var(--border-medium)' }}>
+                                <img src={a.url} alt="" className="w-full h-full object-cover" />
+                                <button onClick={() => setPodAngles((prev) => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Готовые ракурсы попадают в Галерею → прикрепляй их к фразам кнопкой 🖼.</p>
+                      </div>
                     </>
                   )}
 

@@ -15,10 +15,41 @@ import { JWT_SECRET } from '../../config/secrets.js';
 import { getRenderGpuTarget, getRenderWorkerUrl, getRenderGpuWorkerUrl } from '../../config/systemConfig.js';
 import { getFlow } from '../flows/service.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
+import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
+import { generateImage } from '../quest_flow/image_gen.js';
+import { createAsset } from '../media/assets.js';
 import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
 import { generatePodcastDialogue } from './director.js';
 
 const router = Router();
+
+// ── AI-ракурсы студии (Gemini Nano Banana Pro, image-to-image) ────────────────
+/** Топовая image-модель Gemini (Nano Banana Pro) — макс. качество, сохранение лиц/студии. */
+const PODCAST_ANGLE_MODEL = 'gemini-3-pro-image';
+const ANGLE_PROMPTS: Record<string, string> = {
+  left: 'с камеры, смещённой влево (вид немного слева)',
+  right: 'с камеры, смещённой вправо (вид немного справа)',
+  up: 'с более высокой точки (лёгкий верхний ракурс, камера сверху)',
+  down: 'с более низкой точки (лёгкий нижний ракурс, камера снизу)',
+  back: 'из-за спин ведущих (вид со спины/сбоку, видно студию перед ними)',
+  closeup: 'более крупным планом обоих ведущих',
+  wide: 'общим широким планом всей студии',
+};
+function anglePrompt(preset: string, custom: string): string {
+  const a = ANGLE_PROMPTS[preset] || 'с другого ракурса';
+  return `На фото — студия подкаста и два ведущих. Перерисуй ЭТУ ЖЕ сцену ${a}, как другой ракурс той же съёмки. `
+    + 'Строго сохрани те же лица, причёски, одежду, телосложение, студию, мебель, технику, освещение и цветовую гамму. '
+    + 'Фотореалистично, высокое качество, кинематографично. Верни только изображение.'
+    + (custom ? ` Дополнительно: ${custom}.` : '');
+}
+async function fetchImageBase64(url: string): Promise<{ base64: string; mime: string } | null> {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const mime = r.headers.get('content-type') || 'image/jpeg';
+    return { base64: Buffer.from(await r.arrayBuffer()).toString('base64'), mime };
+  } catch { return null; }
+}
 
 interface AuthedRequest extends Request {
   tenantId?: string;
@@ -104,6 +135,35 @@ router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
     }
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка разбора записи' });
+  }
+});
+
+/** POST /podcast/angle — AI-ракурс студии (Gemini Nano Banana Pro, image-to-image).
+ *  body: { imageUrl, preset?, prompt? } → { mediaUrl, assetId }. */
+router.post('/podcast/angle', async (req: AuthedRequest, res: Response) => {
+  try {
+    const imageUrl = typeof req.body?.imageUrl === 'string' ? req.body.imageUrl : '';
+    const preset = typeof req.body?.preset === 'string' ? req.body.preset : 'left';
+    const custom = typeof req.body?.prompt === 'string' ? req.body.prompt.slice(0, 400) : '';
+    if (!imageUrl) return res.status(400).json({ error: 'Не указано исходное фото (imageUrl).' });
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Подключите свой Gemini-ключ (Настройки → Gemini API) — ракурсы рисует Gemini.' });
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = /^https?:\/\//i.test(imageUrl) ? imageUrl : (base ? base + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl) : imageUrl);
+    const img = await fetchImageBase64(abs);
+    if (!img) return res.status(400).json({ error: 'Не удалось загрузить исходное фото.' });
+    const gen = await generateImage({
+      apiKey, model: PODCAST_ANGLE_MODEL,
+      prompt: anglePrompt(preset, custom),
+      inputImages: [{ base64: img.base64, mime: img.mime }],
+    });
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'reference', mediaType: 'image', originalName: `Ракурс студии (${preset})`,
+      fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
+    });
+    res.json({ mediaUrl: gen.mediaUrl, assetId: asset?.id || null });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка генерации ракурса' });
   }
 });
 
