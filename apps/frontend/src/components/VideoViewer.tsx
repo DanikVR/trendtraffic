@@ -16,7 +16,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   X, Play, Pause, Scissors, RotateCw, Crop, Undo2, RefreshCw, Save, Loader2, Download,
-  SkipBack, SkipForward, Check, Music,
+  SkipBack, SkipForward, Check, Music, Pencil, Plus,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { downloadMedia } from './chat/MediaLightbox';
@@ -68,6 +68,18 @@ function intersect(segs: Seg[], a: number, b: number): Seg[] {
     .filter((s) => s.end - s.start > EPS);
 }
 
+/** Отсортировать и слить пересекающиеся/смежные промежутки в нормальный вид. */
+function normalize(segs: Seg[]): Seg[] {
+  const s = segs.filter((x) => x.end - x.start > EPS).sort((a, b) => a.start - b.start);
+  const out: Seg[] = [];
+  for (const seg of s) {
+    const last = out[out.length - 1];
+    if (last && seg.start <= last.end + EPS) last.end = Math.max(last.end, seg.end);
+    else out.push({ ...seg });
+  }
+  return out;
+}
+
 export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind }: VideoViewerProps) {
   const isAudio = kind === 'audio';
   const token = useAppStore((s) => s.token);
@@ -92,6 +104,11 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   const [err, setErr] = useState<string | null>(null);
   const [savedOk, setSavedOk] = useState(false);
 
+  // Имя файла (редактируемое вверху) + несколько отмеченных промежутков (мульти-обрезка).
+  const [nameEdit, setNameEdit] = useState(title || 'Видео');
+  const [editingName, setEditingName] = useState(false);
+  const [marks, setMarks] = useState<Seg[]>([]);
+
   const canEdit = (editable ?? true) && isLocal(curUrl);
 
   // Сброс при открытии / смене входного URL.
@@ -100,7 +117,8 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     setCurUrl(url); setDuration(0); setTime(0); setPlaying(false);
     setKeep([]); setRotate(0); setSelIn(0); setSelOut(0); setHistory([]);
     setErr(null); setSavedOk(false);
-  }, [open, url]);
+    setNameEdit(title || 'Видео'); setEditingName(false); setMarks([]);
+  }, [open, url, title]);
 
   // Esc + блокировка скролла фона.
   useEffect(() => {
@@ -155,10 +173,30 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     });
   };
 
-  const keepSelection = () => { snapshot(); setKeep((k) => intersect(k, selIn, selOut)); };
-  const cutSelection = () => { snapshot(); setKeep((k) => subtract(k, selIn, selOut)); };
+  // Мульти-обрезка: отметить текущее выделение как ещё один промежуток.
+  const addMark = () => {
+    if (selOut - selIn <= EPS) return;
+    setMarks((m) => normalize([...m, { start: selIn, end: selOut }]));
+  };
+  const removeMark = (i: number) => setMarks((m) => m.filter((_, idx) => idx !== i));
+  const clearMarks = () => setMarks([]);
+  // Набор промежутков для операции: отмеченные (если есть), иначе — текущее выделение.
+  const activeSegs = (): Seg[] => (marks.length ? marks : [{ start: selIn, end: selOut }]);
+
+  const keepSelection = () => {
+    snapshot();
+    const segs = activeSegs();
+    setKeep((k) => normalize(segs.flatMap((s) => intersect(k, s.start, s.end))));
+    setMarks([]);
+  };
+  const cutSelection = () => {
+    snapshot();
+    const segs = activeSegs();
+    setKeep((k) => segs.reduce((acc, s) => subtract(acc, s.start, s.end), k));
+    setMarks([]);
+  };
   const rotateStep = () => { snapshot(); setRotate((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270); };
-  const resetEdits = () => { snapshot(); setKeep([{ start: 0, end: duration }]); setSelIn(0); setSelOut(duration); setRotate(0); };
+  const resetEdits = () => { snapshot(); setKeep([{ start: 0, end: duration }]); setSelIn(0); setSelOut(duration); setRotate(0); setMarks([]); };
 
   const resultDuration = useMemo(() => keep.reduce((a, s) => a + (s.end - s.start), 0), [keep]);
   const isFullKeep = keep.length === 1 && keep[0].start <= EPS && keep[0].end >= duration - EPS;
@@ -193,7 +231,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     if (!hasChanges || saving) return;
     setSaving(true); setErr(null); setSavedOk(false);
     try {
-      const body: any = { inputUrl: curUrl, name: title };
+      const body: any = { inputUrl: curUrl, name: (nameEdit || title || 'Видео').trim() };
       if (!isFullKeep) body.segments = keep.map((s) => ({ start: +s.start.toFixed(3), end: +s.end.toFixed(3) }));
       if (rotate !== 0) body.rotate = rotate;
       const res = await fetch('/api/video-edit', {
@@ -222,21 +260,50 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
 
   return (
     <div className="fixed inset-0 z-[130] flex flex-col" style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(6px)' }}>
-      {/* Шапка */}
-      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0">
+      {/* Шапка: имя файла (редактируемое) + Сохранить/Скачать/Закрыть */}
+      <div className="flex items-center gap-2 sm:gap-3 px-4 py-3 flex-shrink-0">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-700 truncate" style={{ color: '#fff' }}>{title || 'Видео'}</div>
+          {canEdit && editingName ? (
+            <input autoFocus value={nameEdit} onChange={(e) => setNameEdit(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setEditingName(false); }}
+              onBlur={() => setEditingName(false)}
+              className="text-sm font-700 px-2 py-1 rounded-md outline-none w-full"
+              style={{ background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)', maxWidth: 460 }} />
+          ) : (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-sm font-700 truncate" style={{ color: '#fff' }} title={canEdit ? (nameEdit || 'Видео') : (title || 'Видео')}>
+                {canEdit ? (nameEdit || 'Видео') : (title || 'Видео')}
+              </span>
+              {canEdit && (
+                <button type="button" onClick={() => setEditingName(true)} title="Переименовать файл"
+                  className="flex-shrink-0" style={{ color: 'rgba(255,255,255,0.7)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}>
+                  <Pencil size={14} />
+                </button>
+              )}
+            </div>
+          )}
           <div className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
             {canEdit ? (isAudio ? 'Прослушивание и обрезка аудио' : 'Просмотр и обрезка') : 'Просмотр'}
           </div>
         </div>
+        {canEdit && (
+          <>
+            {err && <span className="text-xs hidden sm:inline" style={{ color: '#fca5a5' }}>{err}</span>}
+            {savedOk && !err && <span className="inline-flex items-center gap-1 text-xs" style={{ color: '#86efac' }}><Check size={14} /> Сохранено</span>}
+            <button type="button" onClick={save} disabled={!hasChanges || saving} title="Сохранить результат в Галерею (новый файл)"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: hasChanges ? 'var(--brand)' : 'rgba(255,255,255,0.14)', color: hasChanges ? 'var(--brand-contrast, #fff)' : 'rgba(255,255,255,0.5)' }}>
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
+            </button>
+          </>
+        )}
         <button type="button" onClick={() => downloadMedia(curUrl)} title="Скачать"
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90"
+          className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90 flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.14)', color: '#fff' }}>
           <Download size={18} />
         </button>
         <button type="button" onClick={onClose} title="Закрыть (Esc)"
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90"
+          className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90 flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.14)', color: '#fff' }}>
           <X size={18} />
         </button>
@@ -294,6 +361,11 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             {canEdit && keep.map((s, i) => (
               <div key={i} className="absolute top-0 bottom-0" style={{ left: `${pct(s.start)}%`, width: `${pct(s.end - s.start)}%`, background: 'rgba(34,197,94,0.40)', borderLeft: '1px solid rgba(34,197,94,0.8)', borderRight: '1px solid rgba(34,197,94,0.8)' }} />
             ))}
+            {/* Отмеченные промежутки (красные) — применятся все сразу «Вырезать»/«Оставить» */}
+            {canEdit && marks.map((m, i) => (
+              <div key={`m${i}`} className="absolute top-0 bottom-0" title={`Промежуток ${i + 1} — двойной клик снимет`} onDoubleClick={(e) => { e.stopPropagation(); removeMark(i); }}
+                style={{ left: `${pct(m.start)}%`, width: `${pct(m.end - m.start)}%`, background: 'rgba(239,68,68,0.38)', borderLeft: '2px solid rgba(239,68,68,0.95)', borderRight: '2px solid rgba(239,68,68,0.95)' }} />
+            ))}
             {/* Текущее выделение IN..OUT */}
             {canEdit && (
               <div className="absolute top-0 bottom-0 pointer-events-none" style={{ left: `${pct(selIn)}%`, width: `${pct(selOut - selIn)}%`, background: 'rgba(99,102,241,0.30)', border: '1px solid var(--brand)' }} />
@@ -316,14 +388,22 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
         {/* Инструменты обрезки */}
         {canEdit ? (
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={setInPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Начало здесь (I)">[ Начало</button>
-            <button type="button" onClick={setOutPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Конец здесь (O)">Конец ]</button>
-            <button type="button" onClick={keepSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Оставить только выделенное">
-              <Crop size={15} /> Оставить
+            <button type="button" onClick={setInPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Начало выделения здесь (I)">[ Начало</button>
+            <button type="button" onClick={setOutPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Конец выделения здесь (O)">Конец ]</button>
+            <button type="button" onClick={addMark} className={btn} style={{ background: 'rgba(239,68,68,0.22)', color: '#fca5a5' }} title="Отметить текущий промежуток. Можно несколько — потом «Вырезать»/«Оставить» применит все сразу">
+              <Plus size={15} /> Отметить{marks.length ? ` · ${marks.length}` : ''}
             </button>
-            <button type="button" onClick={cutSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Вырезать выделенный кусок">
-              <Scissors size={15} /> Вырезать
+            <button type="button" onClick={keepSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={marks.length ? `Оставить только отмеченные промежутки (${marks.length})` : 'Оставить только выделенное'}>
+              <Crop size={15} /> Оставить{marks.length ? ` (${marks.length})` : ''}
             </button>
+            <button type="button" onClick={cutSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={marks.length ? `Вырезать все отмеченные промежутки (${marks.length})` : 'Вырезать выделенный кусок'}>
+              <Scissors size={15} /> Вырезать{marks.length ? ` (${marks.length})` : ''}
+            </button>
+            {marks.length > 0 && (
+              <button type="button" onClick={clearMarks} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Снять все отметки">
+                <X size={15} /> Отметки
+              </button>
+            )}
             {!isAudio && (
               <button type="button" onClick={rotateStep} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Повернуть на 90°">
                 <RotateCw size={15} /> Поворот{rotate ? ` ${rotate}°` : ''}
@@ -335,14 +415,11 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             <button type="button" onClick={resetEdits} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Сбросить все правки">
               <RefreshCw size={15} /> Сброс
             </button>
-
-            <div className="ml-auto flex items-center gap-2">
-              {err && <span className="text-xs" style={{ color: '#fca5a5' }}>{err}</span>}
-              {savedOk && !err && <span className="inline-flex items-center gap-1 text-xs" style={{ color: '#86efac' }}><Check size={14} /> Сохранено в Галерею</span>}
-              <button type="button" onClick={save} disabled={!hasChanges || saving} className={btn} style={{ background: hasChanges ? 'var(--brand)' : 'rgba(255,255,255,0.12)', color: hasChanges ? 'var(--brand-contrast, #fff)' : 'rgba(255,255,255,0.5)' }}>
-                {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
-              </button>
-            </div>
+            {marks.length > 0 && (
+              <span className="text-[11px] w-full sm:w-auto sm:ml-auto" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Красным — {marks.length} отмеч. промежут(ок/ка): «Вырезать»/«Оставить» применит все сразу; двойной клик по красному — снять.
+              </span>
+            )}
           </div>
         ) : (
           <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
