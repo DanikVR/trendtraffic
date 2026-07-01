@@ -17,6 +17,7 @@ const __d = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_ROOT = path.resolve(__d, '../../../../uploads');
 const RENDERS_DIR = path.join(UPLOADS_ROOT, 'renders');
 const FFMPEG_BIN: string = process.env.FFMPEG_PATH || (ffmpegStatic as unknown as string) || 'ffmpeg';
+const FFPROBE_BIN: string = (process.env.FFMPEG_PATH && process.env.FFMPEG_PATH.replace(/ffmpeg(\.exe)?$/i, 'ffprobe$1')) || 'ffprobe';
 
 function ffmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -29,11 +30,34 @@ function ffmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
   });
 }
 
+/** Длительность медиа (сек) через ffprobe, 0 при ошибке. */
+function probeDuration(input: string): Promise<number> {
+  return new Promise((resolve) => {
+    const ff = spawn(FFPROBE_BIN, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', input], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = '';
+    ff.stdout.on('data', (d) => { out += d.toString(); });
+    const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } resolve(0); }, 30_000);
+    ff.on('error', () => { clearTimeout(timer); resolve(0); });
+    ff.on('close', () => { clearTimeout(timer); resolve(parseFloat(out.trim()) || 0); });
+  });
+}
+
 /** Собрать сплит-скрин из двух голов (+ опц. запись как аудио, + опц. фоновая музыка). → fileUrl. */
 export async function composeHeads(opts: {
   headA: string; headB: string; audioUrl?: string; musicUrl?: string; musicVolume?: number;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
+
+  // Целевая длина = длина записи (если задана) иначе длиннейшей головы. Жёстко ограничиваем -t,
+  // иначе tpad-клон кадра уводит рендер в бесконечность.
+  const [dA, dB, dAudio] = await Promise.all([
+    probeDuration(opts.headA), probeDuration(opts.headB), opts.audioUrl ? probeDuration(opts.audioUrl) : Promise.resolve(0),
+  ]);
+  let target = opts.audioUrl && dAudio > 0.2 ? dAudio : Math.max(dA, dB);
+  if (!(target > 0.2)) target = Math.max(dA, dB, dAudio, 3);
+  target = Math.min(target, 1800); // потолок 30 мин — защита от патологии
+  const T = target.toFixed(2);
+
   const inputs: string[] = ['-i', opts.headA, '-i', opts.headB];
   let idx = 2;
   let audioIdx = -1; let musicIdx = -1;
@@ -42,8 +66,8 @@ export async function composeHeads(opts: {
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
   const HALF = 540; const H = 1920;
-  // tpad клонирует последний кадр — короткая голова не исчезает, обе видны на всю длину звука.
-  const pad = `scale=${HALF}:${H}:force_original_aspect_ratio=decrease,pad=${HALF}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=3600`;
+  // tpad клонирует последний кадр до target — короткая голова не исчезает, обе видны всю длину.
+  const pad = `scale=${HALF}:${H}:force_original_aspect_ratio=decrease,pad=${HALF}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
   let fc = `[0:v]${pad}[la];[1:v]${pad}[lb];[la][lb]hstack=inputs=2[v];`;
 
   // Речь: исходная запись (правильный тайминг) или микс аудио обеих голов.
@@ -64,8 +88,8 @@ export async function composeHeads(opts: {
   const outPath = path.join(RENDERS_DIR, out);
   await ffmpeg([
     '-y', ...inputs, '-filter_complex', fc,
-    '-map', '[v]', '-map', mapAudio,
-    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-shortest', outPath,
+    '-map', '[v]', '-map', mapAudio, '-t', T,
+    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', outPath,
   ]);
   return `/uploads/renders/${out}`;
 }
