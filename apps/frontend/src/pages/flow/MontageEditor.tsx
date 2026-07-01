@@ -372,6 +372,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sources, setSources] = useState<{ url: string; name: string; thumb?: string; type: string; assetId?: string }[]>([]);
+  const [srcTab, setSrcTab] = useState<'all' | 'analyzed' | 'trend' | 'reference'>('all'); // вкладка-папка пикера источника
+  const [srcQuery, setSrcQuery] = useState('');
   // ДНК тренда (Фаза 2): анализ выбранного источника + панель автозаполнения блоков.
   const [sourceAssetId, setSourceAssetId] = useState<string | null>(null);
   const [dna, setDna] = useState<TrendDNA | null>(null);
@@ -1362,7 +1364,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // Пикер исходного видео: проанализированные (с ДНК) + скачанные тренды + видео-референсы.
   const openSourcePicker = async () => {
     setShowSource(true);
-    setPicked([]); setBatchNote(null);
+    setPicked([]); setBatchNote(null); setSrcTab('all'); setSrcQuery('');
     try {
       const [an, v, r] = await Promise.all([
         fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
@@ -2214,11 +2216,31 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               <Sparkles size={11} style={{ color: 'var(--brand)', display: 'inline', verticalAlign: '-1px' }} /> — есть анализ: одно такое видео заполнит блоки по тренду.
               Отметьте <b>несколько</b> — соберём по ролику на каждое (одна цепочка блоков).
             </p>
-            {sources.length === 0 ? (
-              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Нет видео. Скачайте тренды (вкладка «Тренды») или загрузите видео в «Референс» Галереи.</p>
+            {(() => {
+              const SRC_TABS = ([['all', 'Все'], ['analyzed', 'Из анализа'], ['trend', 'Тренды'], ['reference', 'Референс']] as const)
+                .filter(([k]) => k === 'all' || sources.some((s) => s.type === k));
+              const q = srcQuery.trim().toLowerCase();
+              const shown = sources.filter((s) => (srcTab === 'all' || s.type === srcTab) && (!q || (s.name || '').toLowerCase().includes(q)));
+              return (
+                <>
+                  {SRC_TABS.length > 2 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {SRC_TABS.map(([k, lbl]) => (
+                        <button key={k} onClick={() => setSrcTab(k)} className="text-[11px] font-600 px-2.5 py-1 rounded-lg" style={{ background: srcTab === k ? 'var(--brand)' : 'var(--bg-tertiary)', color: srcTab === k ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: `1px solid ${srcTab === k ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ position: 'relative', marginBottom: 8 }}>
+                    <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input value={srcQuery} onChange={(e) => setSrcQuery(e.target.value)} placeholder="Поиск по названию…"
+                      className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                  </div>
+                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {shown.length}</div>
+                  {shown.length === 0 ? (
+              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Скачайте тренды (вкладка «Тренды») или загрузите видео в «Референс» Галереи.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {sources.map((s, i) => {
+                {shown.map((s, i) => {
                   const isPicked = picked.some((x) => x.url === s.url);
                   const order = picked.findIndex((x) => x.url === s.url);
                   return (
@@ -2238,6 +2260,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 })}
               </div>
             )}
+                </>
+              );
+            })()}
             {batchNote && <p className="text-[11px] mt-2" style={{ color: '#f59e0b' }}>{batchNote}</p>}
             {sources.length > 0 && (
               <div className="mt-3 flex items-center gap-2">
@@ -2530,21 +2555,31 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             </div>
                           )}
 
-                          {/* Диапазон по ленте (для part/inserts) */}
-                          {omniSpec.mode !== 'whole' && (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                                <span>Начало: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}</b></span>
-                                <span>Конец: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.end)}</b></span>
+                          {/* Окно по ленте: Omni Flash — макс 10с (за проход); V2V — свободный диапазон (part/inserts) */}
+                          {(g.engine === 'omni' || omniSpec.mode !== 'whole') && (() => {
+                            const dur = srcDuration > 0 ? srcDuration : 0;
+                            const maxFrac = g.engine === 'omni' && dur > 0 ? Math.min(1, 10 / dur) : 1; // Omni: не длиннее 10с
+                            const winSec = dur > 0 ? (g.end - g.start) * dur : 0;
+                            const over = g.engine === 'omni' && dur > 0 && winSec > 10.05;
+                            const col = g.engine === 'omni' ? '#4285F4' : '#a855f7';
+                            const setStart = (v: number) => { const s = Math.max(0, Math.min(v, g.end - 0.01)); let e = g.end; if (g.engine === 'omni' && e - s > maxFrac) e = Math.min(1, s + maxFrac); updateSeg(g.id, { start: s, end: e }); };
+                            const setEnd = (v: number) => { const e = Math.min(1, Math.max(v, g.start + 0.01)); let s = g.start; if (g.engine === 'omni' && e - s > maxFrac) s = Math.max(0, e - maxFrac); updateSeg(g.id, { start: s, end: e }); };
+                            return (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                                  <span>Окно: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}–{fmtT(g.end)}</b></span>
+                                  {g.engine === 'omni' && <span style={{ color: over ? '#ef4444' : col, fontWeight: 700 }}>{dur > 0 ? `${winSec.toFixed(1)}с из макс 10с` : 'макс 10с'}</span>}
+                                </div>
+                                {/* визуальная полоска-таймлайн с выделенным окном */}
+                                <div style={{ position: 'relative', height: 12, borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
+                                  <div style={{ position: 'absolute', left: `${g.start * 100}%`, width: `${Math.max(1, (g.end - g.start) * 100)}%`, top: 0, bottom: 0, background: over ? '#ef4444' : col, opacity: 0.75 }} />
+                                </div>
+                                <input type="range" min={0} max={1} step={0.005} value={g.start} onChange={(e) => setStart(parseFloat(e.target.value))} className="w-full" style={{ accentColor: col }} />
+                                <input type="range" min={0} max={1} step={0.005} value={g.end} onChange={(e) => setEnd(parseFloat(e.target.value))} className="w-full" style={{ accentColor: col }} />
+                                {g.engine === 'omni' && dur === 0 && <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Выберите исходное видео — тогда окно считается в секундах (Omni Flash делает 10с за проход).</p>}
                               </div>
-                              <input type="range" min={0} max={1} step={0.01} value={g.start}
-                                onChange={(e) => { const v = Math.min(parseFloat(e.target.value), g.end - 0.02); updateSeg(g.id, { start: Math.max(0, v) }); }}
-                                className="w-full" style={{ accentColor: g.engine === 'omni' ? '#4285F4' : '#a855f7' }} />
-                              <input type="range" min={0} max={1} step={0.01} value={g.end}
-                                onChange={(e) => { const v = Math.max(parseFloat(e.target.value), g.start + 0.02); updateSeg(g.id, { end: Math.min(1, v) }); }}
-                                className="w-full" style={{ accentColor: g.engine === 'omni' ? '#4285F4' : '#a855f7' }} />
-                            </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       ))}
 
