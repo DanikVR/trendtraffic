@@ -122,7 +122,12 @@ interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: numb
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
 type PodAvatarProvider = 'heygen' | 'did' | 'gpu';
-interface PodAvatar { provider: PodAvatarProvider; heygenVersion: '3' | '4' | '5' }
+interface PodAvatar { provider: PodAvatarProvider; heygenVersion: '3' | '4' | '5'; emotion?: string }
+// Пресеты подачи/эмоции (топ-кнопки) — маппятся в эмоцию голоса HeyGen на бэке.
+const POD_EMOTIONS: { v: string; label: string }[] = [
+  { v: 'friendly', label: 'Дружелюбно' }, { v: 'confident', label: 'Уверенно' },
+  { v: 'excited', label: 'Восторженно' }, { v: 'calm', label: 'Спокойно' }, { v: 'serious', label: 'Серьёзно' },
+];
 const POD_AVATARS: { v: PodAvatarProvider; label: string; quality: string; cost: string; perMin: number; note: string }[] = [
   { v: 'heygen', label: 'HeyGen', quality: '★★★★★ фотореализм', cost: 'премиум', perMin: 0.6, note: 'Лучшее качество, версии 3/4/5. Нужен ключ HeyGen (Настройки → Генерация).' },
   { v: 'did', label: 'D-ID / Hedra', quality: '★★★★ хорошо', cost: 'дешевле в разы', perMin: 0.12, note: 'Говорящая голова из фото за меньшие деньги. Нужен ключ провайдера.' },
@@ -150,7 +155,7 @@ const POD_DEFAULT: PodcastSpec = {
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
   timeline: false,
-  avatar: { provider: 'heygen', heygenVersion: '4' },
+  avatar: { provider: 'heygen', heygenVersion: '4', emotion: 'friendly' },
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -400,8 +405,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
   const [podNote, setPodNote] = useState<string | null>(null);
-  const [animBusy, setAnimBusy] = useState(false);          // проверка/подготовка аниматора аватаров
+  const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
   const [animNote, setAnimNote] = useState<string | null>(null);
+  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null }[]>([]);
+  const animPollRef = useRef<number | null>(null);
   const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg'>(null);
   const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
   const [loadDlgOpen, setLoadDlgOpen] = useState(false);  // модал «Загрузить диалог» (текст/JSON/из Исследования)
@@ -715,20 +722,45 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   /** Суммарная длительность диалога (сек) — для оценки стоимости анимации. */
   const dialogTotalSec = (): number => pod.dialogue.reduce((s, l) => s + lineDur(l), 0);
-  /** Проверить/подготовить аниматор ведущих (говорящие головы) у выбранного провайдера. */
+  /** Опрос статуса рендеров HeyGen до готовности (или ~5 мин). */
+  const pollAnimate = (ids: string[]) => {
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/render/podcast/animate/status?ids=' + ids.join(','), { headers: headers() });
+        const d = await res.json();
+        if (res.ok && Array.isArray(d.statuses)) {
+          setAnimJobs((prev) => prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url } : j; }));
+          const done = d.statuses.every((s: any) => s.status === 'completed' || s.status === 'failed');
+          if (done) {
+            setAnimBusy(false);
+            setAnimNote(d.statuses.some((s: any) => s.status === 'failed') ? 'Часть голов не отрендерилась — см. статус ниже.' : 'Готово! Говорящие головы ведущих отрендерены. Ниже — превью.');
+            return;
+          }
+        }
+      } catch { /* ретрай */ }
+      animPollRef.current = window.setTimeout(tick, 10000);
+    };
+    tick();
+  };
+  /** Запустить рендер говорящих голов ведущих у выбранного провайдера (HeyGen — реально). */
   const runAnimate = async () => {
     if (animBusy) return;
     const av = pod.avatar || POD_DEFAULT.avatar!;
-    if (!pod.hostA.photoUrl || !pod.hostB.photoUrl) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
-    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
-    setAnimBusy(true); setAnimNote(null);
+    if (av.provider === 'heygen' && (!pod.hostA.photoUrl || !pod.hostB.photoUrl)) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
+    if (av.provider === 'heygen' && !pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
+    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+    setAnimBusy(true); setAnimNote(null); setAnimJobs([]);
     try {
       const res = await fetch('/api/render/podcast/animate', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ provider: av.provider, heygenVersion: av.heygenVersion, seconds: Math.round(dialogTotalSec()) }) });
+        body: JSON.stringify({ provider: av.provider, heygenVersion: av.heygenVersion, emotion: av.emotion, spec: pod }) });
       const d = await res.json();
-      setAnimNote(res.ok ? (d.note || 'Аниматор готов.') : (d?.error || 'Аниматор недоступен.'));
-    } catch { setAnimNote('Ошибка сети при подготовке аниматора.'); }
-    finally { setAnimBusy(false); }
+      if (!res.ok) { setAnimNote(d?.error || 'Аниматор недоступен.'); setAnimBusy(false); return; }
+      if (Array.isArray(d.jobs) && d.jobs.length) {
+        setAnimJobs(d.jobs.map((j: any) => ({ ...j, status: 'processing', url: null })));
+        setAnimNote(d.note || 'Идёт рендер…');
+        pollAnimate(d.jobs.map((j: any) => j.videoId));
+      } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
+    } catch { setAnimNote('Ошибка сети при запуске аниматора.'); setAnimBusy(false); }
   };
 
   const podLineMutate = (i: number, patch: Partial<PodLine>) =>
@@ -917,6 +949,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (tlRafRef.current != null) cancelAnimationFrame(tlRafRef.current);
       for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } }
       if (tlCtxRef.current) { try { tlCtxRef.current.close(); } catch { /* тихо */ } tlCtxRef.current = null; }
+      if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
     };
   }, []);
 
@@ -2754,13 +2787,36 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           ); })}
                         </div>
                       )}
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>.</p>
+                      {/* Подача/эмоция (движение) — топ-пресеты */}
+                      {av.provider !== 'gpu' && (
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Подача/эмоция:</span>
+                          {POD_EMOTIONS.map((e) => { const sel = (av.emotion || 'friendly') === e.v; return (
+                            <button key={e.v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), emotion: e.v } }))}
+                              className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{e.label}</button>
+                          ); })}
+                        </div>
+                      )}
+                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>. HeyGen рендерит голову + плечи/жесты и мимику по эмоции.</p>
                       <button onClick={runAnimate} disabled={animBusy}
                         className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                         style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} Анимировать ведущих
+                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? 'Рендер идёт…' : 'Анимировать ведущих'}
                       </button>
                       {animNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{animNote}</p>}
+                      {animJobs.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2">
+                          {animJobs.map((j) => (
+                            <div key={j.videoId} className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                              <div style={{ aspectRatio: '9 / 16', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                {j.url ? <video src={j.url} controls muted className="w-full h-full object-cover" />
+                                  : <div className="flex flex-col items-center gap-1"><Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} /><span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{j.status === 'failed' ? 'ошибка' : 'рендер…'}</span></div>}
+                              </div>
+                              <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

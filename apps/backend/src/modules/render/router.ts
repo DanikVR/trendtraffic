@@ -21,6 +21,7 @@ import { createAsset } from '../media/assets.js';
 import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
 import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
+import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 
 const router = Router();
 
@@ -59,25 +60,10 @@ async function fetchImageBase64(url: string): Promise<{ base64: string; mime: st
   } catch { return null; }
 }
 
-/** Живая проверка ключа HeyGen (быстрая) + остаток кредитов, для аниматора аватаров. */
-async function checkHeyGen(apiKey: string): Promise<{ ok: boolean; quota?: number | null; error?: string }> {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 12_000);
-    try {
-      const r = await fetch('https://api.heygen.com/v1/user/remaining_quota', { headers: { 'x-api-key': apiKey, accept: 'application/json' }, signal: ctrl.signal });
-      if (r.ok) {
-        const d: any = await r.json().catch(() => ({}));
-        const raw = d?.data?.remaining_quota ?? d?.remaining_quota ?? null;
-        // HeyGen отдаёт квоту в «credits*60» на части тарифов — показываем как есть.
-        return { ok: true, quota: typeof raw === 'number' ? raw : null };
-      }
-      const v = await fetch('https://api.heygen.com/v2/voices', { headers: { 'x-api-key': apiKey }, signal: ctrl.signal });
-      if (v.ok) return { ok: true, quota: null };
-      return { ok: false, error: `HTTP ${r.status}` };
-    } finally { clearTimeout(t); }
-  } catch (e: any) { return { ok: false, error: e?.name === 'AbortError' ? 'таймаут' : (e?.message || 'сеть') }; }
-}
+/** Пресеты подачи/эмоции из UI → эмоция голоса HeyGen (для голосов с emotion_support). */
+const HEYGEN_EMOTION_MAP: Record<string, string> = {
+  friendly: 'Friendly', confident: 'Broadcaster', excited: 'Excited', calm: 'Soothing', serious: 'Serious',
+};
 
 interface AuthedRequest extends Request {
   tenantId?: string;
@@ -218,36 +204,71 @@ router.post('/podcast/angle', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /podcast/animate — проверить/подготовить аниматор ведущих (говорящие головы).
- *  body: { provider: 'heygen'|'did'|'gpu', heygenVersion?, seconds? } → { note } | { error }.
- *  Валидирует выбранного провайдера вживую (ключ/воркер) и оценивает стоимость. Сам рендер
- *  голов — длинная фоновая генерация (следующий шаг), сюда не входит из-за таймаутов прокси. */
+/** POST /podcast/animate — ЗАПУСТИТЬ рендер говорящих голов ведущих у выбранного провайдера.
+ *  body: { provider, heygenVersion?, emotion?, spec:{hostA,hostB,dialogue} }.
+ *  HeyGen: грузим фото каждого ведущего → talking_photo → video/generate (текст его реплик,
+ *  голос по полу, эмоция-пресет). Возвращаем video_id по каждому ведущему — фронт опрашивает
+ *  /podcast/animate/status. Сабмит быстрый (укладывается в таймаут), сам рендер идёт у HeyGen. */
 router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
   try {
     const provider = ['heygen', 'did', 'gpu'].includes(req.body?.provider) ? req.body.provider : 'heygen';
-    const seconds = Number.isFinite(Number(req.body?.seconds)) ? Number(req.body.seconds) : 0;
-    const mins = Math.max(0.1, seconds / 60);
-    const minsR = Math.round(mins * 10) / 10;
+    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
+    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
+    const seconds = dialogue.reduce((s, l) => {
+      const st = Number(l?.start); const en = Number(l?.end);
+      return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, String(l?.text || '').length * 0.06)));
+    }, 0);
+    const minsR = Math.round(Math.max(0.1, seconds / 60) * 10) / 10;
 
     if (provider === 'gpu') {
       const gpu = getRenderGpuWorkerUrl();
       if (!gpu) return res.status(400).json({ error: 'GPU-воркер (SadTalker) не подключён. Подключите домашний RTX/облачный GPU в Настройки → Генерация → Рендер — тогда анимация будет без оплаты за минуту.' });
-      return res.json({ note: `GPU-воркер подключён — анимация говорящих голов (SadTalker) без оплаты за минуту (${minsR} мин). Рендер голов пойдёт фоновой генерацией (следующий шаг).` });
+      return res.json({ note: `GPU-воркер подключён — анимация (SadTalker) без оплаты за минуту (${minsR} мин). Рендер голов на GPU подключу следующим шагом.` });
     }
     if (provider === 'did') {
-      return res.json({ note: 'D-ID / Hedra: как только добавите ключ провайдера, подключу его этим же аниматором (дешевле HeyGen). Пока доступны HeyGen (лучшее качество) и наш GPU (бесплатно).' });
+      return res.json({ note: 'D-ID / Hedra: сейчас НЕ подключены (ключей нет). Получите ключ D-ID (studio.d-id.com) или Hedra и добавьте в Настройки → Генерация — тогда включу их этим же аниматором. Пока рекомендую HeyGen.' });
     }
     // HeyGen — основной провайдер.
     const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
     if (!key) return res.status(400).json({ error: 'Добавьте ключ HeyGen в Настройки → Генерация (раздел «Платные», HeyGen). Получить ключ: app.heygen.com/settings/api.' });
-    const chk = await checkHeyGen(key);
-    if (!chk.ok) return res.status(400).json({ error: `Ключ HeyGen не прошёл проверку (${chk.error}). Проверьте ключ и остаток кредитов на app.heygen.com.` });
-    const ver = ['3', '4', '5'].includes(req.body?.heygenVersion) ? req.body.heygenVersion : '4';
-    const est = (mins * 0.6).toFixed(2);
-    const quota = chk.quota != null ? `, остаток кредитов HeyGen: ${chk.quota}` : '';
-    return res.json({ note: `HeyGen v${ver} подключён и проверен${quota}. Аниматор готов: ~$${est} за ролик (${minsR} мин озвучки). Рендер двух говорящих голов и сборка сплит-скрина пойдут фоновой генерацией — запускаю следующим шагом.` });
+    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
+    if (!hostA.photoUrl || !hostB.photoUrl) return res.status(400).json({ error: 'Нужны фото обоих ведущих (студия лиц / ракурсы).' });
+    if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
+
+    const emotion = HEYGEN_EMOTION_MAP[String(req.body?.emotion || '')] || undefined;
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
+    const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
+      .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ').slice(0, 1500);
+
+    const jobs: any[] = [];
+    for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
+      const text = textFor(spk) || `Реплики ведущего ${spk}.`;
+      const voiceId = await pickVoice(key, host.voice === 'male' ? 'male' : 'female', !!emotion);
+      if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
+      const tpId = await uploadTalkingPhoto(key, abs(host.photoUrl));
+      const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: tpId, voiceId, text, emotion });
+      jobs.push({ host: spk, name: host.name || `Ведущий ${spk}`, videoId });
+    }
+    return res.json({ jobs, note: `HeyGen: запущен рендер 2 говорящих голов (~1–3 мин). Опрашиваю статус…` });
   } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка аниматора' });
+    res.status(400).json({ error: `HeyGen: ${err?.message || 'ошибка запуска рендера'}` });
+  }
+});
+
+/** GET /podcast/animate/status?ids=v1,v2 — статусы рендеров HeyGen (готовые отдаём ссылкой). */
+router.get('/podcast/animate/status', async (req: AuthedRequest, res: Response) => {
+  try {
+    const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
+    if (!key) return res.status(400).json({ error: 'Ключ HeyGen не найден.' });
+    const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4);
+    const statuses = await Promise.all(ids.map(async (id) => {
+      const st = await heygenVideoStatus(key, id);
+      return { id, status: st.status, url: st.url || null, error: st.error || null };
+    }));
+    res.json({ statuses });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка статуса аниматора' });
   }
 });
 
