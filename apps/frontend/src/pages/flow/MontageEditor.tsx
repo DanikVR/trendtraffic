@@ -167,23 +167,24 @@ const POD_DEFAULT: PodcastSpec = {
 // engine: 'omni' — сгенерировать новый клип (Veo 3.1, 4/6/8с, текст/кадр→видео);
 //         'v2v'  — ре-стайл реального фрагмента (Runway Gen-4 / FAL-Kling).
 type OmniEngine = 'omni' | 'v2v';
-type OmniMode = 'whole' | 'part' | 'inserts';
 type V2VProvider = 'runway' | 'fal';
+// Окно на ленте исходника. Длина = ширина окна (Omni Flash преобразует 10с за проход).
+// Левый край окна = первый кадр, правый край = последний кадр для kadr→видео.
 interface OmniSeg {
   id: string;
-  start: number;          // доля таймлайна 0..1
-  end: number;            // доля таймлайна 0..1
+  start: number;          // доля таймлайна 0..1 (левый край / первый кадр)
+  end: number;            // доля таймлайна 0..1 (правый край / последний кадр)
   engine: OmniEngine;
   prompt: string;         // «как преобразовать»
-  lenSec: 4 | 6 | 8;      // длина генерации (engine=omni)
-  seedFrame: boolean;     // omni: взять кадр из start как первый кадр
+  seedFrame: boolean;     // omni: брать кадры окна как первый/последний кадр
   provider: V2VProvider;  // engine=v2v: чем ре-стайлить
 }
-interface OmniSpec { mode: OmniMode; segments: OmniSeg[]; }
+interface OmniSpec { segments: OmniSeg[]; }
 let omniSeq = 0;
+const OMNI_MAX_SEC = 10;  // Omni Flash преобразует 10с за один проход
 const newSeg = (start: number, end: number): OmniSeg =>
-  ({ id: `seg${++omniSeq}`, start, end, engine: 'omni', prompt: '', lenSec: 8, seedFrame: true, provider: 'runway' });
-const OMNI_DEFAULT: OmniSpec = { mode: 'whole', segments: [newSeg(0, 1)] };
+  ({ id: `seg${++omniSeq}`, start, end, engine: 'omni', prompt: '', seedFrame: true, provider: 'runway' });
+const OMNI_DEFAULT: OmniSpec = { segments: [newSeg(0, 0.2)] };
 const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
 interface Preset { name: string; kinds: MKind[]; }
@@ -411,6 +412,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // Omni Flash: генерация/правка видео по каждому сегменту (segId → состояние).
   const [omniGen, setOmniGen] = useState<Record<string, { busy?: boolean; note?: string | null; url?: string | null; interactionId?: string | null; edit?: string; sbBusy?: boolean; frames?: string[]; seed?: string | null }>>({});
   const omniPollRef = useRef<Record<string, number>>({});
+  // Omni-лента: перетаскивание окна (тело=сдвиг, края=длина) + живой предпросмотр исходника.
+  const stripRef = useRef<HTMLDivElement | null>(null);
+  const srcVideoRef = useRef<HTMLVideoElement | null>(null);
+  const omniDragRef = useRef<null | { id: string; handle: 'move' | 'start' | 'end'; s0: number; e0: number; x0: number }>(null);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
@@ -479,8 +484,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
           if (Array.isArray(d.flow.graph?.cloudEdges)) setCloudEdges(d.flow.graph.cloudEdges);
           if (d.flow.graph?.omni && typeof d.flow.graph.omni === 'object') {
-            const segs = Array.isArray(d.flow.graph.omni.segments) ? d.flow.graph.omni.segments : [];
-            setOmniSpec({ mode: d.flow.graph.omni.mode || 'whole', segments: segs.length ? segs : [newSeg(0, 1)] });
+            const raw = Array.isArray(d.flow.graph.omni.segments) ? d.flow.graph.omni.segments : [];
+            // Нормализуем старые сохранённые сегменты (могли нести legacy lenSec/mode или битые доли).
+            const clamp01 = (v: unknown, fb: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : fb);
+            const norm: OmniSeg[] = raw.map((x: any) => {
+              const st = clamp01(x?.start, 0);
+              const en = Math.max(st + 0.01, clamp01(x?.end, Math.min(1, st + 0.2)));
+              return {
+                id: typeof x?.id === 'string' ? x.id : `seg${++omniSeq}`,
+                start: st, end: en,
+                engine: x?.engine === 'v2v' ? 'v2v' : 'omni',
+                prompt: typeof x?.prompt === 'string' ? x.prompt : '',
+                seedFrame: x?.seedFrame !== false,
+                provider: x?.provider === 'fal' ? 'fal' : 'runway',
+              };
+            });
+            setOmniSpec({ segments: norm.length ? norm : [newSeg(0, 0.2)] });
           }
           if (d.flow.graph?.podcast && typeof d.flow.graph.podcast === 'object') {
             const pp = d.flow.graph.podcast;
@@ -632,22 +651,79 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       pollOmni(g.id, d.jobId);
     } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при правке.' }); }
   };
-  const setOmniMode = (mode: OmniMode) => omniMutate((s) => {
-    if (mode === 'whole') return { mode, segments: [{ ...(s.segments[0] || newSeg(0, 1)), start: 0, end: 1 }] };
-    if (mode === 'part') return { mode, segments: [s.segments[0] ? { ...s.segments[0] } : newSeg(0, 0.34)] };
-    return { mode, segments: s.segments.length ? s.segments.slice(0, 3) : [newSeg(0, 0.25)] }; // inserts
-  });
   const updateSeg = (id: string, patch: Partial<OmniSeg>) =>
     omniMutate((s) => ({ ...s, segments: s.segments.map((g) => g.id === id ? { ...g, ...patch } : g) }));
-  const addInsert = () => omniMutate((s) => {
-    if (s.segments.length >= 3) return s;
-    const last = s.segments[s.segments.length - 1];
-    const start = last ? Math.min(0.9, last.end + 0.05) : 0;
-    return { ...s, segments: [...s.segments, newSeg(start, Math.min(1, start + 0.2))] };
+  const addSegment = () => omniMutate((s) => {
+    if (s.segments.length >= 6) return s;
+    const maxEnd = s.segments.reduce((m, x) => Math.max(m, x.end), 0); // правый край самого правого окна
+    const gap = s.segments.length ? 0.01 : 0;
+    const free = 1 - (maxEnd + gap);                                    // свободный хвост справа
+    const minW = srcDuration > 0 ? Math.min(0.5, srcDuration) / srcDuration : 0.03;
+    if (free < minW) return s;                                          // места нет — окно не добавляем
+    const w = Math.min(free, srcDuration > 0 ? Math.min(0.2, OMNI_MAX_SEC / srcDuration) : 0.2);
+    const start = s.segments.length ? maxEnd + gap : 0;
+    return { ...s, segments: [...s.segments, newSeg(start, Math.min(1, start + w))] };
   });
-  const removeSeg = (id: string) => omniMutate((s) => ({ ...s, segments: s.segments.filter((g) => g.id !== id) }));
+  const removeSeg = (id: string) => omniMutate((s) => (s.segments.length <= 1 ? s : { ...s, segments: s.segments.filter((g) => g.id !== id) }));
   const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
-  const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + g.lenSec, 0);
+  const winSecOf = (g: OmniSeg) => srcDuration > 0 ? (g.end - g.start) * srcDuration : 0;
+  const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + Math.min(OMNI_MAX_SEC, winSecOf(g)), 0);
+
+  // ── Интерактивная лента Omni: тянем окно (тело=сдвиг, края=длина), макс 10с у Omni, живой seek ──
+  const omniMaxFrac = () => srcDuration > 0 ? Math.min(1, OMNI_MAX_SEC / srcDuration) : 1;
+  const omniMinFrac = () => srcDuration > 0 ? Math.min(0.5, srcDuration) / srcDuration : 0.03;
+  const seekSrc = (frac: number) => {
+    const v = srcVideoRef.current; if (!v || !srcDuration) return;
+    try { v.pause(); v.currentTime = Math.max(0, Math.min(srcDuration - 0.03, frac * srcDuration)); } catch { /* seek не готов */ }
+  };
+  const fracFromClientX = (clientX: number) => {
+    const el = stripRef.current; if (!el) return 0;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 ? Math.max(0, Math.min(1, (clientX - r.left) / r.width)) : 0;
+  };
+  const omniDragStart = (e: React.PointerEvent, g: OmniSeg, handle: 'move' | 'start' | 'end') => {
+    e.preventDefault(); e.stopPropagation();
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* нет capture */ }
+    omniDragRef.current = { id: g.id, handle, s0: g.start, e0: g.end, x0: e.clientX };
+    seekSrc(handle === 'end' ? g.end : g.start);
+  };
+  const omniDragMove = (e: React.PointerEvent) => {
+    const d = omniDragRef.current; if (!d) return;
+    e.stopPropagation();   // не даём событию всплыть с ручки на тело (двойной обработчик)
+    const seg = omniSpec.segments.find((x) => x.id === d.id); if (!seg) return;
+    const isOmni = seg.engine === 'omni';
+    const maxF = isOmni ? omniMaxFrac() : 1;
+    const minF = omniMinFrac();
+    const others = omniSpec.segments.filter((x) => x.id !== d.id);
+    const prevEnd = others.filter((x) => x.end <= d.s0 + 1e-4).reduce((m, x) => Math.max(m, x.end), 0);
+    const nextStart = others.filter((x) => x.start >= d.e0 - 1e-4).reduce((m, x) => Math.min(m, x.start), 1);
+    const cur = fracFromClientX(e.clientX);
+    if (d.handle === 'move') {
+      const w = d.e0 - d.s0;
+      let s = d.s0 + (cur - fracFromClientX(d.x0));
+      s = Math.max(prevEnd, Math.min(s, Math.min(1, nextStart) - w));
+      updateSeg(d.id, { start: s, end: s + w });
+      seekSrc(s);
+    } else if (d.handle === 'start') {
+      let s = Math.max(prevEnd, Math.min(cur, d.e0 - minF));
+      if (isOmni && d.e0 - s > maxF) s = d.e0 - maxF;
+      s = Math.max(0, s);
+      updateSeg(d.id, { start: s, end: d.e0 });
+      seekSrc(s);
+    } else {
+      let en = Math.min(nextStart, Math.max(cur, d.s0 + minF));
+      if (isOmni && en - d.s0 > maxF) en = d.s0 + maxF;
+      en = Math.min(1, en);
+      updateSeg(d.id, { start: d.s0, end: en });
+      seekSrc(en);
+    }
+  };
+  const omniDragEnd = (e: React.PointerEvent) => {
+    if (!omniDragRef.current) return;
+    e.stopPropagation();
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    omniDragRef.current = null;
+  };
 
   // ── Длина: визуальный выбор отрезка на ленте → пишет диапазон m:ss–m:ss в текст узла ──
   const toClock = (sec: number) => { const m = Math.floor(sec / 60), s = Math.round(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; };
@@ -2387,7 +2463,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
       {cloudPanel && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : cloudPanel === 'editor' ? 680 : 600, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : 600, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
                 <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
@@ -2411,40 +2487,49 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 ) : (
                   <>
                     {/* Превью исходника */}
-                    <video src={sourceUrl} controls preload="metadata"
+                    <video ref={srcVideoRef} src={sourceUrl} controls preload="metadata"
                       onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
                       style={{ width: '100%', maxHeight: 190, borderRadius: 10, background: '#000' }} />
 
-                    {/* Режим выбора */}
-                    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                      {([['whole', 'Всё видео'], ['part', 'Часть'], ['inserts', '2–3 вставки']] as [OmniMode, string][]).map(([m, lbl]) => (
-                        <button key={m} onClick={() => setOmniMode(m)}
-                          className="py-2 rounded-lg text-[12px] font-600 transition-all"
-                          style={{ background: omniSpec.mode === m ? 'var(--bg-secondary)' : 'transparent', color: omniSpec.mode === m ? 'var(--brand)' : 'var(--text-muted)', boxShadow: omniSpec.mode === m ? '0 1px 3px rgba(0,0,0,0.12)' : 'none' }}>
-                          {lbl}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Лента-таймлайн: визуализация выбранных кусков */}
+                    {/* Интерактивная лента: перетаскивай окно (тело=сдвиг, края=длина). Omni — макс 10с. Живой предпросмотр. */}
                     <div>
-                      <div className="relative w-full" style={{ height: 38, borderRadius: 8, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
-                        {/* засечки */}
+                      <div ref={stripRef} className="relative w-full" style={{ height: 46, borderRadius: 10, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden', touchAction: 'none', userSelect: 'none' }}>
                         {[0.25, 0.5, 0.75].map((t) => (
                           <div key={t} style={{ position: 'absolute', left: `${t * 100}%`, top: 0, bottom: 0, width: 1, background: 'var(--border-medium)' }} />
                         ))}
-                        {omniSpec.segments.map((g, i) => (
-                          <div key={g.id} title={g.engine === 'omni' ? 'Omni-генерация' : 'V2V ре-стайл'}
-                            style={{ position: 'absolute', top: 3, bottom: 3, left: `${g.start * 100}%`, width: `${Math.max(0.02, g.end - g.start) * 100}%`,
-                              background: g.engine === 'omni' ? 'rgba(66,133,244,0.85)' : 'rgba(168,85,247,0.85)', borderRadius: 5,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, overflow: 'hidden' }}>
-                            {i + 1}
-                          </div>
-                        ))}
+                        {omniSpec.segments.map((g, i) => {
+                          const col = g.engine === 'omni' ? '#4285F4' : '#a855f7';
+                          const over = g.engine === 'omni' && winSecOf(g) > OMNI_MAX_SEC + 0.05;
+                          return (
+                            <div key={g.id}
+                              onPointerDown={(e) => omniDragStart(e, g, 'move')} onPointerMove={omniDragMove} onPointerUp={omniDragEnd} onPointerCancel={omniDragEnd}
+                              title="Перетащи — сдвиг · за края — длина"
+                              style={{ position: 'absolute', top: 4, bottom: 4, left: `${g.start * 100}%`, width: `${Math.max(1.5, (g.end - g.start) * 100)}%`,
+                                background: over ? 'rgba(239,68,68,0.92)' : `${col}e6`, borderRadius: 7, cursor: 'grab', touchAction: 'none',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800, boxShadow: '0 1px 5px rgba(0,0,0,0.28)' }}>
+                              <div onPointerDown={(e) => omniDragStart(e, g, 'start')} onPointerMove={omniDragMove} onPointerUp={omniDragEnd} onPointerCancel={omniDragEnd}
+                                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 13, cursor: 'ew-resize', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 3, height: '55%', background: '#fff', borderRadius: 2, opacity: 0.9 }} />
+                              </div>
+                              <span style={{ pointerEvents: 'none' }}>{i + 1}</span>
+                              <div onPointerDown={(e) => omniDragStart(e, g, 'end')} onPointerMove={omniDragMove} onPointerUp={omniDragEnd} onPointerCancel={omniDragEnd}
+                                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 13, cursor: 'ew-resize', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 3, height: '55%', background: '#fff', borderRadius: 2, opacity: 0.9 }} />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                       <div className="flex justify-between mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                        <span>0с</span><span>{srcDuration > 0 ? `${srcDuration.toFixed(0)}с` : 'длительность'}</span>
+                        <span>0с</span>
+                        <span style={{ opacity: 0.8 }}>тяни окно · края = длина · Omni макс 10с</span>
+                        <span>{srcDuration > 0 ? `${srcDuration.toFixed(0)}с` : '—'}</span>
                       </div>
+                      <button onClick={addSegment} disabled={omniSpec.segments.length >= 6}
+                        className="w-full mt-2 py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                        <Plus size={14} /> Добавить окно ({omniSpec.segments.length})
+                      </button>
                     </div>
 
                     {/* Карточки кусков */}
@@ -2454,10 +2539,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           <div className="flex items-center justify-between">
                             <span className="text-[12px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
                               <span style={{ width: 16, height: 16, borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', background: g.engine === 'omni' ? '#4285F4' : '#a855f7' }}>{i + 1}</span>
-                              {omniSpec.mode === 'inserts' ? `Вставка ${i + 1}` : omniSpec.mode === 'whole' ? 'Всё видео' : 'Фрагмент'}
+                              Окно {i + 1}
                             </span>
-                            {omniSpec.mode === 'inserts' && omniSpec.segments.length > 1 && (
+                            {omniSpec.segments.length > 1 && (
                               <button onClick={() => removeSeg(g.id)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><Trash2 size={13} /></button>
+                            )}
+                          </div>
+
+                          {/* Окно на ленте (тянется на полоске сверху) */}
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span style={{ color: 'var(--text-muted)' }}>Окно: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}–{fmtT(g.end)}</b></span>
+                            {g.engine === 'omni' && (
+                              <span style={{ color: winSecOf(g) > OMNI_MAX_SEC + 0.05 ? '#ef4444' : '#4285F4', fontWeight: 700 }}>
+                                {srcDuration > 0 ? `${winSecOf(g).toFixed(1)}с из макс 10с` : 'макс 10с'}
+                              </span>
                             )}
                           </div>
 
@@ -2482,18 +2577,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           {/* Параметры движка */}
                           {g.engine === 'omni' ? (
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина</span>
-                              {([4, 6, 8] as const).map((sec) => (
-                                <button key={sec} onClick={() => updateSeg(g.id, { lenSec: sec })}
-                                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-700"
-                                  style={{ background: g.lenSec === sec ? 'var(--brand)' : 'var(--bg-secondary)', color: g.lenSec === sec ? 'var(--brand-contrast)' : 'var(--text-muted)', border: `1px solid ${g.lenSec === sec ? 'var(--brand)' : 'var(--border-medium)'}` }}>
-                                  {sec}с
-                                </button>
-                              ))}
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина = ширина окна</span>
                               <button onClick={() => updateSeg(g.id, { seedFrame: !g.seedFrame })}
                                 className="px-2.5 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center gap-1.5"
                                 style={{ background: g.seedFrame ? 'rgba(66,133,244,0.14)' : 'var(--bg-secondary)', color: g.seedFrame ? '#4285F4' : 'var(--text-muted)', border: `1px solid ${g.seedFrame ? '#4285F4' : 'var(--border-medium)'}` }}>
-                                {g.seedFrame ? <Check size={12} /> : <Plus size={12} />} кадр отсюда как старт
+                                {g.seedFrame ? <Check size={12} /> : <Plus size={12} />} кадры окна как опора
                               </button>
                             </div>
                           ) : (
@@ -2555,47 +2643,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             </div>
                           )}
 
-                          {/* Окно по ленте: Omni Flash — макс 10с (за проход); V2V — свободный диапазон (part/inserts) */}
-                          {(g.engine === 'omni' || omniSpec.mode !== 'whole') && (() => {
-                            const dur = srcDuration > 0 ? srcDuration : 0;
-                            const maxFrac = g.engine === 'omni' && dur > 0 ? Math.min(1, 10 / dur) : 1; // Omni: не длиннее 10с
-                            const winSec = dur > 0 ? (g.end - g.start) * dur : 0;
-                            const over = g.engine === 'omni' && dur > 0 && winSec > 10.05;
-                            const col = g.engine === 'omni' ? '#4285F4' : '#a855f7';
-                            const setStart = (v: number) => { const s = Math.max(0, Math.min(v, g.end - 0.01)); let e = g.end; if (g.engine === 'omni' && e - s > maxFrac) e = Math.min(1, s + maxFrac); updateSeg(g.id, { start: s, end: e }); };
-                            const setEnd = (v: number) => { const e = Math.min(1, Math.max(v, g.start + 0.01)); let s = g.start; if (g.engine === 'omni' && e - s > maxFrac) s = Math.max(0, e - maxFrac); updateSeg(g.id, { start: s, end: e }); };
-                            return (
-                              <div className="space-y-1.5">
-                                <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                                  <span>Окно: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}–{fmtT(g.end)}</b></span>
-                                  {g.engine === 'omni' && <span style={{ color: over ? '#ef4444' : col, fontWeight: 700 }}>{dur > 0 ? `${winSec.toFixed(1)}с из макс 10с` : 'макс 10с'}</span>}
-                                </div>
-                                {/* визуальная полоска-таймлайн с выделенным окном */}
-                                <div style={{ position: 'relative', height: 12, borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
-                                  <div style={{ position: 'absolute', left: `${g.start * 100}%`, width: `${Math.max(1, (g.end - g.start) * 100)}%`, top: 0, bottom: 0, background: over ? '#ef4444' : col, opacity: 0.75 }} />
-                                </div>
-                                <input type="range" min={0} max={1} step={0.005} value={g.start} onChange={(e) => setStart(parseFloat(e.target.value))} className="w-full" style={{ accentColor: col }} />
-                                <input type="range" min={0} max={1} step={0.005} value={g.end} onChange={(e) => setEnd(parseFloat(e.target.value))} className="w-full" style={{ accentColor: col }} />
-                                {g.engine === 'omni' && dur === 0 && <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Выберите исходное видео — тогда окно считается в секундах (Omni Flash делает 10с за проход).</p>}
-                              </div>
-                            );
-                          })()}
                         </div>
                       ))}
-
-                      {omniSpec.mode === 'inserts' && omniSpec.segments.length < 3 && (
-                        <button onClick={addInsert}
-                          className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                          <Plus size={14} /> Добавить вставку ({omniSpec.segments.length}/3)
-                        </button>
-                      )}
                     </div>
 
                     {/* Сводка + стоимость */}
                     <div className="rounded-xl p-3 text-[11px] space-y-1" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
                       {omniGenSeconds > 0 && (
-                        <div>Omni Flash: <b style={{ color: 'var(--text-secondary)' }}>{omniGenSeconds}с</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)} <span style={{ opacity: 0.7 }}>(Gemini Omni Flash, 720p, со звуком, ~$0.10/с)</span></div>
+                        <div>Omni Flash: <b style={{ color: 'var(--text-secondary)' }}>{omniGenSeconds.toFixed(0)}с</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)} <span style={{ opacity: 0.7 }}>(Gemini Omni Flash, 720p, со звуком, ~$0.10/с)</span></div>
                       )}
                       {omniSpec.segments.some((g) => g.engine === 'v2v') && (
                         <div>V2V ре-стайл: по тарифу провайдера (Runway/Kling).</div>
