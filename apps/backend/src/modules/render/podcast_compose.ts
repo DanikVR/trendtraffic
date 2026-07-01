@@ -95,11 +95,34 @@ export async function composeHeads(opts: {
   return `/uploads/renders/${out}`;
 }
 
+/** Кадрировать картинку в 9:16 (1080×1920, центральная область — ТА ЖЕ, что берёт фон при
+ *  scale=increase+crop). Нужен для вырезок ведущих: тогда «вырезка» и «clean plate» — один и
+ *  тот же кадр, и оверлей 0:0 сажает аватара ровно на его место. PNG — без jpeg-артефактов
+ *  по краям зелёнки (важно для chromakey). → fileUrl. */
+export async function cropImageTo916(input: string): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const out = `podcut-${randomUUID().slice(0, 8)}.png`;
+  const outPath = path.join(RENDERS_DIR, out);
+  await ffmpeg([
+    '-y', '-i', input,
+    '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1',
+    '-frames:v', '1', outPath,
+  ], 120_000);
+  return `/uploads/renders/${out}`;
+}
+
+/** Медиа реплики поверх студийной сцены: показывается в свой интервал таймлайна. */
+export interface StudioOverlay { url: string; tStart: number; dur: number; video?: boolean }
+
 /** Собрать ролик: две ЗЕЛЁНЫЕ головы (chroma-key) поверх ФОТО СТУДИИ (оба ведущих на фоне студии).
- *  Каждая голова — talking_photo, снятый на зелёном (человек вырезан Nano ДО HeyGen). → fileUrl. */
+ *  Каждая голова — talking_photo, снятый на зелёном (человек вырезан Nano ДО HeyGen).
+ *  fullFrame=true — вырезки сделаны В ТОЙ ЖЕ композиции кадра, что clean plate (+ кроп в тот же
+ *  9:16) → оверлей во весь кадр 0:0, аватары садятся ровно на свои места в студии.
+ *  overlays — медиа реплик (картинка/видео) по таймкодам поверх сцены. → fileUrl. */
 export async function composeOnStudio(opts: {
   studioUrl: string; headA: string; headB: string;
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
+  fullFrame?: boolean; overlays?: StudioOverlay[];
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const [dA, dB, dAudio] = await Promise.all([
@@ -110,22 +133,56 @@ export async function composeOnStudio(opts: {
   target = Math.min(target, 1800);
   const T = target.toFixed(2);
   const key = opts.chromaColor || '0x00FF00';
+  const ovs = (opts.overlays || [])
+    .filter((o) => o && typeof o.url === 'string' && o.url && Number.isFinite(o.tStart) && Number.isFinite(o.dur) && o.dur > 0.1)
+    .slice(0, 12);
 
   const inputs: string[] = ['-loop', '1', '-i', opts.studioUrl, '-i', opts.headA, '-i', opts.headB];
   let idx = 3; let audioIdx = -1; let musicIdx = -1;
   if (opts.audioUrl) { inputs.push('-i', opts.audioUrl); audioIdx = idx++; }
   if (opts.musicUrl) { inputs.push('-i', opts.musicUrl); musicIdx = idx++; }
+  const ovStart = idx;
+  for (const o of ovs) {
+    // видео нельзя подавать с -loop (опция image2-демаксера); картинку зацикливаем
+    if (o.video) inputs.push('-i', o.url);
+    else inputs.push('-loop', '1', '-i', o.url);
+    idx++;
+  }
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
-  const W = 1080, H = 1920, PW = 620; // фон 1080×1920, каждая вырезанная голова ~620 шириной
-  // Фон-студия (картинка, loop), обрезка в кадр 9:16.
+  const W = 1080, H = 1920, PW = 620; // фон 1080×1920; PW — ширина головы в легаси-раскладке
+  // Фон-студия (картинка, loop), обрезка в кадр 9:16 (центр — та же область, что cropImageTo916).
   const bg = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
-  // Chroma-key зелёнки + despill (уводим зелёный из краёв), масштаб, tpad-клон до T.
-  const keyf = (i: number, label: string) =>
-    `[${i}:v]chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,scale=${PW}:-1:force_original_aspect_ratio=decrease,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}[${label}];`;
+  // Chroma-key зелёнки + despill (увод зелёного с краёв) + мягкий край маски (avgblur только
+  // альфа-плоскости, planes=8) — контур вырезки не читается на фоне студии.
+  const keyf = (i: number, label: string) => opts.fullFrame
+    ? `[${i}:v]chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,`
+      + `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},avgblur=sizeX=2:sizeY=2:planes=8,`
+      + `setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}[${label}];`
+    : `[${i}:v]chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,`
+      + `scale=${PW}:-1:force_original_aspect_ratio=decrease,avgblur=sizeX=2:sizeY=2:planes=8,`
+      + `setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}[${label}];`;
   let fc = bg + keyf(1, 'ka') + keyf(2, 'kb');
-  // A — низ-лево, B — низ-право (сидят на фоне студии).
-  fc += `[bg][ka]overlay=x=-40:y=H-h:shortest=0[b1];[b1][kb]overlay=x=W-w+40:y=H-h:shortest=0[v];`;
+  if (opts.fullFrame) {
+    // Кадр вырезки = кадр фона → оверлей 0:0: каждый аватар ровно на своём месте в студии.
+    fc += `[bg][ka]overlay=x=0:y=0:shortest=0[b1];[b1][kb]overlay=x=0:y=0:shortest=0[v0];`;
+  } else {
+    // Легаси-раскладка (головы вырезаны отдельными кадрами): A — низ-лево, B — низ-право.
+    fc += `[bg][ka]overlay=x=-40:y=H-h:shortest=0[b1];[b1][kb]overlay=x=W-w+40:y=H-h:shortest=0[v0];`;
+  }
+  // Медиа реплик: карточка по центру, видима в свой интервал (как в воркерном таймлайне).
+  let lastV = 'v0';
+  const SIDE = Math.round(W * 0.62);
+  ovs.forEach((o, k) => {
+    const i = ovStart + k;
+    const t0 = Math.max(0, o.tStart); const t1 = t0 + o.dur;
+    // видео сдвигаем по времени, чтобы играло с начала своего интервала; картинка статична
+    const pts = o.video ? `,setpts=PTS-STARTPTS+${t0.toFixed(3)}/TB` : '';
+    fc += `[${i}:v]scale=${SIDE}:${SIDE}:force_original_aspect_ratio=increase,crop=${SIDE}:${SIDE},setsar=1,fps=30${pts}[ov${k}];`
+      + `[${lastV}][ov${k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\\,${t0.toFixed(3)}\\,${t1.toFixed(3)})'[vo${k}];`;
+    lastV = `vo${k}`;
+  });
+  fc += `[${lastV}]null[v];`;
 
   let speechLabel: string;
   if (audioIdx >= 0) { fc += `[${audioIdx}:a]aresample=async=1[sp];`; speechLabel = '[sp]'; }

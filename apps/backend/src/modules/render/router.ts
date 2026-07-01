@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, downloadToRenders } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, cropImageTo916, downloadToRenders, type StudioOverlay } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -427,14 +427,39 @@ router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
 // ── HeyGen «на студии»: вырезать ЛЮДЕЙ из общего фото (Nano, на зелёный) → HeyGen анимирует (Avatar IV,
 // тело/руки) → chroma-key на фон студии. talking_photo нельзя вырезать сам (проверено вживую: transparent
 // отклоняется, green игнорируется), поэтому маттинг делаем ДО HeyGen на входном фото. ──
-/** Вырезать одного ведущего (A=лево / B=право) из общего фото студии на зелёный фон (Nano img2img). → /uploads URL. */
-async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B'): Promise<string> {
+/** Вырезать одного ведущего (A=лево / B=право) из общего фото студии на зелёный фон (Nano img2img).
+ *  КЛЮЧЕВОЕ: композиция кадра сохраняется 1:1 (человек НЕ перемещается и НЕ масштабируется) —
+ *  тогда после кропа в тот же 9:16, что и clean plate, оверлей 0:0 сажает аватара ровно на его
+ *  место в студии. → локальный путь + /uploads URL. */
+async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B'): Promise<{ url: string; path: string }> {
   const img = await fetchImageBase64(groupUrlAbs);
   if (!img) throw new Error('не удалось загрузить общее фото студии');
   const where = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
   const gen = await generateImage({
     apiKey, model: PODCAST_ANGLE_MODEL,
-    prompt: `Оставь на изображении ТОЛЬКО человека ${where}. Полностью убери второго человека и всю студию/фон. Замени ВЕСЬ фон СПЛОШНЫМ ярко-зелёным #00FF00 (равномерным, для хромакея). Сохрани этого человека как есть — сидит в полный рост, руки, плечи, чёткие аккуратные края (волосы, силуэт). Фотореалистично, вертикальный кадр 9:16. Верни только изображение.`,
+    prompt: `Оставь на изображении ТОЛЬКО человека ${where}. Полностью убери второго человека и всю студию/фон. `
+      + 'Замени ВСЁ остальное СПЛОШНЫМ равномерным ярко-зелёным #00FF00 (хромакей). '
+      + 'КРИТИЧНО: сохрани КОМПОЗИЦИЮ КАДРА ТОЧНО как на исходном фото — тот же размер кадра, человек остаётся '
+      + 'РОВНО на своём месте, в том же масштабе и позе, НЕ перемещай его в центр и НЕ приближай. '
+      + 'Сохрани человека как есть — в полный рост, руки, плечи, чёткие аккуратные края (волосы, силуэт). '
+      + 'Фотореалистично. Верни только изображение.',
+    inputImages: [{ base64: img.base64, mime: img.mime }],
+  });
+  return { url: gen.mediaUrl, path: gen.filePath };
+}
+
+/** Clean plate: убрать ЛЮДЕЙ с общего фото и дорисовать студию за ними (Nano img2img).
+ *  Это фон для compose-studio — иначе за аватарами выглядывают исходные статичные фигуры. */
+async function studioCleanPlate(apiKey: string, groupUrlAbs: string): Promise<string> {
+  const img = await fetchImageBase64(groupUrlAbs);
+  if (!img) throw new Error('не удалось загрузить общее фото студии');
+  const gen = await generateImage({
+    apiKey, model: PODCAST_ANGLE_MODEL,
+    prompt: 'Убери с фото ВСЕХ людей полностью. Дорисуй студию за ними: мебель, кресла/стулья, стол, '
+      + 'микрофоны, фон — так, как они выглядели бы без людей. '
+      + 'КРИТИЧНО: сохрани композицию кадра, ракурс, освещение, тени и цветовую гамму ТОЧНО как на исходном фото — '
+      + 'ничего не перемещай и не перерисовывай, кроме мест, где были люди. '
+      + 'Фотореалистично, высокое качество. Верни только изображение.',
     inputImages: [{ base64: img.base64, mime: img.mime }],
   });
   return gen.mediaUrl;
@@ -469,9 +494,14 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
     let elevenKey: string | null = null;
     if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs.' }); }
     const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    // Фаза 1 (параллельно по ведущему): голос + вырезка на зелёный (Nano) + talking_photo —
-    // всё падучее ДО сабмитов, чтобы ошибка одного не оставляла оплаченный рендер другого.
+    // Фаза 1 (параллельно по ведущему): голос + вырезка на зелёный (Nano, композиция кадра 1:1)
+    // + кроп в тот же 9:16, что фон + talking_photo. Всё падучее ДО сабмитов. Параллельно —
+    // clean plate (студия БЕЗ людей): иначе за аватарами выглядывают исходные статичные фигуры.
     const warns: string[] = [];
+    const cleanPromise: Promise<string | null> = studioCleanPlate(apiKey, abs(groupPhotoUrl)).catch((e: any) => {
+      console.warn('[heygen-studio] clean plate не удался, фон = исходное фото:', e?.message || e);
+      return null;
+    });
     const prepared = await Promise.all(([['A', hostA], ['B', hostB]] as const).map(async ([spk, host]) => {
       const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
       const fullText = rawTextFor(spk);
@@ -489,10 +519,16 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
         if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
       }
-      const greenUrl = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk);
-      const tpId = await uploadTalkingPhoto(key, abs(greenUrl));
+      const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk);
+      // кроп в 9:16 (та же центральная область, что возьмёт фон) → HeyGen получает ровно кадр
+      // сцены (720×1280 совпадает по пропорции) → в склейке оверлей 0:0 без подгонки координат
+      const cutUrl = await cropImageTo916(green.path || abs(green.url));
+      const tpId = await uploadTalkingPhoto(key, abs(cutUrl));
       return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId };
     }));
+    const cleanUrl = await cleanPromise;
+    if (!cleanUrl) warns.push('clean plate не удался — фоном будет исходное фото (за аватарами могут выглядывать статичные фигуры)');
+    const studioUrl = cleanUrl || groupPhotoUrl;
     const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
     // Фаза 2: сабмитим обоих; частичный сбой отдаём честно.
     const jobs: any[] = [];
@@ -502,16 +538,19 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         jobs.push({ host: p.spk, name: p.name, videoId });
       } catch (e: any) {
         if (!jobs.length) throw e;
-        return res.json({ jobs, studioUrl: groupPhotoUrl, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
+        return res.json({ jobs, studioUrl, fullFrame: true, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
       }
     }
-    res.json({ jobs, studioUrl: groupPhotoUrl, note: `Вырезал ведущих из фото → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует на зелёном (~1–3 мин). Потом наложу на студию.${warnNote}` });
+    res.json({ jobs, studioUrl, fullFrame: true, note: `Вырезал ведущих (композиция 1:1)${cleanUrl ? ' + дорисовал студию без людей (clean plate)' : ''} → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует (~1–3 мин). Потом посажу аватаров на их места в студии.${warnNote}` });
   } catch (err: any) {
     res.status(400).json({ error: `HeyGen-студия: ${err?.message || 'ошибка'}` });
   }
 });
 
-/** POST /podcast/compose-studio — chroma-key двух зелёных голов на ФОТО СТУДИИ. body: {headA,headB,studioUrl,audioUrl?,musicUrl?,musicVolume?} → {jobId}. */
+/** POST /podcast/compose-studio — chroma-key двух зелёных голов на ФОТО СТУДИИ (clean plate).
+ *  body: {headA,headB,studioUrl,audioUrl?,musicUrl?,musicVolume?,fullFrame?,overlays?} → {jobId}.
+ *  fullFrame — головы вырезаны в композиции кадра фона → оверлей 0:0 (аватары на своих местах);
+ *  overlays — медиа реплик [{url,tStart,dur,video?}] по таймкодам поверх сцены. */
 router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response) => {
   try {
     const headA = typeof req.body?.headA === 'string' ? req.body.headA : '';
@@ -523,13 +562,18 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
     const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
     const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
+    const fullFrame = req.body?.fullFrame === true;
+    const overlays: StudioOverlay[] = (Array.isArray(req.body?.overlays) ? req.body.overlays : [])
+      .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
+      .slice(0, 12)
+      .map((o: any) => ({ url: abs(String(o.url))!, tStart: Number(o.tStart), dur: Number(o.dur), video: o.video === true }));
     const jobId = 'cmps_' + Math.random().toString(36).slice(2, 10);
     sweepJobs(composeJobs);
     const tenantId = req.tenantId!;
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume, fullFrame, overlays });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });

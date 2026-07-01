@@ -154,6 +154,8 @@ interface PodcastSpec {
   // Результаты/статус аниматора — сохраняются в спеку, чтобы пережить выход/вход в сценарий.
   animActive?: { kind: 'omnipod' | 'heygen'; jobId?: string; videoIds?: string[] } | null;
   animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null }[] | null;
+  // Фон студии для «Собрать НА студии»: clean plate (студия без людей), выживает выход/вход.
+  studioBgUrl?: string | null;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -923,7 +925,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // ── Подкаст: мутации спеки, диалог/диаризация, медиа, сборка ──────────────────
   const podMutate = (fn: (p: PodcastSpec) => PodcastSpec) => { setPod((p) => fn(p)); setDirty(true); };
   /** Сохранить результат/активную задачу аниматора в спеку (авто-сейв → переживает выход/вход). */
-  const persistAnim = (patch: Partial<Pick<PodcastSpec, 'animActive' | 'animResult'>>) => { setPod((p) => ({ ...p, ...patch })); setDirty(true); };
+  const persistAnim = (patch: Partial<Pick<PodcastSpec, 'animActive' | 'animResult' | 'studioBgUrl'>>) => { setPod((p) => ({ ...p, ...patch })); setDirty(true); };
 
   /** Сгенерировать диалог двух ведущих по брифу (Claude). */
   const genDialogue = async () => {
@@ -1105,11 +1107,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     setComposeBusy(true); setComposeNote(null); setComposeUrl(null);
     try {
       const av = pod.avatar || POD_DEFAULT.avatar!;
-      const onStudio = !!studioBg;
+      const bg = studioBg || pod.studioBgUrl || null;
+      const onStudio = !!bg;
       const body: any = { headA: a.url, headB: b.url,
         audioUrl: av.voiceSource === 'record' ? pod.recordingUrl : undefined,
         musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
-      if (onStudio) body.studioUrl = studioBg;
+      if (onStudio) {
+        body.studioUrl = bg;
+        body.fullFrame = true; // вырезки в композиции кадра фона → аватары на своих местах
+        // медиа реплик (картинки/видео) — показываются по своим интервалам поверх сцены
+        body.overlays = pod.dialogue
+          .map((l, i, arr) => l.image ? { url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image) } : null)
+          .filter(Boolean)
+          .slice(0, 12);
+      }
       const res = await fetch(onStudio ? '/api/render/podcast/compose-studio' : '/api/render/podcast/compose', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
       const d = await res.json();
       if (!res.ok || !d.jobId) { setComposeNote(d?.error || 'Не удалось запустить склейку.'); setComposeBusy(false); return; }
@@ -1132,9 +1143,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (!res.ok) { setAnimNote(d?.error || 'HeyGen-студия недоступна.'); setAnimBusy(false); return; }
       if (Array.isArray(d.jobs) && d.jobs.length) {
         setAnimJobs(d.jobs.map((j: any) => ({ ...j, status: 'processing', url: null })));
-        setStudioBg(d.studioUrl || pod.groupPhotoUrl || null);
+        const bg = d.studioUrl || pod.groupPhotoUrl || null;
+        setStudioBg(bg);
         setAnimNote(d.note || 'HeyGen анимирует…');
-        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null });
+        // studioBgUrl (clean plate) — в спеку: «Собрать НА студии» работает и после выхода/входа
+        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null, studioBgUrl: bg });
         pollAnimate(d.jobs.map((j: any) => j.videoId));
       } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
     } catch { setAnimNote('Ошибка сети (HeyGen-студия).'); setAnimBusy(false); }
@@ -1215,6 +1228,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     animHydratedRef.current = true;
     const res = pod.animResult; const active = pod.animActive;
     if (Array.isArray(res) && res.length) setAnimJobs(res.map((r) => ({ ...r, status: r.url ? 'completed' : 'failed' })));
+    if (pod.studioBgUrl) setStudioBg(pod.studioBgUrl); // clean plate выживает выход/вход
     if (active && active.kind === 'omnipod' && active.jobId) {
       setAnimBusy(true); setAnimNote('Возобновляю Omni-генерацию (шла в фоне)…'); pollOmniAnimate(active.jobId);
     } else if (active && active.kind === 'heygen' && Array.isArray(active.videoIds) && active.videoIds.length) {
