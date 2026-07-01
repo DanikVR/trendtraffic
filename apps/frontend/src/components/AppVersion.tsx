@@ -1095,7 +1095,12 @@
  *         старт следующего окна (сшивка). BE: frame_extract.ts (+SSRF/traversal-guard, чистка временных
  *         файлов) + POST /omni/frame; /omni/storyboard теперь принимает imageUrl (img2img). Прошло
  *         адверсариал-ревью (3 линзы): last-frame без ffprobe, SSRF-guard, addSegment без гонки id. */
-export const APP_VERSION = '1.6.30';
+/* 1.6.31 — Подкаст: генерация аниматора ПЕРЕЖИВАЕТ выход/вход в сценарий. Раньше animJobs/omni были
+ *         только в React-state (терялись при размонтировании),хотя клипы уже сохранялись в Галерею
+ *         (Omni — на бэке сам; HeyGen — при опросе). Теперь результат + активная задача пишутся в
+ *         spec (animResult/animActive, авто-сейв). На возврате: гидрация превью + ВОЗОБНОВЛЕНИЕ опроса
+ *         (контур снова крутится). 404 задачи (рестарт сервера) → мягкое сообщение «ищите в Галерее». */
+export const APP_VERSION = '1.6.31';
 
 export function AppVersion() {
   return (

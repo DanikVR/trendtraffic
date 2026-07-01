@@ -151,6 +151,9 @@ interface PodcastSpec {
   avatar?: PodAvatar;
   // Фоновая музыка на весь ролик (генерим/загружаем): url + громкость % (обрезается по длине видео).
   music?: { url: string; name: string; volumePct: number } | null;
+  // Результаты/статус аниматора — сохраняются в спеку, чтобы пережить выход/вход в сценарий.
+  animActive?: { kind: 'omnipod' | 'heygen'; jobId?: string; videoIds?: string[] } | null;
+  animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null }[] | null;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -851,6 +854,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   // ── Подкаст: мутации спеки, диалог/диаризация, медиа, сборка ──────────────────
   const podMutate = (fn: (p: PodcastSpec) => PodcastSpec) => { setPod((p) => fn(p)); setDirty(true); };
+  /** Сохранить результат/активную задачу аниматора в спеку (авто-сейв → переживает выход/вход). */
+  const persistAnim = (patch: Partial<Pick<PodcastSpec, 'animActive' | 'animResult'>>) => { setPod((p) => ({ ...p, ...patch })); setDirty(true); };
 
   /** Сгенерировать диалог двух ведущих по брифу (Claude). */
   const genDialogue = async () => {
@@ -949,11 +954,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         const res = await fetch('/api/render/podcast/animate/status?ids=' + ids.join(','), { headers: headers() });
         const d = await res.json();
         if (res.ok && Array.isArray(d.statuses)) {
-          setAnimJobs((prev) => prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url } : j; }));
+          let merged: typeof animJobs = [];
+          setAnimJobs((prev) => { merged = prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url } : j; }); return merged; });
           const done = d.statuses.every((s: any) => s.status === 'completed' || s.status === 'failed');
           if (done) {
             setAnimBusy(false);
             setAnimNote(d.statuses.some((s: any) => s.status === 'failed') ? 'Часть голов не отрендерилась — см. статус ниже.' : 'Готово! Говорящие головы ведущих отрендерены. Ниже — превью.');
+            persistAnim({ animActive: null, animResult: merged.map((j) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
             return;
           }
         }
@@ -979,6 +986,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (Array.isArray(d.jobs) && d.jobs.length) {
         setAnimJobs(d.jobs.map((j: any) => ({ ...j, status: 'processing', url: null })));
         setAnimNote(d.note || 'Идёт рендер…');
+        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null });
         pollAnimate(d.jobs.map((j: any) => j.videoId));
       } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
     } catch { setAnimNote('Ошибка сети при запуске аниматора.'); setAnimBusy(false); }
@@ -1032,6 +1040,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await res.json();
       if (!res.ok || !d.jobId) { setAnimNote(d?.error || 'Omni-студия недоступна.'); setAnimBusy(false); return; }
       setAnimNote(d.note || 'Omni оживляет ведущих…');
+      persistAnim({ animActive: { kind: 'omnipod', jobId: d.jobId }, animResult: null });
       pollOmniAnimate(d.jobId);
     } catch { setAnimNote('Ошибка сети при запуске Omni-студии.'); setAnimBusy(false); }
   };
@@ -1039,11 +1048,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const tick = async () => {
       try {
         const res = await fetch('/api/render/podcast/omni-animate/status?jobId=' + jobId, { headers: headers() });
+        if (res.status === 404) { setAnimBusy(false); persistAnim({ animActive: null }); setAnimNote('Прошлая Omni-генерация не найдена (сервер мог перезапуститься). Готовые клипы ищите в Галерее.'); return; }
         const d = await res.json();
         if (res.ok && d.status && d.status !== 'processing') {
           setAnimBusy(false);
           const hosts = Array.isArray(d.hosts) ? d.hosts : [];
-          setAnimJobs(hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'omni-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, interactionId: h.interactionId || null })));
+          const jobs = hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'omni-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, interactionId: h.interactionId || null }));
+          setAnimJobs(jobs);
+          persistAnim({ animActive: null, animResult: jobs.map((j: any) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
           setAnimNote(d.status === 'failed' ? (d.error || 'Omni не смог оживить ведущих.') : 'Готово! Omni оживил ведущих. Правь клипы чатом ниже или склей сплит-скрин.');
           return;
         }
@@ -1067,7 +1079,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           const r = await fetch('/api/render/omni/status?jobId=' + d.jobId, { headers: headers() });
           const s = await r.json();
           if (r.ok && s.status && s.status !== 'processing') {
-            setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false, edit: '', url: s.fileUrl || j.url, interactionId: s.interactionId || j.interactionId } : j));
+            let merged: typeof animJobs = [];
+            setAnimJobs((prev) => { merged = prev.map((j) => j.host === host ? { ...j, editing: false, edit: '', url: s.fileUrl || j.url, interactionId: s.interactionId || j.interactionId } : j); return merged; });
+            persistAnim({ animResult: merged.map((j) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
             if (s.status === 'failed') setAnimNote(s.error || 'Правка не удалась.');
             return;
           }
@@ -1077,6 +1091,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       poll();
     } catch { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote('Ошибка сети при правке.'); }
   };
+
+  // Восстановление результатов аниматора при возврате в сценарий + возобновление опроса, если генерация ещё шла.
+  const animHydratedRef = useRef(false);
+  useEffect(() => {
+    if (loading || animHydratedRef.current) return;
+    animHydratedRef.current = true;
+    const res = pod.animResult; const active = pod.animActive;
+    if (Array.isArray(res) && res.length) setAnimJobs(res.map((r) => ({ ...r, status: r.url ? 'completed' : 'failed' })));
+    if (active && active.kind === 'omnipod' && active.jobId) {
+      setAnimBusy(true); setAnimNote('Возобновляю Omni-генерацию (шла в фоне)…'); pollOmniAnimate(active.jobId);
+    } else if (active && active.kind === 'heygen' && Array.isArray(active.videoIds) && active.videoIds.length) {
+      setAnimBusy(true); setAnimNote('Возобновляю рендер HeyGen…');
+      setAnimJobs(active.videoIds.map((id, i) => ({ host: i === 0 ? 'A' : 'B', name: (res && res[i]?.name) || `Ведущий ${i === 0 ? 'A' : 'B'}`, videoId: id, status: 'processing', url: null })));
+      pollAnimate(active.videoIds);
+    }
+  }, [loading]);
 
   const podLineMutate = (i: number, patch: Partial<PodLine>) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
