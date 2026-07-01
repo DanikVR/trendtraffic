@@ -438,6 +438,36 @@ router.get('/omni/status', (req: AuthedRequest, res: Response) => {
   res.json({ status: j.status, fileUrl: j.fileUrl || null, interactionId: j.interactionId || null, seconds: j.seconds || null, costUsd: j.costUsd || null, error: j.error || null });
 });
 
+/** POST /omni/storyboard — раскадровка: N дешёвых кадров через Nano Banana 2 Lite (перед генерацией видео).
+ *  body: { prompt, count? } → { frames:[{url,assetId}] }. Пользователь выбирает кадр → он идёт стартом в Omni. */
+const NANO_LITE_MODEL = 'gemini-3.1-flash-lite-image';
+router.post('/omni/storyboard', async (req: AuthedRequest, res: Response) => {
+  try {
+    const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+    if (!prompt) return res.status(400).json({ error: 'Опишите сцену для раскадровки (промт).' });
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API).' });
+    const count = Math.max(1, Math.min(4, Number(req.body?.count) || 3));
+    const tenantId = req.tenantId!;
+    // Кадры генерим параллельно (Nano Lite ~4с каждый) — вписываемся в таймаут.
+    const results = await Promise.all(Array.from({ length: count }, async () => {
+      try {
+        const gen = await generateImage({ apiKey, model: NANO_LITE_MODEL, prompt });
+        const asset = await createAsset(tenantId, {
+          kind: 'reference', mediaType: 'image', originalName: 'Раскадровка Omni Flash',
+          fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
+        });
+        return { url: gen.mediaUrl, assetId: asset?.id || null };
+      } catch { return null; }
+    }));
+    const frames = results.filter(Boolean);
+    if (!frames.length) return res.status(400).json({ error: 'Не удалось сгенерировать кадры (проверьте доступ ключа к модели изображений).' });
+    res.json({ frames, note: `${frames.length} кадр(а) раскадровки (~$${(frames.length * 0.034).toFixed(2)}). Выберите кадр → «Сгенерировать» оживит именно его.` });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка раскадровки' });
+  }
+});
+
 /** POST /podcast/:flowId — собрать подкаст-сцену → задача в очередь. body: { spec? } */
 router.post('/podcast/:flowId', async (req: AuthedRequest, res: Response) => {
   try {

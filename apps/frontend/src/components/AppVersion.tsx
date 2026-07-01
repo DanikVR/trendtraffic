@@ -1059,7 +1059,13 @@
  *         (/omni/edit, previous_interaction_id) — «поменяй цвет машины». render/video_gen.ts
  *         (generateOmniVideo/editOmniVideo). Цена ~$0.10/с (проверено usage). Дальше: раскадровка
  *         Nano Banana 2 Lite → выбор → Omni; кадр-из-видео как seedFrame (image_to_video). */
-export const APP_VERSION = '1.6.24';
+/* 1.6.25 — Omni Flash: РАСКАДРОВКА через Nano Banana 2 Lite перед видео. Кнопка «Раскадровка (Nano)»
+ *         на сегменте → 3 дешёвых кадра (~$0.10, ~4с каждый, gemini-3.1-flash-lite-image via
+ *         generateContent — наш image_gen роутит сам) → выбираешь лучший → «Оживить выбранный кадр»
+ *         запускает Omni Flash image_to_video ИМЕННО по нему (первый кадр видео = выбранный).
+ *         Так видно результат ДО дорогой генерации. Бэкенд /omni/storyboard (generateImage×N параллельно,
+ *         в Галерею). Проверено вживую: Nano Lite отдаёт jpeg за 3.8с. */
+export const APP_VERSION = '1.6.25';
 
 export function AppVersion() {
   return (

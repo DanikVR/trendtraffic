@@ -407,7 +407,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   // Omni Flash: генерация/правка видео по каждому сегменту (segId → состояние).
-  const [omniGen, setOmniGen] = useState<Record<string, { busy?: boolean; note?: string | null; url?: string | null; interactionId?: string | null; edit?: string }>>({});
+  const [omniGen, setOmniGen] = useState<Record<string, { busy?: boolean; note?: string | null; url?: string | null; interactionId?: string | null; edit?: string; sbBusy?: boolean; frames?: string[]; seed?: string | null }>>({});
   const omniPollRef = useRef<Record<string, number>>({});
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
@@ -574,8 +574,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // ── Omni: редактирование спецификации преобразования ──
   const omniMutate = (fn: (s: OmniSpec) => OmniSpec) => { setOmniSpec((s) => fn(s)); setDirty(true); };
   // ── Omni Flash: генерация видео (Gemini Interactions API) ──
-  const setOG = (id: string, patch: Partial<{ busy: boolean; note: string | null; url: string | null; interactionId: string | null; edit: string }>) =>
+  const setOG = (id: string, patch: Partial<{ busy: boolean; note: string | null; url: string | null; interactionId: string | null; edit: string; sbBusy: boolean; frames: string[]; seed: string | null }>) =>
     setOmniGen((s) => ({ ...s, [id]: { ...s[id], ...patch } }));
+  /** Раскадровка через Nano Banana 2 Lite — дешёвые кадры ДО дорогой видео-генерации. */
+  const runStoryboard = async (g: OmniSeg) => {
+    if (omniGen[g.id]?.sbBusy) return;
+    if (!g.prompt.trim()) { setOG(g.id, { note: 'Впишите промт для раскадровки.' }); return; }
+    setOG(g.id, { sbBusy: true, note: null });
+    try {
+      const res = await fetch('/api/render/omni/storyboard', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, count: 3 }) });
+      const d = await res.json();
+      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { sbBusy: false, note: d?.error || 'Не удалось сделать раскадровку.' }); return; }
+      setOG(g.id, { sbBusy: false, frames: d.frames.map((f: any) => f.url), note: d.note });
+    } catch { setOG(g.id, { sbBusy: false, note: 'Ошибка сети при раскадровке.' }); }
+  };
   const pollOmni = (id: string, jobId: string) => {
     const tick = async () => {
       try {
@@ -597,7 +609,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (omniPollRef.current[g.id]) clearTimeout(omniPollRef.current[g.id]);
     setOG(g.id, { busy: true, note: null, url: null, interactionId: null });
     try {
-      const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16' }) });
+      const seed = omniGen[g.id]?.seed || undefined; // выбранный кадр раскадровки → image_to_video
+      const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16', imageUrl: seed }) });
       const d = await res.json();
       if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error || 'Omni Flash недоступен.' }); return; }
       setOG(g.id, { note: d.note });
@@ -2471,13 +2484,33 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             </div>
                           )}
 
-                          {/* Omni Flash: генерация видео + чат-правка */}
+                          {/* Omni Flash: раскадровка (Nano) → выбор кадра → генерация видео + чат-правка */}
                           {g.engine === 'omni' && (
                             <div className="space-y-2">
+                              {/* Шаг 1: дешёвая раскадровка перед видео */}
+                              <button onClick={() => runStoryboard(g)} disabled={omniGen[g.id]?.sbBusy || omniGen[g.id]?.busy}
+                                className="w-full py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                                style={{ background: 'var(--bg-secondary)', color: '#4285F4', border: '1px solid rgba(66,133,244,0.4)', cursor: 'pointer' }}>
+                                {omniGen[g.id]?.sbBusy ? <Loader2 size={13} className="animate-spin" /> : <Image size={13} />} {omniGen[g.id]?.sbBusy ? 'Рисую кадры…' : 'Раскадровка (Nano, ~$0.10) — увидеть до видео'}
+                              </button>
+                              {!!omniGen[g.id]?.frames?.length && (
+                                <div>
+                                  <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Выберите кадр — Omni оживит именно его:</div>
+                                  <div className="grid grid-cols-3 gap-1.5">
+                                    {omniGen[g.id]!.frames!.map((f) => { const sel = omniGen[g.id]?.seed === f; return (
+                                      <button key={f} onClick={() => setOG(g.id, { seed: sel ? null : f })} className="rounded-lg overflow-hidden" style={{ border: `2px solid ${sel ? '#4285F4' : 'var(--border-medium)'}`, cursor: 'pointer', padding: 0, position: 'relative' }}>
+                                        <img src={f} alt="" className="w-full" style={{ aspectRatio: '9 / 16', objectFit: 'cover', display: 'block' }} />
+                                        {sel && <span style={{ position: 'absolute', top: 2, right: 2, background: '#4285F4', color: '#fff', borderRadius: 6, padding: '0 4px', fontSize: 9, fontWeight: 700 }}>✓</span>}
+                                      </button>
+                                    ); })}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Шаг 2: оживить (выбранный кадр = старт, иначе текст→видео) */}
                               <button onClick={() => runOmniGen(g)} disabled={omniGen[g.id]?.busy}
                                 className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                                 style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? 'Генерирую… (~30–60с)' : 'Сгенерировать (Omni Flash)'}
+                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? 'Генерирую… (~30–60с)' : (omniGen[g.id]?.seed ? 'Оживить выбранный кадр (Omni Flash)' : 'Сгенерировать (Omni Flash)')}
                               </button>
                               {omniGen[g.id]?.note && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{omniGen[g.id]?.note}</p>}
                               {omniGen[g.id]?.url && (
