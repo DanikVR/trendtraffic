@@ -17,6 +17,7 @@ import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { searchVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
 import { shapeOf } from './analytics.js';
+import { cacheCoverToDisk, deleteCachedCover, isExpiringCover } from '../media/store_cover.js';
 
 export type TrendKind = 'keyword' | 'trending';
 
@@ -175,7 +176,10 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
            author = EXCLUDED.author,
            author_name = EXCLUDED.author_name,
            description = EXCLUDED.description,
-           cover_url = EXCLUDED.cover_url,
+           -- Если обложка уже закэширована локально (/uploads/…) — НЕ затираем её свежей
+           -- подписанной CDN-ссылкой (та истечёт): локальная копия стабильна, оставляем её.
+           cover_url = CASE WHEN source_videos.cover_url LIKE '/uploads/%'
+                            THEN source_videos.cover_url ELSE EXCLUDED.cover_url END,
            video_url = EXCLUDED.video_url,
            web_url = EXCLUDED.web_url,
            duration_sec = EXCLUDED.duration_sec,
@@ -207,11 +211,41 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     }
   }
 
+  // Обложки TikTok/IG — подписанные CDN-ссылки, истекающие через часы-сутки: если хранить
+  // саму ссылку, назавтра CDN отдаёт 403 и обложка пропадает. Кэшируем картинки к себе на
+  // диск и подменяем cover_url на локальный URL. Фоново (не ждём) — чтобы не тормозить ответ
+  // скана: первый рендер ещё успеет по свежей ссылке, а на диске уже ляжет стабильная копия.
+  void cacheCoversInBackground(tenantId, stored);
+
   const shape = videos.length === 0 ? shapeOf(resp.data) : undefined;
   if (videos.length === 0) {
     try { console.log(`[TREND_SHAPE] scan ${platform}/${params.kind} ${JSON.stringify(shape).slice(0, 6000)}`); } catch { /* */ }
   }
   return { trendId, count: videos.length, videos: stored, rawKeys, fellBackToApp, shape };
+}
+
+/**
+ * Фоновое кэширование обложек: качает подписанные CDN-обложки на диск (uploads/covers) и
+ * переписывает cover_url на стабильный локальный URL. Best-effort — сбой на одной обложке не
+ * критичен (в UI просто останется исходная ссылка). Небольшая параллельность, чтобы не
+ * растягивать 30 картинок в очередь и не долбить CDN залпом.
+ */
+async function cacheCoversInBackground(tenantId: string, videos: StoredVideo[]): Promise<void> {
+  const targets = videos.filter((v) => v.id && isExpiringCover(v.coverUrl));
+  const CONC = 5;
+  for (let i = 0; i < targets.length; i += CONC) {
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.all(targets.slice(i, i + CONC).map(async (v) => {
+      try {
+        const saved = await cacheCoverToDisk(v.coverUrl!);
+        await pool.query(
+          `UPDATE source_videos SET cover_url = $3 WHERE tenant_id = $1 AND id = $2`,
+          [tenantId, v.id, saved.mediaUrl]
+        );
+        v.coverUrl = saved.mediaUrl; // объект ещё возвращается вызывающему — держим в согласии с БД
+      } catch { /* обложка не критична — оставляем исходную ссылку */ }
+    }));
+  }
 }
 
 export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false): Promise<StoredVideo[]> {
@@ -236,9 +270,10 @@ export async function deleteVideo(tenantId: string, id: string): Promise<boolean
   //    мешать удалению строки (раньше SELECT и DELETE были в одном try → сбой SELECT
   //    тихо отменял DELETE, и видео «воскресало» после перезагрузки).
   try {
-    const r = await pool.query(`SELECT file_path FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
+    const r = await pool.query(`SELECT file_path, cover_url FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
     const fp = r.rows[0]?.file_path;
     if (fp) { try { fs.unlinkSync(fp); } catch { /* файла может не быть */ } }
+    deleteCachedCover(r.rows[0]?.cover_url); // локально закэшированная обложка — тоже стираем
   } catch (e) {
     console.warn('[trends] deleteVideo: чтение file_path не удалось (продолжаем):', (e as Error).message);
   }
