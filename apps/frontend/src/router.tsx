@@ -42,7 +42,6 @@ import { GoogleCallbackPage } from './pages/auth/GoogleCallbackPage';
 
 // Страница суперадмина — default export
 import AdminConfigPage from './pages/admin/AdminConfigPage';
-import DialectsPage from './pages/admin/DialectsPage';
 import PromocodesPage from './pages/admin/PromocodesPage';
 import UsersPage from './pages/admin/UsersPage';
 import PartnersPage from './pages/admin/PartnersPage';
@@ -344,10 +343,6 @@ export const router = createBrowserRouter([
                 path: 'config',
                 element: <AdminConfigPage />,
               },
-              ...(FEATURES.learnHub ? [{
-                path: 'dialects',
-                element: <DialectsPage />,
-              }] : []),
               {
                 path: 'promocodes',
                 element: <PromocodesPage />,

@@ -12,7 +12,6 @@ import {
   AlertCircle,
   Terminal,
   CreditCard,
-  Gauge,
   TrendingUp,
 } from 'lucide-react';
 import { AuroraCard } from '../../components/AuroraCard';
@@ -20,7 +19,7 @@ import { AuroraButton } from '../../components/AuroraButton';
 import { AuroraInput } from '../../components/AuroraInput';
 import { useAppStore } from '../../store/useAppStore';
 
-type ServiceType = 'livekit' | 'telegram' | 'google' | 'googleOAuth' | 'stripe' | 'tikhub';
+type ServiceType = 'telegram' | 'google' | 'googleOAuth' | 'stripe' | 'tikhub';
 
 interface TestResult {
   status: 'idle' | 'testing' | 'success' | 'error';
@@ -32,20 +31,10 @@ export default function AdminConfigPage() {
   const navigate = useNavigate();
   const { logout, token } = useAppStore();
 
-  const [livekitUrl,     setLivekitUrl]     = useState('');
-  const [livekitKey,     setLivekitKey]     = useState('');
-  const [livekitSecret,  setLivekitSecret]  = useState('');
   const [geminiApiKey,   setGeminiApiKey]   = useState('');
   const [geminiLiveModel, setGeminiLiveModel] = useState('gemini-3.1-flash-live-preview');
   const [voiceFemale, setVoiceFemale] = useState('Aoede');
   const [voiceMale,   setVoiceMale]   = useState('Charon');
-  // Масштабирование видеоперевода (Gemini Live)
-  const [maxConcurrentSessions, setMaxConcurrentSessions] = useState(50);
-  const [extraGeminiKeys, setExtraGeminiKeys] = useState('');   // write-only ввод доп. ключей
-  const [geminiKeysCount, setGeminiKeysCount] = useState(0);    // сколько доп. ключей сейчас в пуле
-  const [geminiUseVertex, setGeminiUseVertex] = useState(false);
-  const [vertexProject, setVertexProject] = useState('');
-  const [vertexLocation, setVertexLocation] = useState('us-central1');
   const [telegramToken,  setTelegramToken]  = useState('');
   const [googleClientId, setGoogleClientId] = useState('');
   const [googleClientSecret, setGoogleClientSecret] = useState('');
@@ -80,7 +69,6 @@ export default function AdminConfigPage() {
   const [testingService, setTestingService] = useState<ServiceType | null>(null);
   const [activeSteps, setActiveSteps] = useState<string[]>([]);
   const [testResults, setTestResults] = useState<Record<ServiceType, TestResult>>({
-    livekit:     { status: 'idle', message: '', steps: [] },
     telegram:    { status: 'idle', message: '', steps: [] },
     google:      { status: 'idle', message: '', steps: [] },
     googleOAuth: { status: 'idle', message: '', steps: [] },
@@ -101,18 +89,10 @@ export default function AdminConfigPage() {
         const res = await fetch('/api/auth/system-settings', { headers: tgHeaders() });
         if (res.ok) {
           const data = await res.json();
-          setLivekitUrl(data.livekitUrl || '');
-          setLivekitKey(data.livekitKey || '');
-          setLivekitSecret(data.livekitSecret || '');
           setGeminiApiKey(data.geminiApiKey || '');
           if (data.geminiLiveModel) setGeminiLiveModel(data.geminiLiveModel);
           if (data.voiceFemale) setVoiceFemale(data.voiceFemale);
           if (data.voiceMale)   setVoiceMale(data.voiceMale);
-          if (typeof data.maxConcurrentTranslationSessions === 'number') setMaxConcurrentSessions(data.maxConcurrentTranslationSessions);
-          if (typeof data.geminiApiKeysCount === 'number') setGeminiKeysCount(data.geminiApiKeysCount);
-          if (typeof data.geminiUseVertex === 'boolean') setGeminiUseVertex(data.geminiUseVertex);
-          if (data.vertexProject) setVertexProject(data.vertexProject);
-          if (data.vertexLocation) setVertexLocation(data.vertexLocation);
           setTelegramToken(data.telegramToken || '');
           setGoogleClientId(data.googleClientId || '');
           setGoogleClientSecret(data.googleClientSecret || '');
@@ -261,14 +241,7 @@ export default function AdminConfigPage() {
         method: 'POST',
         headers: tgHeaders(),
         body: JSON.stringify({
-          livekitUrl, livekitKey, livekitSecret,
           geminiApiKey, geminiLiveModel, voiceFemale, voiceMale, telegramToken,
-          maxConcurrentTranslationSessions: maxConcurrentSessions,
-          geminiUseVertex, vertexProject, vertexLocation,
-          // Доп. ключи шлём ТОЛЬКО если поле непустое (иначе не трогаем существующий пул).
-          ...(extraGeminiKeys.trim()
-            ? { geminiApiKeys: extraGeminiKeys.split('\n').map((s) => s.trim()).filter(Boolean) }
-            : {}),
           googleClientId, googleClientSecret,
           stripeSecretKey, stripeWebhookSecret, stripePublishableKey,
           tikhubApiKey,
@@ -308,10 +281,7 @@ export default function AdminConfigPage() {
     let testSteps: string[] = [];
     let verifyUrl = '';
 
-    if (service === 'livekit') {
-      testSteps = ['Инициализация LiveKit Client SDK...', 'Проверка API Key и API Secret...', 'Подключение к серверу WebSocket...', 'Запрос списка активных комнат...'];
-      verifyUrl = '/api/auth/verify-livekit';
-    } else if (service === 'telegram') {
+    if (service === 'telegram') {
       testSteps = ['Запрос к API Telegram (api.telegram.org)...', 'Проверка валидности токена...', 'Аутентификация бота...', 'Получение информации о боте...'];
       verifyUrl = '/api/auth/verify-telegram';
     } else if (service === 'google') {
@@ -338,9 +308,7 @@ export default function AdminConfigPage() {
         testIntervalRef.current = null;
         try {
           let bodyData: any = {};
-          if (service === 'livekit') {
-            bodyData = { url: livekitUrl, key: livekitKey, secret: livekitSecret };
-          } else if (service === 'telegram') {
+          if (service === 'telegram') {
             bodyData = { token: telegramToken };
           } else if (service === 'google') {
             bodyData = { apiKey: geminiApiKey };
@@ -499,37 +467,7 @@ export default function AdminConfigPage() {
 
         <form onSubmit={handleSave} className="space-y-6">
 
-          {/* AI Learning Hub — Quick Link */}
-          <AuroraCard className="p-5">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }} onClick={() => navigate('/admin/dialects')}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#818cf8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(99,102,241,0.3)', flexShrink: 0 }}>
-                <Bot size={24} strokeWidth={1.5} color="#fff" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', margin: 0 }}>AI Learning Hub — Обучение диалектам</h3>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Управление глоссариями и правилами перевода диалектов для Gemini Live API</p>
-              </div>
-              <AuroraButton variant="secondary" size="sm" id="btn-go-dialects" onClick={(e: React.MouseEvent) => { e.stopPropagation(); navigate('/admin/dialects'); }}>Перейти</AuroraButton>
-            </div>
-          </AuroraCard>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* LiveKit */}
-            <AuroraCard className="p-6 space-y-5 flex flex-col justify-between">
-              <div className="space-y-5">
-                <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
-                    <Server size={16} strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>LiveKit WebRTC Server</h3>
-                </div>
-                <AuroraInput label="Server URL" value={livekitUrl} onChange={(e) => setLivekitUrl(e.target.value)} placeholder="ws://localhost:7880" inputId="admin-livekit-url" />
-                <AuroraInput label="API Key" value={livekitKey} onChange={(e) => setLivekitKey(e.target.value)} placeholder="devkey" inputId="admin-livekit-key" />
-                <AuroraInput label="API Secret" type="password" value={livekitSecret} onChange={(e) => setLivekitSecret(e.target.value)} placeholder="secret" inputId="admin-livekit-secret" />
-              </div>
-              {renderTestBlock('livekit')}
-            </AuroraCard>
 
             {/* Telegram */}
             <AuroraCard className="p-6 space-y-5 flex flex-col justify-between">
@@ -784,84 +722,6 @@ export default function AdminConfigPage() {
                 </div>
               </div>
               {renderTestBlock('google')}
-            </AuroraCard>
-
-            {/* Масштабирование видеоперевода: admission control + пул ключей + Vertex */}
-            <AuroraCard className="p-6 space-y-5 md:col-span-2">
-              <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
-                  <Gauge size={16} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Масштабирование видеоперевода</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <AuroraInput
-                  label="Лимит одновременных переводов"
-                  type="number"
-                  min={1}
-                  max={100000}
-                  value={maxConcurrentSessions}
-                  onChange={(e) => setMaxConcurrentSessions(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  placeholder="50"
-                  inputId="admin-max-sessions"
-                  hint="Сколько участников видеоперевода обслуживать одновременно во всём сервисе (≈ число сессий Gemini Live). Сверх лимита вход в комнату получает «сервис перегружен». Дефолт 50 — поднимайте по мере роста tier Gemini и нагрузки."
-                />
-                <div className="space-y-1.5">
-                  <label className="text-xs font-600 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }} htmlFor="admin-extra-gemini-keys">
-                    Доп. Gemini-ключи (пул, round-robin)
-                  </label>
-                  <textarea
-                    id="admin-extra-gemini-keys"
-                    value={extraGeminiKeys}
-                    onChange={(e) => setExtraGeminiKeys(e.target.value)}
-                    rows={3}
-                    placeholder={`по одному ключу на строку\nоставьте пустым — текущий пул не изменится`}
-                    className="w-full px-3.5 py-3 rounded-2xl text-sm font-500 outline-none transition-all resize-y"
-                    style={{ background: 'var(--bg-tertiary)', border: '1.5px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}
-                  />
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Сейчас в пуле доп. ключей: <strong style={{ color: 'var(--text-secondary)' }}>{geminiKeysCount}</strong>. ⚠️ Ключи должны быть из <strong style={{ color: 'var(--text-secondary)' }}>РАЗНЫХ</strong> Google-проектов — лимит сессий считается на проект, ключи одного проекта делят один потолок.
-                  </p>
-                </div>
-              </div>
-
-              {/* Vertex AI — режим повышенных квот */}
-              <div className="space-y-3 pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={geminiUseVertex}
-                    onChange={(e) => setGeminiUseVertex(e.target.checked)}
-                    className="w-4 h-4 rounded"
-                    style={{ accentColor: 'var(--brand)' }}
-                  />
-                  <span className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>
-                    Использовать Vertex AI (1000 одновременных сессий + 4M TPM на проект)
-                  </span>
-                </label>
-                {geminiUseVertex && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <AuroraInput
-                      label="GCP Project ID"
-                      value={vertexProject}
-                      onChange={(e) => setVertexProject(e.target.value)}
-                      placeholder="my-gcp-project"
-                      inputId="admin-vertex-project"
-                    />
-                    <AuroraInput
-                      label="Регион (location)"
-                      value={vertexLocation}
-                      onChange={(e) => setVertexLocation(e.target.value)}
-                      placeholder="us-central1"
-                      inputId="admin-vertex-location"
-                    />
-                  </div>
-                )}
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Vertex AI снимает узкий лимит concurrent-сессий Developer API. Требует service account на сервере (переменная окружения <code>GOOGLE_APPLICATION_CREDENTIALS</code> с путём к JSON-ключу). Применяется к глобальному трафику; Enterprise-тенанты со своим ключом остаются на Developer API. Подробности — docs/SCALING_GEMINI_LIVE.md.
-                </p>
-              </div>
             </AuroraCard>
 
             {/* Stripe — биллинг */}

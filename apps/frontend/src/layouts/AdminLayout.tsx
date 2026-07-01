@@ -10,7 +10,6 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   Sliders,
-  Brain,
   Tag,
   Users,
   ArrowLeft,
@@ -125,33 +124,6 @@ export function AdminLayout() {
               <>
                 <Sliders size={20} strokeWidth={isActive ? 2 : 1.5} />
                 <span>Настройки API</span>
-              </>
-            )}
-          </NavLink>
-
-          <NavLink
-            to="/admin/dialects"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-500 transition-all duration-150 no-select ${
-                isActive ? 'font-600' : 'hover:font-500'
-              }`
-            }
-            style={({ isActive }) => isActive
-              ? {
-                  background: 'var(--bg-tertiary)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-medium)',
-                }
-              : {
-                  color: 'var(--text-muted)',
-                  border: '1px solid transparent',
-                }
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Brain size={20} strokeWidth={isActive ? 2 : 1.5} />
-                <span>AI Learning Hub</span>
               </>
             )}
           </NavLink>
@@ -339,18 +311,6 @@ export function AdminLayout() {
             }
           >
             ⚙️ Настройки API
-          </NavLink>
-          <NavLink
-            to="/admin/dialects"
-            className={({ isActive }) =>
-              `px-3 py-1.5 rounded-xl text-xs font-600 whitespace-nowrap transition-all duration-150 ${
-                isActive
-                  ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
-                  : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
-              }`
-            }
-          >
-            🧠 AI Learning Hub
           </NavLink>
           <NavLink
             to="/admin/promocodes"
