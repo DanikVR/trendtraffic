@@ -1315,8 +1315,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         @keyframes meDot{0%,100%{opacity:.3}50%{opacity:1}}
         .me-ready{animation:meReady 1.1s ease-in-out infinite;}
         @keyframes meReady{0%,100%{box-shadow:0 8px 26px rgba(16,185,129,.4);transform:scale(1)}50%{box-shadow:0 10px 40px rgba(16,185,129,.95);transform:scale(1.05)}}
-        /* переливающийся контур блока во время генерации */
-        .me-busyring{position:absolute;width:72px;height:72px;border-radius:50%;top:-7px;left:50%;transform:translateX(-50%);background:conic-gradient(from 0deg,#ec4899,#818cf8,#34d399,#fbbf24,#ec4899);animation:meSpin 1.3s linear infinite;-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none;z-index:7;}
+        /* переливающийся контур блока во время генерации — цвета переливаются на месте, кольцо не крутится */
+        .me-busyring{position:absolute;width:72px;height:72px;border-radius:50%;top:-7px;left:50%;transform:translateX(-50%);background:conic-gradient(from 0deg,#ec4899,#818cf8,#34d399,#fbbf24,#f472b6,#ec4899);animation:meShine 2.6s linear infinite;-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none;z-index:7;will-change:filter;}
+        @keyframes meShine{0%{filter:hue-rotate(0deg) saturate(1.15)}50%{filter:hue-rotate(180deg) saturate(1.5)}100%{filter:hue-rotate(360deg) saturate(1.15)}}
         /* раскрытие — пружинка (быстро, мультяшно) */
         .me-grow{animation:meGrow .26s cubic-bezier(.34,1.7,.5,1);transform-origin:bottom center;}
         @keyframes meGrow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
