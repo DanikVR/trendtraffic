@@ -30,6 +30,8 @@ import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './vide
 const composeJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
 // Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
 const omniJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
+// Omni-студия подкаста (в памяти): jobId → статусы 2 клипов (по ведущему), для сплит-скрина/чат-правок.
+const omniPodJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; interactionId?: string | null; seconds?: number | null; costUsd?: number | null; assetId?: string | null; error?: string }>; error?: string; ts: number }>();
 
 const router = Router();
 
@@ -466,6 +468,73 @@ router.post('/omni/storyboard', async (req: AuthedRequest, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка раскадровки' });
   }
+});
+
+// ── Omni-студия подкаста: оживить фото КАЖДОГО ведущего (image_to_video) → 2 клипа с ИИ-голосом ──
+// Omni Flash НЕ принимает аудио на вход и блокирует 2 реальных лица в одном кадре (reference_to_video
+// → "prohibited content"), но оживляет ОДНО фото (image_to_video — проверено вживую). Поэтому делаем
+// по ведущему отдельно → склейка composeHeads. Реальный голос из записи — ветка HeyGen (/podcast/animate).
+// Правки — /omni/edit по interactionId клипа (диалоговое редактирование во главе).
+function omniHostPrompt(name: string, gender: 'male' | 'female', lines: string): string {
+  const who = gender === 'male' ? 'мужчина' : 'женщина';
+  const say = lines
+    ? ` Он(а) естественно, синхронно двигая губами, произносит по-русски: «${lines.slice(0, 600)}».`
+    : ' Он(а) смотрит в камеру и естественно говорит по-русски.';
+  return `Вертикальное видео 9:16. Человек с фотографии — ведущий подкаста (${who}, ${name}), в уютной студии. `
+    + `Живая мимика и лёгкие движения головы, тёплый студийный свет, фотореалистично.${say}`;
+}
+
+/** POST /podcast/omni-animate — оживить фото ведущих через Omni Flash (по одному) → 2 клипа. body: { spec, aspect? } → { jobId }. */
+router.post('/podcast/omni-animate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API) — Omni-студия работает на нём.' });
+    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
+    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
+    if (!hostA.photoUrl || !hostB.photoUrl) return res.status(400).json({ error: 'Нужны фото обоих ведущих (студия лиц / ракурсы).' });
+    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
+    const aspect = req.body?.aspect === '16:9' ? '16:9' : '9:16';
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
+    const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
+      .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
+    const jobId = 'omnipod_' + Math.random().toString(36).slice(2, 10);
+    omniPodJobs.set(jobId, { status: 'processing', ts: Date.now() });
+    const tenantId = req.tenantId!;
+    // Фон: 2 синхронных вызова Omni (~40с каждый) > таймаут прокси → в фоне, poll status.
+    (async () => {
+      const hosts: any[] = [];
+      for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
+        const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
+        const name = host.name || `Ведущий ${spk}`;
+        try {
+          const img = await fetchImageBase64(abs(host.photoUrl));
+          if (!img) { hosts.push({ host: spk, name, error: 'не удалось загрузить фото' }); continue; }
+          const gen = await generateOmniVideo({ apiKey, prompt: omniHostPrompt(name, gender, textFor(spk)), inputImage: { base64: img.base64, mime: img.mime }, aspect });
+          let assetId: string | null = null;
+          try {
+            const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: `Omni-ведущий ${name}`, fileUrl: gen.fileUrl, mime: 'video/mp4' });
+            assetId = asset?.id || null;
+          } catch { /* Галерея опц. */ }
+          hosts.push({ host: spk, name, url: gen.fileUrl, interactionId: gen.interactionId || null, seconds: gen.seconds || null, costUsd: gen.costUsd || null, assetId });
+        } catch (e: any) {
+          hosts.push({ host: spk, name, error: e?.message || 'ошибка Omni' });
+        }
+      }
+      const anyOk = hosts.some((h) => h.url);
+      omniPodJobs.set(jobId, { status: anyOk ? 'done' : 'failed', hosts, error: anyOk ? undefined : (hosts.find((h) => h.error)?.error || 'ведущих не удалось оживить'), ts: Date.now() });
+    })();
+    res.json({ jobId, note: `Omni оживляет фото ведущих по одному (~30–60с каждый, ≈$${(20 * OMNI_VIDEO_USD_PER_SEC).toFixed(2)} за 2 клипа). Опрашиваю…` });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка Omni-студии' });
+  }
+});
+
+/** GET /podcast/omni-animate/status?jobId=... — статусы 2 Omni-клипов ведущих (+ interactionId для правок). */
+router.get('/podcast/omni-animate/status', (req: AuthedRequest, res: Response) => {
+  const j = omniPodJobs.get(String(req.query.jobId || ''));
+  if (!j) return res.status(404).json({ error: 'Задача Omni-студии не найдена' });
+  res.json({ status: j.status, hosts: j.hosts || [], error: j.error || null });
 });
 
 /** POST /podcast/:flowId — собрать подкаст-сцену → задача в очередь. body: { spec? } */

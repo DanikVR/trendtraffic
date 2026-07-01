@@ -121,7 +121,7 @@ const POD_ANIMS: { v: PodAnim; label: string }[] = [
 interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number }
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
-type PodAvatarProvider = 'heygen' | 'did' | 'gpu';
+type PodAvatarProvider = 'heygen' | 'did' | 'gpu' | 'omni';
 type PodAvatarMode = 'standard' | 'iv';                 // HeyGen: стандартный движок / Avatar IV
 type PodVoiceSource = 'heygen' | 'record' | 'elevenlabs'; // откуда голос для аниматора
 interface PodAvatar { provider: PodAvatarProvider; mode: PodAvatarMode; voiceSource: PodVoiceSource; emotion?: string }
@@ -131,6 +131,7 @@ const POD_EMOTIONS: { v: string; label: string }[] = [
   { v: 'excited', label: 'Восторженно' }, { v: 'calm', label: 'Спокойно' }, { v: 'serious', label: 'Серьёзно' },
 ];
 const POD_AVATARS: { v: PodAvatarProvider; label: string; quality: string; cost: string; perMin: number; note: string }[] = [
+  { v: 'omni', label: 'Omni-студия', quality: '★★★★★ живая сцена + правки чатом', cost: 'ИИ-голос ~$0.10/с', perMin: 0, note: 'Omni Flash оживляет фото КАЖДОГО ведущего и правится чатом (диалоговое редактирование). Голос — синтетический (Omni). Для реального голоса из записи выберите HeyGen. Нужен Gemini-ключ.' },
   { v: 'heygen', label: 'HeyGen', quality: '★★★★★ фотореализм', cost: 'премиум', perMin: 0.6, note: 'Лучшее качество, версии 3/4/5. Нужен ключ HeyGen (Настройки → Генерация).' },
   { v: 'did', label: 'D-ID / Hedra', quality: '★★★★ хорошо', cost: 'дешевле в разы', perMin: 0.12, note: 'Говорящая голова из фото за меньшие деньги. Нужен ключ провайдера.' },
   { v: 'gpu', label: 'Наш GPU (SadTalker)', quality: '★★★ скромнее', cost: 'бесплатно', perMin: 0, note: 'Без оплаты за минуту, крутится на нашем GPU-воркере. Сейчас GPU не подключён.' },
@@ -422,7 +423,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [podNote, setPodNote] = useState<string | null>(null);
   const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
   const [animNote, setAnimNote] = useState<string | null>(null);
-  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null }[]>([]);
+  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean }[]>([]);
   const animPollRef = useRef<number | null>(null);
   const [composeBusy, setComposeBusy] = useState(false);       // склейка сплит-скрина
   const [composeNote, setComposeNote] = useState<string | null>(null);
@@ -902,6 +903,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const runAnimate = async () => {
     if (animBusy) return;
     const av = pod.avatar || POD_DEFAULT.avatar!;
+    if (av.provider === 'omni') { void runOmniAnimate(); return; }
     if (av.provider === 'heygen' && (!pod.hostA.photoUrl || !pod.hostB.photoUrl)) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
     if (av.provider === 'heygen' && !pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
     if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
@@ -954,6 +956,63 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setComposeNote(d.note || 'Склеиваю…');
       pollCompose(d.jobId);
     } catch { setComposeNote('Ошибка сети при склейке.'); setComposeBusy(false); }
+  };
+
+  // ── Omni-студия: оживить фото каждого ведущего через Omni Flash (по одному) → 2 клипа с ИИ-голосом ──
+  const runOmniAnimate = async () => {
+    if (animBusy) return;
+    if (!pod.hostA.photoUrl || !pod.hostB.photoUrl) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
+    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+    setAnimBusy(true); setAnimNote(null); setAnimJobs([]);
+    try {
+      const res = await fetch('/api/render/podcast/omni-animate', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod, aspect: '9:16' }) });
+      const d = await res.json();
+      if (!res.ok || !d.jobId) { setAnimNote(d?.error || 'Omni-студия недоступна.'); setAnimBusy(false); return; }
+      setAnimNote(d.note || 'Omni оживляет ведущих…');
+      pollOmniAnimate(d.jobId);
+    } catch { setAnimNote('Ошибка сети при запуске Omni-студии.'); setAnimBusy(false); }
+  };
+  const pollOmniAnimate = (jobId: string) => {
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/render/podcast/omni-animate/status?jobId=' + jobId, { headers: headers() });
+        const d = await res.json();
+        if (res.ok && d.status && d.status !== 'processing') {
+          setAnimBusy(false);
+          const hosts = Array.isArray(d.hosts) ? d.hosts : [];
+          setAnimJobs(hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'omni-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, interactionId: h.interactionId || null })));
+          setAnimNote(d.status === 'failed' ? (d.error || 'Omni не смог оживить ведущих.') : 'Готово! Omni оживил ведущих. Правь клипы чатом ниже или склей сплит-скрин.');
+          return;
+        }
+      } catch { /* ретрай */ }
+      animPollRef.current = window.setTimeout(tick, 8000);
+    };
+    tick();
+  };
+  /** Чат-правка Omni-клипа одного ведущего (та же сессия Interactions, previous_interaction_id). */
+  const runOmniHostEdit = async (host: string) => {
+    const job = animJobs.find((j) => j.host === host);
+    const prompt = (job?.edit || '').trim();
+    if (!job?.interactionId || !prompt || job.editing) return;
+    setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: true } : j));
+    try {
+      const res = await fetch('/api/render/omni/edit', { method: 'POST', headers: headers(), body: JSON.stringify({ previousInteractionId: job.interactionId, prompt, aspect: '9:16' }) });
+      const d = await res.json();
+      if (!res.ok || !d.jobId) { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote(d?.error || 'Правка не запустилась.'); return; }
+      const poll = async () => {
+        try {
+          const r = await fetch('/api/render/omni/status?jobId=' + d.jobId, { headers: headers() });
+          const s = await r.json();
+          if (r.ok && s.status && s.status !== 'processing') {
+            setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false, edit: '', url: s.fileUrl || j.url, interactionId: s.interactionId || j.interactionId } : j));
+            if (s.status === 'failed') setAnimNote(s.error || 'Правка не удалась.');
+            return;
+          }
+        } catch { /* ретрай */ }
+        window.setTimeout(poll, 8000);
+      };
+      poll();
+    } catch { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote('Ошибка сети при правке.'); }
   };
 
   const podLineMutate = (i: number, patch: Partial<PodLine>) =>
@@ -3025,11 +3084,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   const av = pod.avatar || POD_DEFAULT.avatar!;
                   const cur = POD_AVATARS.find((a) => a.v === av.provider) || POD_AVATARS[0];
                   const mins = Math.max(0.1, dialogTotalSec() / 60);
-                  const est = cur.perMin > 0 ? `≈ $${(mins * cur.perMin).toFixed(2)} за ролик (${Math.round(mins * 10) / 10} мин × $${cur.perMin}/мин)` : 'без оплаты за минуту';
+                  const est = av.provider === 'omni'
+                    ? '≈ $2 за 2 клипа (2 × ~10с × ~$0.10/с) + правки чатом'
+                    : cur.perMin > 0 ? `≈ $${(mins * cur.perMin).toFixed(2)} за ролик (${Math.round(mins * 10) / 10} мин × $${cur.perMin}/мин)` : 'без оплаты за минуту';
                   return (
                     <div className="space-y-2 rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                       <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><UserRound size={13} style={{ color: '#ec4899' }} /> Анимация ведущих (говорящие головы)</div>
-                      <div className="grid grid-cols-3 gap-1">
+                      <div className="grid grid-cols-2 gap-1">
                         {POD_AVATARS.map((a) => { const sel = av.provider === a.v; return (
                           <button key={a.v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), provider: a.v } }))}
                             className="rounded-lg px-1.5 py-1.5 text-left" style={{ background: sel ? 'rgba(236,72,153,0.14)' : 'var(--bg-secondary)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
@@ -3087,10 +3148,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         )}
                         <p className="text-[9px] mt-1" style={{ color: 'var(--text-muted)' }}>Если музыка длиннее ролика — обрежется. Генерацию через Suno добавлю следующим шагом.</p>
                       </div>
+                      {av.provider === 'omni' && (
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Omni оживит фото каждого ведущего отдельным клипом (ИИ-голос) — 2 реальных лица в одном кадре модель блокирует. Реплики берутся из диалога; после — правь каждый клип чатом или склей сплит-скрин.</p>
+                      )}
                       <button onClick={runAnimate} disabled={animBusy}
                         className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                         style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? 'Рендер идёт…' : 'Анимировать ведущих'}
+                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? (av.provider === 'omni' ? 'Omni оживляет…' : 'Рендер идёт…') : (av.provider === 'omni' ? 'Оживить ведущих (Omni)' : 'Анимировать ведущих')}
                       </button>
                       {animNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{animNote}</p>}
                       {animJobs.length > 0 && (
@@ -3102,6 +3166,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                   : <div className="flex flex-col items-center gap-1"><Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} /><span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{j.status === 'failed' ? 'ошибка' : 'рендер…'}</span></div>}
                               </div>
                               <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
+                              {av.provider === 'omni' && j.url && j.interactionId && (
+                                <div className="px-1.5 pb-1.5 space-y-1">
+                                  <input value={j.edit || ''} onChange={(e) => { const val = e.target.value; setAnimJobs((prev) => prev.map((x) => x.host === j.host ? { ...x, edit: val } : x)); }}
+                                    placeholder="Правка чатом: «улыбнись», «крупнее»…"
+                                    className="w-full text-[10px] px-1.5 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                                  <button onClick={() => runOmniHostEdit(j.host)} disabled={j.editing || !(j.edit || '').trim()}
+                                    className="w-full text-[10px] font-700 py-1 rounded-md inline-flex items-center justify-center gap-1 disabled:opacity-50"
+                                    style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                                    {j.editing ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />} {j.editing ? 'Меняю…' : 'Изменить клип'}
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
