@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, downloadToRenders } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, downloadToRenders } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -372,6 +372,102 @@ router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
   const j = composeJobs.get(jobId);
   if (!j) return res.status(404).json({ error: 'Задача склейки не найдена' });
   res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, error: j.error || null });
+});
+
+// ── HeyGen «на студии»: вырезать ЛЮДЕЙ из общего фото (Nano, на зелёный) → HeyGen анимирует (Avatar IV,
+// тело/руки) → chroma-key на фон студии. talking_photo нельзя вырезать сам (проверено вживую: transparent
+// отклоняется, green игнорируется), поэтому маттинг делаем ДО HeyGen на входном фото. ──
+/** Вырезать одного ведущего (A=лево / B=право) из общего фото студии на зелёный фон (Nano img2img). → /uploads URL. */
+async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B'): Promise<string> {
+  const img = await fetchImageBase64(groupUrlAbs);
+  if (!img) throw new Error('не удалось загрузить общее фото студии');
+  const where = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
+  const gen = await generateImage({
+    apiKey, model: PODCAST_ANGLE_MODEL,
+    prompt: `Оставь на изображении ТОЛЬКО человека ${where}. Полностью убери второго человека и всю студию/фон. Замени ВЕСЬ фон СПЛОШНЫМ ярко-зелёным #00FF00 (равномерным, для хромакея). Сохрани этого человека как есть — сидит в полный рост, руки, плечи, чёткие аккуратные края (волосы, силуэт). Фотореалистично, вертикальный кадр 9:16. Верни только изображение.`,
+    inputImages: [{ base64: img.base64, mime: img.mime }],
+  });
+  return gen.mediaUrl;
+}
+
+/** POST /podcast/heygen-studio — вырезать людей из общего фото → HeyGen анимирует на зелёном.
+ *  body: { spec, mode?, voiceSource?, emotion? } → { jobs:[{host,name,videoId}], studioUrl }. Голову качаем через /podcast/animate/status, затем /podcast/compose-studio. */
+router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) => {
+  try {
+    const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
+    if (!key) return res.status(400).json({ error: 'Добавьте ключ HeyGen (Настройки → Генерация).' });
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Нужен Gemini-ключ (Настройки → Gemini API) — им вырезаем людей из фото.' });
+    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
+    const groupPhotoUrl = typeof spec.groupPhotoUrl === 'string' && spec.groupPhotoUrl ? spec.groupPhotoUrl : '';
+    if (!groupPhotoUrl) return res.status(400).json({ error: 'Нужно общее фото студии (студия лиц) — из него вырежем обоих ведущих.' });
+    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
+    if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
+    const emotion = HEYGEN_EMOTION_MAP[String(req.body?.emotion || '')] || undefined;
+    const useIV = req.body?.mode !== 'standard'; // по умолчанию Avatar IV — больше движения тела/рук
+    const voiceSource = ['heygen', 'record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'heygen';
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
+    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
+    const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ').slice(0, 1500);
+    const segsFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => ({ start: Number(l?.start), end: Number(l?.end) })).filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
+    if (voiceSource === 'record' && !spec.recordingUrl) return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись (Разобрать запись).' });
+    let elevenKey: string | null = null;
+    if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs.' }); }
+    const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
+    // Параллельно по ведущему: вырезка на зелёный (Nano) → talking_photo → submit (Avatar IV).
+    const jobs = await Promise.all(([['A', hostA], ['B', hostB]] as const).map(async ([spk, host]) => {
+      const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
+      const text = textFor(spk) || `Реплики ведущего ${spk}.`;
+      let audioUrl: string | undefined; let voiceId: string | undefined;
+      if (voiceSource === 'record') {
+        const segs = segsFor(spk);
+        if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
+        audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
+      } else if (voiceSource === 'elevenlabs') {
+        audioUrl = abs(await elevenTTS(elevenKey!, text, gender, host.elevenVoiceId));
+      } else {
+        voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
+        if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
+      }
+      const greenUrl = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk);
+      const tpId = await uploadTalkingPhoto(key, abs(greenUrl));
+      const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: tpId, voiceId, text, audioUrl, emotion, useIV });
+      return { host: spk, name: host.name || `Ведущий ${spk}`, videoId };
+    }));
+    res.json({ jobs, studioUrl: groupPhotoUrl, note: `Вырезал ведущих из фото → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует на зелёном (~1–3 мин). Потом наложу на студию.` });
+  } catch (err: any) {
+    res.status(400).json({ error: `HeyGen-студия: ${err?.message || 'ошибка'}` });
+  }
+});
+
+/** POST /podcast/compose-studio — chroma-key двух зелёных голов на ФОТО СТУДИИ. body: {headA,headB,studioUrl,audioUrl?,musicUrl?,musicVolume?} → {jobId}. */
+router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response) => {
+  try {
+    const headA = typeof req.body?.headA === 'string' ? req.body.headA : '';
+    const headB = typeof req.body?.headB === 'string' ? req.body.headB : '';
+    const studioUrl = typeof req.body?.studioUrl === 'string' ? req.body.studioUrl : '';
+    if (!headA || !headB || !studioUrl) return res.status(400).json({ error: 'Нужны обе головы и фото студии (headA, headB, studioUrl).' });
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
+    const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
+    const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
+    const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
+    const jobId = 'cmps_' + Math.random().toString(36).slice(2, 10);
+    composeJobs.set(jobId, { status: 'processing', ts: Date.now() });
+    const tenantId = req.tenantId!;
+    (async () => {
+      try {
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume });
+        let assetId: string | null = null;
+        try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
+        composeJobs.set(jobId, { status: 'done', fileUrl, assetId, ts: Date.now() });
+      } catch (e: any) { composeJobs.set(jobId, { status: 'failed', error: e?.message || 'ошибка наложения на студию', ts: Date.now() }); }
+    })();
+    res.json({ jobId, note: 'Накладываю ведущих на студию (chroma-key) — в фоне, опрашиваю статус…' });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка наложения на студию' });
+  }
 });
 
 // ── Omni Flash: генерация/правка видео (Gemini gemini-omni-flash-preview, Interactions API) ──

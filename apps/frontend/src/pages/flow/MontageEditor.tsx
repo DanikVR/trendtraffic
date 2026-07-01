@@ -436,6 +436,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
   const [animNote, setAnimNote] = useState<string | null>(null);
   const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean }[]>([]);
+  const [studioBg, setStudioBg] = useState<string | null>(null); // HeyGen «на студии»: фон-фото студии для compose-studio (chroma-key)
   const animPollRef = useRef<number | null>(null);
   const [composeBusy, setComposeBusy] = useState(false);       // склейка сплит-скрина
   const [composeNote, setComposeNote] = useState<string | null>(null);
@@ -1081,15 +1082,39 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     setComposeBusy(true); setComposeNote(null); setComposeUrl(null);
     try {
       const av = pod.avatar || POD_DEFAULT.avatar!;
-      const body = { headA: a.url, headB: b.url,
+      const onStudio = !!studioBg;
+      const body: any = { headA: a.url, headB: b.url,
         audioUrl: av.voiceSource === 'record' ? pod.recordingUrl : undefined,
         musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
-      const res = await fetch('/api/render/podcast/compose', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+      if (onStudio) body.studioUrl = studioBg;
+      const res = await fetch(onStudio ? '/api/render/podcast/compose-studio' : '/api/render/podcast/compose', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
       const d = await res.json();
       if (!res.ok || !d.jobId) { setComposeNote(d?.error || 'Не удалось запустить склейку.'); setComposeBusy(false); return; }
       setComposeNote(d.note || 'Склеиваю…');
       pollCompose(d.jobId);
     } catch { setComposeNote('Ошибка сети при склейке.'); setComposeBusy(false); }
+  };
+
+  // ── HeyGen «на студии»: вырезать людей из общего фото (Nano→зелёный) → HeyGen (Avatar IV) → наложим на студию ──
+  const runHeyGenStudio = async () => {
+    if (animBusy) return;
+    if (!pod.groupPhotoUrl) { setAnimNote('Нужно общее фото студии (студия лиц) — из него вырежем обоих ведущих.'); return; }
+    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
+    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+    setAnimBusy(true); setAnimNote(null); setAnimJobs([]); setStudioBg(null); setComposeUrl(null);
+    try {
+      const av = pod.avatar || POD_DEFAULT.avatar!;
+      const res = await fetch('/api/render/podcast/heygen-studio', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod, mode: av.mode, voiceSource: av.voiceSource, emotion: av.emotion }) });
+      const d = await res.json();
+      if (!res.ok) { setAnimNote(d?.error || 'HeyGen-студия недоступна.'); setAnimBusy(false); return; }
+      if (Array.isArray(d.jobs) && d.jobs.length) {
+        setAnimJobs(d.jobs.map((j: any) => ({ ...j, status: 'processing', url: null })));
+        setStudioBg(d.studioUrl || pod.groupPhotoUrl || null);
+        setAnimNote(d.note || 'HeyGen анимирует…');
+        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null });
+        pollAnimate(d.jobs.map((j: any) => j.videoId));
+      } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
+    } catch { setAnimNote('Ошибка сети (HeyGen-студия).'); setAnimBusy(false); }
   };
 
   // ── Omni-студия: оживить фото каждого ведущего через Omni Flash (по одному) → 2 клипа с ИИ-голосом ──
@@ -3423,8 +3448,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <button onClick={runAnimate} disabled={animBusy}
                         className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                         style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? (av.provider === 'omni' ? 'Omni оживляет…' : 'Рендер идёт…') : (av.provider === 'omni' ? 'Оживить ведущих (Omni)' : 'Анимировать ведущих')}
+                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? (av.provider === 'omni' ? 'Omni оживляет…' : 'Рендер идёт…') : (av.provider === 'omni' ? 'Оживить ведущих (Omni)' : 'Анимировать ведущих (сплит-скрин)')}
                       </button>
+                      {av.provider === 'heygen' && pod.groupPhotoUrl && (
+                        <>
+                          <button onClick={runHeyGenStudio} disabled={animBusy}
+                            className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                            style={{ background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                            {animBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} Оживить НА студии (вырезать людей → HeyGen)
+                          </button>
+                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии»: вырезаю обоих ведущих из общего фото → HeyGen оживляет (Avatar IV, тело/руки) на зелёном → накладываю на фон студии. Голос — по выбору выше.</p>
+                        </>
+                      )}
                       {animNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{animNote}</p>}
                       {animJobs.length > 0 && (
                         <div className="grid grid-cols-2 gap-2">
@@ -3455,14 +3490,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         <button onClick={runCompose} disabled={composeBusy}
                           className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                           style={{ background: '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                          {composeBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} {composeBusy ? 'Склеиваю сплит-скрин…' : 'Склеить сплит-скрин + музыка'}
+                          {composeBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} {composeBusy ? (studioBg ? 'Собираю на студии…' : 'Склеиваю сплит-скрин…') : (studioBg ? 'Собрать НА студии (chroma-key)' : 'Склеить сплит-скрин + музыка')}
                         </button>
                       )}
                       {composeNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{composeNote}</p>}
                       {composeUrl && (
                         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
                           <video src={composeUrl} controls className="w-full" style={{ aspectRatio: '9 / 16', background: '#000' }} />
-                          <div className="text-[10px] px-1.5 py-1" style={{ color: 'var(--text-secondary)' }}>Готовый сплит-скрин ✓ (сохранён в Галерею)</div>
+                          <div className="text-[10px] px-1.5 py-1" style={{ color: 'var(--text-secondary)' }}>{studioBg ? 'Готово: ведущие на фоне студии ✓ (в Галерее)' : 'Готовый сплит-скрин ✓ (сохранён в Галерею)'}</div>
                         </div>
                       )}
                     </div>
