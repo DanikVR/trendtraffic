@@ -16,7 +16,7 @@ import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
-  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine,
+  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { VideoViewer } from '../../components/VideoViewer';
@@ -378,6 +378,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [editorNote, setEditorNote] = useState<string | null>(null);
   const [editorTab, setEditorTab] = useState<EdCat>('analyzed'); // вкладка пикера (как в Галерее)
   const [editorQuery, setEditorQuery] = useState('');            // поиск в пикере
+  const [editorUploading, setEditorUploading] = useState(false); // загрузка «Медиа»/«Аудио» в пикере
+  const edMediaInputRef = useRef<HTMLInputElement | null>(null);
+  const edAudioInputRef = useRef<HTMLInputElement | null>(null);
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
@@ -1277,6 +1280,30 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (firstNonEmpty) setEditorTab(firstNonEmpty);
     } catch { setEditorGallery([]); }
     finally { setEditorGalLoading(false); }
+  };
+  /** Загрузка «Медиа»/«Аудио» прямо из пикера — тот же эндпоинт, что в Галерее; затем перезагрузка списка. */
+  const uploadEditorMedia = async (files: FileList | null, kind: 'reference' | 'audio') => {
+    if (!files || files.length === 0) return;
+    setEditorUploading(true); setEditorNote(null);
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append('file', file);
+        // FormData: НЕ задаём Content-Type — браузер сам проставит boundary.
+        // eslint-disable-next-line no-await-in-loop
+        const res = await fetch(`/api/trends/media/upload?kind=${kind}`, {
+          method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd,
+        });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+      }
+      await loadEditorGallery();                                 // перезагрузить (как Галерея после аплоада)
+      setEditorTab(kind === 'audio' ? 'audio' : 'reference');    // открыть вкладку, куда легло
+    } catch (e: any) { setEditorNote(e?.message || 'Ошибка загрузки'); }
+    finally {
+      setEditorUploading(false);
+      if (edMediaInputRef.current) edMediaInputRef.current.value = '';
+      if (edAudioInputRef.current) edAudioInputRef.current.value = '';
+    }
   };
   const addEditorClip = (c: { url: string; name: string; type?: 'video' | 'audio' }) => { setEditorClips((cs) => (cs.some((x) => x.url === c.url) ? cs : [...cs, c])); setDirty(true); };
   const removeEditorClip = (url: string) => { setEditorClips((cs) => cs.filter((x) => x.url !== url)); setDirty(true); };
@@ -2661,6 +2688,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Из Галереи — клик добавляет</span>
                       <button onClick={() => setEditorPick(false)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Закрыть</button>
+                    </div>
+                    {/* Загрузка своих файлов прямо в Галерею — те же кнопки, что на странице «Галерея» */}
+                    <input ref={edMediaInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => uploadEditorMedia(e.target.files, 'reference')} />
+                    <input ref={edAudioInputRef} type="file" accept="audio/*" multiple className="hidden" onChange={(e) => uploadEditorMedia(e.target.files, 'audio')} />
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <button type="button" onClick={() => edMediaInputRef.current?.click()} disabled={editorUploading} title="Загрузить видео/изображение в «Референс»"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: editorUploading ? 'wait' : 'pointer' }}>
+                        {editorUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} Медиа
+                      </button>
+                      <button type="button" onClick={() => edAudioInputRef.current?.click()} disabled={editorUploading} title="Загрузить аудио в «Аудио»"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: editorUploading ? 'wait' : 'pointer' }}>
+                        {editorUploading ? <Loader2 size={13} className="animate-spin" /> : <Music size={13} />} Аудио
+                      </button>
+                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>загрузить своё</span>
                     </div>
                     {/* Вкладки-папки (как в Галерее): Тренды/Референс/Аудио/Из анализа + счётчики */}
                     <div className="grid grid-cols-4 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
