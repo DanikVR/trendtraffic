@@ -182,6 +182,9 @@ interface OmniSeg {
   prompt: string;         // «как преобразовать»
   seedFrame: boolean;     // (устар.) — заменён явным startFrame
   startFrame?: string | null; // omni: URL старт-кадра (первый кадр для image_to_video) — #3
+  genJobId?: string | null;         // активная задача Omni (возобновляем поллинг после выхода/входа в сценарий)
+  genUrl?: string | null;           // готовый клип — превью выживает выход/вход
+  genInteractionId?: string | null; // interactionId готового клипа (для чат-правок)
   provider: V2VProvider;  // engine=v2v: чем ре-стайлить
 }
 interface OmniSpec { segments: OmniSeg[]; }
@@ -507,10 +510,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 prompt: typeof x?.prompt === 'string' ? x.prompt : '',
                 seedFrame: x?.seedFrame !== false,
                 startFrame: typeof x?.startFrame === 'string' ? x.startFrame : null,
+                genJobId: typeof x?.genJobId === 'string' ? x.genJobId : null,
+                genUrl: typeof x?.genUrl === 'string' ? x.genUrl : null,
+                genInteractionId: typeof x?.genInteractionId === 'string' ? x.genInteractionId : null,
                 provider: x?.provider === 'fal' ? 'fal' : 'runway',
               };
             });
             setOmniSpec({ segments: norm.length ? norm : [newSeg(0, 0.2)] });
+            // Гидрация Omni: вернуть превью готовых клипов и ВОЗОБНОВИТЬ поллинг активных задач (фон переживает выход/вход).
+            for (const sg of norm) {
+              if (sg.genUrl) setOG(sg.id, { url: sg.genUrl, interactionId: sg.genInteractionId || null, note: 'Готово · в Галерее' });
+              else if (sg.genJobId) { setOG(sg.id, { busy: true, note: 'Возобновляю…' }); pollOmni(sg.id, sg.genJobId); }
+            }
           }
           if (d.flow.graph?.podcast && typeof d.flow.graph.podcast === 'object') {
             const pp = d.flow.graph.podcast;
@@ -560,12 +571,23 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const restoringRef = useRef(false);
   const [, setHistTick] = useState(0);
   const docSnap = useCallback((): string => JSON.stringify({
-    name, brief, nodes, pod, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId,
+    name, brief, nodes, pod,
+    // volatile gen-поля (genJobId/genUrl/genInteractionId) НЕ в undo-историю: их пишет фоновый поллинг, а не юзер.
+    omniSpec: { segments: omniSpec.segments.map(({ genJobId, genUrl, genInteractionId, ...s }) => s) },
+    cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId,
   }), [name, brief, nodes, pod, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId]);
   const applyDoc = (s: string) => {
     let d: any; try { d = JSON.parse(s); } catch { return; }
     restoringRef.current = true;
-    setName(d.name); setBrief(d.brief); setNodes(d.nodes); setPod(d.pod); setOmniSpec(d.omniSpec);
+    setName(d.name); setBrief(d.brief); setNodes(d.nodes); setPod(d.pod);
+    // omniSpec в истории без gen-полей → возвращаем их из ТЕКУЩЕГО состояния по id (не теряем активную задачу/превью).
+    setOmniSpec((cur) => {
+      const genById = new Map(cur.segments.map((sg) => [sg.id, { genJobId: sg.genJobId ?? null, genUrl: sg.genUrl ?? null, genInteractionId: sg.genInteractionId ?? null }]));
+      const segs: OmniSeg[] = Array.isArray(d.omniSpec?.segments)
+        ? d.omniSpec.segments.map((sg: any) => ({ ...sg, ...(genById.get(sg.id) || {}) }))
+        : cur.segments;
+      return { segments: segs };
+    });
     setCloud(d.cloud); setCloudEdges(d.cloudEdges);
     setSourceUrl(d.sourceUrl); setSourceName(d.sourceName); setSourceAssetId(d.sourceAssetId);
     setDirty(true);
@@ -632,10 +654,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const tick = async () => {
       try {
         const res = await fetch('/api/render/omni/status?jobId=' + jobId, { headers: headers() });
+        if (res.status === 404) {  // задача пропала (сервер перезапустился) → мягко; готовый клип мог сохраниться в Галерею
+          setOG(id, { busy: false, note: 'Прошлая генерация не найдена (сервер мог перезапуститься). Готовый клип ищите в Галерее.' });
+          updateSeg(id, { genJobId: null });
+          return;
+        }
         const d = await res.json();
         if (res.ok && d.status && d.status !== 'processing') {
-          if (d.status === 'done' && d.fileUrl) setOG(id, { busy: false, url: d.fileUrl, interactionId: d.interactionId, note: `Готово${d.costUsd ? ` · ~$${d.costUsd}` : ''}${d.seconds ? ` · ${d.seconds}с` : ''} · в Галерее` });
-          else setOG(id, { busy: false, note: friendlyOmniError(d.error) });
+          if (d.status === 'done' && d.fileUrl) {
+            setOG(id, { busy: false, url: d.fileUrl, interactionId: d.interactionId, note: `Готово${d.costUsd ? ` · ~$${d.costUsd}` : ''}${d.seconds ? ` · ${d.seconds}с` : ''} · в Галерее` });
+            updateSeg(id, { genJobId: null, genUrl: d.fileUrl, genInteractionId: d.interactionId || null });  // результат → переживёт выход/вход
+          } else {
+            setOG(id, { busy: false, note: friendlyOmniError(d.error) });
+            updateSeg(id, { genJobId: null });
+          }
           return;
         }
       } catch { /* ретрай */ }
@@ -664,6 +696,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await res.json();
       if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Omni Flash недоступен.' }); return; }
       setOG(g.id, { note: d.note });
+      updateSeg(g.id, { genJobId: d.jobId, genUrl: null, genInteractionId: null });  // активная задача → переживёт выход/вход
       pollOmni(g.id, d.jobId);
     } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при генерации.' }); }
   };
@@ -677,6 +710,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await res.json();
       if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Ошибка правки.' }); return; }
       setOG(g.id, { note: d.note, edit: '' });
+      updateSeg(g.id, { genJobId: d.jobId, genUrl: null, genInteractionId: null });  // правка = новая задача; старый результат сбрасываем, иначе гидрация не возобновит её
       pollOmni(g.id, d.jobId);
     } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при правке.' }); }
   };
@@ -755,7 +789,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setOG(g.id, { fbBusy: false, note: newId ? 'Добавил окно-продолжение: старт = последний кадр.' : 'Нет места на ленте для нового окна.' });
     } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при продолжении.' }); }
   };
-  const removeSeg = (id: string) => omniMutate((s) => (s.segments.length <= 1 ? s : { ...s, segments: s.segments.filter((g) => g.id !== id) }));
+  const removeSeg = (id: string) => {
+    if (omniPollRef.current[id]) { clearTimeout(omniPollRef.current[id]); delete omniPollRef.current[id]; } // не оставляем висящий поллинг удалённого окна
+    omniMutate((s) => (s.segments.length <= 1 ? s : { ...s, segments: s.segments.filter((g) => g.id !== id) }));
+  };
   const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
   const winSecOf = (g: OmniSeg) => srcDuration > 0 ? (g.end - g.start) * srcDuration : 0;
   const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + Math.min(OMNI_MAX_SEC, winSecOf(g)), 0);
