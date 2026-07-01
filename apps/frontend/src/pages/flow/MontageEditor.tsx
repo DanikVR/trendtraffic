@@ -97,6 +97,15 @@ const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: stri
   editor: { label: 'Редактор', icon: <Scissors size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
 };
 
+// Пикер «Редактора» повторяет Галерею: те же вкладки-папки (тренды/референс/аудио/из анализа).
+type EdCat = 'trends' | 'reference' | 'audio' | 'analyzed';
+const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
+  { key: 'trends', label: 'Тренды', icon: <Video size={13} /> },
+  { key: 'reference', label: 'Референс', icon: <Image size={13} /> },
+  { key: 'audio', label: 'Аудио', icon: <Music size={13} /> },
+  { key: 'analyzed', label: 'Из анализа', icon: <Sparkles size={13} /> },
+];
+
 // ── Подкаст-сцена (2 ведущих): спецификация облачного узла «Подкаст» ──
 type PodVoice = 'female' | 'male';
 type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
@@ -363,10 +372,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [editorResult, setEditorResult] = useState<{ url: string; name: string; type?: 'video' | 'audio' } | null>(null);
   const [editorView, setEditorView] = useState<{ url: string; name: string; type?: 'video' | 'audio' } | null>(null);
   const [editorPick, setEditorPick] = useState(false);
-  const [editorGallery, setEditorGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' }[]>([]);
+  const [editorGallery, setEditorGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio'; cat: EdCat }[]>([]);
   const [editorGalLoading, setEditorGalLoading] = useState(false);
   const [editorMerging, setEditorMerging] = useState(false);
   const [editorNote, setEditorNote] = useState<string | null>(null);
+  const [editorTab, setEditorTab] = useState<EdCat>('analyzed'); // вкладка пикера (как в Галерее)
+  const [editorQuery, setEditorQuery] = useState('');            // поиск в пикере
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
@@ -1237,9 +1248,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   // ── Облако «Редактор»: пикер видео из Галереи + склейка ──
   const loadEditorGallery = async () => {
-    setEditorPick(true); setEditorGalLoading(true); setEditorNote(null);
+    setEditorPick(true); setEditorGalLoading(true); setEditorNote(null); setEditorQuery('');
     try {
-      // Все локальные медиа Галереи: скачанные тренды + референс-видео + папка «Из анализа» + аудио.
+      // Как в Галерее: тренды + референс-видео + папка «Из анализа» + аудио — по вкладкам.
       const [v, r, an, au] = await Promise.all([
         fetch('/api/trends/videos?downloaded=1&limit=200', { headers: headers() }),
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
@@ -1251,13 +1262,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const analyzed = an.ok ? ((await an.json()).assets || []) : [];
       const audios = au.ok ? ((await au.json()).assets || []) : [];
       const seen = new Set<string>();
-      const list: { url: string; name: string; cover?: string; type: 'video' | 'audio' }[] = [];
-      const pushV = (url: string, name: string, cover?: string) => { if (url && !seen.has(url)) { seen.add(url); list.push({ url, name, cover, type: 'video' }); } };
-      for (const x of vids) if (x.fileUrl) pushV(x.fileUrl, x.title || x.author || 'видео', x.coverUrl);
-      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) pushV(m.fileUrl, m.originalName || 'видео');
-      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) pushV(m.fileUrl, m.originalName || 'видео');
-      for (const m of audios) if (m.fileUrl && !seen.has(m.fileUrl)) { seen.add(m.fileUrl); list.push({ url: m.fileUrl, name: m.originalName || 'аудио', type: 'audio' }); }
+      const list: { url: string; name: string; cover?: string; type: 'video' | 'audio'; cat: EdCat }[] = [];
+      const push = (url: string, name: string, type: 'video' | 'audio', cat: EdCat, cover?: string) => {
+        if (url && !seen.has(url)) { seen.add(url); list.push({ url, name, cover, type, cat }); }
+      };
+      for (const x of vids) if (x.fileUrl) push(x.fileUrl, x.title || x.author || 'видео', 'video', 'trends', x.coverUrl);
+      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) push(m.fileUrl, m.originalName || 'видео', 'video', 'analyzed');
+      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) push(m.fileUrl, m.originalName || 'видео', 'video', 'reference');
+      for (const m of audios) if (m.fileUrl) push(m.fileUrl, m.originalName || 'аудио', 'audio', 'audio');
       setEditorGallery(list);
+      // Открыть первую непустую вкладку (приоритет — «Из анализа», где лежат проанализированные видео).
+      const order: EdCat[] = ['analyzed', 'trends', 'reference', 'audio'];
+      const firstNonEmpty = order.find((c) => list.some((it) => it.cat === c));
+      if (firstNonEmpty) setEditorTab(firstNonEmpty);
     } catch { setEditorGallery([]); }
     finally { setEditorGalLoading(false); }
   };
@@ -2046,7 +2063,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
       {cloudPanel && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : 600, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : cloudPanel === 'editor' ? 680 : 600, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
                 <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
@@ -2640,32 +2657,61 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 )}
 
                 {editorPick && (
-                  <div className="rounded-xl p-2" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Видео и аудио из Галереи (клик — добавить)</span>
+                  <div className="rounded-xl p-2.5" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Из Галереи — клик добавляет</span>
                       <button onClick={() => setEditorPick(false)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Закрыть</button>
                     </div>
-                    {editorGalLoading ? (
-                      <div className="py-6 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
-                    ) : editorGallery.length === 0 ? (
-                      <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Пусто. Скачайте тренды, сохраните анализ или загрузите видео/аудио в Галерею.</p>
-                    ) : (
-                      <div className="grid grid-cols-3 gap-1.5" style={{ maxHeight: 220, overflowY: 'auto' }}>
-                        {editorGallery.map((g) => {
-                          const sel = editorClips.some((c) => c.url === g.url);
-                          return (
-                            <button key={g.url} onClick={() => addEditorClip({ url: g.url, name: g.name, type: g.type })} title={g.name}
-                              className="relative rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: '9/16', background: 'var(--bg-tertiary)', border: sel ? '2px solid var(--brand)' : '1px solid var(--border-medium)', cursor: 'pointer', padding: 0 }}>
-                              {g.type === 'audio'
-                                ? <div className="flex flex-col items-center gap-1 px-1 text-center"><Music size={20} style={{ color: 'var(--brand)' }} /><span className="text-[9px] leading-tight truncate w-full" style={{ color: 'var(--text-muted)' }}>{g.name}</span></div>
-                                : (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)}
-                              {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
-                              {sel && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: '#fff' }}><Check size={12} /></span>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+                    {/* Вкладки-папки (как в Галерее): Тренды/Референс/Аудио/Из анализа + счётчики */}
+                    <div className="grid grid-cols-4 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
+                      {ED_TABS.map((tb) => {
+                        const n = editorGallery.filter((g) => g.cat === tb.key).length;
+                        const active = editorTab === tb.key;
+                        return (
+                          <button key={tb.key} onClick={() => setEditorTab(tb.key)}
+                            className="inline-flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-[11px] font-600 whitespace-nowrap"
+                            style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)' }}>
+                            {tb.icon}<span className="truncate">{tb.label}</span>{n > 0 && <span style={{ opacity: 0.7 }}>{n}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Поиск по имени */}
+                    <div className="relative mb-2">
+                      <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+                      <input value={editorQuery} onChange={(e) => setEditorQuery(e.target.value)} placeholder="Поиск по имени…"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-xs outline-none"
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                    </div>
+                    {(() => {
+                      const filtered = editorGallery.filter((g) => g.cat === editorTab
+                        && (!editorQuery.trim() || g.name.toLowerCase().includes(editorQuery.trim().toLowerCase())));
+                      if (editorGalLoading) return <div className="py-6 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>;
+                      if (filtered.length === 0) return <p className="text-[11px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{editorQuery.trim() ? 'Ничего не найдено.' : 'В этой папке пусто.'}</p>;
+                      return (
+                        <>
+                          <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length}</div>
+                          <div className="grid grid-cols-3 gap-2" style={{ maxHeight: 300, overflowY: 'auto' }}>
+                            {filtered.map((g) => {
+                              const sel = editorClips.some((c) => c.url === g.url);
+                              return (
+                                <button key={g.url} onClick={() => addEditorClip({ url: g.url, name: g.name, type: g.type })} title={g.name}
+                                  className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: sel ? '2px solid var(--brand)' : '1px solid var(--border-medium)', cursor: 'pointer', padding: 0 }}>
+                                  <div className="relative flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000' }}>
+                                    {g.type === 'audio'
+                                      ? <Music size={30} style={{ color: 'var(--brand)' }} />
+                                      : (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)}
+                                    {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
+                                    {sel && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: '#fff' }}><Check size={12} /></span>}
+                                  </div>
+                                  <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{g.name}</div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
