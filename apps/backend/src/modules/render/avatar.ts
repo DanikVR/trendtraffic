@@ -70,17 +70,23 @@ export async function uploadTalkingPhoto(apiKey: string, imageUrl: string): Prom
   return id;
 }
 
-/** Поставить рендер говорящей головы (текст+голос, опц. эмоция) → video_id. */
+/** Поставить рендер говорящей головы → video_id.
+ *  Голос: audioUrl (аудио-драйв: реальная запись / ElevenLabs) ИЛИ текст+voiceId (HeyGen TTS, опц. эмоция).
+ *  useIV=true → движок Avatar IV (выразительнее мимика/движение головы). */
 export async function submitTalkingPhotoVideo(apiKey: string, opts: {
-  talkingPhotoId: string; voiceId: string; text: string; emotion?: string; width?: number; height?: number; speed?: number;
+  talkingPhotoId: string; voiceId?: string; text?: string; audioUrl?: string; emotion?: string;
+  useIV?: boolean; width?: number; height?: number; speed?: number;
 }): Promise<string> {
-  const voice: any = { type: 'text', voice_id: opts.voiceId, input_text: opts.text };
-  if (opts.emotion) voice.emotion = opts.emotion;
-  if (opts.speed) voice.speed = opts.speed;
-  const body = {
+  const voice: any = opts.audioUrl
+    ? { type: 'audio', audio_url: opts.audioUrl }
+    : { type: 'text', voice_id: opts.voiceId, input_text: opts.text || '' };
+  if (!opts.audioUrl && opts.emotion) voice.emotion = opts.emotion;
+  if (!opts.audioUrl && opts.speed) voice.speed = opts.speed;
+  const body: any = {
     video_inputs: [{ character: { type: 'talking_photo', talking_photo_id: opts.talkingPhotoId }, voice }],
     dimension: { width: opts.width || 720, height: opts.height || 1280 },
   };
+  if (opts.useIV) body.use_avatar_iv_model = true;
   const r = await fetch(`${HG}/v2/video/generate`, {
     method: 'POST', headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });

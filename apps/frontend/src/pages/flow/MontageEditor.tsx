@@ -122,7 +122,9 @@ interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: numb
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
 type PodAvatarProvider = 'heygen' | 'did' | 'gpu';
-interface PodAvatar { provider: PodAvatarProvider; heygenVersion: '3' | '4' | '5'; emotion?: string }
+type PodAvatarMode = 'standard' | 'iv';                 // HeyGen: стандартный движок / Avatar IV
+type PodVoiceSource = 'heygen' | 'record' | 'elevenlabs'; // откуда голос для аниматора
+interface PodAvatar { provider: PodAvatarProvider; mode: PodAvatarMode; voiceSource: PodVoiceSource; emotion?: string }
 // Пресеты подачи/эмоции (топ-кнопки) — маппятся в эмоцию голоса HeyGen на бэке.
 const POD_EMOTIONS: { v: string; label: string }[] = [
   { v: 'friendly', label: 'Дружелюбно' }, { v: 'confident', label: 'Уверенно' },
@@ -155,7 +157,7 @@ const POD_DEFAULT: PodcastSpec = {
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
   timeline: false,
-  avatar: { provider: 'heygen', heygenVersion: '4', emotion: 'friendly' },
+  avatar: { provider: 'heygen', mode: 'standard', voiceSource: 'heygen', emotion: 'friendly' },
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -752,7 +754,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     setAnimBusy(true); setAnimNote(null); setAnimJobs([]);
     try {
       const res = await fetch('/api/render/podcast/animate', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ provider: av.provider, heygenVersion: av.heygenVersion, emotion: av.emotion, spec: pod }) });
+        body: JSON.stringify({ provider: av.provider, mode: av.mode, voiceSource: av.voiceSource, emotion: av.emotion, spec: pod }) });
       const d = await res.json();
       if (!res.ok) { setAnimNote(d?.error || 'Аниматор недоступен.'); setAnimBusy(false); return; }
       if (Array.isArray(d.jobs) && d.jobs.length) {
@@ -2779,16 +2781,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         ); })}
                       </div>
                       {av.provider === 'heygen' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Версия HeyGen:</span>
-                          {(['3', '4', '5'] as const).map((v) => { const sel = av.heygenVersion === v; return (
-                            <button key={v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), heygenVersion: v } }))}
-                              className="text-[10px] font-700 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>v{v}</button>
-                          ); })}
-                        </div>
+                        <>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Режим:</span>
+                            {([['standard', 'Стандарт'], ['iv', 'Avatar IV (жесты/мимика)']] as [PodAvatarMode, string][]).map(([m, lbl]) => { const sel = (av.mode || 'standard') === m; return (
+                              <button key={m} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), mode: m } }))}
+                                className="text-[10px] font-700 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                            ); })}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Голос:</span>
+                            {([['record', 'Из записи (реальные)'], ['heygen', 'HeyGen TTS'], ['elevenlabs', 'ElevenLabs']] as [PodVoiceSource, string][]).map(([vs, lbl]) => { const sel = (av.voiceSource || 'heygen') === vs; const disabled = vs === 'record' && !pod.recordingUrl; return (
+                              <button key={vs} disabled={disabled} title={disabled ? 'Нужна загруженная запись подкаста' : ''} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: vs } }))}
+                                className="text-[10px] font-600 px-2 py-1 rounded-md disabled:opacity-40" style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}`, cursor: disabled ? 'not-allowed' : 'pointer' }}>{lbl}</button>
+                            ); })}
+                          </div>
+                        </>
                       )}
                       {/* Подача/эмоция (движение) — топ-пресеты */}
-                      {av.provider !== 'gpu' && (
+                      {av.provider === 'heygen' && (av.voiceSource || 'heygen') === 'heygen' && (
                         <div className="flex flex-wrap items-center gap-1">
                           <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Подача/эмоция:</span>
                           {POD_EMOTIONS.map((e) => { const sel = (av.emotion || 'friendly') === e.v; return (
@@ -2797,7 +2808,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           ); })}
                         </div>
                       )}
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>. HeyGen рендерит голову + плечи/жесты и мимику по эмоции.</p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>. Голос «Из записи» = реальные голоса ведущих (по таймкодам), ElevenLabs — настраивается в ElevenLabs. Suno — это музыка (фон), не речь.</p>
                       <button onClick={runAnimate} disabled={animBusy}
                         className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                         style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>

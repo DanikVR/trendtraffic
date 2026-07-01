@@ -22,6 +22,7 @@ import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from 
 import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
+import { buildHostAudio, elevenTTS } from './podcast_voice.js';
 
 const router = Router();
 
@@ -205,7 +206,7 @@ router.post('/podcast/angle', async (req: AuthedRequest, res: Response) => {
 });
 
 /** POST /podcast/animate — ЗАПУСТИТЬ рендер говорящих голов ведущих у выбранного провайдера.
- *  body: { provider, heygenVersion?, emotion?, spec:{hostA,hostB,dialogue} }.
+ *  body: { provider, mode:'standard'|'iv', voiceSource:'heygen'|'record'|'elevenlabs', emotion?, spec }.
  *  HeyGen: грузим фото каждого ведущего → talking_photo → video/generate (текст его реплик,
  *  голос по полу, эмоция-пресет). Возвращаем video_id по каждому ведущему — фронт опрашивает
  *  /podcast/animate/status. Сабмит быстрый (укладывается в таймаут), сам рендер идёт у HeyGen. */
@@ -236,21 +237,48 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
     if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
 
     const emotion = HEYGEN_EMOTION_MAP[String(req.body?.emotion || '')] || undefined;
+    const useIV = req.body?.mode === 'iv';
+    const voiceSource = ['heygen', 'record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'heygen';
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
     const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
       .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ').slice(0, 1500);
+    const segsFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
+      .map((l) => ({ start: Number(l?.start), end: Number(l?.end) }))
+      .filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
+
+    if (voiceSource === 'record' && !spec.recordingUrl) {
+      return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись подкаста (вкладка «Разобрать запись»).' });
+    }
+    let elevenKey: string | null = null;
+    if (voiceSource === 'elevenlabs') {
+      elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
+      if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs в Настройки → Генерация.' });
+    }
 
     const jobs: any[] = [];
     for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
+      const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
       const text = textFor(spk) || `Реплики ведущего ${spk}.`;
-      const voiceId = await pickVoice(key, host.voice === 'male' ? 'male' : 'female', !!emotion);
-      if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
+      // Голос: реальная запись → нарезка сегментов; ElevenLabs → TTS; иначе HeyGen TTS (текст).
+      let audioUrl: string | undefined;
+      let voiceId: string | undefined;
+      if (voiceSource === 'record') {
+        const segs = segsFor(spk);
+        if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
+        audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs));
+      } else if (voiceSource === 'elevenlabs') {
+        audioUrl = abs(await elevenTTS(elevenKey!, text, gender, host.elevenVoiceId));
+      } else {
+        voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
+        if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
+      }
       const tpId = await uploadTalkingPhoto(key, abs(host.photoUrl));
-      const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: tpId, voiceId, text, emotion });
+      const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: tpId, voiceId, text, audioUrl, emotion, useIV });
       jobs.push({ host: spk, name: host.name || `Ведущий ${spk}`, videoId });
     }
-    return res.json({ jobs, note: `HeyGen: запущен рендер 2 говорящих голов (~1–3 мин). Опрашиваю статус…` });
+    const src = voiceSource === 'record' ? 'реальные голоса из записи' : voiceSource === 'elevenlabs' ? 'голос ElevenLabs' : 'голос HeyGen';
+    return res.json({ jobs, note: `HeyGen${useIV ? ' (Avatar IV)' : ''}: запущен рендер 2 голов, ${src} (~1–3 мин). Опрашиваю статус…` });
   } catch (err: any) {
     res.status(400).json({ error: `HeyGen: ${err?.message || 'ошибка запуска рендера'}` });
   }

@@ -1004,7 +1004,16 @@
  *         возврата в MainLayout). STRIPE: корень пустого ключа (жали «Проверить», не «Сохранить») +
  *         авто-сейв перед sync + sync только Premium + реальные ошибки. ОБЛОЖКИ ленты: cover-proxy +
  *         dynamic_cover (HEIC-фикс). Плавный ввод «Сколько видео». */
-export const APP_VERSION = '1.6.16';
+/* 1.6.17 — Аниматор ведущих, апгрейд: (1) убраны косметические v3/4/5 → реальный переключатель
+ *         движка HeyGen: «Стандарт» / «Avatar IV» (use_avatar_iv_model — выразительнее жесты/мимика).
+ *         (2) ВЫБОР ГОЛОСА: «Из записи (реальные)» — режем сегменты каждого ведущего из записи
+ *         (ffmpeg atrim+concat → mp3 в uploads/renders) и отдаём HeyGen как audio_url (аудио-драйв,
+ *         синхрон губ по реальному голосу); «HeyGen TTS» (текст, эмоция); «ElevenLabs» (TTS
+ *         мультиязычным голосом → mp3 → audio_url). Suno — это музыка, не речь (примечание).
+ *         Бэкенд: render/podcast_voice.ts (buildHostAudio/elevenTTS), avatar.submit (audioUrl+useIV),
+ *         /podcast/animate (mode+voiceSource). Проверено вживую: audio_url и use_avatar_iv_model
+ *         HeyGen принимает (video_id). Дальше: склейка сплит-скрина + сохранение в Галерею по порядку. */
+export const APP_VERSION = '1.6.17';
 
 export function AppVersion() {
   return (
