@@ -74,6 +74,7 @@ export default function FlowPage() {
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [openedNew, setOpenedNew] = useState(false); // true — сценарий только что создан (показать пресеты)
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -116,7 +117,7 @@ export default function FlowPage() {
       const res = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: 'Новый сценарий' }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      if (data.flow?.id) setEditingId(data.flow.id); else await load();
+      if (data.flow?.id) { setOpenedNew(true); setEditingId(data.flow.id); } else await load();
     } catch (e: any) { setError(e?.message || 'Ошибка'); }
     finally { setCreating(false); }
   };
@@ -179,7 +180,7 @@ export default function FlowPage() {
   if (editingId) {
     return (
       <React.Suspense fallback={<div className="py-12 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>}>
-        <MontageEditor flowId={editingId} onBack={() => { setEditingId(null); load(); }} />
+        <MontageEditor flowId={editingId} isNew={openedNew} onBack={() => { setEditingId(null); setOpenedNew(false); load(); }} />
       </React.Suspense>
     );
   }
@@ -215,7 +216,7 @@ export default function FlowPage() {
 
           {/* Карточки сценариев */}
           {flows.map((f) => (
-            <div key={f.id} onClick={() => setEditingId(f.id)} role="button" tabIndex={0}
+            <div key={f.id} onClick={() => { setOpenedNew(false); setEditingId(f.id); }} role="button" tabIndex={0}
               className="rounded-2xl overflow-hidden flex flex-col transition-transform duration-150 hover:-translate-y-0.5 cursor-pointer"
               style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
               {/* Шапка: название + ✎ + статус + дата + ⋯ */}

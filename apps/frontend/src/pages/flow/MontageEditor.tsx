@@ -313,7 +313,7 @@ function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
   return { nodes, brief: d.brief || '' };
 }
 
-export default function MontageEditor({ flowId, onBack }: { flowId: string; onBack: () => void }) {
+export default function MontageEditor({ flowId, onBack, isNew }: { flowId: string; onBack: () => void; isNew?: boolean }) {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
 
@@ -446,7 +446,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео', type: c.type === 'audio' ? 'audio' : 'video' })));
             if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || 'Результат', type: ed.result.type === 'audio' ? 'audio' : 'video' });
           }
-          if (mapped.length === 0) setShowPresets(true);
+          if (mapped.length === 0 && isNew) setShowPresets(true); // пресеты — только для НОВОГО сценария
         }
       } catch { /* пусто */ }
       finally { setLoading(false); }
