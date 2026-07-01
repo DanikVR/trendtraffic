@@ -3080,3 +3080,28 @@ ssh root@web 'cd /var/www/trendtraffic && bash deploy/vps-redeploy.sh'
 ---
 
 *Последнее обновление: 2026-07-01 — TrendFlow редактор видео/аудио (`VideoViewer`) + пикер медиа = Галерея (v1.6.7 → v1.6.14): пресеты только для нового сценария; пикер «Редактора» повторяет Галерею (вкладки Тренды/Референс/Аудио/Из анализа + поиск + крупные карточки + загрузка «Медиа»/«Аудио»); редактор — редактируемое имя (карандаш), «Сохранить» вверху, мульти-обрезка (отметить N промежутков → «Вырезать»/«Оставить» всех сразу), скраб при перетаскивании (видео перематывается на позицию реза), кнопка звука; бэкенд обрезки аудио → .m4a. Приём: изолированный git-worktree-деплой при параллельной сессии (+ junction node_modules для tsc; junction снимать через `rmdir`, не `rm -rf`). Раздел «## 5.Ф». Предыдущее: 2026-06-30…07-01 — монетизация (платный гейт + триал + Stripe + импесонейшн), раздел «## 5.У». Известное TODO: whsec_ webhook secret в Stripe; общий компонент медиа-библиотеки (чтобы улучшения Галереи авто-попадали в пикер редактора).*
+
+## 5.Х TrendFlow: OpenMontage-конвейер доделан — «тренд → рецепт → цепочка → ролик» без дыр (2026-07-01, v1.6.39)
+
+**Цель:** каждый блок монтажной цепочки реально исполняется (раньше news/broll были заглушками, avatar/upscale молча пропускались без GPU).
+
+**Что сделано (бэкенд `apps/backend/src/modules/render/`):**
+- **`news_fetch.ts` (НОВЫЙ)** — честный источник «Новостей»: RSS/Atom (первый item: title+description+enclosure/media:content), Telegram-канал через `t.me/s/<name>` (последний содержательный пост + фото), сайт (OpenGraph, авто-обнаружение RSS по `<link type=application/rss+xml>`). `looksLikeNewsSource()` отличает ссылку/@канал от «темы». Проверено вживую: lenta.ru/rss, @durov, theverge.com.
+- **`broll.ts` (НОВЫЙ)** — подбор перебивок в стоках: Pexels (portrait, файл ~900px) → Pixabay (medium). Ключи: tenant `pexels`/`pixabay` → env `PEXELS_API_KEY`/`PIXABAY_API_KEY` (стоки бесплатны — платформенный фолбэк безопасен).
+- **`avatar_step.ts` (НОВЫЙ)** — облачный путь блока «Аватар»: HeyGen talking_photo → Avatar IV (720×1280) → poll (10с, потолок 15 мин) → mp4 в `/uploads/renders`. Ключ ТОЛЬКО тенантский `heygen`.
+- **`director.ts`** — `writeNews()` принимает `material` (готовый текст источника → переписывание БЕЗ веб-поиска); новый `pickBrollKeywords()` (EN-запрос 2–4 слова для стоков).
+- **`executor_director.ts`** — новые ветки: `news` (источник → материал+фото в scratchpad; `scratch.newsImage` подхватывает B-roll первой перебивкой), `broll` (клипы+тайминги в params → воркер), `avatar` (движок `choices.engine`: heygen=облако / sadtalker=GPU-воркер; сценарий: текст узла → ✨Claude по брифу → scratch.voiceover/news/research; при провале облака — фолбэк на GPU-воркер). `scratch.voiceover` теперь сохраняется для аватара.
+
+**Воркер (`render-worker/main.py`):**
+- **`_broll_insert()`** — вставка перебивок ПОВЕРХ исходника: cover-кроп под кадр (`scale=force_original_aspect_ratio=increase,crop`), overlay `enable=between(t,...)`, сегмент 2.5с, тайминги от DNA («Тайминг по ритму: 0:05, 0:12») или равномерно с обходом первых 2с (хук); звук исходника не трогается (`-map 0:a? -c:a copy`). Картинки (jpg/png/webp) — через `-loop 1`. Смоук локально: 2 перебивки (jpg+mp4) на 12с видео → корректный mp4.
+- **upscale CPU-фолбэк** — если инструмента `upscale` нет в registry (CPU-VPS без GPU): `scale=iw*N:ih*N:flags=lanczos,unsharp` (проверено 540×960→1080×1920). Note честно говорит «GPU-воркер даст нейро-качество».
+
+**Фронт (`MontageEditor.tsx`):** «Аватар» получил выбор голоса М/Ж (для HeyGen TTS), движок подписан «SadTalker (GPU)»; B-roll: дефолт «Стоки» (опция «AI-генерация» убрана, легаси `src='ai'` бэкенд считает стоками); DNA-рецепт заполняет broll `src='stock'`; DIR_HINT для news/broll/avatar.
+
+**Ключи для полного цикла:** Claude (тенант) — ✨шаги; Pexels/Pixabay (тенант или env) — B-roll; HeyGen (тенант) — аватар. Без ключей — мягкая деградация с понятными note.
+
+**GPU-воркер (RTX 5080, домашний ПК) — ЕЩЁ НЕ ВКЛЮЧЁН, как включить:**
+1. На ПК `super` (Windows 11, RTX 5080 16ГБ, драйвер 591.86): WSL НЕ установлен → `wsl --install` от админа + ПЕРЕЗАГРУЗКА (поэтому ассистент не смог сам).
+2. В WSL2 (Ubuntu): `git clone <repo> /opt/tt && bash /opt/tt/render-worker/install-gpu.sh` (ставит OpenMontage + torch cu128 + Real-ESRGAN/SadTalker + systemd `trendtraffic-render-gpu` на `100.122.182.97:8801`; Tailscale уже стоит на ПК — машина `super` в tailnet).
+3. В админке (Admin Config → «Рендер: GPU и воркеры»): `renderGpuWorkerUrl = http://100.122.182.97:8801`, `renderGpuTarget = home`.
+4. После этого: «Апскейл» — нейро Real-ESRGAN, «Аватар» с движком SadTalker — бесплатно локально (HeyGen остаётся как облачный вариант).

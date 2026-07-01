@@ -41,7 +41,7 @@ interface MNode {
 const META: Record<MKind, Meta> = {
   news:      { label: 'Новости', icon: <Newspaper size={18} />, hint: 'Источник: RSS / Telegram / сайт / рубрика → текст + фото',
     choices: [{ id: 'type', label: 'Тип источника', def: ['rss'], opts: [{ v: 'rss', label: 'RSS' }, { v: 'telegram', label: 'Telegram' }, { v: 'site', label: 'Сайт' }, { v: 'rubric', label: 'Рубрика' }] }],
-    text: 'RSS-URL, @telegram-канал или ссылка', llm: true },
+    text: 'RSS-URL, @telegram-канал или ссылка на сайт — возьмём последнюю запись (текст + фото)', llm: true },
   research:  { label: 'Исследование', icon: <Search size={18} />, hint: 'Веб-поиск темы + источники', text: 'Тема для ресёрча…', llm: true },
   length:    { label: 'Длина', icon: <Scissors size={18} />, hint: 'Длина ролика',
     choices: [{ id: 'duration', label: 'Длительность', def: ['30'], opts: [{ v: '15', label: '15 сек' }, { v: '30', label: '30 сек' }, { v: '60', label: '60 сек' }, { v: 'best', label: 'Лучший момент (ЛЛМ)' }, { v: 'full', label: 'Весь' }] }],
@@ -66,11 +66,14 @@ const META: Record<MKind, Meta> = {
   color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки',
     choices: [{ id: 'preset', label: 'Пресет', def: ['none'], opts: [{ v: 'none', label: 'Без' }, { v: 'warm', label: 'Тёплый' }, { v: 'cold', label: 'Холодный' }, { v: 'cinema', label: 'Кино' }, { v: 'bw', label: 'Ч/Б' }, { v: 'vivid', label: 'Яркий' }] }],
     text: 'Опишите цвет: «тёплый плёночный закат, мягкие тени, лёгкое зерно»…', media: 'LUT (.cube) или референс' },
-  broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки / вставки',
-    choices: [{ id: 'src', label: 'Откуда брать', def: ['reference'], opts: [{ v: 'reference', label: 'Из Референса' }, { v: 'ai', label: 'AI-генерация' }, { v: 'stock', label: 'Стоки' }] }],
+  broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки: стоки (Pexels/Pixabay) или медиа из Галереи',
+    choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'reference', label: 'Из Референса' }] }],
     text: 'что вставить и когда…', media: 'Медиа из Галереи', llm: true },
   avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Говорящая голова / UGC',
-    choices: [{ id: 'engine', label: 'Движок', def: ['heygen'], opts: [{ v: 'heygen', label: 'HeyGen (облако)' }, { v: 'sadtalker', label: 'SadTalker (локально)' }] }],
+    choices: [
+      { id: 'engine', label: 'Движок', def: ['heygen'], opts: [{ v: 'heygen', label: 'HeyGen (облако)' }, { v: 'sadtalker', label: 'SadTalker (GPU)' }] },
+      { id: 'voice', label: 'Голос', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] },
+    ],
     text: 'сценарий для аватара…', media: 'Фото / аватар', llm: true },
   upscale:   { label: 'Апскейл', icon: <Maximize2 size={18} />, hint: 'Повысить чёткость',
     choices: [{ id: 'scale', label: 'Множитель', def: ['off'], opts: [{ v: 'off', label: 'Выкл' }, { v: '2', label: '2×' }, { v: '4', label: '4×' }] }] },
@@ -84,8 +87,10 @@ const KIND_ORDER: MKind[] = ['news', 'research', 'length', 'format', 'silence', 
 const DIR_HINT: Partial<Record<MKind, string>> = {
   voiceover: 'Claude напишет сценарий по вашему брифу выше, затем Piper его озвучит.',
   research: 'Claude найдёт материал по теме в вебе — он станет опорой для озвучки.',
-  news: 'Claude соберёт свежую новость по источнику/теме (веб-поиск) для озвучки.',
+  news: 'Ссылка/@канал читается напрямую (текст+фото), Claude перепишет для озвучки; тема без ссылки — веб-поиск.',
   length: 'Claude выберет самый сильный момент по транскрипту и обрежет под длительность.',
+  broll: 'Claude подберёт запрос для стоков (Pexels/Pixabay) по сценарию ролика.',
+  avatar: 'Claude напишет сценарий по брифу — аватар его произнесёт (HeyGen или GPU).',
 };
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash (генерация видео), Контент-план, Подкаст.
@@ -343,7 +348,7 @@ function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
       text: d.hookType ? `Усилить хук «${d.hookType}» в первые секунды` : '' }),
     mkNode('audio', { choices: { vol: 'mid', duck: 'on' }, text: audioBits.join(' · ') }),
     mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) }, text: colorBits.join(' · ') }),
-    mkNode('broll', { useLlm: true, choices: { src: 'ai' },
+    mkNode('broll', { useLlm: true, choices: { src: 'stock' },
       text: brollBits.join(' · ') || (d.howToReplicate || []).slice(0, 2).join('; ') }),
   ];
   // Апскейл — только если оригинал низкого качества / <1080p (GPU-шаг, добавляем по делу).

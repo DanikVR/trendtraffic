@@ -145,12 +145,15 @@ export async function runResearch(opts: {
   }
 }
 
-/** Новость по источнику/теме через веб-поиск → короткий новостной текст. */
+/** Новость по источнику/теме через веб-поиск → короткий новостной текст.
+ *  material — уже добытый текст записи (RSS/Telegram/сайт): тогда переписываем ЕГО
+ *  для озвучки без веб-поиска (быстрее и точнее по источнику). */
 export async function writeNews(opts: {
-  tenantId: string; topic: string; model?: string;
+  tenantId: string; topic: string; material?: string | null; model?: string;
 }): Promise<DirectorTextResult> {
   const topic = (opts.topic || '').trim();
-  if (!topic) return { text: null, note: 'новости: укажите источник/тему в поле узла' };
+  const material = (opts.material || '').trim();
+  if (!topic && !material) return { text: null, note: 'новости: укажите источник/тему в поле узла' };
   const apiKey = await resolveAnthropicKey(opts.tenantId);
   if (!apiKey) return { text: null, note: 'ИИ-режиссёр: ключ Claude не задан — новости пропущены' };
   const system =
@@ -159,13 +162,41 @@ export async function writeNews(opts: {
   try {
     const text = await generateText({
       apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL,
-      system, user: `Источник/тема: ${topic}`, webSearch: true, maxTokens: 5000,
+      system,
+      user: material
+        ? `Материал из источника (перепиши его в текст для озвучки, ничего не выдумывай):\n${material.slice(0, 4000)}`
+        : `Источник/тема: ${topic}`,
+      webSearch: !material, maxTokens: 5000,
     });
     return text
       ? { text, note: `новость ИИ готова (${text.length} симв.)` }
       : { text: null, note: 'новости: пустой ответ' };
   } catch (e: any) {
     return { text: null, note: `новости: ошибка — ${e?.message || e}` };
+  }
+}
+
+/** Ключевые слова для поиска B-roll в стоках (на английском — так ищется лучше).
+ *  Контекст — сценарий/ресёрч/текст узла. Без ключа → null (возьмём сырой текст). */
+export async function pickBrollKeywords(opts: {
+  tenantId: string; context: string; model?: string;
+}): Promise<DirectorTextResult> {
+  const context = (opts.context || '').trim();
+  if (!context) return { text: null, note: 'b-roll: нет контекста для подбора' };
+  const apiKey = await resolveAnthropicKey(opts.tenantId);
+  if (!apiKey) return { text: null, note: 'b-roll: ключ Claude не задан — ищем по тексту узла' };
+  const system =
+    'Ты подбираешь поисковый запрос для СТОКОВОГО видео (Pexels) под перебивки короткого ролика. ' +
+    'Верни ОДИН запрос на английском из 2–4 слов (конкретные визуальные образы, не абстракции) и ничего больше.';
+  try {
+    const text = await generateText({
+      apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL,
+      system, user: `О чём ролик:\n${context.slice(0, 3000)}`, maxTokens: 200,
+    });
+    const q = text.replace(/["'`]/g, '').split('\n')[0].trim().slice(0, 80);
+    return q ? { text: q, note: `b-roll: запрос «${q}»` } : { text: null, note: 'b-roll: пустой ответ' };
+  } catch (e: any) {
+    return { text: null, note: `b-roll: ошибка подбора — ${e?.message || e}` };
   }
 }
 

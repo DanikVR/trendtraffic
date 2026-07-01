@@ -1158,7 +1158,17 @@
  *         интервалам таймлайна поверх сцены (overlays в compose-studio, до 12). Фон студии
  *         (clean plate) сохраняется в спеку (studioBgUrl) — «Собрать НА студии» переживает
  *         выход/вход. Фильтр-граф проверен end-to-end на синтетике (ffmpeg-static). */
-export const APP_VERSION = '1.6.40';
+/* 1.6.41 — OpenMontage-конвейер ДОДЕЛАН (тренд → рецепт → цепочка → ролик без дыр):
+ *         (1) «Новости» честные: news_fetch.ts читает RSS/@tg-канал (t.me/s)/сайт (OpenGraph) → текст+фото
+ *         последней записи; ✨Claude переписывает материал для озвучки (веб-поиск только для «темы»);
+ *         фото новости уходит первой перебивкой в B-roll. (2) B-roll реальный: бэкенд подбирает клипы в
+ *         стоках (broll.ts, Pexels→Pixabay, ключ тенанта или PEXELS_API_KEY; ✨Claude придумывает EN-запрос),
+ *         воркер вставляет перебивки поверх исходника (_broll_insert: cover-кроп, тайминги DNA или равномерно,
+ *         звук не трогаем). (3) «Аватар» без GPU: движок HeyGen (avatar_step.ts: talking_photo→Avatar IV→poll;
+ *         выбор голоса М/Ж) — пресеты «Аватар-спикер»/«UGC-отзыв» ожили; SadTalker остаётся для GPU-воркера.
+ *         (4) Апскейл всегда работает: без GPU — CPU-фолбэк lanczos+unsharp на воркере. DNA-рецепт: broll
+ *         src=stock. Env (опц.): PEXELS_API_KEY/PIXABAY_API_KEY как платформенный фолбэк стоков. */
+export const APP_VERSION = '1.6.41';
 
 export function AppVersion() {
   return (

@@ -11,8 +11,9 @@ input_schema, см. tools/*), читает выход из ToolResult.artifacts 
 Карта узел→инструмент (= planner.TOOL_MAP):
   length→video_trimmer · format→auto_reframe · silence→silence_cutter ·
   subtitles→subtitle_gen(+transcriber+burn) · audio→audio_mixer · voiceover→tts(piper) ·
-  color→color_grade · export→video_compose · broll→clip_search(passthrough) ·
-  news/research→passthrough (наша LLM-сторона) · avatar/upscale→GPU (сюда не маршрутятся).
+  color→color_grade · export→video_compose · broll→clip_search(вставка перебивок,
+  клипы подбирает бэкенд в стоках) · upscale→Real-ESRGAN на GPU / CPU-фолбэк lanczos ·
+  news/research→passthrough (наша LLM-сторона) · avatar→GPU SadTalker (облако HeyGen — на бэке).
 """
 import os
 import re
@@ -312,13 +313,23 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
         f, _, n = run_tool("video_compose", inp)
         return (f, n or "экспорт")
 
-    if step_tool == "upscale":  # upscale (GPU RealESRGAN; есть CPU-фолбэк)
+    if step_tool == "upscale":  # upscale: GPU Real-ESRGAN, иначе CPU-фолбэк (lanczos+unsharp)
         sc = (choices.get("scale") or ["off"])[0]
         if sc == "off":
             return None, "апскейл: выключен — passthrough"
         scale = 4 if sc == "4" else 2
-        f, _, n = run_tool("upscale", {"input_path": input_path, "output_path": out(), "scale": scale})
-        return (f, n or f"апскейл ×{scale}")
+        if registry is not None and registry.get("upscale") is not None:
+            f, _, n = run_tool("upscale", {"input_path": input_path, "output_path": out(), "scale": scale})
+            if f:
+                return (f, n or f"апскейл ×{scale} (Real-ESRGAN)")
+        f2 = out()
+        ok, err = _run([FFMPEG, "-y", "-i", input_path,
+                        "-vf", f"scale=iw*{scale}:ih*{scale}:flags=lanczos,unsharp=5:5:0.6:5:5:0.0",
+                        "-c:v", "libx264", "-preset", "veryfast", "-crf", "19",
+                        "-c:a", "copy", f2], timeout=1800)
+        if ok and os.path.exists(f2):
+            return f2, f"апскейл ×{scale} (CPU lanczos; GPU-воркер даст нейро-качество)"
+        return None, f"апскейл: не получился ({err[:160]})"
 
     if step_tool == "talking_head":  # avatar (GPU SadTalker): фото + озвучка → говорящая голова
         if not media:
@@ -339,7 +350,15 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
     if step_tool == "podcast_compose":  # подкаст-сцена (2 ведущих): TTS на 2 голоса → головы → сшивка
         return _podcast_compose(params, work, base_url)
 
-    # broll(clip_search) / news_source / web_research — наша LLM-сторона / стоки (passthrough)
+    if step_tool == "clip_search":  # broll: перебивки поверх исходника (клипы подобрал бэкенд)
+        clips = params.get("clips") or []
+        if not input_path:
+            return None, "b-roll: нет входного видео — passthrough"
+        if not clips:
+            return None, "b-roll: клипы не подобраны — passthrough"
+        return _broll_insert(input_path, clips, params.get("timings") or [], work, base_url)
+
+    # news_source / web_research — наша LLM-сторона (passthrough)
     return None, f"{step_tool}: на воркере не выполняется — passthrough"
 
 
@@ -376,7 +395,80 @@ def _media_duration(path: str) -> float:
         return 0.0
 
 
-def _cut_audio(src: str, start: float, end: float, out_path: str) -> Optional[str]:
+def _video_wh(path: str) -> Tuple[int, int]:
+    """Ширина×высота первого видеопотока (дефолт 1080×1920 при сбое probe)."""
+    try:
+        p = subprocess.run([FFPROBE, "-v", "error", "-select_streams", "v:0",
+                            "-show_entries", "stream=width,height", "-of", "csv=p=0", path],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+        w, h = (p.stdout or b"").decode().strip().split(",")[:2]
+        return max(int(w), 16), max(int(h), 16)
+    except Exception:  # noqa: BLE001
+        return 1080, 1920
+
+
+_IMG_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
+
+
+def _broll_insert(input_path: str, clip_urls: list, timings: list, work: Path,
+                  base_url: Optional[str]) -> Tuple[Optional[str], str]:
+    """Вставляет перебивки (клипы/картинки) ПОВЕРХ исходника в заданные моменты.
+
+    Звук исходника не трогаем (перебивка — визуальная), клип масштабируется
+    cover-кропом под кадр. Тайминги: заданные бэкендом (ритм DNA) или равномерно,
+    минуя первые 2 сек (хук) и хвост.
+    """
+    dur = _media_duration(input_path)
+    if dur < 4.0:
+        return None, "b-roll: исходник короче 4 сек — перебивки не ставим"
+    files = []
+    for u in clip_urls[:4]:
+        p = _download_media(base_url, u, work, default_ext=".mp4")
+        if p:
+            files.append(p)
+    if not files:
+        return None, "b-roll: клипы не скачались"
+
+    seg = 2.5  # длительность одной перебивки
+    n = len(files)
+    times = []
+    for t in timings:
+        try:
+            times.append(float(t))
+        except Exception:  # noqa: BLE001
+            continue
+    times = [t for t in times if 0.5 <= t < dur - 1.5][:n]
+    if len(times) < n:
+        usable = max(dur - 4.0, 1.0)
+        times = [2.0 + usable * (i + 1) / (n + 1) for i in range(n)]
+    times.sort()
+
+    w, h = _video_wh(input_path)
+    inputs = ["-i", input_path]
+    fparts = []
+    last = "[0:v]"
+    used = 0
+    for i, (p, t) in enumerate(zip(files, times)):
+        d = min(seg, max(dur - t - 0.3, 0.8))
+        if p.lower().endswith(_IMG_EXTS):
+            inputs += ["-loop", "1", "-t", f"{d:.2f}", "-i", p]
+        else:
+            inputs += ["-i", p]
+        end = t + d
+        fparts.append(
+            f"[{used + 1}:v]trim=0:{d:.2f},setpts=PTS-STARTPTS+{t:.3f}/TB,"
+            f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},setsar=1[b{i}]")
+        fparts.append(f"{last}[b{i}]overlay=0:0:enable='between(t,{t:.3f},{end:.3f})'[v{i}]")
+        last = f"[v{i}]"
+        used += 1
+    out_p = str(work / f"o_{uuid.uuid4().hex[:6]}.mp4")
+    cmd = [FFMPEG, "-y", *inputs, "-filter_complex", ";".join(fparts),
+           "-map", last, "-map", "0:a?", "-c:v", "libx264", "-preset", "veryfast",
+           "-crf", "20", "-c:a", "copy", out_p]
+    ok, err = _run(cmd, timeout=1800)
+    if not (ok and os.path.exists(out_p)):
+        return None, f"b-roll: ffmpeg не собрал ({err[:160]})"
+    return out_p, f"b-roll: {used} перебивк(и) на {', '.join(f'{t:.0f}с' for t in times[:used])}"
     """Вырезает [start,end] из записи в моно-wav 22.05кГц (для сохранения реального голоса)."""
     dur = end - start
     if dur < 0.15:  # битые/схлопнутые таймкоды: 150мс «пшика» вместо реплики хуже, чем явный отказ
