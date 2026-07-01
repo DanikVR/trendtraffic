@@ -148,6 +148,8 @@ interface PodcastSpec {
   timeline?: boolean;
   // Анимация ведущих (говорящие головы): выбор провайдера/версии.
   avatar?: PodAvatar;
+  // Фоновая музыка на весь ролик (генерим/загружаем): url + громкость % (обрезается по длине видео).
+  music?: { url: string; name: string; volumePct: number } | null;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -158,6 +160,7 @@ const POD_DEFAULT: PodcastSpec = {
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
   timeline: false,
   avatar: { provider: 'heygen', mode: 'standard', voiceSource: 'heygen', emotion: 'friendly' },
+  music: null,
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -411,7 +414,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [animNote, setAnimNote] = useState<string | null>(null);
   const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null }[]>([]);
   const animPollRef = useRef<number | null>(null);
-  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg'>(null);
+  const [composeBusy, setComposeBusy] = useState(false);       // склейка сплит-скрина
+  const [composeNote, setComposeNote] = useState<string | null>(null);
+  const [composeUrl, setComposeUrl] = useState<string | null>(null);
+  const composePollRef = useRef<number | null>(null);
+  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg' | 'music'>(null);
   const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
   const [loadDlgOpen, setLoadDlgOpen] = useState(false);  // модал «Загрузить диалог» (текст/JSON/из Исследования)
   const [loadDlgText, setLoadDlgText] = useState('');
@@ -764,6 +771,43 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
     } catch { setAnimNote('Ошибка сети при запуске аниматора.'); setAnimBusy(false); }
   };
+  /** Опрос статуса склейки сплит-скрина. */
+  const pollCompose = (jobId: string) => {
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/render/podcast/compose/status?jobId=' + jobId, { headers: headers() });
+        const d = await res.json();
+        if (res.ok && d.status && d.status !== 'processing') {
+          setComposeBusy(false);
+          if (d.status === 'done' && d.fileUrl) { setComposeUrl(d.fileUrl); setComposeNote('Готово! Сплит-скрин собран и сохранён в Галерею.'); }
+          else setComposeNote(d.error || 'Склейка не удалась.');
+          return;
+        }
+      } catch { /* ретрай */ }
+      composePollRef.current = window.setTimeout(tick, 8000);
+    };
+    tick();
+  };
+  /** Склеить готовые головы в сплит-скрин (+ запись как аудио, + фон-музыка). */
+  const runCompose = async () => {
+    if (composeBusy) return;
+    const a = animJobs.find((j) => j.host === 'A' && j.url && j.status === 'completed');
+    const b = animJobs.find((j) => j.host === 'B' && j.url && j.status === 'completed');
+    if (!a?.url || !b?.url) { setComposeNote('Сначала дождитесь готовности обеих голов.'); return; }
+    if (composePollRef.current) { clearTimeout(composePollRef.current); composePollRef.current = null; }
+    setComposeBusy(true); setComposeNote(null); setComposeUrl(null);
+    try {
+      const av = pod.avatar || POD_DEFAULT.avatar!;
+      const body = { headA: a.url, headB: b.url,
+        audioUrl: av.voiceSource === 'record' ? pod.recordingUrl : undefined,
+        musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
+      const res = await fetch('/api/render/podcast/compose', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+      const d = await res.json();
+      if (!res.ok || !d.jobId) { setComposeNote(d?.error || 'Не удалось запустить склейку.'); setComposeBusy(false); return; }
+      setComposeNote(d.note || 'Склеиваю…');
+      pollCompose(d.jobId);
+    } catch { setComposeNote('Ошибка сети при склейке.'); setComposeBusy(false); }
+  };
 
   const podLineMutate = (i: number, patch: Partial<PodLine>) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
@@ -952,11 +996,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } }
       if (tlCtxRef.current) { try { tlCtxRef.current.close(); } catch { /* тихо */ } tlCtxRef.current = null; }
       if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+      if (composePollRef.current) { clearTimeout(composePollRef.current); composePollRef.current = null; }
     };
   }, []);
 
   // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
-  type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg';
+  type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg' | 'music';
   const openPodPick = (target: PodPickTarget) => { setPodPick(target); setPodPickTab('all'); setPodPickQ(''); loadMedia(); };
   const applyPodMedia = (target: PodPickTarget, m: { fileUrl: string; title: string }) => {
     podMutate((p) => {
@@ -965,6 +1010,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title };
       if (target === 'group') return { ...p, groupPhotoUrl: m.fileUrl, groupPhotoName: m.title, faces: [] };
       if (target === 'lineimg' && podLineIdx != null) return { ...p, dialogue: p.dialogue.map((l, j) => (j === podLineIdx ? { ...l, image: m.fileUrl, imageName: m.title } : l)) };
+      if (target === 'music') return { ...p, music: { url: m.fileUrl, name: m.title, volumePct: p.music?.volumePct ?? 20 } };
       return { ...p, cutaways: [...p.cutaways, { url: m.fileUrl, name: m.title }] };
     });
     setPodPick(null);
@@ -972,7 +1018,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const uploadPodFiles = async (files: FileList | File[]) => {
     const target = podPick; const list = Array.from(files || []).filter(Boolean);
     if (!target || !list.length) return;
-    const kind = target === 'recording' ? 'audio' : 'reference';
+    const kind = (target === 'recording' || target === 'music') ? 'audio' : 'reference';
     setPodBusy('upload'); let last: any = null;
     try {
       for (const f of list) {
@@ -1970,11 +2016,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       {podPick && (
         <div onClick={() => setPodPick(null)} style={{ position: 'absolute', inset: 0, zIndex: 94, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-            <input ref={podPickInputRef} type="file" multiple accept={podPick === 'recording' ? 'audio/*,video/*' : (podPick === 'lineimg' || podPick === 'cutaway') ? 'image/*,video/*' : 'image/*'} style={{ display: 'none' }}
+            <input ref={podPickInputRef} type="file" multiple accept={podPick === 'music' ? 'audio/*' : podPick === 'recording' ? 'audio/*,video/*' : (podPick === 'lineimg' || podPick === 'cutaway') ? 'image/*,video/*' : 'image/*'} style={{ display: 'none' }}
               onChange={(e) => { if (e.target.files?.length) uploadPodFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'lineimg' ? 'Медиа к реплике (фото или видео)' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
+                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'music' ? 'Фоновая музыка (весь ролик)' : podPick === 'lineimg' ? 'Медиа к реплике (фото или видео)' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
               </span>
               <button onClick={() => setPodPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
@@ -1988,7 +2034,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             {(() => {
               const wantAudio = podPick === 'recording';
               const wantMedia = podPick === 'lineimg' || podPick === 'cutaway'; // фото ИЛИ видео
-              const kindOk = (m: typeof media[number]) => wantAudio ? (m.kind === 'audio' || m.kind === 'video')
+              const kindOk = (m: typeof media[number]) => podPick === 'music' ? m.kind === 'audio'
+                : wantAudio ? (m.kind === 'audio' || m.kind === 'video')
                 : wantMedia ? (m.kind === 'image' || m.kind === 'video') : m.kind === 'image';
               const base = media.filter(kindOk);
               const TABS = ([['all', 'Все'], ['trends', 'Тренды'], ['reference', 'Референс'], ['audio', 'Аудио'], ['analyzed', 'Из анализа']] as const)
@@ -2809,6 +2856,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         </div>
                       )}
                       <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>. Голос «Из записи» = реальные голоса ведущих (по таймкодам), ElevenLabs — настраивается в ElevenLabs. Suno — это музыка (фон), не речь.</p>
+                      {/* Фоновая музыка на весь ролик */}
+                      <div className="rounded-lg p-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-700 inline-flex items-center gap-1" style={{ color: 'var(--text-primary)' }}><Music size={11} style={{ color: '#8b5cf6' }} /> Фоновая музыка (весь ролик)</span>
+                          {pod.music && <button onClick={() => podMutate((p) => ({ ...p, music: null }))} className="text-[10px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>убрать</button>}
+                        </div>
+                        {pod.music ? (
+                          <>
+                            <div className="text-[10px] truncate mb-1" style={{ color: 'var(--text-secondary)' }}>{pod.music.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Громкость {pod.music.volumePct}%</span>
+                              <input type="range" min={0} max={100} value={pod.music.volumePct} onChange={(e) => podMutate((p) => ({ ...p, music: p.music ? { ...p.music, volumePct: Number(e.target.value) } : p.music }))} style={{ flex: 1, accentColor: '#8b5cf6' }} />
+                            </div>
+                          </>
+                        ) : (
+                          <button onClick={() => openPodPick('music')} className="w-full py-1.5 rounded-md text-[11px] font-600" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>+ Добавить музыку (загрузить / из галереи)</button>
+                        )}
+                        <p className="text-[9px] mt-1" style={{ color: 'var(--text-muted)' }}>Если музыка длиннее ролика — обрежется. Генерацию через Suno добавлю следующим шагом.</p>
+                      </div>
                       <button onClick={runAnimate} disabled={animBusy}
                         className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                         style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
@@ -2826,6 +2892,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {animJobs.length >= 2 && animJobs.every((j) => j.status === 'completed' && j.url) && (
+                        <button onClick={runCompose} disabled={composeBusy}
+                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                          style={{ background: '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                          {composeBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} {composeBusy ? 'Склеиваю сплит-скрин…' : 'Склеить сплит-скрин + музыка'}
+                        </button>
+                      )}
+                      {composeNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{composeNote}</p>}
+                      {composeUrl && (
+                        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
+                          <video src={composeUrl} controls className="w-full" style={{ aspectRatio: '9 / 16', background: '#000' }} />
+                          <div className="text-[10px] px-1.5 py-1" style={{ color: 'var(--text-secondary)' }}>Готовый сплит-скрин ✓ (сохранён в Галерею)</div>
                         </div>
                       )}
                     </div>

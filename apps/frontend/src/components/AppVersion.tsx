@@ -1013,7 +1013,15 @@
  *         Бэкенд: render/podcast_voice.ts (buildHostAudio/elevenTTS), avatar.submit (audioUrl+useIV),
  *         /podcast/animate (mode+voiceSource). Проверено вживую: audio_url и use_avatar_iv_model
  *         HeyGen принимает (video_id). Дальше: склейка сплит-скрина + сохранение в Галерею по порядку. */
-export const APP_VERSION = '1.6.17';
+/* 1.6.18 — Аниматор, финал HeyGen-конвейера: (1) СКЛЕЙКА СПЛИТ-СКРИНА — кнопка «Склеить
+ *         сплит-скрин + музыка»: две головы бок-о-бок в 1080×1920 (ffmpeg hstack+letterbox),
+ *         аудио = запись (если «Из записи», верный тайминг) или микс голов; фон-музыка на
+ *         громкости, обрезается по длине. Идёт фоновой задачей (/podcast/compose + poll), результат
+ *         → превью + Галерея. render/podcast_compose.ts (composeHeads/downloadToRenders). (2)
+ *         СОХРАНЕНИЕ В ГАЛЕРЕЮ по порядку — готовые головы качаются с HeyGen → uploads/renders →
+ *         createAsset (не по временной ссылке). (3) ФОНОВАЯ МУЗЫКА на весь ролик: загрузка/из
+ *         галереи + слайдер громкости % + обрезка по длине. Suno-генерация музыки — следующим шагом. */
+export const APP_VERSION = '1.6.18';
 
 export function AppVersion() {
   return (

@@ -23,6 +23,10 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
+import { composeHeads, downloadToRenders } from './podcast_compose.js';
+
+// Задачи склейки сплит-скрина (в памяти процесса): jobId → статус/результат.
+const composeJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
 
 const router = Router();
 
@@ -284,7 +288,10 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** GET /podcast/animate/status?ids=v1,v2 — статусы рендеров HeyGen (готовые отдаём ссылкой). */
+// Головы, уже сохранённые в Галерею (videoId → fileUrl), чтобы не качать повторно на каждом опросе.
+const savedHeads = new Map<string, string>();
+
+/** GET /podcast/animate/status?ids=v1,v2 — статусы рендеров HeyGen; готовые скачиваем в Галерею по порядку. */
 router.get('/podcast/animate/status', async (req: AuthedRequest, res: Response) => {
   try {
     const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
@@ -292,12 +299,71 @@ router.get('/podcast/animate/status', async (req: AuthedRequest, res: Response) 
     const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4);
     const statuses = await Promise.all(ids.map(async (id) => {
       const st = await heygenVideoStatus(key, id);
-      return { id, status: st.status, url: st.url || null, error: st.error || null };
+      let assetUrl: string | null = savedHeads.get(id) || null;
+      if (st.status === 'completed' && st.url && !assetUrl) {
+        try {
+          const dl = await downloadToRenders(st.url, 'podhead');
+          const asset = await createAsset(req.tenantId!, {
+            kind: 'reference', mediaType: 'video', originalName: 'Аватар-ведущий (HeyGen)',
+            fileUrl: dl.fileUrl, filePath: dl.filePath, mime: 'video/mp4', size: dl.size,
+          });
+          assetUrl = dl.fileUrl; savedHeads.set(id, dl.fileUrl);
+          void asset;
+        } catch { assetUrl = null; }
+      }
+      // отдаём наш сохранённый URL (постоянный) если есть, иначе временную ссылку HeyGen
+      return { id, status: st.status, url: assetUrl || st.url || null, assetUrl, error: st.error || null };
     }));
     res.json({ statuses });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка статуса аниматора' });
   }
+});
+
+/** POST /podcast/compose — склеить две головы в сплит-скрин (+ запись как аудио, + фон-музыка).
+ *  body: { headA, headB, audioUrl?, musicUrl?, musicVolume? } → { jobId }. Идёт в фоне (poll status). */
+router.post('/podcast/compose', async (req: AuthedRequest, res: Response) => {
+  try {
+    const headA = typeof req.body?.headA === 'string' ? req.body.headA : '';
+    const headB = typeof req.body?.headB === 'string' ? req.body.headB : '';
+    if (!headA || !headB) return res.status(400).json({ error: 'Нужны обе готовые головы (headA, headB).' });
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
+    const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
+    const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
+    const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
+    const jobId = 'cmp_' + Math.random().toString(36).slice(2, 10);
+    composeJobs.set(jobId, { status: 'processing', ts: Date.now() });
+    const tenantId = req.tenantId!;
+    // Фоновая задача: склейка может занять минуты (не блокируем ответ / прокси).
+    (async () => {
+      try {
+        const fileUrl = await composeHeads({ headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume });
+        let assetId: string | null = null;
+        try {
+          const asset = await createAsset(tenantId, {
+            kind: 'reference', mediaType: 'video', originalName: 'Подкаст сплит-скрин (аватары)',
+            fileUrl, mime: 'video/mp4',
+          });
+          assetId = asset?.id || null;
+        } catch { /* Галерея опц. */ }
+        composeJobs.set(jobId, { status: 'done', fileUrl, assetId, ts: Date.now() });
+      } catch (e: any) {
+        composeJobs.set(jobId, { status: 'failed', error: e?.message || 'ошибка склейки', ts: Date.now() });
+      }
+    })();
+    res.json({ jobId, note: 'Склеиваю сплит-скрин — идёт в фоне, опрашиваю статус…' });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка склейки' });
+  }
+});
+
+/** GET /podcast/compose/status?jobId=... — статус склейки сплит-скрина. */
+router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
+  const jobId = String(req.query.jobId || '');
+  const j = composeJobs.get(jobId);
+  if (!j) return res.status(404).json({ error: 'Задача склейки не найдена' });
+  res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, error: j.error || null });
 });
 
 /** POST /podcast/:flowId — собрать подкаст-сцену → задача в очередь. body: { spec? } */
