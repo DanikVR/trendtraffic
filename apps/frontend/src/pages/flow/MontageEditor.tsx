@@ -649,7 +649,17 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (omniPollRef.current[g.id]) clearTimeout(omniPollRef.current[g.id]);
     setOG(g.id, { busy: true, note: null, url: null, interactionId: null });
     try {
-      const seed = g.startFrame || omniGen[g.id]?.seed || undefined; // старт-кадр (#3) / кадр раскадровки → image_to_video
+      let seed = g.startFrame || omniGen[g.id]?.seed || undefined; // старт-кадр (#3) / кадр раскадровки
+      // КОНТЕКСТ ВИДЕО: старт-кадр не задан вручную → берём кадр из ВЫДЕЛЕННОГО фрагмента (позиция окна).
+      // Omni оживит реальный кадр сцены по промту (сохранит контекст), а не сгенерит клип с нуля.
+      if (!seed && g.engine === 'omni' && sourceUrl && srcDuration > 0) {
+        setOG(g.id, { note: `Беру кадр ${(g.start * srcDuration).toFixed(1)}с из выделенного фрагмента как контекст…` });
+        try {
+          const fr = await fetch('/api/render/omni/frame', { method: 'POST', headers: headers(), body: JSON.stringify({ videoUrl: sourceUrl, timeSec: g.start * srcDuration }) });
+          const fd = await fr.json();
+          if (fr.ok && fd.url) seed = fd.url;
+        } catch { /* кадр не вышел — уйдём в текст→видео */ }
+      }
       const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16', imageUrl: seed }) });
       const d = await res.json();
       if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Omni Flash недоступен.' }); return; }
@@ -2820,7 +2830,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           {/* Параметры движка */}
                           {g.engine === 'omni' ? (
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина = ширина окна · старт-кадр задаётся ниже</span>
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина = ширина окна. Без старт-кадра Omni берёт кадр выделенного фрагмента как контекст (сцена сохранится). Полная покадровая перерисовка — «Ре-стайл (V2V)».</span>
                             </div>
                           ) : (
                             <div className="flex flex-wrap items-center gap-2">
