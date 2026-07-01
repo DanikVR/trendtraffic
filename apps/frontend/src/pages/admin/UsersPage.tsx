@@ -335,12 +335,26 @@ export default function UsersPage() {
   // Суперадмин получает JWT целевого пользователя, ставит его в store (setAuth) и
   // перезагружает приложение — дальше работает как этот пользователь. Чтобы вернуться
   // в супер-админку, нужно выйти и войти снова под суперадмином.
-  const handleImpersonate = async (u: UserRow) => {
-    if (!window.confirm(
-      `Войти в аккаунт «${u.email || u.tenantId}»?\n\n` +
-      `Вы выйдете из супер-админки и продолжите работу как этот пользователь. ` +
-      `Чтобы вернуться, выйдите из аккаунта и войдите снова под суперадмином.`
-    )) return;
+  // Открывает КАСТОМНЫЙ поп-ап подтверждения (не браузерный confirm).
+  const handleImpersonate = (u: UserRow) => {
+    setConfirmDialog({
+      title: 'Войти в аккаунт пользователя?',
+      message: (
+        <div className="space-y-1.5">
+          <p>Войти в аккаунт <b>{u.email || u.tenantId}</b>?</p>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Вы выйдете из супер-админки и продолжите работу как этот пользователь. Сверху появится
+            кнопка <b>«Вернуться в админку»</b> — она вернёт вас обратно без повторного логина.
+          </p>
+        </div>
+      ),
+      confirmLabel: 'Войти',
+      variant: 'primary',
+      onConfirm: () => { void doImpersonate(u); },
+    });
+  };
+
+  const doImpersonate = async (u: UserRow) => {
     setError(null);
     try {
       const res = await fetch(`/api/admin/users/${u.userId}/impersonate`, {

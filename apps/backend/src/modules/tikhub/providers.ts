@@ -93,7 +93,10 @@ export function genericNormalize(platform: TrendPlatform, raw: any): NormalizedV
       author: handle || authorName || '',
       authorName,
       description: pickText(it),
-      coverUrl: findUrl(it, ['cover', 'origin_cover', 'dynamic_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'image_versions2', 'preview', 'media_url_https', 'images', 'source']),
+      // dynamic_cover ПЕРВЫМ: у TikTok статические cover/origin_cover приходят в HEIC
+      // (браузер не рендерит в <img>), а dynamic_cover — jpeg. У других платформ
+      // dynamic_cover нет → findUrl пропускает его и берёт cover/thumbnail как раньше.
+      coverUrl: findUrl(it, ['dynamic_cover', 'cover', 'origin_cover', 'thumbnail_url', 'display_url', 'thumbnail', 'image_versions2', 'preview', 'media_url_https', 'images', 'source']),
       videoUrl: findUrl(it, ['play_addr', 'download_addr', 'video_url', 'video_versions', 'play_url', 'contentUrl']),
       webUrl: webUrlFor(platform, externalId, handle, it),
       durationSec: num(deepFind(it, ['duration', 'length_seconds', 'video_duration'])),

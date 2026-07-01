@@ -20,6 +20,20 @@ import { ConfirmModal } from './ConfirmModal';
 type Kind = 'keyword' | 'trending';
 type Source = 'tiktok' | 'instagram' | 'youtube' | 'twitter';
 
+/**
+ * TikTok/Instagram отдают подписанные CDN-обложки (p16-…-sign.tiktokcdn-eu.com и т.п.),
+ * которые браузер блокирует при прямой загрузке через <img> (ORB / 403 — нужен Referer
+ * площадки). Гоним их через наш публичный прокси /api/channels/cover (он ставит нужный
+ * Referer серверно). YouTube (ytimg) и прочие — напрямую. Тот же приём, что в «Каналах».
+ */
+function coverSrc(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (/tiktokcdn|ibyteimg|byteimg|muscdn|tiktokv|pstatp|cdninstagram|fbcdn/i.test(url)) {
+    return `/api/channels/cover?u=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 // Источники трендов. Дизайн: брендовый глиф в мягком тонированном «app-icon» чипе
 // (currentColor → color, фон → tint), выбор источника — indigo-выделение пилюли.
 // TikTok/X монохромны (color = текст темы), IG/YouTube — приглушённый бренд-акцент.
@@ -557,7 +571,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
               className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
               <div className="relative w-full" style={{ aspectRatio: cardAspect, background: 'var(--bg-tertiary)' }}>
                 {v.coverUrl ? (
-                  <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
+                  <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
