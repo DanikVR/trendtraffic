@@ -104,11 +104,44 @@ export function MainLayout() {
   //  - Telegram Mini App (установка в WebView недоступна)
   const { showInstallDialog, isAvailable: pwaInstallAvailable } = usePWAInstall();
 
+  // Impersonation: суперадмин «вошёл в аккаунт пользователя» (UsersPage). Бэкап его сессии
+  // лежит в sessionStorage (переживает reload вкладки). Показываем баннер возврата.
+  const impersonation = (() => {
+    try {
+      const raw = sessionStorage.getItem('tt_impersonation_backup');
+      return raw ? (JSON.parse(raw) as { token: string; user: { email?: string } }) : null;
+    } catch { return null; }
+  })();
+  const exitImpersonation = () => {
+    try {
+      const raw = sessionStorage.getItem('tt_impersonation_backup');
+      sessionStorage.removeItem('tt_impersonation_backup');
+      if (raw) { const b = JSON.parse(raw); useAppStore.getState().setAuth(b.token, b.user); }
+    } catch { /* приватный режим */ }
+    window.location.href = '/admin/users';
+  };
+
   return (
     <div
       className="flex h-[100dvh] overflow-hidden"
       style={{ background: 'var(--bg-primary)' }}
     >
+      {impersonation && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          padding: '7px 16px', fontSize: 13, fontWeight: 600,
+          background: 'linear-gradient(90deg,#6366f1,#818cf8)', color: '#fff',
+          boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
+        }}>
+          <span>Вход от суперадмина: вы работаете как <b>{user?.email || 'пользователь'}</b></span>
+          <button type="button" onClick={exitImpersonation}
+                  style={{ background: '#fff', color: '#4f46e5', borderRadius: 8,
+                           padding: '4px 12px', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>
+            ← Вернуться в админку
+          </button>
+        </div>
+      )}
       {/* ────────────────────────────────────
        * DESKTOP: Slim Left Sidebar (lg+)
        * ──────────────────────────────────── */}

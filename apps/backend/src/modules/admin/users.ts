@@ -151,6 +151,52 @@ function escapeHtml(s: string): string {
 }
 
 /**
+ * POST /api/admin/users/:userId/impersonate
+ * «Войти в аккаунт пользователя» — суперадмин получает валидный JWT целевого пользователя,
+ * чтобы зайти в его аккаунт и работать как он (поддержка/отладка). Токен той же структуры,
+ * что при обычном логине ({ id, email, role, tenantId }, 30д). Только superadmin (router-level
+ * requireSuperAdmin). Действие логируется в Telegram-аудит.
+ */
+adminUsersRouter.post('/:userId/impersonate', async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  try {
+    const r = await pool.query(
+      `SELECT id, email, role, tenant_id FROM users WHERE id = $1 LIMIT 1`,
+      [userId]
+    );
+    const u = (r.rows as any[])[0];
+    if (!u) return res.status(404).json({ error: 'Пользователь не найден' });
+
+    const payload = {
+      id: u.id,
+      email: u.email,
+      role: u.role || 'user',
+      tenantId: u.tenant_id,
+    };
+    // Короткий срок жизни (12ч, а не 30д как обычный логин): impersonation-токен
+    // stateless и не отзывается — ограничиваем окно. Маркеры impersonated/impersonatedBy
+    // (приложение их игнорирует при verify, но полезно для аудита/будущих проверок).
+    const adminEmailForClaim = (req as any).adminEmail || 'superadmin';
+    const token = jwt.sign(
+      { ...payload, impersonated: true, impersonatedBy: adminEmailForClaim },
+      JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+
+    const adminEmail = (req as any).adminEmail || 'superadmin';
+    sendTelegramAdminMessage(
+      `🕵️ <b>Вход в аккаунт пользователя (админ)</b>\n` +
+      `<b>Кто:</b> ${escapeHtml(adminEmail)}\n` +
+      `<b>В аккаунт:</b> ${escapeHtml(u.email || '—')} (${escapeHtml(u.role || 'user')})`
+    ).catch(() => {});
+
+    return res.json({ status: 'success', token, user: payload });
+  } catch (err) {
+    return send500(res, err, 'admin.impersonate');
+  }
+});
+
+/**
  * GET /api/admin/users
  * Query: ?search=<email or name>&paidOnly=1&limit=200
  */

@@ -13,7 +13,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Users, Search, Plus, Loader2, AlertCircle, CheckCircle, X, Gift, RefreshCw,
-  Trash2, ChevronDown, CreditCard, Ban, RotateCcw,
+  Trash2, ChevronDown, CreditCard, Ban, RotateCcw, LogIn,
 } from 'lucide-react';
 import { AuroraCard } from '../../components/AuroraCard';
 import { AuroraButton } from '../../components/AuroraButton';
@@ -331,6 +331,41 @@ export default function UsersPage() {
     });
   };
 
+  // ── Войти в аккаунт пользователя (impersonation) ──
+  // Суперадмин получает JWT целевого пользователя, ставит его в store (setAuth) и
+  // перезагружает приложение — дальше работает как этот пользователь. Чтобы вернуться
+  // в супер-админку, нужно выйти и войти снова под суперадмином.
+  const handleImpersonate = async (u: UserRow) => {
+    if (!window.confirm(
+      `Войти в аккаунт «${u.email || u.tenantId}»?\n\n` +
+      `Вы выйдете из супер-админки и продолжите работу как этот пользователь. ` +
+      `Чтобы вернуться, выйдите из аккаунта и войдите снова под суперадмином.`
+    )) return;
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${u.userId}/impersonate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) throw new Error(data.error || `HTTP ${res.status}`);
+      // Сохраняем ТЕКУЩУЮ сессию суперадмина в sessionStorage (переживает reload в этой же
+      // вкладке) — чтобы вернуться в админку одной кнопкой, без повторного логина.
+      const cur = useAppStore.getState();
+      if (cur.token && cur.user) {
+        try {
+          sessionStorage.setItem('tt_impersonation_backup', JSON.stringify({ token: cur.token, user: cur.user }));
+        } catch { /* приватный режим — не критично */ }
+      }
+      // Ставим сессию целевого пользователя и делаем полную перезагрузку — приложение
+      // переинициализируется под новым токеном (роутинг/гейт/биллинг подхватят тариф).
+      useAppStore.getState().setAuth(data.token, data.user);
+      window.location.href = '/';
+    } catch (err: any) {
+      setError(err.message || 'Не удалось войти в аккаунт пользователя');
+    }
+  };
+
   const totalRegistered = stats?.totalRegistered ?? rows.length;
   const totalPaid = stats?.totalPaid ?? rows.filter(r => r.hasPaid).length;
 
@@ -495,22 +530,19 @@ export default function UsersPage() {
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                 <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Email / Организация</th>
                 <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Тариф</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Осталось мин</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Последний платёж</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Всего оплачено</th>
                 <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Зарегистрирован</th>
                 <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Действия</th>
               </tr>
             </thead>
             <tbody>
               {loading && rows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center">
+                <tr><td colSpan={4} className="px-4 py-10 text-center">
                   <Loader2 size={20} className="animate-spin inline-block mr-2" />
                   Загрузка…
                 </td></tr>
               )}
               {!loading && rows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
+                <tr><td colSpan={4} className="px-4 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                   Пользователи не найдены
                 </td></tr>
               )}
@@ -550,12 +582,6 @@ export default function UsersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{u.remainingMinutes}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">
-                      {u.lastPaymentMinutes != null ? `${u.lastPaymentMinutes} мин` : '—'}
-                      <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{fmtDate(u.lastPaymentAt)}</div>
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{u.totalPaidMinutes}</td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{fmtDate(u.registeredAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -572,6 +598,13 @@ export default function UsersPage() {
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
                                 style={{ background: 'rgba(34, 211, 238, 0.12)', color: '#22d3ee', border: '1px solid rgba(34, 211, 238, 0.24)' }}>
                           <CreditCard size={14} />
+                        </button>
+                        <button type="button"
+                                onClick={() => handleImpersonate(u)}
+                                title="Войти в аккаунт пользователя (работать как он)"
+                                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
+                                style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.24)' }}>
+                          <LogIn size={14} />
                         </button>
                         {/* v0.9.5: маленькая, неприметная кнопка отмены/восстановления Stripe-подписки */}
                         {u.stripeSubscriptionId && !u.cancelAtPeriodEnd && (

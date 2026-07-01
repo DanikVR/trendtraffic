@@ -364,6 +364,16 @@ export default function AdminConfigPage() {
     setSyncingProducts(true);
     setSyncResult(null);
     try {
+      // Сначала СОХРАНЯЕМ введённые Stripe-ключи. Иначе синхронизация упадёт с «ключ не
+      // настроен», если ключ введён в поле, но кнопку «Сохранить изменения» ещё не нажимали
+      // («Проверить подключение» только тестирует, но НЕ сохраняет). best-effort: если сейв
+      // не удался — реальную причину покажет сам sync ниже.
+      await fetch('/api/auth/system-settings', {
+        method: 'POST',
+        headers: tgHeaders(),
+        body: JSON.stringify({ stripeSecretKey, stripePublishableKey, stripeWebhookSecret }),
+      }).catch(() => {});
+
       const res = await fetch('/api/billing/sync-products', {
         method: 'POST',
         headers: tgHeaders(),
