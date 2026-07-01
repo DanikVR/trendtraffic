@@ -25,6 +25,7 @@ import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPho
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
 import { composeHeads, downloadToRenders } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
+import { extractFrame } from './frame_extract.js';
 
 // Задачи склейки сплит-скрина (в памяти процесса): jobId → статус/результат.
 const composeJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
@@ -451,10 +452,18 @@ router.post('/omni/storyboard', async (req: AuthedRequest, res: Response) => {
     if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API).' });
     const count = Math.max(1, Math.min(4, Number(req.body?.count) || 3));
     const tenantId = req.tenantId!;
+    // Опц. вход-картинка (#3 «промт+картинка» → img2img): перерисовать свой кадр под сцену.
+    let inputImages: Array<{ base64: string; mime: string }> | undefined;
+    if (typeof req.body?.imageUrl === 'string' && req.body.imageUrl) {
+      const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+      const abs = /^https?:\/\//i.test(req.body.imageUrl) ? req.body.imageUrl : (base ? base + (req.body.imageUrl.startsWith('/') ? req.body.imageUrl : '/' + req.body.imageUrl) : req.body.imageUrl);
+      const img = await fetchImageBase64(abs);
+      if (img) inputImages = [{ base64: img.base64, mime: img.mime }];
+    }
     // Кадры генерим параллельно (Nano Lite ~4с каждый) — вписываемся в таймаут.
     const results = await Promise.all(Array.from({ length: count }, async () => {
       try {
-        const gen = await generateImage({ apiKey, model: NANO_LITE_MODEL, prompt });
+        const gen = await generateImage({ apiKey, model: NANO_LITE_MODEL, prompt, inputImages });
         const asset = await createAsset(tenantId, {
           kind: 'reference', mediaType: 'image', originalName: 'Раскадровка Omni Flash',
           fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
@@ -467,6 +476,31 @@ router.post('/omni/storyboard', async (req: AuthedRequest, res: Response) => {
     res.json({ frames, note: `${frames.length} кадр(а) раскадровки (~$${(frames.length * 0.034).toFixed(2)}). Выберите кадр → «Сгенерировать» оживит именно его.` });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка раскадровки' });
+  }
+});
+
+/** POST /omni/frame — извлечь кадр из видео (ffmpeg) → в Галерею.
+ *  body: { videoUrl, timeSec?, last? } → { url, assetId }.
+ *  #3 старт-кадр: videoUrl=исходник, timeSec=позиция окна. #4 продолжение: videoUrl=клип, last=true. */
+router.post('/omni/frame', async (req: AuthedRequest, res: Response) => {
+  try {
+    const videoUrl = typeof req.body?.videoUrl === 'string' ? req.body.videoUrl : '';
+    if (!videoUrl) return res.status(400).json({ error: 'Нет видео для извлечения кадра.' });
+    const timeSecRaw = Number(req.body?.timeSec);
+    const last = req.body?.last === true;
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const f = await extractFrame({ videoUrl, timeSec: Number.isFinite(timeSecRaw) ? timeSecRaw : 0, last, publicBase: base });
+    let assetId: string | null = null;
+    try {
+      const asset = await createAsset(req.tenantId!, {
+        kind: 'reference', mediaType: 'image', originalName: last ? 'Последний кадр Omni Flash' : 'Кадр из видео',
+        fileUrl: f.fileUrl, filePath: f.filePath, mime: f.mime, size: f.size,
+      });
+      assetId = asset?.id || null;
+    } catch { /* Галерея опц. */ }
+    res.json({ url: f.fileUrl, assetId });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Не удалось извлечь кадр' });
   }
 });
 

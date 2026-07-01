@@ -177,7 +177,8 @@ interface OmniSeg {
   end: number;            // доля таймлайна 0..1 (правый край / последний кадр)
   engine: OmniEngine;
   prompt: string;         // «как преобразовать»
-  seedFrame: boolean;     // omni: брать кадры окна как первый/последний кадр
+  seedFrame: boolean;     // (устар.) — заменён явным startFrame
+  startFrame?: string | null; // omni: URL старт-кадра (первый кадр для image_to_video) — #3
   provider: V2VProvider;  // engine=v2v: чем ре-стайлить
 }
 interface OmniSpec { segments: OmniSeg[]; }
@@ -411,7 +412,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
   // Omni Flash: генерация/правка видео по каждому сегменту (segId → состояние).
-  const [omniGen, setOmniGen] = useState<Record<string, { busy?: boolean; note?: string | null; url?: string | null; interactionId?: string | null; edit?: string; sbBusy?: boolean; frames?: string[]; seed?: string | null }>>({});
+  const [omniGen, setOmniGen] = useState<Record<string, { busy?: boolean; note?: string | null; url?: string | null; interactionId?: string | null; edit?: string; sbBusy?: boolean; fbBusy?: boolean; frames?: string[]; seed?: string | null }>>({});
   const omniPollRef = useRef<Record<string, number>>({});
   // Omni-лента: перетаскивание окна (тело=сдвиг, края=длина) + живой предпросмотр исходника.
   const stripRef = useRef<HTMLDivElement | null>(null);
@@ -497,6 +498,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 engine: x?.engine === 'v2v' ? 'v2v' : 'omni',
                 prompt: typeof x?.prompt === 'string' ? x.prompt : '',
                 seedFrame: x?.seedFrame !== false,
+                startFrame: typeof x?.startFrame === 'string' ? x.startFrame : null,
                 provider: x?.provider === 'fal' ? 'fal' : 'runway',
               };
             });
@@ -596,7 +598,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // ── Omni: редактирование спецификации преобразования ──
   const omniMutate = (fn: (s: OmniSpec) => OmniSpec) => { setOmniSpec((s) => fn(s)); setDirty(true); };
   // ── Omni Flash: генерация видео (Gemini Interactions API) ──
-  const setOG = (id: string, patch: Partial<{ busy: boolean; note: string | null; url: string | null; interactionId: string | null; edit: string; sbBusy: boolean; frames: string[]; seed: string | null }>) =>
+  const setOG = (id: string, patch: Partial<{ busy: boolean; note: string | null; url: string | null; interactionId: string | null; edit: string; sbBusy: boolean; fbBusy: boolean; frames: string[]; seed: string | null }>) =>
     setOmniGen((s) => ({ ...s, [id]: { ...s[id], ...patch } }));
   /** Раскадровка через Nano Banana 2 Lite — дешёвые кадры ДО дорогой видео-генерации. */
   const runStoryboard = async (g: OmniSeg) => {
@@ -631,7 +633,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (omniPollRef.current[g.id]) clearTimeout(omniPollRef.current[g.id]);
     setOG(g.id, { busy: true, note: null, url: null, interactionId: null });
     try {
-      const seed = omniGen[g.id]?.seed || undefined; // выбранный кадр раскадровки → image_to_video
+      const seed = g.startFrame || omniGen[g.id]?.seed || undefined; // старт-кадр (#3) / кадр раскадровки → image_to_video
       const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16', imageUrl: seed }) });
       const d = await res.json();
       if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error || 'Omni Flash недоступен.' }); return; }
@@ -654,17 +656,78 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const updateSeg = (id: string, patch: Partial<OmniSeg>) =>
     omniMutate((s) => ({ ...s, segments: s.segments.map((g) => g.id === id ? { ...g, ...patch } : g) }));
-  const addSegment = () => omniMutate((s) => {
-    if (s.segments.length >= 6) return s;
-    const maxEnd = s.segments.reduce((m, x) => Math.max(m, x.end), 0); // правый край самого правого окна
+  const addSegment = (startFrame?: string | null): string | null => {
+    const s = omniSpec;                                                   // committed состояние на момент клика
+    if (s.segments.length >= 6) return null;
+    const maxEnd = s.segments.reduce((m, x) => Math.max(m, x.end), 0);    // правый край самого правого окна
     const gap = s.segments.length ? 0.01 : 0;
-    const free = 1 - (maxEnd + gap);                                    // свободный хвост справа
+    const free = 1 - (maxEnd + gap);                                      // свободный хвост справа
     const minW = srcDuration > 0 ? Math.min(0.5, srcDuration) / srcDuration : 0.03;
-    if (free < minW) return s;                                          // места нет — окно не добавляем
+    if (free < minW) return null;                                         // места нет — окно не добавляем
     const w = Math.min(free, srcDuration > 0 ? Math.min(0.2, OMNI_MAX_SEC / srcDuration) : 0.2);
     const start = s.segments.length ? maxEnd + gap : 0;
-    return { ...s, segments: [...s.segments, newSeg(start, Math.min(1, start + w))] };
-  });
+    const seg: OmniSeg = { ...newSeg(start, Math.min(1, start + w)), startFrame: startFrame ?? null };
+    omniMutate((prev) => ({ ...prev, segments: [...prev.segments, seg] }));  // чистый append, id известен синхронно
+    return seg.id;
+  };
+  // ── #3 Старт-кадр (кадр из видео / загрузка / промт+картинка) + #4 продолжение по последнему кадру ──
+  const runExtractFrame = async (g: OmniSeg) => {
+    if (!sourceUrl) { setOG(g.id, { note: 'Сначала выберите исходное видео.' }); return; }
+    if (omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy) return;
+    setOG(g.id, { fbBusy: true, note: null });
+    try {
+      const timeSec = srcDuration > 0 ? g.start * srcDuration : 0;
+      const res = await fetch('/api/render/omni/frame', { method: 'POST', headers: headers(), body: JSON.stringify({ videoUrl: sourceUrl, timeSec }) });
+      const d = await res.json();
+      if (!res.ok || !d.url) { setOG(g.id, { fbBusy: false, note: d?.error || 'Не удалось взять кадр.' }); return; }
+      updateSeg(g.id, { startFrame: d.url });
+      setOG(g.id, { fbBusy: false, note: 'Старт-кадр взят из видео (в Галерее).' });
+    } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при извлечении кадра.' }); }
+  };
+  // #3 «Загрузить»: создаём input на лету — segId в замыкании, без общего ref (нет гонки на неверное окно).
+  const pickStartFrame = (segId: string) => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => { if (inp.files && inp.files.length) void uploadStartFrame(segId, inp.files); };
+    inp.click();
+  };
+  const uploadStartFrame = async (segId: string, files: FileList | null) => {
+    const f = files && files[0]; if (!f) return;
+    setOG(segId, { fbBusy: true, note: null });
+    try {
+      const fd = new FormData(); fd.append('file', f);
+      const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.asset?.fileUrl) { setOG(segId, { fbBusy: false, note: d?.error || 'Не удалось загрузить картинку.' }); return; }
+      updateSeg(segId, { startFrame: d.asset.fileUrl });
+      setOG(segId, { fbBusy: false, note: 'Своя картинка — старт-кадр.' });
+    } catch { setOG(segId, { fbBusy: false, note: 'Ошибка загрузки картинки.' }); }
+  };
+  const runPromptImage = async (g: OmniSeg) => {
+    if (omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy) return;
+    if (!g.startFrame) { setOG(g.id, { note: 'Сначала возьми кадр из видео или загрузи картинку.' }); return; }
+    if (!g.prompt.trim()) { setOG(g.id, { note: 'Впиши промт — как изменить картинку.' }); return; }
+    setOG(g.id, { fbBusy: true, note: null });
+    try {
+      const res = await fetch('/api/render/omni/storyboard', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, count: 1, imageUrl: g.startFrame }) });
+      const d = await res.json();
+      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { fbBusy: false, note: d?.error || 'Не удалось перерисовать кадр.' }); return; }
+      updateSeg(g.id, { startFrame: d.frames[0].url });
+      setOG(g.id, { fbBusy: false, note: 'Старт-кадр перерисован по промту (Nano).' });
+    } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при перерисовке.' }); }
+  };
+  const runContinue = async (g: OmniSeg) => {
+    const url = omniGen[g.id]?.url; if (!url) return;
+    if (omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy) return;
+    setOG(g.id, { fbBusy: true, note: null });
+    try {
+      const res = await fetch('/api/render/omni/frame', { method: 'POST', headers: headers(), body: JSON.stringify({ videoUrl: url, last: true }) });
+      const d = await res.json();
+      if (!res.ok || !d.url) { setOG(g.id, { fbBusy: false, note: d?.error || 'Не удалось взять последний кадр.' }); return; }
+      const newId = addSegment(d.url);
+      setOG(g.id, { fbBusy: false, note: newId ? 'Добавил окно-продолжение: старт = последний кадр.' : 'Нет места на ленте для нового окна.' });
+    } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при продолжении.' }); }
+  };
   const removeSeg = (id: string) => omniMutate((s) => (s.segments.length <= 1 ? s : { ...s, segments: s.segments.filter((g) => g.id !== id) }));
   const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
   const winSecOf = (g: OmniSeg) => srcDuration > 0 ? (g.end - g.start) * srcDuration : 0;
@@ -2584,7 +2647,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         <span style={{ opacity: 0.8 }}>тяни окно · края = длина · Omni макс 10с</span>
                         <span>{srcDuration > 0 ? `${srcDuration.toFixed(0)}с` : '—'}</span>
                       </div>
-                      <button onClick={addSegment} disabled={omniSpec.segments.length >= 6}
+                      <button onClick={() => addSegment()} disabled={omniSpec.segments.length >= 6}
                         className="w-full mt-2 py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
                         <Plus size={14} /> Добавить окно ({omniSpec.segments.length})
@@ -2636,12 +2699,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           {/* Параметры движка */}
                           {g.engine === 'omni' ? (
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина = ширина окна</span>
-                              <button onClick={() => updateSeg(g.id, { seedFrame: !g.seedFrame })}
-                                className="px-2.5 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center gap-1.5"
-                                style={{ background: g.seedFrame ? 'rgba(66,133,244,0.14)' : 'var(--bg-secondary)', color: g.seedFrame ? '#4285F4' : 'var(--text-muted)', border: `1px solid ${g.seedFrame ? '#4285F4' : 'var(--border-medium)'}` }}>
-                                {g.seedFrame ? <Check size={12} /> : <Plus size={12} />} кадры окна как опора
-                              </button>
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина = ширина окна · старт-кадр задаётся ниже</span>
                             </div>
                           ) : (
                             <div className="flex flex-wrap items-center gap-2">
@@ -2659,6 +2717,38 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           {/* Omni Flash: раскадровка (Nano) → выбор кадра → генерация видео + чат-правка */}
                           {g.engine === 'omni' && (
                             <div className="space-y-2">
+                              {/* #3 Старт-кадр: кадр из видео / загрузка / промт+картинка (Nano). Первый кадр для image_to_video. */}
+                              <div className="rounded-lg p-2 space-y-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                                <div className="text-[10px] font-600" style={{ color: 'var(--text-secondary)' }}>Старт-кадр (первый кадр для оживления):</div>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                  <button onClick={() => runExtractFrame(g)} disabled={!sourceUrl || omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
+                                    className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
+                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}
+                                    title={sourceUrl ? 'Взять кадр исходника в позиции окна' : 'Сначала выберите исходное видео'}>
+                                    <Film size={12} /> Из кадра видео
+                                  </button>
+                                  <button onClick={() => pickStartFrame(g.id)} disabled={omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
+                                    className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
+                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                                    <UploadCloud size={12} /> Загрузить
+                                  </button>
+                                  <button onClick={() => runPromptImage(g)} disabled={!g.startFrame || !g.prompt.trim() || omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
+                                    className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
+                                    style={{ background: 'var(--bg-tertiary)', color: '#4285F4', border: '1px solid rgba(66,133,244,0.4)', cursor: 'pointer' }}
+                                    title="Перерисовать текущий старт-кадр по промту (Nano img2img)">
+                                    <Sparkles size={12} /> Промт+картинка
+                                  </button>
+                                </div>
+                                {omniGen[g.id]?.fbBusy && <div className="text-[10px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin" /> Готовлю кадр…</div>}
+                                {g.startFrame && (
+                                  <div className="flex items-center gap-2">
+                                    <img src={g.startFrame} alt="старт-кадр" style={{ width: 40, aspectRatio: '9 / 16', objectFit: 'cover', borderRadius: 6, border: '2px solid #4285F4' }} />
+                                    <span className="text-[10px]" style={{ color: '#4285F4', fontWeight: 700 }}>Старт-кадр задан</span>
+                                    <button onClick={() => { updateSeg(g.id, { startFrame: null }); setOG(g.id, { seed: null }); }}
+                                      className="ml-auto w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: '#ef4444', border: 'none', cursor: 'pointer' }} title="Убрать старт-кадр"><X size={12} /></button>
+                                  </div>
+                                )}
+                              </div>
                               {/* Шаг 1: дешёвая раскадровка перед видео */}
                               <button onClick={() => runStoryboard(g)} disabled={omniGen[g.id]?.sbBusy || omniGen[g.id]?.busy}
                                 className="w-full py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
@@ -2670,7 +2760,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                   <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Выберите кадр — Omni оживит именно его:</div>
                                   <div className="grid grid-cols-3 gap-1.5">
                                     {omniGen[g.id]!.frames!.map((f) => { const sel = omniGen[g.id]?.seed === f; return (
-                                      <button key={f} onClick={() => setOG(g.id, { seed: sel ? null : f })} className="rounded-lg overflow-hidden" style={{ border: `2px solid ${sel ? '#4285F4' : 'var(--border-medium)'}`, cursor: 'pointer', padding: 0, position: 'relative' }}>
+                                      <button key={f} onClick={() => { const nv = sel ? null : f; setOG(g.id, { seed: nv }); updateSeg(g.id, { startFrame: nv }); }} className="rounded-lg overflow-hidden" style={{ border: `2px solid ${sel ? '#4285F4' : 'var(--border-medium)'}`, cursor: 'pointer', padding: 0, position: 'relative' }}>
                                         <img src={f} alt="" className="w-full" style={{ aspectRatio: '9 / 16', objectFit: 'cover', display: 'block' }} />
                                         {sel && <span style={{ position: 'absolute', top: 2, right: 2, background: '#4285F4', color: '#fff', borderRadius: 6, padding: '0 4px', fontSize: 9, fontWeight: 700 }}>✓</span>}
                                       </button>
@@ -2682,7 +2772,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               <button onClick={() => runOmniGen(g)} disabled={omniGen[g.id]?.busy}
                                 className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                                 style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? 'Генерирую… (~30–60с)' : (omniGen[g.id]?.seed ? 'Оживить выбранный кадр (Omni Flash)' : 'Сгенерировать (Omni Flash)')}
+                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? 'Генерирую… (~30–60с)' : ((g.startFrame || omniGen[g.id]?.seed) ? 'Оживить старт-кадр (Omni Flash)' : 'Сгенерировать (Omni Flash)')}
                               </button>
                               {omniGen[g.id]?.note && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{omniGen[g.id]?.note}</p>}
                               {omniGen[g.id]?.url && (
@@ -2697,6 +2787,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                         className="px-2.5 py-1.5 rounded-lg text-[11px] font-700 disabled:opacity-50" style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>Править</button>
                                     </div>
                                   )}
+                                  {/* #4: оставить последний кадр → новое окно (сшивка-продолжение следующих 10с) */}
+                                  <button onClick={() => runContinue(g)} disabled={omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy || omniSpec.segments.length >= 6}
+                                    className="w-full py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    style={{ background: 'var(--bg-secondary)', color: '#4285F4', border: '1px solid rgba(66,133,244,0.4)', cursor: 'pointer' }}
+                                    title="Взять последний кадр клипа как старт нового окна — продолжение">
+                                    {omniGen[g.id]?.fbBusy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Последний кадр → новое окно
+                                  </button>
                                 </>
                               )}
                             </div>
