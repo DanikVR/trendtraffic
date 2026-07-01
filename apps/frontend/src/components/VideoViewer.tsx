@@ -16,7 +16,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   X, Play, Pause, Scissors, RotateCw, Crop, Undo2, RefreshCw, Save, Loader2, Download,
-  SkipBack, SkipForward, Check, Music, Pencil, Plus,
+  SkipBack, SkipForward, Check, Music, Pencil, Plus, Volume2, VolumeX,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { downloadMedia } from './chat/MediaLightbox';
@@ -108,6 +108,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   const [nameEdit, setNameEdit] = useState(title || 'Видео');
   const [editingName, setEditingName] = useState(false);
   const [marks, setMarks] = useState<Seg[]>([]);
+  const [muted, setMuted] = useState(false); // звук включён по умолчанию
 
   const canEdit = (editable ?? true) && isLocal(curUrl);
 
@@ -209,15 +210,27 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     const r = el.getBoundingClientRect();
     return Math.max(0, Math.min(duration, ((clientX - r.left) / r.width) * duration));
   };
-  const onTrackClick = (e: React.MouseEvent) => { if (duration) seek(timeFromEvent(e.clientX)); };
+  // Скраб по дорожке: тянешь — видео перематывается на позицию (видно кадр, где режем).
+  const scrubTrack = (e: React.PointerEvent) => {
+    if (!duration) return;
+    e.preventDefault();
+    videoRef.current?.pause();
+    seek(timeFromEvent(e.clientX));
+    const move = (ev: PointerEvent) => seek(timeFromEvent(ev.clientX));
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
 
-  // Перетаскивание ручек IN/OUT.
+  // Перетаскивание ручек IN/OUT — видео тоже перематывается на позицию ручки.
   const dragHandle = (which: 'in' | 'out') => (e: React.PointerEvent) => {
     e.preventDefault(); e.stopPropagation();
+    videoRef.current?.pause();
     const move = (ev: PointerEvent) => {
       const t = timeFromEvent(ev.clientX);
-      if (which === 'in') setSelIn(Math.min(t, selOutRef.current - EPS));
-      else setSelOut(Math.max(t, selInRef.current + EPS));
+      let at: number;
+      if (which === 'in') { at = Math.min(t, selOutRef.current - EPS); setSelIn(at); }
+      else { at = Math.max(t, selInRef.current + EPS); setSelOut(at); }
+      seek(at); // кадр под ручкой сразу виден сверху
     };
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
@@ -323,6 +336,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onClick={togglePlay}
+          muted={muted}
           playsInline
         />
         {isAudio && (
@@ -342,6 +356,9 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             {playing ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
           </button>
           <button type="button" onClick={() => seek(time + 1 / 30)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Кадр вперёд (→)"><SkipForward size={16} /></button>
+          <button type="button" onClick={() => setMuted((m) => !m)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: muted ? '#fca5a5' : '#fff' }} title={muted ? 'Включить звук' : 'Выключить звук'}>
+            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
           <div className="text-xs tabular-nums ml-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
             {fmtTime(time)} <span style={{ color: 'rgba(255,255,255,0.4)' }}>/ {fmtTime(duration)}</span>
           </div>
@@ -354,9 +371,9 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
 
         {/* Дорожка-таймлайн */}
         <div className="relative select-none" style={{ height: 44 }}>
-          <div ref={trackRef} onClick={onTrackClick}
+          <div ref={trackRef} onPointerDown={scrubTrack}
             className="absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-md cursor-pointer overflow-hidden"
-            style={{ height: 26, background: 'rgba(255,255,255,0.12)' }}>
+            style={{ height: 26, background: 'rgba(255,255,255,0.12)', touchAction: 'none' }}>
             {/* Оставляемые сегменты (зелёные) */}
             {canEdit && keep.map((s, i) => (
               <div key={i} className="absolute top-0 bottom-0" style={{ left: `${pct(s.start)}%`, width: `${pct(s.end - s.start)}%`, background: 'rgba(34,197,94,0.40)', borderLeft: '1px solid rgba(34,197,94,0.8)', borderRight: '1px solid rgba(34,197,94,0.8)' }} />
