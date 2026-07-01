@@ -17,6 +17,7 @@ input_schema, см. tools/*), читает выход из ToolResult.artifacts 
 import os
 import re
 import sys
+import time
 import uuid
 import shutil
 import subprocess
@@ -92,9 +93,38 @@ def health():
 
 # ── утилиты ──────────────────────────────────────────────────────────────────
 def _download(url: str, dest: Path) -> None:
+    # Только http/https: url приходит из пользовательских спецификаций — file:// и
+    # прочие схемы дали бы чтение локальных файлов через urlopen.
+    scheme = urllib.parse.urlparse(url).scheme.lower()
+    if scheme not in ("http", "https"):
+        raise ValueError(f"недопустимая схема URL: {scheme or '(нет)'}")
     req = urllib.request.Request(url, headers={"User-Agent": "trendtraffic-render-worker"})
     with urllib.request.urlopen(req, timeout=180) as r, open(dest, "wb") as f:
         shutil.copyfileobj(r, f)
+
+
+def _sweep_old(dir_path: Path, max_age_sec: float, skip: tuple = ()) -> None:
+    """TTL-очистка рабочих каталогов/выходов: без неё диск VPS забивается нарезками за дни."""
+    try:
+        now = time.time()
+        for p in dir_path.iterdir():
+            if p.name in skip:
+                continue
+            try:
+                if now - p.stat().st_mtime > max_age_sec:
+                    if p.is_dir():
+                        shutil.rmtree(p, ignore_errors=True)
+                    else:
+                        p.unlink()
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _sweep_workdirs() -> None:
+    _sweep_old(WORK_DIR, 24 * 3600, skip=("out",))
+    _sweep_old(FILES_DIR, 48 * 3600)
 
 
 def _abs_url(base_url: Optional[str], u: Optional[str]) -> Optional[str]:
@@ -348,7 +378,10 @@ def _media_duration(path: str) -> float:
 
 def _cut_audio(src: str, start: float, end: float, out_path: str) -> Optional[str]:
     """Вырезает [start,end] из записи в моно-wav 22.05кГц (для сохранения реального голоса)."""
-    dur = max(0.15, end - start)
+    dur = end - start
+    if dur < 0.15:  # битые/схлопнутые таймкоды: 150мс «пшика» вместо реплики хуже, чем явный отказ
+        print(f"[worker] cut_audio: слишком короткий диапазон {start:.3f}-{end:.3f}")
+        return None
     cmd = [FFMPEG, "-y", "-ss", f"{start:.3f}", "-t", f"{dur:.3f}", "-i", src,
            "-vn", "-ac", "1", "-ar", "22050", "-c:a", "pcm_s16le", out_path]
     ok, err = _run(cmd, timeout=300)
@@ -369,7 +402,8 @@ def _pad_audio(wav: str, min_sec: float, out_path: str) -> str:
 
 
 def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
-                 audio: str, cut: Optional[str], anim: str, out_path: str) -> Optional[str]:
+                 audio: str, cut: Optional[str], anim: str, out_path: str,
+                 cut_v: bool = False) -> Optional[str]:
     """
     Один сегмент сплит-скрина: ведущий A слева, B справа (каждый half×H), общая дорожка —
     озвучка реплики. Если к фразе прикреплена картинка (cut) — она эффектно «выезжает»
@@ -391,7 +425,8 @@ def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
     )
     last = "base"
     if cut:
-        inputs += ["-loop", "1", "-i", cut]  # 3: картинка к фразе
+        # видео нельзя подавать с -loop (опция image2-демаксера — mp4 уронит весь сегмент)
+        inputs += (["-i", cut] if cut_v else ["-loop", "1", "-i", cut])  # 3: медиа к фразе
         side = int(POD_W * 0.62)
         d = 0.45  # длительность входа
         cx, cy = "(W-w)/2", "(H-h)/2"
@@ -612,6 +647,8 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
         mf, mnote = _podcast_mix(pod, lines, host_a, host_b, img_a, img_b, rec_path, base_url, work)
         if mf:
             return mf, mnote + truncated
+        # не молчим о деградации: пользователь должен видеть, что наложения/позиции потеряны
+        truncated += f"; таймлайн-микс не удался ({mnote}) — собрано последовательно, без наложений"
 
     has_talking = registry.get("talking_head") is not None
     segments: list = []
@@ -622,7 +659,7 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
     for i, l in enumerate(lines):
         spk = "B" if l.get("speaker") == "B" else "A"
         voice = (host_b if spk == "B" else host_a).get("voice") or "female"
-        text = str(l.get("text")).strip()
+        text = str(l.get("text") or "").strip()  # None → '' (иначе TTS озвучит слово «None»)
         # источник звука реплики: реальный фрагмент записи (диаризация) либо TTS.
         wav, tn = None, ""
         if rec_path:
@@ -655,14 +692,16 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
             left, left_v, right, right_v = (speak_clip or img_a), bool(speak_clip), img_b, False
         else:
             left, left_v, right, right_v = img_a, False, (speak_clip or img_b), bool(speak_clip)
-        # картинка к фразе (B-roll) с выездом; «auto» → со стороны говорящего (A слева, B справа)
-        limg = _download_media(base_url, l.get("image"), work, default_ext=".jpg") if l.get("image") else None
+        # медиа к фразе (B-roll, картинка или видео) с выездом; «auto» → со стороны говорящего
+        lmedia = l.get("image")
+        l_is_vid = _is_video_url(lmedia)
+        limg = _download_media(base_url, lmedia, work, default_ext=(".mp4" if l_is_vid else ".jpg")) if lmedia else None
         lanim = str(l.get("anim") or "auto")
         if lanim == "auto":
             lanim = "slide-left" if spk == "A" else "slide-right"
         if limg:
             used_imgs += 1
-        seg = _pod_segment(left, left_v, right, right_v, wav, limg, lanim, out())
+        seg = _pod_segment(left, left_v, right, right_v, wav, limg, lanim, out(), cut_v=l_is_vid)
         if seg:
             segments.append(seg)
         else:
@@ -685,7 +724,9 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
 
 @app.post("/execute")
 def execute(body: ExecBody):
-    job = body.job_id or uuid.uuid4().hex
+    _sweep_workdirs()
+    # job_id идёт в путь — только безопасные символы (без ../)
+    job = re.sub(r"[^A-Za-z0-9_-]", "", str(body.job_id or "")) or uuid.uuid4().hex
     work = WORK_DIR / job
     work.mkdir(parents=True, exist_ok=True)
 
@@ -719,6 +760,7 @@ def transcribe(body: TranscribeBody):
     """Транскрибирует вход (faster-whisper) и отдаёт сегменты — для ЛЛМ-выбора момента."""
     if registry is None:
         return {"segments": [], "note": "registry не загружен"}
+    _sweep_workdirs()
     job = uuid.uuid4().hex
     work = WORK_DIR / job
     work.mkdir(parents=True, exist_ok=True)
@@ -832,9 +874,11 @@ def _seg_features(sig, sr, start: float, end: float):
             peak = int(np.argmax(corr[lo:h])) + lo
             if peak > 0 and corr[peak] > 0.3 * corr[0]:
                 f0s.append(sr / peak)
-    if not cents:
+    if not cents or not f0s:
+        # без питча (шёпот/смех/шум) сегмент в кластеризацию не берём: F0=0 после
+        # z-нормализации — экстремальный выброс, он захватывал начальный центроид k-means
         return None
-    return [float(np.median(f0s)) if f0s else 0.0, float(np.median(cents))]
+    return [float(np.median(f0s)), float(np.median(cents))]
 
 
 def _cluster_speakers(input_path: str, raw_segments: list, work: Path) -> Optional[list]:
@@ -878,6 +922,11 @@ def _cluster_speakers(input_path: str, raw_segments: list, work: Path) -> Option
             for k in range(2):
                 if (labels == k).any():
                     c[k] = Z[labels == k].mean(axis=0)
+        # вырожденное разделение (почти совпавшие центроиды: узкополосный шум/музыка,
+        # неразличимые признаки) — кластерам верить нельзя, отдаём фолбэку по паузам
+        if float(np.linalg.norm(c[0] - c[1])) < 1.0:
+            print("[worker] speaker-cluster: центроиды не разделились — фолбэк на паузы")
+            return None
         # разложим метки обратно на все сегменты (None → та же, что у предыдущего)
         gpos = 0; seg_lbl: list = []
         for f in feats:
@@ -988,6 +1037,7 @@ def diarize(body: DiarizeBody):
     """
     if registry is None:
         return {"lines": [], "tracks": [], "note": "registry не загружен"}
+    _sweep_workdirs()
     job = uuid.uuid4().hex
     work = WORK_DIR / job
     work.mkdir(parents=True, exist_ok=True)

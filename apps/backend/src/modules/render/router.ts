@@ -28,11 +28,18 @@ import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './vide
 import { extractFrame } from './frame_extract.js';
 
 // Задачи склейки сплит-скрина (в памяти процесса): jobId → статус/результат.
-const composeJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
+const composeJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
 // Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
-const omniJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
+const omniJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
 // Omni-студия подкаста (в памяти): jobId → статусы 2 клипов (по ведущему), для сплит-скрина/чат-правок.
-const omniPodJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; interactionId?: string | null; seconds?: number | null; costUsd?: number | null; assetId?: string | null; error?: string }>; error?: string; ts: number }>();
+const omniPodJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; interactionId?: string | null; seconds?: number | null; costUsd?: number | null; assetId?: string | null; error?: string }>; error?: string; ts: number }>();
+
+// TTL-эвикция in-memory задач: без неё Map-ы растут до рестарта процесса.
+const JOB_TTL_MS = 6 * 3600_000;
+function sweepJobs<T extends { ts: number }>(map: Map<string, T>): void {
+  const cutoff = Date.now() - JOB_TTL_MS;
+  for (const [k, v] of map) { if (v.ts < cutoff) map.delete(k); }
+}
 
 const router = Router();
 
@@ -251,8 +258,13 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
     const voiceSource = ['heygen', 'record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'heygen';
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
-    const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
-      .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ').slice(0, 1500);
+    // HeyGen скачивает audio_url/фото сам — без публичной базы относительные ссылки для него мертвы.
+    if (!base && voiceSource !== 'heygen') {
+      return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен на сервере — HeyGen не сможет скачать аудио-дорожку. Обратитесь к администратору.' });
+    }
+    const rawTextFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
+      .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
+    const textFor = (spk: 'A' | 'B') => rawTextFor(spk).slice(0, 1500);
     const segsFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
       .map((l) => ({ start: Number(l?.start), end: Number(l?.end) }))
       .filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
@@ -268,9 +280,13 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
 
     // Общая длина диалога (макс. конец) — чтобы дорожки ведущих были на всю длину.
     const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    const jobs: any[] = [];
+    // Фаза 1: готовим ВСЁ, что может упасть (аудио, фото), ДО первого сабмита — иначе при
+    // ошибке на ведущем B рендер A уже запущен у HeyGen (кредиты потрачены, videoId потерян).
+    const warns: string[] = [];
+    const prepared: Array<{ spk: 'A' | 'B'; name: string; text: string; audioUrl?: string; voiceId?: string; tpId: string }> = [];
     for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
       const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
+      const fullText = rawTextFor(spk);
       const text = textFor(spk) || `Реплики ведущего ${spk}.`;
       // Голос: реальная запись → нарезка сегментов; ElevenLabs → TTS; иначе HeyGen TTS (текст).
       let audioUrl: string | undefined;
@@ -280,17 +296,30 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
         if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
         audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
       } else if (voiceSource === 'elevenlabs') {
-        audioUrl = abs(await elevenTTS(elevenKey!, text, gender, host.elevenVoiceId));
+        if (fullText.length > 2500) warns.push(`текст ведущего ${spk} обрезан до 2500 симв. (лимит ElevenLabs)`);
+        audioUrl = abs(await elevenTTS(elevenKey!, fullText, gender, host.elevenVoiceId));
       } else {
+        if (fullText.length > 1500) warns.push(`текст ведущего ${spk} обрезан до 1500 симв. (лимит HeyGen TTS)`);
         voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
         if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
       }
       const tpId = await uploadTalkingPhoto(key, abs(host.photoUrl));
-      const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: tpId, voiceId, text, audioUrl, emotion, useIV });
-      jobs.push({ host: spk, name: host.name || `Ведущий ${spk}`, videoId });
+      prepared.push({ spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId });
     }
     const src = voiceSource === 'record' ? 'реальные голоса из записи' : voiceSource === 'elevenlabs' ? 'голос ElevenLabs' : 'голос HeyGen';
-    return res.json({ jobs, note: `HeyGen${useIV ? ' (Avatar IV)' : ''}: запущен рендер 2 голов, ${src} (~1–3 мин). Опрашиваю статус…` });
+    const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
+    // Фаза 2: сабмитим обоих. Если второй не запустился — честно отдаём первого (он уже рендерится).
+    const jobs: any[] = [];
+    for (const p of prepared) {
+      try {
+        const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV });
+        jobs.push({ host: p.spk, name: p.name, videoId });
+      } catch (e: any) {
+        if (!jobs.length) throw e;
+        return res.json({ jobs, note: `HeyGen: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится — опрашиваю его.${warnNote}` });
+      }
+    }
+    return res.json({ jobs, note: `HeyGen${useIV ? ' (Avatar IV)' : ''}: запущен рендер 2 голов, ${src} (~1–3 мин). Опрашиваю статус…${warnNote}` });
   } catch (err: any) {
     res.status(400).json({ error: `HeyGen: ${err?.message || 'ошибка запуска рендера'}` });
   }
@@ -298,26 +327,46 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
 
 // Головы, уже сохранённые в Галерею (videoId → fileUrl), чтобы не качать повторно на каждом опросе.
 const savedHeads = new Map<string, string>();
+// Скачивания голов в полёте: параллельные опросы (интервал 10с < время скачивания) без этого
+// качали одну голову дважды и плодили дубликаты в Галерее.
+const headDownloads = new Map<string, Promise<string | null>>();
+
+function rememberHead(id: string, url: string): void {
+  savedHeads.set(id, url);
+  // мягкий кап, чтобы Map не рос бесконечно за жизнь процесса
+  if (savedHeads.size > 500) {
+    const oldest = savedHeads.keys().next().value;
+    if (oldest !== undefined) savedHeads.delete(oldest);
+  }
+}
 
 /** GET /podcast/animate/status?ids=v1,v2 — статусы рендеров HeyGen; готовые скачиваем в Галерею по порядку. */
 router.get('/podcast/animate/status', async (req: AuthedRequest, res: Response) => {
   try {
     const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
     if (!key) return res.status(400).json({ error: 'Ключ HeyGen не найден.' });
+    const tenantId = req.tenantId!;
     const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4);
     const statuses = await Promise.all(ids.map(async (id) => {
       const st = await heygenVideoStatus(key, id);
       let assetUrl: string | null = savedHeads.get(id) || null;
       if (st.status === 'completed' && st.url && !assetUrl) {
-        try {
-          const dl = await downloadToRenders(st.url, 'podhead');
-          const asset = await createAsset(req.tenantId!, {
-            kind: 'reference', mediaType: 'video', originalName: 'Аватар-ведущий (HeyGen)',
-            fileUrl: dl.fileUrl, filePath: dl.filePath, mime: 'video/mp4', size: dl.size,
-          });
-          assetUrl = dl.fileUrl; savedHeads.set(id, dl.fileUrl);
-          void asset;
-        } catch { assetUrl = null; }
+        let dl = headDownloads.get(id);
+        if (!dl) {
+          dl = (async () => {
+            try {
+              const f = await downloadToRenders(st.url!, 'podhead');
+              await createAsset(tenantId, {
+                kind: 'reference', mediaType: 'video', originalName: 'Аватар-ведущий (HeyGen)',
+                fileUrl: f.fileUrl, filePath: f.filePath, mime: 'video/mp4', size: f.size,
+              }).catch(() => null); // Галерея опц. — файл уже сохранён
+              rememberHead(id, f.fileUrl);
+              return f.fileUrl;
+            } catch { return null; } finally { headDownloads.delete(id); }
+          })();
+          headDownloads.set(id, dl);
+        }
+        assetUrl = await dl;
       }
       // отдаём наш сохранённый URL (постоянный) если есть, иначе временную ссылку HeyGen
       return { id, status: st.status, url: assetUrl || st.url || null, assetUrl, error: st.error || null };
@@ -341,8 +390,9 @@ router.post('/podcast/compose', async (req: AuthedRequest, res: Response) => {
     const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
     const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
     const jobId = 'cmp_' + Math.random().toString(36).slice(2, 10);
-    composeJobs.set(jobId, { status: 'processing', ts: Date.now() });
+    sweepJobs(composeJobs);
     const tenantId = req.tenantId!;
+    composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     // Фоновая задача: склейка может занять минуты (не блокируем ответ / прокси).
     (async () => {
       try {
@@ -355,9 +405,9 @@ router.post('/podcast/compose', async (req: AuthedRequest, res: Response) => {
           });
           assetId = asset?.id || null;
         } catch { /* Галерея опц. */ }
-        composeJobs.set(jobId, { status: 'done', fileUrl, assetId, ts: Date.now() });
+        composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
       } catch (e: any) {
-        composeJobs.set(jobId, { status: 'failed', error: e?.message || 'ошибка склейки', ts: Date.now() });
+        composeJobs.set(jobId, { tenantId, status: 'failed', error: e?.message || 'ошибка склейки', ts: Date.now() });
       }
     })();
     res.json({ jobId, note: 'Склеиваю сплит-скрин — идёт в фоне, опрашиваю статус…' });
@@ -370,7 +420,7 @@ router.post('/podcast/compose', async (req: AuthedRequest, res: Response) => {
 router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
   const jobId = String(req.query.jobId || '');
   const j = composeJobs.get(jobId);
-  if (!j) return res.status(404).json({ error: 'Задача склейки не найдена' });
+  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача склейки не найдена' });
   res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, error: j.error || null });
 });
 
@@ -408,16 +458,23 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
     const voiceSource = ['heygen', 'record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'heygen';
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
+    if (!base && voiceSource !== 'heygen') {
+      return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен на сервере — HeyGen не сможет скачать аудио-дорожку. Обратитесь к администратору.' });
+    }
     const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
-    const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ').slice(0, 1500);
+    const rawTextFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
+    const textFor = (spk: 'A' | 'B') => rawTextFor(spk).slice(0, 1500);
     const segsFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => ({ start: Number(l?.start), end: Number(l?.end) })).filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
     if (voiceSource === 'record' && !spec.recordingUrl) return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись (Разобрать запись).' });
     let elevenKey: string | null = null;
     if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs.' }); }
     const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    // Параллельно по ведущему: вырезка на зелёный (Nano) → talking_photo → submit (Avatar IV).
-    const jobs = await Promise.all(([['A', hostA], ['B', hostB]] as const).map(async ([spk, host]) => {
+    // Фаза 1 (параллельно по ведущему): голос + вырезка на зелёный (Nano) + talking_photo —
+    // всё падучее ДО сабмитов, чтобы ошибка одного не оставляла оплаченный рендер другого.
+    const warns: string[] = [];
+    const prepared = await Promise.all(([['A', hostA], ['B', hostB]] as const).map(async ([spk, host]) => {
       const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
+      const fullText = rawTextFor(spk);
       const text = textFor(spk) || `Реплики ведущего ${spk}.`;
       let audioUrl: string | undefined; let voiceId: string | undefined;
       if (voiceSource === 'record') {
@@ -425,17 +482,30 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
         audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
       } else if (voiceSource === 'elevenlabs') {
-        audioUrl = abs(await elevenTTS(elevenKey!, text, gender, host.elevenVoiceId));
+        if (fullText.length > 2500) warns.push(`текст ведущего ${spk} обрезан до 2500 симв. (лимит ElevenLabs)`);
+        audioUrl = abs(await elevenTTS(elevenKey!, fullText, gender, host.elevenVoiceId));
       } else {
+        if (fullText.length > 1500) warns.push(`текст ведущего ${spk} обрезан до 1500 симв. (лимит HeyGen TTS)`);
         voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
         if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
       }
       const greenUrl = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk);
       const tpId = await uploadTalkingPhoto(key, abs(greenUrl));
-      const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: tpId, voiceId, text, audioUrl, emotion, useIV });
-      return { host: spk, name: host.name || `Ведущий ${spk}`, videoId };
+      return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId };
     }));
-    res.json({ jobs, studioUrl: groupPhotoUrl, note: `Вырезал ведущих из фото → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует на зелёном (~1–3 мин). Потом наложу на студию.` });
+    const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
+    // Фаза 2: сабмитим обоих; частичный сбой отдаём честно.
+    const jobs: any[] = [];
+    for (const p of prepared) {
+      try {
+        const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV });
+        jobs.push({ host: p.spk, name: p.name, videoId });
+      } catch (e: any) {
+        if (!jobs.length) throw e;
+        return res.json({ jobs, studioUrl: groupPhotoUrl, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
+      }
+    }
+    res.json({ jobs, studioUrl: groupPhotoUrl, note: `Вырезал ведущих из фото → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует на зелёном (~1–3 мин). Потом наложу на студию.${warnNote}` });
   } catch (err: any) {
     res.status(400).json({ error: `HeyGen-студия: ${err?.message || 'ошибка'}` });
   }
@@ -454,15 +524,16 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
     const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
     const jobId = 'cmps_' + Math.random().toString(36).slice(2, 10);
-    composeJobs.set(jobId, { status: 'processing', ts: Date.now() });
+    sweepJobs(composeJobs);
     const tenantId = req.tenantId!;
+    composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
         const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
-        composeJobs.set(jobId, { status: 'done', fileUrl, assetId, ts: Date.now() });
-      } catch (e: any) { composeJobs.set(jobId, { status: 'failed', error: e?.message || 'ошибка наложения на студию', ts: Date.now() }); }
+        composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
+      } catch (e: any) { composeJobs.set(jobId, { tenantId, status: 'failed', error: e?.message || 'ошибка наложения на студию', ts: Date.now() }); }
     })();
     res.json({ jobId, note: 'Накладываю ведущих на студию (chroma-key) — в фоне, опрашиваю статус…' });
   } catch (err: any) {
@@ -473,7 +544,8 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
 // ── Omni Flash: генерация/правка видео (Gemini gemini-omni-flash-preview, Interactions API) ──
 /** Запустить генерацию/правку Omni Flash в фоне (в память → poll). Общая для generate/edit. */
 async function runOmniJob(tenantId: string, jobId: string, work: () => Promise<{ fileUrl: string; interactionId?: string; seconds?: number; costUsd?: number }>) {
-  omniJobs.set(jobId, { status: 'processing', ts: Date.now() });
+  sweepJobs(omniJobs);
+  omniJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
   try {
     const r = await work();
     let assetId: string | null = null;
@@ -533,7 +605,7 @@ router.post('/omni/edit', async (req: AuthedRequest, res: Response) => {
 /** GET /omni/status?jobId=... — статус генерации/правки Omni Flash. */
 router.get('/omni/status', (req: AuthedRequest, res: Response) => {
   const j = omniJobs.get(String(req.query.jobId || ''));
-  if (!j) return res.status(404).json({ error: 'Задача Omni не найдена' });
+  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача Omni не найдена' });
   res.json({ status: j.status, fileUrl: j.fileUrl || null, interactionId: j.interactionId || null, seconds: j.seconds || null, costUsd: j.costUsd || null, error: j.error || null });
 });
 
@@ -638,8 +710,9 @@ router.post('/podcast/omni-animate', async (req: AuthedRequest, res: Response) =
     const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
       .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
     const jobId = 'omnipod_' + Math.random().toString(36).slice(2, 10);
-    omniPodJobs.set(jobId, { status: 'processing', ts: Date.now() });
+    sweepJobs(omniPodJobs);
     const tenantId = req.tenantId!;
+    omniPodJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     const nameA = hostA.name || 'Ведущий A'; const nameB = hostB.name || 'Ведущий B';
     // Фон: синхронные вызовы Omni (~40с каждый) > таймаут прокси → в фоне, poll status.
     (async () => {
@@ -684,7 +757,7 @@ router.post('/podcast/omni-animate', async (req: AuthedRequest, res: Response) =
         }
       }
       const anyOk = hosts.some((h) => h.url);
-      omniPodJobs.set(jobId, { status: anyOk ? 'done' : 'failed', hosts, error: anyOk ? undefined : (hosts.find((h) => h.error)?.error || 'не удалось оживить'), ts: Date.now() });
+      omniPodJobs.set(jobId, { tenantId, status: anyOk ? 'done' : 'failed', hosts, error: anyOk ? undefined : (hosts.find((h) => h.error)?.error || 'не удалось оживить'), ts: Date.now() });
     })();
     res.json({ jobId, note: groupPhotoUrl
       ? `Omni оживляет ЦЕЛУЮ сцену из общего фото студии (~30–60с, ≈$${(10 * OMNI_VIDEO_USD_PER_SEC).toFixed(2)}). Опрашиваю…`
@@ -697,7 +770,7 @@ router.post('/podcast/omni-animate', async (req: AuthedRequest, res: Response) =
 /** GET /podcast/omni-animate/status?jobId=... — статусы 2 Omni-клипов ведущих (+ interactionId для правок). */
 router.get('/podcast/omni-animate/status', (req: AuthedRequest, res: Response) => {
   const j = omniPodJobs.get(String(req.query.jobId || ''));
-  if (!j) return res.status(404).json({ error: 'Задача Omni-студии не найдена' });
+  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача Omni-студии не найдена' });
   res.json({ status: j.status, hosts: j.hosts || [], error: j.error || null });
 });
 

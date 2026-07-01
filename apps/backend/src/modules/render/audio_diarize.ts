@@ -134,7 +134,10 @@ export async function diarizeWithGemini(opts: {
       + 'Пустые/шумовые участки пропускай.\n'
       + 'Верни СТРОГО JSON: {"segments":[{"speaker":"A"|"B","start":число,"end":число,"text":"..."}]}';
 
-    const resp: any = await ai.models.generateContent({
+    // Жёсткий таймаут: без него зависший generateContent держит HTTP-запрос дольше
+    // прокси-таймаута, и фолбэк на воркер не срабатывает вовсе.
+    const GEN_TIMEOUT_MS = 240_000;
+    const genPromise = ai.models.generateContent({
       model,
       contents: [
         { role: 'user', parts: [createPartFromUri(file.uri, file.mimeType || mime), { text: prompt }] },
@@ -146,6 +149,17 @@ export async function diarizeWithGemini(opts: {
         maxOutputTokens: 65536,
       },
     });
+    genPromise.catch(() => { /* поздний reject после таймаута не должен стать unhandled */ });
+    let genTimer: ReturnType<typeof setTimeout> | undefined;
+    let resp: any;
+    try {
+      resp = await Promise.race([
+        genPromise,
+        new Promise((_, rej) => { genTimer = setTimeout(() => rej(new Error(`Gemini не ответил за ${GEN_TIMEOUT_MS / 1000}с — фолбэк на воркер`)), GEN_TIMEOUT_MS); }),
+      ]);
+    } finally {
+      clearTimeout(genTimer);
+    }
 
     const txt =
       (typeof resp?.text === 'string' && resp.text)

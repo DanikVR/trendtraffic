@@ -438,6 +438,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean }[]>([]);
   const [studioBg, setStudioBg] = useState<string | null>(null); // HeyGen «на студии»: фон-фото студии для compose-studio (chroma-key)
   const animPollRef = useRef<number | null>(null);
+  // Компонент жив? Опросы переустанавливают setTimeout ПОСЛЕ await fetch — clearTimeout в cleanup
+  // снимает только уже запланированный таймер, и без этого флага цикл «воскресал» после unmount.
+  const pollAliveRef = useRef(true);
   const [composeBusy, setComposeBusy] = useState(false);       // склейка сплит-скрина
   const [composeNote, setComposeNote] = useState<string | null>(null);
   const [composeUrl, setComposeUrl] = useState<string | null>(null);
@@ -906,6 +909,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setBuildJob(job);
       for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
         await new Promise((r) => setTimeout(r, 2000));
+        if (!pollAliveRef.current) return; // компонент размонтирован — прекращаем опрос
         const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
         if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
       }
@@ -930,7 +934,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(),
         body: JSON.stringify({ brief: pod.brief, nameA: pod.hostA.name, nameB: pod.hostB.name }) });
       const d = await res.json();
-      if (res.ok && Array.isArray(d.lines) && d.lines.length) { podMutate((p) => ({ ...p, dialogue: d.lines })); setPodNote(d.note || null); }
+      // timeline: false — новые TTS-реплики без start/tStart; в старом режиме таймлайна
+      // (после прошлой диаризации) они раскладывались по оценкам и резались невпопад
+      if (res.ok && Array.isArray(d.lines) && d.lines.length) { podMutate((p) => ({ ...p, dialogue: d.lines, timeline: false })); setPodNote(d.note || null); }
       else setPodNote(d?.note || d?.error || 'Не удалось сгенерировать диалог.');
     } catch { setPodNote('Ошибка сети при генерации диалога.'); }
     finally { setPodBusy(null); }
@@ -945,7 +951,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (/(^|\b)(b|2)(\b|$)|ведущ\w*\s*[бb]|второй|male|муж/.test(low) || low === 'б') return 'B';
       if (/(^|\b)(a|1)(\b|$)|ведущ\w*\s*[аa]|перв|female|жен/.test(low) || low === 'а') return 'A';
       if (who && !names.includes(who)) names.push(who);
-      return names.indexOf(who) === 1 ? 'B' : 'A'; // 1-й уникальный голос → A, 2-й → B
+      // 1-й уникальный голос → A, 2-й → B, дальше чередуем (раньше 3-й+ молча уходили в A)
+      return names.indexOf(who) % 2 === 1 ? 'B' : 'A';
     };
     // JSON?
     if (s[0] === '[' || s[0] === '{') {
@@ -958,7 +965,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             .map((it: any) => {
               const sp = String(it?.speaker ?? it?.role ?? it?.name ?? '').trim();
               const text = String(it?.text ?? it?.content ?? it?.line ?? '').trim();
-              return { speaker: toAB(sp, names), text } as PodLine;
+              // сохраняем таймкоды, если они есть в JSON (сегменты диаризации)
+              const st = Number(it?.start); const en = Number(it?.end);
+              return {
+                speaker: toAB(sp, names), text,
+                ...(Number.isFinite(st) ? { start: st } : {}),
+                ...(Number.isFinite(en) && (!Number.isFinite(st) || en > st) ? { end: en } : {}),
+              } as PodLine;
             })
             .filter((l) => l.text);
         }
@@ -997,11 +1010,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await res.json();
       if (res.ok && Array.isArray(d.lines) && d.lines.length) {
         // Авто-раскладка: ставим клипы на их реальные времена (tStart=start) и включаем таймлайн.
-        podMutate((p) => ({ ...p, timeline: true, dialogue: d.lines.map((l: any) => ({
-          speaker: l.speaker === 'B' ? 'B' : 'A', text: String(l.text || ''),
-          ...(Number.isFinite(l.start) ? { start: l.start, tStart: l.start } : {}),
-          ...(Number.isFinite(l.end) ? { end: l.end } : {}),
-        })) }));
+        podMutate((p) => ({ ...p, timeline: true, dialogue: d.lines.map((l: any) => {
+          // Number(): строковые таймкоды (фолбэк-воркер) иначе молча теряли авто-раскладку
+          const st = Number(l.start); const en = Number(l.end);
+          return {
+            speaker: l.speaker === 'B' ? 'B' : 'A', text: String(l.text || ''),
+            ...(Number.isFinite(st) ? { start: st, tStart: st } : {}),
+            ...(Number.isFinite(en) ? { end: en } : {}),
+          };
+        }) }));
         setPodNote(d.note || null);
         setDiarizeDone(true);  // мигающий кружок на узле «Подкаст»
       } else setPodNote(d?.note || d?.error || 'Не удалось разобрать запись.');
@@ -1011,13 +1028,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   /** Суммарная длительность диалога (сек) — для оценки стоимости анимации. */
   const dialogTotalSec = (): number => pod.dialogue.reduce((s, l) => s + lineDur(l), 0);
-  /** Опрос статуса рендеров HeyGen до готовности (или ~5 мин). */
+  /** Опрос статуса рендеров HeyGen до готовности (потолок ~30 мин). */
   const pollAnimate = (ids: string[]) => {
+    let ticks = 0;
     const tick = async () => {
       try {
         const res = await fetch('/api/render/podcast/animate/status?ids=' + ids.join(','), { headers: headers() });
         const d = await res.json();
-        if (res.ok && Array.isArray(d.statuses)) {
+        if (res.ok && Array.isArray(d.statuses) && d.statuses.length) {
           let merged: typeof animJobs = [];
           setAnimJobs((prev) => { merged = prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url } : j; }); return merged; });
           const done = d.statuses.every((s: any) => s.status === 'completed' || s.status === 'failed');
@@ -1029,6 +1047,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           }
         }
       } catch { /* ретрай */ }
+      if (!pollAliveRef.current) return;
+      if (++ticks > 180) { setAnimBusy(false); setAnimNote('Опрос рендера остановлен по таймауту (30 мин) — готовые головы ищите в Галерее.'); return; }
       animPollRef.current = window.setTimeout(tick, 10000);
     };
     tick();
@@ -1055,8 +1075,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
     } catch { setAnimNote('Ошибка сети при запуске аниматора.'); setAnimBusy(false); }
   };
-  /** Опрос статуса склейки сплит-скрина. */
+  /** Опрос статуса склейки сплит-скрина (потолок ~30 мин). */
   const pollCompose = (jobId: string) => {
+    let ticks = 0;
     const tick = async () => {
       try {
         const res = await fetch('/api/render/podcast/compose/status?jobId=' + jobId, { headers: headers() });
@@ -1068,6 +1089,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           return;
         }
       } catch { /* ретрай */ }
+      if (!pollAliveRef.current) return;
+      if (++ticks > 225) { setComposeBusy(false); setComposeNote('Опрос склейки остановлен по таймауту (30 мин) — результат ищите в Галерее.'); return; }
       composePollRef.current = window.setTimeout(tick, 8000);
     };
     tick();
@@ -1133,6 +1156,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch { setAnimNote('Ошибка сети при запуске Omni-студии.'); setAnimBusy(false); }
   };
   const pollOmniAnimate = (jobId: string) => {
+    let ticks = 0;
     const tick = async () => {
       try {
         const res = await fetch('/api/render/podcast/omni-animate/status?jobId=' + jobId, { headers: headers() });
@@ -1148,6 +1172,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           return;
         }
       } catch { /* ретрай */ }
+      if (!pollAliveRef.current) return;
+      if (++ticks > 225) { setAnimBusy(false); setAnimNote('Опрос Omni остановлен по таймауту (30 мин) — готовые клипы ищите в Галерее.'); return; }
       animPollRef.current = window.setTimeout(tick, 8000);
     };
     tick();
@@ -1162,6 +1188,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const res = await fetch('/api/render/omni/edit', { method: 'POST', headers: headers(), body: JSON.stringify({ previousInteractionId: job.interactionId, prompt, aspect: '9:16' }) });
       const d = await res.json();
       if (!res.ok || !d.jobId) { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote(d?.error || 'Правка не запустилась.'); return; }
+      let ticks = 0;
       const poll = async () => {
         try {
           const r = await fetch('/api/render/omni/status?jobId=' + d.jobId, { headers: headers() });
@@ -1174,7 +1201,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             return;
           }
         } catch { /* ретрай */ }
-        window.setTimeout(poll, 8000);
+        if (!pollAliveRef.current || ++ticks > 150) return;
+        omniPollRef.current[d.jobId] = window.setTimeout(poll, 8000);
       };
       poll();
     } catch { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote('Ошибка сети при правке.'); }
@@ -1199,7 +1227,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const podLineMutate = (i: number, patch: Partial<PodLine>) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
   const podLineAdd = () => podMutate((p) => ({ ...p, dialogue: [...p.dialogue, { speaker: p.dialogue.length % 2 ? 'B' : 'A', text: '' }] }));
-  const podLineDel = (i: number) => podMutate((p) => ({ ...p, dialogue: p.dialogue.filter((_, j) => j !== i) }));
+  const podLineDel = (i: number) => {
+    podMutate((p) => ({ ...p, dialogue: p.dialogue.filter((_, j) => j !== i) }));
+    setSelLine((s) => (s == null ? s : s === i ? null : s > i ? s - 1 : s)); // индексы сдвинулись
+  };
 
   // ── Таймлайн (Фаза 2): длительность/позиция клипа, вкл. режим наложения, перетаскивание ──
   const lineDur = (l: PodLine): number => {
@@ -1223,21 +1254,26 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const tlSetStart = (i: number, t: number) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, tStart: Math.max(0, Math.round(t * 20) / 20) } : l)) }));
   /** Разрезать клип i в позиции tCut (сек на таймлайне) на две реплики. */
-  const splitLineAt = (i: number, tCut: number) => podMutate((p) => {
-    const l = p.dialogue[i]; if (!l) return p;
-    const t = Number.isFinite(l.tStart) ? (l.tStart as number) : 0;
+  const splitLineAt = (i: number, tCut: number) => {
+    const arr = pod.dialogue;
+    const l = arr[i]; if (!l) return;
+    // позиция клипа = lineT (tStart → start → встык): раньше клип без tStart считался от 0,
+    // и ножницы резали не там, куда указывал бегунок
+    const t = lineT(l, i, arr);
     const d = lineDur(l);
     const off = tCut - t;
-    if (off <= 0.1 || off >= d - 0.1) return p; // слишком близко к краю — не режем
+    if (off <= 0.1 || off >= d - 0.1) return; // слишком близко к краю — не режем
     const frac = off / d;
     const words = (l.text || '').split(/\s+/).filter(Boolean);
-    const cw = Math.max(1, Math.round(words.length * frac));
     const hasTC = Number.isFinite(l.start) && Number.isFinite(l.end);
+    if (!hasTC && words.length < 2) return; // TTS-реплику из одного слова не разрезать (пустая половина)
+    const cw = Math.max(1, Math.round(words.length * frac));
     const mid = hasTC ? (l.start as number) + (l.end as number - (l.start as number)) * frac : undefined;
     const a: PodLine = { ...l, text: words.slice(0, cw).join(' ') || l.text, tStart: t, ...(hasTC ? { end: mid } : {}) };
     const b: PodLine = { ...l, text: words.slice(cw).join(' '), tStart: Math.round((t + off) * 20) / 20, image: undefined, imageName: undefined, anim: undefined, ...(hasTC ? { start: mid } : {}) };
-    return { ...p, dialogue: [...p.dialogue.slice(0, i), a, b, ...p.dialogue.slice(i + 1)] };
-  });
+    podMutate((p) => ({ ...p, dialogue: [...p.dialogue.slice(0, i), a, b, ...p.dialogue.slice(i + 1)] }));
+    setSelLine((s) => (s != null && s > i ? s + 1 : s)); // индексы ниже разреза сдвинулись
+  };
   const tlDragRef = useRef<{ i: number; startX: number; startT: number } | null>(null);
   const [tlPps, setTlPps] = useState(44); // пикселей на секунду — масштаб таймлайна (зум)
   const tlPpsRef = useRef(44);
@@ -1273,26 +1309,37 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     setTlPps(Math.max(3, Math.min(160, w / total)));
   };
   /** Объединить реплику i со следующей: тексты, времена и медиа сливаются в один клип. */
-  const mergeLineDown = (i: number) => podMutate((p) => {
-    const a = p.dialogue[i]; const b = p.dialogue[i + 1];
-    if (!a || !b) return p;
-    const tA = Number.isFinite(a.tStart) ? (a.tStart as number) : lineT(a, i, p.dialogue);
-    const startTC = Number.isFinite(a.start) ? a.start : b.start;
-    const endTC = Number.isFinite(b.end) ? b.end : a.end;
-    const merged: PodLine = {
-      ...a,
-      text: [a.text, b.text].map((x) => (x || '').trim()).filter(Boolean).join(' '),
-      tStart: tA,
-      ...(Number.isFinite(startTC) ? { start: startTC } : {}),
-      ...(Number.isFinite(endTC) ? { end: endTC } : {}),
-      image: a.image || b.image, imageName: a.imageName || b.imageName, anim: a.anim || b.anim,
-    };
-    return { ...p, dialogue: [...p.dialogue.slice(0, i), merged, ...p.dialogue.slice(i + 2)] };
-  });
+  const mergeLineDown = (i: number) => {
+    podMutate((p) => {
+      const a = p.dialogue[i]; const b = p.dialogue[i + 1];
+      if (!a || !b) return p;
+      const tA = lineT(a, i, p.dialogue);
+      const tB = lineT(b, i + 1, p.dialogue);
+      // после перетаскивания сосед по массиву может стоять РАНЬШЕ по времени — сливаем по
+      // времени (иначе получался end < start, и клип молча переставал играть)
+      const [first, second] = tB < tA ? [b, a] : [a, b];
+      const starts = [a.start, b.start].filter((x): x is number => Number.isFinite(x));
+      const ends = [a.end, b.end].filter((x): x is number => Number.isFinite(x));
+      const merged: PodLine = {
+        ...a,
+        text: [first.text, second.text].map((x) => (x || '').trim()).filter(Boolean).join(' '),
+        tStart: Math.min(tA, tB),
+        ...(starts.length ? { start: Math.min(...starts) } : {}),
+        ...(ends.length ? { end: Math.max(...ends) } : {}),
+        image: a.image || b.image, imageName: a.imageName || b.imageName, anim: a.anim || b.anim,
+      };
+      return { ...p, dialogue: [...p.dialogue.slice(0, i), merged, ...p.dialogue.slice(i + 2)] };
+    });
+    setSelLine((s) => (s == null ? s : s === i + 1 ? i : s > i + 1 ? s - 1 : s));
+  };
   /** Остановить все запланированные аудио-источники таймлайна. */
   const tlStopSources = () => { for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } } tlSrcsRef.current = []; };
+  // Поколение запуска: tlPlay ждёт декодирование записи (секунды) — Стоп/повторный Play за это
+  // время должен отменить «догоняющий» запуск, иначе играет призрачное аудио + второй raf-цикл.
+  const tlPlaySeqRef = useRef(0);
   /** Остановить воспроизведение таймлайна (аудио + анимация бегунка). */
   const tlStop = () => {
+    tlPlaySeqRef.current++;
     setTlPlaying(false);
     tlStopSources();
     if (tlRafRef.current != null) { cancelAnimationFrame(tlRafRef.current); tlRafRef.current = null; }
@@ -1312,6 +1359,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   /** Воспроизвести с жёлтого бегунка. Каждый клип играет свой отрезок записи в позиции tStart —
    *  наложенные клипы (перебивание) звучат ОДНОВРЕМЕННО (Web Audio микширует). */
   const tlPlay = async () => {
+    tlStop(); // снимаем предыдущий цикл (raf/источники), если был
+    const seq = tlPlaySeqRef.current;
     const arr = pod.dialogue;
     const total = Math.max(1, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
     let from = tlPlayhead; if (from >= total - 0.05) { from = 0; setTlPlayhead(0); }
@@ -1321,6 +1370,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const ctx = tlCtxRef.current;
     if (buf && ctx) {
       if (ctx.state === 'suspended') { try { await ctx.resume(); } catch { /* тихо */ } }
+      if (seq !== tlPlaySeqRef.current) return; // пока декодировали — нажали Стоп/Play заново
       tlStopSources();
       const t0 = ctx.currentTime + 0.08;
       arr.forEach((l, i) => {
@@ -1348,6 +1398,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       return;
     }
     // Нет записи / не удалось декодировать — просто ведём бегунок по времени.
+    if (seq !== tlPlaySeqRef.current) return; // запуск отменили, пока грузили запись
     tlRafPrevRef.current = null;
     const tick = (ts: number) => {
       if (tlRafPrevRef.current == null) tlRafPrevRef.current = ts;
@@ -1371,13 +1422,24 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32; // 32 = отступ подписи дорожки
         const nt = Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20);
         setTlPlayhead(nt);
-        if (tlSrcsRef.current.length) tlStop(); // ручная перемотка — останавливаем воспроизведение
+        // ручная перемотка — останавливаем воспроизведение (и raf-режим без аудио тоже,
+        // иначе цикл каждый кадр перетирает позицию и бегунок «вырывается из рук»)
+        if (tlSrcsRef.current.length || tlRafRef.current != null) tlStop();
       }
     };
-    const up = () => { if (tlDragRef.current) { tlDragRef.current = null; setDirty(true); } tlPlayDragRef.current = false; };
+    const up = () => {
+      if (tlDragRef.current) {
+        tlDragRef.current = null;
+        if (tlMovedRef.current) setDirty(true); // клик без движения — не «грязним» документ
+        // сбрасываем флаг ПОСЛЕ click-события (иначе прерванный драг проглатывает следующий клик)
+        window.setTimeout(() => { tlMovedRef.current = false; }, 0);
+      }
+      tlPlayDragRef.current = false;
+    };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => {
+      pollAliveRef.current = false; // тикеры в полёте (await fetch) не переустановят таймеры
       window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
       if (tlRafRef.current != null) cancelAnimationFrame(tlRafRef.current);
       for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } }
@@ -1530,7 +1592,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     setPodBusy('apply'); setPodNote(null);
     try {
       const img = await loadImage(pod.groupPhotoUrl);
-      const patch: Partial<PodcastSpec> = {};
+      const urls: { A?: string; B?: string } = {};
       for (const sp of ['A', 'B'] as const) {
         const face = pod.faces.find((f) => f.speaker === sp);
         if (!face) continue;
@@ -1538,10 +1600,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (!blob) continue;
         const asset = await uploadBlob(blob, `host-${sp}.jpg`);
         if (!asset) continue;
-        if (sp === 'A') patch.hostA = { ...pod.hostA, photoUrl: asset.fileUrl, photoName: 'Ведущий A (кадр)' };
-        else patch.hostB = { ...pod.hostB, photoUrl: asset.fileUrl, photoName: 'Ведущий B (кадр)' };
+        urls[sp] = asset.fileUrl;
       }
-      podMutate((p) => ({ ...p, ...patch }));
+      // патч собираем ВНУТРИ функционального апдейта: кроп+аплоад занимают секунды, и копия
+      // pod из замыкания перетёрла бы правки имени/голоса, сделанные за это время
+      podMutate((p) => ({
+        ...p,
+        ...(urls.A ? { hostA: { ...p.hostA, photoUrl: urls.A, photoName: 'Ведущий A (кадр)' } } : {}),
+        ...(urls.B ? { hostB: { ...p.hostB, photoUrl: urls.B, photoName: 'Ведущий B (кадр)' } } : {}),
+      }));
       setPodNote('Готово: крупные планы ведущих созданы из общего фото.');
     } catch { setPodNote('Не удалось сделать кадры из фото.'); }
     finally { setPodBusy(null); }
@@ -1602,6 +1669,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       let job = d.job; setBuildJob(job);
       for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
         await new Promise((r) => setTimeout(r, 2000));
+        if (!pollAliveRef.current) return; // ушли со страницы — не опрашиваем ещё 20 минут
         const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
         if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
       }
@@ -3066,7 +3134,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
                           {podBusy === 'detect' ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Распознать лица
                         </button>
-                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите лицо рамкой · до 4 · A — розовый, B — фиолетовый</span>
+                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите лицо рамкой · до 2 (A и B) · A — розовый, B — фиолетовый</span>
                         <div className="flex-1" />
                         <button onClick={() => openPodPick('group')} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сменить фото</button>
                         <button onClick={() => podMutate((p) => ({ ...p, groupPhotoUrl: null, groupPhotoName: null, faces: [] }))} className="text-[11px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>удалить</button>

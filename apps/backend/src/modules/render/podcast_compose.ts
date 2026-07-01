@@ -73,12 +73,13 @@ export async function composeHeads(opts: {
   // Речь: исходная запись (правильный тайминг) или микс аудио обеих голов.
   let speechLabel: string;
   if (audioIdx >= 0) { fc += `[${audioIdx}:a]aresample=async=1[sp];`; speechLabel = '[sp]'; }
-  else { fc += `[0:a][1:a]amix=inputs=2:duration=longest[sp];`; speechLabel = '[sp]'; }
+  // normalize=0: дефолтный amix делит громкость каждого входа на их число — речь играла на 50%
+  else { fc += `[0:a][1:a]amix=inputs=2:normalize=0:duration=longest[sp];`; speechLabel = '[sp]'; }
 
   let mapAudio: string;
   if (musicIdx >= 0) {
     // музыка на громкости + обрезка по длине видео (duration=first = речь)
-    fc += `[${musicIdx}:a]volume=${vol.toFixed(2)}[bg];${speechLabel}[bg]amix=inputs=2:duration=first:dropout_transition=0[aout];`;
+    fc += `[${musicIdx}:a]volume=${vol.toFixed(2)}[bg];${speechLabel}[bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aout];`;
     mapAudio = '[aout]';
   } else {
     mapAudio = speechLabel;
@@ -128,10 +129,11 @@ export async function composeOnStudio(opts: {
 
   let speechLabel: string;
   if (audioIdx >= 0) { fc += `[${audioIdx}:a]aresample=async=1[sp];`; speechLabel = '[sp]'; }
-  else { fc += `[1:a][2:a]amix=inputs=2:duration=longest[sp];`; speechLabel = '[sp]'; }
+  // normalize=0 — иначе amix делит громкость на число входов (речь тише в 2 раза)
+  else { fc += `[1:a][2:a]amix=inputs=2:normalize=0:duration=longest[sp];`; speechLabel = '[sp]'; }
   let mapAudio: string;
   if (musicIdx >= 0) {
-    fc += `[${musicIdx}:a]volume=${vol.toFixed(2)}[bgm];${speechLabel}[bgm]amix=inputs=2:duration=first:dropout_transition=0[aout];`;
+    fc += `[${musicIdx}:a]volume=${vol.toFixed(2)}[bgm];${speechLabel}[bgm]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aout];`;
     mapAudio = '[aout]';
   } else { mapAudio = speechLabel; }
 

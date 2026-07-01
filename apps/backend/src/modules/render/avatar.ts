@@ -98,8 +98,8 @@ export async function submitTalkingPhotoVideo(apiKey: string, opts: {
 
 /** Статус рендера видео HeyGen. */
 export async function heygenVideoStatus(apiKey: string, videoId: string): Promise<{ status: string; url?: string; error?: string }> {
-  const { ok, d } = await hgGet(apiKey, `${HG}/v1/video_status.get?video_id=${encodeURIComponent(videoId)}`);
-  if (!ok) return { status: 'error', error: `HTTP` };
+  const { ok, status, d } = await hgGet(apiKey, `${HG}/v1/video_status.get?video_id=${encodeURIComponent(videoId)}`);
+  if (!ok) return { status: 'error', error: `HTTP ${status}` };
   const x = d?.data || {};
   return { status: x.status || 'unknown', url: x.video_url || undefined, error: x.error ? (x.error.message || JSON.stringify(x.error)) : undefined };
 }
