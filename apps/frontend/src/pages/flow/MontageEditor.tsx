@@ -16,7 +16,7 @@ import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
-  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud,
+  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud, Info,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { VideoViewer } from '../../components/VideoViewer';
@@ -338,7 +338,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [addOpen, setAddOpen] = useState(false); // нижнее поле «Добавить»: свёрнуто/раскрыто
   const [showPresets, setShowPresets] = useState(false);
   const [attachFor, setAttachFor] = useState<string | null>(null);
-  const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string }[]>([]);
+  const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string; folder: 'trends' | 'reference' | 'audio' | 'analyzed'; cover?: string }[]>([]);
+  const [podPickTab, setPodPickTab] = useState<'all' | 'trends' | 'reference' | 'audio' | 'analyzed'>('all'); // вкладка-папка в пикере
+  const [podPickQ, setPodPickQ] = useState(''); // поиск в пикере
   const [uploading, setUploading] = useState(false);   // загрузка медиа с устройства
   const [dragOver, setDragOver] = useState(false);     // подсветка зоны drag-and-drop
   const attachInputRef = useRef<HTMLInputElement | null>(null);
@@ -751,9 +753,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [dialogOpen, setDialogOpen] = useState(false); // список реплик свёрнут/раскрыт
   const [selLine, setSelLine] = useState<number | null>(null); // выбранная реплика (клик по клипу)
   const [tlPlaying, setTlPlaying] = useState(false);   // идёт воспроизведение с бегунка
-  const tlAudioRef = useRef<HTMLAudioElement | null>(null);
   const tlRafRef = useRef<number | null>(null);
   const tlRafPrevRef = useRef<number | null>(null);
+  // Web Audio: микшируем клипы по их tStart, чтобы наложенные (перебивание) звучали ОДНОВРЕМЕННО.
+  const tlCtxRef = useRef<AudioContext | null>(null);
+  const tlBufRef = useRef<AudioBuffer | null>(null);
+  const tlBufUrlRef = useRef<string | null>(null);
+  const tlSrcsRef = useRef<AudioBufferSourceNode[]>([]);
   const tlMmss = (s: number): string => { const m = Math.floor(s / 60); const ss = Math.floor(s % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
   /** Медиа реплики — видео? (чтобы показать нужную иконку и во воркере наложить как видео). */
   const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
@@ -787,27 +793,66 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     };
     return { ...p, dialogue: [...p.dialogue.slice(0, i), merged, ...p.dialogue.slice(i + 2)] };
   });
+  /** Остановить все запланированные аудио-источники таймлайна. */
+  const tlStopSources = () => { for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } } tlSrcsRef.current = []; };
   /** Остановить воспроизведение таймлайна (аудио + анимация бегунка). */
   const tlStop = () => {
     setTlPlaying(false);
-    const a = tlAudioRef.current; if (a) { try { a.pause(); } catch { /* тихо */ } }
+    tlStopSources();
     if (tlRafRef.current != null) { cancelAnimationFrame(tlRafRef.current); tlRafRef.current = null; }
     tlRafPrevRef.current = null;
   };
-  /** Воспроизвести с жёлтого бегунка: реальная запись (если есть) или прогон бегунка по времени. */
-  const tlPlay = () => {
+  /** Декодировать запись в AudioBuffer (кэш по url). */
+  const tlLoadBuffer = async (): Promise<AudioBuffer | null> => {
+    if (!pod.recordingUrl) return null;
+    const ctx = tlCtxRef.current || (tlCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)());
+    if (tlBufRef.current && tlBufUrlRef.current === pod.recordingUrl) return tlBufRef.current;
+    const r = await fetch(pod.recordingUrl);
+    const ab = await r.arrayBuffer();
+    const buf = await ctx.decodeAudioData(ab.slice(0));
+    tlBufRef.current = buf; tlBufUrlRef.current = pod.recordingUrl;
+    return buf;
+  };
+  /** Воспроизвести с жёлтого бегунка. Каждый клип играет свой отрезок записи в позиции tStart —
+   *  наложенные клипы (перебивание) звучат ОДНОВРЕМЕННО (Web Audio микширует). */
+  const tlPlay = async () => {
     const arr = pod.dialogue;
     const total = Math.max(1, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
     let from = tlPlayhead; if (from >= total - 0.05) { from = 0; setTlPlayhead(0); }
     setTlPlaying(true);
-    const a = tlAudioRef.current;
-    if (a && pod.recordingUrl) {
-      try { a.currentTime = from; } catch { /* тихо */ }
-      a.play().catch(() => { /* автоплей мог не сработать */ });
+    let buf: AudioBuffer | null = null;
+    try { buf = await tlLoadBuffer(); } catch { buf = null; }
+    const ctx = tlCtxRef.current;
+    if (buf && ctx) {
+      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch { /* тихо */ } }
+      tlStopSources();
+      const t0 = ctx.currentTime + 0.08;
+      arr.forEach((l, i) => {
+        const st = Number(l.start); const en = Number(l.end);
+        if (!Number.isFinite(st) || !Number.isFinite(en) || en <= st) return; // нет реального отрезка
+        const tStart = lineT(l, i, arr);
+        const clipEnd = tStart + (en - st);
+        if (clipEnd <= from) return;                       // клип целиком до бегунка
+        let offset = st; let dur = en - st; let when = t0 + (tStart - from);
+        if (tStart < from) { const skip = from - tStart; offset = st + skip; dur -= skip; when = t0; } // клип начался раньше бегунка
+        offset = Math.max(0, Math.min(offset, buf!.duration - 0.02));
+        dur = Math.min(dur, buf!.duration - offset);
+        if (dur <= 0.02) return;
+        const src = ctx.createBufferSource(); src.buffer = buf!; src.connect(ctx.destination);
+        try { src.start(when, offset, dur); tlSrcsRef.current.push(src); } catch { /* тихо */ }
+      });
+      const tick = () => {
+        const c = tlCtxRef.current; if (!c) return;
+        const cur = from + (c.currentTime - t0);
+        if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
+        if (cur >= 0) setTlPlayhead(cur);
+        tlRafRef.current = requestAnimationFrame(tick);
+      };
+      tlRafRef.current = requestAnimationFrame(tick);
       return;
     }
-    // Нет записи (TTS-таймлайн) — просто ведём бегунок по времени.
-    tlRafPrevRef.current = null; // стартовая метка времени rAF
+    // Нет записи / не удалось декодировать — просто ведём бегунок по времени.
+    tlRafPrevRef.current = null;
     const tick = (ts: number) => {
       if (tlRafPrevRef.current == null) tlRafPrevRef.current = ts;
       const cur = from + (ts - tlRafPrevRef.current) / 1000;
@@ -817,7 +862,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     };
     tlRafRef.current = requestAnimationFrame(tick);
   };
-  const tlTogglePlay = () => { if (tlPlaying) tlStop(); else tlPlay(); };
+  const tlTogglePlay = () => { if (tlPlaying) tlStop(); else { tlPlay().catch(() => setTlPlaying(false)); } };
   useEffect(() => {
     const move = (e: PointerEvent) => {
       const d = tlDragRef.current;
@@ -830,7 +875,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32; // 32 = отступ подписи дорожки
         const nt = Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20);
         setTlPlayhead(nt);
-        const a = tlAudioRef.current; if (a && !a.paused) { try { a.currentTime = nt; } catch { /* тихо */ } }
+        if (tlSrcsRef.current.length) tlStop(); // ручная перемотка — останавливаем воспроизведение
       }
     };
     const up = () => { if (tlDragRef.current) { tlDragRef.current = null; setDirty(true); } tlPlayDragRef.current = false; };
@@ -839,12 +884,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return () => {
       window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
       if (tlRafRef.current != null) cancelAnimationFrame(tlRafRef.current);
+      for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } }
+      if (tlCtxRef.current) { try { tlCtxRef.current.close(); } catch { /* тихо */ } tlCtxRef.current = null; }
     };
   }, []);
 
   // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
   type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg';
-  const openPodPick = (target: PodPickTarget) => { setPodPick(target); loadMedia(); };
+  const openPodPick = (target: PodPickTarget) => { setPodPick(target); setPodPickTab('all'); setPodPickQ(''); loadMedia(); };
   const applyPodMedia = (target: PodPickTarget, m: { fileUrl: string; title: string }) => {
     podMutate((p) => {
       if (target === 'hostA') return { ...p, hostA: { ...p.hostA, photoUrl: m.fileUrl, photoName: m.title } };
@@ -1028,7 +1075,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
 
   // ── Картинки к фразам (B-roll): прикрепляем картинку к реплике, выезжает на этой фразе ──
-  const openPodLineImage = (i: number) => { setPodLineIdx(i); setPodPick('lineimg'); loadMedia(); };
+  const openPodLineImage = (i: number) => { setPodLineIdx(i); setPodPick('lineimg'); setPodPickTab('all'); setPodPickQ(''); loadMedia(); };
   const setLineImage = (i: number, url: string | null, name?: string) =>
     podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, image: url || undefined, imageName: name } : l)) }));
   const setLineAnim = (i: number, anim: PodAnim) =>
@@ -1077,19 +1124,29 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   const applyPreset = (preset: Preset) => { setName(preset.name); setNodes(preset.kinds.map(newNode)); setDirty(true); setShowPresets(false); };
 
+  // Вся Галерея с папками (как в разделе «Галерея»): тренды + референс + аудио + из анализа.
   const loadMedia = async () => {
     try {
-      const [r, a, an] = await Promise.all([
+      const [tr, r, a, an] = await Promise.all([
+        fetch('/api/trends/videos?downloaded=1&limit=200', { headers: headers() }),
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
         fetch('/api/trends/media?kind=audio', { headers: headers() }),
         fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
       ]);
+      const trends = tr.ok ? (await tr.json()).videos || [] : [];
       const ref = r.ok ? (await r.json()).assets || [] : [];
       const aud = a.ok ? (await a.json()).assets || [] : [];
-      const ana = an.ok ? (await an.json()).assets || [] : []; // проанализированные видео — тоже в галерею
+      const ana = an.ok ? (await an.json()).assets || [] : [];
       const seen = new Set<string>();
-      const all = [...ref, ...aud, ...ana].filter((m: any) => { if (!m?.id || seen.has(m.id)) return false; seen.add(m.id); return true; });
-      setMedia(all.map((m: any) => ({ id: m.id, fileUrl: m.fileUrl, title: m.originalName || 'файл', kind: m.mediaType })));
+      const out: { id: string; fileUrl: string; title: string; kind: string; folder: 'trends' | 'reference' | 'audio' | 'analyzed'; cover?: string }[] = [];
+      const push = (id: string, fileUrl: string, title: string, kind: string, folder: 'trends' | 'reference' | 'audio' | 'analyzed', cover?: string) => {
+        if (fileUrl && !seen.has(fileUrl)) { seen.add(fileUrl); out.push({ id: id || fileUrl, fileUrl, title, kind, folder, cover }); }
+      };
+      for (const v of trends) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || 'видео', 'video', 'trends', v.coverUrl);
+      for (const m of ref) push(m.id, m.fileUrl, m.originalName || 'файл', m.mediaType, 'reference');
+      for (const m of aud) push(m.id, m.fileUrl, m.originalName || 'аудио', m.mediaType, 'audio');
+      for (const m of ana) if (m.mediaType === 'video') push(m.id, m.fileUrl, m.originalName || 'видео', 'video', 'analyzed');
+      setMedia(out);
     } catch { setMedia([]); }
   };
   const openAttach = (id: string) => { setAttachFor(id); loadMedia(); };
@@ -1412,9 +1469,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         @keyframes meDot{0%,100%{opacity:.3}50%{opacity:1}}
         .me-ready{animation:meReady 1.1s ease-in-out infinite;}
         @keyframes meReady{0%,100%{box-shadow:0 8px 26px rgba(16,185,129,.4);transform:scale(1)}50%{box-shadow:0 10px 40px rgba(16,185,129,.95);transform:scale(1.05)}}
-        /* переливающийся контур блока во время генерации — цвета переливаются на месте, кольцо не крутится */
-        .me-busyring{position:absolute;width:72px;height:72px;border-radius:50%;top:-7px;left:50%;transform:translateX(-50%);background:conic-gradient(from 0deg,#ec4899,#818cf8,#34d399,#fbbf24,#f472b6,#ec4899);animation:meShine 2.6s linear infinite;-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none;z-index:7;will-change:filter;}
+        /* контур генерации: ПОД иконкой (z-index:-1), переливается (hue-rotate) + циклически «дышит» (scale) */
+        .me-busyring{position:absolute;width:74px;height:74px;border-radius:50%;top:-8px;left:50%;transform:translateX(-50%);background:conic-gradient(from 0deg,#ec4899,#818cf8,#34d399,#fbbf24,#f472b6,#ec4899);animation:meShine 2.6s linear infinite, mePulse 1.7s ease-in-out infinite;-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none;z-index:-1;will-change:transform,filter;}
         @keyframes meShine{0%{filter:hue-rotate(0deg) saturate(1.15)}50%{filter:hue-rotate(180deg) saturate(1.5)}100%{filter:hue-rotate(360deg) saturate(1.15)}}
+        @keyframes mePulse{0%,100%{transform:translateX(-50%) scale(.78);opacity:.7}50%{transform:translateX(-50%) scale(1.08);opacity:1}}
+        /* всплывающая подсказка при наведении (ⓘ) */
+        .me-tip{position:relative;display:inline-flex;align-items:center;}
+        .me-tip-pop{display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:290px;padding:10px 12px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border-medium);color:var(--text-secondary);font-size:11px;line-height:1.5;z-index:96;box-shadow:0 10px 30px rgba(0,0,0,.35);white-space:normal;text-align:left;}
+        .me-tip:hover .me-tip-pop,.me-tip:focus-within .me-tip-pop{display:block;}
         /* раскрытие — пружинка (быстро, мультяшно) */
         .me-grow{animation:meGrow .26s cubic-bezier(.34,1.7,.5,1);transform-origin:bottom center;}
         @keyframes meGrow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
@@ -1856,30 +1918,51 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               {podBusy === 'upload' ? <Loader2 size={20} className="animate-spin" style={{ color: '#ec4899' }} /> : <Plus size={20} style={{ color: '#ec4899' }} />}
               <span className="text-[13px] font-600">{podBusy === 'upload' ? 'Загружаю…' : 'Загрузить с устройства'}</span>
             </button>
-            <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи</div>
+            <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи — папки и поиск</div>
             {(() => {
               const wantAudio = podPick === 'recording';
               const wantMedia = podPick === 'lineimg' || podPick === 'cutaway'; // фото ИЛИ видео
-              const items = media.filter((m) => (
-                wantAudio ? (m.kind === 'audio' || m.kind === 'video')
-                : wantMedia ? (m.kind === 'image' || m.kind === 'video')
-                : m.kind === 'image'));
-              return items.length === 0 ? (
-                <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пусто. Загрузите файл выше или добавьте в «Галерею».</p>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {items.map((m) => (
-                    <button key={m.id} onClick={() => applyPodMedia(podPick, { fileUrl: m.fileUrl, title: m.title })} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                      <div style={{ position: 'relative', aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
-                          : m.kind === 'audio' ? <Music size={22} style={{ color: '#ec4899' }} />
-                          : <><video src={m.fileUrl} muted preload="metadata" className="w-full h-full object-cover" />
-                              <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)' }}><Play size={20} style={{ color: '#fff' }} fill="#fff" /></span></>}
-                      </div>
-                      <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
-                    </button>
-                  ))}
-                </div>
+              const kindOk = (m: typeof media[number]) => wantAudio ? (m.kind === 'audio' || m.kind === 'video')
+                : wantMedia ? (m.kind === 'image' || m.kind === 'video') : m.kind === 'image';
+              const base = media.filter(kindOk);
+              const TABS = ([['all', 'Все'], ['trends', 'Тренды'], ['reference', 'Референс'], ['audio', 'Аудио'], ['analyzed', 'Из анализа']] as const)
+                .filter(([k]) => k === 'all' || base.some((m) => m.folder === k));
+              const q = podPickQ.trim().toLowerCase();
+              const items = base.filter((m) => (podPickTab === 'all' || m.folder === podPickTab) && (!q || m.title.toLowerCase().includes(q)));
+              return (
+                <>
+                  {TABS.length > 2 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {TABS.map(([k, lbl]) => (
+                        <button key={k} onClick={() => setPodPickTab(k)} className="text-[11px] font-600 px-2.5 py-1 rounded-lg" style={{ background: podPickTab === k ? '#ec4899' : 'var(--bg-tertiary)', color: podPickTab === k ? '#fff' : 'var(--text-secondary)', border: `1px solid ${podPickTab === k ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ position: 'relative', marginBottom: 8 }}>
+                    <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input value={podPickQ} onChange={(e) => setPodPickQ(e.target.value)} placeholder="Поиск по названию…"
+                      className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                  </div>
+                  {items.length === 0 ? (
+                    <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Загрузите файл выше или добавьте в «Галерею».</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {items.map((m) => (
+                        <button key={m.id} onClick={() => applyPodMedia(podPick, { fileUrl: m.fileUrl, title: m.title })} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                          <div style={{ position: 'relative', aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
+                              : m.kind === 'audio' ? <Music size={22} style={{ color: '#ec4899' }} />
+                              : (<>
+                                  {m.cover ? <img src={m.cover} alt="" className="w-full h-full object-cover" /> : <video src={m.fileUrl} muted preload="metadata" className="w-full h-full object-cover" />}
+                                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)' }}><Play size={20} style={{ color: '#fff' }} fill="#fff" /></span>
+                                </>)}
+                          </div>
+                          <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               );
             })()}
           </div>
@@ -2427,11 +2510,27 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
                         {podBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать
                       </button>
-                      <button onClick={() => setLoadDlgOpen(true)}
-                        className="py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                        <Download size={15} /> Загрузить диалог
-                      </button>
+                      <div className="flex items-stretch gap-1">
+                        <button onClick={() => setLoadDlgOpen(true)}
+                          className="flex-1 py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
+                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                          <Download size={15} /> Загрузить диалог
+                        </button>
+                        <span className="me-tip" tabIndex={0} style={{ flexShrink: 0, width: 34, borderRadius: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: 'help', justifyContent: 'center' }}>
+                          <Info size={16} />
+                          <span className="me-tip-pop">
+                            <b>Как подготовить текст диалога</b><br />
+                            Каждая реплика — с новой строки, в начале укажите, кто говорит:<br />
+                            <code style={{ color: 'var(--text-secondary)' }}>A: Привет, сегодня обсудим…</code><br />
+                            <code style={{ color: 'var(--text-secondary)' }}>B: Да, поехали!</code><br />
+                            Можно по именам ведущих — первый голос станет A, второй B.<br /><br />
+                            <b>Или JSON:</b><br />
+                            <code style={{ color: 'var(--text-secondary)' }}>[{'{'}"speaker":"A","text":"…"{'}'}, {'{'}"speaker":"B","text":"…"{'}'}]</code><br />
+                            Поддерживаются поля speaker/role/name и text/content/line.<br /><br />
+                            Ещё можно вставить текст из блока «Исследование»/«Новости» сценария — кнопкой внутри окна.
+                          </span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -2456,13 +2555,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 )}
 
-                {/* Таймлайн (Фаза 2) — вверху; наложение голосовых дорожек */}
+                {/* Таймлайн (Фаза 2) — вверху; наложение голосовых дорожек (Web Audio микширует наложения) */}
                 {pod.dialogue.length > 0 && (
                   <div className="space-y-1.5">
-                    {/* скрытый плеер записи — воспроизведение с жёлтого бегунка */}
-                    <audio ref={tlAudioRef} src={pod.recordingUrl || undefined} preload="metadata" style={{ display: 'none' }}
-                      onTimeUpdate={(e) => { if (tlPlaying && !tlPlayDragRef.current) setTlPlayhead(e.currentTarget.currentTime); }}
-                      onEnded={tlStop} />
                     <div className="flex items-center justify-between flex-wrap gap-1.5">
                       <span className="text-[11px] font-600 inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
                         Таймлайн (наложение голосов)
