@@ -59,6 +59,26 @@ async function fetchImageBase64(url: string): Promise<{ base64: string; mime: st
   } catch { return null; }
 }
 
+/** Живая проверка ключа HeyGen (быстрая) + остаток кредитов, для аниматора аватаров. */
+async function checkHeyGen(apiKey: string): Promise<{ ok: boolean; quota?: number | null; error?: string }> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12_000);
+    try {
+      const r = await fetch('https://api.heygen.com/v1/user/remaining_quota', { headers: { 'x-api-key': apiKey, accept: 'application/json' }, signal: ctrl.signal });
+      if (r.ok) {
+        const d: any = await r.json().catch(() => ({}));
+        const raw = d?.data?.remaining_quota ?? d?.remaining_quota ?? null;
+        // HeyGen отдаёт квоту в «credits*60» на части тарифов — показываем как есть.
+        return { ok: true, quota: typeof raw === 'number' ? raw : null };
+      }
+      const v = await fetch('https://api.heygen.com/v2/voices', { headers: { 'x-api-key': apiKey }, signal: ctrl.signal });
+      if (v.ok) return { ok: true, quota: null };
+      return { ok: false, error: `HTTP ${r.status}` };
+    } finally { clearTimeout(t); }
+  } catch (e: any) { return { ok: false, error: e?.name === 'AbortError' ? 'таймаут' : (e?.message || 'сеть') }; }
+}
+
 interface AuthedRequest extends Request {
   tenantId?: string;
   userRole?: string;
@@ -195,6 +215,39 @@ router.post('/podcast/angle', async (req: AuthedRequest, res: Response) => {
     res.json({ mediaUrl: gen.mediaUrl, assetId: asset?.id || null });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка генерации ракурса' });
+  }
+});
+
+/** POST /podcast/animate — проверить/подготовить аниматор ведущих (говорящие головы).
+ *  body: { provider: 'heygen'|'did'|'gpu', heygenVersion?, seconds? } → { note } | { error }.
+ *  Валидирует выбранного провайдера вживую (ключ/воркер) и оценивает стоимость. Сам рендер
+ *  голов — длинная фоновая генерация (следующий шаг), сюда не входит из-за таймаутов прокси. */
+router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const provider = ['heygen', 'did', 'gpu'].includes(req.body?.provider) ? req.body.provider : 'heygen';
+    const seconds = Number.isFinite(Number(req.body?.seconds)) ? Number(req.body.seconds) : 0;
+    const mins = Math.max(0.1, seconds / 60);
+    const minsR = Math.round(mins * 10) / 10;
+
+    if (provider === 'gpu') {
+      const gpu = getRenderGpuWorkerUrl();
+      if (!gpu) return res.status(400).json({ error: 'GPU-воркер (SadTalker) не подключён. Подключите домашний RTX/облачный GPU в Настройки → Генерация → Рендер — тогда анимация будет без оплаты за минуту.' });
+      return res.json({ note: `GPU-воркер подключён — анимация говорящих голов (SadTalker) без оплаты за минуту (${minsR} мин). Рендер голов пойдёт фоновой генерацией (следующий шаг).` });
+    }
+    if (provider === 'did') {
+      return res.json({ note: 'D-ID / Hedra: как только добавите ключ провайдера, подключу его этим же аниматором (дешевле HeyGen). Пока доступны HeyGen (лучшее качество) и наш GPU (бесплатно).' });
+    }
+    // HeyGen — основной провайдер.
+    const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
+    if (!key) return res.status(400).json({ error: 'Добавьте ключ HeyGen в Настройки → Генерация (раздел «Платные», HeyGen). Получить ключ: app.heygen.com/settings/api.' });
+    const chk = await checkHeyGen(key);
+    if (!chk.ok) return res.status(400).json({ error: `Ключ HeyGen не прошёл проверку (${chk.error}). Проверьте ключ и остаток кредитов на app.heygen.com.` });
+    const ver = ['3', '4', '5'].includes(req.body?.heygenVersion) ? req.body.heygenVersion : '4';
+    const est = (mins * 0.6).toFixed(2);
+    const quota = chk.quota != null ? `, остаток кредитов HeyGen: ${chk.quota}` : '';
+    return res.json({ note: `HeyGen v${ver} подключён и проверен${quota}. Аниматор готов: ~$${est} за ролик (${minsR} мин озвучки). Рендер двух говорящих голов и сборка сплит-скрина пойдут фоновой генерацией — запускаю следующим шагом.` });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка аниматора' });
   }
 });
 

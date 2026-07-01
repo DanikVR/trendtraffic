@@ -120,6 +120,14 @@ const POD_ANIMS: { v: PodAnim; label: string }[] = [
 // Реплика: спикер + текст (+ таймкоды) + опц. картинка + tStart (позиция на таймлайне Фазы 2).
 interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number }
 interface PodCutaway { url: string; name: string }
+// Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
+type PodAvatarProvider = 'heygen' | 'did' | 'gpu';
+interface PodAvatar { provider: PodAvatarProvider; heygenVersion: '3' | '4' | '5' }
+const POD_AVATARS: { v: PodAvatarProvider; label: string; quality: string; cost: string; perMin: number; note: string }[] = [
+  { v: 'heygen', label: 'HeyGen', quality: '★★★★★ фотореализм', cost: 'премиум', perMin: 0.6, note: 'Лучшее качество, версии 3/4/5. Нужен ключ HeyGen (Настройки → Генерация).' },
+  { v: 'did', label: 'D-ID / Hedra', quality: '★★★★ хорошо', cost: 'дешевле в разы', perMin: 0.12, note: 'Говорящая голова из фото за меньшие деньги. Нужен ключ провайдера.' },
+  { v: 'gpu', label: 'Наш GPU (SadTalker)', quality: '★★★ скромнее', cost: 'бесплатно', perMin: 0, note: 'Без оплаты за минуту, крутится на нашем GPU-воркере. Сейчас GPU не подключён.' },
+];
 // Лицо на групповом фото: бокс в долях изображения (0..1) + назначенный спикер.
 interface PodFace { id: string; box: { x: number; y: number; w: number; h: number }; speaker: 'A' | 'B' }
 interface PodcastSpec {
@@ -131,6 +139,8 @@ interface PodcastSpec {
   groupPhotoUrl: string | null; groupPhotoName: string | null; faces: PodFace[];
   // Фаза 2 «Таймлайн»: режим наложения дорожек (микс в воркере по tStart реплик).
   timeline?: boolean;
+  // Анимация ведущих (говорящие головы): выбор провайдера/версии.
+  avatar?: PodAvatar;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -140,6 +150,7 @@ const POD_DEFAULT: PodcastSpec = {
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
   timeline: false,
+  avatar: { provider: 'heygen', heygenVersion: '4' },
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
@@ -389,6 +400,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
   const [podNote, setPodNote] = useState<string | null>(null);
+  const [animBusy, setAnimBusy] = useState(false);          // проверка/подготовка аниматора аватаров
+  const [animNote, setAnimNote] = useState<string | null>(null);
   const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg'>(null);
   const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
   const [loadDlgOpen, setLoadDlgOpen] = useState(false);  // модал «Загрузить диалог» (текст/JSON/из Исследования)
@@ -698,6 +711,24 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       } else setPodNote(d?.note || d?.error || 'Не удалось разобрать запись.');
     } catch { setPodNote('Ошибка сети при разборе записи.'); }
     finally { setPodBusy(null); }
+  };
+
+  /** Суммарная длительность диалога (сек) — для оценки стоимости анимации. */
+  const dialogTotalSec = (): number => pod.dialogue.reduce((s, l) => s + lineDur(l), 0);
+  /** Проверить/подготовить аниматор ведущих (говорящие головы) у выбранного провайдера. */
+  const runAnimate = async () => {
+    if (animBusy) return;
+    const av = pod.avatar || POD_DEFAULT.avatar!;
+    if (!pod.hostA.photoUrl || !pod.hostB.photoUrl) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
+    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
+    setAnimBusy(true); setAnimNote(null);
+    try {
+      const res = await fetch('/api/render/podcast/animate', { method: 'POST', headers: headers(),
+        body: JSON.stringify({ provider: av.provider, heygenVersion: av.heygenVersion, seconds: Math.round(dialogTotalSec()) }) });
+      const d = await res.json();
+      setAnimNote(res.ok ? (d.note || 'Аниматор готов.') : (d?.error || 'Аниматор недоступен.'));
+    } catch { setAnimNote('Ошибка сети при подготовке аниматора.'); }
+    finally { setAnimBusy(false); }
   };
 
   const podLineMutate = (i: number, patch: Partial<PodLine>) =>
@@ -2694,6 +2725,45 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     )}
                   </div>
                 )}
+
+                {/* Анимация ведущих — говорящие головы (выбор провайдера + оценка стоимости) */}
+                {(() => {
+                  const av = pod.avatar || POD_DEFAULT.avatar!;
+                  const cur = POD_AVATARS.find((a) => a.v === av.provider) || POD_AVATARS[0];
+                  const mins = Math.max(0.1, dialogTotalSec() / 60);
+                  const est = cur.perMin > 0 ? `≈ $${(mins * cur.perMin).toFixed(2)} за ролик (${Math.round(mins * 10) / 10} мин × $${cur.perMin}/мин)` : 'без оплаты за минуту';
+                  return (
+                    <div className="space-y-2 rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                      <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><UserRound size={13} style={{ color: '#ec4899' }} /> Анимация ведущих (говорящие головы)</div>
+                      <div className="grid grid-cols-3 gap-1">
+                        {POD_AVATARS.map((a) => { const sel = av.provider === a.v; return (
+                          <button key={a.v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), provider: a.v } }))}
+                            className="rounded-lg px-1.5 py-1.5 text-left" style={{ background: sel ? 'rgba(236,72,153,0.14)' : 'var(--bg-secondary)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                            <div className="text-[11px] font-700" style={{ color: sel ? '#ec4899' : 'var(--text-primary)' }}>{a.label}</div>
+                            <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{a.quality}</div>
+                            <div className="text-[9px] font-600" style={{ color: a.perMin === 0 ? '#10b981' : 'var(--text-secondary)' }}>{a.cost}</div>
+                          </button>
+                        ); })}
+                      </div>
+                      {av.provider === 'heygen' && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Версия HeyGen:</span>
+                          {(['3', '4', '5'] as const).map((v) => { const sel = av.heygenVersion === v; return (
+                            <button key={v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), heygenVersion: v } }))}
+                              className="text-[10px] font-700 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>v{v}</button>
+                          ); })}
+                        </div>
+                      )}
+                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>.</p>
+                      <button onClick={runAnimate} disabled={animBusy}
+                        className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                        style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} Анимировать ведущих
+                      </button>
+                      {animNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{animNote}</p>}
+                    </div>
+                  );
+                })()}
 
                 {/* Мин. длина реплики */}
                 <div className="space-y-1">
