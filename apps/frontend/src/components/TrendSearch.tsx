@@ -139,6 +139,12 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
   };
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(20);
+  // Строковое зеркало count для поля ввода — чтобы цифра набиралась ПЛАВНО (можно очистить
+  // поле, править середину), а клэмп в допустимый диапазон [1..30] происходил на blur, а не
+  // на каждый keystroke (иначе пустое поле мгновенно превращалось в 1 и ввод «дёргался»).
+  const [countStr, setCountStr] = useState('20');
+  const clampCount = (n: number) => Math.min(30, Math.max(1, n));
+  const pickCount = (n: number) => { const c = clampCount(n); setCount(c); setCountStr(String(c)); };
   const [mode, setMode] = useState<'video' | 'general' | 'app'>('app');
   const [sortType, setSortType] = useState<0 | 1 | 2>(0);
   const [publishTime, setPublishTime] = useState<0 | 1 | 7 | 30 | 90 | 180>(0);
@@ -387,7 +393,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             Сколько видео
             <div className="flex items-center gap-1.5">
               {[10, 20, 30].map((n) => (
-                <button key={n} type="button" onClick={() => setCount(n)}
+                <button key={n} type="button" onClick={() => pickCount(n)}
                   className="w-10 h-10 rounded-lg text-sm font-700 transition-colors"
                   style={{
                     background: count === n ? 'var(--brand)' : 'var(--bg-tertiary)',
@@ -397,9 +403,21 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
                   {n}
                 </button>
               ))}
-              <input type="number" min={1} max={30} value={count}
-                onChange={(e) => setCount(Math.min(30, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+              <input
+                type="text" inputMode="numeric" pattern="[0-9]*"
+                value={countStr}
+                onChange={(e) => {
+                  // Только цифры, максимум 2 знака (потолок 30). Пустое поле разрешаем — не
+                  // навязываем 1; count обновляем лишь на валидном числе, финальный клэмп — на blur.
+                  const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
+                  setCountStr(raw);
+                  const n = parseInt(raw, 10);
+                  if (Number.isFinite(n) && n >= 1) setCount(clampCount(n));
+                }}
+                onBlur={() => pickCount(parseInt(countStr, 10) || 20)}
+                onFocus={(e) => e.currentTarget.select()}
                 title="Своё количество (1–30)"
+                aria-label="Своё количество видео (1–30)"
                 className="w-14 h-10 px-2 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
             </div>
