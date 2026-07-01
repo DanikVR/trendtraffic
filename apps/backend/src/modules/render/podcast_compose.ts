@@ -42,7 +42,8 @@ export async function composeHeads(opts: {
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
   const HALF = 540; const H = 1920;
-  const pad = `scale=${HALF}:${H}:force_original_aspect_ratio=decrease,pad=${HALF}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30`;
+  // tpad клонирует последний кадр — короткая голова не исчезает, обе видны на всю длину звука.
+  const pad = `scale=${HALF}:${H}:force_original_aspect_ratio=decrease,pad=${HALF}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=3600`;
   let fc = `[0:v]${pad}[la];[1:v]${pad}[lb];[la][lb]hstack=inputs=2[v];`;
 
   // Речь: исходная запись (правильный тайминг) или микс аудио обеих голов.

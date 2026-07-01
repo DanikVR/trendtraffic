@@ -260,6 +260,8 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
       if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs в Настройки → Генерация.' });
     }
 
+    // Общая длина диалога (макс. конец) — чтобы дорожки ведущих были на всю длину.
+    const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
     const jobs: any[] = [];
     for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
       const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
@@ -270,7 +272,7 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
       if (voiceSource === 'record') {
         const segs = segsFor(spk);
         if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
-        audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs));
+        audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
       } else if (voiceSource === 'elevenlabs') {
         audioUrl = abs(await elevenTTS(elevenKey!, text, gender, host.elevenVoiceId));
       } else {

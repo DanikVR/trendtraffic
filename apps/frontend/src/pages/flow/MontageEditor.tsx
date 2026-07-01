@@ -159,7 +159,7 @@ const POD_DEFAULT: PodcastSpec = {
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
   timeline: false,
-  avatar: { provider: 'heygen', mode: 'standard', voiceSource: 'heygen', emotion: 'friendly' },
+  avatar: { provider: 'heygen', mode: 'iv', voiceSource: 'heygen', emotion: 'friendly' },
   music: null,
 };
 
@@ -510,6 +510,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch { /* */ }
     finally { setSaving(false); }
   };
+  // Авто-сохранение: любые правки (в т.ч. вся спека «Подкаста») сохраняются сами через ~1.6с —
+  // выйдешь и вернёшься в сценарий → всё на месте. Ничего не теряется без кнопки «Сохранить».
+  const saveRef = useRef(save);
+  useEffect(() => { saveRef.current = save; });
+  useEffect(() => {
+    if (!dirty || loading) return;
+    const t = window.setTimeout(() => { void saveRef.current(); }, 1600);
+    return () => clearTimeout(t);
+  }, [dirty, loading]);
 
   // ── Undo/Redo: история снимков редактируемого «документа» ──────────────────────
   const histRef = useRef<{ stack: string[]; idx: number }>({ stack: [], idx: -1 });
@@ -1600,7 +1609,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
       {/* Верхняя панель */}
       <div className="flex items-center gap-2 px-4 py-3 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
-        <button onClick={onBack} title="Назад" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
+        <button onClick={async () => { if (dirty) { try { await save(); } catch { /* */ } } onBack(); }} title="Назад" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
         {nameEdit ? (
           <input autoFocus value={name}
             onChange={(e) => { setName(e.target.value); setDirty(true); }}
@@ -1756,7 +1765,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
-              {id === 'podcast' && (!!podBusy || building || !!angleBusy) && <span className="me-busyring" />}
+              {id === 'podcast' && (!!podBusy || building || !!angleBusy || animBusy || composeBusy) && <span className="me-busyring" />}
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',

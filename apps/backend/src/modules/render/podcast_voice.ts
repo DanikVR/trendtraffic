@@ -45,19 +45,33 @@ async function ensureRecordingLocal(recordingUrl: string, base: string): Promise
   return tmp;
 }
 
-/** Вырезать+склеить сегменты одного ведущего из записи → mp3 в uploads/renders → fileUrl. */
-export async function buildHostAudio(recordingUrl: string, base: string, segments: { start: number; end: number }[]): Promise<string> {
+/**
+ * Полновременная дорожка одного ведущего из записи: его сегменты СТОЯТ НА СВОИХ реальных
+ * временах, между ними — тишина, общая длина = totalSec (вся длина диалога). Тогда голова
+ * HeyGen получается на всю длину и синхронит губы ИМЕННО когда этот ведущий говорит.
+ * → mp3 в uploads/renders → fileUrl.
+ */
+export async function buildHostAudio(recordingUrl: string, base: string, segments: { start: number; end: number }[], totalSec: number): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const rec = await ensureRecordingLocal(recordingUrl, base);
   const segs = segments
     .filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start)
     .slice(0, 200);
   if (!segs.length) throw new Error('нет сегментов для голоса этого ведущего');
-  const trims = segs.map((s, i) => `[0:a]atrim=${Number(s.start).toFixed(3)}:${Number(s.end).toFixed(3)},asetpts=N/SR/TB[a${i}]`).join(';');
-  const concat = segs.map((_, i) => `[a${i}]`).join('') + `concat=n=${segs.length}:v=0:a=1[out]`;
+  const total = Math.max(totalSec || 0, ...segs.map((s) => s.end)) + 0.15;
+  // Каждый сегмент: вырезаем, сбрасываем PTS, задерживаем до его реального start.
+  const parts = segs.map((s, i) => {
+    const ms = Math.max(0, Math.round(Number(s.start) * 1000));
+    return `[0:a]atrim=${Number(s.start).toFixed(3)}:${Number(s.end).toFixed(3)},asetpts=PTS-STARTPTS,adelay=${ms}|${ms}[s${i}]`;
+  }).join(';');
+  // Тихая база нужной длины задаёт итоговую длительность (duration=first), сегменты подмешиваются.
+  const mix = `[1:a]` + segs.map((_, i) => `[s${i}]`).join('') + `amix=inputs=${segs.length + 1}:normalize=0:duration=first[out]`;
   const out = `podvoice-${randomUUID().slice(0, 8)}.mp3`;
   const outPath = path.join(RENDERS_DIR, out);
-  await ffmpeg(['-y', '-i', rec, '-filter_complex', `${trims};${concat}`, '-map', '[out]', '-c:a', 'libmp3lame', '-q:a', '4', outPath]);
+  await ffmpeg([
+    '-y', '-i', rec, '-f', 'lavfi', '-t', total.toFixed(2), '-i', 'anullsrc=r=44100:cl=mono',
+    '-filter_complex', `${parts};${mix}`, '-map', '[out]', '-c:a', 'libmp3lame', '-q:a', '4', outPath,
+  ]);
   return `/uploads/renders/${out}`;
 }
 
