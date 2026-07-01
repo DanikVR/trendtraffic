@@ -990,7 +990,21 @@
  *         /podcast/animate (submit) + /podcast/animate/status (poll). Проверено вживую на
  *         ключе тенанта (talking_photo→completed ~24с). D-ID/Hedra — пока без ключей.
  *         Дальше: реальный голос из записи (audio-driven) + склейка сплит-скрина. */
-export const APP_VERSION = '1.6.15';
+/* 1.6.16 — Монетизация TrendTraffic (сводно; детали — PROJECT_NOTES.md «## 5.У»).
+ *         ПЛАТНЫЙ ГЕЙТ: RequirePaid — неоплаченному только /billing и /settings; billingLoaded +
+ *         само-лечение (refreshBilling из гейта) против deadlock; useIsEnterprise теперь требует
+ *         status∈{active,trialing} (зеркало feature_gate). 7-ДН ТРИАЛ: /checkout trial_period_days=7
+ *         + payment_method_collection:always + trial_settings cancel; webhook не платит рефералке/
+ *         статистике в триал. НОЛЬ ЗАТРАТ: trends 402, resolveAnthropicKey full-access→null, закрыты
+ *         5 утечек платформенного ключа в social-ext (убран `getEffective*Key()||getPlatformKey()`).
+ *         АДМИНКА: «Сменить тариф» → Premium/Enterprise/«Без тарифа» (revoke→status=canceled, НЕ
+ *         inactive — CHECK его не допускает); промокоды → Premium+«На все тарифы»; удалён легаси
+ *         видеоперевода/диалектов (AI Learning Hub, LiveKit, Масштабирование) и минутные столбцы.
+ *         IMPERSONATION: «войти в аккаунт пользователя» (12ч-токен, кастомный ConfirmModal, баннер
+ *         возврата в MainLayout). STRIPE: корень пустого ключа (жали «Проверить», не «Сохранить») +
+ *         авто-сейв перед sync + sync только Premium + реальные ошибки. ОБЛОЖКИ ленты: cover-proxy +
+ *         dynamic_cover (HEIC-фикс). Плавный ввод «Сколько видео». */
+export const APP_VERSION = '1.6.16';
 
 export function AppVersion() {
   return (

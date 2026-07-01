@@ -2935,6 +2935,119 @@ npm run translate:locales # Google Translate API на пустые ключи
 `lobby.overloadedTitle/Msg` добавлены только в ru/en (источники) — прогнать `npm run i18n:propagate`
 + `npm run translate:locales` для остальных 106 языков (до этого fallback на en).
 
+## 5.У TrendTraffic: платный гейт + 7-дн триал + защита от затрат + импесонейшн + Stripe/обложки (2026-06-30 … 2026-07-01)
+
+Пакет работ по монетизации и админке TrendTraffic. Прод — app.trendtraffic.pro (VPS 72.62.0.184,
+pm2 `trendtraffic-api`, деплой `ssh root@… 'cd /var/www/trendtraffic && git fetch --depth 1 origin main
+&& git reset --hard origin/main && bash deploy/vps-redeploy.sh'`).
+
+### 1. Платный гейт (paywall)
+- **RequirePaid** ([router.tsx]): неоплаченному открыты ТОЛЬКО `/billing` и `/settings`, всё остальное →
+  редирект на `/billing`. Обёрнут вокруг `LayoutSwitcher`; admin (`RequireAdmin`) — ВНЕ гейта.
+- **Анти-deadlock гидрации:** флаг `billingLoaded` в `useAppStore` + `refreshBilling` при восстановлении
+  сессии. `setAuth` ставит временный `subscriptionTier='trial'` до того, как `refreshBilling` вернёт
+  реальный тариф → без флага платного юзера выбрасывало на `/billing` при перезагрузке закрытой страницы.
+  Пока `billingLoaded=false` — гейт показывает лоадер, не редиректит. **Само-лечение:** `RequirePaid`
+  сам дёргает `refreshBilling` (раньше это делал только `MainLayout`, который сам за гейтом → deadlock
+  на свежем логине email/Google).
+- **Фронт-гейт = зеркало бэка:** `useIsEnterprise` требует `status∈{active,trialing}` (поле
+  `subscriptionStatus` в сторе). Иначе отменённый Premium (tier='premium', status='canceled') ложно
+  пускал бы в UI, где каждый API отвечает 402. `feature_gate.getFeatureAccess`: enterprise =
+  superadmin OR (tier∈{premium,enterprise} && status∈{active,trialing}).
+
+### 2. 7-дневный триал (Stripe)
+- `/api/billing/checkout` при `trial:true`: `subscription_data.trial_period_days=7`,
+  `payment_method_collection:'always'` (карта обязательна даже при €0), `trial_settings.end_behavior.
+  missing_payment_method:'cancel'`. Через 7 дней Stripe сам списывает €120.
+- **Webhook триал-aware** ([webhook.ts]): `status==='trialing'` НЕ триггерит реферальные выплаты и
+  платёжную статистику (только реальное списание `active`). tier-фолбэк на `subscription.metadata.tier`
+  (кладём в `subscription_data.metadata` при checkout) — на случай, если на Stripe-цене нет `metadata.tier`.
+- BillingPage: кнопка «Попробовать 7 дней бесплатно» + вторичная «Оформить сразу».
+
+### 3. Ноль затрат в пробный период (адверсариальный аудит, workflow 20 агентов)
+- trends-API закрыт `requireFullAccess` (402 неоплаченным — не жгут платформенный TikHub).
+- `resolveAnthropicKey` ([director.ts]): full-access тенант без своего ключа → `null` (НЕ падаем на
+  платформенный `ANTHROPIC_API_KEY`), суперадмин — на платформенный.
+- **⚠️ Закрыты 5 утечек платформенного ключа в [social-ext/router.ts]** (proxy/ai-proxy/music/download/
+  ig-manifest): был антипаттерн `(await getEffectiveTikHubKey())||getTikHubApiKey()` / `…||getGeminiApiKey()`
+  — для full-access тенанта левая часть = null → падало на ПЛАТФОРМЕННЫЙ ключ (= наши затраты в триал).
+  Убрали `|| getPlatformKey()`: теперь только `getEffectiveTikHubKey/getEffectiveGeminiKey` (для full-access
+  → null → 402 «задайте свой ключ»; суперадмину резолвер сам отдаёт платформенный, т.к. `global_admin`
+  не full-access). **Правило: для full-access НИКОГДА не падать на платформенный ключ.**
+
+### 4. Чистка админки суперадмина под TrendTraffic
+- **«Сменить тариф» (UsersPage):** только наши тарифы — **Premium / Enterprise** (полный доступ) +
+  **«Без тарифа»** (revoke). Легаси VibeVox (plus/standard/standard_yearly/триал) убраны.
+  **⚠️ ГРАБЛЯ (major, поймана ревью):** revoke ставил `status='inactive'`, но CHECK
+  `subscriptions_status_check` (init.sql) допускает ТОЛЬКО `active/trialing/canceled/past_due/incomplete`
+  — на реальном Postgres UPDATE падал бы 500. Revoke теперь ставит **`status='canceled'`** + не начисляет
+  минуты.
+- **Промокоды:** селектор «На какие тарифы» → **Premium + «На все тарифы»** (легаси убраны). Магический
+  `< 3` (было «выбрано все 3 = без ограничения») убран и на фронте, и в `promo.ts`. GET списка промокодов
+  больше НЕ блокирует страницу при неподключённом Stripe (отдаёт `{codes:[], stripeConfigured:false}` +
+  мягкое уведомление вместо красной блокировки).
+- **Убран мёртвый легаси видеоперевода/диалектов** (v1.6.5): раздел «AI Learning Hub — Обучение
+  диалектам» (пункт сайдбара десктоп+моб, роут `/admin/dialects`, карточка-баннер в «Настройках API»,
+  удалены сиротские `DialectsPage.tsx` + `DialectPlayground.tsx`); карточка «LiveKit WebRTC Server»;
+  карточка «Масштабирование видеоперевода» (лимит Gemini Live-сессий + Vertex + пул доп. ключей).
+  Флаг `features.ts:learnHub` остался инертным (безвреден).
+- **Убраны минутные столбцы** из таблицы «Пользователи» (Осталось мин / Последний платёж / Всего
+  оплачено) — метрия минут в TrendTraffic не используется (тарифы безлимитные).
+
+### 5. «Войти в аккаунт пользователя» (impersonation)
+- **Бэкенд:** `POST /api/admin/users/:userId/impersonate` ([admin/users.ts], router-level
+  `requireSuperAdmin`) → JWT целевого юзера `{id,email,role,tenantId}` + маркеры `impersonated/
+  impersonatedBy`, срок **12ч** (короче обычных 30д — токен stateless, не отзывается). Аудит в Telegram.
+- **Фронт:** зелёная кнопка LogIn в строке → **кастомный ConfirmModal** (не браузерный `confirm()`) →
+  сохраняет сессию суперадмина в `sessionStorage['tt_impersonation_backup']` → `setAuth(user)` → reload.
+- **Возврат:** фиксированный баннер «Вход от суперадмина: вы работаете как … · ← Вернуться в админку»
+  в [MainLayout], восстанавливает бэкап через `setAuth` — БЕЗ повторного логина.
+
+### 6. Stripe — довели до рабочего состояния
+- **⚠️ КОРНЕВАЯ ПРИЧИНА провала sync/промо:** на сервере `stripeSecretKey` был **ПУСТ** в
+  `apps/backend/system-config.json` (файл НЕ в git, деплой его не трогает — `**/system-config.json`
+  в .gitignore). Бага сохранения нет: `CONFIG_FILE`=`apps/backend/system-config.json`, read==write,
+  `updateConfig` апсертит (маску `********` не перезаписывает — сохраняет прежнее). Причина пустоты:
+  юзер жал **«Проверить подключение»** (тестит ключ из ТЕЛА запроса, `verify-stripe`), но НЕ
+  **«Сохранить изменения»**. Фикс: `handleSyncProducts` теперь **авто-POSTит** `/api/auth/system-settings`
+  со stripe-полями ПЕРЕД sync.
+- **sync только Premium** ([service.ts] `SYNCABLE_TIERS`): не плодим мусорные VibeVox Plus/Standard в
+  LIVE-аккаунте (Enterprise — «по запросу», без Stripe-price). `/sync-products` показывает **реальную
+  ошибку Stripe** суперадмину (operator-эндпоинт), а не generic «Internal server error» (было `send500`).
+- Stripe-аккаунт: **LIVE, валюта PLN** (EUR-цены создаются нормально — multi-currency). Итог: sync EUR
+  создал `vibevox_premium_eur` (€120/мес), self-serve оплата Premium работает.
+- **ОСТАЁТСЯ:** вписать `whsec_…` (Webhook Signing Secret) в админке — URL
+  `https://app.trendtraffic.pro/api/billing/webhook`, события `customer.subscription.*`/
+  `checkout.session.completed`/`invoice.paid`. Без него авто-выставление тарифа после оплаты не сработает
+  (суперадмин пока выдаёт Premium вручную через «Сменить тариф»). Ротировать утёкший `sk_live`.
+
+### 7. Превью обложек в ленте трендов
+- **⚠️ ДВЕ причины серых заглушек:** (1) хотлинк-защита CDN — прямой `<img src>` к TikTok/IG давал 403/ORB;
+  (2) TikTok `cover`/`origin_cover` приходят в **HEIC** (браузер не рендерит). Фикс: (1) обложки в
+  [TrendSearch] идут через публичный **cover-proxy** `/api/channels/cover?u=` (ставит нужный Referer
+  серверно, вайтлист CDN-хостов, тот же приём, что в «Каналах»); (2) в TikHub-провайдере ([providers.ts])
+  `dynamic_cover` (jpeg) поставлен ПЕРВЫМ в приоритете обложки (у других платформ его нет → findUrl
+  пропускает). Действует на новые сканы.
+- Поле «Сколько видео» (кастомный ввод): было `type=number` + мгновенный `Math.max(1,parseInt||1)` на
+  каждый keystroke (нельзя очистить/править). Теперь строковое зеркало (`type=text inputMode=numeric`,
+  клэмп [1..30] на blur, select-all на фокусе). Бэкенд всё равно жёстко клэмпит count в [1..30]
+  (`service.ts`).
+
+### Как это деплоилось (важно для сосуществования с параллельной работой)
+Юзер вёл параллельную разработку (подкаст-студия/аниматор, видео-редактор — MontageEditor/FlowPage/
+render-worker) в другой сессии, активно двигая `origin/main` и bump'я AppVersion (1.6.4 → 1.6.15).
+Чтобы не задеть его незакоммиченный WIP и не ловить non-ff, свои изменения интегрировал через
+**изолированный git worktree** (`git worktree add --detach <tmp> origin/main` → `cherry-pick` моего
+коммита → `push origin HEAD:main`), НЕ трогая грязное рабочее дерево. AppVersion намеренно НЕ бампал
+(чтобы не конфликтовать с его bump'ами) — версии моей работы задокументированы этим разделом и коммитами.
+
+**Ключевые файлы:** `apps/frontend/src/router.tsx` (RequirePaid), `hooks/useIsEnterprise.ts`,
+`store/useAppStore.ts` (billingLoaded/subscriptionStatus), `layouts/MainLayout.tsx` (impersonation-баннер),
+`pages/BillingPage.tsx`, `pages/admin/{UsersPage,PromocodesPage,AdminConfigPage}.tsx`,
+`components/TrendSearch.tsx`; бэкенд `modules/billing/{router,webhook,service,promo,feature_gate}.ts`,
+`modules/admin/users.ts`, `modules/social-ext/router.ts`, `modules/render/director.ts`,
+`modules/trends/router.ts`, `modules/tikhub/providers.ts`, `modules/tenant_settings/{tikhub,gemini}.ts`.
+
 ---
 
-*Последнее обновление: 2026-05-30 — масштабирование видеоперевода (admission control с настраиваемым лимитом, оптимизация DSP −50× CPU, пул ключей, Vertex AI; docs/SCALING_GEMINI_LIVE.md). Предыдущее: 2026-05-28 v0.10.22 (полный SEO-стек: prerender 108×4 = 432 HTML, sitemap.xml, robots.txt, cache headers, Lighthouse audit, DEPLOY.md). Известное TODO: подключить переводы в RoomPage / Settings / Billing / Auth / Chat / Lobby / Enterprise (~460 строк UI ещё inline).*
+*Последнее обновление: 2026-07-01 — TrendTraffic монетизация: платный гейт + 7-дн триал + защита от затрат (5 фиксов утечек social-ext, аудит workflow), чистка админки (тарифы Premium/Enterprise, revoke→canceled, удалён легаси видеоперевода/диалектов, минутные столбцы), impersonation «войти в аккаунт», Stripe (корень пустого ключа + авто-сейв + sync только Premium + реальные ошибки), обложки ленты (cover-proxy + dynamic_cover), плавный ввод «Сколько видео». Раздел «## 5.У». Предыдущее: 2026-05-30 — масштабирование видеоперевода (admission control, DSP −50× CPU, пул ключей, Vertex AI; docs/SCALING_GEMINI_LIVE.md). Известное TODO: whsec_ webhook secret в Stripe для авто-выставления тарифа.*
