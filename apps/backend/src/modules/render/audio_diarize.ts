@@ -15,6 +15,23 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileP = promisify(execFile);
+/** ffprobe рядом с ffmpeg (FFMPEG_PATH). На web-VPS = /usr/bin/ffprobe. */
+function ffprobeBin(): string {
+  const f = process.env.FFMPEG_PATH || 'ffmpeg';
+  return f.replace(/ffmpeg(\.exe)?$/i, 'ffprobe$1');
+}
+/** Длительность аудио (сек) через ffprobe; 0 если не удалось (тогда без якоря длины). */
+async function probeDurationSec(file: string): Promise<number> {
+  try {
+    const { stdout } = await execFileP(ffprobeBin(), ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nk=1:nv=1', file]);
+    const d = parseFloat(String(stdout).trim());
+    return Number.isFinite(d) && d > 0 ? d : 0;
+  } catch { return 0; }
+}
 
 export interface DiarLine {
   speaker: 'A' | 'B';
@@ -89,6 +106,7 @@ export async function diarizeWithGemini(opts: {
   const ai = new GoogleGenAI({ apiKey: opts.apiKey });
 
   const { path: tmp, mime } = await fetchAudioToTemp(opts.audioUrl);
+  const durSec = await probeDurationSec(tmp); // якорь длины: не даём Gemini схлопнуть всё в начало
   let uploaded: any = null;
   try {
     let file: any = await ai.files.upload({ file: tmp, config: { mimeType: mime } });
@@ -110,6 +128,9 @@ export async function diarizeWithGemini(opts: {
       + 'Один и тот же голос — это один и тот же ведущий на всей записи (не путай их местами в середине). '
       + 'Дроби речь на короткие реплики по 2–8 секунд, по смыслу и по смене говорящего. '
       + 'Таймкоды — в СЕКУНДАХ (float) от начала записи, максимально точные, по возрастанию, без наложений. '
+      + (durSec > 0
+        ? `Длительность записи ≈ ${Math.round(durSec)} секунд — таймкоды ДОЛЖНЫ покрывать ВСЮ запись: первая реплика около 0с, последняя заканчивается около ${Math.round(durSec)}с. НЕ сжимай реплики в начало и НЕ используй крошечные значения (0.1, 0.2…) для всей записи. `
+        : '')
       + 'Пустые/шумовые участки пропускай.\n'
       + 'Верни СТРОГО JSON: {"segments":[{"speaker":"A"|"B","start":число,"end":число,"text":"..."}]}';
 
@@ -148,7 +169,13 @@ export async function diarizeWithGemini(opts: {
     }
     lines.sort((a, b) => a.start - b.start);
     if (!lines.length) throw new Error('Gemini не вернул реплик');
-    return { lines, note: `диаризация: ${lines.length} реплик (Gemini ${model})` };
+    // Валидация: если таймкоды не покрыли и половины записи — Gemini «схлопнул» их (баг 33с→<1с).
+    // Бросаем → вызывающая сторона падает на воркер (whisper даёт реальные таймкоды по всей длине).
+    const maxEnd = lines.reduce((m, l) => (l.end > m ? l.end : m), 0);
+    if (durSec > 3 && maxEnd < durSec * 0.5) {
+      throw new Error(`Gemini таймкоды не покрыли запись (макс ${maxEnd.toFixed(1)}с из ~${Math.round(durSec)}с) — фолбэк на воркер`);
+    }
+    return { lines, note: `диаризация: ${lines.length} реплик (Gemini ${model}${durSec > 0 ? `, ~${Math.round(durSec)}с` : ''})` };
   } finally {
     try { fs.unlinkSync(tmp); } catch { /* best-effort */ }
     try { if (uploaded?.name) await ai.files.delete({ name: uploaded.name }); } catch { /* best-effort */ }
