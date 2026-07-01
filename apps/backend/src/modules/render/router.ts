@@ -20,6 +20,7 @@ import { generateImage } from '../quest_flow/image_gen.js';
 import { createAsset } from '../media/assets.js';
 import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
 import { generatePodcastDialogue } from './director.js';
+import { diarizeWithGemini } from './audio_diarize.js';
 
 const router = Router();
 
@@ -115,16 +116,39 @@ router.post('/podcast/dialogue', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /podcast/diarize — разобрать запись подкаста на 2 голоса (через воркер + HuggingFace). */
+/** POST /podcast/diarize — разобрать запись подкаста на 2 голоса.
+ *  Приоритет: Gemini (аудио-понимание тенант-ключом, качественно, с подсказкой пола) →
+ *  воркер (акустическая кластеризация / pyannote при HF-ключе / паузы). */
 router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
   try {
     const recordingUrl = typeof req.body?.recordingUrl === 'string' ? req.body.recordingUrl : '';
     if (!recordingUrl) return res.status(400).json({ error: 'Не указана запись (recordingUrl).' });
-    // pyannote требует torch → предпочитаем GPU-воркер (там есть torch), фолбэк — CPU-воркер.
-    const worker = getRenderGpuWorkerUrl() || getRenderWorkerUrl();
-    if (!worker) return res.status(503).json({ error: 'Рендер-воркер не подключён — разбор недоступен.' });
-    const hfToken = await getEffectiveProviderKey(req.tenantId!, 'hf');
+    const hostAVoice = typeof req.body?.hostAVoice === 'string' ? req.body.hostAVoice : undefined;
+    const hostBVoice = typeof req.body?.hostBVoice === 'string' ? req.body.hostBVoice : undefined;
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const absUrl = /^https?:\/\//i.test(recordingUrl)
+      ? recordingUrl
+      : (base ? base + (recordingUrl.startsWith('/') ? recordingUrl : '/' + recordingUrl) : recordingUrl);
+
+    // 1) Gemini — качественная диаризация тенант-ключом (тот же, что и AI-ракурсы).
+    const geminiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (geminiKey && /^https?:\/\//i.test(absUrl)) {
+      try {
+        const g = await diarizeWithGemini({ apiKey: geminiKey, audioUrl: absUrl, hostAVoice, hostBVoice });
+        if (g.lines.length) return res.json({ lines: g.lines, tracks: [], note: g.note });
+      } catch (e: any) {
+        console.warn('[podcast/diarize] Gemini не справился, фолбэк на воркер:', e?.message || e);
+      }
+    }
+
+    // 2) Фолбэк — рендер-воркер (кластеризация / pyannote / паузы).
+    const worker = getRenderGpuWorkerUrl() || getRenderWorkerUrl();
+    if (!worker) {
+      return res.status(503).json({ error: geminiKey
+        ? 'Gemini не смог разобрать запись, а рендер-воркер не подключён.'
+        : 'Подключите Gemini-ключ (Настройки → Gemini API) для точного разбора, либо рендер-воркер.' });
+    }
+    const hfToken = await getEffectiveProviderKey(req.tenantId!, 'hf');
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 600_000);
     try {

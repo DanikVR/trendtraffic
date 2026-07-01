@@ -375,6 +375,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [podNote, setPodNote] = useState<string | null>(null);
   const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg'>(null);
   const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
+  const [loadDlgOpen, setLoadDlgOpen] = useState(false);  // модал «Загрузить диалог» (текст/JSON/из Исследования)
+  const [loadDlgText, setLoadDlgText] = useState('');
   const podPickInputRef = useRef<HTMLInputElement | null>(null);
   // «Студия лиц»: рисование боксов поверх группового фото.
   const faceWrapRef = useRef<HTMLDivElement | null>(null);
@@ -609,13 +611,64 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     finally { setPodBusy(null); }
   };
 
+  /** Разобрать текст/JSON в реплики двух ведущих (для «Загрузить диалог»). */
+  const parseDialogueInput = (raw: string): PodLine[] => {
+    const s = (raw || '').trim();
+    if (!s) return [];
+    const toAB = (who: string, names: string[]): 'A' | 'B' => {
+      const low = who.toLowerCase().trim();
+      if (/(^|\b)(b|2)(\b|$)|ведущ\w*\s*[бb]|второй|male|муж/.test(low) || low === 'б') return 'B';
+      if (/(^|\b)(a|1)(\b|$)|ведущ\w*\s*[аa]|перв|female|жен/.test(low) || low === 'а') return 'A';
+      if (who && !names.includes(who)) names.push(who);
+      return names.indexOf(who) === 1 ? 'B' : 'A'; // 1-й уникальный голос → A, 2-й → B
+    };
+    // JSON?
+    if (s[0] === '[' || s[0] === '{') {
+      try {
+        const j = JSON.parse(s);
+        const arr = Array.isArray(j) ? j : (j.dialogue || j.lines || j.segments);
+        if (Array.isArray(arr)) {
+          const names: string[] = [];
+          return arr
+            .map((it: any) => {
+              const sp = String(it?.speaker ?? it?.role ?? it?.name ?? '').trim();
+              const text = String(it?.text ?? it?.content ?? it?.line ?? '').trim();
+              return { speaker: toAB(sp, names), text } as PodLine;
+            })
+            .filter((l) => l.text);
+        }
+      } catch { /* не JSON — разберём как текст */ }
+    }
+    // Текст: строки «Имя: реплика» (либо просто чередуем).
+    const names: string[] = [];
+    const out: PodLine[] = [];
+    for (const rawLine of s.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const m = line.match(/^\s*([^:：]{1,32})[:：]\s*(.+)$/);
+      if (m) out.push({ speaker: toAB(m[1], names), text: m[2].trim() });
+      else if (out.length) out[out.length - 1].text += ' ' + line; // продолжение реплики
+      else out.push({ speaker: 'A', text: line });
+    }
+    return out.filter((l) => l.text.trim());
+  };
+  /** Применить загруженный диалог из модала. */
+  const applyLoadedDialogue = () => {
+    const lines = parseDialogueInput(loadDlgText);
+    if (!lines.length) { setPodNote('Не разобрать. Формат: строки «A: …» / «B: …» или JSON [{ "speaker": "A", "text": "…" }].'); return; }
+    podMutate((p) => ({ ...p, dialogue: lines, timeline: false }));
+    setLoadDlgOpen(false); setLoadDlgText(''); setPodNote(`Загружено реплик: ${lines.length}.`);
+  };
+  /** Узлы «Исследование»/«Новости» текущего сценария с текстом — источник для «Загрузить диалог». */
+  const researchNodes = nodes.filter((n) => (n.kind === 'research' || n.kind === 'news') && (n.text || '').trim());
+
   /** Разобрать загруженную запись на 2 голоса (диаризация). */
   const runDiarize = async () => {
     if (podBusy || !pod.recordingUrl) return;
     setPodBusy('diarize'); setPodNote(null);
     try {
       const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ recordingUrl: pod.recordingUrl }) });
+        body: JSON.stringify({ recordingUrl: pod.recordingUrl, hostAVoice: pod.hostA.voice, hostBVoice: pod.hostB.voice }) });
       const d = await res.json();
       if (res.ok && Array.isArray(d.lines) && d.lines.length) {
         // Авто-раскладка: ставим клипы на их реальные времена (tStart=start) и включаем таймлайн.
@@ -1789,6 +1842,47 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         </div>
       )}
 
+      {/* Загрузить диалог: вставить текст/JSON или взять из блока «Исследование» */}
+      {loadDlgOpen && (
+        <div onClick={() => setLoadDlgOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 94, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Загрузить диалог</span>
+              <button onClick={() => setLoadDlgOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
+              Вставьте диалог: строки «A: реплика» / «B: реплика» (или по именам ведущих), либо JSON вида
+              <code style={{ color: 'var(--text-secondary)' }}> [{'{'}"speaker":"A","text":"…"{'}'}]</code>. Первый голос → A, второй → B.
+            </p>
+            {researchNodes.length > 0 && (
+              <div className="mb-2">
+                <div className="text-[11px] font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Из блока «Исследование»</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {researchNodes.map((n) => (
+                    <button key={n.id} onClick={() => setLoadDlgText((t) => (t.trim() ? t + '\n' + (n.text || '') : (n.text || '')))}
+                      className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                      <Newspaper size={12} /> {n.kind === 'news' ? 'Новости' : 'Исследование'}: вставить текст
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <textarea value={loadDlgText} onChange={(e) => setLoadDlgText(e.target.value)} rows={10}
+              placeholder={'A: Привет! Сегодня обсудим ИИ в быту.\nB: Да, тема спорная — давай разберёмся…'}
+              className="w-full px-3 py-2 rounded-xl text-[13px] outline-none"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical', fontFamily: 'inherit' }} />
+            <div className="flex items-center justify-end gap-2 mt-3">
+              <button onClick={() => { setLoadDlgText(''); }} className="text-[12px] font-600 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Очистить</button>
+              <button onClick={applyLoadedDialogue} disabled={!loadDlgText.trim()} className="text-[13px] font-700 px-4 py-2 rounded-lg inline-flex items-center gap-2 disabled:opacity-50"
+                style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                <Check size={15} /> Загрузить в реплики
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Выбор исходного видео */}
       {showSource && (
         <div onClick={() => setShowSource(false)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -2283,11 +2377,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       placeholder="Тема подкаста: «Спор о том, нужен ли людям ИИ-ассистент в быту»…"
                       className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                    <button onClick={genDialogue} disabled={podBusy === 'dialogue'}
-                      className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                      style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                      {podBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать диалог
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={genDialogue} disabled={podBusy === 'dialogue'}
+                        className="py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                        style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                        {podBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать
+                      </button>
+                      <button onClick={() => setLoadDlgOpen(true)}
+                        className="py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                        <Download size={15} /> Загрузить диалог
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
