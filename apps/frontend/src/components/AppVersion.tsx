@@ -1084,7 +1084,11 @@
  *         голос из записи — ветка HeyGen. Проверено вживую на боевом ключе: аудио-вход Omni НЕ
  *         поддерживается, 2 реальных лица в одном кадре блокируются фильтром → по ведущему отдельно.
  *         BE /podcast/omni-animate (+/status); FE провайдер 'omni' + runOmniAnimate/HostEdit. */
-export const APP_VERSION = '1.6.28';
+/* 1.6.29 — Omni-студия: ПРИОРИТЕТ общего фото студии. Если есть groupPhotoUrl → один image_to_video
+ *         оживляет ЦЕЛУЮ сцену (оба ведущих в одном кадре — проверено: single-image НЕ блокируется,
+ *         в отличие от reference_to_video двух разных фото) → без кропов/сплит-скрина/микса голосов.
+ *         Нет общего фото → фолбэк по ведущему (2 клипа). omniScenePrompt; правки чатом как раньше. */
+export const APP_VERSION = '1.6.29';
 
 export function AppVersion() {
   return (

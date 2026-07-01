@@ -961,7 +961,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // ── Omni-студия: оживить фото каждого ведущего через Omni Flash (по одному) → 2 клипа с ИИ-голосом ──
   const runOmniAnimate = async () => {
     if (animBusy) return;
-    if (!pod.hostA.photoUrl || !pod.hostB.photoUrl) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
+    if (!pod.groupPhotoUrl && (!pod.hostA.photoUrl || !pod.hostB.photoUrl)) { setAnimNote('Добавьте общее фото студии (студия лиц) или фото обоих ведущих.'); return; }
     if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
     setAnimBusy(true); setAnimNote(null); setAnimJobs([]);
     try {
@@ -3149,7 +3149,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         <p className="text-[9px] mt-1" style={{ color: 'var(--text-muted)' }}>Если музыка длиннее ролика — обрежется. Генерацию через Suno добавлю следующим шагом.</p>
                       </div>
                       {av.provider === 'omni' && (
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Omni оживит фото каждого ведущего отдельным клипом (ИИ-голос) — 2 реальных лица в одном кадре модель блокирует. Реплики берутся из диалога; после — правь каждый клип чатом или склей сплит-скрин.</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{pod.groupPhotoUrl ? 'Есть общее фото студии → Omni оживит ВСЮ сцену одним клипом (оба ведущих в кадре, ИИ-голос), затем правь чатом.' : 'Нет общего фото — Omni оживит каждого ведущего отдельным клипом (2 лица в одном кадре модель блокирует). Загрузи общее фото студии (студия лиц) для цельной сцены.'} Реплики берутся из диалога.</p>
                       )}
                       <button onClick={runAnimate} disabled={animBusy}
                         className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
