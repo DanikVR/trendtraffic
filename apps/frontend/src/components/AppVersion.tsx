@@ -1050,7 +1050,16 @@
  *         тронуты (совместимость сохранённых сценариев). Бэкенд-исполнение на Gemini Omni Flash —
  *         следующим шагом, ПОСЛЕ проверки реального API на живом Gemini-ключе (SDK @google/genai
  *         v2.6 модель/Interactions API не подтверждает — не пишем вслепую). */
-export const APP_VERSION = '1.6.23';
+/* 1.6.24 — Omni Flash РАБОТАЕТ: реальная генерация видео в блоке «Omni Flash». Проверил API вживую
+ *         на боевом Gemini-ключе: модель `gemini-omni-flash-preview` РЕАЛЬНА, вызывается через
+ *         Interactions API (POST /v1beta/interactions; generateContent даёт 400), ответ синхронный
+ *         (~38с), отдаёт 720p H.264 + AAC (видео СО ЗВУКОМ, ~10с), видео качается по files-uri (+&key,
+ *         fetch идёт по 302). Кнопка «Сгенерировать (Omni Flash)» на сегменте → фоновая задача
+ *         /omni/generate + poll /omni/status → превью 9:16 + сохранение в Галерею. Плюс ЧАТ-ПРАВКА
+ *         (/omni/edit, previous_interaction_id) — «поменяй цвет машины». render/video_gen.ts
+ *         (generateOmniVideo/editOmniVideo). Цена ~$0.10/с (проверено usage). Дальше: раскадровка
+ *         Nano Banana 2 Lite → выбор → Omni; кадр-из-видео как seedFrame (image_to_video). */
+export const APP_VERSION = '1.6.24';
 
 export function AppVersion() {
   return (

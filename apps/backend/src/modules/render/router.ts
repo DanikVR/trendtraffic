@@ -24,9 +24,12 @@ import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
 import { composeHeads, downloadToRenders } from './podcast_compose.js';
+import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 
 // Задачи склейки сплит-скрина (в памяти процесса): jobId → статус/результат.
 const composeJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
+// Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
+const omniJobs = new Map<string, { status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
 
 const router = Router();
 
@@ -366,6 +369,73 @@ router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
   const j = composeJobs.get(jobId);
   if (!j) return res.status(404).json({ error: 'Задача склейки не найдена' });
   res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, error: j.error || null });
+});
+
+// ── Omni Flash: генерация/правка видео (Gemini gemini-omni-flash-preview, Interactions API) ──
+/** Запустить генерацию/правку Omni Flash в фоне (в память → poll). Общая для generate/edit. */
+async function runOmniJob(tenantId: string, jobId: string, work: () => Promise<{ fileUrl: string; interactionId?: string; seconds?: number; costUsd?: number }>) {
+  omniJobs.set(jobId, { status: 'processing', ts: Date.now() });
+  try {
+    const r = await work();
+    let assetId: string | null = null;
+    try {
+      const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Omni Flash видео', fileUrl: r.fileUrl, mime: 'video/mp4' });
+      assetId = asset?.id || null;
+    } catch { /* Галерея опц. */ }
+    omniJobs.set(jobId, { status: 'done', fileUrl: r.fileUrl, interactionId: r.interactionId, seconds: r.seconds, costUsd: r.costUsd, assetId, ts: Date.now() });
+  } catch (e: any) {
+    omniJobs.set(jobId, { status: 'failed', error: e?.message || 'ошибка Omni Flash', ts: Date.now() });
+  }
+}
+
+/** POST /omni/generate — сгенерировать видео (Omni Flash). body: { prompt, imageUrl?, aspect? } → { jobId }. */
+router.post('/omni/generate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+    if (!prompt) return res.status(400).json({ error: 'Опишите, что сгенерировать (промт).' });
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API) — Omni Flash работает на нём.' });
+    const aspect = req.body?.aspect === '16:9' ? '16:9' : '9:16';
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    let inputImage: { base64: string; mime: string } | undefined;
+    if (typeof req.body?.imageUrl === 'string' && req.body.imageUrl) {
+      const abs = /^https?:\/\//i.test(req.body.imageUrl) ? req.body.imageUrl : (base ? base + (req.body.imageUrl.startsWith('/') ? req.body.imageUrl : '/' + req.body.imageUrl) : req.body.imageUrl);
+      const img = await fetchImageBase64(abs);
+      if (img) inputImage = { base64: img.base64, mime: img.mime };
+    }
+    const jobId = 'omni_' + Math.random().toString(36).slice(2, 10);
+    const tenantId = req.tenantId!;
+    void runOmniJob(tenantId, jobId, () => generateOmniVideo({ apiKey, prompt, inputImage, aspect }));
+    res.json({ jobId, note: `Omni Flash генерирует видео (~30–60с, ~$${(10 * OMNI_VIDEO_USD_PER_SEC).toFixed(2)} за 10с). Опрашиваю статус…` });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка Omni Flash' });
+  }
+});
+
+/** POST /omni/edit — чат-правка видео Omni Flash. body: { previousInteractionId, prompt, aspect? } → { jobId }. */
+router.post('/omni/edit', async (req: AuthedRequest, res: Response) => {
+  try {
+    const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+    const previousInteractionId = typeof req.body?.previousInteractionId === 'string' ? req.body.previousInteractionId : '';
+    if (!prompt) return res.status(400).json({ error: 'Опишите правку.' });
+    if (!previousInteractionId) return res.status(400).json({ error: 'Нет id предыдущей генерации для правки.' });
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ.' });
+    const aspect = req.body?.aspect === '16:9' ? '16:9' : '9:16';
+    const jobId = 'omni_' + Math.random().toString(36).slice(2, 10);
+    const tenantId = req.tenantId!;
+    void runOmniJob(tenantId, jobId, () => editOmniVideo({ apiKey, previousInteractionId, prompt, aspect }));
+    res.json({ jobId, note: 'Omni Flash правит видео (это новая генерация — тот же ценник). Опрашиваю…' });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка правки Omni Flash' });
+  }
+});
+
+/** GET /omni/status?jobId=... — статус генерации/правки Omni Flash. */
+router.get('/omni/status', (req: AuthedRequest, res: Response) => {
+  const j = omniJobs.get(String(req.query.jobId || ''));
+  if (!j) return res.status(404).json({ error: 'Задача Omni не найдена' });
+  res.json({ status: j.status, fileUrl: j.fileUrl || null, interactionId: j.interactionId || null, seconds: j.seconds || null, costUsd: j.costUsd || null, error: j.error || null });
 });
 
 /** POST /podcast/:flowId — собрать подкаст-сцену → задача в очередь. body: { spec? } */

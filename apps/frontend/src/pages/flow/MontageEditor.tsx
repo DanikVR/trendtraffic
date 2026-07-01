@@ -406,6 +406,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const edAudioInputRef = useRef<HTMLInputElement | null>(null);
   // Omni: спецификация преобразования исходного видео по таймлайну.
   const [omniSpec, setOmniSpec] = useState<OmniSpec>(OMNI_DEFAULT);
+  // Omni Flash: генерация/правка видео по каждому сегменту (segId → состояние).
+  const [omniGen, setOmniGen] = useState<Record<string, { busy?: boolean; note?: string | null; url?: string | null; interactionId?: string | null; edit?: string }>>({});
+  const omniPollRef = useRef<Record<string, number>>({});
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
@@ -570,6 +573,50 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   // ── Omni: редактирование спецификации преобразования ──
   const omniMutate = (fn: (s: OmniSpec) => OmniSpec) => { setOmniSpec((s) => fn(s)); setDirty(true); };
+  // ── Omni Flash: генерация видео (Gemini Interactions API) ──
+  const setOG = (id: string, patch: Partial<{ busy: boolean; note: string | null; url: string | null; interactionId: string | null; edit: string }>) =>
+    setOmniGen((s) => ({ ...s, [id]: { ...s[id], ...patch } }));
+  const pollOmni = (id: string, jobId: string) => {
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/render/omni/status?jobId=' + jobId, { headers: headers() });
+        const d = await res.json();
+        if (res.ok && d.status && d.status !== 'processing') {
+          if (d.status === 'done' && d.fileUrl) setOG(id, { busy: false, url: d.fileUrl, interactionId: d.interactionId, note: `Готово${d.costUsd ? ` · ~$${d.costUsd}` : ''}${d.seconds ? ` · ${d.seconds}с` : ''} · в Галерее` });
+          else setOG(id, { busy: false, note: d.error || 'Не удалось сгенерировать.' });
+          return;
+        }
+      } catch { /* ретрай */ }
+      omniPollRef.current[id] = window.setTimeout(tick, 6000);
+    };
+    tick();
+  };
+  const runOmniGen = async (g: OmniSeg) => {
+    if (omniGen[g.id]?.busy) return;
+    if (!g.prompt.trim()) { setOG(g.id, { note: 'Впишите промт «как сгенерировать».' }); return; }
+    if (omniPollRef.current[g.id]) clearTimeout(omniPollRef.current[g.id]);
+    setOG(g.id, { busy: true, note: null, url: null, interactionId: null });
+    try {
+      const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16' }) });
+      const d = await res.json();
+      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error || 'Omni Flash недоступен.' }); return; }
+      setOG(g.id, { note: d.note });
+      pollOmni(g.id, d.jobId);
+    } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при генерации.' }); }
+  };
+  const runOmniEdit = async (g: OmniSeg) => {
+    const st = omniGen[g.id]; if (!st?.interactionId || st.busy) return;
+    const editPrompt = (st.edit || '').trim(); if (!editPrompt) return;
+    if (omniPollRef.current[g.id]) clearTimeout(omniPollRef.current[g.id]);
+    setOG(g.id, { busy: true, note: null });
+    try {
+      const res = await fetch('/api/render/omni/edit', { method: 'POST', headers: headers(), body: JSON.stringify({ previousInteractionId: st.interactionId, prompt: editPrompt, aspect: '9:16' }) });
+      const d = await res.json();
+      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error || 'Ошибка правки.' }); return; }
+      setOG(g.id, { note: d.note, edit: '' });
+      pollOmni(g.id, d.jobId);
+    } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при правке.' }); }
+  };
   const setOmniMode = (mode: OmniMode) => omniMutate((s) => {
     if (mode === 'whole') return { mode, segments: [{ ...(s.segments[0] || newSeg(0, 1)), start: 0, end: 1 }] };
     if (mode === 'part') return { mode, segments: [s.segments[0] ? { ...s.segments[0] } : newSeg(0, 0.34)] };
@@ -1006,6 +1053,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (tlCtxRef.current) { try { tlCtxRef.current.close(); } catch { /* тихо */ } tlCtxRef.current = null; }
       if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
       if (composePollRef.current) { clearTimeout(composePollRef.current); composePollRef.current = null; }
+      Object.values(omniPollRef.current).forEach((t) => clearTimeout(t));
     };
   }, []);
 
@@ -2420,6 +2468,32 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                   <Film size={12} /> {V2V_LABEL[p]}
                                 </button>
                               ))}
+                            </div>
+                          )}
+
+                          {/* Omni Flash: генерация видео + чат-правка */}
+                          {g.engine === 'omni' && (
+                            <div className="space-y-2">
+                              <button onClick={() => runOmniGen(g)} disabled={omniGen[g.id]?.busy}
+                                className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                                style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? 'Генерирую… (~30–60с)' : 'Сгенерировать (Omni Flash)'}
+                              </button>
+                              {omniGen[g.id]?.note && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{omniGen[g.id]?.note}</p>}
+                              {omniGen[g.id]?.url && (
+                                <>
+                                  <video src={omniGen[g.id]!.url!} controls className="w-full rounded-lg" style={{ aspectRatio: '9 / 16', background: '#000', maxHeight: 320 }} />
+                                  {omniGen[g.id]?.interactionId && (
+                                    <div className="flex items-center gap-1.5">
+                                      <input value={omniGen[g.id]?.edit || ''} onChange={(e) => setOG(g.id, { edit: e.target.value })}
+                                        placeholder="Правка чатом: «поменяй цвет машины на красный»"
+                                        className="flex-1 px-2 py-1.5 rounded-lg text-[11px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                                      <button onClick={() => runOmniEdit(g)} disabled={omniGen[g.id]?.busy || !(omniGen[g.id]?.edit || '').trim()}
+                                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-700 disabled:opacity-50" style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>Править</button>
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
                           )}
 
