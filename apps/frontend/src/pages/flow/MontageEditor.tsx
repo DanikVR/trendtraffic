@@ -1500,6 +1500,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch (e: any) { setEditorNote(e?.message || 'Не удалось склеить'); }
     finally { setEditorMerging(false); }
   };
+  // Панель «Редактор» открыта → сразу показываем Галерею (пикер всегда виден снизу,
+  // отдельная кнопка «Выбрать видео / аудио» не нужна — добавляем кликом по превью).
+  useEffect(() => {
+    if (cloudPanel === 'editor') loadEditorGallery();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cloudPanel]);
 
   const setPend = (v: { from: string; x: number; y: number } | null) => { pendingRef.current = v; setPending(v); };
   // Старт перетягивания СТРЕЛКИ от точки 🔗 узла.
@@ -2975,11 +2981,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 )}
 
-                <button onClick={loadEditorGallery} className="w-full py-2.5 rounded-xl text-sm font-600 inline-flex items-center justify-center gap-2"
-                  style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
-                  <Plus size={16} /> {editorClips.length ? 'Добавить ещё' : 'Выбрать видео / аудио'}
-                </button>
-
                 {editorClips.length === 1 && (
                   <button onClick={() => setEditorView(editorClips[0])} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
                     style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
@@ -3008,7 +3009,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   <div className="rounded-xl p-2.5" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Из Галереи — клик добавляет</span>
-                      <button onClick={() => setEditorPick(false)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Закрыть</button>
                     </div>
                     {/* Загрузка своих файлов прямо в Галерею — те же кнопки, что на странице «Галерея» */}
                     <input ref={edMediaInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => uploadEditorMedia(e.target.files, 'reference')} />
@@ -3096,7 +3096,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         title={editorView?.name}
         kind={editorView?.type}
         onClose={() => setEditorView(null)}
-        onSaved={(r) => { const t = editorView?.type === 'audio' ? 'audio' : 'video'; setEditorResult({ url: r.fileUrl, name: t === 'audio' ? 'Обрезанное аудио' : 'Обрезанное видео', type: t }); setDirty(true); }}
+        onSaved={async (r) => {
+          const t = editorView?.type === 'audio' ? 'audio' : 'video';
+          setEditorResult({ url: r.fileUrl, name: t === 'audio' ? 'Обрезанное аудио' : 'Обрезанное видео', type: t }); setDirty(true);
+          // Обновить Галерею в пикере, чтобы обрезанный файл сразу появился, и открыть его вкладку.
+          await loadEditorGallery();
+          setEditorTab(t === 'audio' ? 'audio' : 'reference');
+        }}
       />
 
       {/* Прогресс сборки «Собрать» */}

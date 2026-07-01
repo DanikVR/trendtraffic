@@ -235,7 +235,9 @@ router.post('/', async (req: AuthedRequest, res: Response) => {
 
     const fileUrl = `/uploads/renders/${outName}`;
     const asset = await createAsset(req.tenantId!, {
-      kind: 'reference',
+      // Аудио кладём в папку «Аудио» (kind='audio'), видео — в «Референс». Иначе обрезанное
+      // аудио (kind='reference'+mediaType='audio') не попадало ни в одну вкладку Галереи.
+      kind: isAudio ? 'audio' : 'reference',
       mediaType: isAudio ? 'audio' : 'video',
       originalName: name || (isAudio ? 'Обрезанное аудио' : 'Обрезанное видео'),
       fileUrl,
