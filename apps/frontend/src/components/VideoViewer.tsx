@@ -16,7 +16,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   X, Play, Pause, Scissors, RotateCw, Crop, Undo2, RefreshCw, Save, Loader2, Download,
-  SkipBack, SkipForward, Check,
+  SkipBack, SkipForward, Check, Music,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { downloadMedia } from './chat/MediaLightbox';
@@ -33,6 +33,8 @@ interface VideoViewerProps {
   onSaved?: (result: VideoEditResult) => void;
   /** false — чистый просмотр без обрезки. По умолчанию редактирование включено для /uploads. */
   editable?: boolean;
+  /** 'audio' — аудио-режим: без картинки/поворота, доступна только обрезка/нарезка. */
+  kind?: 'video' | 'audio';
 }
 
 interface Seg { start: number; end: number; }
@@ -66,7 +68,8 @@ function intersect(segs: Seg[], a: number, b: number): Seg[] {
     .filter((s) => s.end - s.start > EPS);
 }
 
-export function VideoViewer({ open, url, title, onClose, onSaved, editable }: VideoViewerProps) {
+export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind }: VideoViewerProps) {
+  const isAudio = kind === 'audio';
   const token = useAppStore((s) => s.token);
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -224,7 +227,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable }: Vi
         <div className="min-w-0 flex-1">
           <div className="text-sm font-700 truncate" style={{ color: '#fff' }}>{title || 'Видео'}</div>
           <div className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            {canEdit ? 'Просмотр и обрезка' : 'Просмотр'}
+            {canEdit ? (isAudio ? 'Прослушивание и обрезка аудио' : 'Просмотр и обрезка') : 'Просмотр'}
           </div>
         </div>
         <button type="button" onClick={() => downloadMedia(curUrl)} title="Скачать"
@@ -239,13 +242,15 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable }: Vi
         </button>
       </div>
 
-      {/* Видео */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-4 overflow-hidden">
+      {/* Видео / аудио */}
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4 overflow-hidden" style={{ position: 'relative' }}>
         <video
           ref={videoRef}
           src={curUrl}
           className="max-w-full max-h-full rounded-lg"
-          style={{ transform: rotate ? `rotate(${rotate}deg)` : undefined, transition: 'transform 0.2s' }}
+          style={isAudio
+            ? { width: '100%', maxWidth: 520, height: 120, background: '#000' }
+            : { transform: rotate ? `rotate(${rotate}deg)` : undefined, transition: 'transform 0.2s' }}
           onLoadedMetadata={onMeta}
           onTimeUpdate={() => setTime(videoRef.current?.currentTime || 0)}
           onPlay={() => setPlaying(true)}
@@ -253,6 +258,12 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable }: Vi
           onClick={togglePlay}
           playsInline
         />
+        {isAudio && (
+          <div className="pointer-events-none flex flex-col items-center gap-2" style={{ position: 'absolute', color: 'rgba(255,255,255,0.9)' }}>
+            <Music size={48} />
+            <span className="text-sm">Аудио — обрезайте по дорожке ниже</span>
+          </div>
+        )}
       </div>
 
       {/* Панель управления */}
@@ -313,9 +324,11 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable }: Vi
             <button type="button" onClick={cutSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Вырезать выделенный кусок">
               <Scissors size={15} /> Вырезать
             </button>
-            <button type="button" onClick={rotateStep} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Повернуть на 90°">
-              <RotateCw size={15} /> Поворот{rotate ? ` ${rotate}°` : ''}
-            </button>
+            {!isAudio && (
+              <button type="button" onClick={rotateStep} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Повернуть на 90°">
+                <RotateCw size={15} /> Поворот{rotate ? ` ${rotate}°` : ''}
+              </button>
+            )}
             <button type="button" onClick={undo} disabled={!history.length} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Отменить последнее действие">
               <Undo2 size={15} /> Отменить
             </button>

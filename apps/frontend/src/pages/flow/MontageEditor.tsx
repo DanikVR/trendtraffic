@@ -359,11 +359,11 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
   const [cloudPanel, setCloudPanel] = useState<CloudId | null>(null);
   // Облако «Редактор»: выбранные видео-клипы, результат склейки, открытый просмотрщик, инлайн-пикер.
-  const [editorClips, setEditorClips] = useState<{ url: string; name: string }[]>([]);
-  const [editorResult, setEditorResult] = useState<{ url: string; name: string } | null>(null);
-  const [editorView, setEditorView] = useState<{ url: string; name: string } | null>(null);
+  const [editorClips, setEditorClips] = useState<{ url: string; name: string; type?: 'video' | 'audio' }[]>([]);
+  const [editorResult, setEditorResult] = useState<{ url: string; name: string; type?: 'video' | 'audio' } | null>(null);
+  const [editorView, setEditorView] = useState<{ url: string; name: string; type?: 'video' | 'audio' } | null>(null);
   const [editorPick, setEditorPick] = useState(false);
-  const [editorGallery, setEditorGallery] = useState<{ url: string; name: string; cover?: string }[]>([]);
+  const [editorGallery, setEditorGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' }[]>([]);
   const [editorGalLoading, setEditorGalLoading] = useState(false);
   const [editorMerging, setEditorMerging] = useState(false);
   const [editorNote, setEditorNote] = useState<string | null>(null);
@@ -443,8 +443,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
           }
           if (d.flow.graph?.editor && typeof d.flow.graph.editor === 'object') {
             const ed = d.flow.graph.editor;
-            if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео' })));
-            if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || 'Результат' });
+            if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео', type: c.type === 'audio' ? 'audio' : 'video' })));
+            if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || 'Результат', type: ed.result.type === 'audio' ? 'audio' : 'video' });
           }
           if (mapped.length === 0) setShowPresets(true);
         }
@@ -1123,24 +1123,33 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const loadEditorGallery = async () => {
     setEditorPick(true); setEditorGalLoading(true); setEditorNote(null);
     try {
-      const [v, r] = await Promise.all([
+      // Все локальные медиа Галереи: скачанные тренды + референс-видео + папка «Из анализа» + аудио.
+      const [v, r, an, au] = await Promise.all([
         fetch('/api/trends/videos?downloaded=1&limit=200', { headers: headers() }),
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
+        fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
+        fetch('/api/trends/media?kind=audio', { headers: headers() }),
       ]);
       const vids = v.ok ? ((await v.json()).videos || []) : [];
       const refs = r.ok ? ((await r.json()).assets || []) : [];
-      const list = [
-        ...vids.filter((x: any) => x.fileUrl).map((x: any) => ({ url: x.fileUrl, name: x.title || x.author || 'видео', cover: x.coverUrl })),
-        ...refs.filter((x: any) => x.mediaType === 'video' && x.fileUrl).map((x: any) => ({ url: x.fileUrl, name: x.originalName || 'видео' })),
-      ];
+      const analyzed = an.ok ? ((await an.json()).assets || []) : [];
+      const audios = au.ok ? ((await au.json()).assets || []) : [];
+      const seen = new Set<string>();
+      const list: { url: string; name: string; cover?: string; type: 'video' | 'audio' }[] = [];
+      const pushV = (url: string, name: string, cover?: string) => { if (url && !seen.has(url)) { seen.add(url); list.push({ url, name, cover, type: 'video' }); } };
+      for (const x of vids) if (x.fileUrl) pushV(x.fileUrl, x.title || x.author || 'видео', x.coverUrl);
+      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) pushV(m.fileUrl, m.originalName || 'видео');
+      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) pushV(m.fileUrl, m.originalName || 'видео');
+      for (const m of audios) if (m.fileUrl && !seen.has(m.fileUrl)) { seen.add(m.fileUrl); list.push({ url: m.fileUrl, name: m.originalName || 'аудио', type: 'audio' }); }
       setEditorGallery(list);
     } catch { setEditorGallery([]); }
     finally { setEditorGalLoading(false); }
   };
-  const addEditorClip = (c: { url: string; name: string }) => { setEditorClips((cs) => (cs.some((x) => x.url === c.url) ? cs : [...cs, c])); setDirty(true); };
+  const addEditorClip = (c: { url: string; name: string; type?: 'video' | 'audio' }) => { setEditorClips((cs) => (cs.some((x) => x.url === c.url) ? cs : [...cs, c])); setDirty(true); };
   const removeEditorClip = (url: string) => { setEditorClips((cs) => cs.filter((x) => x.url !== url)); setDirty(true); };
   const mergeEditorClips = async () => {
     if (editorClips.length < 2 || editorMerging) return;
+    if (editorClips.some((c) => c.type === 'audio')) { setEditorNote('Склейка — только для видео. Аудио редактируйте по одному (обрезка).'); return; }
     setEditorMerging(true); setEditorNote(null);
     try {
       const res = await fetch('/api/video-edit/merge', {
@@ -1149,7 +1158,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
-      setEditorResult({ url: d.fileUrl, name: 'Склейка видео' }); setDirty(true);
+      setEditorResult({ url: d.fileUrl, name: 'Склейка видео', type: 'video' }); setDirty(true);
     } catch (e: any) { setEditorNote(e?.message || 'Не удалось склеить'); }
     finally { setEditorMerging(false); }
   };
@@ -2389,8 +2398,8 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  Просмотр и обрезка: обрезать начало/конец, вырезать куски, повернуть, склеить несколько роликов.
-                  Сохранение неразрушающее — результат уходит в Галерею.
+                  Просмотр и обрезка видео или аудио: обрезать начало/конец, вырезать куски, повернуть (видео),
+                  склеить несколько роликов. Сохранение неразрушающее — результат уходит в Галерею.
                 </p>
 
                 {editorClips.length > 0 && (
@@ -2398,6 +2407,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                     {editorClips.map((c, i) => (
                       <div key={c.url} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
                         <span className="text-[11px] font-700" style={{ color: 'var(--text-muted)' }}>{i + 1}</span>
+                        {c.type === 'audio' ? <Music size={13} style={{ color: 'var(--brand)', flexShrink: 0 }} /> : <Video size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
                         <span className="text-xs truncate flex-1" style={{ color: 'var(--text-primary)' }} title={c.name}>{c.name}</span>
                         <button onClick={() => setEditorView(c)} title="Открыть в редакторе" className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Scissors size={13} /></button>
                         <button onClick={() => removeEditorClip(c.url)} title="Убрать" className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
@@ -2408,7 +2418,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
                 <button onClick={loadEditorGallery} className="w-full py-2.5 rounded-xl text-sm font-600 inline-flex items-center justify-center gap-2"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
-                  <Plus size={16} /> {editorClips.length ? 'Добавить ещё видео' : 'Выбрать видео'}
+                  <Plus size={16} /> {editorClips.length ? 'Добавить ещё' : 'Выбрать видео / аудио'}
                 </button>
 
                 {editorClips.length === 1 && (
@@ -2438,21 +2448,24 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {editorPick && (
                   <div className="rounded-xl p-2" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Видео из Галереи (клик — добавить)</span>
+                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Видео и аудио из Галереи (клик — добавить)</span>
                       <button onClick={() => setEditorPick(false)} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Закрыть</button>
                     </div>
                     {editorGalLoading ? (
                       <div className="py-6 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
                     ) : editorGallery.length === 0 ? (
-                      <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Видео не найдены. Скачайте тренды или загрузите видео в Галерею.</p>
+                      <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Пусто. Скачайте тренды, сохраните анализ или загрузите видео/аудио в Галерею.</p>
                     ) : (
                       <div className="grid grid-cols-3 gap-1.5" style={{ maxHeight: 220, overflowY: 'auto' }}>
                         {editorGallery.map((g) => {
                           const sel = editorClips.some((c) => c.url === g.url);
                           return (
-                            <button key={g.url} onClick={() => addEditorClip({ url: g.url, name: g.name })} title={g.name}
-                              className="relative rounded-lg overflow-hidden" style={{ aspectRatio: '9/16', background: 'var(--bg-tertiary)', border: sel ? '2px solid var(--brand)' : '1px solid var(--border-medium)', cursor: 'pointer', padding: 0 }}>
-                              {g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                            <button key={g.url} onClick={() => addEditorClip({ url: g.url, name: g.name, type: g.type })} title={g.name}
+                              className="relative rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: '9/16', background: 'var(--bg-tertiary)', border: sel ? '2px solid var(--brand)' : '1px solid var(--border-medium)', cursor: 'pointer', padding: 0 }}>
+                              {g.type === 'audio'
+                                ? <div className="flex flex-col items-center gap-1 px-1 text-center"><Music size={20} style={{ color: 'var(--brand)' }} /><span className="text-[9px] leading-tight truncate w-full" style={{ color: 'var(--text-muted)' }}>{g.name}</span></div>
+                                : (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)}
+                              {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
                               {sel && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: '#fff' }}><Check size={12} /></span>}
                             </button>
                           );
@@ -2477,8 +2490,9 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
         open={!!editorView}
         url={editorView?.url || ''}
         title={editorView?.name}
+        kind={editorView?.type}
         onClose={() => setEditorView(null)}
-        onSaved={(r) => { setEditorResult({ url: r.fileUrl, name: 'Обрезанное видео' }); setDirty(true); }}
+        onSaved={(r) => { const t = editorView?.type === 'audio' ? 'audio' : 'video'; setEditorResult({ url: r.fileUrl, name: t === 'audio' ? 'Обрезанное аудио' : 'Обрезанное видео', type: t }); setDirty(true); }}
       />
 
       {/* Прогресс сборки «Собрать» */}

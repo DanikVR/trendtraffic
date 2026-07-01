@@ -53,6 +53,18 @@ function runFfmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
   });
 }
 
+/** Аудиофайлы, для которых редактор работает как аудио-резак (выход .m4a/AAC). */
+const AUDIO_RE = /\.(mp3|m4a|aac|wav|ogg|opus|weba|flac)$/i;
+
+/** Вырезать сегмент [start..end] из АУДИО → AAC/m4a (перекод — универсально для mp3/wav/ogg…). */
+async function cutSegmentAudio(input: string, start: number, end: number, out: string): Promise<void> {
+  const dur = Math.max(0.05, end - start);
+  const args = ['-y', '-loglevel', 'error'];
+  if (start > 0.001) args.push('-ss', start.toFixed(3));
+  args.push('-i', input, '-t', dur.toFixed(3), '-vn', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out);
+  await runFfmpeg(args);
+}
+
 /** Вырезать один сегмент [start..end] без перекодирования (ключевой кадр ≤ start). */
 async function cutSegment(input: string, start: number, end: number, out: string, rotate?: number): Promise<void> {
   const dur = Math.max(0.05, end - start);
@@ -169,8 +181,12 @@ router.post('/', async (req: AuthedRequest, res: Response) => {
 
   const input = resolveLocalInput(inputUrl);
   if (!input) {
-    return res.status(400).json({ error: 'Редактировать можно только видео из сервиса (сначала добавьте его в Галерею).' });
+    return res.status(400).json({ error: 'Редактировать можно только медиа из сервиса (сначала добавьте его в Галерею).' });
   }
+
+  // Аудио? Тогда работаем как аудио-резак: поворот неприменим, выход .m4a (AAC).
+  const isAudio = AUDIO_RE.test(inputUrl);
+  const effRotate = isAudio ? undefined : rotate;
 
   // Сегменты: чистим, сортируем; пустой список = весь файл целиком.
   const segments = (parsed.data.segments || [])
@@ -178,27 +194,40 @@ router.post('/', async (req: AuthedRequest, res: Response) => {
     .sort((a, b) => a.start - b.start);
 
   const nothingToCut = segments.length === 0;
-  if (nothingToCut && !rotate) {
-    return res.status(400).json({ error: 'Нет изменений для применения.' });
+  if (nothingToCut && !effRotate) {
+    return res.status(400).json({ error: isAudio ? 'Нет изменений для применения (для аудио доступна только обрезка).' : 'Нет изменений для применения.' });
   }
 
-  const outName = `edited-${randomUUID()}.mp4`;
+  const ext = isAudio ? 'm4a' : 'mp4';
+  const outName = `edited-${randomUUID()}.${ext}`;
   const outPath = path.join(RENDERS_DIR, outName);
   const tmp: string[] = [];
 
   try {
-    if (nothingToCut) {
+    if (isAudio) {
+      // Аудио: обрезка/нарезка → AAC/m4a (одиночный сегмент или склейка кусков).
+      if (segments.length === 1) {
+        await cutSegmentAudio(input, segments[0].start, segments[0].end, outPath);
+      } else {
+        for (const s of segments) {
+          const part = path.join(RENDERS_DIR, `part-${randomUUID()}.m4a`);
+          tmp.push(part);
+          await cutSegmentAudio(input, s.start, s.end, part);
+        }
+        await concatSegments(tmp, outPath);
+      }
+    } else if (nothingToCut) {
       // только поворот — копия с метаданными
-      await runFfmpeg(['-y', '-loglevel', 'error', '-i', input, '-c', 'copy', '-metadata:s:v:0', `rotate=${rotate}`, '-movflags', '+faststart', outPath]);
+      await runFfmpeg(['-y', '-loglevel', 'error', '-i', input, '-c', 'copy', '-metadata:s:v:0', `rotate=${effRotate}`, '-movflags', '+faststart', outPath]);
     } else if (segments.length === 1) {
-      await cutSegment(input, segments[0].start, segments[0].end, outPath, rotate);
+      await cutSegment(input, segments[0].start, segments[0].end, outPath, effRotate);
     } else {
       for (const s of segments) {
         const part = path.join(RENDERS_DIR, `part-${randomUUID()}.mp4`);
         tmp.push(part);
         await cutSegment(input, s.start, s.end, part); // поворот применим на склейке
       }
-      await concatSegments(tmp, outPath, rotate);
+      await concatSegments(tmp, outPath, effRotate);
     }
 
     const stat = fs.statSync(outPath);
@@ -207,11 +236,11 @@ router.post('/', async (req: AuthedRequest, res: Response) => {
     const fileUrl = `/uploads/renders/${outName}`;
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference',
-      mediaType: 'video',
-      originalName: name || 'Обрезанное видео',
+      mediaType: isAudio ? 'audio' : 'video',
+      originalName: name || (isAudio ? 'Обрезанное аудио' : 'Обрезанное видео'),
       fileUrl,
       filePath: outPath,
-      mime: 'video/mp4',
+      mime: isAudio ? 'audio/mp4' : 'video/mp4',
       size: stat.size,
     });
 
