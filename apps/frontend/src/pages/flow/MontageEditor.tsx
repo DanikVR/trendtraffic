@@ -88,10 +88,10 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
   length: 'Claude выберет самый сильный момент по транскрипту и обрежет под длительность.',
 };
 
-// Облачные узлы графа (перетаскиваемые): Google Omni (генерация видео), Контент-план, Подкаст.
+// Облачные узлы графа (перетаскиваемые): Omni Flash (генерация видео), Контент-план, Подкаст.
 type CloudId = 'omni' | 'plan' | 'podcast' | 'editor';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
-  omni: { label: 'Google Omni', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
+  omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
   podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
   editor: { label: 'Редактор', icon: <Scissors size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
@@ -163,7 +163,7 @@ const POD_DEFAULT: PodcastSpec = {
   music: null,
 };
 
-// ── Преобразование исходного видео по таймлайну (узел Google Omni) ──
+// ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
 // engine: 'omni' — сгенерировать новый клип (Veo 3.1, 4/6/8с, текст/кадр→видео);
 //         'v2v'  — ре-стайл реального фрагмента (Runway Gen-4 / FAL-Kling).
 type OmniEngine = 'omni' | 'v2v';
@@ -2311,8 +2311,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             {cloudPanel === 'omni' ? (
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  Преобразование видео по ленте. <b style={{ color: '#4285F4' }}>Omni</b> — генерирует новый клип
-                  (Veo 3.1, 4/6/8с). <b style={{ color: '#a855f7' }}>V2V</b> — ре-стайл реального фрагмента (Runway/Kling).
+                  Преобразование видео по ленте. <b style={{ color: '#4285F4' }}>Omni Flash</b> — генерирует новый клип
+                  со звуком (Gemini Omni Flash, 720p). <b style={{ color: '#a855f7' }}>V2V</b> — ре-стайл реального фрагмента (Runway/Kling).
                   Ключи — в <b style={{ color: 'var(--text-secondary)' }}>Enterprise → Генерация</b>.
                 </p>
 
@@ -2375,9 +2375,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             )}
                           </div>
 
-                          {/* Движок: Omni / V2V */}
+                          {/* Движок: Omni Flash / V2V */}
                           <div className="grid grid-cols-2 gap-1.5">
-                            {([['omni', 'Сгенерировать', '#4285F4', <Sparkles size={13} key="s" />], ['v2v', 'Ре-стайл (V2V)', '#a855f7', <Scissors size={13} key="c" />]] as [OmniEngine, string, string, React.ReactNode][]).map(([eng, lbl, col, ic]) => (
+                            {([['omni', 'Omni Flash', '#4285F4', <Sparkles size={13} key="s" />], ['v2v', 'Ре-стайл (V2V)', '#a855f7', <Scissors size={13} key="c" />]] as [OmniEngine, string, string, React.ReactNode][]).map(([eng, lbl, col, ic]) => (
                               <button key={eng} onClick={() => updateSeg(g.id, { engine: eng })}
                                 className="py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 transition-all"
                                 style={{ background: g.engine === eng ? col : 'var(--bg-secondary)', color: g.engine === eng ? '#fff' : 'var(--text-muted)', border: `1px solid ${g.engine === eng ? col : 'var(--border-medium)'}` }}>
@@ -2453,7 +2453,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     {/* Сводка + стоимость */}
                     <div className="rounded-xl p-3 text-[11px] space-y-1" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
                       {omniGenSeconds > 0 && (
-                        <div>Omni-генерация: <b style={{ color: 'var(--text-secondary)' }}>{omniGenSeconds}с</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)}–${(omniGenSeconds * 0.40).toFixed(2)} <span style={{ opacity: 0.7 }}>(Veo Fast…Standard, 720p/1080p)</span></div>
+                        <div>Omni Flash: <b style={{ color: 'var(--text-secondary)' }}>{omniGenSeconds}с</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)} <span style={{ opacity: 0.7 }}>(Gemini Omni Flash, 720p, со звуком, ~$0.10/с)</span></div>
                       )}
                       {omniSpec.segments.some((g) => g.engine === 'v2v') && (
                         <div>V2V ре-стайл: по тарифу провайдера (Runway/Kling).</div>
