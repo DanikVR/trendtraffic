@@ -366,6 +366,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [showPresets, setShowPresets] = useState(false);
   const [attachFor, setAttachFor] = useState<string | null>(null);
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string; folder: 'trends' | 'reference' | 'audio' | 'analyzed'; cover?: string }[]>([]);
+  const [imgPick, setImgPick] = useState<string | null>(null);   // #3: segId, для которого выбираем старт-кадр из галереи картинок
+  const [imgPickQ, setImgPickQ] = useState('');
+  const imgUploadRef = useRef<HTMLInputElement | null>(null);
   const [podPickTab, setPodPickTab] = useState<'all' | 'trends' | 'reference' | 'audio' | 'analyzed'>('all'); // вкладка-папка в пикере
   const [podPickQ, setPodPickQ] = useState(''); // поиск в пикере
   const [uploading, setUploading] = useState(false);   // загрузка медиа с устройства
@@ -617,6 +620,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setOG(g.id, { sbBusy: false, frames: d.frames.map((f: any) => f.url), note: d.note });
     } catch { setOG(g.id, { sbBusy: false, note: 'Ошибка сети при раскадровке.' }); }
   };
+  /** Понятное объяснение ошибок Omni/Nano — частый кейс это фильтр контента Gemini (400 Input blocked). */
+  const friendlyOmniError = (raw?: string | null): string => {
+    const s = (raw || '').toLowerCase();
+    if (/input blocked|prohibited|could not be processed|not be processed|safety|content polic|deepfake|blocked/.test(s)) {
+      return '⚠️ Gemini заблокировал запрос (фильтр контента). Чаще всего дело в «жёстком» промте (взрыв/насилие/оружие) или запрещённой теме — реже в связке «реальный человек + такое действие». Смягчите формулировку (напр. «бутылка эффектно раскрывается брызгами»); один реальный кадр-лицо сам по себе обычно проходит.';
+    }
+    return raw || 'Не удалось сгенерировать.';
+  };
   const pollOmni = (id: string, jobId: string) => {
     const tick = async () => {
       try {
@@ -624,7 +635,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         const d = await res.json();
         if (res.ok && d.status && d.status !== 'processing') {
           if (d.status === 'done' && d.fileUrl) setOG(id, { busy: false, url: d.fileUrl, interactionId: d.interactionId, note: `Готово${d.costUsd ? ` · ~$${d.costUsd}` : ''}${d.seconds ? ` · ${d.seconds}с` : ''} · в Галерее` });
-          else setOG(id, { busy: false, note: d.error || 'Не удалось сгенерировать.' });
+          else setOG(id, { busy: false, note: friendlyOmniError(d.error) });
           return;
         }
       } catch { /* ретрай */ }
@@ -641,7 +652,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const seed = g.startFrame || omniGen[g.id]?.seed || undefined; // старт-кадр (#3) / кадр раскадровки → image_to_video
       const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16', imageUrl: seed }) });
       const d = await res.json();
-      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error || 'Omni Flash недоступен.' }); return; }
+      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Omni Flash недоступен.' }); return; }
       setOG(g.id, { note: d.note });
       pollOmni(g.id, d.jobId);
     } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при генерации.' }); }
@@ -654,7 +665,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     try {
       const res = await fetch('/api/render/omni/edit', { method: 'POST', headers: headers(), body: JSON.stringify({ previousInteractionId: st.interactionId, prompt: editPrompt, aspect: '9:16' }) });
       const d = await res.json();
-      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error || 'Ошибка правки.' }); return; }
+      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Ошибка правки.' }); return; }
       setOG(g.id, { note: d.note, edit: '' });
       pollOmni(g.id, d.jobId);
     } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при правке.' }); }
@@ -689,24 +700,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setOG(g.id, { fbBusy: false, note: 'Старт-кадр взят из видео (в Галерее).' });
     } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при извлечении кадра.' }); }
   };
-  // #3 «Загрузить»: создаём input на лету — segId в замыкании, без общего ref (нет гонки на неверное окно).
-  const pickStartFrame = (segId: string) => {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*';
-    inp.onchange = () => { if (inp.files && inp.files.length) void uploadStartFrame(segId, inp.files); };
-    inp.click();
-  };
-  const uploadStartFrame = async (segId: string, files: FileList | null) => {
-    const f = files && files[0]; if (!f) return;
+  // #3 «Загрузить»: открыть галерею СВОИХ картинок для этого окна — выбрать существующую ИЛИ загрузить новую.
+  const openStartFramePicker = (segId: string) => { setImgPick(segId); setImgPickQ(''); void loadMedia(); };
+  const uploadStartFrame = async (segId: string, files: FileList | null): Promise<boolean> => {
+    const f = files && files[0]; if (!f) return false;
     setOG(segId, { fbBusy: true, note: null });
     try {
       const fd = new FormData(); fd.append('file', f);
       const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok || !d.asset?.fileUrl) { setOG(segId, { fbBusy: false, note: d?.error || 'Не удалось загрузить картинку.' }); return; }
+      if (!res.ok || !d.asset?.fileUrl) { setOG(segId, { fbBusy: false, note: d?.error || 'Не удалось загрузить картинку.' }); return false; }
       updateSeg(segId, { startFrame: d.asset.fileUrl });
       setOG(segId, { fbBusy: false, note: 'Своя картинка — старт-кадр.' });
-    } catch { setOG(segId, { fbBusy: false, note: 'Ошибка загрузки картинки.' }); }
+      return true;
+    } catch { setOG(segId, { fbBusy: false, note: 'Ошибка загрузки картинки.' }); return false; }
+  };
+  // Загрузка новой картинки из модалки галереи: грузим → ставим старт-кадром → обновляем галерею → закрываем.
+  const uploadStartFrameFromPicker = async (segId: string, files: FileList | null) => {
+    const ok = await uploadStartFrame(segId, files);
+    if (ok) { await loadMedia(); setImgPick(null); }
   };
   const runPromptImage = async (g: OmniSeg) => {
     if (omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy) return;
@@ -716,7 +728,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     try {
       const res = await fetch('/api/render/omni/storyboard', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, count: 1, imageUrl: g.startFrame }) });
       const d = await res.json();
-      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { fbBusy: false, note: d?.error || 'Не удалось перерисовать кадр.' }); return; }
+      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { fbBusy: false, note: d?.error ? friendlyOmniError(d.error) : 'Не удалось перерисовать кадр.' }); return; }
       updateSeg(g.id, { startFrame: d.frames[0].url });
       setOG(g.id, { fbBusy: false, note: 'Старт-кадр перерисован по промту (Nano).' });
     } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при перерисовке.' }); }
@@ -2547,6 +2559,53 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         </div>
       )}
 
+      {/* #3 Галерея своих картинок для старт-кадра окна: выбрать существующую ИЛИ загрузить новую */}
+      {imgPick !== null && (() => {
+        const seg = imgPick;
+        const q = imgPickQ.trim().toLowerCase();
+        const curSF = omniSpec.segments.find((s) => s.id === seg)?.startFrame || null;
+        const imgs = media.filter((m) => m.kind === 'image' && (!q || (m.title || '').toLowerCase().includes(q)));
+        const busy = !!omniGen[seg]?.fbBusy;
+        return (
+          <div onClick={() => setImgPick(null)} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Старт-кадр — своё фото</span>
+                <button onClick={() => setImgPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+              <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>Выберите свою картинку (предмет/фон) как первый кадр — Omni оживит именно её. Или загрузите новую.</p>
+              <div style={{ position: 'relative', marginBottom: 8 }}>
+                <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input value={imgPickQ} onChange={(e) => setImgPickQ(e.target.value)} placeholder="Поиск по названию…" className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+              </div>
+              <input ref={imgUploadRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={(e) => { if (e.target.files?.length) void uploadStartFrameFromPicker(seg, e.target.files); e.currentTarget.value = ''; }} />
+              <button onClick={() => imgUploadRef.current?.click()} disabled={busy}
+                className="w-full mb-2 py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                {busy ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} {busy ? 'Загружаю…' : 'Загрузить новую'}
+              </button>
+              <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {imgs.length}</div>
+              {imgs.length === 0 ? (
+                <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пока нет своих картинок. Нажмите «Загрузить новую».</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {imgs.map((m) => (
+                    <button key={m.fileUrl} onClick={() => { updateSeg(seg, { startFrame: m.fileUrl }); setOG(seg, { seed: null, note: 'Старт-кадр из галереи.' }); setImgPick(null); }}
+                      className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: `2px solid ${curSF === m.fileUrl ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer', padding: 0 }}>
+                      <div style={{ aspectRatio: '1 / 1', background: '#000' }}>
+                        <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Главный промт — общий сценарий ролика (для ИИ-режиссёра) */}
       {showBrief && (
         <div onClick={() => setShowBrief(false)} style={{ position: 'absolute', inset: 0, zIndex: 92, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -2789,9 +2848,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                     title={sourceUrl ? 'Взять кадр исходника в позиции окна' : 'Сначала выберите исходное видео'}>
                                     <Film size={12} /> Из кадра видео
                                   </button>
-                                  <button onClick={() => pickStartFrame(g.id)} disabled={omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
+                                  <button onClick={() => openStartFramePicker(g.id)} disabled={omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
                                     className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
-                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}
+                                    title="Выбрать из своих картинок или загрузить новую">
                                     <UploadCloud size={12} /> Загрузить
                                   </button>
                                   <button onClick={() => runPromptImage(g)} disabled={!g.startFrame || !g.prompt.trim() || omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
