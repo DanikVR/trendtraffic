@@ -759,6 +759,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
   const winSecOf = (g: OmniSeg) => srcDuration > 0 ? (g.end - g.start) * srcDuration : 0;
   const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + Math.min(OMNI_MAX_SEC, winSecOf(g)), 0);
+  // Идёт генерация видео или подготовка кадра хотя бы по одному окну → анимируем узел «Omni Flash» (как «Подкаст»).
+  const omniBusy = Object.values(omniGen).some((x) => !!(x?.busy || x?.fbBusy));
 
   // ── Интерактивная лента Omni: тянем окно (тело=сдвиг, края=длина), макс 10с у Omni, живой seek ──
   const omniMaxFrac = () => srcDuration > 0 ? Math.min(1, OMNI_MAX_SEC / srcDuration) : 1;
@@ -2108,6 +2110,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
               {id === 'podcast' && (!!podBusy || building || !!angleBusy || animBusy || composeBusy) && <span className="me-busyring" />}
+              {id === 'omni' && omniBusy && <span className="me-busyring" />}
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
