@@ -16,7 +16,7 @@ import {
   Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
-  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2,
+  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { VideoViewer } from '../../components/VideoViewer';
@@ -683,7 +683,13 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
   const tlWrapRef = useRef<HTMLDivElement | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false); // список реплик свёрнут/раскрыт
   const [selLine, setSelLine] = useState<number | null>(null); // выбранная реплика (клик по клипу)
+  const [tlPlaying, setTlPlaying] = useState(false);   // идёт воспроизведение с бегунка
+  const tlAudioRef = useRef<HTMLAudioElement | null>(null);
+  const tlRafRef = useRef<number | null>(null);
+  const tlRafPrevRef = useRef<number | null>(null);
   const tlMmss = (s: number): string => { const m = Math.floor(s / 60); const ss = Math.floor(s % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
+  /** Медиа реплики — видео? (чтобы показать нужную иконку и во воркере наложить как видео). */
+  const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
   /** Разрезать клип, над которым стоит бегунок, в его позиции. */
   const cutAtPlayhead = () => {
     const arr = pod.dialogue;
@@ -697,6 +703,54 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
     const w = (tlWrapRef.current?.clientWidth || 520) - 48;
     setTlPps(Math.max(3, Math.min(160, w / total)));
   };
+  /** Объединить реплику i со следующей: тексты, времена и медиа сливаются в один клип. */
+  const mergeLineDown = (i: number) => podMutate((p) => {
+    const a = p.dialogue[i]; const b = p.dialogue[i + 1];
+    if (!a || !b) return p;
+    const tA = Number.isFinite(a.tStart) ? (a.tStart as number) : lineT(a, i, p.dialogue);
+    const startTC = Number.isFinite(a.start) ? a.start : b.start;
+    const endTC = Number.isFinite(b.end) ? b.end : a.end;
+    const merged: PodLine = {
+      ...a,
+      text: [a.text, b.text].map((x) => (x || '').trim()).filter(Boolean).join(' '),
+      tStart: tA,
+      ...(Number.isFinite(startTC) ? { start: startTC } : {}),
+      ...(Number.isFinite(endTC) ? { end: endTC } : {}),
+      image: a.image || b.image, imageName: a.imageName || b.imageName, anim: a.anim || b.anim,
+    };
+    return { ...p, dialogue: [...p.dialogue.slice(0, i), merged, ...p.dialogue.slice(i + 2)] };
+  });
+  /** Остановить воспроизведение таймлайна (аудио + анимация бегунка). */
+  const tlStop = () => {
+    setTlPlaying(false);
+    const a = tlAudioRef.current; if (a) { try { a.pause(); } catch { /* тихо */ } }
+    if (tlRafRef.current != null) { cancelAnimationFrame(tlRafRef.current); tlRafRef.current = null; }
+    tlRafPrevRef.current = null;
+  };
+  /** Воспроизвести с жёлтого бегунка: реальная запись (если есть) или прогон бегунка по времени. */
+  const tlPlay = () => {
+    const arr = pod.dialogue;
+    const total = Math.max(1, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+    let from = tlPlayhead; if (from >= total - 0.05) { from = 0; setTlPlayhead(0); }
+    setTlPlaying(true);
+    const a = tlAudioRef.current;
+    if (a && pod.recordingUrl) {
+      try { a.currentTime = from; } catch { /* тихо */ }
+      a.play().catch(() => { /* автоплей мог не сработать */ });
+      return;
+    }
+    // Нет записи (TTS-таймлайн) — просто ведём бегунок по времени.
+    tlRafPrevRef.current = null; // стартовая метка времени rAF
+    const tick = (ts: number) => {
+      if (tlRafPrevRef.current == null) tlRafPrevRef.current = ts;
+      const cur = from + (ts - tlRafPrevRef.current) / 1000;
+      if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
+      setTlPlayhead(cur);
+      tlRafRef.current = requestAnimationFrame(tick);
+    };
+    tlRafRef.current = requestAnimationFrame(tick);
+  };
+  const tlTogglePlay = () => { if (tlPlaying) tlStop(); else tlPlay(); };
   useEffect(() => {
     const move = (e: PointerEvent) => {
       const d = tlDragRef.current;
@@ -707,13 +761,18 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       } else if (tlPlayDragRef.current && tlWrapRef.current) {
         const r = tlWrapRef.current.getBoundingClientRect();
         const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32; // 32 = отступ подписи дорожки
-        setTlPlayhead(Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20));
+        const nt = Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20);
+        setTlPlayhead(nt);
+        const a = tlAudioRef.current; if (a && !a.paused) { try { a.currentTime = nt; } catch { /* тихо */ } }
       }
     };
     const up = () => { if (tlDragRef.current) { tlDragRef.current = null; setDirty(true); } tlPlayDragRef.current = false; };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
-    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    return () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      if (tlRafRef.current != null) cancelAnimationFrame(tlRafRef.current);
+    };
   }, []);
 
   // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
@@ -953,13 +1012,17 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
 
   const loadMedia = async () => {
     try {
-      const [r, a] = await Promise.all([
+      const [r, a, an] = await Promise.all([
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
         fetch('/api/trends/media?kind=audio', { headers: headers() }),
+        fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
       ]);
       const ref = r.ok ? (await r.json()).assets || [] : [];
       const aud = a.ok ? (await a.json()).assets || [] : [];
-      setMedia([...ref, ...aud].map((m: any) => ({ id: m.id, fileUrl: m.fileUrl, title: m.originalName || 'файл', kind: m.mediaType })));
+      const ana = an.ok ? (await an.json()).assets || [] : []; // проанализированные видео — тоже в галерею
+      const seen = new Set<string>();
+      const all = [...ref, ...aud, ...ana].filter((m: any) => { if (!m?.id || seen.has(m.id)) return false; seen.add(m.id); return true; });
+      setMedia(all.map((m: any) => ({ id: m.id, fileUrl: m.fileUrl, title: m.originalName || 'файл', kind: m.mediaType })));
     } catch { setMedia([]); }
   };
   const openAttach = (id: string) => { setAttachFor(id); loadMedia(); };
@@ -1681,11 +1744,11 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
       {podPick && (
         <div onClick={() => setPodPick(null)} style={{ position: 'absolute', inset: 0, zIndex: 94, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-            <input ref={podPickInputRef} type="file" multiple accept={podPick === 'recording' ? 'audio/*,video/*' : 'image/*'} style={{ display: 'none' }}
+            <input ref={podPickInputRef} type="file" multiple accept={podPick === 'recording' ? 'audio/*,video/*' : (podPick === 'lineimg' || podPick === 'cutaway') ? 'image/*,video/*' : 'image/*'} style={{ display: 'none' }}
               onChange={(e) => { if (e.target.files?.length) uploadPodFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
+                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'lineimg' ? 'Медиа к реплике (фото или видео)' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
               </span>
               <button onClick={() => setPodPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
@@ -1698,17 +1761,22 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
             <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи</div>
             {(() => {
               const wantAudio = podPick === 'recording';
-              const items = media.filter((m) => (wantAudio ? (m.kind === 'audio' || m.kind === 'video') : m.kind === 'image'));
+              const wantMedia = podPick === 'lineimg' || podPick === 'cutaway'; // фото ИЛИ видео
+              const items = media.filter((m) => (
+                wantAudio ? (m.kind === 'audio' || m.kind === 'video')
+                : wantMedia ? (m.kind === 'image' || m.kind === 'video')
+                : m.kind === 'image'));
               return items.length === 0 ? (
                 <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пусто. Загрузите файл выше или добавьте в «Галерею».</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {items.map((m) => (
                     <button key={m.id} onClick={() => applyPodMedia(podPick, { fileUrl: m.fileUrl, title: m.title })} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                      <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ position: 'relative', aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
                           : m.kind === 'audio' ? <Music size={22} style={{ color: '#ec4899' }} />
-                          : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
+                          : <><video src={m.fileUrl} muted preload="metadata" className="w-full h-full object-cover" />
+                              <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)' }}><Play size={20} style={{ color: '#fff' }} fill="#fff" /></span></>}
                       </div>
                       <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
                     </button>
@@ -2245,6 +2313,10 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                 {/* Таймлайн (Фаза 2) — вверху; наложение голосовых дорожек */}
                 {pod.dialogue.length > 0 && (
                   <div className="space-y-1.5">
+                    {/* скрытый плеер записи — воспроизведение с жёлтого бегунка */}
+                    <audio ref={tlAudioRef} src={pod.recordingUrl || undefined} preload="metadata" style={{ display: 'none' }}
+                      onTimeUpdate={(e) => { if (tlPlaying && !tlPlayDragRef.current) setTlPlayhead(e.currentTarget.currentTime); }}
+                      onEnded={tlStop} />
                     <div className="flex items-center justify-between flex-wrap gap-1.5">
                       <span className="text-[11px] font-600 inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
                         Таймлайн (наложение голосов)
@@ -2253,6 +2325,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                       <div className="inline-flex items-center gap-1.5">
                         {pod.timeline && (
                           <>
+                            <button onClick={tlTogglePlay} title={tlPlaying ? 'Пауза' : 'Воспроизвести с бегунка'} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: tlPlaying ? '#10b981' : 'var(--bg-tertiary)', color: tlPlaying ? '#fff' : '#10b981', border: `1px solid ${tlPlaying ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{tlPlaying ? <Pause size={13} /> : <Play size={13} />}</button>
                             <button onClick={cutAtPlayhead} title="Разрезать по бегунку (✂)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
                             <button onClick={() => setTlPps((v) => Math.max(3, Math.round(v / 1.4)))} title="Уменьшить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
                             <button onClick={() => setTlPps((v) => Math.min(160, Math.round(v * 1.4)))} title="Увеличить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
@@ -2288,19 +2361,28 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                                   {arr.map((l, i) => {
                                     if ((l.speaker === 'B' ? 'B' : 'A') !== trk) return null;
                                     const t = lineT(l, i, arr); const d = lineDur(l);
-                                    const w = Math.max(14, d * tlPps - 2);
+                                    const w = Math.max(6, d * tlPps - 2);
                                     const sel = selLine === i;
+                                    const showText = w >= 40;       // на мелком зуме подписи прячем — чистые плашки
+                                    const showThumb = w >= 46 && !!l.image;
+                                    const vid = isVideoUrl(l.image);
                                     return (
                                       <div key={i}
                                         onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startT: t }; }}
                                         onClick={() => { if (tlMovedRef.current) { tlMovedRef.current = false; return; } setSelLine(i); setDialogOpen(true); setTimeout(() => document.getElementById(`pl-${i}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60); }}
                                         title={l.text}
-                                        style={{ position: 'absolute', left: t * tlPps, width: w, top: 2, height: 30, borderRadius: 6,
-                                          background: trk === 'A' ? 'rgba(236,72,153,0.9)' : 'rgba(139,92,246,0.9)', color: '#fff', fontSize: 9, lineHeight: '30px',
-                                          padding: '0 5px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none',
-                                          boxShadow: sel ? '0 0 0 2px #fff, 0 0 0 4px #ec4899' : 'none' }}>
-                                        {l.image && <img src={l.image} alt="" style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, objectFit: 'cover', borderRadius: 4 }} />}
-                                        <span style={{ pointerEvents: 'none' }}>{l.text || `реплика ${i + 1}`}</span>
+                                        style={{ position: 'absolute', left: t * tlPps, width: w, top: 2, height: 30, borderRadius: 7,
+                                          background: trk === 'A' ? 'linear-gradient(180deg, rgba(244,114,182,0.96), rgba(219,39,119,0.96))' : 'linear-gradient(180deg, rgba(167,139,250,0.96), rgba(124,58,237,0.96))',
+                                          color: '#fff', fontSize: 9, lineHeight: '30px',
+                                          padding: showText ? '0 6px' : '0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none',
+                                          border: sel ? 'none' : '1px solid rgba(255,255,255,0.18)',
+                                          boxShadow: sel ? '0 0 0 2px #fff, 0 0 0 4px #ec4899' : '0 1px 3px rgba(0,0,0,0.28)' }}>
+                                        {showThumb && (vid
+                                          ? <span style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, borderRadius: 4, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={12} fill="#fff" style={{ color: '#fff' }} /></span>
+                                          : <img src={l.image} alt="" style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, objectFit: 'cover', borderRadius: 4 }} />)}
+                                        {showText
+                                          ? <span style={{ pointerEvents: 'none' }}>{l.text || `реплика ${i + 1}`}</span>
+                                          : (l.image && <span style={{ position: 'absolute', left: 3, top: 3, width: 6, height: 6, borderRadius: '50%', background: '#fff', opacity: 0.9 }} />)}
                                       </div>
                                     );
                                   })}
@@ -2314,7 +2396,7 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                         </div>
                       );
                     })()}
-                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Тащи клипы по времени; жёлтый бегунок ведёшь и ✂ режет по нему; −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = перебивание.</p>}
+                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с жёлтого бегунка; тащи клипы по времени; бегунок ведёшь и ✂ режет по нему (появляется новая реплика); −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = перебивание.</p>}
                   </div>
                 )}
 
@@ -2338,11 +2420,21 @@ export default function MontageEditor({ flowId, onBack }: { flowId: string; onBa
                                 style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
                               {l.image ? (
                                 <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
-                                  <img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
-                                  <button onClick={() => setLineImage(i, null)} title="Убрать картинку" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
+                                  {isVideoUrl(l.image) ? (
+                                    <>
+                                      <video src={l.image} muted preload="metadata" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
+                                      <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={11} fill="#fff" style={{ color: '#fff' }} /></span>
+                                    </>
+                                  ) : (
+                                    <img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
+                                  )}
+                                  <button onClick={() => setLineImage(i, null)} title="Убрать медиа" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
                                 </div>
                               ) : (
-                                <button onClick={() => openPodLineImage(i)} title="Прикрепить картинку к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Image size={13} /></button>
+                                <button onClick={() => openPodLineImage(i)} title="Прикрепить фото или видео к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Image size={13} /></button>
+                              )}
+                              {i < pod.dialogue.length - 1 && (
+                                <button onClick={() => mergeLineDown(i)} title="Объединить со следующей репликой" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#8b5cf6', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Combine size={13} /></button>
                               )}
                               <button onClick={() => podLineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
                             </div>

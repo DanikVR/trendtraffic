@@ -119,6 +119,16 @@ def _download_media(base_url: Optional[str], u: Optional[str], work: Path, defau
         return None
 
 
+_VIDEO_EXTS = (".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv")
+
+
+def _is_video_url(u: Optional[str]) -> bool:
+    """Похоже ли на видео по расширению (для наложения медиа реплики как видео, а не картинки)."""
+    if not u:
+        return False
+    return os.path.splitext(urllib.parse.urlparse(str(u)).path)[1].lower() in _VIDEO_EXTS
+
+
 def _result_file(result: Any) -> Optional[str]:
     """Выход инструмента: сначала ToolResult.artifacts (список путей), потом data."""
     arts = getattr(result, "artifacts", None) or []
@@ -474,10 +484,12 @@ def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str,
             t = None
         if t is None:  # нет позиции — берём исходный таймкод, иначе встык за предыдущим
             t = st if st is not None else (clips[-1]["t"] + clips[-1]["dur"] if clips else 0.0)
-        img = _download_media(base_url, l.get("image"), work, default_ext=".jpg") if l.get("image") else None
+        media_url = l.get("image")
+        is_vid = _is_video_url(media_url)
+        img = _download_media(base_url, media_url, work, default_ext=(".mp4" if is_vid else ".jpg")) if media_url else None
         if img:
             used_imgs += 1
-        clips.append({"wav": wav, "t": max(0.0, t), "dur": d, "image": img})
+        clips.append({"wav": wav, "t": max(0.0, t), "dur": d, "image": img, "video": bool(img and is_vid)})
     if not clips:
         tail = "; ".join(notes) if notes else "нет клипов"
         return None, f"подкаст(таймлайн): {tail}"
@@ -489,8 +501,11 @@ def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str,
         inputs += ["-i", c["wav"]]
     img_clips = [c for c in clips if c["image"]]
     img_start = 2 + len(clips)
-    for c in img_clips:                                               # картинки — после аудио
-        inputs += ["-loop", "1", "-i", c["image"]]
+    for c in img_clips:                                               # медиа реплик — после аудио
+        if c["video"]:                                               # видео — играет (без -loop), звук отбрасываем
+            inputs += ["-i", c["image"]]
+        else:                                                        # картинка — статичная (looped)
+            inputs += ["-loop", "1", "-i", c["image"]]
 
     fc = (
         f"[0:v]scale={half}:{POD_H}:force_original_aspect_ratio=increase,crop={half}:{POD_H},fps=30,setsar=1[l];"
@@ -502,7 +517,9 @@ def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str,
     for k, c in enumerate(img_clips):
         idx = img_start + k
         t0, t1 = c["t"], c["t"] + c["dur"]
-        fc += (f"[{idx}:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1[ci{k}];"
+        # видео сдвигаем по времени (setpts), чтобы играло с начала клипа; картинка — статична
+        pts = f",setpts=PTS-STARTPTS+{t0:.3f}/TB" if c["video"] else ""
+        fc += (f"[{idx}:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1{pts}[ci{k}];"
                f"[{last_v}][ci{k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\\,{t0:.3f}\\,{t1:.3f})'[vi{k}];")
         last_v = f"vi{k}"
     for k, c in enumerate(clips):
@@ -763,11 +780,129 @@ def _overlap_speaker(turns: list, start: float, end: float) -> Optional[str]:
     return best
 
 
+def _read_wav_mono16k(src: str, work: Path):
+    """Конвертирует вход в моно 16 кГц WAV (ffmpeg) и читает в numpy float32 [-1..1]. -> (sig, sr) | (None,0)."""
+    try:
+        import numpy as np  # noqa: WPS433
+        import wave  # noqa: WPS433
+    except Exception:  # noqa: BLE001
+        return None, 0
+    tmp = str(work / f"diar_{uuid.uuid4().hex[:6]}.wav")
+    ok, _ = _run([FFMPEG, "-y", "-i", src, "-ac", "1", "-ar", "16000", "-f", "wav", tmp], timeout=300)
+    if not (ok and os.path.exists(tmp)):
+        return None, 0
+    try:
+        with wave.open(tmp, "rb") as w:
+            sr = w.getframerate()
+            raw = w.readframes(w.getnframes())
+        sig = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+        return sig, sr
+    except Exception:  # noqa: BLE001
+        return None, 0
+
+
+def _seg_features(sig, sr, start: float, end: float):
+    """Признаки сегмента [start,end]: [медианная F0 (высота голоса), спектральный центроид]. None — если тихо/коротко."""
+    import numpy as np  # noqa: WPS433
+    a = max(0, int(start * sr)); b = min(int(sig.size), int(end * sr))
+    seg = sig[a:b]
+    if seg.size < sr // 10:  # < 100 мс — слишком коротко
+        return None
+    fl, hop = 1024, 512
+    starts = list(range(0, max(1, seg.size - fl), hop))
+    if len(starts) > 40:  # не более 40 кадров на сегмент
+        starts = [starts[i] for i in np.linspace(0, len(starts) - 1, 40).astype(int)]
+    win = np.hanning(fl)
+    lo, hi = int(sr / 350), int(sr / 70)  # диапазон голоса 70–350 Гц
+    f0s: list = []; cents: list = []
+    for s0 in starts:
+        fr = seg[s0:s0 + fl]
+        if fr.size < fl:
+            fr = np.pad(fr, (0, fl - fr.size))
+        if float(np.sqrt(np.mean(fr * fr))) < 0.01:  # тихий кадр — пропуск
+            continue
+        mag = np.abs(np.fft.rfft(fr * win))
+        ssum = float(mag.sum())
+        if ssum > 0:
+            cents.append(float((np.fft.rfftfreq(fl, 1.0 / sr) * mag).sum() / ssum))
+        fr0 = fr - fr.mean()
+        corr = np.correlate(fr0, fr0, mode="full")[fl - 1:]
+        h = min(hi, corr.size - 1)
+        if lo < h and corr[0] > 0:
+            peak = int(np.argmax(corr[lo:h])) + lo
+            if peak > 0 and corr[peak] > 0.3 * corr[0]:
+                f0s.append(sr / peak)
+    if not cents:
+        return None
+    return [float(np.median(f0s)) if f0s else 0.0, float(np.median(cents))]
+
+
+def _cluster_speakers(input_path: str, raw_segments: list, work: Path) -> Optional[list]:
+    """
+    Бестокенная акустическая диаризация на 2 голоса: по каждому whisper-сегменту берём
+    высоту голоса (F0) + тембр (центроид), нормируем и кластеризуем k-means(2). Работает
+    оффлайн (только numpy+ffmpeg), без HuggingFace/torch. -> список меток 'A'/'B' по каждому
+    сегменту raw_segments, либо None (тогда фолбэк на разделение по паузам).
+    """
+    try:
+        import numpy as np  # noqa: WPS433
+    except Exception:  # noqa: BLE001
+        return None
+    try:
+        sig, sr = _read_wav_mono16k(input_path, work)
+        if sig is None or int(getattr(sig, "size", 0)) == 0:
+            return None
+        feats = []
+        for s in raw_segments:
+            try:
+                st = float(s.get("start", 0) or 0); en = float(s.get("end", 0) or 0)
+            except Exception:  # noqa: BLE001
+                feats.append(None); continue
+            feats.append(_seg_features(sig, sr, st, en) if en > st else None)
+        good = [f for f in feats if f is not None]
+        if len(good) < 4:  # мало данных — не кластеризуем
+            return None
+        X = np.array(good, dtype=np.float64)
+        mean = X.mean(axis=0); std = X.std(axis=0); std[std == 0] = 1.0
+        Z = (X - mean) / std
+        Z[:, 0] *= 1.6  # высота голоса — главный признак
+        order = np.argsort(Z[:, 0])
+        c = np.array([Z[order[0]], Z[order[-1]]])  # инициализация по крайним
+        labels = np.zeros(len(Z), dtype=int)
+        for it in range(30):
+            d0 = ((Z - c[0]) ** 2).sum(axis=1); d1 = ((Z - c[1]) ** 2).sum(axis=1)
+            newl = (d1 < d0).astype(int)
+            if it > 0 and np.array_equal(newl, labels):
+                labels = newl; break
+            labels = newl
+            for k in range(2):
+                if (labels == k).any():
+                    c[k] = Z[labels == k].mean(axis=0)
+        # разложим метки обратно на все сегменты (None → та же, что у предыдущего)
+        gpos = 0; seg_lbl: list = []
+        for f in feats:
+            if f is None:
+                seg_lbl.append(None)
+            else:
+                seg_lbl.append(int(labels[gpos])); gpos += 1
+        first = next((lb for lb in seg_lbl if lb is not None), 0)  # первый голос = A
+        out: list = []; last = "A"
+        for lb in seg_lbl:
+            if lb is None:
+                out.append(last)
+            else:
+                last = "A" if lb == first else "B"; out.append(last)
+        return out
+    except Exception as e:  # noqa: BLE001
+        print(f"[worker] speaker-cluster error: {e}")
+        return None
+
+
 def _diarize_audio(input_path: str, work: Path, hf_token: Optional[str] = None) -> Tuple[list, str]:
     """
     Транскрипция (faster-whisper) + разбивка на 2 спикера → ([{speaker,text,start,end}], method).
-    С hf_token+pyannote — настоящая диаризация (сопоставление по перекрытию); иначе — по паузам.
-    Общая для эндпоинта /diarize и сборки podcast_compose (одной кнопки «Собрать» достаточно).
+    Приоритет: pyannote (если hf_token+pyannote) → акустическая кластеризация (numpy, оффлайн) →
+    разделение по паузам. Общая для /diarize и сборки podcast_compose.
     """
     _, data, note = run_tool("transcriber", {"input_path": input_path, "output_dir": str(work)})
     raw = (data or {}).get("segments") or []
@@ -800,26 +935,45 @@ def _diarize_audio(input_path: str, work: Path, hf_token: Optional[str] = None) 
                 lines.append({"speaker": spk, "text": text, "start": start, "end": end})
         method = "pyannote 3.1 (HF)"
     else:
-        GAP = 0.8
-        speaker = "A"
-        prev_end = None
-        for s in raw:
-            try:
-                start = float(s.get("start", 0) or 0); end = float(s.get("end", 0) or 0)
-                text = str(s.get("text", "") or "").strip()
-            except Exception:  # noqa: BLE001
-                continue
-            if not text:
-                continue
-            if prev_end is not None and (start - prev_end) > GAP:
-                speaker = "B" if speaker == "A" else "A"
-            # не склеиваем клип дольше ~7с — для дробного таймлайна
-            if lines and lines[-1]["speaker"] == speaker and (end - lines[-1]["start"]) <= 7.0:
-                lines[-1]["text"] += " " + text; lines[-1]["end"] = end
-            else:
-                lines.append({"speaker": speaker, "text": text, "start": start, "end": end})
-            prev_end = end
-        method = "whisper+паузы" + (" (pyannote недоступен)" if hf_token else "")
+        # 2) Бестокенная акустическая кластеризация (высота голоса + тембр) — по всей записи.
+        cl = _cluster_speakers(input_path, raw, work)
+        if cl and len(cl) == len(raw):
+            for idx, s in enumerate(raw):
+                try:
+                    start = float(s.get("start", 0) or 0); end = float(s.get("end", 0) or 0)
+                    text = str(s.get("text", "") or "").strip()
+                except Exception:  # noqa: BLE001
+                    continue
+                if not text:
+                    continue
+                spk = cl[idx] if cl[idx] in ("A", "B") else "A"
+                # не склеиваем клип дольше ~7с — для дробного таймлайна
+                if lines and lines[-1]["speaker"] == spk and (end - lines[-1]["start"]) <= 7.0:
+                    lines[-1]["text"] += " " + text; lines[-1]["end"] = end
+                else:
+                    lines.append({"speaker": spk, "text": text, "start": start, "end": end})
+            method = "whisper + акустическая кластеризация (2 голоса)"
+        if not lines:
+            # 3) Фолбэк — разделение по паузам.
+            GAP = 0.8
+            speaker = "A"
+            prev_end = None
+            for s in raw:
+                try:
+                    start = float(s.get("start", 0) or 0); end = float(s.get("end", 0) or 0)
+                    text = str(s.get("text", "") or "").strip()
+                except Exception:  # noqa: BLE001
+                    continue
+                if not text:
+                    continue
+                if prev_end is not None and (start - prev_end) > GAP:
+                    speaker = "B" if speaker == "A" else "A"
+                if lines and lines[-1]["speaker"] == speaker and (end - lines[-1]["start"]) <= 7.0:
+                    lines[-1]["text"] += " " + text; lines[-1]["end"] = end
+                else:
+                    lines.append({"speaker": speaker, "text": text, "start": start, "end": end})
+                prev_end = end
+            method = "whisper+паузы" + (" (pyannote недоступен)" if hf_token else "")
     return lines, method
 
 
