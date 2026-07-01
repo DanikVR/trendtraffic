@@ -378,6 +378,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sources, setSources] = useState<{ url: string; name: string; thumb?: string; type: string; assetId?: string }[]>([]);
+  const [srcUploading, setSrcUploading] = useState(false);   // загрузка своего видео прямо в пикер источника
+  const srcUploadRef = useRef<HTMLInputElement | null>(null);
   const [srcTab, setSrcTab] = useState<'all' | 'analyzed' | 'trend' | 'reference'>('all'); // вкладка-папка пикера источника
   const [srcQuery, setSrcQuery] = useState('');
   // ДНК тренда (Фаза 2): анализ выбранного источника + панель автозаполнения блоков.
@@ -1590,9 +1592,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
 
   // Пикер исходного видео: проанализированные (с ДНК) + скачанные тренды + видео-референсы.
-  const openSourcePicker = async () => {
-    setShowSource(true);
-    setPicked([]); setBatchNote(null); setSrcTab('all'); setSrcQuery('');
+  /** Загрузить список источников (как в Галерее): анализ + скачанные тренды + референс-видео. */
+  const loadSources = async () => {
     try {
       const [an, v, r] = await Promise.all([
         fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
@@ -1604,11 +1605,33 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const refs = r.ok ? ((await r.json()).assets || []) : [];
       const list: { url: string; name: string; thumb?: string; type: string; assetId?: string }[] = [];
       // Проанализированные («Из анализа») первыми — у них есть ДНК для автозаполнения блоков.
-      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', type: 'analyzed', assetId: m.id });
+      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', thumb: m.coverUrl || m.thumbUrl || undefined, type: 'analyzed', assetId: m.id });
       for (const x of vids) if (x.fileUrl) list.push({ url: x.fileUrl, name: String(x.description || x.authorName || x.author || 'Видео').slice(0, 40), thumb: x.coverUrl, type: 'trend' });
-      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', type: 'reference' });
+      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', thumb: m.coverUrl || m.thumbUrl || undefined, type: 'reference' });
       setSources(list);
     } catch { setSources([]); }
+  };
+  const openSourcePicker = async () => {
+    setShowSource(true);
+    setPicked([]); setBatchNote(null); setSrcTab('all'); setSrcQuery('');
+    await loadSources();
+  };
+  /** «Добавить видео» из пикера источника → грузим в Референс Галереи и перечитываем список. */
+  const uploadSourceVideo = async (files: FileList | File[] | null) => {
+    const list = Array.from(files || []).filter(Boolean);
+    if (!list.length) return;
+    setSrcUploading(true); setBatchNote(null);
+    try {
+      for (const f of list) {
+        const fd = new FormData(); fd.append('file', f);
+        // eslint-disable-next-line no-await-in-loop
+        const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+      }
+      await loadSources();
+      setSrcTab('reference');   // загруженное лежит в «Референс»
+    } catch (e: any) { setBatchNote(e?.message || 'Ошибка загрузки видео'); }
+    finally { setSrcUploading(false); if (srcUploadRef.current) srcUploadRef.current.value = ''; }
   };
 
   // ── ДНК тренда: применить к графу / подтянуть по ассету / выбрать источник ──
@@ -2463,16 +2486,23 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     <input value={srcQuery} onChange={(e) => setSrcQuery(e.target.value)} placeholder="Поиск по названию…"
                       className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
                   </div>
+                  <input ref={srcUploadRef} type="file" accept="video/*" multiple style={{ display: 'none' }}
+                    onChange={(e) => { if (e.target.files?.length) void uploadSourceVideo(e.target.files); }} />
+                  <button onClick={() => srcUploadRef.current?.click()} disabled={srcUploading}
+                    className="w-full mb-2 py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: srcUploading ? 'not-allowed' : 'pointer' }}>
+                    {srcUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} {srcUploading ? 'Загружаю…' : 'Добавить видео'}
+                  </button>
                   <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {shown.length}</div>
                   {shown.length === 0 ? (
-              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Скачайте тренды (вкладка «Тренды») или загрузите видео в «Референс» Галереи.</p>
+              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Нажмите «Добавить видео» выше или скачайте тренды.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {shown.map((s, i) => {
+                {shown.map((s) => {
                   const isPicked = picked.some((x) => x.url === s.url);
                   const order = picked.findIndex((x) => x.url === s.url);
                   return (
-                  <button key={i} onClick={() => togglePick(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${isPicked || sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                  <button key={s.url} onClick={() => togglePick(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${isPicked || sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     {s.assetId && (
                       <span title="Есть анализ (ДНК тренда)" style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
                     )}
@@ -2480,7 +2510,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <span title={`В пакете №${order + 1}`} style={{ position: 'absolute', top: 4, left: 4, zIndex: 2, minWidth: 20, height: 20, padding: '0 5px', borderRadius: 999, background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, fontSize: 10, fontWeight: 800, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Check size={11} />{order + 1}</span>
                     )}
                     <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPicked ? 0.85 : 1 }}>
-                      {s.thumb ? <img src={s.thumb} alt="" className="w-full h-full object-cover" /> : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
+                      {s.thumb
+                        ? <img src={s.thumb} alt="" className="w-full h-full object-cover" />
+                        : <video src={`${s.url}#t=0.1`} muted preload="metadata" playsInline className="w-full h-full object-cover" />}
                     </div>
                     <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{s.name}</div>
                   </button>
