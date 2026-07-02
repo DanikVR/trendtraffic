@@ -1032,7 +1032,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await res.json();
       if (res.ok && Array.isArray(d.lines) && d.lines.length) {
         // Авто-раскладка: ставим клипы на их реальные времена (tStart=start) и включаем таймлайн.
-        podMutate((p) => ({ ...p, timeline: true, dialogue: d.lines.map((l: any) => {
+        // Голос аниматора автоматически «Из записи»: раз запись разобрана — в ролик идёт СВОЙ
+        // голос по таймкодам, HeyGen делает только мимику/липсинк (не пере-озвучивает TTS-ом).
+        podMutate((p) => ({ ...p, timeline: true,
+          avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: 'record' },
+          dialogue: d.lines.map((l: any) => {
           // Number(): строковые таймкоды (фолбэк-воркер) иначе молча теряли авто-раскладку
           const st = Number(l.start); const en = Number(l.end);
           return {
@@ -1041,7 +1045,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             ...(Number.isFinite(en) ? { end: en } : {}),
           };
         }) }));
-        setPodNote(d.note || null);
+        setPodNote((d.note ? d.note + ' · ' : '') + 'Голос аниматора: «Из записи» (ваш голос, HeyGen — только мимика).');
         setDiarizeDone(true);  // мигающий кружок на узле «Подкаст»
       } else setPodNote(d?.note || d?.error || 'Не удалось разобрать запись.');
     } catch { setPodNote('Ошибка сети при разборе записи.'); }
@@ -1492,7 +1496,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     podMutate((p) => {
       if (target === 'hostA') return { ...p, hostA: { ...p.hostA, photoUrl: m.fileUrl, photoName: m.title } };
       if (target === 'hostB') return { ...p, hostB: { ...p.hostB, photoUrl: m.fileUrl, photoName: m.title } };
-      if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title };
+      // запись выбрана → голос аниматора сразу «Из записи» (свой голос, HeyGen — только мимика)
+      if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: 'record' } };
       if (target === 'group') return { ...p, groupPhotoUrl: m.fileUrl, groupPhotoName: m.title, faces: [] };
       if (target === 'lineimg' && podLineIdx != null) return { ...p, dialogue: p.dialogue.map((l, j) => (j === podLineIdx ? { ...l, image: m.fileUrl, imageName: m.title } : l)) };
       if (target === 'music') return { ...p, music: { url: m.fileUrl, name: m.title, volumePct: p.music?.volumePct ?? 20 } };
@@ -3441,7 +3446,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                         <Music size={15} style={{ color: '#ec4899' }} />
                         <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{pod.recordingName || 'запись'}</span>
-                        <button onClick={() => podMutate((p) => ({ ...p, recordingUrl: null, recordingName: null }))} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                        <button onClick={() => podMutate((p) => ({ ...p, recordingUrl: null, recordingName: null,
+                          // записи больше нет — голос «Из записи» невозможен, откатываем на TTS
+                          ...(p.avatar?.voiceSource === 'record' ? { avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: 'heygen' as PodVoiceSource } } : {}) }))} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
                       </div>
                     ) : (
                       <button onClick={() => openPodPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
@@ -3633,6 +3640,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               <button key={vs} disabled={disabled} title={disabled ? 'Нужна загруженная запись подкаста' : ''} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: vs } }))}
                                 className="text-[10px] font-600 px-2 py-1 rounded-md disabled:opacity-40" style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}`, cursor: disabled ? 'not-allowed' : 'pointer' }}>{lbl}</button>
                             ); })}
+                          </div>
+                          <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                            «Из записи» — в ролик идёт ВАШ голос как есть (по таймкодам реплик), HeyGen делает только мимику и липсинк.
+                            Включается автоматически после «Разобрать запись».
                           </div>
                         </>
                       )}
