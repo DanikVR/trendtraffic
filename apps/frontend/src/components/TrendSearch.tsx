@@ -26,7 +26,7 @@ type Source = 'tiktok' | 'instagram' | 'youtube' | 'twitter';
  * площадки). Гоним их через наш публичный прокси /api/channels/cover (он ставит нужный
  * Referer серверно). YouTube (ytimg) и прочие — напрямую. Тот же приём, что в «Каналах».
  */
-function coverSrc(url?: string | null): string | undefined {
+export function coverSrc(url?: string | null): string | undefined {
   if (!url) return undefined;
   if (/tiktokcdn|ibyteimg|byteimg|muscdn|tiktokv|pstatp|cdninstagram|fbcdn/i.test(url)) {
     return `/api/channels/cover?u=${encodeURIComponent(url)}`;
