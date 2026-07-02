@@ -409,11 +409,12 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
 
 
 def _tts(text: str, voice: Optional[str], out_path: str):
-    """Piper TTS с попыткой выбрать голос; фолбэк — без него (схема может не поддерживать voice)."""
-    if voice:
-        f, d, n = run_tool("piper_tts", {"text": text, "voice": voice, "output_path": out_path})
-        if f:
-            return f, d, n
+    """Piper TTS: пол голоса → русская модель piper (схема инструмента ждёт «model», не «voice»)."""
+    model = (os.environ.get("PIPER_VOICE_MALE", "ru_RU-dmitri-medium") if voice == "male"
+             else os.environ.get("PIPER_VOICE_FEMALE", "ru_RU-irina-medium"))
+    f, d, n = run_tool("piper_tts", {"text": text, "model": model, "output_path": out_path})
+    if f:
+        return f, d, n
     return run_tool("piper_tts", {"text": text, "output_path": out_path})
 
 
