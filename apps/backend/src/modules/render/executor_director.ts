@@ -79,7 +79,8 @@ export class DirectorExecutor implements StepExecutor {
       if (looksLikeNewsSource(text)) {
         const f = await fetchNewsFromSource({ source: text, type: choice(step.params, 'type', '') });
         material = f.text;
-        if (f.imageUrl) scratch.newsImage = f.imageUrl; // подхватит B-roll перебивкой
+        if (f.imageUrl) scratch.newsImage = f.imageUrl;               // подхватит B-roll/озвучка
+        if (f.images?.length) scratch.newsImages = f.images;          // все кадры поста (альбом)
         notes.push(f.note);
       }
       if (step.llm) {
@@ -136,14 +137,26 @@ export class DirectorExecutor implements StepExecutor {
       return { ...base, note: joinNotes(r.note, base.note) };
     }
 
-    // broll → клипы из стоков/референса → воркер вставляет перебивки
+    // broll → клипы из стоков/референса/кадров источника → воркер вставляет перебивки
     if (step.kind === 'broll') {
       const notes: string[] = [];
       const src = choice(step.params, 'src', 'stock'); // 'ai' (легаси) считаем стоками
       const clips: string[] = [];
-      const newsImg = typeof scratch.newsImage === 'string' ? scratch.newsImage : null;
-      if (newsImg) clips.push(newsImg); // фото новости — первая перебивка
-      if (src === 'reference' && step.params?.mediaUrl) {
+      const newsImgs: string[] = Array.isArray(scratch.newsImages) && scratch.newsImages.length
+        ? scratch.newsImages
+        : (typeof scratch.newsImage === 'string' ? [scratch.newsImage] : []);
+      if (src === 'source') {
+        // Ограничение юзера: ТОЛЬКО кадры источника (фото поста/статьи), без стоков.
+        clips.push(...newsImgs);
+        if (step.params?.mediaUrl) { const abs = toAbsolute(step.params.mediaUrl); if (abs) clips.push(abs); }
+        if (!clips.length) {
+          return { outputUrl: ctx.currentUrl, note: 'b-roll: у источника нет кадров (блок «Новости» не дал фото) — перебивки пропущены' };
+        }
+        notes.push(`b-roll: только кадры источника (${clips.length})`);
+      } else if (newsImgs.length) clips.push(newsImgs[0]); // фото новости — первая перебивка
+      if (src === 'source') {
+        // клипы уже собраны выше
+      } else if (src === 'reference' && step.params?.mediaUrl) {
         const abs = toAbsolute(step.params.mediaUrl);
         if (abs) clips.push(abs);
       } else {

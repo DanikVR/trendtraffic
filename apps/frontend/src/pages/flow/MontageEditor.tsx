@@ -65,8 +65,8 @@ const META: Record<MKind, Meta> = {
   color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки: пресет или свой LUT',
     choices: [{ id: 'preset', label: 'Пресет', def: ['none'], opts: [{ v: 'none', label: 'Без' }, { v: 'warm', label: 'Тёплый' }, { v: 'cold', label: 'Холодный' }, { v: 'cinema', label: 'Кино' }, { v: 'bw', label: 'Ч/Б' }, { v: 'vivid', label: 'Яркий' }] }],
     media: 'LUT-файл (.cube) из Галереи — заменяет пресет' },
-  broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки: стоки (Pexels/Pixabay) или медиа из Галереи',
-    choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'reference', label: 'Из Референса' }] }],
+  broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки: стоки, кадры источника (фото из блока «Новости») или медиа из Галереи',
+    choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'source', label: 'Кадры источника' }, { v: 'reference', label: 'Из Референса' }] }],
     text: 'что вставить и когда…', media: 'Медиа из Галереи', llm: true },
   avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Одна говорящая голова (монолог); диалог двух ведущих — облако «Подкаст»',
     choices: [
@@ -3846,10 +3846,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         }}
       />
 
-      {/* Прогресс сборки «Собрать» */}
+      {/* Прогресс сборки «Собрать» — в углу, чтобы не закрывать паутину и центральный узел
+          (импульсы и кольцо активного блока видны во время рендера). */}
       {buildJob && !buildMinimized && (
-        <div onClick={() => (building ? setBuildMinimized(true) : setBuildJob(null))} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 460, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+        <div style={{ position: 'absolute', right: 16, bottom: 16, zIndex: 95, width: 'min(430px, calc(100% - 32px))', maxHeight: '70%', overflow: 'auto' }}>
+          <div className="me-pop-in" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
                 {building && <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} />}

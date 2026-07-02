@@ -42,9 +42,12 @@ interface GalleryItem {
   isTrend: boolean;
 }
 
+// «Тренды» из Галереи убраны (по слову юзера, 2026-07-02): скачанные тренды живут на
+// странице «Тренды» и в пикерах источника. Вкладка «Референс» переименована в «TrendFlow» —
+// сюда падает ВСЁ, что произвёл TrendFlow (готовые ролики, склейки, кадры, головы HeyGen,
+// Omni-клипы) + загруженные вручную медиа.
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'trends', label: 'Тренды' },
-  { key: 'reference', label: 'Референс' },
+  { key: 'reference', label: 'TrendFlow' },
   { key: 'audio', label: 'Аудио' },
   { key: 'analyzed', label: 'Из анализа' },
 ];
@@ -70,7 +73,7 @@ function dur(s?: number): string {
 
 export default function GalleryPage() {
   const { token } = useAppStore();
-  const [tab, setTab] = useState<Tab>('trends');
+  const [tab, setTab] = useState<Tab>('reference');
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');

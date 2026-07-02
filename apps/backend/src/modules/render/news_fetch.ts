@@ -11,7 +11,8 @@
 
 export interface NewsItem {
   text: string | null;      // заголовок + суть последней записи
-  imageUrl: string | null;  // картинка записи (og:image / enclosure / фото поста)
+  imageUrl: string | null;  // главная картинка записи (og:image / enclosure / фото поста)
+  images?: string[];        // все кадры записи (Telegram-пост может нести несколько фото)
   note: string;
 }
 
@@ -62,7 +63,7 @@ function parseFeed(xml: string): NewsItem | null {
     || null;
   const text = [title, desc && desc !== title ? desc : null].filter(Boolean).join('. ').slice(0, 2500);
   if (!text) return null;
-  return { text, imageUrl: img, note: 'новость из RSS' };
+  return { text, imageUrl: img, images: img ? [img] : [], note: 'новость из RSS' };
 }
 
 /** Публичный Telegram-канал через t.me/s/<name>: последний пост → текст+фото. */
@@ -74,7 +75,9 @@ function parseTelegram(html: string): NewsItem | null {
   const photos = [...html.matchAll(/class="tgme_widget_message_photo_wrap[^"]*"[^>]*style="[^"]*background-image:url\('([^']+)'\)/g)]
     .map((m) => m[1]);
   if (!text) return null;
-  return { text: text.slice(0, 2500), imageUrl: photos[photos.length - 1] || null, note: 'пост из Telegram' };
+  // Хвост списка ≈ фото последнего поста (альбом даёт несколько подряд).
+  const images = photos.slice(-4);
+  return { text: text.slice(0, 2500), imageUrl: images[images.length - 1] || null, images, note: 'пост из Telegram' };
 }
 
 /** Обычная страница: OpenGraph → заголовок+описание+картинка. */
@@ -88,7 +91,7 @@ function parseSite(html: string): NewsItem | null {
   const img = meta('og:image');
   const text = [title, desc].filter(Boolean).join('. ').slice(0, 2500);
   if (!text) return null;
-  return { text: stripHtml(text), imageUrl: img, note: 'материал со страницы' };
+  return { text: stripHtml(text), imageUrl: img, images: img ? [img] : [], note: 'материал со страницы' };
 }
 
 /** Похоже ли поле узла на конкретный источник (а не тему для веб-поиска)? */
