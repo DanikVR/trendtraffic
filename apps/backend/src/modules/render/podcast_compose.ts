@@ -171,9 +171,13 @@ export async function cropImageToRect(input: string, r: NormRect): Promise<strin
 /** Доля «зелёных» пикселей картинки (0..1) или null при ошибке. Gemini иногда игнорирует
  *  инструкцию хромакея и возвращает кадр со студийным фоном — такой нельзя пускать в HeyGen:
  *  chromakey потом нечего убирать, и ведущий вклеивается прямоугольником со своим фоном. */
-export function greenBgRatio(input: string): Promise<number | null> {
+export function greenBgRatio(input: string, region?: NormRect): Promise<number | null> {
   return new Promise((resolve) => {
-    const ff = spawn(FFMPEG_BIN, ['-v', 'error', '-i', input, '-vf', 'scale=64:64', '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], { stdio: ['ignore', 'pipe', 'ignore'] });
+    // region — считать долю зелёного только ВНУТРИ области (рамка ведущего): у плотного
+    // человека внутри рамки зелёного мало, у «растворённого» призрака зелёный просвечивает
+    // сквозь всё тело — так ловим полупрозрачные вырезки до HeyGen.
+    const crop = region ? `crop=iw*${region.w.toFixed(4)}:ih*${region.h.toFixed(4)}:iw*${region.x.toFixed(4)}:ih*${region.y.toFixed(4)},` : '';
+    const ff = spawn(FFMPEG_BIN, ['-v', 'error', '-i', input, '-vf', `${crop}scale=64:64`, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], { stdio: ['ignore', 'pipe', 'ignore'] });
     const chunks: Buffer[] = [];
     ff.stdout.on('data', (d) => { chunks.push(d as Buffer); });
     const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } resolve(null); }, 60_000);
