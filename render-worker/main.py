@@ -226,9 +226,10 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
     def out(sfx=".mp4") -> str:
         return str(work / f"o_{uuid.uuid4().hex[:6]}{sfx}")
 
+    # tts здесь НЕТ: озвучка без входного видео собирает базовый ролик «с нуля».
     needs_video = step_tool in ("video_trimmer", "auto_reframe", "silence_cutter",
                                 "subtitle_gen", "color_grade", "video_compose", "audio_mixer",
-                                "tts", "upscale")
+                                "upscale")
     if needs_video and not input_path:
         return None, "нет входного видео — passthrough"
 
@@ -305,16 +306,42 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
                                            "music_path": mp, "music_volume": vol, "output_path": out()})
         return (f, n or "аудио")
 
-    if step_tool == "tts":  # voiceover: piper (голос М/Ж из узла) → подмешать как дорожку видео
+    if step_tool == "tts":  # voiceover: piper (голос М/Ж) → дорожка поверх видео ИЛИ ролик «с нуля»
         if not text:
             return None, "озвучка: нет текста — passthrough"
         voice = (choices.get("voice") or ["female"])[0]
+        vlabel = "муж." if voice == "male" else "жен."
         wav, _, n = _tts(text, voice, out(".wav"))
         if not wav:
             return None, f"озвучка: tts не создан ({n or ''})"
-        f, _, cn = run_tool("video_compose", {"operation": "encode", "input_path": input_path,
-                                              "audio_path": wav, "output_path": out()})
-        return (f, cn or f"озвучка ({'муж.' if voice == 'male' else 'жен.'} голос)")
+        if input_path:
+            f, _, cn = run_tool("video_compose", {"operation": "encode", "input_path": input_path,
+                                                  "audio_path": wav, "output_path": out()})
+            return (f, cn or f"озвучка ({vlabel} голос)")
+        # Исходника нет: базовое видео под длину озвучки — фото материала (news_fetch)
+        # с медленным наездом (Ken Burns), иначе тёмный фон; перебивки добавит B-roll.
+        dur = max(_media_duration(wav) + 0.6, 2.0)
+        img = None
+        for u in (params.get("images") or [])[:1]:
+            img = _download_media(base_url, u, work, default_ext=".jpg")
+        f2 = out()
+        if img:
+            frames = int(dur * 25) + 1
+            vf = ("scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,"
+                  f"zoompan=z='min(1.0+0.12*on/{frames},1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                  f":d={frames}:s=1080x1920:fps=25,format=yuv420p")
+            cmd = [FFMPEG, "-y", "-loop", "1", "-t", f"{dur:.2f}", "-i", img, "-i", wav,
+                   "-vf", vf, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                   "-c:a", "aac", "-shortest", f2]
+        else:
+            cmd = [FFMPEG, "-y", "-f", "lavfi", "-i", f"color=c=0x0e0f14:s=1080x1920:r=25:d={dur:.2f}",
+                   "-i", wav, "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
+                   "-c:a", "aac", "-shortest", f2]
+        ok, err = _run(cmd, timeout=1200)
+        if ok and os.path.exists(f2):
+            src = "из фото источника" if img else "тёмный фон"
+            return f2, f"озвучка ({vlabel} голос) — ролик собран с нуля ({src}, {dur:.0f}с)"
+        return None, f"озвучка: базовое видео не собралось ({err[:140]})"
 
     if step_tool == "color_grade":  # color: профили color_grade + LUT .cube + Ч/Б через custom_vf
         preset = (choices.get("preset") or ["none"])[0]

@@ -902,8 +902,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
   const build = async () => {
     if (building || batchRunning) return;
-    if (!sourceUrl) {
+    if (!sourceUrl && !canBuildWithoutSource) {
       // Без исходника рендерить нечего: открываем пикер и подсказываем по-русски.
+      // (цепочки с Новостями/Озвучкой умеют собираться «с нуля» — их пропускаем)
       setSelectedId(null); setCloudPanel(null); setShowSource(true);
       setBuildJob({ status: 'failed', progress: 0, steps: [], error: 'Сначала выберите исходное видео: клик по центральному узлу «Видео из галереи».' });
       return;
@@ -2068,6 +2069,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     });
   }, [nodes]);
 
+  // Какой блок цепочки прямо сейчас исполняется воркером (для подсветки узла при сборке).
+  const runningKind: MKind | null = building
+    ? ((buildJob?.steps || []).find((s: any) => s?.status === 'running')?.kind ?? null)
+    : null;
+  // Цепочка умеет собираться «с нуля» (без исходника): есть Новости или Озвучка с текстом/✨.
+  const canBuildWithoutSource = nodes.some((n) => n.kind === 'news' || (n.kind === 'voiceover' && (n.useLlm || (n.text || '').trim())));
+
   if (loading) {
     return <div className="flex items-center justify-center" style={{ height: '70vh' }}><Loader2 size={26} className="animate-spin" style={{ color: 'var(--text-muted)' }} /></div>;
   }
@@ -2076,6 +2084,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     <div className="flex flex-col" style={{ height: 'calc(100dvh - 8px)', position: 'relative' }}>
       <style>{`
         .me-node{transition:transform .18s cubic-bezier(.34,1.56,.64,1), filter .18s ease;}
+        .me-line-flow{animation:meLineFlow 1.1s linear infinite;}
+        @keyframes meLineFlow{to{stroke-dashoffset:9.2;}}
         .me-node:hover{transform:translate(-50%,-50%) scale(1.12);filter:brightness(1.3);}
         .me-node-in{animation:meNodeIn .45s cubic-bezier(.34,1.56,.64,1) backwards;}
         @keyframes meNodeIn{from{opacity:0;transform:translate(-50%,-50%) scale(.3)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
@@ -2209,7 +2219,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         </button>
 
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} aria-hidden="true">
-          {positions.map((p, i) => (<line key={i} x1="50" y1="50" x2={p.left} y2={p.top} stroke="var(--border-strong)" strokeWidth="0.18" />))}
+          {positions.map((p, i) => (
+            <line key={i} x1="50" y1="50" x2={p.left} y2={p.top}
+              className={building ? 'me-line-flow' : undefined}
+              stroke={building ? 'rgba(129,140,248,0.55)' : 'var(--border-strong)'}
+              strokeWidth={building ? 0.26 : 0.18}
+              strokeDasharray={building ? '1.4 3.2' : undefined} />
+          ))}
         </svg>
 
         <button data-node-id="center" onClick={() => openSourcePicker()} title={building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
@@ -2224,7 +2240,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             </div>
           </div>
           <div className="text-[11px] mt-2" style={{ color: building ? 'var(--brand)' : sourceUrl ? 'var(--brand)' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
-            {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
+            {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : canBuildWithoutSource ? 'Без исходника — из материалов' : 'Видео из галереи'}
           </div>
         </button>
         {/* 🔗 связать стрелкой ОТ «Видео из галереи» */}
@@ -2238,6 +2254,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           <button key={n.id} onClick={() => setSelectedId(n.id)} className="me-node me-node-in"
             style={{ position: 'absolute', left: `${positions[i].left}%`, top: `${positions[i].top}%`, transform: 'translate(-50%,-50%)', animationDelay: `${i * 0.05}s`,
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+            {runningKind === n.kind && <span className="me-busyring" style={{ width: 60, height: 60, top: -7 }} />}
             <span style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? 'var(--brand)' : 'var(--border-strong)'}`,
               color: selectedId === n.id ? 'var(--brand)' : 'var(--text-secondary)' }}>{META[n.kind].icon}</span>
@@ -2727,25 +2744,33 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               );
             })()}
             {batchNote && <p className="text-[11px] mt-2" style={{ color: '#f59e0b' }}>{batchNote}</p>}
-            {sources.length > 0 && (
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>Выбрано: {picked.length}</span>
-                {picked.length === 1 && (
-                  <button onClick={() => selectSource(picked[0])} className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
-                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                    <Check size={16} /> Выбрать видео
-                  </button>
-                )}
-                {picked.length >= 2 && (
-                  <button onClick={() => runBatch(picked)} disabled={nodes.length === 0}
-                    title={nodes.length === 0 ? 'Сначала добавьте блоки в сценарий' : `Собрать ${picked.length} роликов`}
-                    className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
-                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: nodes.length === 0 ? 'not-allowed' : 'pointer', opacity: nodes.length === 0 ? 0.5 : 1 }}>
-                    <Film size={16} /> Собрать пакет ({picked.length})
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Липкая панель действий: видна без прокрутки в конец списка */}
+            <div className="flex items-center gap-2" style={{ position: 'sticky', bottom: -16, zIndex: 3, margin: '12px -16px -16px', padding: '10px 16px 12px',
+              background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-medium)' }}>
+              <span className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>Выбрано: {picked.length}</span>
+              {picked.length === 0 && canBuildWithoutSource && (
+                <button onClick={() => { if (sourceUrl) clearSource(); setShowSource(false); }}
+                  title="Соберём ролик целиком из материалов: фото новости + озвучка + стоковые перебивки"
+                  className="inline-flex items-center gap-1.5 text-sm font-600 px-3.5 py-2.5 rounded-xl"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
+                  <Wand2 size={15} /> Без исходника
+                </button>
+              )}
+              {picked.length === 1 && (
+                <button onClick={() => selectSource(picked[0])} className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
+                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                  <Check size={16} /> Выбрать видео
+                </button>
+              )}
+              {picked.length >= 2 && (
+                <button onClick={() => runBatch(picked)} disabled={nodes.length === 0}
+                  title={nodes.length === 0 ? 'Сначала добавьте блоки в сценарий' : `Собрать ${picked.length} роликов`}
+                  className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
+                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: nodes.length === 0 ? 'not-allowed' : 'pointer', opacity: nodes.length === 0 ? 0.5 : 1 }}>
+                  <Film size={16} /> Собрать пакет ({picked.length})
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

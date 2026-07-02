@@ -102,24 +102,26 @@ export class DirectorExecutor implements StepExecutor {
 
     // voiceover: ✨ → Claude пишет сценарий; без ✨/без ключа — материал news/research
     // из scratchpad идёт в TTS как есть (пресет «Новости» работает и без ключа Claude).
+    // Без исходника (currentUrl=null) воркер соберёт базовое видео с нуля — передаём
+    // ему фото новости (scratch.newsImage) для кен-бёрнс-подложки.
     if (step.kind === 'voiceover') {
       const material = String(scratch.news || scratch.research || '').trim();
+      const baseImages = !ctx.currentUrl && typeof scratch.newsImage === 'string' ? { images: [scratch.newsImage] } : {};
       if (step.llm) {
         const r = await generateVoiceoverScript({
           tenantId: ctx.tenantId, brief: withScenario(text), notes: scratch.research || scratch.news, model,
         });
         const script = r.text || (!text ? material : '');
         if (script) scratch.voiceover = script; // пригодится аватару как сценарий
-        const enriched = script ? { ...step, params: { ...step.params, text: script } } : step;
+        const enriched = { ...step, params: { ...step.params, ...(script ? { text: script } : {}), ...baseImages } };
         const base = await this.base.execute(enriched, ctx);
         return { ...base, note: joinNotes(r.note, !r.text && script ? 'озвучка: читаем материал источника как есть' : undefined, base.note) };
       }
-      if (!text && material) {
-        scratch.voiceover = material;
-        const base = await this.base.execute({ ...step, params: { ...step.params, text: material } }, ctx);
-        return { ...base, note: joinNotes('озвучка: текст из блока Новости/Исследование', base.note) };
-      }
-      return this.base.execute(step, ctx);
+      if (!text && material) scratch.voiceover = material;
+      const plainText = text || material;
+      const enriched = { ...step, params: { ...step.params, ...(plainText ? { text: plainText } : {}), ...baseImages } };
+      const base = await this.base.execute(enriched, ctx);
+      return { ...base, note: joinNotes(!text && material ? 'озвучка: текст из блока Новости/Исследование' : undefined, base.note) };
     }
 
     // length: выбор момента, если включён ЛЛМ ИЛИ выбрана длительность «Лучший момент»,
