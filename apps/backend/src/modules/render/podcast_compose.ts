@@ -143,6 +143,31 @@ export async function cropImageToRect(input: string, r: NormRect): Promise<strin
   return `/uploads/renders/${out}`;
 }
 
+/** Доля «зелёных» пикселей картинки (0..1) или null при ошибке. Gemini иногда игнорирует
+ *  инструкцию хромакея и возвращает кадр со студийным фоном — такой нельзя пускать в HeyGen:
+ *  chromakey потом нечего убирать, и ведущий вклеивается прямоугольником со своим фоном. */
+export function greenBgRatio(input: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    const ff = spawn(FFMPEG_BIN, ['-v', 'error', '-i', input, '-vf', 'scale=64:64', '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], { stdio: ['ignore', 'pipe', 'ignore'] });
+    const chunks: Buffer[] = [];
+    ff.stdout.on('data', (d) => { chunks.push(d as Buffer); });
+    const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } resolve(null); }, 60_000);
+    ff.on('error', () => { clearTimeout(timer); resolve(null); });
+    ff.on('close', () => {
+      clearTimeout(timer);
+      const buf = Buffer.concat(chunks);
+      const n = 64 * 64;
+      if (buf.length < n * 3) return resolve(null);
+      let green = 0;
+      for (let i = 0; i < n; i++) {
+        const r = buf[i * 3]; const g = buf[i * 3 + 1]; const b = buf[i * 3 + 2];
+        if (g > 100 && g > r * 1.6 && g > b * 1.6) green++;
+      }
+      resolve(green / n);
+    });
+  });
+}
+
 /** Медиа реплики поверх студийной сцены: показывается в свой интервал таймлайна. */
 export interface StudioOverlay { url: string; tStart: number; dur: number; video?: boolean }
 

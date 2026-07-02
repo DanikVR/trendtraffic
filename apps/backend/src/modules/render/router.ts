@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, cropImageTo916, cropImageToRect, downloadToRenders, probeImageSize, type NormRect, type StudioOverlay } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, cropImageTo916, cropImageToRect, downloadToRenders, greenBgRatio, probeImageSize, type NormRect, type StudioOverlay } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -434,7 +434,7 @@ router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
 /** Рамка ведущего на общем фото (доли кадра 0..1) — задаёт, КОГО именно вырезать. */
 interface FaceBox { x: number; y: number; w: number; h: number }
 
-async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B', box?: FaceBox | null): Promise<{ url: string; path: string }> {
+async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B', box?: FaceBox | null, strict = false): Promise<{ url: string; path: string }> {
   const img = await fetchImageBase64(groupUrlAbs);
   if (!img) throw new Error('не удалось загрузить общее фото студии');
   const sideHint = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
@@ -451,7 +451,13 @@ async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' 
       + 'КРИТИЧНО: сохрани КОМПОЗИЦИЮ КАДРА ТОЧНО как на исходном фото — тот же размер кадра, человек остаётся '
       + 'РОВНО на своём месте, в том же масштабе и позе, НЕ перемещай его в центр и НЕ приближай. '
       + 'Сохрани человека как есть — в полный рост, руки, плечи, чёткие аккуратные края (волосы, силуэт). '
-      + 'Фотореалистично. Верни только изображение.',
+      + 'Фотореалистично. Верни только изображение.'
+      // повторная попытка: прошлый результат вернулся со студийным фоном — усиливаем требование
+      + (strict
+        ? ' ОБЯЗАТЕЛЬНОЕ УСЛОВИЕ: итоговое изображение — это ОДИН человек на СПЛОШНОМ ярко-зелёном фоне #00FF00. '
+          + 'НИКАКОЙ студии, мебели, столов, экранов, микрофонов и деталей интерьера на фоне быть НЕ ДОЛЖНО. '
+          + 'Если фон не зелёный — результат неверен.'
+        : ''),
     inputImages: [{ base64: img.base64, mime: img.mime }],
   });
   return { url: gen.mediaUrl, path: gen.filePath };
@@ -550,14 +556,28 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))));
       const box: { x: number; y: number; w: number; h: number } | null = face
         ? { x: Number(face.box.x), y: Number(face.box.y), w: Number(face.box.w), h: Number(face.box.h) } : null;
-      const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box);
       // Окно 9:16 вокруг ведущего: HeyGen получает крупного человека (лицо детектится),
       // а координаты окна поедут в склейку — аватар сядет ровно на своё место в сцене.
       const win = windowFor(spk, box);
       if (win) place[spk] = win;
-      const cutUrl = win
-        ? await cropImageToRect(green.path || abs(green.url), win)
-        : await cropImageTo916(green.path || abs(green.url)); // фолбэк: центральный кадр
+      const makeCut = async (strict: boolean): Promise<string> => {
+        const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, strict);
+        return win
+          ? await cropImageToRect(green.path || abs(green.url), win)
+          : await cropImageTo916(green.path || abs(green.url)); // фолбэк: центральный кадр
+      };
+      // Валидация зелёнки: Gemini иногда возвращает кадр со студийным фоном — тогда chromakey
+      // в склейке нечего убирать. Ловим ДО HeyGen (кредиты не тратятся) и повторяем строже.
+      let cutUrl = await makeCut(false);
+      let ratio = await greenBgRatio(abs(cutUrl));
+      if (ratio != null && ratio < 0.22) {
+        console.warn(`[heygen-studio] вырезка ${spk}: зелёного ${(ratio * 100).toFixed(0)}% — повторяю строже`);
+        cutUrl = await makeCut(true);
+        ratio = await greenBgRatio(abs(cutUrl));
+        if (ratio != null && ratio < 0.22) {
+          throw new Error(`не удалось вырезать ведущего ${spk} на зелёный фон (Gemini дважды вернул кадр со студией) — нажмите «Оживить НА студии» ещё раз`);
+        }
+      }
       const tpId = await uploadTalkingPhoto(key, abs(cutUrl));
       return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId };
     }));
@@ -569,7 +589,13 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
     const jobs: any[] = [];
     for (const p of prepared) {
       try {
-        const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV });
+        let videoId: string;
+        try {
+          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, expressive: true });
+        } catch {
+          // talking_style может не поддерживаться движком/аккаунтом — повтор без него
+          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV });
+        }
         jobs.push({ host: p.spk, name: p.name, videoId });
       } catch (e: any) {
         if (!jobs.length) throw e;
