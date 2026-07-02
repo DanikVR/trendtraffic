@@ -3,8 +3,11 @@
  *
  *  • Карточка «+ Создать сценарий» → создаёт флоу и сразу открывает редактор.
  *  • Карточка сценария целиком кликабельна → открывает редактор.
- *  • На карточке: название (инлайн-переименование ✎), дата, ⋯-меню
- *    (дублировать / статус черновик↔активен / удалить), крупный брендовый герой.
+ *  • На карточке: название (инлайн-переименование ✎), дата+время создания (цифрами),
+ *    иконки действий прямо на плашке (дублировать / черновик↔активен / удалить),
+ *    крупный брендовый герой.
+ *  • Массовое выделение: чекбокс на обложке; при ≥1 выбранном клик по карточке
+ *    тоже выделяет, сверху появляется панель «Выбрано N / Выбрать все / Удалить».
  *  • Редактор — MontageEditor (радиальная «паутина» монтажных узлов). Легаси
  *    omnichannel-редактор (FlowCanvas/flowNodes/channels) удалён в v1.6.42.
  *
@@ -12,7 +15,7 @@
  * сценариев они не нужны.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Check, X, MoreVertical, Copy, Trash2, Power, Loader2, Mic, Cloud, Film } from 'lucide-react';
+import { Plus, Pencil, Check, X, Copy, Trash2, Power, Loader2, Mic, Cloud, Film } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
@@ -33,17 +36,18 @@ interface FlowRow {
   status: 'draft' | 'active' | 'archived';
   channel_type: string | null;
   is_default: boolean;
+  created_at?: string;
   updated_at?: string;
 }
 
-const menuItem: React.CSSProperties = {
-  background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left',
-};
-
-function fmtDate(iso?: string): string {
+// Дата создания цифрами + время: «02.07.2026, 14:35».
+function fmtDateTime(iso?: string): string {
   if (!iso) return '';
-  try { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }); }
-  catch { return ''; }
+  try {
+    return new Date(iso).toLocaleString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  } catch { return ''; }
 }
 
 // Иконки-бейджи содержимого сценария (по графу): подкаст / Google Omni / монтаж.
@@ -77,8 +81,10 @@ export default function FlowPage() {
   const [openedNew, setOpenedNew] = useState(false); // true — сценарий только что создан (показать пресеты)
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FlowRow | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set()); // массовое выделение карточек
+  const [confirmMass, setConfirmMass] = useState(false);
+  const [massBusy, setMassBusy] = useState(false);
   const [flowKinds, setFlowKinds] = useState<Record<string, string[]>>({}); // иконки-бейджи содержимого по графу
 
   const load = useCallback(async () => {
@@ -162,6 +168,34 @@ export default function FlowPage() {
     finally { setBusyId(null); }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const massDelete = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    setMassBusy(true); setError(null);
+    try {
+      const results = await Promise.all(ids.map(async (id) => {
+        try {
+          const res = await fetch(`/api/flows/${id}`, { method: 'DELETE', headers: headers() });
+          const d = await res.json().catch(() => ({}));
+          return res.ok && d.ok !== false;
+        } catch { return false; }
+      }));
+      const failed = results.filter((ok) => !ok).length;
+      if (failed > 0) setError(`Не удалось удалить ${failed} из ${ids.length} сценариев`);
+      setSelected(new Set());
+      setConfirmMass(false);
+      await load();
+    } finally { setMassBusy(false); }
+  };
+
   const renameFlow = async (id: string) => {
     const name = editName.trim();
     if (!name) { setEditingNameId(null); return; }
@@ -200,6 +234,33 @@ export default function FlowPage() {
 
       {error && <AuroraCard className="p-3"><p className="text-sm" style={{ color: '#ef4444' }}>{error}</p></AuroraCard>}
 
+      {/* Панель массовых действий — появляется при ≥1 выбранной карточке */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-2 flex-wrap rounded-xl px-3 py-2"
+          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--accent-cyan)' }}>
+          <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Выбрано: {selected.size}</span>
+          {selected.size < flows.length && (
+            <button type="button" onClick={() => setSelected(new Set(flows.map((f) => f.id)))}
+              className="px-2.5 py-1 rounded-lg text-xs font-600 transition-colors hover:bg-[var(--bg-tertiary)]"
+              style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              Выбрать все ({flows.length})
+            </button>
+          )}
+          <button type="button" onClick={() => setSelected(new Set())}
+            className="px-2.5 py-1 rounded-lg text-xs font-600 transition-colors hover:bg-[var(--bg-tertiary)]"
+            style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            Снять выделение
+          </button>
+          <div className="flex-1" />
+          <button type="button" onClick={() => setConfirmMass(true)} disabled={massBusy}
+            className="px-3 py-1.5 rounded-lg text-xs font-700 flex items-center gap-1.5 transition-opacity hover:opacity-90"
+            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', cursor: massBusy ? 'wait' : 'pointer' }}>
+            {massBusy ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+            Удалить ({selected.size})
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
       ) : (
@@ -216,10 +277,19 @@ export default function FlowPage() {
 
           {/* Карточки сценариев */}
           {flows.map((f) => (
-            <div key={f.id} onClick={() => { setOpenedNew(false); setEditingId(f.id); }} role="button" tabIndex={0}
+            <div key={f.id}
+              onClick={() => {
+                if (selected.size > 0) { toggleSelect(f.id); return; } // режим выделения: клик = выбрать
+                setOpenedNew(false); setEditingId(f.id);
+              }}
+              role="button" tabIndex={0}
               className="rounded-2xl overflow-hidden flex flex-col transition-transform duration-150 hover:-translate-y-0.5 cursor-pointer"
-              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-              {/* Шапка: название + ✎ + статус + дата + ⋯ */}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: selected.has(f.id) ? '1px solid var(--accent-cyan)' : '1px solid var(--border-medium)',
+                boxShadow: selected.has(f.id) ? '0 0 0 1px var(--accent-cyan)' : 'none',
+              }}>
+              {/* Шапка: название + ✎ + статус + дата+время + иконки действий */}
               <div className="px-3 pt-3 pb-2 flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   {editingNameId === f.id ? (
@@ -245,32 +315,52 @@ export default function FlowPage() {
                         : { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
                       {f.status === 'active' ? 'Активен' : 'Черновик'}
                     </span>
-                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{fmtDate(f.updated_at)}</span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{fmtDateTime(f.created_at || f.updated_at)}</span>
                   </div>
                 </div>
-                {/* ⋯ меню */}
-                <div style={{ position: 'relative' }} onClick={stop}>
-                  <button onClick={() => setOpenMenuId(openMenuId === f.id ? null : f.id)} title="Действия" aria-label="Действия"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
-                    style={{ background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                    {busyId === f.id ? <Loader2 size={15} className="animate-spin" /> : <MoreVertical size={16} />}
-                  </button>
-                  {openMenuId === f.id && (
+                {/* Иконки действий прямо на плашке: дублировать / активировать / удалить */}
+                <div className="flex items-center" onClick={stop}>
+                  {busyId === f.id ? (
+                    <span className="w-7 h-7 flex items-center justify-center">
+                      <Loader2 size={15} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+                    </span>
+                  ) : (
                     <>
-                      <div onClick={() => setOpenMenuId(null)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                      <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 50, minWidth: 184, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-                        <button onClick={() => { setOpenMenuId(null); duplicateFlow(f); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--bg-tertiary)]" style={menuItem}><Copy size={14} /> Дублировать</button>
-                        <button onClick={() => { setOpenMenuId(null); toggleActive(f); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--bg-tertiary)]" style={menuItem}><Power size={14} /> {f.status === 'active' ? 'Сделать черновиком' : 'Активировать'}</button>
-                        <button onClick={() => { setOpenMenuId(null); setConfirmDelete(f); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--bg-tertiary)]" style={{ ...menuItem, color: '#ef4444' }}><Trash2 size={14} /> Удалить</button>
-                      </div>
+                      <button onClick={() => duplicateFlow(f)} title="Дублировать" aria-label="Дублировать"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                        <Copy size={14} />
+                      </button>
+                      <button onClick={() => toggleActive(f)}
+                        title={f.status === 'active' ? 'Сделать черновиком' : 'Активировать'}
+                        aria-label={f.status === 'active' ? 'Сделать черновиком' : 'Активировать'}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
+                        style={{ background: 'transparent', border: 'none', color: f.status === 'active' ? 'var(--accent-green)' : 'var(--text-muted)', cursor: 'pointer' }}>
+                        <Power size={14} />
+                      </button>
+                      <button onClick={() => setConfirmDelete(f)} title="Удалить" aria-label="Удалить"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                        <Trash2 size={14} />
+                      </button>
                     </>
                   )}
                 </div>
               </div>
-              {/* Герой + иконки-бейджи содержимого сверху */}
+              {/* Герой + чекбокс выделения + иконки-бейджи содержимого сверху */}
               <div className="mx-3 mb-3 rounded-xl overflow-hidden" style={{ position: 'relative', aspectRatio: '3 / 4', background: '#2a0a10' }}>
                 <img src={HERO} alt="" loading="lazy" className="w-full h-full object-cover"
                   onError={(e) => { const img = e.currentTarget; if (!img.src.endsWith(HERO_FALLBACK)) img.src = HERO_FALLBACK; }} />
+                <button type="button" onClick={(e) => { stop(e); toggleSelect(f.id); }}
+                  title={selected.has(f.id) ? 'Снять выделение' : 'Выбрать'} aria-label={selected.has(f.id) ? 'Снять выделение' : 'Выбрать'}
+                  style={{
+                    position: 'absolute', top: 6, right: 6, zIndex: 3, width: 24, height: 24, borderRadius: 7,
+                    background: selected.has(f.id) ? 'var(--accent-cyan)' : 'rgba(0,0,0,0.55)',
+                    border: selected.has(f.id) ? '1px solid var(--accent-cyan)' : '1px solid rgba(255,255,255,0.3)',
+                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  }}>
+                  {selected.has(f.id) && <Check size={15} strokeWidth={3} />}
+                </button>
                 {(flowKinds[f.id]?.length ?? 0) > 0 && (
                   <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', gap: 4, zIndex: 2 }}>
                     {flowKinds[f.id].map((k) => KIND_BADGE[k] && (
@@ -294,6 +384,16 @@ export default function FlowPage() {
         variant="danger"
         onConfirm={() => confirmDelete && doDelete(confirmDelete.id)}
         onCancel={() => setConfirmDelete(null)}
+      />
+
+      <ConfirmModal
+        open={confirmMass}
+        title={`Удалить выбранные сценарии (${selected.size})?`}
+        message="Выбранные сценарии будут удалены безвозвратно."
+        confirmLabel={`Удалить (${selected.size})`}
+        variant="danger"
+        onConfirm={massDelete}
+        onCancel={() => setConfirmMass(false)}
       />
     </div>
   );
