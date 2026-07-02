@@ -145,20 +145,24 @@ export class DirectorExecutor implements StepExecutor {
       const newsImgs: string[] = Array.isArray(scratch.newsImages) && scratch.newsImages.length
         ? scratch.newsImages
         : (typeof scratch.newsImage === 'string' ? [scratch.newsImage] : []);
+      // Свои файлы узла: мульти-список medias («Медиафайлы» принимает несколько) + легаси mediaUrl.
+      const ownMedias: string[] = [
+        ...(Array.isArray(step.params?.medias) ? step.params.medias : []),
+        ...(step.params?.mediaUrl ? [step.params.mediaUrl] : []),
+      ].map((u: string) => toAbsolute(u)).filter((u): u is string => !!u);
       if (src === 'source') {
-        // Ограничение юзера: ТОЛЬКО кадры источника (фото поста/статьи), без стоков.
-        clips.push(...newsImgs);
-        if (step.params?.mediaUrl) { const abs = toAbsolute(step.params.mediaUrl); if (abs) clips.push(abs); }
+        // Ограничение юзера: ТОЛЬКО кадры источника (фото поста/статьи) + свои файлы, без стоков.
+        clips.push(...newsImgs, ...ownMedias);
         if (!clips.length) {
-          return { outputUrl: ctx.currentUrl, note: 'b-roll: у источника нет кадров (блок «Новости» не дал фото) — перебивки пропущены' };
+          return { outputUrl: ctx.currentUrl, note: 'медиафайлы: у источника нет кадров (блок «Новости» не дал фото) — перебивки пропущены' };
         }
-        notes.push(`b-roll: только кадры источника (${clips.length})`);
+        notes.push(`медиафайлы: только кадры источника (${clips.length})`);
       } else if (newsImgs.length) clips.push(newsImgs[0]); // фото новости — первая перебивка
       if (src === 'source') {
         // клипы уже собраны выше
-      } else if (src === 'reference' && step.params?.mediaUrl) {
-        const abs = toAbsolute(step.params.mediaUrl);
-        if (abs) clips.push(abs);
+      } else if (src === 'reference') {
+        clips.push(...ownMedias);
+        if (!ownMedias.length) notes.push('медиафайлы: прикрепите файлы из Галереи (📎)');
       } else {
         // Запрос: текст узла (DNA пишет «Вставки по теме: …») → ЛЛМ-подбор → бриф.
         let query = text.replace(/вставки по теме:/i, '').split('·')[0].trim();

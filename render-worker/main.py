@@ -496,12 +496,13 @@ def _broll_insert(input_path: str, clip_urls: list, timings: list, work: Path,
     if dur < 4.0:
         return None, "b-roll: исходник короче 4 сек — перебивки не ставим"
     files = []
-    for u in clip_urls[:4]:
+    for u in clip_urls[:6]:
         p = _download_media(base_url, u, work, default_ext=".mp4")
         if p:
             files.append(p)
     if not files:
         return None, "b-roll: клипы не скачались"
+    dropped = max(len(clip_urls) - 6, 0)
 
     seg = 2.5  # длительность одной перебивки
     n = len(files)
@@ -542,7 +543,8 @@ def _broll_insert(input_path: str, clip_urls: list, timings: list, work: Path,
     ok, err = _run(cmd, timeout=1800)
     if not (ok and os.path.exists(out_p)):
         return None, f"b-roll: ffmpeg не собрал ({err[:160]})"
-    return out_p, f"b-roll: {used} перебивк(и) на {', '.join(f'{t:.0f}с' for t in times[:used])}"
+    extra = f" (+{dropped} не влезло, максимум 6)" if dropped else ""
+    return out_p, f"b-roll: {used} перебивк(и) на {', '.join(f'{t:.0f}с' for t in times[:used])}{extra}"
     """Вырезает [start,end] из записи в моно-wav 22.05кГц (для сохранения реального голоса)."""
     dur = end - start
     if dur < 0.15:  # битые/схлопнутые таймкоды: 150мс «пшика» вместо реплики хуже, чем явный отказ

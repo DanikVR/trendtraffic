@@ -34,6 +34,8 @@ interface MNode {
   text: string;
   mediaUrl: string | null;
   mediaName: string | null;
+  /** Доп. медиа (B-roll «Медиафайлы» принимает НЕСКОЛЬКО файлов из Галереи). */
+  medias?: { url: string; name: string }[];
   useLlm: boolean;
   choices: Record<string, string[]>;
 }
@@ -65,9 +67,9 @@ const META: Record<MKind, Meta> = {
   color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки: пресет или свой LUT',
     choices: [{ id: 'preset', label: 'Пресет', def: ['none'], opts: [{ v: 'none', label: 'Без' }, { v: 'warm', label: 'Тёплый' }, { v: 'cold', label: 'Холодный' }, { v: 'cinema', label: 'Кино' }, { v: 'bw', label: 'Ч/Б' }, { v: 'vivid', label: 'Яркий' }] }],
     media: 'LUT-файл (.cube) из Галереи — заменяет пресет' },
-  broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки: стоки, кадры источника (фото из блока «Новости») или медиа из Галереи',
-    choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'source', label: 'Кадры источника' }, { v: 'reference', label: 'Из Референса' }] }],
-    text: 'что вставить и когда…', media: 'Медиа из Галереи', llm: true },
+  broll:     { label: 'Медиафайлы', icon: <Image size={18} />, hint: 'Перебивки: стоки, кадры источника (фото из блока «Новости») или свои файлы из Галереи (можно несколько)',
+    choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'source', label: 'Кадры источника' }, { v: 'reference', label: 'Свои файлы' }] }],
+    text: 'что вставить и когда…', media: 'Добавить из Галереи', llm: true },
   avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Одна говорящая голова (монолог); диалог двух ведущих — облако «Подкаст»',
     choices: [
       { id: 'engine', label: 'Движок', def: ['heygen'], opts: [{ v: 'heygen', label: 'HeyGen (облако)' }, { v: 'sadtalker', label: 'SadTalker (GPU)' }] },
@@ -488,7 +490,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           if (typeof d.flow.graph?.brief === 'string') setBrief(d.flow.graph.brief);
           const g = d.flow.graph?.nodes || [];
           const mapped: MNode[] = g.filter((x: any) => x?.type === 'montage' && x?.data?.kind && META[x.data.kind as MKind])
-            .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null, useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
+            .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null,
+              medias: Array.isArray(x.data.medias) ? x.data.medias.filter((m: any) => m?.url) : [],
+              useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
           setNodes(mapped);
           const src = d.flow.graph?.source;
           if (src && typeof src.url === 'string') {
@@ -560,7 +564,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const save = async () => {
     setSaving(true);
     try {
-      const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, useLlm: n.useLlm, choices: n.choices } }));
+      const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
       await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, brief } }) });
       setDirty(false);
@@ -1785,6 +1789,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const kind = node?.kind === 'audio' ? 'audio' : 'reference';
     setUploading(true);
     let lastAsset: any = null;
+    const uploaded: { url: string; name: string }[] = [];
     try {
       for (const f of list) {
         const fd = new FormData();
@@ -1795,10 +1800,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           body: fd,
         });
-        if (res.ok) { const d = await res.json(); if (d.asset) lastAsset = d.asset; }
+        if (res.ok) {
+          const d = await res.json();
+          if (d.asset) { lastAsset = d.asset; uploaded.push({ url: d.asset.fileUrl, name: d.asset.originalName || 'файл' }); }
+        }
       }
       await loadMedia();
-      if (lastAsset) patchNode(attachFor, { mediaUrl: lastAsset.fileUrl, mediaName: lastAsset.originalName || 'файл' });
+      if (node?.kind === 'broll') {
+        // «Медиафайлы»: ВСЕ загруженные файлы добавляются в список узла.
+        const cur = node.medias || [];
+        const add = uploaded.filter((u) => !cur.some((x) => x.url === u.url));
+        if (add.length) patchNode(attachFor, { medias: [...cur, ...add] });
+      } else if (lastAsset) {
+        patchNode(attachFor, { mediaUrl: lastAsset.fileUrl, mediaName: lastAsset.originalName || 'файл' });
+      }
     } catch { /* тихо */ }
     finally { setUploading(false); }
   };
@@ -2247,6 +2262,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           ))}
         </svg>
 
+        {/* «Сценарий» — над центральным узлом (просьба юзера): главный промт всегда на виду */}
+        <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра (все ✨-шаги читают его)"
+          style={{ position: 'absolute', left: '50%', top: 'calc(50% - 84px)', transform: 'translateX(-50%)', zIndex: 7,
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+            background: brief.trim() ? 'rgba(99,102,241,0.16)' : 'var(--bg-secondary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)',
+            border: `1px ${brief.trim() ? 'solid rgba(99,102,241,0.5)' : 'dashed var(--border-strong)'}`, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <Sparkles size={13} /> {brief.trim() ? `Сценарий ✓ ${brief.trim().slice(0, 26)}${brief.trim().length > 26 ? '…' : ''}` : 'Сценарий ролика — задайте тон ИИ'}
+        </button>
+
         <button data-node-id="center" onClick={() => openSourcePicker()} title={building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
           style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: building ? 'default' : 'pointer' }}>
           <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
@@ -2449,10 +2473,23 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none mb-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
             )}
 
-            {/* Медиа + ЛЛМ */}
+            {/* Медиа + ЛЛМ. «Медиафайлы» (broll) принимает НЕСКОЛЬКО файлов — чипы с ✕. */}
             {(META[selected.kind].media || META[selected.kind].llm) && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                {META[selected.kind].media && (selected.mediaUrl ? (
+                {selected.kind === 'broll' ? (
+                  <>
+                    {(selected.medias || []).map((m) => (
+                      <span key={m.url} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
+                        <Paperclip size={13} /> <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                        <button title="Удалить файл" onClick={() => patchNode(selected.id, { medias: (selected.medias || []).filter((x) => x.url !== m.url) })}
+                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={12} /></button>
+                      </span>
+                    ))}
+                    <button onClick={() => openAttach(selected.id)} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-strong)', cursor: 'pointer' }}>
+                      <Plus size={13} /> {(selected.medias || []).length ? 'Добавить ещё' : META[selected.kind].media}
+                    </button>
+                  </>
+                ) : META[selected.kind].media && (selected.mediaUrl ? (
                   <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
                     <Paperclip size={13} /> {selected.mediaName || 'файл'}
                     <button onClick={() => patchNode(selected.id, { mediaUrl: null, mediaName: null })} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={12} /></button>
@@ -2546,8 +2583,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             <input ref={attachInputRef} type="file" multiple accept="image/*,video/*,audio/*" style={{ display: 'none' }}
               onChange={(e) => { if (e.target.files?.length) uploadMediaFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Медиа</span>
-              <button onClick={() => setAttachFor(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+                {nodes.find((x) => x.id === attachFor)?.kind === 'broll'
+                  ? `Медиафайлы — выбрано: ${(nodes.find((x) => x.id === attachFor)?.medias || []).length} (клик добавляет/убирает)`
+                  : 'Медиа'}
+              </span>
+              <button onClick={() => setAttachFor(null)} className="inline-flex items-center gap-1 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                {nodes.find((x) => x.id === attachFor)?.kind === 'broll' ? <><Check size={14} /> Готово</> : <X size={16} />}
+              </button>
             </div>
 
             {/* Зона загрузки с устройства / drag-and-drop */}
@@ -2564,8 +2607,24 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пока пусто. Загрузите файл выше или добавьте во вкладке «Галерея».</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {media.map((m) => (
-                  <button key={m.id} onClick={() => { patchNode(attachFor, { mediaUrl: m.fileUrl, mediaName: m.title }); setAttachFor(null); }} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                {media.map((m) => {
+                  const attachNode = nodes.find((x) => x.id === attachFor);
+                  const multi = attachNode?.kind === 'broll';
+                  const added = multi && (attachNode?.medias || []).some((x) => x.url === m.fileUrl);
+                  return (
+                  <button key={m.id} onClick={() => {
+                    if (multi) {
+                      // «Медиафайлы»: клик добавляет/убирает, пикер не закрываем — можно добрать ещё.
+                      const list = attachNode?.medias || [];
+                      patchNode(attachFor!, { medias: added ? list.filter((x) => x.url !== m.fileUrl) : [...list, { url: m.fileUrl, name: m.title }] });
+                    } else {
+                      patchNode(attachFor!, { mediaUrl: m.fileUrl, mediaName: m.title });
+                      setAttachFor(null);
+                    }
+                  }} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${added ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    {added && (
+                      <span style={{ position: 'absolute', top: 4, left: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={12} /></span>
+                    )}
                     <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
                         : m.kind === 'audio' ? <Music size={22} style={{ color: 'var(--brand)' }} />
@@ -2573,7 +2632,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     </div>
                     <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
