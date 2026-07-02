@@ -1121,29 +1121,30 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     };
     tick();
   };
-  /** Склеить готовые головы в сплит-скрин (+ запись как аудио, + фон-музыка). */
+  /** Склеить готовые головы: на студии (полный кадр, аспект = фото; можно с ОДНОЙ головой)
+   *  или легаси сплит-скрин (нужны обе). */
   const runCompose = async () => {
     if (composeBusy) return;
     const a = animJobs.find((j) => j.host === 'A' && j.url && j.status === 'completed');
     const b = animJobs.find((j) => j.host === 'B' && j.url && j.status === 'completed');
-    if (!a?.url || !b?.url) { setComposeNote('Сначала дождитесь готовности обеих голов.'); return; }
+    const bg = studioBg || pod.studioBgUrl || null;
+    const onStudio = !!bg;
+    const ready = [a, b].filter((j) => j?.url);
+    if (onStudio ? !ready.length : (!a?.url || !b?.url)) {
+      setComposeNote(onStudio ? 'Сначала дождитесь готовности головы ведущего.' : 'Сначала дождитесь готовности обеих голов.');
+      return;
+    }
     if (composePollRef.current) { clearTimeout(composePollRef.current); composePollRef.current = null; }
     setComposeBusy(true); setComposeNote(null); setComposeUrl(null);
     try {
       const av = pod.avatar || POD_DEFAULT.avatar!;
-      const bg = studioBg || pod.studioBgUrl || null;
-      const onStudio = !!bg;
-      const body: any = { headA: a.url, headB: b.url,
+      const body: any = {
+        headA: onStudio ? ready[0]!.url : a!.url,
+        ...(onStudio ? (ready[1]?.url ? { headB: ready[1]!.url } : {}) : { headB: b!.url }),
         audioUrl: av.voiceSource === 'record' ? pod.recordingUrl : undefined,
         musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
       if (onStudio) {
         body.studioUrl = bg;
-        body.fullFrame = true; // вырезки в композиции кадра фона → аватары на своих местах
-        if (pod.studioPlace?.A && pod.studioPlace?.B) body.place = pod.studioPlace; // окна-координаты посадки
-        // рамки ведущих из «студии лиц» — сцена зумится на них (без пустого потолка/пола)
-        const focA = pod.faces.find((f) => f.speaker === 'A')?.box;
-        const focB = pod.faces.find((f) => f.speaker === 'B')?.box;
-        if (focA && focB) body.focus = { A: focA, B: focB };
         // медиа реплик (картинки/видео) — показываются по своим интервалам поверх сцены
         body.overlays = pod.dialogue
           .map((l, i, arr) => l.image ? { url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image) } : null)

@@ -171,27 +171,30 @@ export function greenBgRatio(input: string): Promise<number | null> {
 /** Медиа реплики поверх студийной сцены: показывается в свой интервал таймлайна. */
 export interface StudioOverlay { url: string; tStart: number; dur: number; video?: boolean }
 
-/** Собрать ролик: две ЗЕЛЁНЫЕ головы (chroma-key) поверх ФОТО СТУДИИ (оба ведущих на фоне студии).
- *  Каждая голова — talking_photo, снятый на зелёном (человек вырезан Nano ДО HeyGen).
- *  placeA/placeB — окна ведущих в долях ИСХОДНОГО кадра: фон пере-кадрируется по горизонтали
- *  так, чтобы ОБА окна попали в вертикальный 1080×1920 (широкое фото студии в 9:16 целиком не
- *  влезает), недостающая высота — блюр-подложка; головы сажаются на вычисленные координаты.
- *  fullFrame=true (без place) — вырезки в композиции центрального 9:16-кропа → оверлей 0:0.
- *  overlays — медиа реплик (картинка/видео) по таймкодам поверх сцены. → fileUrl. */
+/** Собрать ролик «на студии»: зелёные головы (chroma-key) поверх clean plate.
+ *  ПРИНЦИП (решение юзера): аспект ВЫХОДА = аспект исходного фото студии — 16:9 фото →
+ *  ролик 1920×1080, 9:16 → 1080×1920, ~квадрат → 1080×1080. Вырезка ведущего сохраняет
+ *  композицию ПОЛНОГО кадра, поэтому фон и головы кладутся во весь кадр (оверлей 0:0) —
+ *  никакой координатной математики/пере-кадрирования. headB опционален: одна рамка в
+ *  «студии лиц» = соло-режим с одним ведущим. overlays — медиа реплик по таймкодам. → fileUrl. */
 export async function composeOnStudio(opts: {
-  studioUrl: string; headA: string; headB: string;
+  studioUrl: string; headA: string; headB?: string | null;
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
-  fullFrame?: boolean; overlays?: StudioOverlay[];
-  placeA?: NormRect | null; placeB?: NormRect | null;
-  /** Рамки самих ведущих (из «студии лиц») — сцена зумится на них (2D-кроп без пустого потолка). */
+  overlays?: StudioOverlay[];
+  // легаси-поля старого API — игнорируются (совместимость)
+  fullFrame?: boolean; placeA?: NormRect | null; placeB?: NormRect | null;
   focusA?: NormRect | null; focusB?: NormRect | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
-  const [dA, dB, dAudio] = await Promise.all([
-    probeDuration(opts.headA), probeDuration(opts.headB), opts.audioUrl ? probeDuration(opts.audioUrl) : Promise.resolve(0),
+  const heads = [opts.headA, opts.headB].filter((h): h is string => typeof h === 'string' && !!h);
+  const durs = await Promise.all([
+    ...heads.map((h) => probeDuration(h)),
+    opts.audioUrl ? probeDuration(opts.audioUrl) : Promise.resolve(0),
   ]);
-  let target = opts.audioUrl && dAudio > 0.2 ? dAudio : Math.max(dA, dB);
-  if (!(target > 0.2)) target = Math.max(dA, dB, dAudio, 3);
+  const dAudio = durs[durs.length - 1];
+  const headDur = Math.max(...durs.slice(0, heads.length));
+  let target = opts.audioUrl && dAudio > 0.2 ? dAudio : headDur;
+  if (!(target > 0.2)) target = Math.max(headDur, dAudio, 3);
   target = Math.min(target, 1800);
   const T = target.toFixed(2);
   const key = opts.chromaColor || '0x00FF00';
@@ -199,8 +202,14 @@ export async function composeOnStudio(opts: {
     .filter((o) => o && typeof o.url === 'string' && o.url && Number.isFinite(o.tStart) && Number.isFinite(o.dur) && o.dur > 0.1)
     .slice(0, 12);
 
-  const inputs: string[] = ['-loop', '1', '-i', opts.studioUrl, '-i', opts.headA, '-i', opts.headB];
-  let idx = 3; let audioIdx = -1; let musicIdx = -1;
+  // Канвас = аспект фото студии (однотипный, предсказуемый размер выхода).
+  const size = await probeImageSize(opts.studioUrl);
+  const ar = size && size.h > 0 ? size.w / size.h : 9 / 16;
+  const [W, H] = ar >= 1.2 ? [1920, 1080] : ar <= 0.83 ? [1080, 1920] : [1080, 1080];
+
+  const inputs: string[] = ['-loop', '1', '-i', opts.studioUrl];
+  for (const h of heads) inputs.push('-i', h);
+  let idx = 1 + heads.length; let audioIdx = -1; let musicIdx = -1;
   if (opts.audioUrl) { inputs.push('-i', opts.audioUrl); audioIdx = idx++; }
   if (opts.musicUrl) { inputs.push('-i', opts.musicUrl); musicIdx = idx++; }
   const ovStart = idx;
@@ -212,94 +221,31 @@ export async function composeOnStudio(opts: {
   }
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
-  const W = 1080, H = 1920, PW = 620; // выход 1080×1920; PW — ширина головы в легаси-раскладке
-  const ev = (n: number) => Math.max(2, 2 * Math.round(n / 2)); // чётные размеры для yuv420p
-
-  // Геометрия посадки по окнам ведущих (если заданы и удалось узнать размер фона).
-  let geom: { bgChain: string; A: { w: number; h: number; x: number; y: number }; B: { w: number; h: number; x: number; y: number } } | null = null;
-  if (opts.placeA && opts.placeB) {
-    const size = await probeImageSize(opts.studioUrl);
-    if (size && size.w > 1 && size.h > 1) {
-      const pA = opts.placeA; const pB = opts.placeB;
-      const fA = opts.focusA; const fB = opts.focusB;
-      // Контент-бокс сцены: при рамках ведущих зумим НА НИХ (2D — режем и пустой потолок/пол,
-      // иначе сцена ужималась в узкую ленту по центру); без рамок — по окнам, во всю высоту.
-      let cx0: number; let cx1: number; let cy0: number; let cy1: number;
-      if (fA && fB) {
-        cx0 = Math.max(0, Math.min(fA.x, fB.x) - 0.05);
-        cx1 = Math.min(1, Math.max(fA.x + fA.w, fB.x + fB.w) + 0.05);
-        cy0 = Math.max(0, Math.min(fA.y, fB.y) - 0.07);
-        cy1 = Math.min(1, Math.max(fA.y + fA.h, fB.y + fB.h) + 0.10);
-      } else {
-        cx0 = Math.max(0, Math.min(pA.x, pB.x) - 0.02);
-        cx1 = Math.min(1, Math.max(pA.x + pA.w, pB.x + pB.w) + 0.02);
-        cy0 = 0; cy1 = 1;
-      }
-      const cw = Math.max(0.05, cx1 - cx0); const ch = Math.max(0.05, cy1 - cy0);
-      const cropW = ev(cw * size.w); const cropX = Math.round(cx0 * size.w);
-      const cropH = ev(ch * size.h); const cropY = Math.round(cy0 * size.h);
-      const s = W / cropW;                       // масштаб источник→выход
-      const Hs = ev(cropH * s);                  // высота сцены после масштабирования
-      const headCy = ((pA.y + pA.h / 2 + pB.y + pB.h / 2) / 2 - cy0) / ch; // центр ведущих в контенте (0..1)
-      const yShift = Hs >= H
-        ? Math.max(0, Math.min(Hs - H, Math.round(headCy * Hs - H / 2)))
-        : 0;                                     // Hs>=H: вертикальный кроп с центром на ведущих
-      const top = Hs >= H ? 0 : Math.round((H - Hs) / 2); // Hs<H: сцена лентой по центру
-      const sharp = `crop=${cropW}:${cropH}:${cropX}:${cropY},scale=${W}:${Hs},setsar=1`;
-      const bgChain = Hs >= H
-        ? `[0:v]${sharp},crop=${W}:${H}:0:${yShift},fps=30[bg];`
-        // недостающую высоту заполняет притемнённый блюр студии — подложка не спорит со сценой
-        : `[0:v]split[bgs][bgb];[bgb]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=32:2,eq=brightness=-0.08:saturation=0.8,setsar=1[blf];`
-          + `[bgs]${sharp}[shp];[blf][shp]overlay=0:${top},fps=30[bg];`;
-      const place = (p: NormRect) => {
-        // окна могут выходить за контент-бокс (по вертикали почти всегда) — отрицательные
-        // координаты допустимы, лишнее по краям окна прозрачно после chromakey
-        const w = ev(p.w * size.w * s); const h = ev(p.h * size.h * s);
-        const x = Math.round((p.x - cx0) * size.w * s);
-        const y = Math.round((p.y - cy0) * size.h * s) - yShift + top;
-        return { w, h, x, y };
-      };
-      geom = { bgChain, A: place(pA), B: place(pB) };
-    }
-  }
-
-  // Chroma-key зелёнки + despill (увод зелёного с краёв) + мягкий край маски (avgblur только
-  // альфа-плоскости, planes=8) — контур вырезки не читается на фоне студии.
-  // similarity 0.38/blend 0.08: HeyGen пере-жимает зелёный (H.264), и при 0.30 фон кеился не до
-  // конца — вокруг ведущего оставалась полупрозрачная «плёнка» с видимым швом окна.
-  const keyBase = `chromakey=${key}:0.38:0.08,despill=type=green:mix=0.5:expand=0,`;
+  // Фон clean plate — тот же аспект, что канвас → scale+crop без потерь композиции.
+  const bg = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
+  // Chroma-key + despill + мягкий край альфа-маски. 0.36/0.10 — H.264-зелёный HeyGen неравномерен:
+  // слабее оставалась «плёнка», сильнее начинает есть полутона.
+  const keyBase = `chromakey=${key}:0.36:0.10,despill=type=green:mix=0.5:expand=0,`;
   const keyTail = `avgblur=sizeX=2:sizeY=2:planes=8,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
-  const keyf = (i: number, label: string) => {
-    if (geom) {
-      const g = i === 1 ? geom.A : geom.B;
-      return `[${i}:v]${keyBase}scale=${g.w}:${g.h},${keyTail}[${label}];`;
-    }
-    return opts.fullFrame
-      ? `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},${keyTail}[${label}];`
-      : `[${i}:v]${keyBase}scale=${PW}:-1:force_original_aspect_ratio=decrease,${keyTail}[${label}];`;
-  };
-  const bg = geom ? geom.bgChain : `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
-  let fc = bg + keyf(1, 'ka') + keyf(2, 'kb');
-  if (geom) {
-    // Каждое окно-голова садится на свои координаты в пере-кадрированной сцене.
-    fc += `[bg][ka]overlay=x=${geom.A.x}:y=${geom.A.y}:shortest=0[b1];[b1][kb]overlay=x=${geom.B.x}:y=${geom.B.y}:shortest=0[v0];`;
-  } else if (opts.fullFrame) {
-    // Кадр вырезки = кадр фона → оверлей 0:0: каждый аватар ровно на своём месте в студии.
-    fc += `[bg][ka]overlay=x=0:y=0:shortest=0[b1];[b1][kb]overlay=x=0:y=0:shortest=0[v0];`;
-  } else {
-    // Легаси-раскладка (головы вырезаны отдельными кадрами): A — низ-лево, B — низ-право.
-    fc += `[bg][ka]overlay=x=-40:y=H-h:shortest=0[b1];[b1][kb]overlay=x=W-w+40:y=H-h:shortest=0[v0];`;
-  }
+  const keyf = (i: number, label: string) =>
+    `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},${keyTail}[${label}];`;
+  let fc = bg;
+  let lastV = 'bg';
+  heads.forEach((_, k) => {
+    const lbl = `k${k}`;
+    fc += keyf(1 + k, lbl);
+    fc += `[${lastV}][${lbl}]overlay=x=0:y=0:shortest=0[hv${k}];`;
+    lastV = `hv${k}`;
+  });
   // Медиа реплик: карточка по центру, видима в свой интервал (как в воркерном таймлайне).
-  let lastV = 'v0';
-  const SIDE = Math.round(W * 0.62);
+  const SIDE = Math.round(Math.min(W, H) * 0.62);
   ovs.forEach((o, k) => {
     const i = ovStart + k;
     const t0 = Math.max(0, o.tStart); const t1 = t0 + o.dur;
     // видео сдвигаем по времени, чтобы играло с начала своего интервала; картинка статична
     const pts = o.video ? `,setpts=PTS-STARTPTS+${t0.toFixed(3)}/TB` : '';
     fc += `[${i}:v]scale=${SIDE}:${SIDE}:force_original_aspect_ratio=increase,crop=${SIDE}:${SIDE},setsar=1,fps=30${pts}[ov${k}];`
-      + `[${lastV}][ov${k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\\,${t0.toFixed(3)}\\,${t1.toFixed(3)})'[vo${k}];`;
+      + `[${lastV}][ov${k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\,${t0.toFixed(3)}\,${t1.toFixed(3)})'[vo${k}];`;
     lastV = `vo${k}`;
   });
   fc += `[${lastV}]null[v];`;
@@ -307,7 +253,8 @@ export async function composeOnStudio(opts: {
   let speechLabel: string;
   if (audioIdx >= 0) { fc += `[${audioIdx}:a]aresample=async=1[sp];`; speechLabel = '[sp]'; }
   // normalize=0 — иначе amix делит громкость на число входов (речь тише в 2 раза)
-  else { fc += `[1:a][2:a]amix=inputs=2:normalize=0:duration=longest[sp];`; speechLabel = '[sp]'; }
+  else if (heads.length === 2) { fc += `[1:a][2:a]amix=inputs=2:normalize=0:duration=longest[sp];`; speechLabel = '[sp]'; }
+  else { fc += `[1:a]anull[sp];`; speechLabel = '[sp]'; }
   let mapAudio: string;
   if (musicIdx >= 0) {
     fc += `[${musicIdx}:a]volume=${vol.toFixed(2)}[bgm];${speechLabel}[bgm]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aout];`;

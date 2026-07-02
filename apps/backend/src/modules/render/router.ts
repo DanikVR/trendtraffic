@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, cropImageTo916, cropImageToRect, downloadToRenders, greenBgRatio, probeImageSize, type NormRect, type StudioOverlay } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, type StudioOverlay } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -509,32 +509,29 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
     let elevenKey: string | null = null;
     if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs.' }); }
     const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    // Фаза 1 (параллельно по ведущему): голос + вырезка на зелёный (Nano, композиция кадра 1:1)
-    // + кроп в тот же 9:16, что фон + talking_photo. Всё падучее ДО сабмитов. Параллельно —
-    // clean plate (студия БЕЗ людей): иначе за аватарами выглядывают исходные статичные фигуры.
+    // Фаза 1 (параллельно по ведущему): голос + full-frame вырезка на зелёный (композиция
+    // кадра 1:1) + talking_photo. Всё падучее ДО сабмитов. Параллельно — clean plate (студия
+    // БЕЗ людей): иначе за аватарами выглядывают исходные статичные фигуры.
+    // ПРИНЦИП: аспект выхода = аспект фото (16:9 фото → ролик 16:9, 9:16 → 9:16) — вырезка и
+    // фон это один и тот же полный кадр, склейка кладёт головы во весь кадр без координат.
     const warns: string[] = [];
     const cleanPromise: Promise<string | null> = studioCleanPlate(apiKey, abs(groupPhotoUrl)).catch((e: any) => {
       console.warn('[heygen-studio] clean plate не удался, фон = исходное фото:', e?.message || e);
       return null;
     });
-    // Размер фото → ОКНО 9:16 вокруг каждого ведущего. Центральный кроп широкого (16:9) фото
-    // резал ведущих по краям — HeyGen отвечал «No face detected». Окно строится по рамке
-    // (или по половине кадра), а его координаты едут в compose для точной посадки.
+    // Размер фото → размер видео HeyGen того же аспекта (иначе HeyGen пере-кадрирует
+    // talking_photo, и композиция «вырезка = кадр фона» ломается).
     const photoSize = await probeImageSize(abs(groupPhotoUrl));
-    if (!photoSize) warns.push('не удалось определить размер фото — вырезка центральным кадром (для широких фото обведите ведущих рамками и повторите)');
-    const windowFor = (spk: 'A' | 'B', box: { x: number; y: number; w: number; h: number } | null): NormRect | null => {
-      if (!photoSize) return null;
-      const { w: W, h: H } = photoSize;
-      let wPx = Math.min(W, H * 9 / 16); let hPx = wPx * 16 / 9;
-      if (hPx > H) { hPx = H; wPx = H * 9 / 16; }
-      const cx = (box ? box.x + box.w / 2 : spk === 'A' ? 0.27 : 0.73) * W;
-      const cy = (box ? box.y + box.h / 2 : 0.5) * H;
-      const x = Math.min(Math.max(0, cx - wPx / 2), Math.max(0, W - wPx));
-      const y = Math.min(Math.max(0, cy - hPx / 2), Math.max(0, H - hPx));
-      return { x: x / W, y: y / H, w: wPx / W, h: hPx / H };
-    };
-    const place: { A?: NormRect; B?: NormRect } = {};
-    const prepared = await Promise.all(([['A', hostA], ['B', hostB]] as const).map(async ([spk, host]) => {
+    const par = photoSize && photoSize.h > 0 ? photoSize.w / photoSize.h : 9 / 16;
+    const heyDim = par >= 1.2 ? { width: 1280, height: 720 } : par <= 0.83 ? { width: 720, height: 1280 } : { width: 720, height: 720 };
+    // Соло-режим: если рамкой отмечен только ОДИН ведущий — работаем с одним (одна вырезка,
+    // один голос, одна голова в склейке).
+    const facesArr: any[] = Array.isArray(spec.faces) ? spec.faces : [];
+    const hasFaceA = facesArr.some((f: any) => f?.speaker === 'A');
+    const hasFaceB = facesArr.some((f: any) => f?.speaker === 'B');
+    const hostsList: Array<readonly ['A' | 'B', any]> = hasFaceA && !hasFaceB ? [['A', hostA]]
+      : (!hasFaceA && hasFaceB ? [['B', hostB]] : [['A', hostA], ['B', hostB]]);
+    const prepared = await Promise.all(hostsList.map(async ([spk, host]) => {
       const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
       const fullText = rawTextFor(spk);
       const text = textFor(spk) || `Реплики ведущего ${spk}.`;
@@ -552,19 +549,15 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
       }
       // Рамка ведущего из «студии лиц» (если обведена) — вырезаем именно её содержимое
-      const face = (Array.isArray(spec.faces) ? spec.faces : []).find((f: any) => f?.speaker === spk && f?.box
+      const face = facesArr.find((f: any) => f?.speaker === spk && f?.box
         && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))));
       const box: { x: number; y: number; w: number; h: number } | null = face
         ? { x: Number(face.box.x), y: Number(face.box.y), w: Number(face.box.w), h: Number(face.box.h) } : null;
-      // Окно 9:16 вокруг ведущего: HeyGen получает крупного человека (лицо детектится),
-      // а координаты окна поедут в склейку — аватар сядет ровно на своё место в сцене.
-      const win = windowFor(spk, box);
-      if (win) place[spk] = win;
+      // Full-frame вырезка: тот же кадр, что clean plate (композиция 1:1, без кропов) —
+      // в склейке голова кладётся во весь кадр, аватар на своём месте по построению.
       const makeCut = async (strict: boolean): Promise<string> => {
         const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, strict);
-        return win
-          ? await cropImageToRect(green.path || abs(green.url), win)
-          : await cropImageTo916(green.path || abs(green.url)); // фолбэк: центральный кадр
+        return green.url;
       };
       // Валидация зелёнки: Gemini иногда возвращает кадр со студийным фоном — тогда chromakey
       // в склейке нечего убирать. Ловим ДО HeyGen (кредиты не тратятся) и повторяем строже.
@@ -585,56 +578,45 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
     if (!cleanUrl) warns.push('clean plate не удался — фоном будет исходное фото (за аватарами могут выглядывать статичные фигуры)');
     const studioUrl = cleanUrl || groupPhotoUrl;
     const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
-    // Фаза 2: сабмитим обоих; частичный сбой отдаём честно.
+    // Фаза 2: сабмитим (размер видео = аспект фото); частичный сбой отдаём честно.
     const jobs: any[] = [];
     for (const p of prepared) {
       try {
         let videoId: string;
         try {
-          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, expressive: true });
+          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, expressive: true, ...heyDim });
         } catch {
           // talking_style может не поддерживаться движком/аккаунтом — повтор без него
-          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV });
+          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, ...heyDim });
         }
         jobs.push({ host: p.spk, name: p.name, videoId });
       } catch (e: any) {
         if (!jobs.length) throw e;
-        return res.json({ jobs, studioUrl, fullFrame: true, place: place.A && place.B ? place : null, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
+        return res.json({ jobs, studioUrl, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
       }
     }
-    res.json({ jobs, studioUrl, fullFrame: true, place: place.A && place.B ? place : null, note: `Вырезал ведущих (окна по рамкам)${cleanUrl ? ' + дорисовал студию без людей (clean plate)' : ''} → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует (~1–3 мин). Потом посажу аватаров на их места в студии.${warnNote}` });
+    const soloNote = hostsList.length === 1 ? ` Режим одного ведущего (${hostsList[0][0]}).` : '';
+    res.json({ jobs, studioUrl, note: `Вырезал ведущих (полный кадр, выход = формат фото)${cleanUrl ? ' + дорисовал студию без людей (clean plate)' : ''} → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует (~1–3 мин).${soloNote}${warnNote}` });
   } catch (err: any) {
     res.status(400).json({ error: `HeyGen-студия: ${err?.message || 'ошибка'}` });
   }
 });
 
-/** POST /podcast/compose-studio — chroma-key двух зелёных голов на ФОТО СТУДИИ (clean plate).
- *  body: {headA,headB,studioUrl,audioUrl?,musicUrl?,musicVolume?,fullFrame?,overlays?} → {jobId}.
- *  fullFrame — головы вырезаны в композиции кадра фона → оверлей 0:0 (аватары на своих местах);
- *  overlays — медиа реплик [{url,tStart,dur,video?}] по таймкодам поверх сцены. */
+/** POST /podcast/compose-studio — chroma-key голов на ФОТО СТУДИИ (clean plate).
+ *  body: {headA, headB?, studioUrl, audioUrl?, musicUrl?, musicVolume?, overlays?} → {jobId}.
+ *  Аспект выхода = аспект фото студии; головы кладутся во весь кадр (композиция 1:1).
+ *  headB опционален (соло-режим). overlays — медиа реплик по таймкодам. */
 router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response) => {
   try {
     const headA = typeof req.body?.headA === 'string' ? req.body.headA : '';
     const headB = typeof req.body?.headB === 'string' ? req.body.headB : '';
     const studioUrl = typeof req.body?.studioUrl === 'string' ? req.body.studioUrl : '';
-    if (!headA || !headB || !studioUrl) return res.status(400).json({ error: 'Нужны обе головы и фото студии (headA, headB, studioUrl).' });
+    if (!headA || !studioUrl) return res.status(400).json({ error: 'Нужны готовая голова и фото студии (headA, studioUrl).' });
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
     const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
     const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
     const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
-    const fullFrame = req.body?.fullFrame === true;
-    // Окна ведущих в долях исходного кадра (посадка на свои места; из ответа heygen-studio).
-    const parseRect = (r: any): NormRect | null => {
-      if (!r || ![r.x, r.y, r.w, r.h].every((v: any) => Number.isFinite(Number(v)))) return null;
-      const x = Number(r.x); const y = Number(r.y); const w = Number(r.w); const h = Number(r.h);
-      return (w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= 1.001 && y + h <= 1.001) ? { x, y, w, h } : null;
-    };
-    const placeA = parseRect(req.body?.place?.A);
-    const placeB = parseRect(req.body?.place?.B);
-    // Рамки самих ведущих (из «студии лиц») — сцена зумится на них, без пустого потолка/пола.
-    const focusA = parseRect(req.body?.focus?.A);
-    const focusB = parseRect(req.body?.focus?.B);
     const overlays: StudioOverlay[] = (Array.isArray(req.body?.overlays) ? req.body.overlays : [])
       .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
       .slice(0, 12)
@@ -645,7 +627,7 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume, fullFrame, overlays, placeA, placeB, focusA, focusB });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, audioUrl, musicUrl, musicVolume, overlays });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
