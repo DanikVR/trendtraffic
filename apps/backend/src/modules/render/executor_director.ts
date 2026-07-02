@@ -100,15 +100,26 @@ export class DirectorExecutor implements StepExecutor {
       return { outputUrl: ctx.currentUrl, note: r.note };
     }
 
-    // voiceover (+ЛЛМ) → сценарий → базовый tts
-    if (step.kind === 'voiceover' && step.llm) {
-      const r = await generateVoiceoverScript({
-        tenantId: ctx.tenantId, brief: withScenario(text), notes: scratch.research || scratch.news, model,
-      });
-      if (r.text) scratch.voiceover = r.text; // пригодится аватару как сценарий
-      const enriched = r.text ? { ...step, params: { ...step.params, text: r.text } } : step;
-      const base = await this.base.execute(enriched, ctx);
-      return { ...base, note: joinNotes(r.note, base.note) };
+    // voiceover: ✨ → Claude пишет сценарий; без ✨/без ключа — материал news/research
+    // из scratchpad идёт в TTS как есть (пресет «Новости» работает и без ключа Claude).
+    if (step.kind === 'voiceover') {
+      const material = String(scratch.news || scratch.research || '').trim();
+      if (step.llm) {
+        const r = await generateVoiceoverScript({
+          tenantId: ctx.tenantId, brief: withScenario(text), notes: scratch.research || scratch.news, model,
+        });
+        const script = r.text || (!text ? material : '');
+        if (script) scratch.voiceover = script; // пригодится аватару как сценарий
+        const enriched = script ? { ...step, params: { ...step.params, text: script } } : step;
+        const base = await this.base.execute(enriched, ctx);
+        return { ...base, note: joinNotes(r.note, !r.text && script ? 'озвучка: читаем материал источника как есть' : undefined, base.note) };
+      }
+      if (!text && material) {
+        scratch.voiceover = material;
+        const base = await this.base.execute({ ...step, params: { ...step.params, text: material } }, ctx);
+        return { ...base, note: joinNotes('озвучка: текст из блока Новости/Исследование', base.note) };
+      }
+      return this.base.execute(step, ctx);
     }
 
     // length: выбор момента, если включён ЛЛМ ИЛИ выбрана длительность «Лучший момент»,
