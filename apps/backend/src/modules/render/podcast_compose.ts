@@ -111,18 +111,53 @@ export async function cropImageTo916(input: string): Promise<string> {
   return `/uploads/renders/${out}`;
 }
 
+/** Прямоугольник в долях кадра (0..1). */
+export interface NormRect { x: number; y: number; w: number; h: number }
+
+/** Размеры картинки/видео (px) через ffprobe; null при ошибке. Понимает и http(s)-URL. */
+export function probeImageSize(input: string): Promise<{ w: number; h: number } | null> {
+  return new Promise((resolve) => {
+    const ff = spawn(FFPROBE_BIN, ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=s=x:p=0', input], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = '';
+    ff.stdout.on('data', (d) => { out += d.toString(); });
+    const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } resolve(null); }, 30_000);
+    ff.on('error', () => { clearTimeout(timer); resolve(null); });
+    ff.on('close', () => {
+      clearTimeout(timer);
+      const m = out.trim().match(/^(\d+)x(\d+)/);
+      resolve(m ? { w: Number(m[1]), h: Number(m[2]) } : null);
+    });
+  });
+}
+
+/** Вырезать из картинки ОКНО (прямоугольник в долях кадра, строится 9:16 вокруг ведущего)
+ *  → 1080×1920 PNG. Именно это окно едет в HeyGen: ведущий в нём крупный (лицо детектится),
+ *  а его координаты в исходном кадре знаем — при склейке сажаем окно обратно на место. */
+export async function cropImageToRect(input: string, r: NormRect): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const out = `podwin-${randomUUID().slice(0, 8)}.png`;
+  const outPath = path.join(RENDERS_DIR, out);
+  const vf = `crop=floor(iw*${r.w.toFixed(5)}/2)*2:floor(ih*${r.h.toFixed(5)}/2)*2:iw*${r.x.toFixed(5)}:ih*${r.y.toFixed(5)},`
+    + 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1';
+  await ffmpeg(['-y', '-i', input, '-vf', vf, '-frames:v', '1', outPath], 120_000);
+  return `/uploads/renders/${out}`;
+}
+
 /** Медиа реплики поверх студийной сцены: показывается в свой интервал таймлайна. */
 export interface StudioOverlay { url: string; tStart: number; dur: number; video?: boolean }
 
 /** Собрать ролик: две ЗЕЛЁНЫЕ головы (chroma-key) поверх ФОТО СТУДИИ (оба ведущих на фоне студии).
  *  Каждая голова — talking_photo, снятый на зелёном (человек вырезан Nano ДО HeyGen).
- *  fullFrame=true — вырезки сделаны В ТОЙ ЖЕ композиции кадра, что clean plate (+ кроп в тот же
- *  9:16) → оверлей во весь кадр 0:0, аватары садятся ровно на свои места в студии.
+ *  placeA/placeB — окна ведущих в долях ИСХОДНОГО кадра: фон пере-кадрируется по горизонтали
+ *  так, чтобы ОБА окна попали в вертикальный 1080×1920 (широкое фото студии в 9:16 целиком не
+ *  влезает), недостающая высота — блюр-подложка; головы сажаются на вычисленные координаты.
+ *  fullFrame=true (без place) — вырезки в композиции центрального 9:16-кропа → оверлей 0:0.
  *  overlays — медиа реплик (картинка/видео) по таймкодам поверх сцены. → fileUrl. */
 export async function composeOnStudio(opts: {
   studioUrl: string; headA: string; headB: string;
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
   fullFrame?: boolean; overlays?: StudioOverlay[];
+  placeA?: NormRect | null; placeB?: NormRect | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const [dA, dB, dAudio] = await Promise.all([
@@ -150,20 +185,61 @@ export async function composeOnStudio(opts: {
   }
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
-  const W = 1080, H = 1920, PW = 620; // фон 1080×1920; PW — ширина головы в легаси-раскладке
-  // Фон-студия (картинка, loop), обрезка в кадр 9:16 (центр — та же область, что cropImageTo916).
-  const bg = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
+  const W = 1080, H = 1920, PW = 620; // выход 1080×1920; PW — ширина головы в легаси-раскладке
+  const ev = (n: number) => Math.max(2, 2 * Math.round(n / 2)); // чётные размеры для yuv420p
+
+  // Геометрия посадки по окнам ведущих (если заданы и удалось узнать размер фона).
+  let geom: { bgChain: string; A: { w: number; h: number; x: number; y: number }; B: { w: number; h: number; x: number; y: number } } | null = null;
+  if (opts.placeA && opts.placeB) {
+    const size = await probeImageSize(opts.studioUrl);
+    if (size && size.w > 1 && size.h > 1) {
+      const pA = opts.placeA; const pB = opts.placeB;
+      // Горизонтальный регион, покрывающий оба окна (+2% запас) — его растягиваем на всю ширину.
+      const cx0 = Math.max(0, Math.min(pA.x, pB.x) - 0.02);
+      const cx1 = Math.min(1, Math.max(pA.x + pA.w, pB.x + pB.w) + 0.02);
+      const cw = Math.max(0.05, cx1 - cx0);
+      const cropW = ev(cw * size.w); const cropX = Math.round(cx0 * size.w);
+      const s = W / cropW;                       // масштаб источник→выход
+      const Hs = ev(size.h * s);                 // высота сцены после масштабирования
+      const yShift = Hs >= H
+        ? Math.max(0, Math.min(Hs - H, Math.round(((pA.y + pA.h / 2 + pB.y + pB.h / 2) / 2) * Hs - H / 2)))
+        : 0;                                     // Hs>=H: вертикальный кроп с центром на ведущих
+      const top = Hs >= H ? 0 : Math.round((H - Hs) / 2); // Hs<H: сцена лентой по центру
+      const sharp = `crop=${cropW}:${size.h}:${cropX}:0,scale=${W}:${Hs},setsar=1`;
+      const bgChain = Hs >= H
+        ? `[0:v]${sharp},crop=${W}:${H}:0:${yShift},fps=30[bg];`
+        // недостающую высоту заполняет блюр всей студии — стандарт вертикального рекадра
+        : `[0:v]split[bgs][bgb];[bgb]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=24:2,setsar=1[blf];`
+          + `[bgs]${sharp}[shp];[blf][shp]overlay=0:${top},fps=30[bg];`;
+      const place = (p: NormRect) => {
+        const w = ev(p.w * size.w * s); const h = ev(p.h * size.h * s);
+        const x = Math.round((p.x - cx0) * size.w * s);
+        const y = Math.round(p.y * size.h * s) - yShift + top;
+        return { w, h, x, y };
+      };
+      geom = { bgChain, A: place(pA), B: place(pB) };
+    }
+  }
+
   // Chroma-key зелёнки + despill (увод зелёного с краёв) + мягкий край маски (avgblur только
   // альфа-плоскости, planes=8) — контур вырезки не читается на фоне студии.
-  const keyf = (i: number, label: string) => opts.fullFrame
-    ? `[${i}:v]chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,`
-      + `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},avgblur=sizeX=2:sizeY=2:planes=8,`
-      + `setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}[${label}];`
-    : `[${i}:v]chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,`
-      + `scale=${PW}:-1:force_original_aspect_ratio=decrease,avgblur=sizeX=2:sizeY=2:planes=8,`
-      + `setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}[${label}];`;
+  const keyBase = `chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,`;
+  const keyTail = `avgblur=sizeX=2:sizeY=2:planes=8,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
+  const keyf = (i: number, label: string) => {
+    if (geom) {
+      const g = i === 1 ? geom.A : geom.B;
+      return `[${i}:v]${keyBase}scale=${g.w}:${g.h},${keyTail}[${label}];`;
+    }
+    return opts.fullFrame
+      ? `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},${keyTail}[${label}];`
+      : `[${i}:v]${keyBase}scale=${PW}:-1:force_original_aspect_ratio=decrease,${keyTail}[${label}];`;
+  };
+  const bg = geom ? geom.bgChain : `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
   let fc = bg + keyf(1, 'ka') + keyf(2, 'kb');
-  if (opts.fullFrame) {
+  if (geom) {
+    // Каждое окно-голова садится на свои координаты в пере-кадрированной сцене.
+    fc += `[bg][ka]overlay=x=${geom.A.x}:y=${geom.A.y}:shortest=0[b1];[b1][kb]overlay=x=${geom.B.x}:y=${geom.B.y}:shortest=0[v0];`;
+  } else if (opts.fullFrame) {
     // Кадр вырезки = кадр фона → оверлей 0:0: каждый аватар ровно на своём месте в студии.
     fc += `[bg][ka]overlay=x=0:y=0:shortest=0[b1];[b1][kb]overlay=x=0:y=0:shortest=0[v0];`;
   } else {

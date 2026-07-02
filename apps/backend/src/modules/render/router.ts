@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, cropImageTo916, downloadToRenders, type StudioOverlay } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, cropImageTo916, cropImageToRect, downloadToRenders, probeImageSize, type NormRect, type StudioOverlay } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -511,6 +511,23 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
       console.warn('[heygen-studio] clean plate не удался, фон = исходное фото:', e?.message || e);
       return null;
     });
+    // Размер фото → ОКНО 9:16 вокруг каждого ведущего. Центральный кроп широкого (16:9) фото
+    // резал ведущих по краям — HeyGen отвечал «No face detected». Окно строится по рамке
+    // (или по половине кадра), а его координаты едут в compose для точной посадки.
+    const photoSize = await probeImageSize(abs(groupPhotoUrl));
+    if (!photoSize) warns.push('не удалось определить размер фото — вырезка центральным кадром (для широких фото обведите ведущих рамками и повторите)');
+    const windowFor = (spk: 'A' | 'B', box: { x: number; y: number; w: number; h: number } | null): NormRect | null => {
+      if (!photoSize) return null;
+      const { w: W, h: H } = photoSize;
+      let wPx = Math.min(W, H * 9 / 16); let hPx = wPx * 16 / 9;
+      if (hPx > H) { hPx = H; wPx = H * 9 / 16; }
+      const cx = (box ? box.x + box.w / 2 : spk === 'A' ? 0.27 : 0.73) * W;
+      const cy = (box ? box.y + box.h / 2 : 0.5) * H;
+      const x = Math.min(Math.max(0, cx - wPx / 2), Math.max(0, W - wPx));
+      const y = Math.min(Math.max(0, cy - hPx / 2), Math.max(0, H - hPx));
+      return { x: x / W, y: y / H, w: wPx / W, h: hPx / H };
+    };
+    const place: { A?: NormRect; B?: NormRect } = {};
     const prepared = await Promise.all(([['A', hostA], ['B', hostB]] as const).map(async ([spk, host]) => {
       const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
       const fullText = rawTextFor(spk);
@@ -534,9 +551,13 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
       const box: { x: number; y: number; w: number; h: number } | null = face
         ? { x: Number(face.box.x), y: Number(face.box.y), w: Number(face.box.w), h: Number(face.box.h) } : null;
       const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box);
-      // кроп в 9:16 (та же центральная область, что возьмёт фон) → HeyGen получает ровно кадр
-      // сцены (720×1280 совпадает по пропорции) → в склейке оверлей 0:0 без подгонки координат
-      const cutUrl = await cropImageTo916(green.path || abs(green.url));
+      // Окно 9:16 вокруг ведущего: HeyGen получает крупного человека (лицо детектится),
+      // а координаты окна поедут в склейку — аватар сядет ровно на своё место в сцене.
+      const win = windowFor(spk, box);
+      if (win) place[spk] = win;
+      const cutUrl = win
+        ? await cropImageToRect(green.path || abs(green.url), win)
+        : await cropImageTo916(green.path || abs(green.url)); // фолбэк: центральный кадр
       const tpId = await uploadTalkingPhoto(key, abs(cutUrl));
       return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId };
     }));
@@ -552,10 +573,10 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         jobs.push({ host: p.spk, name: p.name, videoId });
       } catch (e: any) {
         if (!jobs.length) throw e;
-        return res.json({ jobs, studioUrl, fullFrame: true, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
+        return res.json({ jobs, studioUrl, fullFrame: true, place: place.A && place.B ? place : null, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
       }
     }
-    res.json({ jobs, studioUrl, fullFrame: true, note: `Вырезал ведущих (композиция 1:1)${cleanUrl ? ' + дорисовал студию без людей (clean plate)' : ''} → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует (~1–3 мин). Потом посажу аватаров на их места в студии.${warnNote}` });
+    res.json({ jobs, studioUrl, fullFrame: true, place: place.A && place.B ? place : null, note: `Вырезал ведущих (окна по рамкам)${cleanUrl ? ' + дорисовал студию без людей (clean plate)' : ''} → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует (~1–3 мин). Потом посажу аватаров на их места в студии.${warnNote}` });
   } catch (err: any) {
     res.status(400).json({ error: `HeyGen-студия: ${err?.message || 'ошибка'}` });
   }
@@ -577,6 +598,14 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
     const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
     const fullFrame = req.body?.fullFrame === true;
+    // Окна ведущих в долях исходного кадра (посадка на свои места; из ответа heygen-studio).
+    const parseRect = (r: any): NormRect | null => {
+      if (!r || ![r.x, r.y, r.w, r.h].every((v: any) => Number.isFinite(Number(v)))) return null;
+      const x = Number(r.x); const y = Number(r.y); const w = Number(r.w); const h = Number(r.h);
+      return (w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= 1.001 && y + h <= 1.001) ? { x, y, w, h } : null;
+    };
+    const placeA = parseRect(req.body?.place?.A);
+    const placeB = parseRect(req.body?.place?.B);
     const overlays: StudioOverlay[] = (Array.isArray(req.body?.overlays) ? req.body.overlays : [])
       .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
       .slice(0, 12)
@@ -587,7 +616,7 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume, fullFrame, overlays });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume, fullFrame, overlays, placeA, placeB });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });

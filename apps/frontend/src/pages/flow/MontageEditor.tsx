@@ -160,6 +160,8 @@ interface PodcastSpec {
   animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null }[] | null;
   // Фон студии для «Собрать НА студии»: clean plate (студия без людей), выживает выход/вход.
   studioBgUrl?: string | null;
+  // Окна ведущих в долях исходного фото — посадка аватаров на свои места при склейке.
+  studioPlace?: { A?: { x: number; y: number; w: number; h: number }; B?: { x: number; y: number; w: number; h: number } } | null;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
@@ -939,7 +941,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // ── Подкаст: мутации спеки, диалог/диаризация, медиа, сборка ──────────────────
   const podMutate = (fn: (p: PodcastSpec) => PodcastSpec) => { setPod((p) => fn(p)); setDirty(true); };
   /** Сохранить результат/активную задачу аниматора в спеку (авто-сейв → переживает выход/вход). */
-  const persistAnim = (patch: Partial<Pick<PodcastSpec, 'animActive' | 'animResult' | 'studioBgUrl'>>) => { setPod((p) => ({ ...p, ...patch })); setDirty(true); };
+  const persistAnim = (patch: Partial<Pick<PodcastSpec, 'animActive' | 'animResult' | 'studioBgUrl' | 'studioPlace'>>) => { setPod((p) => ({ ...p, ...patch })); setDirty(true); };
 
   /** Сгенерировать диалог двух ведущих по брифу (Claude). */
   const genDialogue = async () => {
@@ -1129,6 +1131,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (onStudio) {
         body.studioUrl = bg;
         body.fullFrame = true; // вырезки в композиции кадра фона → аватары на своих местах
+        if (pod.studioPlace?.A && pod.studioPlace?.B) body.place = pod.studioPlace; // окна-координаты посадки
         // медиа реплик (картинки/видео) — показываются по своим интервалам поверх сцены
         body.overlays = pod.dialogue
           .map((l, i, arr) => l.image ? { url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image) } : null)
@@ -1161,7 +1164,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         setStudioBg(bg);
         setAnimNote(d.note || 'HeyGen анимирует…');
         // studioBgUrl (clean plate) — в спеку: «Собрать НА студии» работает и после выхода/входа
-        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null, studioBgUrl: bg });
+        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null, studioBgUrl: bg, studioPlace: d.place || null });
         pollAnimate(d.jobs.map((j: any) => j.videoId));
       } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
     } catch { setAnimNote('Ошибка сети (HeyGen-студия).'); setAnimBusy(false); }
