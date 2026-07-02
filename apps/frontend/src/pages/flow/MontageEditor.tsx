@@ -43,18 +43,17 @@ const META: Record<MKind, Meta> = {
     choices: [{ id: 'type', label: 'Тип источника', def: ['rss'], opts: [{ v: 'rss', label: 'RSS' }, { v: 'telegram', label: 'Telegram' }, { v: 'site', label: 'Сайт' }, { v: 'rubric', label: 'Рубрика' }] }],
     text: 'RSS-URL, @telegram-канал или ссылка на сайт — возьмём последнюю запись (текст + фото)', llm: true },
   research:  { label: 'Исследование', icon: <Search size={18} />, hint: 'Веб-поиск темы + источники', text: 'Тема для ресёрча…', llm: true },
-  length:    { label: 'Длина', icon: <Scissors size={18} />, hint: 'Длина ролика',
+  length:    { label: 'Длина', icon: <Scissors size={18} />, hint: 'Длительность / лучший момент (ИИ) — авто-нарезка; ручная обрезка — в облаке «Редактор»',
     choices: [{ id: 'duration', label: 'Длительность', def: ['30'], opts: [{ v: '15', label: '15 сек' }, { v: '30', label: '30 сек' }, { v: '60', label: '60 сек' }, { v: 'best', label: 'Лучший момент (ЛЛМ)' }, { v: 'full', label: 'Весь' }] }],
     text: 'или диапазон 0:10–0:40', llm: true },
   format:    { label: 'Формат', icon: <Crop size={18} />, hint: 'Ориентация под площадку',
     choices: [{ id: 'orient', label: 'Ориентация', def: ['9:16'], opts: [{ v: '9:16', label: 'Вертикаль 9:16' }, { v: '16:9', label: 'Гориз 16:9' }, { v: '1:1', label: 'Квадрат' }, { v: '4:5', label: '4:5' }, { v: '21:9', label: 'Cinematic' }] }] },
   silence:   { label: 'Паузы', icon: <VolumeX size={18} />, hint: 'Тишина между словами',
     choices: [{ id: 'mode', label: 'Что делать с паузами', def: ['cut'], opts: [{ v: 'none', label: 'Не трогать' }, { v: 'cut', label: 'Вырезать' }, { v: 'speed', label: 'Ускорить' }] }] },
-  subtitles: { label: 'Субтитры', icon: <Type size={18} />, hint: 'Стиль титров',
+  subtitles: { label: 'Субтитры', icon: <Type size={18} />, hint: 'Распознаём речь и вшиваем титры',
     choices: [
       { id: 'style', label: 'Стиль', def: ['word'], opts: [{ v: 'none', label: 'Без' }, { v: 'word', label: 'По словам' }, { v: 'karaoke', label: 'Караоке' }, { v: 'plain', label: 'Обычные' }] },
-      { id: 'pos', label: 'Позиция', def: ['bottom'], opts: [{ v: 'bottom', label: 'Низ' }, { v: 'center', label: 'Центр' }, { v: 'top', label: 'Верх' }] },
-    ], text: 'Пожелания к титрам: шрифт, кегль, межбуквенный и межстрочный интервал, обводка, цвет, тень…', llm: true },
+    ] },
   audio:     { label: 'Аудио', icon: <Music size={18} />, hint: 'Музыка + баланс с голосом',
     choices: [
       { id: 'vol', label: 'Громкость музыки', def: ['mid'], opts: [{ v: 'low', label: 'Тихо' }, { v: 'mid', label: 'Средне' }, { v: 'high', label: 'Громко' }] },
@@ -62,14 +61,14 @@ const META: Record<MKind, Meta> = {
     ], media: 'Музыка из Галереи' },
   voiceover: { label: 'Озвучка', icon: <Mic size={18} />, hint: 'Текст → голос (TTS)',
     choices: [{ id: 'voice', label: 'Голос', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] }],
-    text: 'текст для озвучки…', media: 'Референс голоса', llm: true },
-  color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки',
+    text: 'текст для озвучки…', llm: true },
+  color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки: пресет или свой LUT',
     choices: [{ id: 'preset', label: 'Пресет', def: ['none'], opts: [{ v: 'none', label: 'Без' }, { v: 'warm', label: 'Тёплый' }, { v: 'cold', label: 'Холодный' }, { v: 'cinema', label: 'Кино' }, { v: 'bw', label: 'Ч/Б' }, { v: 'vivid', label: 'Яркий' }] }],
-    text: 'Опишите цвет: «тёплый плёночный закат, мягкие тени, лёгкое зерно»…', media: 'LUT (.cube) или референс' },
+    media: 'LUT-файл (.cube) из Галереи — заменяет пресет' },
   broll:     { label: 'B-roll', icon: <Image size={18} />, hint: 'Перебивки: стоки (Pexels/Pixabay) или медиа из Галереи',
     choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'reference', label: 'Из Референса' }] }],
     text: 'что вставить и когда…', media: 'Медиа из Галереи', llm: true },
-  avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Говорящая голова / UGC',
+  avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Одна говорящая голова (монолог); диалог двух ведущих — облако «Подкаст»',
     choices: [
       { id: 'engine', label: 'Движок', def: ['heygen'], opts: [{ v: 'heygen', label: 'HeyGen (облако)' }, { v: 'sadtalker', label: 'SadTalker (GPU)' }] },
       { id: 'voice', label: 'Голос', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] },
@@ -99,7 +98,7 @@ const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: stri
   omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
   podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
-  editor: { label: 'Редактор', icon: <Scissors size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
+  editor: { label: 'Редактор', icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
 };
 
 // Пикер «Редактора» повторяет Галерею: те же вкладки-папки (тренды/референс/аудио/из анализа).
@@ -202,33 +201,40 @@ const newSeg = (start: number, end: number): OmniSeg =>
 const OMNI_DEFAULT: OmniSpec = { segments: [newSeg(0, 0.2)] };
 const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
-interface Preset { name: string; kinds: MKind[]; }
-const NEWS_CHAIN: MKind[] = ['news', 'voiceover', 'broll', 'subtitles', 'audio', 'format', 'export'];
+/** Узел пресета: kind или kind с готовыми настройками (кнопки/текст/✨). */
+type PresetNode = MKind | { kind: MKind; choices?: Record<string, string[]>; text?: string; llm?: boolean };
+interface Preset { name: string; kinds: PresetNode[]; }
+// Порядок узлов = порядок применения: Формат ДО титров (кроп не отрежет вшитые
+// субтитры), титры ПОСЛЕ озвучки (транскрибируют голос), музыка — после титров.
+const NEWS_CHAIN = (type: string): PresetNode[] => [
+  { kind: 'news', choices: { type: [type] }, llm: true },
+  { kind: 'voiceover', llm: true }, 'format', { kind: 'broll', llm: true }, 'subtitles', 'audio', 'export',
+];
 const PRESET_GROUPS: { group: string; presets: Preset[] }[] = [
   { group: 'Новости', presets: [
-    { name: 'Новости из RSS', kinds: NEWS_CHAIN },
-    { name: 'Из Telegram-канала', kinds: NEWS_CHAIN },
-    { name: 'С сайта (рубрика)', kinds: NEWS_CHAIN },
+    { name: 'Новости из RSS', kinds: NEWS_CHAIN('rss') },
+    { name: 'Из Telegram-канала', kinds: NEWS_CHAIN('telegram') },
+    { name: 'С сайта (рубрика)', kinds: NEWS_CHAIN('site') },
   ] },
   { group: 'Короткие ролики', presets: [
     { name: 'Клип-фабрика', kinds: ['length', 'format', 'silence', 'subtitles', 'audio', 'export'] },
-    { name: 'Подкаст → шортс', kinds: ['length', 'format', 'subtitles', 'audio', 'export'] },
-    { name: 'Reels-нарезка', kinds: ['length', 'format', 'silence', 'subtitles', 'export'] },
+    { name: 'Лучший момент → шортс', kinds: [{ kind: 'length', choices: { duration: ['best'] }, llm: true }, 'format', 'subtitles', 'audio', 'export'] },
+    { name: 'Reels-нарезка', kinds: [{ kind: 'length', choices: { duration: ['15'] } }, 'format', 'silence', { kind: 'color', choices: { preset: ['vivid'] } }, 'subtitles', 'export'] },
   ] },
   { group: 'Говорящие', presets: [
-    { name: 'Говорящая голова', kinds: ['length', 'format', 'subtitles', 'audio', 'color', 'export'] },
-    { name: 'Аватар-спикер', kinds: ['research', 'voiceover', 'avatar', 'subtitles', 'export'] },
-    { name: 'UGC-отзыв', kinds: ['avatar', 'voiceover', 'subtitles', 'audio', 'export'] },
+    { name: 'Говорящая голова', kinds: ['length', 'format', 'color', 'subtitles', 'audio', 'export'] },
+    { name: 'Аватар-спикер', kinds: [{ kind: 'research', llm: true }, { kind: 'avatar', llm: true }, 'subtitles', 'audio', 'export'] },
+    { name: 'UGC-отзыв', kinds: [{ kind: 'avatar', llm: true }, 'subtitles', 'audio', 'export'] },
   ] },
   { group: 'Постановочные', presets: [
-    { name: 'Кинематик', kinds: ['length', 'format', 'color', 'audio', 'export'] },
-    { name: 'Объяснитель', kinds: ['research', 'voiceover', 'broll', 'subtitles', 'audio', 'export'] },
-    { name: 'Документалка', kinds: ['length', 'broll', 'color', 'audio', 'export'] },
+    { name: 'Кинематик', kinds: ['length', { kind: 'format', choices: { orient: ['21:9'] } }, { kind: 'color', choices: { preset: ['cinema'] } }, 'audio', 'export'] },
+    { name: 'Объяснитель', kinds: [{ kind: 'research', llm: true }, { kind: 'voiceover', llm: true }, 'format', { kind: 'broll', llm: true }, 'subtitles', 'audio', 'export'] },
+    { name: 'Документалка', kinds: ['length', { kind: 'format', choices: { orient: ['16:9'] } }, { kind: 'broll', llm: true }, { kind: 'color', choices: { preset: ['cinema'] } }, 'audio', 'export'] },
   ] },
   { group: 'Сервисные', presets: [
     { name: 'Скрин-демо', kinds: ['length', 'silence', 'subtitles', 'audio', 'export'] },
     { name: 'Дубляж', kinds: ['voiceover', 'subtitles', 'export'] },
-    { name: 'Гибрид', kinds: ['length', 'format', 'broll', 'subtitles', 'audio', 'export'] },
+    { name: 'Гибрид', kinds: ['length', 'format', { kind: 'broll', llm: true }, 'subtitles', 'audio', 'export'] },
   ] },
 ];
 
@@ -320,17 +326,6 @@ function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
     lenText = `${secToClock(start)}–${secToClock(end)}`; lenLlm = false;
   }
 
-  // Аудио: стратегия звука + целевая громкость (LUFS) для loudnorm.
-  const audioBits: string[] = [];
-  if (d.audioDialogue) audioBits.push(d.audioDialogue);
-  else if (d.meta?.music) audioBits.push(`Звук оригинала: ${d.meta.music}`);
-  if (d.quality?.lufs != null) audioBits.push(`громкость ≈ ${d.quality.lufs} LUFS`);
-
-  // Цвет: стиль + ориентир яркости.
-  const colorBits: string[] = [];
-  if (d.visualStyle) colorBits.push(d.visualStyle);
-  if (d.quality?.brightness != null) colorBits.push(`яркость ~${Math.round(d.quality.brightness)}/255`);
-
   // B-roll: тема (ключи) + тайминг вставок по ритму оригинала.
   const brollBits: string[] = [];
   if (kw) brollBits.push(`Вставки по теме: ${kw}`);
@@ -344,12 +339,12 @@ function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
       useLlm: !d.copyReadyScript,        // есть готовый скрипт → читаем как есть; нет → пишет Claude по брифу
       choices: { voice: 'female' },
     }),
-    mkNode('subtitles', { useLlm: true, choices: { style: 'word', pos: 'bottom' },
-      text: d.hookType ? `Усилить хук «${d.hookType}» в первые секунды` : '' }),
-    mkNode('audio', { choices: { vol: 'mid', duck: 'on' }, text: audioBits.join(' · ') }),
-    mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) }, text: colorBits.join(' · ') }),
+    // B-roll ДО титров (перебивки не закрывают вшитый текст), титры ПОСЛЕ озвучки.
     mkNode('broll', { useLlm: true, choices: { src: 'stock' },
       text: brollBits.join(' · ') || (d.howToReplicate || []).slice(0, 2).join('; ') }),
+    mkNode('subtitles', { choices: { style: 'word' } }),
+    mkNode('audio', { choices: { vol: 'mid', duck: 'on' } }),
+    mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) } }),
   ];
   // Апскейл — только если оригинал низкого качества / <1080p (GPU-шаг, добавляем по делу).
   if (d.quality?.needUpscale) nodes.push(mkNode('upscale', { choices: { scale: '2' } }));
@@ -506,7 +501,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             }
           }
           if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
-          if (Array.isArray(d.flow.graph?.cloudEdges)) setCloudEdges(d.flow.graph.cloudEdges);
+          if (Array.isArray(d.flow.graph?.cloudEdges)) {
+            // «Контент-план» скрыт — старые связи с ним не рисуем и не копим.
+            setCloudEdges(d.flow.graph.cloudEdges.filter((e: any) => e?.from !== 'plan' && e?.to !== 'plan'));
+          }
           if (d.flow.graph?.omni && typeof d.flow.graph.omni === 'object') {
             const raw = Array.isArray(d.flow.graph.omni.segments) ? d.flow.graph.omni.segments : [];
             // Нормализуем старые сохранённые сегменты (могли нести legacy lenSec/mode или битые доли).
@@ -904,6 +902,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
   const build = async () => {
     if (building || batchRunning) return;
+    if (!sourceUrl) {
+      // Без исходника рендерить нечего: открываем пикер и подсказываем по-русски.
+      setSelectedId(null); setCloudPanel(null); setShowSource(true);
+      setBuildJob({ status: 'failed', progress: 0, steps: [], error: 'Сначала выберите исходное видео: клик по центральному узлу «Видео из галереи».' });
+      return;
+    }
     setBuilding(true);
     setBuildMinimized(false);
     setBuildJob({ status: 'queued', progress: 0, steps: [] });
@@ -921,7 +925,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
       }
     } catch (e: any) {
-      setBuildJob({ status: 'failed', error: e?.message || 'Ошибка', progress: 0, steps: [] });
+      const raw = String(e?.message || 'Ошибка');
+      const msg = /inputUrl|source/i.test(raw)
+        ? 'Не выбрано исходное видео — кликните центральный узел и выберите файл из Галереи.'
+        : raw;
+      setBuildJob({ status: 'failed', error: msg, progress: 0, steps: [] });
     } finally {
       setBuilding(false);
     }
@@ -1709,7 +1717,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return { ...n, choices: { ...n.choices, [c.id]: next } };
   }));
 
-  const applyPreset = (preset: Preset) => { setName(preset.name); setNodes(preset.kinds.map(newNode)); setDirty(true); setShowPresets(false); };
+  const applyPreset = (preset: Preset) => {
+    setName(preset.name);
+    setNodes(preset.kinds.map((p) => {
+      const spec = typeof p === 'string' ? { kind: p } : p;
+      const n = newNode(spec.kind);
+      if (spec.choices) Object.entries(spec.choices).forEach(([k, v]) => { n.choices[k] = [...v]; });
+      if (spec.text) n.text = spec.text;
+      if (spec.llm) n.useLlm = true;
+      return n;
+    }));
+    setDirty(true); setShowPresets(false);
+  };
 
   // Вся Галерея с папками (как в разделе «Галерея»): тренды + референс + аудио + из анализа.
   const loadMedia = async () => {
@@ -2140,6 +2159,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
         </button>
+        {/* «Собрать» в шапке — всегда видима (плавающую кнопку перекрывают модалки панелей). */}
+        <button onClick={build} disabled={building || batchRunning || nodes.length === 0}
+          title={nodes.length === 0 ? 'Добавьте блоки в сценарий' : !sourceUrl ? 'Сначала выберите исходное видео (центральный узел)' : 'Собрать ролик из сценария'}
+          className="inline-flex items-center gap-1.5 text-sm font-700 px-3.5 py-1.5 rounded-lg disabled:opacity-50"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: 'var(--brand-contrast)', border: 'none',
+            cursor: building ? 'wait' : nodes.length === 0 ? 'not-allowed' : 'pointer' }}>
+          {building ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />}
+          {building ? `Собираю… ${buildJob?.progress || 0}%` : 'Собрать'}
+        </button>
       </div>
 
       {/* Холст-паутина (верхние чипы убраны — добавление через плавающую «+» слева сверху) */}
@@ -2253,7 +2281,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             </button>
           );
         })}
-        {(['omni', 'plan', 'podcast', 'editor'] as CloudId[]).map((id) => {
+        {/* «Контент-план» скрыт до реализации (этап C): узел был пустым стабом. */}
+        {(['omni', 'podcast', 'editor'] as CloudId[]).map((id) => {
           const pos = cloud[id]; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
@@ -2459,7 +2488,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     {g.presets.map((p) => (
                       <button key={p.name} onClick={() => applyPreset(p)} className="text-left p-3 rounded-xl transition-colors hover:border-[var(--text-accent)]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
                         <div className="text-sm font-700 mb-1" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
-                        <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.kinds.map((k) => META[k].label).join(' · ')}</div>
+                        <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.kinds.map((k) => META[typeof k === 'string' ? k : k.kind].label).join(' · ')}</div>
                       </button>
                     ))}
                   </div>

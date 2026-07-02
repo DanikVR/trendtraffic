@@ -1168,7 +1168,27 @@
  *         выбор голоса М/Ж) — пресеты «Аватар-спикер»/«UGC-отзыв» ожили; SadTalker остаётся для GPU-воркера.
  *         (4) Апскейл всегда работает: без GPU — CPU-фолбэк lanczos+unsharp на воркере. DNA-рецепт: broll
  *         src=stock. Env (опц.): PEXELS_API_KEY/PIXABAY_API_KEY как платформенный фолбэк стоков. */
-export const APP_VERSION = '1.6.41';
+/* 1.6.42 — БОЛЬШОЙ АУДИТ TrendFlow (workflow, 9 агентов): пресеты/узлы/UX «Собрать» приведены к реально
+ *         работающему. ВОРКЕР: (1) Формат чинён — auto_reframe получал «9:16»-строки, НЕ входящие в его
+ *         enum, и молча падал в portrait: «16:9»/«1:1» всегда давали вертикаль; теперь portrait/landscape/
+ *         square/vertical_4_5/cinematic (все 5 кнопок честные). (2) Цветокор чинён — слал preset/look,
+ *         а схема ждёт profile/lut_path/custom_vf → шаг был passthrough; теперь warm→cinematic_warm,
+ *         cold→cinematic_cool, cinema→moody_dark, vivid→bright_clean, Ч/Б через custom_vf hue=s=0
+ *         (+фолбэк high_contrast), LUT .cube из Галереи → lut_path. (3) Аудио: дакинг реализован
+ *         (sidechaincompress+amix, музыка зациклена; duck=off → segmented_music). (4) Озвучка: голос М/Ж
+ *         из узла доходит до piper (_tts). (5) Экспорт: платформы → реальные media-profiles (tiktok/
+ *         instagram_reels/youtube_shorts/youtube_landscape/instagram_feed), note честно про общий формат.
+ *         ФРОНТ: пресеты с оверрайдами (choices/text/✨ на узел) — news-пресеты ставят type и ✨,
+ *         «Лучший момент → шортс» (length=best+✨), «Кинематик» 21:9+cinema, «Документалка» 16:9,
+ *         «Аватар-спикер»/«UGC-отзыв» через avatar+✨ (порядок был сломан: voiceover ПОСЛЕ avatar
+ *         перекрывал липсинк-голос); везде Формат ДО титров (кроп резал вшитые субтитры). Убраны мёртвые
+ *         контролы: subtitles pos/текст/✨ (воркер читает только стиль), voiceover «референс голоса»,
+ *         color текст (LUT работает!). «Контент-план» скрыт (пустой стаб), «Редактор» — иконка Film,
+ *         хинты Длина/Аватар различают авто-нарезку/Редактор и монолог/Подкаст. «Собрать» продублирована
+ *         в ШАПКЕ (плавающую перекрывали модалки — жалоба юзера), без источника — открывает пикер с
+ *         русской подсказкой. Удалён легаси omnichannel (FlowCanvas/flowNodes/channels + @xyflow/react).
+ *         DNA-рецепт: broll до титров, без мусорных text. */
+export const APP_VERSION = '1.6.42';
 
 export function AppVersion() {
   return (

@@ -28,8 +28,7 @@
 **Общие (затрагивают ВСЕ каналы — править осторожно):**
 - `flows/runner.ts` — движок (SendIntent/FlowRunContext, узлы, ветвление, спинтакс, handover, анти-флуд кап).
 - `channels/capabilities.ts` — бэкенд-матрица возможностей (maxButtons/cards/ctaUrl/media по каналу).
-- `flow/channels.tsx` — фронт-матрица (caps + список блоков `*_BLOCKS` + иконки каналов).
-- `flow/flowNodes.tsx` — UI-узлов (блоки), `flow/FlowCanvas.tsx` — редактор, `pages/FlowPage.tsx` — карточки аккаунтов (welcome/ice breakers/ref) + аналитика.
+- ~~`flow/channels.tsx` / `flow/flowNodes.tsx` / `flow/FlowCanvas.tsx`~~ — УДАЛЕНЫ в v1.6.42 (легаси omnichannel-редактора; страница /flow теперь = TrendFlow `flow/MontageEditor.tsx`). Фронт-матрица каналов при возврате бот-фичи восстанавливается из git-истории.
 - `server.ts` — монтаж `/api/<канал>` (раздел 2.2.x).
 - `apps/backend/.env.example` — все переменные `<КАНАЛ>_*`.
 

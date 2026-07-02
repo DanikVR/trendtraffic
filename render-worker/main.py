@@ -245,11 +245,14 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
         return (f, n or "обрезка")
 
     if step_tool == "auto_reframe":  # format
-        amap = {"9:16": "9:16", "16:9": "16:9", "1:1": "1:1", "4:5": "9:16", "21:9": "16:9"}
+        # Имена пресетов auto_reframe (ASPECT_PRESETS): неизвестный ключ молча падал в 9:16,
+        # из-за чего «16:9»/«1:1» всегда давали вертикаль. Маппим в реальные имена.
+        amap = {"9:16": "portrait", "16:9": "landscape", "1:1": "square",
+                "4:5": "vertical_4_5", "21:9": "cinematic"}
         orient = (choices.get("orient") or ["9:16"])[0]
         f, _, n = run_tool("auto_reframe", {"input_path": input_path, "output_path": out(),
-                                            "target_aspect": amap.get(orient, "9:16")})
-        return (f, n or "формат")
+                                            "target_aspect": amap.get(orient, "portrait")})
+        return (f, n or f"формат {orient}")
 
     if step_tool == "silence_cutter":  # silence
         m = (choices.get("mode") or ["cut"])[0]
@@ -276,42 +279,85 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
                                               "subtitle_path": srt, "output_path": out()})
         return (f, cn or "субтитры вшиты")
 
-    if step_tool == "audio_mixer":  # audio: музыка + дакинг
+    if step_tool == "audio_mixer":  # audio: музыка (+дакинг под голос через sidechain)
         if not media:
             return None, "аудио: музыка не выбрана — passthrough"
         mp = _download_media(base_url, media, work, default_ext=".mp3")
         if not mp:
             return None, "аудио: музыка не скачалась"
         vol = {"low": 0.10, "mid": 0.20, "high": 0.35}.get((choices.get("vol") or ["mid"])[0], 0.20)
+        duck = (choices.get("duck") or ["on"])[0] != "off"
+        if duck:
+            # Музыка приглушается, когда в исходнике звучит голос (sidechaincompress),
+            # затем миксуется с оригинальной дорожкой. Музыка зациклена на всю длину.
+            f2 = out()
+            ok, err = _run([FFMPEG, "-y", "-i", input_path, "-stream_loop", "-1", "-i", mp,
+                            "-filter_complex",
+                            f"[1:a]volume={vol:.2f}[m];"
+                            f"[m][0:a]sidechaincompress=threshold=0.05:ratio=8:attack=120:release=500[dk];"
+                            f"[0:a][dk]amix=inputs=2:duration=first:normalize=0[a]",
+                            "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac",
+                            "-shortest", f2], timeout=1200)
+            if ok and os.path.exists(f2):
+                return f2, "аудио: музыка + приглушение под голос"
+            print(f"[worker] duck mix failed: {err[:200]} — фолбэк segmented_music")
         f, _, n = run_tool("audio_mixer", {"operation": "segmented_music", "video_path": input_path,
                                            "music_path": mp, "music_volume": vol, "output_path": out()})
         return (f, n or "аудио")
 
-    if step_tool == "tts":  # voiceover: piper → подмешать как аудио дорожку видео
+    if step_tool == "tts":  # voiceover: piper (голос М/Ж из узла) → подмешать как дорожку видео
         if not text:
             return None, "озвучка: нет текста — passthrough"
-        wav, _, n = run_tool("piper_tts", {"text": text, "output_path": out(".wav")})
+        voice = (choices.get("voice") or ["female"])[0]
+        wav, _, n = _tts(text, voice, out(".wav"))
         if not wav:
             return None, f"озвучка: tts не создан ({n or ''})"
         f, _, cn = run_tool("video_compose", {"operation": "encode", "input_path": input_path,
                                               "audio_path": wav, "output_path": out()})
-        return (f, cn or "озвучка")
+        return (f, cn or f"озвучка ({'муж.' if voice == 'male' else 'жен.'} голос)")
 
-    if step_tool == "color_grade":  # color (схема enhancement/ — best-effort)
+    if step_tool == "color_grade":  # color: профили color_grade + LUT .cube + Ч/Б через custom_vf
         preset = (choices.get("preset") or ["none"])[0]
-        if preset == "none":
+        lut = None
+        if media and str(media).lower().endswith(".cube"):
+            lut = _download_media(base_url, media, work, default_ext=".cube")
+        if preset == "none" and not lut:
             return None, "цвет: без изменений"
-        f, _, n = run_tool("color_grade", {"input_path": input_path, "output_path": out(),
-                                           "preset": preset, "look": preset})
-        return (f, n or "цветокор")
+        inp = {"input_path": input_path, "output_path": out()}
+        label = preset
+        if lut:
+            inp["lut_path"] = lut
+            label = "LUT"
+        elif preset == "bw":
+            inp["custom_vf"] = "hue=s=0,eq=contrast=1.06"
+        else:
+            pmap = {"warm": "cinematic_warm", "cold": "cinematic_cool",
+                    "cinema": "moody_dark", "vivid": "bright_clean"}
+            inp["profile"] = pmap.get(preset, "neutral")
+        f, _, n = run_tool("color_grade", inp)
+        if not f and preset == "bw":  # схема без custom_vf → ближайший профиль
+            f, _, n = run_tool("color_grade", {"input_path": input_path, "output_path": out(),
+                                               "profile": "high_contrast"})
+        return (f, n or f"цветокор: {label}")
 
-    if step_tool == "video_compose":  # export
-        plats = choices.get("platforms") or []
+    if step_tool == "video_compose":  # export: media-profile площадки (один файл на формат)
+        plats = [str(p) for p in (choices.get("platforms") or [])]
+        prof_map = {"tiktok": "tiktok", "reels": "instagram_reels", "shorts": "youtube_shorts",
+                    "youtube": "youtube_landscape", "instagram": "instagram_feed"}
         inp = {"operation": "encode", "input_path": input_path, "output_path": out()}
+        note = "экспорт"
         if plats:
-            inp["profile"] = plats[0]
+            first = prof_map.get(plats[0])
+            if first:
+                inp["profile"] = first
+            vertical = {"tiktok", "reels", "shorts"}
+            same = [p for p in plats if (p in vertical) == (plats[0] in vertical)]
+            other = [p for p in plats if p not in same]
+            note = f"экспорт: {', '.join(same)}"
+            if other:
+                note += f" · ВНИМАНИЕ: {', '.join(other)} — другой формат кадра, для него соберите вариант с узлом «Формат»"
         f, _, n = run_tool("video_compose", inp)
-        return (f, n or "экспорт")
+        return (f, n or note)
 
     if step_tool == "upscale":  # upscale: GPU Real-ESRGAN, иначе CPU-фолбэк (lanczos+unsharp)
         sc = (choices.get("scale") or ["off"])[0]

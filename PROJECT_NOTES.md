@@ -3105,3 +3105,14 @@ ssh root@web 'cd /var/www/trendtraffic && bash deploy/vps-redeploy.sh'
 2. В WSL2 (Ubuntu): `git clone <repo> /opt/tt && bash /opt/tt/render-worker/install-gpu.sh` (ставит OpenMontage + torch cu128 + Real-ESRGAN/SadTalker + systemd `trendtraffic-render-gpu` на `100.122.182.97:8801`; Tailscale уже стоит на ПК — машина `super` в tailnet).
 3. В админке (Admin Config → «Рендер: GPU и воркеры»): `renderGpuWorkerUrl = http://100.122.182.97:8801`, `renderGpuTarget = home`.
 4. После этого: «Апскейл» — нейро Real-ESRGAN, «Аватар» с движком SadTalker — бесплатно локально (HeyGen остаётся как облачный вариант).
+
+### 5.Х-доп: аудит пресетов/узлов v1.6.42 (2026-07-02, workflow 9 агентов)
+
+Найдено и починено (полный чейнджлог — комментарий v1.6.42 в AppVersion.tsx):
+- **Формат был сломан всегда**: воркер слал auto_reframe значения «9:16»-строками, которых нет в его enum (`ASPECT_PRESETS.get(name,(9,16))` молча даёт вертикаль) → «16:9»/«1:1» выдавали 9:16. Теперь portrait/landscape/square/vertical_4_5/cinematic.
+- **Цветокор был passthrough всегда**: слали `preset/look`, схема ждёт `profile/lut_path/custom_vf`. Маппинг warm/cold/cinema/vivid → профили color_grade; Ч/Б → custom_vf; LUT .cube из Галереи реально применяется.
+- **Дакинг реализован** (ffmpeg sidechaincompress + amix, музыка -stream_loop), duck=off → segmented_music. **Голос М/Ж** доходит до piper. **Экспорт** маппит площадки на media_profiles (один файл на формат кадра, note предупреждает про смешение вертикали и youtube).
+- **Пресеты**: тип Preset расширен оверрайдами (choices/text/llm). Все 15 переписаны: format ДО титров (кроп резал вшитые субтитры), news-пресеты ставят type+✨, «Аватар-спикер»/«UGC-отзыв» = avatar+✨ (раньше voiceover ПОСЛЕ avatar глушил липсинк-голос HeyGen), «Лучший момент → шортс» (best+✨), «Кинематик» 21:9+cinema, «Документалка» 16:9, «Reels-нарезка» 15с+vivid.
+- **Мёртвые контролы убраны**: subtitles pos/текст/✨, voiceover «референс голоса», color текст. **«Контент-план» скрыт** (пустой стаб; связи с ним фильтруются при загрузке). «Редактор» — иконка Film; хинты «Длина» (авто-нарезка vs Редактор) и «Аватар» (монолог vs Подкаст).
+- **«Собрать» в шапке** (плавающую FAB перекрывали модалки панелей z-60/70 — жалоба юзера «нет кнопки»); build() без источника открывает пикер с русским сообщением; ошибка inputUrl русифицирована.
+- **Удалён легаси omnichannel**: flow/FlowCanvas.tsx, flowNodes.tsx, channels.tsx + @xyflow/react (не импортировались; /flow = MontageEditor).
