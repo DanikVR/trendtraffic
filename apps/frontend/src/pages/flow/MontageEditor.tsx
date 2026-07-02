@@ -1140,6 +1140,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         body.studioUrl = bg;
         body.fullFrame = true; // вырезки в композиции кадра фона → аватары на своих местах
         if (pod.studioPlace?.A && pod.studioPlace?.B) body.place = pod.studioPlace; // окна-координаты посадки
+        // рамки ведущих из «студии лиц» — сцена зумится на них (без пустого потолка/пола)
+        const focA = pod.faces.find((f) => f.speaker === 'A')?.box;
+        const focB = pod.faces.find((f) => f.speaker === 'B')?.box;
+        if (focA && focB) body.focus = { A: focA, B: focB };
         // медиа реплик (картинки/видео) — показываются по своим интервалам поверх сцены
         body.overlays = pod.dialogue
           .map((l, i, arr) => l.image ? { url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image) } : null)

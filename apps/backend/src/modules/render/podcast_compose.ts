@@ -183,6 +183,8 @@ export async function composeOnStudio(opts: {
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
   fullFrame?: boolean; overlays?: StudioOverlay[];
   placeA?: NormRect | null; placeB?: NormRect | null;
+  /** Рамки самих ведущих (из «студии лиц») — сцена зумится на них (2D-кроп без пустого потолка). */
+  focusA?: NormRect | null; focusB?: NormRect | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const [dA, dB, dAudio] = await Promise.all([
@@ -219,27 +221,42 @@ export async function composeOnStudio(opts: {
     const size = await probeImageSize(opts.studioUrl);
     if (size && size.w > 1 && size.h > 1) {
       const pA = opts.placeA; const pB = opts.placeB;
-      // Горизонтальный регион, покрывающий оба окна (+2% запас) — его растягиваем на всю ширину.
-      const cx0 = Math.max(0, Math.min(pA.x, pB.x) - 0.02);
-      const cx1 = Math.min(1, Math.max(pA.x + pA.w, pB.x + pB.w) + 0.02);
-      const cw = Math.max(0.05, cx1 - cx0);
+      const fA = opts.focusA; const fB = opts.focusB;
+      // Контент-бокс сцены: при рамках ведущих зумим НА НИХ (2D — режем и пустой потолок/пол,
+      // иначе сцена ужималась в узкую ленту по центру); без рамок — по окнам, во всю высоту.
+      let cx0: number; let cx1: number; let cy0: number; let cy1: number;
+      if (fA && fB) {
+        cx0 = Math.max(0, Math.min(fA.x, fB.x) - 0.05);
+        cx1 = Math.min(1, Math.max(fA.x + fA.w, fB.x + fB.w) + 0.05);
+        cy0 = Math.max(0, Math.min(fA.y, fB.y) - 0.07);
+        cy1 = Math.min(1, Math.max(fA.y + fA.h, fB.y + fB.h) + 0.10);
+      } else {
+        cx0 = Math.max(0, Math.min(pA.x, pB.x) - 0.02);
+        cx1 = Math.min(1, Math.max(pA.x + pA.w, pB.x + pB.w) + 0.02);
+        cy0 = 0; cy1 = 1;
+      }
+      const cw = Math.max(0.05, cx1 - cx0); const ch = Math.max(0.05, cy1 - cy0);
       const cropW = ev(cw * size.w); const cropX = Math.round(cx0 * size.w);
+      const cropH = ev(ch * size.h); const cropY = Math.round(cy0 * size.h);
       const s = W / cropW;                       // масштаб источник→выход
-      const Hs = ev(size.h * s);                 // высота сцены после масштабирования
+      const Hs = ev(cropH * s);                  // высота сцены после масштабирования
+      const headCy = ((pA.y + pA.h / 2 + pB.y + pB.h / 2) / 2 - cy0) / ch; // центр ведущих в контенте (0..1)
       const yShift = Hs >= H
-        ? Math.max(0, Math.min(Hs - H, Math.round(((pA.y + pA.h / 2 + pB.y + pB.h / 2) / 2) * Hs - H / 2)))
+        ? Math.max(0, Math.min(Hs - H, Math.round(headCy * Hs - H / 2)))
         : 0;                                     // Hs>=H: вертикальный кроп с центром на ведущих
       const top = Hs >= H ? 0 : Math.round((H - Hs) / 2); // Hs<H: сцена лентой по центру
-      const sharp = `crop=${cropW}:${size.h}:${cropX}:0,scale=${W}:${Hs},setsar=1`;
+      const sharp = `crop=${cropW}:${cropH}:${cropX}:${cropY},scale=${W}:${Hs},setsar=1`;
       const bgChain = Hs >= H
         ? `[0:v]${sharp},crop=${W}:${H}:0:${yShift},fps=30[bg];`
-        // недостающую высоту заполняет блюр всей студии — стандарт вертикального рекадра
-        : `[0:v]split[bgs][bgb];[bgb]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=24:2,setsar=1[blf];`
+        // недостающую высоту заполняет притемнённый блюр студии — подложка не спорит со сценой
+        : `[0:v]split[bgs][bgb];[bgb]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=32:2,eq=brightness=-0.08:saturation=0.8,setsar=1[blf];`
           + `[bgs]${sharp}[shp];[blf][shp]overlay=0:${top},fps=30[bg];`;
       const place = (p: NormRect) => {
+        // окна могут выходить за контент-бокс (по вертикали почти всегда) — отрицательные
+        // координаты допустимы, лишнее по краям окна прозрачно после chromakey
         const w = ev(p.w * size.w * s); const h = ev(p.h * size.h * s);
         const x = Math.round((p.x - cx0) * size.w * s);
-        const y = Math.round(p.y * size.h * s) - yShift + top;
+        const y = Math.round((p.y - cy0) * size.h * s) - yShift + top;
         return { w, h, x, y };
       };
       geom = { bgChain, A: place(pA), B: place(pB) };
@@ -248,7 +265,9 @@ export async function composeOnStudio(opts: {
 
   // Chroma-key зелёнки + despill (увод зелёного с краёв) + мягкий край маски (avgblur только
   // альфа-плоскости, planes=8) — контур вырезки не читается на фоне студии.
-  const keyBase = `chromakey=${key}:0.30:0.12,despill=type=green:mix=0.5:expand=0,`;
+  // similarity 0.38/blend 0.08: HeyGen пере-жимает зелёный (H.264), и при 0.30 фон кеился не до
+  // конца — вокруг ведущего оставалась полупрозрачная «плёнка» с видимым швом окна.
+  const keyBase = `chromakey=${key}:0.38:0.08,despill=type=green:mix=0.5:expand=0,`;
   const keyTail = `avgblur=sizeX=2:sizeY=2:planes=8,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
   const keyf = (i: number, label: string) => {
     if (geom) {

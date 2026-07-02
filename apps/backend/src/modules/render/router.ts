@@ -632,6 +632,9 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     };
     const placeA = parseRect(req.body?.place?.A);
     const placeB = parseRect(req.body?.place?.B);
+    // Рамки самих ведущих (из «студии лиц») — сцена зумится на них, без пустого потолка/пола.
+    const focusA = parseRect(req.body?.focus?.A);
+    const focusB = parseRect(req.body?.focus?.B);
     const overlays: StudioOverlay[] = (Array.isArray(req.body?.overlays) ? req.body.overlays : [])
       .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
       .slice(0, 12)
@@ -642,7 +645,7 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume, fullFrame, overlays, placeA, placeB });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume, fullFrame, overlays, placeA, placeB, focusA, focusB });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
