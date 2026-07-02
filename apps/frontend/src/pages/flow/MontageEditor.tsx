@@ -1579,21 +1579,37 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       let raw: { x: number; y: number; w: number; h: number }[] = [];
       try { raw = await detectMediapipe(img); } catch { raw = []; }
       if (!raw.length) { try { raw = await detectNative(img); } catch { raw = []; } }
-      if (!raw.length) { setPodNote('Лица не найдены автоматически — обведите их рамкой по фото (мышью).'); return; }
-      // 2 крупнейших лица, упорядоченные слева→направо → A, B
+      if (!raw.length) { setPodNote('Ведущие не найдены автоматически — обведите каждого рамкой по фото (мышью).'); return; }
+      // 2 крупнейших лица слева→направо → A, B; рамку расширяем с лица до ВЕДУЩЕГО ЦЕЛИКОМ
+      // (рамка теперь задаёт, кого вырезаем на студию, и участок для крупного плана)
       const top = raw.sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 2).sort((a, b) => a.x - b.x);
-      const boxes: PodFace[] = top.map((box, i) => ({ id: `f${Date.now().toString(36)}${i}`, box, speaker: i === 0 ? 'A' : 'B' }));
+      const person = (f: { x: number; y: number; w: number; h: number }) => {
+        const cx = f.x + f.w / 2;
+        const w = Math.min(1, f.w * 3.4); const x = Math.min(Math.max(0, cx - w / 2), 1 - w);
+        const y = Math.max(0, f.y - f.h * 0.55); const h = Math.min(1 - y, f.h * 5.6);
+        return { x, y, w, h };
+      };
+      const boxes: PodFace[] = top.map((box, i) => ({ id: `f${Date.now().toString(36)}${i}`, box: person(box), speaker: i === 0 ? 'A' : 'B' }));
       podMutate((p) => ({ ...p, faces: boxes }));
-      setPodNote(`Найдено лиц: ${boxes.length}. Слева — A, справа — B (можно поменять).`);
+      setPodNote(`Найдено ведущих: ${boxes.length}. Слева — A, справа — B (рамки можно поправить/перерисовать).`);
     } catch { setPodNote('Не удалось распознать — обведите вручную.'); }
     finally { setPodBusy(null); }
   };
 
-  /** Кроп области (бокс в долях, расширенный под голову/плечи) → квадратный JPEG-Blob. */
+  /** Кроп области → квадратный JPEG-Blob. Рамка может быть и лицом, и ведущим целиком:
+   *  большую рамку берём почти как есть (небольшой запас), маленькую (лицо) расширяем под
+   *  голову/плечи — иначе кадр из «рамки-ведущего» разрастался на всё фото. */
   const cropBox = (img: HTMLImageElement, box: { x: number; y: number; w: number; h: number }, out = 640): Promise<Blob | null> => {
     const W = img.naturalWidth, H = img.naturalHeight;
-    let x = (box.x - box.w * 0.7) * W, y = (box.y - box.h * 0.9) * H;
-    let w = box.w * 2.4 * W, h = box.h * 3.3 * H;
+    const isPerson = box.w >= 0.28 || box.h >= 0.38; // крупная рамка — обведён ведущий целиком
+    let x: number, y: number, w: number, h: number;
+    if (isPerson) {
+      x = (box.x - box.w * 0.06) * W; y = (box.y - box.h * 0.06) * H;
+      w = box.w * 1.12 * W; h = box.h * 1.12 * H;
+    } else {
+      x = (box.x - box.w * 0.7) * W; y = (box.y - box.h * 0.9) * H;
+      w = box.w * 2.4 * W; h = box.h * 3.3 * H;
+    }
     x = Math.max(0, x); y = Math.max(0, y); w = Math.min(W - x, w); h = Math.min(H - y, h);
     const c = document.createElement('canvas'); c.width = out; c.height = out;
     const ctx = c.getContext('2d'); if (!ctx) return Promise.resolve(null);
@@ -1615,7 +1631,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const applyFaces = async () => {
     if (!pod.groupPhotoUrl || podBusy) return;
     if (!pod.faces.some((f) => f.speaker === 'A') && !pod.faces.some((f) => f.speaker === 'B')) {
-      setPodNote('Назначьте лица ведущим A/B (обведите лицо и выберите A или B).'); return;
+      setPodNote('Обведите каждого ведущего рамкой и назначьте A/B (или нажмите «Найти ведущих»).'); return;
     }
     setPodBusy('apply'); setPodNote(null);
     try {
@@ -3205,9 +3221,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         <button onClick={detectFaces} disabled={!!podBusy}
                           className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
                           style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                          {podBusy === 'detect' ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Распознать лица
+                          {podBusy === 'detect' ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Найти ведущих (авто)
                         </button>
-                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите лицо рамкой · до 2 (A и B) · A — розовый, B — фиолетовый</span>
+                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите КАЖДОГО ведущего рамкой целиком · A — розовый, B — фиолетовый. Рамка задаёт, кого вырезаем и анимируем на студии.</span>
                         <div className="flex-1" />
                         <button onClick={() => openPodPick('group')} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сменить фото</button>
                         <button onClick={() => podMutate((p) => ({ ...p, groupPhotoUrl: null, groupPhotoName: null, faces: [] }))} className="text-[11px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>удалить</button>
@@ -3217,6 +3233,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: 'pointer' }}>
                         {podBusy === 'apply' ? <Loader2 size={15} className="animate-spin" /> : <Crop size={15} />} Сделать кадры ведущих
                       </button>
+                      <div className="text-[11px]" style={{ color: 'var(--text-muted)', marginTop: -4 }}>
+                        Кадры — отдельные фото A/B (нужны для обычного «Оживить ведущих» и сплит-скрина).
+                        Для «Оживить НА студии» кадры не обязательны: там ведущие вырезаются прямо из этого фото по рамкам.
+                      </div>
 
                       {/* AI-ракурсы студии — другой вид той же студии для разнообразия */}
                       <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>

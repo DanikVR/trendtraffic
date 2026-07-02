@@ -431,10 +431,19 @@ router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
  *  КЛЮЧЕВОЕ: композиция кадра сохраняется 1:1 (человек НЕ перемещается и НЕ масштабируется) —
  *  тогда после кропа в тот же 9:16, что и clean plate, оверлей 0:0 сажает аватара ровно на его
  *  место в студии. → локальный путь + /uploads URL. */
-async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B'): Promise<{ url: string; path: string }> {
+/** Рамка ведущего на общем фото (доли кадра 0..1) — задаёт, КОГО именно вырезать. */
+interface FaceBox { x: number; y: number; w: number; h: number }
+
+async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B', box?: FaceBox | null): Promise<{ url: string; path: string }> {
   const img = await fetchImageBase64(groupUrlAbs);
   if (!img) throw new Error('не удалось загрузить общее фото студии');
-  const where = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
+  const sideHint = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
+  // Рамка пользователя точнее эвристики «лево/право» (люди могут сидеть не по краям).
+  const pct = (v: number) => `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`;
+  const where = box
+    ? `в отмеченной пользователем области кадра: по горизонтали от ${pct(box.x)} до ${pct(box.x + box.w)} ширины, `
+      + `по вертикали от ${pct(box.y)} до ${pct(box.y + box.h)} высоты (ориентир: ${sideHint})`
+    : sideHint;
   const gen = await generateImage({
     apiKey, model: PODCAST_ANGLE_MODEL,
     prompt: `Оставь на изображении ТОЛЬКО человека ${where}. Полностью убери второго человека и всю студию/фон. `
@@ -519,7 +528,12 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
         if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
       }
-      const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk);
+      // Рамка ведущего из «студии лиц» (если обведена) — вырезаем именно её содержимое
+      const face = (Array.isArray(spec.faces) ? spec.faces : []).find((f: any) => f?.speaker === spk && f?.box
+        && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))));
+      const box: { x: number; y: number; w: number; h: number } | null = face
+        ? { x: Number(face.box.x), y: Number(face.box.y), w: Number(face.box.w), h: Number(face.box.h) } : null;
+      const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box);
       // кроп в 9:16 (та же центральная область, что возьмёт фон) → HeyGen получает ровно кадр
       // сцены (720×1280 совпадает по пропорции) → в склейке оверлей 0:0 без подгонки координат
       const cutUrl = await cropImageTo916(green.path || abs(green.url));
