@@ -14,7 +14,10 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import pool from '../../db/index.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
-import { searchVideos, type NormalizedVideo } from '../tikhub/tikhub_client.js';
+import {
+  searchVideos, fetchOneVideo, extractOneVideoCover, fetchInstagramPostInfo, extractInstagramCover,
+  type NormalizedVideo,
+} from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
 import { shapeOf } from './analytics.js';
 import { cacheCoverToDisk, deleteCachedCover, isExpiringCover } from '../media/store_cover.js';
@@ -229,23 +232,92 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
  * переписывает cover_url на стабильный локальный URL. Best-effort — сбой на одной обложке не
  * критичен (в UI просто останется исходная ссылка). Небольшая параллельность, чтобы не
  * растягивать 30 картинок в очередь и не долбить CDN залпом.
+ *
+ * Кэш при скане — ОДНА попытка fire-and-forget: рестарт pm2 (каждый деплой) или сбой сети
+ * убивает её молча, и в БД навсегда остаётся подписанная CDN-ссылка, которая назавтра
+ * протухает («вчера обложки были — сегодня чёрные»). Поэтому то же лечение зовётся и на
+ * ЧТЕНИИ ленты (listRecentVideos): живые CDN-ссылки докачиваются на диск, а уже мёртвые —
+ * воскрешаются свежей обложкой из TikHub (opts.resurrect; 1 запрос на видео, с потолком
+ * за проход и долгим кулдауном, чтобы беречь кредиты; результат ложится на диск навсегда).
  */
-async function cacheCoversInBackground(tenantId: string, videos: StoredVideo[]): Promise<void> {
-  const targets = videos.filter((v) => v.id && isExpiringCover(v.coverUrl));
+const coverInFlight = new Set<string>();        // обложка уже качается (сканом или лечением)
+const coverNextTry = new Map<string, number>(); // анти-долбёжка: раньше этого времени не пытаться
+const COVER_RETRY_MS = 15 * 60 * 1000;          // повторная попытка живой ссылки — не чаще 15 мин
+const COVER_DEAD_MS = 6 * 60 * 60 * 1000;       // после неудачного воскрешения — пауза 6 часов
+const RESURRECT_MAX_PER_RUN = 12;               // потолок TikHub-запросов за один проход
+
+async function cacheCoversInBackground(
+  tenantId: string, videos: StoredVideo[], opts: { resurrect?: boolean } = {}
+): Promise<void> {
+  const now = Date.now();
+  const targets = videos.filter((v) =>
+    v.id && isExpiringCover(v.coverUrl) && !coverInFlight.has(v.id) && now >= (coverNextTry.get(v.id) || 0)
+  );
+  if (!targets.length) return;
+  if (coverNextTry.size > 5000) coverNextTry.clear(); // не даём карте расти вечно
+  for (const v of targets) { coverInFlight.add(v.id!); coverNextTry.set(v.id!, now + COVER_RETRY_MS); }
+
+  // Ключ TikHub — один на проход (нужен только для воскрешения мёртвых ссылок).
+  const tikhubKey = opts.resurrect ? await getEffectiveTikHubKey(tenantId).catch(() => null) : null;
+  let tikhubBudget = tikhubKey ? RESURRECT_MAX_PER_RUN : 0;
+
+  let cached = 0, resurrected = 0, failed = 0;
   const CONC = 5;
   for (let i = 0; i < targets.length; i += CONC) {
     // eslint-disable-next-line no-await-in-loop
     await Promise.all(targets.slice(i, i + CONC).map(async (v) => {
       try {
-        const saved = await cacheCoverToDisk(v.coverUrl!);
+        try {
+          const saved = await cacheCoverToDisk(v.coverUrl!);
+          await pool.query(
+            `UPDATE source_videos SET cover_url = $3 WHERE tenant_id = $1 AND id = $2`,
+            [tenantId, v.id, saved.mediaUrl]
+          );
+          v.coverUrl = saved.mediaUrl; // объект ещё возвращается вызывающему — держим в согласии с БД
+          cached++;
+          return;
+        } catch { /* ссылка мертва (подпись истекла) — пробуем воскресить через TikHub */ }
+        if (tikhubBudget <= 0) { failed++; return; }
+        tikhubBudget--;
+        const fresh = await fetchFreshCoverUrl(tikhubKey!, v);
+        if (!fresh) { failed++; coverNextTry.set(v.id!, now + COVER_DEAD_MS); return; }
+        const saved = await cacheCoverToDisk(fresh);
         await pool.query(
           `UPDATE source_videos SET cover_url = $3 WHERE tenant_id = $1 AND id = $2`,
           [tenantId, v.id, saved.mediaUrl]
         );
-        v.coverUrl = saved.mediaUrl; // объект ещё возвращается вызывающему — держим в согласии с БД
-      } catch { /* обложка не критична — оставляем исходную ссылку */ }
+        v.coverUrl = saved.mediaUrl;
+        resurrected++;
+      } catch {
+        failed++;
+        coverNextTry.set(v.id!, now + COVER_DEAD_MS);
+      } finally {
+        coverInFlight.delete(v.id!);
+      }
     }));
   }
+  // След в логах вместо прежнего молчаливого catch — иначе сбои кэша невидимы.
+  console.log(`[trends] обложки: закэшировано ${cached}, воскрешено через TikHub ${resurrected}, не удалось ${failed} (из ${targets.length})`);
+}
+
+/**
+ * Свежая обложка умершего видео через TikHub (по id/коду). Только TikTok и Instagram —
+ * ровно те площадки, чьи CDN-подписи истекают (см. isExpiringCover); YouTube/X стабильны.
+ */
+async function fetchFreshCoverUrl(apiKey: string, v: StoredVideo): Promise<string | undefined> {
+  if (v.platform === 'tiktok') {
+    const r = await fetchOneVideo(apiKey, v.externalId);
+    return r.ok ? extractOneVideoCover(r.data) : undefined;
+  }
+  if (v.platform === 'instagram') {
+    // Shortcode надёжнее брать из web_url (/p/<code>/); external_id у IG бывает числовым pk.
+    const m = /\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/.exec(v.webUrl || '');
+    const code = m?.[1] || (/^\d+$/.test(v.externalId) ? null : v.externalId);
+    if (!code) return undefined;
+    const r = await fetchInstagramPostInfo(apiKey, code);
+    return r.ok ? extractInstagramCover(r.data) : undefined;
+  }
+  return undefined;
 }
 
 export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false): Promise<StoredVideo[]> {
@@ -258,7 +330,11 @@ export async function listRecentVideos(tenantId: string, limit = 60, downloadedO
        FROM source_videos WHERE tenant_id = $1 ${where} ORDER BY created_at DESC LIMIT $2`,
       [tenantId, lim]
     );
-    return (r.rows as any[]).map(mapRow);
+    const rows = (r.rows as any[]).map(mapRow);
+    // Самолечение обложек: у кого cover_url так и остался CDN-ссылкой (кэш при скане не
+    // успел — например, деплой рестартнул процесс), докачиваем фоном; протухшие воскрешаем.
+    void cacheCoversInBackground(tenantId, rows, { resurrect: true });
+    return rows;
   } catch {
     return [];
   }

@@ -380,6 +380,57 @@ export function extractDownloadUrls(payload: any): string[] {
   return Array.from(new Set(urls));
 }
 
+/** url из строки или TikTok-объекта {url_list:[…]} (первая https-ссылка). */
+function coverUrlOf(x: any): string | undefined {
+  if (typeof x === 'string' && x.startsWith('http')) return x;
+  if (x && Array.isArray(x.url_list)) {
+    for (const u of x.url_list) if (typeof u === 'string' && u.startsWith('http')) return u;
+  }
+  return undefined;
+}
+
+/**
+ * Свежая обложка из ответа fetch_one_video — для «воскрешения» протухших обложек ленты.
+ * dynamic_cover ПЕРВЫМ: статические cover/origin_cover у TikTok — HEIC, который <img>
+ * не рендерит (та же причина, что в providers.genericNormalize).
+ */
+export function extractOneVideoCover(payload: any): string | undefined {
+  const aw = pickAweme(payload);
+  if (!aw || typeof aw !== 'object') return undefined;
+  const v = aw.video || {};
+  return coverUrlOf(v.dynamic_cover) || coverUrlOf(v.dynamicCover)
+    || coverUrlOf(v.cover) || coverUrlOf(v.origin_cover) || coverUrlOf(v.originCover)
+    || coverUrlOf(aw.cover) || coverUrlOf(aw.thumbnail);
+}
+
+/** Инфо об одном IG-посте по shortcode (тот же эндпоинт, что в аналитике/social-ext). */
+export async function fetchInstagramPostInfo(apiKey: string, code: string): Promise<TikHubResult<any>> {
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/instagram/v3/get_post_info_by_code?code=${encodeURIComponent(code)}`, { timeoutMs: 30000 })
+  );
+}
+
+/** Обложка IG-поста из ответа get_post_info_by_code (candidates[0] = максимальный размер). */
+export function extractInstagramCover(payload: any): string | undefined {
+  const seen = new Set<any>();
+  const walk = (node: any, depth: number): string | undefined => {
+    if (!node || typeof node !== 'object' || depth > 6 || seen.has(node)) return undefined;
+    seen.add(node);
+    const cand = node.image_versions2?.candidates?.[0]?.url;
+    if (typeof cand === 'string' && cand.startsWith('http')) return cand;
+    for (const k of ['thumbnail_url', 'display_url', 'cover_url']) {
+      const u = node[k];
+      if (typeof u === 'string' && u.startsWith('http')) return u;
+    }
+    for (const k of Object.keys(node)) {
+      const r = walk(node[k], depth + 1);
+      if (r) return r;
+    }
+    return undefined;
+  };
+  return walk(payload, 0);
+}
+
 /** Деталь твита (X) для скачивания видео — структура иная, чем у TikTok. */
 export async function fetchTweetDetail(apiKey: string, tweetId: string): Promise<TikHubResult<any>> {
   return withTikhubRetry(() =>

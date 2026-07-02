@@ -16,7 +16,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
-import TrendSearch, { type StoredVideo } from '../components/TrendSearch';
+import TrendSearch, { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import TrendAnalyticsPanel from './TrendAnalyticsPanel';
 
 type Tab = 'search' | 'analytics';
@@ -396,7 +396,7 @@ export default function SocialExtensionPage() {
                           className="relative rounded-lg overflow-hidden group transition-transform hover:-translate-y-0.5"
                           style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
                           {v.coverUrl ? (
-                            <img src={v.coverUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
+                            <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
                               className="w-full h-full object-cover"
                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
