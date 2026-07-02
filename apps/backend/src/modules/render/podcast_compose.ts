@@ -130,6 +130,31 @@ export function probeImageSize(input: string): Promise<{ w: number; h: number } 
   });
 }
 
+/** Похожесть ОБЛАСТИ (рамка в долях кадра) двух картинок: SSIM по яркости, 0..1; null при
+ *  ошибке. Используется для валидации clean plate: если область, где сидел ведущий, почти не
+ *  изменилась (высокий SSIM) — Gemini не удалил человека, а «растворил» до полупрозрачного
+ *  призрака, и такой фон нельзя брать в склейку. */
+export function regionSimilarity(inputA: string, inputB: string, r: NormRect): Promise<number | null> {
+  return new Promise((resolve) => {
+    const crop = `crop=iw*${r.w.toFixed(4)}:ih*${r.h.toFixed(4)}:iw*${r.x.toFixed(4)}:ih*${r.y.toFixed(4)},scale=256:256,format=gray`;
+    const ff = spawn(FFMPEG_BIN, [
+      '-v', 'info', '-i', inputA, '-i', inputB,
+      '-filter_complex', `[0:v]${crop}[a];[1:v]${crop}[b];[a][b]ssim`,
+      '-frames:v', '1', '-f', 'null', '-',
+    ], { stdio: ['ignore', 'ignore', 'pipe'] });
+    let err = '';
+    ff.stderr.on('data', (d) => { err += d.toString(); });
+    const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } resolve(null); }, 60_000);
+    ff.on('error', () => { clearTimeout(timer); resolve(null); });
+    ff.on('close', () => {
+      clearTimeout(timer);
+      const m = err.match(/SSIM.*?All:\s*([\d.]+)/) || err.match(/SSIM.*?Y:\s*([\d.]+)/);
+      const v = m ? Number(m[1]) : NaN;
+      resolve(Number.isFinite(v) ? v : null);
+    });
+  });
+}
+
 /** Вырезать из картинки ОКНО (прямоугольник в долях кадра, строится 9:16 вокруг ведущего)
  *  → 1080×1920 PNG. Именно это окно едет в HeyGen: ведущий в нём крупный (лицо детектится),
  *  а его координаты в исходном кадре знаем — при склейке сажаем окно обратно на место. */
@@ -203,7 +228,8 @@ export async function composeOnStudio(opts: {
     .slice(0, 12);
 
   // Канвас = аспект фото студии (однотипный, предсказуемый размер выхода).
-  const size = await probeImageSize(opts.studioUrl);
+  // Фолбэк — аспект головы (она рендерится в формате фото): не даём канвасу «уехать» в 9:16.
+  const size = (await probeImageSize(opts.studioUrl)) || (await probeImageSize(opts.headA));
   const ar = size && size.h > 0 ? size.w / size.h : 9 / 16;
   const [W, H] = ar >= 1.2 ? [1920, 1080] : ar <= 0.83 ? [1080, 1920] : [1080, 1080];
 
@@ -227,8 +253,11 @@ export async function composeOnStudio(opts: {
   // слабее оставалась «плёнка», сильнее начинает есть полутона.
   const keyBase = `chromakey=${key}:0.36:0.10,despill=type=green:mix=0.5:expand=0,`;
   const keyTail = `avgblur=sizeX=2:sizeY=2:planes=8,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
+  // ВПИСЫВАЕМ (decrease + прозрачный pad), а не кроем кропом: если аспект головы вдруг не
+  // совпал с канвасом (HeyGen отрендерил в другом формате), кроп раньше отрезал человека и
+  // оставлял одну зелёнку — голова «исчезала» из ролика. Letterbox прозрачный (black@0).
   const keyf = (i: number, label: string) =>
-    `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},${keyTail}[${label}];`;
+    `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${label}];`;
   let fc = bg;
   let lastV = 'bg';
   heads.forEach((_, k) => {

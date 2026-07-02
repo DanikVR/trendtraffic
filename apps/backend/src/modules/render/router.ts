@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, type StudioOverlay } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -465,16 +465,23 @@ async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' 
 
 /** Clean plate: убрать ЛЮДЕЙ с общего фото и дорисовать студию за ними (Nano img2img).
  *  Это фон для compose-studio — иначе за аватарами выглядывают исходные статичные фигуры. */
-async function studioCleanPlate(apiKey: string, groupUrlAbs: string): Promise<string> {
+async function studioCleanPlate(apiKey: string, groupUrlAbs: string, strict = false): Promise<string> {
   const img = await fetchImageBase64(groupUrlAbs);
   if (!img) throw new Error('не удалось загрузить общее фото студии');
   const gen = await generateImage({
     apiKey, model: PODCAST_ANGLE_MODEL,
     prompt: 'Убери с фото ВСЕХ людей полностью. Дорисуй студию за ними: мебель, кресла/стулья, стол, '
       + 'микрофоны, фон — так, как они выглядели бы без людей. '
+      + 'ЛЮДЕЙ НЕ ДОЛЖНО БЫТЬ ВИДНО ВООБЩЕ — ни полупрозрачных силуэтов, ни контуров, ни «призраков»: '
+      + 'кресла и стол полностью пустые. '
       + 'КРИТИЧНО: сохрани композицию кадра, ракурс, освещение, тени и цветовую гамму ТОЧНО как на исходном фото — '
       + 'ничего не перемещай и не перерисовывай, кроме мест, где были люди. '
-      + 'Фотореалистично, высокое качество. Верни только изображение.',
+      + 'Фотореалистично, высокое качество. Верни только изображение.'
+      // повторная попытка: прошлый результат оставил полупрозрачные силуэты людей
+      + (strict
+        ? ' ОБЯЗАТЕЛЬНОЕ УСЛОВИЕ: если на результате останется хоть частично видимый человек или его '
+          + 'полупрозрачный след — результат НЕВЕРЕН. Полностью замени области с людьми пустой мебелью и фоном студии.'
+        : ''),
     inputImages: [{ base64: img.base64, mime: img.mime }],
   });
   return gen.mediaUrl;
@@ -555,28 +562,54 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
         ? { x: Number(face.box.x), y: Number(face.box.y), w: Number(face.box.w), h: Number(face.box.h) } : null;
       // Full-frame вырезка: тот же кадр, что clean plate (композиция 1:1, без кропов) —
       // в склейке голова кладётся во весь кадр, аватар на своём месте по построению.
-      const makeCut = async (strict: boolean): Promise<string> => {
-        const green = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, strict);
-        return green.url;
-      };
+      const makeCut = (strict: boolean) => personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, strict);
       // Валидация зелёнки: Gemini иногда возвращает кадр со студийным фоном — тогда chromakey
       // в склейке нечего убирать. Ловим ДО HeyGen (кредиты не тратятся) и повторяем строже.
-      let cutUrl = await makeCut(false);
-      let ratio = await greenBgRatio(abs(cutUrl));
+      let cut = await makeCut(false);
+      let ratio = await greenBgRatio(cut.path || abs(cut.url));
       if (ratio != null && ratio < 0.22) {
         console.warn(`[heygen-studio] вырезка ${spk}: зелёного ${(ratio * 100).toFixed(0)}% — повторяю строже`);
-        cutUrl = await makeCut(true);
-        ratio = await greenBgRatio(abs(cutUrl));
+        cut = await makeCut(true);
+        ratio = await greenBgRatio(cut.path || abs(cut.url));
         if (ratio != null && ratio < 0.22) {
           throw new Error(`не удалось вырезать ведущего ${spk} на зелёный фон (Gemini дважды вернул кадр со студией) — нажмите «Оживить НА студии» ещё раз`);
         }
       }
-      const tpId = await uploadTalkingPhoto(key, abs(cutUrl));
-      return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId };
+      // Размер HeyGen — по аспекту САМОЙ вырезки, с локального файла (сетевая проба фото могла
+      // молча падать → HeyGen рендерил 9:16 при фото 16:9, и голова терялась при вписывании).
+      const cutSize = await probeImageSize(cut.path || abs(cut.url));
+      const car = cutSize && cutSize.h > 0 ? cutSize.w / cutSize.h : par;
+      const dim = car >= 1.2 ? { width: 1280, height: 720 } : car <= 0.83 ? { width: 720, height: 1280 } : { width: 720, height: 720 };
+      const tpId = await uploadTalkingPhoto(key, abs(cut.url));
+      return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId, dim };
     }));
     const cleanUrl = await cleanPromise;
     if (!cleanUrl) warns.push('clean plate не удался — фоном будет исходное фото (за аватарами могут выглядывать статичные фигуры)');
-    const studioUrl = cleanUrl || groupPhotoUrl;
+    let studioUrl = cleanUrl || groupPhotoUrl;
+    // Валидация clean plate: если область рамки почти не изменилась (SSIM высок) — Gemini не
+    // удалил людей, а «растворил» до полупрозрачных призраков; такой фон портит склейку.
+    if (cleanUrl) {
+      const boxes = facesArr
+        .filter((f: any) => f?.box && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))))
+        .map((f: any) => ({ x: Number(f.box.x), y: Number(f.box.y), w: Number(f.box.w), h: Number(f.box.h) }));
+      const simOf = async (url: string): Promise<number | null> => {
+        const sims = await Promise.all(boxes.map((b: any) => regionSimilarity(abs(groupPhotoUrl), abs(url), b)));
+        const vals = sims.filter((v): v is number => v != null);
+        return vals.length ? Math.max(...vals) : null;
+      };
+      if (boxes.length) {
+        let sim = await simOf(cleanUrl);
+        if (sim != null && sim > 0.8) {
+          console.warn(`[heygen-studio] clean plate: SSIM ${sim.toFixed(2)} в рамках — «призраки», повторяю строже`);
+          const retryUrl = await studioCleanPlate(apiKey, abs(groupPhotoUrl), true).catch(() => null);
+          if (retryUrl) {
+            const sim2 = await simOf(retryUrl);
+            if (sim2 == null || sim2 <= sim) { studioUrl = retryUrl; sim = sim2; }
+          }
+          if (sim != null && sim > 0.8) warns.push('фон мог сохранить полупрозрачные следы ведущих («призраки») — если видны в ролике, нажмите «Оживить НА студии» ещё раз');
+        }
+      }
+    }
     const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
     // Фаза 2: сабмитим (размер видео = аспект фото); частичный сбой отдаём честно.
     const jobs: any[] = [];
@@ -584,10 +617,10 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
       try {
         let videoId: string;
         try {
-          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, expressive: true, ...heyDim });
+          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, expressive: true, ...(p.dim || heyDim) });
         } catch {
           // talking_style может не поддерживаться движком/аккаунтом — повтор без него
-          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, ...heyDim });
+          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, ...(p.dim || heyDim) });
         }
         jobs.push({ host: p.spk, name: p.name, videoId });
       } catch (e: any) {
