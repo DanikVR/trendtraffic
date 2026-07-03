@@ -444,6 +444,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean }[]>([]);
   const [studioBg, setStudioBg] = useState<string | null>(null); // HeyGen «на студии»: фон-фото студии для compose-studio (chroma-key)
   const animPollRef = useRef<number | null>(null);
+  // Ссылки на <video> превью голов (по videoId) — для кнопки «Запустить обоих» разом.
+  const headVidRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const playBothHeads = () => {
+    const vids = animJobs.map((j) => headVidRefs.current[j.videoId]).filter((v): v is HTMLVideoElement => !!v);
+    vids.forEach((v) => { try { v.currentTime = 0; v.muted = false; v.play().catch(() => {}); } catch { /* */ } });
+  };
   // Компонент жив? Опросы переустанавливают setTimeout ПОСЛЕ await fetch — clearTimeout в cleanup
   // снимает только уже запланированный таймер, и без этого флага цикл «воскресал» после unmount.
   const pollAliveRef = useRef(true);
@@ -3793,7 +3799,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           {animJobs.map((j) => (
                             <div key={j.videoId} className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
                               <div style={{ aspectRatio: '9 / 16', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                {j.url ? <video src={j.url} controls muted className="w-full h-full object-cover" />
+                                {j.url ? <video ref={(el) => { headVidRefs.current[j.videoId] = el; }} src={j.url} controls playsInline preload="metadata" className="w-full h-full object-cover" style={{ objectPosition: j.host === 'B' ? 'right center' : 'left center' }} />
                                   : <div className="flex flex-col items-center gap-1"><Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} /><span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{j.status === 'failed' ? 'ошибка' : 'рендер…'}</span></div>}
                               </div>
                               <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
@@ -3812,6 +3818,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             </div>
                           ))}
                         </div>
+                      )}
+                      {animJobs.filter((j) => j.url).length >= 2 && (
+                        <button onClick={playBothHeads} type="button"
+                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2"
+                          style={{ background: 'transparent', color: '#ec4899', border: '1px solid rgba(236,72,153,0.5)', cursor: 'pointer' }}>
+                          <Play size={14} /> Запустить обоих
+                        </button>
                       )}
                       {animJobs.length >= 2 && animJobs.every((j) => j.status === 'completed' && j.url) && (
                         <button onClick={runCompose} disabled={composeBusy}
