@@ -1318,7 +1318,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     podMutate((p) => ({ ...p, dialogue: [...p.dialogue.slice(0, i), a, b, ...p.dialogue.slice(i + 1)] }));
     setSelLine((s) => (s != null && s > i ? s + 1 : s)); // индексы ниже разреза сдвинулись
   };
-  const tlDragRef = useRef<{ i: number; startX: number; startT: number } | null>(null);
+  const tlDragRef = useRef<{ i: number; startX: number; startY: number; startT: number; spk: 'A' | 'B'; cur?: 'A' | 'B' } | null>(null);
   const [tlPps, setTlPps] = useState(44); // пикселей на секунду — масштаб таймлайна (зум)
   const tlPpsRef = useRef(44);
   useEffect(() => { tlPpsRef.current = tlPps; }, [tlPps]);
@@ -1460,7 +1460,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (d) {
         tlMovedRef.current = true;
         const nt = Math.max(0, Math.round((d.startT + (e.clientX - d.startX) / tlPpsRef.current) * 20) / 20);
-        setPod((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === d.i ? { ...l, tStart: nt } : l)) }));
+        // Вертикальный перенос между дорожками (вниз с A → B, вверх с B → A):
+        // порог 30px ≈ высота дорожки + вертикаль должна ДОМИНИРОВАТЬ (|dy| ≥ 0.6·|dx|) — иначе
+        // длинный горизонтальный драг по времени со «съехавшей» рукой случайно менял ведущего;
+        // гистерезис (возврат при <14px) — без дребезга A↔B на границе полос.
+        const dx = e.clientX - d.startX;
+        const dy = e.clientY - d.startY;
+        const other: 'A' | 'B' = d.spk === 'A' ? 'B' : 'A';
+        const toOther = d.spk === 'A' ? dy : -dy; // насколько ушли в сторону чужой дорожки
+        let spk: 'A' | 'B' = d.cur || d.spk;
+        if (spk === d.spk) {
+          if (toOther >= 30 && Math.abs(dy) >= Math.abs(dx) * 0.6) spk = other;
+        } else if (toOther < 14) {
+          spk = d.spk;
+        }
+        d.cur = spk;
+        setPod((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === d.i ? { ...l, tStart: nt, speaker: spk } : l)) }));
       } else if (tlPlayDragRef.current && tlWrapRef.current) {
         const r = tlWrapRef.current.getBoundingClientRect();
         const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32; // 32 = отступ подписи дорожки
@@ -1535,17 +1550,50 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) };
   };
   const nextSpeaker = (): 'A' | 'B' => (pod.faces.some((f) => f.speaker === 'A') ? 'B' : 'A');
+  // Перетаскивание/ресайз УЖЕ нарисованной рамки: move — за тело, resize — за уголок.
+  const faceDragRef = useRef<{ id: string; mode: 'move' | 'resize'; sx: number; sy: number; box: { x: number; y: number; w: number; h: number }; moved: boolean } | null>(null);
+  const faceBoxDown = (e: React.PointerEvent, id: string, mode: 'move' | 'resize') => {
+    if (e.button !== 0) return; // только левая кнопка (правая = контекстное меню, без «залипания»)
+    e.stopPropagation(); // не даём обёртке начать рисовать новую рамку
+    const f = pod.faces.find((x) => x.id === id); if (!f) return;
+    // capture: события идут сюда, даже когда курсор вылетел за фото — жест не обрывается на границе
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* тихо */ }
+    const p = faceXY(e);
+    faceDragRef.current = { id, mode, sx: p.x, sy: p.y, box: { ...f.box }, moved: false };
+  };
   const faceDown = (e: React.PointerEvent) => {
     if (pod.faces.length >= 2) return; // только два персонажа
     drawStartRef.current = faceXY(e);
     setDrawBox({ ...drawStartRef.current, w: 0, h: 0 });
   };
   const faceMove = (e: React.PointerEvent) => {
+    const drag = faceDragRef.current;
+    if (drag) {
+      // кнопку отпустили вне окна (Alt-Tab/меню) — жест мёртв, не таскаем «за наведением»
+      if (!(e.buttons & 1)) { faceDragRef.current = null; return; }
+      const p = faceXY(e);
+      const dx = p.x - drag.sx; const dy = p.y - drag.sy;
+      if (Math.abs(dx) + Math.abs(dy) > 0.003) drag.moved = true;
+      const b = drag.box;
+      // клампы: сначала минимальный размер, потом «не вылезать за кадр» (иначе у края w>1-x)
+      const nb = drag.mode === 'move'
+        ? { ...b, x: Math.max(0, Math.min(1 - b.w, b.x + dx)), y: Math.max(0, Math.min(1 - b.h, b.y + dy)) }
+        : { ...b, w: Math.min(Math.max(0.01, 1 - b.x), Math.max(0.04, b.w + dx)), h: Math.min(Math.max(0.01, 1 - b.y), Math.max(0.04, b.h + dy)) };
+      // без setDirty на каждый кадр — пометим изменённым при отпускании (и только если двигали)
+      setPod((prev) => ({ ...prev, faces: prev.faces.map((f) => (f.id === drag.id ? { ...f, box: nb } : f)) }));
+      return;
+    }
     if (!drawStartRef.current) return;
     const p = faceXY(e); const s = drawStartRef.current;
     setDrawBox({ x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
   };
   const faceUp = () => {
+    if (faceDragRef.current) {
+      const moved = faceDragRef.current.moved;
+      faceDragRef.current = null;
+      if (moved) setDirty(true); // клик без движения не «грязнит» документ
+      return;
+    }
     const b = drawBox; drawStartRef.current = null; setDrawBox(null);
     if (b && b.w > 0.03 && b.h > 0.03) {
       podMutate((p) => ({ ...p, faces: [...p.faces, { id: `f${Date.now().toString(36)}${p.faces.length}`, box: b, speaker: nextSpeaker() }] }));
@@ -3271,11 +3319,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   ) : (
                     <>
                       <div ref={faceWrapRef}
-                        onPointerDown={faceDown} onPointerMove={faceMove} onPointerUp={faceUp} onPointerLeave={faceUp}
+                        onPointerDown={faceDown} onPointerMove={faceMove} onPointerUp={faceUp} onPointerLeave={faceUp} onPointerCancel={faceUp}
                         style={{ position: 'relative', width: '100%', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-medium)', cursor: 'crosshair', touchAction: 'none', userSelect: 'none' }}>
                         <img src={pod.groupPhotoUrl} alt="" draggable={false} style={{ width: '100%', display: 'block', pointerEvents: 'none' }} />
                         {pod.faces.map((f) => (
-                          <div key={f.id} style={{ position: 'absolute', left: `${f.box.x * 100}%`, top: `${f.box.y * 100}%`, width: `${f.box.w * 100}%`, height: `${f.box.h * 100}%`, border: `2px solid ${f.speaker === 'A' ? '#ec4899' : '#8b5cf6'}`, borderRadius: 4 }}>
+                          <div key={f.id} onPointerDown={(e) => faceBoxDown(e, f.id, 'move')} title="Тяните рамку, чтобы переместить; за уголок — изменить размер"
+                            style={{ position: 'absolute', left: `${f.box.x * 100}%`, top: `${f.box.y * 100}%`, width: `${f.box.w * 100}%`, height: `${f.box.h * 100}%`, border: `2px solid ${f.speaker === 'A' ? '#ec4899' : '#8b5cf6'}`, borderRadius: 4, cursor: 'move', touchAction: 'none' }}>
                             <div style={{ position: 'absolute', top: -21, left: -2, display: 'flex', gap: 2 }}>
                               {(['A', 'B'] as const).map((sp) => (
                                 <button key={sp} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); faceAssign(f.id, sp); }}
@@ -3284,6 +3333,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); faceDel(f.id); }}
                                 style={{ width: 18, height: 18, borderRadius: 4, border: 'none', cursor: 'pointer', background: 'rgba(0,0,0,0.6)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={11} /></button>
                             </div>
+                            {/* уголок ресайза (правый-нижний; почти внутри рамки — overflow:hidden обёртки не срезает его у края фото) */}
+                            <div onPointerDown={(e) => faceBoxDown(e, f.id, 'resize')} title="Изменить размер рамки"
+                              style={{ position: 'absolute', right: -2, bottom: -2, width: 14, height: 14, borderRadius: 4, cursor: 'nwse-resize', background: f.speaker === 'A' ? '#ec4899' : '#8b5cf6', border: '2px solid rgba(0,0,0,0.5)' }} />
                           </div>
                         ))}
                         {drawBox && (
@@ -3466,6 +3518,24 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
                       {podBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} Разобрать на 2 голоса
                     </button>
+                    {pod.dialogue.length > 0 && (
+                      <button disabled={podBusy === 'diarize'} onClick={() => {
+                        if (!window.confirm('Удалить текущий разбор (реплики, таймлайн и отрендеренные по нему головы)? Запись останется — можно разобрать её заново или загрузить другую.')) return;
+                        // чистим ВСЁ, что построено на старом разборе: иначе «Собрать» склеит
+                        // старые головы (липсинк под удалённые реплики) с новым диалогом
+                        if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+                        setAnimBusy(false); setAnimJobs([]); setAnimNote(null);
+                        setStudioBg(null); setComposeUrl(null); setComposeNote(null);
+                        setDiarizeDone(false);
+                        tlStop(); setSelLine(null); setTlPlayhead(0);
+                        podMutate((p) => ({ ...p, dialogue: [], timeline: false, animActive: null, animResult: null, studioBgUrl: null, studioPlace: null }));
+                        setPodNote('Разбор удалён. Разберите запись заново или загрузите другую.');
+                      }}
+                        className="w-full py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        style={{ background: 'transparent', color: '#ef4444', border: '1px dashed rgba(239,68,68,0.5)', cursor: podBusy === 'diarize' ? 'not-allowed' : 'pointer' }}>
+                        <X size={13} /> Сбросить разбор (удалить реплики)
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -3523,7 +3593,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                     const vid = isVideoUrl(l.image);
                                     return (
                                       <div key={i}
-                                        onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startT: t }; }}
+                                        onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startY: e.clientY, startT: t, spk: trk }; }}
                                         onClick={() => { if (tlMovedRef.current) { tlMovedRef.current = false; return; } setSelLine(i); setDialogOpen(true); setTimeout(() => document.getElementById(`pl-${i}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60); }}
                                         title={l.text}
                                         style={{ position: 'absolute', left: t * tlPps, width: w, top: 2, height: 30, borderRadius: 7,
@@ -3551,7 +3621,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         </div>
                       );
                     })()}
-                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с жёлтого бегунка; тащи клипы по времени; бегунок ведёшь и ✂ режет по нему (появляется новая реплика); −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = перебивание.</p>}
+                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с жёлтого бегунка; тащи клипы по времени, а ВВЕРХ/ВНИЗ — на дорожку другого ведущего (реплика меняет голос A↔B); бегунок ведёшь и ✂ режет по нему (появляется новая реплика); −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = перебивание.</p>}
                   </div>
                 )}
 
