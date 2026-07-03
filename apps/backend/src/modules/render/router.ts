@@ -349,6 +349,8 @@ router.get('/podcast/animate/status', async (req: AuthedRequest, res: Response) 
     const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4);
     const statuses = await Promise.all(ids.map(async (id) => {
       const st = await heygenVideoStatus(key, id);
+      // Логируем причину падения HeyGen — иначе на фронте только глухое «ошибка», диагностировать нечем.
+      if (st.status === 'failed' || st.status === 'error') console.warn(`[animate/status] голова ${id}: ${st.status} — ${st.error || 'HeyGen не вернул причину'}`);
       let assetUrl: string | null = savedHeads.get(id) || null;
       if (st.status === 'completed' && st.url && !assetUrl) {
         let dl = headDownloads.get(id);

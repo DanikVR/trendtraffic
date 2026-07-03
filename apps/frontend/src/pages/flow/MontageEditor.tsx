@@ -441,7 +441,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [podNote, setPodNote] = useState<string | null>(null);
   const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
   const [animNote, setAnimNote] = useState<string | null>(null);
-  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean }[]>([]);
+  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean; error?: string | null }[]>([]);
   const [studioBg, setStudioBg] = useState<string | null>(null); // HeyGen «на студии»: фон-фото студии для compose-studio (chroma-key)
   const animPollRef = useRef<number | null>(null);
   // Ссылки на <video> превью голов (по videoId) — для кнопки «Запустить обоих» разом.
@@ -1079,11 +1079,16 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         const d = await res.json();
         if (res.ok && Array.isArray(d.statuses) && d.statuses.length) {
           let merged: typeof animJobs = [];
-          setAnimJobs((prev) => { merged = prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url } : j; }); return merged; });
+          setAnimJobs((prev) => { merged = prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url, error: s.error || null } : j; }); return merged; });
           const done = d.statuses.every((s: any) => s.status === 'completed' || s.status === 'failed');
           if (done) {
             setAnimBusy(false);
-            setAnimNote(d.statuses.some((s: any) => s.status === 'failed') ? 'Часть голов не отрендерилась — см. статус ниже.' : 'Готово! Говорящие головы ведущих отрендерены. Ниже — превью.');
+            // Причину падения HeyGen показываем явно (раньше было глухое «ошибка») — по ней сразу понятно, что делать.
+            const failed = d.statuses.filter((s: any) => s.status === 'failed');
+            const reasons = Array.from(new Set(failed.map((s: any) => String(s.error || '').trim()).filter(Boolean)));
+            setAnimNote(failed.length
+              ? (reasons.length ? `Часть голов не отрендерилась. HeyGen: ${reasons.join('; ')}` : 'Часть голов не отрендерилась (HeyGen не вернул причину). Попробуйте ещё раз — часто это временный сбой/квота.')
+              : 'Готово! Говорящие головы ведущих отрендерены. Ниже — превью.');
             persistAnim({ animActive: null, animResult: merged.map((j) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
             return;
           }
@@ -3828,7 +3833,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             <div key={j.videoId} className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
                               <div style={{ aspectRatio: '9 / 16', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                                 {j.url ? <video ref={(el) => { headVidRefs.current[j.videoId] = el; }} src={j.url} controls playsInline preload="metadata" className="w-full h-full object-cover" style={{ objectPosition: headObjPos(j.host) }} />
-                                  : <div className="flex flex-col items-center gap-1"><Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} /><span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{j.status === 'failed' ? 'ошибка' : 'рендер…'}</span></div>}
+                                  : <div className="flex flex-col items-center gap-1 px-2 text-center">
+                                      {j.status === 'failed' ? <X size={18} style={{ color: '#ef4444' }} /> : <Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} />}
+                                      <span className="text-[9px]" style={{ color: j.status === 'failed' ? '#ef4444' : 'var(--text-muted)' }}>{j.status === 'failed' ? (j.error ? `ошибка: ${j.error}` : 'ошибка') : 'рендер…'}</span>
+                                    </div>}
                               </div>
                               <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
                               {av.provider === 'omni' && j.url && j.interactionId && (
