@@ -22,6 +22,10 @@ REPO_DIR="${TT_DIR:-/opt/tt}"
 WORKER_DIR="${REPO_DIR}/render-worker"
 HOST="${WORKER_HOST:-100.122.182.97}"   # Tailscale-адрес домашнего ПК (super)
 PORT="${WORKER_PORT:-8801}"
+# EchoMimic-v2 (open-source): фото по пояс + аудио → говорящий С ЖЕСТАМИ рук/корпуса.
+EMV2_REPO="${ECHOMIMIC_REPO:-https://github.com/antgroup/echomimic_v2}"
+EMV2_DIR="${ECHOMIMIC_DIR:-/opt/echomimic_v2}"
+EMV2_VENV="${EMV2_DIR}/.venv"
 
 [ "$(id -u)" = "0" ] || { echo "Запусти от root (sudo bash install-gpu.sh)"; exit 1; }
 
@@ -63,6 +67,25 @@ print("torch", torch.__version__, "cuda:", torch.cuda.is_available(),
       torch.cuda.get_device_name(0) if torch.cuda.is_available() else "")
 PY
 
+echo "== EchoMimic-v2 (жесты рук/корпуса; аватар «на студии») =="
+# Клонируем + ставим зависимости в СВОЙ venv (у него специфичные версии torch/diffusers).
+# Веса качаются отдельно (HuggingFace) — см. README репозитория; тут best-effort.
+if [ ! -d "${EMV2_DIR}/.git" ]; then
+  git clone --depth 1 "${EMV2_REPO}" "${EMV2_DIR}" || echo "(EchoMimic-v2 не склонировался — поставишь вручную)"
+fi
+if [ -d "${EMV2_DIR}" ]; then
+  [ -d "${EMV2_VENV}" ] || python3 -m venv "${EMV2_VENV}"
+  "${EMV2_VENV}/bin/pip" install --upgrade pip
+  # свежий CUDA-torch под RTX 5080 (cu124); при другой CUDA поправь индекс
+  "${EMV2_VENV}/bin/pip" install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124 || echo "(torch не встал — поставь под свою CUDA)"
+  [ -f "${EMV2_DIR}/requirements.txt" ] && "${EMV2_VENV}/bin/pip" install -r "${EMV2_DIR}/requirements.txt" || echo "(requirements.txt EchoMimic-v2 не найден/не встал)"
+  echo "  ⚠ ВЕСА EchoMimic-v2 нужно скачать по инструкции их README (HuggingFace) в ${EMV2_DIR}/pretrained_weights."
+  echo "  ⚠ Проверь имя скрипта инференса (infer_acc.py?) и его аргументы — при необходимости задай"
+  echo "     ECHOMIMIC_INFER и ECHOMIMIC_ARGS в systemd-юните (см. ниже)."
+else
+  echo "(каталог EchoMimic-v2 отсутствует — аватар будет работать на SadTalker, без жестов)"
+fi
+
 echo "== TrendTraffic render-worker: клон/обновление + fastapi/uvicorn =="
 if [ ! -d "${REPO_DIR}/.git" ]; then
   git clone --depth 1 https://github.com/DanikVR/trendtraffic "${REPO_DIR}"
@@ -82,6 +105,11 @@ Wants=network-online.target
 [Service]
 WorkingDirectory=${OM_DIR}
 Environment=OPENMONTAGE_DIR=${OM_DIR}
+Environment=ECHOMIMIC_DIR=${EMV2_DIR}
+Environment=ECHOMIMIC_PY=${EMV2_VENV}/bin/python
+# При необходимости раскомментируй/поправь под реальный скрипт инференса EchoMimic-v2:
+# Environment=ECHOMIMIC_INFER=${EMV2_DIR}/infer_acc.py
+# Environment=ECHOMIMIC_ARGS=--W 768 --H 768 --fps 24
 ExecStart=${VENV}/bin/uvicorn main:app --app-dir ${WORKER_DIR} --host ${HOST} --port ${PORT}
 Restart=always
 RestartSec=3

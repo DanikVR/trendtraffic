@@ -61,6 +61,41 @@ Tailscale). Затем в **Админ-панели → Конфигурация
 «Домашний ПК», GPU-воркер = `http://100.122.182.97:8801` → Сохранить. (Эквивалент в
 `.env` web-VPS: `RENDER_GPU_TARGET=home`, `RENDER_GPU_WORKER_URL=...`.)
 
+## Аватар «на студии» на своём GPU (замена HeyGen, БЕЗ кредитов) — `POST /avatar`
+Локальная замена облачного HeyGen для подкаст-студии. Бэкенд (`/podcast/gpu-studio`) делает
+всё «дорогое-но-дешёвое» у себя (вырезка ведущего на зелёный через Gemini + валидация + аудио
+из вашей записи), а СЮДА шлёт только анимацию головы:
+```
+POST /avatar  { image_url (зелёная вырезка), audio_url (голос), base_url, engine? }
+   → { output_name, engine, note }        # видео на ЗЕЛЁНОМ (фон не тронут)
+GET  /files/<output_name>                  # бэкенд забирает, снимает chroma-key, сажает на студию
+```
+Движки (по убыванию «живости»), выбираются автоматически по доступности (`/health.avatar_engines`):
+1. **EchoMimic-v2** — фото по пояс + аудио → говорящий **С ЖЕСТАМИ рук/корпуса** (то, ради чего
+   уходим с HeyGen). Ставится `install-gpu.sh` в `/opt/echomimic_v2`; воркер видит его по
+   `ECHOMIMIC_DIR`. ⚠ Веса качаются вручную (HuggingFace, см. README EchoMimic-v2), и точное
+   имя скрипта инференса/аргументы задаются env `ECHOMIMIC_INFER` / `ECHOMIMIC_ARGS` в юните —
+   **проверить на первой установке** (в коде дефолт `infer_acc.py`).
+3. **SadTalker** (`talking_head`) — фолбэк: только голова/липсинк, без жестов. Работает сразу,
+   если стоит OpenMontage-GPU.
+
+### Запуск утром (по шагам)
+1. Включить/перезагрузить домашний ПК, проверить `nvidia-smi` (в WSL2 — драйвер в Windows).
+2. `WORKER_HOST=100.122.182.97 bash /opt/tt/render-worker/install-gpu.sh`
+   (клонирует EchoMimic-v2, ставит зависимости, поднимает `trendtraffic-render-gpu:8801`).
+3. Скачать веса EchoMimic-v2 по их README в `/opt/echomimic_v2/pretrained_weights`; при
+   необходимости поправить `ECHOMIMIC_INFER`/`ECHOMIMIC_ARGS` в
+   `/etc/systemd/system/trendtraffic-render-gpu.service` → `systemctl daemon-reload && systemctl restart trendtraffic-render-gpu`.
+4. Проверить: `curl http://100.122.182.97:8801/health` → в `avatar_engines` должно быть
+   `echomimic` (и/или `sadtalker`).
+5. В **Админ → Конфигурация → Рендер**: GPU-воркер = `http://100.122.182.97:8801` → Сохранить
+   (или `.env` web-VPS `RENDER_GPU_WORKER_URL=...`, `RENDER_GPU_TARGET=home`, pm2 restart).
+6. В TrendFlow → Подкаст: провайдер **«Домашний GPU (жесты)»**, голос **«Из записи»**, фото
+   студии + рамки ведущих → **«Оживить НА студии (домашний GPU)»** → **«Собрать НА студии»**.
+
+Без EchoMimic-v2 (только SadTalker) всё работает, но БЕЗ жестов (голова/липсинк). Если
+`avatar_engines` пуст — нет ни одного движка (поставь OpenMontage-GPU или EchoMimic-v2).
+
 ## Управление
 ```
 systemctl status trendtraffic-render

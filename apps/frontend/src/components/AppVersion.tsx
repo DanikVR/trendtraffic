@@ -1366,7 +1366,17 @@
  *         заметке («HeyGen: <reason>») и под плашкой головы (крестик вместо спиннера + «ошибка: …»);
  *         (3) если причины нет — подсказка «часто временный сбой/квота, попробуйте ещё раз». Диагностика,
  *         не смена логики рендера. Даёт увидеть реальную причину (No face / квота / 5xx) и чинить точечно. */
-export const APP_VERSION = '1.6.66';
+/* 1.6.67 — GPU-СТУДИЯ (замена HeyGen на ДОМАШНЕМ ПК, без кредитов): та же схема «вырезка на зелёный →
+ *         анимация → chroma-key → студия», но анимация головы идёт на своём RTX через render-worker.
+ *         Новое: (worker) POST /avatar {image_url,audio_url,engine?} → EchoMimic-v2 (ЖЕСТЫ рук/корпуса)
+ *         с фолбэком на SadTalker (голова); /health.avatar_engines; install-gpu.sh ставит EchoMimic-v2
+ *         (ECHOMIMIC_DIR в юните). (бэкенд) POST /podcast/gpu-studio + /status: переиспользует вырезку
+ *         (personCutoutGreen+валидация), buildHostAudio/ElevenLabs, studioCleanPlate, зовёт воркер /avatar
+ *         по хосту → зелёные головы + фон → та же compose-studio. (фронт) провайдер «Домашний GPU (жесты)»:
+ *         кнопка «Оживить НА студии (домашний GPU)», poll+resume, голос «Из записи»/ElevenLabs.
+ *         ⚠ GPU-инференс НЕ протестирован (нет запущенного воркера) — требует установки EchoMimic-v2 на ПК
+ *         (см. render-worker/README.md); HeyGen-путь не тронут. tsc фронт+бэк 0, py_compile 0. */
+export const APP_VERSION = '1.6.67';
 
 export function AppVersion() {
   return (

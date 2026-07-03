@@ -140,7 +140,7 @@ const POD_AVATARS: { v: PodAvatarProvider; label: string; quality: string; cost:
   { v: 'omni', label: 'Omni-студия', quality: '★★★★★ живая сцена + правки чатом', cost: 'ИИ-голос ~$0.10/с', perMin: 0, note: 'Omni Flash оживляет фото КАЖДОГО ведущего и правится чатом (диалоговое редактирование). Голос — синтетический (Omni). Для реального голоса из записи выберите HeyGen. Нужен Gemini-ключ.' },
   { v: 'heygen', label: 'HeyGen', quality: '★★★★★ фотореализм', cost: 'премиум', perMin: 0.6, note: 'Лучшее качество, версии 3/4/5. Нужен ключ HeyGen (Настройки → Генерация).' },
   { v: 'did', label: 'D-ID / Hedra', quality: '★★★★ хорошо', cost: 'дешевле в разы', perMin: 0.12, note: 'Говорящая голова из фото за меньшие деньги. Нужен ключ провайдера.' },
-  { v: 'gpu', label: 'Наш GPU (SadTalker)', quality: '★★★ скромнее', cost: 'бесплатно', perMin: 0, note: 'Без оплаты за минуту, крутится на нашем GPU-воркере. Сейчас GPU не подключён.' },
+  { v: 'gpu', label: 'Домашний GPU (жесты)', quality: '★★★★ жесты рук/корпуса', cost: 'бесплатно', perMin: 0, note: 'На вашем ПК (RTX), без оплаты за минуту: EchoMimic-v2 = говорящий С ЖЕСТАМИ рук/корпуса (если установлен), иначе SadTalker (только голова). Голос: «Из записи» или ElevenLabs. Нужен запущенный GPU-воркер (render-worker/install-gpu.sh). Кнопка «Оживить НА студии (домашний GPU)».' },
 ];
 // Лицо на групповом фото: бокс в долях изображения (0..1) + назначенный спикер.
 interface PodFace { id: string; box: { x: number; y: number; w: number; h: number }; speaker: 'A' | 'B' }
@@ -158,7 +158,7 @@ interface PodcastSpec {
   // Фоновая музыка на весь ролик (генерим/загружаем): url + громкость % (обрезается по длине видео).
   music?: { url: string; name: string; volumePct: number } | null;
   // Результаты/статус аниматора — сохраняются в спеку, чтобы пережить выход/вход в сценарий.
-  animActive?: { kind: 'omnipod' | 'heygen'; jobId?: string; videoIds?: string[] } | null;
+  animActive?: { kind: 'omnipod' | 'heygen' | 'gpupod'; jobId?: string; videoIds?: string[] } | null;
   animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null }[] | null;
   // Фон студии для «Собрать НА студии»: clean plate (студия без людей), выживает выход/вход.
   studioBgUrl?: string | null;
@@ -1221,6 +1221,54 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch { setAnimNote('Ошибка сети (HeyGen-студия).'); setAnimBusy(false); }
   };
 
+  // ── GPU-студия (домашний ПК, без облака/кредитов): вырезка на зелёный + аудио → render-worker
+  //    /avatar (EchoMimic-v2 жесты / SadTalker голова) → зелёные головы + clean plate → «Собрать НА студии». ──
+  const runGpuStudio = async () => {
+    if (animBusy) return;
+    if (!pod.groupPhotoUrl) { setAnimNote('Нужно общее фото студии (студия лиц) — из него вырежем ведущих.'); return; }
+    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
+    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+    setAnimBusy(true); setAnimNote(null); setAnimJobs([]); setStudioBg(null); setComposeUrl(null);
+    try {
+      const av = pod.avatar || POD_DEFAULT.avatar!;
+      // GPU-движки ведутся аудио: голос «Из записи» или ElevenLabs (не HeyGen TTS).
+      const voiceSource = av.voiceSource === 'elevenlabs' ? 'elevenlabs' : 'record';
+      const res = await fetch('/api/render/podcast/gpu-studio', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod, voiceSource }) });
+      const d = await res.json();
+      if (!res.ok || !d.jobId) { setAnimNote(d?.error || 'GPU-студия недоступна.'); setAnimBusy(false); return; }
+      setAnimNote(d.note || 'GPU оживляет ведущих…');
+      persistAnim({ animActive: { kind: 'gpupod', jobId: d.jobId }, animResult: null });
+      pollGpuStudio(d.jobId);
+    } catch { setAnimNote('Ошибка сети (GPU-студия).'); setAnimBusy(false); }
+  };
+  const pollGpuStudio = (jobId: string) => {
+    let ticks = 0;
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/render/podcast/gpu-studio/status?jobId=' + jobId, { headers: headers() });
+        if (res.status === 404) { setAnimBusy(false); persistAnim({ animActive: null }); setAnimNote('Прошлая GPU-генерация не найдена (сервер мог перезапуститься). Готовые головы ищите в Галерее.'); return; }
+        const d = await res.json();
+        if (res.ok && d.status && d.status !== 'processing') {
+          setAnimBusy(false);
+          const hosts = Array.isArray(d.hosts) ? d.hosts : [];
+          const jobs = hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'gpu-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, error: h.error || null }));
+          setAnimJobs(jobs);
+          if (d.studioUrl) setStudioBg(d.studioUrl);
+          persistAnim({ animActive: null, animResult: jobs.map((j: any) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: null })), studioBgUrl: d.studioUrl || null });
+          const failed = hosts.filter((h: any) => h.error);
+          setAnimNote(d.status === 'failed'
+            ? ('GPU не смог оживить: ' + (d.error || failed.map((h: any) => h.error).join('; ')))
+            : (failed.length ? ('Часть готова. Ошибки: ' + failed.map((h: any) => `${h.host}: ${h.error}`).join('; ')) : 'Готово! GPU оживил ведущих. Жми «Собрать НА студии».'));
+          return;
+        }
+      } catch { /* ретрай */ }
+      if (!pollAliveRef.current) return;
+      if (++ticks > 300) { setAnimBusy(false); setAnimNote('Опрос GPU остановлен по таймауту — готовые головы ищите в Галерее.'); return; }
+      animPollRef.current = window.setTimeout(tick, 8000);
+    };
+    tick();
+  };
+
   // ── Omni-студия: оживить фото каждого ведущего через Omni Flash (по одному) → 2 клипа с ИИ-голосом ──
   const runOmniAnimate = async () => {
     if (animBusy) return;
@@ -1303,6 +1351,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setAnimBusy(true); setAnimNote('Возобновляю рендер HeyGen…');
       setAnimJobs(active.videoIds.map((id, i) => ({ host: i === 0 ? 'A' : 'B', name: (res && res[i]?.name) || `Ведущий ${i === 0 ? 'A' : 'B'}`, videoId: id, status: 'processing', url: null })));
       pollAnimate(active.videoIds);
+    } else if (active && active.kind === 'gpupod' && active.jobId) {
+      setAnimBusy(true); setAnimNote('Возобновляю GPU-генерацию (шла в фоне)…'); pollGpuStudio(active.jobId);
     }
   }, [loading]);
 
@@ -3817,6 +3867,16 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             {animBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} Оживить НА студии (вырезать людей → HeyGen)
                           </button>
                           <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии»: вырезаю обоих ведущих из общего фото → HeyGen оживляет (Avatar IV, тело/руки) на зелёном → накладываю на фон студии. Голос — по выбору выше.</p>
+                        </>
+                      )}
+                      {av.provider === 'gpu' && pod.groupPhotoUrl && (
+                        <>
+                          <button onClick={runGpuStudio} disabled={animBusy}
+                            className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                            style={{ background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                            {animBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} Оживить НА студии (домашний GPU)
+                          </button>
+                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии» на вашем ПК (без кредитов): вырезаю ведущих из общего фото → домашний GPU оживляет (EchoMimic-v2 = жесты рук/корпуса; если не установлен — SadTalker, только голова) на зелёном → фон студии. Голос: «Из записи» или ElevenLabs. Нужен запущенный GPU-воркер (render-worker/install-gpu.sh).</p>
                         </>
                       )}
                       {animBusy && (

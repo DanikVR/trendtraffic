@@ -33,6 +33,9 @@ const composeJobs = new Map<string, { tenantId?: string; status: 'processing' | 
 const omniJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
 // Omni-студия подкаста (в памяти): jobId → статусы 2 клипов (по ведущему), для сплит-скрина/чат-правок.
 const omniPodJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; interactionId?: string | null; seconds?: number | null; costUsd?: number | null; assetId?: string | null; error?: string }>; error?: string; ts: number }>();
+// GPU-студия подкаста (домашний RTX 5080 через render-worker /avatar): jobId → вырезка на зелёный
+// + аудио + анимация (EchoMimic-v2/SadTalker) по ведущему + фон clean plate. Дальше — та же compose-studio.
+const gpuStudioJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; assetId?: string | null; engine?: string | null; error?: string }>; studioUrl?: string | null; note?: string; error?: string; ts: number }>();
 
 // TTL-эвикция in-memory задач: без неё Map-ы растут до рестарта процесса.
 const JOB_TTL_MS = 6 * 3600_000;
@@ -942,6 +945,108 @@ router.get('/podcast/omni-animate/status', (req: AuthedRequest, res: Response) =
   const j = omniPodJobs.get(String(req.query.jobId || ''));
   if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача Omni-студии не найдена' });
   res.json({ status: j.status, hosts: j.hosts || [], error: j.error || null });
+});
+
+/** POST /podcast/gpu-studio — «на студии» на ДОМАШНЕМ GPU (без облака/кредитов HeyGen):
+ *  вырезка ведущих на зелёный (Gemini, та же валидация) + аудио (ваш голос/ElevenLabs) →
+ *  render-worker /avatar (EchoMimic-v2 = жесты / SadTalker = голова) → зелёные головы + clean plate.
+ *  Дальше — та же /podcast/compose-studio (chroma-key + студия + оверлеи). body: { spec, voiceSource?, engine? } → { jobId }. */
+router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => {
+  try {
+    const gpuWorker = getRenderGpuWorkerUrl();
+    if (!gpuWorker) return res.status(400).json({ error: 'GPU-воркер (домашний ПК) не подключён. Запустите render-worker/install-gpu.sh и укажите адрес в Админ → Конфигурация → Рендер (RENDER_GPU_WORKER_URL).' });
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Нужен Gemini-ключ (Настройки → Gemini API) — им вырезаем людей из фото.' });
+    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
+    const groupPhotoUrl = typeof spec.groupPhotoUrl === 'string' && spec.groupPhotoUrl ? spec.groupPhotoUrl : '';
+    if (!groupPhotoUrl) return res.status(400).json({ error: 'Нужно общее фото студии (студия лиц).' });
+    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
+    if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
+    // Локальные движки — АУДИО-ведомые (нет HeyGen TTS): нужен реальный голос (запись/ElevenLabs).
+    const voiceSource = ['record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'record';
+    const engine = ['echomimic', 'sadtalker'].includes(String(req.body?.engine)) ? String(req.body.engine) : undefined;
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — GPU-воркер не скачает фото/аудио. Обратитесь к администратору.' });
+    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : base + (u.startsWith('/') ? u : '/' + u);
+    let elevenKey: string | null = null;
+    if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs или выберите «Из записи».' }); }
+    if (voiceSource === 'record' && !spec.recordingUrl) return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись (Разобрать запись).' });
+
+    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
+    const dialFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk);
+    const rawTextFor = (spk: 'A' | 'B') => dialFor(spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
+    const segsFor = (spk: 'A' | 'B') => dialFor(spk).map((l) => ({ start: Number(l?.start), end: Number(l?.end) })).filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
+    const totalSec = dialogue.reduce((m: number, l: any) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
+    const facesArr: any[] = Array.isArray(spec.faces) ? spec.faces : [];
+    const hasA = facesArr.some((f) => f?.speaker === 'A'); const hasB = facesArr.some((f) => f?.speaker === 'B');
+    const hostsList: Array<readonly ['A' | 'B', any]> = hasA && !hasB ? [['A', hostA]] : (!hasA && hasB ? [['B', hostB]] : [['A', hostA], ['B', hostB]]);
+    const boxOf = (spk: 'A' | 'B') => { const f = facesArr.find((x) => x?.speaker === spk && x?.box && [x.box.x, x.box.y, x.box.w, x.box.h].every((v: any) => Number.isFinite(Number(v)))); return f ? { x: Number(f.box.x), y: Number(f.box.y), w: Number(f.box.w), h: Number(f.box.h) } : null; };
+
+    const jobId = 'gpupod_' + Math.random().toString(36).slice(2, 10);
+    sweepJobs(gpuStudioJobs);
+    const tenantId = req.tenantId!;
+    gpuStudioJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
+
+    // Один вызов домашнего воркера: {зелёная вырезка, аудио} → видео на зелёном (скачиваем к себе).
+    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string): Promise<{ url: string; engine: string | null }> => {
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 1_800_000);
+      try {
+        const r = await fetch(`${gpuWorker}/avatar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_url: imageUrlAbs, audio_url: audioUrlAbs, base_url: base, engine }), signal: ctrl.signal });
+        const d: any = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.error || `GPU-воркер HTTP ${r.status}`);
+        if (!d.output_name) throw new Error(d?.note || 'GPU-воркер не вернул видео');
+        const dl = await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(d.output_name)}`, 'gpuhead');
+        return { url: dl.fileUrl, engine: d.engine || null };
+      } finally { clearTimeout(t); }
+    };
+
+    // Всё в фоне (вырезка/озвучка/GPU-рендер идут минуты > таймаут прокси) — статус опрашивается.
+    (async () => {
+      const cleanUrl = await studioCleanPlate(apiKey, abs(groupPhotoUrl)).catch(() => null);
+      const studioUrl = cleanUrl || groupPhotoUrl;
+      const hosts: Array<{ host: 'A' | 'B'; name: string; url?: string; assetId?: string | null; engine?: string | null; error?: string }> = [];
+      for (const [spk, host] of hostsList) {
+        const name = host.name || `Ведущий ${spk}`;
+        try {
+          // 1) аудио (ваш голос по таймкодам / ElevenLabs)
+          let audioUrl: string;
+          if (voiceSource === 'record') { const segs = segsFor(spk); if (!segs.length) throw new Error('нет сегментов записи (разберите запись на 2 голоса)'); audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec)); }
+          else { const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female'; audioUrl = abs(await elevenTTS(elevenKey!, rawTextFor(spk), gender, host.elevenVoiceId)); }
+          // 2) вырезка на зелёный + валидация (полупрозрачность / второй человек) — как в heygen-studio
+          const box = boxOf(spk);
+          const ob = boxOf(spk === 'A' ? 'B' : 'A');
+          const otherBox = ob ? { x: ob.x + ob.w * 0.15, y: ob.y + ob.h * 0.15, w: ob.w * 0.7, h: ob.h * 0.7 } : null;
+          const cutProblem = async (c: { url: string; path: string }): Promise<string | null> => {
+            const bg = await greenBgRatio(c.path || abs(c.url)); if (bg != null && bg < 0.22) return 'фон остался студией (не зелёный)';
+            if (box) { const ib = await greenBgRatio(c.path || abs(c.url), box); if (ib != null && ib > 0.55) return 'ведущий получился полупрозрачным'; }
+            if (otherBox) { const og = await greenBgRatio(c.path || abs(c.url), otherBox); if (og != null && og < 0.5) return 'в кадре остался второй человек'; }
+            return null;
+          };
+          let cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false);
+          let problem = await cutProblem(cut);
+          if (problem) { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, true); problem = await cutProblem(cut); if (problem) throw new Error(`вырезка ведущего ${spk}: ${problem}`); }
+          // 3) анимация на домашнем GPU
+          const av = await workerAvatar(abs(cut.url), audioUrl);
+          let assetId: string | null = null;
+          try { const a = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: `GPU-ведущий ${name}`, fileUrl: av.url, mime: 'video/mp4' }); assetId = a?.id || null; } catch { /* Галерея опц. */ }
+          hosts.push({ host: spk, name, url: av.url, assetId, engine: av.engine });
+        } catch (e: any) { hosts.push({ host: spk, name, error: e?.message || 'ошибка' }); }
+      }
+      const anyOk = hosts.some((h) => h.url);
+      gpuStudioJobs.set(jobId, { tenantId, status: anyOk ? 'done' : 'failed', hosts, studioUrl, error: anyOk ? undefined : (hosts.find((h) => h.error)?.error || 'не удалось оживить на GPU'), ts: Date.now() });
+    })();
+
+    res.json({ jobId, note: 'GPU-студия: вырезаю ведущих, озвучиваю и анимирую на домашнем ПК (несколько минут). Опрашиваю статус…' });
+  } catch (err: any) {
+    res.status(500).json({ error: `GPU-студия: ${err?.message || 'ошибка'}` });
+  }
+});
+
+/** GET /podcast/gpu-studio/status?jobId=... — статус GPU-студии: головы (зелёные) + фон студии. */
+router.get('/podcast/gpu-studio/status', (req: AuthedRequest, res: Response) => {
+  const j = gpuStudioJobs.get(String(req.query.jobId || ''));
+  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача GPU-студии не найдена' });
+  res.json({ status: j.status, hosts: j.hosts || [], studioUrl: j.studioUrl || null, error: j.error || null });
 });
 
 /** POST /podcast/:flowId — собрать подкаст-сцену → задача в очередь. body: { spec? } */

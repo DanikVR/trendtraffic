@@ -87,9 +87,34 @@ class DiarizeBody(BaseModel):
     hf_token: Optional[str] = None
 
 
+class AvatarBody(BaseModel):
+    # Аватар «на студии»: фото ведущего на ЗЕЛЁНОМ (вырезка бэкенда) + аудио → говорящее видео.
+    # Фон ДОЛЖЕН остаться зелёным (движок анимирует человека, не трогая фон) — бэкенд потом
+    # снимет его chroma-key и посадит на студию. engine: echomimic (жесты) | sadtalker (голова) | None(auto).
+    image_url: str
+    audio_url: str
+    base_url: Optional[str] = None
+    engine: Optional[str] = None
+
+
+def _avatar_engines() -> list:
+    """Какие локальные движки аватара доступны на этой машине (по убыванию «живости»)."""
+    eng = []
+    emv2 = os.environ.get("ECHOMIMIC_DIR")
+    if emv2 and os.path.isdir(emv2):
+        eng.append("echomimic")   # EchoMimic-v2: полукорпус + жесты рук (нужен GPU)
+    try:
+        if registry is not None and registry.get("talking_head") is not None:
+            eng.append("sadtalker")  # SadTalker: только голова/липсинк (без жестов)
+    except Exception:  # noqa: BLE001
+        pass
+    return eng
+
+
 @app.get("/health")
 def health():
-    return {"ok": registry is not None, "tools": len(TOOLS), "openmontage_dir": OPENMONTAGE_DIR}
+    return {"ok": registry is not None, "tools": len(TOOLS), "openmontage_dir": OPENMONTAGE_DIR,
+            "avatar_engines": _avatar_engines()}
 
 
 # ── утилиты ──────────────────────────────────────────────────────────────────
@@ -921,6 +946,74 @@ def execute(body: ExecBody):
     name = f"{job}-{uuid.uuid4().hex[:8]}{os.path.splitext(out_file)[1] or '.mp4'}"
     shutil.copyfile(out_file, FILES_DIR / name)
     return {"skipped": False, "output_name": name, "note": note}
+
+
+def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
+    """EchoMimic-v2: фото (по пояс) + аудио → говорящий с жестами рук/корпуса (open-source, GPU).
+    Вызов через CLI репозитория (ECHOMIMIC_DIR). ⚠ ТОЧНЫЕ аргументы зависят от версии EchoMimic-v2 —
+    заданы через env, ПРОВЕРИТЬ/поправить на реальной установке (см. install-gpu.sh):
+      ECHOMIMIC_DIR   — каталог клона EchoMimic-v2
+      ECHOMIMIC_PY    — python из его venv (по умолч. <dir>/.venv/bin/python)
+      ECHOMIMIC_INFER — скрипт инференса (по умолч. <dir>/infer_acc.py)
+      ECHOMIMIC_ARGS  — доп. аргументы (например «--W 768 --H 768 --fps 24»)
+    Фон входного кадра (зелёный) сохраняется — движок анимирует человека, не заменяя фон.
+    """
+    emv2 = os.environ.get("ECHOMIMIC_DIR")
+    if not emv2 or not os.path.isdir(emv2):
+        return False, "ECHOMIMIC_DIR не задан/не найден"
+    py = os.environ.get("ECHOMIMIC_PY") or os.path.join(emv2, ".venv", "bin", "python")
+    script = os.environ.get("ECHOMIMIC_INFER") or os.path.join(emv2, "infer_acc.py")
+    extra = (os.environ.get("ECHOMIMIC_ARGS") or "").split()
+    cmd = [py, script, "--ref_image", img, "--audio", wav, "--output", out_path, *extra]
+    ok, log = _run(cmd, timeout=1800)
+    return (ok and os.path.exists(out_path)), log
+
+
+@app.post("/avatar")
+def avatar(body: AvatarBody):
+    """Локальный аниматор головы «на студии»: {image_url(зелёная вырезка), audio_url} → видео на зелёном.
+    Пробуем движки по доступности (EchoMimic-v2 → SadTalker). Выход отдаём как /files/<output_name>,
+    его бэкенд снимет chroma-key и посадит на фон студии (та же склейка, что у HeyGen-пути)."""
+    _sweep_workdirs()
+    work = WORK_DIR / ("av_" + uuid.uuid4().hex[:8])
+    work.mkdir(parents=True, exist_ok=True)
+    img = _download_media(body.base_url, body.image_url, work, default_ext=".png")
+    if not img:
+        return {"output_name": None, "note": "аватар: изображение не скачалось"}
+    wav = _download_media(body.base_url, body.audio_url, work, default_ext=".wav")
+    if not wav:
+        return {"output_name": None, "note": "аватар: аудио не скачалось"}
+    available = _avatar_engines()
+    if not available:
+        return {"output_name": None, "note": "аватар: нет движка (нужен EchoMimic-v2 или SadTalker на GPU-воркере)"}
+    want = (body.engine or "").lower().strip()
+    order = ([want] if want in available else []) + [e for e in available if e != want]
+    out_path = str(work / f"avatar_{uuid.uuid4().hex[:6]}.mp4")
+    note = ""
+    used = None
+    for eng in order:
+        try:
+            if eng == "echomimic":
+                ok, log = _echomimic_v2(img, wav, out_path)
+                if ok:
+                    used, note = "echomimic", "EchoMimic-v2 (жесты рук/корпуса)"
+                    break
+                note = f"EchoMimic-v2 не удался: {(log or '')[-200:]}"
+            elif eng == "sadtalker":
+                f, _, n = run_tool("talking_head", {"image_path": img, "audio_path": wav,
+                                                    "output_path": out_path, "model": "sadtalker"})
+                if f and os.path.exists(f):
+                    out_path = f
+                    used, note = "sadtalker", (n or "SadTalker (голова/липсинк, без жестов)")
+                    break
+                note = f"SadTalker не удался: {n or ''}"
+        except Exception as e:  # noqa: BLE001
+            note = f"{eng}: {e}"
+    if not used or not os.path.exists(out_path):
+        return {"output_name": None, "note": note or "аватар: не удалось сгенерировать"}
+    name = f"avatar-{uuid.uuid4().hex[:8]}{os.path.splitext(out_path)[1] or '.mp4'}"
+    shutil.copyfile(out_path, FILES_DIR / name)
+    return {"output_name": name, "note": note, "engine": used}
 
 
 @app.post("/transcribe")
