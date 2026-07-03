@@ -1080,6 +1080,16 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     tick();
   };
   /** Запустить рендер говорящих голов ведущих у выбранного провайдера (HeyGen — реально). */
+  /** Отменить идущий рендер аниматора (HeyGen/студия/Omni): останавливаем опрос, чистим
+   *  превью и сохранённое возобновление (animActive) — после перезахода рендер не «воскреснет».
+   *  Уже запущенный у провайдера рендер доработает на его стороне, результат игнорируется. */
+  const cancelAnimate = () => {
+    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+    setAnimBusy(false);
+    setAnimJobs([]);
+    setAnimNote('Отменено: опрос остановлен, результат не будет использован. Уже запущенный у провайдера рендер доработает на его стороне (кредиты за запуск не возвращаются). Можно запускать заново.');
+    persistAnim({ animActive: null });
+  };
   const runAnimate = async () => {
     if (animBusy) return;
     const av = pod.avatar || POD_DEFAULT.avatar!;
@@ -3769,6 +3779,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           </button>
                           <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии»: вырезаю обоих ведущих из общего фото → HeyGen оживляет (Avatar IV, тело/руки) на зелёном → накладываю на фон студии. Голос — по выбору выше.</p>
                         </>
+                      )}
+                      {animBusy && (
+                        <button onClick={cancelAnimate}
+                          className="w-full py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                          style={{ background: 'transparent', color: '#ef4444', border: '1px dashed rgba(239,68,68,0.5)', cursor: 'pointer' }}>
+                          <X size={13} /> Отменить рендер
+                        </button>
                       )}
                       {animNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{animNote}</p>}
                       {animJobs.length > 0 && (
