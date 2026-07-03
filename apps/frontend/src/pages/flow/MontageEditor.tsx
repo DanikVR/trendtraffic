@@ -450,12 +450,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const vids = animJobs.map((j) => headVidRefs.current[j.videoId]).filter((v): v is HTMLVideoElement => !!v);
     vids.forEach((v) => { try { v.currentTime = 0; v.muted = false; v.play().catch(() => {}); } catch { /* */ } });
   };
+  // Позиция кадрирования превью головы = ЦЕНТР рамки ведущего (голова по центру ячейки, не срезана).
+  // Раньше жёстко left/right — ведущего резало у края; центр рамки показывает его посредине.
+  const headObjPos = (host: string): string => {
+    const b = pod.faces.find((f) => f.speaker === host)?.box;
+    if (!b) return '50% 50%';
+    const cx = Math.min(100, Math.max(0, (b.x + b.w / 2) * 100));
+    const cy = Math.min(100, Math.max(0, (b.y + b.h / 2) * 100));
+    return `${cx.toFixed(1)}% ${cy.toFixed(1)}%`;
+  };
   // Компонент жив? Опросы переустанавливают setTimeout ПОСЛЕ await fetch — clearTimeout в cleanup
   // снимает только уже запланированный таймер, и без этого флага цикл «воскресал» после unmount.
   const pollAliveRef = useRef(true);
   const [composeBusy, setComposeBusy] = useState(false);       // склейка сплит-скрина
   const [composeNote, setComposeNote] = useState<string | null>(null);
   const [composeUrl, setComposeUrl] = useState<string | null>(null);
+  const [composeAR, setComposeAR] = useState<string>('9 / 16'); // аспект плеера финала = аспект самого видео (16:9→16:9)
   const composePollRef = useRef<number | null>(null);
   const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg' | 'music'>(null);
   const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
@@ -1692,8 +1702,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const isPerson = box.w >= 0.28 || box.h >= 0.38; // крупная рамка — обведён ведущий целиком
     let x: number, y: number, w: number, h: number;
     if (isPerson) {
-      x = (box.x - box.w * 0.06) * W; y = (box.y - box.h * 0.06) * H;
-      w = box.w * 1.12 * W; h = box.h * 1.12 * H;
+      // КВАДРАТНЫЙ кроп вокруг центра рамки по БОЛЬШЕЙ стороне: масштаб ведущего не зависит
+      // от формы рамки. Раньше cover-впис в квадрат зумил по МЕНЬШЕЙ стороне → у'же рамка
+      // (женщина) выходила крупнее мужчины. Теперь A и B в одном масштабе.
+      const side = Math.max(box.w * W, box.h * H) * 1.12;
+      const cx = (box.x + box.w / 2) * W, cy = (box.y + box.h / 2) * H;
+      x = cx - side / 2; y = cy - side / 2; w = side; h = side;
     } else {
       x = (box.x - box.w * 0.7) * W; y = (box.y - box.h * 0.9) * H;
       w = box.w * 2.4 * W; h = box.h * 3.3 * H;
@@ -3806,7 +3820,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           {animJobs.map((j) => (
                             <div key={j.videoId} className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
                               <div style={{ aspectRatio: '9 / 16', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                {j.url ? <video ref={(el) => { headVidRefs.current[j.videoId] = el; }} src={j.url} controls playsInline preload="metadata" className="w-full h-full object-cover" style={{ objectPosition: j.host === 'B' ? 'right center' : 'left center' }} />
+                                {j.url ? <video ref={(el) => { headVidRefs.current[j.videoId] = el; }} src={j.url} controls playsInline preload="metadata" className="w-full h-full object-cover" style={{ objectPosition: headObjPos(j.host) }} />
                                   : <div className="flex flex-col items-center gap-1"><Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} /><span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{j.status === 'failed' ? 'ошибка' : 'рендер…'}</span></div>}
                               </div>
                               <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
@@ -3843,7 +3857,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       {composeNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{composeNote}</p>}
                       {composeUrl && (
                         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
-                          <video src={composeUrl} controls className="w-full" style={{ aspectRatio: '9 / 16', background: '#000' }} />
+                          <video src={composeUrl} controls className="w-full"
+                            onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setComposeAR(`${v.videoWidth} / ${v.videoHeight}`); }}
+                            style={{ aspectRatio: composeAR, maxHeight: '70vh', background: '#000' }} />
                           <div className="text-[10px] px-1.5 py-1" style={{ color: 'var(--text-secondary)' }}>{studioBg ? 'Готово: ведущие на фоне студии ✓ (в Галерее)' : 'Готовый сплит-скрин ✓ (сохранён в Галерею)'}</div>
                         </div>
                       )}

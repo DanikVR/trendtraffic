@@ -331,11 +331,14 @@ export async function composeOnStudio(opts: {
 
   const out = `podstudio-${randomUUID().slice(0, 8)}.mp4`;
   const outPath = path.join(RENDERS_DIR, out);
+  // Таймаут масштабируем по длине: chromakey+оверлеи на CPU могут идти медленнее реального
+  // времени. ~4× длительности + 2 мин запаса (для 15-мин ролика ≈ 55 мин), не меньше 10 мин.
+  const composeTimeout = Math.max(600_000, Math.min(3_300_000, Math.round(target * 4000) + 120_000));
   await ffmpeg([
     '-y', ...inputs, '-filter_complex', fc,
     '-map', '[v]', '-map', mapAudio, '-t', T,
     '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', outPath,
-  ]);
+  ], composeTimeout);
   return `/uploads/renders/${out}`;
 }
 
