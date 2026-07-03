@@ -128,7 +128,7 @@ interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: numb
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
 type PodAvatarProvider = 'heygen' | 'did' | 'gpu' | 'omni';
-type PodAvatarMode = 'standard' | 'iv';                 // HeyGen: стандартный движок / Avatar IV
+type PodAvatarMode = 'standard' | 'iv' | 'v';           // HeyGen: стандартный / Avatar IV / Avatar V (V — задел, пока неактивен: нужен видео-референс + Enterprise-API)
 type PodVoiceSource = 'heygen' | 'record' | 'elevenlabs'; // откуда голос для аниматора
 interface PodAvatar { provider: PodAvatarProvider; mode: PodAvatarMode; voiceSource: PodVoiceSource; emotion?: string }
 // Пресеты подачи/эмоции (топ-кнопки) — маппятся в эмоцию голоса HeyGen на бэке.
@@ -3741,10 +3741,17 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         <>
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Режим:</span>
-                            {([['standard', 'Стандарт'], ['iv', 'Avatar IV (жесты/мимика)']] as [PodAvatarMode, string][]).map(([m, lbl]) => { const sel = (av.mode || 'standard') === m; return (
-                              <button key={m} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), mode: m } }))}
-                                className="text-[10px] font-700 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                            {/* Avatar V — задел: пока неактивен (нужен реальный 15-сек видео-референс + Enterprise-API HeyGen; к ИИ-ведущим из фото не подключить). */}
+                            {([['standard', 'Стандарт', false], ['iv', 'Avatar IV (жесты/мимика)', false], ['v', 'Avatar V (по видео)', true]] as [PodAvatarMode, string, boolean][]).map(([m, lbl, disabled]) => { const sel = (av.mode || 'standard') === m; return (
+                              <button key={m} disabled={disabled}
+                                title={disabled ? 'Avatar V учит движения по реальному 15-сек видео человека + нужен Enterprise-доступ HeyGen API. К ИИ-ведущим из фото пока не подключён.' : ''}
+                                onClick={() => { if (disabled) return; podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), mode: m } })); }}
+                                className="text-[10px] font-700 px-2 py-1 rounded-md disabled:opacity-40" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: disabled ? 'not-allowed' : 'pointer' }}>{lbl}</button>
                             ); })}
+                          </div>
+                          <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                            <b>Avatar IV</b> — из фото ведущего (наш случай): мимика, липсинк и авто-жесты руками, если в кадре виден корпус.
+                            <br /><b>Avatar V</b> (скоро) — «живее», но учится по реальному 15-сек видео человека и требует Enterprise-API HeyGen; к ИИ-ведущим из фото не применяется.
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Голос:</span>
