@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type NormRect } from './podcast_compose.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -686,13 +686,18 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
       .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
       .slice(0, 12)
       .map((o: any) => ({ url: abs(String(o.url))!, tStart: Number(o.tStart), dur: Number(o.dur), video: o.video === true }));
+    // Рамки ведущих (доли кадра) для детерминированной обрезки в склейке — каждый со своей стороны.
+    const parseBox = (b: any): NormRect | null => (b && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(Number(b[k]))))
+      ? { x: Number(b.x), y: Number(b.y), w: Number(b.w), h: Number(b.h) } : null;
+    const boxA = parseBox(req.body?.boxA);
+    const boxB = parseBox(req.body?.boxB);
     const jobId = 'cmps_' + Math.random().toString(36).slice(2, 10);
     sweepJobs(composeJobs);
     const tenantId = req.tenantId!;
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, audioUrl, musicUrl, musicVolume, overlays });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, audioUrl, musicUrl, musicVolume, overlays, boxA, boxB });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });

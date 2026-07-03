@@ -210,6 +210,10 @@ export async function composeOnStudio(opts: {
   studioUrl: string; headA: string; headB?: string | null;
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
   overlays?: StudioOverlay[];
+  // Рамки ведущих (доли кадра исходного фото) — ДЕТЕРМИНИРОВАННАЯ обрезка по сторонам:
+  // каждый ведущий берётся ТОЛЬКО со своей половины (разрез в промежутке между рамками),
+  // поэтому если в вырезке остался второй человек — он отсекается тут, без зависимости от Gemini.
+  boxA?: NormRect | null; boxB?: NormRect | null;
   // легаси-поля старого API — игнорируются (совместимость)
   fullFrame?: boolean; placeA?: NormRect | null; placeB?: NormRect | null;
   focusA?: NormRect | null; focusB?: NormRect | null;
@@ -267,12 +271,38 @@ export async function composeOnStudio(opts: {
   // оставлял одну зелёнку — голова «исчезала» из ролика. Letterbox прозрачный (black@0).
   const keyf = (i: number, label: string) =>
     `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${label}];`;
+  // ДЕТЕРМИНИРОВАННАЯ обрезка: если 2 ведущих и заданы рамки — каждый берётся ТОЛЬКО со своей
+  // стороны. Разрез (splitPx) — в ПРОМЕЖУТКЕ между рамками (между внутренними краями), значит
+  // никого не режем, но «утёкший» в вырезку второй человек с чужой стороны отсекается. clip[k] —
+  // диапазон по X (px) для головы k (0=A, 1=B). Гарантия НЕ зависит от качества вырезки Gemini.
+  let clip: { x: number; w: number }[] | null = null;
+  if (heads.length === 2 && opts.boxA && opts.boxB) {
+    const bA = opts.boxA, bB = opts.boxB;
+    const cA = bA.x + bA.w / 2, cB = bB.x + bB.w / 2;
+    const aLeft = cA <= cB;                                   // кто левее по центру рамки
+    const left = aLeft ? bA : bB, right = aLeft ? bB : bA;
+    const leftInner = left.x + left.w, rightInner = right.x;  // внутренние края рамок
+    let sf = leftInner < rightInner ? (leftInner + rightInner) / 2 : (cA + cB) / 2; // разрез в зазоре (или между центрами при нахлёсте)
+    sf = Math.min(0.85, Math.max(0.15, sf));
+    let splitPx = Math.round((sf * W) / 2) * 2;               // чётное для yuv420
+    splitPx = Math.min(W - 2, Math.max(2, splitPx));
+    const leftRange = { x: 0, w: splitPx };
+    const rightRange = { x: splitPx, w: W - splitPx };
+    clip = aLeft ? [leftRange, rightRange] : [rightRange, leftRange]; // индекс 0=A,1=B
+  }
   let fc = bg;
   let lastV = 'bg';
   heads.forEach((_, k) => {
     const lbl = `k${k}`;
     fc += keyf(1 + k, lbl);
-    fc += `[${lastV}][${lbl}]overlay=x=0:y=0:shortest=0[hv${k}];`;
+    let src = lbl;
+    if (clip) {
+      const r = clip[k];
+      // оставить только диапазон [r.x, r.x+r.w) головы, остальное — прозрачно (pad black@0)
+      fc += `[${lbl}]crop=${r.w}:${H}:${r.x}:0,pad=${W}:${H}:${r.x}:0:color=black@0[cc${k}];`;
+      src = `cc${k}`;
+    }
+    fc += `[${lastV}][${src}]overlay=x=0:y=0:shortest=0[hv${k}];`;
     lastV = `hv${k}`;
   });
   // Медиа реплик: карточка по центру, видима в свой интервал (как в воркерном таймлайне).

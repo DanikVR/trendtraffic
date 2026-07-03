@@ -1166,6 +1166,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           .map((l, i, arr) => l.image ? { url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image) } : null)
           .filter(Boolean)
           .slice(0, 12);
+        // Рамки ведущих → детерминированная обрезка в склейке (каждый со своей стороны):
+        // даже если в вырезке остался второй человек, он отсекается. Только когда обе головы.
+        if (ready.length >= 2) {
+          const fa = pod.faces.find((f) => f.speaker === 'A')?.box;
+          const fb = pod.faces.find((f) => f.speaker === 'B')?.box;
+          if (fa && fb) { body.boxA = fa; body.boxB = fb; }
+        }
       }
       const res = await fetch(onStudio ? '/api/render/podcast/compose-studio' : '/api/render/podcast/compose', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
       const d = await res.json();
