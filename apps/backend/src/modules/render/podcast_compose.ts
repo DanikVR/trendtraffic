@@ -253,9 +253,14 @@ export async function composeOnStudio(opts: {
 
   // Фон clean plate — тот же аспект, что канвас → scale+crop без потерь композиции.
   const bg = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
-  // Chroma-key + despill + мягкий край альфа-маски. 0.36/0.10 — H.264-зелёный HeyGen неравномерен:
-  // слабее оставалась «плёнка», сильнее начинает есть полутона.
-  const keyBase = `chromakey=${key}:0.36:0.10,despill=type=green:mix=0.5:expand=0,`;
+  // Chroma-key + despill + мягкий край альфа-маски.
+  // similarity=0.18 (было 0.36 — БАГ: съедало сам объект). Проверено на синтетике (ffmpeg 6.1):
+  // при 0.36 пиксели с зелёным ПОДСВЕТОМ (spill на тёмном костюме, полутона кожи) попадали под
+  // порог и вырезались → ведущий в ролике полупрозрачный/исчезал. 0.18 убирает и чистый, и
+  // неравномерный H.264-зелёный (запас до 0x22DD2A), но сохраняет объект даже с сильным spill;
+  // подъедать человека начинает лишь с ~0.26. «Плёнку» (остаточный зелёный по краям) убирает
+  // despill (снимает зелёный КАСТ, не трогая альфу) — это его работа, а не задирание similarity.
+  const keyBase = `chromakey=${key}:0.18:0.08,despill=type=green:mix=0.5:expand=0,`;
   const keyTail = `avgblur=sizeX=2:sizeY=2:planes=8,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
   // ВПИСЫВАЕМ (decrease + прозрачный pad), а не кроем кропом: если аспект головы вдруг не
   // совпал с канвасом (HeyGen отрендерил в другом формате), кроп раньше отрезал человека и
