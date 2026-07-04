@@ -1071,6 +1071,24 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
         L = str(max(24, min(maxl, int(round(_media_duration(wav16) * 24)))))
     except Exception:  # noqa: BLE001
         L = "120"
+    # ЛИЧНОСТЬ: EchoMimic теряет лицо/волосы/одежду на ЧИСТО-ЗЕЛЁНОЙ вырезке #00FF00 (out-of-distribution)
+    # → уплывает к «прайору» модели. Фикс: кроп на человека + центр + нейтральный серый фон
+    # (echomimic_natural.py под emv2-питоном). На выходе matte вернёт человека на зелёный.
+    natscript = os.path.join(os.path.dirname(os.path.abspath(__file__)), "echomimic_natural.py")
+    ref_img = img
+    natural = os.environ.get("ECHOMIMIC_NATURAL_BG", "1") != "0" and os.path.exists(natscript)
+    if natural:
+        prepped = os.path.join(workdir, "ref_nat_%s.png" % uuid.uuid4().hex[:6])
+        try:
+            subprocess.run([py, natscript, "prep", img, prepped], cwd=emv2,
+                           capture_output=True, text=True, timeout=120)
+        except Exception:  # noqa: BLE001
+            pass
+        if os.path.exists(prepped):
+            ref_img = prepped
+        else:
+            natural = False
+            print("[echomimic] natural prep не удался — фолбэк на зелёную вырезку", flush=True)
     # временный конфиг: один test_case (наш ref + аудио + поза), веса — стандартные пути
     cfg = os.path.join(emv2, "configs", "prompts", "_worker_%s.yaml" % uuid.uuid4().hex[:8])
     with open(cfg, "w") as f:
@@ -1085,7 +1103,7 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
             'inference_config: "./configs/inference/inference_v2.yaml"\n'
             "weight_dtype: 'fp16'\n"
             "test_cases:\n"
-            '  "%s":\n    - "%s"\n    - "%s"\n' % (img, wav16, pose)
+            '  "%s":\n    - "%s"\n    - "%s"\n' % (ref_img, wav16, pose)
         )
     mark = os.path.join(workdir, ".emv2mark_%s" % uuid.uuid4().hex[:6])
     open(mark, "w").close()
@@ -1116,7 +1134,23 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
     if not outs:
         return False, "EchoMimic-v2 (2 попытки): " + log[-300:]
     outs.sort(key=os.path.getmtime)
-    shutil.copyfile(outs[-1], out_path)
+    sig = outs[-1]
+    # matte: серый фон EchoMimic → человек на ЧИСТОМ зелёном (бэкенд снимет хромакей как раньше)
+    if natural:
+        mok = False
+        try:
+            mp = subprocess.run([py, natscript, "matte", sig, out_path], cwd=emv2,
+                                capture_output=True, text=True, timeout=1800)
+            mok = mp.returncode == 0 and os.path.exists(out_path)
+            if not mok:
+                log += " | matte rc=%s %s" % (mp.returncode, (mp.stderr or "")[-160:])
+        except Exception as e:  # noqa: BLE001
+            log += " | matte err: %s" % e
+        if mok:
+            return True, log + " | natural+matte"
+        # matte не удался → отдаём серый выход (личность верная, фон серый — хромакей может не снять)
+        print("[echomimic] matte не удался, отдаю серый выход: %s" % log[-200:], flush=True)
+    shutil.copyfile(sig, out_path)
     return True, log
 
 
