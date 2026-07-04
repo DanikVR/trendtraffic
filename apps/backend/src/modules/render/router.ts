@@ -1048,14 +1048,26 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
           let problem = await cutProblem(cut);
           if (problem) { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, true); problem = await cutProblem(cut); if (problem) throw new Error(`вырезка ведущего ${spk}: ${problem}`); }
           // 3) анимация на домашнем GPU. «Реалистичная студия» (по умолч.): жестикулирует ТОЛЬКО
-          // говорящий — прокидываем сегменты речи хоста (по таймкодам диалога) + темперамент жестов.
+          // говорящий. Прокидываем сегменты речи хоста + интенсивность (ползунок) + оверрайд на реплику.
           const realistic = (spec.realisticStudio !== false);
-          const gest = ['calm', 'medium', 'active'].includes(String(host?.gesture)) ? String(host.gesture) : (spk === 'A' ? 'medium' : 'calm');
+          const toGain = (pct: number) => Math.max(0, Math.min(1.3, (pct / 100) * 1.3));
+          const intens = Number(host?.gestureIntensity);
+          const levelGain = Number.isFinite(intens) ? toGain(intens) : (spk === 'A' ? 0.9 : 0.6);
+          // оверрайд на конкретную реплику: line.gesture (0..100) → своя амплитуда; 0 = без жестов; undefined = авто (интенсивность хоста)
+          const lineGain = (l: any): number | undefined => {
+            const g = Number(l?.gesture);
+            return (l?.gesture === undefined || l?.gesture === null || !Number.isFinite(g)) ? undefined : toGain(g);
+          };
+          const workerSegs = dialFor(spk)
+            .map((l) => ({ s: Number(l?.start), e: Number(l?.end), g: lineGain(l) }))
+            .filter((x) => Number.isFinite(x.s) && Number.isFinite(x.e) && x.e > x.s)
+            .map((x) => (x.g === undefined ? [x.s, x.e] : [x.s, x.e, x.g]));
           const av = await workerAvatar(abs(cut.url), audioUrl, realistic ? {
             realistic_studio: true,
-            speech_segs: segsFor(spk).map((s) => [s.start, s.end]),
+            speech_segs: workerSegs,
             total_sec: totalSec,
-            gesture: gest,
+            level_gain: levelGain,
+            pose_style: spk === 'A' ? 1 : 2,       // разная хореография рук у A и B
             phase: spk === 'A' ? 0 : 48,
           } : {});
           let assetId: string | null = null;

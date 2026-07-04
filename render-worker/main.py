@@ -100,9 +100,11 @@ class AvatarBody(BaseModel):
     # «Реалистичная студия»: жестикулирует ТОЛЬКО говорящий. Бэкенд шлёт сегменты речи хоста
     # (по таймкодам диалога) + темперамент — воркер собирает per-host папку поз (жесты в речи, покой в молчании).
     realistic_studio: Optional[bool] = None
-    speech_segs: Optional[list] = None       # [[start,end], ...] в секундах, когда говорит ЭТОТ хост
+    speech_segs: Optional[list] = None       # [[start,end], ...] или [[start,end,gain], ...] (оверрайд амплитуды на реплику)
     total_sec: Optional[float] = None
-    gesture: Optional[str] = None            # calm | medium | active → позы 03/02/01
+    gesture: Optional[str] = None            # legacy: calm | medium | active → позы 03/02/01 (фолбэк)
+    level_gain: Optional[float] = None       # интенсивность жестов 0..~1.3 (ползунок), амплитуда рук вокруг покоя
+    pose_style: Optional[int] = None         # стиль-хореография 1..4 → позы 01..04
     phase: Optional[int] = None              # смещение курсора жеста (у A и B разное → не в фазе)
 
 
@@ -1084,12 +1086,21 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
     if studio and studio.get("realistic") and studio.get("speech_segs"):
         try:
             Lint = int(L)
-            active_pose = {"calm": "03", "medium": "02", "active": "01"}.get(str(studio.get("gesture") or "medium"), "02")
+            # стиль (какая хореография рук): pose_style 1..4 → «01».. «04»; фолбэк со старого gesture
+            if studio.get("pose_style"):
+                active_pose = "%02d" % max(1, min(4, int(studio.get("pose_style"))))
+            else:
+                active_pose = {"calm": "03", "medium": "02", "active": "01"}.get(str(studio.get("gesture") or "medium"), "02")
+            # интенсивность (амплитуда жеста): level_gain 0..~1.3 из ползунка; фолбэк 1.0
+            try:
+                level_gain = float(studio.get("level_gain")) if studio.get("level_gain") is not None else 1.0
+            except (TypeError, ValueError):
+                level_gain = 1.0
             pdir = os.path.join(workdir, "pose_%s" % uuid.uuid4().hex[:6])
             pd_params = {
                 "pose_root": os.path.join(emv2, "assets", "halfbody_demo", "pose"),
                 "active_pose": active_pose, "fps": 24, "total_sec": Lint / 24.0,
-                "speech_segs": studio.get("speech_segs") or [], "level_gain": 1.0,
+                "speech_segs": studio.get("speech_segs") or [], "level_gain": level_gain,
                 "phase": int(studio.get("phase") or 0), "out_dir": pdir,
             }
             pj = os.path.join(workdir, "pdp_%s.json" % uuid.uuid4().hex[:6])
@@ -1221,6 +1232,8 @@ def _avatar_impl(body: AvatarBody) -> dict:
         "speech_segs": body.speech_segs,
         "total_sec": body.total_sec,
         "gesture": body.gesture,
+        "level_gain": body.level_gain,
+        "pose_style": body.pose_style,
         "phase": body.phase,
     }
     with _gpu_lock:

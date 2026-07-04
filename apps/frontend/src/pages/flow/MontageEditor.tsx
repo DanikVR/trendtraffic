@@ -119,11 +119,7 @@ const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
 type PodVoice = 'female' | 'male';
 type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
 type PodLayout = 'overlay' | 'topbar'; // где картинка в сплит-скрине
-type PodGesture = 'calm' | 'medium' | 'active';   // темперамент жестикуляции (GPU): карта на позы 03/02/01
-const POD_GESTURES: { v: PodGesture; label: string }[] = [
-  { v: 'calm', label: 'Спокойно' }, { v: 'medium', label: 'Умеренно' }, { v: 'active', label: 'Активно' },
-];
-interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string; gesture?: PodGesture }
+interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string; gestureIntensity?: number }
 // Анимация «выезда» картинки, прикреплённой к реплике.
 type PodAnim = 'auto' | 'slide-left' | 'slide-right' | 'slide-up' | 'fade' | 'zoom';
 const POD_ANIMS: { v: PodAnim; label: string }[] = [
@@ -131,7 +127,7 @@ const POD_ANIMS: { v: PodAnim; label: string }[] = [
   { v: 'slide-up', label: '↑ Снизу' }, { v: 'zoom', label: 'Зум' }, { v: 'fade', label: 'Проявление' },
 ];
 // Реплика: спикер + текст (+ таймкоды) + опц. картинка + tStart (позиция на таймлайне Фазы 2).
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number }
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number; gesture?: number }
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
 type PodAvatarProvider = 'heygen' | 'did' | 'gpu' | 'omni';
@@ -175,8 +171,8 @@ interface PodcastSpec {
   realisticStudio?: boolean;
 }
 const POD_DEFAULT: PodcastSpec = {
-  hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A', gesture: 'medium' },
-  hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B', gesture: 'calm' },
+  hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A', gestureIntensity: 70 },
+  hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B', gestureIntensity: 45 },
   source: 'gen', brief: '', dialogue: [],
   realisticStudio: true,
   recordingUrl: null, recordingName: null,
@@ -3563,24 +3559,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               </button>
                             ))}
                           </div>
-                          {pod.avatar?.provider === 'gpu' && (
-                            <div>
-                              <div className="text-[9px] mb-0.5" style={{ color: 'var(--text-muted)' }}>Жесты (пока говорит)</div>
-                              <div className="grid grid-cols-3 gap-1">
-                                {POD_GESTURES.map(({ v, label: gl }) => {
-                                  const sel = (h.gesture || (label === 'A' ? 'medium' : 'calm')) === v;
-                                  return (
-                                    <button key={v} title="Насколько активно ведущий жестикулирует руками во время СВОЕЙ речи. У A и B разные значения — чтобы дуэт не двигался одинаково. Слушая, руки спокойны."
-                                      onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], gesture: v } }))}
-                                      className="py-1 rounded-lg text-[10px] font-600"
-                                      style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}` }}>
-                                      {gl}
-                                    </button>
-                                  );
-                                })}
+                          {pod.avatar?.provider === 'gpu' && (() => {
+                            const gi = Math.round(h.gestureIntensity ?? (label === 'A' ? 70 : 45));
+                            return (
+                              <div title="Насколько размашисто ведущий жестикулирует руками, ПОКА ГОВОРИТ. 0% — почти без жестов, 100% — активно. Слушая, руки спокойны. У A и B по умолчанию разные значения — чтобы дуэт не двигался одинаково.">
+                                <div className="flex items-center justify-between text-[9px] mb-0.5" style={{ color: 'var(--text-muted)' }}>
+                                  <span>Жестикуляция (пока говорит)</span><span style={{ color: '#8b5cf6', fontWeight: 700 }}>{gi}%</span>
+                                </div>
+                                <input type="range" min={0} max={100} step={5} value={gi}
+                                  onChange={(e) => podMutate((p) => ({ ...p, [hk]: { ...p[hk], gestureIntensity: Number(e.target.value) } }))}
+                                  className="w-full" style={{ accentColor: '#8b5cf6', height: 4 }} />
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
                           <div className="flex items-center justify-center gap-2">
                             <button onClick={() => openPodPick(hk)} className="text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>выбрать вручную</button>
                             {h.photoUrl && <button onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], photoUrl: null, photoName: null } }))} className="text-[10px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>убрать кадр</button>}
@@ -3803,6 +3794,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               )}
                               <button onClick={() => podLineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
                             </div>
+                            {pod.avatar?.provider === 'gpu' && (pod.realisticStudio ?? true) && (
+                              <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
+                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }} title="Переопределить жестикуляцию ИМЕННО на этой реплике (иначе — как у ведущего). «Без» — на этой фразе руки спокойны.">Жест:</span>
+                                {([['Авто', undefined], ['Без', 0], ['Слабо', 30], ['Средне', 60], ['Сильно', 95]] as [string, number | undefined][]).map(([lbl, val]) => {
+                                  const sel = val === undefined ? (l.gesture === undefined || l.gesture === null) : l.gesture === val;
+                                  return (
+                                    <button key={lbl} onClick={() => podLineMutate(i, { gesture: val })}
+                                      className="text-[10px] font-600 px-1.5 py-0.5 rounded-md"
+                                      style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                                  );
+                                })}
+                              </div>
+                            )}
                             {l.image && (
                               <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
                                 <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>

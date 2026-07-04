@@ -1441,7 +1441,16 @@
  *         01 макс, 03 мин); дефолты A=Умеренно/B=Спокойно + разный phase → дуэт НЕ в фазе. Эмоций на GPU
  *         нет (движок не умеет) — кнопку не делаем. AvatarBody +speech_segs/gesture/phase/total_sec/realistic_studio.
  *         render-worker/{main.py,pose_director.py} + backend router.ts + frontend MontageEditor.tsx. */
-export const APP_VERSION = '1.6.75';
+/* 1.6.76 — GPU-студия v2: три улучшения. (1) УСКОРЕНИЕ — matte переведён на GPU (RobustVideoMatting,
+ *         torch.hub mobilenetv3): 168 кадров за ~5с (~37fps) vs ~3мин у rembg CPU → ~20-40x, и края волос
+ *         ЧИЩЕ (temporally-stable). rembg остаётся фолбэком (ECHOMIMIC_MATTE=rembg). Итог ~5-6→~2мин/хост.
+ *         (2) ПОЛЗУНОК интенсивности жестов (0-100%) на карточке вместо 3 кнопок — плавно; амплитуда рук
+ *         вокруг покоя (level_gain=pct/100*1.3). Дефолты A=70%/B=45%. (3) ОВЕРРАЙД жеста на конкретную
+ *         реплику: под каждой строкой диалога Авто/Без/Слабо/Средне/Сильно → per-seg gain в speech_segs
+ *         [[s,e,gain]]; «Без»=руки спокойны на этой фразе. pose_director: seg с 3-м элементом = своя амплитуда.
+ *         AvatarBody +level_gain/pose_style; PodHost.gestureIntensity, PodLine.gesture; router.ts прокид.
+ *         render-worker/{echomimic_natural.py(RVM),pose_director.py,main.py} + router.ts + MontageEditor.tsx. */
+export const APP_VERSION = '1.6.76';
 
 export function AppVersion() {
   return (

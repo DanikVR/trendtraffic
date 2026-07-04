@@ -57,8 +57,61 @@ def prep_ref_natural(src, out):
     return out
 
 
+def _matte_rvm(src_mp4, out_mp4, downsample=0.4):
+    """RVM (RobustVideoMatting) на GPU: человек → зелёный. ~37 fps (в 20-40x быстрее rembg),
+    temporally-stable (чище края волос). Модель качается один раз в кэш torch.hub."""
+    import time
+    import torch
+    import cv2
+    import numpy as np
+    t0 = time.time()
+    model = torch.hub.load("PeterL1n/RobustVideoMatting", "mobilenetv3", trust_repo=True).eval().cuda()
+    for p in model.parameters():
+        p.requires_grad_(False)
+    cap = cv2.VideoCapture(src_mp4)
+    W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)); H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS) or 24
+    tmp = out_mp4 + ".noaudio.mp4"
+    vw = cv2.VideoWriter(tmp, cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
+    bgr = torch.tensor([0.0, 1.0, 0.0], device="cuda").view(1, 3, 1, 1)   # зелёный RGB
+    rec = [None] * 4
+    nf = 0
+    with torch.no_grad():
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            src = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float().cuda() / 255.0
+            fgr, pha, *rec = model(src, *rec, downsample_ratio=downsample)
+            com = fgr * pha + bgr * (1 - pha)
+            arr = (com[0].permute(1, 2, 0).clamp(0, 1).cpu().numpy() * 255).astype(np.uint8)
+            vw.write(cv2.cvtColor(arr, cv2.COLOR_RGB2BGR))
+            nf += 1
+    cap.release(); vw.release()
+    del model
+    try: torch.cuda.empty_cache()
+    except Exception: pass
+    if nf == 0:
+        return False
+    subprocess.run(["ffmpeg", "-y", "-i", tmp, "-i", src_mp4, "-map", "0:v", "-map", "1:a?",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", out_mp4],
+                   capture_output=True)
+    try: os.remove(tmp)
+    except OSError: pass
+    print("[natural] matte RVM %d кадров за %.1fс -> %s" % (nf, time.time() - t0, out_mp4), flush=True)
+    return os.path.exists(out_mp4)
+
+
 def matte_to_green(src_mp4, out_mp4):
-    """Серый выход EchoMimic → человек на чистом зелёном (для бэкенд-хромакея)."""
+    """Серый выход EchoMimic → человек на чистом зелёном (для бэкенд-хромакея).
+    Сначала быстрый GPU-RVM; если не вышел (нет модели/сети/GPU) — фолбэк на rembg (CPU)."""
+    if os.getenv("ECHOMIMIC_MATTE", "rvm") != "rembg":
+        try:
+            if _matte_rvm(src_mp4, out_mp4):
+                return True
+        except Exception as e:  # noqa: BLE001
+            print("[natural] RVM не вышел (%s) — фолбэк rembg" % e, flush=True)
     from rembg import remove, new_session
     work = os.path.dirname(os.path.abspath(out_mp4)) or "."
     fr = os.path.join(work, "fr_%s" % uuid.uuid4().hex[:5])

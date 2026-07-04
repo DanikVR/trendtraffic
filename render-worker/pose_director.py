@@ -60,10 +60,17 @@ def build(params):
     rest_hands = hands[rest_idx]           # (2,21,2)
     rest_score = scores[rest_idx]
 
-    # сырая огибающая gain[i]: level во время речи (пачками), 0 в молчании
+    # сырая огибающая gain[i]: амплитуда во время речи (пачками), 0 в молчании.
+    # seg = [start,end] (амплитуда = level хоста) ИЛИ [start,end,gain] (оверрайд на реплику;
+    # gain=0 → эта реплика без жестов, gain>0 → своя амплитуда).
     raw = np.zeros(L)
-    for (s, e) in segs:
-        s = float(s); e = float(e)
+    for seg in segs:
+        s = float(seg[0]); e = float(seg[1])
+        g = level
+        if len(seg) > 2 and seg[2] is not None:
+            g = float(seg[2])               # оверрайд амплитуды на конкретную реплику
+        if g <= 0.001:
+            continue                        # оверрайд «без жестов» — сегмент целиком покой
         if e - s < min_gest:
             continue                        # короткая реплика («да») — без жестов
         a = s + lead_in                     # плавный въезд
@@ -77,7 +84,7 @@ def build(params):
             t2 = min(b, t + seg_len)
             if on:
                 i0 = int(round(t * fps)); i1 = int(round(t2 * fps))
-                raw[max(0, i0):min(L, i1)] = level
+                raw[max(0, i0):min(L, i1)] = g
             t = t2; on = not on
     env = _smooth(raw, max(1, lerp // 2))   # плавные вкл/выкл
 
