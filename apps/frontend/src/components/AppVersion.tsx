@@ -1450,7 +1450,14 @@
  *         [[s,e,gain]]; «Без»=руки спокойны на этой фразе. pose_director: seg с 3-м элементом = своя амплитуда.
  *         AvatarBody +level_gain/pose_style; PodHost.gestureIntensity, PodLine.gesture; router.ts прокид.
  *         render-worker/{echomimic_natural.py(RVM),pose_director.py,main.py} + router.ts + MontageEditor.tsx. */
-export const APP_VERSION = '1.6.76';
+/* 1.6.77 — GPU-студия: СЕГМЕНТАЦИЯ длинных диалогов. Раньше клип жёстко резался на 10с (ECHOMIMIC_MAXL=240)
+ *         → подкаст на минуты обрезался. Теперь: Lfull = вся длина аудио (потолок ECHOMIMIC_MAXTOTAL=2400≈100с);
+ *         если > maxl → генерим КУСКАМИ по ≤10с и склеиваем (ffmpeg concat) + один matte-проход RVM. Позу
+ *         режем из ПОЛНОЙ папки поз (руки непрерывны на стыках), аудио — по времени; каждый кусок стартует
+ *         от того же реф-фото → личность/свет совпадают. Проверено на 20с (2 сегмента): стык на 10с без шва,
+ *         личность цела, итог ровно 20с. Скорость: matte RVM всей склейки (480 кадров ~16с). Только worker
+ *         (main.py: helper `_emv2_infer_once` + чанк-цикл). maxl остаётся размером ОДНОГО куска (VRAM/скорость). */
+export const APP_VERSION = '1.6.77';
 
 export function AppVersion() {
   return (

@@ -1048,6 +1048,51 @@ def _ensure_echomimic_lowvram_patch(emv2: str) -> None:
         print("[echomimic] lowvram-патч ошибка: %s" % e, flush=True)
 
 
+_EMV2_CFG = (
+    'pretrained_base_model_path: "./pretrained_weights/sd-image-variations-diffusers"\n'
+    'pretrained_vae_path: "./pretrained_weights/sd-vae-ft-mse"\n'
+    "denoising_unet_path: './pretrained_weights/denoising_unet_acc.pth'\n"
+    'reference_unet_path: "./pretrained_weights/reference_unet.pth"\n'
+    'pose_encoder_path: "./pretrained_weights/pose_encoder.pth"\n'
+    "motion_module_path: './pretrained_weights/motion_module_acc.pth'\n"
+    'audio_model_path: "./pretrained_weights/audio_processor/tiny.pt"\n'
+    'inference_config: "./configs/inference/inference_v2.yaml"\n'
+    "weight_dtype: 'fp16'\n"
+    "test_cases:\n"
+)
+
+
+def _emv2_infer_once(py, emv2, ref_img, wav_path, pose_dir, clen, W, H, steps, env, workdir):
+    """Один прогон infer_acc (cfg = ref + аудио + поза, -L clen) с 2 ретраями.
+    Возврат: (путь к свежему *_sig.mp4 | None, log). Ретрай — т.к. CUDA-ошибки часто транзиентны."""
+    import glob as _glob
+    cfg = os.path.join(emv2, "configs", "prompts", "_wk_%s.yaml" % uuid.uuid4().hex[:8])
+    with open(cfg, "w") as f:
+        f.write(_EMV2_CFG + '  "%s":\n    - "%s"\n    - "%s"\n' % (ref_img, wav_path, pose_dir))
+    mark = os.path.join(workdir, ".mk_%s" % uuid.uuid4().hex[:6]); open(mark, "w").close()
+    time.sleep(0.1)
+    sig = None; log = ""
+    for attempt in (1, 2):
+        try:
+            p = subprocess.run([py, "infer_acc.py", "--config", cfg, "-L", str(clen), "-W", W, "-H", H, "--steps", steps],
+                               cwd=emv2, env=env, capture_output=True, text=True, timeout=1800)
+            log = (p.stdout or "")[-200:] + " || " + (p.stderr or "")[-700:]
+        except Exception as e:  # noqa: BLE001
+            log = "infer_acc: %s" % e
+        outs = [v for v in _glob.glob(os.path.join(emv2, "output", "**", "*_sig.mp4"), recursive=True)
+                if os.path.getmtime(v) >= os.path.getmtime(mark)]
+        if outs:
+            outs.sort(key=os.path.getmtime); sig = outs[-1]; break
+        print("[echomimic] прогон попытка %d пусто: %s" % (attempt, log[-300:]), flush=True)
+        if attempt == 1:
+            time.sleep(4)
+    try: os.remove(cfg)
+    except Exception: pass
+    try: os.remove(mark)
+    except Exception: pass
+    return sig, log
+
+
 def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = None) -> Tuple[bool, str]:
     """EchoMimic-v2: фото (по пояс) + аудио → говорящий с жестами рук/корпуса (open-source, GPU).
     Вызов через CLI репозитория (ECHOMIMIC_DIR). ⚠ ТОЧНЫЕ аргументы зависят от версии EchoMimic-v2 —
@@ -1076,16 +1121,17 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
     _run(["ffmpeg", "-y", "-i", wav, "-ar", "16000", "-ac", "1", wav16], timeout=180)
     if not os.path.exists(wav16):
         wav16 = wav
-    # длина кадров = сек аудио × 24fps, но не больше потолка (длиннее — сегментировать, TODO)
+    # длина в кадрах (24fps). maxl = размер ОДНОГО куска (VRAM/скорость); диалог длиннее → сегментируем.
+    maxtotal = int(os.environ.get("ECHOMIMIC_MAXTOTAL", "2400") or 2400)   # общий потолок ~100с
     try:
-        L = str(max(24, min(maxl, int(round(_media_duration(wav16) * 24)))))
+        Lfull = max(24, min(maxtotal, int(round(_media_duration(wav16) * 24))))
     except Exception:  # noqa: BLE001
-        L = "120"
+        Lfull = 120
     # СТУДИЙНОЕ ПОВЕДЕНИЕ «жестикулирует только говорящий»: собираем per-host папку поз по сегментам
     # речи. draw_pose_select_v2 рисует ТОЛЬКО руки → активные жесты в речи хоста, покой в молчании.
     if studio and studio.get("realistic") and studio.get("speech_segs"):
         try:
-            Lint = int(L)
+            Lint = Lfull
             # стиль (какая хореография рук): pose_style 1..4 → «01».. «04»; фолбэк со старого gesture
             if studio.get("pose_style"):
                 active_pose = "%02d" % max(1, min(4, int(studio.get("pose_style"))))
@@ -1133,57 +1179,62 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
         else:
             natural = False
             print("[echomimic] natural prep не удался — фолбэк на зелёную вырезку", flush=True)
-    # временный конфиг: один test_case (наш ref + аудио + поза), веса — стандартные пути
-    cfg = os.path.join(emv2, "configs", "prompts", "_worker_%s.yaml" % uuid.uuid4().hex[:8])
-    with open(cfg, "w") as f:
-        f.write(
-            'pretrained_base_model_path: "./pretrained_weights/sd-image-variations-diffusers"\n'
-            'pretrained_vae_path: "./pretrained_weights/sd-vae-ft-mse"\n'
-            "denoising_unet_path: './pretrained_weights/denoising_unet_acc.pth'\n"
-            'reference_unet_path: "./pretrained_weights/reference_unet.pth"\n'
-            'pose_encoder_path: "./pretrained_weights/pose_encoder.pth"\n'
-            "motion_module_path: './pretrained_weights/motion_module_acc.pth'\n"
-            'audio_model_path: "./pretrained_weights/audio_processor/tiny.pt"\n'
-            'inference_config: "./configs/inference/inference_v2.yaml"\n'
-            "weight_dtype: 'fp16'\n"
-            "test_cases:\n"
-            '  "%s":\n    - "%s"\n    - "%s"\n' % (ref_img, wav16, pose)
-        )
-    mark = os.path.join(workdir, ".emv2mark_%s" % uuid.uuid4().hex[:6])
-    open(mark, "w").close()
     env = dict(os.environ)
     env.setdefault("FFMPEG_PATH", "/usr/bin")
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")  # меньше фрагментации VRAM
+    fps = 24
     log = ""
-    outs = []
-    # Ретрай: CUDA-ошибки («device-side assert» и пр.) часто ТРАНЗИЕНТНЫ — свежий процесс = чистая VRAM.
-    for attempt in (1, 2):
-        try:
-            p = subprocess.run([py, "infer_acc.py", "--config", cfg, "-L", L, "-W", W, "-H", H, "--steps", steps],
-                               cwd=emv2, env=env, capture_output=True, text=True, timeout=1800)
-            log = (p.stdout or "")[-300:] + " || " + (p.stderr or "")[-900:]
-        except Exception as e:  # noqa: BLE001
-            log = "infer_acc запуск: %s" % e
-        outs = [v for v in glob.glob(os.path.join(emv2, "output", "**", "*_sig.mp4"), recursive=True)
-                if os.path.getmtime(v) >= os.path.getmtime(mark)]
-        if outs:
-            break
-        print("[echomimic] попытка %d без результата: %s" % (attempt, log[-500:]), flush=True)  # полный лог в journal
-        if attempt == 1:
-            time.sleep(4)
-    try: os.remove(cfg)
-    except Exception: pass
-    try: os.remove(mark)
-    except Exception: pass
-    if not outs:
-        return False, "EchoMimic-v2 (2 попытки): " + log[-300:]
-    outs.sort(key=os.path.getmtime)
-    sig = outs[-1]
+    if Lfull <= maxl:
+        # короткий клип — один прогон
+        combined, log = _emv2_infer_once(py, emv2, ref_img, wav16, pose, Lfull, W, H, steps, env, workdir)
+        if not combined:
+            return False, "EchoMimic-v2: " + (log or "")[-300:]
+    else:
+        # СЕГМЕНТАЦИЯ длинного диалога: куски по maxl кадров → склейка. Позу режем из полной папки
+        # (руки непрерывны на стыках), аудио — по времени. Каждый кусок стартует от того же реф-фото.
+        n_pose = len([x for x in os.listdir(pose) if x.endswith(".npy")]) if os.path.isdir(pose) else 0
+        nch = (Lfull + maxl - 1) // maxl
+        print("[echomimic] длинный клип: %d кадров → %d сегментов по ≤%d" % (Lfull, nch, maxl), flush=True)
+        chunk_files = []
+        for k in range(nch):
+            clen = min(maxl, Lfull - k * maxl)
+            cw = os.path.join(workdir, "cw_%d_%s.wav" % (k, uuid.uuid4().hex[:4]))
+            _run(["ffmpeg", "-y", "-i", wav16, "-ss", "%.3f" % (k * maxl / fps), "-t", "%.3f" % (clen / fps),
+                  "-ar", "16000", "-ac", "1", cw], timeout=120)
+            if not os.path.exists(cw):
+                cw = wav16
+            if os.path.isdir(pose) and n_pose:
+                cp = os.path.join(workdir, "cp_%d_%s" % (k, uuid.uuid4().hex[:4])); os.makedirs(cp, exist_ok=True)
+                for j in range(clen):
+                    src = os.path.join(pose, "%d.npy" % ((k * maxl + j) % n_pose))
+                    if os.path.exists(src):
+                        shutil.copyfile(src, os.path.join(cp, "%d.npy" % j))
+                cpose = cp
+            else:
+                cpose = pose
+            sig, log = _emv2_infer_once(py, emv2, ref_img, cw, cpose, clen, W, H, steps, env, workdir)
+            if not sig:
+                return False, "EchoMimic-v2 сегмент %d/%d: %s" % (k + 1, nch, (log or "")[-200:])
+            cf = os.path.join(workdir, "chunk_%d_%s.mp4" % (k, uuid.uuid4().hex[:4]))
+            shutil.copyfile(sig, cf); chunk_files.append(cf)
+            print("[echomimic] сегмент %d/%d готов (%d кадров)" % (k + 1, nch, clen), flush=True)
+        listf = os.path.join(workdir, "cc_%s.txt" % uuid.uuid4().hex[:4])
+        with open(listf, "w") as lf:
+            for cf in chunk_files:
+                lf.write("file '%s'\n" % cf)
+        combined = os.path.join(workdir, "comb_%s.mp4" % uuid.uuid4().hex[:4])
+        _run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listf, "-c", "copy", combined], timeout=300)
+        if not os.path.exists(combined):   # разные параметры кодека → пере-кодируем
+            _run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listf, "-c:v", "libx264",
+                  "-pix_fmt", "yuv420p", "-c:a", "aac", combined], timeout=600)
+        if not os.path.exists(combined):
+            return False, "EchoMimic-v2: склейка сегментов не удалась"
+        print("[echomimic] склеено %d сегментов → ~%.1fс" % (nch, Lfull / fps), flush=True)
     # matte: серый фон EchoMimic → человек на ЧИСТОМ зелёном (бэкенд снимет хромакей как раньше)
     if natural:
         mok = False
         try:
-            mp = subprocess.run([py, natscript, "matte", sig, out_path], cwd=emv2,
+            mp = subprocess.run([py, natscript, "matte", combined, out_path], cwd=emv2,
                                 capture_output=True, text=True, timeout=1800)
             mok = mp.returncode == 0 and os.path.exists(out_path)
             if not mok:
@@ -1192,9 +1243,8 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
             log += " | matte err: %s" % e
         if mok:
             return True, log + " | natural+matte"
-        # matte не удался → отдаём серый выход (личность верная, фон серый — хромакей может не снять)
         print("[echomimic] matte не удался, отдаю серый выход: %s" % log[-200:], flush=True)
-    shutil.copyfile(sig, out_path)
+    shutil.copyfile(combined, out_path)
     return True, log
 
 
