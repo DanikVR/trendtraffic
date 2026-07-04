@@ -961,12 +961,63 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
     emv2 = os.environ.get("ECHOMIMIC_DIR")
     if not emv2 or not os.path.isdir(emv2):
         return False, "ECHOMIMIC_DIR не задан/не найден"
+    import glob
     py = os.environ.get("ECHOMIMIC_PY") or os.path.join(emv2, ".venv", "bin", "python")
-    script = os.environ.get("ECHOMIMIC_INFER") or os.path.join(emv2, "infer_acc.py")
-    extra = (os.environ.get("ECHOMIMIC_ARGS") or "").split()
-    cmd = [py, script, "--ref_image", img, "--audio", wav, "--output", out_path, *extra]
-    ok, log = _run(cmd, timeout=1800)
-    return (ok and os.path.exists(out_path)), log
+    if not os.path.exists(py):
+        return False, "ECHOMIMIC_PY не найден: " + py
+    pose = os.environ.get("ECHOMIMIC_POSE", "assets/halfbody_demo/pose/01")
+    W = os.environ.get("ECHOMIMIC_W", "768"); H = os.environ.get("ECHOMIMIC_H", "768")
+    steps = os.environ.get("ECHOMIMIC_STEPS", "6")
+    maxl = int(os.environ.get("ECHOMIMIC_MAXL", "240") or 240)
+    workdir = os.path.dirname(out_path) or "."
+    # аудио → wav 16k моно (EchoMimic ждёт wav)
+    wav16 = os.path.join(workdir, "emv2_%s.wav" % uuid.uuid4().hex[:6])
+    _run(["ffmpeg", "-y", "-i", wav, "-ar", "16000", "-ac", "1", wav16], timeout=180)
+    if not os.path.exists(wav16):
+        wav16 = wav
+    # длина кадров = сек аудио × 24fps, но не больше потолка (длиннее — сегментировать, TODO)
+    try:
+        L = str(max(24, min(maxl, int(round(_media_duration(wav16) * 24)))))
+    except Exception:  # noqa: BLE001
+        L = "120"
+    # временный конфиг: один test_case (наш ref + аудио + поза), веса — стандартные пути
+    cfg = os.path.join(emv2, "configs", "prompts", "_worker_%s.yaml" % uuid.uuid4().hex[:8])
+    with open(cfg, "w") as f:
+        f.write(
+            'pretrained_base_model_path: "./pretrained_weights/sd-image-variations-diffusers"\n'
+            'pretrained_vae_path: "./pretrained_weights/sd-vae-ft-mse"\n'
+            "denoising_unet_path: './pretrained_weights/denoising_unet_acc.pth'\n"
+            'reference_unet_path: "./pretrained_weights/reference_unet.pth"\n'
+            'pose_encoder_path: "./pretrained_weights/pose_encoder.pth"\n'
+            "motion_module_path: './pretrained_weights/motion_module_acc.pth'\n"
+            'audio_model_path: "./pretrained_weights/audio_processor/tiny.pt"\n'
+            'inference_config: "./configs/inference/inference_v2.yaml"\n'
+            "weight_dtype: 'fp16'\n"
+            "test_cases:\n"
+            '  "%s":\n    - "%s"\n    - "%s"\n' % (img, wav16, pose)
+        )
+    mark = os.path.join(workdir, ".emv2mark_%s" % uuid.uuid4().hex[:6])
+    open(mark, "w").close()
+    env = dict(os.environ); env.setdefault("FFMPEG_PATH", "/usr/bin")
+    try:
+        p = subprocess.run([py, "infer_acc.py", "--config", cfg, "-L", L, "-W", W, "-H", H, "--steps", steps],
+                           cwd=emv2, env=env, capture_output=True, text=True, timeout=1800)
+        log = (p.stdout or "")[-300:] + " || " + (p.stderr or "")[-600:]
+    except Exception as e:  # noqa: BLE001
+        log = "infer_acc запуск: %s" % e
+    finally:
+        try: os.remove(cfg)
+        except Exception: pass
+    # выход EchoMimic — свежий *_sig.mp4 (со звуком) в <dir>/output/...
+    outs = [v for v in glob.glob(os.path.join(emv2, "output", "**", "*_sig.mp4"), recursive=True)
+            if os.path.getmtime(v) >= os.path.getmtime(mark)]
+    try: os.remove(mark)
+    except Exception: pass
+    if not outs:
+        return False, "EchoMimic-v2: выход не найден. " + log[-300:]
+    outs.sort(key=os.path.getmtime)
+    shutil.copyfile(outs[-1], out_path)
+    return True, log
 
 
 @app.post("/avatar")

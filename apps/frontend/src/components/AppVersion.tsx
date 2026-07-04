@@ -1376,7 +1376,16 @@
  *         кнопка «Оживить НА студии (домашний GPU)», poll+resume, голос «Из записи»/ElevenLabs.
  *         ⚠ GPU-инференс НЕ протестирован (нет запущенного воркера) — требует установки EchoMimic-v2 на ПК
  *         (см. render-worker/README.md); HeyGen-путь не тронут. tsc фронт+бэк 0, py_compile 0. */
-export const APP_VERSION = '1.6.67';
+/* 1.6.68 — GPU-АВАТАР ЗАРАБОТАЛ на домашнем RTX 5080 (Blackwell). EchoMimic-v2 реально генерит видео
+ *         с жестами (проверено: torch 2.11+cu128, diffusers 0.31, ~30с на клип). Переписал воркерный
+ *         `_echomimic_v2` под РЕАЛЬНЫЙ интерфейс: инференс config-driven (`infer_acc.py --config` с
+ *         `test_cases: ref → [audio, pose_dir]`), а не выдуманный `--ref_image/--audio`. Жесты берутся
+ *         из POSE-шаблона (ECHOMIMIC_POSE, дефолт `pose/01`), аудио → wav16k, длина = сек×24 (кап
+ *         ECHOMIMIC_MAXL=240 ≈ 10с/клип, длиннее — сегментация TODO), выход = свежий `*_sig.mp4`.
+ *         Инфраструктура на ПК подготовлена ассистентом: WSL Ubuntu + CUDA-on-WSL, воркер в WSL,
+ *         Python-форвардер Windows→WSL (без прав админа), web-VPS достучался по Tailscale,
+ *         `RENDER_GPU_WORKER_URL` в проде. Только render-worker/main.py. */
+export const APP_VERSION = '1.6.68';
 
 export function AppVersion() {
   return (
