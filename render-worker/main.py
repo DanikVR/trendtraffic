@@ -1033,6 +1033,7 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
 # Асинхронные задачи аватара (job_id → результат): долгий инференс (минуты) НЕ держим на
 # HTTP-соединении — иначе рвётся по таймаутам fetch/undici/форвардера. См. /avatar + /avatar/status.
 _avatar_jobs: dict = {}
+_gpu_lock = threading.Lock()  # сериализует GPU-инференс: одна генерация за раз (иначе OOM на 16ГБ)
 
 
 def _avatar_impl(body: AvatarBody) -> dict:
@@ -1056,24 +1057,27 @@ def _avatar_impl(body: AvatarBody) -> dict:
     out_path = str(work / f"avatar_{uuid.uuid4().hex[:6]}.mp4")
     note = ""
     used = None
-    for eng in order:
-        try:
-            if eng == "echomimic":
-                ok, log = _echomimic_v2(img, wav, out_path)
-                if ok:
-                    used, note = "echomimic", "EchoMimic-v2 (жесты рук/корпуса)"
-                    break
-                note = f"EchoMimic-v2 не удался: {(log or '')[-200:]}"
-            elif eng == "sadtalker":
-                f, _, n = run_tool("talking_head", {"image_path": img, "audio_path": wav,
-                                                    "output_path": out_path, "model": "sadtalker"})
-                if f and os.path.exists(f):
-                    out_path = f
-                    used, note = "sadtalker", (n or "SadTalker (голова/липсинк, без жестов)")
-                    break
-                note = f"SadTalker не удался: {n or ''}"
-        except Exception as e:  # noqa: BLE001
-            note = f"{eng}: {e}"
+    # ТОЛЬКО ОДНА генерация на GPU за раз: две параллельные (2 клипа / чужой прогон) не влезают
+    # в 16ГБ → OOM. Остальные задачи ждут на блокировке (статус остаётся 'processing').
+    with _gpu_lock:
+        for eng in order:
+            try:
+                if eng == "echomimic":
+                    ok, log = _echomimic_v2(img, wav, out_path)
+                    if ok:
+                        used, note = "echomimic", "EchoMimic-v2 (жесты рук/корпуса)"
+                        break
+                    note = f"EchoMimic-v2 не удался: {(log or '')[-200:]}"
+                elif eng == "sadtalker":
+                    f, _, n = run_tool("talking_head", {"image_path": img, "audio_path": wav,
+                                                        "output_path": out_path, "model": "sadtalker"})
+                    if f and os.path.exists(f):
+                        out_path = f
+                        used, note = "sadtalker", (n or "SadTalker (голова/липсинк, без жестов)")
+                        break
+                    note = f"SadTalker не удался: {n or ''}"
+            except Exception as e:  # noqa: BLE001
+                note = f"{eng}: {e}"
     if not used or not os.path.exists(out_path):
         return {"output_name": None, "note": note or "аватар: не удалось сгенерировать"}
     name = f"avatar-{uuid.uuid4().hex[:8]}{os.path.splitext(out_path)[1] or '.mp4'}"

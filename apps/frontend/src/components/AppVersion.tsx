@@ -1399,7 +1399,12 @@
  *         `_echomimic_v2`: 2 попытки инференса (свежий процесс = чистая VRAM, пауза 4с между),
  *         `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` (меньше фрагментации), полный лог ошибки
  *         в journal (был обрезан). Только render-worker/main.py. */
-export const APP_VERSION = '1.6.70';
+/* 1.6.71 — GPU-аватар: НАСТОЯЩАЯ причина OOM у юзера — ПАРАЛЛЕЛЬНАЯ нагрузка на GPU (2 генерации разом
+ *         не влезают в 16ГБ). Проверено: -L 240 (10с, 240 кадров) в одиночку идёт ЧИСТО. Пайплайн уже
+ *         декодирует VAE по кадрам, VAE-slicing не нужен. Фикс: `_gpu_lock` в worker — сериализует
+ *         GPU-инференс, только ОДНА генерация за раз (остальные ждут, статус 'processing'), OOM от
+ *         конкуренции исключён. MAXL оставлен 240. Только render-worker/main.py. */
+export const APP_VERSION = '1.6.71';
 
 export function AppVersion() {
   return (
