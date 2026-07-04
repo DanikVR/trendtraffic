@@ -999,23 +999,32 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
         )
     mark = os.path.join(workdir, ".emv2mark_%s" % uuid.uuid4().hex[:6])
     open(mark, "w").close()
-    env = dict(os.environ); env.setdefault("FFMPEG_PATH", "/usr/bin")
-    try:
-        p = subprocess.run([py, "infer_acc.py", "--config", cfg, "-L", L, "-W", W, "-H", H, "--steps", steps],
-                           cwd=emv2, env=env, capture_output=True, text=True, timeout=1800)
-        log = (p.stdout or "")[-300:] + " || " + (p.stderr or "")[-600:]
-    except Exception as e:  # noqa: BLE001
-        log = "infer_acc запуск: %s" % e
-    finally:
-        try: os.remove(cfg)
-        except Exception: pass
-    # выход EchoMimic — свежий *_sig.mp4 (со звуком) в <dir>/output/...
-    outs = [v for v in glob.glob(os.path.join(emv2, "output", "**", "*_sig.mp4"), recursive=True)
-            if os.path.getmtime(v) >= os.path.getmtime(mark)]
+    env = dict(os.environ)
+    env.setdefault("FFMPEG_PATH", "/usr/bin")
+    env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")  # меньше фрагментации VRAM
+    log = ""
+    outs = []
+    # Ретрай: CUDA-ошибки («device-side assert» и пр.) часто ТРАНЗИЕНТНЫ — свежий процесс = чистая VRAM.
+    for attempt in (1, 2):
+        try:
+            p = subprocess.run([py, "infer_acc.py", "--config", cfg, "-L", L, "-W", W, "-H", H, "--steps", steps],
+                               cwd=emv2, env=env, capture_output=True, text=True, timeout=1800)
+            log = (p.stdout or "")[-300:] + " || " + (p.stderr or "")[-900:]
+        except Exception as e:  # noqa: BLE001
+            log = "infer_acc запуск: %s" % e
+        outs = [v for v in glob.glob(os.path.join(emv2, "output", "**", "*_sig.mp4"), recursive=True)
+                if os.path.getmtime(v) >= os.path.getmtime(mark)]
+        if outs:
+            break
+        print("[echomimic] попытка %d без результата: %s" % (attempt, log[-500:]), flush=True)  # полный лог в journal
+        if attempt == 1:
+            time.sleep(4)
+    try: os.remove(cfg)
+    except Exception: pass
     try: os.remove(mark)
     except Exception: pass
     if not outs:
-        return False, "EchoMimic-v2: выход не найден. " + log[-300:]
+        return False, "EchoMimic-v2 (2 попытки): " + log[-300:]
     outs.sort(key=os.path.getmtime)
     shutil.copyfile(outs[-1], out_path)
     return True, log

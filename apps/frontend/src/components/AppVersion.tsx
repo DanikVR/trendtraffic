@@ -1393,7 +1393,13 @@
  *         Windows→WSL (`settimeout(None)` — коннект-таймаут 10с рвал долгие запросы) и отключён
  *         idle-таймаут WSL (VM гасилась каждую минуту → воркер циклически падал). render-worker/main.py
  *         + backend router.ts. */
-export const APP_VERSION = '1.6.69';
+/* 1.6.70 — GPU-аватар: РЕТРАЙ EchoMimic-v2 при сбое (по фидбэку: 1 ведущий сгенерился, 2-й упал с
+ *         транзиентной CUDA-ошибкой «device-side assert»). Диагноз: не OOM и не систематика — демо на
+ *         -L 240 идёт чисто, VRAM хватает; ошибка разовая/специфична для входа. Фикс в worker
+ *         `_echomimic_v2`: 2 попытки инференса (свежий процесс = чистая VRAM, пауза 4с между),
+ *         `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` (меньше фрагментации), полный лог ошибки
+ *         в journal (был обрезан). Только render-worker/main.py. */
+export const APP_VERSION = '1.6.70';
 
 export function AppVersion() {
   return (
