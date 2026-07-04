@@ -26,7 +26,7 @@ type MKind =
   | 'voiceover' | 'color' | 'broll' | 'avatar' | 'upscale' | 'export';
 
 interface Choice { id: string; label: string; multi?: boolean; def: string[]; opts: { v: string; label: string }[]; }
-interface Meta { label: string; icon: React.ReactNode; hint: string; choices?: Choice[]; text?: string; media?: string; llm?: boolean; }
+interface Meta { label: string; icon: React.ReactNode; hint: string; choices?: Choice[]; text?: string; media?: string; audio?: string; llm?: boolean; }
 
 interface MNode {
   id: string;
@@ -34,6 +34,9 @@ interface MNode {
   text: string;
   mediaUrl: string | null;
   mediaName: string | null;
+  /** Своё аудио для блока «Аватар» (говорит аватар вместо TTS). */
+  audioUrl: string | null;
+  audioName: string | null;
   /** Доп. медиа (B-roll «Медиафайлы» принимает НЕСКОЛЬКО файлов из Галереи). */
   medias?: { url: string; name: string }[];
   useLlm: boolean;
@@ -70,12 +73,12 @@ const META: Record<MKind, Meta> = {
   broll:     { label: 'Медиафайлы', icon: <Image size={18} />, hint: 'Перебивки: стоки, кадры источника (фото из блока «Новости») или свои файлы из Галереи (можно несколько)',
     choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'source', label: 'Кадры источника' }, { v: 'reference', label: 'Свои файлы' }] }],
     text: 'что вставить и когда…', media: 'Добавить из Галереи', llm: true },
-  avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Одна говорящая голова (монолог); диалог двух ведущих — облако «Подкаст»',
+  avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Говорящая голова из аудио: фото + твой голос → аватар (EchoMimic/SadTalker на GPU)',
     choices: [
-      { id: 'engine', label: 'Движок', def: ['heygen'], opts: [{ v: 'heygen', label: 'HeyGen (облако)' }, { v: 'sadtalker', label: 'SadTalker (GPU)' }] },
-      { id: 'voice', label: 'Голос', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] },
+      { id: 'engine', label: 'Движок', def: ['auto'], opts: [{ v: 'auto', label: 'Авто (по медиа)' }, { v: 'echomimic', label: 'EchoMimic-v2 (жесты)' }, { v: 'sadtalker', label: 'SadTalker (голова)' }] },
+      { id: 'voice', label: 'Голос (если TTS)', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] },
     ],
-    text: 'сценарий для аватара…', media: 'Фото / аватар', llm: true },
+    text: 'сценарий для аватара (если без своего аудио)…', media: 'Фото / видео-аватар', audio: 'Голос: моё аудио', llm: true },
   upscale:   { label: 'Апскейл', icon: <Maximize2 size={18} />, hint: 'Повысить чёткость',
     choices: [{ id: 'scale', label: 'Множитель', def: ['off'], opts: [{ v: 'off', label: 'Выкл' }, { v: '2', label: '2×' }, { v: '4', label: '4×' }] }] },
   export:    { label: 'Экспорт', icon: <Share2 size={18} />, hint: 'Куда выводим (можно несколько)',
@@ -226,6 +229,7 @@ const PRESET_GROUPS: { group: string; presets: Preset[] }[] = [
     { name: 'Reels-нарезка', kinds: [{ kind: 'length', choices: { duration: ['15'] } }, 'format', 'silence', { kind: 'color', choices: { preset: ['vivid'] } }, 'subtitles', 'export'] },
   ] },
   { group: 'Говорящие', presets: [
+    { name: 'Аватар из аудио', kinds: [{ kind: 'avatar', llm: false }, 'subtitles', 'export'] },
     { name: 'Говорящая голова', kinds: ['length', 'format', 'color', 'subtitles', 'audio', 'export'] },
     { name: 'Аватар-спикер', kinds: [{ kind: 'research', llm: true }, { kind: 'avatar', llm: true }, 'subtitles', 'audio', 'export'] },
     { name: 'UGC-отзыв', kinds: [{ kind: 'avatar', llm: true }, 'subtitles', 'audio', 'export'] },
@@ -247,7 +251,7 @@ const newId = () => `m${Date.now().toString(36)}${(_seq++).toString(36)}`;
 function newNode(kind: MKind): MNode {
   const choices: Record<string, string[]> = {};
   (META[kind].choices || []).forEach((c) => { choices[c.id] = [...c.def]; });
-  return { id: newId(), kind, text: '', mediaUrl: null, mediaName: null, useLlm: false, choices };
+  return { id: newId(), kind, text: '', mediaUrl: null, mediaName: null, audioUrl: null, audioName: null, useLlm: false, choices };
 }
 function hydrate(kind: MKind, choices: any): Record<string, string[]> {
   const out: Record<string, string[]> = { ...(choices && typeof choices === 'object' ? choices : {}) };
@@ -374,6 +378,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [addOpen, setAddOpen] = useState(false); // нижнее поле «Добавить»: свёрнуто/раскрыто
   const [showPresets, setShowPresets] = useState(false);
   const [attachFor, setAttachFor] = useState<string | null>(null);
+  const [attachSlot, setAttachSlot] = useState<'media' | 'audio'>('media'); // куда привязывать выбранный файл
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string; folder: 'trends' | 'reference' | 'audio' | 'analyzed'; cover?: string }[]>([]);
   const [imgPick, setImgPick] = useState<string | null>(null);   // #3: segId, для которого выбираем старт-кадр из галереи картинок
   const [imgPickQ, setImgPickQ] = useState('');
@@ -507,6 +512,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           const g = d.flow.graph?.nodes || [];
           const mapped: MNode[] = g.filter((x: any) => x?.type === 'montage' && x?.data?.kind && META[x.data.kind as MKind])
             .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null,
+              audioUrl: x.data.audioUrl || null, audioName: x.data.audioName || null,
               medias: Array.isArray(x.data.medias) ? x.data.medias.filter((m: any) => m?.url) : [],
               useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
           setNodes(mapped);
@@ -580,7 +586,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const save = async () => {
     setSaving(true);
     try {
-      const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
+      const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, audioUrl: n.audioUrl, audioName: n.audioName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
       await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, brief } }) });
       setDirty(false);
@@ -1929,14 +1935,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setMedia(out);
     } catch { setMedia([]); }
   };
-  const openAttach = (id: string) => { setAttachFor(id); loadMedia(); };
+  const openAttach = (id: string, slot: 'media' | 'audio' = 'media') => { setAttachSlot(slot); setAttachFor(id); loadMedia(); };
 
   // Загрузка файлов с устройства (или drag-and-drop) прямо из блока узла → в Галерею + привязка к узлу.
   const uploadMediaFiles = async (files: FileList | File[]) => {
     const list = Array.from(files).filter(Boolean);
     if (!list.length || !attachFor) return;
     const node = nodes.find((x) => x.id === attachFor);
-    const kind = node?.kind === 'audio' ? 'audio' : 'reference';
+    const kind = (attachSlot === 'audio' || node?.kind === 'audio') ? 'audio' : 'reference';
     setUploading(true);
     let lastAsset: any = null;
     const uploaded: { url: string; name: string }[] = [];
@@ -1956,7 +1962,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         }
       }
       await loadMedia();
-      if (node?.kind === 'broll') {
+      if (attachSlot === 'audio') {
+        if (lastAsset) patchNode(attachFor, { audioUrl: lastAsset.fileUrl, audioName: lastAsset.originalName || 'аудио' });
+      } else if (node?.kind === 'broll') {
         // «Медиафайлы»: ВСЕ загруженные файлы добавляются в список узла.
         const cur = node.medias || [];
         const add = uploaded.filter((u) => !cur.some((x) => x.url === u.url));
@@ -2623,8 +2631,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none mb-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
             )}
 
-            {/* Медиа + ЛЛМ. «Медиафайлы» (broll) принимает НЕСКОЛЬКО файлов — чипы с ✕. */}
-            {(META[selected.kind].media || META[selected.kind].llm) && (
+            {/* Медиа + Аудио + ЛЛМ. «Медиафайлы» (broll) принимает НЕСКОЛЬКО файлов — чипы с ✕. */}
+            {(META[selected.kind].media || META[selected.kind].audio || META[selected.kind].llm) && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {selected.kind === 'broll' ? (
                   <>
@@ -2647,6 +2655,16 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 ) : (
                   <button onClick={() => openAttach(selected.id)} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
                     <Paperclip size={13} /> {META[selected.kind].media}
+                  </button>
+                ))}
+                {META[selected.kind].audio && (selected.audioUrl ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(236,72,153,0.12)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.3)' }}>
+                    <Music size={13} /> {selected.audioName || 'аудио'}
+                    <button onClick={() => patchNode(selected.id, { audioUrl: null, audioName: null })} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={12} /></button>
+                  </span>
+                ) : (
+                  <button onClick={() => openAttach(selected.id, 'audio')} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    <Music size={13} /> {META[selected.kind].audio}
                   </button>
                 ))}
                 {META[selected.kind].llm && (
@@ -2730,11 +2748,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer?.files?.length) uploadMediaFiles(e.dataTransfer.files); }}
             style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: `1px solid ${dragOver ? 'var(--brand)' : 'var(--border-medium)'}`, borderRadius: 16, padding: 16, transform: 'none', outline: dragOver ? '2px dashed var(--brand)' : 'none', outlineOffset: -6 }}>
-            <input ref={attachInputRef} type="file" multiple accept="image/*,video/*,audio/*" style={{ display: 'none' }}
+            <input ref={attachInputRef} type="file" multiple accept={attachSlot === 'audio' ? 'audio/*' : 'image/*,video/*,audio/*'} style={{ display: 'none' }}
               onChange={(e) => { if (e.target.files?.length) uploadMediaFiles(e.target.files); e.currentTarget.value = ''; }} />
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {nodes.find((x) => x.id === attachFor)?.kind === 'broll'
+                {attachSlot === 'audio'
+                  ? 'Аудио (голос аватара)'
+                  : nodes.find((x) => x.id === attachFor)?.kind === 'broll'
                   ? `Медиафайлы — выбрано: ${(nodes.find((x) => x.id === attachFor)?.medias || []).length} (клик добавляет/убирает)`
                   : 'Медиа'}
               </span>
@@ -2763,7 +2783,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   const added = multi && (attachNode?.medias || []).some((x) => x.url === m.fileUrl);
                   return (
                   <button key={m.id} onClick={() => {
-                    if (multi) {
+                    if (attachSlot === 'audio') {
+                      patchNode(attachFor!, { audioUrl: m.fileUrl, audioName: m.title });
+                      setAttachFor(null);
+                    } else if (multi) {
                       // «Медиафайлы»: клик добавляет/убирает, пикер не закрываем — можно добрать ещё.
                       const list = attachNode?.medias || [];
                       patchNode(attachFor!, { medias: added ? list.filter((x) => x.url !== m.fileUrl) : [...list, { url: m.fileUrl, name: m.title }] });

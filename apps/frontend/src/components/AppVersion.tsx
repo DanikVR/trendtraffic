@@ -1404,7 +1404,14 @@
  *         декодирует VAE по кадрам, VAE-slicing не нужен. Фикс: `_gpu_lock` в worker — сериализует
  *         GPU-инференс, только ОДНА генерация за раз (остальные ждут, статус 'processing'), OOM от
  *         конкуренции исключён. MAXL оставлен 240. Только render-worker/main.py. */
-export const APP_VERSION = '1.6.71';
+/* 1.6.72 — Блок «Аватар» в монтаже теперь делает говорящую голову ИЗ АУДИО: в узел добавлен слот
+ *         «Голос: моё аудио» (загрузка mp3/wav) + пресет «Аватар из аудио» (avatar→subtitles→export).
+ *         Приоритет голоса: своё аудио → иначе Piper из текста. Движки узла: Авто/EchoMimic-v2/SadTalker
+ *         (реально на GPU-воркере установлен EchoMimic-v2 — он и рендерит, с жестами). Worker-ветка
+ *         talking_head переписана: media=фото/видео + аудио → `_echomimic_v2` (порядок движков как в
+ *         /avatar, под `_gpu_lock`), видео → Wav2Lip (lip_sync) если установлен. planner прокидывает
+ *         audioUrl. MontageEditor.tsx + planner.ts + render-worker/main.py. */
+export const APP_VERSION = '1.6.72';
 
 export function AppVersion() {
   return (

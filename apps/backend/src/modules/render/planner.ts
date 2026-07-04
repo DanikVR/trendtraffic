@@ -61,6 +61,8 @@ export function planFromGraph(graph: FlowGraph | null | undefined): RenderStep[]
         text: typeof n.data.text === 'string' ? n.data.text : '',
         mediaUrl: n.data.mediaUrl || null,
         mediaName: n.data.mediaName || null,
+        audioUrl: n.data.audioUrl || null,
+        audioName: n.data.audioName || null,
         // Мульти-медиа узла «Медиафайлы» (broll): список файлов из Галереи.
         medias: Array.isArray(n.data.medias)
           ? n.data.medias.map((m: any) => String(m?.url || '')).filter(Boolean)

@@ -430,21 +430,67 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
             return f2, f"апскейл ×{scale} (CPU lanczos; GPU-воркер даст нейро-качество)"
         return None, f"апскейл: не получился ({err[:160]})"
 
-    if step_tool == "talking_head":  # avatar (GPU SadTalker): фото + озвучка → говорящая голова
+    if step_tool == "talking_head":  # avatar: фото/видео + голос → говорящий аватар (EchoMimic-v2 → SadTalker; видео → Wav2Lip)
         if not media:
-            return None, "аватар: нужна фото/аватар (медиа узла) — passthrough"
-        img = _download_media(base_url, media, work, default_ext=".jpg")
-        if not img:
-            return None, "аватар: фото не скачалось"
-        if not text:
-            return None, "аватар: нет сценария для озвучки — passthrough"
-        # Локальный движок — только SadTalker; engine=heygen (облако) тут недоступен.
-        wav, _, tn = run_tool("piper_tts", {"text": text, "output_path": out(".wav")})
-        if not wav:
-            return None, f"аватар: озвучка не создана ({tn or ''})"
-        f, _, n = run_tool("talking_head", {"image_path": img, "audio_path": wav,
-                                            "output_path": out(), "model": "sadtalker"})
-        return (f, n or "аватар (говорящая голова)")
+            return None, "аватар: нужна фото или видео-аватар (медиа узла) — passthrough"
+        is_vid = _is_video_url(media)
+        face = _download_media(base_url, media, work, default_ext=(".mp4" if is_vid else ".jpg"))
+        if not face:
+            return None, "аватар: медиа не скачалось"
+        # Голос: приоритет — своё загруженное аудио (params['audioUrl']); иначе Piper из текста
+        # (Piper есть на CPU-воркере; на GPU-воркере его обычно нет → нужно своё аудио).
+        audio_url = params.get("audioUrl")
+        if audio_url:
+            wav = _download_media(base_url, audio_url, work, default_ext=".wav")
+            if not wav:
+                return None, "аватар: аудио не скачалось"
+            voice_note = "своё аудио"
+        elif text:
+            wav, _, tn = run_tool("piper_tts", {"text": text, "output_path": out(".wav")})
+            if not wav:
+                return None, f"аватар: нет озвучки — прикрепите свой голос (аудио). ({tn or 'TTS недоступен на этом воркере'})"
+            voice_note = "озвучка Piper"
+        else:
+            return None, "аватар: прикрепите свой голос (аудио) или текст — passthrough"
+
+        avail = _avatar_engines()  # что реально установлено на этом воркере (echomimic/sadtalker)
+        want = (choices.get("engine") or ["auto"])[0]
+        out_path = out()
+        note = "нет доступного движка (нужен EchoMimic-v2 или SadTalker на GPU-воркере)"
+        # Видео-аватар + Wav2Lip (lip_sync) — если установлен в OpenMontage.
+        if is_vid and want in ("wav2lip", "auto") and registry is not None and registry.get("lip_sync") is not None:
+            with _gpu_lock:  # одна GPU-генерация за раз (иначе OOM на 16ГБ)
+                f, _, n = run_tool("lip_sync", {"video_path": face, "audio_path": wav,
+                                                "output_path": out_path, "model": "wav2lip"})
+            if f and os.path.exists(f):
+                return (f, n or f"аватар (Wav2Lip · {voice_note})")
+            note = f"Wav2Lip: {n or 'не удался'}"
+        # Фото-движки (EchoMimic/SadTalker) работают с кадром: из видео берём первый кадр.
+        img = face
+        if is_vid:
+            frame = out(".jpg")
+            ok, _ = _run(["ffmpeg", "-y", "-i", face, "-frames:v", "1", "-q:v", "2", frame], timeout=120)
+            if ok and os.path.exists(frame):
+                img = frame
+        # Порядок движков: явный выбор (если доступен) → остальные доступные (echomimic приоритетнее).
+        order = ([want] if want in avail else []) + [e for e in avail if e != want]
+        with _gpu_lock:  # одна GPU-генерация за раз (иначе OOM на 16ГБ)
+            for eng in order:
+                try:
+                    if eng == "echomimic":
+                        ok, log = _echomimic_v2(img, wav, out_path)
+                        if ok:
+                            return (out_path, f"аватар (EchoMimic-v2, жесты · {voice_note})")
+                        note = f"EchoMimic-v2 не удался: {(log or '')[-160:]}"
+                    elif eng == "sadtalker":
+                        f, _, n = run_tool("talking_head", {"image_path": img, "audio_path": wav,
+                                                            "output_path": out_path, "model": "sadtalker"})
+                        if f and os.path.exists(f):
+                            return (f, n or f"аватар (SadTalker · {voice_note})")
+                        note = f"SadTalker: {n or 'не удался'}"
+                except Exception as e:  # noqa: BLE001
+                    note = f"{eng}: {e}"
+        return None, f"аватар: {note}"
 
     if step_tool == "podcast_compose":  # подкаст-сцена (2 ведущих): TTS на 2 голоса → головы → сшивка
         return _podcast_compose(params, work, base_url)
