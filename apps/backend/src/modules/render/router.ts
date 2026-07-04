@@ -988,16 +988,38 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
     gpuStudioJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
 
     // Один вызов домашнего воркера: {зелёная вырезка, аудио} → видео на зелёном (скачиваем к себе).
-    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string): Promise<{ url: string; engine: string | null }> => {
-      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 1_800_000);
+    // POST быстрый (воркер сразу отдаёт job_id), инференс идёт в ФОНЕ → опрашиваем /avatar/status.
+    // Долгое HTTP-соединение НЕ держим — оно рвётся по таймаутам fetch/undici(300с)/форвардера.
+    const postWorker = async (path: string, bodyObj: any): Promise<any> => {
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 60_000);
       try {
-        const r = await fetch(`${gpuWorker}/avatar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_url: imageUrlAbs, audio_url: audioUrlAbs, base_url: base, engine }), signal: ctrl.signal });
+        const r = await fetch(`${gpuWorker}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj), signal: ctrl.signal });
         const d: any = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d?.error || `GPU-воркер HTTP ${r.status}`);
-        if (!d.output_name) throw new Error(d?.note || 'GPU-воркер не вернул видео');
-        const dl = await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(d.output_name)}`, 'gpuhead');
-        return { url: dl.fileUrl, engine: d.engine || null };
+        return d;
       } finally { clearTimeout(t); }
+    };
+    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string): Promise<{ url: string; engine: string | null }> => {
+      const start = await postWorker('/avatar', { image_url: imageUrlAbs, audio_url: audioUrlAbs, base_url: base, engine });
+      const jobId = start?.job_id;
+      if (!jobId) throw new Error(start?.note || 'GPU-воркер не принял задачу');
+      for (let i = 0; i < 480; i++) {                       // до ~40 мин (инференс идёт минуты)
+        await new Promise((res) => setTimeout(res, 5000));
+        let st: any = null;
+        try {
+          const sc = new AbortController(); const stt = setTimeout(() => sc.abort(), 30_000);
+          try { const sr = await fetch(`${gpuWorker}/avatar/status?job=${encodeURIComponent(jobId)}`, { signal: sc.signal }); st = await sr.json().catch(() => null); }
+          finally { clearTimeout(stt); }
+        } catch { continue; }                               // сетевой сбой опроса — ретрай
+        if (!st) continue;
+        if (st.status === 'done' && st.output_name) {
+          const dl = await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(st.output_name)}`, 'gpuhead');
+          return { url: dl.fileUrl, engine: st.engine || null };
+        }
+        if (st.status === 'failed') throw new Error(st.note || 'GPU-аватар не удался');
+        if (st.status === 'not_found') throw new Error('GPU-задача потеряна (воркер перезапущен) — повторите');
+      }
+      throw new Error('GPU-аватар: таймаут ожидания (~40 мин)');
     };
 
     // Всё в фоне (вырезка/озвучка/GPU-рендер идут минуты > таймаут прокси) — статус опрашивается.

@@ -22,6 +22,7 @@ import time
 import uuid
 import shutil
 import subprocess
+import threading
 import mimetypes
 import urllib.request
 import urllib.parse
@@ -1020,8 +1021,12 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
     return True, log
 
 
-@app.post("/avatar")
-def avatar(body: AvatarBody):
+# Асинхронные задачи аватара (job_id → результат): долгий инференс (минуты) НЕ держим на
+# HTTP-соединении — иначе рвётся по таймаутам fetch/undici/форвардера. См. /avatar + /avatar/status.
+_avatar_jobs: dict = {}
+
+
+def _avatar_impl(body: AvatarBody) -> dict:
     """Локальный аниматор головы «на студии»: {image_url(зелёная вырезка), audio_url} → видео на зелёном.
     Пробуем движки по доступности (EchoMimic-v2 → SadTalker). Выход отдаём как /files/<output_name>,
     его бэкенд снимет chroma-key и посадит на фон студии (та же склейка, что у HeyGen-пути)."""
@@ -1065,6 +1070,37 @@ def avatar(body: AvatarBody):
     name = f"avatar-{uuid.uuid4().hex[:8]}{os.path.splitext(out_path)[1] or '.mp4'}"
     shutil.copyfile(out_path, FILES_DIR / name)
     return {"output_name": name, "note": note, "engine": used}
+
+
+def _avatar_run(job_id: str, body: AvatarBody):
+    try:
+        res = _avatar_impl(body)
+    except Exception as e:  # noqa: BLE001
+        res = {"output_name": None, "note": "avatar: %s" % e}
+    res["status"] = "done" if res.get("output_name") else "failed"
+    res["ts"] = time.time()
+    _avatar_jobs[job_id] = res
+
+
+@app.post("/avatar")
+def avatar(body: AvatarBody):
+    """Запустить анимацию головы в ФОНЕ → {job_id}. Статус/результат — GET /avatar/status?job=."""
+    cutoff = time.time() - 6 * 3600
+    for k in [k for k, v in list(_avatar_jobs.items()) if v.get("ts", 0) < cutoff]:
+        _avatar_jobs.pop(k, None)
+    job_id = "av_" + uuid.uuid4().hex[:10]
+    _avatar_jobs[job_id] = {"status": "processing", "ts": time.time()}
+    threading.Thread(target=_avatar_run, args=(job_id, body), daemon=True).start()
+    return {"job_id": job_id, "status": "processing"}
+
+
+@app.get("/avatar/status")
+def avatar_status(job: str = ""):
+    j = _avatar_jobs.get(job)
+    if not j:
+        return {"status": "not_found"}
+    return {"status": j.get("status"), "output_name": j.get("output_name"),
+            "note": j.get("note"), "engine": j.get("engine")}
 
 
 @app.post("/transcribe")

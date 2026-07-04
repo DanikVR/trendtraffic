@@ -1385,7 +1385,15 @@
  *         Инфраструктура на ПК подготовлена ассистентом: WSL Ubuntu + CUDA-on-WSL, воркер в WSL,
  *         Python-форвардер Windows→WSL (без прав админа), web-VPS достучался по Tailscale,
  *         `RENDER_GPU_WORKER_URL` в проде. Только render-worker/main.py. */
-export const APP_VERSION = '1.6.68';
+/* 1.6.69 — GPU-аватар: `/avatar` СДЕЛАН АСИНХРОННЫМ (фикс «fetch failed»). Инференс EchoMimic-v2 идёт
+ *         6+ мин, а держать HTTP-соединение так долго рвётся по таймаутам (undici 300с / форвардер).
+ *         Теперь: worker `POST /avatar` сразу отдаёт `{job_id}`, инференс в фоновом потоке, `GET
+ *         /avatar/status?job=` возвращает статус/output_name; backend `workerAvatar` опрашивает статус
+ *         (5с, до ~40 мин) вместо долгого ожидания. Также при отладке на ПК починен форвардер
+ *         Windows→WSL (`settimeout(None)` — коннект-таймаут 10с рвал долгие запросы) и отключён
+ *         idle-таймаут WSL (VM гасилась каждую минуту → воркер циклически падал). render-worker/main.py
+ *         + backend router.ts. */
+export const APP_VERSION = '1.6.69';
 
 export function AppVersion() {
   return (
