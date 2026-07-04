@@ -995,6 +995,49 @@ def execute(body: ExecBody):
     return {"skipped": False, "output_name": name, "note": note}
 
 
+def _ensure_echomimic_lowvram_patch(emv2: str) -> None:
+    """Идемпотентно патчит EchoMimic-v2: pose_encoder обрабатывается КУСКАМИ кадров.
+
+    PoseEncoder = InflatedConv3d (Conv2d по кадрам, БЕЗ temporal-микса), поэтому нарезка
+    входных поз по кадрам численно ИДЕНТИЧНА полному прогону, но снимает пик VRAM: без
+    патча conv_in по всем 160–240 кадрам на 768×768 + F.silu даёт всплеск до ~17.8ГБ →
+    OOM на 16ГБ рядом с рабочим столом/браузером. С нарезкой (по 16 кадров) пик ~9.2ГБ.
+    Симптом без патча: «RuntimeError: CUDA driver error: out of memory» в F.silu.
+    Патч самолечащийся: применяется при первом вызове, переживает git-reset репозитория EchoMimic.
+    """
+    try:
+        pf = os.path.join(emv2, "src", "pipelines", "pipeline_echomimicv2_acc.py")
+        if not os.path.exists(pf):
+            return
+        with open(pf, encoding="utf-8") as f:
+            s = f.read()
+        if "ECHOMIMIC_POSE_CHUNK" in s:
+            return  # уже пропатчено
+        anchor = "        pose_enocder_tensor = self.pose_encoder(poses_tensor)\n"
+        if anchor not in s:
+            print("[echomimic] lowvram-патч: anchor не найден — пропуск", flush=True)
+            return
+        repl = (
+            "        # === TrendTraffic low-VRAM: pose encoder по кускам кадров (numerically exact) ===\n"
+            "        import os as _os, torch as _torch\n"
+            "        _pe_chunk = int(_os.getenv('ECHOMIMIC_POSE_CHUNK', '16'))\n"
+            "        if _pe_chunk > 0 and poses_tensor.shape[2] > _pe_chunk:\n"
+            "            _pe_outs = []\n"
+            "            for _pe_i in range(0, poses_tensor.shape[2], _pe_chunk):\n"
+            "                _pe_outs.append(self.pose_encoder(poses_tensor[:, :, _pe_i:_pe_i + _pe_chunk]))\n"
+            "            pose_enocder_tensor = _torch.cat(_pe_outs, dim=2)\n"
+            "            del _pe_outs\n"
+            "        else:\n"
+            "            pose_enocder_tensor = self.pose_encoder(poses_tensor)\n"
+            "        # === end low-VRAM ===\n"
+        )
+        with open(pf, "w", encoding="utf-8") as f:
+            f.write(s.replace(anchor, repl, 1))
+        print("[echomimic] lowvram-патч применён (pose chunking) → пик VRAM ~9ГБ вместо ~18ГБ", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print("[echomimic] lowvram-патч ошибка: %s" % e, flush=True)
+
+
 def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
     """EchoMimic-v2: фото (по пояс) + аудио → говорящий с жестами рук/корпуса (open-source, GPU).
     Вызов через CLI репозитория (ECHOMIMIC_DIR). ⚠ ТОЧНЫЕ аргументы зависят от версии EchoMimic-v2 —
@@ -1012,6 +1055,7 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
     py = os.environ.get("ECHOMIMIC_PY") or os.path.join(emv2, ".venv", "bin", "python")
     if not os.path.exists(py):
         return False, "ECHOMIMIC_PY не найден: " + py
+    _ensure_echomimic_lowvram_patch(emv2)  # снижает пик VRAM 18→9ГБ, фикс OOM (см. функцию выше)
     pose = os.environ.get("ECHOMIMIC_POSE", "assets/halfbody_demo/pose/01")
     W = os.environ.get("ECHOMIMIC_W", "768"); H = os.environ.get("ECHOMIMIC_H", "768")
     steps = os.environ.get("ECHOMIMIC_STEPS", "6")

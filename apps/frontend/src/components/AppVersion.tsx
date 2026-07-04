@@ -1411,7 +1411,15 @@
  *         talking_head переписана: media=фото/видео + аудио → `_echomimic_v2` (порядок движков как в
  *         /avatar, под `_gpu_lock`), видео → Wav2Lip (lip_sync) если установлен. planner прокидывает
  *         audioUrl. MontageEditor.tsx + planner.ts + render-worker/main.py. */
-export const APP_VERSION = '1.6.72';
+/* 1.6.73 — GPU-аватар, НАСТОЯЩИЙ фикс OOM. Профилировка (torch.cuda.max_memory_allocated) вскрыла
+ *         истинный пик 17.8ГБ — nvidia-smi недосэмплировал всплеск (2с-опрос) и показывал 15.7.
+ *         Виновник — pose_encoder: гонял ВСЕ кадры поз (160–240) на 768×768 разом, conv_in+F.silu
+ *         давали всплеск ~11ГБ (оттого OOM именно в F.silu у юзера). PoseEncoder=InflatedConv3d
+ *         (Conv2d по кадрам, БЕЗ temporal-микса) → нарезка входа по 16 кадров ЧИСЛЕННО ИДЕНТИЧНА,
+ *         пик 17.8→9.2ГБ (влезает рядом с браузером/рабочим столом). Кадр на выходе — тот же.
+ *         Самолечащийся патч `_ensure_echomimic_lowvram_patch` в worker (переживает git-reset репо
+ *         EchoMimic). Диагнозы v1.6.70/71 (транзиент/конкуренция) — мимо. Только render-worker/main.py. */
+export const APP_VERSION = '1.6.73';
 
 export function AppVersion() {
   return (
