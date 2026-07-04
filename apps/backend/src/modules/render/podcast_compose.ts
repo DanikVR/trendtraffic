@@ -271,38 +271,37 @@ export async function composeOnStudio(opts: {
   // оставлял одну зелёнку — голова «исчезала» из ролика. Letterbox прозрачный (black@0).
   const keyf = (i: number, label: string) =>
     `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${label}];`;
-  // ДЕТЕРМИНИРОВАННАЯ обрезка: если 2 ведущих и заданы рамки — каждый берётся ТОЛЬКО со своей
-  // стороны. Разрез (splitPx) — в ПРОМЕЖУТКЕ между рамками (между внутренними краями), значит
-  // никого не режем, но «утёкший» в вырезку второй человек с чужой стороны отсекается. clip[k] —
-  // диапазон по X (px) для головы k (0=A, 1=B). Гарантия НЕ зависит от качества вырезки Gemini.
-  let clip: { x: number; w: number }[] | null = null;
-  if (heads.length === 2 && opts.boxA && opts.boxB) {
-    const bA = opts.boxA, bB = opts.boxB;
-    const cA = bA.x + bA.w / 2, cB = bB.x + bB.w / 2;
-    const aLeft = cA <= cB;                                   // кто левее по центру рамки
-    const left = aLeft ? bA : bB, right = aLeft ? bB : bA;
-    const leftInner = left.x + left.w, rightInner = right.x;  // внутренние края рамок
-    let sf = leftInner < rightInner ? (leftInner + rightInner) / 2 : (cA + cB) / 2; // разрез в зазоре (или между центрами при нахлёсте)
-    sf = Math.min(0.85, Math.max(0.15, sf));
-    let splitPx = Math.round((sf * W) / 2) * 2;               // чётное для yuv420
-    splitPx = Math.min(W - 2, Math.max(2, splitPx));
-    const leftRange = { x: 0, w: splitPx };
-    const rightRange = { x: splitPx, w: W - splitPx };
-    clip = aLeft ? [leftRange, rightRange] : [rightRange, leftRange]; // индекс 0=A,1=B
+  // РАЗМЕЩЕНИЕ двух ведущих ПО СТОРОНАМ. Вырезка (v1.6.74) = человек ПО ЦЕНТРУ квадрата, поэтому
+  // старый «разрез по центру» давал нахлёст (пол-женщины+пол-мужчины в середине). Теперь каждую
+  // голову масштабируем в квадрат и кладём A/B в ЛЕВУЮ/ПРАВУЮ половину — люди разнесены, не режутся.
+  // Сторона — из рамок (кто левее по центру), иначе A слева.
+  let place2: { x: number; y: number; hs: number }[] | null = null;
+  if (heads.length === 2) {
+    const hs = Math.min(H, Math.floor(W / 2 / 2) * 2);       // квадрат = половина ширины (или высота), чётный
+    const yPos = H - hs;                                      // низ головы у низа кадра (за столом)
+    const half = W / 2;
+    const xL = Math.round((half - hs) / 2 / 2) * 2;           // центр левой половины
+    const xR = Math.round((half + (half - hs) / 2) / 2) * 2;  // центр правой половины
+    let aLeft = true;
+    if (opts.boxA && opts.boxB) aLeft = (opts.boxA.x + opts.boxA.w / 2) <= (opts.boxB.x + opts.boxB.w / 2);
+    place2 = aLeft
+      ? [{ x: xL, y: yPos, hs }, { x: xR, y: yPos, hs }]      // индекс 0=A(слева),1=B(справа)
+      : [{ x: xR, y: yPos, hs }, { x: xL, y: yPos, hs }];
   }
   let fc = bg;
   let lastV = 'bg';
   heads.forEach((_, k) => {
     const lbl = `k${k}`;
-    fc += keyf(1 + k, lbl);
-    let src = lbl;
-    if (clip) {
-      const r = clip[k];
-      // оставить только диапазон [r.x, r.x+r.w) головы, остальное — прозрачно (pad black@0)
-      fc += `[${lbl}]crop=${r.w}:${H}:${r.x}:0,pad=${W}:${H}:${r.x}:0:color=black@0[cc${k}];`;
-      src = `cc${k}`;
+    if (place2) {
+      const p = place2[k];
+      // голову — в квадрат hs×hs (человек по центру), затем в свою половину кадра
+      fc += `[${1 + k}:v]${keyBase}scale=${p.hs}:${p.hs}:force_original_aspect_ratio=decrease,`
+        + `pad=${p.hs}:${p.hs}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${lbl}];`;
+      fc += `[${lastV}][${lbl}]overlay=x=${p.x}:y=${p.y}:shortest=0[hv${k}];`;
+    } else {
+      fc += keyf(1 + k, lbl);                                  // соло-режим: голова во весь кадр
+      fc += `[${lastV}][${lbl}]overlay=x=0:y=0:shortest=0[hv${k}];`;
     }
-    fc += `[${lastV}][${src}]overlay=x=0:y=0:shortest=0[hv${k}];`;
     lastV = `hv${k}`;
   });
   // Медиа реплик: карточка по центру, видима в свой интервал (как в воркерном таймлайне).
