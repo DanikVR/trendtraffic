@@ -119,7 +119,11 @@ const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
 type PodVoice = 'female' | 'male';
 type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
 type PodLayout = 'overlay' | 'topbar'; // где картинка в сплит-скрине
-interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string }
+type PodGesture = 'calm' | 'medium' | 'active';   // темперамент жестикуляции (GPU): карта на позы 03/02/01
+const POD_GESTURES: { v: PodGesture; label: string }[] = [
+  { v: 'calm', label: 'Спокойно' }, { v: 'medium', label: 'Умеренно' }, { v: 'active', label: 'Активно' },
+];
+interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string; gesture?: PodGesture }
 // Анимация «выезда» картинки, прикреплённой к реплике.
 type PodAnim = 'auto' | 'slide-left' | 'slide-right' | 'slide-up' | 'fade' | 'zoom';
 const POD_ANIMS: { v: PodAnim; label: string }[] = [
@@ -167,11 +171,14 @@ interface PodcastSpec {
   studioBgUrl?: string | null;
   // Окна ведущих в долях исходного фото — посадка аватаров на свои места при склейке.
   studioPlace?: { A?: { x: number; y: number; w: number; h: number }; B?: { x: number; y: number; w: number; h: number } } | null;
+  // GPU-студия: «Реалистичная студия» — жестикулирует ТОЛЬКО говорящий, слушающий спокоен (по таймкодам диалога).
+  realisticStudio?: boolean;
 }
 const POD_DEFAULT: PodcastSpec = {
-  hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A' },
-  hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B' },
+  hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A', gesture: 'medium' },
+  hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B', gesture: 'calm' },
   source: 'gen', brief: '', dialogue: [],
+  realisticStudio: true,
   recordingUrl: null, recordingName: null,
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
@@ -3556,6 +3563,24 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               </button>
                             ))}
                           </div>
+                          {pod.avatar?.provider === 'gpu' && (
+                            <div>
+                              <div className="text-[9px] mb-0.5" style={{ color: 'var(--text-muted)' }}>Жесты (пока говорит)</div>
+                              <div className="grid grid-cols-3 gap-1">
+                                {POD_GESTURES.map(({ v, label: gl }) => {
+                                  const sel = (h.gesture || (label === 'A' ? 'medium' : 'calm')) === v;
+                                  return (
+                                    <button key={v} title="Насколько активно ведущий жестикулирует руками во время СВОЕЙ речи. У A и B разные значения — чтобы дуэт не двигался одинаково. Слушая, руки спокойны."
+                                      onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], gesture: v } }))}
+                                      className="py-1 rounded-lg text-[10px] font-600"
+                                      style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}` }}>
+                                      {gl}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                           <div className="flex items-center justify-center gap-2">
                             <button onClick={() => openPodPick(hk)} className="text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>выбрать вручную</button>
                             {h.photoUrl && <button onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], photoUrl: null, photoName: null } }))} className="text-[10px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>убрать кадр</button>}
@@ -3894,6 +3919,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       )}
                       {av.provider === 'gpu' && pod.groupPhotoUrl && (
                         <>
+                          <button onClick={() => podMutate((p) => ({ ...p, realisticStudio: !(p.realisticStudio ?? true) }))}
+                            title="Жестикулирует ТОЛЬКО тот, кто говорит; слушающий держит руки спокойно. Автоматически по таймкодам диалога — ручных настроек не нужно."
+                            className="w-full py-2 px-2.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-between gap-2"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                            <span>🎬 Реалистичная студия <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>— жестикулирует только говорящий</span></span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-700" style={{ background: (pod.realisticStudio ?? true) ? '#8b5cf6' : 'var(--bg-secondary)', color: (pod.realisticStudio ?? true) ? '#fff' : 'var(--text-muted)' }}>{(pod.realisticStudio ?? true) ? 'ВКЛ' : 'ВЫКЛ'}</span>
+                          </button>
                           <button onClick={runGpuStudio} disabled={animBusy}
                             className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                             style={{ background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer' }}>

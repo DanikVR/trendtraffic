@@ -999,8 +999,8 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
         return d;
       } finally { clearTimeout(t); }
     };
-    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string): Promise<{ url: string; engine: string | null }> => {
-      const start = await postWorker('/avatar', { image_url: imageUrlAbs, audio_url: audioUrlAbs, base_url: base, engine });
+    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string, extra: Record<string, unknown> = {}): Promise<{ url: string; engine: string | null }> => {
+      const start = await postWorker('/avatar', { image_url: imageUrlAbs, audio_url: audioUrlAbs, base_url: base, engine, ...extra });
       const jobId = start?.job_id;
       if (!jobId) throw new Error(start?.note || 'GPU-воркер не принял задачу');
       for (let i = 0; i < 480; i++) {                       // до ~40 мин (инференс идёт минуты)
@@ -1047,8 +1047,17 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
           let cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false);
           let problem = await cutProblem(cut);
           if (problem) { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, true); problem = await cutProblem(cut); if (problem) throw new Error(`вырезка ведущего ${spk}: ${problem}`); }
-          // 3) анимация на домашнем GPU
-          const av = await workerAvatar(abs(cut.url), audioUrl);
+          // 3) анимация на домашнем GPU. «Реалистичная студия» (по умолч.): жестикулирует ТОЛЬКО
+          // говорящий — прокидываем сегменты речи хоста (по таймкодам диалога) + темперамент жестов.
+          const realistic = (spec.realisticStudio !== false);
+          const gest = ['calm', 'medium', 'active'].includes(String(host?.gesture)) ? String(host.gesture) : (spk === 'A' ? 'medium' : 'calm');
+          const av = await workerAvatar(abs(cut.url), audioUrl, realistic ? {
+            realistic_studio: true,
+            speech_segs: segsFor(spk).map((s) => [s.start, s.end]),
+            total_sec: totalSec,
+            gesture: gest,
+            phase: spk === 'A' ? 0 : 48,
+          } : {});
           let assetId: string | null = null;
           try { const a = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: `GPU-ведущий ${name}`, fileUrl: av.url, mime: 'video/mp4' }); assetId = a?.id || null; } catch { /* Галерея опц. */ }
           hosts.push({ host: spk, name, url: av.url, assetId, engine: av.engine });

@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import threading
 import mimetypes
+import json
 import urllib.request
 import urllib.parse
 from pathlib import Path
@@ -96,6 +97,13 @@ class AvatarBody(BaseModel):
     audio_url: str
     base_url: Optional[str] = None
     engine: Optional[str] = None
+    # «Реалистичная студия»: жестикулирует ТОЛЬКО говорящий. Бэкенд шлёт сегменты речи хоста
+    # (по таймкодам диалога) + темперамент — воркер собирает per-host папку поз (жесты в речи, покой в молчании).
+    realistic_studio: Optional[bool] = None
+    speech_segs: Optional[list] = None       # [[start,end], ...] в секундах, когда говорит ЭТОТ хост
+    total_sec: Optional[float] = None
+    gesture: Optional[str] = None            # calm | medium | active → позы 03/02/01
+    phase: Optional[int] = None              # смещение курсора жеста (у A и B разное → не в фазе)
 
 
 def _avatar_engines() -> list:
@@ -1038,7 +1046,7 @@ def _ensure_echomimic_lowvram_patch(emv2: str) -> None:
         print("[echomimic] lowvram-патч ошибка: %s" % e, flush=True)
 
 
-def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
+def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = None) -> Tuple[bool, str]:
     """EchoMimic-v2: фото (по пояс) + аудио → говорящий с жестами рук/корпуса (open-source, GPU).
     Вызов через CLI репозитория (ECHOMIMIC_DIR). ⚠ ТОЧНЫЕ аргументы зависят от версии EchoMimic-v2 —
     заданы через env, ПРОВЕРИТЬ/поправить на реальной установке (см. install-gpu.sh):
@@ -1071,6 +1079,31 @@ def _echomimic_v2(img: str, wav: str, out_path: str) -> Tuple[bool, str]:
         L = str(max(24, min(maxl, int(round(_media_duration(wav16) * 24)))))
     except Exception:  # noqa: BLE001
         L = "120"
+    # СТУДИЙНОЕ ПОВЕДЕНИЕ «жестикулирует только говорящий»: собираем per-host папку поз по сегментам
+    # речи. draw_pose_select_v2 рисует ТОЛЬКО руки → активные жесты в речи хоста, покой в молчании.
+    if studio and studio.get("realistic") and studio.get("speech_segs"):
+        try:
+            Lint = int(L)
+            active_pose = {"calm": "03", "medium": "02", "active": "01"}.get(str(studio.get("gesture") or "medium"), "02")
+            pdir = os.path.join(workdir, "pose_%s" % uuid.uuid4().hex[:6])
+            pd_params = {
+                "pose_root": os.path.join(emv2, "assets", "halfbody_demo", "pose"),
+                "active_pose": active_pose, "fps": 24, "total_sec": Lint / 24.0,
+                "speech_segs": studio.get("speech_segs") or [], "level_gain": 1.0,
+                "phase": int(studio.get("phase") or 0), "out_dir": pdir,
+            }
+            pj = os.path.join(workdir, "pdp_%s.json" % uuid.uuid4().hex[:6])
+            with open(pj, "w") as _pf:
+                json.dump(pd_params, _pf)
+            pdscript = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pose_director.py")
+            subprocess.run([py, pdscript, pj], cwd=emv2, capture_output=True, text=True, timeout=180)
+            if os.path.isdir(pdir) and len([x for x in os.listdir(pdir) if x.endswith(".npy")]) >= Lint:
+                pose = pdir
+                print("[echomimic] студийная поза=%s жесты=%s кадров=%d" % (active_pose, studio.get("gesture"), Lint), flush=True)
+            else:
+                print("[echomimic] pose_director не собрал позы — глобальная поза", flush=True)
+        except Exception as _e:  # noqa: BLE001
+            print("[echomimic] pose_director ошибка: %s" % _e, flush=True)
     # ЛИЧНОСТЬ: EchoMimic теряет лицо/волосы/одежду на ЧИСТО-ЗЕЛЁНОЙ вырезке #00FF00 (out-of-distribution)
     # → уплывает к «прайору» модели. Фикс: кроп на человека + центр + нейтральный серый фон
     # (echomimic_natural.py под emv2-питоном). На выходе matte вернёт человека на зелёный.
@@ -1183,11 +1216,18 @@ def _avatar_impl(body: AvatarBody) -> dict:
     used = None
     # ТОЛЬКО ОДНА генерация на GPU за раз: две параллельные (2 клипа / чужой прогон) не влезают
     # в 16ГБ → OOM. Остальные задачи ждут на блокировке (статус остаётся 'processing').
+    studio = {
+        "realistic": bool(body.realistic_studio),
+        "speech_segs": body.speech_segs,
+        "total_sec": body.total_sec,
+        "gesture": body.gesture,
+        "phase": body.phase,
+    }
     with _gpu_lock:
         for eng in order:
             try:
                 if eng == "echomimic":
-                    ok, log = _echomimic_v2(img, wav, out_path)
+                    ok, log = _echomimic_v2(img, wav, out_path, studio)
                     if ok:
                         used, note = "echomimic", "EchoMimic-v2 (жесты рук/корпуса)"
                         break
