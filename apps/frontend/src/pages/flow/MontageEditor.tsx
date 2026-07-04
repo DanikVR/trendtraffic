@@ -98,12 +98,13 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
 };
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash (генерация видео), Контент-план, Подкаст.
-type CloudId = 'omni' | 'plan' | 'podcast' | 'editor';
+type CloudId = 'omni' | 'plan' | 'podcast' | 'editor' | 'ugc';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
   omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
   podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
   editor: { label: 'Редактор', icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
+  ugc: { label: 'UGC', icon: <Video size={22} />, color: '#a855f7', glow: 'rgba(168,85,247,.35)', def: { x: 50, y: 12 } },
 };
 
 // Пикер «Редактора» повторяет Галерею: те же вкладки-папки (тренды/референс/аудио/из анализа).
@@ -181,6 +182,40 @@ const POD_DEFAULT: PodcastSpec = {
   timeline: false,
   avatar: { provider: 'heygen', mode: 'iv', voiceSource: 'heygen', emotion: 'friendly' },
   music: null,
+};
+
+// ── Блок «UGC / Аватары»: кадр 9:16 из двух половин (аватар + видео) ──
+// Одна половина — говорящий аватар (движок EchoMimic-v2 на домашнем GPU / своё фото), другая —
+// произвольное видео из Галереи; аватар ставится сверху или снизу. Скрипт — генерация/разбор
+// записи (как в подкасте). Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
+type UgcAvatarSource = 'collection' | 'photo';
+interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
+interface UgcSpec {
+  avatarSource: UgcAvatarSource;
+  avatarId: string | null;                                  // выбранный из коллекции
+  photoUrl: string | null; photoName: string | null;        // своё фото
+  placement: 'top' | 'bottom';                              // где аватар в кадре 9:16
+  voice: PodVoice;
+  source: PodSource;                                        // 'gen' | 'diarize'
+  brief: string;
+  script: PodLine[];                                        // реплики (один аватар)
+  recordingUrl: string | null; recordingName: string | null;
+  clip: { url: string; name: string } | null;              // вторая половина — видео
+  clipFit: 'cover' | 'contain'; clipMuted: boolean;
+  subtitles: UgcSubtitles;                                  // титры (переиспользуем блок субтитров)
+  music: { url: string; name: string; volumePct: number } | null;
+  platforms: string[];
+}
+const UGC_DEFAULT: UgcSpec = {
+  avatarSource: 'collection', avatarId: null,
+  photoUrl: null, photoName: null,
+  placement: 'top', voice: 'female',
+  source: 'gen', brief: '', script: [],
+  recordingUrl: null, recordingName: null,
+  clip: null, clipFit: 'cover', clipMuted: true,
+  subtitles: { style: 'word', pos: 'bottom', wishes: '' },
+  music: null,
+  platforms: ['tiktok', 'reels', 'shorts'],
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
@@ -415,7 +450,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [batchMinimized, setBatchMinimized] = useState(false);
   const [batchNote, setBatchNote] = useState<string | null>(null);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
-  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def } });
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
@@ -480,6 +515,78 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [loadDlgOpen, setLoadDlgOpen] = useState(false);  // модал «Загрузить диалог» (текст/JSON/из Исследования)
   const [loadDlgText, setLoadDlgText] = useState('');
   const podPickInputRef = useRef<HTMLInputElement | null>(null);
+  // ── Блок «UGC / Аватары»: состояние + обработчики ──
+  const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
+  const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
+  const [ugcNote, setUgcNote] = useState<string | null>(null);
+  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music'>(null);
+  const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
+  const [ugcGalLoading, setUgcGalLoading] = useState(false);
+  const ugcMutate = (fn: (u: UgcSpec) => UgcSpec) => { setUgc((u) => fn(u)); setDirty(true); };
+  const ugcScriptSec = () => ugc.script.reduce((s, l) => {
+    const st = Number(l.start); const en = Number(l.end);
+    return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
+  }, 0);
+  // Пикер медиа для UGC (видео/фото/запись/музыка) из Галереи — как в «Редакторе».
+  const openUgcPick = async (target: 'clip' | 'photo' | 'recording' | 'music') => {
+    setUgcPick(target); setUgcGalLoading(true); setUgcGallery([]);
+    try {
+      const [v, r, an, au] = await Promise.all([
+        fetch('/api/trends/videos?downloaded=1&limit=200', { headers: headers() }),
+        fetch('/api/trends/media?kind=reference', { headers: headers() }),
+        fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
+        fetch('/api/trends/media?kind=audio', { headers: headers() }),
+      ]);
+      const vids = v.ok ? ((await v.json()).videos || []) : [];
+      const refs = r.ok ? ((await r.json()).assets || []) : [];
+      const analyzed = an.ok ? ((await an.json()).assets || []) : [];
+      const audios = au.ok ? ((await au.json()).assets || []) : [];
+      const seen = new Set<string>();
+      const list: { url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[] = [];
+      const push = (url: string, name: string, type: 'video' | 'audio' | 'image', cover?: string) => { if (url && !seen.has(url)) { seen.add(url); list.push({ url, name, cover, type }); } };
+      for (const x of vids) if (x.fileUrl) push(x.fileUrl, x.title || x.author || 'видео', 'video', x.coverUrl);
+      for (const m of analyzed) if (m.fileUrl) push(m.fileUrl, m.originalName || 'медиа', m.mediaType === 'image' ? 'image' : 'video');
+      for (const m of refs) if (m.fileUrl) push(m.fileUrl, m.originalName || 'медиа', m.mediaType === 'image' ? 'image' : 'video');
+      for (const m of audios) if (m.fileUrl) push(m.fileUrl, m.originalName || 'аудио', 'audio');
+      setUgcGallery(list);
+    } catch { setUgcGallery([]); }
+    finally { setUgcGalLoading(false); }
+  };
+  const pickUgcItem = (g: { url: string; name: string; type: 'video' | 'audio' | 'image' }) => {
+    if (ugcPick === 'clip') ugcMutate((u) => ({ ...u, clip: { url: g.url, name: g.name } }));
+    else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name }));
+    else if (ugcPick === 'recording') ugcMutate((u) => ({ ...u, recordingUrl: g.url, recordingName: g.name }));
+    else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
+    setUgcPick(null);
+  };
+  // Скрипт аватара: генерация текста (переиспользуем /podcast/dialogue) → реплики одного спикера.
+  const ugcGenScript = async () => {
+    if (ugcBusy) return;
+    setUgcBusy('dialogue'); setUgcNote(null);
+    try {
+      const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(), body: JSON.stringify({ brief: ugc.brief, turns: 6 }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
+      const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: 'A' as const, text: String(l.text || '') })).filter((l: PodLine) => l.text.trim()) : [];
+      ugcMutate((u) => ({ ...u, script: lines }));
+      setUgcNote(d.note || `Готово: ${lines.length} реплик.`);
+    } catch (e: any) { setUgcNote(e?.message || 'Не удалось сгенерировать текст.'); }
+    finally { setUgcBusy(null); }
+  };
+  // Разбор записи → реплики (переиспользуем /podcast/diarize; для 1 аватара берём весь текст).
+  const ugcRunDiarize = async () => {
+    if (ugcBusy || !ugc.recordingUrl) return;
+    setUgcBusy('diarize'); setUgcNote(null);
+    try {
+      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(), body: JSON.stringify({ recordingUrl: ugc.recordingUrl, hostAVoice: ugc.voice }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
+      const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: 'A' as const, text: String(l.text || ''), start: Number(l.start), end: Number(l.end) })).filter((l: PodLine) => l.text.trim()) : [];
+      ugcMutate((u) => ({ ...u, script: lines }));
+      setUgcNote(d.note || `Разобрано: ${lines.length} реплик.`);
+    } catch (e: any) { setUgcNote(e?.message || 'Не удалось разобрать запись.'); }
+    finally { setUgcBusy(null); }
+  };
   // «Студия лиц»: рисование боксов поверх группового фото.
   const faceWrapRef = useRef<HTMLDivElement | null>(null);
   const [drawBox, setDrawBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -579,6 +686,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео', type: c.type === 'audio' ? 'audio' : 'video' })));
             if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || 'Результат', type: ed.result.type === 'audio' ? 'audio' : 'video' });
           }
+          if (d.flow.graph?.ugc && typeof d.flow.graph.ugc === 'object') {
+            const uu = d.flow.graph.ugc;
+            setUgc({
+              ...UGC_DEFAULT, ...uu,
+              script: Array.isArray(uu.script) ? uu.script : [],
+              subtitles: { ...UGC_DEFAULT.subtitles, ...(uu.subtitles || {}) },
+            });
+          }
           if (mapped.length === 0 && isNew) setShowPresets(true); // пресеты — только для НОВОГО сценария
         }
       } catch { /* пусто */ }
@@ -591,7 +706,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, audioUrl: n.audioUrl, audioName: n.audioName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, ugc, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -2503,13 +2618,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           );
         })}
         {/* «Контент-план» скрыт до реализации (этап C): узел был пустым стабом. */}
-        {(['omni', 'podcast', 'editor'] as CloudId[]).map((id) => {
+        {(['omni', 'podcast', 'editor', 'ugc'] as CloudId[]).map((id) => {
           const pos = cloud[id]; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
               {id === 'podcast' && (!!podBusy || building || !!angleBusy || animBusy || composeBusy) && <span className="me-busyring" />}
               {id === 'omni' && omniBusy && <span className="me-busyring" />}
+              {id === 'ugc' && !!ugcBusy && <span className="me-busyring" />}
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
@@ -4033,6 +4149,183 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 {podBuildHint() && !building && (
                   <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>{podBuildHint()}</p>
                 )}
+              </div>
+            ) : cloudPanel === 'ugc' ? (
+              <div className="space-y-3.5">
+                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  UGC на аватарах: кадр <b style={{ color: '#a855f7' }}>9:16 из двух половин</b> — говорящий аватар
+                  (движок <b>EchoMimic-v2</b> на вашем GPU) и произвольное видео. Аватар ставится сверху или снизу;
+                  скрипт можно сгенерировать или разобрать запись; снизу — титры.
+                </p>
+
+                {/* Аватар: источник + положение + голос */}
+                <div className="rounded-xl p-2.5 space-y-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><UserRound size={13} style={{ color: '#a855f7' }} /> Аватар</div>
+                  <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                    {([['collection', 'Коллекция'], ['photo', 'Своё фото']] as [UgcAvatarSource, string][]).map(([s, lbl]) => (
+                      <button key={s} onClick={() => ugcMutate((u) => ({ ...u, avatarSource: s }))}
+                        className="py-2 rounded-lg text-[12px] font-600" style={{ background: ugc.avatarSource === s ? 'var(--bg-tertiary)' : 'transparent', color: ugc.avatarSource === s ? '#a855f7' : 'var(--text-muted)' }}>{lbl}</button>
+                    ))}
+                  </div>
+                  {ugc.avatarSource === 'collection' ? (
+                    <div className="rounded-lg p-3 text-[11px] text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}>
+                      Грид готовых аватаров появится на следующем шаге. Выбран: <b style={{ color: 'var(--text-secondary)' }}>{ugc.avatarId || 'не выбран'}</b>
+                    </div>
+                  ) : (
+                    <button onClick={() => openUgcPick('photo')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                      style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                      {ugc.photoUrl ? (ugc.photoName || 'фото выбрано') : 'Выбрать своё фото из Галереи'}
+                    </button>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Положение:</span>
+                    {([['top', 'Сверху'], ['bottom', 'Снизу']] as ['top' | 'bottom', string][]).map(([p, lbl]) => (
+                      <button key={p} onClick={() => ugcMutate((u) => ({ ...u, placement: p }))} className="flex-1 py-1.5 rounded-lg text-[11px] font-700"
+                        style={{ background: ugc.placement === p ? '#a855f7' : 'var(--bg-secondary)', color: ugc.placement === p ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.placement === p ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Голос:</span>
+                    {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
+                      <button key={v} onClick={() => ugcMutate((u) => ({ ...u, voice: v }))} className="flex-1 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1"
+                        style={{ background: ugc.voice === v ? '#a855f7' : 'var(--bg-secondary)', color: ugc.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.voice === v ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}><Mic size={11} /> {lbl}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Скрипт: генерация / разбор записи */}
+                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                  {([['gen', 'Сгенерировать текст'], ['diarize', 'Разобрать запись']] as [PodSource, string][]).map(([s, lbl]) => (
+                    <button key={s} onClick={() => ugcMutate((u) => ({ ...u, source: s }))} className="py-2 rounded-lg text-[12px] font-600"
+                      style={{ background: ugc.source === s ? 'var(--bg-secondary)' : 'transparent', color: ugc.source === s ? '#a855f7' : 'var(--text-muted)' }}>{lbl}</button>
+                  ))}
+                </div>
+                {ugc.source === 'gen' ? (
+                  <div className="space-y-2">
+                    <textarea value={ugc.brief} onChange={(e) => ugcMutate((u) => ({ ...u, brief: e.target.value }))} rows={2}
+                      placeholder="О чём говорит аватар: «честный отзыв на приложение, крючок в первые 3 секунды»…"
+                      className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+                    <button onClick={ugcGenScript} disabled={ugcBusy === 'dialogue'} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                      style={{ background: 'rgba(168,85,247,0.14)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
+                      {ugcBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать текст
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {ugc.recordingUrl ? (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        <Music size={15} style={{ color: '#a855f7' }} />
+                        <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.recordingName || 'запись'}</span>
+                        <button onClick={() => ugcMutate((u) => ({ ...u, recordingUrl: null, recordingName: null }))} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => openUgcPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                        <Paperclip size={14} /> Загрузить запись (аудио/видео)
+                      </button>
+                    )}
+                    <button onClick={ugcRunDiarize} disabled={ugcBusy === 'diarize' || !ugc.recordingUrl} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                      style={{ background: 'rgba(168,85,247,0.14)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
+                      {ugcBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} Разобрать речь
+                    </button>
+                  </div>
+                )}
+                {ugc.script.length > 0 && (
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Реплик в скрипте: <b style={{ color: 'var(--text-secondary)' }}>{ugc.script.length}</b> (~{Math.round(ugcScriptSec())}с)</div>
+                )}
+
+                {/* Вторая половина — видео */}
+                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Video size={13} style={{ color: '#a855f7' }} /> Вторая половина — видео</div>
+                  {ugc.clip ? (
+                    <div className="flex items-center gap-2">
+                      <video src={`${ugc.clip.url}#t=0.1`} muted className="rounded-lg" style={{ width: 44, height: 78, objectFit: 'cover', background: '#000' }} />
+                      <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.clip.name}</span>
+                      <button onClick={() => ugcMutate((u) => ({ ...u, clip: null }))} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                    </div>
+                  ) : (
+                    <button onClick={() => openUgcPick('clip')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                      style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                      <Download size={14} /> Загрузить видео (галерея)
+                    </button>
+                  )}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1">
+                      {([['cover', 'Заполнить'], ['contain', 'Вписать']] as ['cover' | 'contain', string][]).map(([f, lbl]) => (
+                        <button key={f} onClick={() => ugcMutate((u) => ({ ...u, clipFit: f }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
+                          style={{ background: ugc.clipFit === f ? '#a855f7' : 'var(--bg-secondary)', color: ugc.clipFit === f ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.clipFit === f ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                      ))}
+                    </div>
+                    <label className="text-[11px] inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={ugc.clipMuted} onChange={(e) => ugcMutate((u) => ({ ...u, clipMuted: e.target.checked }))} /> без звука видео
+                    </label>
+                  </div>
+                </div>
+
+                {/* Титры — переиспользуем блок субтитров (subtitle_gen на воркере) */}
+                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Type size={13} style={{ color: '#a855f7' }} /> Титры</div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Стиль:</span>
+                    {([['none', 'Без'], ['word', 'По словам'], ['karaoke', 'Караоке'], ['plain', 'Обычные']] as [UgcSubtitles['style'], string][]).map(([s, lbl]) => (
+                      <button key={s} onClick={() => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, style: s } }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
+                        style={{ background: ugc.subtitles.style === s ? '#a855f7' : 'var(--bg-secondary)', color: ugc.subtitles.style === s ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.subtitles.style === s ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Позиция:</span>
+                    {([['bottom', 'Низ'], ['center', 'Центр'], ['top', 'Верх']] as [UgcSubtitles['pos'], string][]).map(([p, lbl]) => (
+                      <button key={p} onClick={() => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, pos: p } }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
+                        style={{ background: ugc.subtitles.pos === p ? '#a855f7' : 'var(--bg-secondary)', color: ugc.subtitles.pos === p ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.subtitles.pos === p ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                    ))}
+                  </div>
+                  <input value={ugc.subtitles.wishes} onChange={(e) => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, wishes: e.target.value } }))}
+                    placeholder="пожелания: шрифт, кегль, обводка, цвет, тень…" className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                </div>
+
+                {/* Инлайн-пикер медиа (видео/фото/запись/музыка) из Галереи */}
+                {ugcPick && (
+                  <div className="rounded-xl p-2 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-600" style={{ color: 'var(--text-secondary)' }}>Выберите из Галереи</span>
+                      <button onClick={() => setUgcPick(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                    </div>
+                    {ugcGalLoading ? (
+                      <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> загрузка…</p>
+                    ) : (() => {
+                      const want = ugcPick === 'music' ? 'audio' : ugcPick === 'photo' ? 'image' : 'video';
+                      const items = ugcGallery.filter((g) => g.type === want);
+                      if (!items.length) return <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Пусто — загрузите медиа в Галерею.</p>;
+                      return (
+                        <div className="grid grid-cols-3 gap-1.5" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                          {items.map((g, i) => (
+                            <button key={i} onClick={() => pickUgcItem(g)} className="relative rounded-lg overflow-hidden" style={{ aspectRatio: '9/16', background: '#000', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                              {g.type === 'image' ? <img src={g.url} alt="" className="w-full h-full object-cover" />
+                                : g.type === 'audio' ? <span className="flex items-center justify-center w-full h-full"><Music size={18} style={{ color: '#a855f7' }} /></span>
+                                : g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" />
+                                : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {ugcNote && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{ugcNote}</p>}
+
+                {/* Сборка */}
+                <div className="flex items-center gap-2">
+                  <button onClick={() => save()} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Save size={15} /> Сохранить</button>
+                  <button disabled title="Рендер EchoMimic-GPU + склейка 9:16 (vstack) + титры — следующий шаг"
+                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'not-allowed' }}>
+                    <Wand2 size={16} /> Собрать UGC
+                  </button>
+                </div>
+                <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>Рендер аватара через ваш EchoMimic-GPU, склейка «аватар + видео» (vstack) и вжигание титров — подключаю следующим шагом.</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">

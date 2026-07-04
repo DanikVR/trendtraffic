@@ -75,6 +75,24 @@ export const PROVIDERS: ProviderDef[] = [
     verify: (k) => tryVerify('ElevenLabs', () => ping('https://api.elevenlabs.io/v1/user', { headers: { 'xi-api-key': k } })) },
   { id: 'heygen', label: 'HeyGen (аватары, видео-шлюз)', group: 'paid', help: 'https://app.heygen.com/settings/api',
     verify: (k) => tryVerify('HeyGen', () => ping('https://api.heygen.com/v2/user/remaining_quota', { headers: { 'X-Api-Key': k } })) },
+  { id: 'spatialreal', label: 'SpatialReal (аватары UGC, real-time)', group: 'paid', help: 'https://app.spatialreal.ai/apps',
+    // Реальная проверка: создаём короткоживущий session-token (нужен только X-Api-Key).
+    // 200 → активен; 401/403 → невалиден; 429 → лимит; иначе → ключ дошёл, формат ответа иной.
+    verify: async (k) => {
+      try {
+        const r = await ping('https://console.us-west.spatialwalk.cloud/v1/console/session-tokens', {
+          method: 'POST',
+          headers: { 'X-Api-Key': k.trim(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expireAt: Math.floor(Date.now() / 1000) + 300 }),
+        });
+        if (r.ok) return { ok: true, status: 'active', message: 'SpatialReal: ключ активен' };
+        if (r.status === 401 || r.status === 403) return { ok: false, status: 'invalid', message: `SpatialReal: ключ невалиден (HTTP ${r.status})` };
+        if (r.status === 429) return { ok: false, status: 'quota_exceeded', message: 'SpatialReal: превышен лимит / нет баланса (429)' };
+        return { ok: true, status: 'unknown', message: `SpatialReal: ключ сохранён; сервис ответил HTTP ${r.status} (авто-проверка ограничена).` };
+      } catch (e: any) {
+        return { ok: false, status: 'unknown', message: `SpatialReal: сеть/таймаут — ${e?.message || e}` };
+      }
+    } },
   { id: 'runway', label: 'Runway (Gen-4 видео)', group: 'paid', help: 'https://dev.runwayml.com',
     verify: async () => savedOnly('Runway') },
   { id: 'suno', label: 'Suno (генерация музыки)', group: 'paid', help: 'https://suno.com',
