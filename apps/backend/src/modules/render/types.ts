@@ -23,8 +23,14 @@ export interface PodcastHost {
   voice: 'female' | 'male';
   name?: string;
 }
-/** Реплика диалога: какой ведущий и что говорит (+ таймкоды для нарезки реального голоса при диаризации). */
-export interface PodcastLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number }
+/** Реплика диалога: какой ведущий и что говорит (+ таймкоды для нарезки реального голоса при
+ *  диаризации). image/anim/mode/title — иллюстрация («Иллюстратор»/ручной выбор): картинка или
+ *  видео к фразе, план card|full (карточка/во весь кадр) и заголовок индиго-плашки. */
+export interface PodcastLine {
+  speaker: 'A' | 'B'; text: string; start?: number; end?: number;
+  image?: string; imageName?: string; anim?: string; tStart?: number;
+  mode?: 'card' | 'full'; title?: string;
+}
 /** Картинка-вставка, показываемая между ведущими. */
 export interface PodcastCutaway { url: string; name?: string }
 /**
@@ -53,6 +59,8 @@ export interface PodcastSpec {
   segSec: number;
   /** Площадки экспорта. */
   platforms: string[];
+  /** Стиль «Новости»: вжигать титры реплик + плашки-заголовки в студийную склейку. */
+  newsStyle?: boolean;
 }
 
 /** Где исполнять шаг: cpu — бесплатно на VPS; gpu — на воркере (дом/облако). */

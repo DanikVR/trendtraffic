@@ -654,13 +654,25 @@ def _pad_audio(wav: str, min_sec: float, out_path: str) -> str:
     return out_path if ok and os.path.exists(out_path) else wav
 
 
+def _kenburns(w: int, h: int, dur: float, direction: str = "in") -> str:
+    """Ken Burns по фото: пре-скейл ×2 (анти-дёргание сабпиксельного зума) + zoompan до w×h.
+    direction 'in' — наезд 1.0→1.12, 'out' — отъезд 1.12→1.0, за всю длительность показа."""
+    frames = max(2, int(round(dur * 30)) + 1)
+    inc = 0.12 / frames
+    z = (f"min(zoom+{inc:.6f},1.12)" if direction == "in"
+         else f"if(lte(on,1),1.12,max(zoom-{inc:.6f},1.0))")
+    return (f"scale={w * 2}:{h * 2}:force_original_aspect_ratio=increase,crop={w * 2}:{h * 2},setsar=1,"
+            f"zoompan=z='{z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={w}x{h}:fps=30")
+
+
 def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
                  audio: str, cut: Optional[str], anim: str, out_path: str,
-                 cut_v: bool = False) -> Optional[str]:
+                 cut_v: bool = False, mode: str = "card") -> Optional[str]:
     """
     Один сегмент сплит-скрина: ведущий A слева, B справа (каждый half×H), общая дорожка —
-    озвучка реплики. Если к фразе прикреплена картинка (cut) — она эффектно «выезжает»
-    карточкой по центру с анимацией anim (slide-left/right/up | fade | zoom | auto).
+    озвучка реплики. Если к фразе прикреплена картинка (cut) — она либо «выезжает»
+    карточкой по центру (mode='card', анимация anim), либо кроет ВЕСЬ кадр как новостной
+    b-roll (mode='full': фото — с Ken Burns, видео — фрагментом, с мягким проявлением).
     Говорящая сторона — видео-голова или статичное фото (loop).
     """
     half = POD_W // 2
@@ -680,21 +692,33 @@ def _pod_segment(left: str, left_v: bool, right: str, right_v: bool,
     if cut:
         # видео нельзя подавать с -loop (опция image2-демаксера — mp4 уронит весь сегмент)
         inputs += (["-i", cut] if cut_v else ["-loop", "1", "-i", cut])  # 3: медиа к фразе
-        side = int(POD_W * 0.62)
         d = 0.45  # длительность входа
-        cx, cy = "(W-w)/2", "(H-h)/2"
-        pre = (f"[3:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1")
-        if anim == "slide-left":
-            x, y = f"(W-w)/2-((W-w)/2+w)*(1-min(1\\,t/{d}))", cy
-        elif anim == "slide-right":
-            x, y = f"(W-w)/2+(W-(W-w)/2)*(1-min(1\\,t/{d}))", cy
-        elif anim == "slide-up":
-            x, y = cx, f"(H-h)/2+(H-(H-h)/2)*(1-min(1\\,t/{d}))"
-        else:  # fade / zoom / auto → проявление
-            x, y = cx, cy
-            pre += f",format=yuva420p,fade=in:st=0:d={d}:alpha=1"
-        fc += f"{pre}[cut];[{last}][cut]overlay=x={x}:y={y}[v];"
-        last = "v"
+        if mode == "full":
+            # во весь кадр: фото = Ken Burns, видео = cover; мягкое проявление входа/выхода
+            fade = (f",format=yuva420p,fade=in:st=0:d={d}:alpha=1"
+                    f",fade=out:st={max(0.0, dur - d):.3f}:d={d}:alpha=1")
+            if cut_v:
+                pre = (f"[3:v]scale={POD_W}:{POD_H}:force_original_aspect_ratio=increase,"
+                       f"crop={POD_W}:{POD_H},setsar=1,fps=30,setpts=PTS-STARTPTS{fade}")
+            else:
+                pre = f"[3:v]{_kenburns(POD_W, POD_H, dur, 'in')}{fade}"
+            fc += f"{pre}[cut];[{last}][cut]overlay=x=0:y=0[v];"
+            last = "v"
+        else:
+            side = int(POD_W * 0.62)
+            cx, cy = "(W-w)/2", "(H-h)/2"
+            pre = (f"[3:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1")
+            if anim == "slide-left":
+                x, y = f"(W-w)/2-((W-w)/2+w)*(1-min(1\\,t/{d}))", cy
+            elif anim == "slide-right":
+                x, y = f"(W-w)/2+(W-(W-w)/2)*(1-min(1\\,t/{d}))", cy
+            elif anim == "slide-up":
+                x, y = cx, f"(H-h)/2+(H-(H-h)/2)*(1-min(1\\,t/{d}))"
+            else:  # fade / zoom / auto → проявление
+                x, y = cx, cy
+                pre += f",format=yuva420p,fade=in:st=0:d={d}:alpha=1"
+            fc += f"{pre}[cut];[{last}][cut]overlay=x={x}:y={y}[v];"
+            last = "v"
     cmd = [FFMPEG, "-y", *inputs,
            "-filter_complex", fc.rstrip("; "),
            "-map", f"[{last}]", "-map", "2:a",
@@ -777,7 +801,8 @@ def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str,
         img = _download_media(base_url, media_url, work, default_ext=(".mp4" if is_vid else ".jpg")) if media_url else None
         if img:
             used_imgs += 1
-        clips.append({"wav": wav, "t": max(0.0, t), "dur": d, "image": img, "video": bool(img and is_vid)})
+        clips.append({"wav": wav, "t": max(0.0, t), "dur": d, "image": img, "video": bool(img and is_vid),
+                      "mode": ("full" if l.get("mode") == "full" else "card")})
     if not clips:
         tail = "; ".join(notes) if notes else "нет клипов"
         return None, f"подкаст(таймлайн): {tail}"
@@ -790,10 +815,12 @@ def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str,
     img_clips = [c for c in clips if c["image"]]
     img_start = 2 + len(clips)
     for c in img_clips:                                               # медиа реплик — после аудио
+        # вход режем по длительности показа (+запас): Ken Burns/декод не молотит весь ролик
+        dcap = f"{c['dur'] + 0.6:.3f}"
         if c["video"]:                                               # видео — играет (без -loop), звук отбрасываем
-            inputs += ["-i", c["image"]]
+            inputs += ["-t", dcap, "-i", c["image"]]
         else:                                                        # картинка — статичная (looped)
-            inputs += ["-loop", "1", "-i", c["image"]]
+            inputs += ["-loop", "1", "-t", dcap, "-i", c["image"]]
 
     fc = (
         f"[0:v]scale={half}:{POD_H}:force_original_aspect_ratio=increase,crop={half}:{POD_H},fps=30,setsar=1[l];"
@@ -802,13 +829,30 @@ def _podcast_mix(pod: dict, lines: list, host_a: dict, host_b: dict, img_a: str,
     )
     last_v = "v0"
     side = int(POD_W * 0.62)
+    kb_flip = 0
     for k, c in enumerate(img_clips):
         idx = img_start + k
         t0, t1 = c["t"], c["t"] + c["dur"]
-        # видео сдвигаем по времени (setpts), чтобы играло с начала клипа; картинка — статична
-        pts = f",setpts=PTS-STARTPTS+{t0:.3f}/TB" if c["video"] else ""
-        fc += (f"[{idx}:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1{pts}[ci{k}];"
-               f"[{last_v}][ci{k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\\,{t0:.3f}\\,{t1:.3f})'[vi{k}];")
+        full = c.get("mode") == "full"
+        fade = (f",format=yuva420p,fade=in:st=0:d=0.4:alpha=1"
+                f",fade=out:st={max(0.0, c['dur'] - 0.4):.3f}:d=0.4:alpha=1")
+        if full and not c["video"]:
+            # фото во весь кадр — новостной Ken Burns (наезд/отъезд чередуются)
+            kb_dir = "in" if kb_flip % 2 == 0 else "out"
+            kb_flip += 1
+            pre = f"[{idx}:v]{_kenburns(POD_W, POD_H, c['dur'], kb_dir)}{fade},setpts=PTS+{t0:.3f}/TB"
+            pos = "overlay=0:0"
+        elif full:
+            pre = (f"[{idx}:v]scale={POD_W}:{POD_H}:force_original_aspect_ratio=increase,"
+                   f"crop={POD_W}:{POD_H},setsar=1,fps=30,setpts=PTS-STARTPTS{fade},setpts=PTS+{t0:.3f}/TB")
+            pos = "overlay=0:0"
+        else:
+            # видео сдвигаем по времени (setpts), чтобы играло с начала клипа; картинка — статична
+            pts = f",setpts=PTS-STARTPTS+{t0:.3f}/TB" if c["video"] else ""
+            pre = f"[{idx}:v]scale={side}:{side}:force_original_aspect_ratio=increase,crop={side}:{side},setsar=1{pts}"
+            pos = "overlay=(W-w)/2:(H-h)/2"
+        fc += (f"{pre}[ci{k}];"
+               f"[{last_v}][ci{k}]{pos}:enable='between(t\\,{t0:.3f}\\,{t1:.3f})'[vi{k}];")
         last_v = f"vi{k}"
     for k, c in enumerate(clips):
         ms = int(c["t"] * 1000)
@@ -952,9 +996,10 @@ def _podcast_compose(params: dict, work: Path, base_url: Optional[str]) -> Tuple
         lanim = str(l.get("anim") or "auto")
         if lanim == "auto":
             lanim = "slide-left" if spk == "A" else "slide-right"
+        lmode = "full" if l.get("mode") == "full" else "card"
         if limg:
             used_imgs += 1
-        seg = _pod_segment(left, left_v, right, right_v, wav, limg, lanim, out(), cut_v=l_is_vid)
+        seg = _pod_segment(left, left_v, right, right_v, wav, limg, lanim, out(), cut_v=l_is_vid, mode=lmode)
         if seg:
             segments.append(seg)
         else:

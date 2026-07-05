@@ -198,8 +198,89 @@ export function greenBgRatio(input: string, region?: NormRect): Promise<number |
   });
 }
 
-/** Медиа реплики поверх студийной сцены: показывается в свой интервал таймлайна. */
-export interface StudioOverlay { url: string; tStart: number; dur: number; video?: boolean }
+/** Медиа реплики поверх студийной сцены: показывается в свой интервал таймлайна.
+ *  mode: 'card' — карточка 62% по центру (как раньше); 'full' — во весь кадр (новостной b-roll).
+ *  fx (для фото в full): 'kb_in'/'kb_out' — Ken Burns наезд/отъезд, 'none' — статично;
+ *  без fx направление чередуется. title — текст плашки-заголовка (lower third) на время показа. */
+export interface StudioOverlay { url: string; tStart: number; dur: number; video?: boolean; mode?: 'card' | 'full'; fx?: 'kb_in' | 'kb_out' | 'none'; title?: string }
+
+/** Титр реплики (для вжигания субтитров стиля «Новости»). */
+export interface CaptionLine { t0: number; t1: number; text: string }
+
+// ── ASS-титры «как новости»: караоке-титры + плашки-заголовки (lower third) ──
+
+function assTime(sec: number): string {
+  const cs = Math.max(0, Math.round(sec * 100));
+  const h = Math.floor(cs / 360000);
+  const m = Math.floor((cs % 360000) / 6000);
+  const s = Math.floor((cs % 6000) / 100);
+  const c = cs % 100;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(c).padStart(2, '0')}`;
+}
+
+/** Экранирование текста для ASS: фигурные скобки открывают override-блоки, \n → \N. */
+function assEsc(text: string): string {
+  return String(text).replace(/\{/g, '(').replace(/\}/g, ')').replace(/\r?\n/g, '\\N').trim();
+}
+
+/**
+ * Построить ASS с двумя стилями: Cap — титры реплик (белый с тёмной обводкой, снизу по центру),
+ * LT — плашка-заголовок в фирменном индиго (BorderStyle=3 = непрозрачный бокс), слева снизу.
+ * capMarginV подбирается по раскладке (в 9:16-дуэте титры сидят НАД лентой ведущих).
+ */
+export function buildNewsAss(opts: {
+  W: number; H: number; capMarginV: number;
+  captions: CaptionLine[];
+  lower: Array<{ t0: number; t1: number; text: string }>;
+}): string {
+  const vertical = opts.H > opts.W;
+  const capFs = vertical ? 58 : 54;
+  const ltFs = vertical ? 44 : 46;
+  // Цвета ASS = &HAABBGGRR. Индиго #4F46E5 → BBGGRR = E5464F (акцент дизайн-системы).
+  const head = [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${opts.W}`,
+    `PlayResY: ${opts.H}`,
+    'WrapStyle: 0',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: Cap,DejaVu Sans,${capFs},&H00FFFFFF,&H00FFFFFF,&H00141414,&H7A000000,-1,0,0,0,100,100,0,0,1,3,1,2,60,60,${Math.round(opts.capMarginV)},1`,
+    `Style: LT,DejaVu Sans,${ltFs},&H00FFFFFF,&H00FFFFFF,&H00E5464F,&H00E5464F,-1,0,0,0,100,100,0,0,3,14,0,1,56,56,56,1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+  ];
+  const ev: string[] = [];
+  for (const c of opts.captions) {
+    if (!(c.t1 > c.t0) || !String(c.text || '').trim()) continue;
+    ev.push(`Dialogue: 0,${assTime(c.t0)},${assTime(c.t1)},Cap,,0,0,0,,${assEsc(c.text)}`);
+  }
+  for (const l of opts.lower) {
+    if (!(l.t1 > l.t0) || !String(l.text || '').trim()) continue;
+    ev.push(`Dialogue: 1,${assTime(l.t0)},${assTime(l.t1)},LT,,0,0,0,,${assEsc(l.text).toUpperCase()}`);
+  }
+  return head.concat(ev).join('\n') + '\n';
+}
+
+/** Путь для фильтра subtitles: прямые слэши + экранированные ':' ',' '\''. */
+function subFilterPath(p: string): string {
+  return p.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/,/g, '\\,').replace(/'/g, "\\'");
+}
+
+/** Ken Burns по фото: пре-скейл ×2 (анти-дёргание сабпиксельного зума) + zoompan до кадра W×H.
+ *  dir: наезд (in) или отъезд (out); zoom 1.0↔1.12 за всю длительность показа. */
+function kenBurnsChain(W: number, H: number, durSec: number, dir: 'kb_in' | 'kb_out'): string {
+  const frames = Math.max(2, Math.round(durSec * 30) + 1);
+  const inc = (0.12 / frames).toFixed(6);
+  const z = dir === 'kb_in'
+    ? `min(zoom+${inc},1.12)`
+    : `if(lte(on,1),1.12,max(zoom-${inc},1.0))`;
+  return `scale=${W * 2}:${H * 2}:force_original_aspect_ratio=increase,crop=${W * 2}:${H * 2},setsar=1,`
+    + `zoompan=z='${z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${W}x${H}:fps=30`;
+}
 
 /** Собрать ролик «на студии»: зелёные головы (chroma-key) поверх clean plate.
  *  ПРИНЦИП (решение юзера): аспект ВЫХОДА = аспект исходного фото студии — 16:9 фото →
@@ -211,6 +292,8 @@ export async function composeOnStudio(opts: {
   studioUrl: string; headA: string; headB?: string | null;
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
   overlays?: StudioOverlay[];
+  /** Титры реплик (стиль «Новости») — вжигаются вместе с плашками overlays[].title. */
+  captions?: CaptionLine[] | null;
   // Рамки ведущих (доли кадра исходного фото) — ДЕТЕРМИНИРОВАННАЯ обрезка по сторонам:
   // каждый ведущий берётся ТОЛЬКО со своей половины (разрез в промежутке между рамками),
   // поэтому если в вырезке остался второй человек — он отсекается тут, без зависимости от Gemini.
@@ -234,7 +317,7 @@ export async function composeOnStudio(opts: {
   const key = opts.chromaColor || '0x00FF00';
   const ovs = (opts.overlays || [])
     .filter((o) => o && typeof o.url === 'string' && o.url && Number.isFinite(o.tStart) && Number.isFinite(o.dur) && o.dur > 0.1)
-    .slice(0, 12);
+    .slice(0, 24);
 
   // Канвас = аспект фото студии (однотипный, предсказуемый размер выхода).
   // Фолбэк — аспект головы (она рендерится в формате фото): не даём канвасу «уехать» в 9:16.
@@ -249,9 +332,12 @@ export async function composeOnStudio(opts: {
   if (opts.musicUrl) { inputs.push('-i', opts.musicUrl); musicIdx = idx++; }
   const ovStart = idx;
   for (const o of ovs) {
-    // видео нельзя подавать с -loop (опция image2-демаксера); картинку зацикливаем
-    if (o.video) inputs.push('-i', o.url);
-    else inputs.push('-loop', '1', '-i', o.url);
+    // видео нельзя подавать с -loop (опция image2-демаксера); картинку зацикливаем.
+    // Вход обрезаем по длительности показа (+запас): иначе Ken Burns/декодирование
+    // молотит весь ролик ради нескольких секунд показа.
+    const dcap = (Math.max(0.2, o.dur) + 0.6).toFixed(3);
+    if (o.video) inputs.push('-t', dcap, '-i', o.url);
+    else inputs.push('-loop', '1', '-t', dcap, '-i', o.url);
     idx++;
   }
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
@@ -305,17 +391,50 @@ export async function composeOnStudio(opts: {
     }
     lastV = `hv${k}`;
   });
-  // Медиа реплик: карточка по центру, видима в свой интервал (как в воркерном таймлайне).
+  // Медиа реплик: 'full' — во весь кадр (новостной b-roll: фото с Ken Burns, видео фрагментом),
+  // 'card' — карточка 62% по центру (как раньше). Вход/выход — мягкие альфа-фейды.
+  // Все оверлеи собираются в ЛОКАЛЬНОМ времени (pts от 0) и сдвигаются setpts на t0 —
+  // так фейды и Ken Burns не зависят от позиции на таймлайне; enable прячет края.
   const SIDE = Math.round(Math.min(W, H) * 0.62);
+  const FADE = 0.4;
+  let kbFlip = 0;
   ovs.forEach((o, k) => {
     const i = ovStart + k;
-    const t0 = Math.max(0, o.tStart); const t1 = t0 + o.dur;
-    // видео сдвигаем по времени, чтобы играло с начала своего интервала; картинка статична
-    const pts = o.video ? `,setpts=PTS-STARTPTS+${t0.toFixed(3)}/TB` : '';
-    fc += `[${i}:v]scale=${SIDE}:${SIDE}:force_original_aspect_ratio=increase,crop=${SIDE}:${SIDE},setsar=1,fps=30${pts}[ov${k}];`
-      + `[${lastV}][ov${k}]overlay=(W-w)/2:(H-h)/2:enable='between(t\,${t0.toFixed(3)}\,${t1.toFixed(3)})'[vo${k}];`;
+    const t0 = Math.max(0, o.tStart); const dur = Math.max(0.2, o.dur); const t1 = t0 + dur;
+    const full = o.mode === 'full';
+    const fade = `format=yuva420p,fade=in:st=0:d=${FADE}:alpha=1,fade=out:st=${Math.max(0, dur - FADE).toFixed(3)}:d=${FADE}:alpha=1`;
+    const coverFull = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30`;
+    const coverCard = `scale=${SIDE}:${SIDE}:force_original_aspect_ratio=increase,crop=${SIDE}:${SIDE},setsar=1,fps=30`;
+    let chain: string;
+    if (!o.video && full && o.fx !== 'none') {
+      // фото во весь кадр = Ken Burns (наезд/отъезд чередуются, если направление не задано)
+      const dir: 'kb_in' | 'kb_out' = o.fx === 'kb_out' ? 'kb_out' : o.fx === 'kb_in' ? 'kb_in' : (kbFlip++ % 2 === 0 ? 'kb_in' : 'kb_out');
+      chain = `${kenBurnsChain(W, H, dur, dir)},${fade}`;
+    } else {
+      chain = `${full ? coverFull : coverCard},setpts=PTS-STARTPTS,${fade}`;
+    }
+    chain += `,setpts=PTS+${t0.toFixed(3)}/TB`;
+    const pos = full ? 'overlay=0:0' : 'overlay=(W-w)/2:(H-h)/2';
+    fc += `[${i}:v]${chain}[ov${k}];`
+      + `[${lastV}][ov${k}]${pos}:enable='between(t\,${t0.toFixed(3)}\,${t1.toFixed(3)})'[vo${k}];`;
     lastV = `vo${k}`;
   });
+  // Стиль «Новости»: титры реплик + индиго-плашки заголовков (lower third) — вжигаются libass.
+  const caps = (opts.captions || [])
+    .filter((c) => c && Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && String(c.text || '').trim())
+    .slice(0, 400);
+  const lower = ovs
+    .filter((o) => o.title && String(o.title).trim())
+    .map((o) => ({ t0: Math.max(0, o.tStart), t1: Math.max(0, o.tStart) + Math.max(0.2, o.dur), text: String(o.title) }));
+  if (caps.length || lower.length) {
+    // в 9:16-дуэте низ кадра занят лентой ведущих — титры поднимаем над ней
+    const capMarginV = H > W ? (heads.length === 2 ? 620 : 320) : 90;
+    const ass = buildNewsAss({ W, H, capMarginV, captions: caps, lower });
+    const assPath = path.join(RENDERS_DIR, `podass-${randomUUID().slice(0, 8)}.ass`);
+    fs.writeFileSync(assPath, ass, 'utf8');
+    fc += `[${lastV}]subtitles=filename='${subFilterPath(assPath)}'[vsub];`;
+    lastV = 'vsub';
+  }
   fc += `[${lastV}]null[v];`;
 
   let speechLabel: string;

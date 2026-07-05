@@ -128,7 +128,8 @@ const POD_ANIMS: { v: PodAnim; label: string }[] = [
   { v: 'slide-up', label: '↑ Снизу' }, { v: 'zoom', label: 'Зум' }, { v: 'fade', label: 'Проявление' },
 ];
 // Реплика: спикер + текст (+ таймкоды) + опц. картинка + tStart (позиция на таймлайне Фазы 2).
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number; gesture?: number }
+// mode/title — «Иллюстратор»: план показа медиа (карточка/во весь кадр) и заголовок индиго-плашки.
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number; gesture?: number; mode?: 'card' | 'full'; title?: string }
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
 type PodAvatarProvider = 'heygen' | 'did' | 'gpu' | 'omni';
@@ -170,12 +171,15 @@ interface PodcastSpec {
   studioPlace?: { A?: { x: number; y: number; w: number; h: number }; B?: { x: number; y: number; w: number; h: number } } | null;
   // GPU-студия: «Реалистичная студия» — жестикулирует ТОЛЬКО говорящий, слушающий спокоен (по таймкодам диалога).
   realisticStudio?: boolean;
+  // Стиль «Новости»: вжигать титры реплик + плашки-заголовки в студийную склейку.
+  newsStyle?: boolean;
 }
 const POD_DEFAULT: PodcastSpec = {
   hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A', gestureIntensity: 70 },
   hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B', gestureIntensity: 45 },
   source: 'gen', brief: '', dialogue: [],
   realisticStudio: true,
+  newsStyle: true,
   recordingUrl: null, recordingName: null,
   cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
   groupPhotoUrl: null, groupPhotoName: null, faces: [],
@@ -480,7 +484,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const omniDragRef = useRef<null | { id: string; handle: 'move' | 'start' | 'end'; s0: number; e0: number; x0: number }>(null);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
-  const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply'>(null);
+  const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply' | 'illustrate'>(null);
+  const [illusNote, setIllusNote] = useState<string | null>(null); // заметка «Иллюстратора» (автоподбор видеоряда)
   const [podNote, setPodNote] = useState<string | null>(null);
   const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
   const [animNote, setAnimNote] = useState<string | null>(null);
@@ -1104,6 +1109,38 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     finally { setPodBusy(null); }
   };
 
+  /** «Иллюстратор»: автоподбор видеоряда (b-roll) из Галереи под реплики. Заполняет
+   *  dialogue[].image/anim/mode/title — ручные правки после этого работают как раньше. */
+  const runIllustrate = async () => {
+    if (podBusy) return;
+    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setIllusNote('Сначала нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
+    setPodBusy('illustrate'); setIllusNote(null);
+    try {
+      const body = {
+        dialogue: pod.dialogue.map((l, i) => ({ idx: i, speaker: l.speaker, text: l.text, dur: lineDur(l) })),
+        brief: pod.brief || '',
+      };
+      const res = await fetch('/api/render/podcast/illustrate', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+      const d = await res.json();
+      if (!res.ok) { setIllusNote(d?.error || 'Автоподбор не удался.'); return; }
+      const byIdx = new Map<number, any>((Array.isArray(d.lines) ? d.lines : []).map((s: any) => [Number(s.idx), s]));
+      if (!byIdx.size) { setIllusNote(d?.note || 'Подходящих материалов не нашлось.'); return; }
+      podMutate((p) => ({
+        ...p,
+        dialogue: p.dialogue.map((l, j) => {
+          const s = byIdx.get(j);
+          if (!s || !s.image) return l;
+          return { ...l, image: String(s.image), imageName: s.imageName ? String(s.imageName) : undefined,
+            anim: (POD_ANIMS.some((a) => a.v === s.anim) ? s.anim : 'fade') as PodAnim,
+            mode: s.mode === 'card' ? 'card' as const : 'full' as const,
+            title: s.title ? String(s.title) : undefined };
+        }),
+      }));
+      setIllusNote(d.note || 'Иллюстрации подобраны. Проверьте реплики — план и плашку можно поменять у каждой.');
+    } catch { setIllusNote('Ошибка сети при автоподборе.'); }
+    finally { setPodBusy(null); }
+  };
+
   /** Разобрать текст/JSON в реплики двух ведущих (для «Загрузить диалог»). */
   const parseDialogueInput = (raw: string): PodLine[] => {
     const s = (raw || '').trim();
@@ -1303,11 +1340,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
       if (onStudio) {
         body.studioUrl = bg;
-        // медиа реплик (картинки/видео) — показываются по своим интервалам поверх сцены
+        // медиа реплик (картинки/видео) — по своим интервалам: 'full' = во весь кадр
+        // (фото с Ken Burns), 'card' = карточка по центру; title → индиго-плашка
         body.overlays = pod.dialogue
-          .map((l, i, arr) => l.image ? { url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image) } : null)
+          .map((l, i, arr) => l.image ? {
+            url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image),
+            mode: l.mode === 'full' ? 'full' : 'card',
+            title: l.mode === 'full' && l.title ? l.title : undefined,
+          } : null)
           .filter(Boolean)
-          .slice(0, 12);
+          .slice(0, 24);
+        // Стиль «Новости»: титры реплик вжигаются в склейку (тайминги из таймлайна диалога)
+        if (pod.newsStyle !== false) {
+          body.captions = pod.dialogue
+            .map((l, i, arr) => (l.text || '').trim() ? { t0: lineT(l, i, arr), t1: lineT(l, i, arr) + lineDur(l), text: l.text.trim() } : null)
+            .filter(Boolean);
+        }
         // Рамки ведущих → детерминированная обрезка в склейке (каждый со своей стороны):
         // даже если в вырезке остался второй человек, он отсекается. Только когда обе головы.
         if (ready.length >= 2) {
@@ -3878,6 +3926,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 {/* Реплики — свёрнуты, открываются; клик по клипу подсвечивает */}
                 {pod.dialogue.length > 0 && (
                   <div className="space-y-1.5">
+                    {/* «Иллюстратор»: авто-видеоряд из Галереи под смысл реплик (как перебивки в новостях) */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button onClick={runIllustrate} disabled={podBusy === 'illustrate'}
+                        title="Автоподбор видеоряда из Галереи (референсы, «Из анализа», скачанные тренды) под смысл каждой реплики: фото — во весь кадр с движением Ken Burns, видео — фрагментами. Плашки и план можно поправить у каждой реплики."
+                        className="flex-1 min-w-[190px] inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-700"
+                        style={{ background: 'rgba(99,102,241,0.14)', color: '#6366f1', border: '1px solid #6366f1', cursor: 'pointer' }}>
+                        {podBusy === 'illustrate' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Иллюстрации: авто-видеоряд
+                      </button>
+                      <label className="inline-flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+                        title="Вжигать в студийную склейку титры реплик и индиго-плашки заголовков (стиль новостей)">
+                        <input type="checkbox" checked={pod.newsStyle !== false} onChange={(e) => podMutate((p) => ({ ...p, newsStyle: e.target.checked }))} /> Титры + плашки
+                      </label>
+                    </div>
+                    {illusNote && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{illusNote}</p>}
                     <button onClick={() => setDialogOpen((o) => !o)} className="w-full flex items-center justify-between text-[11px] font-600 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
                       <span>Реплики ({pod.dialogue.length}) — открыть/свернуть</span>
                       <span>{dialogOpen ? '▾' : '▸'}</span>
@@ -3927,6 +3989,23 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                               </div>
                             )}
                             {l.image && (
+                              <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
+                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр:</span>
+                                {([['full', 'Во весь кадр'], ['card', 'Карточка']] as ['full' | 'card', string][]).map(([m, lbl]) => { const sel = (l.mode || 'card') === m; return (
+                                  <button key={m} onClick={() => podLineMutate(i, { mode: m })}
+                                    title={m === 'full' ? 'Новостной b-roll: фото — с движением Ken Burns, видео — фрагментом во весь кадр' : 'Карточка поверх сцены (62% кадра)'}
+                                    className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#6366f1' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#6366f1' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                                ); })}
+                              </div>
+                            )}
+                            {l.image && l.mode === 'full' && (
+                              <div className="flex items-center gap-1 mt-1" style={{ paddingLeft: 34 }}>
+                                <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }} title="Заголовок индиго-плашки (lower third) на время показа кадра. Пусто — без плашки.">Плашка:</span>
+                                <input value={l.title || ''} onChange={(e) => podLineMutate(i, { title: e.target.value.slice(0, 60) })} placeholder="заголовок 2–5 слов (необязательно)"
+                                  className="flex-1 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                              </div>
+                            )}
+                            {l.image && (l.mode || 'card') === 'card' && (
                               <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
                                 <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
                                 {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a.v; return (

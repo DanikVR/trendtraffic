@@ -810,6 +810,21 @@ const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_tier_check;
           ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_tier_check CHECK (tier IN ('premium', 'plus', 'standard', 'standard_yearly', 'enterprise', 'trial', 'monthly', 'annual'))`,
   },
+  // ============================================================================
+  //  asset_captions — кэш коротких vision-описаний медиа («Иллюстратор» подкаста):
+  //  описание картинки генерится Gemini ОДИН раз, дальше берётся отсюда.
+  //  Ключ (tenant, url) — и ассеты Галереи, и тренды адресуются URL-ом файла.
+  // ============================================================================
+  {
+    name: 'asset_captions.create',
+    sql: `CREATE TABLE IF NOT EXISTS asset_captions (
+      tenant_id VARCHAR(64) NOT NULL,
+      url TEXT NOT NULL,
+      caption TEXT NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (tenant_id, url)
+    )`,
+  },
 ];
 
 export async function runStartupMigrations(): Promise<void> {
