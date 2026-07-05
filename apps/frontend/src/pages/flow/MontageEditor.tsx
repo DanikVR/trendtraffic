@@ -4025,11 +4025,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       {av.provider === 'omni' && (
                         <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{pod.groupPhotoUrl ? 'Есть общее фото студии → Omni оживит ВСЮ сцену одним клипом (оба ведущих в кадре, ИИ-голос), затем правь чатом.' : 'Нет общего фото — Omni оживит каждого ведущего отдельным клипом (2 лица в одном кадре модель блокирует). Загрузи общее фото студии (студия лиц) для цельной сцены.'} Реплики берутся из диалога.</p>
                       )}
-                      <button onClick={runAnimate} disabled={animBusy}
-                        className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                        style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                        {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? (av.provider === 'omni' ? 'Omni оживляет…' : 'Рендер идёт…') : (av.provider === 'omni' ? 'Оживить ведущих (Omni)' : 'Анимировать ведущих (сплит-скрин)')}
-                      </button>
+                      {/* Розовая (классический сплит-скрин по фото хостов) — только облачные провайдеры;
+                          при «Домашнем GPU» единственный путь — зелёная GPU-студия, вторая кнопка путала. */}
+                      {av.provider !== 'gpu' && (
+                        <button onClick={runAnimate} disabled={animBusy}
+                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                          style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
+                          {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? (av.provider === 'omni' ? 'Omni оживляет…' : 'Рендер идёт…') : (av.provider === 'omni' ? 'Оживить ведущих (Omni)' : 'Анимировать ведущих (сплит-скрин)')}
+                        </button>
+                      )}
                       {av.provider === 'heygen' && pod.groupPhotoUrl && (
                         <>
                           <button onClick={runHeyGenStudio} disabled={animBusy}
@@ -4040,7 +4044,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                           <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии»: вырезаю обоих ведущих из общего фото → HeyGen оживляет (Avatar IV, тело/руки) на зелёном → накладываю на фон студии. Голос — по выбору выше.</p>
                         </>
                       )}
-                      {av.provider === 'gpu' && pod.groupPhotoUrl && (
+                      {/* Без groupPhotoUrl кнопку НЕ прячем (розовой при gpu больше нет — иначе
+                          не осталось бы ни одной): клик честно попросит общее фото студии. */}
+                      {av.provider === 'gpu' && (
                         <>
                           <button onClick={() => podMutate((p) => ({ ...p, realisticStudio: !(p.realisticStudio ?? true) }))}
                             title="Жестикулирует ТОЛЬКО тот, кто говорит; слушающий держит руки спокойно. Автоматически по таймкодам диалога — ручных настроек не нужно."
