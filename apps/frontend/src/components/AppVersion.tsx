@@ -1489,7 +1489,14 @@
  *         из общего фото → EchoMimic на домашнем GPU → головы на зелёном → «Собрать НА студии».
  *         Бэкенд-нота заглушки переписана честно (для старых бандлов/прямых вызовов API).
  *         MontageEditor.tsx (runAnimate), render/router.ts (/podcast/animate, ветка gpu). */
-export const APP_VERSION = '1.6.81';
+/* 1.6.82 — GPU-студия переживает спайки Gemini. По прогону юзера: вырезка ведущих падала с 503
+ *         «high demand» (ретрай 3×0.9с сгорал внутри спайка) и «fetch failed» (сетевые сбои вообще
+ *         не считались транзиентными). (1) image_gen.withRetry: 5 попыток, бэкофф 1.8→14.4с+джиттер
+ *         (~30с суммарно), isTransientGenError понимает 429/5xx и сетевые обрывы undici — лечит ВСЕ
+ *         вызовы картинок (вырезка/clean plate/ракурсы/storyboard). (2) gpu-studio (фоновый джоб):
+ *         поверх — ещё 2 попытки вырезки с паузами 20с/40с (переживает спайк ~2.5 мин). (3)
+ *         fetchImageBase64: 3 попытки самофетча /uploads. image_gen.ts, render/router.ts. */
+export const APP_VERSION = '1.6.82';
 
 export function AppVersion() {
   return (

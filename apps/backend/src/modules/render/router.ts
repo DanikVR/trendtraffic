@@ -16,7 +16,7 @@ import { getRenderGpuTarget, getRenderWorkerUrl, getRenderGpuWorkerUrl } from '.
 import { getFlow } from '../flows/service.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
-import { generateImage } from '../quest_flow/image_gen.js';
+import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset } from '../media/assets.js';
 import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
 import { generatePodcastDialogue } from './director.js';
@@ -73,12 +73,18 @@ function anglePrompt(preset: string, custom: string): string {
     + (custom ? ` Дополнительно: ${custom}.` : '');
 }
 async function fetchImageBase64(url: string): Promise<{ base64: string; mime: string } | null> {
-  try {
-    const r = await fetch(url);
-    if (!r.ok) return null;
-    const mime = r.headers.get('content-type') || 'image/jpeg';
-    return { base64: Buffer.from(await r.arrayBuffer()).toString('base64'), mime };
-  } catch { return null; }
+  // 3 попытки: сетевой чих на самофетче /uploads ронял весь рендер («не удалось загрузить фото»).
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) {
+        const mime = r.headers.get('content-type') || 'image/jpeg';
+        return { base64: Buffer.from(await r.arrayBuffer()).toString('base64'), mime };
+      }
+    } catch { /* транзиентный сбой — ретрай ниже */ }
+    if (attempt < 3) await new Promise((res) => setTimeout(res, 700 * attempt));
+  }
+  return null;
 }
 
 /** Пресеты подачи/эмоции из UI → эмоция голоса HeyGen (для голосов с emotion_support). */
@@ -1046,7 +1052,17 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
             if (otherBox) { const og = await greenBgRatio(c.path || abs(c.url), otherBox); if (og != null && og < 0.5) return 'в кадре остался второй человек'; }
             return null;
           };
-          let cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false);
+          // Джоб фоновый (минуты GPU впереди) → транзиентный сбой Gemini (503 «high demand» /
+          // сетевой обрыв) не роняем сразу: поверх внутреннего ретрая generateImage (~30с) ждём
+          // спайк подольше (20с/40с) и пробуем ещё. Нетранзиентные ошибки летят сразу.
+          let cut: { url: string; path: string } | null = null;
+          for (let att = 1; !cut; att++) {
+            try { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false); }
+            catch (e) {
+              if (att < 3 && isTransientGenError(e)) { await new Promise((r) => setTimeout(r, 20_000 * att)); continue; }
+              throw e;
+            }
+          }
           let problem = await cutProblem(cut);
           if (problem) { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, true); problem = await cutProblem(cut); if (problem) throw new Error(`вырезка ведущего ${spk}: ${problem}`); }
           // 3) анимация на домашнем GPU. «Реалистичная студия» (по умолч.): жестикулирует ТОЛЬКО

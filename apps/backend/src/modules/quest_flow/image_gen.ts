@@ -71,21 +71,31 @@ export function saveGeneratedImage(base64: string, mime: string): GeneratedImage
   };
 }
 
-/** Признак временной перегрузки модели (503/429) — повторяем. */
-function isTransient(err: any): boolean {
+/** Признак ВРЕМЕННОЙ ошибки модели/сети — такие повторяем: перегрузка (503 «high demand»/429),
+ *  транзиентные 5xx Google и сетевые сбои fetch/undici («fetch failed», обрывы соединения).
+ *  Экспортирован: фоновые пайплайны (GPU-студия) поверх него строят свой длинный ретрай. */
+export function isTransientGenError(err: any): boolean {
+  const code = Number((err as any)?.status ?? (err as any)?.code);
+  if ([429, 500, 502, 503, 504].includes(code)) return true;
   const msg = String(err?.message || err || '');
-  return /\b(503|429)\b/.test(msg) || /UNAVAILABLE|high demand|overloaded|rate.?limit|RESOURCE_EXHAUSTED/i.test(msg);
+  return /\b(429|500|502|503|504)\b/.test(msg)
+    || /UNAVAILABLE|high demand|overloaded|rate.?limit|RESOURCE_EXHAUSTED|INTERNAL|DEADLINE_EXCEEDED/i.test(msg)
+    || /fetch failed|network|socket|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|EPIPE|UND_ERR|terminated/i.test(msg);
 }
 
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+/** Ретрай транзиентных ошибок. Спайки «high demand» живут секунды–десятки секунд, поэтому бэкофф
+ *  растёт экспоненциально (≈1.8с→3.6с→7.2с→14.4с + джиттер, суммарно ~30с) — старые 0.9с/1.8с
+ *  сгорали за 3 секунды внутри одного спайка и ошибка уходила пользователю. */
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5): Promise<T> {
   let lastErr: any;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (err) {
       lastErr = err;
-      if (attempt < maxAttempts && isTransient(err)) {
-        await new Promise((r) => setTimeout(r, 900 * attempt));
+      if (attempt < maxAttempts && isTransientGenError(err)) {
+        const delay = Math.min(15_000, 1800 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 1000);
+        await new Promise((r) => setTimeout(r, delay));
         continue;
       }
       throw err;
