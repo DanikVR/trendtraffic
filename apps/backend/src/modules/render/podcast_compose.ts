@@ -67,7 +67,7 @@ export async function composeHeads(opts: {
 
   const HALF = 540; const H = 1920;
   // tpad клонирует последний кадр до target — короткая голова не исчезает, обе видны всю длину.
-  const pad = `scale=${HALF}:${H}:force_original_aspect_ratio=decrease,pad=${HALF}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
+  const pad = `scale=${HALF}:${H}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${HALF}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${T}`;
   let fc = `[0:v]${pad}[la];[1:v]${pad}[lb];[la][lb]hstack=inputs=2[v];`;
 
   // Речь: исходная запись (правильный тайминг) или микс аудио обеих голов.
@@ -90,9 +90,9 @@ export async function composeHeads(opts: {
   await ffmpeg([
     '-y', ...inputs, '-filter_complex', fc,
     '-map', '[v]', '-map', mapAudio, '-t', T,
-    // -crf 18: дефолтный crf 23 при veryfast заметно мылил финал и добавлял блочность у движения
-    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', outPath,
-  ]);
+    // -crf 17 + medium: как в composeOnStudio — veryfast мылил головы (см. комментарий там)
+    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-c:a', 'aac', outPath,
+  ], Math.max(600_000, Math.min(5_400_000, Math.round(target * 9000) + 120_000)));
   return `/uploads/renders/${out}`;
 }
 
@@ -106,7 +106,7 @@ export async function cropImageTo916(input: string): Promise<string> {
   const outPath = path.join(RENDERS_DIR, out);
   await ffmpeg([
     '-y', '-i', input,
-    '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1',
+    '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1',
     '-frames:v', '1', outPath,
   ], 120_000);
   return `/uploads/renders/${out}`;
@@ -164,7 +164,7 @@ export async function cropImageToRect(input: string, r: NormRect): Promise<strin
   const out = `podwin-${randomUUID().slice(0, 8)}.png`;
   const outPath = path.join(RENDERS_DIR, out);
   const vf = `crop=floor(iw*${r.w.toFixed(5)}/2)*2:floor(ih*${r.h.toFixed(5)}/2)*2:iw*${r.x.toFixed(5)}:ih*${r.y.toFixed(5)},`
-    + 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1';
+    + 'scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1';
   await ffmpeg(['-y', '-i', input, '-vf', vf, '-frames:v', '1', outPath], 120_000);
   return `/uploads/renders/${out}`;
 }
@@ -278,7 +278,7 @@ function kenBurnsChain(W: number, H: number, durSec: number, dir: 'kb_in' | 'kb_
   const z = dir === 'kb_in'
     ? `min(zoom+${inc},1.12)`
     : `if(lte(on,1),1.12,max(zoom-${inc},1.0))`;
-  return `scale=${W * 2}:${H * 2}:force_original_aspect_ratio=increase,crop=${W * 2}:${H * 2},setsar=1,`
+  return `scale=${W * 2}:${H * 2}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W * 2}:${H * 2},setsar=1,`
     + `zoompan=z='${z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${W}x${H}:fps=30`;
 }
 
@@ -343,7 +343,7 @@ export async function composeOnStudio(opts: {
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
   // Фон clean plate — тот же аспект, что канвас → scale+crop без потерь композиции.
-  const bg = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30[bg];`;
+  const bg = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30[bg];`;
   // Chroma-key + despill + мягкий край альфа-маски.
   // similarity=0.18 (было 0.36 — БАГ: съедало сам объект). Проверено на синтетике (ffmpeg 6.1):
   // при 0.36 пиксели с зелёным ПОДСВЕТОМ (spill на тёмном костюме, полутона кожи) попадали под
@@ -357,7 +357,7 @@ export async function composeOnStudio(opts: {
   // совпал с канвасом (HeyGen отрендерил в другом формате), кроп раньше отрезал человека и
   // оставлял одну зелёнку — голова «исчезала» из ролика. Letterbox прозрачный (black@0).
   const keyf = (i: number, label: string) =>
-    `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${label}];`;
+    `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${label}];`;
   // РАЗМЕЩЕНИЕ двух ведущих ПО СТОРОНАМ. Вырезка (v1.6.74) = человек ПО ЦЕНТРУ квадрата, поэтому
   // старый «разрез по центру» давал нахлёст (пол-женщины+пол-мужчины в середине). Теперь каждую
   // голову масштабируем в квадрат и кладём A/B в ЛЕВУЮ/ПРАВУЮ половину — люди разнесены, не режутся.
@@ -403,8 +403,8 @@ export async function composeOnStudio(opts: {
     const t0 = Math.max(0, o.tStart); const dur = Math.max(0.2, o.dur); const t1 = t0 + dur;
     const full = o.mode === 'full';
     const fade = `format=yuva420p,fade=in:st=0:d=${FADE}:alpha=1,fade=out:st=${Math.max(0, dur - FADE).toFixed(3)}:d=${FADE}:alpha=1`;
-    const coverFull = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30`;
-    const coverCard = `scale=${SIDE}:${SIDE}:force_original_aspect_ratio=increase,crop=${SIDE}:${SIDE},setsar=1,fps=30`;
+    const coverFull = `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30`;
+    const coverCard = `scale=${SIDE}:${SIDE}:force_original_aspect_ratio=increase:flags=lanczos,crop=${SIDE}:${SIDE},setsar=1,fps=30`;
     let chain: string;
     if (!o.video && full && o.fx !== 'none') {
       // фото во весь кадр = Ken Burns (наезд/отъезд чередуются, если направление не задано)
@@ -450,14 +450,15 @@ export async function composeOnStudio(opts: {
 
   const out = `podstudio-${randomUUID().slice(0, 8)}.mp4`;
   const outPath = path.join(RENDERS_DIR, out);
-  // Таймаут масштабируем по длине: chromakey+оверлеи на CPU могут идти медленнее реального
-  // времени. ~4× длительности + 2 мин запаса (для 15-мин ролика ≈ 55 мин), не меньше 10 мин.
-  const composeTimeout = Math.max(600_000, Math.min(3_300_000, Math.round(target * 4000) + 120_000));
+  // Таймаут масштабируем по длине: chromakey+оверлеи+medium-энкод на CPU идут медленнее
+  // реального времени. ~9× длительности + 2 мин запаса, не меньше 10 мин, потолок 90 мин.
+  const composeTimeout = Math.max(600_000, Math.min(5_400_000, Math.round(target * 9000) + 120_000));
   await ffmpeg([
     '-y', ...inputs, '-filter_complex', fc,
     '-map', '[v]', '-map', mapAudio, '-t', T,
-    // -crf 18: дефолтный crf 23 при veryfast заметно мылил финал и добавлял блочность у движения
-    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', outPath,
+    // -crf 17 + preset medium: у veryfast слабее психовизуальная оптимизация — головы EchoMimic
+    // (диффузия, апскейл 768→~960) теряли остатки микродетали и выходили «пластиковыми».
+    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-c:a', 'aac', outPath,
   ], composeTimeout);
   return `/uploads/renders/${out}`;
 }
