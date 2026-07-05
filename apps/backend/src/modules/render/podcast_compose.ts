@@ -90,7 +90,8 @@ export async function composeHeads(opts: {
   await ffmpeg([
     '-y', ...inputs, '-filter_complex', fc,
     '-map', '[v]', '-map', mapAudio, '-t', T,
-    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', outPath,
+    // -crf 18: дефолтный crf 23 при veryfast заметно мылил финал и добавлял блочность у движения
+    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', outPath,
   ]);
   return `/uploads/renders/${out}`;
 }
@@ -336,7 +337,8 @@ export async function composeOnStudio(opts: {
   await ffmpeg([
     '-y', ...inputs, '-filter_complex', fc,
     '-map', '[v]', '-map', mapAudio, '-t', T,
-    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', outPath,
+    // -crf 18: дефолтный crf 23 при veryfast заметно мылил финал и добавлял блочность у движения
+    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', outPath,
   ], composeTimeout);
   return `/uploads/renders/${out}`;
 }
