@@ -1570,7 +1570,18 @@
  *         перемотка тягой + время + mute), корректен в тёмной И светлой теме; заменил нативный
  *         <audio controls> в Галерее и используется в блоке Hotebook. MontageEditor.tsx,
  *         GalleryPage.tsx, components/AudioPlayer.tsx. */
-/* 1.6.92 — Hotebook: в источники добавляется ВЕСЬ анализ видео, не огрызок. Диагноз по вопросу
+/* 1.6.92 — Тренды → Аналитика (iframe-расширение): (1) ТЁМНАЯ ТЕМА — панель зеркалит тему
+ *         приложения (localStorage vibevox_theme → <html>.dark в iframe), dark:-утилиты
+ *         бандла переносятся на лету с @media (prefers-color-scheme) на класс .dark
+ *         (CSSOM: копия правил с префиксом «.dark », исходный медиа-блок → 'not all');
+ *         смена темы подхватывается storage-событием без перезагрузки. (2) АВТО-АНАЛИЗ —
+ *         после «Анализировать» (set-url от родителя) custom.js сам открывает вкладку
+ *         Analysis и жмёт «Analyze Viral Factors» / «Analyze Video Content» / «Run Full
+ *         Analysis» (для аккаунтов «Analyze Profile») — по одному разу на URL; остаёмся
+ *         на вкладке Analysis, т.к. Viral/Video Content держат результат в локальном
+ *         стейте вкладки (Full Analysis живёт в глобальном сторе и переживает уход).
+ *         Только public/social-ext/custom.js — бандл расширения не тронут. */
+/* 1.6.93 — Hotebook: в источники добавляется ВЕСЬ анализ видео, не огрызок. Диагноз по вопросу
  *         юзера: при «Добавить в галерею» видео + анализ уже сохраняются (video_analyses,
  *         привязка к ассету) — но кнопка «＋ анализ» (v1.6.91) читала НЕсуществующие поля
  *         (dna.meta.topic/hooks/blocks) → добавляла почти пустой текст. Теперь hbBuildAnalysisText
@@ -1580,7 +1591,7 @@
  *         вкладке «Аналитика». Новая кнопка «видео + анализ» на файлах «Из анализа» добавляет
  *         одним кликом и видео, и его разбор (двумя источниками); «анализ» — только текст.
  *         MontageEditor.tsx (hbBuildAnalysisText/hbAddBoth/hbFetchAnalysisText). */
-export const APP_VERSION = '1.6.92';
+export const APP_VERSION = '1.6.93';
 
 export function AppVersion() {
   return (

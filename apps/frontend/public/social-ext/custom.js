@@ -17,6 +17,12 @@
  *  • «Quality variants» (IG/X): прячем длинный URL-текст строки и нативную копию,
  *    добавляем тройку кнопок: открыть по ссылке · скачать (через медиа-прокси
  *    родителя) · скопировать ссылку.
+ *  • Тема: зеркалим тему приложения (localStorage['vibevox_theme']) на <html>.dark
+ *    и переводим dark:-утилиты бандла с @media (prefers-color-scheme) на класс .dark
+ *    (иначе расширение слушает тему ОС и в тёмном приложении остаётся белым).
+ *  • Авто-анализ: после «Анализировать» (set-url от родителя) сами открываем
+ *    вкладку Analysis и жмём «Analyze Viral Factors» / «Analyze Video Content» /
+ *    «Run Full Analysis» — разборы стартуют сразу, без кликов пользователя.
  */
 (function () {
   'use strict';
@@ -328,8 +334,116 @@
     }
   }
 
+  // ── Тема: зеркалим тему приложения на <html>.dark ────────────────────────────
+  // Приложение хранит тему в localStorage['vibevox_theme'] ('dark' по умолчанию,
+  // 'light' — явный выбор). iframe same-origin → читаем напрямую; смену ловим
+  // storage-событием (родитель — другой документ, событие сюда прилетает).
+  function appIsDark() {
+    try { return localStorage.getItem('vibevox_theme') !== 'light'; } catch (e) { return true; }
+  }
+
+  function syncTheme() {
+    var el = document.documentElement;
+    var want = appIsDark();
+    if (el.classList.contains('dark') !== want) el.classList.toggle('dark', want);
+  }
+
+  // Бандл расширения собран с dark:-утилитами под @media (prefers-color-scheme:dark) —
+  // они слушают тему ОС, а не приложения. Переносим их под класс .dark: копируем
+  // правила с префиксом «.dark », а исходный медиа-блок глушим (media = 'not all').
+  // Базовые переменные (--color-background и т.п.) в CSS уже висят на .dark — им
+  // достаточно класса на <html>.
+  function scopeDarkRules(rules) {
+    var css = [];
+    for (var i = 0; i < rules.length; i++) {
+      var r = rules[i];
+      if (r.type === 1 && r.selectorText) { // CSSStyleRule
+        var sels = r.selectorText.split(',').map(function (s) { return '.dark ' + s.trim(); }).join(',');
+        css.push(sels + '{' + r.style.cssText + '}');
+      } else if (r.type === 4 && r.cssRules) { // вложенный @media (напр. брейкпоинты)
+        css.push('@media ' + r.media.mediaText + '{' + scopeDarkRules(r.cssRules) + '}');
+      }
+    }
+    return css.join('\n');
+  }
+
+  // Рекурсивный поиск: медиа-блок сидит внутри @layer utilities (Tailwind v4),
+  // поэтому идём вглубь любых групповых правил (@layer/@supports/@media).
+  function huntDarkMedia(rules, out) {
+    for (var j = 0; j < rules.length; j++) {
+      var r = rules[j];
+      var cond = (r.media && r.media.mediaText) || '';
+      if (r.type === 4 && /prefers-color-scheme/.test(cond)) {
+        out.push(scopeDarkRules(r.cssRules));
+        try { r.media.mediaText = 'not all'; } catch (e) { /* тихо */ }
+      } else if (r.cssRules && r.cssRules.length) {
+        huntDarkMedia(r.cssRules, out);
+      }
+    }
+  }
+
+  function retargetDarkCss(doc) {
+    var sheets = doc.styleSheets;
+    for (var i = 0; i < sheets.length; i++) {
+      var sheet = sheets[i];
+      var node = sheet.ownerNode;
+      if (!node || !node.getAttribute || node.getAttribute('data-tt-dark-done') || node.getAttribute('data-tt-dark-scope')) continue;
+      var rules;
+      try { rules = sheet.cssRules; } catch (e) { node.setAttribute('data-tt-dark-done', '1'); continue; }
+      if (!rules) continue;
+      var out = [];
+      huntDarkMedia(rules, out);
+      node.setAttribute('data-tt-dark-done', '1');
+      if (out.length) {
+        var st = doc.createElement('style');
+        st.setAttribute('data-tt-dark-scope', '1');
+        st.textContent = out.join('\n');
+        doc.head.appendChild(st);
+      }
+    }
+  }
+
+  // ── Авто-анализ: после «Анализировать» запускаем все разборы сами ────────────
+  // Родитель шлёт 'social-ext:set-url' → когда расширение загрузит данные и покажет
+  // ленту вкладок, открываем Analysis и жмём кнопки разборов (по одному разу на URL).
+  // «Run Full Analysis» живёт в глобальном сторе расширения и переживает уход со
+  // вкладки; Viral/Video Content держат состояние локально — поэтому и остаёмся
+  // на вкладке Analysis, чтобы результаты рендерились по мере готовности.
+  var AUTO_RUN_LABELS = ['Analyze Viral Factors', 'Analyze Video Content', 'Run Full Analysis', 'Analyze Profile'];
+  var autoRun = { url: '', switched: false, clicked: {} };
+
+  function tabButtonByText(doc, names) {
+    var bs = doc.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) {
+      if (names.indexOf(bs[i].textContent.trim()) >= 0) return bs[i];
+    }
+    return null;
+  }
+
+  function autoAnalyze(doc) {
+    if (!autoRun.url) return;
+    // Лента вкладок появляется, когда данные по ссылке загружены.
+    var infoTab = tabButtonByText(doc, ['Info']);
+    var analysisTab = tabButtonByText(doc, ['Analysis', 'Deep Analysis']);
+    if (!infoTab || !analysisTab) return;
+    if (!autoRun.switched) {
+      autoRun.switched = true;
+      analysisTab.click();
+      schedule(); // разделы отрендерятся следующим тиком
+      return;
+    }
+    for (var i = 0; i < AUTO_RUN_LABELS.length; i++) {
+      var label = AUTO_RUN_LABELS[i];
+      if (autoRun.clicked[label]) continue;
+      var b = buttonByText(doc, label);
+      if (b && !b.disabled) { autoRun.clicked[label] = 1; b.click(); }
+    }
+  }
+
   function apply() {
     try {
+      syncTheme();
+      retargetDarkCss(document);
       hideTopBar(document);
       stickyTabs(document);
       musicButtons(document);
@@ -338,6 +452,7 @@
       igMediaButton(document);
       igAudioButton(document);
       enhanceQualityVariants(document);
+      autoAnalyze(document);
     } catch (e) { /* тихо */ }
   }
 
@@ -348,6 +463,18 @@
     try {
       var obs = new MutationObserver(schedule);
       obs.observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) {}
+    // Смена темы в приложении (другой документ) → storage-событие здесь.
+    try { window.addEventListener('storage', function (e) { if (!e || !e.key || e.key === 'vibevox_theme') syncTheme(); }); } catch (e) {}
+    // Новая ссылка от родителя → свежий цикл авто-анализа (по одному разу на URL).
+    try {
+      window.addEventListener('message', function (ev) {
+        if (window.parent && ev.source !== window.parent) return;
+        var d = ev.data;
+        if (!d || typeof d !== 'object') return;
+        if (d.type === 'social-ext:set-url') { autoRun = { url: String(d.url || ''), switched: false, clicked: {} }; schedule(); }
+        else if (d.type === 'social-ext:clear-url') { autoRun = { url: '', switched: false, clicked: {} }; }
+      });
     } catch (e) {}
     apply();
     setTimeout(apply, 400);
