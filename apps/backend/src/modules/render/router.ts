@@ -720,6 +720,9 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     const headB = typeof req.body?.headB === 'string' ? req.body.headB : '';
     const studioUrl = typeof req.body?.studioUrl === 'string' ? req.body.studioUrl : '';
     if (!headA || !studioUrl) return res.status(400).json({ error: 'Нужны готовая голова и фото студии (headA, studioUrl).' });
+    // альфа-дорожки голов (GPU-путь): с ними склейка идёт alphamerge вместо хромакея
+    const alphaA = typeof req.body?.alphaA === 'string' && req.body.alphaA ? req.body.alphaA : null;
+    const alphaB = typeof req.body?.alphaB === 'string' && req.body.alphaB ? req.body.alphaB : null;
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
     const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
@@ -750,7 +753,7 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, audioUrl, musicUrl, musicVolume, overlays, captions, boxA, boxB });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, headAAlpha: alphaA ? abs(alphaA)! : null, headBAlpha: alphaB ? abs(alphaB)! : null, audioUrl, musicUrl, musicVolume, overlays, captions, boxA, boxB });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
@@ -1047,7 +1050,7 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
         return d;
       } finally { clearTimeout(t); }
     };
-    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string, extra: Record<string, unknown> = {}): Promise<{ url: string; engine: string | null }> => {
+    const workerAvatar = async (imageUrlAbs: string, audioUrlAbs: string, extra: Record<string, unknown> = {}): Promise<{ url: string; alphaUrl: string | null; engine: string | null }> => {
       const start = await postWorker('/avatar', { image_url: imageUrlAbs, audio_url: audioUrlAbs, base_url: base, engine, ...extra });
       const jobId = start?.job_id;
       if (!jobId) throw new Error(start?.note || 'GPU-воркер не принял задачу');
@@ -1062,7 +1065,13 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
         if (!st) continue;
         if (st.status === 'done' && st.output_name) {
           const dl = await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(st.output_name)}`, 'gpuhead');
-          return { url: dl.fileUrl, engine: st.engine || null };
+          // альфа-дорожка (RVM): с ней склейка идёт alphamerge вместо хромакея — чище края волос
+          let alphaUrl: string | null = null;
+          if (st.alpha_name) {
+            try { alphaUrl = (await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(st.alpha_name)}`, 'gpuhead-a')).fileUrl; }
+            catch (e: any) { console.warn('[gpu-studio] альфа не скачалась (склею хромакеем):', e?.message || e); }
+          }
+          return { url: dl.fileUrl, alphaUrl, engine: st.engine || null };
         }
         if (st.status === 'failed') throw new Error(st.note || 'GPU-аватар не удался');
         if (st.status === 'not_found') throw new Error('GPU-задача потеряна (воркер перезапущен) — повторите');
@@ -1074,7 +1083,7 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
     (async () => {
       const cleanUrl = await studioCleanPlate(apiKey, abs(groupPhotoUrl)).catch(() => null);
       const studioUrl = cleanUrl || groupPhotoUrl;
-      const hosts: Array<{ host: 'A' | 'B'; name: string; url?: string; assetId?: string | null; engine?: string | null; error?: string }> = [];
+      const hosts: Array<{ host: 'A' | 'B'; name: string; url?: string; alphaUrl?: string | null; assetId?: string | null; engine?: string | null; error?: string }> = [];
       for (const [spk, host] of hostsList) {
         const name = host.name || `Ведущий ${spk}`;
         try {
@@ -1130,7 +1139,7 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
           } : {});
           let assetId: string | null = null;
           try { const a = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: `GPU-ведущий ${name}`, fileUrl: av.url, mime: 'video/mp4' }); assetId = a?.id || null; } catch { /* Галерея опц. */ }
-          hosts.push({ host: spk, name, url: av.url, assetId, engine: av.engine });
+          hosts.push({ host: spk, name, url: av.url, alphaUrl: av.alphaUrl || null, assetId, engine: av.engine });
         } catch (e: any) { hosts.push({ host: spk, name, error: e?.message || 'ошибка' }); }
       }
       const anyOk = hosts.some((h) => h.url);

@@ -290,6 +290,9 @@ function kenBurnsChain(W: number, H: number, durSec: number, dir: 'kb_in' | 'kb_
  *  «студии лиц» = соло-режим с одним ведущим. overlays — медиа реплик по таймкодам. → fileUrl. */
 export async function composeOnStudio(opts: {
   studioUrl: string; headA: string; headB?: string | null;
+  /** Альфа-дорожки голов (GPU-путь, RVM): с ними слой клеится alphamerge БЕЗ хромакея —
+   *  края волос без цветовых порогов и despill. Нет альфы (HeyGen/старые головы) — хромакей. */
+  headAAlpha?: string | null; headBAlpha?: string | null;
   audioUrl?: string; musicUrl?: string; musicVolume?: number; chromaColor?: string;
   overlays?: StudioOverlay[];
   /** Титры реплик (стиль «Новости») — вжигаются вместе с плашками overlays[].title. */
@@ -340,6 +343,10 @@ export async function composeOnStudio(opts: {
     else inputs.push('-loop', '1', '-t', dcap, '-i', o.url);
     idx++;
   }
+  // Альфа-дорожки голов — В КОНЦЕ входов (не сдвигают индексную математику выше).
+  const alphaSrc: (string | null)[] = [opts.headAAlpha || null, opts.headBAlpha || null].slice(0, heads.length);
+  const alphaIdx: number[] = heads.map(() => -1);
+  alphaSrc.forEach((a, k) => { if (a) { inputs.push('-i', a); alphaIdx[k] = idx++; } });
   const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
 
   // Фон clean plate — тот же аспект, что канвас → scale+crop без потерь композиции.
@@ -356,8 +363,6 @@ export async function composeOnStudio(opts: {
   // ВПИСЫВАЕМ (decrease + прозрачный pad), а не кроем кропом: если аспект головы вдруг не
   // совпал с канвасом (HeyGen отрендерил в другом формате), кроп раньше отрезал человека и
   // оставлял одну зелёнку — голова «исчезала» из ролика. Letterbox прозрачный (black@0).
-  const keyf = (i: number, label: string) =>
-    `[${i}:v]${keyBase}scale=${W}:${H}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${label}];`;
   // РАЗМЕЩЕНИЕ двух ведущих ПО СТОРОНАМ. Вырезка (v1.6.74) = человек ПО ЦЕНТРУ квадрата, поэтому
   // старый «разрез по центру» давал нахлёст (пол-женщины+пол-мужчины в середине). Теперь каждую
   // голову масштабируем в квадрат и кладём A/B в ЛЕВУЮ/ПРАВУЮ половину — люди разнесены, не режутся.
@@ -379,14 +384,25 @@ export async function composeOnStudio(opts: {
   let lastV = 'bg';
   heads.forEach((_, k) => {
     const lbl = `k${k}`;
+    // Источник слоя головы: с альфа-дорожкой — alphamerge (RVM, края волос без порогов и
+    // despill), без неё — хромакей как раньше (HeyGen/старые головы).
+    let srcLabel = `[${1 + k}:v]`;
+    let srcPrefix = keyBase;
+    if (alphaIdx[k] >= 0) {
+      fc += `[${1 + k}:v][${alphaIdx[k]}:v]alphamerge[amg${k}];`;
+      srcLabel = `[amg${k}]`;
+      srcPrefix = '';
+    }
     if (place2) {
       const p = place2[k];
       // голову — в квадрат hs×hs (человек по центру), затем в свою половину кадра
-      fc += `[${1 + k}:v]${keyBase}scale=${p.hs}:${p.hs}:force_original_aspect_ratio=decrease,`
+      fc += `${srcLabel}${srcPrefix}scale=${p.hs}:${p.hs}:force_original_aspect_ratio=decrease:flags=lanczos,`
         + `pad=${p.hs}:${p.hs}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${lbl}];`;
       fc += `[${lastV}][${lbl}]overlay=x=${p.x}:y=${p.y}:shortest=0[hv${k}];`;
     } else {
-      fc += keyf(1 + k, lbl);                                  // соло-режим: голова во весь кадр
+      // соло-режим: голова во весь кадр
+      fc += `${srcLabel}${srcPrefix}scale=${W}:${H}:force_original_aspect_ratio=decrease:flags=lanczos,`
+        + `pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0,${keyTail}[${lbl}];`;
       fc += `[${lastV}][${lbl}]overlay=x=0:y=0:shortest=0[hv${k}];`;
     }
     lastV = `hv${k}`;
