@@ -67,6 +67,13 @@ wsl -e bash -c "systemctl is-active trendtraffic-notebooklm; curl -s http://loca
 # ждём: active  и  {"ok":true,...}
 ```
 
+> ⚠️ **Проброс порта Windows→WSL (обязательно для доступа с VPS).** Воркер слушает
+> `0.0.0.0:8802` ВНУТРИ WSL, но Tailscale живёт на Windows-хосте. Чтобы web-VPS достучался
+> на `100.122.182.97:8802`, на Windows крутится TCP-форвардер `C:\Users\pl761\trendtraffic-gpu\fwd8802.py`
+> (клон `fwd8801.py` для GPU-воркера) — слушает Windows:8802 → пересылает в WSL. Автозапуск —
+> в `start-gpu.bat` (Startup). Без него VPS видит воркер как `offline`. Проверка с VPS:
+> `curl http://100.122.182.97:8802/health`.
+>
 > ⚠️ **Грабли CRLF.** Если `install.sh` копировали из Windows-чекаута, у него могут
 > быть CRLF-переводы строк → bash падает `set: pipefail: invalid option name`.
 > Лечение: `wsl -u root -e bash -c "sed -i 's/\r$//' /opt/tt/notebooklm-worker/install.sh"`
