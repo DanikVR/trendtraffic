@@ -1,0 +1,4 @@
+# Shell-скрипты ВСЕГДА с LF, даже в Windows-чекауте — иначе bash в WSL/Linux
+# спотыкается на CRLF («set: pipefail: invalid option name»). Важно для
+# render-worker/*.sh и notebooklm-worker/*.sh, которые копируются в WSL/VPS.
+*.sh text eol=lf

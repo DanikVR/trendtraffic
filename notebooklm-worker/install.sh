@@ -51,6 +51,7 @@ Wants=network-online.target
 WorkingDirectory=${WORKER_DIR}
 Environment=NOTEBOOKLM_HOME=${DATA_DIR}/home
 Environment=NOTEBOOKLM_OUT=${DATA_DIR}/out
+Environment=DISPLAY=:0
 ExecStart=${VENV}/bin/uvicorn main:app --app-dir ${WORKER_DIR} --host ${HOST} --port ${PORT}
 Restart=always
 RestartSec=3
@@ -59,15 +60,30 @@ RestartSec=3
 WantedBy=multi-user.target
 UNIT
 
-echo "== systemd timer: продление сессии Google (auth refresh, раз в сутки) =="
+# keepalive: продлеваем сессию КАЖДОГО профиля-тенанта (не только default),
+# т.к. подключение пер-тенантное. Скрипт перебирает все профили в NOTEBOOKLM_HOME.
+cat > "${DATA_DIR}/refresh-all.sh" <<'RSH'
+#!/usr/bin/env bash
+HOME_DIR="${NOTEBOOKLM_HOME:-/opt/tt-hotebook/home}"
+NB="__VENV__/bin/notebooklm"
+for d in "${HOME_DIR}"/profiles/*/; do
+  [ -f "${d}/storage_state.json" ] || continue
+  p="$(basename "$d")"
+  "$NB" -p "$p" auth refresh --quiet || true
+done
+RSH
+sed -i "s#__VENV__#${VENV}#" "${DATA_DIR}/refresh-all.sh"
+chmod +x "${DATA_DIR}/refresh-all.sh"
+
+echo "== systemd timer: продление сессий Google всех тенантов (раз в сутки) =="
 cat > /etc/systemd/system/trendtraffic-notebooklm-refresh.service <<UNIT
 [Unit]
-Description=TrendTraffic Hotebook — keepalive cессии NotebookLM
+Description=TrendTraffic Hotebook — keepalive сессий NotebookLM (все профили)
 
 [Service]
 Type=oneshot
 Environment=NOTEBOOKLM_HOME=${DATA_DIR}/home
-ExecStart=${VENV}/bin/notebooklm auth refresh --quiet
+ExecStart=${DATA_DIR}/refresh-all.sh
 UNIT
 cat > /etc/systemd/system/trendtraffic-notebooklm-refresh.timer <<UNIT
 [Unit]
@@ -93,7 +109,15 @@ curl -fsS "http://${HOST}:${PORT}/health" 2>/dev/null && echo \
   || echo "(воркер ещё стартует — проверь: systemctl status trendtraffic-notebooklm; journalctl -u trendtraffic-notebooklm -n 50)"
 
 echo
-echo "ГОТОВО. Hotebook-воркер: http://${HOST}:${PORT} (только Tailscale)."
-echo "На WEB-VPS задай в apps/backend/.env:"
-echo "    NOTEBOOKLM_WORKER_URL=http://${HOST}:${PORT}"
+echo "ГОТОВО. Hotebook-воркер слушает ${HOST}:${PORT}."
+if [ "$HOST" = "0.0.0.0" ]; then
+  # WSL: Tailscale живёт на Windows-хосте — VPS ходит на ЕГО Tailscale-адрес, не 0.0.0.0.
+  TS_HINT="$(tailscale ip -4 2>/dev/null | head -1)"
+  [ -n "$TS_HINT" ] || TS_HINT="<Tailscale-IP-этой-машины, напр. 100.122.182.97>"
+  echo "ВНИМАНИЕ: воркер в WSL. На WEB-VPS в apps/backend/.env укажи Tailscale-адрес ЭТОЙ машины (НЕ 0.0.0.0):"
+  echo "    NOTEBOOKLM_WORKER_URL=http://${TS_HINT}:${PORT}"
+else
+  echo "На WEB-VPS задай в apps/backend/.env:"
+  echo "    NOTEBOOKLM_WORKER_URL=http://${HOST}:${PORT}"
+fi
 echo "и перезапусти backend:  pm2 restart trendtraffic-api --update-env"
