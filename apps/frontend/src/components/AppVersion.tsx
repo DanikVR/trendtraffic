@@ -1483,7 +1483,13 @@
  *         мёртвых локальных в NULL при чтении); лента трендов воскрешает и МЁРТВЫЕ ЛОКАЛЬНЫЕ обложки
  *         (файл пропал с диска) через TikHub; deleteVideo стирает файлы ПОСЛЕ успешного DELETE.
  *         main.py, echomimic_natural.py, watchlist.ts, trends/service.ts, store_cover.ts. */
-export const APP_VERSION = '1.6.80';
+/* 1.6.81 — фикс «Анимировать ведущих» при провайдере «Домашний GPU»: кнопка била в бэкенд-заглушку
+ *         v1.6.12 («рендер голов подключу следующим шагом») и молча ничего не делала. Теперь она
+ *         делегирует в рабочий GPU-путь runGpuStudio (как omni → runOmniAnimate): вырезка ведущих
+ *         из общего фото → EchoMimic на домашнем GPU → головы на зелёном → «Собрать НА студии».
+ *         Бэкенд-нота заглушки переписана честно (для старых бандлов/прямых вызовов API).
+ *         MontageEditor.tsx (runAnimate), render/router.ts (/podcast/animate, ветка gpu). */
+export const APP_VERSION = '1.6.81';
 
 export function AppVersion() {
   return (

@@ -1239,6 +1239,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (animBusy) return;
     const av = pod.avatar || POD_DEFAULT.avatar!;
     if (av.provider === 'omni') { void runOmniAnimate(); return; }
+    // Домашний GPU: единственный рабочий путь — GPU-студия (вырезка из общего фото → EchoMimic).
+    // Раньше кнопка била в бэкенд-заглушку «подключу следующим шагом» и молча ничего не делала.
+    if (av.provider === 'gpu') { void runGpuStudio(); return; }
     if (av.provider === 'heygen' && (!pod.hostA.photoUrl || !pod.hostB.photoUrl)) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
     if (av.provider === 'heygen' && !pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
     if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }

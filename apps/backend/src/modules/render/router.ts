@@ -244,7 +244,9 @@ router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
     if (provider === 'gpu') {
       const gpu = getRenderGpuWorkerUrl();
       if (!gpu) return res.status(400).json({ error: 'GPU-воркер (SadTalker) не подключён. Подключите домашний RTX/облачный GPU в Настройки → Генерация → Рендер — тогда анимация будет без оплаты за минуту.' });
-      return res.json({ note: `GPU-воркер подключён — анимация (SadTalker) без оплаты за минуту (${minsR} мин). Рендер голов на GPU подключу следующим шагом.` });
+      // Рендер на GPU живёт в /podcast/gpu-studio (вырезка из общего фото → EchoMimic/SadTalker);
+      // свежий фронт делегирует туда сам — эта нота осталась для старых бандлов/прямых вызовов.
+      return res.json({ note: `GPU-воркер подключён (${minsR} мин, без оплаты за минуту). Жмите «Оживить НА студии (домашний GPU)» — рендер голов идёт через GPU-студию.` });
     }
     if (provider === 'did') {
       return res.json({ note: 'D-ID / Hedra: сейчас НЕ подключены (ключей нет). Получите ключ D-ID (studio.d-id.com) или Hedra и добавьте в Настройки → Генерация — тогда включу их этим же аниматором. Пока рекомендую HeyGen.' });
