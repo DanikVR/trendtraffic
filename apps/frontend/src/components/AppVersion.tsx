@@ -1483,7 +1483,21 @@
  *         мёртвых локальных в NULL при чтении); лента трендов воскрешает и МЁРТВЫЕ ЛОКАЛЬНЫЕ обложки
  *         (файл пропал с диска) через TikHub; deleteVideo стирает файлы ПОСЛЕ успешного DELETE.
  *         main.py, echomimic_natural.py, watchlist.ts, trends/service.ts, store_cover.ts. */
-export const APP_VERSION = '1.6.80';
+/* 1.6.81 — НОВЫЙ БЛОК «Hotebook» (Google NotebookLM) в TrendFlow — 6-й облачный узел: источники
+ *         (URL/YouTube/текст/файл из Галереи), чат с цитатами, студия из 9 артефактов (аудиопересказ,
+ *         видеообзор, отчёт, тест, таблица, инфографика, карточки, ментальная карта, презентация) с
+ *         настройками 1:1 как в NotebookLM (формат-карточки/длина/язык/«акцент»); готовые файлы →
+ *         Галерея, новая вкладка «Hotebook»; индикатор на узле как у подкаста (кольцо генерации +
+ *         зелёная точка готовности); счётчики генераций за сегодня; плашка «синхронизация с Google
+ *         нарушена» (auth/api_changed/quota/offline) в блоке и в Настройках Enterprise → «Hotebook»
+ *         (подключение аккаунта: статус, «Проверить», импорт storage_state.json; только superadmin);
+ *         Telegram-алерт владельцу при поломке синхронизации (раз в 12ч). Технически: notebooklm-worker/
+ *         (FastAPI-обёртка notebooklm-py 0.7.3, порт 8802, WSL домашнего воркера; enum-параметры
+ *         генерации сверены с библиотекой, несовпавшие уходят текстом в instructions), бэкенд-модуль
+ *         apps/backend/src/modules/notebooklm/ (таблицы notebooklm_state/notebooklm_jobs, поллинг джоб
+ *         через GET /jobs/:id, артефакты в uploads/hotebook + media_assets folder='hotebook'),
+ *         NOTEBOOKLM_WORKER_URL в systemConfig/админке. Enterprise-гейт как у social-ext. */
+export const APP_VERSION = '1.6.81';
 
 export function AppVersion() {
   return (

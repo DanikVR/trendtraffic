@@ -9,7 +9,7 @@
 
 import React, { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Workflow, Loader2, Lock, Plug, TrendingUp, Wand2 } from 'lucide-react';
+import { Sparkles, Workflow, Loader2, Lock, Plug, TrendingUp, Wand2, BookOpen } from 'lucide-react';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
 import { AuroraCard } from '../components/AuroraCard';
 
@@ -19,6 +19,7 @@ const Section3QuestFlow = lazy(() => import('./enterprise/Section3QuestFlow'));
 const Section5Mcp = lazy(() => import('./enterprise/Section5Mcp'));
 const Section6TikHub = lazy(() => import('./enterprise/Section6TikHub'));
 const Section7OpenMontage = lazy(() => import('./enterprise/Section7OpenMontage'));
+const Section8Hotebook = lazy(() => import('./enterprise/Section8Hotebook'));
 
 interface BuiltSection {
   key: string;
@@ -67,6 +68,13 @@ export function EnterpriseSettingsPage() {
       icon: <Wand2 size={16} />,
       color: '#ec4899',
       component: Section7OpenMontage,
+    },
+    {
+      key: 'hotebook',
+      label: t('enterprise.tabs.hotebook', 'Hotebook'),
+      icon: <BookOpen size={16} />,
+      color: '#22d3ee',
+      component: Section8Hotebook,
     },
   ];
 

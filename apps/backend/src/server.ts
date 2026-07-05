@@ -44,6 +44,7 @@ import channelsCoverRouter from './modules/channels/cover_proxy.js';
 import { startChannelSnapshotScheduler } from './modules/channels/scheduler.js';
 import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter, manifestRouter as socialExtManifestRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
+import notebooklmRouter from './modules/notebooklm/router.js';
 import videoEditRouter from './modules/video_edit/router.js';
 import { startRenderWorker, setRenderExecutor } from './modules/render/worker.js';
 import { HttpWorkerExecutor } from './modules/render/executor_http.js';
@@ -195,6 +196,8 @@ app.use('/api/social-ext/download', socialExtVideoRouter);
 app.use('/api/social-ext/ig-manifest', socialExtManifestRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
 app.use('/api/render', renderRouter);
+// HOTEBOOK: блок NotebookLM (источники/чат/артефакты) — JWT + Enterprise внутри роутера
+app.use('/api/notebooklm', notebooklmRouter);
 // TRENDTRAFFIC: обрезка/нарезка видео (движок редактора-просмотрщика) — JWT внутри роутера
 app.use('/api/video-edit', videoEditRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)

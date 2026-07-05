@@ -100,6 +100,8 @@ export interface SystemConfig {
   renderWorkerUrl?: string;
   /** URL GPU-воркера (домашний RTX 5080 по Tailscale). */
   renderGpuWorkerUrl?: string;
+  /** URL Hotebook-воркера (обёртка notebooklm-py по Tailscale, напр. http://100.x:8801). */
+  notebookWorkerUrl?: string;
 }
 
 /** Дефолтная модель Gemini Live (используется, если в админке ничего не выбрано). */
@@ -300,6 +302,11 @@ export function getRenderGpuWorkerUrl(): string {
   return String(get('renderGpuWorkerUrl', 'RENDER_GPU_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
 }
 
+/** URL Hotebook-воркера (NotebookLM по Tailscale). Пусто → блок «Hotebook» показывает «не подключено». */
+export function getNotebookWorkerUrl(): string {
+  return String(get('notebookWorkerUrl', 'NOTEBOOKLM_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
+}
+
 /** Telegram Bot API Token */
 export function getTelegramToken(): string {
   return get('telegramToken', 'TELEGRAM_BOT_TOKEN');
@@ -469,6 +476,7 @@ export function getSettingsForClient(): Record<string, any> {
     renderGpuTarget: getRenderGpuTarget(),
     renderWorkerUrl: getRenderWorkerUrl(),
     renderGpuWorkerUrl: getRenderGpuWorkerUrl(),
+    notebookWorkerUrl: getNotebookWorkerUrl(),
   };
 }
 
@@ -511,6 +519,7 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
     // Рендер «Собрать»: адреса воркеров (не секрет, Tailscale).
     { key: 'renderWorkerUrl', envFallback: 'RENDER_WORKER_URL' },
     { key: 'renderGpuWorkerUrl', envFallback: 'RENDER_GPU_WORKER_URL' },
+    { key: 'notebookWorkerUrl', envFallback: 'NOTEBOOKLM_WORKER_URL' },
   ];
 
   for (const { key, envFallback } of fieldMap) {
