@@ -1591,7 +1591,20 @@
  *         вкладке «Аналитика». Новая кнопка «видео + анализ» на файлах «Из анализа» добавляет
  *         одним кликом и видео, и его разбор (двумя источниками); «анализ» — только текст.
  *         MontageEditor.tsx (hbBuildAnalysisText/hbAddBoth/hbFetchAnalysisText). */
-export const APP_VERSION = '1.6.93';
+/* 1.6.94 — лестница качества GPU-студии (продолжение 1.6.90) + свой confirm. (1) Real-ESRGAN
+ *         x2plus на RTX: выход EchoMimic 768² апскейлится до 1536² ДО матте (RRDBNet инлайном —
+ *         без basicsr, тот ломается на свежем torch; веса качаются раз в render-worker/models;
+ *         ~0.2с/кадр fp16 на 5080, +~4 мин на 33с-клип). (2) АЛЬФА-ПАЙПЛАЙН вместо хромакея:
+ *         RVM отдаёт color (человек на нейтральном сером) + alpha (маска) двумя файлами,
+ *         /avatar/status → alpha_name, бэкенд качает обе и клеит alphamerge — края волос без
+ *         цветовых порогов и despill; HeyGen/старые головы — хромакей как раньше (фолбэк цел).
+ *         Ручки воркера: ECHOMIMIC_UPSCALE=2 (0=выкл), ECHOMIMIC_ALPHA=1, ECHOMIMIC_ALPHA_ERODE=0
+ *         (мягкий AA-край — фича). GPU-тест на живом человеке: апскейл 74 кадра/20.6с → 1536²,
+ *         альфа центр=255/угол=0; синтетика alphamerge-склейки PASS (фон color-файла отброшен).
+ *         (3) «Сбросить разбор» — наш ConfirmModal вместо браузерного window.confirm. Файлы:
+ *         echomimic_natural.py (upscale/mattealpha), main.py, podcast_compose.ts, router.ts,
+ *         MontageEditor.tsx. */
+export const APP_VERSION = '1.6.94';
 
 export function AppVersion() {
   return (

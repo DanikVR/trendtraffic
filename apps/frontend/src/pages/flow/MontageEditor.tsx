@@ -24,6 +24,7 @@ import { useAppStore } from '../../store/useAppStore';
 import FlowExtPanel from './FlowExtPanel';
 import { VideoViewer } from '../../components/VideoViewer';
 import { AudioPlayer } from '../../components/AudioPlayer';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
@@ -412,7 +413,7 @@ interface PodcastSpec {
   music?: { url: string; name: string; volumePct: number } | null;
   // Результаты/статус аниматора — сохраняются в спеку, чтобы пережить выход/вход в сценарий.
   animActive?: { kind: 'omnipod' | 'heygen' | 'gpupod'; jobId?: string; videoIds?: string[] } | null;
-  animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null }[] | null;
+  animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null; alphaUrl?: string | null }[] | null;
   // Фон студии для «Собрать НА студии»: clean plate (студия без людей), выживает выход/вход.
   studioBgUrl?: string | null;
   // Окна ведущих в долях исходного фото — посадка аватаров на свои места при склейке.
@@ -734,10 +735,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply' | 'illustrate'>(null);
   const [illusNote, setIllusNote] = useState<string | null>(null); // заметка «Иллюстратора» (автоподбор видеоряда)
+  const [resetDiarizeOpen, setResetDiarizeOpen] = useState(false); // свой confirm-модал «Сбросить разбор»
   const [podNote, setPodNote] = useState<string | null>(null);
   const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
   const [animNote, setAnimNote] = useState<string | null>(null);
-  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; edit?: string; editing?: boolean; error?: string | null }[]>([]);
+  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; alphaUrl?: string | null; edit?: string; editing?: boolean; error?: string | null }[]>([]);
   const [studioBg, setStudioBg] = useState<string | null>(null); // HeyGen «на студии»: фон-фото студии для compose-studio (chroma-key)
   const animPollRef = useRef<number | null>(null);
   // Ссылки на <video> превью голов (по videoId) — для кнопки «Запустить обоих» разом.
@@ -1626,6 +1628,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
       if (onStudio) {
         body.studioUrl = bg;
+        // альфа-дорожки GPU-голов (RVM): склейка пойдёт alphamerge вместо хромакея
+        if (ready[0]?.alphaUrl) body.alphaA = ready[0].alphaUrl;
+        if (ready[1]?.alphaUrl) body.alphaB = ready[1].alphaUrl;
         // медиа реплик (картинки/видео) — по своим интервалам: 'full' = во весь кадр
         // (фото с Ken Burns), 'card' = карточка по центру; title → индиго-плашка
         body.overlays = pod.dialogue
@@ -1712,10 +1717,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (res.ok && d.status && d.status !== 'processing') {
           setAnimBusy(false);
           const hosts = Array.isArray(d.hosts) ? d.hosts : [];
-          const jobs = hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'gpu-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, error: h.error || null }));
+          const jobs = hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'gpu-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, alphaUrl: h.alphaUrl || null, error: h.error || null }));
           setAnimJobs(jobs);
           if (d.studioUrl) setStudioBg(d.studioUrl);
-          persistAnim({ animActive: null, animResult: jobs.map((j: any) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: null })), studioBgUrl: d.studioUrl || null });
+          persistAnim({ animActive: null, animResult: jobs.map((j: any) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: null, alphaUrl: j.alphaUrl || null })), studioBgUrl: d.studioUrl || null });
           const failed = hosts.filter((h: any) => h.error);
           setAnimNote(d.status === 'failed'
             ? ('GPU не смог оживить: ' + (d.error || failed.map((h: any) => h.error).join('; ')))
@@ -4371,22 +4376,35 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       {podBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} Разобрать на 2 голоса
                     </button>
                     {pod.dialogue.length > 0 && (
-                      <button disabled={podBusy === 'diarize'} onClick={() => {
-                        if (!window.confirm('Удалить текущий разбор (реплики, таймлайн и отрендеренные по нему головы)? Запись останется — можно разобрать её заново или загрузить другую.')) return;
-                        // чистим ВСЁ, что построено на старом разборе: иначе «Собрать» склеит
-                        // старые головы (липсинк под удалённые реплики) с новым диалогом
-                        if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-                        setAnimBusy(false); setAnimJobs([]); setAnimNote(null);
-                        setStudioBg(null); setComposeUrl(null); setComposeNote(null);
-                        setDiarizeDone(false);
-                        tlStop(); setSelLine(null); setTlPlayhead(0);
-                        podMutate((p) => ({ ...p, dialogue: [], timeline: false, animActive: null, animResult: null, studioBgUrl: null, studioPlace: null }));
-                        setPodNote('Разбор удалён. Разберите запись заново или загрузите другую.');
-                      }}
-                        className="w-full py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                        style={{ background: 'transparent', color: '#ef4444', border: '1px dashed rgba(239,68,68,0.5)', cursor: podBusy === 'diarize' ? 'not-allowed' : 'pointer' }}>
-                        <X size={13} /> Сбросить разбор (удалить реплики)
-                      </button>
+                      <>
+                        <button disabled={podBusy === 'diarize'} onClick={() => setResetDiarizeOpen(true)}
+                          className="w-full py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          style={{ background: 'transparent', color: '#ef4444', border: '1px dashed rgba(239,68,68,0.5)', cursor: podBusy === 'diarize' ? 'not-allowed' : 'pointer' }}>
+                          <X size={13} /> Сбросить разбор (удалить реплики)
+                        </button>
+                        {/* свой модал вместо браузерного window.confirm (уродлив и вне дизайна) */}
+                        <ConfirmModal
+                          open={resetDiarizeOpen}
+                          title="Сбросить разбор?"
+                          message="Удалятся реплики, таймлайн и отрендеренные по ним головы. Сама запись останется — можно разобрать её заново или загрузить другую."
+                          confirmLabel="Сбросить"
+                          cancelLabel="Отмена"
+                          variant="danger"
+                          onCancel={() => setResetDiarizeOpen(false)}
+                          onConfirm={() => {
+                            setResetDiarizeOpen(false);
+                            // чистим ВСЁ, что построено на старом разборе: иначе «Собрать» склеит
+                            // старые головы (липсинк под удалённые реплики) с новым диалогом
+                            if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
+                            setAnimBusy(false); setAnimJobs([]); setAnimNote(null);
+                            setStudioBg(null); setComposeUrl(null); setComposeNote(null);
+                            setDiarizeDone(false);
+                            tlStop(); setSelLine(null); setTlPlayhead(0);
+                            podMutate((p) => ({ ...p, dialogue: [], timeline: false, animActive: null, animResult: null, studioBgUrl: null, studioPlace: null }));
+                            setPodNote('Разбор удалён. Разберите запись заново или загрузите другую.');
+                          }}
+                        />
+                      </>
                     )}
                   </div>
                 )}

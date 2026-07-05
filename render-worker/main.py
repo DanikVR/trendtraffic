@@ -1335,8 +1335,37 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
         if not os.path.exists(combined):
             return False, "EchoMimic-v2: склейка сегментов не удалась"
         print("[echomimic] склеено %d сегментов → ~%.1fс" % (nch, Lfull / fps), flush=True)
-    # matte: серый фон EchoMimic → человек на ЧИСТОМ зелёном (бэкенд снимет хромакей как раньше)
+    # Real-ESRGAN x2 (ECHOMIMIC_UPSCALE=2, деф. вкл): диффузионный выход 768² мягкий («пластик»);
+    # апскейл ДО матте добавляет микродеталь, а матте на 1536² даёт более чистые края волос.
+    if natural and os.environ.get("ECHOMIMIC_UPSCALE", "2") == "2":
+        upped = os.path.join(workdir, "up_%s.mp4" % uuid.uuid4().hex[:4])
+        try:
+            ut = max(900, int(Lfull * 1.5))
+            up = subprocess.run([py, natscript, "upscale", combined, upped], cwd=emv2,
+                                capture_output=True, text=True, timeout=ut)
+            if up.returncode == 0 and os.path.exists(upped):
+                combined = upped
+                log += " | esrgan x2"
+            else:
+                log += " | esrgan пропущен rc=%s %s" % (up.returncode, (up.stderr or "")[-120:])
+                print("[echomimic] esrgan не удался — матте по 768: %s" % (up.stderr or "")[-200:], flush=True)
+        except Exception as e:  # noqa: BLE001
+            log += " | esrgan err: %s" % e
+    # matte: приоритет АЛЬФА-режим (ECHOMIMIC_ALPHA=1, деф.) — RVM отдаёт color+alpha двумя
+    # файлами, бэкенд клеит alphamerge (края волос без хромакей-порогов). Альфа кладётся рядом:
+    # <out>_a.mp4 — вызывающий (_avatar_impl) подхватит по конвенции. Фолбэк — старый зелёный.
     if natural:
+        if os.environ.get("ECHOMIMIC_ALPHA", "1") != "0":
+            alpha_path = os.path.splitext(out_path)[0] + "_a.mp4"
+            try:
+                ma = subprocess.run([py, natscript, "mattealpha", combined, out_path, alpha_path],
+                                    cwd=emv2, capture_output=True, text=True, timeout=1800)
+                if ma.returncode == 0 and os.path.exists(out_path) and os.path.exists(alpha_path):
+                    return True, log + " | natural+alpha"
+                log += " | alpha rc=%s %s" % (ma.returncode, (ma.stderr or "")[-120:])
+            except Exception as e:  # noqa: BLE001
+                log += " | alpha err: %s" % e
+            print("[echomimic] альфа-матте не удался — фолбэк на зелёный: %s" % log[-200:], flush=True)
         mok = False
         try:
             mp = subprocess.run([py, natscript, "matte", combined, out_path], cwd=emv2,
@@ -1426,7 +1455,14 @@ def _avatar_impl(body: AvatarBody) -> dict:
         return {"output_name": None, "note": note or "аватар: не удалось сгенерировать"}
     name = f"avatar-{uuid.uuid4().hex[:8]}{os.path.splitext(out_path)[1] or '.mp4'}"
     shutil.copyfile(out_path, FILES_DIR / name)
-    return {"output_name": name, "note": note, "engine": used}
+    # альфа-дорожка (конвенция <out>_a.mp4 из _echomimic_v2): отдаём отдельным файлом —
+    # бэкенд склеит alphamerge вместо хромакея (чище края волос)
+    alpha_name = None
+    ap = os.path.splitext(out_path)[0] + "_a.mp4"
+    if used == "echomimic" and os.path.exists(ap):
+        alpha_name = f"avatar-{uuid.uuid4().hex[:8]}-a.mp4"
+        shutil.copyfile(ap, FILES_DIR / alpha_name)
+    return {"output_name": name, "alpha_name": alpha_name, "note": note, "engine": used}
 
 
 def _avatar_run(job_id: str, body: AvatarBody):
@@ -1472,6 +1508,7 @@ def avatar_status(job: str = ""):
     if not j:
         return {"status": "not_found"}
     return {"status": j.get("status"), "output_name": j.get("output_name"),
+            "alpha_name": j.get("alpha_name"),
             "note": j.get("note"), "engine": j.get("engine")}
 
 
