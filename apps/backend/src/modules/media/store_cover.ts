@@ -87,3 +87,11 @@ export function deleteCachedCover(coverUrl?: string | null): void {
   if (!coverUrl || !coverUrl.startsWith('/uploads/covers/')) return;
   try { fs.unlinkSync(path.join(COVERS_DIR, path.basename(coverUrl))); } catch { /* файла может не быть */ }
 }
+
+/** true, если cover_url указывает на наш локальный кэш И файл реально лежит на диске.
+ *  Нужен самолечению: после передеплоя без volume/чистки диска локальная ссылка в БД
+ *  может указывать в пустоту — такую обложку надо воскрешать, а не считать здоровой. */
+export function cachedCoverExists(coverUrl?: string | null): boolean {
+  if (!coverUrl || !coverUrl.startsWith('/uploads/covers/')) return false;
+  try { return fs.existsSync(path.join(COVERS_DIR, path.basename(coverUrl))); } catch { return false; }
+}

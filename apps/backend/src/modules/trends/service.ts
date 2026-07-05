@@ -20,7 +20,7 @@ import {
 } from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
 import { shapeOf } from './analytics.js';
-import { cacheCoverToDisk, deleteCachedCover, isExpiringCover } from '../media/store_cover.js';
+import { cacheCoverToDisk, cachedCoverExists, deleteCachedCover, isExpiringCover } from '../media/store_cover.js';
 
 export type TrendKind = 'keyword' | 'trending';
 
@@ -250,8 +250,13 @@ async function cacheCoversInBackground(
   tenantId: string, videos: StoredVideo[], opts: { resurrect?: boolean } = {}
 ): Promise<void> {
   const now = Date.now();
+  // Мёртвая локальная обложка: ссылка на наш кэш, а файла нет (диск чистили/деплой без volume).
+  // Раньше такие считались «здоровыми» (не CDN) и висели чёрными навсегда — теперь воскрешаем.
+  const deadLocal = (u?: string | null): boolean =>
+    !!u && u.startsWith('/uploads/covers/') && !cachedCoverExists(u);
   const targets = videos.filter((v) =>
-    v.id && isExpiringCover(v.coverUrl) && !coverInFlight.has(v.id) && now >= (coverNextTry.get(v.id) || 0)
+    v.id && (isExpiringCover(v.coverUrl) || (opts.resurrect && deadLocal(v.coverUrl)))
+    && !coverInFlight.has(v.id) && now >= (coverNextTry.get(v.id) || 0)
   );
   if (!targets.length) return;
   if (coverNextTry.size > 5000) coverNextTry.clear(); // не даём карте расти вечно
@@ -340,23 +345,30 @@ export async function listRecentVideos(tenantId: string, limit = 60, downloadedO
   }
 }
 
-/** Удаляет видео: стирает файл с диска (если скачан) и строку из БД. */
+/** Удаляет видео: строку из БД, затем файлы с диска. */
 export async function deleteVideo(tenantId: string, id: string): Promise<boolean> {
-  // 1. Файл с диска — best-effort и ИЗОЛИРОВАННО: ошибка чтения file_path не должна
-  //    мешать удалению строки (раньше SELECT и DELETE были в одном try → сбой SELECT
+  // 1. Пути читаем ДО удаления строки (после DELETE их уже не спросить), best-effort и
+  //    ИЗОЛИРОВАННО: ошибка чтения не должна мешать удалению строки (раньше сбой SELECT
   //    тихо отменял DELETE, и видео «воскресало» после перезагрузки).
+  let fp: string | null = null, cover: string | null = null;
   try {
     const r = await pool.query(`SELECT file_path, cover_url FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
-    const fp = r.rows[0]?.file_path;
-    if (fp) { try { fs.unlinkSync(fp); } catch { /* файла может не быть */ } }
-    deleteCachedCover(r.rows[0]?.cover_url); // локально закэшированная обложка — тоже стираем
+    fp = r.rows[0]?.file_path || null;
+    cover = r.rows[0]?.cover_url || null;
   } catch (e) {
     console.warn('[trends] deleteVideo: чтение file_path не удалось (продолжаем):', (e as Error).message);
   }
-  // 2. Удаление строки — КРИТИЧНО, со своей обработкой ошибок.
+  // 2. Удаление строки — КРИТИЧНО, со своей обработкой ошибок. Файлы стираем ТОЛЬКО после
+  //    успешного DELETE: если он сорвётся и строка «воскреснет», обложка/видео останутся живыми
+  //    (раньше стирали до DELETE — воскресшая запись показывала чёрную обложку).
   try {
     const d = await pool.query(`DELETE FROM source_videos WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
-    return (d.rowCount || 0) > 0;
+    const deleted = (d.rowCount || 0) > 0;
+    if (deleted) {
+      if (fp) { try { fs.unlinkSync(fp); } catch { /* файла может не быть */ } }
+      deleteCachedCover(cover); // локально закэшированная обложка — тоже стираем
+    }
+    return deleted;
   } catch (e) {
     console.warn('[trends] deleteVideo: DELETE не удался:', (e as Error).message);
     return false;

@@ -13,6 +13,7 @@
 
 import pool from '../../db/index.js';
 import { analyzeChannel, detectChannel } from './service.js';
+import { cacheCoverToDisk, cachedCoverExists, isExpiringCover } from '../media/store_cover.js';
 
 export interface WatchedChannel {
   id: string;
@@ -60,6 +61,46 @@ function mapChannel(r: any): WatchedChannel {
   };
 }
 const bn = (v: any): number | null => (v == null ? null : Number(v));
+
+/**
+ * Фоновое кэширование обложек канальных видео (та же болезнь, что у ленты трендов, см.
+ * media/store_cover.ts): TikTok/IG отдают ПОДПИСАННЫЕ CDN-ссылки, протухающие за часы-сутки.
+ * Рефреш канала (раз в ~20ч) приносит свежие ссылки только для видео из последней выборки —
+ * между рефрешами и для «выпавших» из неё видео обложки гнили в 403. Качаем на диск и
+ * подменяем cover_url на стабильный локальный URL. Best-effort, зовётся fire-and-forget.
+ */
+const chCoverInFlight = new Set<string>();
+const chCoverNextTry = new Map<string, number>();
+const CH_COVER_RETRY_MS = 15 * 60 * 1000;      // живая ссылка не скачалась — не чаще раза в 15 мин
+const CH_COVER_DEAD_MS = 6 * 60 * 60 * 1000;   // мёртвая (истёкшая) — пауза до следующего рефреша
+
+async function cacheChannelCovers(tenantId: string, rows: Array<{ id: string; cover_url: string | null }>): Promise<void> {
+  const now = Date.now();
+  const targets = rows.filter((r) =>
+    r.id && isExpiringCover(r.cover_url) && !chCoverInFlight.has(r.id) && now >= (chCoverNextTry.get(r.id) || 0)
+  );
+  if (!targets.length) return;
+  if (chCoverNextTry.size > 5000) chCoverNextTry.clear();
+  for (const r of targets) { chCoverInFlight.add(r.id); chCoverNextTry.set(r.id, now + CH_COVER_RETRY_MS); }
+  let cached = 0, failed = 0;
+  const CONC = 5;
+  for (let i = 0; i < targets.length; i += CONC) {
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.all(targets.slice(i, i + CONC).map(async (r) => {
+      try {
+        const saved = await cacheCoverToDisk(r.cover_url!);
+        await pool.query(`UPDATE channel_videos SET cover_url = $3 WHERE tenant_id = $1 AND id = $2`, [tenantId, r.id, saved.mediaUrl]);
+        cached++;
+      } catch {
+        failed++;
+        chCoverNextTry.set(r.id, now + CH_COVER_DEAD_MS);
+      } finally {
+        chCoverInFlight.delete(r.id);
+      }
+    }));
+  }
+  if (cached || failed) console.log(`[channels] обложки: закэшировано ${cached}, не удалось ${failed} (из ${targets.length})`);
+}
 /** Целое для INT/BIGINT-колонок: округляем (Instagram отдаёт дробную длительность видео,
  *  напр. 70.008 → 70). Иначе Postgres падает «invalid input syntax for type integer». */
 const I = (v: any): number | null => { if (v == null) return null; const n = Math.round(Number(v)); return Number.isFinite(n) ? n : null; };
@@ -78,14 +119,30 @@ export async function getWatchedChannel(tenantId: string, channelId: string): Pr
     `SELECT * FROM channel_videos WHERE channel_id = $1 AND tenant_id = $2 ORDER BY play_count DESC NULLS LAST LIMIT 500`,
     [channelId, tenantId]
   );
-  const videos: WatchedVideo[] = v.rows.map((r: any) => ({
-    externalId: r.external_id, platform: r.platform, isShort: r.is_short ?? null, author: r.author_name || r.author,
-    description: r.description, coverUrl: r.cover_url, webUrl: r.web_url,
-    durationSec: r.duration_sec, createTime: r.create_time == null ? null : Number(r.create_time),
-    stats: { play: bn(r.play_count), like: bn(r.like_count), comment: bn(r.comment_count), share: bn(r.share_count) },
-    prev: { play: bn(r.prev_play_count), like: bn(r.prev_like_count), comment: bn(r.prev_comment_count), share: bn(r.prev_share_count) },
-    prevSnapshotAt: r.prev_snapshot_at ? new Date(r.prev_snapshot_at).toISOString() : null,
-  }));
+  // Самолечение обложек на чтении: живые CDN-ссылки докачиваем на диск фоном; мёртвые
+  // ЛОКАЛЬНЫЕ (файл пропал с диска) сбрасываем в NULL — следующий рефреш канала принесёт
+  // свежую CDN-ссылку, и она закэшируется заново (иначе битая ссылка висела бы вечно).
+  const deadLocalIds: string[] = [];
+  const videos: WatchedVideo[] = v.rows.map((r: any) => {
+    let cover: string | null = r.cover_url;
+    if (cover && cover.startsWith('/uploads/covers/') && !cachedCoverExists(cover)) {
+      deadLocalIds.push(r.id);
+      cover = null;
+    }
+    return {
+      externalId: r.external_id, platform: r.platform, isShort: r.is_short ?? null, author: r.author_name || r.author,
+      description: r.description, coverUrl: cover, webUrl: r.web_url,
+      durationSec: r.duration_sec, createTime: r.create_time == null ? null : Number(r.create_time),
+      stats: { play: bn(r.play_count), like: bn(r.like_count), comment: bn(r.comment_count), share: bn(r.share_count) },
+      prev: { play: bn(r.prev_play_count), like: bn(r.prev_like_count), comment: bn(r.prev_comment_count), share: bn(r.prev_share_count) },
+      prevSnapshotAt: r.prev_snapshot_at ? new Date(r.prev_snapshot_at).toISOString() : null,
+    };
+  });
+  if (deadLocalIds.length) {
+    void pool.query(`UPDATE channel_videos SET cover_url = NULL WHERE tenant_id = $1 AND id = ANY($2)`, [tenantId, deadLocalIds])
+      .catch((e: unknown) => console.warn('[channels] сброс мёртвых локальных обложек не удался:', (e as Error).message));
+  }
+  void cacheChannelCovers(tenantId, v.rows.map((r: any) => ({ id: r.id, cover_url: r.cover_url })));
   return { channel: mapChannel(c.rows[0]), videos };
 }
 
@@ -156,6 +213,10 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
       [I(p.followers), p.displayName ?? null, p.avatarUrl ?? null, !!p.verified, analysis.videos.length, channelId]
     );
     // Видео: upsert с переносом current→prev; + снимок дня для каждого.
+    // cover_url: уже закэшированную ЛОКАЛЬНУЮ обложку не перетираем свежей CDN-ссылкой
+    // (она протухнет за часы; локальная копия вечная — см. cacheChannelCovers). Если файл
+    // пропал с диска, чтение канала сбросит cover_url в NULL — тогда CDN-ссылка снова пройдёт.
+    const upserted: Array<{ id: string; cover_url: string | null }> = [];
     for (const v of analysis.videos) {
       const up = await client.query(
         `INSERT INTO channel_videos
@@ -172,16 +233,19 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
            comment_count = EXCLUDED.comment_count, share_count = EXCLUDED.share_count,
            is_short = EXCLUDED.is_short,
            description = COALESCE(EXCLUDED.description, channel_videos.description),
-           cover_url = COALESCE(EXCLUDED.cover_url, channel_videos.cover_url),
+           cover_url = CASE WHEN channel_videos.cover_url LIKE '/uploads/%'
+                            THEN channel_videos.cover_url
+                            ELSE COALESCE(EXCLUDED.cover_url, channel_videos.cover_url) END,
            web_url = COALESCE(EXCLUDED.web_url, channel_videos.web_url),
            duration_sec = COALESCE(EXCLUDED.duration_sec, channel_videos.duration_sec),
            last_seen_at = NOW()
-         RETURNING id`,
+         RETURNING id, cover_url`,
         [tenantId, channelId, v.platform, v.externalId, v.author ?? null, v.authorName ?? null, v.description ?? null,
          v.coverUrl ?? null, v.webUrl ?? null, I(v.durationSec), I(v.createTime),
          I(v.stats.play), I(v.stats.like), I(v.stats.comment), I(v.stats.share), v.isShort ?? null]
       );
       const vid = up.rows[0].id;
+      upserted.push({ id: vid, cover_url: up.rows[0].cover_url ?? null });
       await client.query(
         `INSERT INTO video_metric_snapshots (tenant_id, channel_id, video_id, snapshot_date, play_count, like_count, comment_count, share_count)
          VALUES ($1,$2,$3, CURRENT_DATE, $4,$5,$6,$7)
@@ -201,6 +265,8 @@ export async function refreshWatchedChannel(tenantId: string, channelId: string)
       [tenantId, channelId, I(p.followers), analysis.videos.length, I(totalViews), I(totalLikes)]
     );
     await client.query('COMMIT');
+    // Свежие CDN-обложки → на диск (фоном, после коммита — чтобы не держать транзакцию).
+    void cacheChannelCovers(tenantId, upserted);
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;

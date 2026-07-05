@@ -21,6 +21,15 @@ import subprocess
 GRAY = (143, 143, 143)
 
 
+def _erode_px():
+    """Сколько пикселей съедать с края маски (ECHOMIMIC_ERODE, деф. 1; 0 = выкл).
+    Убирает полу-зелёный anti-alias край — «контур» вокруг человека после хромакея."""
+    try:
+        return max(0, int(os.getenv("ECHOMIMIC_ERODE", "1") or 1))
+    except ValueError:
+        return 1
+
+
 def _green_mask(a):
     import numpy as np  # noqa: F401
     r, g, b = a[..., 0].astype(int), a[..., 1].astype(int), a[..., 2].astype(int)
@@ -62,9 +71,11 @@ def _matte_rvm(src_mp4, out_mp4, downsample=0.4):
     temporally-stable (чище края волос). Модель качается один раз в кэш torch.hub."""
     import time
     import torch
+    import torch.nn.functional as F
     import cv2
     import numpy as np
     t0 = time.time()
+    erode_px = _erode_px()
     model = torch.hub.load("PeterL1n/RobustVideoMatting", "mobilenetv3", trust_repo=True).eval().cuda()
     for p in model.parameters():
         p.requires_grad_(False)
@@ -84,6 +95,10 @@ def _matte_rvm(src_mp4, out_mp4, downsample=0.4):
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             src = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float().cuda() / 255.0
             fgr, pha, *rec = model(src, *rec, downsample_ratio=downsample)
+            # эрозия альфы (ECHOMIMIC_ERODE px, деф. 1): край anti-alias (полу-зелёные пиксели) уходит
+            # в чистый зелёный → бэкенд-хромакей срезает его без остаточного «контура» вокруг человека.
+            for _ in range(erode_px):
+                pha = -F.max_pool2d(-pha, kernel_size=3, stride=1, padding=1)
             com = fgr * pha + bgr * (1 - pha)
             arr = (com[0].permute(1, 2, 0).clamp(0, 1).cpu().numpy() * 255).astype(np.uint8)
             vw.write(cv2.cvtColor(arr, cv2.COLOR_RGB2BGR))
@@ -122,10 +137,19 @@ def matte_to_green(src_mp4, out_mp4):
     frames = sorted(glob.glob(os.path.join(fr, "f*.png")))
     if not frames:
         return False
+    import io
+    from PIL import Image, ImageFilter
+    erode_px = _erode_px()
     sess = new_session("u2net_human_seg")
     for f in frames:
-        out = remove(open(f, "rb").read(), session=sess, bgcolor=(0, 255, 0, 255))
-        open(os.path.join(og, os.path.basename(f)), "wb").write(out)
+        out = remove(open(f, "rb").read(), session=sess)   # RGBA: альфа отдельно, чтобы съесть край
+        im = Image.open(io.BytesIO(out)).convert("RGBA")
+        alpha = im.getchannel("A")
+        for _ in range(erode_px):   # та же эрозия, что в RVM-пути: без неё контур остаётся в фолбэке
+            alpha = alpha.filter(ImageFilter.MinFilter(3))
+        green = Image.new("RGB", im.size, (0, 255, 0))
+        green.paste(im.convert("RGB"), mask=alpha)
+        green.save(os.path.join(og, os.path.basename(f)))
     # частота кадров — из исходника (EchoMimic = 24), аудио берём из него же
     subprocess.run(["ffmpeg", "-y", "-framerate", "24", "-i", os.path.join(og, "f%05d.png"),
                     "-i", src_mp4, "-map", "0:v", "-map", "1:a?", "-c:v", "libx264",

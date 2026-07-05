@@ -482,6 +482,9 @@ def dispatch(step_tool: str, params: dict, input_path: Optional[str], work: Path
             ok, _ = _run(["ffmpeg", "-y", "-i", face, "-frames:v", "1", "-q:v", "2", frame], timeout=120)
             if ok and os.path.exists(frame):
                 img = frame
+            else:
+                # видео вместо кадра фото-движку не подсовываем: он свалится позже и непонятнее
+                return None, "аватар: не извлёкся кадр из видео-аватара (файл битый?) — passthrough"
         # Порядок движков: явный выбор (если доступен) → остальные доступные (echomimic приоритетнее).
         order = ([want] if want in avail else []) + [e for e in avail if e != want]
         with _gpu_lock:  # одна GPU-генерация за раз (иначе OOM на 16ГБ)
@@ -1093,6 +1096,52 @@ def _emv2_infer_once(py, emv2, ref_img, wav_path, pose_dir, clen, W, H, steps, e
     return sig, log
 
 
+def _emv2_infer_multi(py, emv2, cases, L, W, H, steps, env, workdir):
+    """Несколько сегментов в ОДНОМ процессе infer_acc — модель грузится ОДИН раз (а не на каждый кусок).
+    cases = [(ref, audio, pose_dir), ...]; ref-пути ОБЯЗАНЫ быть уникальны (ключи YAML-конфига и
+    матчинг выходов по basename). infer_acc уменьшает args.L навсегда после короткого кейса →
+    короткий сегмент держим ПОСЛЕДНИМ. Ретрай гонит только недостающие сегменты.
+    → ([sig на каждый сегмент по порядку] | None, log)."""
+    import glob as _glob
+    cfg = os.path.join(emv2, "configs", "prompts", "_wm_%s.yaml" % uuid.uuid4().hex[:8])
+    mark = os.path.join(workdir, ".mkm_%s" % uuid.uuid4().hex[:6]); open(mark, "w").close()
+    time.sleep(0.1)
+    sigs = [None] * len(cases); log = ""
+    for attempt in (1, 2):
+        todo = [c for k, c in enumerate(cases) if not sigs[k]]
+        body = _EMV2_CFG
+        for (ref, aud, pdir) in todo:
+            body += '  "%s":\n    - "%s"\n    - "%s"\n' % (ref, aud, pdir)
+        with open(cfg, "w") as f:
+            f.write(body)
+        try:
+            p = subprocess.run([py, "infer_acc.py", "--config", cfg, "-L", str(L), "-W", W, "-H", H, "--steps", steps],
+                               cwd=emv2, env=env, capture_output=True, text=True,
+                               timeout=max(3600, 600 * len(todo)))
+            log = (p.stdout or "")[-200:] + " || " + (p.stderr or "")[-700:]
+        except Exception as e:  # noqa: BLE001
+            log = "infer_acc multi: %s" % e
+        allsigs = [v for v in _glob.glob(os.path.join(emv2, "output", "**", "*_sig.mp4"), recursive=True)
+                   if os.path.getmtime(v) >= os.path.getmtime(mark)]
+        for k, (ref, _a, _p) in enumerate(cases):        # матчим по basename ref-копии (не по порядку)
+            if sigs[k]:
+                continue
+            base = os.path.splitext(os.path.basename(ref))[0]
+            m = [v for v in allsigs if os.path.basename(v).startswith(base + "-")]
+            if m:
+                m.sort(key=os.path.getmtime); sigs[k] = m[-1]
+        if all(sigs):
+            break
+        print("[echomimic] multi попытка %d: %d/%d сегментов | %s" % (attempt, sum(1 for s in sigs if s), len(cases), log[-200:]), flush=True)
+        if attempt == 1:
+            time.sleep(4)
+    try: os.remove(cfg)
+    except Exception: pass
+    try: os.remove(mark)
+    except Exception: pass
+    return (sigs if all(sigs) else None), log
+
+
 def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = None) -> Tuple[bool, str]:
     """EchoMimic-v2: фото (по пояс) + аудио → говорящий с жестами рук/корпуса (open-source, GPU).
     Вызов через CLI репозитория (ECHOMIMIC_DIR). ⚠ ТОЧНЫЕ аргументы зависят от версии EchoMimic-v2 —
@@ -1113,7 +1162,7 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
     _ensure_echomimic_lowvram_patch(emv2)  # снижает пик VRAM 18→9ГБ, фикс OOM (см. функцию выше)
     pose = os.environ.get("ECHOMIMIC_POSE", "assets/halfbody_demo/pose/01")
     W = os.environ.get("ECHOMIMIC_W", "768"); H = os.environ.get("ECHOMIMIC_H", "768")
-    steps = os.environ.get("ECHOMIMIC_STEPS", "6")
+    steps = os.environ.get("ECHOMIMIC_STEPS", "4")   # acc-модель: 4 шага ≈ качество 6, но ~24% быстрее
     maxl = int(os.environ.get("ECHOMIMIC_MAXL", "240") or 240)
     workdir = os.path.dirname(out_path) or "."
     # аудио → wav 16k моно (EchoMimic ждёт wav)
@@ -1190,12 +1239,14 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
         if not combined:
             return False, "EchoMimic-v2: " + (log or "")[-300:]
     else:
-        # СЕГМЕНТАЦИЯ длинного диалога: куски по maxl кадров → склейка. Позу режем из полной папки
-        # (руки непрерывны на стыках), аудио — по времени. Каждый кусок стартует от того же реф-фото.
+        # СЕГМЕНТАЦИЯ длинного диалога: куски по ≤maxl кадров, но ВСЕ в ОДНОМ процессе infer_acc
+        # (модель грузится 1 раз, а не на каждый сегмент — главная экономия времени). Позу режем из
+        # полной папки (руки непрерывны на стыках), аудио — по времени; каждый сегмент — своя копия
+        # реф-фото → своя выходная папка. Потом склейка.
         n_pose = len([x for x in os.listdir(pose) if x.endswith(".npy")]) if os.path.isdir(pose) else 0
         nch = (Lfull + maxl - 1) // maxl
-        print("[echomimic] длинный клип: %d кадров → %d сегментов по ≤%d" % (Lfull, nch, maxl), flush=True)
-        chunk_files = []
+        print("[echomimic] длинный клип: %d кадров → %d сегментов (один процесс, steps=%s)" % (Lfull, nch, steps), flush=True)
+        cases = []
         for k in range(nch):
             clen = min(maxl, Lfull - k * maxl)
             cw = os.path.join(workdir, "cw_%d_%s.wav" % (k, uuid.uuid4().hex[:4]))
@@ -1212,12 +1263,21 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
                 cpose = cp
             else:
                 cpose = pose
-            sig, log = _emv2_infer_once(py, emv2, ref_img, cw, cpose, clen, W, H, steps, env, workdir)
-            if not sig:
-                return False, "EchoMimic-v2 сегмент %d/%d: %s" % (k + 1, nch, (log or "")[-200:])
+            # копия ref обязана быть уникальной: общий ref = дубликат ключа в YAML (PyYAML молча
+            # оставит последний) + коллизия матчинга выходов → фейл-фаст вместо тихой поломки
+            refk = os.path.join(workdir, "refc_%d_%s.png" % (k, uuid.uuid4().hex[:4]))
+            try:
+                shutil.copyfile(ref_img, refk)
+            except Exception as e:  # noqa: BLE001
+                return False, "EchoMimic-v2: копия реф-кадра для сегмента %d не создана: %s" % (k + 1, e)
+            cases.append((refk, cw, cpose))
+        sigs, log = _emv2_infer_multi(py, emv2, cases, maxl, W, H, steps, env, workdir)
+        if not sigs:
+            return False, "EchoMimic-v2 сегменты (%d): %s" % (nch, (log or "")[-250:])
+        chunk_files = []
+        for k, sig in enumerate(sigs):
             cf = os.path.join(workdir, "chunk_%d_%s.mp4" % (k, uuid.uuid4().hex[:4]))
             shutil.copyfile(sig, cf); chunk_files.append(cf)
-            print("[echomimic] сегмент %d/%d готов (%d кадров)" % (k + 1, nch, clen), flush=True)
         listf = os.path.join(workdir, "cc_%s.txt" % uuid.uuid4().hex[:4])
         with open(listf, "w") as lf:
             for cf in chunk_files:
