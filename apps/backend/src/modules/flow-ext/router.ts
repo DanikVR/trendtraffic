@@ -132,10 +132,12 @@ function saveDataUrl(dataUrl: string): { fileUrl: string; filePath: string; size
 // ── Роутер ──────────────────────────────────────────────────────────────────
 const router = Router();
 
-/** Мягкий лимит на поллинг расширения (защита БД от runaway-циклов). */
+/** Мягкий лимит на поллинг расширения (защита БД от runaway-циклов).
+ *  Ключ — tenantId (requireAuth гарантирует его до этого middleware). НЕ req.ip:
+ *  express-rate-limit иначе кидает ValidationError про обход лимита по IPv6. */
 const pollLimiter = rateLimit({
   windowMs: 60_000, max: 240,
-  keyGenerator: (req: AuthedRequest) => req.tenantId || req.ip || 'anon',
+  keyGenerator: (req: AuthedRequest) => req.tenantId || 'anon',
   standardHeaders: true, legacyHeaders: false,
 });
 
