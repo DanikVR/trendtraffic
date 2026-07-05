@@ -16,7 +16,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Plug, Send, Loader2, Trash2, CheckCircle2, XCircle, Clock, Download } from 'lucide-react';
+import { Plug, Send, Loader2, Trash2, CheckCircle2, XCircle, Clock, Download, ExternalLink, Image } from 'lucide-react';
 
 type Status = 'queued' | 'running' | 'done' | 'failed';
 interface FlowTask {
@@ -130,17 +130,25 @@ export default function FlowExtPanel({
               {extPresent === null ? 'проверяю…' : extPresent === false ? 'не установлено' : connected ? 'подключено' : 'установлено, не подключено'}
             </span>
           </span>
-          {extPresent === false ? (
-            <a href="/flow-extension.zip" download className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg" style={{ background: '#6366f1', color: '#fff' }}>
-              <Download size={14} /> Скачать
-            </a>
-          ) : (
-            <button onClick={connect} disabled={connected}
-              className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
-              style={{ background: connected ? 'var(--bg-secondary)' : '#6366f1', color: connected ? 'var(--text-muted)' : '#fff', border: connected ? '1px solid var(--border-medium)' : 'none' }}>
-              <Plug size={14} /> {connected ? 'Подключено' : 'Подключить'}
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => window.open('https://labs.google/flow', '_blank', 'noopener')}
+              title="Открыть Google Flow в новой вкладке"
+              className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg"
+              style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
+              <ExternalLink size={14} /> Открыть Flow
             </button>
-          )}
+            {extPresent === false ? (
+              <a href="/flow-extension.zip" download className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg" style={{ background: '#6366f1', color: '#fff' }}>
+                <Download size={14} /> Скачать
+              </a>
+            ) : (
+              <button onClick={connect} disabled={connected}
+                className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
+                style={{ background: connected ? 'var(--bg-secondary)' : '#6366f1', color: connected ? 'var(--text-muted)' : '#fff', border: connected ? '1px solid var(--border-medium)' : 'none' }}>
+                <Plug size={14} /> {connected ? 'Подключено' : 'Подключить'}
+              </button>
+            )}
+          </div>
         </div>
         {extPresent === false && (
           <p className="text-[10.5px] mt-2" style={{ color: 'var(--text-muted)' }}>
@@ -148,6 +156,13 @@ export default function FlowExtPanel({
           </p>
         )}
       </div>
+
+      {/* Быстрый доступ к Галерее (готовые клипы Flow + исходники) */}
+      <button onClick={() => window.open('/gallery', '_blank', 'noopener')}
+        className="inline-flex items-center justify-center gap-2 text-[12px] font-600 px-3 py-2 rounded-xl"
+        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
+        <Image size={14} /> Открыть галерею
+      </button>
 
       {/* 2. Промпты → очередь */}
       <div className="flex flex-col gap-2">
