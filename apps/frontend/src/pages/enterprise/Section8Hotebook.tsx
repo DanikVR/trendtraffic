@@ -1,16 +1,17 @@
 /**
  * Section8Hotebook — Enterprise-настройки блока «Hotebook» (Google NotebookLM).
  *
- * Здесь живёт «процедура подключения Google-аккаунта»:
+ * Подключение ПЕР-ТЕНАНТНОЕ: у каждого Enterprise-аккаунта свой Google-аккаунт
+ * (профиль = tenantId на воркере), свои лимиты и блокноты. Здесь:
  *  - статус синхронизации (тот же, что питает плашку в блоке): ok / auth /
  *    api_changed / quota / offline / not_configured + почта аккаунта;
  *  - кнопка «Проверить подключение» (живой вызов NotebookLM через воркер);
- *  - импорт сессии: вставить storage_state.json (создаёт «notebooklm login»
- *    на машине воркера) — применяется через воркер, только superadmin;
+ *  - импорт сессии: вставить свой storage_state.json — доступно любому Enterprise;
+ *  - кнопка «Открыть окно входа Google» (Chromium на машине воркера) — только
+ *    superadmin, чья это машина; клиенты подключаются вставкой сессии;
  *  - счётчики генераций за сегодня.
  *
- * Аккаунт платформенный (один на сервис): рекомендуется ОТДЕЛЬНЫЙ Google-аккаунт
- * с планом Google AI (лимиты аудио/видео — суточные, на аккаунт).
+ * Рекомендуется ОТДЕЛЬНЫЙ Google-аккаунт с планом Google AI (лимиты — суточные, на аккаунт).
  */
 
 import React, { useEffect, useState } from 'react';
@@ -40,7 +41,7 @@ const KIND_TITLE: Record<string, string> = {
   network: 'Сбой сети между воркером и Google',
 };
 const KIND_BODY: Record<string, string> = {
-  auth: 'Переподключите аккаунт: на машине воркера выполните «notebooklm login» (или вставьте свежий storage_state.json ниже).',
+  auth: 'Переподключите аккаунт: выполните «notebooklm login» у себя и вставьте свежий storage_state.json ниже (суперадмин может нажать «Открыть окно входа»).',
   api_changed: 'Обычно лечится обновлением библиотеки: на воркере выполните «pip install -U notebooklm-py» и перезапустите сервис.',
   quota: 'Генерации возобновятся после сброса лимита (обычно на следующий день). Либо повысите план Google AI на аккаунте.',
   offline: 'Включите машину воркера и проверьте Tailscale. Сервис: systemctl status trendtraffic-notebooklm.',
@@ -49,7 +50,8 @@ const KIND_BODY: Record<string, string> = {
 };
 
 export function Section8Hotebook() {
-  const { token } = useAppStore();
+  const { token, user } = useAppStore();
+  const isSuperadmin = user?.role === 'superadmin';
   const headers = (): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
 
   const [status, setStatus] = useState<HbConnStatus | null>(null);
@@ -122,7 +124,7 @@ export function Section8Hotebook() {
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Hotebook — подключение Google (NotebookLM)</h3>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Один платформенный Google-аккаунт для блока «Hotebook» во всех сценариях TrendFlow.
+              Ваш личный Google-аккаунт для блока «Hotebook». У каждого Enterprise-аккаунта своё подключение и свои лимиты.
             </p>
           </div>
           {status && (
@@ -167,27 +169,33 @@ export function Section8Hotebook() {
         <h4 className="text-sm font-700 mb-2 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
           <KeyRound size={15} style={{ color: '#22d3ee' }} /> Как подключить / переподключить Google-аккаунт
         </h4>
-        {/* Главный путь: вход в 2 клика прямо отсюда — окно откроется на машине воркера. */}
-        <div className="rounded-xl p-3.5 mb-3 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.3)' }}>
-          <AuroraButton onClick={() => void doLoginWindow()} disabled={loginOpening}
-            icon={loginOpening ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}>
-            Открыть окно входа Google
-          </AuroraButton>
-          <p className="text-[11px] flex-1 min-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
-            Окно Chromium появится <b>на экране машины воркера</b> (домашний ПК). Войдите в Google-аккаунт —
-            и нажмите «Проверить подключение» выше. Ничего вставлять не нужно.
-          </p>
-        </div>
+        {/* Окно входа на машине воркера — только суперадмину (его ПК = воркер). */}
+        {isSuperadmin && (
+          <div className="rounded-xl p-3.5 mb-3 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.3)' }}>
+            <AuroraButton onClick={() => void doLoginWindow()} disabled={loginOpening}
+              icon={loginOpening ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}>
+              Открыть окно входа Google
+            </AuroraButton>
+            <p className="text-[11px] flex-1 min-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
+              <b>Только для вас (суперадмин):</b> окно Chromium появится на экране машины воркера (домашний ПК).
+              Войдите в Google — и нажмите «Проверить подключение» выше. Клиенты подключают аккаунт вставкой сессии (ниже).
+            </p>
+          </div>
+        )}
+        <p className="text-xs mb-2 font-600" style={{ color: 'var(--text-secondary)' }}>
+          {isSuperadmin ? 'Запасной способ — вставить сессию своего аккаунта:' : 'Подключите свой Google-аккаунт — вставьте файл сессии:'}
+        </p>
         <ol className="text-xs space-y-1.5 mb-4 list-decimal list-inside" style={{ color: 'var(--text-secondary)' }}>
-          <li>Запасной путь: на машине воркера выполните <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>notebooklm login</code> — откроется браузер, войдите в Google-аккаунт.</li>
-          <li>Сессия сохранится в <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>storage_state.json</code>; воркер продлевает её сам (keepalive раз в сутки).</li>
-          <li>Либо вставьте содержимое этого файла ниже — применится без доступа к консоли.</li>
+          <li>На своём компьютере установите клиент: <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>pip install "notebooklm-py[browser]"</code></li>
+          <li>Выполните <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>notebooklm login</code> — откроется браузер, войдите в свой Google-аккаунт.</li>
+          <li>Откройте файл <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>~/.notebooklm/profiles/default/storage_state.json</code> и вставьте его содержимое ниже.</li>
         </ol>
         <div className="rounded-xl p-3 mb-3 flex items-start gap-2" style={{ background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.25)' }}>
           <Info size={14} style={{ color: '#22d3ee', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-            Рекомендуется <b>отдельный</b> Google-аккаунт (не основной): библиотека работает через недокументированный API,
-            а суточные лимиты NotebookLM (аудио/видео/чат) считаются на аккаунт. Для активной работы включите на нём план Google AI (Plus/Pro/Ultra).
+            Это <b>ваш</b> аккаунт с <b>вашими</b> лимитами и блокнотами — они не пересекаются с другими клиентами.
+            Рекомендуется отдельный Google-аккаунт (библиотека работает через недокументированный API);
+            суточные лимиты NotebookLM (аудио/видео/чат) считаются на аккаунт — для активной работы включите план Google AI (Plus/Pro/Ultra).
           </p>
         </div>
         <textarea value={ssInput} onChange={(e) => setSsInput(e.target.value)} rows={5}
@@ -197,9 +205,9 @@ export function Section8Hotebook() {
         <div className="flex items-center gap-3 flex-wrap">
           <AuroraButton onClick={() => void doImport()} disabled={importing || !ssInput.trim()}
             icon={importing ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}>
-            Применить сессию
+            Подключить мой аккаунт
           </AuroraButton>
-          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Только для суперадмина — аккаунт общий для платформы.</span>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Сессия применяется только к вашему Enterprise-аккаунту.</span>
         </div>
         {note && (
           <p className="text-xs mt-2 inline-flex items-center gap-1.5" style={{ color: note.ok ? '#10b981' : '#ef4444' }}>

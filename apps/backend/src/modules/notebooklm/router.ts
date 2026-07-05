@@ -2,13 +2,17 @@
  * Hotebook (Google NotebookLM) — бэкенд блока «Hotebook» в TrendFlow.
  *
  * Архитектура: фронт → этот роутер → Hotebook-воркер (notebooklm-worker,
- * FastAPI-обёртка notebooklm-py по Tailscale) → NotebookLM под платформенным
- * Google-аккаунтом. Готовые артефакты (mp3/mp4/pdf/png/md/json) скачиваются
- * с воркера в uploads/hotebook и регистрируются в media_assets
- * (folder='hotebook') — их показывает раздел «Hotebook» Галереи.
+ * FastAPI-обёртка notebooklm-py по Tailscale) → NotebookLM. Готовые артефакты
+ * (mp3/mp4/pdf/png/md/json) скачиваются с воркера в uploads/hotebook и
+ * регистрируются в media_assets (folder='hotebook') — их показывает раздел
+ * «Hotebook» Галереи.
  *
- * Доступ: JWT + Enterprise (как social-ext) — каждый вызов расходует квоты
- * платформенного аккаунта Google. Импорт кук — только superadmin.
+ * ПОДКЛЮЧЕНИЕ ПЕР-ТЕНАНТНОЕ: у каждого Enterprise-тенанта СВОЙ Google-аккаунт
+ * (профиль notebooklm-py на воркере = tenantId → ?profile= на всех вызовах);
+ * свои лимиты и блокноты. Подключение (вставка storage_state.json) доступно
+ * любому Enterprise-тенанту; окно входа на машине воркера — только superadmin.
+ *
+ * Доступ: JWT + Enterprise (как social-ext).
  *
  * Статус /status питает «плашку синхронизации»: error_kind =
  *   'auth'           — сессия Google протухла, нужно переподключение;
@@ -126,14 +130,20 @@ function workerBase(): string {
   return getNotebookWorkerUrl();
 }
 
-async function wfetch(pathname: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<any> {
+/**
+ * Вызов воркера. prof — имя профиля notebooklm-py (= tenantId), добавляется как
+ * ?profile=<prof> → у каждого Enterprise-тенанта свой Google-аккаунт на воркере.
+ */
+async function wfetch(pathname: string, init: RequestInit = {}, timeoutMs = 30_000, prof?: string): Promise<any> {
   const base = workerBase();
   if (!base) throw new WorkerApiError('Hotebook-воркер не настроен (NOTEBOOKLM_WORKER_URL)', 'not_configured');
+  let url = `${base}${pathname}`;
+  if (prof) url += (pathname.includes('?') ? '&' : '?') + `profile=${encodeURIComponent(prof)}`;
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   let r: globalThis.Response;
   try {
-    r = await fetch(`${base}${pathname}`, { ...init, signal: ctrl.signal });
+    r = await fetch(url, { ...init, signal: ctrl.signal });
   } catch (e: any) {
     clearTimeout(t);
     throw new WorkerOffline(e?.name === 'AbortError' ? 'Hotebook-воркер не ответил вовремя' : 'Hotebook-воркер недоступен (машина воркера выключена?)');
@@ -156,32 +166,44 @@ function errPayload(e: any): { error: string; errorKind: string } {
   return { error: e?.message || 'Ошибка', errorKind: 'error' };
 }
 
-// ── Статус подключения (кэш 30с) + алерт владельцу ──────────────────────────
-let statusCache: { at: number; data: any } | null = null;
-let lastAlertAt = 0;
+// ── Статус подключения ПЕР-ТЕНАНТ (кэш 30с на тенанта) + алерт владельцу ──────
+const statusCache = new Map<string, { at: number; data: any }>();
+const lastAlertAt = new Map<string, number>();
+const adopted = new Set<string>(); // тенанты, для кого уже пробовали перенести сессию 'default'
 
-async function connectionStatus(force = false): Promise<any> {
+/**
+ * Статус подключения Google этого тенанта (профиль = tenantId).
+ * Для суперадмина один раз пробуем перенести старую платформенную сессию
+ * 'default' в его профиль (он логинился до перехода на пер-тенантную схему).
+ */
+async function connectionStatus(tenantId: string, opts: { force?: boolean; role?: string } = {}): Promise<any> {
   if (!workerBase()) return { configured: false, ok: false, errorKind: 'not_configured', checkedAt: new Date().toISOString() };
-  if (!force && statusCache && Date.now() - statusCache.at < 30_000) return statusCache.data;
+  const cached = statusCache.get(tenantId);
+  if (!opts.force && cached && Date.now() - cached.at < 30_000) return cached.data;
+  // Суперадмин: перенести сессию default → его профиль (идемпотентно, один раз).
+  if (opts.role === 'superadmin' && !adopted.has(tenantId)) {
+    adopted.add(tenantId);
+    try { await wfetch('/auth/adopt-default', { method: 'POST' }, 20_000, tenantId); } catch { /* нет default — не страшно */ }
+  }
   let data: any;
   try {
-    const s = await wfetch('/auth/status', {}, 15_000);
+    const s = await wfetch('/auth/status', {}, 15_000, tenantId);
     data = { configured: true, ok: !!s.ok, errorKind: s.error_kind || null, email: s.email || null, error: s.error || null, checkedAt: new Date().toISOString() };
   } catch (e: any) {
     const p = errPayload(e);
     data = { configured: true, ok: false, errorKind: p.errorKind, error: p.error, checkedAt: new Date().toISOString() };
   }
-  statusCache = { at: Date.now(), data };
+  statusCache.set(tenantId, { at: Date.now(), data });
   return data;
 }
 
-/** Разовый алерт владельцу при поломке синхронизации (не чаще раза в 12ч). */
+/** Разовый алерт владельцу тенанта при поломке синхронизации (не чаще раза в 12ч). */
 async function maybeAlertOwner(tenantId: string, st: any): Promise<void> {
   if (st?.ok || !['auth', 'api_changed'].includes(String(st?.errorKind))) return;
-  if (Date.now() - lastAlertAt < 12 * 3600_000) return;
-  lastAlertAt = Date.now();
+  if (Date.now() - (lastAlertAt.get(tenantId) || 0) < 12 * 3600_000) return;
+  lastAlertAt.set(tenantId, Date.now());
   const why = st.errorKind === 'auth'
-    ? 'сессия Google-аккаунта протухла — переподключите аккаунт в Настройках Enterprise → Hotebook'
+    ? 'сессия вашего Google-аккаунта протухла — переподключите аккаунт в Настройках Enterprise → Hotebook'
     : 'Google изменил внутренний API NotebookLM — нужно обновить библиотеку на воркере';
   try {
     await sendOwnerNotification(tenantId, `⚠️ <b>Hotebook: синхронизация с Google нарушена</b>\n${why}`);
@@ -200,7 +222,7 @@ async function ensureNotebook(tenantId: string, flowId: string, title?: string):
   const name = (title || '').trim() || `TrendFlow · ${flowId.slice(0, 8)}`;
   const d = await wfetch('/notebooks', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: name }),
-  }, 60_000);
+  }, 60_000, tenantId);
   const nb = d?.notebook || {};
   const nbId = nb.id || nb.notebook_id || nb.notebookId;
   if (!nbId || typeof nbId !== 'string') throw new WorkerApiError('NotebookLM не вернул id блокнота', 'api_changed');
@@ -294,7 +316,7 @@ async function refreshJob(tenantId: string, row: any): Promise<any> {
           `UPDATE notebooklm_jobs SET status='error', error=$2, error_kind=$3, finished_at=now() WHERE id=$1`,
           [row.id, String(task.error || 'ошибка генерации'), String(task.error_kind || 'error')]
         );
-        if (task.error_kind === 'auth' || task.error_kind === 'api_changed') statusCache = null; // плашка узнает сразу
+        if (task.error_kind === 'auth' || task.error_kind === 'api_changed') statusCache.delete(tenantId); // плашка узнает сразу
       } else if (row.status === 'queued') {
         await pool.query(`UPDATE notebooklm_jobs SET status='running' WHERE id=$1`, [row.id]);
       }
@@ -326,36 +348,35 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireEnterprise);
 
-/** Статус подключения Google (для плашки в блоке и в настройках). ?force=1 — без кэша. */
+/** Статус подключения Google этого тенанта (плашка в блоке и в настройках). ?force=1 — без кэша. */
 router.get('/status', async (req: AuthedRequest, res: Response) => {
-  const st = await connectionStatus(req.query.force === '1');
+  const st = await connectionStatus(req.tenantId!, { force: req.query.force === '1', role: req.userRole });
   void maybeAlertOwner(req.tenantId!, st);
   res.json({ status: st });
 });
 
-/** Открыть окно входа Google на машине воркера (WSLg) — только superadmin. */
+/** Открыть окно входа Google на машине воркера (WSLg) — только superadmin (его ПК = воркер). */
 router.post('/auth/login-window', async (req: AuthedRequest, res: Response) => {
-  if (req.userRole !== 'superadmin') return res.status(403).json({ error: 'Только суперадмин может подключать Google-аккаунт' });
+  if (req.userRole !== 'superadmin') return res.status(403).json({ error: 'Окно входа доступно только суперадмину (на машине воркера). Клиенты подключают аккаунт вставкой сессии storage_state.json.' });
   try {
-    const d = await wfetch('/auth/login-window', { method: 'POST' }, 30_000);
-    statusCache = null; // после входа «Проверить» должен увидеть свежую сессию
+    const d = await wfetch('/auth/login-window', { method: 'POST' }, 30_000, req.tenantId!);
+    statusCache.delete(req.tenantId!); // после входа «Проверить» должен увидеть свежую сессию
     res.json({ started: !!d.started, note: d.note || null });
   } catch (e: any) {
     res.status(502).json(errPayload(e));
   }
 });
 
-/** Импорт кук Google (storage_state.json) — только superadmin: аккаунт платформенный. */
+/** Импорт кук Google (storage_state.json) в СВОЙ профиль — любой Enterprise-тенант. */
 router.post('/auth/import', async (req: AuthedRequest, res: Response) => {
-  if (req.userRole !== 'superadmin') return res.status(403).json({ error: 'Только суперадмин может подключать Google-аккаунт' });
   try {
     let ss = req.body?.storageState ?? req.body?.storage_state;
     if (typeof ss === 'string') { try { ss = JSON.parse(ss); } catch { return res.status(400).json({ error: 'Это не JSON. Вставьте содержимое storage_state.json целиком.' }); } }
     if (!ss || !Array.isArray(ss.cookies) || ss.cookies.length === 0) {
       return res.status(400).json({ error: 'Ожидается storage_state.json с массивом cookies (его создаёт «notebooklm login»)' });
     }
-    const d = await wfetch('/auth/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ storage_state: ss }) }, 60_000);
-    statusCache = null;
+    const d = await wfetch('/auth/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ storage_state: ss }) }, 60_000, req.tenantId!);
+    statusCache.delete(req.tenantId!);
     res.json({ status: { configured: true, ok: !!d.ok, errorKind: d.error_kind || null, email: d.email || null, error: d.error || null, checkedAt: new Date().toISOString() } });
   } catch (e: any) {
     res.status(502).json(errPayload(e));
@@ -366,12 +387,12 @@ router.post('/auth/import', async (req: AuthedRequest, res: Response) => {
 router.get('/flow/:flowId/overview', async (req: AuthedRequest, res: Response) => {
   const { flowId } = req.params;
   const tenantId = req.tenantId!;
-  const [status, counters] = await Promise.all([connectionStatus(), todayCounters(tenantId)]);
+  const [status, counters] = await Promise.all([connectionStatus(tenantId, { role: req.userRole }), todayCounters(tenantId)]);
   void maybeAlertOwner(tenantId, status);
   const notebookId = await getNotebookId(tenantId, flowId).catch(() => null);
   let sources: any[] = [];
   if (notebookId && status?.ok) {
-    try { sources = (await wfetch(`/notebooks/${encodeURIComponent(notebookId)}/sources`, {}, 30_000))?.sources || []; }
+    try { sources = (await wfetch(`/notebooks/${encodeURIComponent(notebookId)}/sources`, {}, 30_000, tenantId))?.sources || []; }
     catch { /* источники недоступны — покажем пусто, плашка объяснит */ }
   }
   let jobs: any[] = [];
@@ -392,7 +413,7 @@ router.post('/flow/:flowId/sources', async (req: AuthedRequest, res: Response) =
     const d = await wfetch(`/notebooks/${encodeURIComponent(nb)}/sources`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ kind, url, title, content }),
-    }, 180_000);
+    }, 180_000, req.tenantId!);
     res.json({ source: d?.source || null, notebookId: nb });
   } catch (e: any) {
     res.status(502).json(errPayload(e));
@@ -412,7 +433,7 @@ router.post('/flow/:flowId/sources/asset', async (req: AuthedRequest, res: Respo
     const buf = fs.readFileSync(a.file_path);
     const fd = new FormData();
     fd.append('file', new Blob([buf], { type: a.mime || 'application/octet-stream' }), a.original_name || path.basename(a.file_path));
-    const d = await wfetch(`/notebooks/${encodeURIComponent(nb)}/sources/file`, { method: 'POST', body: fd as any }, 600_000);
+    const d = await wfetch(`/notebooks/${encodeURIComponent(nb)}/sources/file`, { method: 'POST', body: fd as any }, 600_000, req.tenantId!);
     res.json({ source: d?.source || null, notebookId: nb });
   } catch (e: any) {
     res.status(502).json(errPayload(e));
@@ -423,7 +444,7 @@ router.delete('/flow/:flowId/sources/:sourceId', async (req: AuthedRequest, res:
   try {
     const nb = await getNotebookId(req.tenantId!, req.params.flowId);
     if (!nb) return res.status(404).json({ error: 'Блокнот ещё не создан' });
-    await wfetch(`/notebooks/${encodeURIComponent(nb)}/sources/${encodeURIComponent(req.params.sourceId)}`, { method: 'DELETE' }, 60_000);
+    await wfetch(`/notebooks/${encodeURIComponent(nb)}/sources/${encodeURIComponent(req.params.sourceId)}`, { method: 'DELETE' }, 60_000, req.tenantId!);
     res.json({ ok: true });
   } catch (e: any) {
     res.status(502).json(errPayload(e));
@@ -438,7 +459,7 @@ router.post('/flow/:flowId/chat', async (req: AuthedRequest, res: Response) => {
     const nb = await ensureNotebook(req.tenantId!, req.params.flowId, req.body?.flowName);
     const d = await wfetch(`/notebooks/${encodeURIComponent(nb)}/chat`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }),
-    }, 240_000);
+    }, 240_000, req.tenantId!);
     res.json({ answer: d?.answer ?? null, citations: d?.citations ?? null });
   } catch (e: any) {
     res.status(502).json(errPayload(e));
@@ -455,7 +476,7 @@ router.post('/flow/:flowId/generate', async (req: AuthedRequest, res: Response) 
     const nb = await ensureNotebook(req.tenantId!, flowId, req.body?.flowName);
     const d = await wfetch(`/notebooks/${encodeURIComponent(nb)}/generate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: gtype, params }),
-    }, 60_000);
+    }, 60_000, req.tenantId!);
     const remote = String(d?.task_id || '');
     if (!remote) throw new WorkerApiError('воркер не вернул task_id', 'api_changed');
     const id = randomUUID();

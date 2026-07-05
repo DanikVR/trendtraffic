@@ -13,14 +13,19 @@ generate_slide_deck / generate_data_table, enum-параметры (AudioFormat 
 AskResult.references. При обновлении либы несовпавшие параметры не роняют
 генерацию — сворачиваются текстом в instructions.
 
-Авторизация Google: профиль notebooklm-py (NOTEBOOKLM_HOME, по умолчанию
-~/.notebooklm). Логин выполняется отдельно (`notebooklm login` на машине с
-браузером) либо импортом storage_state.json через POST /auth/import.
+Авторизация Google — ПЕР-ТЕНАНТНАЯ: у каждого Enterprise-тенанта свой профиль
+notebooklm-py (свой Google-аккаунт, свои куки, свои лимиты и блокноты). Профиль
+задаётся query-параметром ?profile=<tenantId> на ВСЕХ ручках (пусто → 'default').
+Куки профиля лежат в NOTEBOOKLM_HOME/profiles/<profile>/storage_state.json.
+Подключение: `notebooklm -p <profile> login` (окно на машине воркера) либо импорт
+storage_state.json через POST /auth/import?profile=<tenantId>.
 
-Эндпоинты:
+Эндпоинты (все принимают ?profile=<tenantId>):
   GET  /health                       — жив ли сервис + версия либы
   GET  /auth/status                  — реальная проверка сессии (list notebooks)
   POST /auth/import                  — {storage_state:{...}} → записать профиль
+  POST /auth/adopt-default           — перенести сессию 'default' в профиль тенанта
+  POST /auth/login-window            — открыть окно входа Google на машине воркера
   POST /notebooks                    — {title} → создать блокнот
   GET  /notebooks                    — список
   POST /notebooks/{nb}/sources       — {kind:'url'|'text', url|title+content}
@@ -65,45 +70,55 @@ app = FastAPI(title="TrendTraffic Hotebook Worker (NotebookLM)")
 OUT_DIR = Path(os.environ.get("NOTEBOOKLM_OUT", str(Path(__file__).parent / "out")))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Клиент: один на процесс (uvicorn = один event loop), пересоздаём при сбоях ──
-_client = None
+# ── Клиенты ПЕР-ПРОФИЛЬ: каждый Enterprise-тенант = свой профиль notebooklm-py ──
+# (свой Google-аккаунт, свои куки, свои лимиты и блокноты). profile = tenantId
+# (или 'default' для обратной совместимости/платформенного). Кэш клиентов —
+# словарь по имени профиля; один общий lock (создание клиента редкое).
+_clients: Dict[str, Any] = {}
 _client_lock = asyncio.Lock()
 
+_HOME = Path(os.environ.get("NOTEBOOKLM_HOME", str(Path.home() / ".notebooklm")))
 
-def _storage_state_path() -> Path:
-    """Путь storage_state.json активного профиля (default), уважая NOTEBOOKLM_HOME."""
-    home = Path(os.environ.get("NOTEBOOKLM_HOME", str(Path.home() / ".notebooklm")))
-    profile = os.environ.get("NOTEBOOKLM_PROFILE", "default")
-    return home / "profiles" / profile / "storage_state.json"
+
+def _safe_profile(profile: Optional[str]) -> str:
+    """tenantId → безопасное имя профиля (без обхода путей). Пусто → 'default'."""
+    p = (profile or "").strip() or os.environ.get("NOTEBOOKLM_PROFILE", "default")
+    p = re.sub(r"[^A-Za-z0-9_.-]", "_", p)
+    return p or "default"
+
+
+def _storage_state_path(profile: Optional[str] = None) -> Path:
+    """Путь storage_state.json конкретного профиля, уважая NOTEBOOKLM_HOME."""
+    return _HOME / "profiles" / _safe_profile(profile) / "storage_state.json"
 
 
 class AuthMissing(Exception):
     pass
 
 
-async def get_client():
-    global _client
+async def get_client(profile: Optional[str] = None):
+    prof = _safe_profile(profile)
     if NotebookLMClient is None:
         raise HTTPException(503, f"notebooklm-py не установлен: {_IMPORT_ERROR}")
     async with _client_lock:
-        if _client is None:
-            if not _storage_state_path().exists():
-                raise AuthMissing("Google-аккаунт не подключён (нет storage_state.json)")
-            c = NotebookLMClient.from_storage()
-            _client = await c.__aenter__()
-        return _client
+        if prof not in _clients:
+            if not _storage_state_path(prof).exists():
+                raise AuthMissing(f"Google-аккаунт не подключён (профиль {prof})")
+            c = NotebookLMClient.from_storage(profile=prof)
+            _clients[prof] = await c.__aenter__()
+        return _clients[prof]
 
 
-async def drop_client():
-    """Сбросить клиент (после auth-ошибки) — следующий вызов пересоздаст его."""
-    global _client
+async def drop_client(profile: Optional[str] = None):
+    """Сбросить клиент профиля (после auth-ошибки) — следующий вызов пересоздаст."""
+    prof = _safe_profile(profile)
     async with _client_lock:
-        if _client is not None:
+        c = _clients.pop(prof, None)
+        if c is not None:
             try:
-                await _client.__aexit__(None, None, None)
+                await c.__aexit__(None, None, None)
             except Exception:
                 pass
-            _client = None
 
 
 # ── Классификация ошибок для «плашки синхронизации» ─────────────────────────
@@ -236,11 +251,11 @@ def build_gen_kwargs(gtype: str, fn, p: Dict[str, Any]) -> Dict[str, Any]:
     return kw
 
 
-async def run_generation(task_id: str, nb: str, gtype: str, p: Dict[str, Any]):
+async def run_generation(task_id: str, nb: str, gtype: str, p: Dict[str, Any], profile: str = "default"):
     t = TASKS[task_id]
     t["status"] = "running"
     try:
-        client = await get_client()
+        client = await get_client(profile)
         arts = client.artifacts
         spec = GEN_SPEC[gtype]
         gen_fn = getattr(arts, spec["gen"], None)
@@ -307,7 +322,7 @@ async def run_generation(task_id: str, nb: str, gtype: str, p: Dict[str, Any]):
         t["error"] = str(e) or type(e).__name__
         t["error_kind"] = kind
         if kind == "auth":
-            await drop_client()
+            await drop_client(profile)
     finally:
         t["finished_at"] = time.time()
 
@@ -357,15 +372,15 @@ async def health():
     }
 
 
-@app.get("/auth/status")
-async def auth_status():
-    """Живая проверка: дешёвый вызов API. Классифицирует поломку для плашки."""
+async def _auth_status(profile: str):
+    """Живая проверка сессии профиля: дешёвый вызов API. Классифицирует поломку."""
+    prof = _safe_profile(profile)
     try:
-        client = await get_client()
+        client = await get_client(prof)
         notebooks = await client.notebooks.list()
         email = None
         try:
-            st = json.loads(_storage_state_path().read_text(encoding="utf-8"))
+            st = json.loads(_storage_state_path(prof).read_text(encoding="utf-8"))
             email = ((st.get("notebooklm") or {}).get("account") or {}).get("email")
         except Exception:
             pass
@@ -375,25 +390,58 @@ async def auth_status():
     except Exception as e:  # noqa: BLE001
         kind = classify_error(e)
         if kind == "auth":
-            await drop_client()
+            await drop_client(prof)
         return {"ok": False, "error_kind": kind, "error": str(e) or type(e).__name__}
 
 
+@app.get("/auth/status")
+async def auth_status(profile: str = "default"):
+    return await _auth_status(profile)
+
+
 @app.post("/auth/import")
-async def auth_import(body: AuthImportIn):
-    """Записать storage_state.json (куки Google) и пересоздать клиент."""
+async def auth_import(body: AuthImportIn, profile: str = "default"):
+    """Записать storage_state.json (куки Google) в профиль тенанта и пересоздать клиент."""
     ss = body.storage_state
     if not isinstance(ss, dict) or not isinstance(ss.get("cookies"), list) or not ss["cookies"]:
         raise HTTPException(400, "Ожидается JSON storage_state с массивом cookies")
-    path = _storage_state_path()
+    prof = _safe_profile(profile)
+    path = _storage_state_path(prof)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(ss, ensure_ascii=False, indent=1), encoding="utf-8")
     try:
         os.chmod(path, 0o600)
     except Exception:
         pass
-    await drop_client()
-    return await auth_status()
+    await drop_client(prof)
+    return await _auth_status(prof)
+
+
+@app.post("/auth/adopt-default")
+async def auth_adopt_default(profile: str = "default"):
+    """Перенести существующую сессию профиля 'default' (старый платформенный вход,
+    сделанный `notebooklm login`) в профиль тенанта — чтобы суперадмин, залогинившийся
+    один раз, не логинился заново. Копирует storage_state.json + master_token.json."""
+    prof = _safe_profile(profile)
+    if prof == "default":
+        return await _auth_status("default")
+    src = _storage_state_path("default")
+    if not src.exists():
+        raise HTTPException(404, "нет сессии профиля default для переноса")
+    dst = _storage_state_path(prof)
+    if dst.exists():  # у тенанта уже своя сессия — не перетираем
+        return await _auth_status(prof)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    import shutil
+    shutil.copy2(src, dst)
+    mt = src.parent / "master_token.json"
+    if mt.exists():
+        try:
+            shutil.copy2(mt, dst.parent / "master_token.json")
+        except Exception:
+            pass
+    await drop_client(prof)
+    return await _auth_status(prof)
 
 
 def _wrap_api_error(e: Exception):
@@ -402,17 +450,20 @@ def _wrap_api_error(e: Exception):
 
 
 @app.post("/auth/login-window")
-async def auth_login_window():
-    """Открыть окно интерактивного входа Google НА МАШИНЕ ВОРКЕРА (WSLg/десктоп).
+async def auth_login_window(profile: str = "default"):
+    """Открыть окно интерактивного входа Google НА МАШИНЕ ВОРКЕРА (WSLg/десктоп)
+    для конкретного профиля тенанта.
 
-    Запускает `notebooklm login` отдельным процессом: на экране машины воркера
-    появляется Chromium, человек входит в Google, куки сохраняются в профиль.
-    Здесь не ждём (вход занимает минуты) — фронт жмёт «Проверить» / поллит /auth/status.
+    Запускает `notebooklm -p <profile> login` отдельным процессом: на экране машины
+    воркера появляется Chromium, человек входит в Google, куки сохраняются в профиль.
+    Не ждём (вход занимает минуты) — фронт жмёт «Проверить» / поллит /auth/status.
     """
     import subprocess
     import sys
+    prof = _safe_profile(profile)
     exe = Path(sys.executable).parent / "notebooklm"
-    cmd = [str(exe) if exe.exists() else "notebooklm", "login"]
+    base = str(exe) if exe.exists() else "notebooklm"
+    cmd = [base, "-p", prof, "login"]
     env = dict(os.environ)
     env.setdefault("DISPLAY", ":0")
     try:
@@ -423,23 +474,23 @@ async def auth_login_window():
 
 
 @app.post("/notebooks")
-async def create_notebook(body: NotebookIn):
+async def create_notebook(body: NotebookIn, profile: str = "default"):
     try:
-        client = await get_client()
+        client = await get_client(profile)
         nb = await client.notebooks.create(body.title)
         return {"notebook": jsonable(nb)}
     except HTTPException:
         raise
     except Exception as e:  # noqa: BLE001
         if classify_error(e) == "auth":
-            await drop_client()
+            await drop_client(profile)
         _wrap_api_error(e)
 
 
 @app.get("/notebooks")
-async def list_notebooks():
+async def list_notebooks(profile: str = "default"):
     try:
-        client = await get_client()
+        client = await get_client(profile)
         return {"notebooks": jsonable(await client.notebooks.list())}
     except HTTPException:
         raise
@@ -448,9 +499,9 @@ async def list_notebooks():
 
 
 @app.post("/notebooks/{nb}/sources")
-async def add_source(nb: str, body: SourceIn):
+async def add_source(nb: str, body: SourceIn, profile: str = "default"):
     try:
-        client = await get_client()
+        client = await get_client(profile)
         if body.kind == "url":
             if not body.url:
                 raise HTTPException(400, "url обязателен")
@@ -466,23 +517,23 @@ async def add_source(nb: str, body: SourceIn):
         raise
     except Exception as e:  # noqa: BLE001
         if classify_error(e) == "auth":
-            await drop_client()
+            await drop_client(profile)
         _wrap_api_error(e)
 
 
 @app.post("/notebooks/{nb}/sources/file")
-async def add_source_file(nb: str, file: UploadFile = File(...)):
+async def add_source_file(nb: str, file: UploadFile = File(...), profile: str = "default"):
     tmp = OUT_DIR / f"up-{uuid.uuid4().hex}-{re.sub(r'[^A-Za-z0-9._-]', '_', file.filename or 'file')}"
     try:
         tmp.write_bytes(await file.read())
-        client = await get_client()
+        client = await get_client(profile)
         src = await client.sources.add_file(nb, str(tmp))
         return {"source": jsonable(src)}
     except HTTPException:
         raise
     except Exception as e:  # noqa: BLE001
         if classify_error(e) == "auth":
-            await drop_client()
+            await drop_client(profile)
         _wrap_api_error(e)
     finally:
         try:
@@ -492,9 +543,9 @@ async def add_source_file(nb: str, file: UploadFile = File(...)):
 
 
 @app.get("/notebooks/{nb}/sources")
-async def list_sources(nb: str):
+async def list_sources(nb: str, profile: str = "default"):
     try:
-        client = await get_client()
+        client = await get_client(profile)
         return {"sources": jsonable(await client.sources.list(nb))}
     except HTTPException:
         raise
@@ -503,9 +554,9 @@ async def list_sources(nb: str):
 
 
 @app.delete("/notebooks/{nb}/sources/{sid}")
-async def delete_source(nb: str, sid: str):
+async def delete_source(nb: str, sid: str, profile: str = "default"):
     try:
-        client = await get_client()
+        client = await get_client(profile)
         await client.sources.delete(nb, sid)
         return {"ok": True}
     except HTTPException:
@@ -515,9 +566,9 @@ async def delete_source(nb: str, sid: str):
 
 
 @app.post("/notebooks/{nb}/chat")
-async def chat(nb: str, body: ChatIn):
+async def chat(nb: str, body: ChatIn, profile: str = "default"):
     try:
-        client = await get_client()
+        client = await get_client(profile)
         r = await client.chat.ask(nb, body.question)
         return {
             "answer": jsonable(getattr(r, "answer", None)) or jsonable(r),
@@ -527,21 +578,22 @@ async def chat(nb: str, body: ChatIn):
         raise
     except Exception as e:  # noqa: BLE001
         if classify_error(e) == "auth":
-            await drop_client()
+            await drop_client(profile)
         _wrap_api_error(e)
 
 
 @app.post("/notebooks/{nb}/generate")
-async def generate(nb: str, body: GenerateIn):
+async def generate(nb: str, body: GenerateIn, profile: str = "default"):
     gtype = body.type
     if gtype not in GEN_SPEC:
         raise HTTPException(400, f"неизвестный тип артефакта: {gtype}")
+    prof = _safe_profile(profile)
     task_id = uuid.uuid4().hex
     TASKS[task_id] = {
-        "status": "queued", "type": gtype, "notebook": nb,
+        "status": "queued", "type": gtype, "notebook": nb, "profile": prof,
         "params": body.params, "created_at": time.time(),
     }
-    asyncio.create_task(run_generation(task_id, nb, gtype, body.params or {}))
+    asyncio.create_task(run_generation(task_id, nb, gtype, body.params or {}, prof))
     # Подчистка стариков (реестр в памяти; файлы живут в OUT_DIR до забора).
     if len(TASKS) > 400:
         for k in sorted(TASKS, key=lambda k: TASKS[k].get("created_at", 0))[:100]:
