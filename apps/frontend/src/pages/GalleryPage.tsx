@@ -19,7 +19,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
-  Download, Play,
+  Download, Play, BookOpen,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -27,7 +27,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
 import { useAppStore } from '../store/useAppStore';
 
-type Tab = 'trends' | 'reference' | 'audio' | 'analyzed';
+type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
 
 interface GalleryItem {
   id: string;
@@ -50,12 +50,14 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'reference', label: 'TrendFlow' },
   { key: 'audio', label: 'Аудио' },
   { key: 'analyzed', label: 'Из анализа' },
+  { key: 'hotebook', label: 'Hotebook' },
 ];
 
 function tabIcon(key: Tab, size = 15) {
   if (key === 'trends') return <Video size={size} />;
   if (key === 'reference') return <ImageIcon size={size} />;
   if (key === 'audio') return <Music size={size} />;
+  if (key === 'hotebook') return <BookOpen size={size} />;
   return <Sparkles size={size} />;
 }
 
@@ -104,8 +106,8 @@ export default function GalleryPage() {
           })));
         }
       } else {
-        // 'analyzed' → папка «Из анализа» (folder=analyzed, любой kind); иначе по kind.
-        const qsMedia = which === 'analyzed' ? 'folder=analyzed' : `kind=${which}`;
+        // 'analyzed' → папка «Из анализа»; 'hotebook' → папка артефактов NotebookLM; иначе по kind.
+        const qsMedia = which === 'analyzed' ? 'folder=analyzed' : which === 'hotebook' ? 'folder=hotebook' : `kind=${which}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
           const d = await res.json();
@@ -226,7 +228,17 @@ export default function GalleryPage() {
         <audio src={v.fileUrl} controls className="w-full" />
       </div>
     );
-    return <div className="w-full h-full flex items-center justify-center"><FileText size={28} style={{ color: 'var(--text-muted)' }} /></div>;
+    // Файлы (pdf/pptx/md/json/csv — артефакты Hotebook и т.п.): клик открывает в новой вкладке.
+    const ext = (v.fileUrl.split('.').pop() || '').toUpperCase().slice(0, 5);
+    return (
+      <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Открыть файл"
+        className="w-full h-full flex flex-col items-center justify-center gap-2.5" style={{ background: 'var(--bg-tertiary)' }}>
+        <span className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(34,211,238,0.12)', color: '#22d3ee' }}>
+          <FileText size={26} />
+        </span>
+        {ext && <span className="text-[10px] font-700 px-2 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.35)', color: 'var(--text-secondary)' }}>{ext}</span>}
+      </a>
+    );
   };
 
   return (
@@ -296,6 +308,7 @@ export default function GalleryPage() {
             {tab === 'trends' ? 'Скачайте видео на странице «Тренды».'
               : tab === 'reference' ? 'Загрузите изображения/видео кнопкой «Медиа».'
               : tab === 'audio' ? 'Загрузите аудио кнопкой «Аудио».'
+              : tab === 'hotebook' ? 'Генерируйте аудио, видео, отчёты и другие артефакты в блоке «Hotebook» сценария TrendFlow — готовое появится здесь.'
               : 'Сохраняйте видео из «Аналитики» (вкладка «Тренды» → «Добавить в галерею») — они появятся здесь.'}
           </p>
         </AuroraCard>

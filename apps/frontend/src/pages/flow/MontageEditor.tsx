@@ -17,6 +17,7 @@ import {
   UserRound, Search, Maximize2, Share2, Newspaper,
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
   Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud, Info,
+  BookOpen, Globe, FileText, Send, ListChecks, Table, Layers, Presentation, RefreshCw, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { VideoViewer } from '../../components/VideoViewer';
@@ -98,14 +99,257 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
 };
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash (генерация видео), Контент-план, Подкаст.
-type CloudId = 'omni' | 'plan' | 'podcast' | 'editor' | 'ugc';
+type CloudId = 'omni' | 'plan' | 'podcast' | 'editor' | 'ugc' | 'hotebook';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
   omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
   podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
   editor: { label: 'Редактор', icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
   ugc: { label: 'UGC', icon: <Video size={22} />, color: '#a855f7', glow: 'rgba(168,85,247,.35)', def: { x: 50, y: 12 } },
+  hotebook: { label: 'Hotebook', icon: <BookOpen size={22} />, color: '#22d3ee', glow: 'rgba(34,211,238,.35)', def: { x: 50, y: 88 } },
 };
+
+// ── Блок «Hotebook» (Google NotebookLM): источники + чат + студия артефактов ──
+// Настройки генерации повторяют модалки NotebookLM 1:1 (формат-карточки, язык,
+// длина, «на чём сделать акцент»). Ids полей = параметры бэкенда/воркера.
+type HbType = 'audio' | 'video' | 'report' | 'quiz' | 'table' | 'infographic' | 'flashcards' | 'mindmap' | 'slides';
+interface HbChatMsg { q: string; a: string; ts: number; cites?: number }
+interface HbSpec { chat: HbChatMsg[]; settings: Partial<Record<HbType, Record<string, string>>> }
+const HB_DEFAULT: HbSpec = { chat: [], settings: {} };
+
+const HB_LANGS: { v: string; label: string }[] = [
+  { v: 'ru', label: 'русский' }, { v: 'en', label: 'английский' }, { v: 'uk', label: 'украинский' },
+  { v: 'es', label: 'испанский' }, { v: 'de', label: 'немецкий' }, { v: 'fr', label: 'французский' },
+  { v: 'it', label: 'итальянский' }, { v: 'pt', label: 'португальский' }, { v: 'pl', label: 'польский' },
+  { v: 'tr', label: 'турецкий' }, { v: 'kk', label: 'казахский' }, { v: 'zh', label: 'китайский' },
+  { v: 'ja', label: 'японский' }, { v: 'ko', label: 'корейский' }, { v: 'ar', label: 'арабский' }, { v: 'hi', label: 'хинди' },
+];
+
+interface HbField { id: string; label: string; kind: 'cards' | 'chips' | 'lang' | 'focus'; opts?: { v: string; label: string; hint?: string }[]; ph?: string }
+const HB_FOCUS_PH = 'Вы можете попросить: пересказать определённый источник; осветить конкретную тему; объяснить материал для определённой аудитории…';
+const HB_TYPES: { t: HbType; label: string; fields: HbField[] }[] = [
+  {
+    t: 'audio', label: 'Аудиопересказ', fields: [
+      { id: 'format', label: 'Формат', kind: 'cards', opts: [
+        { v: 'deep_dive', label: 'Подробный анализ', hint: 'Активная беседа двух ведущих, раскрывающая и связывающая темы из ваших источников.' },
+        { v: 'brief', label: 'Краткий пересказ', hint: 'Небольшой обзор, который поможет быстро понять основные идеи источников.' },
+        { v: 'critique', label: 'Рецензия', hint: 'Экспертная оценка ваших источников с конструктивными замечаниями, которые помогут улучшить материал.' },
+        { v: 'debate', label: 'Дебаты', hint: 'Дискуссия между двумя ведущими, раскрывающая разные мнения о ваших источниках.' },
+      ] },
+      { id: 'length', label: 'Длина', kind: 'chips', opts: [{ v: 'short', label: 'Маленькая' }, { v: 'default', label: 'По умолчанию' }, { v: 'long', label: 'Длинная' }] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'На чём в этом выпуске должны сделать акцент ИИ-ведущие?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'video', label: 'Видеообзор', fields: [
+      { id: 'format', label: 'Формат', kind: 'cards', opts: [
+        { v: 'explainer', label: 'Объясняющий', hint: 'Подробный видеоролик с рассказчиком, слайдами и иллюстрациями по вашим источникам.' },
+        { v: 'brief', label: 'Краткий', hint: 'Короткий видеообзор — только главные идеи источников.' },
+        { v: 'cinematic', label: 'Кинематографичный', hint: 'Полностью анимированное видео (Veo). Требует план Google AI Ultra на аккаунте.' },
+      ] },
+      { id: 'style', label: 'Визуальный стиль', kind: 'chips', opts: [
+        { v: 'auto_select', label: 'Авто' }, { v: 'classic', label: 'Классика' }, { v: 'whiteboard', label: 'Маркерная доска' },
+        { v: 'watercolor', label: 'Акварель' }, { v: 'paper_craft', label: 'Аппликация' }, { v: 'anime', label: 'Аниме' },
+        { v: 'kawaii', label: 'Кавай' }, { v: 'retro_print', label: 'Ретро-печать' }, { v: 'heritage', label: 'Гравюра' },
+      ] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'На чём сделать акцент в этом видео?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'report', label: 'Отчёт', fields: [
+      { id: 'format', label: 'Шаблон', kind: 'cards', opts: [
+        { v: 'briefing_doc', label: 'Брифинг-документ', hint: 'Сжатая сводка ключевых фактов и выводов из источников.' },
+        { v: 'study_guide', label: 'Учебное пособие', hint: 'Структурированный конспект для изучения материала.' },
+        { v: 'blog_post', label: 'Блог-пост', hint: 'Готовая статья по мотивам источников — можно публиковать.' },
+        { v: 'custom', label: 'Свой формат', hint: 'Опишите нужный формат в поле «акцент» ниже.' },
+      ] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'О чём должен быть отчёт?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'quiz', label: 'Тест', fields: [
+      { id: 'count', label: 'Количество вопросов', kind: 'chips', opts: [{ v: 'standard', label: 'Стандартно' }, { v: 'fewer', label: 'Поменьше' }] },
+      { id: 'difficulty', label: 'Сложность', kind: 'chips', opts: [{ v: 'easy', label: 'Лёгкий' }, { v: 'medium', label: 'Средний' }, { v: 'hard', label: 'Сложный' }] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'По какому материалу составить тест?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'table', label: 'Таблица', fields: [
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'Что свести в таблицу?', kind: 'focus', ph: 'Например: сравнить все упомянутые инструменты по цене и функциям…' },
+    ],
+  },
+  {
+    t: 'infographic', label: 'Инфографика', fields: [
+      { id: 'orientation', label: 'Ориентация', kind: 'chips', opts: [{ v: 'portrait', label: 'Вертикальная' }, { v: 'landscape', label: 'Горизонтальная' }, { v: 'square', label: 'Квадрат' }] },
+      { id: 'detail', label: 'Детализация', kind: 'chips', opts: [{ v: 'standard', label: 'Стандартно' }, { v: 'concise', label: 'Минимум' }, { v: 'detailed', label: 'Максимум' }] },
+      { id: 'style', label: 'Стиль', kind: 'chips', opts: [
+        { v: 'auto_select', label: 'Авто' }, { v: 'sketch_note', label: 'Скетч' }, { v: 'professional', label: 'Деловой' },
+        { v: 'bento_grid', label: 'Bento-сетка' }, { v: 'editorial', label: 'Журнальный' }, { v: 'instructional', label: 'Инструкция' },
+        { v: 'bricks', label: 'Кирпичики' }, { v: 'clay', label: 'Пластилин' }, { v: 'anime', label: 'Аниме' }, { v: 'scientific', label: 'Научный' },
+      ] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'Что показать на инфографике?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'flashcards', label: 'Карточки', fields: [
+      { id: 'count', label: 'Количество карточек', kind: 'chips', opts: [{ v: 'standard', label: 'Стандартно' }, { v: 'fewer', label: 'Поменьше' }] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'Что вынести на карточки?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'mindmap', label: 'Ментальная карта', fields: [
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'Вокруг чего строить карту?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+  {
+    t: 'slides', label: 'Презентация', fields: [
+      { id: 'format', label: 'Формат', kind: 'cards', opts: [
+        { v: 'detailed_deck', label: 'Подробные слайды', hint: 'Самодостаточная презентация — можно читать без выступающего.' },
+        { v: 'presenter_slides', label: 'Для выступления', hint: 'Лаконичные слайды-опора под живой рассказ.' },
+      ] },
+      { id: 'length', label: 'Длина', kind: 'chips', opts: [{ v: 'short', label: 'Маленькая' }, { v: 'default', label: 'По умолчанию' }] },
+      { id: 'language', label: 'Выберите язык', kind: 'lang' },
+      { id: 'focus', label: 'О чём должна быть презентация?', kind: 'focus', ph: HB_FOCUS_PH },
+    ],
+  },
+];
+const HB_ICON: Record<HbType, React.ReactNode> = {
+  audio: <Mic size={17} />, video: <Film size={17} />, report: <FileText size={17} />,
+  quiz: <ListChecks size={17} />, table: <Table size={17} />, infographic: <Image size={17} />,
+  flashcards: <Layers size={17} />, mindmap: <Share2 size={17} />, slides: <Presentation size={17} />,
+};
+const HB_LABEL: Record<HbType, string> = Object.fromEntries(HB_TYPES.map((x) => [x.t, x.label])) as Record<HbType, string>;
+/** Дефолтные настройки генерации типа: первый вариант каждого поля, язык — русский. */
+function hbDefaults(t: HbType): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of HB_TYPES.find((x) => x.t === t)!.fields) {
+    if (f.kind === 'lang') out[f.id] = 'ru';
+    else if (f.kind === 'focus') out[f.id] = '';
+    else if (f.opts && f.opts.length) out[f.id] = f.opts[0].v;
+  }
+  // «По умолчанию» — осознанные дефолты (как в NotebookLM), не первый чип.
+  if (out.length === 'short') out.length = 'default';
+  if (out.detail === 'concise') out.detail = 'standard';
+  return out;
+}
+
+/** Просмотр JSON-артефактов Hotebook прямо в панели: тест / карточки / менталка / таблица. */
+function HbPayloadView({ job }: { job: any }) {
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const [flipped, setFlipped] = useState<Set<number>>(new Set());
+  const raw = job?.payload;
+  const data = raw && typeof raw === 'object' && 'data' in raw ? (raw as any).data : raw;
+  const toggle = (set: React.Dispatch<React.SetStateAction<Set<number>>>, i: number) =>
+    set((p) => { const n = new Set(p); if (n.has(i)) n.delete(i); else n.add(i); return n; });
+  const asArr = (...cands: any[]): any[] | null => { for (const c of cands) if (Array.isArray(c) && c.length) return c; return null; };
+  const txt = (o: any, keys: string[]): string => {
+    if (o == null) return '';
+    if (typeof o === 'string') return o;
+    for (const k of keys) if (typeof o?.[k] === 'string' && o[k]) return o[k];
+    return '';
+  };
+
+  if (job?.type === 'quiz') {
+    const qs = asArr(data?.questions, data?.items, data?.quiz, Array.isArray(data) ? data : null);
+    if (qs) {
+      return (
+        <div className="space-y-2">
+          {qs.map((q: any, i: number) => {
+            const opts = asArr(q?.options, q?.answers, q?.choices) || [];
+            const ans = txt(q, ['answer', 'correct_answer', 'correctAnswer', 'explanation'])
+              || (typeof q?.answer_index === 'number' && opts[q.answer_index] ? (typeof opts[q.answer_index] === 'string' ? opts[q.answer_index] : txt(opts[q.answer_index], ['text', 'label'])) : '');
+            return (
+              <div key={i} className="rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)' }}>
+                <div className="text-xs font-700 mb-1" style={{ color: 'var(--text-primary)' }}>{i + 1}. {txt(q, ['question', 'prompt', 'q', 'text']) || '—'}</div>
+                {opts.length > 0 && (
+                  <ul className="space-y-0.5 mb-1">
+                    {opts.map((o: any, j: number) => <li key={j} className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>· {typeof o === 'string' ? o : txt(o, ['text', 'label', 'option'])}</li>)}
+                  </ul>
+                )}
+                <button onClick={() => toggle(setRevealed, i)} className="text-[11px] font-600" style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: 0 }}>
+                  {revealed.has(i) ? 'Скрыть ответ' : 'Показать ответ'}
+                </button>
+                {revealed.has(i) && <p className="text-[11px] mt-1" style={{ color: '#10b981', whiteSpace: 'pre-wrap' }}>{ans || JSON.stringify(q?.answer ?? '—')}</p>}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+  }
+  if (job?.type === 'flashcards') {
+    const cards = asArr(data?.cards, data?.flashcards, data?.items, Array.isArray(data) ? data : null);
+    if (cards) {
+      return (
+        <div className="grid grid-cols-2 gap-2">
+          {cards.map((c: any, i: number) => (
+            <button key={i} onClick={() => toggle(setFlipped, i)} className="rounded-xl p-3 text-left"
+              style={{ background: flipped.has(i) ? 'rgba(34,211,238,0.10)' : 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer', minHeight: 84 }}>
+              <div className="text-[10px] font-700 mb-1" style={{ color: 'var(--text-muted)' }}>{flipped.has(i) ? 'ОТВЕТ' : `КАРТОЧКА ${i + 1} · нажмите`}</div>
+              <div className="text-xs" style={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+                {flipped.has(i) ? (txt(c, ['back', 'answer', 'definition', 'a']) || '—') : (txt(c, ['front', 'question', 'term', 'q']) || '—')}
+              </div>
+            </button>
+          ))}
+        </div>
+      );
+    }
+  }
+  if (job?.type === 'mindmap') {
+    const root = data?.root || data?.mindmap || data;
+    const renderNode = (n: any, d: number): React.ReactNode => {
+      if (!n || typeof n !== 'object' || d > 6) return null;
+      const kids = asArr(n?.children, n?.nodes, n?.branches) || [];
+      return (
+        <div style={{ marginLeft: d === 0 ? 0 : 14, borderLeft: d === 0 ? 'none' : '1.5px solid var(--border-medium)', paddingLeft: d === 0 ? 0 : 10, marginTop: 4 }}>
+          <div className="text-xs" style={{ color: d === 0 ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: d === 0 ? 700 : 500 }}>
+            {txt(n, ['title', 'name', 'label', 'text']) || '—'}
+          </div>
+          {kids.map((k: any, i: number) => <React.Fragment key={i}>{renderNode(k, d + 1)}</React.Fragment>)}
+        </div>
+      );
+    };
+    if (root && typeof root === 'object') return <div>{renderNode(root, 0)}</div>;
+  }
+  if (job?.type === 'table') {
+    const rows = asArr(data?.rows, data?.data, Array.isArray(data) ? data : null);
+    const heads = asArr(data?.headers, data?.columns);
+    if (rows && typeof rows[0] === 'object' && !Array.isArray(rows[0])) {
+      const keys = Object.keys(rows[0] || {});
+      return (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="text-[11px]" style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <thead><tr>{keys.map((k) => <th key={k} className="text-left p-1.5" style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>{k}</th>)}</tr></thead>
+            <tbody>{rows.map((r: any, i: number) => <tr key={i}>{keys.map((k) => <td key={k} className="p-1.5" style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>{String(r?.[k] ?? '')}</td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      );
+    }
+    if (rows && Array.isArray(rows[0])) {
+      return (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="text-[11px]" style={{ borderCollapse: 'collapse', width: '100%' }}>
+            {heads && <thead><tr>{heads.map((h: any, i: number) => <th key={i} className="text-left p-1.5" style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>{typeof h === 'string' ? h : txt(h, ['label', 'title', 'name'])}</th>)}</tr></thead>}
+            <tbody>{rows.map((r: any[], i: number) => <tr key={i}>{r.map((c, j) => <td key={j} className="p-1.5" style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>{String(c ?? '')}</td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      );
+    }
+  }
+  return (
+    <pre className="text-[10px] p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', maxHeight: 380, overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+      {JSON.stringify(data ?? {}, null, 1)}
+    </pre>
+  );
+}
 
 // Пикер «Редактора» повторяет Галерею: те же вкладки-папки (тренды/референс/аудио/из анализа).
 type EdCat = 'trends' | 'reference' | 'audio' | 'analyzed';
@@ -450,7 +694,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [batchMinimized, setBatchMinimized] = useState(false);
   const [batchNote, setBatchNote] = useState<string | null>(null);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
-  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def } });
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def }, hotebook: { ...CLOUD.hotebook.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
@@ -599,6 +843,34 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const angleInputRef = useRef<HTMLInputElement | null>(null);
   const [nameEdit, setNameEdit] = useState(false); // инлайн-редактирование имени сценария
   const [diarizeDone, setDiarizeDone] = useState(false); // разбор записи завершён → мигающий кружок на узле «Подкаст»
+  // ── Блок «Hotebook» (NotebookLM): состояние панели ──
+  const [hb, setHb] = useState<HbSpec>(HB_DEFAULT);
+  const hbMutate = (fn: (h: HbSpec) => HbSpec) => { setHb((h) => fn(h)); setDirty(true); };
+  const [hbStatus, setHbStatus] = useState<any>(null);              // статус подключения Google (плашка)
+  const [hbSources, setHbSources] = useState<any[]>([]);
+  const [hbJobs, setHbJobs] = useState<any[]>([]);
+  const [hbCounters, setHbCounters] = useState<Record<string, number>>({});
+  const [hbLoading, setHbLoading] = useState(false);
+  const [hbNote, setHbNote] = useState<string | null>(null);
+  const [hbFreshDone, setHbFreshDone] = useState(false);            // готовый артефакт → зелёная точка на узле
+  const [hbSrcUrl, setHbSrcUrl] = useState('');
+  const [hbSrcBusy, setHbSrcBusy] = useState(false);
+  const [hbTextOpen, setHbTextOpen] = useState(false);
+  const [hbSrcText, setHbSrcText] = useState('');
+  const [hbPickOpen, setHbPickOpen] = useState(false);              // пикер файла-источника из Галереи
+  const [hbGallery, setHbGallery] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [hbGalLoading, setHbGalLoading] = useState(false);
+  const [hbChatQ, setHbChatQ] = useState('');
+  const [hbChatBusy, setHbChatBusy] = useState(false);
+  const [hbGenOpen, setHbGenOpen] = useState<HbType | null>(null);  // модалка настроек генерации
+  const [hbGenSet, setHbGenSet] = useState<Record<string, string>>({});
+  const [hbGenBusy, setHbGenBusy] = useState(false);
+  const [hbView, setHbView] = useState<any | null>(null);           // просмотр артефакта (тест/карточки/менталка/таблица)
+  const hbPollingRef = useRef(false);
+  const hbJobsRef = useRef<any[]>([]);
+  useEffect(() => { hbJobsRef.current = hbJobs; }, [hbJobs]);
+  const hbActive = hbJobs.some((j) => j.status === 'queued' || j.status === 'running');
+  const hbBusyAny = hbActive || hbChatBusy || hbSrcBusy || hbGenBusy;
   const [srcDuration, setSrcDuration] = useState<number>(0);
   const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
   const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
@@ -694,6 +966,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               subtitles: { ...UGC_DEFAULT.subtitles, ...(uu.subtitles || {}) },
             });
           }
+          if (d.flow.graph?.hotebook && typeof d.flow.graph.hotebook === 'object') {
+            const hh = d.flow.graph.hotebook;
+            setHb({
+              chat: Array.isArray(hh.chat) ? hh.chat.filter((m: any) => m && typeof m.q === 'string') : [],
+              settings: hh.settings && typeof hh.settings === 'object' ? hh.settings : {},
+            });
+          }
           if (mapped.length === 0 && isNew) setShowPresets(true); // пресеты — только для НОВОГО сценария
         }
       } catch { /* пусто */ }
@@ -706,7 +985,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, audioUrl: n.audioUrl, audioName: n.audioName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, ugc, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, ugc, hotebook: hb, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -2244,6 +2523,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const onCloudClick = (id: CloudId) => {
     if (movedRef.current) { movedRef.current = false; return; } // был drag узла — не открываем панель
     if (id === 'podcast') setDiarizeDone(false); // открыли — мигание погасло
+    if (id === 'hotebook') setHbFreshDone(false); // открыли — зелёная точка погасла
     setCloudPanel(id);
   };
 
@@ -2324,8 +2604,183 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // отдельная кнопка «Выбрать видео / аудио» не нужна — добавляем кликом по превью).
   useEffect(() => {
     if (cloudPanel === 'editor') loadEditorGallery();
+    if (cloudPanel === 'hotebook') void hbLoadOverview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudPanel]);
+
+  // ── Блок «Hotebook»: загрузка сводки, источники, чат, генерации, поллинг ──
+  const hbRefreshStatus = async (force = false) => {
+    try {
+      const r = await fetch(`/api/notebooklm/status${force ? '?force=1' : ''}`, { headers: headers() });
+      if (r.ok) setHbStatus((await r.json()).status || null);
+    } catch { /* статус обновится при следующем действии */ }
+  };
+  /** Поллинг активных джоб (4с): подтягивает статусы, зажигает зелёную точку на узле. */
+  const hbPollLoop = async () => {
+    if (hbPollingRef.current) return;
+    hbPollingRef.current = true;
+    try {
+      while (pollAliveRef.current) {
+        const act = hbJobsRef.current.filter((j) => j.status === 'queued' || j.status === 'running');
+        if (act.length === 0) break;
+        for (const j of act) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const r = await fetch(`/api/notebooklm/jobs/${j.id}`, { headers: headers() });
+            if (r.ok) {
+              // eslint-disable-next-line no-await-in-loop
+              const nj = (await r.json()).job;
+              if (nj) {
+                setHbJobs((js) => js.map((x) => (x.id === nj.id ? nj : x)));
+                if (nj.status === 'done') setHbFreshDone(true);
+                if (nj.status === 'error' && (nj.errorKind === 'auth' || nj.errorKind === 'api_changed' || nj.errorKind === 'quota')) void hbRefreshStatus(true);
+              }
+            }
+          } catch { /* сеть мигнула — следующий круг */ }
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((res) => setTimeout(res, 4000));
+      }
+    } finally {
+      hbPollingRef.current = false;
+    }
+  };
+  /** Сводка панели: статус + блокнот + источники + джобы + счётчики. silent — фоновая гидрация. */
+  const hbLoadOverview = async (silent = false) => {
+    if (!silent) { setHbLoading(true); setHbNote(null); }
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/overview`, { headers: headers() });
+      if (!r.ok) {
+        if (!silent) setHbNote(r.status === 403 ? 'Блок «Hotebook» доступен на тарифе Enterprise.' : `Ошибка ${r.status}`);
+        return;
+      }
+      const d = await r.json();
+      setHbStatus(d.status || null);
+      setHbSources(Array.isArray(d.sources) ? d.sources : []);
+      setHbJobs(Array.isArray(d.jobs) ? d.jobs : []);
+      setHbCounters(d.counters && typeof d.counters === 'object' ? d.counters : {});
+      if ((d.jobs || []).some((j: any) => j.status === 'queued' || j.status === 'running')) setTimeout(() => { void hbPollLoop(); }, 0);
+    } catch { if (!silent) setHbNote('Бэкенд недоступен.'); }
+    finally { if (!silent) setHbLoading(false); }
+  };
+  // Тихая гидрация после загрузки сценария: кольцо генерации на узле оживает без открытия панели.
+  useEffect(() => {
+    if (!loading) void hbLoadOverview(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+  const hbErr = async (res: globalThis.Response): Promise<string> => {
+    const d = await res.json().catch(() => ({} as any));
+    if (d?.errorKind && ['auth', 'api_changed', 'offline', 'not_configured', 'quota'].includes(d.errorKind)) void hbRefreshStatus(true);
+    return d?.error || `Ошибка ${res.status}`;
+  };
+  const hbAddUrl = async () => {
+    const url = hbSrcUrl.trim();
+    if (!url || hbSrcBusy) return;
+    if (!/^https?:\/\//i.test(url)) { setHbNote('Ссылка должна начинаться с http(s)://'); return; }
+    setHbSrcBusy(true); setHbNote(null);
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'url', url, flowName: name }) });
+      if (!r.ok) throw new Error(await hbErr(r));
+      const d = await r.json();
+      if (d.source) setHbSources((s) => [...s, d.source]);
+      setHbSrcUrl('');
+    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить источник'); }
+    finally { setHbSrcBusy(false); }
+  };
+  const hbAddText = async () => {
+    const content = hbSrcText.trim();
+    if (!content || hbSrcBusy) return;
+    setHbSrcBusy(true); setHbNote(null);
+    try {
+      const title = content.split('\n')[0].slice(0, 60) || 'Текст';
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'text', title, content, flowName: name }) });
+      if (!r.ok) throw new Error(await hbErr(r));
+      const d = await r.json();
+      if (d.source) setHbSources((s) => [...s, d.source]);
+      setHbSrcText(''); setHbTextOpen(false);
+    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить текст'); }
+    finally { setHbSrcBusy(false); }
+  };
+  /** Пикер источника-файла из Галереи (media_assets: референс/аудио/из анализа). */
+  const hbOpenPick = async () => {
+    setHbPickOpen(true); setHbGalLoading(true); setHbGallery([]);
+    try {
+      const [r, a, an] = await Promise.all([
+        fetch('/api/trends/media?kind=reference', { headers: headers() }),
+        fetch('/api/trends/media?kind=audio', { headers: headers() }),
+        fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
+      ]);
+      const out: { id: string; name: string; type: string }[] = [];
+      const seen = new Set<string>();
+      for (const res of [r, a, an]) {
+        if (!res.ok) continue;
+        // eslint-disable-next-line no-await-in-loop
+        for (const m of ((await res.json()).assets || [])) {
+          if (m.id && !seen.has(m.id)) { seen.add(m.id); out.push({ id: m.id, name: m.originalName || 'файл', type: m.mediaType || 'file' }); }
+        }
+      }
+      setHbGallery(out);
+    } catch { setHbGallery([]); }
+    finally { setHbGalLoading(false); }
+  };
+  const hbAddAsset = async (assetId: string) => {
+    if (hbSrcBusy) return;
+    setHbSrcBusy(true); setHbNote(null);
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/sources/asset`, { method: 'POST', headers: headers(), body: JSON.stringify({ assetId, flowName: name }) });
+      if (!r.ok) throw new Error(await hbErr(r));
+      const d = await r.json();
+      if (d.source) setHbSources((s) => [...s, d.source]);
+      setHbPickOpen(false);
+    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить файл'); }
+    finally { setHbSrcBusy(false); }
+  };
+  const hbDelSource = async (sid: string) => {
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/sources/${encodeURIComponent(sid)}`, { method: 'DELETE', headers: headers() });
+      if (!r.ok) throw new Error(await hbErr(r));
+      setHbSources((s) => s.filter((x) => (x.id || x.source_id) !== sid));
+    } catch (e: any) { setHbNote(e?.message || 'Не удалось удалить источник'); }
+  };
+  const hbAsk = async () => {
+    const q = hbChatQ.trim();
+    if (!q || hbChatBusy) return;
+    if (hbSources.length === 0) { setHbNote('Сначала добавьте хотя бы один источник.'); return; }
+    setHbChatBusy(true); setHbNote(null);
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/chat`, { method: 'POST', headers: headers(), body: JSON.stringify({ question: q, flowName: name }) });
+      if (!r.ok) throw new Error(await hbErr(r));
+      const d = await r.json();
+      const a = typeof d.answer === 'string' ? d.answer : JSON.stringify(d.answer ?? '');
+      const cites = Array.isArray(d.citations) ? d.citations.length : 0;
+      hbMutate((h) => ({ ...h, chat: [...h.chat, { q, a, ts: Date.now(), cites }] }));
+      setHbChatQ('');
+    } catch (e: any) { setHbNote(e?.message || 'Чат не ответил'); }
+    finally { setHbChatBusy(false); }
+  };
+  const hbOpenGen = (t: HbType) => {
+    setHbGenSet({ ...hbDefaults(t), ...((hb.settings[t] as Record<string, string>) || {}) });
+    setHbGenOpen(t);
+  };
+  const hbGenerate = async () => {
+    const t = hbGenOpen;
+    if (!t || hbGenBusy) return;
+    if (hbSources.length === 0) { setHbNote('Сначала добавьте хотя бы один источник.'); setHbGenOpen(null); return; }
+    setHbGenBusy(true); setHbNote(null);
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/generate`, { method: 'POST', headers: headers(), body: JSON.stringify({ type: t, params: hbGenSet, flowName: name }) });
+      if (!r.ok) throw new Error(await hbErr(r));
+      const d = await r.json();
+      if (d.job) {
+        setHbJobs((js) => [d.job, ...js]);
+        setHbCounters((c) => ({ ...c, [t]: (c[t] || 0) + 1 }));
+        setTimeout(() => { void hbPollLoop(); }, 0);
+      }
+      hbMutate((h) => ({ ...h, settings: { ...h.settings, [t]: hbGenSet } })); // запомнить настройки
+      setHbGenOpen(null);
+    } catch (e: any) { setHbNote(e?.message || 'Не удалось запустить генерацию'); }
+    finally { setHbGenBusy(false); }
+  };
 
   const setPend = (v: { from: string; x: number; y: number } | null) => { pendingRef.current = v; setPending(v); };
   // Старт перетягивания СТРЕЛКИ от точки 🔗 узла.
@@ -2621,7 +3076,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           );
         })}
         {/* «Контент-план» скрыт до реализации (этап C): узел был пустым стабом. */}
-        {(['omni', 'podcast', 'editor', 'ugc'] as CloudId[]).map((id) => {
+        {(['omni', 'podcast', 'editor', 'ugc', 'hotebook'] as CloudId[]).map((id) => {
           const pos = cloud[id]; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
@@ -2629,6 +3084,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               {id === 'podcast' && (!!podBusy || building || !!angleBusy || animBusy || composeBusy) && <span className="me-busyring" />}
               {id === 'omni' && omniBusy && <span className="me-busyring" />}
               {id === 'ugc' && !!ugcBusy && <span className="me-busyring" />}
+              {id === 'hotebook' && hbBusyAny && <span className="me-busyring" />}
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
@@ -2637,6 +3093,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               </button>
               {id === 'podcast' && diarizeDone && (
                 <span className="me-dot" title="Разбор записи готов" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
+              )}
+              {id === 'hotebook' && hbFreshDone && !hbBusyAny && (
+                <span className="me-dot" title="Артефакт готов — открыт блок и Галерея → Hotebook" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
               )}
               <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{cfg.label}</span>
               <button onPointerDown={(e) => startConnect(id, e)} title="Потяните, чтобы провести стрелку"
@@ -4455,12 +4914,356 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 )}
               </div>
+            ) : cloudPanel === 'hotebook' ? (
+              <div className="space-y-3">
+                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  Google NotebookLM внутри сценария: добавьте <b style={{ color: '#22d3ee' }}>источники</b>, спрашивайте в чате
+                  и собирайте артефакты — аудио, видео, отчёты, тесты… Готовое падает в <b>Галерею → «Hotebook»</b>.
+                </p>
+
+                {/* Плашка синхронизации с Google (auth / api_changed / quota / offline) */}
+                {hbStatus && !hbStatus.ok && (
+                  <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.45)' }}>
+                    <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-700" style={{ color: '#f59e0b' }}>
+                        {hbStatus.errorKind === 'auth' ? 'Синхронизация с Google нарушена — нужно переподключить аккаунт'
+                          : hbStatus.errorKind === 'api_changed' ? 'Google изменил внутренний API NotebookLM — идёт рассинхронизация'
+                          : hbStatus.errorKind === 'quota' ? 'Суточный лимит Google-аккаунта исчерпан'
+                          : hbStatus.errorKind === 'offline' ? 'Hotebook-воркер недоступен'
+                          : hbStatus.errorKind === 'not_configured' ? 'Hotebook-воркер не настроен'
+                          : 'Сбой сети между воркером и Google'}
+                      </div>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                        {hbStatus.errorKind === 'auth' ? 'Сессия Google-аккаунта истекла или отозвана. Переподключите её в Настройках Enterprise → вкладка «Hotebook».'
+                          : hbStatus.errorKind === 'api_changed' ? 'Обычно лечится обновлением библиотеки notebooklm-py на воркере. Генерации и чат временно не работают.'
+                          : hbStatus.errorKind === 'quota' ? 'Генерации возобновятся после сброса лимита (обычно на следующий день) — или повысите план Google AI на аккаунте.'
+                          : hbStatus.errorKind === 'offline' ? 'Включите машину Hotebook-воркера (и проверьте Tailscale), затем нажмите «Проверить».'
+                          : hbStatus.errorKind === 'not_configured' ? 'Задайте адрес воркера (NOTEBOOKLM_WORKER_URL) в админ-панели или .env бэкенда.'
+                          : 'Проверьте интернет на машине воркера и нажмите «Проверить».'}
+                      </p>
+                      <div className="flex gap-1.5 mt-1.5">
+                        <button onClick={() => void hbRefreshStatus(true)} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg"
+                          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                          <RefreshCw size={11} /> Проверить
+                        </button>
+                        {hbStatus.errorKind === 'auth' && (
+                          <a href="/settings/enterprise" className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg"
+                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--brand)', textDecoration: 'none' }}>
+                            <ExternalLink size={11} /> Открыть настройки
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {hbStatus?.ok && hbStatus.email && (
+                  <div className="text-[10px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <Check size={11} style={{ color: '#10b981' }} /> Подключено: {hbStatus.email}
+                  </div>
+                )}
+
+                {/* Источники */}
+                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <Globe size={13} style={{ color: '#22d3ee' }} /> ИСТОЧНИКИ {hbSources.length > 0 && `· ${hbSources.length}`}
+                    {hbLoading && <Loader2 size={11} className="animate-spin" />}
+                  </div>
+                  {hbSources.length > 0 && (
+                    <div className="space-y-1" style={{ maxHeight: 150, overflowY: 'auto' }}>
+                      {hbSources.map((s: any, i: number) => {
+                        const sid = s.id || s.source_id || String(i);
+                        const title = s.title || s.name || s.url || 'источник';
+                        return (
+                          <div key={sid} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
+                            <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text-primary)' }} title={title}>{title}</span>
+                            <button onClick={() => void hbDelSource(sid)} title="Удалить источник" className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                              style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="flex gap-1.5">
+                    <input value={hbSrcUrl} onChange={(e) => setHbSrcUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void hbAddUrl(); }}
+                      placeholder="Ссылка: статья, сайт или YouTube…" className="flex-1 px-2.5 py-2 rounded-lg text-xs outline-none"
+                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                    <button onClick={() => void hbAddUrl()} disabled={hbSrcBusy || !hbSrcUrl.trim()} title="Добавить ссылку"
+                      className="px-3 rounded-lg text-xs font-700 inline-flex items-center gap-1 disabled:opacity-50"
+                      style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
+                      {hbSrcBusy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                    </button>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => setHbTextOpen(true)} disabled={hbSrcBusy}
+                      className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      <Type size={12} /> Вставить текст
+                    </button>
+                    <button onClick={() => void hbOpenPick()} disabled={hbSrcBusy}
+                      className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      <Paperclip size={12} /> Файл из Галереи
+                    </button>
+                  </div>
+                </div>
+
+                {/* Чат по источникам */}
+                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                      <Sparkles size={13} style={{ color: '#22d3ee' }} /> ЧАТ ПО ИСТОЧНИКАМ
+                    </span>
+                    {hb.chat.length > 0 && (
+                      <button onClick={() => hbMutate((h) => ({ ...h, chat: [] }))} title="Очистить историю"
+                        className="text-[10px] font-600" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>очистить</button>
+                    )}
+                  </div>
+                  {hb.chat.length > 0 && (
+                    <div className="space-y-2" style={{ maxHeight: 240, overflowY: 'auto' }}>
+                      {hb.chat.map((m, i) => (
+                        <div key={i} className="space-y-1">
+                          <div className="text-[11px] px-2.5 py-1.5 rounded-xl ml-8" style={{ background: 'rgba(34,211,238,0.12)', color: 'var(--text-primary)' }}>{m.q}</div>
+                          <div className="text-[11px] px-2.5 py-1.5 rounded-xl mr-4" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                            {m.a}
+                            {!!m.cites && <div className="text-[9px] mt-1 font-700" style={{ color: '#22d3ee' }}>⌘ {m.cites} цитат из источников</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-1.5 items-end">
+                    <textarea value={hbChatQ} onChange={(e) => setHbChatQ(e.target.value)} rows={2}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void hbAsk(); } }}
+                      placeholder={hbSources.length ? 'Спросите о ваших источниках…' : 'Сначала добавьте источники…'}
+                      className="flex-1 px-2.5 py-2 rounded-lg text-xs outline-none resize-none"
+                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                    <button onClick={() => void hbAsk()} disabled={hbChatBusy || !hbChatQ.trim()} title="Спросить"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center disabled:opacity-50"
+                      style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
+                      {hbChatBusy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Студия: 9 типов артефактов */}
+                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                      <Wand2 size={13} style={{ color: '#22d3ee' }} /> СТУДИЯ
+                    </span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      Сегодня: {Object.values(hbCounters).reduce((s, n) => s + (n || 0), 0)} генераций
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {HB_TYPES.map(({ t, label }) => (
+                      <button key={t} onClick={() => hbOpenGen(t)} title={`Настроить и сгенерировать: ${label}`}
+                        className="relative rounded-xl px-1.5 py-2.5 flex flex-col items-center gap-1"
+                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <span style={{ color: '#22d3ee' }}>{HB_ICON[t]}</span>
+                        <span className="text-[10px] font-600 leading-tight text-center">{label}</span>
+                        {(hbCounters[t] || 0) > 0 && (
+                          <span className="absolute top-1 right-1 text-[9px] font-700 px-1 rounded" style={{ background: 'rgba(34,211,238,0.18)', color: '#22d3ee' }}>{hbCounters[t]}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Артефакты сценария */}
+                {hbJobs.length > 0 && (
+                  <div className="rounded-xl p-2.5 space-y-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="text-[11px] font-700" style={{ color: 'var(--text-muted)' }}>АРТЕФАКТЫ</div>
+                    {hbJobs.map((j: any) => {
+                      const jt = j.type as HbType;
+                      const running = j.status === 'queued' || j.status === 'running';
+                      const isJson = ['quiz', 'flashcards', 'mindmap', 'table'].includes(jt);
+                      return (
+                        <div key={j.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
+                          <span style={{ color: '#22d3ee', flexShrink: 0 }}>{HB_ICON[jt] || <FileText size={15} />}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] font-600 truncate" style={{ color: 'var(--text-primary)' }}>{HB_LABEL[jt] || jt}</div>
+                            <div className="text-[9px]" style={{ color: j.status === 'error' ? '#ef4444' : 'var(--text-muted)' }} title={j.error || undefined}>
+                              {running ? 'Генерируется… (можно закрыть панель)' : j.status === 'error' ? (j.error || 'Ошибка') : `Готово · ${new Date(j.createdAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
+                            </div>
+                          </div>
+                          {running && <Loader2 size={14} className="animate-spin" style={{ color: '#22d3ee', flexShrink: 0 }} />}
+                          {j.status === 'done' && isJson && j.payload && (
+                            <button onClick={() => setHbView(j)} className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0"
+                              style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>Открыть</button>
+                          )}
+                          {j.status === 'done' && j.fileUrl && !isJson && (
+                            <a href={j.fileUrl} target="_blank" rel="noreferrer" className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0"
+                              style={{ background: '#22d3ee', color: '#083344', textDecoration: 'none' }}>Открыть</a>
+                          )}
+                          {j.status === 'done' && j.fileUrl && (
+                            <a href={j.fileUrl} download className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" title="Скачать"
+                              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><Download size={11} /></a>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Все готовые файлы также лежат в Галерее → вкладка «Hotebook».</p>
+                  </div>
+                )}
+
+                {hbNote && <p className="text-[11px]" style={{ color: '#ef4444' }}>{hbNote}</p>}
+              </div>
             ) : (
               <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
                 <p><b>Контент-план</b> — расписание и публикация готовых роликов по соцсетям.</p>
                 <p style={{ color: 'var(--text-muted)' }}>Календарь + публикатор — этап C. Сейчас узел можно связывать: по стрелке сюда попадёт готовое видео из цепочки.</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Hotebook: модалка настроек генерации — 1:1 как в NotebookLM (формат-карточки, длина, язык, акцент) */}
+      {hbGenOpen && (() => {
+        const cfg = HB_TYPES.find((x) => x.t === hbGenOpen)!;
+        return (
+          <div onClick={() => setHbGenOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+            <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 640, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                  <span style={{ color: '#22d3ee' }}>{HB_ICON[hbGenOpen]}</span> Настройка — {cfg.label}
+                </span>
+                <button onClick={() => setHbGenOpen(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+              <div className="space-y-3.5">
+                {cfg.fields.map((f) => (
+                  <div key={f.id}>
+                    <div className="text-[12px] font-600 mb-1.5" style={{ color: 'var(--text-secondary)' }}>{f.label}</div>
+                    {f.kind === 'cards' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {f.opts!.map((o) => {
+                          const sel = hbGenSet[f.id] === o.v;
+                          return (
+                            <button key={o.v} onClick={() => setHbGenSet((s) => ({ ...s, [f.id]: o.v }))}
+                              className="rounded-xl p-3 text-left transition-colors"
+                              style={{ background: sel ? 'rgba(34,211,238,0.10)' : 'var(--bg-tertiary)', border: `1.5px solid ${sel ? '#22d3ee' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                              <div className="text-xs font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                                {o.label} {sel && <Check size={13} style={{ color: '#22d3ee' }} />}
+                              </div>
+                              {o.hint && <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--text-muted)' }}>{o.hint}</p>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {f.kind === 'chips' && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {f.opts!.map((o) => {
+                          const sel = hbGenSet[f.id] === o.v;
+                          return (
+                            <button key={o.v} onClick={() => setHbGenSet((s) => ({ ...s, [f.id]: o.v }))}
+                              className="inline-flex items-center gap-1 text-xs font-600 px-2.5 py-1.5 rounded-lg"
+                              style={{ background: sel ? '#22d3ee' : 'var(--bg-tertiary)', color: sel ? '#083344' : 'var(--text-secondary)', border: `1px solid ${sel ? '#22d3ee' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                              {sel && <Check size={12} />}{o.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {f.kind === 'lang' && (
+                      <select value={hbGenSet[f.id] || 'ru'} onChange={(e) => setHbGenSet((s) => ({ ...s, [f.id]: e.target.value }))}
+                        className="px-2.5 py-2 rounded-lg text-xs outline-none" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minWidth: 180 }}>
+                        {HB_LANGS.map((l) => <option key={l.v} value={l.v}>{l.label}</option>)}
+                      </select>
+                    )}
+                    {f.kind === 'focus' && (
+                      <textarea value={hbGenSet[f.id] || ''} onChange={(e) => setHbGenSet((s) => ({ ...s, [f.id]: e.target.value }))}
+                        rows={3} placeholder={f.ph || ''} className="w-full px-2.5 py-2 rounded-lg text-xs outline-none resize-none"
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  Сегодня этого типа: {hbCounters[hbGenOpen] || 0} · лимит зависит от плана Google-аккаунта
+                </span>
+                <button onClick={() => void hbGenerate()} disabled={hbGenBusy}
+                  className="inline-flex items-center gap-2 text-sm font-700 px-4 py-2.5 rounded-xl disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg,#06b6d4,#22d3ee)', color: '#083344', border: 'none', cursor: 'pointer' }}>
+                  {hbGenBusy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Hotebook: модалка «Вставить текст-источник» */}
+      {hbTextOpen && (
+        <div onClick={() => setHbTextOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Текст-источник</span>
+              <button onClick={() => setHbTextOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <textarea value={hbSrcText} onChange={(e) => setHbSrcText(e.target.value)} rows={9} autoFocus
+              placeholder="Вставьте текст: заметки, сценарий, статью…"
+              className="w-full px-3 py-2.5 rounded-xl text-xs outline-none resize-none mb-3"
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+            <button onClick={() => void hbAddText()} disabled={hbSrcBusy || !hbSrcText.trim()}
+              className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
+              {hbSrcBusy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />} Добавить в источники
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hotebook: пикер файла-источника из Галереи */}
+      {hbPickOpen && (
+        <div onClick={() => setHbPickOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Файл из Галереи → источник</span>
+              <button onClick={() => setHbPickOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>NotebookLM понимает PDF, текст, аудио, видео и изображения. Клик — добавить.</p>
+            {hbGalLoading ? (
+              <div className="py-8 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
+            ) : hbGallery.length === 0 ? (
+              <p className="text-[11px] py-6 text-center" style={{ color: 'var(--text-muted)' }}>В Галерее пусто — загрузите файлы на странице «Галерея».</p>
+            ) : (
+              <div className="space-y-1">
+                {hbGallery.map((g) => (
+                  <button key={g.id} onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left disabled:opacity-50"
+                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    {g.type === 'audio' ? <Music size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'video' ? <Video size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'image' ? <Image size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : <FileText size={13} style={{ color: '#22d3ee', flexShrink: 0 }} />}
+                    <span className="text-xs truncate" style={{ color: 'var(--text-primary)' }}>{g.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Hotebook: просмотр артефакта (тест / карточки / ментальная карта / таблица) */}
+      {hbView && (
+        <div onClick={() => setHbView(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 640, maxHeight: '86vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                <span style={{ color: '#22d3ee' }}>{HB_ICON[hbView.type as HbType]}</span> {HB_LABEL[hbView.type as HbType] || 'Артефакт'}
+              </span>
+              <div className="flex items-center gap-1.5">
+                {hbView.fileUrl && (
+                  <a href={hbView.fileUrl} download className="w-8 h-8 rounded-lg flex items-center justify-center" title="Скачать файл"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><Download size={14} /></a>
+                )}
+                <button onClick={() => setHbView(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+            </div>
+            <HbPayloadView job={hbView} />
           </div>
         </div>
       )}
