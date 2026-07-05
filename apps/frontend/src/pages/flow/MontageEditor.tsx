@@ -18,8 +18,10 @@ import {
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
   Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud, Info,
   BookOpen, Globe, FileText, Send, ListChecks, Table, Layers, Presentation, RefreshCw, AlertTriangle, ExternalLink,
+  Clapperboard,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import FlowExtPanel from './FlowExtPanel';
 import { VideoViewer } from '../../components/VideoViewer';
 
 type MKind =
@@ -99,7 +101,7 @@ const DIR_HINT: Partial<Record<MKind, string>> = {
 };
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash (генерация видео), Контент-план, Подкаст.
-type CloudId = 'omni' | 'plan' | 'podcast' | 'editor' | 'ugc' | 'hotebook';
+type CloudId = 'omni' | 'plan' | 'podcast' | 'editor' | 'ugc' | 'hotebook' | 'flow';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
   omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
@@ -107,6 +109,7 @@ const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: stri
   editor: { label: 'Редактор', icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
   ugc: { label: 'UGC', icon: <Video size={22} />, color: '#a855f7', glow: 'rgba(168,85,247,.35)', def: { x: 50, y: 12 } },
   hotebook: { label: 'Hotebook', icon: <BookOpen size={22} />, color: '#22d3ee', glow: 'rgba(34,211,238,.35)', def: { x: 50, y: 88 } },
+  flow: { label: 'Google Flow', icon: <Clapperboard size={22} />, color: '#6366f1', glow: 'rgba(99,102,241,.35)', def: { x: 85, y: 50 } },
 };
 
 // ── Блок «Hotebook» (Google NotebookLM): источники + чат + студия артефактов ──
@@ -698,7 +701,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [batchMinimized, setBatchMinimized] = useState(false);
   const [batchNote, setBatchNote] = useState<string | null>(null);
   // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
-  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def }, hotebook: { ...CLOUD.hotebook.def } });
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def }, hotebook: { ...CLOUD.hotebook.def }, flow: { ...CLOUD.flow.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
@@ -3124,8 +3127,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           );
         })}
         {/* «Контент-план» скрыт до реализации (этап C): узел был пустым стабом. */}
-        {(['omni', 'podcast', 'editor', 'ugc', 'hotebook'] as CloudId[]).map((id) => {
-          const pos = cloud[id]; const cfg = CLOUD[id];
+        {(['omni', 'podcast', 'editor', 'ugc', 'hotebook', 'flow'] as CloudId[]).map((id) => {
+          const pos = cloud[id] || CLOUD[id].def; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
@@ -3810,7 +3813,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               </span>
               <button onClick={() => setCloudPanel(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
-            {cloudPanel === 'omni' ? (
+            {cloudPanel === 'flow' ? (
+              <FlowExtPanel token={token} flowId={flowId} omniSegments={omniSpec.segments} />
+            ) : cloudPanel === 'omni' ? (
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                   Преобразование видео по ленте. <b style={{ color: '#4285F4' }}>Omni Flash</b> — генерирует новый клип
