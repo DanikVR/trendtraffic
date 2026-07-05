@@ -1545,7 +1545,13 @@
  *         notebooklm/ (per-tenant таблицы, поллинг GET /jobs/:id, артефакты uploads/hotebook →
  *         media_assets folder='hotebook'), NOTEBOOKLM_WORKER_URL. Enterprise-гейт как social-ext.
  *         Пошаговый рунбук — docs/HOTEBOOK.md, конспект — PROJECT_NOTES «## 5.Ц». */
-export const APP_VERSION = '1.6.88';
+/* 1.6.89 — «Иллюстратор»: честная заметка при отказе Gemini. Прогон юзера дал «0 из 7, Gemini не
+ *         ответил» — в логах 429 RESOURCE_EXHAUSTED (кончились prepay-кредиты ключа). Теперь
+ *         заметка под кнопкой прямо говорит: «Gemini-ключ исчерпан (429): пополните биллинг в
+ *         AI Studio или вставьте другой ключ в Настройки → Gemini API» (аналогично 403), а при
+ *         нулевом фолбэк-подборе — совет прикрепить медиа вручную (иконка у реплики, там же
+ *         загрузка) или восстановить ключ и нажать ещё раз. illustrate.ts. */
+export const APP_VERSION = '1.6.89';
 
 export function AppVersion() {
   return (

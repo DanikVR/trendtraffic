@@ -116,6 +116,18 @@ async function thumbBase64(absUrl: string): Promise<{ base64: string; mime: stri
   }
 }
 
+/** Человеческое объяснение типовых отказов Gemini (квота/биллинг/доступ) для заметки в UI. */
+function geminiProblem(e: unknown): string | null {
+  const s = String((e as any)?.message || e || '');
+  if (/RESOURCE_EXHAUSTED|credits are depleted|"code"\s*:\s*429|status.*429/i.test(s)) {
+    return 'Gemini-ключ исчерпан (429): пополните биллинг в AI Studio (ai.studio/projects) или вставьте другой ключ в Настройки → Gemini API';
+  }
+  if (/PERMISSION_DENIED|API key not valid|"code"\s*:\s*403/i.test(s)) {
+    return 'Gemini-ключ не принят (403): проверьте ключ в Настройки → Gemini API';
+  }
+  return null;
+}
+
 const CAPTIONS_SCHEMA = {
   type: 'object',
   properties: {
@@ -131,10 +143,12 @@ const CAPTIONS_SCHEMA = {
   required: ['captions'],
 };
 
-/** Описать картинки батчем (≤16 за вызов). Возвращает Map url→caption только для удавшихся. */
-async function captionImages(apiKey: string, items: Array<{ url: string; absUrl: string }>, deadline: number): Promise<Map<string, string>> {
+/** Описать картинки батчем (≤16 за вызов). Возвращает Map url→caption только для удавшихся
+ *  + problem (человеческое объяснение, если Gemini отказал по квоте/ключу). */
+async function captionImages(apiKey: string, items: Array<{ url: string; absUrl: string }>, deadline: number): Promise<{ caps: Map<string, string>; problem: string | null }> {
   const out = new Map<string, string>();
-  if (!items.length) return out;
+  let problem: string | null = null;
+  if (!items.length) return { caps: out, problem };
   const { GoogleGenAI } = await import('@google/genai');
   const ai = new GoogleGenAI({ apiKey });
   for (let i = 0; i < items.length; i += 16) {
@@ -178,9 +192,11 @@ async function captionImages(apiKey: string, items: Array<{ url: string; absUrl:
       }
     } catch (e: any) {
       console.warn('[illustrate] описания картинок не удались (батч):', e?.message || e);
+      problem = problem || geminiProblem(e);
+      if (problem) break; // квота/ключ — дальнейшие батчи бессмысленны
     }
   }
-  return out;
+  return { caps: out, problem };
 }
 
 // ── Раскадровка LLM ───────────────────────────────────────────────────────────
@@ -309,15 +325,17 @@ export async function illustrateDialogue(opts: {
 
   // Описания картинок: кэш → vision (в бюджете ~35с) → имя файла.
   let visionCount = 0;
+  let keyProblem: string | null = null; // квота/невалидный ключ — показываем пользователю прямо в заметке
   const images = candidates.filter((c) => c.type === 'image');
   const cached = await getCachedCaptions(opts.tenantId, images.map((c) => c.url));
   for (const c of images) { const hit = cached.get(c.url); if (hit) c.caption = hit; }
   const need = images.filter((c) => !cached.get(c.url));
   if (opts.apiKey && need.length) {
     const fresh = await captionImages(opts.apiKey, need.map((c) => ({ url: c.url, absUrl: abs(c.url) })), Date.now() + 35_000);
-    visionCount = fresh.size;
+    visionCount = fresh.caps.size;
+    keyProblem = fresh.problem;
     for (const c of need) {
-      const cap = fresh.get(c.url);
+      const cap = fresh.caps.get(c.url);
       if (cap) { c.caption = cap; void saveCaption(opts.tenantId, c.url, cap); }
     }
   }
@@ -333,12 +351,13 @@ export async function illustrateDialogue(opts: {
       if (!assigned.size) throw new Error('пустая раскадровка');
     } catch (e: any) {
       console.warn('[illustrate] LLM-раскадровка не удалась, фолбэк на ключевые слова:', e?.message || e);
+      keyProblem = keyProblem || geminiProblem(e);
       assigned = keywordShotlist(lines, candidates);
-      engine = 'ключевые слова (Gemini не ответил)';
+      engine = keyProblem ? 'ключевые слова' : 'ключевые слова (Gemini не ответил)';
     }
   } else {
     assigned = keywordShotlist(lines, candidates);
-    engine = 'ключевые слова (нет Gemini-ключа)';
+    engine = 'ключевые слова (нет Gemini-ключа — подключите в Настройки → Gemini API для умного подбора)';
   }
 
   // Пост-валидация: не дублировать ассет в соседних репликах, первая — без иллюстрации.
@@ -360,9 +379,13 @@ export async function illustrateDialogue(opts: {
     });
   }
   const full = shots.filter((s) => s.mode === 'full').length;
-  const note = `иллюстрации: ${shots.length} из ${lines.length} реплик (во весь кадр ${full}, карточкой ${shots.length - full}); `
+  let note = `иллюстрации: ${shots.length} из ${lines.length} реплик (во весь кадр ${full}, карточкой ${shots.length - full}); `
     + `каталог ${candidates.length} (фото ${images.length}, видео ${candidates.length - images.length})`
     + (visionCount ? `, новых описаний ${visionCount}` : '')
     + `; подбор: ${engine}`;
+  if (keyProblem) note += `. ⚠ ${keyProblem}`;
+  if (!shots.length && engine.startsWith('ключевые слова')) {
+    note += '. Совет: грубый подбор по словам почти не совпадает — восстановите Gemini-ключ и нажмите ещё раз, либо прикрепите медиа вручную (иконка картинки у реплики; там же есть загрузка файлов).';
+  }
   return { shots, note };
 }
