@@ -861,6 +861,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [hbCounters, setHbCounters] = useState<Record<string, number>>({});
   const [hbLoading, setHbLoading] = useState(false);
   const [hbNote, setHbNote] = useState<string | null>(null);
+  const [hbOk, setHbOk] = useState<string | null>(null);           // зелёный фидбэк «источник добавлен»
   const [hbFreshDone, setHbFreshDone] = useState(false);            // готовый артефакт → зелёная точка на узле
   const [hbSrcUrl, setHbSrcUrl] = useState('');
   const [hbSrcBusy, setHbSrcBusy] = useState(false);
@@ -2728,24 +2729,32 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (d?.errorKind && ['auth', 'api_changed', 'offline', 'not_configured', 'quota'].includes(d.errorKind)) void hbRefreshStatus(true);
     return d?.error || `Ошибка ${res.status}`;
   };
+  // После добавления источника: зелёный фидбэк + перечитать АВТОРИТЕТНЫЙ список из блокнота
+  // (сколько бы их ни было — панель всегда показывает реальные, не «застревает» на одном).
+  const hbAfterAdd = (label: string) => {
+    setHbOk(`Источник добавлен: ${label}. Можно добавлять ещё.`);
+    setTimeout(() => setHbOk(null), 6000);
+    void hbLoadOverview(true);
+  };
   const hbAddUrl = async () => {
     const url = hbSrcUrl.trim();
     if (!url || hbSrcBusy) return;
     if (!/^https?:\/\//i.test(url)) { setHbNote('Ссылка должна начинаться с http(s)://'); return; }
-    setHbSrcBusy(true); setHbNote(null);
+    setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'url', url, flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json();
       if (d.source) setHbSources((s) => [...s, d.source]);
       setHbSrcUrl('');
+      hbAfterAdd(d.source?.title || d.source?.url || url);
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить источник'); }
     finally { setHbSrcBusy(false); }
   };
   const hbAddText = async () => {
     const content = hbSrcText.trim();
     if (!content || hbSrcBusy) return;
-    setHbSrcBusy(true); setHbNote(null);
+    setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const title = content.split('\n')[0].slice(0, 60) || 'Текст';
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'text', title, content, flowName: name }) });
@@ -2753,6 +2762,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await r.json();
       if (d.source) setHbSources((s) => [...s, d.source]);
       setHbSrcText(''); setHbTextOpen(false);
+      hbAfterAdd(title);
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить текст'); }
     finally { setHbSrcBusy(false); }
   };
@@ -2788,12 +2798,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const hbAddAsset = async (assetId: string) => {
     if (hbSrcBusy) return;
-    setHbSrcBusy(true); setHbNote(null);
+    setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources/asset`, { method: 'POST', headers: headers(), body: JSON.stringify({ assetId, flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json(); if (d.source) setHbSources((s) => [...s, d.source]);
       setHbPickOpen(false);
+      hbAfterAdd(d.source?.title || 'файл');
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить файл'); }
     finally { setHbSrcBusy(false); }
   };
@@ -2848,19 +2859,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // «＋ анализ»: добавить ПОЛНЫЙ сохранённый анализ файла отдельным текст-источником.
   const hbAddAnalysis = async (assetId: string, fileName: string) => {
     if (hbSrcBusy) return;
-    setHbSrcBusy(true); setHbNote(null);
+    setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const content = await hbFetchAnalysisText(assetId);
       if (!content) { setHbNote('Для этого файла нет сохранённого анализа.'); return; }
       await hbAddSourceText(`Анализ: ${fileName}`, content);
       setHbPickOpen(false);
+      hbAfterAdd(`Анализ: ${fileName}`);
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить анализ'); }
     finally { setHbSrcBusy(false); }
   };
   // «＋ видео + анализ»: одним кликом добавить и сам файл, и его анализ (отдельными источниками).
   const hbAddBoth = async (assetId: string, fileName: string) => {
     if (hbSrcBusy) return;
-    setHbSrcBusy(true); setHbNote(null);
+    setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const rv = await fetch(`/api/notebooklm/flow/${flowId}/sources/asset`, { method: 'POST', headers: headers(), body: JSON.stringify({ assetId, flowName: name }) });
       if (!rv.ok) throw new Error(await hbErr(rv));
@@ -2872,6 +2884,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         else noAnalysis = true;
       } catch { noAnalysis = true; }
       setHbPickOpen(false);
+      hbAfterAdd(noAnalysis ? fileName : `${fileName} + анализ`);
       if (noAnalysis) setHbNote('Видео добавлено. Сохранённого анализа у него нет — добавилось только видео.');
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить'); }
     finally { setHbSrcBusy(false); }
@@ -3896,7 +3909,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
       {cloudPanel && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : 600, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
+          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : cloudPanel === 'hotebook' ? 680 : 600, maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
                 <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
@@ -5181,6 +5194,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <Paperclip size={12} /> Файл из Галереи
                     </button>
                   </div>
+                  {hbOk && (
+                    <p className="text-[11px] inline-flex items-center gap-1.5" style={{ color: '#10b981' }}>
+                      <Check size={12} /> {hbOk}
+                    </p>
+                  )}
                 </div>
 
                 {/* Чат по источникам */}
@@ -5195,28 +5213,28 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     )}
                   </div>
                   {hb.chat.length > 0 && (
-                    <div className="space-y-2" style={{ maxHeight: 240, overflowY: 'auto' }}>
+                    <div className="space-y-2.5" style={{ maxHeight: '42vh', overflowY: 'auto' }}>
                       {hb.chat.map((m, i) => (
                         <div key={i} className="space-y-1">
-                          <div className="text-[11px] px-2.5 py-1.5 rounded-xl ml-8" style={{ background: 'rgba(34,211,238,0.12)', color: 'var(--text-primary)' }}>{m.q}</div>
-                          <div className="text-[11px] px-2.5 py-1.5 rounded-xl mr-4" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                          <div className="text-xs px-3 py-2 rounded-xl ml-6" style={{ background: 'rgba(34,211,238,0.12)', color: 'var(--text-primary)' }}>{m.q}</div>
+                          <div className="text-xs px-3 py-2 rounded-xl mr-2 leading-relaxed" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
                             {m.a}
-                            {!!m.cites && <div className="text-[9px] mt-1 font-700" style={{ color: '#22d3ee' }}>⌘ {m.cites} цитат из источников</div>}
+                            {!!m.cites && <div className="text-[10px] mt-1.5 font-700" style={{ color: '#22d3ee' }}>⌘ {m.cites} цитат из источников</div>}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="flex gap-1.5 items-end">
-                    <textarea value={hbChatQ} onChange={(e) => setHbChatQ(e.target.value)} rows={2}
+                    <textarea value={hbChatQ} onChange={(e) => setHbChatQ(e.target.value)} rows={4}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void hbAsk(); } }}
-                      placeholder={hbSources.length ? 'Спросите о ваших источниках…' : 'Сначала добавьте источники…'}
-                      className="flex-1 px-2.5 py-2 rounded-lg text-xs outline-none resize-none"
-                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                      placeholder={hbSources.length ? 'Спросите о ваших источниках… (Enter — отправить, Shift+Enter — новая строка)' : 'Сначала добавьте источники…'}
+                      className="flex-1 px-3 py-2.5 rounded-lg text-xs outline-none resize-y leading-relaxed"
+                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minHeight: 88, maxHeight: 320 }} />
                     <button onClick={() => void hbAsk()} disabled={hbChatBusy || !hbChatQ.trim()} title="Спросить"
-                      className="w-9 h-9 rounded-lg flex items-center justify-center disabled:opacity-50"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center disabled:opacity-50 flex-shrink-0"
                       style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
-                      {hbChatBusy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                      {hbChatBusy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                     </button>
                   </div>
                 </div>

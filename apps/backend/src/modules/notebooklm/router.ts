@@ -515,8 +515,10 @@ router.post('/flow/:flowId/sources/asset', async (req: AuthedRequest, res: Respo
     if (!a?.file_path || !fs.existsSync(a.file_path)) return res.status(404).json({ error: 'Файл ассета не найден на диске' });
     const nb = await ensureNotebook(req.tenantId!, flowId, req.body?.flowName);
     const buf = fs.readFileSync(a.file_path);
+    const niceName = a.original_name || path.basename(a.file_path);
     const fd = new FormData();
-    fd.append('file', new Blob([buf], { type: a.mime || 'application/octet-stream' }), a.original_name || path.basename(a.file_path));
+    fd.append('file', new Blob([buf], { type: a.mime || 'application/octet-stream' }), niceName);
+    fd.append('title', niceName); // красивое имя источника в NotebookLM (не «up-{uuid}-…»)
     const d = await wfetch(`/notebooks/${encodeURIComponent(nb)}/sources/file`, { method: 'POST', body: fd as any }, 600_000, req.tenantId!);
     res.json({ source: d?.source || null, notebookId: nb });
   } catch (e: any) {

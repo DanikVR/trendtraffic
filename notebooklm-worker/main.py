@@ -49,7 +49,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
@@ -682,12 +682,17 @@ async def add_source(nb: str, body: SourceIn, profile: str = "default"):
 
 
 @app.post("/notebooks/{nb}/sources/file")
-async def add_source_file(nb: str, file: UploadFile = File(...), profile: str = "default"):
+async def add_source_file(nb: str, file: UploadFile = File(...), profile: str = "default", title: Optional[str] = Form(None)):
     tmp = OUT_DIR / f"up-{uuid.uuid4().hex}-{re.sub(r'[^A-Za-z0-9._-]', '_', file.filename or 'file')}"
     try:
         tmp.write_bytes(await file.read())
         client = await get_client(profile)
-        src = await client.sources.add_file(nb, str(tmp))
+        # Красивое имя источника в NotebookLM: явный title (ориг. имя файла), а не «up-{uuid}-…».
+        nice = (title or file.filename or "Файл").strip()
+        try:
+            src = await client.sources.add_file(nb, str(tmp), title=nice)
+        except TypeError:  # старые версии либы без параметра title
+            src = await client.sources.add_file(nb, str(tmp))
         return {"source": jsonable(src)}
     except HTTPException:
         raise
