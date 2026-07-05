@@ -73,7 +73,7 @@
           .card{width:300px;background:#14181F;color:#EAECEF;border:1px solid #2A303B;
             border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.45);overflow:hidden}
           .hd{display:flex;align-items:center;gap:8px;padding:11px 13px;background:#1B2029;
-            border-bottom:1px solid #2A303B;cursor:pointer}
+            border-bottom:1px solid #2A303B;cursor:move;user-select:none;touch-action:none}
           .logo{width:9px;height:9px;border-radius:50%;background:#6366F1;box-shadow:0 0 8px #6366F1}
           .ttl{font-size:12.5px;font-weight:700;letter-spacing:.02em}
           .sub{font-size:10.5px;color:#8A919C;margin-left:auto;font-family:ui-monospace,Consolas,monospace}
@@ -119,12 +119,55 @@
         hd: sh.getElementById('hd'), reconc: sh.getElementById('reconc'),
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
-      els.hd.addEventListener('click', () => els.bd.classList.toggle('hide'));
+      makeDraggable(host, els.hd, () => els.bd.classList.toggle('hide'));
       els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro', '_blank'));
       els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line('Пауза включена вручную')));
       refreshStatus();
       setInterval(refreshStatus, 5000);
       root = sh;
+    }
+    function savePanelPos(left, top) {
+      try { chrome.storage.local.set({ panelPos: { left, top } }); } catch { /* noop */ }
+    }
+    // Перетаскивание панели за шапку (+ запоминание позиции). Клик без движения = свернуть/развернуть.
+    function makeDraggable(host, handle, onTap) {
+      try {
+        chrome.storage.local.get('panelPos', (d) => {
+          const p = d && d.panelPos;
+          if (!p || typeof p.left !== 'number' || typeof p.top !== 'number') return;
+          const w = host.offsetWidth || 300, h = host.offsetHeight || 120;
+          host.style.left = Math.max(4, Math.min(window.innerWidth - w - 4, p.left)) + 'px';
+          host.style.top = Math.max(4, Math.min(window.innerHeight - h - 4, p.top)) + 'px';
+          host.style.right = 'auto'; host.style.bottom = 'auto';
+        });
+      } catch { /* noop */ }
+      let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0, moved = false;
+      handle.addEventListener('pointerdown', (e) => {
+        if (e.button != null && e.button !== 0) return;
+        dragging = true; moved = false;
+        const r = host.getBoundingClientRect();
+        ox = r.left; oy = r.top; sx = e.clientX; sy = e.clientY;
+        host.style.left = ox + 'px'; host.style.top = oy + 'px';
+        host.style.right = 'auto'; host.style.bottom = 'auto';
+        try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
+      });
+      handle.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+        const w = host.offsetWidth, h = host.offsetHeight;
+        host.style.left = Math.max(4, Math.min(window.innerWidth - w - 4, ox + dx)) + 'px';
+        host.style.top = Math.max(4, Math.min(window.innerHeight - h - 4, oy + dy)) + 'px';
+      });
+      const end = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        try { handle.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+        if (moved) savePanelPos(parseInt(host.style.left, 10) || 0, parseInt(host.style.top, 10) || 0);
+        else if (typeof onTap === 'function') onTap();
+      };
+      handle.addEventListener('pointerup', end);
+      handle.addEventListener('pointercancel', end);
     }
     function line(t) {
       if (!els.lg) return;
