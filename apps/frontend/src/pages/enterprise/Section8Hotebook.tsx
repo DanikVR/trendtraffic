@@ -77,6 +77,20 @@ export function Section8Hotebook() {
   };
   useEffect(() => { void loadStatus(); void loadCounters(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
+  /** Открыть окно входа Google на машине воркера (Chromium через WSLg) — вход в 2 клика отсюда. */
+  const [loginOpening, setLoginOpening] = useState(false);
+  const doLoginWindow = async () => {
+    if (loginOpening) return;
+    setLoginOpening(true); setNote(null);
+    try {
+      const r = await fetch('/api/notebooklm/auth/login-window', { method: 'POST', headers: headers() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `Ошибка ${r.status}`);
+      setNote({ ok: true, text: 'Окно Chromium открыто на машине воркера — войдите в Google-аккаунт, затем нажмите «Проверить подключение».' });
+    } catch (e: any) { setNote({ ok: false, text: e?.message || 'Не удалось открыть окно входа' }); }
+    finally { setLoginOpening(false); }
+  };
+
   const doImport = async () => {
     const raw = ssInput.trim();
     if (!raw || importing) return;
@@ -153,8 +167,19 @@ export function Section8Hotebook() {
         <h4 className="text-sm font-700 mb-2 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
           <KeyRound size={15} style={{ color: '#22d3ee' }} /> Как подключить / переподключить Google-аккаунт
         </h4>
+        {/* Главный путь: вход в 2 клика прямо отсюда — окно откроется на машине воркера. */}
+        <div className="rounded-xl p-3.5 mb-3 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.3)' }}>
+          <AuroraButton onClick={() => void doLoginWindow()} disabled={loginOpening}
+            icon={loginOpening ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}>
+            Открыть окно входа Google
+          </AuroraButton>
+          <p className="text-[11px] flex-1 min-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
+            Окно Chromium появится <b>на экране машины воркера</b> (домашний ПК). Войдите в Google-аккаунт —
+            и нажмите «Проверить подключение» выше. Ничего вставлять не нужно.
+          </p>
+        </div>
         <ol className="text-xs space-y-1.5 mb-4 list-decimal list-inside" style={{ color: 'var(--text-secondary)' }}>
-          <li>На машине Hotebook-воркера выполните <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>notebooklm login</code> — откроется браузер, войдите в Google-аккаунт.</li>
+          <li>Запасной путь: на машине воркера выполните <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>notebooklm login</code> — откроется браузер, войдите в Google-аккаунт.</li>
           <li>Сессия сохранится в <code className="px-1 rounded" style={{ background: 'var(--bg-tertiary)' }}>storage_state.json</code>; воркер продлевает её сам (keepalive раз в сутки).</li>
           <li>Либо вставьте содержимое этого файла ниже — применится без доступа к консоли.</li>
         </ol>

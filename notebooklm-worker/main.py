@@ -401,6 +401,27 @@ def _wrap_api_error(e: Exception):
     raise HTTPException(502, detail={"error": str(e) or type(e).__name__, "error_kind": kind})
 
 
+@app.post("/auth/login-window")
+async def auth_login_window():
+    """Открыть окно интерактивного входа Google НА МАШИНЕ ВОРКЕРА (WSLg/десктоп).
+
+    Запускает `notebooklm login` отдельным процессом: на экране машины воркера
+    появляется Chromium, человек входит в Google, куки сохраняются в профиль.
+    Здесь не ждём (вход занимает минуты) — фронт жмёт «Проверить» / поллит /auth/status.
+    """
+    import subprocess
+    import sys
+    exe = Path(sys.executable).parent / "notebooklm"
+    cmd = [str(exe) if exe.exists() else "notebooklm", "login"]
+    env = dict(os.environ)
+    env.setdefault("DISPLAY", ":0")
+    try:
+        subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"не удалось открыть окно входа: {e}")
+    return {"started": True, "note": "Окно Chromium открыто на машине воркера (ждёт входа до 5 минут)"}
+
+
 @app.post("/notebooks")
 async def create_notebook(body: NotebookIn):
     try:

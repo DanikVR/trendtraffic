@@ -333,6 +333,18 @@ router.get('/status', async (req: AuthedRequest, res: Response) => {
   res.json({ status: st });
 });
 
+/** Открыть окно входа Google на машине воркера (WSLg) — только superadmin. */
+router.post('/auth/login-window', async (req: AuthedRequest, res: Response) => {
+  if (req.userRole !== 'superadmin') return res.status(403).json({ error: 'Только суперадмин может подключать Google-аккаунт' });
+  try {
+    const d = await wfetch('/auth/login-window', { method: 'POST' }, 30_000);
+    statusCache = null; // после входа «Проверить» должен увидеть свежую сессию
+    res.json({ started: !!d.started, note: d.note || null });
+  } catch (e: any) {
+    res.status(502).json(errPayload(e));
+  }
+});
+
 /** Импорт кук Google (storage_state.json) — только superadmin: аккаунт платформенный. */
 router.post('/auth/import', async (req: AuthedRequest, res: Response) => {
   if (req.userRole !== 'superadmin') return res.status(403).json({ error: 'Только суперадмин может подключать Google-аккаунт' });
