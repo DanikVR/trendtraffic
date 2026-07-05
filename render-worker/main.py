@@ -160,7 +160,7 @@ def _sweep_old(dir_path: Path, max_age_sec: float, skip: tuple = ()) -> None:
 
 
 def _sweep_workdirs() -> None:
-    _sweep_old(WORK_DIR, 24 * 3600, skip=("out",))
+    _sweep_old(WORK_DIR, 24 * 3600, skip=("out", "avatar_jobs"))  # avatar_jobs — свой TTL в /avatar
     _sweep_old(FILES_DIR, 48 * 3600)
 
 
@@ -1357,6 +1357,18 @@ def _echomimic_v2(img: str, wav: str, out_path: str, studio: Optional[dict] = No
 # HTTP-соединении — иначе рвётся по таймаутам fetch/undici/форвардера. См. /avatar + /avatar/status.
 _avatar_jobs: dict = {}
 _gpu_lock = threading.Lock()  # сериализует GPU-инференс: одна генерация за раз (иначе OOM на 16ГБ)
+# Спека+статус каждого джоба дублируются на диск: рестарт сервиса (деплой) больше не теряет
+# рендер — недоделанные джобы реанимируются при старте с ТЕМ ЖЕ job_id (бэкенд их доопрашивает).
+AVJOBS_DIR = WORK_DIR / "avatar_jobs"
+AVJOBS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _avjob_write(job_id: str, data: dict) -> None:
+    try:
+        with open(AVJOBS_DIR / (job_id + ".json"), "w") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception as e:  # noqa: BLE001
+        print("[avatar] не записал джоб %s на диск: %s" % (job_id, e), flush=True)
 
 
 def _avatar_impl(body: AvatarBody) -> dict:
@@ -1425,6 +1437,7 @@ def _avatar_run(job_id: str, body: AvatarBody):
     res["status"] = "done" if res.get("output_name") else "failed"
     res["ts"] = time.time()
     _avatar_jobs[job_id] = res
+    _avjob_write(job_id, res)   # финал на диск: статус переживает рестарт сервиса
 
 
 @app.post("/avatar")
@@ -1433,8 +1446,16 @@ def avatar(body: AvatarBody):
     cutoff = time.time() - 6 * 3600
     for k in [k for k, v in list(_avatar_jobs.items()) if v.get("ts", 0) < cutoff]:
         _avatar_jobs.pop(k, None)
+    try:
+        for p in AVJOBS_DIR.glob("av_*.json"):
+            if p.stat().st_mtime < cutoff:
+                p.unlink()
+    except Exception:  # noqa: BLE001
+        pass
     job_id = "av_" + uuid.uuid4().hex[:10]
     _avatar_jobs[job_id] = {"status": "processing", "ts": time.time()}
+    # спека на диск ДО старта треда: если сервис рестартнут mid-render, джоб реанимируется
+    _avjob_write(job_id, {"status": "processing", "ts": time.time(), "body": body.model_dump()})
     threading.Thread(target=_avatar_run, args=(job_id, body), daemon=True).start()
     return {"job_id": job_id, "status": "processing"}
 
@@ -1442,10 +1463,41 @@ def avatar(body: AvatarBody):
 @app.get("/avatar/status")
 def avatar_status(job: str = ""):
     j = _avatar_jobs.get(job)
+    if not j and re.fullmatch(r"av_[0-9a-f]{10}", job or ""):
+        try:  # память потеряна рестартом, но джоб успел доделаться до него — финал лежит на диске
+            with open(AVJOBS_DIR / (job + ".json")) as f:
+                j = json.load(f)
+        except Exception:  # noqa: BLE001
+            j = None
     if not j:
         return {"status": "not_found"}
     return {"status": j.get("status"), "output_name": j.get("output_name"),
             "note": j.get("note"), "engine": j.get("engine")}
+
+
+def _avatar_requeue_unfinished() -> None:
+    """Реанимация после рестарта: джобы со статусом processing на диске перезапускаются с тем же
+    job_id — бэкенд продолжает поллить и дождётся. (2026-07-05 рестарт воркера дважды убивал
+    рендер юзера на середине — деплой параллельных фич не должен стоить потерянных рендеров.)"""
+    cutoff = time.time() - 6 * 3600
+    n = 0
+    for p in sorted(AVJOBS_DIR.glob("av_*.json")):
+        try:
+            with open(p) as f:
+                j = json.load(f)
+            if j.get("status") != "processing" or j.get("ts", 0) < cutoff or not j.get("body"):
+                continue
+            job_id = p.stem
+            _avatar_jobs[job_id] = {"status": "processing", "ts": j.get("ts") or time.time()}
+            threading.Thread(target=_avatar_run, args=(job_id, AvatarBody(**j["body"])), daemon=True).start()
+            n += 1
+        except Exception as e:  # noqa: BLE001
+            print("[avatar] реанимация %s не удалась: %s" % (p.name, e), flush=True)
+    if n:
+        print("[avatar] реанимировано незавершённых джобов после рестарта: %d" % n, flush=True)
+
+
+_avatar_requeue_unfinished()
 
 
 @app.post("/transcribe")

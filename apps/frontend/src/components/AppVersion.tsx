@@ -1520,7 +1520,14 @@
  *         Форматы наследуются от фото студии (9:16/16:9/1:1). Файлы: illustrate.ts (новый),
  *         podcast_compose.ts (Ken Burns/full/ASS), router.ts (/podcast/illustrate, captions),
  *         main.py воркера (full+Ken Burns в обоих путях), MontageEditor.tsx (UI). */
-/* 1.6.81–1.6.85 (ветка Hotebook, влита как 1.6.87) — НОВЫЙ БЛОК «Hotebook» (Google NotebookLM) в
+/* 1.6.87 — GPU-джобы переживают рестарт воркера. Дважды за день (14:57 и 16:50) рестарт сервиса
+ *         trendtraffic-render-gpu (деплой параллельных фич) убивал рендер юзера на середине:
+ *         джобы жили только в памяти → «GPU-задача потеряна», у голов «ошибка». Теперь спека
+ *         каждого /avatar-джоба пишется на диск (WORK_DIR/avatar_jobs, TTL 6ч, исключён из
+ *         sweep), финальный статус — тоже; при старте воркер РЕАНИМИРУЕТ недоделанные джобы с
+ *         тем же job_id (бэкенд продолжает поллить и дождётся), /avatar/status читает финал с
+ *         диска, если память потеряна. render-worker/main.py. */
+/* 1.6.81–1.6.85 (ветка Hotebook, влита как 1.6.88) — НОВЫЙ БЛОК «Hotebook» (Google NotebookLM) в
  *         TrendFlow — 6-й облачный узел: источники (URL/YouTube/текст/файл из Галереи), чат с
  *         цитатами, студия из 9 артефактов (аудиопересказ, видеообзор, отчёт, тест, таблица,
  *         инфографика, карточки, ментальная карта, презентация) с настройками 1:1 как в NotebookLM
@@ -1538,7 +1545,7 @@
  *         notebooklm/ (per-tenant таблицы, поллинг GET /jobs/:id, артефакты uploads/hotebook →
  *         media_assets folder='hotebook'), NOTEBOOKLM_WORKER_URL. Enterprise-гейт как social-ext.
  *         Пошаговый рунбук — docs/HOTEBOOK.md, конспект — PROJECT_NOTES «## 5.Ц». */
-export const APP_VERSION = '1.6.87';
+export const APP_VERSION = '1.6.88';
 
 export function AppVersion() {
   return (
