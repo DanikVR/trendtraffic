@@ -1570,7 +1570,17 @@
  *         перемотка тягой + время + mute), корректен в тёмной И светлой теме; заменил нативный
  *         <audio controls> в Галерее и используется в блоке Hotebook. MontageEditor.tsx,
  *         GalleryPage.tsx, components/AudioPlayer.tsx. */
-export const APP_VERSION = '1.6.91';
+/* 1.6.92 — Hotebook: в источники добавляется ВЕСЬ анализ видео, не огрызок. Диагноз по вопросу
+ *         юзера: при «Добавить в галерею» видео + анализ уже сохраняются (video_analyses,
+ *         привязка к ассету) — но кнопка «＋ анализ» (v1.6.91) читала НЕсуществующие поля
+ *         (dna.meta.topic/hooks/blocks) → добавляла почти пустой текст. Теперь hbBuildAnalysisText
+ *         собирает ПОЛНЫЙ разбор из реальных полей TrendDNA (hookType/whyItWorks/targetAudience/
+ *         viralFactors/copyReadyScript/howToAdapt/summary/sceneBeats с таймкодами/hookAnalysis/
+ *         visualStyle/audioDialogue/whyResonates/howToReplicate/keywords) = то, что видно на
+ *         вкладке «Аналитика». Новая кнопка «видео + анализ» на файлах «Из анализа» добавляет
+ *         одним кликом и видео, и его разбор (двумя источниками); «анализ» — только текст.
+ *         MontageEditor.tsx (hbBuildAnalysisText/hbAddBoth/hbFetchAnalysisText). */
+export const APP_VERSION = '1.6.92';
 
 export function AppVersion() {
   return (

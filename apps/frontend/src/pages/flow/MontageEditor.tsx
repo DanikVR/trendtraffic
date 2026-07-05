@@ -2797,29 +2797,83 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить файл'); }
     finally { setHbSrcBusy(false); }
   };
-  // «＋ анализ»: добавить сохранённый анализ файла (описание/summary из video_analyses) как текст-источник.
+  // Собрать ПОЛНЫЙ текст анализа из сохранённой ДНК (video_analyses.dna) — тот же
+  // разбор, что видно на вкладке «Аналитика»: Viral Breakdown + Video Content Analysis.
+  const hbBuildAnalysisText = (dna: any): string => {
+    if (!dna || typeof dna !== 'object') return '';
+    const L: string[] = [];
+    const line = (label: string, v: any) => { const s = String(v ?? '').trim(); if (s) L.push(`${label}: ${s}`); };
+    const bullets = (label: string, arr: any) => {
+      if (Array.isArray(arr) && arr.length) { L.push(`${label}:`); for (const x of arr) { const s = String(x ?? '').trim(); if (s) L.push(`• ${s}`); } }
+    };
+    L.push('=== ВИРАЛЬНЫЙ РАЗБОР ===');
+    line('Тип хука', dna.hookType);
+    line('Почему работает', dna.whyItWorks);
+    line('Целевая аудитория', dna.targetAudience);
+    bullets('Факторы виральности', dna.viralFactors);
+    if (String(dna.copyReadyScript || '').trim()) { L.push('Готовый сценарий (copy-ready):'); L.push(String(dna.copyReadyScript).trim()); }
+    bullets('Как адаптировать', dna.howToAdapt);
+    L.push('');
+    L.push('=== АНАЛИЗ СОДЕРЖАНИЯ ===');
+    line('Краткое описание', dna.summary);
+    if (Array.isArray(dna.sceneBeats) && dna.sceneBeats.length) {
+      L.push('Сцены (тайминг):');
+      for (const b of dna.sceneBeats) {
+        const t = typeof b?.t === 'number' ? `${Math.floor(b.t / 60)}:${String(Math.floor(b.t % 60)).padStart(2, '0')}` : '';
+        const desc = String(b?.desc ?? '').trim();
+        if (desc) L.push(`• ${t ? t + ' — ' : ''}${desc}${b?.intensity ? ` [${b.intensity}]` : ''}`);
+      }
+    }
+    line('Разбор хука', dna.hookAnalysis);
+    line('Визуальный стиль', dna.visualStyle);
+    line('Аудио/диалог', dna.audioDialogue);
+    bullets('Почему заходит у зрителя', dna.whyResonates);
+    bullets('Как повторить', dna.howToReplicate);
+    if (Array.isArray(dna.keywords) && dna.keywords.length) line('Ключевые слова', dna.keywords.join(', '));
+    if (dna.sourceUrl) line('Источник', dna.sourceUrl);
+    const out = L.join('\n').trim();
+    return out.length > 40 ? out : (dna.brief ? String(dna.brief) : (dna.summary ? String(dna.summary) : ''));
+  };
+  const hbAddSourceText = async (title: string, content: string) => {
+    const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'text', title, content, flowName: name }) });
+    if (!r.ok) throw new Error(await hbErr(r));
+    const d = await r.json(); if (d.source) setHbSources((s) => [...s, d.source]);
+  };
+  const hbFetchAnalysisText = async (assetId: string): Promise<string | null> => {
+    const ar = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: headers() });
+    if (ar.status === 404) return null;
+    if (!ar.ok) throw new Error(`Ошибка ${ar.status}`);
+    return hbBuildAnalysisText((await ar.json()).analysis?.dna || {}) || null;
+  };
+  // «＋ анализ»: добавить ПОЛНЫЙ сохранённый анализ файла отдельным текст-источником.
   const hbAddAnalysis = async (assetId: string, fileName: string) => {
     if (hbSrcBusy) return;
     setHbSrcBusy(true); setHbNote(null);
     try {
-      const ar = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: headers() });
-      if (ar.status === 404) { setHbNote('Для этого файла нет сохранённого анализа.'); return; }
-      if (!ar.ok) throw new Error(`Ошибка ${ar.status}`);
-      const dna = (await ar.json()).analysis?.dna || {};
-      const parts: string[] = [];
-      if (dna.summary) parts.push(`Краткое описание: ${dna.summary}`);
-      const meta = dna.meta || {};
-      if (meta.topic) parts.push(`Тема: ${meta.topic}`);
-      if (Array.isArray(meta.hooks) && meta.hooks.length) parts.push(`Зацепки: ${meta.hooks.join('; ')}`);
-      if (meta.tone) parts.push(`Тон: ${meta.tone}`);
-      if (Array.isArray(dna.blocks) && dna.blocks.length) parts.push(`Структура: ${dna.blocks.map((b: any) => b.title || b.kind).filter(Boolean).join(' → ')}`);
-      const content = parts.join('\n') || JSON.stringify(dna).slice(0, 4000);
-      if (!content.trim()) { setHbNote('Анализ пуст.'); return; }
-      const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'text', title: `Анализ: ${fileName}`, content, flowName: name }) });
-      if (!r.ok) throw new Error(await hbErr(r));
-      const d = await r.json(); if (d.source) setHbSources((s) => [...s, d.source]);
+      const content = await hbFetchAnalysisText(assetId);
+      if (!content) { setHbNote('Для этого файла нет сохранённого анализа.'); return; }
+      await hbAddSourceText(`Анализ: ${fileName}`, content);
       setHbPickOpen(false);
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить анализ'); }
+    finally { setHbSrcBusy(false); }
+  };
+  // «＋ видео + анализ»: одним кликом добавить и сам файл, и его анализ (отдельными источниками).
+  const hbAddBoth = async (assetId: string, fileName: string) => {
+    if (hbSrcBusy) return;
+    setHbSrcBusy(true); setHbNote(null);
+    try {
+      const rv = await fetch(`/api/notebooklm/flow/${flowId}/sources/asset`, { method: 'POST', headers: headers(), body: JSON.stringify({ assetId, flowName: name }) });
+      if (!rv.ok) throw new Error(await hbErr(rv));
+      const dv = await rv.json(); if (dv.source) setHbSources((s) => [...s, dv.source]);
+      let noAnalysis = false;
+      try {
+        const content = await hbFetchAnalysisText(assetId);
+        if (content) await hbAddSourceText(`Анализ: ${fileName}`, content);
+        else noAnalysis = true;
+      } catch { noAnalysis = true; }
+      setHbPickOpen(false);
+      if (noAnalysis) setHbNote('Видео добавлено. Сохранённого анализа у него нет — добавилось только видео.');
+    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить'); }
     finally { setHbSrcBusy(false); }
   };
   const hbDelSource = async (sid: string) => {
@@ -5367,7 +5421,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Файл из Галереи → источник</span>
               <button onClick={() => setHbPickOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
-            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>NotebookLM понимает PDF, текст, аудио, видео и изображения. Клик — добавить файл; у файлов «Из анализа» кнопка <b>＋ анализ</b> добавит его описание.</p>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>NotebookLM понимает PDF, текст, аудио, видео и изображения. Клик по имени — добавить сам файл. У файлов «Из анализа»: <b>видео + анализ</b> добавит и видео, и его разбор (двумя источниками), либо <b>анализ</b> — только разбор текстом.</p>
             {/* Вкладки-папки как в Галерее (TrendFlow / Аудио / Из анализа) */}
             <div className="grid grid-cols-3 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
               {([
@@ -5406,14 +5460,21 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     <div key={`${g.cat}:${g.id}`} className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
                       style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                       {g.type === 'audio' ? <Music size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'video' ? <Video size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'image' ? <Image size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : <FileText size={13} style={{ color: '#22d3ee', flexShrink: 0 }} />}
-                      <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title="Добавить файл источником"
+                      <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title="Добавить только сам файл источником"
                         className="text-xs truncate flex-1 text-left disabled:opacity-50" style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{g.name}</button>
                       {g.cat === 'analyzed' && (
-                        <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить сохранённый анализ (описание) этого файла"
-                          className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50 inline-flex items-center gap-1"
-                          style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
-                          <Sparkles size={11} /> анализ
-                        </button>
+                        <>
+                          <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title="Добавить видео + его анализ (двумя источниками)"
+                            className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50 inline-flex items-center gap-1"
+                            style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
+                            <Sparkles size={11} /> видео + анализ
+                          </button>
+                          <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить только анализ (текстом)"
+                            className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50"
+                            style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
+                            анализ
+                          </button>
+                        </>
                       )}
                     </div>
                   ))}
