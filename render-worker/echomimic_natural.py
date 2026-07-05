@@ -82,8 +82,17 @@ def _matte_rvm(src_mp4, out_mp4, downsample=0.4):
     cap = cv2.VideoCapture(src_mp4)
     W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)); H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS) or 24
-    tmp = out_mp4 + ".noaudio.mp4"
-    vw = cv2.VideoWriter(tmp, cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
+    # Кадры уходят СРАЗУ в libx264 rawvideo-пайпом. Старый путь (cv2 mp4v → пере-кодирование в
+    # yuv420p без crf) давал два поколения потерь и хрому в половинном разрешении — бэкенд-хромакей
+    # режет по ЦВЕТУ, и у быстрых рук проступали «квадраты» макроблоков. yuv444p держит хрому в
+    # полном разрешении, crf 16 ≈ визуально без потерь для промежуточного файла.
+    enc = subprocess.Popen(
+        ["ffmpeg", "-y",
+         "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", "%dx%d" % (W, H), "-r", "%.6f" % fps, "-i", "-",
+         "-i", src_mp4, "-map", "0:v", "-map", "1:a?",
+         "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-pix_fmt", "yuv444p",
+         "-c:a", "aac", "-shortest", out_mp4],
+        stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     bgr = torch.tensor([0.0, 1.0, 0.0], device="cuda").view(1, 3, 1, 1)   # зелёный RGB
     rec = [None] * 4
     nf = 0
@@ -101,21 +110,23 @@ def _matte_rvm(src_mp4, out_mp4, downsample=0.4):
                 pha = -F.max_pool2d(-pha, kernel_size=3, stride=1, padding=1)
             com = fgr * pha + bgr * (1 - pha)
             arr = (com[0].permute(1, 2, 0).clamp(0, 1).cpu().numpy() * 255).astype(np.uint8)
-            vw.write(cv2.cvtColor(arr, cv2.COLOR_RGB2BGR))
+            enc.stdin.write(cv2.cvtColor(arr, cv2.COLOR_RGB2BGR).tobytes())
             nf += 1
-    cap.release(); vw.release()
+    cap.release()
     del model
     try: torch.cuda.empty_cache()
     except Exception: pass
+    try: enc.stdin.close()
+    except Exception: pass
+    try:
+        enc.wait(timeout=900)
+    except Exception:
+        enc.kill()
+        return False
     if nf == 0:
         return False
-    subprocess.run(["ffmpeg", "-y", "-i", tmp, "-i", src_mp4, "-map", "0:v", "-map", "1:a?",
-                    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", out_mp4],
-                   capture_output=True)
-    try: os.remove(tmp)
-    except OSError: pass
     print("[natural] matte RVM %d кадров за %.1fс -> %s" % (nf, time.time() - t0, out_mp4), flush=True)
-    return os.path.exists(out_mp4)
+    return enc.returncode == 0 and os.path.exists(out_mp4)
 
 
 def matte_to_green(src_mp4, out_mp4):
@@ -150,10 +161,12 @@ def matte_to_green(src_mp4, out_mp4):
         green = Image.new("RGB", im.size, (0, 255, 0))
         green.paste(im.convert("RGB"), mask=alpha)
         green.save(os.path.join(og, os.path.basename(f)))
-    # частота кадров — из исходника (EchoMimic = 24), аудио берём из него же
+    # частота кадров — из исходника (EchoMimic = 24), аудио берём из него же.
+    # crf 16 + yuv444p — как в RVM-пути: полная хрома для чистого хромакея на бэке.
     subprocess.run(["ffmpeg", "-y", "-framerate", "24", "-i", os.path.join(og, "f%05d.png"),
                     "-i", src_mp4, "-map", "0:v", "-map", "1:a?", "-c:v", "libx264",
-                    "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", out_mp4],
+                    "-crf", "16", "-preset", "medium", "-pix_fmt", "yuv444p",
+                    "-c:a", "aac", "-shortest", out_mp4],
                    capture_output=True)
     for d in (fr, og):
         for f in glob.glob(os.path.join(d, "*")):

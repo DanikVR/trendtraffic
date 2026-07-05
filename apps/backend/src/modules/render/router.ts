@@ -23,7 +23,8 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type NormRect } from './podcast_compose.js';
+import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect } from './podcast_compose.js';
+import { illustrateDialogue, type IllusLine } from './illustrate.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
@@ -199,6 +200,35 @@ router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
     }
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка разбора записи' });
+  }
+});
+
+/** POST /podcast/illustrate — «Иллюстратор»: автоподбор видеоряда (b-roll) под реплики.
+ *  body: { dialogue:[{idx?,speaker,text,dur}], brief? } → { lines:[{idx,image,imageName,anim,mode,title}], note }.
+ *  Кандидаты = Галерея (референсы + «Из анализа») + скачанные тренды; картинкам один раз
+ *  генерятся описания (Gemini vision, кэш asset_captions); раскадровка — Gemini, без ключа —
+ *  фолбэк на пересечение ключевых слов. Ничего не рендерит — только заполняет реплики. */
+router.post('/podcast/illustrate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const rawLines: any[] = Array.isArray(req.body?.dialogue) ? req.body.dialogue : [];
+    const lines: IllusLine[] = rawLines
+      .map((l, i) => ({
+        idx: Number.isFinite(Number(l?.idx)) ? Number(l.idx) : i,
+        speaker: (l?.speaker === 'B' ? 'B' : 'A') as 'A' | 'B',
+        text: String(l?.text || '').trim(),
+        dur: Number.isFinite(Number(l?.dur)) && Number(l.dur) > 0 ? Number(l.dur) : Math.max(1.5, Math.min(12, String(l?.text || '').length * 0.06)),
+      }))
+      .filter((l) => l.text)
+      .slice(0, 120);
+    if (!lines.length) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
+    const brief = typeof req.body?.brief === 'string' ? req.body.brief : '';
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const r = await illustrateDialogue({ tenantId: req.tenantId!, apiKey, lines, brief, publicBase: base });
+    if (!r.shots.length) return res.json({ lines: [], note: r.note });
+    res.json({ lines: r.shots, note: r.note });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка автоподбора иллюстраций' });
   }
 });
 
@@ -697,8 +727,18 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
     const overlays: StudioOverlay[] = (Array.isArray(req.body?.overlays) ? req.body.overlays : [])
       .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
-      .slice(0, 12)
-      .map((o: any) => ({ url: abs(String(o.url))!, tStart: Number(o.tStart), dur: Number(o.dur), video: o.video === true }));
+      .slice(0, 24)
+      .map((o: any) => ({
+        url: abs(String(o.url))!, tStart: Number(o.tStart), dur: Number(o.dur), video: o.video === true,
+        mode: o.mode === 'full' ? 'full' as const : 'card' as const,
+        fx: ['kb_in', 'kb_out', 'none'].includes(o.fx) ? o.fx : undefined,
+        title: typeof o.title === 'string' && o.title.trim() ? o.title.trim().slice(0, 60) : undefined,
+      }));
+    // Титры реплик (стиль «Новости»): фронт шлёт готовые интервалы из таймлайна диалога.
+    const captions: CaptionLine[] = (Array.isArray(req.body?.captions) ? req.body.captions : [])
+      .filter((c: any) => c && Number.isFinite(Number(c.t0)) && Number.isFinite(Number(c.t1)) && typeof c.text === 'string' && c.text.trim())
+      .slice(0, 400)
+      .map((c: any) => ({ t0: Number(c.t0), t1: Number(c.t1), text: String(c.text).trim().slice(0, 220) }));
     // Рамки ведущих (доли кадра) для детерминированной обрезки в склейке — каждый со своей стороны.
     const parseBox = (b: any): NormRect | null => (b && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(Number(b[k]))))
       ? { x: Number(b.x), y: Number(b.y), w: Number(b.w), h: Number(b.h) } : null;
@@ -710,7 +750,7 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
     composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
     (async () => {
       try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, audioUrl, musicUrl, musicVolume, overlays, boxA, boxB });
+        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, audioUrl, musicUrl, musicVolume, overlays, captions, boxA, boxB });
         let assetId: string | null = null;
         try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
         composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
