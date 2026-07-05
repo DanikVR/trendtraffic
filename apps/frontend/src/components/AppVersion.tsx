@@ -1521,7 +1521,14 @@
  *         podcast_compose.ts (Ken Burns/full/ASS), router.ts (/podcast/illustrate, captions),
  *         main.py воркера (full+Ken Burns в обоих путях), MontageEditor.tsx (UI). Слот 1.6.85
  *         оставлен ветке Hotebook. */
-export const APP_VERSION = '1.6.86';
+/* 1.6.87 — GPU-джобы переживают рестарт воркера. Дважды за день (14:57 и 16:50) рестарт сервиса
+ *         trendtraffic-render-gpu (деплой параллельных фич) убивал рендер юзера на середине:
+ *         джобы жили только в памяти → «GPU-задача потеряна», у голов «ошибка». Теперь спека
+ *         каждого /avatar-джоба пишется на диск (WORK_DIR/avatar_jobs, TTL 6ч, исключён из
+ *         sweep), финальный статус — тоже; при старте воркер РЕАНИМИРУЕТ недоделанные джобы с
+ *         тем же job_id (бэкенд продолжает поллить и дождётся), /avatar/status читает финал с
+ *         диска, если память потеряна. render-worker/main.py. */
+export const APP_VERSION = '1.6.87';
 
 export function AppVersion() {
   return (
