@@ -50,8 +50,11 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
+
+# Интерактивный вход из браузера клиента требует headful Chromium под WSLg (:0).
+os.environ.setdefault("DISPLAY", ":0")
 
 try:
     from notebooklm import NotebookLMClient  # type: ignore
@@ -471,6 +474,163 @@ async def auth_login_window(profile: str = "default"):
     except Exception as e:  # noqa: BLE001
         raise HTTPException(500, f"не удалось открыть окно входа: {e}")
     return {"started": True, "note": "Окно Chromium открыто на машине воркера (ждёт входа до 5 минут)"}
+
+
+# ── Потоковый вход Google В БРАУЗЕРЕ КЛИЕНТА (без файла, без установок) ───────
+# Воркер держит headful Chromium (Playwright) в профиле тенанта, отдаёт кадры
+# (JPEG) и принимает мышь/клавиатуру. Клиент логинится «как в обычном окне»;
+# когда на notebooklm.google.com появляются нужные куки — сохраняем сессию в
+# профиль. Окно спрятано за экран (--window-position), чтобы не мелькать у хоста.
+LOGIN_SESSIONS: Dict[str, Dict[str, Any]] = {}
+_pw = None  # async_playwright instance (ленивая инициализация)
+REQUIRED_COOKIES = {"SID", "__Secure-1PSIDTS"}
+
+
+async def _ensure_pw():
+    global _pw
+    if _pw is None:
+        from playwright.async_api import async_playwright  # type: ignore
+        _pw = await async_playwright().start()
+    return _pw
+
+
+async def _reap_login_sessions(max_age: float = 600.0):
+    now = time.time()
+    for sid in [k for k, v in LOGIN_SESSIONS.items() if now - v.get("created", now) > max_age]:
+        s = LOGIN_SESSIONS.pop(sid, None)
+        if s:
+            try:
+                await s["ctx"].close()
+            except Exception:
+                pass
+
+
+class InputIn(BaseModel):
+    kind: str                 # move | click | scroll | char | key
+    x: Optional[float] = None
+    y: Optional[float] = None
+    dy: Optional[float] = None
+    text: Optional[str] = None
+    key: Optional[str] = None
+
+
+@app.post("/auth/login-remote/start")
+async def login_remote_start(profile: str = "default"):
+    """Запустить интерактивный Chromium в профиле тенанта и вернуть session_id."""
+    prof = _safe_profile(profile)
+    await _reap_login_sessions()
+    await drop_client(prof)  # освободить клиент библиотеки, если открыт
+    pw = await _ensure_pw()
+    prof_dir = _HOME / "profiles" / prof
+    prof_dir.mkdir(parents=True, exist_ok=True)
+    W, H = 1100, 760
+    try:
+        ctx = await pw.chromium.launch_persistent_context(
+            str(prof_dir / "browser_profile"),
+            headless=False,  # headful: Google реже блокирует «небезопасный браузер»
+            viewport={"width": W, "height": H},
+            args=[
+                "--no-sandbox", "--disable-dev-shm-usage",
+                "--disable-blink-features=AutomationControlled",
+                "--window-position=-2400,-2400",  # спрятать окно за экран хоста
+            ],
+        )
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"не удалось запустить браузер: {e}")
+    page = ctx.pages[0] if ctx.pages else await ctx.new_page()
+    try:
+        await page.goto("https://notebooklm.google.com/", wait_until="domcontentloaded", timeout=45_000)
+    except Exception:
+        pass  # даже если долго грузится — клиент увидит и продолжит
+    sid = uuid.uuid4().hex
+    LOGIN_SESSIONS[sid] = {"ctx": ctx, "page": page, "profile": prof, "created": time.time(), "done": False}
+    return {"session_id": sid, "width": W, "height": H}
+
+
+def _sess(sid: str) -> Dict[str, Any]:
+    s = LOGIN_SESSIONS.get(sid)
+    if not s:
+        raise HTTPException(404, "сессия входа не найдена (истекла?) — начните заново")
+    return s
+
+
+@app.get("/auth/login-remote/frame")
+async def login_remote_frame(sid: str):
+    s = _sess(sid)
+    try:
+        buf = await s["page"].screenshot(type="jpeg", quality=55)
+    except Exception as e:  # noqa: BLE001 — страница могла перейти/закрыться
+        raise HTTPException(502, f"кадр недоступен: {e}")
+    return Response(content=buf, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/auth/login-remote/input")
+async def login_remote_input(body: InputIn, sid: str):
+    s = _sess(sid)
+    page = s["page"]
+    try:
+        if body.kind == "move" and body.x is not None:
+            await page.mouse.move(body.x, body.y or 0)
+        elif body.kind == "click" and body.x is not None:
+            await page.mouse.click(body.x, body.y or 0)
+        elif body.kind == "scroll":
+            await page.mouse.wheel(0, body.dy or 0)
+        elif body.kind == "char" and body.text:
+            await page.keyboard.type(body.text)
+        elif body.kind == "key" and body.key:
+            await page.keyboard.press(body.key)
+    except Exception:
+        pass  # одиночный ввод мог не примениться (навигация) — не роняем стрим
+    return {"ok": True}
+
+
+@app.get("/auth/login-remote/poll")
+async def login_remote_poll(sid: str):
+    """Проверить, вошёл ли клиент. При успехе сохранить сессию в профиль и закрыть браузер."""
+    s = _sess(sid)
+    ctx, page, prof = s["ctx"], s["page"], s["profile"]
+    try:
+        cookies = await ctx.cookies()
+        url = page.url or ""
+    except Exception as e:  # noqa: BLE001
+        return {"done": False, "error": str(e)}
+    names = {c.get("name") for c in cookies}
+    signed = REQUIRED_COOKIES.issubset(names)
+    on_nlm = "notebooklm.google.com" in url
+    if signed and on_nlm and not s.get("done"):
+        s["done"] = True
+        ss_path = _storage_state_path(prof)
+        ss_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            state = await ctx.storage_state()
+            ss_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+            try:
+                os.chmod(ss_path, 0o600)
+            except Exception:
+                pass
+        except Exception as e:  # noqa: BLE001
+            s["done"] = False
+            return {"done": False, "error": f"не удалось сохранить сессию: {e}"}
+        try:
+            await ctx.close()
+        except Exception:
+            pass
+        LOGIN_SESSIONS.pop(sid, None)
+        await drop_client(prof)
+        st = await _auth_status(prof)
+        return {"done": True, "ok": st.get("ok"), "email": st.get("email"), "status": st}
+    return {"done": False, "signed_in": signed, "on_notebooklm": on_nlm}
+
+
+@app.post("/auth/login-remote/stop")
+async def login_remote_stop(sid: str):
+    s = LOGIN_SESSIONS.pop(sid, None)
+    if s:
+        try:
+            await s["ctx"].close()
+        except Exception:
+            pass
+    return {"stopped": True}
 
 
 @app.post("/notebooks")

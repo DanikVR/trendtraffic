@@ -1522,7 +1522,19 @@
  *         per-tenant, поллинг джоб через GET /jobs/:id, артефакты в uploads/hotebook + media_assets
  *         folder='hotebook'), NOTEBOOKLM_WORKER_URL в systemConfig/админке. Enterprise-гейт как у
  *         social-ext. Смоук на живом аккаунте: блокнот+источник+чат с цитатами+аудио (ru/дебаты) — ок. */
-export const APP_VERSION = '1.6.84';
+/* 1.6.85 — Hotebook: ВХОД GOOGLE ПРЯМО В ПРИЛОЖЕНИИ, без файла и установок (по просьбе юзера
+ *         «клиенты логинились совсем без возни с файлом»). Кнопка «Подключить Google» в Настройках
+ *         Enterprise → Hotebook (любому Enterprise): открывает модалку с ЖИВЫМ окном браузера,
+ *         стримящимся с воркера (JPEG-кадры ~4 fps + проброс мыши/колеса/клавиатуры через бэкенд).
+ *         Клиент вводит Google-логин как обычно; при появлении кук на notebooklm.google.com воркер
+ *         сохраняет storage_state в профиль тенанта и закрывает браузер. Технически: воркер держит
+ *         headful Playwright-контекст в профиле (окно спрятано за экран хоста), эндпоинты
+ *         /auth/login-remote/{start,frame,input,poll,stop}; бэкенд проксирует их с привязкой
+ *         session_id↔tenantId (тенант управляет только своим окном), wfetchRaw для кадров.
+ *         Причина «нельзя просто OAuth»: у NotebookLM нет офиц. API, куки HttpOnly — их не прочесть
+ *         JS клиента; поэтому нужен реальный интерактивный вход (стримим его). Вставка файла остаётся
+ *         запасным путём. notebooklm-worker/main.py, notebooklm/router.ts, Section8Hotebook.tsx. */
+export const APP_VERSION = '1.6.85';
 
 export function AppVersion() {
   return (

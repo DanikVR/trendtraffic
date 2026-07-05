@@ -166,6 +166,33 @@ function errPayload(e: any): { error: string; errorKind: string } {
   return { error: e?.message || 'Ошибка', errorKind: 'error' };
 }
 
+/** Сырой вызов воркера (для кадра логина — не JSON, а image/*). Возвращает {buf, contentType}. */
+async function wfetchRaw(pathname: string, timeoutMs = 15_000): Promise<{ buf: Buffer; contentType: string }> {
+  const base = workerBase();
+  if (!base) throw new WorkerApiError('Hotebook-воркер не настроен', 'not_configured');
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(`${base}${pathname}`, { signal: ctrl.signal });
+    if (!r.ok) throw new WorkerApiError(`кадр: HTTP ${r.status}`, 'api_changed');
+    return { buf: Buffer.from(await r.arrayBuffer()), contentType: r.headers.get('content-type') || 'image/jpeg' };
+  } catch (e: any) {
+    if (e instanceof WorkerApiError) throw e;
+    throw new WorkerOffline('Hotebook-воркер недоступен');
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/** Привязка session_id окна входа → tenantId (чтобы тенант управлял только своим окном). */
+const loginSids = new Map<string, { tenantId: string; at: number }>();
+function ownsSid(tenantId: string, sid: string): boolean {
+  const e = loginSids.get(sid);
+  if (!e) return false;
+  if (Date.now() - e.at > 15 * 60_000) { loginSids.delete(sid); return false; }
+  return e.tenantId === tenantId;
+}
+
 // ── Статус подключения ПЕР-ТЕНАНТ (кэш 30с на тенанта) + алерт владельцу ──────
 const statusCache = new Map<string, { at: number; data: any }>();
 const lastAlertAt = new Map<string, number>();
@@ -365,6 +392,63 @@ router.post('/auth/login-window', async (req: AuthedRequest, res: Response) => {
   } catch (e: any) {
     res.status(502).json(errPayload(e));
   }
+});
+
+// ── Потоковое окно входа Google в приложении (без файла) — любой Enterprise ──
+/** Запустить окно входа: воркер поднимает браузер в профиле тенанта, вернуть session_id. */
+router.post('/auth/login-remote/start', async (req: AuthedRequest, res: Response) => {
+  try {
+    const d = await wfetch('/auth/login-remote/start', { method: 'POST' }, 60_000, req.tenantId!);
+    const sid = String(d?.session_id || '');
+    if (!sid) throw new WorkerApiError('воркер не вернул session_id', 'api_changed');
+    loginSids.set(sid, { tenantId: req.tenantId!, at: Date.now() });
+    res.json({ sessionId: sid, width: d.width || 1100, height: d.height || 760 });
+  } catch (e: any) {
+    res.status(502).json(errPayload(e));
+  }
+});
+
+/** Кадр окна входа (JPEG). Только владелец session_id. */
+router.get('/auth/login-remote/frame', async (req: AuthedRequest, res: Response) => {
+  const sid = String(req.query.sid || '');
+  if (!ownsSid(req.tenantId!, sid)) return res.status(403).end();
+  try {
+    const { buf, contentType } = await wfetchRaw(`/auth/login-remote/frame?sid=${encodeURIComponent(sid)}`, 15_000);
+    res.set('Content-Type', contentType); res.set('Cache-Control', 'no-store'); res.send(buf);
+  } catch { res.status(502).end(); }
+});
+
+/** Проброс мыши/клавиатуры в окно входа. */
+router.post('/auth/login-remote/input', async (req: AuthedRequest, res: Response) => {
+  const sid = String(req.query.sid || '');
+  if (!ownsSid(req.tenantId!, sid)) return res.status(403).json({ error: 'нет доступа к окну входа' });
+  try {
+    await wfetch(`/auth/login-remote/input?sid=${encodeURIComponent(sid)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req.body || {}),
+    }, 15_000);
+    res.json({ ok: true });
+  } catch (e: any) { res.status(502).json(errPayload(e)); }
+});
+
+/** Опрос готовности входа: при успехе воркер сохраняет сессию в профиль тенанта. */
+router.get('/auth/login-remote/poll', async (req: AuthedRequest, res: Response) => {
+  const sid = String(req.query.sid || '');
+  if (!ownsSid(req.tenantId!, sid)) return res.status(403).json({ error: 'нет доступа к окну входа' });
+  try {
+    const d = await wfetch(`/auth/login-remote/poll?sid=${encodeURIComponent(sid)}`, {}, 30_000);
+    if (d?.done) { loginSids.delete(sid); statusCache.delete(req.tenantId!); }
+    res.json(d);
+  } catch (e: any) { res.status(502).json(errPayload(e)); }
+});
+
+/** Закрыть окно входа. */
+router.post('/auth/login-remote/stop', async (req: AuthedRequest, res: Response) => {
+  const sid = String(req.query.sid || '');
+  if (sid && ownsSid(req.tenantId!, sid)) {
+    loginSids.delete(sid);
+    try { await wfetch(`/auth/login-remote/stop?sid=${encodeURIComponent(sid)}`, { method: 'POST' }, 15_000); } catch { /* уже закрыт */ }
+  }
+  res.json({ ok: true });
 });
 
 /** Импорт кук Google (storage_state.json) в СВОЙ профиль — любой Enterprise-тенант. */
