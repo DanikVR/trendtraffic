@@ -25,6 +25,7 @@ import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
+import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
 
 type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
@@ -225,7 +226,7 @@ export default function GalleryPage() {
     if (v.mediaType === 'audio') return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-3 px-3" style={{ background: 'var(--bg-tertiary)' }}>
         <span className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}><Music size={26} /></span>
-        <audio src={v.fileUrl} controls className="w-full" />
+        <AudioPlayer src={v.fileUrl} />
       </div>
     );
     // Файлы (pdf/pptx/md/json/csv — артефакты Hotebook и т.п.): клик открывает в новой вкладке.
