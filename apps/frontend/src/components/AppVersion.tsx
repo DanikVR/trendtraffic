@@ -1621,7 +1621,17 @@
  *         heygen-studio) проверяют доступность фото ДО старта джоба и сразу отвечают 400
  *         «файл, похоже, удалён из Галереи — выберите фото заново в „Студии лиц“» + warn с URL
  *         в лог. render/router.ts. */
-export const APP_VERSION = '1.6.96';
+/* 1.6.97 — Анализ едет ВМЕСТЕ с видео + бейдж в Галерее. Диагноз по вопросу юзера: «Добавить
+ *         в галерею» из расширения (social-ext /to-gallery) сохраняло ТОЛЬКО видео — разбор в
+ *         video_analyses не писался (has_analysis=f у видео юзера), в отличие от второго пути
+ *         (trends/router). Фиксы: (1) /to-gallery теперь фоном generateTrendDNA+saveTrendDNA —
+ *         разбор (Claude, не Gemini!) ложится в video_analyses, привязанный к ассету. (2) listFolder
+ *         отдаёт has_analysis (LEFT JOIN video_analyses). (3) Галерея, вкладка «Из анализа»: бейдж
+ *         «✨ Анализ» на карточках с сохранённым разбором → клик открывает модалку с ГОТОВЫМ
+ *         разбором (Viral Breakdown + Video Content Analysis), НЕ запускает заново. (4) Hotebook
+ *         «видео + анализ» уже читает /media/:id/analysis — теперь у видео есть что читать.
+ *         social-ext/router.ts, media/assets.ts, GalleryPage.tsx. */
+export const APP_VERSION = '1.6.97';
 
 export function AppVersion() {
   return (

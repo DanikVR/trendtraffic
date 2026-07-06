@@ -24,6 +24,7 @@ export interface MediaAsset {
   mime?: string;
   size?: number;
   folder?: string;
+  hasAnalysis?: boolean; // есть ли рядом сохранённый разбор (video_analyses) — для бейджа Галереи
 }
 
 function mapRow(r: any): MediaAsset {
@@ -36,6 +37,7 @@ function mapRow(r: any): MediaAsset {
     mime: r.mime || undefined,
     size: r.size != null ? Number(r.size) : undefined,
     folder: r.folder || undefined,
+    hasAnalysis: r.has_analysis === true || r.has_analysis === 't' || undefined,
   };
 }
 
@@ -55,14 +57,17 @@ export async function listAssets(tenantId: string, kind: MediaKind): Promise<Med
   }
 }
 
-/** Список ассетов конкретной папки (любого kind), напр. 'analyzed' → «Из анализа». */
+/** Список ассетов конкретной папки (любого kind), напр. 'analyzed' → «Из анализа».
+ *  has_analysis — есть ли рядом сохранённый разбор (video_analyses) для бейджа в Галерее. */
 export async function listFolder(tenantId: string, folder: string): Promise<MediaAsset[]> {
   try {
     const r = await pool.query(
-      `SELECT id, kind, media_type, original_name, file_url, mime, size, folder
-       FROM media_assets
-       WHERE tenant_id = $1 AND folder = $2
-       ORDER BY created_at DESC LIMIT 500`,
+      `SELECT m.id, m.kind, m.media_type, m.original_name, m.file_url, m.mime, m.size, m.folder,
+              (va.id IS NOT NULL) AS has_analysis
+       FROM media_assets m
+       LEFT JOIN video_analyses va ON va.tenant_id = m.tenant_id AND va.media_asset_id = m.id
+       WHERE m.tenant_id = $1 AND m.folder = $2
+       ORDER BY m.created_at DESC LIMIT 500`,
       [tenantId, folder]
     );
     return (r.rows as any[]).map(mapRow);

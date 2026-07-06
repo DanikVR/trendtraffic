@@ -27,6 +27,7 @@ import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { analyzeUrl, detectUrl } from '../trends/analytics.js';
+import { generateTrendDNA, saveTrendDNA } from '../trends/dna.js';
 import { extractDownloadUrls, fetchOneVideo, tikhubGet, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
@@ -323,12 +324,14 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
     let stored: any;
     let platform = det?.platform || 'tiktok';
     let vid = det?.videoId || 'video';
+    let analysis: any = null;
 
     if (det?.platform === 'youtube') {
       // YouTube-скачивание отключено (подпись потоков TikHub ненадёжна).
       return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
     } else {
       const result: any = await analyzeUrl(req.tenantId!, url);
+      analysis = result;
       let dlUrls = extractDownloadUrls(result?.blocks?.video?.data);
       // X/Twitter: иная структура — лучший mp4-вариант твита.
       if (!dlUrls.length && (result?.detected?.platform || det?.platform) === 'twitter') {
@@ -348,7 +351,26 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
       fileUrl: stored.mediaUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
       folder: ANALYZED_FOLDER, // из аналитики → папка «Из анализа»
     });
-    res.json({ ok: true, fileUrl: stored.mediaUrl, asset });
+
+    // Анализ едет ВМЕСТЕ с видео: в фоне собираем разбор (TrendDNA) и кладём в
+    // video_analyses, привязав к ассету. Best-effort — скачивание уже успешно.
+    // (Раньше этот путь сохранял только видео — анализ терялся; бейдж в Галерее и
+    //  «видео + анализ» в Hotebook опираются на эту запись.)
+    if (asset && analysis) {
+      const tId = req.tenantId!, assetId = asset.id, dPlatform = platform, dVideoId = String(vid), srcUrl = url;
+      void (async () => {
+        try {
+          const dna = await generateTrendDNA(tId, {
+            summary: analysis.summary, comments: analysis.normalized?.comments, keywords: analysis.normalized?.keywords,
+            platform: analysis.detected?.platform || dPlatform, sourceUrl: srcUrl,
+          });
+          await saveTrendDNA(tId, { mediaAssetId: assetId, platform: dPlatform, externalId: dVideoId, sourceUrl: srcUrl, dna });
+        } catch (e) {
+          console.warn('[social-ext] save→DNA:', (e as Error).message);
+        }
+      })();
+    }
+    res.json({ ok: true, fileUrl: stored.mediaUrl, asset, analyzing: !!analysis });
   } catch (err: any) {
     res.status(err?.status || 502).json({ error: err?.message || 'Не удалось добавить в галерею' });
   }

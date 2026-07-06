@@ -41,6 +41,7 @@ interface GalleryItem {
   durationSec?: number;
   stats?: { play?: number; like?: number };
   isTrend: boolean;
+  hasAnalysis?: boolean; // «Из анализа»: есть сохранённый разбор → бейдж + просмотр
 }
 
 // «Тренды» из Галереи убраны (по слову юзера, 2026-07-02): скачанные тренды живут на
@@ -86,6 +87,18 @@ export default function GalleryPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [viewer, setViewer] = useState<{ url: string; title: string } | null>(null);
+  const [analysis, setAnalysis] = useState<{ title: string; dna: any } | null>(null); // просмотр сохранённого разбора
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  const openAnalysis = async (v: GalleryItem) => {
+    setAnalysis({ title: v.title, dna: null }); setAnalysisLoading(true);
+    try {
+      const r = await fetch(`/api/trends/media/${v.id}/analysis`, { headers: jsonHeaders() });
+      if (r.ok) setAnalysis({ title: v.title, dna: (await r.json()).analysis?.dna || {} });
+      else setAnalysis({ title: v.title, dna: { __error: r.status === 404 ? 'Анализ не найден.' : `Ошибка ${r.status}` } });
+    } catch { setAnalysis({ title: v.title, dna: { __error: 'Не удалось загрузить анализ.' } }); }
+    finally { setAnalysisLoading(false); }
+  };
 
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +127,7 @@ export default function GalleryPage() {
           const d = await res.json();
           setItems((d.assets || []).map((a: any): GalleryItem => ({
             id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
-            title: a.originalName || 'файл', isTrend: false,
+            title: a.originalName || 'файл', isTrend: false, hasAnalysis: !!a.hasAnalysis,
           })));
         }
       }
@@ -366,6 +379,15 @@ export default function GalleryPage() {
                       <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10"
                         style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>
                     )}
+                    {/* Бейдж «Анализ» — у видео «Из анализа» с сохранённым разбором; клик → открыть разбор */}
+                    {v.hasAnalysis && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); void openAnalysis(v); }}
+                        title="Открыть сохранённый анализ этого видео"
+                        className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 text-[10px] font-700 px-2 py-1 rounded-lg transition-transform hover:scale-105"
+                        style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
+                        <Sparkles size={11} /> Анализ
+                      </button>
+                    )}
                   </div>
                   <div className="p-3 flex flex-col gap-2 flex-1">
                     <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
@@ -422,6 +444,62 @@ export default function GalleryPage() {
         onClose={() => setViewer(null)}
         onSaved={() => { void load(); }}
       />
+
+      {/* Просмотр сохранённого анализа видео (тот же разбор, что на вкладке «Аналитика») */}
+      {analysis && (
+        <div onClick={() => setAnalysis(null)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
+                <Sparkles size={16} style={{ color: '#22d3ee' }} /> Анализ · {analysis.title}
+              </span>
+              <button onClick={() => setAnalysis(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+            {analysisLoading ? (
+              <div className="py-10 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
+            ) : analysis.dna?.__error ? (
+              <p className="text-sm py-6 text-center" style={{ color: '#ef4444' }}>{analysis.dna.__error}</p>
+            ) : (
+              <AnalysisView dna={analysis.dna} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Форматированный разбор из сохранённой TrendDNA (Viral Breakdown + Video Content Analysis). */
+function AnalysisView({ dna }: { dna: any }) {
+  const Sec = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="mb-3">
+      <div className="text-[10px] font-700 tracking-wide mb-1" style={{ color: '#22d3ee' }}>{title}</div>
+      <div className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{children}</div>
+    </div>
+  );
+  const Bul = ({ items }: { items: any }) => Array.isArray(items) && items.length ? (
+    <ul className="space-y-0.5">{items.map((x: any, i: number) => <li key={i}>• {String(x)}</li>)}</ul>
+  ) : <span style={{ color: 'var(--text-muted)' }}>—</span>;
+  const beats = Array.isArray(dna?.sceneBeats) ? dna.sceneBeats : [];
+  const fmtT = (t: any) => (typeof t === 'number' ? `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}` : '');
+  return (
+    <div>
+      <div className="text-[11px] font-700 mb-2" style={{ color: 'var(--text-muted)' }}>ВИРАЛЬНЫЙ РАЗБОР</div>
+      {dna?.hookType && <Sec title="ТИП ХУКА">{dna.hookType}</Sec>}
+      {dna?.whyItWorks && <Sec title="ПОЧЕМУ РАБОТАЕТ">{dna.whyItWorks}</Sec>}
+      {dna?.targetAudience && <Sec title="ЦЕЛЕВАЯ АУДИТОРИЯ">{dna.targetAudience}</Sec>}
+      {dna?.viralFactors && <Sec title="ФАКТОРЫ ВИРАЛЬНОСТИ"><Bul items={dna.viralFactors} /></Sec>}
+      {dna?.copyReadyScript && <Sec title="ГОТОВЫЙ СЦЕНАРИЙ"><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{dna.copyReadyScript}</div></Sec>}
+      {dna?.howToAdapt && <Sec title="КАК АДАПТИРОВАТЬ"><Bul items={dna.howToAdapt} /></Sec>}
+      <div className="text-[11px] font-700 mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>АНАЛИЗ СОДЕРЖАНИЯ</div>
+      {dna?.summary && <Sec title="КРАТКОЕ ОПИСАНИЕ">{dna.summary}</Sec>}
+      {beats.length > 0 && <Sec title="СЦЕНЫ (ТАЙМИНГ)"><ul className="space-y-0.5">{beats.map((b: any, i: number) => <li key={i}><span style={{ color: '#22d3ee' }}>{fmtT(b?.t)}</span> {b?.desc}{b?.intensity ? ` [${b.intensity}]` : ''}</li>)}</ul></Sec>}
+      {dna?.hookAnalysis && <Sec title="РАЗБОР ХУКА">{dna.hookAnalysis}</Sec>}
+      {dna?.visualStyle && <Sec title="ВИЗУАЛЬНЫЙ СТИЛЬ">{dna.visualStyle}</Sec>}
+      {dna?.audioDialogue && <Sec title="АУДИО / ДИАЛОГ">{dna.audioDialogue}</Sec>}
+      {dna?.whyResonates && <Sec title="ПОЧЕМУ ЗАХОДИТ"><Bul items={dna.whyResonates} /></Sec>}
+      {dna?.howToReplicate && <Sec title="КАК ПОВТОРИТЬ"><Bul items={dna.howToReplicate} /></Sec>}
+      {Array.isArray(dna?.keywords) && dna.keywords.length > 0 && <Sec title="КЛЮЧЕВЫЕ СЛОВА">{dna.keywords.join(', ')}</Sec>}
     </div>
   );
 }
