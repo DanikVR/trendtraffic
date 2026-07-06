@@ -1,47 +1,43 @@
 /**
  * CommentatorPanel — режим «Комментатор» блока Google Flow.
  *
- * Г1: загруженное аудио = финальный голос; на каждый диаризованный сегмент — полноэкранный
- * визуал: картинка (бесплатный Ken Burns) ЛИБО Omni-клип (кредиты/API) ЛИБО видео. Сборка —
- * бэкенд `/commentator/compose` (локальный ffmpeg), готовый ролик падает в Галерею «Google Flow».
+ * Г1: загруженное аудио = финальный голос; редактор диалога — ОБЩИЙ таймлайн (DialogueTimeline,
+ * тот же, что в подкасте): наложение голосов, резать/двигать/сплитить сегменты, картинка (Ken Burns)
+ * или Omni-клип на реплику. Сборка — `/commentator/compose` (локальный ffmpeg), ролик → Галерея «Google Flow».
  *
- * Диаризацию берём из `/podcast/diarize`, Omni-клипы — из `/omni/generate` (тот же, что «Omni Flash»).
+ * Этап 1: редактор-таймлайн подключён. Пересбор аудио из перемещённых/вырезанных сегментов —
+ * следующий этап (пока аудио берётся целиком, таймлайн задаёт тайминг ВИЗУАЛОВ).
  */
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Upload, Wand2, Image as ImageIcon, Loader2, Film, Play, Trash2, Sparkles } from 'lucide-react';
+import { Upload, Wand2, Loader2, Film, Play } from 'lucide-react';
+import DialogueTimeline from './DialogueTimeline';
+import { PodLine } from './dialogueTypes';
 
-type Mode = 'none' | 'image' | 'omni';
-interface CLine {
-  id: string; text: string; start: number; end: number;
-  mode: Mode;
-  visualUrl?: string;   // картинка (Ken Burns) или готовый Omni/видео клип
-  isVideo?: boolean;    // true = клип (cover), false = картинка (Ken Burns)
-  omniPrompt?: string;
-  omniBusy?: boolean;
-  omniNote?: string | null;
-}
-
-const OMNI_CREDITS = 20; // ориентир: Omni≈Fast-клип ~20 кр (на Ultra ~10)
+const OMNI_CREDITS = 20;
+const isVideoUrl = (u?: string): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
+const posOf = (l: PodLine): number => (Number.isFinite(l.tStart) ? (l.tStart as number) : Number.isFinite(l.start) ? (l.start as number) : 0);
 
 export default function CommentatorPanel({ token }: { token: string | null }) {
   const [audioUrl, setAudioUrl] = useState('');
   const [audioName, setAudioName] = useState('');
   const [format, setFormat] = useState<'9:16' | '16:9'>('9:16');
-  const [lines, setLines] = useState<CLine[]>([]);
+  const [lines, setLines] = useState<PodLine[]>([]);
   const [audioBusy, setAudioBusy] = useState(false);
   const [diarBusy, setDiarBusy] = useState(false);
   const [buildBusy, setBuildBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const aliveRef = useRef(true);
+  const imgInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingImgLine = useRef<number | null>(null);
 
   const auth = useCallback((): HeadersInit => (token ? { Authorization: `Bearer ${token}` } : {}), [token]);
   const authJson = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
-  const setLine = (id: string, patch: Partial<CLine>) => setLines((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  const setLine = (i: number, patch: Partial<PodLine>) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
 
-  const omniCount = useMemo(() => lines.filter((l) => l.mode === 'omni' && l.visualUrl).length, [lines]);
-  const readyCount = useMemo(() => lines.filter((l) => l.visualUrl).length, [lines]);
+  const omniCount = useMemo(() => lines.filter((l) => isVideoUrl(l.image)).length, [lines]);
+  const readyCount = useMemo(() => lines.filter((l) => l.image).length, [lines]);
 
   // ── аудио ──
   const uploadAudio = useCallback(async (files: FileList | null) => {
@@ -67,34 +63,38 @@ export default function CommentatorPanel({ token }: { token: string | null }) {
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       const raw = Array.isArray(d.lines) ? d.lines : [];
-      const cl: CLine[] = raw
+      const cl: PodLine[] = raw
         .filter((l: any) => Number.isFinite(Number(l?.start)))
-        .map((l: any, i: number) => ({ id: 'l' + i + '_' + Math.random().toString(36).slice(2, 6), text: String(l?.text || '').trim(), start: Number(l.start), end: Number(l?.end ?? l.start), mode: 'none' as Mode }));
+        .map((l: any) => ({ speaker: (l?.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l?.text || '').trim(), start: Number(l.start), end: Number(l?.end ?? l.start), tStart: Number(l.start), mode: 'full' as const }));
       setLines(cl);
-      setNote({ ok: cl.length > 0, text: cl.length ? `Разобрано сегментов: ${cl.length}. Привяжите картинки/Omni и соберите.` : 'Не удалось разобрать запись (нужен Gemini-ключ).' });
+      setNote({ ok: cl.length > 0, text: cl.length ? `Разобрано сегментов: ${cl.length}. Правьте на таймлайне и привяжите визуалы.` : 'Не удалось разобрать запись (нужен Gemini-ключ).' });
     } catch (e: any) { setNote({ ok: false, text: e?.message || 'Ошибка разбора' }); }
     finally { setDiarBusy(false); }
   }, [audioUrl, authJson]);
 
-  // ── картинка на строку (Ken Burns) ──
-  const uploadLineImage = useCallback(async (id: string, files: FileList | null) => {
-    const f = files && files[0]; if (!f) return;
-    setLine(id, { omniBusy: true, omniNote: null });
+  // ── картинка на реплику (Ken Burns) — через скрытый file input ──
+  const pickImage = useCallback((i: number) => { pendingImgLine.current = i; imgInputRef.current?.click(); }, []);
+  const onImgChosen = useCallback(async (files: FileList | null) => {
+    const f = files && files[0]; const i = pendingImgLine.current;
+    if (imgInputRef.current) imgInputRef.current.value = '';
+    if (!f || i == null) return;
+    setNote({ ok: true, text: 'Загружаю картинку…' });
     try {
       const fd = new FormData(); fd.append('file', f);
       const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: auth(), body: fd });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d?.asset?.fileUrl) throw new Error(d?.error || 'ошибка');
-      setLine(id, { mode: 'image', visualUrl: d.asset.fileUrl, isVideo: false, omniBusy: false, omniNote: null });
-    } catch (e: any) { setLine(id, { omniBusy: false, omniNote: e?.message || 'ошибка' }); }
+      setLine(i, { image: d.asset.fileUrl, imageName: f.name, mode: 'full' });
+      setNote({ ok: true, text: 'Картинка привязана (Ken Burns).' });
+    } catch (e: any) { setNote({ ok: false, text: e?.message || 'Не удалось загрузить картинку' }); }
   }, [auth]);
 
-  // ── Omni-клип на строку (через /omni/generate + поллинг /omni/status) ──
-  const genOmni = useCallback(async (id: string) => {
-    const line = lines.find((l) => l.id === id);
-    const prompt = (line?.omniPrompt || '').trim();
-    if (!prompt) { setLine(id, { omniNote: 'Впишите, что сгенерировать.' }); return; }
-    setLine(id, { omniBusy: true, omniNote: 'Omni генерирует…' });
+  // ── Omni-клип на реплику ──
+  const genOmni = useCallback(async (i: number) => {
+    const line = lines[i];
+    const prompt = (line?.text || '').trim();
+    if (!prompt) { setNote({ ok: false, text: 'В реплике нет текста для Omni.' }); return; }
+    setNote({ ok: true, text: `Omni генерирует для реплики ${i + 1}…` });
     try {
       const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: authJson(), body: JSON.stringify({ prompt, aspect: format }) });
       const d = await res.json().catch(() => ({}));
@@ -104,16 +104,14 @@ export default function CommentatorPanel({ token }: { token: string | null }) {
         if (!aliveRef.current) return;
         const s = await fetch('/api/render/omni/status?jobId=' + jobId, { headers: auth() });
         const sd = await s.json().catch(() => ({}));
-        if (sd?.status === 'done' && sd?.fileUrl) { setLine(id, { mode: 'omni', visualUrl: sd.fileUrl, isVideo: true, omniBusy: false, omniNote: 'клип готов ✓' }); return; }
-        if (sd?.status === 'failed') { setLine(id, { omniBusy: false, omniNote: sd?.error || 'Omni не смог' }); return; }
-        if (Date.now() - started > 180_000) { setLine(id, { omniBusy: false, omniNote: 'таймаут Omni' }); return; }
+        if (sd?.status === 'done' && sd?.fileUrl) { setLine(i, { image: sd.fileUrl, mode: 'full' }); setNote({ ok: true, text: `Omni-клип готов на реплику ${i + 1} ✓` }); return; }
+        if (sd?.status === 'failed') { setNote({ ok: false, text: sd?.error || 'Omni не смог' }); return; }
+        if (Date.now() - started > 180_000) { setNote({ ok: false, text: 'таймаут Omni' }); return; }
         setTimeout(poll, 5000);
       };
       poll();
-    } catch (e: any) { setLine(id, { omniBusy: false, omniNote: e?.message || 'ошибка Omni' }); }
+    } catch (e: any) { setNote({ ok: false, text: e?.message || 'ошибка Omni' }); }
   }, [lines, authJson, auth, format]);
-
-  const clearLineVisual = (id: string) => setLine(id, { mode: 'none', visualUrl: undefined, isVideo: false, omniNote: null });
 
   // ── сборка ──
   const build = useCallback(async () => {
@@ -121,7 +119,7 @@ export default function CommentatorPanel({ token }: { token: string | null }) {
     if (!lines.length) { setNote({ ok: false, text: 'Сначала разберите запись.' }); return; }
     setBuildBusy(true); setNote(null); setResult(null);
     try {
-      const payload = lines.map((l) => ({ start: l.start, end: l.end, visualUrl: l.visualUrl || undefined, isVideo: !!l.isVideo }));
+      const payload = [...lines].sort((a, b) => posOf(a) - posOf(b)).map((l) => ({ start: posOf(l), end: posOf(l) + Math.max(0.4, (Number(l.end) - Number(l.start)) || 2), visualUrl: l.image || undefined, isVideo: isVideoUrl(l.image) }));
       const res = await fetch('/api/render/commentator/compose', { method: 'POST', headers: authJson(), body: JSON.stringify({ audioUrl, format, lines: payload }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d?.jobId) throw new Error(d?.error || 'Не удалось запустить сборку');
@@ -141,11 +139,11 @@ export default function CommentatorPanel({ token }: { token: string | null }) {
     } catch (e: any) { setBuildBusy(false); setNote({ ok: false, text: e?.message || 'Ошибка сборки' }); }
   }, [audioUrl, lines, format, authJson, auth]);
 
-  const fmtT = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Загрузите дорожку — это ваш голос. Разбор на сегменты, на каждый — картинка (бесплатный Ken Burns) или Omni-клип. Собранный ролик падает в Галерею → «Google Flow».</p>
+      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Загрузите дорожку — это ваш голос. Разбор на сегменты, редактор-таймлайн как в подкасте (резать/двигать/наложить), на каждый сегмент — картинка (Ken Burns) или Omni-клип. Ролик падает в Галерею → «Google Flow».</p>
+
+      <input ref={imgInputRef} type="file" accept="image/*" hidden onChange={(e) => onImgChosen(e.target.files)} />
 
       {/* аудио + формат */}
       <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
@@ -168,40 +166,8 @@ export default function CommentatorPanel({ token }: { token: string | null }) {
         </button>
       </div>
 
-      {/* строки */}
-      {lines.length > 0 && (
-        <div className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto pr-0.5">
-          {lines.map((l, i) => (
-            <div key={l.id} className="rounded-lg px-2.5 py-2 flex flex-col gap-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-700 tabular-nums" style={{ color: 'var(--text-muted)', minWidth: 34 }}>{fmtT(l.start)}</span>
-                <span className="flex-1 text-[12px] truncate" style={{ color: 'var(--text-secondary)' }} title={l.text}>{l.text || '—'}</span>
-                {l.visualUrl && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] font-600" style={{ color: l.isVideo ? '#6366f1' : '#10b981' }}>
-                    {l.isVideo ? <Film size={11} /> : <ImageIcon size={11} />}{l.isVideo ? 'Omni' : 'фото'}
-                  </span>
-                )}
-                <label className="w-7 h-7 rounded-md inline-flex items-center justify-center cursor-pointer" title="Картинка (Ken Burns)" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)' }}>
-                  {l.omniBusy && l.mode !== 'omni' ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-                  <input type="file" accept="image/*" hidden onChange={(e) => uploadLineImage(l.id, e.target.files)} />
-                </label>
-                <button onClick={() => setLine(l.id, { mode: l.mode === 'omni' ? 'none' : 'omni' })} title="Omni-клип" className="w-7 h-7 rounded-md inline-flex items-center justify-center" style={{ background: l.mode === 'omni' ? 'rgba(99,102,241,0.16)' : 'var(--bg-secondary)', color: l.mode === 'omni' ? '#6366f1' : 'var(--text-muted)', border: '1px solid var(--border-medium)' }}><Sparkles size={12} /></button>
-                {l.visualUrl && <button onClick={() => clearLineVisual(l.id)} title="Убрать" className="w-7 h-7 rounded-md inline-flex items-center justify-center" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: '1px solid var(--border-medium)' }}><Trash2 size={12} /></button>}
-              </div>
-              {l.mode === 'omni' && (
-                <div className="flex items-center gap-1.5">
-                  <input value={l.omniPrompt || ''} onChange={(e) => setLine(l.id, { omniPrompt: e.target.value })} placeholder="сцена для Omni: «медленный пролёт над городом на закате…»"
-                    className="flex-1 text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                  <button onClick={() => genOmni(l.id)} disabled={l.omniBusy} className="text-[11px] font-600 px-2 py-1 rounded-md disabled:opacity-50" style={{ background: '#6366f1', color: '#fff' }}>
-                    {l.omniBusy ? <Loader2 size={12} className="animate-spin" /> : 'Сген.'}
-                  </button>
-                </div>
-              )}
-              {l.omniNote && <span className="text-[10px]" style={{ color: l.omniNote.includes('✓') ? '#10b981' : 'var(--text-muted)' }}>{l.omniNote}</span>}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* редактор-таймлайн (общий с подкастом) */}
+      <DialogueTimeline dialogue={lines} setDialogue={setLines} recordingUrl={audioUrl} onPickImage={pickImage} onOmni={genOmni} accentA="#6366f1" accentB="#8b5cf6" />
 
       {lines.length > 0 && (
         <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
@@ -223,9 +189,7 @@ export default function CommentatorPanel({ token }: { token: string | null }) {
       {result && (
         <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
           <video src={result} controls playsInline className="w-full block" style={{ maxHeight: 360, background: '#000' }} />
-          <a href={result} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 text-[12px] font-600 py-2" style={{ color: '#6366f1' }}>
-            <Play size={13} /> открыть ролик
-          </a>
+          <a href={result} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 text-[12px] font-600 py-2" style={{ color: '#6366f1' }}><Play size={13} /> открыть ролик</a>
         </div>
       )}
     </div>
