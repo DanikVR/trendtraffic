@@ -55,37 +55,31 @@ function ffprobeDuration(file) {
   });
 }
 
-/** Тишина в НАЧАЛЕ аудио (сек) по PCM s16le mono 16кГц: первое 20мс-окно с энергией (RMS)
- *  выше порога = речь пошла. Оконный RMS, а НЕ подряд идущие громкие сэмплы — речь всё время
- *  пересекает ноль, поэтому «N подряд громких» не срабатывает никогда. */
-function leadingSilenceSec(pcmPath) {
+/** Огибающая громкости аудио по КАДРОВЫМ бинам (RMS каждого 1/fps окна). PCM s16le mono 16кГц. */
+function audioEnvelope(pcmPath, nBins, fps) {
+  const A = new Array(nBins).fill(0);
   try {
     const buf = fs.readFileSync(pcmPath);
     const N = Math.floor(buf.length / 2);
-    const WIN = Math.round(16000 * 0.02); // 20мс
-    const RMS_THRESH = 350;
-    for (let w = 0; w + WIN <= N; w += WIN) {
-      let sum = 0;
-      for (let i = 0; i < WIN; i++) { const s = buf.readInt16LE((w + i) * 2); sum += s * s; }
-      if (Math.sqrt(sum / WIN) > RMS_THRESH) return w / 16000;
+    const per = Math.max(1, Math.round(16000 / fps));
+    for (let k = 0; k < nBins; k++) {
+      let sum = 0; let cnt = 0; const s0 = k * per;
+      for (let i = 0; i < per && (s0 + i) < N; i++) { const s = buf.readInt16LE((s0 + i) * 2); sum += s * s; cnt++; }
+      A[k] = cnt ? Math.sqrt(sum / cnt) : 0;
     }
-    return 0;
-  } catch { return 0; }
+  } catch { /* нули */ }
+  return A;
 }
 
-/**
- * Первое→последнее движение ГУБ по покадровой разнице центрально-нижней зоны
- * (tblend=difference → signalstats YAVG). Возвращает {firstMotion,lastMotion} в индексах кадров
- * ИЛИ null (движения нет). Паузы ВНУТРИ речи сохраняются. Синхрон-обрезку (вычет тишины/
- * задержки облака) считает вызывающий.
- */
-function detectMotion(framesDir, count) {
+/** Покадровый сигнал движения РТА (разница соседних кадров в зоне рта, сглажено окном 3).
+ *  Длина = count (mo[0]=0). Возвращает массив ИЛИ null. */
+function motionSignal(framesDir, count) {
   return new Promise((resolve) => {
     if (count < 8) { resolve(null); return; }
-    // Кроп на центрально-нижнюю зону (там рот у head-and-shoulders аватара) — чтобы
-    // детектить именно артикуляцию, а не моргание/дыхание/плечи (иначе начало срежется рано).
+    // Зона рта (центр-низ лица head-and-shoulders). Idle-движение головы/плеч сюда почти не
+    // попадает, а что попадёт — отсеет кросс-корреляция с аудио (не коррелирует со звуком).
     const ff = spawn(FFMPEG, ['-i', path.join(framesDir, 'f%05d.png'),
-      '-vf', 'crop=iw*0.42:ih*0.26:iw*0.29:ih*0.44,format=gray,tblend=all_mode=difference,signalstats,metadata=print',
+      '-vf', 'crop=iw*0.34:ih*0.20:iw*0.33:ih*0.50,format=gray,tblend=all_mode=difference,signalstats,metadata=print',
       '-f', 'null', '-'],
     { stdio: ['ignore', 'ignore', 'pipe'] });
     let buf = '';
@@ -97,24 +91,41 @@ function detectMotion(framesDir, count) {
       const raw = [];
       const re = /lavfi\.signalstats\.YAVG=([\d.]+)/g; let m;
       while ((m = re.exec(buf)) !== null) raw.push(parseFloat(m[1]));
-      // tblend даёт count-1 значений (разниц); индекс i-разницы = движение НА кадре i+1.
       if (raw.length < 4) { resolve(null); return; }
-      // Сглаживаем окном 3 — одиночные спайки (моргание) не считаем «началом речи»,
-      // ловим устойчивое движение рта.
-      const y = raw.map((_, i) => {
-        const a = raw[i - 1] ?? raw[i]; const b = raw[i]; const c = raw[i + 1] ?? raw[i];
-        return (a + b + c) / 3;
-      });
-      const peak = Math.max(...y);
-      if (!(peak > 0.5)) { resolve(null); return; } // движения нет вовсе
-      const thr = Math.max(0.8, peak * 0.16); // порог «устойчивое движение рта»
-      let first = 0; while (first < y.length && y[first] < thr) first++;
-      let last = y.length - 1; while (last > 0 && y[last] < thr) last--;
-      if (first >= last) { resolve(null); return; }
-      // индексы разниц → индексы кадров (+1)
-      resolve({ firstMotion: first + 1, lastMotion: last + 1 });
+      // раскладка: raw[i] = разница кадров i↔i+1 → движение НА кадре i+1
+      const mo = new Array(count).fill(0);
+      for (let i = 0; i < raw.length; i++) mo[i + 1] = raw[i];
+      // сглаживание окном 3
+      const sm = mo.map((_, i) => ((mo[i - 1] ?? mo[i]) + mo[i] + (mo[i + 1] ?? mo[i])) / 3);
+      resolve(sm);
     });
   });
+}
+
+/** Лаг видео относительно аудио (кадры) через кросс-корреляцию огибающих: движение рта mo[k]
+ *  соответствует звуку A[k−L]. Ищем L∈[0,maxLag], максимизирующий корреляцию (сигналы
+ *  центрируем — убираем постоянную составляющую idle-движения). 0 при слабом сигнале. */
+function bestLagFrames(mo, A, maxLag) {
+  const n = Math.min(mo.length, A.length);
+  if (n < 8) return 0;
+  const mean = (arr, len) => { let s = 0; for (let i = 0; i < len; i++) s += arr[i]; return s / len; };
+  const mMo = mean(mo, n); const mA = mean(A, n);
+  const mc = mo.slice(0, n).map((v) => v - mMo);
+  const ac = A.slice(0, n).map((v) => v - mA);
+  const energy = (arr) => Math.sqrt(arr.reduce((s, v) => s + v * v, 0)) || 1;
+  const eA = energy(ac);
+  let best = 0; let bestScore = -Infinity;
+  for (let L = 0; L <= maxLag; L++) {
+    let s = 0; let cnt = 0;
+    for (let k = L; k < n; k++) { s += mc[k] * ac[k - L]; cnt++; }
+    if (cnt < 8) break;
+    // нормируем на энергию окна mc, чтобы длина окна не смещала выбор к малым L
+    let em = 0; for (let k = L; k < n; k++) em += mc[k] * mc[k];
+    const score = s / ((Math.sqrt(em) || 1) * eA);
+    if (score > bestScore) { bestScore = score; best = L; }
+  }
+  // слабая корреляция → не доверяем, не режем
+  return bestScore > 0.12 ? best : 0;
 }
 
 // ── Vite: страница с avatarkit (exclude обязателен — pre-bundle ломает WASM-загрузку) ──
@@ -273,20 +284,19 @@ async function runJob(id, { sessionToken, appId, avatarId, audioUrl }) {
     const fps = Math.max(1, Math.min(30, capSpanMs > 200 ? (saved - 1) / (capSpanMs / 1000) : CAPTURE_FPS));
     j.frames = saved; j.fps = Math.round(fps * 100) / 100;
 
-    // 4a. Синхрон: срезаем начало на ЗАДЕРЖКУ их облака = (первое движение губ) − (тишина в
-    //     аудио). Так закрытый рот на реальную тишину в начале записи СОХРАНЯЕТСЯ, а «пустой»
-    //     простой из-за буфера облака уходит. Конец — по последнему движению (+запас); дальше
-    //     composeUgc caps по длине голоса.
-    const motion = await detectMotion(framesDir, saved);
-    const silSec = leadingSilenceSec(pcm);
-    let startN = 0; let endN = saved - 1;
-    if (motion) {
-      startN = Math.max(0, Math.round(motion.firstMotion - silSec * fps) - 1);
-      endN = Math.min(saved - 1, motion.lastMotion + 3);
-      if (endN <= startN) { startN = 0; endN = saved - 1; }
-    }
+    // 4a. Синхрон через КРОСС-КОРРЕЛЯЦИЮ: их облако двигает губы с задержкой L. Находим L как
+    //     сдвиг, при котором движение рта совпадает с громкостью аудио (idle-движение головы/
+    //     моргание НЕ коррелирует со звуком → не мешает). Срезаем L кадров с начала — тогда
+    //     первый кадр ляжет на звук[0]. Реальная тишина в записи сохраняется (в неё рот закрыт,
+    //     и корреляция это учитывает). Конец не режем — composeUgc caps по длине голоса.
+    const mo = await motionSignal(framesDir, saved);
+    const env = audioEnvelope(pcm, saved, fps);
+    const maxLag = Math.max(1, Math.round(Math.min(8, dur * 0.5) * fps));
+    const lag = mo ? bestLagFrames(mo, env, maxLag) : 0;
+    const startN = Math.max(0, Math.min(saved - 4, lag));
+    const endN = saved - 1;
     const nFrames = endN - startN + 1;
-    log(`job ${id.slice(0, 6)} синхрон: движение ${motion ? `${motion.firstMotion}..${motion.lastMotion}` : 'нет'}, тишина ${silSec.toFixed(2)}с → срез начала ${startN} кадр., конец ${saved - 1 - endN}; итог ${nFrames}/${saved}`);
+    log(`job ${id.slice(0, 6)} синхрон: лаг ${lag} кадр. (~${(lag / fps).toFixed(2)}с) → срез начала ${startN}; итог ${nFrames}/${saved} @${fps.toFixed(2)}fps`);
 
     // 4b. Кадры → VP9 webm С АЛЬФОЙ (auto-alt-ref=0 обязателен для альфы)
     j.status = 'encode';

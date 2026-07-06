@@ -806,6 +806,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
   // Аспект готового ролика (из метаданных видео) — плеер под 9:16/16:9, а не пиллар-бокс.
   const [ugcResultAR, setUgcResultAR] = useState(9 / 16);
+  // Аватар к удалению из коллекции (свой ConfirmModal вместо браузерного confirm).
+  const [ugcDelAvatar, setUgcDelAvatar] = useState<{ id: string; url: string; name: string } | null>(null);
   const ugcSaveNow = async () => {
     await save();
     setUgcSavedFlash(true);
@@ -908,9 +910,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const pickUgcSrAvatar = (a: { id: string; name: string; previewUrl: string | null }) =>
     ugcMutate((u) => ({ ...u, avatarId: a.id, avatarUrl: a.previewUrl, avatarName: a.name, avatarProvider: 'spatialreal' }));
-  const delUgcAvatar = async (a: { id: string; url: string; name: string }, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!window.confirm(`Убрать «${a.name}» из коллекции аватаров?`)) return;
+  // Крестик на плитке — открывает свой ConfirmModal (не браузерный confirm).
+  const askDelUgcAvatar = (a: { id: string; url: string; name: string }, e: React.MouseEvent) => {
+    e.stopPropagation(); setUgcDelAvatar(a);
+  };
+  const doDelUgcAvatar = async (a: { id: string; url: string; name: string }) => {
+    setUgcDelAvatar(null);
     try {
       const r = await fetch(`/api/render/ugc/avatars/${encodeURIComponent(a.id)}`, { method: 'DELETE', headers: headers() });
       if (!r.ok) throw new Error();
@@ -5023,7 +5028,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                                 {sel && (
                                   <span className="absolute bottom-1 left-1 rounded-full flex items-center justify-center" style={{ width: 18, height: 18, background: '#a855f7' }}><Check size={12} color="#fff" /></span>
                                 )}
-                                <button onClick={(e) => delUgcAvatar(a, e)} title="Убрать из коллекции"
+                                <button onClick={(e) => askDelUgcAvatar(a, e)} title="Убрать из коллекции"
                                   className="absolute top-1 right-1 rounded-full items-center justify-center hidden group-hover:flex"
                                   style={{ width: 18, height: 18, background: 'rgba(0,0,0,.65)', border: 'none', color: '#f87171', cursor: 'pointer' }}><X size={11} /></button>
                               </div>
@@ -5198,6 +5203,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   />
                 )}
 
+                {/* Удаление аватара из коллекции — свой модал, без браузерного confirm */}
+                <ConfirmModal
+                  open={!!ugcDelAvatar}
+                  title="Убрать аватар?"
+                  message={ugcDelAvatar ? `«${ugcDelAvatar.name}» будет убран из вашей коллекции аватаров. Исходный файл в Галерее останется.` : ''}
+                  confirmLabel="Убрать"
+                  cancelLabel="Отмена"
+                  variant="danger"
+                  onCancel={() => setUgcDelAvatar(null)}
+                  onConfirm={() => { if (ugcDelAvatar) void doDelUgcAvatar(ugcDelAvatar); }}
+                />
+
                 {ugcNote && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{ugcNote}</p>}
 
                 {/* Результат */}
@@ -5207,9 +5224,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Готовый ролик (он же в Галерее)</span>
                       <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title="Скрыть" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
                     </div>
-                    <video src={ugc.result.url} controls playsInline
+                    {/* Крупный плеер: аспект ролика + большая высота (проверенный на проде
+                        подход v1.6.113, только выше — «крупнее» по просьбе). */}
+                    <video src={ugc.result.url} controls playsInline autoPlay
                       onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setUgcResultAR(v.videoWidth / v.videoHeight); }}
-                      className="rounded-lg block" style={{ aspectRatio: String(ugcResultAR), maxHeight: 460, maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
+                      className="rounded-lg block" style={{ aspectRatio: String(ugcResultAR), maxHeight: '72vh', maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
                   </div>
                 )}
 
