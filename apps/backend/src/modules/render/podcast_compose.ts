@@ -105,10 +105,26 @@ export async function composeHeads(opts: {
  * поэтому паузы между репликами «держатся» текущим кадром, а суммарная длина == длине аудио.
  * Каждый клип рендерится отдельно (надёжнее мега-фильтра) → concat → мукс с аудио.
  */
+/** ASS с одним титром ПО ЦЕНТРУ кадра на всю длительность клипа — для сегментов «Комментатора»
+ *  без визуала: тёмный фон + текст реплики, чтобы ролик без картинок был читаемым, а не чёрным. */
+function centeredCaptionAss(text: string, W: number, H: number, durSec: number): string {
+  const vertical = H > W;
+  const capFs = vertical ? 66 : 54;
+  const mh = Math.round(W * 0.1);
+  const head = [
+    '[Script Info]', 'ScriptType: v4.00+', `PlayResX: ${W}`, `PlayResY: ${H}`, 'WrapStyle: 0', 'ScaledBorderAndShadow: yes', '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: Mid,DejaVu Sans,${capFs},&H00FFFFFF,&H00FFFFFF,&H00141414,&H64000000,-1,0,0,0,100,100,0,0,1,3,2,5,${mh},${mh},0,1`,
+    '', '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+  ];
+  return head.concat([`Dialogue: 0,${assTime(0)},${assTime(Math.max(0.4, durSec))},Mid,,0,0,0,,${assEsc(text)}`]).join('\n') + '\n';
+}
+
 export async function composeCommentator(opts: {
   audioUrl: string;
   format?: '9:16' | '16:9';
-  lines: { start: number; end?: number; visualUrl?: string; isVideo?: boolean }[];
+  lines: { start: number; end?: number; visualUrl?: string; isVideo?: boolean; text?: string }[];
   musicUrl?: string; musicVolume?: number;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
@@ -157,10 +173,18 @@ export async function composeCommentator(opts: {
           '-vf', kb, '-an', '-t', D, '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', clip,
         ], 300_000);
       } else {
-        // Без визуала — нейтральный тёмный кадр (дизайн-фон), держит паузу.
+        // Без визуала — тёмный «дизайн-фон». Если у сегмента есть текст реплики, вжигаем его
+        // по центру (титр): ролик даже без единой картинки остаётся смотрибельным, а не чёрным.
+        const cap = String(l.text || '').trim();
+        let vf = fade;
+        if (cap) {
+          const assPath = path.join(work, `t${String(i).padStart(3, '0')}.ass`);
+          fs.writeFileSync(assPath, centeredCaptionAss(cap, W, H, dur), 'utf8');
+          vf = `subtitles=filename='${subFilterPath(assPath)}',${fade}`;
+        }
         await ffmpeg([
           '-y', '-f', 'lavfi', '-i', `color=c=0x10141b:s=${W}x${H}:r=30:d=${D}`,
-          '-vf', fade, '-an', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', clip,
+          '-vf', vf, '-an', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', clip,
         ], 120_000);
       }
       clips.push(clip);

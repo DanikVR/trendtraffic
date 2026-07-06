@@ -1039,7 +1039,7 @@ router.post('/commentator/compose', async (req: AuthedRequest, res: Response) =>
     if (!audioUrl) return res.status(400).json({ error: 'Нужна загруженная аудиодорожка.' });
     const format = body.format === '16:9' ? '16:9' : '9:16';
     const lines = (Array.isArray(body.lines) ? body.lines : [])
-      .map((l: any) => ({ start: Number(l?.start), end: Number(l?.end), visualUrl: abs(typeof l?.visualUrl === 'string' ? l.visualUrl : '') || undefined, isVideo: !!l?.isVideo }))
+      .map((l: any) => ({ start: Number(l?.start), end: Number(l?.end), visualUrl: abs(typeof l?.visualUrl === 'string' ? l.visualUrl : '') || undefined, isVideo: !!l?.isVideo, text: typeof l?.text === 'string' ? l.text : undefined }))
       .filter((l: any) => Number.isFinite(l.start));
     if (!lines.length) return res.status(400).json({ error: 'Нет сегментов — разберите запись.' });
     const musicUrl = abs(typeof body.musicUrl === 'string' ? body.musicUrl : undefined);

@@ -8,9 +8,10 @@
  */
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Upload, Wand2, Loader2, Film, Play } from 'lucide-react';
+import { Music, Wand2, Loader2, Film, Play } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import { PodLine } from './dialogueTypes';
+import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 
 export interface CommState {
   audioUrl?: string; audioName?: string;
@@ -41,7 +42,7 @@ export default function CommentatorPanel({
   const lines = state.lines || [];
   const result = state.resultUrl || null;
 
-  const [audioBusy, setAudioBusy] = useState(false);
+  const [pickOpen, setPickOpen] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const aliveRef = useRef(true);
   const imgInputRef = useRef<HTMLInputElement | null>(null);
@@ -56,20 +57,25 @@ export default function CommentatorPanel({
   const omniCount = useMemo(() => lines.filter((l) => isVideoUrl(l.image)).length, [lines]);
   const readyCount = useMemo(() => lines.filter((l) => l.image).length, [lines]);
 
-  // ── аудио ──
-  const uploadAudio = useCallback(async (files: FileList | null) => {
-    const f = files && files[0]; if (!f) return;
-    setAudioBusy(true); setNote(null);
-    try {
+  // ── аудио: единый пикер Галереи (как в подкасте) — выбрать готовое ИЛИ загрузить с устройства ──
+  const onAudioUpload = useCallback(async (files: FileList | File[]): Promise<GalleryPickItem[]> => {
+    const out: GalleryPickItem[] = [];
+    for (const f of Array.from(files).filter(Boolean)) {
       const fd = new FormData(); fd.append('file', f);
+      // eslint-disable-next-line no-await-in-loop
       const res = await fetch('/api/trends/media/upload?kind=audio', { method: 'POST', headers: auth(), body: fd });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok || !d?.asset?.fileUrl) throw new Error(d?.error || 'Не удалось загрузить аудио');
-      patch({ audioUrl: d.asset.fileUrl, audioName: f.name, lines: [], resultUrl: null });
-      setNote({ ok: true, text: 'Аудио загружено — нажмите «Разобрать запись».' });
-    } catch (e: any) { setNote({ ok: false, text: e?.message || 'Ошибка загрузки аудио' }); }
-    finally { setAudioBusy(false); }
-  }, [auth, patch]);
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}));
+        const a = d?.asset;
+        if (a?.fileUrl) out.push({ id: a.id || a.fileUrl, fileUrl: a.fileUrl, title: a.originalName || f.name, type: 'audio', cat: 'audio' });
+      }
+    }
+    return out;
+  }, [auth]);
+  const onAudioPick = useCallback((it: GalleryPickItem) => {
+    patch({ audioUrl: it.fileUrl, audioName: it.title, lines: [], resultUrl: null });
+    setNote({ ok: true, text: 'Аудио выбрано — нажмите «Разобрать запись».' });
+  }, [patch]);
 
   // ── диаризация (в MontageEditor — переживает закрытие + кольцо у узла) ──
   const diarize = useCallback(() => { if (audioUrl) { setNote(null); onDiarize(audioUrl); } }, [audioUrl, onDiarize]);
@@ -122,25 +128,25 @@ export default function CommentatorPanel({
   const build = useCallback(() => {
     if (!audioUrl) { setNote({ ok: false, text: 'Сначала загрузите аудио.' }); return; }
     if (!lines.length) { setNote({ ok: false, text: 'Сначала разберите запись.' }); return; }
-    const payload = [...lines].sort((a, b) => posOf(a) - posOf(b)).map((l) => ({ start: posOf(l), end: posOf(l) + Math.max(0.4, (Number(l.end) - Number(l.start)) || 2), visualUrl: l.image || undefined, isVideo: isVideoUrl(l.image) }));
+    const payload = [...lines].sort((a, b) => posOf(a) - posOf(b)).map((l) => ({ start: posOf(l), end: posOf(l) + Math.max(0.4, (Number(l.end) - Number(l.start)) || 2), visualUrl: l.image || undefined, isVideo: isVideoUrl(l.image), text: (l.text || '').trim() || undefined }));
     onBuild({ audioUrl, format, lines: payload });
     setNote({ ok: true, text: 'Собираю ролик… (можно закрыть — соберётся в фоне, кольцо у иконки)' });
   }, [audioUrl, lines, format, onBuild]);
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Загрузите дорожку — это ваш голос. Разбор на сегменты, редактор-таймлайн как в подкасте (резать/двигать/наложить), на каждый сегмент — картинка (Ken Burns) или Omni-клип. Ролик падает в Галерею → «Google Flow».</p>
+      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Возьмите дорожку из Галереи (или загрузите туда) — это ваш голос. Разбор на сегменты, редактор-таймлайн как в подкасте (резать/двигать/наложить), на каждый сегмент — картинка (Ken Burns) или Omni-клип; без визуала — текст реплики на тёмном фоне. Ролик падает в Галерею → «Google Flow».</p>
 
       <input ref={imgInputRef} type="file" accept="image/*" hidden onChange={(e) => onImgChosen(e.target.files)} />
 
       {/* аудио + формат */}
       <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
         <div className="flex items-center gap-2">
-          <label className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: '#6366f1', color: '#fff' }}>
-            {audioBusy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Загрузить аудио
-            <input type="file" accept="audio/*" hidden onChange={(e) => uploadAudio(e.target.files)} />
-          </label>
-          <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text-secondary)' }}>{audioName || 'файл не выбран'}</span>
+          <button type="button" onClick={() => setPickOpen(true)}
+            className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg" style={{ background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer' }}>
+            <Music size={14} /> Выбрать из галереи
+          </button>
+          <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text-secondary)' }}>{audioName || 'аудио не выбрано'}</span>
           <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
             {(['9:16', '16:9'] as const).map((f) => (
               <button key={f} onClick={() => patch({ format: f })} className="text-[11px] font-600 px-2 py-1" style={{ background: format === f ? '#6366f1' : 'transparent', color: format === f ? '#fff' : 'var(--text-muted)' }}>{f}</button>
@@ -160,7 +166,7 @@ export default function CommentatorPanel({
       {lines.length > 0 && (
         <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
           <span>Готово визуалов: <b style={{ color: 'var(--text-secondary)' }}>{readyCount}/{lines.length}</b> · Omni: {omniCount} ≈ {omniCount * OMNI_CREDITS} кр</span>
-          <span>без картинки → тёмный кадр</span>
+          <span>без картинки → текст реплики на тёмном фоне</span>
         </div>
       )}
 
@@ -183,6 +189,17 @@ export default function CommentatorPanel({
           </div>
         </div>
       )}
+
+      {/* Единый пикер Галереи — открывается на «Аудио», можно листать все папки и загрузить с устройства */}
+      <GalleryPicker
+        open={pickOpen} token={token}
+        title="Аудио — ваш голос" defaultTab="audio"
+        note="Выберите готовую дорожку из Галереи или загрузите новую — она сразу попадёт в Галерею."
+        uploadAccept="audio/*,video/*" uploadHint="аудио/видео с компьютера или телефона → попадёт в Галерею"
+        onClose={() => setPickOpen(false)}
+        onUpload={onAudioUpload}
+        onPick={onAudioPick}
+      />
     </div>
   );
 }
