@@ -844,7 +844,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const pickUgcItem = (g: { url: string; name: string; type: 'video' | 'audio' | 'image' }) => {
     if (ugcPick === 'clip') ugcMutate((u) => ({ ...u, clip: { url: g.url, name: g.name } }));
     else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name }));
-    else if (ugcPick === 'recording') ugcMutate((u) => ({ ...u, recordingUrl: g.url, recordingName: g.name }));
+    else if (ugcPick === 'recording') ugcMutate((u) => (
+      // Новая запись → старый разбор (реплики) и готовый ролик больше не относятся к ней: сбрасываем.
+      u.recordingUrl === g.url ? { ...u, recordingUrl: g.url, recordingName: g.name }
+        : { ...u, recordingUrl: g.url, recordingName: g.name, script: [], result: null }
+    ));
     else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
     else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
     else if (ugcPick === 'lineImage') {
@@ -886,7 +890,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d?.avatar) throw new Error(d?.error || `Ошибка ${r.status}`);
       setUgcAvatars((prev) => [d.avatar, ...(prev || [])]);
-      ugcMutate((u) => ({ ...u, avatarId: d.avatar.id, avatarUrl: d.avatar.url, avatarName: d.avatar.name }));
+      ugcMutate((u) => ({ ...u, avatarId: d.avatar.id, avatarUrl: d.avatar.url, avatarName: d.avatar.name, avatarProvider: 'gallery' }));
     } catch (e: any) { setUgcAvNote(e?.message || 'Не удалось добавить аватар в коллекцию.'); }
   };
   const pickUgcAvatar = (a: { id: string; url: string; name: string }) =>
@@ -5101,7 +5105,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                         <Music size={15} style={{ color: '#a855f7' }} />
                         <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.recordingName || 'запись'}</span>
-                        <button onClick={() => ugcMutate((u) => ({ ...u, recordingUrl: null, recordingName: null }))} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                        <button onClick={() => ugcMutate((u) => ({ ...u, recordingUrl: null, recordingName: null, script: [], result: null }))} title="Убрать запись (сбросит и её разбор)" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
                       </div>
                     ) : (
                       <button onClick={() => openUgcPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
@@ -5189,6 +5193,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     onClose={() => { setUgcPick(null); setUgcLineIdx(null); }}
                     onUpload={(files) => uploadToGallery(files, ugcPick === 'music' ? 'audio' : 'reference')}
                     uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
+                    onlyType={ugcPick === 'photo' || ugcPick === 'avatarAdd' ? 'image' : ugcPick === 'music' ? 'audio' : ugcPick === 'clip' ? 'video' : undefined}
                     onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
                   />
                 )}

@@ -339,6 +339,10 @@ router.post('/ugc/avatars/add', async (req: AuthedRequest, res: Response) => {
     const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
     const name = (typeof req.body?.name === 'string' ? req.body.name.trim() : '').slice(0, 200) || 'Аватар';
     if (!url || !(url.startsWith('/') || /^https?:\/\//i.test(url))) return res.status(400).json({ error: 'Не указана картинка (url).' });
+    // Аватар = фото анфас. Аудио/видео в коллекцию не пускаем (иначе «битая картинка» + рендер упадёт).
+    if (/\.(mp3|wav|m4a|aac|ogg|flac|opus|mp4|mov|webm|mkv|avi|m4v)(\?|#|$)/i.test(url)) {
+      return res.status(400).json({ error: 'В коллекцию аватаров можно добавить только фото (анфас), не аудио/видео.' });
+    }
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'image', originalName: name, fileUrl: url, folder: UGC_AVATARS_FOLDER,
     });
