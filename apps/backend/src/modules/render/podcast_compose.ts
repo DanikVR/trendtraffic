@@ -628,6 +628,19 @@ export async function downloadToRendersExt(url: string, prefix: string, ext: str
   return { fileUrl: `/uploads/renders/${name}`, filePath, size: buf.length };
 }
 
+/** Длительность медиа (сек) — публичная обёртка probeDuration. */
+export function mediaDuration(input: string): Promise<number> { return probeDuration(input); }
+
+/** Нарезать кусок аудио [t0,t1] в WAV в uploads/renders (публичный URL для HeyGen). */
+export async function sliceAudioToRenders(inputPath: string, t0: number, t1: number, prefix = 'ugcseg'): Promise<{ fileUrl: string; filePath: string }> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const name = `${prefix}-${randomUUID().slice(0, 8)}.wav`;
+  const filePath = path.join(RENDERS_DIR, name);
+  const dur = Math.max(0.2, t1 - t0);
+  await ffmpeg(['-y', '-ss', t0.toFixed(2), '-t', dur.toFixed(2), '-i', inputPath, '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', filePath], 120_000);
+  return { fileUrl: `/uploads/renders/${name}`, filePath };
+}
+
 // ── UGC: аватар (webm с альфой) + видео → кадр 9:16 (vstack ИЛИ оверлей) + титры ──
 
 export interface UgcCaption { t0: number; t1: number; text: string }
