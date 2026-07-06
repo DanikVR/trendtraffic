@@ -555,8 +555,85 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
     const script: any[] = Array.isArray(spec.script) ? spec.script : [];
     const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
+    const isPhoto = spec.avatarSource === 'photo';
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
+    const gender: 'male' | 'female' = spec.voice === 'male' ? 'male' : 'female';
+    const scriptText = script.map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
+    const capStyle: 'none' | 'word' | 'karaoke' | 'plain' = ['none', 'word', 'karaoke', 'plain'].includes(spec.subtitles?.style) ? spec.subtitles.style : 'word';
+    const capPos: 'bottom' | 'center' | 'top' = ['bottom', 'center', 'top'].includes(spec.subtitles?.pos) ? spec.subtitles.pos : 'bottom';
+    const captions: UgcCaption[] = script
+      .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
+      .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
+
+    // ── Ветка «Своё фото» → HeyGen Avatar IV (видео+звук синхронны — задержки нет) ──
+    if (isPhoto) {
+      if (!spec.photoUrl) return res.status(400).json({ error: 'Загрузите своё фото (портрет анфас) в разделе «Своё фото».' });
+      const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
+      if (!hgKey) return res.status(400).json({ error: 'Для оживления своего фото добавьте ключ HeyGen в Настройки → Генерация (Avatar IV).' });
+      const useRecording = spec.source === 'diarize' && spec.recordingUrl;
+      if (!useRecording && !scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
+      if (useRecording && !base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не сможет скачать вашу запись.' });
+
+      const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+      sweepJobs(ugcJobs);
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now() });
+      res.json({ jobId });
+
+      void (async () => {
+        const j = ugcJobs.get(jobId)!;
+        try {
+          j.status = 'загружаю фото в HeyGen';
+          const tpId = await uploadTalkingPhoto(hgKey, abs(String(spec.photoUrl)));
+          const voiceId = useRecording ? undefined : ((await pickVoice(hgKey, gender)) || undefined);
+          j.status = 'генерирую аватар (Avatar IV)';
+          const videoId = await submitTalkingPhotoVideo(hgKey, {
+            talkingPhotoId: tpId, useIV: true, expressive: true, width: 1080, height: 1920,
+            ...(useRecording ? { audioUrl: abs(String(spec.recordingUrl)) } : { voiceId, text: scriptText.slice(0, 1500) }),
+          });
+          const deadline = Date.now() + 20 * 60_000;
+          let hgUrl = '';
+          while (Date.now() < deadline) {
+            await new Promise((r2) => setTimeout(r2, 5000));
+            const st = await heygenVideoStatus(hgKey, videoId);
+            if (st.status === 'failed' || st.status === 'error') throw new Error(`HeyGen: ${st.error || 'ошибка рендера'}`);
+            if (st.status === 'completed' && st.url) { hgUrl = st.url; break; }
+            j.status = `генерирую аватар (Avatar IV, ${st.status})`;
+          }
+          if (!hgUrl) throw new Error('HeyGen не отдал видео за 20 минут');
+
+          j.status = 'скачиваю аватар';
+          const avatar = await downloadToRenders(hgUrl, 'ugchead-hg');
+          const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
+          const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
+
+          j.status = 'склейка + титры';
+          const fileUrl = await composeUgc({
+            avatarPath: avatar.filePath, avatarKind: 'opaque',
+            voicePath: avatar.filePath, // голос уже в mp4 HeyGen — берём его аудио
+            clipPath: clip?.filePath || null,
+            clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+            clipMuted: spec.clipMuted !== false,
+            placement: placement as any,
+            musicPath: music?.filePath || null,
+            musicVolumePct: Number(spec.music?.volumePct) || 20,
+            captions, capStyle: captions.length ? capStyle : 'none', capPos,
+          });
+          const asset = await createAsset(j.tenantId!, {
+            kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV)`, fileUrl, mime: 'video/mp4',
+          });
+          j.fileUrl = fileUrl; j.assetId = asset?.id || null; j.status = 'done';
+        } catch (e: any) {
+          j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
+          console.warn('[ugc/build photo] FAILED:', j.error);
+        }
+      })();
+      return;
+    }
+
+    // ── Ветка «Коллекция» SpatialReal → sr-capture (домашний ПК) ──
     if (spec.avatarProvider !== 'spatialreal' || !spec.avatarId) {
-      return res.status(400).json({ error: 'Пока собираю только аватаров SpatialReal — выберите аватара в секции «SpatialReal — библиотека». Свои фото (EchoMimic) подключу следующим шагом.' });
+      return res.status(400).json({ error: 'Выберите аватара в секции «SpatialReal — библиотека» ИЛИ загрузите своё фото (вкладка «Своё фото»).' });
     }
     const cap = getSrCaptureUrl();
     if (!cap) return res.status(400).json({ error: 'Сервис рендера аватара (sr-capture) не подключён: задайте SR_CAPTURE_URL на сервере.' });
@@ -571,17 +648,14 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     if (!apiKey) return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация.' });
 
     // Голос: «Разобрать запись» → сама запись (ваш голос); «Сгенерировать» → ElevenLabs по скрипту.
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
     let voiceUrl: string;
     if (spec.source === 'diarize' && spec.recordingUrl) {
       voiceUrl = String(spec.recordingUrl);
     } else {
-      const text = script.map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
-      if (!text) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
+      if (!scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
       const elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
       if (!elevenKey) return res.status(400).json({ error: 'Для озвучки сгенерированного текста нужен ключ ElevenLabs (Настройки → Генерация) — либо используйте «Разобрать запись» со своим аудио.' });
-      voiceUrl = await elevenTTS(elevenKey, text, spec.voice === 'male' ? 'male' : 'female');
+      voiceUrl = await elevenTTS(elevenKey, scriptText, gender);
     }
     if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — sr-capture не сможет скачать аудио.' });
 
@@ -625,12 +699,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
 
         j.status = 'склейка + титры';
-        const captions: UgcCaption[] = script
-          .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
-          .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
-        const capStyle: 'none' | 'word' | 'karaoke' | 'plain' = ['none', 'word', 'karaoke', 'plain'].includes(spec.subtitles?.style) ? spec.subtitles.style : 'word';
         const fileUrl = await composeUgc({
-          avatarPath: avatar.filePath,
+          avatarPath: avatar.filePath, avatarKind: 'alpha',
           voicePath: voice.filePath,
           clipPath: clip?.filePath || null,
           clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
@@ -638,9 +708,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           placement: placement as any,
           musicPath: music?.filePath || null,
           musicVolumePct: Number(spec.music?.volumePct) || 20,
-          captions,
-          capStyle: captions.length ? capStyle : 'none',
-          capPos: ['bottom', 'center', 'top'].includes(spec.subtitles?.pos) ? spec.subtitles.pos : 'bottom',
+          captions, capStyle: captions.length ? capStyle : 'none', capPos,
         });
         const asset = await createAsset(j.tenantId!, {
           kind: 'reference', mediaType: 'video',

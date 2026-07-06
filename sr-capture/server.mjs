@@ -55,37 +55,28 @@ function ffprobeDuration(file) {
   });
 }
 
-/** Тишина в НАЧАЛЕ аудио (сек) по PCM s16le mono 16кГц: первое 20мс-окно с энергией (RMS)
- *  выше порога = речь пошла. Оконный RMS, а НЕ подряд идущие громкие сэмплы — речь всё время
- *  пересекает ноль, поэтому «N подряд громких» не срабатывает никогда. */
+/** Тишина в НАЧАЛЕ аудио (сек) по PCM s16le mono 16кГц: первое 20мс-окно с RMS выше порога. */
 function leadingSilenceSec(pcmPath) {
   try {
     const buf = fs.readFileSync(pcmPath);
     const N = Math.floor(buf.length / 2);
-    const WIN = Math.round(16000 * 0.02); // 20мс
-    const RMS_THRESH = 350;
+    const WIN = Math.round(16000 * 0.02); const THR = 350;
     for (let w = 0; w + WIN <= N; w += WIN) {
-      let sum = 0;
-      for (let i = 0; i < WIN; i++) { const s = buf.readInt16LE((w + i) * 2); sum += s * s; }
-      if (Math.sqrt(sum / WIN) > RMS_THRESH) return w / 16000;
+      let s = 0; for (let i = 0; i < WIN; i++) { const v = buf.readInt16LE((w + i) * 2); s += v * v; }
+      if (Math.sqrt(s / WIN) > THR) return w / 16000;
     }
     return 0;
   } catch { return 0; }
 }
 
-/**
- * Первое→последнее движение ГУБ по покадровой разнице центрально-нижней зоны
- * (tblend=difference → signalstats YAVG). Возвращает {firstMotion,lastMotion} в индексах кадров
- * ИЛИ null (движения нет). Паузы ВНУТРИ речи сохраняются. Синхрон-обрезку (вычет тишины/
- * задержки облака) считает вызывающий.
- */
-function detectMotion(framesDir, count) {
+/** Покадровое движение РТА (разница соседних кадров в зоне рта). Длина = count (mo[0]=0),
+ *  сглажено окном 3. Возвращает массив ИЛИ null. КРОП должен покрывать рот (центр-низ лица);
+ *  для 540×960-аватара рот ~y49% — берём щедрую зону y42-62%, x30-70%. */
+function motionSignal(framesDir, count) {
   return new Promise((resolve) => {
     if (count < 8) { resolve(null); return; }
-    // Кроп на центрально-нижнюю зону (там рот у head-and-shoulders аватара) — чтобы
-    // детектить именно артикуляцию, а не моргание/дыхание/плечи (иначе начало срежется рано).
     const ff = spawn(FFMPEG, ['-i', path.join(framesDir, 'f%05d.png'),
-      '-vf', 'crop=iw*0.42:ih*0.26:iw*0.29:ih*0.44,format=gray,tblend=all_mode=difference,signalstats,metadata=print',
+      '-vf', 'crop=iw*0.40:ih*0.20:iw*0.30:ih*0.42,format=gray,tblend=all_mode=difference,signalstats,metadata=print',
       '-f', 'null', '-'],
     { stdio: ['ignore', 'ignore', 'pipe'] });
     let buf = '';
@@ -97,24 +88,38 @@ function detectMotion(framesDir, count) {
       const raw = [];
       const re = /lavfi\.signalstats\.YAVG=([\d.]+)/g; let m;
       while ((m = re.exec(buf)) !== null) raw.push(parseFloat(m[1]));
-      // tblend даёт count-1 значений (разниц); индекс i-разницы = движение НА кадре i+1.
       if (raw.length < 4) { resolve(null); return; }
-      // Сглаживаем окном 3 — одиночные спайки (моргание) не считаем «началом речи»,
-      // ловим устойчивое движение рта.
-      const y = raw.map((_, i) => {
-        const a = raw[i - 1] ?? raw[i]; const b = raw[i]; const c = raw[i + 1] ?? raw[i];
-        return (a + b + c) / 3;
-      });
-      const peak = Math.max(...y);
-      if (!(peak > 0.5)) { resolve(null); return; } // движения нет вовсе
-      const thr = Math.max(0.8, peak * 0.16); // порог «устойчивое движение рта»
-      let first = 0; while (first < y.length && y[first] < thr) first++;
-      let last = y.length - 1; while (last > 0 && y[last] < thr) last--;
-      if (first >= last) { resolve(null); return; }
-      // индексы разниц → индексы кадров (+1)
-      resolve({ firstMotion: first + 1, lastMotion: last + 1 });
+      const mo = new Array(count).fill(0);
+      for (let i = 0; i < raw.length; i++) mo[i + 1] = raw[i];
+      const sm = mo.map((_, i) => ((mo[i - 1] ?? mo[i]) + mo[i] + (mo[i + 1] ?? mo[i])) / 3);
+      resolve(sm);
     });
   });
+}
+
+/** Кадр НАЧАЛА речи (первое устойчивое движение рта РЕЧЕВОГО уровня). Их движок молчит с
+ *  задержкой: рот закрыт (idle-движение ~2-4), потом артикуляция скачком в 3-5× (~10-16).
+ *  Порог адаптивный: медиана(idle)×2.2 и пик×0.30; требуем устойчивость (соседний кадр тоже
+ *  высокий), чтобы моргание/одиночный спайк не считать речью. Возвращает индекс или null. */
+function speechOnsetFrame(mo, fps, dur) {
+  const n = mo.length;
+  if (n < 8) return null;
+  const searchEnd = Math.min(n - 2, Math.round(Math.min(8, Math.max(4, dur * 0.6)) * fps));
+  const sorted = [...mo].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length * 0.5)];
+  const peak = sorted[Math.floor(sorted.length * 0.99)]; // ~уровень речи (устойчив к 1 выбросу)
+  if (!(peak > 3)) return null; // артикуляции почти нет
+  // Речь в 3-5× выше idle. Порог высокий, чтобы начальный «повышенный idle» (первая ~1с,
+  // 3-5) не ловился, а речь (10-16) — да.
+  const thr = Math.max(peak * 0.40, median * 3, 3.0);
+  for (let k = 2; k <= searchEnd; k++) {
+    if (mo[k] <= thr) continue;
+    // устойчивость: среднее следующих ~5 кадров тоже высокое (речь длится, не одиночный спайк)
+    let sum = 0; let c = 0;
+    for (let j = k; j < Math.min(mo.length, k + 5); j++) { sum += mo[j]; c++; }
+    if (c && sum / c > thr * 0.55) return k;
+  }
+  return null;
 }
 
 // ── Vite: страница с avatarkit (exclude обязателен — pre-bundle ломает WASM-загрузку) ──
@@ -273,20 +278,19 @@ async function runJob(id, { sessionToken, appId, avatarId, audioUrl }) {
     const fps = Math.max(1, Math.min(30, capSpanMs > 200 ? (saved - 1) / (capSpanMs / 1000) : CAPTURE_FPS));
     j.frames = saved; j.fps = Math.round(fps * 100) / 100;
 
-    // 4a. Синхрон: срезаем начало на ЗАДЕРЖКУ их облака = (первое движение губ) − (тишина в
-    //     аудио). Так закрытый рот на реальную тишину в начале записи СОХРАНЯЕТСЯ, а «пустой»
-    //     простой из-за буфера облака уходит. Конец — по последнему движению (+запас); дальше
-    //     composeUgc caps по длине голоса.
-    const motion = await detectMotion(framesDir, saved);
-    const silSec = leadingSilenceSec(pcm);
-    let startN = 0; let endN = saved - 1;
-    if (motion) {
-      startN = Math.max(0, Math.round(motion.firstMotion - silSec * fps) - 1);
-      endN = Math.min(saved - 1, motion.lastMotion + 3);
-      if (endN <= startN) { startN = 0; endN = saved - 1; }
-    }
+    // 4a. Синхрон: их облако молчит с ЗАДЕРЖКОЙ — рот закрыт (idle ~2-4), потом артикуляция
+    //     скачком (~10-16). Ловим кадр НАЧАЛА речи по рту (speechOnsetFrame) и вычитаем тишину
+    //     в начале записи (S). Лаг облака L = onset − S·fps; срезаем L кадров → первый кадр
+    //     ляжет на речь[0], реальная тишина в записи сохраняется. Конец не режем (composeUgc
+    //     caps по длине голоса). КРОП motionSignal должен покрывать рот — иначе onset=null.
+    const mo = await motionSignal(framesDir, saved);
+    const onset = mo ? speechOnsetFrame(mo, fps, dur) : null;
+    const silFrames = Math.round(leadingSilenceSec(pcm) * fps);
+    let startN = 0;
+    if (onset != null) startN = Math.max(0, Math.min(saved - 4, onset - silFrames));
+    const endN = saved - 1;
     const nFrames = endN - startN + 1;
-    log(`job ${id.slice(0, 6)} синхрон: движение ${motion ? `${motion.firstMotion}..${motion.lastMotion}` : 'нет'}, тишина ${silSec.toFixed(2)}с → срез начала ${startN} кадр., конец ${saved - 1 - endN}; итог ${nFrames}/${saved}`);
+    log(`job ${id.slice(0, 6)} синхрон: начало речи=${onset != null ? onset : 'нет'} кадр, тишина=${silFrames} кадр → лаг ${startN} кадр (~${(startN / fps).toFixed(2)}с); итог ${nFrames}/${saved} @${fps.toFixed(2)}fps`);
 
     // 4b. Кадры → VP9 webm С АЛЬФОЙ (auto-alt-ref=0 обязателен для альфы)
     j.status = 'encode';
