@@ -23,6 +23,10 @@ export interface FlowGraph {
   podcast?: Record<string, any>;
   /** Главный промт — общий сценарий ролика (контекст для ИИ-режиссёра во всех ЛЛМ-шагах). */
   brief?: string;
+  /** Прочие блоки редактора (ugc, editor, hotebook, …) — пробрасываются как есть.
+   *  ВАЖНО: parseGraph обязан их сохранять, иначе состояние блока теряется при перезагрузке
+   *  (так уже терялся graph.ugc — выбор аватара/скрипт пропадали после F5). */
+  [key: string]: any;
 }
 
 export interface Flow {
@@ -43,7 +47,15 @@ const COLS = 'id, tenant_id, name, status, graph, channel_type, chatwoot_inbox_i
 function parseGraph(g: any): FlowGraph {
   if (typeof g === 'string') { try { g = JSON.parse(g); } catch { g = null; } }
   if (!g || typeof g !== 'object') return { nodes: [], edges: [], triggers: [] };
+  // Неизвестные блоки (ugc, editor, hotebook, будущие) — как есть: белый список ниже
+  // молча съедал их состояние при каждом сохранении.
+  const extra: Record<string, any> = {};
+  const known = new Set(['nodes', 'edges', 'triggers', 'source', 'cloud', 'cloudEdges', 'omni', 'podcast', 'brief']);
+  for (const [k, v] of Object.entries(g)) {
+    if (!known.has(k) && v !== undefined && (typeof v === 'object' || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')) extra[k] = v;
+  }
   return {
+    ...extra,
     nodes: Array.isArray(g.nodes) ? g.nodes : [],
     edges: Array.isArray(g.edges) ? g.edges : [],
     triggers: Array.isArray(g.triggers) ? g.triggers : [],

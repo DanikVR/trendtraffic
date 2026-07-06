@@ -26,6 +26,7 @@ import { VideoViewer } from '../../components/VideoViewer';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
+import DialogueTimeline from './DialogueTimeline';
 
 type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
@@ -783,7 +784,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
-  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd'>(null);
+  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'lineImage'>(null);
+  const [ugcLineIdx, setUgcLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем медиа
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
   const [ugcGalLoading, setUgcGalLoading] = useState(false);
   // Коллекция аватаров (Галерея, папка 'avatars'): null = ещё не грузили, грузим по тапу на «Коллекция».
@@ -831,6 +833,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     else if (ugcPick === 'recording') ugcMutate((u) => ({ ...u, recordingUrl: g.url, recordingName: g.name }));
     else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
     else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
+    else if (ugcPick === 'lineImage') {
+      const i = ugcLineIdx;
+      if (i != null) ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, image: g.url, imageName: g.name } : l)) }));
+      setUgcLineIdx(null);
+    }
     setUgcPick(null);
   };
   // ── Коллекция аватаров: список/генерация/добавление/удаление (Галерея, папка 'avatars') ──
@@ -5021,7 +5028,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 )}
                 {ugc.script.length > 0 && (
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Реплик в скрипте: <b style={{ color: 'var(--text-secondary)' }}>{ugc.script.length}</b> (~{Math.round(ugcScriptSec())}с)</div>
+                  <div className="space-y-2">
+                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Реплик в скрипте: <b style={{ color: 'var(--text-secondary)' }}>{ugc.script.length}</b> (~{Math.round(ugcScriptSec())}с)</div>
+                    {/* Стандартный редактор диалога (тот же, что в Подкасте/Комментаторе): таймлайн + правка реплик. */}
+                    <DialogueTimeline
+                      dialogue={ugc.script}
+                      setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
+                      recordingUrl={ugc.recordingUrl}
+                      onPickImage={(i) => { setUgcLineIdx(i); setUgcPick('lineImage'); }}
+                      accentA="#a855f7"
+                      accentB="#c084fc"
+                    />
+                  </div>
                 )}
 
                 {/* Вторая половина — видео */}
@@ -5078,11 +5096,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 {ugcPick && (
                   <GalleryPicker
                     open token={token}
-                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : 'Видео (UGC)'}
+                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : ugcPick === 'lineImage' ? 'Медиа к фразе' : 'Видео (UGC)'}
                     defaultTab={ugcPick === 'music' ? 'audio' : 'reference'}
-                    onClose={() => setUgcPick(null)}
+                    onClose={() => { setUgcPick(null); setUgcLineIdx(null); }}
                     onUpload={(files) => uploadToGallery(files, ugcPick === 'music' ? 'audio' : 'reference')}
-                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
+                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
                     onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
                   />
                 )}
