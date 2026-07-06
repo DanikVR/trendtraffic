@@ -102,6 +102,10 @@ export interface SystemConfig {
   renderGpuWorkerUrl?: string;
   /** URL Hotebook-воркера (обёртка notebooklm-py по Tailscale, напр. http://100.x:8801). */
   notebookWorkerUrl?: string;
+  /** URL sr-capture (домашний ПК: SpatialReal-аватар → видео с альфой, по Tailscale, напр. http://100.x:8803). */
+  srCaptureUrl?: string;
+  /** App ID SpatialReal (не секрет; обычно берётся из session-token). */
+  srAppId?: string;
 }
 
 /** Дефолтная модель Gemini Live (используется, если в админке ничего не выбрано). */
@@ -307,6 +311,16 @@ export function getNotebookWorkerUrl(): string {
   return String(get('notebookWorkerUrl', 'NOTEBOOKLM_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
 }
 
+/** URL sr-capture (домашний ПК: SpatialReal-аватар → видео с альфой, по Tailscale). Пусто → «Собрать UGC» с аватаром SpatialReal вернёт понятную ошибку. */
+export function getSrCaptureUrl(): string {
+  return String(get('srCaptureUrl', 'SR_CAPTURE_URL', '') || '').trim().replace(/\/+$/, '');
+}
+
+/** App ID SpatialReal (не секрет). Обычно берётся из session-token; это фолбэк-дефолт. */
+export function getSrAppId(): string {
+  return String(get('srAppId', 'SR_APP_ID', 'app_mq8khj80_m5upcw') || '').trim();
+}
+
 /** Telegram Bot API Token */
 export function getTelegramToken(): string {
   return get('telegramToken', 'TELEGRAM_BOT_TOKEN');
@@ -477,6 +491,7 @@ export function getSettingsForClient(): Record<string, any> {
     renderWorkerUrl: getRenderWorkerUrl(),
     renderGpuWorkerUrl: getRenderGpuWorkerUrl(),
     notebookWorkerUrl: getNotebookWorkerUrl(),
+    srCaptureUrl: getSrCaptureUrl(),
   };
 }
 
@@ -520,6 +535,7 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
     { key: 'renderWorkerUrl', envFallback: 'RENDER_WORKER_URL' },
     { key: 'renderGpuWorkerUrl', envFallback: 'RENDER_GPU_WORKER_URL' },
     { key: 'notebookWorkerUrl', envFallback: 'NOTEBOOKLM_WORKER_URL' },
+    { key: 'srCaptureUrl', envFallback: 'SR_CAPTURE_URL' },
   ];
 
   for (const { key, envFallback } of fieldMap) {

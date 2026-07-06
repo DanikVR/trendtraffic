@@ -615,3 +615,189 @@ export async function downloadToRenders(url: string, prefix = 'podhead'): Promis
   fs.writeFileSync(filePath, buf);
   return { fileUrl: `/uploads/renders/${name}`, filePath, size: buf.length };
 }
+
+/** То же, но с явным расширением (webm с альфой от sr-capture и т.п.). */
+export async function downloadToRendersExt(url: string, prefix: string, ext: string): Promise<{ fileUrl: string; filePath: string; size: number }> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`файл не скачался (HTTP ${r.status})`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  const name = `${prefix}-${randomUUID().slice(0, 8)}.${ext.replace(/^\./, '')}`;
+  const filePath = path.join(RENDERS_DIR, name);
+  fs.writeFileSync(filePath, buf);
+  return { fileUrl: `/uploads/renders/${name}`, filePath, size: buf.length };
+}
+
+// ── UGC: аватар (webm с альфой) + видео → кадр 9:16 (vstack ИЛИ оверлей) + титры ──
+
+export interface UgcCaption { t0: number; t1: number; text: string }
+
+/** ASS для UGC: стили титров «Обычные» (строка), «По словам» (слово за словом крупно),
+ *  «Караоке» (строка с заливкой слов фиолетовым по мере речи). Позиция: низ/центр/верх. */
+function buildUgcAss(opts: {
+  W: number; H: number;
+  captions: UgcCaption[];
+  style: 'word' | 'karaoke' | 'plain';
+  pos: 'bottom' | 'center' | 'top';
+}): string {
+  const align = opts.pos === 'bottom' ? 2 : opts.pos === 'center' ? 5 : 8;
+  const marginV = opts.pos === 'bottom' ? 170 : opts.pos === 'top' ? 140 : 0;
+  const fs1 = opts.style === 'word' ? 92 : 62;
+  // Фиолетовый акцент UGC #a855f7 → ASS BBGGRR = F755A8.
+  const head = [
+    '[Script Info]', 'ScriptType: v4.00+', `PlayResX: ${opts.W}`, `PlayResY: ${opts.H}`,
+    'WrapStyle: 0', 'ScaledBorderAndShadow: yes', '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: Cap,DejaVu Sans,${fs1},&H00FFFFFF,&H00FFFFFF,&H00141414,&H7A000000,-1,0,0,0,100,100,0,0,1,4,1,${align},60,60,${marginV},1`,
+    `Style: Kar,DejaVu Sans,62,&H00F755A8,&H00FFFFFF,&H00141414,&H7A000000,-1,0,0,0,100,100,0,0,1,4,1,${align},60,60,${marginV},1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+  ];
+  const ev: string[] = [];
+  const wordsOf = (t: string) => String(t || '').trim().split(/\s+/).filter(Boolean);
+  for (const c of opts.captions) {
+    if (!(c.t1 > c.t0) || !String(c.text || '').trim()) continue;
+    if (opts.style === 'plain') {
+      ev.push(`Dialogue: 0,${assTime(c.t0)},${assTime(c.t1)},Cap,,0,0,0,,${assEsc(c.text)}`);
+    } else {
+      const words = wordsOf(c.text);
+      if (!words.length) continue;
+      const total = words.reduce((s, w) => s + w.length + 1, 0);
+      if (opts.style === 'word') {
+        // Слово за словом: длительность слова пропорциональна его длине.
+        let t = c.t0;
+        for (const w of words) {
+          const d = (c.t1 - c.t0) * ((w.length + 1) / total);
+          ev.push(`Dialogue: 0,${assTime(t)},${assTime(Math.min(c.t1, t + d))},Cap,,0,0,0,,${assEsc(w)}`);
+          t += d;
+        }
+      } else {
+        // Караоке: {\kNN} в сотых секунды на каждое слово.
+        const durCs = Math.max(1, Math.round((c.t1 - c.t0) * 100));
+        let acc = 0;
+        const parts = words.map((w, i) => {
+          const k = i === words.length - 1 ? Math.max(1, durCs - acc) : Math.max(1, Math.round(durCs * ((w.length + 1) / total)));
+          acc += k;
+          return `{\\k${k}}${assEsc(w)}`;
+        });
+        ev.push(`Dialogue: 0,${assTime(c.t0)},${assTime(c.t1)},Kar,,0,0,0,,${parts.join(' ')}`);
+      }
+    }
+  }
+  return head.concat(ev).join('\n') + '\n';
+}
+
+/** Есть ли аудио-дорожка (для опц. подмешивания звука клипа). */
+function hasAudioStream(input: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const ff = spawn(FFPROBE_BIN, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=codec_type', '-of', 'csv=p=0', input], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = '';
+    ff.stdout.on('data', (d) => { out += d.toString(); });
+    const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } resolve(false); }, 30_000);
+    ff.on('error', () => { clearTimeout(timer); resolve(false); });
+    ff.on('close', () => { clearTimeout(timer); resolve(/audio/.test(out)); });
+  });
+}
+
+/**
+ * Собрать UGC-ролик 1080×1920:
+ *  - placement 'top'/'bottom' — кадр из двух половин: аватар отдельным блоком (тёмная подложка,
+ *    альфа сохраняет силуэт) + видео во второй половине (cover/contain по clipFit);
+ *  - placement 'overlay-left'/'overlay-right' — видео во весь кадр, аватар МАЛЕНЬКИМ поверх
+ *    (прозрачный фон — виден только человек), снизу слева/справа.
+ * Звук: голос аватара (+ звук клипа, если !clipMuted и он есть; + музыка с volumePct).
+ * Титры — buildUgcAss. Длительность = длине голосовой дорожки. → fileUrl.
+ */
+export async function composeUgc(opts: {
+  avatarPath: string;           // webm VP9 с альфой (sr-capture)
+  voicePath: string;            // голосовая дорожка (двигала губы)
+  clipPath?: string | null;
+  clipFit: 'cover' | 'contain';
+  clipMuted: boolean;
+  placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right';
+  musicPath?: string | null; musicVolumePct?: number;
+  captions: UgcCaption[];
+  capStyle: 'none' | 'word' | 'karaoke' | 'plain';
+  capPos: 'bottom' | 'center' | 'top';
+}): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const W = 1080, H = 1920;
+  const D = await probeDuration(opts.voicePath);
+  if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  const Ds = (D + 0.2).toFixed(2);
+
+  const overlayMode = opts.placement === 'overlay-left' || opts.placement === 'overlay-right';
+  const clipAudio = !!opts.clipPath && !opts.clipMuted && await hasAudioStream(opts.clipPath);
+
+  // Входы. ВАЖНО: -c:v libvpx-vp9 ДО -i аватара — нативный vp9-декодер ffmpeg роняет альфу.
+  const inputs: string[] = ['-c:v', 'libvpx-vp9', '-i', opts.avatarPath];
+  let idx = 1;
+  let clipIdx = -1;
+  if (opts.clipPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.clipPath); clipIdx = idx++; }
+  const voiceIdx = idx++; inputs.push('-i', opts.voicePath);
+  let musicIdx = -1;
+  if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.musicPath); musicIdx = idx++; }
+
+  const fit = (w: number, h: number) => opts.clipFit === 'contain'
+    ? `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=0x0d0f16`
+    : `scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h}`;
+
+  const parts: string[] = [];
+  let vTag = '[vmain]';
+  if (overlayMode) {
+    // Фон: клип во весь кадр (или тёмный фон), аватар маленьким поверх снизу.
+    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30[bg]`);
+    else parts.push(`color=c=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`);
+    const aH = 720; // высота блока аватара поверх (прозрачные поля вокруг фигуры не видны)
+    const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
+    parts.push(`[0:v]scale=-2:${aH}:flags=lanczos,format=yuva420p[av]`);
+    parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+  } else {
+    // Два блока: аватар (тёмная подложка) + клип; порядок по placement.
+    const halfH = H / 2;
+    parts.push(`color=c=0x0d0f16:s=${W}x${halfH}:r=30:d=${Ds}[abg]`);
+    parts.push(`[0:v]scale=-2:${halfH}:flags=lanczos,format=yuva420p[av]`);
+    parts.push(`[abg][av]overlay=(W-w)/2:0:eof_action=pass[ahalf]`);
+    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, halfH)},setsar=1,fps=30[chalf]`);
+    else parts.push(`color=c=0x161a24:s=${W}x${halfH}:r=30:d=${Ds}[chalf]`);
+    parts.push(opts.placement === 'top' ? `[ahalf][chalf]vstack=inputs=2[vmain]` : `[chalf][ahalf]vstack=inputs=2[vmain]`);
+  }
+
+  // Титры
+  let assPath: string | null = null;
+  if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
+    assPath = path.join(RENDERS_DIR, `ugc-${randomUUID().slice(0, 8)}.ass`);
+    fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+    parts.push(`${vTag}subtitles='${subFilterPath(assPath)}'[vout]`);
+    vTag = '[vout]';
+  }
+
+  // Звук: голос + опц. клип + опц. музыка (normalize=0 — без выравнивания громкостей).
+  const aIns: string[] = [`[${voiceIdx}:a]anull[a_v]`];
+  const mixTags: string[] = ['[a_v]'];
+  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=0.9[a_c]`); mixTags.push('[a_c]'); }
+  if (musicIdx >= 0) {
+    const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
+    aIns.push(`[${musicIdx}:a]volume=${vol.toFixed(2)}[a_m]`); mixTags.push('[a_m]');
+  }
+  let aTag = '[a_v]';
+  if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
+  parts.push(...aIns.slice(mixTags.length > 1 ? 0 : 1)); // anull нужен только при миксе
+
+  const fc = parts.join(';');
+  const out = `ugc-${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(RENDERS_DIR, out);
+  const args = ['-y', ...inputs, '-filter_complex', fc,
+    '-map', vTag, '-map', mixTags.length > 1 ? aTag : `${voiceIdx}:a`,
+    '-t', Ds, '-r', '30', '-pix_fmt', 'yuv420p',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k',
+    outPath];
+  try {
+    await ffmpeg(args, Math.max(600_000, Math.round(D * 9000) + 180_000));
+  } finally {
+    if (assPath) { try { fs.unlinkSync(assPath); } catch { /* */ } }
+  }
+  return `/uploads/renders/${out}`;
+}

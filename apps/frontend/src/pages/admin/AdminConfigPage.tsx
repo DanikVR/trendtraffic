@@ -49,6 +49,7 @@ export default function AdminConfigPage() {
   const [renderGpuTarget, setRenderGpuTarget] = useState<'home' | 'cloud' | 'off'>('home');
   const [renderWorkerUrl, setRenderWorkerUrl] = useState('');
   const [renderGpuWorkerUrl, setRenderGpuWorkerUrl] = useState('');
+  const [srCaptureUrl, setSrCaptureUrl] = useState('');
 
   // Произвольные коды сайта (cookie-consent / аналитика / пиксели)
   const [customHeadCode, setCustomHeadCode] = useState('');
@@ -103,6 +104,7 @@ export default function AdminConfigPage() {
           if (data.renderGpuTarget === 'home' || data.renderGpuTarget === 'cloud' || data.renderGpuTarget === 'off') setRenderGpuTarget(data.renderGpuTarget);
           if (typeof data.renderWorkerUrl === 'string') setRenderWorkerUrl(data.renderWorkerUrl);
           if (typeof data.renderGpuWorkerUrl === 'string') setRenderGpuWorkerUrl(data.renderGpuWorkerUrl);
+          if (typeof data.srCaptureUrl === 'string') setSrCaptureUrl(data.srCaptureUrl);
           if (Array.isArray(data.telegramAdminChatIds)) setTgChatIds(data.telegramAdminChatIds);
         }
       } catch (err) {
@@ -245,7 +247,7 @@ export default function AdminConfigPage() {
           googleClientId, googleClientSecret,
           stripeSecretKey, stripeWebhookSecret, stripePublishableKey,
           tikhubApiKey,
-          renderGpuTarget, renderWorkerUrl, renderGpuWorkerUrl,
+          renderGpuTarget, renderWorkerUrl, renderGpuWorkerUrl, srCaptureUrl,
         }),
       });
 
@@ -871,6 +873,7 @@ export default function AdminConfigPage() {
 
                 <AuroraInput label="GPU-воркер (домашний ПК, Tailscale)" value={renderGpuWorkerUrl} onChange={(e) => setRenderGpuWorkerUrl(e.target.value)} placeholder="http://100.122.182.97:8801" inputId="admin-render-gpu-url" />
                 <AuroraInput label="CPU-воркер (рендер-VPS, Tailscale)" value={renderWorkerUrl} onChange={(e) => setRenderWorkerUrl(e.target.value)} placeholder="http://100.81.35.75:8800" inputId="admin-render-cpu-url" />
+                <AuroraInput label="sr-capture (UGC-аватар SpatialReal, домашний ПК, Tailscale)" value={srCaptureUrl} onChange={(e) => setSrCaptureUrl(e.target.value)} placeholder="http://100.122.182.97:8803" inputId="admin-sr-capture-url" />
 
                 <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
                   <p><b style={{ color: 'var(--text-secondary)' }}>Домашний ПК</b> — тяжёлые шаги (говорящая голова, апскейл) идут на вашу RTX 5080 по Tailscale. Нужен запущенный GPU-воркер на ПК и его адрес выше. «Выключить» или пустой адрес — эти шаги пропускаются, базовый монтаж работает на CPU-воркере.</p>

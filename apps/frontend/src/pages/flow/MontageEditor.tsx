@@ -451,7 +451,7 @@ interface UgcSpec {
   avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
   avatarProvider: 'gallery' | 'spatialreal';                // gallery=EchoMimic-вход, spatialreal=их realtime-движок
   photoUrl: string | null; photoName: string | null;        // своё фото
-  placement: 'top' | 'bottom';                              // где аватар в кадре 9:16
+  placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
   voice: PodVoice;
   source: PodSource;                                        // 'gen' | 'diarize'
   brief: string;
@@ -462,6 +462,8 @@ interface UgcSpec {
   subtitles: UgcSubtitles;                                  // титры (переиспользуем блок субтитров)
   music: { url: string; name: string; volumePct: number } | null;
   platforms: string[];
+  buildJobId: string | null;                                // идущая сборка (переживает перезаход)
+  result: { url: string; name: string } | null;             // готовый ролик
 }
 const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
@@ -474,6 +476,8 @@ const UGC_DEFAULT: UgcSpec = {
   subtitles: { style: 'word', pos: 'bottom', wishes: '' },
   music: null,
   platforms: ['tiktok', 'reels', 'shorts'],
+  buildJobId: null,
+  result: null,
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
@@ -800,6 +804,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcSrNote, setUgcSrNote] = useState<string | null>(null);
   // Фидбэк кнопки «Сохранить» в панели UGC: автосейв делает сохранение «невидимым» — показываем галку.
   const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
+  // Аспект готового ролика (из метаданных видео) — плеер под 9:16/16:9, а не пиллар-бокс.
+  const [ugcResultAR, setUgcResultAR] = useState(9 / 16);
   const ugcSaveNow = async () => {
     await save();
     setUgcSavedFlash(true);
@@ -913,6 +919,57 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (cloudPanel === 'ugc' && ugc.avatarSource === 'collection') { void loadUgcAvatars(); void loadUgcSrAvatars(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudPanel, ugc.avatarSource]);
+  // ── Сборка UGC: аватар говорит (sr-capture) → склейка с видео + титры → Галерея ──
+  const ugcPollRef = useRef<number | null>(null);
+  const pollUgcBuild = (jobId: string) => {
+    if (ugcPollRef.current) window.clearInterval(ugcPollRef.current);
+    setUgcBusy('render');
+    ugcPollRef.current = window.setInterval(async () => {
+      try {
+        const r = await fetch(`/api/render/ugc/build/status?job=${encodeURIComponent(jobId)}`, { headers: headers() });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+        if (d.status === 'done' && d.fileUrl) {
+          if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
+          setUgcBusy(null);
+          ugcMutate((u) => ({ ...u, buildJobId: null, result: { url: d.fileUrl, name: `UGC — ${u.avatarName || 'аватар'}` } }));
+          setUgcNote('Готово! Ролик сохранён в Галерею.');
+        } else if (d.status === 'failed') {
+          if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
+          setUgcBusy(null);
+          ugcMutate((u) => ({ ...u, buildJobId: null }));
+          setUgcNote(`Сборка не удалась: ${d.error || 'неизвестная ошибка'}`);
+        } else {
+          setUgcNote(`Сборка: ${d.status}…`);
+        }
+      } catch (e: any) {
+        if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
+        setUgcBusy(null);
+        ugcMutate((u) => ({ ...u, buildJobId: null }));
+        setUgcNote(e?.message || 'Потеряна связь со сборкой.');
+      }
+    }, 3000);
+  };
+  const ugcBuildStart = async () => {
+    if (ugcBusy) return;
+    if (ugc.avatarProvider !== 'spatialreal' || !ugc.avatarId) { setUgcNote('Выберите аватара в секции «SpatialReal — библиотека» — рендер своих фото (EchoMimic) подключу следующим шагом.'); return; }
+    const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
+    if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
+    setUgcBusy('render'); setUgcNote('Запускаю сборку…');
+    try {
+      const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: ugc }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.jobId) throw new Error(d?.error || `Ошибка ${r.status}`);
+      ugcMutate((u) => ({ ...u, buildJobId: d.jobId, result: null }));
+      pollUgcBuild(d.jobId);
+    } catch (e: any) { setUgcBusy(null); setUgcNote(e?.message || 'Не удалось запустить сборку.'); }
+  };
+  // Возобновление поллинга после перезахода в сценарий (сборка идёт на сервере).
+  useEffect(() => {
+    if (!loading && cloudPanel === 'ugc' && ugc.buildJobId && !ugc.result && !ugcPollRef.current) pollUgcBuild(ugc.buildJobId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, cloudPanel, ugc.buildJobId]);
+  useEffect(() => () => { if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); }, []);
   // Скрипт аватара: генерация текста (переиспользуем /podcast/dialogue) → реплики одного спикера.
   const ugcGenScript = async () => {
     if (ugcBusy) return;
@@ -5004,11 +5061,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   )}
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Положение:</span>
-                    {([['top', 'Сверху'], ['bottom', 'Снизу']] as ['top' | 'bottom', string][]).map(([p, lbl]) => (
-                      <button key={p} onClick={() => ugcMutate((u) => ({ ...u, placement: p }))} className="flex-1 py-1.5 rounded-lg text-[11px] font-700"
+                    {([['top', 'Сверху'], ['bottom', 'Снизу'], ['overlay-left', 'Фон · слева'], ['overlay-right', 'Фон · справа']] as [UgcSpec['placement'], string][]).map(([p, lbl]) => (
+                      <button key={p} onClick={() => ugcMutate((u) => ({ ...u, placement: p }))} className="flex-1 py-1.5 rounded-lg text-[10px] font-700"
                         style={{ background: ugc.placement === p ? '#a855f7' : 'var(--bg-secondary)', color: ugc.placement === p ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.placement === p ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
                     ))}
                   </div>
+                  {(ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') && (
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«Фон» = видео во весь кадр, аватар маленьким поверх (фон аватара прозрачный — виден только человек).</p>
+                  )}
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Голос:</span>
                     {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
@@ -5135,6 +5195,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
                 {ugcNote && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{ugcNote}</p>}
 
+                {/* Результат */}
+                {ugc.result && (
+                  <div className="rounded-xl p-2 space-y-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(168,85,247,.4)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Готовый ролик (он же в Галерее)</span>
+                      <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title="Скрыть" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                    </div>
+                    <video src={ugc.result.url} controls playsInline
+                      onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setUgcResultAR(v.videoWidth / v.videoHeight); }}
+                      className="rounded-lg block" style={{ aspectRatio: String(ugcResultAR), maxHeight: 460, maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
+                  </div>
+                )}
+
                 {/* Сборка */}
                 <div className="flex items-center gap-2">
                   <button onClick={() => void ugcSaveNow()} disabled={saving} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-60"
@@ -5142,14 +5215,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     {saving ? <Loader2 size={15} className="animate-spin" /> : ugcSavedFlash ? <Check size={15} /> : <Save size={15} />}
                     {saving ? 'Сохраняю…' : ugcSavedFlash ? 'Сохранено' : 'Сохранить'}
                   </button>
-                  <button disabled title="Рендер EchoMimic-GPU + склейка 9:16 (vstack) + титры — следующий шаг"
-                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl opacity-50"
-                    style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'not-allowed' }}>
-                    <Wand2 size={16} /> Собрать UGC
+                  <button onClick={() => void ugcBuildStart()} disabled={ugcBusy === 'render'}
+                    title="Аватар говорит скрипт (SpatialReal) → склейка с видео → титры → Галерея"
+                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    {ugcBusy === 'render' ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {ugcBusy === 'render' ? 'Собираю…' : 'Собрать UGC'}
                   </button>
                 </div>
                 <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Автосохранение включено: правки пишутся сами через пару секунд — кнопка лишь страховка.</p>
-                <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>Рендер аватара (SpatialReal / EchoMimic-GPU), склейка «аватар + видео» (vstack) и вжигание титров — подключаю следующим шагом.</p>
+                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Сборка идёт на сервере: аватар говорит в реальном времени (клип ~30с ≈ 1–2 мин рендера) — можно закрыть панель, прогресс не потеряется. Пока рендерятся аватары SpatialReal; свои фото (EchoMimic) — следующий шаг.</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">
