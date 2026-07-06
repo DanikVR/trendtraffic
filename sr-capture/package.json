@@ -1,0 +1,15 @@
+{
+  "name": "tt-sr-capture",
+  "private": true,
+  "type": "module",
+  "description": "TrendTraffic — сервис захвата SpatialReal-аватара: session-token → avatarkit (headless) → webm с альфой",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@spatialwalk/avatarkit": "1.0.0-beta.104",
+    "express": "^4.19.0",
+    "playwright": "1.61.1",
+    "vite": "^5.4.0"
+  }
+}

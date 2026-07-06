@@ -1728,7 +1728,21 @@
  *         (2) фикс Omni «Input blocked (400)» — сырой текст реплики оборачиваем в промпт-сцену
  *         b-roll (Omni — генератор видео, не озвучка); (3) зелёная точка «ролик собран» у узла +
  *         заголовок «✓ собран» в панели (было непонятно, где результат). */
-export const APP_VERSION = '1.6.110';
+/* 1.6.111 — «СОБРАТЬ UGC» РАБОТАЕТ: SpatialReal-аватар говорит скрипт → ролик в Галерею.
+ *         Пайплайн: голос (запись из «Разобрать речь» ИЛИ ElevenLabs по скрипту) → session-token
+ *         → НОВЫЙ сервис sr-capture/ на домашнем ПК (SR_CAPTURE_URL, Tailscale): headless
+ *         Chromium + @spatialwalk/avatarkit, их realtime-движок, кадры С АЛЬФОЙ → VP9 webm
+ *         (двухрежимный захват: new-headless rAF-читалка ~15fps / headless-shell beginFrame
+ *         ~8fps + GPU d3d11; кадры пишутся с ПЕРВОГО аудио-чанка — синхрон губ) → composeUgc
+ *         (podcast_compose): 1080×1920, «Сверху/Снизу» = блок-vstack, НОВЫЕ «Фон · слева/справа»
+ *         = видео во весь кадр + аватар маленьким ПОВЕРХ (альфа — виден только человек), титры
+ *         ASS (По словам/Караоке с фиолетовой заливкой/Обычные; низ/центр/верх), звук клипа
+ *         (без звука-галка) и музыка с volumePct. Джоба переживает перезаход (buildJobId в
+ *         graph.ugc + резюм поллинга), результат-плеер в панели + ассет в Галерее. E2E проверен
+ *         вживую (Little Tommy поверх клипа, караоке горит). Свои фото (EchoMimic) — след. шаг.
+ *         router.ts (/ugc/build), podcast_compose.ts (composeUgc), sr-capture/ (новый),
+ *         MontageEditor.tsx. */
+export const APP_VERSION = '1.6.111';
 
 export function AppVersion() {
   return (

@@ -26,7 +26,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeCommentator, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect } from './podcast_compose.js';
+import { composeHeads, composeCommentator, composeOnStudio, composeUgc, downloadToRenders, downloadToRendersExt, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect, type UgcCaption } from './podcast_compose.js';
 import { illustrateDialogue, type IllusLine } from './illustrate.js';
 import { insertGpuJob, updateGpuJob, getGpuJob, listProcessingGpuJobs, type GpuStudioParams, type GpuStudioState } from './gpu_studio_store.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
@@ -514,6 +514,153 @@ router.get('/ugc/avatars/spatialreal', async (req: AuthedRequest, res: Response)
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка загрузки библиотеки SpatialReal' });
   }
+});
+
+// ── Сборка UGC: SpatialReal-аватар говорит скрипт → склейка с видео + титры ───
+// Аватар рендерит sr-capture (домашний ПК юзера, SR_CAPTURE_URL, Tailscale):
+// голос → их realtime-движок → webm С АЛЬФОЙ. Дальше composeUgc: vstack (сверху/снизу)
+// или маленький аватар ПОВЕРХ видео (overlay-left/right, альфа = виден только человек).
+const ugcJobs = new Map<string, {
+  tenantId?: string; status: string; error?: string; fileUrl?: string; assetId?: string | null; ts: number;
+}>();
+
+function getSrCaptureUrl(): string { return String(process.env.SR_CAPTURE_URL || '').replace(/\/+$/, ''); }
+
+/** app_id из session-token JWT (Фаза-0: токен несёт app_id) — свой App ID у тенанта не храним. */
+function srAppIdFromToken(token: string): string | null {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+    const v = payload.app_id || payload.appId || payload.aid || null;
+    return typeof v === 'string' && v ? v : null;
+  } catch { return null; }
+}
+
+async function srMakeSessionToken(apiKey: string, expireSec = 3600): Promise<string> {
+  let last = '';
+  for (const host of SR_CONSOLE_HOSTS) {
+    const st = await srFetchJson(`${host}/v1/console/session-tokens`, { 'X-Api-Key': apiKey.trim(), 'Content-Type': 'application/json' }, 'POST',
+      JSON.stringify({ expireAt: Math.floor(Date.now() / 1000) + expireSec })).catch((e) => ({ status: 0, d: null, errDetail: String(e?.message || e) }));
+    const token = st.d?.sessionToken || st.d?.session_token || st.d?.data?.sessionToken || st.d?.token;
+    if (token) return token;
+    last = st.errDetail || `HTTP ${st.status}`;
+  }
+  throw new Error(`SpatialReal не выдал session-token (${last}). Проверьте ключ в Настройки → Генерация.`);
+}
+
+/** POST /ugc/build — запустить сборку. body: { spec: UgcSpec-подмножество }. → { jobId }. */
+router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
+  try {
+    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
+    const script: any[] = Array.isArray(spec.script) ? spec.script : [];
+    const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
+    if (spec.avatarProvider !== 'spatialreal' || !spec.avatarId) {
+      return res.status(400).json({ error: 'Пока собираю только аватаров SpatialReal — выберите аватара в секции «SpatialReal — библиотека». Свои фото (EchoMimic) подключу следующим шагом.' });
+    }
+    const cap = getSrCaptureUrl();
+    if (!cap) return res.status(400).json({ error: 'Сервис рендера аватара (sr-capture) не подключён: задайте SR_CAPTURE_URL на сервере.' });
+    // Живость сервиса — сразу, а не через 2 минуты пайплайна.
+    try {
+      const h = await fetch(`${cap}/health`, { signal: AbortSignal.timeout(6000) });
+      if (!h.ok) throw new Error(`HTTP ${h.status}`);
+    } catch (e: any) {
+      return res.status(502).json({ error: `Сервис рендера аватара недоступен (${e?.message || e}). Проверьте, что домашний ПК включён и sr-capture запущен.` });
+    }
+    const apiKey = await getEffectiveProviderKey(req.tenantId!, 'spatialreal');
+    if (!apiKey) return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация.' });
+
+    // Голос: «Разобрать запись» → сама запись (ваш голос); «Сгенерировать» → ElevenLabs по скрипту.
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
+    let voiceUrl: string;
+    if (spec.source === 'diarize' && spec.recordingUrl) {
+      voiceUrl = String(spec.recordingUrl);
+    } else {
+      const text = script.map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
+      if (!text) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
+      const elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
+      if (!elevenKey) return res.status(400).json({ error: 'Для озвучки сгенерированного текста нужен ключ ElevenLabs (Настройки → Генерация) — либо используйте «Разобрать запись» со своим аудио.' });
+      voiceUrl = await elevenTTS(elevenKey, text, spec.voice === 'male' ? 'male' : 'female');
+    }
+    if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — sr-capture не сможет скачать аудио.' });
+
+    const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    sweepJobs(ugcJobs);
+    ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now() });
+    res.json({ jobId });
+
+    // Дальше — в фоне; фронт поллит /ugc/build/status.
+    void (async () => {
+      const j = ugcJobs.get(jobId)!;
+      try {
+        j.status = 'токен SpatialReal';
+        const token = await srMakeSessionToken(apiKey);
+        const appId = srAppIdFromToken(token) || String(process.env.SR_APP_ID || '');
+        if (!appId) throw new Error('Не удалось определить App ID SpatialReal (нет в токене; задайте SR_APP_ID).');
+
+        j.status = 'аватар говорит (реальное время)';
+        const sr = await fetch(`${cap}/render`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionToken: token, appId, avatarId: spec.avatarId, audioUrl: abs(voiceUrl) }),
+        });
+        const srd: any = await sr.json().catch(() => ({}));
+        if (!sr.ok || !srd.job_id) throw new Error(`sr-capture: ${srd?.error || `HTTP ${sr.status}`}`);
+        const deadline = Date.now() + 30 * 60_000;
+        let outName = '';
+        while (Date.now() < deadline) {
+          await new Promise((r2) => setTimeout(r2, 3000));
+          const st = await fetch(`${cap}/status?job=${encodeURIComponent(srd.job_id)}`).then((r2) => r2.json()).catch(() => null);
+          if (!st) continue;
+          if (st.status === 'failed') throw new Error(`рендер аватара: ${st.error || 'ошибка'}`);
+          if (st.status === 'done' && st.output_name) { outName = st.output_name; break; }
+          j.status = `аватар говорит (${st.status}${st.frames ? `, кадров ${st.frames}` : ''})`;
+        }
+        if (!outName) throw new Error('рендер аватара не уложился в 30 минут');
+
+        j.status = 'скачиваю аватара';
+        const avatar = await downloadToRendersExt(`${cap}/files/${outName}`, 'ugchead', 'webm');
+        const voice = await downloadToRenders(abs(voiceUrl), 'ugcvoice');
+        const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
+        const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
+
+        j.status = 'склейка + титры';
+        const captions: UgcCaption[] = script
+          .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
+          .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
+        const capStyle: 'none' | 'word' | 'karaoke' | 'plain' = ['none', 'word', 'karaoke', 'plain'].includes(spec.subtitles?.style) ? spec.subtitles.style : 'word';
+        const fileUrl = await composeUgc({
+          avatarPath: avatar.filePath,
+          voicePath: voice.filePath,
+          clipPath: clip?.filePath || null,
+          clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+          clipMuted: spec.clipMuted !== false,
+          placement: placement as any,
+          musicPath: music?.filePath || null,
+          musicVolumePct: Number(spec.music?.volumePct) || 20,
+          captions,
+          capStyle: captions.length ? capStyle : 'none',
+          capPos: ['bottom', 'center', 'top'].includes(spec.subtitles?.pos) ? spec.subtitles.pos : 'bottom',
+        });
+        const asset = await createAsset(j.tenantId!, {
+          kind: 'reference', mediaType: 'video',
+          originalName: `UGC — ${String(spec.avatarName || 'аватар')}`,
+          fileUrl, mime: 'video/mp4',
+        });
+        j.fileUrl = fileUrl; j.assetId = asset?.id || null; j.status = 'done';
+      } catch (e: any) {
+        j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
+        console.warn('[ugc/build] FAILED:', j.error);
+      }
+    })();
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка запуска сборки UGC' });
+  }
+});
+
+/** GET /ugc/build/status?job= — статус сборки. */
+router.get('/ugc/build/status', (req: AuthedRequest, res: Response) => {
+  const j = ugcJobs.get(String(req.query.job || ''));
+  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача не найдена (возможно, сервер перезапускался — запустите сборку заново).' });
+  res.json({ status: j.status, error: j.error, fileUrl: j.fileUrl, assetId: j.assetId });
 });
 
 /** POST /podcast/animate — ЗАПУСТИТЬ рендер говорящих голов ведущих у выбранного провайдера.
