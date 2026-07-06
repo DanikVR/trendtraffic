@@ -18,6 +18,7 @@
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { getRenderWorkerUrl } from '../../config/systemConfig.js';
+import type { SegScore } from './retention.js';
 
 export const DEFAULT_DIRECTOR_MODEL = 'claude-opus-4-8';
 const ALLOWED_MODELS = new Set([
@@ -244,6 +245,41 @@ export async function generatePodcastDialogue(opts: {
       : { lines: [], note: 'диалог: пустой ответ' };
   } catch (e: any) {
     return { lines: [], note: `диалог: ошибка — ${e?.message || e}` };
+  }
+}
+
+// ── UGC-удержание: LLM решает, какие сегменты поднять на дорогой Avatar IV ────
+/**
+ * Оценивает, какие сегменты скрипта важнее всего показать на премиум-аватаре (IV): крючок,
+ * ключевое действие/демо, призыв. Возвращает SegScore[] (индекс + балл + причина). Пусто →
+ * вызывающий откатывается на эвристику (planRetention). Ключ Claude — как у режиссёра.
+ */
+export async function tagUgcRetention(opts: {
+  tenantId: string; segments: string[]; ivMax: number; model?: string;
+}): Promise<{ scores: SegScore[]; note: string }> {
+  const segs = (opts.segments || []).map((t) => String(t || '').replace(/\s+/g, ' ').trim());
+  if (!segs.length) return { scores: [], note: 'сегментов нет' };
+  const apiKey = await resolveAnthropicKey(opts.tenantId);
+  if (!apiKey) return { scores: [], note: 'LLM-разметка: ключ Claude не задан — эвристика' };
+  const list = segs.map((t, i) => `${i}: ${t.slice(0, 180) || '(без текста)'}`).join('\n');
+  const system =
+    'Ты — режиссёр коротких вертикальных UGC-роликов. На вход — сегменты ОДНОГО скрипта по порядку. ' +
+    'Оцени, какие сегменты важнее всего показать крупным планом на ПРЕМИУМ-аватаре (максимум доверия и качества): ' +
+    'крючок в самом начале, момент реального ДЕЙСТВИЯ/демонстрации («показываю», «смотрите», «вот как»), и призыв в конце — высокий балл; ' +
+    'связки, факты и общие фразы — низкий, их и так покажем на дешёвом аватаре или видео. ' +
+    `Верни СТРОГО JSON-массив, максимум ${Math.max(1, opts.ivMax)} объектов (только реально важные), и ничего больше: ` +
+    '[{"i":<индекс сегмента>,"role":"hook|action|cta","score":<0..100>}].';
+  try {
+    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user: `Сегменты:\n${list}`, maxTokens: 700 });
+    const arr = extractJsonArray(raw);
+    if (!arr) return { scores: [], note: 'LLM-разметка: не JSON — эвристика' };
+    const why = (r: string) => (r === 'hook' ? 'крючок → IV' : r === 'cta' ? 'призыв → IV' : 'ключевое действие → IV');
+    const scores: SegScore[] = arr
+      .map((x: any) => ({ i: Number(x?.i), score: Number(x?.score) || 0, why: why(String(x?.role || '')) }))
+      .filter((s) => Number.isInteger(s.i) && s.i >= 0 && s.i < segs.length && s.score > 0);
+    return scores.length ? { scores, note: `LLM-разметка: ${scores.length} сегм. на IV` } : { scores: [], note: 'LLM-разметка: пусто — эвристика' };
+  } catch (e: any) {
+    return { scores: [], note: `LLM-разметка: ошибка ${e?.message || e} — эвристика` };
   }
 }
 
