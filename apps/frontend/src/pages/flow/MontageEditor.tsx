@@ -119,8 +119,8 @@ const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: stri
 // длина, «на чём сделать акцент»). Ids полей = параметры бэкенда/воркера.
 type HbType = 'audio' | 'video' | 'report' | 'quiz' | 'table' | 'infographic' | 'flashcards' | 'mindmap' | 'slides';
 interface HbChatMsg { q: string; a: string; ts: number; cites?: number }
-interface HbSpec { chat: HbChatMsg[]; settings: Partial<Record<HbType, Record<string, string>>> }
-const HB_DEFAULT: HbSpec = { chat: [], settings: {} };
+interface HbSpec { chat: HbChatMsg[]; settings: Partial<Record<HbType, Record<string, string>>>; name?: string }
+const HB_DEFAULT: HbSpec = { chat: [], settings: {}, name: '' };
 
 const HB_LANGS: { v: string; label: string }[] = [
   { v: 'ru', label: 'русский' }, { v: 'en', label: 'английский' }, { v: 'uk', label: 'украинский' },
@@ -1064,6 +1064,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             setHb({
               chat: Array.isArray(hh.chat) ? hh.chat.filter((m: any) => m && typeof m.q === 'string') : [],
               settings: hh.settings && typeof hh.settings === 'object' ? hh.settings : {},
+              name: typeof hh.name === 'string' ? hh.name : '',
             });
           }
           if (mapped.length === 0 && isNew) setShowPresets(true); // пресеты — только для НОВОГО сценария
@@ -3005,7 +3006,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (hbSources.length === 0) { setHbNote('Сначала добавьте хотя бы один источник.'); setHbGenOpen(null); return; }
     setHbGenBusy(true); setHbNote(null);
     try {
-      const r = await fetch(`/api/notebooklm/flow/${flowId}/generate`, { method: 'POST', headers: headers(), body: JSON.stringify({ type: t, params: hbGenSet, flowName: name }) });
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/generate`, { method: 'POST', headers: headers(), body: JSON.stringify({ type: t, params: hbGenSet, name: (hb.name || '').trim(), flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json();
       if (d.job) {
@@ -5284,6 +5285,20 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   Google NotebookLM внутри сценария: добавьте <b style={{ color: '#22d3ee' }}>источники</b>, спрашивайте в чате
                   и собирайте артефакты — аудио, видео, отчёты, тесты… Готовое падает в <b>Галерею → «Hotebook»</b>.
                 </p>
+
+                {/* Название проекта: имя для всех сгенерированных файлов (аудио/презентация/…) */}
+                <div>
+                  <div className="text-[11px] font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Название (им будут подписаны готовые файлы)</div>
+                  <input value={hb.name || ''} onChange={(e) => hbMutate((h) => ({ ...h, name: e.target.value }))}
+                    placeholder="Напр.: Обзор про WordPress"
+                    className="w-full px-3 py-2 rounded-lg text-sm font-600 outline-none"
+                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                  {(hb.name || '').trim() && (
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                      Файлы появятся как «{(hb.name || '').trim()} — Аудиопересказ», «{(hb.name || '').trim()} — Презентация» и т.д.
+                    </p>
+                  )}
+                </div>
 
                 {/* Плашка синхронизации с Google (auth / api_changed / quota / offline) */}
                 {hbStatus && !hbStatus.ok && (

@@ -115,6 +115,8 @@ async function ensureTables(): Promise<void> {
       created_at TIMESTAMPTZ DEFAULT now(),
       finished_at TIMESTAMPTZ
     )`);
+  // Пользовательское название для артефакта (задаётся в шапке блока) → имя файла в Галерее.
+  await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS title TEXT`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_nlm_jobs_tenant ON notebooklm_jobs(tenant_id, created_at DESC)`);
 }
 ensureTables().catch((e) => console.warn('[hotebook] init таблиц:', (e as Error).message));
@@ -308,10 +310,16 @@ async function finalizeJob(tenantId: string, row: any, task: any): Promise<void>
     const fileUrl = `/uploads/hotebook/${localName}`;
     const gtype = row.type as GenType;
     const when = new Date().toLocaleDateString('ru-RU');
+    // Имя файла в Галерее: пользовательское название из шапки блока (если задано) —
+    // «<Название> — <тип>.ext»; иначе стандартное «Hotebook — <тип> · дата.ext».
+    const custom = String(row.title || '').trim();
+    const originalName = custom
+      ? `${custom} — ${RU_LABEL[gtype] || gtype}${ext}`
+      : `Hotebook — ${RU_LABEL[gtype] || gtype} · ${when}${ext}`;
     const asset: MediaAsset | null = await createAsset(tenantId, {
       kind: 'reference',
       mediaType: EXT_MEDIA[ext] || 'file',
-      originalName: `Hotebook — ${RU_LABEL[gtype] || gtype} · ${when}${ext}`,
+      originalName,
       fileUrl,
       filePath: localPath,
       mime: EXT_MIME[ext],
@@ -557,6 +565,7 @@ router.post('/flow/:flowId/generate', async (req: AuthedRequest, res: Response) 
   const { flowId } = req.params;
   const gtype = String(req.body?.type || '') as GenType;
   const params = (req.body?.params && typeof req.body.params === 'object') ? req.body.params : {};
+  const title = String(req.body?.name || '').trim().slice(0, 120); // пользовательское название → имя файла
   if (!GEN_TYPES.includes(gtype)) return res.status(400).json({ error: `Неизвестный тип: ${gtype}` });
   try {
     const nb = await ensureNotebook(req.tenantId!, flowId, req.body?.flowName);
@@ -567,9 +576,9 @@ router.post('/flow/:flowId/generate', async (req: AuthedRequest, res: Response) 
     if (!remote) throw new WorkerApiError('воркер не вернул task_id', 'api_changed');
     const id = randomUUID();
     const r = await pool.query(
-      `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, type, params, status, remote_task_id)
-       VALUES ($1,$2,$3,$4,$5,'queued',$6) RETURNING *`,
-      [id, req.tenantId!, flowId, gtype, JSON.stringify(params), remote]
+      `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, type, params, status, remote_task_id, title)
+       VALUES ($1,$2,$3,$4,$5,'queued',$6,$7) RETURNING *`,
+      [id, req.tenantId!, flowId, gtype, JSON.stringify(params), remote, title || null]
     );
     res.json({ job: mapJob(r.rows[0]) });
   } catch (e: any) {

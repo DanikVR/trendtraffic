@@ -1645,7 +1645,13 @@
  *         на ошибки — реальный статус в body.errors[].status, парсим конверт). Выбор плитки
  *         пишет avatarProvider='spatialreal' (+id/имя/превью) в graph.ugc — рендер их движком
  *         подключается следующим шагом. MontageEditor.tsx, render/router.ts. */
-export const APP_VERSION = '1.6.98';
+/* 1.6.99 — Hotebook: своё НАЗВАНИЕ для генераций. В шапке блока — редактируемое поле «Название»
+ *         (hb.name, персист в graph.hotebook). При генерации имя летит в /generate → бэкенд
+ *         пишет его в notebooklm_jobs.title (ADD COLUMN IF NOT EXISTS), и при готовности файл в
+ *         Галерее называется «<Название> — <тип>.ext» (напр. «Обзор про WordPress — Аудиопересказ.mp3»)
+ *         вместо «Hotebook — Аудиопересказ · дата». Пусто → старое дефолтное имя. Живой превью
+ *         под полем. MontageEditor.tsx, notebooklm/router.ts (ensureTables/generate/finalizeJob). */
+export const APP_VERSION = '1.6.99';
 
 export function AppVersion() {
   return (
