@@ -1631,7 +1631,21 @@
  *         разбором (Viral Breakdown + Video Content Analysis), НЕ запускает заново. (4) Hotebook
  *         «видео + анализ» уже читает /media/:id/analysis — теперь у видео есть что читать.
  *         social-ext/router.ts, media/assets.ts, GalleryPage.tsx. */
-export const APP_VERSION = '1.6.97';
+/* 1.6.98 — UGC: коллекция аватаров вместо заглушки. Вкладка «Коллекция» = пер-тенантная
+ *         галерея (папка 'avatars' в media_assets): грид подгружается по тапу на узел/вкладку,
+ *         выбор плиткой (avatarId+avatarUrl уходят в graph.ugc), удаление по hover-крестику.
+ *         Пополнение: «Сгенерировать 3» (Gemini Nano Banana Pro, опц. бриф «кого нарисовать»,
+ *         ротация 6 персон, ретраи транзиентных сбоев) и «Из Галереи» (копия-ссылка без
+ *         filePath — удаление из коллекции не трогает исходный файл; автоселект после
+ *         добавления). Бэкенд: GET/POST/DELETE /api/render/ugc/avatars (+ /generate, /add)
+ *         в render/router.ts. + СЕКЦИЯ «SpatialReal — библиотека»: публичные аватары с
+ *         app.spatialreal.ai/avatars/library по тенантскому ключу (эндпоинт
+ *         GET {console}/v2/console/public-avatars вытащен из их бандла — в доках list-API нет;
+ *         session-token → Bearer, фолбэк X-Api-Key; ВАЖНО: SpatialReal отвечает HTTP 200 даже
+ *         на ошибки — реальный статус в body.errors[].status, парсим конверт). Выбор плитки
+ *         пишет avatarProvider='spatialreal' (+id/имя/превью) в graph.ugc — рендер их движком
+ *         подключается следующим шагом. MontageEditor.tsx, render/router.ts. */
+export const APP_VERSION = '1.6.98';
 
 export function AppVersion() {
   return (

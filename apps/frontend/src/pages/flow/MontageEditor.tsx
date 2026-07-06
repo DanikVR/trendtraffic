@@ -446,6 +446,8 @@ interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bot
 interface UgcSpec {
   avatarSource: UgcAvatarSource;
   avatarId: string | null;                                  // выбранный из коллекции
+  avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
+  avatarProvider: 'gallery' | 'spatialreal';                // gallery=EchoMimic-вход, spatialreal=их realtime-движок
   photoUrl: string | null; photoName: string | null;        // своё фото
   placement: 'top' | 'bottom';                              // где аватар в кадре 9:16
   voice: PodVoice;
@@ -461,6 +463,7 @@ interface UgcSpec {
 }
 const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
+  avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
   photoUrl: null, photoName: null,
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],
@@ -774,16 +777,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
-  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music'>(null);
+  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd'>(null);
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
   const [ugcGalLoading, setUgcGalLoading] = useState(false);
+  // Коллекция аватаров (Галерея, папка 'avatars'): null = ещё не грузили, грузим по тапу на «Коллекция».
+  const [ugcAvatars, setUgcAvatars] = useState<{ id: string; url: string; name: string }[] | null>(null);
+  const [ugcAvLoading, setUgcAvLoading] = useState(false);
+  const [ugcAvBrief, setUgcAvBrief] = useState('');
+  const [ugcAvNote, setUgcAvNote] = useState<string | null>(null);
+  // Публичные аватары SpatialReal (оживление их движком): грузятся вместе с коллекцией.
+  const [ugcSrAvatars, setUgcSrAvatars] = useState<{ id: string; name: string; previewUrl: string | null }[] | null>(null);
+  const [ugcSrLoading, setUgcSrLoading] = useState(false);
+  const [ugcSrNote, setUgcSrNote] = useState<string | null>(null);
   const ugcMutate = (fn: (u: UgcSpec) => UgcSpec) => { setUgc((u) => fn(u)); setDirty(true); };
   const ugcScriptSec = () => ugc.script.reduce((s, l) => {
     const st = Number(l.start); const en = Number(l.end);
     return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
   }, 0);
-  // Пикер медиа для UGC (видео/фото/запись/музыка) из Галереи — как в «Редакторе».
-  const openUgcPick = async (target: 'clip' | 'photo' | 'recording' | 'music') => {
+  // Пикер медиа для UGC (видео/фото/запись/музыка/аватар в коллекцию) из Галереи — как в «Редакторе».
+  const openUgcPick = async (target: 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd') => {
     setUgcPick(target); setUgcGalLoading(true); setUgcGallery([]);
     try {
       const [v, r, an, au] = await Promise.all([
@@ -812,8 +824,74 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name }));
     else if (ugcPick === 'recording') ugcMutate((u) => ({ ...u, recordingUrl: g.url, recordingName: g.name }));
     else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
+    else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
     setUgcPick(null);
   };
+  // ── Коллекция аватаров: список/генерация/добавление/удаление (Галерея, папка 'avatars') ──
+  const loadUgcAvatars = async (force = false) => {
+    if (ugcAvLoading || (ugcAvatars !== null && !force)) return;
+    setUgcAvLoading(true); setUgcAvNote(null);
+    try {
+      const r = await fetch('/api/render/ugc/avatars', { headers: headers() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      setUgcAvatars(Array.isArray(d.avatars) ? d.avatars : []);
+    } catch (e: any) { setUgcAvatars([]); setUgcAvNote(e?.message || 'Не удалось загрузить коллекцию аватаров.'); }
+    finally { setUgcAvLoading(false); }
+  };
+  const genUgcAvatars = async () => {
+    if (ugcBusy) return;
+    setUgcBusy('avatars'); setUgcAvNote(null);
+    try {
+      const r = await fetch('/api/render/ugc/avatars/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ count: 3, brief: ugcAvBrief.trim() || undefined }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      const fresh: { id: string; url: string; name: string }[] = Array.isArray(d.avatars) ? d.avatars : [];
+      setUgcAvatars((prev) => [...fresh, ...(prev || [])]);
+      setUgcAvNote(d.note || `Готово: +${fresh.length}.`);
+    } catch (e: any) { setUgcAvNote(e?.message || 'Не удалось сгенерировать аватары.'); }
+    finally { setUgcBusy(null); }
+  };
+  const addUgcAvatar = async (url: string, name: string) => {
+    setUgcAvNote(null);
+    try {
+      const r = await fetch('/api/render/ugc/avatars/add', { method: 'POST', headers: headers(), body: JSON.stringify({ url, name }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d?.avatar) throw new Error(d?.error || `Ошибка ${r.status}`);
+      setUgcAvatars((prev) => [d.avatar, ...(prev || [])]);
+      ugcMutate((u) => ({ ...u, avatarId: d.avatar.id, avatarUrl: d.avatar.url, avatarName: d.avatar.name }));
+    } catch (e: any) { setUgcAvNote(e?.message || 'Не удалось добавить аватар в коллекцию.'); }
+  };
+  const pickUgcAvatar = (a: { id: string; url: string; name: string }) =>
+    ugcMutate((u) => ({ ...u, avatarId: a.id, avatarUrl: a.url, avatarName: a.name, avatarProvider: 'gallery' }));
+  const loadUgcSrAvatars = async (force = false) => {
+    if (ugcSrLoading || (ugcSrAvatars !== null && !force)) return;
+    setUgcSrLoading(true); setUgcSrNote(null);
+    try {
+      const r = await fetch(`/api/render/ugc/avatars/spatialreal${force ? '?force=1' : ''}`, { headers: headers() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      setUgcSrAvatars(Array.isArray(d.avatars) ? d.avatars : []);
+    } catch (e: any) { setUgcSrAvatars([]); setUgcSrNote(e?.message || 'Библиотека SpatialReal недоступна.'); }
+    finally { setUgcSrLoading(false); }
+  };
+  const pickUgcSrAvatar = (a: { id: string; name: string; previewUrl: string | null }) =>
+    ugcMutate((u) => ({ ...u, avatarId: a.id, avatarUrl: a.previewUrl, avatarName: a.name, avatarProvider: 'spatialreal' }));
+  const delUgcAvatar = async (a: { id: string; url: string; name: string }, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Убрать «${a.name}» из коллекции аватаров?`)) return;
+    try {
+      const r = await fetch(`/api/render/ugc/avatars/${encodeURIComponent(a.id)}`, { method: 'DELETE', headers: headers() });
+      if (!r.ok) throw new Error();
+      setUgcAvatars((prev) => (prev || []).filter((x) => x.id !== a.id));
+      if (ugc.avatarProvider === 'gallery' && ugc.avatarId === a.id) ugcMutate((u) => ({ ...u, avatarId: null, avatarUrl: null, avatarName: null }));
+    } catch { setUgcAvNote('Не удалось удалить аватар.'); }
+  };
+  // Открыли панель UGC на вкладке «Коллекция» — оба грида подгружаются сразу, по тапу на узел.
+  useEffect(() => {
+    if (cloudPanel === 'ugc' && ugc.avatarSource === 'collection') { void loadUgcAvatars(); void loadUgcSrAvatars(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cloudPanel, ugc.avatarSource]);
   // Скрипт аватара: генерация текста (переиспользуем /podcast/dialogue) → реплики одного спикера.
   const ugcGenScript = async () => {
     if (ugcBusy) return;
@@ -4841,8 +4919,89 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     ))}
                   </div>
                   {ugc.avatarSource === 'collection' ? (
-                    <div className="rounded-lg p-3 text-[11px] text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}>
-                      Грид готовых аватаров появится на следующем шаге. Выбран: <b style={{ color: 'var(--text-secondary)' }}>{ugc.avatarId || 'не выбран'}</b>
+                    <div className="space-y-2">
+                      {/* Библиотека SpatialReal — оживление их realtime-движком */}
+                      <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>SpatialReal — библиотека (их движок)</div>
+                      {ugcSrLoading ? (
+                        <p className="text-[11px] py-2 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> тяну библиотеку SpatialReal…</p>
+                      ) : (ugcSrAvatars || []).length ? (
+                        <div className="grid grid-cols-4 gap-1.5" style={{ maxHeight: 180, overflowY: 'auto' }}>
+                          {(ugcSrAvatars || []).map((a) => {
+                            const sel = ugc.avatarProvider === 'spatialreal' && ugc.avatarId === a.id;
+                            return (
+                              <div key={a.id} onClick={() => pickUgcSrAvatar(a)} title={`${a.name} (SpatialReal)`} className="relative rounded-lg overflow-hidden"
+                                style={{ aspectRatio: '3/4', background: '#000', cursor: 'pointer',
+                                  border: sel ? '2px solid #a855f7' : '1px solid var(--border-medium)',
+                                  boxShadow: sel ? '0 0 0 2px rgba(168,85,247,.3)' : 'none' }}>
+                                {a.previewUrl ? (
+                                  <img src={a.previewUrl} alt={a.name} loading="lazy" className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="flex items-center justify-center w-full h-full text-[16px] font-700" style={{ color: '#a855f7', background: 'var(--bg-secondary)' }}>{(a.name || '?').slice(0, 1)}</span>
+                                )}
+                                <span className="absolute bottom-0 left-0 right-0 px-1 py-0.5 text-[9px] truncate" style={{ background: 'rgba(0,0,0,.55)', color: '#fff' }}>{a.name}</span>
+                                {sel && (
+                                  <span className="absolute top-1 left-1 rounded-full flex items-center justify-center" style={{ width: 18, height: 18, background: '#a855f7' }}><Check size={12} color="#fff" /></span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg p-2 text-[11px]" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}>
+                          {ugcSrNote || 'Библиотека SpatialReal пока пуста.'}{' '}
+                          <button onClick={() => loadUgcSrAvatars(true)} style={{ background: 'transparent', border: 'none', color: '#a855f7', cursor: 'pointer', padding: 0, font: 'inherit', textDecoration: 'underline' }}>повторить</button>
+                        </div>
+                      )}
+                      {/* Моя коллекция (вход EchoMimic: Gemini-генерации + свои фото) */}
+                      <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Моя коллекция</div>
+                      {ugcAvLoading ? (
+                        <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> загружаю аватары…</p>
+                      ) : (ugcAvatars || []).length ? (
+                        <div className="grid grid-cols-4 gap-1.5" style={{ maxHeight: 236, overflowY: 'auto' }}>
+                          {(ugcAvatars || []).map((a) => {
+                            const sel = ugc.avatarProvider === 'gallery' && ugc.avatarId === a.id;
+                            return (
+                              <div key={a.id} onClick={() => pickUgcAvatar(a)} title={a.name} className="relative rounded-lg overflow-hidden group"
+                                style={{ aspectRatio: '3/4', background: '#000', cursor: 'pointer',
+                                  border: sel ? '2px solid #a855f7' : '1px solid var(--border-medium)',
+                                  boxShadow: sel ? '0 0 0 2px rgba(168,85,247,.3)' : 'none' }}>
+                                <img src={a.url} alt={a.name} loading="lazy" className="w-full h-full object-cover" />
+                                {sel && (
+                                  <span className="absolute bottom-1 left-1 rounded-full flex items-center justify-center" style={{ width: 18, height: 18, background: '#a855f7' }}><Check size={12} color="#fff" /></span>
+                                )}
+                                <button onClick={(e) => delUgcAvatar(a, e)} title="Убрать из коллекции"
+                                  className="absolute top-1 right-1 rounded-full items-center justify-center hidden group-hover:flex"
+                                  style={{ width: 18, height: 18, background: 'rgba(0,0,0,.65)', border: 'none', color: '#f87171', cursor: 'pointer' }}><X size={11} /></button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg p-3 text-[11px] text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}>
+                          Коллекция пуста — сгенерируйте готовых аватаров (Gemini) или добавьте фото из Галереи.
+                        </div>
+                      )}
+                      <div className="flex gap-1.5">
+                        <button onClick={genUgcAvatars} disabled={ugcBusy === 'avatars'} className="flex-1 py-2 rounded-lg text-[11px] font-700 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                          style={{ background: 'rgba(168,85,247,0.14)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
+                          {ugcBusy === 'avatars' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Сгенерировать 3
+                        </button>
+                        <button onClick={() => openUgcPick('avatarAdd')} className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5"
+                          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                          <Plus size={13} /> Из Галереи
+                        </button>
+                        <button onClick={() => loadUgcAvatars(true)} disabled={ugcAvLoading} title="Обновить список" className="px-2 py-2 rounded-lg"
+                          style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><RefreshCw size={13} /></button>
+                      </div>
+                      <input value={ugcAvBrief} onChange={(e) => setUgcAvBrief(e.target.value)}
+                        placeholder="кого сгенерировать: «девушка 25 лет, casual, дружелюбная»…"
+                        className="w-full px-2 py-1.5 rounded-lg text-[11px] outline-none"
+                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                      <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                        Выбран: <b style={{ color: ugc.avatarName ? '#a855f7' : 'var(--text-secondary)' }}>{ugc.avatarName || 'не выбран'}</b>
+                        {ugc.avatarName ? <span style={{ color: 'var(--text-muted)' }}> · {ugc.avatarProvider === 'spatialreal' ? 'оживит SpatialReal' : 'оживит EchoMimic (ваш GPU)'}</span> : null}
+                      </div>
+                      {ugcAvNote && <p className="text-[11px]" style={{ color: '#f59e0b' }}>{ugcAvNote}</p>}
                     </div>
                   ) : (
                     <button onClick={() => openUgcPick('photo')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
@@ -4967,7 +5126,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     {ugcGalLoading ? (
                       <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> загрузка…</p>
                     ) : (() => {
-                      const want = ugcPick === 'music' ? 'audio' : ugcPick === 'photo' ? 'image' : 'video';
+                      const want = ugcPick === 'music' ? 'audio' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image' : 'video';
                       const items = ugcGallery.filter((g) => g.type === want);
                       if (!items.length) return <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Пусто — загрузите медиа в Галерею.</p>;
                       return (

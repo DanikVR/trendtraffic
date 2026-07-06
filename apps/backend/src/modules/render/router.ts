@@ -17,7 +17,7 @@ import { getFlow } from '../flows/service.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
-import { createAsset } from '../media/assets.js';
+import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
 import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
 import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
@@ -258,6 +258,210 @@ router.post('/podcast/angle', async (req: AuthedRequest, res: Response) => {
     res.json({ mediaUrl: gen.mediaUrl, assetId: asset?.id || null });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка генерации ракурса' });
+  }
+});
+
+// ── Коллекция аватаров UGC — папка 'avatars' в Галерее ───────────────────────
+// Аватар = портрет анфас (вход EchoMimic-v2). Коллекция пер-тенантная: генерация
+// Gemini кладёт файлы сюда, «Из Галереи» добавляет ссылку на уже существующий файл.
+const UGC_AVATARS_FOLDER = 'avatars';
+const UGC_AVATAR_PERSONAS = [
+  'девушка 22–28 лет, дружелюбная улыбка, casual-стиль',
+  'мужчина 27–35 лет, уверенный, smart casual',
+  'женщина 30–40 лет, деловой стиль, лёгкая улыбка',
+  'парень 18–24 лет, стритвир, живая мимика',
+  'женщина 45–55 лет, тёплая улыбка, уютный свитер',
+  'мужчина 38–50 лет, аккуратная борода, рубашка',
+];
+function ugcAvatarPrompt(persona: string, variantIdx: number): string {
+  return `Фотореалистичный вертикальный портрет для UGC-видео: ${persona}. `
+    + 'Один человек в кадре, лицо строго анфас, смотрит прямо в камеру, план по грудь. '
+    + 'Нейтральный чистый фон, мягкий ровный свет, качество как у хорошего селфи на смартфон. '
+    + (variantIdx >= 0 ? `Вариант №${variantIdx + 1} — заметно другая внешность, причёска и одежда. ` : '')
+    + 'Без текста и водяных знаков. Верни только изображение.';
+}
+
+/** GET /ugc/avatars — список коллекции аватаров тенанта. */
+router.get('/ugc/avatars', async (req: AuthedRequest, res: Response) => {
+  try {
+    const items = await listFolder(req.tenantId!, UGC_AVATARS_FOLDER);
+    const avatars = items.filter((a) => a.mediaType === 'image' && a.fileUrl)
+      .map((a) => ({ id: a.id, url: a.fileUrl, name: a.originalName || 'Аватар' }));
+    res.json({ avatars });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка загрузки коллекции аватаров' });
+  }
+});
+
+/** POST /ugc/avatars/generate — догенерировать готовых аватаров (Gemini Nano Banana Pro).
+ *  body: { count?: 1..4, brief?: string } → { avatars: [{id,url,name}], note? }. */
+router.post('/ugc/avatars/generate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const count = Math.max(1, Math.min(4, Number(req.body?.count) || 3));
+    const brief = typeof req.body?.brief === 'string' ? req.body.brief.trim().slice(0, 300) : '';
+    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
+    if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API) — аватары рисует Gemini.' });
+    const shift = Math.floor(Math.random() * UGC_AVATAR_PERSONAS.length);
+    const made: { id: string; url: string; name: string }[] = [];
+    let failNote = '';
+    // До count*2 попыток: транзиентный чих Gemini не должен срывать весь набор.
+    for (let i = 0; i < count * 2 && made.length < count; i++) {
+      const persona = brief || UGC_AVATAR_PERSONAS[(shift + i) % UGC_AVATAR_PERSONAS.length];
+      try {
+        const gen = await generateImage({ apiKey, model: PODCAST_ANGLE_MODEL, prompt: ugcAvatarPrompt(persona, brief && count > 1 ? i : -1) });
+        const name = `Аватар — ${persona.split(',')[0]}`;
+        const asset = await createAsset(req.tenantId!, {
+          kind: 'reference', mediaType: 'image', originalName: name,
+          fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
+          folder: UGC_AVATARS_FOLDER,
+        });
+        made.push({ id: asset?.id || gen.mediaUrl, url: gen.mediaUrl, name });
+      } catch (e: any) {
+        failNote = e?.message || 'ошибка генерации';
+        if (!isTransientGenError(e)) break; // ключ/фильтр/квота — дальнейшие попытки бессмысленны
+      }
+    }
+    if (!made.length) return res.status(502).json({ error: `Gemini не вернул ни одного аватара${failNote ? ` (${failNote})` : ''}.` });
+    res.json({ avatars: made, note: made.length < count ? `Готово ${made.length} из ${count}${failNote ? ` — ${failNote}` : ''}.` : undefined });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка генерации аватаров' });
+  }
+});
+
+/** POST /ugc/avatars/add — добавить картинку из Галереи в коллекцию.
+ *  body: { url, name? } → { avatar }. Без filePath: удаление из коллекции не тронет исходный файл. */
+router.post('/ugc/avatars/add', async (req: AuthedRequest, res: Response) => {
+  try {
+    const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+    const name = (typeof req.body?.name === 'string' ? req.body.name.trim() : '').slice(0, 200) || 'Аватар';
+    if (!url || !(url.startsWith('/') || /^https?:\/\//i.test(url))) return res.status(400).json({ error: 'Не указана картинка (url).' });
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'reference', mediaType: 'image', originalName: name, fileUrl: url, folder: UGC_AVATARS_FOLDER,
+    });
+    if (!asset) return res.status(500).json({ error: 'Не удалось сохранить аватар в коллекцию.' });
+    res.json({ avatar: { id: asset.id, url: asset.fileUrl, name: asset.originalName || name } });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка добавления аватара' });
+  }
+});
+
+/** DELETE /ugc/avatars/:id — убрать аватар из коллекции. */
+router.delete('/ugc/avatars/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const ok = await deleteAsset(req.tenantId!, String(req.params.id || ''));
+    if (!ok) return res.status(404).json({ error: 'Аватар не найден.' });
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления аватара' });
+  }
+});
+
+// ── Публичные аватары SpatialReal (оживление их realtime-движком) ────────────
+// Студия (app.spatialreal.ai/avatars/library) тянет список через
+// GET {console}/v2/console/public-avatars — эндпоинт вытащен из их бандла
+// (list-API в доках нет). Авторизация — по тенантскому ключу SpatialReal:
+// сначала session-token (проверенный /v1/console/session-tokens), затем Bearer;
+// фолбэк — X-Api-Key напрямую. Ответ кэшируем на 30 мин на тенанта.
+const SR_CONSOLE_HOSTS = ['https://console.us-west.spatialwalk.cloud', 'https://console.ap-northeast.spatialwalk.cloud'];
+const srAvatarsCache = new Map<string, { list: { id: string; name: string; previewUrl: string | null }[]; ts: number }>();
+const SR_CACHE_TTL_MS = 30 * 60_000;
+
+/** ВАЖНО: SpatialReal отвечает HTTP 200 даже на ошибки — реальный статус лежит в body.errors[].status
+ *  (JSON:API-конверт). Поэтому status здесь = errors[0].status, если конверт ошибочный. */
+async function srFetchJson(url: string, headers: Record<string, string>, method = 'GET', body?: string): Promise<{ status: number; d: any; errDetail?: string }> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 20_000);
+  try {
+    const r = await fetch(url, { method, headers, body, signal: ctrl.signal });
+    const d = await r.json().catch(() => null);
+    const err = Array.isArray(d?.errors) && d.errors.length ? d.errors[0] : null;
+    if (err) return { status: Number(err.status) || (r.ok ? 400 : r.status), d, errDetail: String(err.detail || err.title || '') };
+    return { status: r.status, d };
+  } finally { clearTimeout(t); }
+}
+
+/** Разбор ответа public-avatars: у SpatialReal поля не задокументированы — берём устойчиво. */
+function srParseAvatars(d: any): { id: string; name: string; previewUrl: string | null }[] {
+  const arr: any[] = Array.isArray(d) ? d
+    : Array.isArray(d?.data) ? d.data
+    : Array.isArray(d?.avatars) ? d.avatars
+    : Array.isArray(d?.items) ? d.items
+    : Array.isArray(d?.list) ? d.list
+    : Array.isArray(d?.data?.items) ? d.data.items
+    : Array.isArray(d?.data?.list) ? d.data.list : [];
+  const out: { id: string; name: string; previewUrl: string | null }[] = [];
+  for (const raw of arr) {
+    const it = raw && typeof raw === 'object' ? { ...raw, ...(raw.attributes && typeof raw.attributes === 'object' ? raw.attributes : {}) } : {};
+    const id = String(it.id || it.uuid || it.avatar_id || it.avatarId || it.character_id || it.characterId || raw?.id || '').trim();
+    if (!id) continue;
+    const name = String(it.name || it.title || it.display_name || it.displayName || 'Аватар').trim();
+    let preview: string | null = null;
+    for (const k of ['avatar_url', 'avatarUrl', 'preview_image_url', 'previewImageUrl', 'preview_url', 'previewUrl', 'image_url', 'imageUrl', 'cover_url', 'coverUrl', 'cover', 'thumbnail_url', 'thumbnailUrl', 'thumbnail', 'portrait_url', 'photo_url', 'image', 'preview', 'icon']) {
+      const v = it[k];
+      if (typeof v === 'string' && /^https?:\/\//i.test(v)) { preview = v; break; }
+    }
+    if (!preview) {
+      // последний шанс: любое http-поле, похожее на картинку
+      for (const v of Object.values(it)) {
+        if (typeof v === 'string' && /^https?:\/\/.*\.(png|jpe?g|webp|gif)(\?|$)/i.test(v)) { preview = v; break; }
+      }
+    }
+    out.push({ id, name, previewUrl: preview });
+  }
+  return out;
+}
+
+/** GET /ugc/avatars/spatialreal — публичная библиотека SpatialReal по тенантскому ключу. */
+router.get('/ugc/avatars/spatialreal', async (req: AuthedRequest, res: Response) => {
+  try {
+    const cached = srAvatarsCache.get(req.tenantId!);
+    if (cached && Date.now() - cached.ts < SR_CACHE_TTL_MS && String(req.query.force || '') !== '1') {
+      return res.json({ avatars: cached.list, cached: true });
+    }
+    const apiKey = await getEffectiveProviderKey(req.tenantId!, 'spatialreal');
+    if (!apiKey) return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация (раздел «Платные», SpatialReal) — библиотека аватаров тянется по нему.' });
+    const tried: string[] = [];
+    let badKey = false;
+    for (const host of SR_CONSOLE_HOSTS) {
+      // 1) session-token → Bearer (рабочая схема из смоук-теста Фазы-0)
+      try {
+        const st = await srFetchJson(`${host}/v1/console/session-tokens`, { 'X-Api-Key': apiKey.trim(), 'Content-Type': 'application/json' }, 'POST',
+          JSON.stringify({ expireAt: Math.floor(Date.now() / 1000) + 600 }));
+        const token = st.d?.sessionToken || st.d?.session_token || st.d?.data?.sessionToken || st.d?.token;
+        if (token) {
+          const r = await srFetchJson(`${host}/v2/console/public-avatars`, { Authorization: `Bearer ${token}` });
+          tried.push(`${host} bearer→${r.status}${r.errDetail ? ` (${r.errDetail})` : ''}`);
+          if (r.status >= 200 && r.status < 300) {
+            const list = srParseAvatars(r.d);
+            if (list.length) { srAvatarsCache.set(req.tenantId!, { list, ts: Date.now() }); return res.json({ avatars: list }); }
+            console.warn('[ugc/sr] public-avatars ок, но распарсили 0 — сырой ответ:', JSON.stringify(r.d).slice(0, 800));
+            tried.push(`${host} parse→0`);
+          }
+        } else {
+          tried.push(`${host} token→${st.status}${st.errDetail ? ` (${st.errDetail})` : ''}`);
+          if (/invalid api key/i.test(st.errDetail || '') || st.status === 401 || st.status === 403) badKey = true;
+        }
+      } catch (e: any) { tried.push(`${host} bearer-err:${e?.message || e}`); }
+      // 2) фолбэк — X-Api-Key напрямую
+      try {
+        const r2 = await srFetchJson(`${host}/v2/console/public-avatars`, { 'X-Api-Key': apiKey.trim() });
+        tried.push(`${host} xapikey→${r2.status}${r2.errDetail ? ` (${r2.errDetail})` : ''}`);
+        if (r2.status >= 200 && r2.status < 300) {
+          const list = srParseAvatars(r2.d);
+          if (list.length) { srAvatarsCache.set(req.tenantId!, { list, ts: Date.now() }); return res.json({ avatars: list }); }
+          console.warn('[ugc/sr] public-avatars(xapikey) ок, но 0 — сырой:', JSON.stringify(r2.d).slice(0, 800));
+          tried.push(`${host} parse→0`);
+        }
+      } catch (e: any) { tried.push(`${host} xapikey-err:${e?.message || e}`); }
+    }
+    console.warn('[ugc/sr] библиотека SpatialReal не получена:', tried.join(' | '));
+    res.status(badKey ? 400 : 502).json({
+      error: badKey
+        ? 'SpatialReal: ключ невалиден («invalid api key»). Перепроверьте ключ в Настройки → Генерация → SpatialReal (взять: app.spatialreal.ai → Developer → API Key).'
+        : `SpatialReal не отдал библиотеку (${tried.join('; ')}). Проверьте ключ в Настройки → Генерация.`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка загрузки библиотеки SpatialReal' });
   }
 });
 
