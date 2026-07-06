@@ -61,7 +61,7 @@ function CardAudio({ url }: { url: string }) {
 
 export function GalleryPicker({
   open, onClose, onPick, title = 'Из Галереи', defaultTab = 'reference', multi = false, pickedKeys,
-  token, note, onUpload, uploadAccept = 'image/*,video/*,audio/*', uploadHint,
+  token, note, onUpload, uploadAccept = 'image/*,video/*,audio/*', uploadHint, onlyType,
 }: {
   open: boolean;
   onClose: () => void;
@@ -76,6 +76,7 @@ export function GalleryPicker({
   onUpload?: (files: FileList | File[]) => Promise<GalleryPickItem[]>;
   uploadAccept?: string;         // accept для input (по умолчанию любое медиа)
   uploadHint?: string;           // подпись в зоне загрузки
+  onlyType?: 'image' | 'video' | 'audio'; // показывать ТОЛЬКО этот тип (напр. аватар = только картинки)
 }) {
   const [items, setItems] = useState<GalleryPickItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -124,7 +125,8 @@ export function GalleryPicker({
   }, [open, defaultTab]);
 
   const filtered = useMemo(() => items.filter((g) => g.cat === tab
-    && (!query.trim() || g.title.toLowerCase().includes(query.trim().toLowerCase()))), [items, tab, query]);
+    && (!onlyType || g.type === onlyType)
+    && (!query.trim() || g.title.toLowerCase().includes(query.trim().toLowerCase()))), [items, tab, query, onlyType]);
 
   const isPicked = (g: GalleryPickItem) => (pickedKeys ? pickedKeys.has(g.fileUrl) : ownPicked.has(g.fileUrl));
 
@@ -191,7 +193,7 @@ export function GalleryPicker({
         {/* Вкладки-папки */}
         <div className="grid grid-cols-5 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
           {TABS.map((tb) => {
-            const n = items.filter((g) => g.cat === tb.key).length;
+            const n = items.filter((g) => g.cat === tb.key && (!onlyType || g.type === onlyType)).length;
             const active = tab === tb.key;
             return (
               <button key={tb.key} onClick={() => setTab(tb.key)}
