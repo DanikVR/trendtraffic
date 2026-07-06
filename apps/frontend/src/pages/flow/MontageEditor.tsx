@@ -464,6 +464,10 @@ interface UgcSpec {
   platforms: string[];
   buildJobId: string | null;                                // идущая сборка (переживает перезаход)
   result: { url: string; name: string } | null;             // готовый ролик
+  // Удержание (переключения техник) — только для «Своё фото» (HeyGen IV/III):
+  retentionPreset: 'off' | 'eco' | 'bal' | 'prem';          // off = обычная сборка
+  retentionBrolls: { url: string; name: string }[];         // батч: N видео → N роликов (иначе один clip)
+  results: { url: string; name: string }[];                 // готовые ролики батча
 }
 const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
@@ -478,6 +482,9 @@ const UGC_DEFAULT: UgcSpec = {
   platforms: ['tiktok', 'reels', 'shorts'],
   buildJobId: null,
   result: null,
+  retentionPreset: 'off',
+  retentionBrolls: [],
+  results: [],
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
@@ -789,7 +796,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
-  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'lineImage'>(null);
+  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'>(null);
   const [ugcLineIdx, setUgcLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем медиа
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
   const [ugcGalLoading, setUgcGalLoading] = useState(false);
@@ -819,7 +826,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
   }, 0);
   // Пикер медиа для UGC (видео/фото/запись/музыка/аватар в коллекцию) из Галереи — как в «Редакторе».
-  const openUgcPick = async (target: 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd') => {
+  const openUgcPick = async (target: 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'retBrolls') => {
     setUgcPick(target); setUgcGalLoading(true); setUgcGallery([]);
     try {
       const [v, r, an, au] = await Promise.all([
@@ -938,11 +945,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         const r = await fetch(`/api/render/ugc/build/status?job=${encodeURIComponent(jobId)}`, { headers: headers() });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
-        if (d.status === 'done' && d.fileUrl) {
+        if (d.status === 'done' && (d.fileUrl || (Array.isArray(d.results) && d.results.length))) {
           if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
           setUgcBusy(null);
-          ugcMutate((u) => ({ ...u, buildJobId: null, result: { url: d.fileUrl, name: `UGC — ${u.avatarName || 'аватар'}` } }));
-          setUgcNote('Готово! Ролик сохранён в Галерею.');
+          const results: { url: string; name: string }[] = Array.isArray(d.results) && d.results.length ? d.results : (d.fileUrl ? [{ url: d.fileUrl, name: 'ролик' }] : []);
+          ugcMutate((u) => ({ ...u, buildJobId: null, result: results[0] || null, results }));
+          setUgcNote(results.length > 1 ? `Готово! ${results.length} роликов в Галерее.` : 'Готово! Ролик сохранён в Галерею.');
         } else if (d.status === 'failed') {
           if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
           setUgcBusy(null);
@@ -968,9 +976,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     }
     const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
     if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
-    setUgcBusy('render'); setUgcNote('Запускаю сборку…');
+    const useRetention = ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
+    // Для удержания собираем spec с полем retention (preset + список B-roll для батча).
+    const spec = useRetention
+      ? { ...ugc, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
+      : ugc;
+    setUgcBusy('render'); setUgcNote(useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
     try {
-      const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: ugc }) });
+      const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.jobId) throw new Error(d?.error || `Ошибка ${r.status}`);
       ugcMutate((u) => ({ ...u, buildJobId: d.jobId, result: null }));
@@ -5183,7 +5196,47 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 </div>
 
-                {/* Титры — переиспользуем блок субтитров (subtitle_gen на воркере) */}
+                {/* Удержание (переключения техник) — только для «Своё фото» (HeyGen IV/III) */}
+                {ugc.avatarSource === 'photo' && (
+                  <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Layers size={13} style={{ color: '#a855f7' }} /> Удержание — переключения планов</div>
+                    <div className="grid grid-cols-4 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                      {([['off', 'Выкл'], ['eco', 'Эконом'], ['bal', 'Баланс'], ['prem', 'Премиум']] as [UgcSpec['retentionPreset'], string][]).map(([p, lbl]) => (
+                        <button key={p} onClick={() => ugcMutate((u) => ({ ...u, retentionPreset: p }))} className="py-1.5 rounded-lg text-[11px] font-700"
+                          style={{ background: ugc.retentionPreset === p ? '#a855f7' : 'transparent', color: ugc.retentionPreset === p ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}>{lbl}</button>
+                      ))}
+                    </div>
+                    {ugc.retentionPreset !== 'off' && (
+                      <>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          {ugc.retentionPreset === 'eco' && 'IV только на крючок и призыв, максимум «только видео». Дешевле всего (~2 IV-сегмента).'}
+                          {ugc.retentionPreset === 'bal' && 'IV на крючок, действие и призыв; III на связки, много врезок. Золотая середина (~3 IV).'}
+                          {ugc.retentionPreset === 'prem' && 'IV на крючок, действие, доп. лицо и призыв. Больше лица, дороже (~4 IV).'}
+                        </p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр каждые несколько секунд меняет технику (крупный план / верх-низ / только видео / PiP) под одну дорожку голоса. Где IV/III — решает LLM по тексту.</p>
+                        {/* Батч: N видео из Галереи → N роликов (аватар рендерится один раз) */}
+                        <div className="rounded-lg p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)' }}>
+                          <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Батч: несколько видео → несколько роликов</div>
+                          {ugc.retentionBrolls.length > 0 ? (
+                            <div className="space-y-1">
+                              <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Выбрано видео: <b style={{ color: '#a855f7' }}>{ugc.retentionBrolls.length}</b> → столько же роликов на выходе</div>
+                              <div className="flex gap-1.5">
+                                <button onClick={() => openUgcPick('retBrolls')} className="flex-1 py-1.5 rounded-md text-[11px] font-600" style={{ background: 'var(--bg-tertiary)', color: '#a855f7', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>изменить набор</button>
+                                <button onClick={() => ugcMutate((u) => ({ ...u, retentionBrolls: [] }))} className="px-2 py-1.5 rounded-md text-[11px]" style={{ background: 'transparent', color: '#ef4444', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>очистить</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button onClick={() => openUgcPick('retBrolls')} className="w-full py-2 rounded-md text-[11px] font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                              <Plus size={13} /> Выбрать несколько видео (иначе — одно «Вторая половина» выше)
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Титры — переиспускаем блок субтитров (subtitle_gen на воркере) */}
                 <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                   <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Type size={13} style={{ color: '#a855f7' }} /> Титры</div>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -5206,7 +5259,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 </div>
 
                 {/* Инлайн-пикер медиа (видео/фото/запись/музыка) из Галереи */}
-                {ugcPick && (
+                {ugcPick && ugcPick !== 'retBrolls' && (
                   <GalleryPicker
                     open token={token}
                     title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : ugcPick === 'lineImage' ? 'Медиа к фразе' : 'Видео (UGC)'}
@@ -5216,6 +5269,26 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
                     onlyType={ugcPick === 'photo' || ugcPick === 'avatarAdd' ? 'image' : ugcPick === 'music' ? 'audio' : ugcPick === 'clip' ? 'video' : undefined}
                     onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
+                  />
+                )}
+
+                {/* Батч-пикер видео для удержания: мульти-выбор, каждое видео → отдельный ролик */}
+                {ugcPick === 'retBrolls' && (
+                  <GalleryPicker
+                    open multi token={token}
+                    title="Видео для батча (каждое → свой ролик)"
+                    note="Клик добавляет видео; можно выбрать несколько. На каждое получится готовый ролик с аватаром."
+                    defaultTab="reference"
+                    onlyType="video"
+                    uploadAccept="video/*"
+                    pickedKeys={new Set(ugc.retentionBrolls.map((b) => b.url))}
+                    onClose={() => setUgcPick(null)}
+                    onUpload={(files) => uploadToGallery(files, 'reference')}
+                    onPick={(it) => ugcMutate((u) => (
+                      u.retentionBrolls.some((b) => b.url === it.fileUrl)
+                        ? { ...u, retentionBrolls: u.retentionBrolls.filter((b) => b.url !== it.fileUrl) }
+                        : { ...u, retentionBrolls: [...u.retentionBrolls, { url: it.fileUrl, name: it.title }] }
+                    ))}
                   />
                 )}
 
@@ -5233,8 +5306,24 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
                 {ugcNote && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{ugcNote}</p>}
 
-                {/* Результат */}
-                {ugc.result && (
+                {/* Результат — один ролик или батч (несколько) */}
+                {ugc.results && ugc.results.length > 1 ? (
+                  <div className="rounded-xl p-2 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(168,85,247,.4)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Батч: {ugc.results.length} роликов (все в Галерее)</span>
+                      <button onClick={() => ugcMutate((u) => ({ ...u, result: null, results: [] }))} title="Скрыть" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ugc.results.map((res, i) => (
+                        <div key={res.url + i} className="space-y-1">
+                          <video src={res.url} controls playsInline
+                            className="rounded-lg block w-full" style={{ aspectRatio: '9 / 16', maxHeight: '48vh', background: '#000' }} />
+                          <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }} title={res.name}>{res.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : ugc.result && (
                   <div className="rounded-xl p-2 space-y-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(168,85,247,.4)' }}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Готовый ролик (он же в Галерее)</span>

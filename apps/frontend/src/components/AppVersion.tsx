@@ -1819,7 +1819,18 @@
  *         видимое (иконки <160px отсекаются). Бэкенд /ingest-manual принимает kind=image →
  *         storeIncomingImage/downloadImageToDisk (mediaType='image', ext по mime); /gallery отдаёт
  *         и картинки (+type). Расширение шлёт kind. flow-ext/router.ts, background.js, content-flow.js. */
-/* 1.6.122 — Google Flow: АВТО-ПОДКЛЮЧЕНИЕ расширения + бегущая лента (v0.2.2). Юзер: «подключил,
+/* 1.6.122 — UGC-удержание: пайплайн «переключений техник» под одну дорожку голоса (Своё фото →
+ *         HeyGen). Новая секция «Удержание» в UGC: пресеты Выкл/Эконом/Баланс/Премиум (ivMax 2/3/4)
+ *         + мульти-пикер видео из Галереи для БАТЧА (N видео → N роликов, аватар рендерится ОДИН раз
+ *         → 1× цена HeyGen). Бэкенд /ugc/build ветка retention: непрерывный голос (запись/ElevenLabs)
+ *         → planWindows(пресет: %-окна, притянутые к паузам) → LLM-разметка дорогого Avatar IV по
+ *         тексту (крючок/действие/призыв, tagUgcRetention, фолбэк-эвристика) → talking_photo один раз
+ *         → посегментный рендер лица HeyGen (IV/III по движку сегмента) → composeRetentionVideo:
+ *         склейка сегментов (closeup/split верх-низ/broll/pip) с ТОЧНОЙ длиной (tpad) + непрерывный
+ *         голос + ASS-титры + музыка, по каждому B-roll. Синтетика ститчера PASS (4 раскладки, 1080×1920,
+ *         длина=голос). retention.ts, director.ts (tagUgcRetention), podcast_compose.ts
+ *         (composeRetentionVideo/sliceAudioToRenders/mediaDuration), router.ts, MontageEditor.tsx. */
+/* 1.6.123 — Google Flow: АВТО-ПОДКЛЮЧЕНИЕ расширения + бегущая лента (v0.2.2). Юзер: «подключил,
  *         а панель на Flow пишет НЕ ПОДКЛЮЧЕНО; хочу чтобы всегда работало, простой индикатор».
  *         Причина: после обновления расширения старые вкладки держат старый content-script +
  *         рукопожатие через кнопку хрупкое. Теперь content-bridge САМ читает JWT из
@@ -1828,7 +1839,7 @@
  *         «бегущая лента» когда работает + подписи «работает»/«войдите в аккаунт» (было
  *         «подключено/не подключено»). «Открыть TrendTraffic» → /flow. manifest 0.2.1→0.2.2,
  *         пересобран zip. content-bridge.js, content-flow.js, FlowExtPanel.tsx. */
-export const APP_VERSION = '1.6.122';
+export const APP_VERSION = '1.6.123';
 
 export function AppVersion() {
   return (
