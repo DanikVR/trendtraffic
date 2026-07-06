@@ -25,6 +25,7 @@ import FlowExtPanel from './FlowExtPanel';
 import { VideoViewer } from '../../components/VideoViewer';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 
 type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
@@ -948,7 +949,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [hbTextOpen, setHbTextOpen] = useState(false);
   const [hbSrcText, setHbSrcText] = useState('');
   const [hbPickOpen, setHbPickOpen] = useState(false);              // пикер файла-источника из Галереи
-  const [hbGallery, setHbGallery] = useState<{ id: string; name: string; type: string; cat: EdCat }[]>([]);
+  const [hbGallery, setHbGallery] = useState<{ id: string; name: string; type: string; cat: EdCat; url: string; cover?: string }[]>([]);
+  const [hbPickedIds, setHbPickedIds] = useState<Set<string>>(new Set()); // добавленные из пикера (✓ на превью)
   const [hbGalLoading, setHbGalLoading] = useState(false);
   const [hbPickTab, setHbPickTab] = useState<EdCat>('analyzed');    // вкладка пикера (как в Галерее/Редакторе)
   const [hbPickQuery, setHbPickQuery] = useState('');               // поиск в пикере
@@ -2478,6 +2480,30 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const openAttach = (id: string, slot: 'media' | 'audio' = 'media') => { setAttachSlot(slot); setAttachFor(id); loadMedia(); };
 
   // Загрузка файлов с устройства (или drag-and-drop) прямо из блока узла → в Галерею + привязка к узлу.
+  /** Универсальная загрузка в Галерею для GalleryPicker: заливает файл(ы), отдаёт новые элементы (auto-pick делает пикер).
+   *  kind не задан → определяем по типу файла (audio/* → «Аудио», иначе «Референс»). */
+  const uploadToGallery = async (files: FileList | File[], kind?: 'reference' | 'audio'): Promise<GalleryPickItem[]> => {
+    const list = Array.from(files).filter(Boolean);
+    const out: GalleryPickItem[] = [];
+    for (const f of list) {
+      const k: 'reference' | 'audio' = kind || ((f.type || '').startsWith('audio/') ? 'audio' : 'reference');
+      const fd = new FormData();
+      fd.append('file', f);
+      // eslint-disable-next-line no-await-in-loop
+      const res = await fetch(`/api/trends/media/upload?kind=${k}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: fd,
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const a = d.asset;
+        if (a?.fileUrl) out.push({ id: a.id || a.fileUrl, fileUrl: a.fileUrl, title: a.originalName || 'файл', type: a.mediaType || (k === 'audio' ? 'audio' : 'file'), cat: k === 'audio' ? 'audio' : 'reference' });
+      }
+    }
+    return out;
+  };
+
   const uploadMediaFiles = async (files: FileList | File[]) => {
     const list = Array.from(files).filter(Boolean);
     if (!list.length || !attachFor) return;
@@ -2854,25 +2880,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // Пикер источника = ВСЯ Галерея с вкладками-папками (как её видит юзер): TrendFlow
   // (референс) + Аудио + Из анализа. У «Из анализа» — доп. кнопка «＋ анализ» (описание).
   const hbOpenPick = async () => {
-    setHbPickOpen(true); setHbGalLoading(true); setHbGallery([]); setHbPickQuery('');
+    setHbPickOpen(true); setHbGalLoading(true); setHbGallery([]); setHbPickQuery(''); setHbPickedIds(new Set());
     try {
       const [r, au, an] = await Promise.all([
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
         fetch('/api/trends/media?kind=audio', { headers: headers() }),
         fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
       ]);
-      const out: { id: string; name: string; type: string; cat: EdCat }[] = [];
+      const out: { id: string; name: string; type: string; cat: EdCat; url: string; cover?: string }[] = [];
       const seen = new Set<string>();
-      const push = (id: string, nm: string, type: string, cat: EdCat) => {
+      const push = (id: string, nm: string, type: string, cat: EdCat, url: string, cover?: string) => {
         const k = `${cat}:${id}`;
-        if (id && !seen.has(k)) { seen.add(k); out.push({ id, name: nm, type, cat }); }
+        if (id && !seen.has(k)) { seen.add(k); out.push({ id, name: nm, type, cat, url, cover }); }
       };
       const refs = r.ok ? ((await r.json()).assets || []) : [];
-      for (const m of refs) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'reference');
+      for (const m of refs) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'reference', m.fileUrl, m.coverUrl);
       const auds = au.ok ? ((await au.json()).assets || []) : [];
-      for (const m of auds) if (m.id) push(m.id, m.originalName || 'аудио', m.mediaType || 'audio', 'audio');
+      for (const m of auds) if (m.id) push(m.id, m.originalName || 'аудио', m.mediaType || 'audio', 'audio', m.fileUrl, m.coverUrl);
       const ana = an.ok ? ((await an.json()).assets || []) : [];
-      for (const m of ana) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'analyzed');
+      for (const m of ana) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'analyzed', m.fileUrl, m.coverUrl);
       setHbGallery(out);
       const order: EdCat[] = ['analyzed', 'reference', 'audio'];
       const first = order.find((c) => out.some((x) => x.cat === c));
@@ -2887,7 +2913,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources/asset`, { method: 'POST', headers: headers(), body: JSON.stringify({ assetId, flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json(); if (d.source) setHbSources((s) => [...s, d.source]);
-      setHbPickOpen(false);
+      setHbPickedIds((p) => new Set(p).add(assetId)); // отметить ✓, пикер оставить открытым (можно добавить ещё)
       hbAfterAdd(d.source?.title || 'файл');
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить файл'); }
     finally { setHbSrcBusy(false); }
@@ -2948,7 +2974,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const content = await hbFetchAnalysisText(assetId);
       if (!content) { setHbNote('Для этого файла нет сохранённого анализа.'); return; }
       await hbAddSourceText(`Анализ: ${fileName}`, content);
-      setHbPickOpen(false);
+      setHbPickedIds((p) => new Set(p).add(assetId));
       hbAfterAdd(`Анализ: ${fileName}`);
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить анализ'); }
     finally { setHbSrcBusy(false); }
@@ -2967,7 +2993,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (content) await hbAddSourceText(`Анализ: ${fileName}`, content);
         else noAnalysis = true;
       } catch { noAnalysis = true; }
-      setHbPickOpen(false);
+      setHbPickedIds((p) => new Set(p).add(assetId));
       hbAfterAdd(noAnalysis ? fileName : `${fileName} + анализ`);
       if (noAnalysis) setHbNote('Видео добавлено. Сохранённого анализа у него нет — добавилось только видео.');
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить'); }
@@ -3560,146 +3586,46 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       )}
 
       {/* Выбор медиа: из Галереи + загрузка с устройства + drag-and-drop */}
-      {attachFor && (
-        <div onClick={() => { setAttachFor(null); setDragOver(false); }} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in"
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer?.files?.length) uploadMediaFiles(e.dataTransfer.files); }}
-            style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: `1px solid ${dragOver ? 'var(--brand)' : 'var(--border-medium)'}`, borderRadius: 16, padding: 16, transform: 'none', outline: dragOver ? '2px dashed var(--brand)' : 'none', outlineOffset: -6 }}>
-            <input ref={attachInputRef} type="file" multiple accept={attachSlot === 'audio' ? 'audio/*' : 'image/*,video/*,audio/*'} style={{ display: 'none' }}
-              onChange={(e) => { if (e.target.files?.length) uploadMediaFiles(e.target.files); e.currentTarget.value = ''; }} />
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {attachSlot === 'audio'
-                  ? 'Аудио (голос аватара)'
-                  : nodes.find((x) => x.id === attachFor)?.kind === 'broll'
-                  ? `Медиафайлы — выбрано: ${(nodes.find((x) => x.id === attachFor)?.medias || []).length} (клик добавляет/убирает)`
-                  : 'Медиа'}
-              </span>
-              <button onClick={() => setAttachFor(null)} className="inline-flex items-center gap-1 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
-                {nodes.find((x) => x.id === attachFor)?.kind === 'broll' ? <><Check size={14} /> Готово</> : <X size={16} />}
-              </button>
-            </div>
+      {attachFor && (() => {
+        const attachNode = nodes.find((x) => x.id === attachFor);
+        const isAudio = attachSlot === 'audio';
+        const multi = attachNode?.kind === 'broll' && !isAudio;
+        const pickedKeys = multi ? new Set((attachNode?.medias || []).map((m) => m.url)) : undefined;
+        return (
+          <GalleryPicker
+            open token={token}
+            title={isAudio ? 'Аудио (голос аватара)' : multi ? 'Медиафайлы' : 'Медиа'}
+            defaultTab={isAudio ? 'audio' : 'reference'}
+            multi={multi}
+            pickedKeys={pickedKeys}
+            onClose={() => setAttachFor(null)}
+            onUpload={(files) => uploadToGallery(files, isAudio ? 'audio' : 'reference')}
+            uploadAccept={isAudio ? 'audio/*' : 'image/*,video/*,audio/*'}
+            onPick={(it) => {
+              if (isAudio) { patchNode(attachFor!, { audioUrl: it.fileUrl, audioName: it.title }); return; }
+              if (multi) {
+                const list = attachNode?.medias || [];
+                const has = list.some((x) => x.url === it.fileUrl);
+                patchNode(attachFor!, { medias: has ? list.filter((x) => x.url !== it.fileUrl) : [...list, { url: it.fileUrl, name: it.title }] });
+                return;
+              }
+              patchNode(attachFor!, { mediaUrl: it.fileUrl, mediaName: it.title });
+            }}
+          />
+        );
+      })()}
 
-            {/* Зона загрузки с устройства / drag-and-drop */}
-            <button onClick={() => attachInputRef.current?.click()} disabled={uploading}
-              className="w-full mb-3 rounded-xl flex flex-col items-center justify-center gap-1.5 py-5 transition-colors"
-              style={{ background: dragOver ? 'rgba(99,102,241,0.08)' : 'var(--bg-tertiary)', border: `1.5px dashed ${dragOver ? 'var(--brand)' : 'var(--border-strong)'}`, color: dragOver ? 'var(--brand)' : 'var(--text-secondary)', cursor: uploading ? 'wait' : 'pointer' }}>
-              {uploading ? <Loader2 size={20} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Plus size={20} style={{ color: 'var(--brand)' }} />}
-              <span className="text-[13px] font-600">{uploading ? 'Загружаю…' : 'Загрузить с устройства'}</span>
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>с компьютера/телефона или перетащите файлы сюда → попадут в Галерею</span>
-            </button>
-
-            <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи</div>
-            {media.length === 0 ? (
-              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пока пусто. Загрузите файл выше или добавьте во вкладке «Галерея».</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {media.map((m) => {
-                  const attachNode = nodes.find((x) => x.id === attachFor);
-                  const multi = attachNode?.kind === 'broll';
-                  const added = multi && (attachNode?.medias || []).some((x) => x.url === m.fileUrl);
-                  return (
-                  <button key={m.id} onClick={() => {
-                    if (attachSlot === 'audio') {
-                      patchNode(attachFor!, { audioUrl: m.fileUrl, audioName: m.title });
-                      setAttachFor(null);
-                    } else if (multi) {
-                      // «Медиафайлы»: клик добавляет/убирает, пикер не закрываем — можно добрать ещё.
-                      const list = attachNode?.medias || [];
-                      patchNode(attachFor!, { medias: added ? list.filter((x) => x.url !== m.fileUrl) : [...list, { url: m.fileUrl, name: m.title }] });
-                    } else {
-                      patchNode(attachFor!, { mediaUrl: m.fileUrl, mediaName: m.title });
-                      setAttachFor(null);
-                    }
-                  }} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${added ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                    {added && (
-                      <span style={{ position: 'absolute', top: 4, left: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={12} /></span>
-                    )}
-                    <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
-                        : m.kind === 'audio' ? <Music size={22} style={{ color: 'var(--brand)' }} />
-                        : <Video size={22} style={{ color: 'var(--text-muted)' }} />}
-                    </div>
-                    <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
-                  </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Подкаст: выбор медиа (фото ведущих / картинка-вставка / запись) */}
+      {/* Подкаст: выбор медиа (фото ведущих / картинка-вставка / запись) — единый пикер Галереи */}
       {podPick && (
-        <div onClick={() => setPodPick(null)} style={{ position: 'absolute', inset: 0, zIndex: 94, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-            <input ref={podPickInputRef} type="file" multiple accept={podPick === 'music' ? 'audio/*' : podPick === 'recording' ? 'audio/*,video/*' : (podPick === 'lineimg' || podPick === 'cutaway') ? 'image/*,video/*' : 'image/*'} style={{ display: 'none' }}
-              onChange={(e) => { if (e.target.files?.length) uploadPodFiles(e.target.files); e.currentTarget.value = ''; }} />
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {podPick === 'recording' ? 'Запись подкаста' : podPick === 'music' ? 'Фоновая музыка (весь ролик)' : podPick === 'lineimg' ? 'Медиа к реплике (фото или видео)' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
-              </span>
-              <button onClick={() => setPodPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-            <button onClick={() => podPickInputRef.current?.click()} disabled={podBusy === 'upload'}
-              className="w-full mb-3 rounded-xl flex flex-col items-center justify-center gap-1.5 py-5"
-              style={{ background: 'var(--bg-tertiary)', border: '1.5px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: podBusy === 'upload' ? 'wait' : 'pointer' }}>
-              {podBusy === 'upload' ? <Loader2 size={20} className="animate-spin" style={{ color: '#ec4899' }} /> : <Plus size={20} style={{ color: '#ec4899' }} />}
-              <span className="text-[13px] font-600">{podBusy === 'upload' ? 'Загружаю…' : 'Загрузить с устройства'}</span>
-            </button>
-            <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Из Галереи — папки и поиск</div>
-            {(() => {
-              const wantAudio = podPick === 'recording';
-              const wantMedia = podPick === 'lineimg' || podPick === 'cutaway'; // фото ИЛИ видео
-              const kindOk = (m: typeof media[number]) => podPick === 'music' ? m.kind === 'audio'
-                : wantAudio ? (m.kind === 'audio' || m.kind === 'video')
-                : wantMedia ? (m.kind === 'image' || m.kind === 'video') : m.kind === 'image';
-              const base = media.filter(kindOk);
-              const TABS = ([['all', 'Все'], ['trends', 'Тренды'], ['reference', 'Референс'], ['audio', 'Аудио'], ['analyzed', 'Из анализа']] as const)
-                .filter(([k]) => k === 'all' || base.some((m) => m.folder === k));
-              const q = podPickQ.trim().toLowerCase();
-              const items = base.filter((m) => (podPickTab === 'all' || m.folder === podPickTab) && (!q || m.title.toLowerCase().includes(q)));
-              return (
-                <>
-                  {TABS.length > 2 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {TABS.map(([k, lbl]) => (
-                        <button key={k} onClick={() => setPodPickTab(k)} className="text-[11px] font-600 px-2.5 py-1 rounded-lg" style={{ background: podPickTab === k ? '#ec4899' : 'var(--bg-tertiary)', color: podPickTab === k ? '#fff' : 'var(--text-secondary)', border: `1px solid ${podPickTab === k ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ position: 'relative', marginBottom: 8 }}>
-                    <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input value={podPickQ} onChange={(e) => setPodPickQ(e.target.value)} placeholder="Поиск по названию…"
-                      className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
-                  </div>
-                  {items.length === 0 ? (
-                    <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Загрузите файл выше или добавьте в «Галерею».</p>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-2">
-                      {items.map((m) => (
-                        <button key={m.id} onClick={() => applyPodMedia(podPick, { fileUrl: m.fileUrl, title: m.title })} className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                          <div style={{ position: 'relative', aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {m.kind === 'image' ? <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
-                              : m.kind === 'audio' ? <Music size={22} style={{ color: '#ec4899' }} />
-                              : (<>
-                                  {m.cover ? <img src={m.cover} alt="" className="w-full h-full object-cover" /> : <video src={m.fileUrl} muted preload="metadata" className="w-full h-full object-cover" />}
-                                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)' }}><Play size={20} style={{ color: '#fff' }} fill="#fff" /></span>
-                                </>)}
-                          </div>
-                          <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        </div>
+        <GalleryPicker
+          open token={token}
+          title={podPick === 'recording' ? 'Запись подкаста' : podPick === 'music' ? 'Фоновая музыка (весь ролик)' : podPick === 'lineimg' ? 'Медиа к реплике (фото или видео)' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
+          defaultTab={(podPick === 'recording' || podPick === 'music') ? 'audio' : 'reference'}
+          onClose={() => setPodPick(null)}
+          onUpload={(files) => uploadToGallery(files, (podPick === 'recording' || podPick === 'music') ? 'audio' : 'reference')}
+          uploadAccept={podPick === 'music' ? 'audio/*' : podPick === 'recording' ? 'audio/*,video/*' : (podPick === 'lineimg' || podPick === 'cutaway') ? 'image/*,video/*' : 'image/*'}
+          onPick={(it) => applyPodMedia(podPick, { fileUrl: it.fileUrl, title: it.title })}
+        />
       )}
 
       {/* Загрузить диалог: вставить текст/JSON или взять из блока «Исследование» */}
@@ -3849,47 +3775,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       {/* #3 Галерея своих картинок для старт-кадра окна: выбрать существующую ИЛИ загрузить новую */}
       {imgPick !== null && (() => {
         const seg = imgPick;
-        const q = imgPickQ.trim().toLowerCase();
         const curSF = omniSpec.segments.find((s) => s.id === seg)?.startFrame || null;
-        const imgs = media.filter((m) => m.kind === 'image' && (!q || (m.title || '').toLowerCase().includes(q)));
-        const busy = !!omniGen[seg]?.fbBusy;
         return (
-          <div onClick={() => setImgPick(null)} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-            <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Старт-кадр — своё фото</span>
-                <button onClick={() => setImgPick(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-              </div>
-              <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>Выберите свою картинку (предмет/фон) как первый кадр — Omni оживит именно её. Или загрузите новую.</p>
-              <div style={{ position: 'relative', marginBottom: 8 }}>
-                <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input value={imgPickQ} onChange={(e) => setImgPickQ(e.target.value)} placeholder="Поиск по названию…" className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
-              </div>
-              <input ref={imgUploadRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={(e) => { if (e.target.files?.length) void uploadStartFrameFromPicker(seg, e.target.files); e.currentTarget.value = ''; }} />
-              <button onClick={() => imgUploadRef.current?.click()} disabled={busy}
-                className="w-full mb-2 py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: busy ? 'not-allowed' : 'pointer' }}>
-                {busy ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} {busy ? 'Загружаю…' : 'Загрузить новую'}
-              </button>
-              <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {imgs.length}</div>
-              {imgs.length === 0 ? (
-                <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Пока нет своих картинок. Нажмите «Загрузить новую».</p>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {imgs.map((m) => (
-                    <button key={m.fileUrl} onClick={() => { updateSeg(seg, { startFrame: m.fileUrl }); setOG(seg, { seed: null, note: 'Старт-кадр из галереи.' }); setImgPick(null); }}
-                      className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: `2px solid ${curSF === m.fileUrl ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer', padding: 0 }}>
-                      <div style={{ aspectRatio: '1 / 1', background: '#000' }}>
-                        <img src={m.fileUrl} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{m.title}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <GalleryPicker
+            open token={token}
+            title="Старт-кадр — своё фото"
+            note="Выберите картинку (предмет/фон) как первый кадр — Omni оживит именно её. Или загрузите новую."
+            defaultTab="reference"
+            pickedKeys={curSF ? new Set([curSF]) : undefined}
+            onClose={() => setImgPick(null)}
+            onUpload={(files) => uploadToGallery(files, 'reference')}
+            uploadAccept="image/*"
+            onPick={(it) => { updateSeg(seg, { startFrame: it.fileUrl }); setOG(seg, { seed: null, note: 'Старт-кадр из галереи.' }); }}
+          />
         );
       })()}
 
@@ -5119,31 +5017,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
                 {/* Инлайн-пикер медиа (видео/фото/запись/музыка) из Галереи */}
                 {ugcPick && (
-                  <div className="rounded-xl p-2 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-600" style={{ color: 'var(--text-secondary)' }}>Выберите из Галереи</span>
-                      <button onClick={() => setUgcPick(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
-                    </div>
-                    {ugcGalLoading ? (
-                      <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> загрузка…</p>
-                    ) : (() => {
-                      const want = ugcPick === 'music' ? 'audio' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image' : 'video';
-                      const items = ugcGallery.filter((g) => g.type === want);
-                      if (!items.length) return <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}>Пусто — загрузите медиа в Галерею.</p>;
-                      return (
-                        <div className="grid grid-cols-3 gap-1.5" style={{ maxHeight: 220, overflowY: 'auto' }}>
-                          {items.map((g, i) => (
-                            <button key={i} onClick={() => pickUgcItem(g)} className="relative rounded-lg overflow-hidden" style={{ aspectRatio: '9/16', background: '#000', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                              {g.type === 'image' ? <img src={g.url} alt="" className="w-full h-full object-cover" />
-                                : g.type === 'audio' ? <span className="flex items-center justify-center w-full h-full"><Music size={18} style={{ color: '#a855f7' }} /></span>
-                                : g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" />
-                                : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
+                  <GalleryPicker
+                    open token={token}
+                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : 'Видео (UGC)'}
+                    defaultTab={ugcPick === 'music' ? 'audio' : 'reference'}
+                    onClose={() => setUgcPick(null)}
+                    onUpload={(files) => uploadToGallery(files, ugcPick === 'music' ? 'audio' : 'reference')}
+                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
+                    onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
+                  />
                 )}
 
                 {ugcNote && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{ugcNote}</p>}
@@ -5206,77 +5088,16 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 )}
 
                 {editorPick && (
-                  <div className="rounded-xl p-2.5" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Из Галереи — клик добавляет</span>
-                    </div>
-                    {/* Загрузка своих файлов прямо в Галерею — те же кнопки, что на странице «Галерея» */}
-                    <input ref={edMediaInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => uploadEditorMedia(e.target.files, 'reference')} />
-                    <input ref={edAudioInputRef} type="file" accept="audio/*" multiple className="hidden" onChange={(e) => uploadEditorMedia(e.target.files, 'audio')} />
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <button type="button" onClick={() => edMediaInputRef.current?.click()} disabled={editorUploading} title="Загрузить видео/изображение в «Референс»"
-                        className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: editorUploading ? 'wait' : 'pointer' }}>
-                        {editorUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} Медиа
-                      </button>
-                      <button type="button" onClick={() => edAudioInputRef.current?.click()} disabled={editorUploading} title="Загрузить аудио в «Аудио»"
-                        className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: editorUploading ? 'wait' : 'pointer' }}>
-                        {editorUploading ? <Loader2 size={13} className="animate-spin" /> : <Music size={13} />} Аудио
-                      </button>
-                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>загрузить своё</span>
-                    </div>
-                    {/* Вкладки-папки (как в Галерее): Тренды/Референс/Аудио/Из анализа + счётчики */}
-                    <div className="grid grid-cols-4 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
-                      {ED_TABS.map((tb) => {
-                        const n = editorGallery.filter((g) => g.cat === tb.key).length;
-                        const active = editorTab === tb.key;
-                        return (
-                          <button key={tb.key} onClick={() => setEditorTab(tb.key)}
-                            className="inline-flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-[11px] font-600 whitespace-nowrap"
-                            style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)' }}>
-                            {tb.icon}<span className="truncate">{tb.label}</span>{n > 0 && <span style={{ opacity: 0.7 }}>{n}</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Поиск по имени */}
-                    <div className="relative mb-2">
-                      <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
-                      <input value={editorQuery} onChange={(e) => setEditorQuery(e.target.value)} placeholder="Поиск по имени…"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-xs outline-none"
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                    </div>
-                    {(() => {
-                      const filtered = editorGallery.filter((g) => g.cat === editorTab
-                        && (!editorQuery.trim() || g.name.toLowerCase().includes(editorQuery.trim().toLowerCase())));
-                      if (editorGalLoading) return <div className="py-6 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>;
-                      if (filtered.length === 0) return <p className="text-[11px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{editorQuery.trim() ? 'Ничего не найдено.' : 'В этой папке пусто.'}</p>;
-                      return (
-                        <>
-                          <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length}</div>
-                          <div className="grid grid-cols-3 gap-2" style={{ maxHeight: 300, overflowY: 'auto' }}>
-                            {filtered.map((g) => {
-                              const sel = editorClips.some((c) => c.url === g.url);
-                              return (
-                                <button key={g.url} onClick={() => addEditorClip({ url: g.url, name: g.name, type: g.type })} title={g.name}
-                                  className="rounded-xl overflow-hidden text-left" style={{ background: 'var(--bg-tertiary)', border: sel ? '2px solid var(--brand)' : '1px solid var(--border-medium)', cursor: 'pointer', padding: 0 }}>
-                                  <div className="relative flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000' }}>
-                                    {g.type === 'audio'
-                                      ? <Music size={30} style={{ color: 'var(--brand)' }} />
-                                      : (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)}
-                                    {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
-                                    {sel && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: '#fff' }}><Check size={12} /></span>}
-                                  </div>
-                                  <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{g.name}</div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
+                  <GalleryPicker
+                    open multi token={token}
+                    title="Из Галереи — добавить в редактор"
+                    note="Клик добавляет клип; можно выбрать несколько. Видео и аудио."
+                    defaultTab="reference"
+                    pickedKeys={new Set(editorClips.map((c) => c.url))}
+                    onClose={() => setEditorPick(false)}
+                    onUpload={(files) => uploadToGallery(files)}
+                    onPick={(it) => addEditorClip({ url: it.fileUrl, name: it.title, type: it.type === 'audio' ? 'audio' : 'video' })}
+                  />
                 )}
               </div>
             ) : cloudPanel === 'hotebook' ? (
@@ -5664,33 +5485,54 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 && (!hbPickQuery.trim() || g.name.toLowerCase().includes(hbPickQuery.trim().toLowerCase())));
               if (filtered.length === 0) return <p className="text-[11px] py-6 text-center" style={{ color: 'var(--text-muted)' }}>{hbPickQuery.trim() ? 'Ничего не найдено.' : 'В этой папке пусто.'}</p>;
               return (
-                <div className="space-y-1" style={{ maxHeight: 340, overflowY: 'auto' }}>
-                  <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length}</div>
-                  {filtered.map((g) => (
-                    <div key={`${g.cat}:${g.id}`} className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
-                      style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                      {g.type === 'audio' ? <Music size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'video' ? <Video size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'image' ? <Image size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : <FileText size={13} style={{ color: '#22d3ee', flexShrink: 0 }} />}
-                      <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title="Добавить только сам файл источником"
-                        className="text-xs truncate flex-1 text-left disabled:opacity-50" style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{g.name}</button>
-                      {g.cat === 'analyzed' && (
-                        <>
-                          <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title="Добавить видео + его анализ (двумя источниками)"
-                            className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50 inline-flex items-center gap-1"
-                            style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
-                            <Sparkles size={11} /> видео + анализ
-                          </button>
-                          <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить только анализ (текстом)"
-                            className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50"
-                            style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
-                            анализ
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length} · клик по превью — добавить файл</div>
+                  <div className="grid grid-cols-3 gap-2" style={{ maxHeight: 360, overflowY: 'auto' }}>
+                    {filtered.map((g) => (
+                      <div key={`${g.cat}:${g.id}`} className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        {/* Превью — клик добавляет сам файл источником */}
+                        <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title={`Добавить файл: ${g.name}`}
+                          className="block w-full text-left disabled:opacity-50" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          <div className="relative flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000' }}>
+                            {g.type === 'audio'
+                              ? <Music size={30} style={{ color: '#22d3ee' }} />
+                              : g.type === 'image'
+                                ? <img src={g.url} alt="" className="w-full h-full object-cover" />
+                                : g.type === 'video'
+                                  ? (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)
+                                  : <FileText size={28} style={{ color: '#22d3ee' }} />}
+                            {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
+                            {g.cat === 'analyzed' && <span className="absolute top-1 left-1 text-[8px] font-700 px-1 rounded inline-flex items-center gap-0.5" style={{ background: 'rgba(34,211,238,0.92)', color: '#083344' }}><Sparkles size={9} /> анализ</span>}
+                            {hbPickedIds.has(g.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b981', color: '#fff' }}><Check size={12} /></span>}
+                          </div>
+                          <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }} title={g.name}>{g.name}</div>
+                        </button>
+                        {/* «Из анализа»: добавить видео+анализ или только анализ */}
+                        {g.cat === 'analyzed' && (
+                          <div className="flex gap-1 px-1.5 pb-1.5">
+                            <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title="Добавить видео + его анализ (двумя источниками)"
+                              className="flex-1 text-[9px] font-700 py-1 rounded-md disabled:opacity-50 inline-flex items-center justify-center gap-0.5"
+                              style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
+                              <Sparkles size={9} /> видео+анализ
+                            </button>
+                            <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить только анализ (текстом)"
+                              className="text-[9px] font-700 px-1.5 py-1 rounded-md disabled:opacity-50"
+                              style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
+                              анализ
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
               );
             })()}
+            {/* Пикер не закрывается после добавления — можно добавить несколько; ✓ на добавленных */}
+            <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-medium)' }}>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{hbPickedIds.size > 0 ? `Добавлено: ${hbPickedIds.size}` : 'Можно добавить несколько файлов'}</span>
+              <button onClick={() => setHbPickOpen(false)} className="text-xs font-700 px-4 py-2 rounded-lg" style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>Готово</button>
+            </div>
           </div>
         </div>
       )}
