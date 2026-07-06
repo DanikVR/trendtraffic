@@ -804,6 +804,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcSrNote, setUgcSrNote] = useState<string | null>(null);
   // Фидбэк кнопки «Сохранить» в панели UGC: автосейв делает сохранение «невидимым» — показываем галку.
   const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
+  // Аспект готового ролика (из метаданных видео) — плеер под 9:16/16:9, а не пиллар-бокс.
+  const [ugcResultAR, setUgcResultAR] = useState(9 / 16);
   const ugcSaveNow = async () => {
     await save();
     setUgcSavedFlash(true);
@@ -5200,7 +5202,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Готовый ролик (он же в Галерее)</span>
                       <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title="Скрыть" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
                     </div>
-                    <video src={ugc.result.url} controls playsInline className="w-full rounded-lg" style={{ maxHeight: 420, background: '#000' }} />
+                    <video src={ugc.result.url} controls playsInline
+                      onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setUgcResultAR(v.videoWidth / v.videoHeight); }}
+                      className="rounded-lg block" style={{ aspectRatio: String(ugcResultAR), maxHeight: 460, maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
                   </div>
                 )}
 
