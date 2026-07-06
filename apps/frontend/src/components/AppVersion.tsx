@@ -1819,7 +1819,16 @@
  *         видимое (иконки <160px отсекаются). Бэкенд /ingest-manual принимает kind=image →
  *         storeIncomingImage/downloadImageToDisk (mediaType='image', ext по mime); /gallery отдаёт
  *         и картинки (+type). Расширение шлёт kind. flow-ext/router.ts, background.js, content-flow.js. */
-export const APP_VERSION = '1.6.121';
+/* 1.6.122 — Google Flow: АВТО-ПОДКЛЮЧЕНИЕ расширения + бегущая лента (v0.2.2). Юзер: «подключил,
+ *         а панель на Flow пишет НЕ ПОДКЛЮЧЕНО; хочу чтобы всегда работало, простой индикатор».
+ *         Причина: после обновления расширения старые вкладки держат старый content-script +
+ *         рукопожатие через кнопку хрупкое. Теперь content-bridge САМ читает JWT из
+ *         localStorage['vibevox_token'] SPA и отдаёт расширению (на загрузке/фокусе/раз в 15с) —
+ *         кнопку «Подключить» жать не нужно, пока залогинен. Индикатор в панели Flow: анимированная
+ *         «бегущая лента» когда работает + подписи «работает»/«войдите в аккаунт» (было
+ *         «подключено/не подключено»). «Открыть TrendTraffic» → /flow. manifest 0.2.1→0.2.2,
+ *         пересобран zip. content-bridge.js, content-flow.js, FlowExtPanel.tsx. */
+export const APP_VERSION = '1.6.122';
 
 export function AppVersion() {
   return (

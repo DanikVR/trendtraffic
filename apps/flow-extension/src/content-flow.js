@@ -108,6 +108,11 @@
             font-size:11px;color:#C6CCD5;word-break:break-word}
           .pick .it:hover{background:#242B37}
           .pick .ph{font-size:10.5px;color:#8A919C;text-align:center;padding:8px}
+          .wire{position:relative;height:3px;border-radius:3px;background:#242B37;overflow:hidden}
+          .wire::before{content:'';position:absolute;top:0;left:-45%;width:45%;height:100%;
+            background:linear-gradient(90deg,transparent,#6366F1,transparent);opacity:0}
+          .wire.on::before{opacity:1;animation:ttrun 1.25s linear infinite}
+          @keyframes ttrun{from{left:-45%}to{left:100%}}
           .foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
           .rec{flex:0 0 auto;width:auto;font-size:10px;color:#8A919C;background:none;
             border:none;cursor:pointer;text-decoration:underline;padding:0}
@@ -121,6 +126,7 @@
           </div>
           <div class="bd" id="bd">
             <div class="row"><span>Состояние</span><span class="pill off" id="st">не подключено</span></div>
+            <div class="wire" id="wire"></div>
             <div class="task" id="task">Ожидаю задачи из TrendTraffic…</div>
             <div class="lg" id="lg"></div>
             <div class="btns">
@@ -144,10 +150,11 @@
         ver: sh.getElementById('ver'), pause: sh.getElementById('pause'),
         open: sh.getElementById('open'), bd: sh.getElementById('bd'),
         hd: sh.getElementById('hd'), reconc: sh.getElementById('reconc'), pick: sh.getElementById('pick'),
+        wire: sh.getElementById('wire'),
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       makeDraggable(host, els.hd, () => els.bd.classList.toggle('hide'));
-      els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro', '_blank'));
+      els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro/flow', '_blank'));
       els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line('Пауза включена вручную')));
       sh.getElementById('toGal').addEventListener('click', () => sendToGallery());
       sh.getElementById('fromGal').addEventListener('click', () => openGalleryPicker());
@@ -215,9 +222,12 @@
     async function refreshStatus() {
       const r = await send({ type: 'tt-status' });
       if (!r) return;
-      if (r.connected && Date.now() < (r.pausedUntil || 0)) status('wait', 'пауза');
-      else if (r.connected) status('on', 'подключено');
-      else status('off', 'не подключено');
+      const paused = r.connected && Date.now() < (r.pausedUntil || 0);
+      if (paused) status('wait', 'пауза');
+      else if (r.connected) status('on', 'работает');
+      else status('off', 'войдите в аккаунт');
+      // Бегущая лента горит, когда «работает» (подключено и не на паузе).
+      if (els.wire) els.wire.classList.toggle('on', !!r.connected && !paused);
       // Первый раз, как только подключились, — молча снимаем вёрстку Flow (авто-разведка).
       if (r.connected && !reconSent) { reconSent = true; setTimeout(() => runRecon(true), 1500); }
     }
