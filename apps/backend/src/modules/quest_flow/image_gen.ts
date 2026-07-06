@@ -85,16 +85,34 @@ export function isTransientGenError(err: any): boolean {
 
 /** Ретрай транзиентных ошибок. Спайки «high demand» живут секунды–десятки секунд, поэтому бэкофф
  *  растёт экспоненциально (≈1.8с→3.6с→7.2с→14.4с + джиттер, суммарно ~30с) — старые 0.9с/1.8с
- *  сгорали за 3 секунды внутри одного спайка и ошибка уходила пользователю. */
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5): Promise<T> {
+ *  сгорали за 3 секунды внутри одного спайка и ошибка уходила пользователю.
+ *
+ *  ЖЁСТКИЙ ТАЙМАУТ попытки (90с) обязателен: generateContent иногда ВИСНЕТ на сетевом уровне
+ *  без ответа — дефолтные таймауты undici (300с) × 5 попыток давали 25+ минут молчания
+ *  (прогон юзера 06.07: вырезка «зависла» на 16+ мин без единой ошибки в логах). Таймаут
+ *  считается транзиентным (свежее соединение обычно живое) + общий бюджет вызова 4 мин. */
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5, attemptTimeoutMs = 90_000, totalBudgetMs = 240_000): Promise<T> {
+  const started = Date.now();
   let lastErr: any;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await fn();
-    } catch (err) {
+      const attemptPromise = fn();
+      attemptPromise.catch(() => { /* поздний reject после гонки таймаута — не unhandled */ });
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          attemptPromise,
+          new Promise<never>((_, rej) => {
+            timer = setTimeout(() => rej(new Error(`ETIMEDOUT: Gemini не ответил за ${Math.round(attemptTimeoutMs / 1000)}с`)), attemptTimeoutMs);
+          }),
+        ]);
+      } finally { clearTimeout(timer); }
+    } catch (err: any) {
       lastErr = err;
-      if (attempt < maxAttempts && isTransientGenError(err)) {
+      const spent = Date.now() - started;
+      if (attempt < maxAttempts && spent < totalBudgetMs && isTransientGenError(err)) {
         const delay = Math.min(15_000, 1800 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 1000);
+        console.warn(`[image_gen] попытка ${attempt}/${maxAttempts} не удалась (${String(err?.message || err).slice(0, 120)}) — ретрай через ${Math.round(delay / 1000)}с`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }

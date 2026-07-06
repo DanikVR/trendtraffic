@@ -732,7 +732,7 @@ router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
 /** Рамка ведущего на общем фото (доли кадра 0..1) — задаёт, КОГО именно вырезать. */
 interface FaceBox { x: number; y: number; w: number; h: number }
 
-async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B', box?: FaceBox | null, strict = false): Promise<{ url: string; path: string }> {
+async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B', box?: FaceBox | null, strict = false, model: string = PODCAST_ANGLE_MODEL): Promise<{ url: string; path: string }> {
   const img = await fetchImageBase64(groupUrlAbs);
   if (!img) throw new Error('не удалось загрузить общее фото студии');
   const sideHint = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
@@ -743,7 +743,7 @@ async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' 
       + `по вертикали от ${pct(box.y)} до ${pct(box.y + box.h)} высоты (ориентир: ${sideHint})`
     : sideHint;
   const gen = await generateImage({
-    apiKey, model: PODCAST_ANGLE_MODEL,
+    apiKey, model,
     prompt: `Оставь на изображении РОВНО ОДНОГО человека — того, что ${where}. `
       + 'На фото есть и ДРУГИЕ люди — убери их ВСЕХ ПОЛНОСТЬЮ, до единого. Ни одного другого человека, '
       + 'ни его части (лицо, рука, плечо, силуэт, тень, даже частично на краю кадра) остаться НЕ должно — '
@@ -1429,15 +1429,25 @@ async function runGpuStudioJob(jobId: string, tenantId: string, params: GpuStudi
             return null;
           };
           // Джоб фоновый (минуты GPU впереди) → транзиентный сбой Gemini (503 «high demand» /
-          // сетевой обрыв) не роняем сразу: поверх внутреннего ретрая generateImage (~30с) ждём
-          // спайк подольше (20с/40с) и пробуем ещё. Нетранзиентные ошибки летят сразу.
+          // сетевой обрыв) не роняем сразу: поверх внутреннего ретрая generateImage ждём спайк
+          // с растущими паузами (спайк 06.07 длился 25+ минут). Нетранзиентные ошибки — сразу.
+          // Если pro-image так и не ожила — последняя попытка лёгкой моделью: она хуже держит
+          // личность, но валидация вырезки ниже (зелёный фон/плотность/второй человек) защищает
+          // от плохого результата — лучше шанс, чем гарантированный отказ.
           let cut: { url: string; path: string } | null = null;
-          for (let att = 1; !cut; att++) {
+          let cutErr: any = null;
+          for (let att = 1; att <= 5 && !cut; att++) {
             try { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false); }
             catch (e) {
-              if (att < 3 && isTransientGenError(e)) { await new Promise((r) => setTimeout(r, 20_000 * att)); continue; }
-              throw e;
+              cutErr = e;
+              if (!isTransientGenError(e)) throw e;
+              if (att < 5) await new Promise((r) => setTimeout(r, Math.min(120_000, 20_000 * att)));
             }
+          }
+          if (!cut) {
+            console.warn(`[gpu-studio] pro-image не ожила за 5 попыток — пробую lite-модель для вырезки ${spk}`);
+            try { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false, NANO_LITE_MODEL); }
+            catch { throw cutErr; }
           }
           let problem = await cutProblem(cut);
           if (problem) { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, true); problem = await cutProblem(cut); if (problem) throw new Error(`вырезка ведущего ${spk}: ${problem}`); }
