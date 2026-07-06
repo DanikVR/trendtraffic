@@ -557,6 +557,11 @@ router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) 
     if (!base && voiceSource !== 'heygen') {
       return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен на сервере — HeyGen не сможет скачать аудио-дорожку. Обратитесь к администратору.' });
     }
+    // Фото реально доступно? (файл могли удалить из Галереи — удаление стирает и файл с диска)
+    if (!(await fetchImageBase64(abs(groupPhotoUrl)))) {
+      console.warn('[heygen-studio] общее фото студии недоступно:', abs(groupPhotoUrl));
+      return res.status(400).json({ error: 'Общее фото студии недоступно — файл, похоже, удалён из Галереи. Откройте «Студию лиц» и выберите или загрузите фото заново.' });
+    }
     const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
     const rawTextFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
     const textFor = (spk: 'A' | 'B') => rawTextFor(spk).slice(0, 1500);
@@ -1019,6 +1024,13 @@ router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => 
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — GPU-воркер не скачает фото/аудио. Обратитесь к администратору.' });
     const abs = (u: string) => /^https?:\/\//i.test(u) ? u : base + (u.startsWith('/') ? u : '/' + u);
+    // Фото реально доступно? Частый кейс: файл удалили из Галереи (удаление стирает и файл с
+    // диска), а сценарий ссылается на мёртвый URL — раньше это всплывало через минуту ошибкой
+    // «не удалось загрузить» в карточках голов. Падаем СРАЗУ и с понятной причиной.
+    if (!(await fetchImageBase64(abs(groupPhotoUrl)))) {
+      console.warn('[gpu-studio] общее фото студии недоступно:', abs(groupPhotoUrl));
+      return res.status(400).json({ error: 'Общее фото студии недоступно — файл, похоже, удалён из Галереи. Откройте «Студию лиц» и выберите или загрузите фото заново.' });
+    }
     let elevenKey: string | null = null;
     if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs или выберите «Из записи».' }); }
     if (voiceSource === 'record' && !spec.recordingUrl) return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись (Разобрать запись).' });

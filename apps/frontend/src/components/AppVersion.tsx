@@ -1614,7 +1614,14 @@
  *         текст), панель Hotebook шире (680px). (3) Имя файла-источника в NotebookLM —
  *         оригинальное (title в add_file), а не «up-{uuid}-…»: воркер add_source_file(title=),
  *         бэкенд шлёт original_name. MontageEditor.tsx, notebooklm/router.ts, worker main.py. */
-export const APP_VERSION = '1.6.95';
+/* 1.6.96 — честная ошибка «фото студии удалено» ДО запуска GPU/HeyGen-студии. Прогон юзера:
+ *         обе головы упали «не удалось загрузить общее фото студии» — в nginx-логе self-fetch
+ *         бил 404 в /uploads/reference/med-…png: файл был УДАЛЁН ИЗ ГАЛЕРЕИ (удаление стирает
+ *         и файл с диска), а сценарий ссылался на мёртвый URL. Теперь оба роута (gpu-studio,
+ *         heygen-studio) проверяют доступность фото ДО старта джоба и сразу отвечают 400
+ *         «файл, похоже, удалён из Галереи — выберите фото заново в „Студии лиц“» + warn с URL
+ *         в лог. render/router.ts. */
+export const APP_VERSION = '1.6.96';
 
 export function AppVersion() {
   return (
