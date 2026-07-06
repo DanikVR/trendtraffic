@@ -818,3 +818,114 @@ export async function composeUgc(opts: {
   }
   return `/uploads/renders/${out}`;
 }
+
+// ── UGC-удержание: склейка сегментов (техники показа) в один ролик 1080×1920 ──
+export interface RetComposeSeg {
+  dur: number;
+  layout: 'split' | 'closeup' | 'broll' | 'pip';
+  placement: 'top' | 'bottom';          // куда аватар в split
+  avatarPath: string | null;            // HeyGen mp4 (непрозрачный) для лицевых сегментов; null → broll
+}
+
+/**
+ * Собрать ролик удержания: каждый сегмент рендерится своей техникой (crux — единый непрерывный
+ * звук поверх всего). Аватар HeyGen синхронен сам; каждый сегмент режется РОВНО в свою длину
+ * (tpad клонирует последний кадр, если видео короче), поэтому склейка не уплывает от голоса.
+ * Порядок сегментов = порядок таймлайна; их суммарная длина = длине голоса.
+ */
+export async function composeRetentionVideo(opts: {
+  segments: RetComposeSeg[];
+  brollPath?: string | null;
+  voicePath: string;
+  clipFit: 'cover' | 'contain';
+  musicPath?: string | null; musicVolumePct?: number;
+  captions: UgcCaption[];
+  capStyle: 'none' | 'word' | 'karaoke' | 'plain';
+  capPos: 'bottom' | 'center' | 'top';
+}): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const W = 1080, H = 1920, hp = H / 2;
+  const D = await probeDuration(opts.voicePath);
+  if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  if (!opts.segments.length) throw new Error('Нет сегментов для склейки.');
+  const broll = opts.brollPath || null;
+  const cover = (w: number, h: number) => `scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},setsar=1`;
+  const fitClip = (w: number, h: number) => opts.clipFit === 'contain'
+    ? `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=0x0d0f16,setsar=1`
+    : cover(w, h);
+
+  const work = fs.mkdtempSync(path.join(RENDERS_DIR, 'ret-'));
+  try {
+    const clips: string[] = [];
+    for (let i = 0; i < opts.segments.length; i++) {
+      const s = opts.segments[i];
+      const Ds = Math.max(0.3, s.dur).toFixed(2);
+      const clip = path.join(work, `s${String(i).padStart(3, '0')}.mp4`);
+      const enc = ['-an', '-t', Ds, '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', clip];
+      const freeze = `tpad=stop_mode=clone:stop_duration=${Ds}`; // добить длину клоном последнего кадра
+
+      if (s.layout === 'broll' || !s.avatarPath) {
+        if (broll) await ffmpeg(['-y', '-stream_loop', '-1', '-t', Ds, '-i', broll, '-vf', `${fitClip(W, H)},fps=30`, ...enc], 300_000);
+        else await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
+      } else if (s.layout === 'closeup') {
+        await ffmpeg(['-y', '-i', s.avatarPath, '-vf', `${cover(W, H)},fps=30,${freeze}`, ...enc], 300_000);
+      } else if (s.layout === 'split') {
+        const ins = ['-i', s.avatarPath];
+        if (broll) ins.push('-stream_loop', '-1', '-t', Ds, '-i', broll);
+        const avf = `[0:v]${cover(W, hp)},fps=30,${freeze}[a]`;
+        const clf = broll ? `[1:v]${fitClip(W, hp)},fps=30[c]` : `color=0x161a24:s=${W}x${hp}:r=30:d=${Ds}[c]`;
+        const stack = s.placement === 'bottom' ? `[c][a]vstack=inputs=2[v]` : `[a][c]vstack=inputs=2[v]`;
+        await ffmpeg(['-y', ...ins, '-filter_complex', `${avf};${clf};${stack}`, '-map', '[v]', ...enc], 300_000);
+      } else { // pip
+        const ins: string[] = [];
+        let bg: string;
+        if (broll) { ins.push('-stream_loop', '-1', '-t', Ds, '-i', broll); bg = `[0:v]${fitClip(W, H)},fps=30[bg]`; }
+        else bg = `color=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`;
+        ins.push('-i', s.avatarPath);
+        const avIdx = broll ? 1 : 0;
+        const pv = `[${avIdx}:v]${cover(360, 640)},fps=30,${freeze}[pv]`;
+        await ffmpeg(['-y', ...ins, '-filter_complex', `${bg};${pv};[bg][pv]overlay=W-w-32:H-h-48[v]`, '-map', '[v]', ...enc], 300_000);
+      }
+      clips.push(clip);
+    }
+
+    // склейка сегментов (одинаковые параметры → concat demuxer, re-encode для надёжности)
+    const listFile = path.join(work, 'list.txt');
+    fs.writeFileSync(listFile, clips.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
+    const visual = path.join(work, 'visual.mp4');
+    await ffmpeg(['-y', '-f', 'concat', '-safe', '0', '-i', listFile,
+      '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-r', '30', visual],
+    Math.max(600_000, Math.round(D * 6000) + 120_000));
+
+    // титры на всю длину + непрерывный голос (+ музыка)
+    let assPath: string | null = null;
+    if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
+      assPath = path.join(RENDERS_DIR, `ret-${randomUUID().slice(0, 8)}.ass`);
+      fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+    }
+    const inputs = ['-i', visual, '-i', opts.voicePath];
+    let musicIdx = -1;
+    if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', (D + 0.2).toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
+    let fc = ''; let vTag = '0:v'; let aTag = '1:a';
+    if (assPath) { fc += `[0:v]subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
+    if (musicIdx >= 0) {
+      const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
+      fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)}[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
+      aTag = '[aa]';
+    }
+    const out = `ugc-ret-${randomUUID().slice(0, 8)}.mp4`;
+    const outPath = path.join(RENDERS_DIR, out);
+    const args = ['-y', ...inputs];
+    if (fc) args.push('-filter_complex', fc);
+    args.push('-map', vTag, '-map', aTag, '-t', D.toFixed(2),
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k', outPath);
+    try {
+      await ffmpeg(args, Math.max(600_000, Math.round(D * 9000) + 180_000));
+    } finally {
+      if (assPath) { try { fs.unlinkSync(assPath); } catch { /* */ } }
+    }
+    return `/uploads/renders/${out}`;
+  } finally {
+    try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* */ }
+  }
+}
