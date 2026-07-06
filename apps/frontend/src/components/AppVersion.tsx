@@ -1775,7 +1775,16 @@
  *         подтверждение (ConfirmModal, danger) → стирает аудио ВМЕСТЕ с таймлайном, всеми
  *         репликами и собранным роликом (audioUrl/audioName/lines/resultUrl/buildJobId=∅).
  *         Кнопка заблокирована во время разбора/сборки (commBusy). CommentatorPanel.tsx. */
-export const APP_VERSION = '1.6.116';
+/* 1.6.117 — Google Flow, двусторонний обмен (расширение v0.2.0). В панели расширения ПРЯМО на
+ *         живом Flow: «⬆ В галерею» (готовый клип Flow → Галерея folder='flow') и «⬇ Из Галереи»
+ *         (видео Галереи → залить в Flow на переработку/video-to-video; байты качает background в
+ *         обход CORS, File → input[type=file] Flow). Плюс АВТО-РАЗВЕДКА: расширение само снимает
+ *         вёрстку Flow (поля/кнопки/upload/video/эндпоинты) → POST /recon (по 1 записи на тенант),
+ *         селекторы больше не присылать руками. Бэкенд: /gallery, /ingest-manual, POST+GET /recon
+ *         (flow-ext/router.ts). Расширение: background (handlers gallery-list/manual-ingest/
+ *         fetch-bytes/send-recon), content-flow (кнопки+пикер+эвристики upload+recon), manifest
+ *         0.1.0→0.2.0, пересобран public/flow-extension.zip. FlowExtPanel.tsx — подсказка. */
+export const APP_VERSION = '1.6.117';
 
 export function AppVersion() {
   return (

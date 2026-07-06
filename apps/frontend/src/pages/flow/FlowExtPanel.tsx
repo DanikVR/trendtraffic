@@ -132,7 +132,7 @@ export default function FlowExtPanel({
         ))}
       </div>
       {mode === 'commentator' ? <CommentatorPanel token={token} flowId={flowId} state={commState} onChange={onCommChange} onBuild={onCommBuild} onDiarize={onCommDiarize} commBusy={commBusy} /> : (<>
-      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает готовые клипы в Галерею → вкладка «Google Flow».</p>
+      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает готовые клипы в Галерею → вкладка «Google Flow». В панели расширения прямо на Flow — кнопки <b>«⬆ В галерею»</b> и <b>«⬇ Из Галереи»</b> для двустороннего обмена видео (v0.2.0 — обновите расширение).</p>
 
       {/* 1. Расширение */}
       <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>

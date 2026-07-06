@@ -29,7 +29,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import pool from '../../db/index.js';
-import { createAsset } from '../media/assets.js';
+import { createAsset, listAssets } from '../media/assets.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 
 /** Папка Галереи для готовых клипов Flow (вкладка «Google Flow»). */
@@ -95,6 +95,15 @@ async function ensureTables(): Promise<void> {
       updated_at TIMESTAMPTZ DEFAULT now()
     )`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_flow_tasks_tenant ON flow_ext_tasks(tenant_id, status, created_at DESC)`);
+  // Авто-разведка вёрстки живого Flow: расширение шлёт снимок (textarea/кнопки/file-input/
+  // video/эндпоинты) — по одной последней записи на тенант. Помогает подстроить селекторы.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flow_ext_recon (
+      tenant_id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      url TEXT,
+      updated_at TIMESTAMPTZ DEFAULT now()
+    )`);
 }
 ensureTables().catch((e) => console.warn('[flow-ext] init таблиц:', (e as Error).message));
 
@@ -128,6 +137,25 @@ function saveDataUrl(dataUrl: string): { fileUrl: string; filePath: string; size
   fs.writeFileSync(filePath, buf);
   return { fileUrl: `/uploads/source-videos/${name}`, filePath, size: buf.length, mime };
 }
+
+/** Сохранить входящее видео (прямая CDN-ссылка ИЛИ base64 dataUrl) на диск. Общий код /ingest и /ingest-manual. */
+async function storeIncomingVideo(sourceUrl: string, dataUrl: string): Promise<{ fileUrl: string; filePath: string; size: number; mime: string }> {
+  if (sourceUrl && /^https?:/.test(sourceUrl)) {
+    const s = await downloadVideoToDisk([sourceUrl], { referer: FLOW_REFERER });
+    return { fileUrl: s.mediaUrl, filePath: s.filePath, size: s.size, mime: s.mime };
+  }
+  if (dataUrl.startsWith('data:')) return saveDataUrl(dataUrl);
+  throw new Error('нет sourceUrl/dataUrl');
+}
+
+/** Абсолютная база сервиса (расширение качает байты из background — нужен полный URL). */
+function absBase(req: AuthedRequest): string {
+  const env = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+  if (env) return env;
+  const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0] || req.protocol || 'https';
+  return `${proto}://${req.get('host')}`;
+}
+const absUrl = (base: string, u?: string): string => (u && !/^https?:\/\//i.test(u) ? base + (u.startsWith('/') ? u : '/' + u) : (u || ''));
 
 // ── Роутер ──────────────────────────────────────────────────────────────────
 const router = Router();
@@ -224,15 +252,7 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
   const task = t.rows[0];
 
   try {
-    let stored: { fileUrl: string; filePath: string; size: number; mime: string };
-    if (sourceUrl && /^https?:/.test(sourceUrl)) {
-      const s = await downloadVideoToDisk([sourceUrl], { referer: FLOW_REFERER });
-      stored = { fileUrl: s.mediaUrl, filePath: s.filePath, size: s.size, mime: s.mime };
-    } else if (dataUrl.startsWith('data:')) {
-      stored = saveDataUrl(dataUrl);
-    } else {
-      return res.status(400).json({ error: 'нет sourceUrl/dataUrl' });
-    }
+    const stored = await storeIncomingVideo(sourceUrl, dataUrl);
 
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video',
@@ -265,6 +285,74 @@ router.get('/list', async (req: AuthedRequest, res: Response) => {
 router.post('/clear', async (req: AuthedRequest, res: Response) => {
   await pool.query(`DELETE FROM flow_ext_tasks WHERE tenant_id=$1 AND status IN ('done','failed')`, [req.tenantId]);
   res.json({ ok: true });
+});
+
+/**
+ * Расширение (кнопка «Из Галереи» в живом Flow): список ВИДЕО тенанта для заливки в Flow
+ * на переработку. Абсолютные URL — расширение качает байты из background (обход CORS страницы).
+ */
+router.get('/gallery', async (req: AuthedRequest, res: Response) => {
+  try {
+    const base = absBase(req);
+    const all = await listAssets(req.tenantId!, 'reference');
+    const items = all
+      .filter((a) => String(a.mediaType || '').startsWith('video') || /\.(mp4|webm|mov|m4v|mkv)(\?|#|$)/i.test(a.fileUrl || ''))
+      .slice(0, 120)
+      .map((a) => ({ id: a.id, title: a.originalName || 'видео', fileUrl: absUrl(base, a.fileUrl), folder: a.folder || null }));
+    res.json({ items });
+  } catch (e: any) {
+    res.status(500).json({ error: String(e?.message || e) });
+  }
+});
+
+/**
+ * Расширение (кнопка «В галерею» в живом Flow): произвольный клип, собранный человеком прямо
+ * в Flow (не из очереди), → Галерея folder='flow'. Без taskId. body: { sourceUrl?|dataUrl?, title? }.
+ */
+router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
+  const sourceUrl = req.body?.sourceUrl ? String(req.body.sourceUrl) : '';
+  const dataUrl = req.body?.dataUrl ? String(req.body.dataUrl) : '';
+  const title = req.body?.title ? String(req.body.title).slice(0, 120) : 'Flow';
+  if (!sourceUrl && !dataUrl) return res.status(400).json({ error: 'нет sourceUrl/dataUrl' });
+  try {
+    const stored = await storeIncomingVideo(sourceUrl, dataUrl);
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'reference', mediaType: 'video',
+      originalName: (title || 'Flow').slice(0, 116) + '.mp4',
+      fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
+      folder: FLOW_FOLDER,
+    });
+    res.json({ ok: true, assetId: asset?.id || null, fileUrl: stored.fileUrl });
+  } catch (e: any) {
+    res.status(502).json({ error: 'не удалось сохранить видео: ' + (e?.message || e) });
+  }
+});
+
+/**
+ * Авто-разведка: расширение шлёт снимок вёрстки живого Flow (кандидаты поля промпта, кнопки
+ * генерации, input[type=file] для заливки, video-результата + виденные эндпоинты). По одной
+ * последней записи на тенант — чтобы подстроить селекторы под текущий Flow, не прося HTML руками.
+ */
+router.post('/recon', async (req: AuthedRequest, res: Response) => {
+  const data = req.body?.data;
+  if (!data || typeof data !== 'object') return res.status(400).json({ error: 'нет data' });
+  const url = req.body?.url ? String(req.body.url).slice(0, 500) : null;
+  try {
+    await pool.query(
+      `INSERT INTO flow_ext_recon (tenant_id, data, url, updated_at) VALUES ($1,$2,$3,now())
+       ON CONFLICT (tenant_id) DO UPDATE SET data=EXCLUDED.data, url=EXCLUDED.url, updated_at=now()`,
+      [req.tenantId, JSON.stringify(data), url]
+    );
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }); }
+});
+
+/** Последний снимок разведки тенанта (для отладки селекторов). */
+router.get('/recon', async (req: AuthedRequest, res: Response) => {
+  const r = await pool.query(`SELECT data, url, updated_at FROM flow_ext_recon WHERE tenant_id=$1`, [req.tenantId]);
+  if (!r.rowCount) return res.json({ recon: null });
+  const row = r.rows[0];
+  res.json({ recon: { data: row.data, url: row.url, updatedAt: row.updated_at } });
 });
 
 export const INGEST_LIMIT = INGEST_JSON_LIMIT;

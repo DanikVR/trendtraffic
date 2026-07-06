@@ -34,6 +34,10 @@
     generateBtnText: ['generate', 'создать', 'сгенерировать', 'создать видео'],
     resultVideo: ['video[src]', 'video source[src]'],
     throttleBanner: ['unusual activity', 'необычн', 'подтвердите', 'suspicious'],
+    // Поле загрузки видео/фото в Flow (для «Из Галереи»). file-input часто скрыт — по visible НЕ фильтруем.
+    uploadInput: ['input[type="file"][accept*="video" i]', 'input[type="file"][accept*="image" i]', 'input[type="file"]'],
+    // Тексты кнопки «добавить медиа/загрузить/ингредиент/кадр», по которой раскрывается file-input.
+    addMediaText: ['upload', 'загруз', 'добав', 'add media', 'media', 'изображ', 'референс', 'reference', 'frames', 'ingredient', 'ингредиент', 'кадр'],
   };
   const RESULT_POLL_MS = 4000;
   const RESULT_MAX_MS = 7 * 60_000;
@@ -41,6 +45,7 @@
   const log = (...a) => console.log('[tt-flow]', ...a);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const send = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(); } };
+  const reconApis = []; // последние виденные эндпоинты Flow (для авто-разведки)
 
   // ---------- 1. инжект MAIN-world перехватчика ----------
   function injectInterceptor() {
@@ -56,12 +61,16 @@
     const d = ev.data;
     if (!d || d.source !== 'tt-flow-injected') return;
     if (d.kind === 'bearer') send({ type: 'bearer', token: d.token });
-    else if (d.kind === 'api') { send({ type: 'api-recon', data: d }); ui.recon(d); }
+    else if (d.kind === 'api') {
+      reconApis.push({ url: String(d.url || '').slice(0, 160), method: d.method, status: d.status });
+      if (reconApis.length > 60) reconApis.shift();
+      send({ type: 'api-recon', data: d }); ui.recon(d);
+    }
   });
 
   // ---------- 2. панель (Shadow DOM) ----------
   const ui = (() => {
-    let root, els = {}, reconCount = 0;
+    let root, els = {}, reconCount = 0, reconSent = false;
     function mount() {
       const host = document.createElement('div');
       host.id = 'tt-flow-host';
@@ -92,7 +101,17 @@
             border:1px solid #2A303B;background:#222836;color:#EAECEF;cursor:pointer}
           button:hover{background:#2A303B} button.pri{background:#4F46E5;border-color:#4F46E5}
           button.pri:hover{background:#4038c7}
-          .mini{font-size:10px;color:#6B7280;text-align:center}
+          .mini{font-size:10px;color:#6B7280}
+          .pick{max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:5px;
+            border:1px solid #2A303B;border-radius:8px;padding:6px;background:#0F131A}
+          .pick .it{padding:6px 7px;border-radius:6px;background:#1B2029;cursor:pointer;
+            font-size:11px;color:#C6CCD5;word-break:break-word}
+          .pick .it:hover{background:#242B37}
+          .pick .ph{font-size:10.5px;color:#8A919C;text-align:center;padding:8px}
+          .foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+          .rec{flex:0 0 auto;width:auto;font-size:10px;color:#8A919C;background:none;
+            border:none;cursor:pointer;text-decoration:underline;padding:0}
+          .rec:hover{color:#C6CCD5;background:none}
           .hide{display:none}
         </style>
         <div class="card">
@@ -108,7 +127,15 @@
               <button id="pause">Пауза</button>
               <button class="pri" id="open">Открыть TrendTraffic</button>
             </div>
-            <div class="mini" id="reconc">разведка: 0 запросов Flow</div>
+            <div class="btns">
+              <button id="toGal" title="Отправить готовый клип из Flow в Галерею TrendTraffic">⬆ В галерею</button>
+              <button id="fromGal" title="Взять видео из Галереи и залить в Flow на переработку">⬇ Из Галереи</button>
+            </div>
+            <div class="pick hide" id="pick"></div>
+            <div class="foot">
+              <span class="mini" id="reconc">разведка: 0 запросов Flow</span>
+              <button class="rec" id="recBtn" title="Снять текущую вёрстку Flow и прислать нам (для подстройки)">разведка вёрстки</button>
+            </div>
           </div>
         </div>`;
       document.documentElement.appendChild(host);
@@ -116,12 +143,15 @@
         st: sh.getElementById('st'), task: sh.getElementById('task'), lg: sh.getElementById('lg'),
         ver: sh.getElementById('ver'), pause: sh.getElementById('pause'),
         open: sh.getElementById('open'), bd: sh.getElementById('bd'),
-        hd: sh.getElementById('hd'), reconc: sh.getElementById('reconc'),
+        hd: sh.getElementById('hd'), reconc: sh.getElementById('reconc'), pick: sh.getElementById('pick'),
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       makeDraggable(host, els.hd, () => els.bd.classList.toggle('hide'));
       els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro', '_blank'));
       els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line('Пауза включена вручную')));
+      sh.getElementById('toGal').addEventListener('click', () => sendToGallery());
+      sh.getElementById('fromGal').addEventListener('click', () => openGalleryPicker());
+      sh.getElementById('recBtn').addEventListener('click', () => runRecon(false));
       refreshStatus();
       setInterval(refreshStatus, 5000);
       root = sh;
@@ -188,8 +218,25 @@
       if (r.connected && Date.now() < (r.pausedUntil || 0)) status('wait', 'пауза');
       else if (r.connected) status('on', 'подключено');
       else status('off', 'не подключено');
+      // Первый раз, как только подключились, — молча снимаем вёрстку Flow (авто-разведка).
+      if (r.connected && !reconSent) { reconSent = true; setTimeout(() => runRecon(true), 1500); }
     }
-    return { mount, line, status, task, recon };
+    // Список видео Галереи внутри панели (пикер «Из Галереи»).
+    function showPicker(placeholder, items) {
+      if (!els.pick) return;
+      els.pick.classList.remove('hide');
+      els.pick.innerHTML = '';
+      if (placeholder) { const p = document.createElement('div'); p.className = 'ph'; p.textContent = placeholder; els.pick.appendChild(p); }
+      for (const it of (items || [])) {
+        const row = document.createElement('div'); row.className = 'it';
+        row.textContent = '🎬 ' + (it.title || 'видео') + (it.folder ? '  ·  ' + it.folder : '');
+        row.title = it.fileUrl || '';
+        row.addEventListener('click', () => pickGalleryItem(it));
+        els.pick.appendChild(row);
+      }
+    }
+    function hidePicker() { if (els.pick) { els.pick.classList.add('hide'); els.pick.innerHTML = ''; } }
+    return { mount, line, status, task, recon, showPicker, hidePicker };
   })();
 
   // ---------- 3. автоматизация генерации ----------
@@ -265,8 +312,19 @@
     if (!okPrompt) { ui.line('⚠ поле промпта не найдено — нужна разведка селекторов'); return { ok: false, reason: 'selector:promptInput' }; }
     ui.line('промпт подставлен');
 
-    // Референсы/кадры/формат — следующий этап (нужен живой DOM Flow для их полей).
-    if (task.references && task.references.length) ui.line(`референсов ${task.references.length} — загрузка на следующем этапе`);
+    // Референсы из Галереи → заливаем в Flow (video-to-video / кадры) ДО генерации. Best-effort.
+    if (task.references && task.references.length) {
+      for (const url of task.references.slice(0, 4)) {
+        try {
+          const b = await send({ type: 'fetch-bytes', url });
+          if (b && b.ok) {
+            const up = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'ref' + guessExt(b.mime)));
+            ui.line(up.ok ? 'референс залит в Flow' : ('референс: поле загрузки не найдено'));
+            await sleep(700);
+          } else { ui.line('референс не скачался' + (b && b.error ? ': ' + b.error : '')); }
+        } catch { /* референс best-effort */ }
+      }
+    }
 
     await sleep(600);
     const btn = findGenerateButton();
@@ -279,6 +337,114 @@
     if (r.timeout) { ui.line('⌛ таймаут ожидания клипа'); return { ok: false, reason: 'timeout' }; }
     ui.line('✓ клип готов');
     return { ok: true, sourceUrl: r.sourceUrl || null, dataUrl: r.dataUrl || null, meta: { title: task.title || null } };
+  }
+
+  // ---------- 4. двусторонняя связь Flow ↔ Галерея ----------
+  function blobToDataUrl(blob) {
+    return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('read')); fr.readAsDataURL(blob); });
+  }
+  // Лучший видео-результат в Flow: видимый, с src, самый крупный по площади (обычно активный клип).
+  function findResultVideo() {
+    const vids = [...document.querySelectorAll('video')].filter(visible).filter((v) => (v.currentSrc || v.src || (v.querySelector('source') || {}).src));
+    if (!vids.length) return null;
+    vids.sort((a, b) => (b.clientWidth * b.clientHeight) - (a.clientWidth * a.clientHeight));
+    return vids[0];
+  }
+  async function grabVideoData(v) {
+    const src = v.currentSrc || v.src || (v.querySelector('source') || {}).src || '';
+    if (src && !src.startsWith('blob:')) return { sourceUrl: src };
+    if (src && src.startsWith('blob:')) {
+      try { return { dataUrl: await blobToDataUrl(await (await fetch(src)).blob()) }; }
+      catch { return { sourceUrl: src }; }
+    }
+    return {};
+  }
+  // «В галерею»: забрать текущий клип из Flow → наша Галерея (folder='flow').
+  async function sendToGallery() {
+    const v = findResultVideo();
+    if (!v) { ui.line('⚠ клип в Flow не найден — открой готовое видео и повтори'); return; }
+    ui.line('забираю клип из Flow…');
+    const data = await grabVideoData(v);
+    if (!data.sourceUrl && !data.dataUrl) { ui.line('⚠ не удалось прочитать видео'); return; }
+    const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
+    if (r && r.ok) ui.line('✓ отправлено в Галерею → вкладка «Google Flow»');
+    else ui.line('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить» в TrendTraffic'));
+  }
+  // Поле загрузки Flow (часто скрыто — по visible НЕ фильтруем); при отсутствии кликаем «добавить медиа».
+  function findFileInput() {
+    const inputs = [...document.querySelectorAll('input[type="file"]')];
+    return inputs.find((i) => /video/i.test(i.accept || '')) || inputs.find((i) => !i.accept || /image|video|\*/i.test(i.accept)) || inputs[0] || null;
+  }
+  async function revealFileInput() {
+    let inp = findFileInput();
+    if (inp) return inp;
+    const btns = [...document.querySelectorAll('button,[role="button"],[aria-label]')].filter(visible);
+    const add = btns.find((b) => {
+      const t = ((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || '')).toLowerCase();
+      return SELECTORS.addMediaText.some((k) => t.includes(k));
+    });
+    if (add) { add.click(); await sleep(800); inp = findFileInput(); }
+    return inp;
+  }
+  async function injectFileIntoFlow(file) {
+    const inp = await revealFileInput();
+    if (!inp) return { ok: false, reason: 'upload-input не найден' };
+    try {
+      const dt = new DataTransfer(); dt.items.add(file);
+      inp.files = dt.files;
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+      return { ok: true };
+    } catch (e) { return { ok: false, reason: String(e && e.message || e) }; }
+  }
+  function dataUrlToFile(dataUrl, name) {
+    const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl || '');
+    const mime = m ? m[1] : 'video/mp4';
+    const bin = atob(m ? m[2] : '');
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], name, { type: mime });
+  }
+  const guessExt = (mime) => (/webm/i.test(mime || '') ? '.webm' : /quicktime|mov/i.test(mime || '') ? '.mov' : '.mp4');
+  // «Из Галереи»: список видео → пикер в панели.
+  async function openGalleryPicker() {
+    ui.showPicker('загрузка списка…', []);
+    const r = await send({ type: 'gallery-list' });
+    if (!r || !r.ok) { ui.showPicker('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить»'), []); return; }
+    if (!r.items || !r.items.length) { ui.showPicker('в Галерее нет видео', []); return; }
+    ui.showPicker(null, r.items);
+  }
+  // Выбор видео из Галереи → скачиваем байты в фоне (обход CORS) → File → в поле загрузки Flow.
+  async function pickGalleryItem(item) {
+    ui.hidePicker();
+    ui.line('качаю «' + (item.title || 'видео') + '»…');
+    const b = await send({ type: 'fetch-bytes', url: item.fileUrl });
+    if (!b || !b.ok) { ui.line('⚠ ' + ((b && b.error) || 'ошибка загрузки')); return; }
+    const name = (item.title || 'gallery').replace(/[^\w.-]+/g, '_').slice(0, 60).replace(/\.(mp4|webm|mov)$/i, '') + guessExt(b.mime);
+    const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, name));
+    if (res.ok) ui.line('✓ видео вставлено в Flow — выбери его как исходное/референс и генерируй');
+    else ui.line('⚠ поле загрузки Flow не найдено (' + res.reason + ') — жму «разведка вёрстки»');
+  }
+  // Авто-разведка: снимок вёрстки Flow (кандидаты полей/кнопок/загрузки/видео + эндпоинты) → бэкенд.
+  function collectRecon() {
+    const vis = (el) => { try { return visible(el); } catch { return false; } };
+    const tag = (el) => ({
+      tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 120),
+      ph: (el.getAttribute && el.getAttribute('placeholder')) || '', aria: (el.getAttribute && el.getAttribute('aria-label')) || '',
+      text: (el.textContent || '').trim().slice(0, 40), vis: vis(el),
+    });
+    return {
+      url: location.href, ts: Date.now(),
+      buttons: [...document.querySelectorAll('button,[role="button"]')].slice(0, 140).map(tag),
+      textareas: [...document.querySelectorAll('textarea,[contenteditable="true"]')].slice(0, 30).map(tag),
+      fileInputs: [...document.querySelectorAll('input[type="file"]')].map((i) => ({ accept: i.accept || '', cls: String(i.className || '').slice(0, 90), hidden: !vis(i) })),
+      videos: [...document.querySelectorAll('video')].slice(0, 20).map((v) => ({ src: String(v.currentSrc || v.src || '').slice(0, 120), w: v.clientWidth, h: v.clientHeight, vis: vis(v) })),
+      endpoints: reconApis.slice(-30),
+    };
+  }
+  async function runRecon(silent) {
+    const r = await send({ type: 'send-recon', payload: { data: collectRecon(), url: location.href } });
+    if (!silent) ui.line(r && r.ok ? '✓ разведка вёрстки отправлена' : ('⚠ разведка: ' + ((r && r.error) || 'нет подключения')));
   }
 
   // ---------- команды от background ----------

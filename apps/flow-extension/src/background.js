@@ -193,6 +193,59 @@ async function reportStatus(taskId, status, note) {
   } catch { /* статус — best-effort */ }
 }
 
+// ---------- двусторонняя связь Flow ↔ Галерея (кнопки в панели Flow) ----------
+/** Ручная заливка видео из Flow в Галерею (кнопка «В галерею»). */
+async function manualIngest(payload) {
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  try {
+    const res = await fetch(api('/api/flow-ext/ingest-manual'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ sourceUrl: payload.sourceUrl || null, dataUrl: payload.dataUrl || null, title: payload.title || 'Flow' }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: d.error || ('HTTP ' + res.status) };
+    return { ok: true, fileUrl: d.fileUrl, assetId: d.assetId };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+/** Список видео Галереи для кнопки «Из Галереи». */
+async function galleryList() {
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  try {
+    const res = await fetch(api('/api/flow-ext/gallery'), { headers: authHeaders() });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: d.error || ('HTTP ' + res.status) };
+    return { ok: true, items: Array.isArray(d.items) ? d.items : [] };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+/** Скачать байты видео в КОНТЕКСТЕ РАСШИРЕНИЯ (обход CORS страницы Flow) → dataURL.
+ *  В service worker нет FileReader — кодируем arrayBuffer→base64 чанками через btoa. */
+async function fetchBytes(url) {
+  if (!url) return { ok: false, error: 'нет url' };
+  if (url.startsWith('/') && STATE.apiBase) url = STATE.apiBase.replace(/\/+$/, '') + url; // относительный → абсолютный
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return { ok: false, error: 'HTTP ' + res.status };
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength > 64 * 1024 * 1024) return { ok: false, error: 'видео >64МБ — велико для заливки в Flow' };
+    const bytes = new Uint8Array(buf);
+    let binary = ''; const CH = 0x8000;
+    for (let i = 0; i < bytes.length; i += CH) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+    const mime = res.headers.get('content-type') || 'video/mp4';
+    return { ok: true, dataUrl: `data:${mime};base64,${btoa(binary)}`, mime, size: buf.byteLength };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+/** Снимок разведки вёрстки Flow → бэкенд (авто-recon). */
+async function sendRecon(payload) {
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  try {
+    const res = await fetch(api('/api/flow-ext/recon'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ data: payload.data || {}, url: payload.url || null }),
+    });
+    return { ok: res.ok };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+
 // ---------- разведка эндпоинтов (от injected через content-flow) ----------
 async function saveRecon(entry) {
   const { recon = [] } = await chrome.storage.local.get('recon');
@@ -234,6 +287,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         STATE.pausedUntil = Date.now() + THROTTLE_PAUSE_MS;
         await saveState();
         sendResponse({ ok: true });
+        break;
+      case 'manual-ingest':
+        sendResponse(await manualIngest(msg.payload || {}));
+        break;
+      case 'gallery-list':
+        sendResponse(await galleryList());
+        break;
+      case 'fetch-bytes':
+        sendResponse(await fetchBytes(msg.url));
+        break;
+      case 'send-recon':
+        sendResponse(await sendRecon(msg.payload || {}));
         break;
       default:
         sendResponse({ ok: false, error: 'unknown message' });
