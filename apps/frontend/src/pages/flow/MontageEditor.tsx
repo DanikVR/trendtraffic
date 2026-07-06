@@ -948,7 +948,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [hbTextOpen, setHbTextOpen] = useState(false);
   const [hbSrcText, setHbSrcText] = useState('');
   const [hbPickOpen, setHbPickOpen] = useState(false);              // пикер файла-источника из Галереи
-  const [hbGallery, setHbGallery] = useState<{ id: string; name: string; type: string; cat: EdCat }[]>([]);
+  const [hbGallery, setHbGallery] = useState<{ id: string; name: string; type: string; cat: EdCat; url: string; cover?: string }[]>([]);
+  const [hbPickedIds, setHbPickedIds] = useState<Set<string>>(new Set()); // добавленные из пикера (✓ на превью)
   const [hbGalLoading, setHbGalLoading] = useState(false);
   const [hbPickTab, setHbPickTab] = useState<EdCat>('analyzed');    // вкладка пикера (как в Галерее/Редакторе)
   const [hbPickQuery, setHbPickQuery] = useState('');               // поиск в пикере
@@ -2854,25 +2855,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // Пикер источника = ВСЯ Галерея с вкладками-папками (как её видит юзер): TrendFlow
   // (референс) + Аудио + Из анализа. У «Из анализа» — доп. кнопка «＋ анализ» (описание).
   const hbOpenPick = async () => {
-    setHbPickOpen(true); setHbGalLoading(true); setHbGallery([]); setHbPickQuery('');
+    setHbPickOpen(true); setHbGalLoading(true); setHbGallery([]); setHbPickQuery(''); setHbPickedIds(new Set());
     try {
       const [r, au, an] = await Promise.all([
         fetch('/api/trends/media?kind=reference', { headers: headers() }),
         fetch('/api/trends/media?kind=audio', { headers: headers() }),
         fetch('/api/trends/media?folder=analyzed', { headers: headers() }),
       ]);
-      const out: { id: string; name: string; type: string; cat: EdCat }[] = [];
+      const out: { id: string; name: string; type: string; cat: EdCat; url: string; cover?: string }[] = [];
       const seen = new Set<string>();
-      const push = (id: string, nm: string, type: string, cat: EdCat) => {
+      const push = (id: string, nm: string, type: string, cat: EdCat, url: string, cover?: string) => {
         const k = `${cat}:${id}`;
-        if (id && !seen.has(k)) { seen.add(k); out.push({ id, name: nm, type, cat }); }
+        if (id && !seen.has(k)) { seen.add(k); out.push({ id, name: nm, type, cat, url, cover }); }
       };
       const refs = r.ok ? ((await r.json()).assets || []) : [];
-      for (const m of refs) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'reference');
+      for (const m of refs) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'reference', m.fileUrl, m.coverUrl);
       const auds = au.ok ? ((await au.json()).assets || []) : [];
-      for (const m of auds) if (m.id) push(m.id, m.originalName || 'аудио', m.mediaType || 'audio', 'audio');
+      for (const m of auds) if (m.id) push(m.id, m.originalName || 'аудио', m.mediaType || 'audio', 'audio', m.fileUrl, m.coverUrl);
       const ana = an.ok ? ((await an.json()).assets || []) : [];
-      for (const m of ana) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'analyzed');
+      for (const m of ana) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'analyzed', m.fileUrl, m.coverUrl);
       setHbGallery(out);
       const order: EdCat[] = ['analyzed', 'reference', 'audio'];
       const first = order.find((c) => out.some((x) => x.cat === c));
@@ -2887,7 +2888,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources/asset`, { method: 'POST', headers: headers(), body: JSON.stringify({ assetId, flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json(); if (d.source) setHbSources((s) => [...s, d.source]);
-      setHbPickOpen(false);
+      setHbPickedIds((p) => new Set(p).add(assetId)); // отметить ✓, пикер оставить открытым (можно добавить ещё)
       hbAfterAdd(d.source?.title || 'файл');
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить файл'); }
     finally { setHbSrcBusy(false); }
@@ -2948,7 +2949,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const content = await hbFetchAnalysisText(assetId);
       if (!content) { setHbNote('Для этого файла нет сохранённого анализа.'); return; }
       await hbAddSourceText(`Анализ: ${fileName}`, content);
-      setHbPickOpen(false);
+      setHbPickedIds((p) => new Set(p).add(assetId));
       hbAfterAdd(`Анализ: ${fileName}`);
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить анализ'); }
     finally { setHbSrcBusy(false); }
@@ -2967,7 +2968,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (content) await hbAddSourceText(`Анализ: ${fileName}`, content);
         else noAnalysis = true;
       } catch { noAnalysis = true; }
-      setHbPickOpen(false);
+      setHbPickedIds((p) => new Set(p).add(assetId));
       hbAfterAdd(noAnalysis ? fileName : `${fileName} + анализ`);
       if (noAnalysis) setHbNote('Видео добавлено. Сохранённого анализа у него нет — добавилось только видео.');
     } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить'); }
@@ -5664,33 +5665,54 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 && (!hbPickQuery.trim() || g.name.toLowerCase().includes(hbPickQuery.trim().toLowerCase())));
               if (filtered.length === 0) return <p className="text-[11px] py-6 text-center" style={{ color: 'var(--text-muted)' }}>{hbPickQuery.trim() ? 'Ничего не найдено.' : 'В этой папке пусто.'}</p>;
               return (
-                <div className="space-y-1" style={{ maxHeight: 340, overflowY: 'auto' }}>
-                  <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length}</div>
-                  {filtered.map((g) => (
-                    <div key={`${g.cat}:${g.id}`} className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
-                      style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                      {g.type === 'audio' ? <Music size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'video' ? <Video size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : g.type === 'image' ? <Image size={13} style={{ color: '#22d3ee', flexShrink: 0 }} /> : <FileText size={13} style={{ color: '#22d3ee', flexShrink: 0 }} />}
-                      <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title="Добавить только сам файл источником"
-                        className="text-xs truncate flex-1 text-left disabled:opacity-50" style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{g.name}</button>
-                      {g.cat === 'analyzed' && (
-                        <>
-                          <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title="Добавить видео + его анализ (двумя источниками)"
-                            className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50 inline-flex items-center gap-1"
-                            style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
-                            <Sparkles size={11} /> видео + анализ
-                          </button>
-                          <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить только анализ (текстом)"
-                            className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 disabled:opacity-50"
-                            style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
-                            анализ
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length} · клик по превью — добавить файл</div>
+                  <div className="grid grid-cols-3 gap-2" style={{ maxHeight: 360, overflowY: 'auto' }}>
+                    {filtered.map((g) => (
+                      <div key={`${g.cat}:${g.id}`} className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                        {/* Превью — клик добавляет сам файл источником */}
+                        <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title={`Добавить файл: ${g.name}`}
+                          className="block w-full text-left disabled:opacity-50" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          <div className="relative flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000' }}>
+                            {g.type === 'audio'
+                              ? <Music size={30} style={{ color: '#22d3ee' }} />
+                              : g.type === 'image'
+                                ? <img src={g.url} alt="" className="w-full h-full object-cover" />
+                                : g.type === 'video'
+                                  ? (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)
+                                  : <FileText size={28} style={{ color: '#22d3ee' }} />}
+                            {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
+                            {g.cat === 'analyzed' && <span className="absolute top-1 left-1 text-[8px] font-700 px-1 rounded inline-flex items-center gap-0.5" style={{ background: 'rgba(34,211,238,0.92)', color: '#083344' }}><Sparkles size={9} /> анализ</span>}
+                            {hbPickedIds.has(g.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b981', color: '#fff' }}><Check size={12} /></span>}
+                          </div>
+                          <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }} title={g.name}>{g.name}</div>
+                        </button>
+                        {/* «Из анализа»: добавить видео+анализ или только анализ */}
+                        {g.cat === 'analyzed' && (
+                          <div className="flex gap-1 px-1.5 pb-1.5">
+                            <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title="Добавить видео + его анализ (двумя источниками)"
+                              className="flex-1 text-[9px] font-700 py-1 rounded-md disabled:opacity-50 inline-flex items-center justify-center gap-0.5"
+                              style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
+                              <Sparkles size={9} /> видео+анализ
+                            </button>
+                            <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить только анализ (текстом)"
+                              className="text-[9px] font-700 px-1.5 py-1 rounded-md disabled:opacity-50"
+                              style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
+                              анализ
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
               );
             })()}
+            {/* Пикер не закрывается после добавления — можно добавить несколько; ✓ на добавленных */}
+            <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-medium)' }}>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{hbPickedIds.size > 0 ? `Добавлено: ${hbPickedIds.size}` : 'Можно добавить несколько файлов'}</span>
+              <button onClick={() => setHbPickOpen(false)} className="text-xs font-700 px-4 py-2 rounded-lg" style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>Готово</button>
+            </div>
           </div>
         </div>
       )}
