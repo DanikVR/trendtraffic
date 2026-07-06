@@ -1678,7 +1678,15 @@
  *         (клип/фото/запись/музыка/аватар), Omni старт-кадр, Редактор (клипы). Пикер
  *         источника (пакетная сборка) и Hotebook-источники оставлены как есть. GalleryPicker.tsx
  *         (новый), MontageEditor.tsx. */
-export const APP_VERSION = '1.6.102';
+/* 1.6.103 — SpatialReal-библиотека РАБОТАЕТ + грузится ОДИН РАЗ. Прогон юзера дал parse→0 —
+ *         реальный формат ответа снят с pm2-лога: {"publicAvatars":[{id,name,coverUrl,...}]} —
+ *         парсер выучил publicAvatars/coverUrl. Библиотека глобальная и редко меняется →
+ *         кэш: память + uploads/sr-avatars/library.json (переживает рестарты pm2), TTL 7 дней,
+ *         «повторить» (?force=1) обновляет; превью скачиваются к себе в uploads/sr-avatars/
+ *         (не зависим от их CDN); при недоступности их API отдаём сохранённую копию.
+ *         X-Api-Key напрямую убран (на проде даёт 401 — рабочая схема только
+ *         session-token → Bearer). render/router.ts. */
+export const APP_VERSION = '1.6.103';
 
 export function AppVersion() {
   return (

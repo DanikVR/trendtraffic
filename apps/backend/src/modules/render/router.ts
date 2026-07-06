@@ -9,6 +9,9 @@
  * Все эндпоинты требуют JWT. Изоляция — по tenant_id из токена (как в trends).
  */
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
@@ -360,12 +363,52 @@ router.delete('/ugc/avatars/:id', async (req: AuthedRequest, res: Response) => {
 // ── Публичные аватары SpatialReal (оживление их realtime-движком) ────────────
 // Студия (app.spatialreal.ai/avatars/library) тянет список через
 // GET {console}/v2/console/public-avatars — эндпоинт вытащен из их бандла
-// (list-API в доках нет). Авторизация — по тенантскому ключу SpatialReal:
-// сначала session-token (проверенный /v1/console/session-tokens), затем Bearer;
-// фолбэк — X-Api-Key напрямую. Ответ кэшируем на 30 мин на тенанта.
+// (list-API в доках нет). Реальный формат (снят с прода): {"publicAvatars":
+// [{id,name,description,coverUrl,remark,...}]}. Авторизация — по тенантскому
+// ключу SpatialReal: session-token → Bearer (X-Api-Key напрямую даёт 401).
+// Библиотека ГЛОБАЛЬНАЯ (одна на всех) и меняется у них редко → грузим ОДИН РАЗ:
+// кэш в памяти + файл uploads/sr-avatars/library.json (переживает рестарты pm2),
+// превью скачиваем к себе в uploads/sr-avatars/ (не зависим от их CDN).
+// TTL 7 дней; кнопка «повторить» (?force=1) обновляет принудительно.
 const SR_CONSOLE_HOSTS = ['https://console.us-west.spatialwalk.cloud', 'https://console.ap-northeast.spatialwalk.cloud'];
-const srAvatarsCache = new Map<string, { list: { id: string; name: string; previewUrl: string | null }[]; ts: number }>();
-const SR_CACHE_TTL_MS = 30 * 60_000;
+type SrAvatar = { id: string; name: string; previewUrl: string | null };
+const SR_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../uploads/sr-avatars');
+const SR_LIB_FILE = path.join(SR_DIR, 'library.json');
+const SR_CACHE_TTL_MS = 7 * 24 * 3600_000;
+let srLibCache: { list: SrAvatar[]; ts: number } | null = null;
+
+function srLibLoad(): { list: SrAvatar[]; ts: number } | null {
+  if (srLibCache) return srLibCache;
+  try {
+    const d = JSON.parse(fs.readFileSync(SR_LIB_FILE, 'utf8'));
+    if (Array.isArray(d?.list) && Number.isFinite(d?.ts)) { srLibCache = { list: d.list, ts: d.ts }; return srLibCache; }
+  } catch { /* нет файла — ок */ }
+  return null;
+}
+function srLibSave(list: SrAvatar[]): void {
+  srLibCache = { list, ts: Date.now() };
+  try { fs.mkdirSync(SR_DIR, { recursive: true }); fs.writeFileSync(SR_LIB_FILE, JSON.stringify(srLibCache)); } catch (e: any) { console.warn('[ugc/sr] не смог сохранить library.json:', e?.message); }
+}
+
+/** Скачивает превью аватара к себе (uploads/sr-avatars/<id>.<ext>) → локальный URL; при сбое — исходный. */
+async function srCachePreview(id: string, url: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15_000);
+    const r = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+    if (!r.ok) return url;
+    const ct = r.headers.get('content-type') || '';
+    if (!/image\//i.test(ct)) return url;
+    const ext = /png/i.test(ct) ? 'png' : /webp/i.test(ct) ? 'webp' : 'jpg';
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length < 512) return url;
+    fs.mkdirSync(SR_DIR, { recursive: true });
+    const safe = id.replace(/[^a-z0-9-]/gi, '');
+    fs.writeFileSync(path.join(SR_DIR, `${safe}.${ext}`), buf);
+    return `/uploads/sr-avatars/${safe}.${ext}`;
+  } catch { return url; }
+}
 
 /** ВАЖНО: SpatialReal отвечает HTTP 200 даже на ошибки — реальный статус лежит в body.errors[].status
  *  (JSON:API-конверт). Поэтому status здесь = errors[0].status, если конверт ошибочный. */
@@ -381,9 +424,12 @@ async function srFetchJson(url: string, headers: Record<string, string>, method 
   } finally { clearTimeout(t); }
 }
 
-/** Разбор ответа public-avatars: у SpatialReal поля не задокументированы — берём устойчиво. */
+/** Разбор ответа public-avatars. Реальный формат: {"publicAvatars":[{id,name,coverUrl,...}]}
+ *  (снят с прод-лога [ugc/sr]); остальные ключи оставлены защитно. */
 function srParseAvatars(d: any): { id: string; name: string; previewUrl: string | null }[] {
-  const arr: any[] = Array.isArray(d) ? d
+  const arr: any[] = Array.isArray(d?.publicAvatars) ? d.publicAvatars
+    : Array.isArray(d?.personalAvatars) ? d.personalAvatars
+    : Array.isArray(d) ? d
     : Array.isArray(d?.data) ? d.data
     : Array.isArray(d?.avatars) ? d.avatars
     : Array.isArray(d?.items) ? d.items
@@ -415,16 +461,22 @@ function srParseAvatars(d: any): { id: string; name: string; previewUrl: string 
 /** GET /ugc/avatars/spatialreal — публичная библиотека SpatialReal по тенантскому ключу. */
 router.get('/ugc/avatars/spatialreal', async (req: AuthedRequest, res: Response) => {
   try {
-    const cached = srAvatarsCache.get(req.tenantId!);
-    if (cached && Date.now() - cached.ts < SR_CACHE_TTL_MS && String(req.query.force || '') !== '1') {
+    // Библиотека глобальная: раз загрузили (память или файл) — отдаём сразу, в сеть не ходим.
+    const force = String(req.query.force || '') === '1';
+    const cached = srLibLoad();
+    if (cached && !force && Date.now() - cached.ts < SR_CACHE_TTL_MS) {
       return res.json({ avatars: cached.list, cached: true });
     }
     const apiKey = await getEffectiveProviderKey(req.tenantId!, 'spatialreal');
-    if (!apiKey) return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация (раздел «Платные», SpatialReal) — библиотека аватаров тянется по нему.' });
+    if (!apiKey) {
+      // Ключа у этого тенанта нет, но библиотека могла быть загружена ранее (глобальная) — отдаём её.
+      if (cached) return res.json({ avatars: cached.list, cached: true });
+      return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация (раздел «Платные», SpatialReal) — библиотека аватаров тянется по нему.' });
+    }
     const tried: string[] = [];
     let badKey = false;
     for (const host of SR_CONSOLE_HOSTS) {
-      // 1) session-token → Bearer (рабочая схема из смоук-теста Фазы-0)
+      // session-token → Bearer (X-Api-Key напрямую даёт 401 unauthenticated — проверено на проде)
       try {
         const st = await srFetchJson(`${host}/v1/console/session-tokens`, { 'X-Api-Key': apiKey.trim(), 'Content-Type': 'application/json' }, 'POST',
           JSON.stringify({ expireAt: Math.floor(Date.now() / 1000) + 600 }));
@@ -434,7 +486,14 @@ router.get('/ugc/avatars/spatialreal', async (req: AuthedRequest, res: Response)
           tried.push(`${host} bearer→${r.status}${r.errDetail ? ` (${r.errDetail})` : ''}`);
           if (r.status >= 200 && r.status < 300) {
             const list = srParseAvatars(r.d);
-            if (list.length) { srAvatarsCache.set(req.tenantId!, { list, ts: Date.now() }); return res.json({ avatars: list }); }
+            if (list.length) {
+              // Превью — к себе в uploads/sr-avatars (конкурентность 4), чтобы не зависеть от их CDN.
+              for (let i = 0; i < list.length; i += 4) {
+                await Promise.all(list.slice(i, i + 4).map(async (a) => { a.previewUrl = await srCachePreview(a.id, a.previewUrl); }));
+              }
+              srLibSave(list);
+              return res.json({ avatars: list });
+            }
             console.warn('[ugc/sr] public-avatars ок, но распарсили 0 — сырой ответ:', JSON.stringify(r.d).slice(0, 800));
             tried.push(`${host} parse→0`);
           }
@@ -442,20 +501,11 @@ router.get('/ugc/avatars/spatialreal', async (req: AuthedRequest, res: Response)
           tried.push(`${host} token→${st.status}${st.errDetail ? ` (${st.errDetail})` : ''}`);
           if (/invalid api key/i.test(st.errDetail || '') || st.status === 401 || st.status === 403) badKey = true;
         }
-      } catch (e: any) { tried.push(`${host} bearer-err:${e?.message || e}`); }
-      // 2) фолбэк — X-Api-Key напрямую
-      try {
-        const r2 = await srFetchJson(`${host}/v2/console/public-avatars`, { 'X-Api-Key': apiKey.trim() });
-        tried.push(`${host} xapikey→${r2.status}${r2.errDetail ? ` (${r2.errDetail})` : ''}`);
-        if (r2.status >= 200 && r2.status < 300) {
-          const list = srParseAvatars(r2.d);
-          if (list.length) { srAvatarsCache.set(req.tenantId!, { list, ts: Date.now() }); return res.json({ avatars: list }); }
-          console.warn('[ugc/sr] public-avatars(xapikey) ок, но 0 — сырой:', JSON.stringify(r2.d).slice(0, 800));
-          tried.push(`${host} parse→0`);
-        }
-      } catch (e: any) { tried.push(`${host} xapikey-err:${e?.message || e}`); }
+      } catch (e: any) { tried.push(`${host} err:${e?.message || e}`); }
     }
     console.warn('[ugc/sr] библиотека SpatialReal не получена:', tried.join(' | '));
+    // Свежая загрузка не удалась, но есть старый кэш (даже просроченный/при force) — лучше отдать его.
+    if (cached) return res.json({ avatars: cached.list, cached: true, note: 'Не удалось обновить — показана сохранённая библиотека.' });
     res.status(badKey ? 400 : 502).json({
       error: badKey
         ? 'SpatialReal: ключ невалиден («invalid api key»). Перепроверьте ключ в Настройки → Генерация → SpatialReal (взять: app.spatialreal.ai → Developer → API Key).'
