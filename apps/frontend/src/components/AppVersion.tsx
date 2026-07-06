@@ -1742,7 +1742,12 @@
  *         вживую (Little Tommy поверх клипа, караоке горит). Свои фото (EchoMimic) — след. шаг.
  *         router.ts (/ugc/build), podcast_compose.ts (composeUgc), sr-capture/ (новый),
  *         MontageEditor.tsx. */
-export const APP_VERSION = '1.6.111';
+/* 1.6.112 — sr-capture URL через system-config (не сырой .env): getSrCaptureUrl/getSrAppId в
+ *         systemConfig, поле «sr-capture (UGC-аватар SpatialReal)» в Админ→Конфиг→Рендер (рядом
+ *         с GPU/CPU-воркерами). srAppId — фолбэк-дефалт (обычно берётся из session-token).
+ *         Настраивается как остальные воркеры, без правки .env на проде. systemConfig.ts,
+ *         render/router.ts, AdminConfigPage.tsx. */
+export const APP_VERSION = '1.6.112';
 
 export function AppVersion() {
   return (

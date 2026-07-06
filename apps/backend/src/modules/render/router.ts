@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { getRenderGpuTarget, getRenderWorkerUrl, getRenderGpuWorkerUrl } from '../../config/systemConfig.js';
+import { getRenderGpuTarget, getRenderWorkerUrl, getRenderGpuWorkerUrl, getSrCaptureUrl, getSrAppId } from '../../config/systemConfig.js';
 import { getFlow } from '../flows/service.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
@@ -524,8 +524,6 @@ const ugcJobs = new Map<string, {
   tenantId?: string; status: string; error?: string; fileUrl?: string; assetId?: string | null; ts: number;
 }>();
 
-function getSrCaptureUrl(): string { return String(process.env.SR_CAPTURE_URL || '').replace(/\/+$/, ''); }
-
 /** app_id из session-token JWT (Фаза-0: токен несёт app_id) — свой App ID у тенанта не храним. */
 function srAppIdFromToken(token: string): string | null {
   try {
@@ -594,7 +592,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       try {
         j.status = 'токен SpatialReal';
         const token = await srMakeSessionToken(apiKey);
-        const appId = srAppIdFromToken(token) || String(process.env.SR_APP_ID || '');
+        const appId = srAppIdFromToken(token) || getSrAppId();
         if (!appId) throw new Error('Не удалось определить App ID SpatialReal (нет в токене; задайте SR_APP_ID).');
 
         j.status = 'аватар говорит (реальное время)';
