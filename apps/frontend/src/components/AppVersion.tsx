@@ -1763,7 +1763,11 @@
  *         ТЕКСТ реплики по центру на тёмном фоне (ASS-титр), ролик читаем даже без единой
  *         картинки. CommentatorPanel.tsx, podcast_compose.ts (composeCommentator + centeredCaptionAss),
  *         render/router.ts (проброс text). */
-export const APP_VERSION = '1.6.114';
+/* 1.6.115 — «Комментатор»: удаление загруженного аудио. Красная корзина рядом с дорожкой →
+ *         подтверждение (ConfirmModal, danger) → стирает аудио ВМЕСТЕ с таймлайном, всеми
+ *         репликами и собранным роликом (audioUrl/audioName/lines/resultUrl/buildJobId=∅).
+ *         Кнопка заблокирована во время разбора/сборки (commBusy). CommentatorPanel.tsx. */
+export const APP_VERSION = '1.6.115';
 
 export function AppVersion() {
   return (

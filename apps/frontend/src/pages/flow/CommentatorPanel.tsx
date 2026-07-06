@@ -8,10 +8,11 @@
  */
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Music, Wand2, Loader2, Film, Play } from 'lucide-react';
+import { Music, Wand2, Loader2, Film, Play, Trash2 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import { PodLine } from './dialogueTypes';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 export interface CommState {
   audioUrl?: string; audioName?: string;
@@ -43,6 +44,7 @@ export default function CommentatorPanel({
   const result = state.resultUrl || null;
 
   const [pickOpen, setPickOpen] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const aliveRef = useRef(true);
   const imgInputRef = useRef<HTMLInputElement | null>(null);
@@ -73,9 +75,17 @@ export default function CommentatorPanel({
     return out;
   }, [auth]);
   const onAudioPick = useCallback((it: GalleryPickItem) => {
-    patch({ audioUrl: it.fileUrl, audioName: it.title, lines: [], resultUrl: null });
+    patch({ audioUrl: it.fileUrl, audioName: it.title, lines: [], resultUrl: null, buildJobId: null });
     setNote({ ok: true, text: 'Аудио выбрано — нажмите «Разобрать запись».' });
   }, [patch]);
+  // Удалить аудио → вместе с ним стираем таймлайн, все реплики и собранный ролик.
+  const clearAudio = useCallback(() => {
+    patch({ audioUrl: '', audioName: '', lines: [], resultUrl: null, buildJobId: null });
+    setNote(null); setConfirmClear(false);
+  }, [patch]);
+  const askClearAudio = useCallback(() => {
+    if ((state.lines || []).length > 0) setConfirmClear(true); else clearAudio();
+  }, [state.lines, clearAudio]);
 
   // ── диаризация (в MontageEditor — переживает закрытие + кольцо у узла) ──
   const diarize = useCallback(() => { if (audioUrl) { setNote(null); onDiarize(audioUrl); } }, [audioUrl, onDiarize]);
@@ -147,6 +157,14 @@ export default function CommentatorPanel({
             <Music size={14} /> Выбрать из галереи
           </button>
           <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text-secondary)' }}>{audioName || 'аудио не выбрано'}</span>
+          {audioUrl && (
+            <button type="button" onClick={askClearAudio} disabled={!!commBusy}
+              title="Удалить аудио вместе с таймлайном и репликами"
+              className="inline-flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 disabled:opacity-40"
+              style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: '1px solid var(--border-medium)', cursor: commBusy ? 'not-allowed' : 'pointer' }}>
+              <Trash2 size={14} />
+            </button>
+          )}
           <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
             {(['9:16', '16:9'] as const).map((f) => (
               <button key={f} onClick={() => patch({ format: f })} className="text-[11px] font-600 px-2 py-1" style={{ background: format === f ? '#6366f1' : 'transparent', color: format === f ? '#fff' : 'var(--text-muted)' }}>{f}</button>
@@ -199,6 +217,15 @@ export default function CommentatorPanel({
         onClose={() => setPickOpen(false)}
         onUpload={onAudioUpload}
         onPick={onAudioPick}
+      />
+
+      <ConfirmModal
+        open={confirmClear}
+        title="Удалить аудио?"
+        message={`Дорожка удалится вместе с таймлайном и всеми репликами (${(state.lines || []).length}). Собранный ролик тоже сбросится. Действие необратимо.`}
+        confirmLabel="Удалить" cancelLabel="Отмена" variant="danger"
+        onConfirm={clearAudio}
+        onCancel={() => setConfirmClear(false)}
       />
     </div>
   );
