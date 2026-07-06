@@ -26,6 +26,7 @@ import { VideoViewer } from '../../components/VideoViewer';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
+import DialogueTimeline from './DialogueTimeline';
 
 type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
@@ -784,7 +785,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
-  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd'>(null);
+  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'lineImage'>(null);
+  const [ugcLineIdx, setUgcLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем медиа
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
   const [ugcGalLoading, setUgcGalLoading] = useState(false);
   // Коллекция аватаров (Галерея, папка 'avatars'): null = ещё не грузили, грузим по тапу на «Коллекция».
@@ -796,6 +798,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcSrAvatars, setUgcSrAvatars] = useState<{ id: string; name: string; previewUrl: string | null }[] | null>(null);
   const [ugcSrLoading, setUgcSrLoading] = useState(false);
   const [ugcSrNote, setUgcSrNote] = useState<string | null>(null);
+  // Фидбэк кнопки «Сохранить» в панели UGC: автосейв делает сохранение «невидимым» — показываем галку.
+  const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
+  const ugcSaveNow = async () => {
+    await save();
+    setUgcSavedFlash(true);
+    window.setTimeout(() => setUgcSavedFlash(false), 1800);
+  };
   const ugcMutate = (fn: (u: UgcSpec) => UgcSpec) => { setUgc((u) => fn(u)); setDirty(true); };
   const ugcScriptSec = () => ugc.script.reduce((s, l) => {
     const st = Number(l.start); const en = Number(l.end);
@@ -832,6 +841,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     else if (ugcPick === 'recording') ugcMutate((u) => ({ ...u, recordingUrl: g.url, recordingName: g.name }));
     else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
     else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
+    else if (ugcPick === 'lineImage') {
+      const i = ugcLineIdx;
+      if (i != null) ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, image: g.url, imageName: g.name } : l)) }));
+      setUgcLineIdx(null);
+    }
     setUgcPick(null);
   };
   // ── Коллекция аватаров: список/генерация/добавление/удаление (Галерея, папка 'avatars') ──
@@ -5042,7 +5056,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 )}
                 {ugc.script.length > 0 && (
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Реплик в скрипте: <b style={{ color: 'var(--text-secondary)' }}>{ugc.script.length}</b> (~{Math.round(ugcScriptSec())}с)</div>
+                  <div className="space-y-2">
+                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Реплик в скрипте: <b style={{ color: 'var(--text-secondary)' }}>{ugc.script.length}</b> (~{Math.round(ugcScriptSec())}с)</div>
+                    {/* Стандартный редактор диалога (тот же, что в Подкасте/Комментаторе): таймлайн + правка реплик. */}
+                    <DialogueTimeline
+                      dialogue={ugc.script}
+                      setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
+                      recordingUrl={ugc.recordingUrl}
+                      onPickImage={(i) => { setUgcLineIdx(i); setUgcPick('lineImage'); }}
+                      accentA="#a855f7"
+                      accentB="#c084fc"
+                    />
+                  </div>
                 )}
 
                 {/* Вторая половина — видео */}
@@ -5099,11 +5124,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 {ugcPick && (
                   <GalleryPicker
                     open token={token}
-                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : 'Видео (UGC)'}
+                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : ugcPick === 'lineImage' ? 'Медиа к фразе' : 'Видео (UGC)'}
                     defaultTab={ugcPick === 'music' ? 'audio' : 'reference'}
-                    onClose={() => setUgcPick(null)}
+                    onClose={() => { setUgcPick(null); setUgcLineIdx(null); }}
                     onUpload={(files) => uploadToGallery(files, ugcPick === 'music' ? 'audio' : 'reference')}
-                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
+                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
                     onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
                   />
                 )}
@@ -5112,15 +5137,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
                 {/* Сборка */}
                 <div className="flex items-center gap-2">
-                  <button onClick={() => save()} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Save size={15} /> Сохранить</button>
+                  <button onClick={() => void ugcSaveNow()} disabled={saving} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-60"
+                    style={{ background: 'var(--bg-tertiary)', color: ugcSavedFlash ? '#22c55e' : 'var(--text-secondary)', border: `1px solid ${ugcSavedFlash ? 'rgba(34,197,94,.5)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    {saving ? <Loader2 size={15} className="animate-spin" /> : ugcSavedFlash ? <Check size={15} /> : <Save size={15} />}
+                    {saving ? 'Сохраняю…' : ugcSavedFlash ? 'Сохранено' : 'Сохранить'}
+                  </button>
                   <button disabled title="Рендер EchoMimic-GPU + склейка 9:16 (vstack) + титры — следующий шаг"
                     className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl opacity-50"
                     style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'not-allowed' }}>
                     <Wand2 size={16} /> Собрать UGC
                   </button>
                 </div>
-                <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>Рендер аватара через ваш EchoMimic-GPU, склейка «аватар + видео» (vstack) и вжигание титров — подключаю следующим шагом.</p>
+                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Автосохранение включено: правки пишутся сами через пару секунд — кнопка лишь страховка.</p>
+                <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>Рендер аватара (SpatialReal / EchoMimic-GPU), склейка «аватар + видео» (vstack) и вжигание титров — подключаю следующим шагом.</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">
