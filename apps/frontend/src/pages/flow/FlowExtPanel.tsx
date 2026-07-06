@@ -17,7 +17,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Plug, Send, Loader2, Trash2, CheckCircle2, XCircle, Clock, Download, ExternalLink, Image } from 'lucide-react';
-import CommentatorPanel from './CommentatorPanel';
+import CommentatorPanel, { type CommState } from './CommentatorPanel';
 
 type Status = 'queued' | 'running' | 'done' | 'failed';
 interface FlowTask {
@@ -30,11 +30,15 @@ const EXT_ORIGIN = 'trendtraffic';   // метка наших сообщений
 const EXT_REPLY = 'tt-flow-ext';     // метка ответов расширения
 
 export default function FlowExtPanel({
-  token, flowId, omniSegments,
+  token, flowId, omniSegments, commState, onCommChange, onCommBuild, commBuilding,
 }: {
   token: string | null;
   flowId: string;
   omniSegments?: OmniSegment[];
+  commState: CommState;
+  onCommChange: (updater: (s: CommState) => CommState) => void;
+  onCommBuild: (payload: { audioUrl: string; format: string; lines: any[] }) => void;
+  commBuilding?: boolean;
 }) {
   const [extPresent, setExtPresent] = useState<boolean | null>(null); // null = проверяем
   const [connected, setConnected] = useState(false);
@@ -126,7 +130,7 @@ export default function FlowExtPanel({
           <button key={m} onClick={() => setMode(m)} className="text-[12px] font-600 py-1.5 rounded-lg" style={{ background: mode === m ? '#6366f1' : 'transparent', color: mode === m ? '#fff' : 'var(--text-muted)' }}>{m === 'clips' ? 'Клипы' : 'Комментатор'}</button>
         ))}
       </div>
-      {mode === 'commentator' ? <CommentatorPanel token={token} /> : (<>
+      {mode === 'commentator' ? <CommentatorPanel token={token} flowId={flowId} state={commState} onChange={onCommChange} onBuild={onCommBuild} building={commBuilding} /> : (<>
       <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает готовые клипы в Галерею → вкладка «Google Flow».</p>
 
       {/* 1. Расширение */}

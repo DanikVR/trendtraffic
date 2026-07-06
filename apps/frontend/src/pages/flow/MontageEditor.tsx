@@ -737,6 +737,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const omniDragRef = useRef<null | { id: string; handle: 'move' | 'start' | 'end'; s0: number; e0: number; x0: number }>(null);
   // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
   const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
+  // «Комментатор» (блок Google Flow): состояние в graph.flow.commentator — переживает закрытие
+  // панели, поллинг сборки живёт ЗДЕСЬ (не в панели) → крутит кольцо у узла и возобновляется.
+  const [flowComm, setFlowComm] = useState<{ audioUrl?: string; audioName?: string; format?: '9:16' | '16:9'; lines?: PodLine[]; buildJobId?: string | null; resultUrl?: string | null }>({});
+  const [commBusy, setCommBusy] = useState<null | 'build'>(null);
+  const commPollRef = useRef<number | null>(null);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply' | 'illustrate'>(null);
   const [illusNote, setIllusNote] = useState<string | null>(null); // заметка «Иллюстратора» (автоподбор видеоряда)
   const [resetDiarizeOpen, setResetDiarizeOpen] = useState(false); // свой confirm-модал «Сбросить разбор»
@@ -1069,6 +1074,17 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               name: typeof hh.name === 'string' ? hh.name : '',
             });
           }
+          if (d.flow.graph?.flow?.commentator && typeof d.flow.graph.flow.commentator === 'object') {
+            const fc = d.flow.graph.flow.commentator;
+            setFlowComm({
+              audioUrl: typeof fc.audioUrl === 'string' ? fc.audioUrl : undefined,
+              audioName: typeof fc.audioName === 'string' ? fc.audioName : undefined,
+              format: fc.format === '16:9' ? '16:9' : '9:16',
+              lines: Array.isArray(fc.lines) ? fc.lines : [],
+              buildJobId: fc.buildJobId || null,
+              resultUrl: fc.resultUrl || null,
+            });
+          }
           if (mapped.length === 0 && isNew) setShowPresets(true); // пресеты — только для НОВОГО сценария
         }
       } catch { /* пусто */ }
@@ -1081,7 +1097,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     try {
       const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, audioUrl: n.audioUrl, audioName: n.audioName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, ugc, hotebook: hb, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, ugc, hotebook: hb, flow: { commentator: flowComm }, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
@@ -1832,6 +1848,47 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       pollOmniAnimate(d.jobId);
     } catch { setAnimNote('Ошибка сети при запуске Omni-студии.'); setAnimBusy(false); }
   };
+  // ── «Комментатор»: сборка + поллинг ЗДЕСЬ (переживает закрытие панели) ──
+  const pollCommentatorBuild = (jobId: string) => {
+    let ticks = 0;
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/render/commentator/compose/status?jobId=' + jobId, { headers: headers() });
+        if (res.status === 404) { setCommBusy(null); setFlowComm((s) => ({ ...s, buildJobId: null })); setDirty(true); return; }
+        const d = await res.json();
+        if (res.ok && d.status && d.status !== 'processing') {
+          setCommBusy(null);
+          setFlowComm((s) => ({ ...s, buildJobId: null, resultUrl: d.fileUrl || s.resultUrl || null }));
+          setDirty(true);
+          return;
+        }
+      } catch { /* ретрай */ }
+      if (++ticks > 320) { setCommBusy(null); return; } // ~21 мин
+      commPollRef.current = window.setTimeout(tick, 4000);
+    };
+    tick();
+  };
+  const startCommentatorBuild = async (payload: { audioUrl: string; format: string; lines: any[] }) => {
+    if (commBusy) return;
+    if (commPollRef.current) { clearTimeout(commPollRef.current); commPollRef.current = null; }
+    setCommBusy('build');
+    setFlowComm((s) => ({ ...s, resultUrl: null }));
+    try {
+      const res = await fetch('/api/render/commentator/compose', { method: 'POST', headers: headers(), body: JSON.stringify(payload) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.jobId) { setCommBusy(null); return; }
+      setFlowComm((s) => ({ ...s, buildJobId: d.jobId })); setDirty(true);
+      pollCommentatorBuild(d.jobId);
+    } catch { setCommBusy(null); }
+  };
+  // Возобновление сборки после перезахода (джоб шёл в фоне): buildJobId есть, результата нет.
+  useEffect(() => {
+    if (flowComm.buildJobId && !flowComm.resultUrl && !commBusy && commPollRef.current == null) {
+      setCommBusy('build'); pollCommentatorBuild(flowComm.buildJobId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowComm.buildJobId]);
+
   const pollOmniAnimate = (jobId: string) => {
     let ticks = 0;
     const tick = async () => {
@@ -3349,6 +3406,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               {id === 'omni' && omniBusy && <span className="me-busyring" />}
               {id === 'ugc' && !!ugcBusy && <span className="me-busyring" />}
               {id === 'hotebook' && hbBusyAny && <span className="me-busyring" />}
+              {id === 'flow' && !!commBusy && <span className="me-busyring" />}
               <button onClick={() => onCloudClick(id)} title={cfg.label}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
@@ -3899,7 +3957,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               <button onClick={() => setCloudPanel(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             {cloudPanel === 'flow' ? (
-              <FlowExtPanel token={token} flowId={flowId} omniSegments={omniSpec.segments} />
+              <FlowExtPanel token={token} flowId={flowId} omniSegments={omniSpec.segments}
+                commState={flowComm} onCommChange={setFlowComm} onCommBuild={startCommentatorBuild} commBuilding={!!commBusy} />
             ) : cloudPanel === 'omni' ? (
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
