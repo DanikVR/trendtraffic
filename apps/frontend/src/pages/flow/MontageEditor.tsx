@@ -961,7 +961,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const ugcBuildStart = async () => {
     if (ugcBusy) return;
-    if (ugc.avatarProvider !== 'spatialreal' || !ugc.avatarId) { setUgcNote('Выберите аватара в секции «SpatialReal — библиотека» — рендер своих фото (EchoMimic) подключу следующим шагом.'); return; }
+    if (ugc.avatarSource === 'photo') {
+      if (!ugc.photoUrl) { setUgcNote('Загрузите своё фото (портрет анфас) во вкладке «Своё фото».'); return; }
+    } else if (ugc.avatarProvider !== 'spatialreal' || !ugc.avatarId) {
+      setUgcNote('Выберите аватара в секции «SpatialReal — библиотека» или загрузите своё фото (вкладка «Своё фото»).'); return;
+    }
     const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
     if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
     setUgcBusy('render'); setUgcNote('Запускаю сборку…');
@@ -5063,10 +5067,22 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       {ugcAvNote && <p className="text-[11px]" style={{ color: '#f59e0b' }}>{ugcAvNote}</p>}
                     </div>
                   ) : (
-                    <button onClick={() => openUgcPick('photo')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                      style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                      {ugc.photoUrl ? (ugc.photoName || 'фото выбрано') : 'Выбрать своё фото из Галереи'}
-                    </button>
+                    <div className="space-y-2">
+                      {ugc.photoUrl ? (
+                        <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                          <img src={ugc.photoUrl} alt="" className="rounded-md object-cover" style={{ width: 52, height: 68 }} />
+                          <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.photoName || 'фото выбрано'}</span>
+                          <button onClick={() => openUgcPick('photo')} title="Заменить" className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: '#a855f7', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>заменить</button>
+                          <button onClick={() => ugcMutate((u) => ({ ...u, photoUrl: null, photoName: null }))} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => openUgcPick('photo')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                          style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                          Выбрать своё фото из Галереи
+                        </button>
+                      )}
+                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Ваше фото оживит <b>HeyGen Avatar IV</b> (портрет анфас). Голос — по тексту (жен/муж ниже) или из вашей записи. Нужен ключ HeyGen в Настройки → Генерация.</p>
+                    </div>
                   )}
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Положение:</span>
@@ -5247,7 +5263,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </button>
                 </div>
                 <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Автосохранение включено: правки пишутся сами через пару секунд — кнопка лишь страховка.</p>
-                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Сборка идёт на сервере: аватар говорит в реальном времени (клип ~30с ≈ 1–2 мин рендера) — можно закрыть панель, прогресс не потеряется. Пока рендерятся аватары SpatialReal; свои фото (EchoMimic) — следующий шаг.</p>
+                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Сборка идёт на сервере — можно закрыть панель, прогресс не потеряется. «Коллекция» → аватар SpatialReal (на вашем ПК); «Своё фото» → HeyGen Avatar IV (в облаке, ~2–5 мин).</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">

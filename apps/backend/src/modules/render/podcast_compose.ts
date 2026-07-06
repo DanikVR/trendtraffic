@@ -711,8 +711,9 @@ function hasAudioStream(input: string): Promise<boolean> {
  * Титры — buildUgcAss. Длительность = длине голосовой дорожки. → fileUrl.
  */
 export async function composeUgc(opts: {
-  avatarPath: string;           // webm VP9 с альфой (sr-capture)
-  voicePath: string;            // голосовая дорожка (двигала губы)
+  avatarPath: string;           // альфа-webm (sr-capture) ИЛИ непрозрачный mp4 (HeyGen Avatar IV)
+  avatarKind?: 'alpha' | 'opaque'; // alpha=прозрачный силуэт; opaque=готовое видео с фоном (HeyGen)
+  voicePath: string;            // голосовая дорожка (для длины/аудио); для HeyGen = сам его mp4
   clipPath?: string | null;
   clipFit: 'cover' | 'contain';
   clipMuted: boolean;
@@ -724,6 +725,7 @@ export async function composeUgc(opts: {
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = 1080, H = 1920;
+  const opaque = opts.avatarKind === 'opaque';
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
   const Ds = (D + 0.2).toFixed(2);
@@ -731,8 +733,9 @@ export async function composeUgc(opts: {
   const overlayMode = opts.placement === 'overlay-left' || opts.placement === 'overlay-right';
   const clipAudio = !!opts.clipPath && !opts.clipMuted && await hasAudioStream(opts.clipPath);
 
-  // Входы. ВАЖНО: -c:v libvpx-vp9 ДО -i аватара — нативный vp9-декодер ffmpeg роняет альфу.
-  const inputs: string[] = ['-c:v', 'libvpx-vp9', '-i', opts.avatarPath];
+  // Входы. Для альфа-webm: -c:v libvpx-vp9 ДО -i (нативный vp9-декодер роняет альфу).
+  // Для непрозрачного mp4 (HeyGen) — обычный декод.
+  const inputs: string[] = opaque ? ['-i', opts.avatarPath] : ['-c:v', 'libvpx-vp9', '-i', opts.avatarPath];
   let idx = 1;
   let clipIdx = -1;
   if (opts.clipPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.clipPath); clipIdx = idx++; }
@@ -747,19 +750,33 @@ export async function composeUgc(opts: {
   const parts: string[] = [];
   let vTag = '[vmain]';
   if (overlayMode) {
-    // Фон: клип во весь кадр (или тёмный фон), аватар маленьким поверх снизу.
+    // Фон: клип во весь кадр (или тёмный фон), аватар маленьким поверх снизу слева/справа.
     if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30[bg]`);
     else parts.push(`color=c=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`);
-    const aH = 720; // высота блока аватара поверх (прозрачные поля вокруг фигуры не видны)
     const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
-    parts.push(`[0:v]scale=-2:${aH}:flags=lanczos,format=yuva420p[av]`);
-    parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+    if (opaque) {
+      // HeyGen: непрозрачный PiP-бокс (со своим фоном), cover-кроп в вертикальный прямоугольник.
+      const bw = 360, bh = 640;
+      parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
+      parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+    } else {
+      // sr-capture: прозрачный силуэт (виден только человек).
+      const aH = 720;
+      parts.push(`[0:v]scale=-2:${aH}:flags=lanczos,format=yuva420p[av]`);
+      parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+    }
   } else {
-    // Два блока: аватар (тёмная подложка) + клип; порядок по placement.
+    // Два блока: аватар + клип; порядок по placement.
     const halfH = H / 2;
-    parts.push(`color=c=0x0d0f16:s=${W}x${halfH}:r=30:d=${Ds}[abg]`);
-    parts.push(`[0:v]scale=-2:${halfH}:flags=lanczos,format=yuva420p[av]`);
-    parts.push(`[abg][av]overlay=(W-w)/2:0:eof_action=pass[ahalf]`);
+    if (opaque) {
+      // HeyGen: непрозрачное видео заполняет свою половину (cover).
+      parts.push(`[0:v]${fit(W, halfH)},setsar=1,fps=30[ahalf]`);
+    } else {
+      // sr-capture: прозрачный силуэт на тёмной подложке.
+      parts.push(`color=c=0x0d0f16:s=${W}x${halfH}:r=30:d=${Ds}[abg]`);
+      parts.push(`[0:v]scale=-2:${halfH}:flags=lanczos,format=yuva420p[av]`);
+      parts.push(`[abg][av]overlay=(W-w)/2:0:eof_action=pass[ahalf]`);
+    }
     if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, halfH)},setsar=1,fps=30[chalf]`);
     else parts.push(`color=c=0x161a24:s=${W}x${halfH}:r=30:d=${Ds}[chalf]`);
     parts.push(opts.placement === 'top' ? `[ahalf][chalf]vstack=inputs=2[vmain]` : `[chalf][ahalf]vstack=inputs=2[vmain]`);

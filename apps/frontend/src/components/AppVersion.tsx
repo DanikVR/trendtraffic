@@ -1794,7 +1794,17 @@
  *         1.94с (было 0). Живой тест: задержка 2.8с найдена, рот артикулирует с t=0. NB задержка
  *         их облака ПЛАВАЕТ 0.5-2.8с между сессиями — адаптивная детекция обязательна. Только
  *         sr-capture/server.mjs (на ПК юзера; прод-бандл не затронут). */
-export const APP_VERSION = '1.6.118';
+/* 1.6.119 — UGC «Своё фото» → HeyGen Avatar IV. Загруженное фото оживляет HeyGen Avatar IV
+ *         (uploadTalkingPhoto → generate use_avatar_iv_model, портрет 1080×1920): голос по
+ *         тексту (voice по полу жен/муж) ИЛИ из вашей записи (audio-driven). Видео+звук от
+ *         HeyGen синхронны сами — детекция задержки НЕ нужна (в отличие от SpatialReal).
+ *         composeUgc получил avatarKind:'alpha'|'opaque': opaque (HeyGen mp4 со своим фоном)
+ *         кладётся блоком (vstack Сверху/Снизу, cover) или PiP-боксом (overlay Фон·слева/справа);
+ *         alpha (sr-capture webm) — как раньше, прозрачный силуэт. /ugc/build ветвится по
+ *         avatarSource: photo→HeyGen, collection→sr-capture. Фильтр-графы проверены синтетикой
+ *         (vstack+PiP → 1080×1920 OK). Превью фото + пояснение в панели «Своё фото». Нужен ключ
+ *         HeyGen. router.ts, podcast_compose.ts (composeUgc), MontageEditor.tsx. */
+export const APP_VERSION = '1.6.119';
 
 export function AppVersion() {
   return (
