@@ -811,6 +811,25 @@ const MIGRATIONS: Migration[] = [
           ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_tier_check CHECK (tier IN ('premium', 'plus', 'standard', 'standard_yearly', 'enterprise', 'trial', 'monthly', 'annual'))`,
   },
   // ============================================================================
+  //  gpu_studio_jobs — журнал джобов GPU-студии подкаста: спека + пошаговый прогресс.
+  //  Деплой = pm2 restart; in-memory джоб умирал вместе с процессом (юзер терял
+  //  10–30 мин GPU-рендера). Отсюда джобы реанимируются при старте бэкенда.
+  // ============================================================================
+  {
+    name: 'gpu_studio_jobs.create',
+    sql: `CREATE TABLE IF NOT EXISTS gpu_studio_jobs (
+      id VARCHAR(40) PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      status VARCHAR(16) NOT NULL DEFAULT 'processing',
+      params JSONB NOT NULL DEFAULT '{}'::jsonb,
+      state JSONB NOT NULL DEFAULT '{}'::jsonb,
+      error TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'gpu_studio_jobs.idx_status', sql: `CREATE INDEX IF NOT EXISTS idx_gpu_studio_jobs_status ON gpu_studio_jobs(status, created_at DESC)` },
+  // ============================================================================
   //  asset_captions — кэш коротких vision-описаний медиа («Иллюстратор» подкаста):
   //  описание картинки генерится Gemini ОДИН раз, дальше берётся отсюда.
   //  Ключ (tenant, url) — и ассеты Галереи, и тренды адресуются URL-ом файла.
