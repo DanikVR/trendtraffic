@@ -200,7 +200,7 @@ async function manualIngest(payload) {
   try {
     const res = await fetch(api('/api/flow-ext/ingest-manual'), {
       method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ sourceUrl: payload.sourceUrl || null, dataUrl: payload.dataUrl || null, title: payload.title || 'Flow' }),
+      body: JSON.stringify({ sourceUrl: payload.sourceUrl || null, dataUrl: payload.dataUrl || null, title: payload.title || 'Flow', kind: payload.kind || null }),
     });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: d.error || ('HTTP ' + res.status) };

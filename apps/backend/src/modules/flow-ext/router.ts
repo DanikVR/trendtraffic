@@ -148,6 +148,39 @@ async function storeIncomingVideo(sourceUrl: string, dataUrl: string): Promise<{
   throw new Error('нет sourceUrl/dataUrl');
 }
 
+/** Скачать КАРТИНКУ (Flow-ассет: изображение/кадр) по прямой ссылке на диск. */
+async function downloadImageToDisk(url: string): Promise<{ fileUrl: string; filePath: string; size: number; mime: string }> {
+  const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Referer: FLOW_REFERER, Accept: 'image/*,*/*' } });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const ct = resp.headers.get('content-type') || 'image/png';
+  if (!/image\//i.test(ct)) throw new Error(`не картинка (${ct})`);
+  const buf = Buffer.from(await resp.arrayBuffer());
+  if (buf.length < 128) throw new Error('пустая картинка');
+  const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : ct.includes('gif') ? 'gif' : ct.includes('avif') ? 'avif' : 'jpg';
+  const name = `flow-${randomUUID()}.${ext}`;
+  const filePath = path.join(FLOW_DIR, name);
+  fs.writeFileSync(filePath, buf);
+  return { fileUrl: `/uploads/source-videos/${name}`, filePath, size: buf.length, mime: ct };
+}
+
+/** Сохранить входящую КАРТИНКУ (base64 dataUrl ИЛИ прямая ссылка). */
+async function storeIncomingImage(sourceUrl: string, dataUrl: string): Promise<{ fileUrl: string; filePath: string; size: number; mime: string }> {
+  if (dataUrl.startsWith('data:image')) {
+    const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+    if (!m) throw new Error('неверный dataUrl');
+    const mime = m[1] || 'image/png';
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length < 128) throw new Error('пустая картинка');
+    const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : mime.includes('gif') ? 'gif' : mime.includes('avif') ? 'avif' : 'jpg';
+    const name = `flow-${randomUUID()}.${ext}`;
+    const filePath = path.join(FLOW_DIR, name);
+    fs.writeFileSync(filePath, buf);
+    return { fileUrl: `/uploads/source-videos/${name}`, filePath, size: buf.length, mime };
+  }
+  if (sourceUrl && /^https?:/.test(sourceUrl)) return await downloadImageToDisk(sourceUrl);
+  throw new Error('нет sourceUrl/dataUrl');
+}
+
 /** Абсолютная база сервиса (расширение качает байты из background — нужен полный URL). */
 function absBase(req: AuthedRequest): string {
   const env = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
@@ -295,10 +328,11 @@ router.get('/gallery', async (req: AuthedRequest, res: Response) => {
   try {
     const base = absBase(req);
     const all = await listAssets(req.tenantId!, 'reference');
+    const isImg = (a: any) => String(a.mediaType || '').startsWith('image') || /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(a.fileUrl || '');
     const items = all
-      .filter((a) => String(a.mediaType || '').startsWith('video') || /\.(mp4|webm|mov|m4v|mkv)(\?|#|$)/i.test(a.fileUrl || ''))
-      .slice(0, 120)
-      .map((a) => ({ id: a.id, title: a.originalName || 'видео', fileUrl: absUrl(base, a.fileUrl), folder: a.folder || null }));
+      .filter((a) => String(a.mediaType || '').startsWith('video') || isImg(a) || /\.(mp4|webm|mov|m4v|mkv)(\?|#|$)/i.test(a.fileUrl || ''))
+      .slice(0, 150)
+      .map((a) => ({ id: a.id, title: a.originalName || 'файл', fileUrl: absUrl(base, a.fileUrl), folder: a.folder || null, type: isImg(a) ? 'image' : 'video' }));
     res.json({ items });
   } catch (e: any) {
     res.status(500).json({ error: String(e?.message || e) });
@@ -313,18 +347,24 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
   const sourceUrl = req.body?.sourceUrl ? String(req.body.sourceUrl) : '';
   const dataUrl = req.body?.dataUrl ? String(req.body.dataUrl) : '';
   const title = req.body?.title ? String(req.body.title).slice(0, 120) : 'Flow';
+  const kind = req.body?.kind === 'image' ? 'image' : req.body?.kind === 'video' ? 'video' : '';
   if (!sourceUrl && !dataUrl) return res.status(400).json({ error: 'нет sourceUrl/dataUrl' });
+  // Картинка — если так сказало расширение, либо по mime dataUrl / расширению ссылки. Иначе видео.
+  const isImage = kind === 'image'
+    || dataUrl.startsWith('data:image')
+    || (!kind && !!sourceUrl && /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(sourceUrl));
   try {
-    const stored = await storeIncomingVideo(sourceUrl, dataUrl);
+    const stored = isImage ? await storeIncomingImage(sourceUrl, dataUrl) : await storeIncomingVideo(sourceUrl, dataUrl);
+    const imgExt = stored.mime.includes('png') ? 'png' : stored.mime.includes('webp') ? 'webp' : stored.mime.includes('gif') ? 'gif' : 'jpg';
     const asset = await createAsset(req.tenantId!, {
-      kind: 'reference', mediaType: 'video',
-      originalName: (title || 'Flow').slice(0, 116) + '.mp4',
+      kind: 'reference', mediaType: isImage ? 'image' : 'video',
+      originalName: (title || 'Flow').slice(0, 112) + (isImage ? '.' + imgExt : '.mp4'),
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
       folder: FLOW_FOLDER,
     });
-    res.json({ ok: true, assetId: asset?.id || null, fileUrl: stored.fileUrl });
+    res.json({ ok: true, assetId: asset?.id || null, fileUrl: stored.fileUrl, mediaType: isImage ? 'image' : 'video' });
   } catch (e: any) {
-    res.status(502).json({ error: 'не удалось сохранить видео: ' + (e?.message || e) });
+    res.status(502).json({ error: 'не удалось сохранить медиа: ' + (e?.message || e) });
   }
 });
 

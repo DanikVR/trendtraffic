@@ -1813,7 +1813,13 @@
  *         (flow-ext/router.ts). Расширение: background (handlers gallery-list/manual-ingest/
  *         fetch-bytes/send-recon), content-flow (кнопки+пикер+эвристики upload+recon), manifest
  *         0.1.0→0.2.0, пересобран public/flow-extension.zip. FlowExtPanel.tsx — подсказка. */
-export const APP_VERSION = '1.6.120';
+/* 1.6.121 — Google Flow «В галерею» берёт и КАРТИНКИ, не только видео (расширение v0.2.1). Юзер
+ *         генерил в Flow картинки (не Veo-видео) → «клип не найден». Теперь findResultMedia ловит
+ *         видео ИЛИ картинку, приоритет — что юзер КЛИКНУЛ (lastClickedMedia), иначе крупнейшее
+ *         видимое (иконки <160px отсекаются). Бэкенд /ingest-manual принимает kind=image →
+ *         storeIncomingImage/downloadImageToDisk (mediaType='image', ext по mime); /gallery отдаёт
+ *         и картинки (+type). Расширение шлёт kind. flow-ext/router.ts, background.js, content-flow.js. */
+export const APP_VERSION = '1.6.121';
 
 export function AppVersion() {
   return (
