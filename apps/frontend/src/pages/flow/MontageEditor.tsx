@@ -797,6 +797,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcSrAvatars, setUgcSrAvatars] = useState<{ id: string; name: string; previewUrl: string | null }[] | null>(null);
   const [ugcSrLoading, setUgcSrLoading] = useState(false);
   const [ugcSrNote, setUgcSrNote] = useState<string | null>(null);
+  // Фидбэк кнопки «Сохранить» в панели UGC: автосейв делает сохранение «невидимым» — показываем галку.
+  const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
+  const ugcSaveNow = async () => {
+    await save();
+    setUgcSavedFlash(true);
+    window.setTimeout(() => setUgcSavedFlash(false), 1800);
+  };
   const ugcMutate = (fn: (u: UgcSpec) => UgcSpec) => { setUgc((u) => fn(u)); setDirty(true); };
   const ugcScriptSec = () => ugc.script.reduce((s, l) => {
     const st = Number(l.start); const en = Number(l.end);
@@ -5109,15 +5116,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
                 {/* Сборка */}
                 <div className="flex items-center gap-2">
-                  <button onClick={() => save()} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Save size={15} /> Сохранить</button>
+                  <button onClick={() => void ugcSaveNow()} disabled={saving} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-60"
+                    style={{ background: 'var(--bg-tertiary)', color: ugcSavedFlash ? '#22c55e' : 'var(--text-secondary)', border: `1px solid ${ugcSavedFlash ? 'rgba(34,197,94,.5)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    {saving ? <Loader2 size={15} className="animate-spin" /> : ugcSavedFlash ? <Check size={15} /> : <Save size={15} />}
+                    {saving ? 'Сохраняю…' : ugcSavedFlash ? 'Сохранено' : 'Сохранить'}
+                  </button>
                   <button disabled title="Рендер EchoMimic-GPU + склейка 9:16 (vstack) + титры — следующий шаг"
                     className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl opacity-50"
                     style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'not-allowed' }}>
                     <Wand2 size={16} /> Собрать UGC
                   </button>
                 </div>
-                <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>Рендер аватара через ваш EchoMimic-GPU, склейка «аватар + видео» (vstack) и вжигание титров — подключаю следующим шагом.</p>
+                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Автосохранение включено: правки пишутся сами через пару секунд — кнопка лишь страховка.</p>
+                <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>Рендер аватара (SpatialReal / EchoMimic-GPU), склейка «аватар + видео» (vstack) и вжигание титров — подключаю следующим шагом.</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">
