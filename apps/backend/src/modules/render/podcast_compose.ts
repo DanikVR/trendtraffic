@@ -96,6 +96,107 @@ export async function composeHeads(opts: {
   return `/uploads/renders/${out}`;
 }
 
+/**
+ * «Комментатор» (Г1): единая загруженная дорожка = финальный голос, на каждый диаризованный
+ * сегмент — полноэкранный ВИЗУАЛ (Ken Burns по картинке ИЛИ немой видео/Omni-клип), склейка
+ * в один трек, сверху — исходная дорожка (+ опц. музыка). Локальный ffmpeg, как composeHeads.
+ *
+ * Инвариант синка: клип строки i занимает [start_i, start_{i+1}] (последний — до конца аудио),
+ * поэтому паузы между репликами «держатся» текущим кадром, а суммарная длина == длине аудио.
+ * Каждый клип рендерится отдельно (надёжнее мега-фильтра) → concat → мукс с аудио.
+ */
+export async function composeCommentator(opts: {
+  audioUrl: string;
+  format?: '9:16' | '16:9';
+  lines: { start: number; end?: number; visualUrl?: string; isVideo?: boolean }[];
+  musicUrl?: string; musicVolume?: number;
+}): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const portrait = opts.format !== '16:9';
+  const W = portrait ? 1080 : 1920;
+  const H = portrait ? 1920 : 1080;
+
+  const audioDur = await probeDuration(opts.audioUrl);
+  if (!(audioDur > 0.2)) throw new Error('Аудио не читается или пустое.');
+  const lines = [...(opts.lines || [])]
+    .filter((l) => l && Number.isFinite(l.start))
+    .sort((a, b) => a.start - b.start);
+  if (!lines.length) throw new Error('Нет строк для сборки.');
+
+  const work = fs.mkdtempSync(path.join(RENDERS_DIR, 'comm-'));
+  try {
+    const clips: string[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      const segEnd = i < lines.length - 1 ? lines[i + 1].start : audioDur;
+      const dur = Math.max(0.4, Math.min(600, segEnd - l.start));
+      const D = dur.toFixed(2);
+      const clip = path.join(work, `c${String(i).padStart(3, '0')}.mp4`);
+      const fadeD = Math.min(0.4, dur / 3);
+      const fade = `fade=t=in:st=0:d=${fadeD.toFixed(2)},fade=t=out:st=${Math.max(0, dur - fadeD).toFixed(2)}:d=${fadeD.toFixed(2)}`;
+
+      if (l.visualUrl && l.isVideo) {
+        // Omni-клип / видео из Галереи: cover, немой (звук отбрасываем — голос только ваш), обрезка по dur.
+        await ffmpeg([
+          '-y', '-t', D, '-i', l.visualUrl,
+          '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${fade}`,
+          '-an', '-t', D, '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', clip,
+        ], 300_000);
+      } else if (l.visualUrl) {
+        // Картинка: Ken Burns (пре-скейл ×2 — анти-дёрганье; наезд/отъезд чередуются).
+        const frames = Math.max(2, Math.round(dur * 30) + 1);
+        const inc = (0.12 / frames).toFixed(6);
+        // Запятые внутри z='...' защищены одинарными кавычками ffmpeg — как в проверенном _kenburns (Python).
+        const z = i % 2 === 0
+          ? `min(zoom+${inc},1.12)`
+          : `if(lte(on,1),1.12,max(zoom-${inc},1.0))`;
+        const kb = `scale=${W * 2}:${H * 2}:force_original_aspect_ratio=increase,crop=${W * 2}:${H * 2},setsar=1,`
+          + `zoompan=z='${z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${W}x${H}:fps=30,${fade}`;
+        await ffmpeg([
+          '-y', '-loop', '1', '-t', D, '-i', l.visualUrl,
+          '-vf', kb, '-an', '-t', D, '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', clip,
+        ], 300_000);
+      } else {
+        // Без визуала — нейтральный тёмный кадр (дизайн-фон), держит паузу.
+        await ffmpeg([
+          '-y', '-f', 'lavfi', '-i', `color=c=0x10141b:s=${W}x${H}:r=30:d=${D}`,
+          '-vf', fade, '-an', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', clip,
+        ], 120_000);
+      }
+      clips.push(clip);
+    }
+
+    // Склейка визуалов встык (одинаковые параметры → безопасно; re-encode на всякий случай).
+    const listFile = path.join(work, 'list.txt');
+    fs.writeFileSync(listFile, clips.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
+    const visual = path.join(work, 'visual.mp4');
+    await ffmpeg([
+      '-y', '-f', 'concat', '-safe', '0', '-i', listFile,
+      '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-r', '30', visual,
+    ], Math.max(600_000, Math.round(audioDur * 6000) + 120_000));
+
+    // Мукс: визуал + ваша дорожка (+ опц. музыка с дакингом), длина = длине аудио.
+    const inputs = ['-i', visual, '-i', opts.audioUrl];
+    let fc = ''; let mapA = '1:a';
+    if (opts.musicUrl) {
+      inputs.push('-i', opts.musicUrl);
+      const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolume) ? (opts.musicVolume as number) : 20) / 100));
+      fc = `[2:a]volume=${vol.toFixed(2)}[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aout]`;
+      mapA = '[aout]';
+    }
+    const out = `commentator-${randomUUID().slice(0, 8)}.mp4`;
+    const outPath = path.join(RENDERS_DIR, out);
+    const args = ['-y', ...inputs];
+    if (fc) args.push('-filter_complex', fc);
+    args.push('-map', '0:v', '-map', mapA, '-t', audioDur.toFixed(2), '-c:v', 'copy', '-c:a', 'aac', '-shortest', outPath);
+    await ffmpeg(args, Math.max(300_000, Math.round(audioDur * 3000) + 120_000));
+
+    return `/uploads/renders/${out}`;
+  } finally {
+    try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* */ }
+  }
+}
+
 /** Кадрировать картинку в 9:16 (1080×1920, центральная область — ТА ЖЕ, что берёт фон при
  *  scale=increase+crop). Нужен для вырезок ведущих: тогда «вырезка» и «clean plate» — один и
  *  тот же кадр, и оверлей 0:0 сажает аватара ровно на его место. PNG — без jpeg-артефактов
