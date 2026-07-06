@@ -17,6 +17,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Plug, Send, Loader2, Trash2, CheckCircle2, XCircle, Clock, Download, ExternalLink, Image } from 'lucide-react';
+import CommentatorPanel from './CommentatorPanel';
 
 type Status = 'queued' | 'running' | 'done' | 'failed';
 interface FlowTask {
@@ -41,6 +42,7 @@ export default function FlowExtPanel({
   const [tasks, setTasks] = useState<FlowTask[]>([]);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [mode, setMode] = useState<'clips' | 'commentator'>('clips');
 
   const auth = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
   const postToExt = useCallback((type: string, extra?: Record<string, unknown>) => {
@@ -119,6 +121,12 @@ export default function FlowExtPanel({
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+        {(['clips', 'commentator'] as const).map((m) => (
+          <button key={m} onClick={() => setMode(m)} className="text-[12px] font-600 py-1.5 rounded-lg" style={{ background: mode === m ? '#6366f1' : 'transparent', color: mode === m ? '#fff' : 'var(--text-muted)' }}>{m === 'clips' ? 'Клипы' : 'Комментатор'}</button>
+        ))}
+      </div>
+      {mode === 'commentator' ? <CommentatorPanel token={token} /> : (<>
       <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает готовые клипы в Галерею → вкладка «Google Flow».</p>
 
       {/* 1. Расширение */}
@@ -212,6 +220,7 @@ export default function FlowExtPanel({
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 }

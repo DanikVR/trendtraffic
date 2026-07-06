@@ -23,7 +23,7 @@ import { generatePodcastDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect } from './podcast_compose.js';
+import { composeHeads, composeCommentator, composeOnStudio, downloadToRenders, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect } from './podcast_compose.js';
 import { illustrateDialogue, type IllusLine } from './illustrate.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
@@ -972,6 +972,56 @@ router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response)
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка наложения на студию' });
   }
+});
+
+// ── «Комментатор»: единая дорожка = голос, полноэкранный визуал на сегмент (Ken Burns/Omni/видео) ──
+const commentatorJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
+
+/** POST /commentator/compose — собрать ролик «Комментатор». Визуалы уже готовы (картинки для Ken Burns,
+ *  Omni/видео-клипы через /omni/generate). body: { audioUrl, format?, lines:[{start,end?,visualUrl?,isVideo?}], musicUrl?, musicVolume? } → { jobId }. */
+router.post('/commentator/compose', async (req: AuthedRequest, res: Response) => {
+  try {
+    const body = req.body || {};
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+    const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
+    const audioUrl = abs(typeof body.audioUrl === 'string' ? body.audioUrl : '');
+    if (!audioUrl) return res.status(400).json({ error: 'Нужна загруженная аудиодорожка.' });
+    const format = body.format === '16:9' ? '16:9' : '9:16';
+    const lines = (Array.isArray(body.lines) ? body.lines : [])
+      .map((l: any) => ({ start: Number(l?.start), end: Number(l?.end), visualUrl: abs(typeof l?.visualUrl === 'string' ? l.visualUrl : '') || undefined, isVideo: !!l?.isVideo }))
+      .filter((l: any) => Number.isFinite(l.start));
+    if (!lines.length) return res.status(400).json({ error: 'Нет сегментов — разберите запись.' });
+    const musicUrl = abs(typeof body.musicUrl === 'string' ? body.musicUrl : undefined);
+    const musicVolume = Number.isFinite(Number(body.musicVolume)) ? Number(body.musicVolume) : 20;
+    const jobId = 'comm_' + Math.random().toString(36).slice(2, 10);
+    sweepJobs(commentatorJobs);
+    const tenantId = req.tenantId!;
+    commentatorJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
+    (async () => {
+      try {
+        const fileUrl = await composeCommentator({ audioUrl: audioUrl!, format, lines, musicUrl: musicUrl || undefined, musicVolume });
+        let assetId: string | null = null;
+        try {
+          const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Комментатор', fileUrl, mime: 'video/mp4', folder: 'flow' });
+          assetId = asset?.id || null;
+        } catch { /* Галерея опц. */ }
+        commentatorJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
+      } catch (e: any) {
+        commentatorJobs.set(jobId, { tenantId, status: 'failed', error: e?.message || 'ошибка сборки', ts: Date.now() });
+      }
+    })();
+    res.json({ jobId, note: 'Собираю ролик «Комментатор» — идёт в фоне, опрашиваю статус…' });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка сборки' });
+  }
+});
+
+/** GET /commentator/compose/status?jobId=... */
+router.get('/commentator/compose/status', (req: AuthedRequest, res: Response) => {
+  const jobId = String(req.query.jobId || '');
+  const j = commentatorJobs.get(jobId);
+  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача не найдена' });
+  res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, error: j.error || null });
 });
 
 // ── Omni Flash: генерация/правка видео (Gemini gemini-omni-flash-preview, Interactions API) ──
