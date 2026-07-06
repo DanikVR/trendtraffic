@@ -25,14 +25,15 @@ const isVideoUrl = (u?: string): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)
 const posOf = (l: PodLine): number => (Number.isFinite(l.tStart) ? (l.tStart as number) : Number.isFinite(l.start) ? (l.start as number) : 0);
 
 export default function CommentatorPanel({
-  token, flowId, state, onChange, onBuild, building,
+  token, flowId, state, onChange, onBuild, onDiarize, commBusy,
 }: {
   token: string | null;
   flowId?: string;
   state: CommState;
   onChange: (updater: (s: CommState) => CommState) => void;
   onBuild: (payload: { audioUrl: string; format: string; lines: any[] }) => void;
-  building?: boolean;
+  onDiarize: (audioUrl: string) => void;
+  commBusy?: 'diarize' | 'build' | null;
 }) {
   const audioUrl = state.audioUrl || '';
   const audioName = state.audioName || '';
@@ -41,7 +42,6 @@ export default function CommentatorPanel({
   const result = state.resultUrl || null;
 
   const [audioBusy, setAudioBusy] = useState(false);
-  const [diarBusy, setDiarBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const aliveRef = useRef(true);
   const imgInputRef = useRef<HTMLInputElement | null>(null);
@@ -71,23 +71,8 @@ export default function CommentatorPanel({
     finally { setAudioBusy(false); }
   }, [auth, patch]);
 
-  // ── диаризация ──
-  const diarize = useCallback(async () => {
-    if (!audioUrl) return;
-    setDiarBusy(true); setNote(null);
-    try {
-      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: authJson(), body: JSON.stringify({ recordingUrl: audioUrl }) });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
-      const raw = Array.isArray(d.lines) ? d.lines : [];
-      const cl: PodLine[] = raw
-        .filter((l: any) => Number.isFinite(Number(l?.start)))
-        .map((l: any) => ({ speaker: (l?.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l?.text || '').trim(), start: Number(l.start), end: Number(l?.end ?? l.start), tStart: Number(l.start), mode: 'full' as const }));
-      patch({ lines: cl });
-      setNote({ ok: cl.length > 0, text: cl.length ? `Разобрано сегментов: ${cl.length}. Правьте на таймлайне и привяжите визуалы.` : 'Не удалось разобрать запись (нужен Gemini-ключ).' });
-    } catch (e: any) { setNote({ ok: false, text: e?.message || 'Ошибка разбора' }); }
-    finally { setDiarBusy(false); }
-  }, [audioUrl, authJson, patch]);
+  // ── диаризация (в MontageEditor — переживает закрытие + кольцо у узла) ──
+  const diarize = useCallback(() => { if (audioUrl) { setNote(null); onDiarize(audioUrl); } }, [audioUrl, onDiarize]);
 
   // ── картинка на реплику (Ken Burns) ──
   const pickImage = useCallback((i: number) => { pendingImgLine.current = i; imgInputRef.current?.click(); }, []);
@@ -109,11 +94,14 @@ export default function CommentatorPanel({
   // ── Omni-клип на реплику ──
   const genOmni = useCallback(async (i: number) => {
     const line = (state.lines || [])[i];
-    const prompt = (line?.text || '').trim();
-    if (!prompt) { setNote({ ok: false, text: 'В реплике нет текста для Omni.' }); return; }
+    const raw = (line?.text || '').trim();
+    if (!raw) { setNote({ ok: false, text: 'В реплике нет текста для Omni.' }); return; }
+    // Omni — генератор ВИДЕО: сырой текст реплики фильтр блокирует (400 Input blocked).
+    // Оборачиваем в промпт-сцену b-roll, иллюстрирующую тему реплики.
+    const scene = `Документальный кинематографичный b-roll без наложенного текста и без узнаваемых реальных лиц, визуально иллюстрирующий тему: «${raw.slice(0, 200)}». Плавное движение камеры, реалистичное освещение, атмосферно.`;
     setNote({ ok: true, text: `Omni генерирует для реплики ${i + 1}…` });
     try {
-      const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: authJson(), body: JSON.stringify({ prompt, aspect: format }) });
+      const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: authJson(), body: JSON.stringify({ prompt: scene, aspect: format }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d?.jobId) throw new Error(d?.error || 'Omni недоступен');
       const jobId = d.jobId; const started = Date.now();
@@ -159,10 +147,10 @@ export default function CommentatorPanel({
             ))}
           </div>
         </div>
-        <button onClick={diarize} disabled={!audioUrl || diarBusy}
+        <button onClick={diarize} disabled={!audioUrl || !!commBusy}
           className="inline-flex items-center justify-center gap-2 text-[12px] font-600 px-3 py-2 rounded-lg disabled:opacity-50"
           style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }}>
-          {diarBusy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />} Разобрать запись
+          {commBusy === 'diarize' ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />} {commBusy === 'diarize' ? 'Разбираю…' : 'Разобрать запись'}
         </button>
       </div>
 
@@ -177,19 +165,22 @@ export default function CommentatorPanel({
       )}
 
       {lines.length > 0 && (
-        <button onClick={build} disabled={!!building}
+        <button onClick={build} disabled={!!commBusy}
           className="inline-flex items-center justify-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl disabled:opacity-50"
           style={{ background: '#6366f1', color: '#fff' }}>
-          {building ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />} {building ? 'Собираю ролик…' : 'Собрать видео'}
+          {commBusy === 'build' ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />} {commBusy === 'build' ? 'Собираю ролик…' : 'Собрать видео'}
         </button>
       )}
 
       {note && <div className="text-[12px] font-600" style={{ color: note.ok ? '#10b981' : '#ef4444' }}>{note.text}</div>}
 
       {result && (
-        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
-          <video src={result} controls playsInline className="w-full block" style={{ maxHeight: 360, background: '#000' }} />
-          <a href={result} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 text-[12px] font-600 py-2" style={{ color: '#6366f1' }}><Play size={13} /> открыть ролик</a>
+        <div className="flex flex-col gap-1">
+          <div className="text-[12px] font-700" style={{ color: '#10b981' }}>✓ Ролик собран — превью ниже, копия в Галерее → «Google Flow»</div>
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
+            <video src={result} controls playsInline className="w-full block" style={{ maxHeight: 360, background: '#000' }} />
+            <a href={result} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 text-[12px] font-600 py-2" style={{ color: '#6366f1' }}><Play size={13} /> открыть ролик</a>
+          </div>
         </div>
       )}
     </div>

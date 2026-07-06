@@ -740,7 +740,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   // «Комментатор» (блок Google Flow): состояние в graph.flow.commentator — переживает закрытие
   // панели, поллинг сборки живёт ЗДЕСЬ (не в панели) → крутит кольцо у узла и возобновляется.
   const [flowComm, setFlowComm] = useState<{ audioUrl?: string; audioName?: string; format?: '9:16' | '16:9'; lines?: PodLine[]; buildJobId?: string | null; resultUrl?: string | null }>({});
-  const [commBusy, setCommBusy] = useState<null | 'build'>(null);
+  const [commBusy, setCommBusy] = useState<null | 'diarize' | 'build'>(null);
+  const [commFreshDone, setCommFreshDone] = useState(false); // ролик собрался — зелёная точка у узла
   const commPollRef = useRef<number | null>(null);
   const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply' | 'illustrate'>(null);
   const [illusNote, setIllusNote] = useState<string | null>(null); // заметка «Иллюстратора» (автоподбор видеоряда)
@@ -1859,6 +1860,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (res.ok && d.status && d.status !== 'processing') {
           setCommBusy(null);
           setFlowComm((s) => ({ ...s, buildJobId: null, resultUrl: d.fileUrl || s.resultUrl || null }));
+          if (d.fileUrl) setCommFreshDone(true);
           setDirty(true);
           return;
         }
@@ -1880,6 +1882,21 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setFlowComm((s) => ({ ...s, buildJobId: d.jobId })); setDirty(true);
       pollCommentatorBuild(d.jobId);
     } catch { setCommBusy(null); }
+  };
+  // Диаризация «Комментатора» ЗДЕСЬ (переживает закрытие + крутит кольцо у узла flow).
+  const startCommentatorDiarize = async (audioUrl: string) => {
+    if (commBusy || !audioUrl) return;
+    setCommBusy('diarize');
+    try {
+      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(), body: JSON.stringify({ recordingUrl: audioUrl }) });
+      const d = await res.json().catch(() => ({}));
+      const raw = Array.isArray(d.lines) ? d.lines : [];
+      const cl: PodLine[] = raw
+        .filter((l: any) => Number.isFinite(Number(l?.start)))
+        .map((l: any) => ({ speaker: (l?.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l?.text || '').trim(), start: Number(l.start), end: Number(l?.end ?? l.start), tStart: Number(l.start), mode: 'full' as const }));
+      if (cl.length) { setFlowComm((s) => ({ ...s, lines: cl })); setDirty(true); }
+    } catch { /* тихо */ }
+    finally { setCommBusy(null); }
   };
   // Возобновление сборки после перезахода (джоб шёл в фоне): buildJobId есть, результата нет.
   useEffect(() => {
@@ -2747,6 +2764,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     if (movedRef.current) { movedRef.current = false; return; } // был drag узла — не открываем панель
     if (id === 'podcast') setDiarizeDone(false); // открыли — мигание погасло
     if (id === 'hotebook') setHbFreshDone(false); // открыли — зелёная точка погасла
+    if (id === 'flow') setCommFreshDone(false);
     setCloudPanel(id);
   };
 
@@ -3419,6 +3437,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               {id === 'hotebook' && hbFreshDone && !hbBusyAny && (
                 <span className="me-dot" title="Артефакт готов — открыт блок и Галерея → Hotebook" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
               )}
+              {id === 'flow' && commFreshDone && !commBusy && (
+                <span className="me-dot" title="Ролик собран — откройте блок и Галерею → Google Flow" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
+              )}
               <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{cfg.label}</span>
               <button onPointerDown={(e) => startConnect(id, e)} title="Потяните, чтобы провести стрелку"
                 style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: pending?.from === id ? 'var(--brand)' : 'var(--bg-secondary)', border: '1px solid var(--brand)', color: pending?.from === id ? '#fff' : 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, touchAction: 'none' }}>
@@ -3958,7 +3979,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             </div>
             {cloudPanel === 'flow' ? (
               <FlowExtPanel token={token} flowId={flowId} omniSegments={omniSpec.segments}
-                commState={flowComm} onCommChange={setFlowComm} onCommBuild={startCommentatorBuild} commBuilding={!!commBusy} />
+                commState={flowComm} onCommChange={setFlowComm} onCommBuild={startCommentatorBuild} onCommDiarize={startCommentatorDiarize} commBusy={commBusy} />
             ) : cloudPanel === 'omni' ? (
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
