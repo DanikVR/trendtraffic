@@ -25,20 +25,24 @@ const ROOT = path.resolve(__dirname, '..');
 const LOCALES_DIR = path.join(ROOT, 'public', 'locales');
 const SOURCE_LANG = 'en';
 
-// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: разделитель дней в ленте чата комнаты) ──
-// Прошлые батчи (settings.changePwd.*, auth.reset.*) уже переведены во всех локалях —
+// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: вся UGC-студия v2.0.6) ──
+// Прошлые батчи (chat.*, settings.changePwd.*, auth.reset.*) уже переведены во всех локалях —
 // их повторно гонять не нужно. Перед новым прогоном замени список на свежие ключи.
-const KEY_PATHS = [
-  'chat.empty',
-  'chat.newMessages',
-  'chat.fromTranscript',
-  'chat.audioMessage',
-  'chat.queued',
-  'chat.delivered',
-  'chat.fileFallback',
-  'chat.openImage',
-  'chat.explainTone',
-];
+// Батч UGC собирается программно: ВСЕ листья дерева `ugc.*` из en/common.json (~280 ключей,
+// включая плюрал-формы _one/_other) — руками такой список не поддержать.
+const KEY_PATHS = await (async () => {
+  const en = JSON.parse(await fs.readFile(path.join(LOCALES_DIR, 'en', 'common.json'), 'utf-8'));
+  const out = [];
+  (function walk(node, prefix) {
+    for (const [k, v] of Object.entries(node)) {
+      const p = prefix ? `${prefix}.${k}` : k;
+      if (typeof v === 'string') out.push(p);
+      else if (v && typeof v === 'object') walk(v, p);
+    }
+  })(en.ugc || {}, 'ugc');
+  console.log(`Батч UGC: ${out.length} ключей`);
+  return out;
+})();
 
 // Наши коды → коды Google Translate (некоторые отличаются).
 const GOOGLE_CODE_MAP = { zh: 'zh-CN', he: 'iw', jv: 'jw' };
@@ -135,9 +139,15 @@ async function main() {
 
     let translated;
     try {
-      // Защищаем ведущие глифы, переводим, восстанавливаем.
+      // Защищаем ведущие глифы, переводим ЧАНКАМИ (лимит Google — 128 сегментов/запрос), восстанавливаем.
       const parts = enValues.map(protectPrefix);
-      const out = await translateBatch(apiKey, parts.map((p) => p.rest), lang);
+      const rests = parts.map((p) => p.rest);
+      const CHUNK = 100;
+      const out = [];
+      for (let i = 0; i < rests.length; i += CHUNK) {
+        const piece = await translateBatch(apiKey, rests.slice(i, i + CHUNK), lang);
+        out.push(...piece);
+      }
       translated = parts.map((p, i) => p.prefix + (out[i] ?? p.rest));
       ok++;
     } catch (e) {

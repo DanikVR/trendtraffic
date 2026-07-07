@@ -326,8 +326,8 @@ export default function UgcStudio(p: UgcStudioProps) {
         </button>
       </div>
 
-      {/* ── Корпус: панель шагов + превью ── */}
-      <div className="flex-1 min-h-0 grid" style={{ gridTemplateColumns: '348px 1fr' }}>
+      {/* ── Корпус: панель шагов + превью (рейл сжимается на узких экранах) ── */}
+      <div className="flex-1 min-h-0 grid" style={{ gridTemplateColumns: 'minmax(292px, 348px) minmax(0, 1fr)' }}>
         {/* Левая панель */}
         <div className="overflow-y-auto p-3 space-y-2.5" style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-medium)' }}>
 
