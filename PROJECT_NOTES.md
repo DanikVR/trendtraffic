@@ -3176,3 +3176,19 @@ ssh root@web 'cd /var/www/trendtraffic && bash deploy/vps-redeploy.sh'
 **Ключевые находки (журнал в доке):** 401 при заборе видео = CDN `flow-content.google` за авторизацией → байты качает расширение в браузере клиента; 413 = порядок middleware + nginx 210M→700M; видео не встраивается = у Flow поле `accept="image/*"` только внутри проекта (нашли через `/recon` в БД) → умная заливка по типу; video-to-video невозможен у Veo (→ Runway/Kling роадмап). Лимит медиа: 500 МБ (сервер 700mb / nginx 700M).
 
 **Дисциплина:** при релизе расширения бампать `manifest.version` И `FLOW_EXT_VERSION` (AppVersion.tsx) + пересобрать `public/flow-extension.zip`. Обновление у клиента = удалить старую карточку в `chrome://extensions` → загрузить новый unpacked → F5 на app и на Flow.
+
+## 5.Щ TrendFlow: HeyGen по подписке — головы UGC через расширение (2026-07-07, ветка `heygen-ext` `ea767a5`, расширение v1.0.0 → v1.1.0) — ⚠️ НЕ ЗАДЕПЛОЕНО
+
+> 📖 Полная документация — в [`docs/HEYGEN_EXTENSION.md`](docs/HEYGEN_EXTENSION.md). Здесь — конспект. **Статус: реализовано и проверено локально (backend tsc 0, frontend 4 предсущ., модули без циклов, zip собран), закоммичено на ветке `heygen-ext` поверх `origin/main` (`eb2cd97`). НЕ запушено на GitHub, НЕ задеплоено. Живой E2E не гонялся.**
+
+**Цель:** головы UGC (Avatar IV/III) рендерить через веб-студию HeyGen по **подписке клиента** (≈$1/мин), а не через API (~$3/мин). Кредиты подписки через API недоступны → расширение в браузере клиента, залогиненного в свою подписку HeyGen. См. память `heygen-pricing`.
+
+**Дисциплина «смотреть, что уже сделано»:** при доработке обнаружено, что параллельно уже свели Flow+NotebookLM в единое `apps/trendtraffic-extension` (`eb2cd97`). HeyGen был сначала собран на старой базе (`apps/flow-extension`), затем **пересажен** тем же паттерном ТРЕТЬИМ сервисом в `apps/trendtraffic-extension` (ре-база на `origin/main`). Урок в силе: перед доделкой — `git fetch` + проверить свежий `origin/main`.
+
+**Архитектура (третий сервис единого расширения, «панель по хосту»):** `content-heygen.js` (панель+драйвер на `app.heygen.com`) + `injected-heygen.js` (перехват fetch/XHR студии = разведка API + session-Bearer). Драйвер = ПРЯМЫЕ вызовы под сессией: `upload.heygen.com/v1/talking_photo` → `api.heygen.com/v2/video/generate` (`use_avatar_iv_model`, аудио = наш сегмент) → poll `v1/video_status.get` → скачать mp4; эндпоинты в `CONFIG` наверху файла (правятся разведкой). Общий `background.js`: `tickHeygen` в `tick()` рядом с `tickFlow`/`nlmLoop`, теги `hg-bearer`/`hg-send-recon`. Бэкенд `modules/heygen-ext/router.ts` (`/tasks,/status,/ingest,/recon` + `enqueueHeygenHeads`/`waitHeygenHeads`; таблица `heygen_ext_tasks`; смонтирован ДО глобального `express.json()`). Панель UGC слушает общий тег `tt-flow-ext`.
+
+**Переключатель провайдера:** `UgcSpec.faceProvider ('heygen_api'|'heygen_ext')` в блоке UGC (над «Положение», для всех режимов). Бэкенд: единый хелпер `renderTalkingHeads({provider})` во ВСЕХ 3 ветках `/ugc/build` (Своё фото / Удержание / Диалоги); на `'ext'` ключ HeyGen не нужен.
+
+**Главный риск (не подтверждён без живого аккаунта):** что генерация под session-Bearer списывает подписку, а не требует API-ключ; и что студия ходит именно v2-эндпоинтами. Первый прогон + авто-разведка (`/api/heygen-ext/recon`) подтвердят/поправят `CONFIG`. ToS HeyGen формально запрещает автоматизацию → риск персонального бана; модель строго «каждый клиент — своя подписка», общий аккаунт нельзя.
+
+**Осталось:** пуш `heygen-ext`→`origin/main` (юзер из worktree — предохранитель не пускает Claude в защищённую ветку) + деплой (`vps-redeploy.sh` по SSH) + живой E2E на аккаунте юзера. При релизе бампать `manifest.version` И `TT_EXT_VERSION` + пересобрать `public/trendtraffic-extension.zip`.
