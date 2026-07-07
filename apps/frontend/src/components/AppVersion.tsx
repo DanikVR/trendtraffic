@@ -1843,11 +1843,17 @@
  *         .zip + версия из FLOW_EXT_VERSION + раскрывающаяся инструкция «Как установить»). По
  *         просьбе юзера: страница настроек = энциклопедия, откуда всегда качается свежее расширение.
  *         Версию FLOW_EXT_VERSION бампаем вместе с manifest расширения. Section7OpenMontage.tsx. */
-export const APP_VERSION = '1.6.124';
+/* 1.6.125 — Google Flow «В галерею»: фикс HTTP 401 при сохранении (расширение v0.2.3). Видео/фото
+ *         Flow раздаются с Google-CDN ЗА АВТОРИЗАЦИЕЙ → наш сервер их скачать не мог (401). Теперь
+ *         байты качает САМО расширение в браузере юзера (background fetch с credentials:'include' =
+ *         его Google-cookie) → dataUrl → на сервер. host_permissions расширены (*.googleapis.com,
+ *         *.ggpht.com). Фолбэк на sourceUrl сохранён. content-flow.js (grabMediaData), background.js
+ *         (fetchBytes), manifest 0.2.2→0.2.3, пересобран zip. */
+export const APP_VERSION = '1.6.125';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.2';
+export const FLOW_EXT_VERSION = '0.2.3';
 
 export function AppVersion() {
   return (

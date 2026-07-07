@@ -382,6 +382,12 @@
       try { return { dataUrl: await blobToDataUrl(await (await fetch(src)).blob()), kind }; }
       catch { return { sourceUrl: src, kind }; }
     }
+    // http(s): CDN Google-Flow требует авторизацию (наш сервер ловит HTTP 401). Качаем байты
+    // в браузере юзера — background с его Google-cookie (credentials) → dataUrl. Фолбэк — sourceUrl.
+    try {
+      const b = await send({ type: 'fetch-bytes', url: src });
+      if (b && b.ok && b.dataUrl) return { dataUrl: b.dataUrl, kind };
+    } catch { /* фолбэк ниже */ }
     return { sourceUrl: src, kind };
   }
   // «В галерею»: забрать текущий результат (видео ИЛИ картинку) из Flow → наша Галерея (folder='flow').
