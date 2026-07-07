@@ -1897,14 +1897,23 @@
  *         Flow «Загрузки»» и шагами (открой Flow → «Загрузки» → выбери файл). Картинка — как было
  *         (авто-вставка через расширение). GalleryPage.tsx (sendToFlow ветвится по mediaType +
  *         videoPopup). */
-/* 1.6.132 — Google Flow фидбэк (расширение v0.2.7): (1) «В галерею» брала не то (крупнейшее) —
+/* 1.6.132 — UGC-диалоги: ОПЦИОНАЛЬНАЯ ВЫРЕЗКА ФОНА аватара (силуэт поверх медиа). Тумблер
+ *         «Вырезать фон аватара» в диалоге. Раньше в раскладке «фон + лицо сбоку» (media-bg-left/
+ *         right) аватар клался НЕПРОЗРАЧНЫМ прямоугольником со своим фоном. Теперь опц.: HeyGen
+ *         рендерит говорящего на ЗЕЛЁНОМ (submitTalkingPhotoVideo bgColor='#00FF00' → video_input.
+ *         background) → composeDialogueVideo делает chroma-key+despill (avatarChroma) → чистый
+ *         силуэт поверх медиа. Только media-bg (крупный план/two-shot/split — фон = сцена, не
+ *         трогаем). Безопасный фолбэк: HeyGen оставил свой фон (нет зелёного) → chromakey ничего
+ *         не режет = как прежде (бокс). avatar.ts, podcast_compose.ts (DlgComposeSeg.avatarChroma),
+ *         router.ts, MontageEditor.tsx. Синтетика PASS (зелёное→медиа, человек остался, нет утечки). */
+/* 1.6.133 — Google Flow фидбэк (расширение v0.2.7): (1) «В галерею» брала не то (крупнейшее) —
  *         теперь ВЫБОР: кликнул медиа ≤12с → берём его; несколько на экране → ПРЕВЬЮ-ПИКЕР в панели
  *         (showMediaPicker, кликаешь миниатюру); + подсветка выбранного (flashHighlight). (2) картинка
  *         «→ Flow» на ГЛАВНОЙ Flow падала «поле не найдено» — сообщение теперь ведёт «открой ПРОЕКТ,
  *         не главную». (3) «Открыть Google Flow» в поп-апе видео → страница проектов /fx/tools/flow
  *         (ближе к «Загрузки»). content-flow.js (showMediaPicker/flashHighlight/collectVisibleMedia/
  *         grabAndSend), GalleryPage.tsx, manifest 0.2.6→0.2.7. */
-export const APP_VERSION = '1.6.132';
+export const APP_VERSION = '1.6.133';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */

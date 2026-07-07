@@ -76,6 +76,7 @@ export async function uploadTalkingPhoto(apiKey: string, imageUrl: string): Prom
 export async function submitTalkingPhotoVideo(apiKey: string, opts: {
   talkingPhotoId: string; voiceId?: string; text?: string; audioUrl?: string; emotion?: string;
   useIV?: boolean; width?: number; height?: number; speed?: number; expressive?: boolean;
+  bgColor?: string; // hex-цвет фона (напр. '#00FF00') — для последующей вырезки (chroma-key). Пусто = свой фон фото
 }): Promise<string> {
   const voice: any = opts.audioUrl
     ? { type: 'audio', audio_url: opts.audioUrl }
@@ -85,8 +86,11 @@ export async function submitTalkingPhotoVideo(apiKey: string, opts: {
   const character: any = { type: 'talking_photo', talking_photo_id: opts.talkingPhotoId };
   // «expressive» — заметнее движение головы/тела у talking photo (иначе почти только губы)
   if (opts.expressive) { character.talking_style = 'expressive'; character.expression = 'default'; }
+  const videoInput: any = { character, voice };
+  // Однотонный фон → HeyGen кладёт говорящего на этот цвет (матирует фото), потом вырезаем chroma-key.
+  if (opts.bgColor) videoInput.background = { type: 'color', value: opts.bgColor };
   const body: any = {
-    video_inputs: [{ character, voice }],
+    video_inputs: [videoInput],
     dimension: { width: opts.width || 720, height: opts.height || 1280 },
   };
   if (opts.useIV) body.use_avatar_iv_model = true;

@@ -597,6 +597,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       if (!hgKey) return res.status(400).json({ error: 'Для диалога нужен ключ HeyGen (Avatar IV/III) — Настройки → Генерация.' });
       if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не скачает аудио.' });
       const engagement: DlgEngagement = ['eco', 'bal', 'dyn'].includes(spec.dialogue.engagement) ? spec.dialogue.engagement : 'bal';
+      const cutout = !!spec.dialogue.cutout; // вырезать фон аватара в раскладке «фон+лицо сбоку»
+      const isBgLayout = (l: string) => l === 'media-bg-left' || l === 'media-bg-right';
       const isVid = (u: string) => /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -654,6 +656,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const videoId = await submitTalkingPhotoVideo(hgKey, {
               talkingPhotoId: s.speaker === 'A' ? tpA : tpB, useIV: s.engine === 'iv', expressive: true,
               width: 1080, height: 1920, audioUrl: abs(slice.fileUrl),
+              // фон+лицо сбоку + вырезка → рендерим на зелёном (HeyGen матирует фото), потом chroma-key
+              ...(cutout && isBgLayout(s.layout) ? { bgColor: '#00FF00' } : {}),
             });
             submitted.push({ i, videoId });
           }
@@ -683,6 +687,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             dur: s.t1 - s.t0, layout: s.layout,
             avatarPath: (s.layout === 'media-full' || s.kind === 'hold') ? null : (avatarPaths[i] || null),
             avatar2Path: s.layout === 'twoshot' ? (s.speaker === 'A' ? pB.filePath : pA.filePath) : null, avatar2IsImage: true,
+            avatarChroma: cutout && isBgLayout(s.layout) ? '0x00FF00' : null,
             mediaPath: s.image ? mediaCache.get(s.image) || null : null, isVideo: s.isVideo, mediaFromSec: s.mediaFromSec,
           }));
           const caps: UgcCaption[] = segs.filter((s) => s.kind === 'speech' && s.text.trim()).map((s) => ({ t0: s.t0, t1: s.t1, text: s.text }));
