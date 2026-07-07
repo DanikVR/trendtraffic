@@ -1897,11 +1897,18 @@
  *         Flow «Загрузки»» и шагами (открой Flow → «Загрузки» → выбери файл). Картинка — как было
  *         (авто-вставка через расширение). GalleryPage.tsx (sendToFlow ветвится по mediaType +
  *         videoPopup). */
-export const APP_VERSION = '1.6.131';
+/* 1.6.132 — Google Flow фидбэк (расширение v0.2.7): (1) «В галерею» брала не то (крупнейшее) —
+ *         теперь ВЫБОР: кликнул медиа ≤12с → берём его; несколько на экране → ПРЕВЬЮ-ПИКЕР в панели
+ *         (showMediaPicker, кликаешь миниатюру); + подсветка выбранного (flashHighlight). (2) картинка
+ *         «→ Flow» на ГЛАВНОЙ Flow падала «поле не найдено» — сообщение теперь ведёт «открой ПРОЕКТ,
+ *         не главную». (3) «Открыть Google Flow» в поп-апе видео → страница проектов /fx/tools/flow
+ *         (ближе к «Загрузки»). content-flow.js (showMediaPicker/flashHighlight/collectVisibleMedia/
+ *         grabAndSend), GalleryPage.tsx, manifest 0.2.6→0.2.7. */
+export const APP_VERSION = '1.6.132';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.6';
+export const FLOW_EXT_VERSION = '0.2.7';
 
 export function AppVersion() {
   return (

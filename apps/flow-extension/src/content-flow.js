@@ -268,7 +268,30 @@
       }
     }
     function hidePicker() { if (els.pick) { els.pick.classList.add('hide'); els.pick.innerHTML = ''; } }
-    return { mount, line, status, task, recon, showPicker, hidePicker };
+    // Выбор ИЗ МЕДИА НА ЭКРАНЕ Flow (превьюшки) → onPick(element).
+    function showMediaPicker(mediaEls, onPick) {
+      if (!els.pick) return;
+      els.pick.classList.remove('hide');
+      els.pick.innerHTML = '';
+      const hint = document.createElement('div'); hint.className = 'ph'; hint.textContent = 'Кликни нужное — заберётся в Галерею';
+      els.pick.appendChild(hint);
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:5px';
+      for (const el of mediaEls) {
+        const src = el.currentSrc || el.src || '';
+        const cell = document.createElement('div');
+        cell.style.cssText = 'aspect-ratio:1;border-radius:6px;overflow:hidden;cursor:pointer;background:#000;border:1px solid #2A303B';
+        let thumb;
+        if (el.tagName === 'VIDEO') { thumb = document.createElement('video'); thumb.muted = true; thumb.preload = 'metadata'; thumb.src = src; }
+        else { thumb = document.createElement('img'); thumb.src = src; }
+        thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
+        cell.appendChild(thumb);
+        cell.addEventListener('click', () => { hidePicker(); onPick(el); });
+        grid.appendChild(cell);
+      }
+      els.pick.appendChild(grid);
+    }
+    return { mount, line, status, task, recon, showPicker, hidePicker, showMediaPicker };
   })();
 
   // ---------- 3. автоматизация генерации ----------
@@ -378,11 +401,12 @@
   }
   // Последнее медиа (видео/картинка), кликнутое юзером в Flow — приоритетный кандидат для «В галерею».
   let lastClickedMedia = null;
+  let lastClickedAt = 0;
   document.addEventListener('click', (e) => {
     try {
       const path = (e.composedPath && e.composedPath()) || [];
       const m = path.find((n) => n && (n.tagName === 'VIDEO' || n.tagName === 'IMG')) || (e.target && e.target.closest && e.target.closest('video,img'));
-      if (m) lastClickedMedia = m;
+      if (m) { lastClickedMedia = m; lastClickedAt = Date.now(); }
     } catch { /* */ }
   }, true);
   const usableMediaSrc = (el) => (el.tagName === 'VIDEO'
@@ -441,19 +465,42 @@
     } catch { /* фолбэк ниже */ }
     return { sourceUrl: src, kind };
   }
-  // «В галерею»: забрать текущий результат (видео ИЛИ картинку) из Flow → наша Галерея (folder='flow').
-  async function sendToGallery() {
-    const el = findResultMedia();
-    if (!el) { ui.line('⚠ видео/картинка не найдены — кликни нужный результат в Flow и повтори'); return; }
+  // Кратко подсветить выбранный элемент (юзер видит, что ИМЕННО берём).
+  function flashHighlight(el) {
+    try {
+      const so = el.style.outline, sf = el.style.outlineOffset;
+      el.style.outline = '3px solid #6366f1'; el.style.outlineOffset = '2px';
+      setTimeout(() => { try { el.style.outline = so; el.style.outlineOffset = sf; } catch { /* */ } }, 1800);
+    } catch { /* */ }
+  }
+  // Все видимые медиа на экране (видео+картинки, крупные первыми).
+  function collectVisibleMedia() {
+    const vids = queryAllDeep('video').filter(visible).filter(usableMediaSrc);
+    const imgs = queryAllDeep('img').filter(visible).filter(usableMediaSrc).filter((i) => i.clientWidth >= 120 && i.clientHeight >= 120);
+    return [...vids, ...imgs].sort(byArea).slice(0, 12);
+  }
+  // Забрать КОНКРЕТНЫЙ элемент → Галерея.
+  async function grabAndSend(el) {
+    flashHighlight(el);
     const what = el.tagName === 'VIDEO' ? 'клип' : 'картинку';
     ui.line('забираю ' + what + ' из Flow…');
     const data = await grabMediaData(el);
     if (!data.sourceUrl && !data.dataUrl) { ui.line('⚠ не удалось прочитать медиа'); return; }
-    // Диагностика: если байты скачать не удалось (остался sourceUrl) — покажем хост CDN.
     if (data.sourceUrl && !data.dataUrl) { try { ui.line('CDN за авторизацией: ' + new URL(data.sourceUrl).host + ' — пробую через сервер'); } catch { /* */ } }
     const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
     if (r && r.ok) ui.line('✓ ' + what + ' в Галерее → вкладка «Google Flow»');
     else ui.line('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить» в TrendTraffic'));
+  }
+  // «В галерею»: (1) кликнул медиа ≤12с — берём ЕГО; (2) одно на экране — его; (3) несколько — ВЫБОР превьюшками.
+  async function sendToGallery() {
+    if (lastClickedMedia && (Date.now() - lastClickedAt < 12000) && document.contains(lastClickedMedia) && visible(lastClickedMedia) && usableMediaSrc(lastClickedMedia)) {
+      return grabAndSend(lastClickedMedia);
+    }
+    const cands = collectVisibleMedia();
+    if (!cands.length) { ui.line('⚠ кликни нужное фото/видео в Flow, потом «В галерею»'); return; }
+    if (cands.length === 1) return grabAndSend(cands[0]);
+    ui.line('несколько медиа — выбери, что забрать ↓');
+    ui.showMediaPicker(cands, (el) => grabAndSend(el));
   }
   // Подходит ли input[type=file] под тип (image/video). Пустой accept или */* — принимает всё.
   function acceptsKind(inp, kind) {
@@ -484,7 +531,7 @@
       // Для видео есть только image-поле → честно сообщаем (не втыкаем видео в image → ошибка Flow).
       const imageOnly = [...document.querySelectorAll('input[type="file"]')].some((i) => /image/i.test(i.accept || '') && !/video|\*/i.test(i.accept || ''));
       if (kind === 'video' && imageOnly) return { ok: false, reason: 'Flow здесь принимает только картинки — видео залей через раздел «Загрузки» Flow' };
-      return { ok: false, reason: 'поле загрузки не найдено' };
+      return { ok: false, reason: 'поле загрузки не найдено — открой ПРОЕКТ в Flow (не главную): внутри проекта есть загрузка (+/«Загрузки»)' };
     }
     try {
       const dt = new DataTransfer(); dt.items.add(file);
