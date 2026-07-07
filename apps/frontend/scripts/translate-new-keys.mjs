@@ -86,6 +86,28 @@ function protectPrefix(s) {
   return { prefix: '', rest: s };
 }
 
+// ── Защита {{интерполяций}} от переводчика (как в translate-locales.mjs) ──
+// Без неё Google переводит ИМЕНА переменных ({{count}} → {{telling}}/{{ቆጠራ}}…) и i18next
+// перестаёт подставлять значения. {{…}} маскируются токенами __VVn__ и восстанавливаются.
+function protectPlaceholders(str) {
+  const map = [];
+  const protectedStr = String(str).replace(/\{\{[^}]+\}\}/g, (m) => {
+    const token = `__VV${map.length}__`;
+    map.push(m);
+    return token;
+  });
+  return { protectedStr, map };
+}
+function restorePlaceholders(translatedStr, map) {
+  let out = String(translatedStr);
+  map.forEach((original, idx) => {
+    for (const v of [`__VV${idx}__`, `__vv${idx}__`, `_VV${idx}_`, `__ VV${idx} __`, `__VV ${idx}__`]) {
+      out = out.split(v).join(original);
+    }
+  });
+  return out;
+}
+
 async function translateBatch(apiKey, texts, targetLang) {
   const googleTarget = GOOGLE_CODE_MAP[targetLang] || targetLang;
   const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
@@ -139,16 +161,18 @@ async function main() {
 
     let translated;
     try {
-      // Защищаем ведущие глифы, переводим ЧАНКАМИ (лимит Google — 128 сегментов/запрос), восстанавливаем.
+      // Защищаем ведущие глифы и {{интерполяции}}, переводим ЧАНКАМИ (лимит Google —
+      // 128 сегментов/запрос), затем восстанавливаем плейсхолдеры и глифы.
       const parts = enValues.map(protectPrefix);
-      const rests = parts.map((p) => p.rest);
+      const guarded = parts.map((p) => protectPlaceholders(p.rest));
+      const rests = guarded.map((g) => g.protectedStr);
       const CHUNK = 100;
       const out = [];
       for (let i = 0; i < rests.length; i += CHUNK) {
         const piece = await translateBatch(apiKey, rests.slice(i, i + CHUNK), lang);
         out.push(...piece);
       }
-      translated = parts.map((p, i) => p.prefix + (out[i] ?? p.rest));
+      translated = parts.map((p, i) => p.prefix + restorePlaceholders(out[i] ?? guarded[i].protectedStr, guarded[i].map));
       ok++;
     } catch (e) {
       // API не справился для языка — кладём английский, чтобы ключ существовал.

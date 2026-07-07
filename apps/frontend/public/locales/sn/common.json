@@ -1241,15 +1241,15 @@
       "elevenPreview": "Tamba muenzaniso",
       "langsLabel": "Mitauro yemavhidhiyo",
       "langRuPinned": "ChiRussian · puraimari",
-      "langsHintVoiceover": "Nhevedzano: clip yakasiyana mumutauro wega wega we {{count}} — Claude anoshandura, manzwi eElevenLabs. Anenge emahara: mutengo = izwi pamusoro × mitauro.",
-      "langsHintSolo": "Nhevedzano: clip yakasiyana mumutauro wega wega we {{count}}. Neavatar, HeyGen inoburitsa chiso chemutauro wega wega — inodhura zvakanyanya.",
+      "langsHintVoiceover": "Nhevedzano: clip yakasiyana mune imwe neimwe yemitauro {{count}} — Claude anoshandura, manzwi eElevenLabs. Anenge emahara: mutengo = izwi pamusoro × mitauro.",
+      "langsHintSolo": "Nhevedzano: clip yakasiyana mumutauro wega wega we {{count}}. Neavatar, HeyGen inoita kuti chiso chemutauro wega wega chive chakakodzera - mutengo wakanyanya.",
       "diarizeHintVoiceover": "Odhiyo inodzokorora vhidhiyo sezvairi. \"Kunyora hurukuro\" hazvidiwi: inodiwa pakunyora zvinyorwa pasi pechinyorwa uye pakuisa mutsetse wega wega.",
       "loudnormTitle": "Enzanisa vhoriyamu yezwi",
       "loudnormSub": "zvikamu zvakanyarara zvinosimudzwa, zvikamu zvine ruzha zvinogadziriswa — ruzha rwepro-sounding"
     },
     "lines": {
-      "count_one": "Mutsetse we {{count}} · ~{{sec}} sec",
-      "count_other": "Mitsetse {{count}} · ~{{sec}} sec",
+      "count_one": "{{count}} mutsetse · ~{{sec}} sekondi",
+      "count_other": "{{count}} mitsetse · ~{{sec}} sekondi",
       "editHint": "— gadzirisa pane nguva iri pasi pechidzitiro.",
       "title": "Mitsetse",
       "filterAll": "Zvese · {{count}}",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · chikafu",
       "label11": "1:1 · Instagram feed",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "mafaira pakushandisa: {{count}} — mufananidzo unobhadharwa kamwe chete"
+      "filesPerRun": "mafaira pakushandisa: {{count}} — avatar inobhadharwa kamwe chete"
     },
     "layout": {
       "label": "Marongerwo",
@@ -1356,9 +1356,9 @@
       "noteDialogue": "Hurongwa hwekukurukurirana husina kunaka: AI inosarudza nguva yekutaura zviri pedyo uye nguva yekuratidza zvese zviri mufuremu (mhinduro imufananidzo usingachinji, $0)."
     },
     "preview": {
-      "seriesReady": "Mavhidhiyo enguva dzose agadzirira: {{count}} — ese ari muGallery",
+      "seriesReady": "Mavhidhiyo eVV0__ agadzirira: {{count}} — ese ari muGallery",
       "ready": "Zvapera — vhidhiyo iri muGallery",
-      "footerSolo": "Dzvanya panzvimbo yekutarisa kuti uwedzere zviri mukati. Kutarisa kuchavandudzwa ipapo ipapo.",
+      "footerSolo": "Dzvanya nzvimbo yekutarisa kuti uwedzere zviri mukati. Kutarisa kuchavandudzwa ipapo ipapo.",
       "footerPlan": "Dzvanya zvikamu zvehurongwa — tarisiro inoratidza mufananidzo wega wega. Mitsetse yemifananidzo iri pane nguva iri pazasi.",
       "emptyNotSelected": "{{tag}} — haisati yasarudzwa",
       "emptyClickToChoose": "tinya kuti usarudze",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Rutivi rwepamusoro",
       "sub": "logo kana furemu — inogara iri pamusoro",
-      "empty": "{{fomati}} — PNG inoonekera",
+      "empty": "{{format}} — PNG yakajeka",
       "hint": "PNG saizi yefuremu: logo chero kupi, furemu, chinyorwa. Chinogara pamusoro pevhidhiyo yese; zvinyorwa zvidiki zvinogara pamusoro pechikamu.",
       "progressTitle": "Bhawa rekufambira mberi",
-      "progressSub": "chikamu chidiki chenguva chiri pamusoro — vaoni vanoona vhidhiyo yacho ipfupi uye tarisai kusvika kumagumo"
+      "progressSub": "chikamu chidiki chenguva chiri pamusoro — vaoni vanoona vhidhiyo yacho ipfupi uye tarisai kusvika kumagumo",
+      "pngOnly": "Chinyorwa ichi chinofanira kunge chiri chePNG kana WebP inoonekera — faira risina kuonekera rinofukidza furemu yese."
     },
     "brand": {
       "button": "Kiti yemhando yepamusoro",

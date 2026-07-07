@@ -1241,14 +1241,14 @@
       "elevenPreview": "Reprodueix una mostra",
       "langsLabel": "Idiomes de vídeo",
       "langRuPinned": "Rus · primària",
-      "langsHintVoiceover": "Una sèrie: un clip separat en cadascun dels {{count}} idiomes — Claude tradueix, veus d'ElevenLabs. Pràcticament gratuït: cost = veu en off × idiomes.",
-      "langsHintSolo": "Una sèrie: un clip separat en cadascun dels {{count}} idiomes. Amb un avatar, HeyGen renderitza la cara per a cada idioma, cosa que és més cara.",
+      "langsHintVoiceover": "Una sèrie: un clip separat en cadascun dels idiomes {{count}} — Claude tradueix, veus d'ElevenLabs. Pràcticament gratuït: cost = veu en off × idiomes.",
+      "langsHintSolo": "Una sèrie: un clip separat en cadascun dels idiomes {{count}}. Amb un avatar, HeyGen renderitza la cara per a cada idioma, cosa que és més cara.",
       "diarizeHintVoiceover": "L'àudio s'afegeix al vídeo tal com està. L'opció \"Transcripció de la veu\" és opcional: necessària per als subtítols i les insercions per línia.",
       "loudnormTitle": "Volum de veu uniforme",
       "loudnormSub": "les parts tranquil·les s'eleven, les parts fortes es suavitzen: àudio amb un so professional"
     },
     "lines": {
-      "count_one": "{{count}} línia · ~{{sec}} seg",
+      "count_one": "línia {{count}} · ~{{sec}} seg",
       "count_other": "{{count}} línies · ~{{sec}} seg",
       "editHint": "— edita a la línia de temps a la part inferior de la pantalla.",
       "title": "Línies",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Opcional: sense vídeo, l'avatar omple tot el quadre.",
       "dialogueHint": "En el mode de diàleg, els elements multimèdia s'adjunten a les línies de la línia de temps següent: \"Com mostrar\" i \"Mostra durant N segons\" apareixen a qualsevol línia amb elements multimèdia.",
       "seriesHeading": "Sèrie de clips",
-      "seriesCount": "Vídeos de la sèrie: {{count}} → el mateix nombre de clips publicats",
+      "seriesCount": "Vídeos de la sèrie: {{count}} → el mateix nombre de clips fora",
       "seriesChange": "Canvi",
       "seriesAdd": "Afegir vídeos a la sèrie: un clip per vídeo",
       "seriesBilling": "L'avatar es factura una vegada per a tota la sèrie.",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Pla aproximat de diàleg: la IA decideix quan fer un primer pla i quan mostrar tots dos en l'enquadrament (una reacció és una foto estàtica, 0 $)."
     },
     "preview": {
-      "seriesReady": "Sèries llestes: {{count}} vídeos, tots a la Galeria",
+      "seriesReady": "Sèries a punt: vídeos de {{count}}, tots a la Galeria",
       "ready": "Fet: el vídeo és a la Galeria",
       "footerSolo": "Feu clic a una àrea de previsualització per afegir contingut. La previsualització s'actualitza a l'instant.",
       "footerPlan": "Feu clic als segments del pla: la vista prèvia mostra cada presa. El contingut multimèdia de línia es troba a la línia de temps següent.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG transparent",
       "hint": "Un fitxer PNG amb la mida adequada al fotograma: un logotip a qualsevol lloc, un fotograma, un peu de foto. Es col·loca sobre tot el vídeo; els subtítols es mantenen a sobre de la capa.",
       "progressTitle": "Barra de progrés",
-      "progressSub": "una tira fina de temporitzador a la part superior: els espectadors veuen que el vídeo és curt i el miren fins al final"
+      "progressSub": "una tira fina de temporitzador a la part superior: els espectadors veuen que el vídeo és curt i el miren fins al final",
+      "pngOnly": "La capa ha de ser un fitxer PNG o WebP transparent; un fitxer sense transparència cobriria tot el marc."
     },
     "brand": {
       "button": "Kit de marca",

@@ -1241,8 +1241,8 @@
       "elevenPreview": "Spela ett prov",
       "langsLabel": "Videospråk",
       "langRuPinned": "Ryska · primärval",
-      "langsHintVoiceover": "En serie: ett separat klipp på vart och ett av {{count}} språk — Claude översätter, ElevenLabs-röster. Nästan gratis: kostnad = berättarröst × språk.",
-      "langsHintSolo": "En serie: ett separat klipp på vart och ett av {{count}} språken. Med en avatar renderar HeyGen ansiktet för varje språk – dyrare.",
+      "langsHintVoiceover": "En serie: ett separat klipp på vart och ett av {{count}} språken — Claude översätter, ElevenLabs-röster. Nästan gratis: kostnad = berättarröst × språk.",
+      "langsHintSolo": "En serie: ett separat klipp på varje {{count}}-språk. Med en avatar renderar HeyGen ansiktet för varje språk – dyrare.",
       "diarizeHintVoiceover": "Ljudet går över videon som det är. \"Transkribera tal\" är valfritt: behövs för undertexter och radvisa inlägg.",
       "loudnormTitle": "Jämna ut röstvolymen",
       "loudnormSub": "tysta delar lyfts, högljudda delar jämnas ut — proffsigt ljud"
@@ -1329,7 +1329,7 @@
       "bottom": "Avatar längst ner",
       "overlayLeft": "Över videon, vänster",
       "overlayRight": "Över videon, höger",
-      "overlayHint": "videon fyller ut bildrutan, avataren är liten överst"
+      "overlayHint": "videon fyller ut bilden, avataren är liten överst"
     },
     "timeline": {
       "title": "Linjer tidslinje",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — transparent PNG",
       "hint": "En PNG-fil i ramstorlek: en logotyp var som helst, en ram, en bildtext. Den ligger över hela videon; undertexterna visas ovanför lagret.",
       "progressTitle": "Förloppsindikator",
-      "progressSub": "en tunn timerremsa högst upp – tittarna ser att videon är kort och tittar till slutet"
+      "progressSub": "en tunn timerremsa högst upp – tittarna ser att videon är kort och tittar till slutet",
+      "pngOnly": "Lagret måste vara en transparent PNG eller WebP – en fil utan transparens skulle täcka hela bildrutan."
     },
     "brand": {
       "button": "Varumärkessats",

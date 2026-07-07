@@ -1130,7 +1130,7 @@
       "perClip2": "≈ $2 per klipp",
       "perMin1": "≈ 1 dollar per minutt",
       "perMin3_4": "≈ 3–4 dollar per minutt",
-      "seriesSuffix": " · serie på {{count}} — avatar én gang",
+      "seriesSuffix": " · serie med {{count}} — avatar én gang",
       "filesSuffix": " · 2 filer — avatar én gang",
       "voiceoverAi": "≈ $0,1–0,3 per klipp",
       "voiceoverFree": "0 kr – din egen lyd og video",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Hold HeyGen studio-fanen åpen med et aktivt abonnement.",
       "apiNote": "Via HeyGen API – tast inn i Innstillinger → Generering, betal etter bruk-fakturering (~$3/min Avatar IV).",
       "delTitle": "Fjerne avataren?",
-      "delMessage": "'{{name}}' vil bli fjernet fra avatarsamlingen din. Den opprinnelige filen forblir i galleriet."
+      "delMessage": "«{{name}}» vil bli fjernet fra avatarsamlingen din. Den opprinnelige filen forblir i galleriet."
     },
     "voice": {
       "title": "Stemme og manus",
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Spill av et eksempel",
       "langsLabel": "Videospråk",
       "langRuPinned": "Russisk · primærvalg",
-      "langsHintVoiceover": "En serie: et separat klipp på hvert av {{count}} språk — Claude oversetter, ElevenLabs-stemmer. Nesten gratis: kostnad = voiceover × språk.",
-      "langsHintSolo": "En serie: et separat klipp på hvert av {{count}} språk. Med en avatar gjengir HeyGen ansiktet for hvert språk – dyrere.",
+      "langsHintVoiceover": "En serie: et separat klipp på hvert av {{count}}-språkene — Claude oversetter, ElevenLabs-stemmer. Nesten gratis: kostnad = voiceover × språk.",
+      "langsHintSolo": "En serie: et separat klipp på hvert av {{count}}-språkene. Med en avatar gjengir HeyGen ansiktet for hvert språk – dyrere.",
       "diarizeHintVoiceover": "Lyden går over videoen som den er. «Transkriber tale» er valgfritt: nødvendig for undertekster og linjevise innlegg.",
       "loudnormTitle": "Jevn ut stemmevolumet",
       "loudnormSub": "stille deler løftes, høye deler jevnes ut – proff lyd"
@@ -1285,7 +1285,7 @@
     },
     "subtitles": {
       "title": "Undertekster",
-      "sub": "live-eksempel – i forhåndsvisningen",
+      "sub": "live eksempel – i forhåndsvisningen",
       "styleLabel": "Stil:",
       "styleNone": "Av",
       "styleWord": "Ord for ord",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Grov dialogplan: AI bestemmer når den skal gå på nærbilder og når den skal vise begge deler i bildet (en reaksjon er et statisk bilde, $0)."
     },
     "preview": {
-      "seriesReady": "Serien er klar: {{count}} videoer – alle i galleriet",
+      "seriesReady": "Serien er klar: {{count}} videoer – alt i galleriet",
       "ready": "Ferdig – videoen er i galleriet",
       "footerSolo": "Klikk på et forhåndsvisningsområde for å legge til innhold. Forhåndsvisningen oppdateres umiddelbart.",
       "footerPlan": "Klikk på plansegmentene – forhåndsvisningen viser hvert opptak. Linjemedier er på tidslinjen nedenfor.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — gjennomsiktig PNG",
       "hint": "En PNG-fil i riktig størrelse for rammen: en logo hvor som helst, en ramme, en bildetekst. Den ligger over hele videoen; undertekstene forblir over laget.",
       "progressTitle": "Fremdriftslinje",
-      "progressSub": "en tynn timerstripe øverst – seerne ser at videoen er kort og ser den til slutten"
+      "progressSub": "en tynn timerstripe øverst – seerne ser at videoen er kort og ser den til slutten",
+      "pngOnly": "Laget må være en gjennomsiktig PNG- eller WebP-fil – en fil uten gjennomsiktighet ville dekke hele rammen."
     },
     "brand": {
       "button": "Merkesett",

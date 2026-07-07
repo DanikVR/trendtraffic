@@ -1119,7 +1119,7 @@
       "saved": "Wedi'i gadw",
       "save": "Cadw",
       "ctaTooltipReady": "Mae'r avatar yn llefaru'r sgript (HeyGen) → uno â fideo → isdeitlau → Oriel",
-      "ctaTooltipMissing": "Yn dal yn ofynnol: {{missing}}",
+      "ctaTooltipMissing": "Dal angen: {{missing}}",
       "creating": "Wrthi'n creu…",
       "create": "Creu fideo"
     },
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Chwarae sampl",
       "langsLabel": "Ieithoedd fideo",
       "langRuPinned": "Rwsieg · cynradd",
-      "langsHintVoiceover": "Cyfres: clip ar wahân ym mhob un o {{count}} iaith — mae Claude yn cyfieithu, lleisiau ElevenLabs. Bron yn rhad ac am ddim: cost = troslais × ieithoedd.",
-      "langsHintSolo": "Cyfres: clip ar wahân ym mhob un o {{count}} iaith. Gyda avatar, mae HeyGen yn rendro'r wyneb ar gyfer pob iaith — yn ddrytach.",
+      "langsHintVoiceover": "Cyfres: clip ar wahân ym mhob un o'r ieithoedd {{count}} — mae Claude yn cyfieithu, lleisiau ElevenLabs. Bron yn rhad ac am ddim: cost = troslais × ieithoedd.",
+      "langsHintSolo": "Cyfres: clip ar wahân ym mhob un o'r ieithoedd {{count}}. Gyda avatar, mae HeyGen yn rendro'r wyneb ar gyfer pob iaith — yn ddrytach.",
       "diarizeHintVoiceover": "Mae'r sain yn mynd dros y fideo fel y mae. Mae \"Trawsgrifio lleferydd\" yn ddewisol: mae ei angen ar gyfer isdeitlau a mewnosodiadau fesul llinell.",
       "loudnormTitle": "Cyfartalu cyfaint y llais",
       "loudnormSub": "mae rhannau tawel yn cael eu codi, mae rhannau uchel yn cael eu llyfnhau — sain sy'n swnio'n broffesiynol"
@@ -1252,7 +1252,7 @@
       "count_other": "{{count}} llinellau · ~{{sec}} eiliad",
       "editHint": "— golygu ar y llinell amser ar waelod y sgrin.",
       "title": "Llinellau",
-      "filterAll": "Pawb · {{count}}",
+      "filterAll": "Popeth · {{count}}",
       "filterVoiceA": "Llais A · {{count}}",
       "filterVoiceB": "Llais B · {{count}}",
       "hintDialogue": "Bathodyn A/B — newid llais · ⇣ — uno â'r llinell nesaf",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Cynllun deialog bras: Mae deallusrwydd artiffisial yn penderfynu pryd i fynd yn agos a phryd i ddangos y ddau yn y ffrâm (mae adwaith yn llun statig, $0)."
     },
     "preview": {
-      "seriesReady": "Cyfres yn barod: {{count}} fideo — pob un yn yr Oriel",
+      "seriesReady": "Cyfres yn barod: fideos {{count}} — i gyd yn yr Oriel",
       "ready": "Wedi'i wneud — mae'r fideo yn yr Oriel",
       "footerSolo": "Cliciwch ar ardal rhagolwg i ychwanegu cynnwys. Mae'r rhagolwg yn diweddaru ar unwaith.",
       "footerPlan": "Cliciwch ar y segmentau cynllun — mae'r rhagolwg yn dangos pob ergyd. Mae cyfryngau llinell ar yr amserlen isod.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG tryloyw",
       "hint": "PNG o faint ar gyfer y ffrâm: logo unrhyw le, ffrâm, capsiwn. Yn eistedd dros y fideo cyfan; mae isdeitlau'n aros uwchben yr haen.",
       "progressTitle": "Bar cynnydd",
-      "progressSub": "stribed amserydd tenau ar y brig — mae gwylwyr yn gweld bod y fideo yn fyr ac yn gwylio hyd y diwedd"
+      "progressSub": "stribed amserydd tenau ar y brig — mae gwylwyr yn gweld bod y fideo yn fyr ac yn gwylio hyd y diwedd",
+      "pngOnly": "Rhaid i'r haen fod yn PNG neu'n WebP tryloyw — byddai ffeil heb dryloywder yn gorchuddio'r ffrâm gyfan."
     },
     "brand": {
       "button": "Pecyn brand",

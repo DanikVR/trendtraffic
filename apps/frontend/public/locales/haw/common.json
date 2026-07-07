@@ -1151,7 +1151,7 @@
       "missScript": "palapala a hoʻopaʻa leo paha",
       "videoChosen": "Nā kiʻi i koho ʻia",
       "missVideo": "kiʻiʻoniʻoni",
-      "step": "ʻanuʻu"
+      "step": "kaʻanuʻu {{n}}"
     },
     "mode": {
       "title": "ʻAno wikiō",
@@ -1161,7 +1161,7 @@
       "soloHint": "ʻŌlelo ka avatar i ka palapala holoʻokoʻa ma ka ʻaoʻao o kāu kiʻi. ʻO ke koho maʻalahi loa.",
       "retentionHint": "Hoʻololi ke kiʻi i kēlā me kēia mau kekona ma luna o hoʻokahi mele leo, no laila e nānā ka poʻe nānā a hiki i ka hopena. 'ʻO kaʻu kiʻi' wale nō.",
       "dialogueHint": "ʻŌlelo nā kānaka ʻelua me ko lākou mau helehelena ponoʻī. Pono i ʻelua kiʻi a me kahi hoʻopaʻa leo kamaʻilio ʻelua.",
-      "retentionPresetLabel": "Ka ikaika o ka hoʻonohonoho ʻana",
+      "retentionPresetLabel": "Ka ikaika o ka Montage",
       "presetEco": "Hoʻokele waiwai",
       "presetPrem": "Kūlana kiʻekiʻe",
       "presetEcoHint": "Nā kiʻi kokoke pipiʻi wale nō ma ka makau a me ke kāhea ʻana i ka hana (~2 no kēlā me kēia wikiō). ʻO ke koho makepono loa.",
@@ -1241,18 +1241,18 @@
       "elevenPreview": "E pāʻani i kahi laʻana",
       "langsLabel": "Nā ʻōlelo wikiō",
       "langRuPinned": "Lūkini · mua",
-      "langsHintVoiceover": "He moʻo: he ʻāpana ʻokoʻa ma kēlā me kēia o {{count}} mau ʻōlelo — unuhi ʻo Claude, nā leo o ElevenLabs. Kokoke manuahi: kumukūʻai = leo ma luna × nā ʻōlelo.",
-      "langsHintSolo": "He moʻo: he ʻāpana ʻokoʻa ma kēlā me kēia o nā ʻōlelo {{count}}. Me kahi avatar, hōʻike ʻo HeyGen i ke alo no kēlā me kēia ʻōlelo - ʻoi aku ke kumukūʻai.",
+      "langsHintVoiceover": "He moʻo: he ʻāpana wikiō kaʻawale ma kēlā me kēia ʻōlelo {{count}} — unuhi ʻo Claude, nā leo ʻo ElevenLabs. Kokoke manuahi: kumukūʻai = leo ma luna × nā ʻōlelo.",
+      "langsHintSolo": "He moʻo: he ʻāpana wikiō kaʻawale ma kēlā me kēia ʻōlelo {{count}}. Me kahi avatar, hōʻike ʻo HeyGen i ke alo no kēlā me kēia ʻōlelo - ʻoi aku ke kumukūʻai.",
       "diarizeHintVoiceover": "Hoʻolohe ʻia ke kani ma luna o ke wikiō e like me ia. He koho ʻo \"E kākau i ka ʻōlelo\": pono no nā huaʻōlelo i unuhi ʻia a me nā hoʻokomo no kēlā me kēia laina.",
       "loudnormTitle": "Hoʻohālikelike i ka leo",
       "loudnormSub": "hāpai ʻia nā ʻāpana mālie, hoʻomaʻemaʻe ʻia nā ʻāpana leo nui — leo kani-pro"
     },
     "lines": {
       "count_one": "laina {{count}} · ~{{sec}} kekona",
-      "count_other": "{{count}} laina · ~{{sec}} kekona",
+      "count_other": "Nā laina {{count}} · ~{{sec}} kekona",
       "editHint": "— hoʻoponopono ma ka papa manawa ma lalo o ka pale.",
       "title": "Nā Laina",
-      "filterAll": "A pau · {{count}}",
+      "filterAll": "Nā mea a pau · {{count}}",
       "filterVoiceA": "Leo A · {{count}}",
       "filterVoiceB": "Leo B · {{count}}",
       "hintDialogue": "Hōʻailona A/B — hoʻololi leo · ⇣ — hui pū me ka laina aʻe",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Koho: me ka ʻole o kahi wikiō, hoʻopiha ka avatar i ka mōlina.",
       "dialogueHint": "Ma ke ʻano kamaʻilio, hoʻopili ʻia ka pāpāho i nā laina ma ka papa manawa ma lalo - ʻike ʻia ʻo 'Pehea e hōʻike ai' a me 'Hōʻike no N kekona' ma kekahi laina me ka pāpāho.",
       "seriesHeading": "Moʻo ʻokiʻoki",
-      "seriesCount": "Nā wikiō ma ka moʻo: {{count}} → ka helu like o nā ʻāpana wikiō i hoʻopuka ʻia",
+      "seriesCount": "Nā wikiō ma ka moʻo: {{count}} → ka helu like o nā ʻāpana wikiō i waho",
       "seriesChange": "Hoʻololi",
       "seriesAdd": "Hoʻohui i nā wikiō i ka moʻo - hoʻokahi ʻāpana wikiō no kēlā me kēia wikiō",
       "seriesBilling": "Hoʻokahi wale nō uku no ka avatar no ka moʻo holoʻokoʻa.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · hānai",
       "label11": "1:1 · Hānai Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "nā faila no kēlā me kēia holo: {{count}} — ua uku ʻia ka avatar no hoʻokahi manawa"
+      "filesPerRun": "nā faila no kēlā me kēia holo: {{count}} - ua uku ʻia ka avatar no hoʻokahi manawa"
     },
     "layout": {
       "label": "Hoʻonohonoho",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Hoʻolālā kamaʻilio maʻamau: Hoʻoholo ʻo AI i ka wā e hele kokoke ai a me ka wā e hōʻike ai i nā mea ʻelua i loko o ke kiʻi (he kiʻi paʻa ka hopena, $0)."
     },
     "preview": {
-      "seriesReady": "Mākaukau nā moʻo: {{count}} wikiō — aia nā mea a pau ma ka Hale Hōʻikeʻike",
+      "seriesReady": "Mākaukau nā moʻo: nā wikiō {{count}} — aia nā mea a pau ma ka Hale Hōʻikeʻike",
       "ready": "Ua pau — aia ke wikiō ma ka Hale Hōʻikeʻike Kiʻi",
       "footerSolo": "Kaomi i kahi ʻāpana nānā mua e hoʻohui i ka ʻike. Hoʻohou koke ʻia ka nānā mua.",
       "footerPlan": "Kaomi i nā ʻāpana hoʻolālā - hōʻike ka nānā mua i kēlā me kēia kiʻi. Aia ka pāpaho laina ma ka papa manawa ma lalo.",
@@ -1370,7 +1370,7 @@
       "emptyLineMediaSub": "e hoʻopili i kahi kiʻi a wikiō paha i kahi laina (⊞)",
       "cutoutTooltip": "Ka hope moakāka — ʻo ke kanaka wale nō e noho ana i loko o ke kiʻiʻoniʻoni",
       "cutoutBadge": "hope moakāka",
-      "emptyAvatarOverlay": "ʻAvatar — ʻaʻole i koho ʻia i kēia manawa",
+      "emptyAvatarOverlay": "ʻAvatar — ʻaʻole i koho ʻia",
       "tagPeerACloseup": "Luna Hoʻolaha A · kokoke loa",
       "emptyPeerA": "Luna Hoʻomalu A — ʻaʻole i koho ʻia",
       "tagPeerBCloseup": "Luna Hoʻolaha B · kokoke loa",
@@ -1380,7 +1380,7 @@
       "tagLineMediaBg": "Pāpaho laina · ma ke ʻano he kua",
       "tagCutawayNoFace": "ʻOki ʻoki · ʻaʻohe maka · $0",
       "tagAvatarCloseup": "Avatar · kiʻi kokoke",
-      "openGallery": "E wehe i loko o ka Hale Hōʻikeʻike",
+      "openGallery": "E wehe i loko o ka Hale Hōʻikeʻike Kiʻi",
       "tagYourVideo": "Kāu wikiō",
       "emptyClipSubVoiceover": "ke kumu o ka mōlina · pā e koho"
     },
@@ -1416,15 +1416,16 @@
       "heading": "Nā pale hoʻolauna a me nā pale hoʻokuʻu — koho",
       "introEmpty": "Hoʻolauna - ʻaʻohe",
       "outroEmpty": "Outro — ʻaʻohe",
-      "hint": "Ua hoʻopili ʻia kahi wikiō i hana mua ʻia mai ka Hale Hōʻikeʻike e like me ia, ʻaʻohe hana: kahi hoʻolauna logo (2-10 kekona), kahi hoʻopau \"kau inoa\"."
+      "hint": "Ua hoʻopili ʻia kahi wikiō i hana mua ʻia mai ka Hale Hōʻikeʻike e like me ia, ʻaʻohe hana ʻana: kahi hoʻolauna logo (2-10 kekona), kahi hoʻopau \"kau inoa\"."
     },
     "layer": {
       "title": "Papa luna",
       "sub": "logo a i ʻole ka mōlina - ma luna mau",
-      "empty": "{{format}} — PNG moakāka",
+      "empty": "{{format}} — PNG moakaka",
       "hint": "He PNG i hoʻonui ʻia no ka mōlina: he logo ma nā wahi āpau, he mōlina, he caption. E kau ana ma luna o ke wikiō holoʻokoʻa; e noho nā subtitles ma luna o ka papa.",
       "progressTitle": "Ka pae holomua",
-      "progressSub": "he kaha manawa lahilahi ma luna - ʻike ka poʻe nānā he pōkole ke wikiō a nānā a hiki i ka hopena"
+      "progressSub": "he kaha manawa lahilahi ma luna - ʻike ka poʻe nānā he pōkole ke wikiō a nānā a hiki i ka hopena",
+      "pngOnly": "Pono ka papa i kahi PNG moakaka a i ʻole WebP — ʻo kahi faila me ka ʻole o ka moakaka e uhi i ka mōlina holoʻokoʻa."
     },
     "brand": {
       "button": "Pahu hōʻailona",

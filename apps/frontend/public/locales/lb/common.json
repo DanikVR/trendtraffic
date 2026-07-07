@@ -1241,15 +1241,15 @@
       "elevenPreview": "Spillt e Beispill",
       "langsLabel": "Videosproochen",
       "langRuPinned": "Russesch · Primärschoul",
-      "langsHintVoiceover": "Eng Serie: e separate Clip an all vun {{count}} Sproochen — Claude iwwersetzt, ElevenLabs Stëmmen. Bal gratis: Käschten = Stëmmiwwersetzung × Sproochen.",
-      "langsHintSolo": "Eng Serie: e separate Clip an all vun {{count}} Sproochen. Mat engem Avatar rendert HeyGen d'Gesiicht fir all Sprooch - méi deier.",
+      "langsHintVoiceover": "Eng Serie: e separate Clip an all {{count}} Sprooch — Claude iwwersetzt, ElevenLabs Stëmmen. Bal gratis: Käschten = Stëmmiwwersetzung × Sproochen.",
+      "langsHintSolo": "Eng Serie: e separaten Clip an all {{count}} Sprooch. Mat engem Avatar rendert HeyGen d'Gesiicht fir all Sprooch - méi deier.",
       "diarizeHintVoiceover": "Den Audio geet iwwer d'Video sou wéi en ass. \"Sprooch transkribéieren\" ass optional: néideg fir Ënnertitelen an Zeil-pro-Zeil-Inserts.",
       "loudnormTitle": "Stëmmlautstäerkt gläichméisseg ausgläichen",
       "loudnormSub": "Roueg Deeler ginn opgehuewen, haart Deeler ginn ausgeglach - professionell kléngend Audio"
     },
     "lines": {
       "count_one": "{{count}} Zeil · ~{{sec}} Sekonn",
-      "count_other": "{{count}} Zeilen · ~{{sec}} Sekonnen",
+      "count_other": "{{count}} Zeilen · ~{{sec}} Sekonn",
       "editHint": "— op der Timeline ënnen um Écran änneren.",
       "title": "Linnen",
       "filterAll": "Alles · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Stëmm B · {{count}}",
       "hintDialogue": "A/B Badge — Stëmm wiesselen · ⇣ — mat der nächster Zeil zesummeféieren",
       "hintMerge": "⇣ — mat der nächster Zeil zesummeféieren",
-      "holdNote": "video {{sec}}s — vollstänneg gewisen: +{{extra}}s, déi folgend Zeilen réckelen",
+      "holdNote": "Video {{sec}}s — komplett gewisen: +{{extra}}s, déi folgend Zeilen réckelen",
       "swapVoice": "Stëmm wiesselen A↔B",
       "hostVoice": "Stëmm vum Presentateur",
       "mediaReplace": "Linnmedien — klickt fir ze ersetzen",
@@ -1357,7 +1357,7 @@
     },
     "preview": {
       "seriesReady": "Serie fäerdeg: {{count}} Videoen — all an der Galerie",
-      "ready": "Fäerdeg - d'Video ass an der Galerie",
+      "ready": "Fäerdeg - de Video ass an der Galerie",
       "footerSolo": "Klickt op e Virschauberäich fir Inhalt derbäizesetzen. D'Virschau gëtt direkt aktualiséiert.",
       "footerPlan": "Klickt op d'Plangsegmenter - d'Virschau weist all Opnam. D'Linnmedien sinn op der Timeline hei drënner.",
       "emptyNotSelected": "{{tag}} — nach net ausgewielt",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — transparent PNG",
       "hint": "E PNG an der Gréisst fir de Frame: e Logo iergendwou, e Frame, eng Ënnerschrëft. Sëtzt iwwer dem ganze Video; Ënnertitelen bleiwen iwwer dem Layer.",
       "progressTitle": "Fortschrëttsbalke",
-      "progressSub": "e schmuele Timersträifen uewen - d'Zuschauer gesinn, datt de Video kuerz ass a kucken bis zum Schluss"
+      "progressSub": "e schmuele Timersträifen uewen - d'Zuschauer gesinn, datt de Video kuerz ass a kucken bis zum Schluss",
+      "pngOnly": "De Layer muss eng transparent PNG oder WebP sinn - eng Datei ouni Transparenz géif de ganze Frame ofdecken."
     },
     "brand": {
       "button": "Markenkit",

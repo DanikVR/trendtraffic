@@ -1130,11 +1130,11 @@
       "perClip2": "≈ 2 đô la mỗi chiếc kẹp",
       "perMin1": "≈ 1 đô la mỗi phút",
       "perMin3_4": "≈ 3–4 đô la mỗi phút",
-      "seriesSuffix": " · chuỗi {{count}} — avatar một lần",
+      "seriesSuffix": " · loạt {{count}} — avatar một lần",
       "filesSuffix": " • 2 tập tin — ảnh đại diện một lần",
       "voiceoverAi": "≈ 0,1–0,3 đô la mỗi đoạn clip",
       "voiceoverFree": "$0 — Âm thanh và video của riêng bạn",
-      "langsSuffix": " • Ngôn ngữ: {{count}}"
+      "langsSuffix": " · Ngôn ngữ: {{count}}"
     },
     "checklist": {
       "title": "Sẵn sàng để xây dựng",
@@ -1166,7 +1166,7 @@
       "presetPrem": "Phần thưởng",
       "presetEcoHint": "Chỉ sử dụng các cảnh quay cận cảnh tốn kém vào phần mở đầu và lời kêu gọi hành động (~2 cảnh mỗi clip). Đây là lựa chọn tiết kiệm nhất.",
       "presetBalHint": "Cận cảnh vào điểm mấu chốt, hành động và lời kêu gọi hành động (~3). Điểm mấu chốt.",
-      "presetPremHint": "Thời lượng xuất hiện trên khuôn mặt tối đa (~4 ảnh cận cảnh). Sống động hơn và đắt hơn.",
+      "presetPremHint": "Thời lượng xuất hiện trên khuôn mặt tối đa (~4 cảnh cận). Sống động hơn và đắt hơn.",
       "presetAiTrailer": "Trí tuệ nhân tạo (AI) sẽ quyết định vị trí chụp ảnh dựa trên nội dung văn bản bạn nhập.",
       "dialogueEngLabel": "Nhịp độ hội thoại",
       "engCalm": "Điềm tĩnh",
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Nghe thử một đoạn nhạc mẫu",
       "langsLabel": "Ngôn ngữ video",
       "langRuPinned": "Tiếng Nga · chính",
-      "langsHintVoiceover": "Một loạt bài: mỗi đoạn clip riêng biệt bằng một trong {{count}} ngôn ngữ — Claude dịch, ElevenLabs lồng tiếng. Gần như miễn phí: chi phí = số lượng lồng tiếng × số ngôn ngữ.",
-      "langsHintSolo": "Một loạt video: mỗi video riêng biệt bằng một trong {{count}} ngôn ngữ. Với hình đại diện, HeyGen sẽ tạo ra khuôn mặt cho từng ngôn ngữ — giá thành cao hơn.",
+      "langsHintVoiceover": "Một loạt video: mỗi video riêng biệt bằng một trong {{count}} ngôn ngữ — Claude dịch, ElevenLabs lồng tiếng. Gần như miễn phí: chi phí = số lượng lồng tiếng × số ngôn ngữ.",
+      "langsHintSolo": "Một loạt video: mỗi video riêng biệt bằng một trong số {{count}} ngôn ngữ. Với hình đại diện, HeyGen sẽ tạo khuôn mặt cho từng ngôn ngữ — giá thành cao hơn.",
       "diarizeHintVoiceover": "Âm thanh được phát đồng bộ với video. Chức năng \"Chuyển đổi giọng nói thành văn bản\" là tùy chọn: cần thiết cho phụ đề và chèn nội dung từng dòng.",
       "loudnormTitle": "Cân bằng âm lượng giọng nói",
       "loudnormSub": "Những đoạn yên tĩnh được làm nổi bật, những đoạn ồn ào được làm mượt mà hơn — âm thanh chuyên nghiệp"
@@ -1253,11 +1253,11 @@
       "editHint": "— Chỉnh sửa trên dòng thời gian ở cuối màn hình.",
       "title": "Dòng",
       "filterAll": "Tất cả · {{count}}",
-      "filterVoiceA": "Giọng A · {{count}}",
+      "filterVoiceA": "Giọng nói A · {{count}}",
       "filterVoiceB": "Giọng B · {{count}}",
       "hintDialogue": "Biểu tượng A/B — chuyển giọng nói · ⇣ — hợp nhất với dòng tiếp theo",
       "hintMerge": "⇣ — hợp nhất với dòng tiếp theo",
-      "holdNote": "video {{giây}} — hiển thị đầy đủ: +{{thêm}} giây, các dòng tiếp theo dịch chuyển",
+      "holdNote": "video {{sec}}s — hiển thị đầy đủ: +{{extra}}s, các dòng sau dịch chuyển",
       "swapVoice": "Chuyển giọng nói A↔B",
       "hostVoice": "Giọng người dẫn chương trình",
       "mediaReplace": "dòng phương tiện — nhấp để thay thế",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Tùy chọn: nếu không có video, hình đại diện sẽ lấp đầy khung hình.",
       "dialogueHint": "Ở chế độ hội thoại, phương tiện được gắn vào các dòng trên dòng thời gian bên dưới — 'Cách hiển thị' và 'Hiển thị trong N giây' sẽ xuất hiện trên bất kỳ dòng nào có phương tiện.",
       "seriesHeading": "Loạt video ngắn",
-      "seriesCount": "Video trong chuỗi: {{count}} → cùng số lượng clip đã phát hành",
+      "seriesCount": "Các video trong loạt phim: {{count}} → có cùng số lượng clip",
       "seriesChange": "Thay đổi",
       "seriesAdd": "Thêm video vào chuỗi — mỗi video một đoạn clip.",
       "seriesBilling": "Hình đại diện chỉ được tính phí một lần cho toàn bộ loạt phim.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · nguồn cấp dữ liệu",
       "label11": "1:1 · Trang Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "số tệp mỗi lần chạy: {{count}} — hình đại diện chỉ được trả tiền một lần"
+      "filesPerRun": "Số tập tin mỗi lần chạy: {{count}} — hình đại diện chỉ được trả phí một lần"
     },
     "layout": {
       "label": "Cách trình bày",
@@ -1358,8 +1358,8 @@
     "preview": {
       "seriesReady": "Bộ sưu tập đã sẵn sàng: {{count}} video — tất cả đều có trong Thư viện",
       "ready": "Xong rồi — video đã có trong Thư viện ảnh.",
-      "footerSolo": "Nhấp chuột vào vùng xem trước để thêm nội dung. Bản xem trước sẽ cập nhật ngay lập tức.",
-      "footerPlan": "Nhấp vào các phân đoạn của kế hoạch — bản xem trước sẽ hiển thị từng cảnh quay. Phương tiện truyền thông dạng dòng nằm trên dòng thời gian bên dưới.",
+      "footerSolo": "Nhấp vào vùng xem trước để thêm nội dung. Bản xem trước sẽ cập nhật ngay lập tức.",
+      "footerPlan": "Nhấp vào các phân đoạn của kế hoạch — bản xem trước sẽ hiển thị từng cảnh quay. Thông tin về đường kẻ hiển thị trên dòng thời gian bên dưới.",
       "emptyNotSelected": "{{tag}} — chưa được chọn",
       "emptyClickToChoose": "nhấp chuột để chọn",
       "tagFitContainSuffix": " · trọn",
@@ -1388,7 +1388,7 @@
       "photoA": "Ảnh · người phát biểu đầu tiên",
       "photoB": "Ảnh · người phát biểu thứ hai",
       "recording": "Ghi âm",
-      "avatarAdd": "Ảnh đại diện từ Thư viện",
+      "avatarAdd": "Ảnh đại diện từ thư viện",
       "lineImage": "Phương tiện truyền thông cho dòng sản phẩm này",
       "retBrollsTitle": "Các video cho loạt phim này — mỗi video một đoạn clip.",
       "retBrollsNote": "Nhấp chuột sẽ thêm một video; bạn có thể chọn nhiều video. Ảnh đại diện chỉ được tính phí một lần cho toàn bộ loạt video.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Lớp trên cùng",
       "sub": "logo hoặc khung — luôn ở trên cùng",
-      "empty": "{{format}} — PNG trong suốt",
+      "empty": "{{format}} — ảnh PNG trong suốt",
       "hint": "Một file PNG có kích thước phù hợp với khung hình: logo ở bất kỳ vị trí nào, khung hình, chú thích. Nó nằm phủ toàn bộ video; phụ đề vẫn nằm phía trên lớp hình ảnh.",
       "progressTitle": "thanh tiến độ",
-      "progressSub": "Một dải hẹn giờ mỏng ở phía trên — người xem thấy video ngắn và xem đến hết."
+      "progressSub": "Một dải hẹn giờ mỏng ở phía trên — người xem thấy video ngắn và xem đến hết.",
+      "pngOnly": "Lớp ảnh phải là định dạng PNG hoặc WebP trong suốt — tệp không có độ trong suốt sẽ che phủ toàn bộ khung hình."
     },
     "brand": {
       "button": "Bộ dụng cụ thương hiệu",

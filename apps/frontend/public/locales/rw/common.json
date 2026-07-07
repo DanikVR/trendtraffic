@@ -1119,7 +1119,7 @@
       "saved": "Byabitswe",
       "save": "Bika",
       "ctaTooltipReady": "Avatar ivuga inyandiko (HeyGen) → ihuzwa na videwo → utwuma duto → Ishusho",
-      "ctaTooltipMissing": "Biracyakenewe: {{haburaga}}",
+      "ctaTooltipMissing": "Biracyakenewe: {{missing}}",
       "creating": "Kurema…",
       "create": "Kora videwo"
     },
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Kina icyitegererezo",
       "langsLabel": "Indimi za videwo",
       "langRuPinned": "Ikirusiya · ibanze",
-      "langsHintVoiceover": "Urukurikirane: agace k'amashusho gatandukanye muri buri rurimi rwa {{count}} — Claude ahindura, amajwi ya ElevenLabs. Hafi y'ubuntu: ikiguzi = ijwi × indimi.",
-      "langsHintSolo": "Urukurikirane: agace k'amashusho gatandukanye muri buri rurimi rwa {{count}}. Hamwe n'ishusho, HeyGen ihindura isura kuri buri rurimi - ihenze cyane.",
+      "langsHintVoiceover": "Urukurikirane: agace k'amashusho kari muri buri rurimi rwa {{count}} — Claude ahindura, amajwi ya ElevenLabs. Hafi y'ubuntu: ikiguzi = ijwi × indimi.",
+      "langsHintSolo": "Urukurikirane: agace k'amashusho kari muri buri rurimi rwa {{count}}. Hamwe n'avatar, HeyGen iragaragaza isura ya buri rurimi — ihenze cyane.",
       "diarizeHintVoiceover": "Amajwi akurikirana videwo uko iri. \"Kwandika ijambo\" ni ngombwa: birakenewe mu nyandiko ngufi n'izindi zishyirwa kuri buri murongo.",
       "loudnormTitle": "Tonganya ijwi ryose",
       "loudnormSub": "ibice bituje birazamurwa, ibice birenga bigatunganywa — amajwi yumvikana neza"
     },
     "lines": {
-      "count_one": "Umurongo wa {{count}} · ~{{sec}} sec",
-      "count_other": "imirongo {{count}} · ~{{sec}} amasegonda",
+      "count_one": "{{count}} umurongo · ~{{sec}} amasegonda",
+      "count_other": "{{count}} imirongo · ~{{sec}} amasegonda",
       "editHint": "— hindura ku murongo w'igihe uri hasi kuri ecran.",
       "title": "Imirongo",
       "filterAll": "Byose · {{count}}",
@@ -1356,9 +1356,9 @@
       "noteDialogue": "Gahunda y'ibiganiro igoye: Ubuhanga bwo gukora imibonano mpuzabitsina (AI) bugena igihe cyo kwerekeza hafi n'igihe cyo kwerekana byombi mu ishusho (igisubizo ni ifoto idahinduka, $0)."
     },
     "preview": {
-      "seriesReady": "Urutonde rw'ibiganiro ruriteguye: Videwo za {{count}} — zose ziri muri Gallery",
+      "seriesReady": "Urutonde rw'ibiganiro: {{count}} videwo — zose ziri muri Gallery",
       "ready": "Byarangiye — videwo iri muri Gallery",
-      "footerSolo": "Kanda ahantu habanza gusuzumwa mbere y'igihe kugira ngo wongere ibikubiye. Isuzuma ry'igihe rihita rivugururwa.",
+      "footerSolo": "Kanda ahantu habanza gusuzumwa mbere y'igihe kugira ngo wongereho ibikubiye. Isuzuma ry'igihe rihita rivugururwa.",
       "footerPlan": "Kanda ku bice by'igenamiterere — imbonerahamwe igaragaza buri foto. Imirongo y'amakuru iri ku murongo w'igihe uri hepfo.",
       "emptyNotSelected": "{{tag}} — ntabwo byatoranyijwe kugeza ubu",
       "emptyClickToChoose": "kanda kugira ngo uhitemo",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG ibonerana",
       "hint": "Ingano ya PNG kuri fremu: ikirango aho ari ho hose, fremu, ibisobanuro. Iba hejuru ya videwo yose; amagambo ahinnye aguma hejuru y'urwego.",
       "progressTitle": "Umurongo w'iterambere",
-      "progressSub": "agace gato k'igihe hejuru — abareba babona ko videwo ari ngufi hanyuma bakareba kugeza ku iherezo"
+      "progressSub": "agace gato k'igihe hejuru — abareba babona ko videwo ari ngufi hanyuma bakareba kugeza ku iherezo",
+      "pngOnly": "Urupapuro rugomba kuba PNG cyangwa WebP ibonerana — dosiye idafite ibonerana yatwikira fremu yose."
     },
     "brand": {
       "button": "Ibikoresho by'ikirango",

@@ -1119,7 +1119,7 @@
       "saved": "An adana",
       "save": "Ajiye",
       "ctaTooltipReady": "Avatar ɗin yana magana da rubutun (HeyGen) → haɗa tare da bidiyo → subtitles → Gallery",
-      "ctaTooltipMissing": "Har yanzu ana buƙata: {{bace}}",
+      "ctaTooltipMissing": "Har yanzu ana buƙata: {{missing}}",
       "creating": "Ƙirƙirar…",
       "create": "Ƙirƙiri bidiyo"
     },
@@ -1134,7 +1134,7 @@
       "filesSuffix": " · Fayiloli 2 — avatar sau ɗaya",
       "voiceoverAi": "≈ $0.1–0.3 a kowace bidiyo",
       "voiceoverFree": "$0 — sauti da bidiyonka na kanka",
-      "langsSuffix": " · harsuna: {{adadi}}"
+      "langsSuffix": " · harsuna: {{count}}"
     },
     "checklist": {
       "title": "A shirye don gini",
@@ -1237,24 +1237,24 @@
       "diarizeHintDialogue": "Binciken ya bambanta muryoyin biyu - layukan sun sauka akan waƙoƙin A da B.",
       "diarizeHintSolo": "Muryar da ke cikin rikodin ta zama muryar bidiyon.",
       "elevenLabel": "Muryar ElevenLabs",
-      "elevenDefault": "An riga an rubuta shi - ta hanyar jinsi (Sarah / George)",
+      "elevenDefault": "An saba — ta jinsi (Sarah / George)",
       "elevenPreview": "Yi misali",
       "langsLabel": "Harsunan bidiyo",
       "langRuPinned": "Rashanci · firamare",
-      "langsHintVoiceover": "Jerin: wani faifan bidiyo daban a cikin kowace harsunan {{count}} — Claude ya fassara, muryoyin ElevenLabs. Kusan kyauta: farashi = harsunan murya ×.",
-      "langsHintSolo": "Jerin: wani faifan bidiyo daban a cikin kowace harsunan {{count}}. Tare da hoton hoto, HeyGen yana nuna fuskar kowace harshe - mafi tsada.",
+      "langsHintVoiceover": "Jerin shirye-shirye: wani faifan bidiyo daban a cikin kowace harshe {{count}} — Claude ya fassara, muryoyin ElevenLabs. Kusan kyauta: farashi = murya a kan × harsuna.",
+      "langsHintSolo": "Jerin shirye-shirye: wani faifan bidiyo daban a cikin kowace harshe {{count}}. Tare da hoton hoto, HeyGen yana nuna fuskar kowace harshe - mafi tsada.",
       "diarizeHintVoiceover": "Sautin ya yi bayani game da bidiyon kamar yadda yake. \"Rubuta magana\" zaɓi ne: ana buƙatar shi don ƙananan kalmomi da kuma kowane layi da aka saka.",
       "loudnormTitle": "Daidaita ingancin sauti",
       "loudnormSub": "Ana ɗaga sassa masu natsuwa, ana sassa masu ƙarfi suna lanƙwasa — sauti mai kyau"
     },
     "lines": {
-      "count_one": "{{count}} layi · ~{{sec}} daƙiƙa",
-      "count_other": "Layuka {{count}} · ~{{sec}} daƙiƙa",
+      "count_one": "Layi na {{count}} · ~{{sec}} daƙiƙa",
+      "count_other": "Layukan {{count}} · ~{{sec}} daƙiƙa",
       "editHint": "— gyara a kan jadawalin lokaci a ƙasan allon.",
       "title": "Layuka",
-      "filterAll": "Duk · {{ƙidaya}}",
-      "filterVoiceA": "Murya A · {{ƙidaya}}",
-      "filterVoiceB": "Murya B · {{ƙidaya}}",
+      "filterAll": "Duk · {{count}}",
+      "filterVoiceA": "Murya A · {{count}}",
+      "filterVoiceB": "Murya B · {{count}}",
       "hintDialogue": "Alamar A/B — muryar canza murya · ⇣ — haɗa da layi na gaba",
       "hintMerge": "⇣ - haɗa da layi na gaba",
       "holdNote": "bidiyo {{sec}}s — an nuna shi cikakke: +{{extra}}s, layukan da ke ƙasa suna canzawa",
@@ -1300,28 +1300,28 @@
     },
     "music": {
       "title": "Waƙar bango",
-      "sub": "tilas ne",
+      "sub": "na zaɓi",
       "volumeLabel": "Ƙarar kiɗa:",
       "volumeHint": "Murya koyaushe tana da kashi 100%; mafi kyawun hanyar amfani da bango shine kashi 15-25%. Waƙa ta fi guntu fiye da madannin clip; ana yanke ta da ta fi tsayi.",
       "empty": "Kiɗa — ba a zaɓa ba tukuna · yana zaune a hankali a ƙarƙashin muryar",
       "durationLabel": "Tsawon lokacin da zai ɗauka yana wasa",
       "playFull": "Cikakken bidiyo",
       "playFirst": "Daƙiƙa N na farko",
-      "durationHint": "Daƙiƙa kaɗan daga farko, sannan a rage haske sosai"
+      "durationHint": "Daƙiƙa kaɗan daga farko, sannan a yi shiru"
     },
     "format": {
       "label": "Tsarin",
       "portrait": "9:16 · tsaye",
       "landscape": "16:9 · kwance",
       "both": "Dukansu biyun",
-      "twoFilesNote": "Fayiloli 2 a kowace gudu — ana biyan kuɗin avatar sau ɗaya",
+      "twoFilesNote": "Fayiloli 2 a kowace gudu — ana lissafin avatar sau ɗaya",
       "label916": "9:16 · TikTok, Reels, Shorts",
       "label169": "16:9 · YouTube",
       "square": "1:1 · murabba'i",
       "feed": "4:5 · ciyarwa",
       "label11": "1:1 · Tashar Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "fayiloli a kowace gudu: {{count}} — ana biyan avatar sau ɗaya"
+      "filesPerRun": "fayiloli a kowace gudu: {{count}} — an biya avatar sau ɗaya"
     },
     "layout": {
       "label": "Tsarin Zane",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Babban Layer",
       "sub": "tambari ko firam - koyaushe yana kan gaba",
-      "empty": "{{tsarin}} — PNG mai haske",
+      "empty": "{{format}} — PNG mai haske",
       "hint": "Girman PNG na firam ɗin: tambari a ko'ina, firam, taken kai tsaye. Yana zaune akan bidiyon gaba ɗaya; ƙananan taken suna kan saman layin.",
       "progressTitle": "Sandar ci gaba",
-      "progressSub": "siririn tsiri na agogo a saman — masu kallo suna ganin bidiyon gajere ne kuma suna kallo har ƙarshe"
+      "progressSub": "siririn tsiri na agogo a saman — masu kallo suna ganin bidiyon gajere ne kuma suna kallo har ƙarshe",
+      "pngOnly": "Dole ne Layer ɗin ya zama PNG ko WebP mai haske - fayil ɗin da ba shi da haske zai rufe dukkan firam ɗin."
     },
     "brand": {
       "button": "Kayan alama",

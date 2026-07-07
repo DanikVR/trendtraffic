@@ -1241,23 +1241,23 @@
       "elevenPreview": "Ascolta un esempio",
       "langsLabel": "Lingue video",
       "langRuPinned": "Russo · primario",
-      "langsHintVoiceover": "Una serie: una clip separata in ciascuna delle {{count}} lingue — Claude traduce, ElevenLabs dà la voce. Quasi gratis: costo = voce fuori campo × lingue.",
+      "langsHintVoiceover": "Una serie: una clip separata in ciascuna delle {{count}} lingue — Claude traduce, ElevenLabs dà le voci. Quasi gratis: costo = voce fuori campo × lingue.",
       "langsHintSolo": "Una serie: una clip separata in ciascuna delle {{count}} lingue. Con un avatar, HeyGen crea il volto per ogni lingua — più costoso.",
       "diarizeHintVoiceover": "L'audio viene riprodotto sul video così com'è. La funzione \"Trascrivi il parlato\" è facoltativa: necessaria per i sottotitoli e per gli inserimenti riga per riga.",
       "loudnormTitle": "Regolare il volume della voce",
       "loudnormSub": "Le parti silenziose vengono amplificate, quelle rumorose smussate: un audio dal suono professionale."
     },
     "lines": {
-      "count_one": "{{count}} riga · ~{{sec}} sec",
-      "count_other": "{{count}} righe · ~{{sec}} sec",
+      "count_one": "{{count}} linea · ~{{sec}} sec",
+      "count_other": "{{count}} linee · ~{{sec}} sec",
       "editHint": "— modifica sulla timeline in fondo allo schermo.",
       "title": "Linee",
-      "filterAll": "Tutti · {{count}}",
+      "filterAll": "Tutto · {{count}}",
       "filterVoiceA": "Voce A · {{count}}",
       "filterVoiceB": "Voce B · {{count}}",
       "hintDialogue": "Badge A/B — cambia voce · ⇣ — unisci alla riga successiva",
       "hintMerge": "⇣ — unisci alla riga successiva",
-      "holdNote": "video {{sec}}s — mostrato per intero: +{{extra}}s, le righe seguenti si spostano",
+      "holdNote": "video {{sec}}s — mostrato per intero: +{{extra}}s, le seguenti righe si spostano",
       "swapVoice": "Cambia voce da A a B",
       "hostVoice": "Voce del presentatore",
       "mediaReplace": "media di linea — fai clic per sostituire",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Schema di dialogo di massima: l'IA decide quando avvicinarsi e quando mostrare entrambi nell'inquadratura (una reazione è una foto statica, $0)."
     },
     "preview": {
-      "seriesReady": "Serie pronta: {{count}} video — tutti nella Galleria",
+      "seriesReady": "Serie pronta: video {{count}} — tutti nella Galleria",
       "ready": "Fatto: il video è nella Galleria.",
       "footerSolo": "Fai clic su un'area di anteprima per aggiungere contenuti. L'anteprima si aggiorna istantaneamente.",
       "footerPlan": "Fai clic sui segmenti del piano: l'anteprima mostra ogni inquadratura. I media lineari si trovano sulla timeline sottostante.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG trasparente",
       "hint": "Un'immagine PNG dimensionata per la cornice: un logo ovunque, una cornice, una didascalia. Si sovrappone all'intero video; i sottotitoli rimangono sopra il livello.",
       "progressTitle": "Barra di avanzamento",
-      "progressSub": "una sottile striscia di timer in alto: gli spettatori vedono che il video è breve e lo guardano fino alla fine"
+      "progressSub": "una sottile striscia di timer in alto: gli spettatori vedono che il video è breve e lo guardano fino alla fine",
+      "pngOnly": "Il livello deve essere un file PNG o WebP trasparente; un file senza trasparenza coprirebbe l'intera inquadratura."
     },
     "brand": {
       "button": "Kit del marchio",

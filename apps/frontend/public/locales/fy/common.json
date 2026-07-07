@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Hâld it ljepblêd HeyGen studio iepen mei in aktyf abonnemint.",
       "apiNote": "Fia de HeyGen API — ynfiere yn Ynstellings → Generaasje, betelje-as-jo-geane fakturearring (~$3/min Avatar IV).",
       "delTitle": "Avatar fuortsmite?",
-      "delMessage": "'{{name}}' wurdt fuorthelle út jo avatarkolleksje. It orizjinele bestân bliuwt yn 'e Galery."
+      "delMessage": "'{{name}}' sil út dyn avatarkolleksje fuortsmiten wurde. It orizjinele bestân bliuwt yn 'e Galery."
     },
     "voice": {
       "title": "Stim & skript",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Boppeste laach",
       "sub": "logo of frame - altyd boppe-oan",
-      "empty": "{{formaat}} — transparante PNG",
+      "empty": "{{format}} — transparante PNG",
       "hint": "In PNG-grutte foar it frame: in logo earne oars, in frame, in ûnderskrift. Sit oer de hiele fideo; ûndertitels bliuwe boppe de laach.",
       "progressTitle": "Foarútgongsbalke",
-      "progressSub": "in tinne timerstrip oan 'e boppekant - sjoggers sjogge dat de fideo koart is en sjogge oant it ein"
+      "progressSub": "in tinne timerstrip oan 'e boppekant - sjoggers sjogge dat de fideo koart is en sjogge oant it ein",
+      "pngOnly": "De laach moat in transparante PNG of WebP wêze - in bestân sûnder transparânsje soe it hiele frame dekke."
     },
     "brand": {
       "button": "Merkkit",

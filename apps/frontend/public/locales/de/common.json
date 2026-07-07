@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Halten Sie den HeyGen Studio-Tab bei einem aktiven Abonnement geöffnet.",
       "apiNote": "Über die HeyGen API — Schlüssel in Einstellungen → Generierung, Abrechnung nach Verbrauch (~3 $/min Avatar IV).",
       "delTitle": "Avatar entfernen?",
-      "delMessage": "'{{name}}' wird aus Ihrer Avatar-Sammlung entfernt. Die Originaldatei bleibt in der Galerie erhalten."
+      "delMessage": "„{{name}}“ wird aus Ihrer Avatar-Sammlung entfernt. Die Originaldatei bleibt in der Galerie erhalten."
     },
     "voice": {
       "title": "Stimme & Skript",
@@ -1249,7 +1249,7 @@
     },
     "lines": {
       "count_one": "{{count}} Zeile · ~{{sec}} Sekunde",
-      "count_other": "{{count}} Zeilen · ~{{sec}} Sekunden",
+      "count_other": "{{count}} Zeilen · ~{{sec}} Sek.",
       "editHint": "— Bearbeiten Sie die Zeitleiste am unteren Bildschirmrand.",
       "title": "Linien",
       "filterAll": "Alle · {{count}}",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Optional: Ohne Video füllt der Avatar das Bild aus.",
       "dialogueHint": "Im Dialogmodus werden Medien an Zeilen auf der unten stehenden Zeitleiste angehängt – „Wie angezeigt“ und „Für N Sekunden anzeigen“ erscheinen auf jeder Zeile mit Medien.",
       "seriesHeading": "Clip-Serie",
-      "seriesCount": "Videos in der Serie: {{count}} → die gleiche Anzahl an Clips veröffentlicht",
+      "seriesCount": "Videos der Serie: {{count}} → die gleiche Anzahl an Clips veröffentlicht",
       "seriesChange": "Ändern",
       "seriesAdd": "Füge der Serie Videos hinzu – ein Clip pro Video",
       "seriesBilling": "Der Avatar wird nur einmal für die gesamte Serie abgerechnet.",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Grober Dialogplan: Die KI entscheidet, wann eine Nahaufnahme gezeigt wird und wann beide im Bild zu sehen sind (eine Reaktion ist ein statisches Foto, 0 $)."
     },
     "preview": {
-      "seriesReady": "Serien bereit: {{count}} Videos – alle in der Galerie",
+      "seriesReady": "Serienstart: {{count}} Videos – alle in der Galerie",
       "ready": "Erledigt – das Video befindet sich in der Galerie.",
       "footerSolo": "Klicken Sie auf einen Vorschaubereich, um Inhalte hinzuzufügen. Die Vorschau wird sofort aktualisiert.",
       "footerPlan": "Klicken Sie auf die Planabschnitte – die Vorschau zeigt jede einzelne Aufnahme. Die Linienmedien befinden sich in der Zeitleiste darunter.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — transparentes PNG",
       "hint": "Eine PNG-Datei in der passenden Größe für den Frame: ein Logo an beliebiger Stelle, ein Rahmen, eine Bildunterschrift. Sie liegt über dem gesamten Video; Untertitel bleiben über der Ebene.",
       "progressTitle": "Fortschrittsanzeige",
-      "progressSub": "Ein schmaler Zeitstreifen am oberen Rand signalisiert den Zuschauern, dass das Video kurz ist und sie bis zum Ende ansehen."
+      "progressSub": "Ein schmaler Zeitstreifen am oberen Rand signalisiert den Zuschauern, dass das Video kurz ist und sie bis zum Ende ansehen.",
+      "pngOnly": "Die Ebene muss eine transparente PNG- oder WebP-Datei sein – eine Datei ohne Transparenz würde den gesamten Rahmen verdecken."
     },
     "brand": {
       "button": "Marken-Set",

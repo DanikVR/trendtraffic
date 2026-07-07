@@ -1151,7 +1151,7 @@
       "missScript": "ssenariy yoki yozuv",
       "videoChosen": "Tasvirlar tanlandi",
       "missVideo": "videolavhalar",
-      "step": "{{n}}-qadam"
+      "step": "{{n}} bosqichi"
     },
     "mode": {
       "title": "Video rejimi",
@@ -1223,7 +1223,7 @@
       "sub": "nima deyilgan",
       "sourceGen": "Sun'iy intellekt bilan yozing",
       "sourceDiarize": "Mening yozuvim",
-      "dialogueNeedsRecording": "Muloqot uchun ikki ovozli yozuv kerak — “Mening yozuvim”ga oʻting va nutqni tahlil qiling.",
+      "dialogueNeedsRecording": "Muloqot ikki ovozli yozuvni talab qiladi — “Mening yozuvim”ga oʻting va nutqni tahlil qiling.",
       "ttsLabel": "Ovoz berish:",
       "female": "Ayol",
       "male": "Erkak",
@@ -1241,23 +1241,23 @@
       "elevenPreview": "Namuna ijro eting",
       "langsLabel": "Video tillari",
       "langRuPinned": "Rus tili · boshlang'ich",
-      "langsHintVoiceover": "Seriya: har bir {{count}} tilda alohida klip — Klod tarjima qiladi, ElevenLabs ovozlari. Deyarli bepul: narxi = ovozli × tillar.",
-      "langsHintSolo": "Seriya: har bir {{count}} tilda alohida klip. Avatar yordamida HeyGen har bir til uchun yuzni renderlaydi — qimmatroq.",
+      "langsHintVoiceover": "Seriya: {{count}} tillarining har birida alohida klip — Klod tarjima qiladi, ElevenLabs ovozlari. Deyarli bepul: narxi = ovozli × tillar.",
+      "langsHintSolo": "Seriya: {{count}} tillarining har birida alohida klip. Avatar yordamida HeyGen har bir til uchun yuzni renderlaydi — qimmatroq.",
       "diarizeHintVoiceover": "Audio videoni qanday bo'lsa, shundayligicha uzatadi. “Nutqni transkripsiya qilish” ixtiyoriy: subtitrlar va har bir qator qo'shimchalari uchun kerak.",
       "loudnormTitle": "Ovoz balandligini tenglashtirish",
       "loudnormSub": "jim qismlar ko'tariladi, baland qismlar tekislanadi — professional ovoz"
     },
     "lines": {
       "count_one": "{{count}} qator · ~{{sec}} soniya",
-      "count_other": "{{count}} qator · ~{{sec}} soniya",
+      "count_other": "{{count}} qatorlar · ~{{sec}} soniya",
       "editHint": "— ekranning pastki qismidagi vaqt jadvalida tahrirlash.",
       "title": "Chiziqlar",
       "filterAll": "Hammasi · {{count}}",
-      "filterVoiceA": "A ovozi · {{count}}",
-      "filterVoiceB": "B ovozi · {{count}}",
+      "filterVoiceA": "Ovoz A · {{count}}",
+      "filterVoiceB": "Ovoz B · {{count}}",
       "hintDialogue": "A/B nishoni — ovozni almashtirish · ⇣ — keyingi qator bilan birlashtirish",
       "hintMerge": "⇣ — keyingi qator bilan birlashtirish",
-      "holdNote": "video {{sec}}lar — to'liq ko'rsatilgan: +{{extra}}lar, quyidagi qatorlar siljiydi",
+      "holdNote": "video {{sec}}s — to'liq ko'rsatilgan: +{{extra}}s, quyidagi qatorlar siljiydi",
       "swapVoice": "Ovozni A↔B ga o'zgartiring",
       "hostVoice": "Taqdimotchining ovozi",
       "mediaReplace": "line media — almashtirish uchun bosing",
@@ -1275,12 +1275,12 @@
       "fitContain": "Butunini ko'rsatish",
       "keepSound": "video ovozi",
       "soloOptional": "Ixtiyoriy: videosiz avatar kadrni to'ldiradi.",
-      "dialogueHint": "Muloqot rejimida media quyidagi vaqt jadvalidagi qatorlarga biriktirilgan — media bilan har qanday qatorda \"Qanday ko'rsatish kerak\" va \"N soniya uchun ko'rsatish\" yozuvlari paydo bo'ladi.",
+      "dialogueHint": "Muloqot rejimida media quyidagi vaqt jadvalidagi qatorlarga biriktirilgan — media bilan har qanday qatorda \"Qanday ko'rsatish kerak\" va \"N soniya uchun ko'rsatish\" paydo bo'ladi.",
       "seriesHeading": "Kliplar seriyasi",
       "seriesCount": "Seriyadagi videolar: {{count}} → bir xil miqdordagi kliplar chiqdi",
       "seriesChange": "O'zgarish",
       "seriesAdd": "Seriyaga videolar qo'shing — har bir video uchun bitta klip",
-      "seriesBilling": "Avatar butun serial uchun bir marta to'lanadi.",
+      "seriesBilling": "Avatar butun serial uchun bir marta taqdim etiladi.",
       "voiceoverBase": "Bu rejimda video kadrning asosi hisoblanadi: ovoz va subtitrlar tepada joylashgan."
     },
     "subtitles": {
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · tasmasi",
       "label11": "1:1 · Instagram tasmasi",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "Har bir ishga tushirish uchun fayllar: {{count}} — avatar uchun bir marta to'lanadi"
+      "filesPerRun": "har bir ishga tushirish uchun fayllar: {{count}} — avatar uchun bir marta to'lanadi"
     },
     "layout": {
       "label": "Joylashtirish",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Taxminiy dialog rejasi: Sun'iy intellekt qachon yaqindan suratga olishni va qachon ikkalasini ham kadrda ko'rsatishni hal qiladi (reaktsiya statik fotosurat, $0)."
     },
     "preview": {
-      "seriesReady": "Serial tayyor: {{count}} video — barchasi Galereyada",
+      "seriesReady": "Seriya tayyor: {{count}} videolar — barchasi Galereyada",
       "ready": "Bajarildi — video Galereyada",
       "footerSolo": "Kontent qo'shish uchun oldindan ko'rish maydonini bosing. Oldindan ko'rish darhol yangilanadi.",
       "footerPlan": "Reja segmentlarini bosing — oldindan ko'rish oynasida har bir kadr ko'rsatiladi. Quyidagi vaqt jadvalida chiziqli media mavjud.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — shaffof PNG",
       "hint": "Kadr uchun PNG o'lchami: istalgan joyda logotip, kadr, sarlavha. Butun video ustida joylashgan; subtitrlar qatlam ustida qoladi.",
       "progressTitle": "Jarayon paneli",
-      "progressSub": "yuqori qismida yupqa taymer tasmasi — tomoshabinlar videoning qisqa ekanligini ko'rishadi va oxirigacha tomosha qilishadi"
+      "progressSub": "yuqori qismida yupqa taymer tasmasi — tomoshabinlar videoning qisqa ekanligini ko'rishadi va oxirigacha tomosha qilishadi",
+      "pngOnly": "Qatlam shaffof PNG yoki WebP bo'lishi kerak — shaffofligi bo'lmagan fayl butun kadrni qoplaydi."
     },
     "brand": {
       "button": "Brend to'plami",

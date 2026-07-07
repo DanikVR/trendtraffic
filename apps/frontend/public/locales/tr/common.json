@@ -1119,7 +1119,7 @@
       "saved": "Kaydedildi",
       "save": "Kaydetmek",
       "ctaTooltipReady": "Avatar metni okuyor (HeyGen) → video ile birleştir → altyazılar → Galeri",
-      "ctaTooltipMissing": "Hâlâ gerekli: {{eksik}}",
+      "ctaTooltipMissing": "Hâlâ gerekli: {{missing}}",
       "creating": "Oluşturma…",
       "create": "Video oluştur"
     },
@@ -1130,7 +1130,7 @@
       "perClip2": "Klip başına yaklaşık 2 dolar",
       "perMin1": "Dakika başına yaklaşık 1 dolar",
       "perMin3_4": "Dakika başına yaklaşık 3-4 dolar",
-      "seriesSuffix": " · {{count}} serisi — bir kez avatar",
+      "seriesSuffix": " · {{count}} serisi — bir zamanlar avatar",
       "filesSuffix": " · 2 dosya — avatar bir kez",
       "voiceoverAi": "Klip başına yaklaşık 0,1-0,3 dolar",
       "voiceoverFree": "0$ — kendi ses ve videolarınız",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "HeyGen stüdyo sekmesini aktif aboneliğinizle açık tutun.",
       "apiNote": "HeyGen API'si aracılığıyla — Ayarlar → Üretim bölümünden giriş yapın, kullandıkça öde faturalandırma (~3$/dk Avatar IV).",
       "delTitle": "Avatarı kaldırmak mı?",
-      "delMessage": "'{{name}}' avatar koleksiyonunuzdan kaldırılacaktır. Orijinal dosya Galeride kalacaktır."
+      "delMessage": "'{{name}}' avatar koleksiyonunuzdan kaldırılacaktır. Orijinal dosya Galeri'de kalacaktır."
     },
     "voice": {
       "title": "Ses ve senaryo",
@@ -1240,9 +1240,9 @@
       "elevenDefault": "Varsayılan — cinsiyete göre (Sarah / George)",
       "elevenPreview": "Bir örnek oynatın",
       "langsLabel": "Video dilleri",
-      "langRuPinned": "Rusça · birincil",
+      "langRuPinned": "Rusça · temel",
       "langsHintVoiceover": "Bir dizi: {{count}} dilin her birinde ayrı bir klip — Claude çeviriyor, ElevenLabs seslendiriyor. Neredeyse ücretsiz: maliyet = seslendirme × dil sayısı.",
-      "langsHintSolo": "Bir dizi: {{count}} dilin her birinde ayrı bir klip. Bir avatar ile HeyGen, her dil için yüzü yeniden oluşturuyor - daha pahalı.",
+      "langsHintSolo": "Bir dizi: {{count}} dilin her birinde ayrı bir klip. Bir avatar ile HeyGen, her dil için yüzü yeniden oluşturuyor — daha pahalı.",
       "diarizeHintVoiceover": "Ses, videonun üzerine olduğu gibi eklenir. \"Konuşmayı yazıya dök\" seçeneği isteğe bağlıdır: altyazılar ve satır başı eklemeler için gereklidir.",
       "loudnormTitle": "Ses seviyesini dengeleyin.",
       "loudnormSub": "Sessiz kısımlar belirginleşir, yüksek sesli kısımlar yumuşatılır — profesyonel ses kalitesi."
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Ses B · {{count}}",
       "hintDialogue": "A/B rozeti — ses değiştir · ⇣ — sonraki satırla birleştir",
       "hintMerge": "⇣ — sonraki satırla birleştir",
-      "holdNote": "video {{saniye}} — tamamı gösteriliyor: +{{ekstra}} saniye, aşağıdaki satırlar kayıyor",
+      "holdNote": "video {{sec}}s — tamamı gösteriliyor: +{{extra}}s, sonraki satırlar kayıyor",
       "swapVoice": "Sesi değiştir A↔B",
       "hostVoice": "Sunucunun sesi",
       "mediaReplace": "satır medyası — değiştirmek için tıklayın",
@@ -1304,7 +1304,7 @@
       "volumeLabel": "Müzik ses seviyesi:",
       "volumeHint": "Ses her zaman %100'dür; arka plan müziği için en iyi uygulama %15-25'tir. Klipten daha kısa bir parça döngü halinde oynatılır; daha uzun bir parça ise kırpılır.",
       "empty": "Müzik — henüz seçilmedi · sesin altında sessizce duruyor",
-      "durationLabel": "Oynatma süresi",
+      "durationLabel": "Ne kadar süreyle oynatılır",
       "playFull": "Videonun tamamı",
       "playFirst": "İlk N saniye",
       "durationHint": "Başlangıçtan itibaren saniyeler, ardından yumuşak bir şekilde kaybolma."
@@ -1328,8 +1328,8 @@
       "top": "Üstte avatar",
       "bottom": "Alttaki avatar",
       "overlayLeft": "Videonun üzerinde, solda",
-      "overlayRight": "Videonun hemen üstünde, sağda.",
-      "overlayHint": "Video çerçeveyi tamamen kaplıyor, avatar üstte küçük bir şekilde yer alıyor."
+      "overlayRight": "Videonun hemen üstünde, sağda",
+      "overlayHint": "Video çerçeveyi tamamen kaplıyor, avatar üstte küçük."
     },
     "timeline": {
       "title": "Çizgiler zaman çizelgesi",
@@ -1361,7 +1361,7 @@
       "footerSolo": "İçerik eklemek için önizleme alanına tıklayın. Önizleme anında güncellenir.",
       "footerPlan": "Plan bölümlerine tıklayın; önizleme her çekimi gösterir. Çizgi medyası aşağıdaki zaman çizelgesinde yer almaktadır.",
       "emptyNotSelected": "{{tag}} — henüz seçilmedi",
-      "emptyClickToChoose": "seçmek için tıklayın",
+      "emptyClickToChoose": "Seçmek için tıklayın",
       "tagFitContainSuffix": " · tüm",
       "emptyClipTitle": "Video — henüz yüklenmedi",
       "emptyClipSub": "Galeriden seçmek için tıklayın",
@@ -1393,13 +1393,13 @@
       "retBrollsTitle": "Seriye ait videolar — her videoda bir kısa klip",
       "retBrollsNote": "Tıklama bir video ekler; birden fazla video seçebilirsiniz. Avatar, tüm seri için yalnızca bir kez ücretlendirilir.",
       "intro": "Giriş bandı",
-      "outro": "Kapanış müziği",
+      "outro": "Çıkış müziği",
       "layer": "Üst katman (PNG)",
       "layerNote": "Çerçeve formatı için hazırlanmış şeffaf bir PNG dosyası; videonun tamamını kaplayacak şekilde yerleştirilecektir.",
       "bumperNote": "Video ile birlikte eklenmiştir, herhangi bir işlem uygulanmamıştır."
     },
     "progress": {
-      "title": "Videonuzu oluşturmak…",
+      "title": "Videonuzu oluşturma…",
       "note": "Pencereyi kapatabilirsiniz; derleme işlemi sunucuda devam eder (~2-5 dakika)."
     },
     "common": {
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — şeffaf PNG",
       "hint": "Çerçeve boyutuna uygun bir PNG dosyası: herhangi bir yere logo, çerçeve veya alt yazı yerleştirilebilir. Tüm videonun üzerine oturur; alt yazılar katmanın üstünde kalır.",
       "progressTitle": "İlerleme çubuğu",
-      "progressSub": "Üst kısımda ince bir zamanlayıcı şeridi bulunuyor; izleyiciler videonun kısa olduğunu görüyor ve sonuna kadar izliyor."
+      "progressSub": "Üst kısımda ince bir zamanlayıcı şeridi bulunuyor; izleyiciler videonun kısa olduğunu görüyor ve sonuna kadar izliyor.",
+      "pngOnly": "Katman şeffaf bir PNG veya WebP dosyası olmalıdır; şeffaflığı olmayan bir dosya tüm çerçeveyi kaplayacaktır."
     },
     "brand": {
       "button": "Marka kiti",

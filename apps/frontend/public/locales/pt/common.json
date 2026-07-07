@@ -1119,7 +1119,7 @@
       "saved": "Salvo",
       "save": "Salvar",
       "ctaTooltipReady": "O avatar fala o roteiro (HeyGen) → mesclar com o vídeo → legendas → Galeria",
-      "ctaTooltipMissing": "Ainda falta: {{missing}}",
+      "ctaTooltipMissing": "Ainda é necessário: {{missing}}",
       "creating": "Criando…",
       "create": "Criar vídeo"
     },
@@ -1151,7 +1151,7 @@
       "missScript": "roteiro ou gravação",
       "videoChosen": "Imagens selecionadas",
       "missVideo": "imagens de vídeo",
-      "step": "passo {{n}}"
+      "step": "etapa {{n}}"
     },
     "mode": {
       "title": "Modo de vídeo",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Mantenha a aba do estúdio HeyGen aberta com uma assinatura ativa.",
       "apiNote": "Via API HeyGen — chave em Configurações → Geração, cobrança por uso (aproximadamente US$ 3/min para Avatar IV).",
       "delTitle": "Remover avatar?",
-      "delMessage": "'{{name}}' será removido da sua coleção de avatares. O arquivo original permanecerá na Galeria."
+      "delMessage": "O avatar '{{name}}' será removido da sua coleção. O arquivo original permanecerá na Galeria."
     },
     "voice": {
       "title": "Voz e roteiro",
@@ -1230,7 +1230,7 @@
       "briefPlaceholder": "Sobre o que trata o vídeo: 'uma análise honesta do aplicativo, que prende a atenção nos primeiros 3 segundos'…",
       "genScript": "Gerar script",
       "recordingName": "gravação",
-      "removeRecording": "Remover a gravação (e também limpar sua análise)",
+      "removeRecording": "Remover gravação (também limpa sua análise)",
       "recordingEmpty": "Gravação — ainda não carregada · áudio ou vídeo",
       "diarizing": "Analisando a gravação…",
       "diarize": "Analisar a fala",
@@ -1241,14 +1241,14 @@
       "elevenPreview": "Reproduza uma amostra",
       "langsLabel": "Idiomas de vídeo",
       "langRuPinned": "Russo · primário",
-      "langsHintVoiceover": "Uma série: um clipe separado em cada um dos {{count}} idiomas — Claude traduz, ElevenLabs faz a narração. Quase grátis: custo = narração × idiomas.",
-      "langsHintSolo": "Uma série: um clipe separado em cada um dos {{count}} idiomas. Com um avatar, o HeyGen renderiza o rosto para cada idioma — mais caro.",
+      "langsHintVoiceover": "Uma série: um clipe separado em cada um dos {{count}} idiomas — Claude traduz, ElevenLabs faz a dublagem. Quase grátis: custo = dublagem × idiomas.",
+      "langsHintSolo": "Uma série: um clipe separado em cada um dos idiomas {{count}}. Com um avatar, o HeyGen renderiza o rosto para cada idioma — mais caro.",
       "diarizeHintVoiceover": "O áudio é sobreposto ao vídeo sem alterações. A opção \"Transcrever fala\" é opcional: necessária para legendas e inserções linha a linha.",
       "loudnormTitle": "Equilibre o volume da voz",
       "loudnormSub": "As partes silenciosas são realçadas, as partes altas são suavizadas — áudio com som profissional."
     },
     "lines": {
-      "count_one": "{{count}} linha · ~{{sec}} segundos",
+      "count_one": "{{count}} linha · ~{{sec}} seg",
       "count_other": "{{count}} linhas · ~{{sec}} segundos",
       "editHint": "— editar na linha do tempo na parte inferior da tela.",
       "title": "Linhas",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Voz B · {{count}}",
       "hintDialogue": "Distintivo A/B — alternar voz · ⇣ — mesclar com a próxima linha",
       "hintMerge": "⇣ — mesclar com a próxima linha",
-      "holdNote": "vídeo {{sec}}s — exibido na íntegra: +{{extra}}s, as linhas seguintes mudam",
+      "holdNote": "Vídeo {{sec}}s — exibido na íntegra: +{{extra}}s, as seguintes linhas mudam",
       "swapVoice": "Trocar voz A↔B",
       "hostVoice": "Voz do apresentador",
       "mediaReplace": "mídia de linha — clique para substituir",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG transparente",
       "hint": "Um PNG dimensionado para o quadro: um logotipo em qualquer lugar, uma moldura, uma legenda. Sobrepõe-se a todo o vídeo; as legendas permanecem acima da camada.",
       "progressTitle": "Barra de progresso",
-      "progressSub": "Uma fina faixa de tempo na parte superior — os espectadores veem que o vídeo é curto e assistem até o final."
+      "progressSub": "Uma fina faixa de tempo na parte superior — os espectadores veem que o vídeo é curto e assistem até o final.",
+      "pngOnly": "A camada deve ser um PNG ou WebP transparente — um arquivo sem transparência cobriria toda a imagem."
     },
     "brand": {
       "button": "Kit de marca",

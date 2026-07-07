@@ -1119,7 +1119,7 @@
       "saved": "Na-save",
       "save": "I-save",
       "ctaTooltipReady": "Ang avatar ang nagsasalita ng script (HeyGen) → pagsamahin sa video → mga subtitle → Gallery",
-      "ctaTooltipMissing": "Kailangan pa rin: {{nawawala}}",
+      "ctaTooltipMissing": "Kailangan pa rin: {{missing}}",
       "creating": "Lumilikha…",
       "create": "Gumawa ng bidyo"
     },
@@ -1151,7 +1151,7 @@
       "missScript": "iskrip o pagrerekord",
       "videoChosen": "Napiling footage",
       "missVideo": "kuha",
-      "step": "hakbang"
+      "step": "hakbang {{n}}"
     },
     "mode": {
       "title": "Mode ng bidyo",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Panatilihing bukas ang tab na HeyGen studio gamit ang isang aktibong subscription.",
       "apiNote": "Sa pamamagitan ng HeyGen API — pindutin ang Mga Setting → Pagbuo, pay-as-you-go na pagsingil (~$3/min Avatar IV).",
       "delTitle": "Alisin ang avatar?",
-      "delMessage": "Aalisin ang '{{name}}' sa iyong koleksyon ng avatar. Ang orihinal na file ay mananatili sa Gallery."
+      "delMessage": "Aalisin ang '{{name}}' sa iyong koleksyon ng avatar. Mananatili ang orihinal na file sa Gallery."
     },
     "voice": {
       "title": "Boses at iskrip",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Magpatugtog ng sample",
       "langsLabel": "Mga wika ng video",
       "langRuPinned": "Ruso · pangunahin",
-      "langsHintVoiceover": "Isang serye: isang hiwalay na clip sa bawat isa sa {{count}} na wika — si Claude ang nagsasalin, ang mga boses ng ElevenLabs. Halos libre: gastos = voiceover × mga wika.",
-      "langsHintSolo": "Isang serye: isang hiwalay na clip sa bawat isa sa {{count}} na wika. Gamit ang isang avatar, nire-render ng HeyGen ang mukha para sa bawat wika — mas mahal.",
-      "diarizeHintVoiceover": "Ang audio ay ipapakita sa video nang walang pagbabago. Opsyonal ang \"I-transcribe ang speech\": kailangan para sa mga subtitle at mga insert kada linya.",
+      "langsHintVoiceover": "Isang serye: isang hiwalay na clip sa bawat isa sa mga wikang {{count}} — si Claude ang nagsasalin, ang mga boses ng ElevenLabs. Halos libre: gastos = voiceover × mga wika.",
+      "langsHintSolo": "Isang serye: isang hiwalay na clip sa bawat isa sa mga wikang {{count}}. Gamit ang isang avatar, nire-render ng HeyGen ang mukha para sa bawat wika — mas mahal.",
+      "diarizeHintVoiceover": "Ang audio ay ipapakita sa video nang walang pagbabago. Opsyonal ang \"I-transcribe ang speech\": kailangan para sa mga subtitle at per-line insert.",
       "loudnormTitle": "Pantayin ang lakas ng boses",
       "loudnormSub": "ang mga tahimik na bahagi ay naaangat, ang mga maiingay na bahagi ay pinapakinis — pro-sounding audio"
     },
     "lines": {
-      "count_one": "{{count}} linya · ~{{sec}} segundo",
-      "count_other": "{{count}} linya · ~{{sec}} segundo",
+      "count_one": "linyang {{count}} · ~{{sec}} segundo",
+      "count_other": "mga linya ng {{count}} · ~{{sec}} segundo",
       "editHint": "— i-edit sa timeline sa ibaba ng screen.",
       "title": "Mga Linya",
       "filterAll": "Lahat · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Boses B · {{count}}",
       "hintDialogue": "A/B badge — lumipat ng boses · ⇣ — sumanib sa susunod na linya",
       "hintMerge": "⇣ — pagsamahin sa susunod na linya",
-      "holdNote": "mga video {{sec}} — ipinapakita nang buo: +{{extra}}, ang mga sumusunod na linya ay nagbabago",
+      "holdNote": "video {{sec}}s — ipinapakita nang buo: +{{extra}}s, ang mga sumusunod na linya ay nagbabago",
       "swapVoice": "Magpalit ng boses A↔B",
       "hostVoice": "Boses ng tagapagtanghal",
       "mediaReplace": "line media — i-click para palitan",
@@ -1314,7 +1314,7 @@
       "portrait": "9:16 · patayo",
       "landscape": "16:9 · pahalang",
       "both": "Pareho",
-      "twoFilesNote": "2 file bawat pagpapatakbo — ang avatar ay sinisingil nang isang beses",
+      "twoFilesNote": "2 file bawat pagtakbo — ang avatar ay sinisingil nang isang beses",
       "label916": "9:16 · TikTok, Mga Reel, Mga Shorts",
       "label169": "16:9 · YouTube",
       "square": "1:1 · parisukat",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — transparent na PNG",
       "hint": "Isang PNG na sukat para sa frame: isang logo kahit saan, isang frame, isang caption. Nakalagay sa buong video; ang mga subtitle ay nananatili sa itaas ng layer.",
       "progressTitle": "Bar ng pag-unlad",
-      "progressSub": "isang manipis na timer strip sa itaas — makikita ng mga manonood na maikli ang video at mapapanood hanggang dulo"
+      "progressSub": "isang manipis na timer strip sa itaas — makikita ng mga manonood na maikli ang video at mapapanood hanggang dulo",
+      "pngOnly": "Ang layer ay dapat isang transparent na PNG o WebP — ang isang file na walang transparency ay tatakpan ang buong frame."
     },
     "brand": {
       "button": "Kit ng tatak",

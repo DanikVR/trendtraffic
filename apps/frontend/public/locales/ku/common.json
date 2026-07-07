@@ -1119,7 +1119,7 @@
       "saved": "Tomarkirî",
       "save": "Rizgarkirin",
       "ctaTooltipReady": "Avatar senaryoyê dibêje (HeyGen) → bi vîdyoyê re bibe yek → jêrnivîs → Galerî",
-      "ctaTooltipMissing": "Hîn jî pêwîst e: {{winda ye}}",
+      "ctaTooltipMissing": "Hîn jî pêwîst e: {{missing}}",
       "creating": "Afirandin…",
       "create": "Vîdyoyê biafirîne"
     },
@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 dolar ji bo her klîpê",
       "perMin1": "≈ 1 dolar ji bo her deqîqeyê",
       "perMin3_4": "≈ 3–4 dolar di deqîqeyê de",
-      "seriesSuffix": " · rêzenivîsa {{count}} — avatar carekê",
+      "seriesSuffix": " · rêzefîlma {{count}} — avatar carekê",
       "filesSuffix": " · 2 pel — carekê avatar",
       "voiceoverAi": "≈ $0.1–0.3 ji bo her klîpê",
       "voiceoverFree": "$0 — deng û vîdyoya te ya taybet",
@@ -1151,7 +1151,7 @@
       "missScript": "senaryo an tomarkirin",
       "videoChosen": "Dîmen hatine hilbijartin",
       "missVideo": "dîmenên dîmenî",
-      "step": "gav {{n}}"
+      "step": "gava {{n}}"
     },
     "mode": {
       "title": "Moda vîdyoyê",
@@ -1227,7 +1227,7 @@
       "ttsLabel": "Dengdan:",
       "female": "Mê",
       "male": "Nêrî",
-      "briefPlaceholder": "Klîb li ser çi ye: 'nirxandineke rastgo ya sepanê, di 3 saniyeyên pêşîn de bandorê li ser bike'...",
+      "briefPlaceholder": "Klîb li ser çi ye: 'nirxandineke rastgo ya sepanê, di 3 saniyeyên pêşîn de bandorê li ser bike'…",
       "genScript": "Skrîptê çêbike",
       "recordingName": "girtinî",
       "removeRecording": "Tomarkirinê jê bibe (analîza wê jî paqij dike)",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Nimûneyek bilîze",
       "langsLabel": "Zimanên vîdyoyan",
       "langRuPinned": "Rûsî · seretayî",
-      "langsHintVoiceover": "Rêzefîlmek: klîpek cuda bi her {{count}} zimanan — Claude werdigerîne, dengên ElevenLabs. Hema bêje belaş: lêçûn = dengdan × ziman.",
-      "langsHintSolo": "Rêze: klîpek cuda ji bo her yek ji {{count}} zimanan. Bi avatarekê, HeyGen rûyê her zimanî nîşan dide - bihatir.",
+      "langsHintVoiceover": "Rêze: klîpek cuda ji bo her yek ji zimanan {{count}} — Claude werdigerîne, dengên ElevenLabs. Hema bêje belaş: lêçûn = dengdan × ziman.",
+      "langsHintSolo": "Rêze: klîpek cuda ji bo her yek ji zimanên {{count}}. Bi avatarekê, HeyGen rûyê her zimanî nîşan dide - bihatir.",
       "diarizeHintVoiceover": "Deng wekî xwe li ser vîdyoyê tê. \"Transkribekirina axaftinê\" vebijarkî ye: ji bo jêrnivîsan û têxistinên li ser rêzê pêdivî ye.",
       "loudnormTitle": "Dengê dengî hevseng bike",
       "loudnormSub": "beşên bêdeng tên rakirin, beşên bi deng tên nermkirin - dengê profesyonel"
     },
     "lines": {
-      "count_one": "{{count}} rêz · ~{{sec}} saniye",
-      "count_other": "{{count}} rêz · ~{{sec}} saniye",
+      "count_one": "xeta {{count}} · ~{{sec}} çirke",
+      "count_other": "xetên {{count}} · ~{{sec}} çirke",
       "editHint": "- li ser rêza demê li binê ekranê biguherîne.",
       "title": "Xêz",
       "filterAll": "Hemû · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Dengê B · {{count}}",
       "hintDialogue": "Nîşana A/B — guhertina deng · ⇣ — bi rêza din re bibe yek",
       "hintMerge": "⇣ — bi rêza din re bibe yek",
-      "holdNote": "vîdyo {{çirk}} — bi tevahî tê nîşandan: +{{zêde}}, rêzên jêrîn diguherin",
+      "holdNote": "vîdyoya {{sec}}s — bi tevahî tê nîşandan: +{{extra}}s, rêzên jêrîn diguhezin",
       "swapVoice": "Guhertina deng A↔B",
       "hostVoice": "Dengê pêşkêşvan",
       "mediaReplace": "medyaya xêzê - ji bo guhertinê bikirtînin",
@@ -1276,8 +1276,8 @@
       "keepSound": "dengê vîdyoyê",
       "soloOptional": "Vebijarkî: bê vîdyoyek, avatar çarçoveyê tijî dike.",
       "dialogueHint": "Di moda diyalogê de, medyayê bi xetên li ser xeta demê ya li jêr ve girêdayî ye - 'Çawa nîşan bide' û 'Ji bo N saniyeyan nîşan bide' li ser her rêzek bi medyayê re xuya dibin.",
-      "seriesHeading": "Zîncîreya klîpan",
-      "seriesCount": "Vîdyoyên di rêzefîlmê de: {{count}} → heman hejmar klîp derketine",
+      "seriesHeading": "Zîncîreya klîban",
+      "seriesCount": "Vîdyoyên di rêzefîlmê de: {{count}} → heman hejmar klîb derketine",
       "seriesChange": "Gûherrandin",
       "seriesAdd": "Vîdyoyê li rêzefîlmê zêde bikin - yek klîp ji bo her vîdyoyê",
       "seriesBilling": "Avatar ji bo tevahiya rêzefîlmê carekê tê nîşandan.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · xwarin",
       "label11": "1:1 · Xwarina Instagramê",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "pelan ji bo her gerandinê: {{count}} — pereyê avatarê carekê tê dayîn"
+      "filesPerRun": "pelan ji bo her xebitandinê: {{count}} — pereyê avatarê carekê tê dayîn"
     },
     "layout": {
       "label": "Rêz",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plana diyalogê ya xav: AI biryar dide kengê ji nêz ve were kişandin û kengê herduyan di çarçovê de nîşan bide (reaksiyon wêneyek statîk e, $0)."
     },
     "preview": {
-      "seriesReady": "Rêzefîlm amade ye: {{count}} vîdyo — hemû di Galeriyê de ne",
+      "seriesReady": "Rêzefîlm amade ye: vîdyoyên {{count}} — hemû di Galeriyê de ne",
       "ready": "Qediya - vîdyo di Galeriyê de ye",
       "footerSolo": "Ji bo zêdekirina naverokê li qadeke pêşdîtinê bikirtînin. Pêşdîtin tavilê tê nûve kirin.",
       "footerPlan": "Li ser beşên planê bikirtînin — pêşdîtin her wêneyekê nîşan dide. Medyaya xêzê li ser xeta demê ya li jêr e.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG-ya zelal",
       "hint": "PNG-yek bi mezinahiya çarçovê: logoyek li her derê, çarçoveyek, jêrnivîsek. Li ser tevahiya vîdyoyê rûdine; jêrnivîs li jor qatê dimînin.",
       "progressTitle": "Barika pêşketinê",
-      "progressSub": "şerîtek demjimêrê ya zirav li jor - temaşevan dibînin ku vîdyo kurt e û heta dawiyê temaşe dikin"
+      "progressSub": "şerîtek demjimêrê ya zirav li jor - temaşevan dibînin ku vîdyo kurt e û heta dawiyê temaşe dikin",
+      "pngOnly": "Divê çîn PNG an WebP-yeke zelal be — pelek bê şefafî dê tevahiya çarçoveyê bigire nav xwe."
     },
     "brand": {
       "button": "Kîta marqeyê",

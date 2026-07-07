@@ -1130,7 +1130,7 @@
       "perClip2": "≈ $2 ngekliphu nganye",
       "perMin1": "≈ $1 ngomzuzu",
       "perMin3_4": "≈ $3–4 ngomzuzu",
-      "seriesSuffix": " · uthotho lwe- {{count}} — umfanekiso we-avatar kanye",
+      "seriesSuffix": " · uthotho lwe {{count}} — umfanekiso we-avatar kanye",
       "filesSuffix": " · Iifayile ezi-2 — umfanekiso we-avatar kube kanye",
       "voiceoverAi": "≈ $0.1–0.3 ngekliphu nganye",
       "voiceoverFree": "$0 — isandi sakho kunye nevidiyo yakho",
@@ -1241,16 +1241,16 @@
       "elevenPreview": "Dlala isampuli",
       "langsLabel": "Iilwimi zevidiyo",
       "langRuPinned": "IsiRashiya · iklasi yokuqala",
-      "langsHintVoiceover": "Uthotho: ikliphu eyahlukileyo kulwimi ngalunye lwe- {{count}} — uClaude uguqulela, amazwi e-ElevenLabs. Phantse simahla: ixabiso = ilizwi × iilwimi.",
-      "langsHintSolo": "Uthotho: ikliphu eyahlukileyo kulwimi ngalunye lwe- {{count}}. Nge-avatar, i-HeyGen yenza ubuso bolwimi ngalunye bube buhle ngakumbi.",
+      "langsHintVoiceover": "Uthotho: ikliphu eyahlukileyo kulwimi ngalunye lwe-{{count}} — uClaude uguqulela, amazwi e-ElevenLabs. Phantse simahla: ixabiso = ilizwi × iilwimi.",
+      "langsHintSolo": "Uthotho: ikliphu eyahlukileyo kulwimi ngalunye lwe-{{count}}. Nge-avatar, i-HeyGen yenza ubuso bolwimi ngalunye bube buhle ngakumbi.",
       "diarizeHintVoiceover": "Isandi sidlula ividiyo njengoko injalo. \"Ukubhala intetho\" akunyanzelekanga: kuyafuneka kwii-subtitles kunye nee-inserts zomgca ngamnye.",
       "loudnormTitle": "Isandi selizwi silingana",
       "loudnormSub": "iindawo ezizolileyo ziyaphakanyiswa, iindawo ezinomsindo ziyalungiswa — isandi esivakalayo"
     },
     "lines": {
-      "count_one": "Umgca ongu-{{count}} · ~{{sec}} umzuzwana",
-      "count_other": "Imigca engu-{{count}} · ~{{sec}} imizuzwana",
-      "editHint": "— hlela kumgca wexesha osezantsi kwesikrini.",
+      "count_one": "{{count}} umgca · ~{{sec}} isekhondi",
+      "count_other": "{{count}} imigca · ~{{sec}} imizuzwana",
+      "editHint": "— hlela kumgca wexesha ezantsi kwesikrini.",
       "title": "Imigca",
       "filterAll": "Zonke · {{count}}",
       "filterVoiceA": "Ilizwi A · {{count}}",
@@ -1307,7 +1307,7 @@
       "durationLabel": "Ixesha elingakanani elidlalwayo",
       "playFull": "Ividiyo yonke",
       "playFirst": "Imizuzwana yokuqala engu-N",
-      "durationHint": "imizuzwana ukususela ekuqaleni, emva koko i-fade-out egudileyo"
+      "durationHint": "imizuzwana ukususela ekuqaleni, emva koko kuphuma uthuli oluthambileyo"
     },
     "format": {
       "label": "Ifomathi",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Isicwangciso sencoko esingacwangciswanga: I-AI igqiba ukuba kufuneka isondele nini kwaye ibonise nini zombini kwifreyimu (impendulo yifoto engashukumiyo, $0)."
     },
     "preview": {
-      "seriesReady": "Uthotho lulungile: iividiyo ezingu-{{count}} — zonke zikwiGalari",
+      "seriesReady": "Uthotho lulungile: {{count}} iividiyo — zonke zikwiGalari",
       "ready": "Igqityiwe — ividiyo ikwiGalari",
       "footerSolo": "Cofa indawo yokujonga kwangaphambili ukuze wongeze umxholo. Ukujonga kwangaphambili kuhlaziywa ngoko nangoko.",
       "footerPlan": "Cofa amacandelo esicwangciso — imboniso yangaphambili ibonisa umfanekiso ngamnye. Imidiya yomgca ikwixesha elingezantsi.",
@@ -1415,7 +1415,7 @@
     "bumpers": {
       "heading": "Iibhampa zentshayelelo neze-outro — ozikhethelayo",
       "introEmpty": "Intshayelelo — akukho",
-      "outroEmpty": "I-Outro — akukho",
+      "outroEmpty": "Ngaphandle — akukho",
       "hint": "Ividiyo esele yenziwe kwiGalari iqhotyoshelwe njengoko injalo, akukho kulungiswa: intshayelelo yelogo (imizuzwana emi-2 ukuya kweli-10), i-outro \"yokubhalisa\"."
     },
     "layer": {
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — iPNG ecacileyo",
       "hint": "I-PNG enobukhulu befreyimu: ilogo naphi na, ifreyimu, inkcazo. Ihlala phezu kwevidiyo yonke; imibhalo engezantsi ihlala ngaphezulu komaleko.",
       "progressTitle": "Ibha yenkqubela phambili",
-      "progressSub": "umgca wexesha obhityileyo phezulu — ababukeli babona ividiyo imfutshane baze bayibukele de kube sekupheleni"
+      "progressSub": "umgca wexesha obhityileyo phezulu — ababukeli babona ividiyo imfutshane baze bayibukele de kube sekupheleni",
+      "pngOnly": "Umaleko kufuneka ube yi-PNG okanye i-WebP ebonakalayo — ifayile engenazo izinto ezibonakalayo iya kugubungela yonke ifreyimu."
     },
     "brand": {
       "button": "Ikhithi yebhrendi",

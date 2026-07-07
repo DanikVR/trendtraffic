@@ -1241,8 +1241,8 @@
       "elevenPreview": "Cluich sampall",
       "langsLabel": "Cànanan bhidio",
       "langRuPinned": "Ruiseanach · bun-sgoil",
-      "langsHintVoiceover": "Sreath: criomag air leth anns gach aon de {{count}} cànanan — eadar-theangaicheas Claude, guthan ElevenLabs. Cha mhòr an-asgaidh: cosgais = guth-thairis × cànanan.",
-      "langsHintSolo": "Sreath: criomag air leth anns gach aon de {{count}} cànanan. Le avatar, bidh HeyGen a’ lìbhrigeadh an aodainn airson gach cànan - nas daoire.",
+      "langsHintVoiceover": "Sreath: criomag air leth anns gach aon de na cànanan {{count}} — Claude ag eadar-theangachadh, guthan ElevenLabs. Cha mhòr an-asgaidh: cosgais = guth-thairis × cànanan.",
+      "langsHintSolo": "Sreath: criomag air leth anns gach aon de na cànanan {{count}}. Le avatar, bidh HeyGen a’ lìbhrigeadh an aodainn airson gach cànan - nas daoire.",
       "diarizeHintVoiceover": "Thèid an claisneachd thairis air a’ bhidio mar a tha e. Tha “Tar-sgrìobhadh òraid” roghainneil: riatanach airson fo-thiotalan agus cuir-a-steach gach loidhne.",
       "loudnormTitle": "Co-ionannachd a dhèanamh air meud a’ ghutha",
       "loudnormSub": "bidh pàirtean sàmhach air an togail, pàirtean àrda air an rèiteachadh - claisneachd proifeasanta"
@@ -1252,9 +1252,9 @@
       "count_other": "{{count}} loidhnichean · ~{{sec}} diog",
       "editHint": "— deasaich air an loidhne-tìm aig bonn na sgrìn.",
       "title": "Loidhnichean",
-      "filterAll": "Uile · {{cunnt}}",
-      "filterVoiceA": "Guth A · {{cunnt}}",
-      "filterVoiceB": "Guth B · {{cunnt}}",
+      "filterAll": "Uile · {{count}}",
+      "filterVoiceA": "Guth A · {{count}}",
+      "filterVoiceB": "Guth B · {{count}}",
       "hintDialogue": "Bràiste A/B — atharraich guth · ⇣ — co-aonaich leis an ath loidhne",
       "hintMerge": "⇣ — co-aonaich leis an ath loidhne",
       "holdNote": "bhidio {{sec}}s — air a shealltainn gu h-iomlan: +{{extra}}s, gluaisidh na loidhnichean a leanas",
@@ -1301,7 +1301,7 @@
     "music": {
       "title": "Ceòl cùl-fhiosrachaidh",
       "sub": "roghainneil",
-      "volumeLabel": "Meud a’ chiùil:",
+      "volumeLabel": "Meud a' chiùil:",
       "volumeHint": "Tha an guth an-còmhnaidh 100%; ’s e 15–25% an cleachdadh as fheàrr airson cùl-raon. Tha trac nas giorra na lùban a’ chriomag; tha fear nas fhaide air a ghearradh.",
       "empty": "Ceòl — gun a bhith air a thaghadh fhathast · na shuidhe gu sàmhach fon ghuth",
       "durationLabel": "Dè cho fada 's a chluicheas e",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · biadh",
       "label11": "1:1 · Biadhadh Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "faidhlichean gach ruith: {{count}} — pàightear an avatar aon uair"
+      "filesPerRun": "faidhlichean gach ruith: {{count}} — pàightear airson an avatar aon uair"
     },
     "layout": {
       "label": "Cruth",
@@ -1353,10 +1353,10 @@
       "reactionFree": "freagairt $0",
       "cutout": "gearradh a-mach",
       "noteRetention": "Plana ro-shuidhichte garbh: purpaidh = Avatar IV daor, '$0' = earrannan gun aghaidh. Bidh AI a’ togail a’ phlana cheart bhon teacsa agad.",
-      "noteDialogue": "Plana garbh de chòmhradh: Bidh AI a’ co-dhùnadh cuin a thèid e faisg air làimh agus cuin a sheallas e an dà chuid san fhrèam (is e dealbh statach a th’ ann an ath-bhualadh, $0)."
+      "noteDialogue": "Plana garbh airson còmhradh: Bidh AI a’ co-dhùnadh cuin a thèid e faisg air làimh agus cuin a sheallas e an dà chuid san fhrèam (is e dealbh statach a th’ ann an ath-bhualadh, $0)."
     },
     "preview": {
-      "seriesReady": "Sreath deiseil: {{count}} bhideothan — uile san Ghailearaidh",
+      "seriesReady": "Sreath deiseil: bhideothan {{count}} — uile san Ghailearaidh",
       "ready": "Deiseil — tha a’ bhidio anns a’ Ghailearaidh",
       "footerSolo": "Briog air raon ro-shealladh gus susbaint a chur ris. Bidh an ro-shealladh ag ùrachadh sa bhad.",
       "footerPlan": "Briog air na h-earrannan plana — tha an ro-shealladh a’ sealltainn gach dealbh. Tha meadhan na loidhne air an loidhne-tìm gu h-ìosal.",
@@ -1391,9 +1391,9 @@
       "avatarAdd": "Avatar bhon Ghailearaidh",
       "lineImage": "Meadhanan airson na loidhne",
       "retBrollsTitle": "Bhideothan airson an t-sreath — aon chriomag gach bhidio",
-      "retBrollsNote": "Ma bhriogas tu, cuiridh sin bhidio ris; faodaidh tu grunn a thaghadh. Thèid cosgais a chur air an avatar aon uair airson an t-sreath gu lèir.",
+      "retBrollsNote": "Ma bhriogas tu, cuiridh sin bhidio ris; faodaidh tu grunn a thaghadh. Thèid cunntas a thoirt air an avatar aon uair airson an t-sreath gu lèir.",
       "intro": "Bumper ro-ràdh",
-      "outro": "Bumper Outro",
+      "outro": "Bampair a-muigh",
       "layer": "An ìre as àirde (PNG)",
       "layerNote": "PNG follaiseach air ullachadh airson cruth frèam — bidh e na shuidhe thairis air a’ bhidio gu lèir.",
       "bumperNote": "Ceangailte ris a’ bhidio mar a tha e, gun phròiseasadh sam bith."
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "An ìre as àirde",
       "sub": "suaicheantas no frèam — an-còmhnaidh air a’ mhullach",
-      "empty": "{{cruth}} — PNG follaiseach",
+      "empty": "{{format}} — PNG follaiseach",
       "hint": "Meud PNG airson a’ fhrèam: suaicheantas an àite sam bith, frèam, fo-thiotal. Suidhidh e thairis air a’ bhidio gu lèir; bidh fo-thiotalan a’ fuireach os cionn na sreath.",
       "progressTitle": "Bàr adhartais",
-      "progressSub": "stiall tana timer aig a’ mhullach — chì luchd-amhairc gu bheil am bhidio goirid agus coimheadaidh iad chun na crìche"
+      "progressSub": "stiall tana timer aig a’ mhullach — chì luchd-amhairc gu bheil am bhidio goirid agus coimheadaidh iad chun na crìche",
+      "pngOnly": "Feumaidh an sreath a bhith na PNG no WebP follaiseach — bhiodh faidhle às aonais follaiseachd a’ còmhdach a’ fhrèam gu lèir."
     },
     "brand": {
       "button": "Pasgan branda",

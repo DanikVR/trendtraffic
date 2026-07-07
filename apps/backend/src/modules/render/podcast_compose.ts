@@ -366,8 +366,12 @@ function overlayExtras(o: {
     cur = out; idx++;
   }
   if (o.progressBar) {
+    // drawbox НЕ анимируется (её `t` — толщина рамки, не время). Анимация — полоса-источник во всю
+    // ширину, выезжающая слева направо: overlay пересчитывает x покадрово (eval=frame по умолчанию).
+    const dur = Math.max(0.5, o.D).toFixed(2);
+    parts.push(`color=c=0xA855F7@0.9:s=${o.W}x8:r=30:d=${o.Ds}[pbar]`);
     const out = next();
-    parts.push(`${cur}drawbox=x=0:y=0:w='iw*min(t/${Math.max(0.5, o.D).toFixed(2)}\\,1)':h=8:color=0xA855F7@0.9:t=fill${out}`);
+    parts.push(`${cur}[pbar]overlay=x='-${o.W}+${o.W}*min(t/${dur}\\,1)':y=0:eof_action=pass${out}`);
     cur = out;
   }
   return { inputs, parts, vOut: cur, nextIdx: idx };
@@ -393,7 +397,9 @@ export async function concatBumpers(opts: {
     const dur = await probeDuration(segs[i]);
     parts.push(`[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,format=yuv420p[v${i}]`);
     if (await hasAudioStream(segs[i])) {
-      parts.push(`[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}]`);
+      // apad+atrim: аудио сегмента точно = длине его видео — иначе разница длин дорожек
+      // сдвигала бы синхрон всего, что идёт после бампера.
+      parts.push(`[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,apad,atrim=0:${Math.max(0.2, dur).toFixed(2)}[a${i}]`);
     } else {
       parts.push(`anullsrc=r=44100:cl=stereo,atrim=0:${Math.max(0.2, dur).toFixed(2)}[a${i}]`);
     }

@@ -1119,7 +1119,7 @@
       "saved": "Disimpan",
       "save": "Simpan",
       "ctaTooltipReady": "Avatar itu menyebut skrip (HeyGen) → gabungkan dengan video → sari kata → Galeri",
-      "ctaTooltipMissing": "Masih diperlukan: {{hilang}}",
+      "ctaTooltipMissing": "Masih diperlukan: {{missing}}",
       "creating": "Mencipta…",
       "create": "Cipta video"
     },
@@ -1151,7 +1151,7 @@
       "missScript": "skrip atau rakaman",
       "videoChosen": "Rakaman dipilih",
       "missVideo": "rakaman",
-      "step": "langkah"
+      "step": "langkah {{n}}"
     },
     "mode": {
       "title": "Mod video",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Mainkan sampel",
       "langsLabel": "Bahasa video",
       "langRuPinned": "Rusia · sekolah rendah",
-      "langsHintVoiceover": "Satu siri: klip berasingan dalam setiap {{count}} bahasa — Claude menterjemah, suara ElevenLabs. Hampir percuma: kos = suara latar × bahasa.",
-      "langsHintSolo": "Satu siri: klip berasingan dalam setiap {{count}} bahasa. Dengan avatar, HeyGen memaparkan wajah untuk setiap bahasa — lebih mahal.",
+      "langsHintVoiceover": "Satu siri: klip berasingan dalam setiap bahasa {{count}} — Claude menterjemah, suara ElevenLabs. Hampir percuma: kos = suara latar × bahasa.",
+      "langsHintSolo": "Siri: klip berasingan dalam setiap bahasa {{count}}. Dengan avatar, HeyGen memaparkan wajah untuk setiap bahasa — lebih mahal.",
       "diarizeHintVoiceover": "Audio memaparkan video seperti sedia ada. \"Transkripsikan pertuturan\" adalah pilihan: diperlukan untuk sari kata dan sisipan setiap baris.",
       "loudnormTitle": "Ratakan kelantangan suara",
       "loudnormSub": "bahagian yang senyap diangkat, bahagian yang bising diratakan — audio yang berbunyi profesional"
     },
     "lines": {
-      "count_one": "baris {{count}} · ~{{sec}} saat",
-      "count_other": "{{count}} baris · ~{{sec}} saat",
+      "count_one": "Baris {{count}} · ~{{sec}} saat",
+      "count_other": "baris {{count}} · ~{{sec}} saat",
       "editHint": "— edit pada garis masa di bahagian bawah skrin.",
       "title": "Garisan",
       "filterAll": "Semua · {{count}}",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Pelan dialog kasar: AI memutuskan bila hendak melihat dari dekat dan bila hendak menunjukkan kedua-duanya dalam bingkai (reaksi ialah foto statik, $0)."
     },
     "preview": {
-      "seriesReady": "Siri sedia: {{count}} video — semuanya dalam Galeri",
+      "seriesReady": "Siri sedia: video {{count}} — semua dalam Galeri",
       "ready": "Selesai — video berada dalam Galeri",
       "footerSolo": "Klik kawasan pratonton untuk menambah kandungan. Pratonton dikemas kini serta-merta.",
       "footerPlan": "Klik segmen pelan — pratonton menunjukkan setiap tangkapan. Media baris berada pada garis masa di bawah.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG lutsinar",
       "hint": "Saiz PNG untuk bingkai: logo di mana-mana sahaja, bingkai, kapsyen. Terletak di atas keseluruhan video; sari kata kekal di atas lapisan.",
       "progressTitle": "Bar kemajuan",
-      "progressSub": "jalur pemasa nipis di bahagian atas — penonton melihat video itu pendek dan menonton hingga tamat"
+      "progressSub": "jalur pemasa nipis di bahagian atas — penonton melihat video itu pendek dan menonton hingga tamat",
+      "pngOnly": "Lapisan tersebut mestilah PNG atau WebP lutsinar — fail tanpa ketelusan akan meliputi seluruh bingkai."
     },
     "brand": {
       "button": "Kit jenama",

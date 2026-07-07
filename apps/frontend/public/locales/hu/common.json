@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 dollár klipenként",
       "perMin1": "≈ 1 dollár percenként",
       "perMin3_4": "≈ 3–4 dollár percenként",
-      "seriesSuffix": " · {{count}} darab sorozata — avatar egyszer",
+      "seriesSuffix": " · {{count}} sorozat — avatar egyszer",
       "filesSuffix": " · 2 fájl — avatar egyszer",
       "voiceoverAi": "≈ 0,1–0,3 dollár klipenként",
       "voiceoverFree": "0 dollár — saját hang- és videófelvételek",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Játsszon le egy hangmintát",
       "langsLabel": "Videó nyelvei",
       "langRuPinned": "Orosz · általános iskola",
-      "langsHintVoiceover": "Egy sorozat: egy külön klip {{count}} nyelv mindegyikén — Claude fordít, az ElevenLabs szinkronhangjai. Majdnem ingyenes: költség = hangalámondás × nyelv.",
-      "langsHintSolo": "Egy sorozat: egy külön klip {{count}} nyelv mindegyikén. Egy avatarral a HeyGen minden nyelven renderelte az arcot – drágább.",
+      "langsHintVoiceover": "Egy sorozat: külön klip {{count}} nyelvenként — Claude fordít, ElevenLabs hangok. Majdnem ingyenes: költség = hangalámondás × nyelvek.",
+      "langsHintSolo": "Egy sorozat: külön klip {{count}} nyelvenként. A HeyGen egy avatárral minden nyelvhez renderelte az arcot – drágább.",
       "diarizeHintVoiceover": "A hanganyag a videó felett átmegy, ahogy van. A „Beszéd átírása” opció opcionális: feliratokhoz és soronkénti beszúrásokhoz szükséges.",
       "loudnormTitle": "Kiegyenlíti a hangerőt",
       "loudnormSub": "a halk részek kiemelődnek, a hangosak elsimasulnak – professzionális hangzás"
     },
     "lines": {
       "count_one": "{{count}} sor · ~{{sec}} mp",
-      "count_other": "{{count}} sor · ~{{sec}} másodperc",
+      "count_other": "{{count}} sorok · ~{{sec}} mp",
       "editHint": "— szerkesztés a képernyő alján található idővonalon.",
       "title": "Vonalak",
       "filterAll": "Összes · {{count}}",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Opcionális: videó nélkül az avatar kitölti a képkockát.",
       "dialogueHint": "Párbeszéd módban a média az idővonal soraihoz van csatolva – a „Hogyan jelenítse meg” és a „Megjelenítés N másodpercig” felirat jelenik meg bármely, médiát tartalmazó sorban.",
       "seriesHeading": "Klipsorozat",
-      "seriesCount": "Videók a sorozatban: {{count}} → ugyanannyi klip készült",
+      "seriesCount": "Videók a sorozatban: {{count}} → ugyanannyi klip van kiadva",
       "seriesChange": "Változás",
       "seriesAdd": "Videók hozzáadása a sorozathoz – videónként egy klip",
       "seriesBilling": "Az avatárt egyszer számlázzák a teljes sorozatra.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · etetés",
       "label11": "1:1 · Instagram-hírfolyam",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "fájlok futtatásonként: {{count}} — az avatarért egyszer fizetnek"
+      "filesPerRun": "fájlok futtatásonként: {{count}} — az avatárért egyszer kell fizetni"
     },
     "layout": {
       "label": "Elrendezés",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Durva párbeszédterv: A mesterséges intelligencia dönti el, mikor közelítsen, és mikor jelenítse meg mindkettőt a képkockán belül (a reakció egy statikus fotó, 0 dollár)."
     },
     "preview": {
-      "seriesReady": "Készen áll a sorozat: {{count}} videó — mind a Galériában",
+      "seriesReady": "Készen áll a sorozat: {{count}} videók — mind a Galériában",
       "ready": "Kész — a videó a Galériában van",
       "footerSolo": "Kattintson egy előnézeti területre tartalom hozzáadásához. Az előnézet azonnal frissül.",
       "footerPlan": "Kattintson a tervszegmensekre – az előnézet minden egyes felvételt megjelenít. A vonalas média az alábbi idővonalon látható.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — átlátszó PNG",
       "hint": "Kerethez méretezett PNG: logó bárhol, keret, felirat. Az egész videót lefedi; a feliratok a réteg felett maradnak.",
       "progressTitle": "Folyamatjelző sáv",
-      "progressSub": "egy vékony időzítőcsík a tetején – a nézők látják, hogy a videó rövid, és a végéig nézik"
+      "progressSub": "egy vékony időzítőcsík a tetején – a nézők látják, hogy a videó rövid, és a végéig nézik",
+      "pngOnly": "A rétegnek átlátszó PNG vagy WebP formátumúnak kell lennie – egy átlátszóság nélküli fájl lefedné az egész képkockát."
     },
     "brand": {
       "button": "Márkakészlet",

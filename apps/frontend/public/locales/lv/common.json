@@ -1118,7 +1118,7 @@
       "saving": "Saglabāšana…",
       "saved": "Saglabāts",
       "save": "Saglabāt",
-      "ctaTooltipReady": "Avatārs izrunā scenāriju (HeyGen) → apvienot ar video → subtitri → Galerija",
+      "ctaTooltipReady": "Avatārs izrunā scenāriju (HeyGen) → apvienot ar video → subtitri → galerija",
       "ctaTooltipMissing": "Joprojām nepieciešams: {{missing}}",
       "creating": "Veidošana…",
       "create": "Izveidot video"
@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 ASV dolāri par klipu",
       "perMin1": "≈ 1 ASV dolārs minūtē",
       "perMin3_4": "≈ 3–4 ASV dolāri minūtē",
-      "seriesSuffix": " · {{count}} skaitļu sērija — avatārs vienreiz",
+      "seriesSuffix": " · {{count}} sērija — avatārs vienreiz",
       "filesSuffix": " · 2 faili — avatārs vienreiz",
       "voiceoverAi": "≈ 0,1–0,3 ASV dolāri par klipu",
       "voiceoverFree": "0 ASV dolāri — jūsu pašu audio un video",
@@ -1193,7 +1193,7 @@
       "gen3": "Ģenerējiet 3 avatārus",
       "pickFromGallery": "Izvēlēties no galerijas",
       "refresh": "Atsvaidzināt sarakstu",
-      "briefPlaceholder": "Aprakstiet avatāru: \"25 gadus veca sieviete, neformāla, draudzīga\"...",
+      "briefPlaceholder": "Aprakstiet avatāru: \"25 gadus veca sieviete, neformāla, draudzīga\"…",
       "speakerAHeading": "Pirmais runātājs (A)",
       "yourPhotoHeading": "Jūsu fotoattēls",
       "photoChosenName": "fotoattēls atlasīts",
@@ -1248,16 +1248,16 @@
       "loudnormSub": "klusās daļas tiek izceltas, skaļās daļas izlīdzinātas — profesionālas skaņas skaņa"
     },
     "lines": {
-      "count_one": "{{count}} rinda · ~{{sec}} sek",
-      "count_other": "{{count}} rindas · ~{{sec}} sekundes",
+      "count_one": "{{count}} līnija · ~{{sec}} sek",
+      "count_other": "{{count}} līnijas · ~{{sec}} sekundes",
       "editHint": "— rediģēt laika skalā ekrāna apakšdaļā.",
       "title": "Līnijas",
       "filterAll": "Visi · {{count}}",
-      "filterVoiceA": "A balss · {{count}}",
-      "filterVoiceB": "B balss · {{count}}",
+      "filterVoiceA": "Balss A · {{count}}",
+      "filterVoiceB": "Balss B · {{count}}",
       "hintDialogue": "A/B emblēma — mainīt balsi · ⇣ — apvienot ar nākamo rindu",
       "hintMerge": "⇣ — apvienot ar nākamo rindu",
-      "holdNote": "video {{sec}}s — parādīts pilnībā: +{{extra}}s, šādas rindas nobīdās",
+      "holdNote": "video {{sec}}s — parādīts pilnībā: +{{extra}}s, nobīdās šādas rindas",
       "swapVoice": "Pārslēgt balsi A↔B",
       "hostVoice": "Prezentētāja balss",
       "mediaReplace": "līnijas multivide — noklikšķiniet, lai aizstātu",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Pēc izvēles: bez video avatārs aizpilda visu kadru.",
       "dialogueHint": "Dialoga režīmā multivide ir pievienota rindām zemāk esošajā laika skalā — “Kā parādīt” un “Rādīt N sekundes” tiek rādīti jebkurā rindā ar multividi.",
       "seriesHeading": "Klipu sērija",
-      "seriesCount": "Sērijas videoklipi: {{count}} → tikpat daudz klipu",
+      "seriesCount": "Video sērijā: {{count}} → tāds pats klipu skaits",
       "seriesChange": "Mainīt",
       "seriesAdd": "Pievienot sērijai videoklipus — pa vienam klipam katrā videoklipā",
       "seriesBilling": "Avatars tiek apmaksāts vienu reizi par visu sēriju.",
@@ -1303,7 +1303,7 @@
       "sub": "neobligāts",
       "volumeLabel": "Mūzikas skaļums:",
       "volumeHint": "Balss vienmēr ir 100%; fonam ieteicams izmantot 15–25%. Celiņš ir īsāks par klipa cilpām; garāks tiek apgriezts.",
-      "empty": "Mūzika — vēl nav izvēlēta · klusi skan zem balss",
+      "empty": "Mūzika — vēl nav izvēlēta · klusi ieskanas zem balss",
       "durationLabel": "Cik ilgi tas spēlē",
       "playFull": "Viss video",
       "playFirst": "Pirmās N sekundes",
@@ -1396,7 +1396,7 @@
       "outro": "Ārējais bamperis",
       "layer": "Augšējais slānis (PNG)",
       "layerNote": "Caurspīdīgs PNG fails, kas sagatavots kadra formātam — tas pārklās visu video.",
-      "bumperNote": "Pievienots video tādam pašam, kāds tas ir, bez apstrādes."
+      "bumperNote": "Pievienots video tādā veidā, kā ir, bez apstrādes."
     },
     "progress": {
       "title": "Notiek videoklipa izveide…",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Augšējais slānis",
       "sub": "logotips vai rāmis — vienmēr augšpusē",
-      "empty": "{{format}} — caurspīdīgs PNG",
+      "empty": "{{format}} — caurspīdīgs PNG attēls",
       "hint": "PNG fails atbilstoši rāmja izmēram: logotips jebkur, rāmis, paraksts. Tas pārklāj visu video; subtitri paliek virs slāņa.",
       "progressTitle": "Progresa josla",
-      "progressSub": "šaura taimera josla augšpusē — skatītāji redz, ka video ir īss, un noskatās līdz galam"
+      "progressSub": "šaura taimera josla augšpusē — skatītāji redz, ka video ir īss, un noskatās līdz galam",
+      "pngOnly": "Slānim jābūt caurspīdīgam PNG vai WebP failam — fails bez caurspīdīguma pārklātu visu kadru."
     },
     "brand": {
       "button": "Zīmola komplekts",

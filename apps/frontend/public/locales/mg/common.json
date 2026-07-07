@@ -1119,7 +1119,7 @@
       "saved": "voavonjy",
       "save": "afa-tsy",
       "ctaTooltipReady": "Ny avatar dia miteny ny script (HeyGen) → miray amin'ny horonan-tsary → dikanteny → Galeriana",
-      "ctaTooltipMissing": "Mbola ilaina: {{tsy hita}}",
+      "ctaTooltipMissing": "Mbola ilaina: {{missing}}",
       "creating": "Mamorona…",
       "create": "Mamorona lahatsary"
     },
@@ -1151,7 +1151,7 @@
       "missScript": "script na fandraisam-peo",
       "videoChosen": "Lahatsary voafantina",
       "missVideo": "lahatsary",
-      "step": "dingana"
+      "step": "dingana {{n}}"
     },
     "mode": {
       "title": "Fomba lahatsary",
@@ -1241,7 +1241,7 @@
       "elevenPreview": "Milalao santionany",
       "langsLabel": "Fiteny amin'ny lahatsary",
       "langRuPinned": "Rosiana · voalohany",
-      "langsHintVoiceover": "Andian-dahatsoratra: sombin-dahatsary misaraka amin'ny fiteny {{count}} tsirairay — Claude no mandika teny, ny feon'ny ElevenLabs. Saika maimaim-poana: vidiny = feo × fiteny.",
+      "langsHintVoiceover": "Andian-dahatsoratra: horonan-tsary misaraka amin'ny fiteny {{count}} tsirairay — Claude no mandika teny, ny feon'ny ElevenLabs. Saika maimaim-poana: vidiny = feo × fiteny.",
       "langsHintSolo": "Andian-dahatsoratra: horonan-tsary misaraka amin'ny fiteny {{count}} tsirairay. Amin'ny alalan'ny avatar, ny HeyGen dia mampiseho ny endrika ho an'ny fiteny tsirairay — lafo kokoa.",
       "diarizeHintVoiceover": "Mandeha araka ny maha-izy azy ny feo ao amin'ny lahatsary. Tsy voatery ny \"mandika teny\": ilaina amin'ny dikanteny sy fampidirana isaky ny andalana.",
       "loudnormTitle": "Ampitovy ny hamafin'ny feo",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Tsy voatery: raha tsy misy lahatsary dia mameno ny sary ny avatar.",
       "dialogueHint": "Ao amin'ny fomba fifanakalozan-kevitra, ny media dia mifamatotra amin'ny andalana eo amin'ny fe-potoana etsy ambany — Ny 'Ahoana no fampisehoana' sy ny 'Asehoy mandritra ny N segondra' dia miseho amin'ny andalana rehetra misy media.",
       "seriesHeading": "Andian-dahatsoratra",
-      "seriesCount": "Lahatsary ao amin'ny andian-tantara: {{count}} → mitovy isa ny sombin-tsary navoaka",
+      "seriesCount": "Lahatsary ao amin'ny andian-tantara: {{count}} → mitovy isa ny sombin-tsary mivoaka",
       "seriesChange": "FIOVANA",
       "seriesAdd": "Ampio horonan-tsary amin'ny andian-tantara — sombin-tsary iray isaky ny horonan-tsary",
       "seriesBilling": "Indray mandeha monja no faktioran'ny avatar mandritra ny andiany iray manontolo.",
@@ -1314,7 +1314,7 @@
       "portrait": "9:16 · mitsangana",
       "landscape": "16:9 · mitsivalana",
       "both": "ROA",
-      "twoFilesNote": "Rakitra 2 isaky ny fampandehanana — indray mandeha no andoavana ny avatar",
+      "twoFilesNote": "Rakitra 2 isaky ny fampandehanana — faktiora indray mandeha ny avatar",
       "label916": "9:16 · TikTok, Reels, Shorts",
       "label169": "16:9 · YouTube",
       "square": "1:1 · efamira",
@@ -1328,7 +1328,7 @@
       "top": "Avatar eo ambony",
       "bottom": "Avatar eo ambany",
       "overlayLeft": "Eo amin'ny ankavia, eo ambonin'ny lahatsary",
-      "overlayRight": "Eo amin'ny ilany ankavanana amin'ilay lahatsary",
+      "overlayRight": "Eo amin'ny ankavanana eo amin'ny lahatsary",
       "overlayHint": "Mameno ny frame ny horonan-tsary, kely ny avatar eo ambony"
     },
     "timeline": {
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Drafitra fifanakalozan-kevitra ankapobeny: Ny AI no mamaritra ny fotoana hijerena akaiky sy ny fotoana hampisehoana azy roa ao anaty sary (sary tsy mihetsika ny fihetsika, $0)."
     },
     "preview": {
-      "seriesReady": "Vonona amin'ny andiany: {{count}} lahatsary — ao amin'ny Galeriana avokoa",
+      "seriesReady": "Vonona amin'ny andiany: lahatsary {{count}} — ao amin'ny Galeriana avokoa",
       "ready": "Vita — ao amin'ny Galeriana ny lahatsary",
       "footerSolo": "Tsindrio ny faritra fijerena mialoha mba hanampiana votoaty. Havaozina avy hatrany ny fijerena mialoha.",
       "footerPlan": "Tsindrio ireo fizarana drafitra — ny topimaso dia mampiseho ny sary tsirairay. Ny fampitam-baovao amin'ny tsipika dia eo amin'ny fe-potoana etsy ambany.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG mangarahara",
       "hint": "Sary PNG ho an'ny sary: logo na aiza na aiza, sary, lohateny. Mipetraka eo ambonin'ny lahatsary manontolo; ny dikanteny dia mijanona eo ambonin'ny sosona.",
       "progressTitle": "Bara fandrosoana",
-      "progressSub": "tsipika famantaranandro manify eo an-tampony — ho hitan'ny mpijery fa fohy ny lahatsary ary hojereny hatramin'ny farany"
+      "progressSub": "tsipika famantaranandro manify eo an-tampony — ho hitan'ny mpijery fa fohy ny lahatsary ary hojereny hatramin'ny farany",
+      "pngOnly": "Tsy maintsy PNG na WebP mangarahara ny sosona — rakitra tsy misy mangarahara dia handrakotra ny frame iray manontolo."
     },
     "brand": {
       "button": "Kitapo marika",

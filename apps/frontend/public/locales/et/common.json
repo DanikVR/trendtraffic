@@ -1242,13 +1242,13 @@
       "langsLabel": "Video keeled",
       "langRuPinned": "Vene keel · algkool",
       "langsHintVoiceover": "Seeria: eraldi klipp igas {{count}} keeles — Claude tõlgib, ElevenLabsi hääled. Peaaegu tasuta: hind = hääleülekanne × keeled.",
-      "langsHintSolo": "Seeria: eraldi klipp igas {{count}} keeles. HeyGen renderdab avatari abil iga keele näo – kallim hind.",
+      "langsHintSolo": "Seeria: eraldi klipp igas {{count}} keeles. HeyGen renderdab avatari abil iga keele näo – kallim on see.",
       "diarizeHintVoiceover": "Heli esitatakse video peal muutmata kujul. „Kõne transkribeerimine” on valikuline: vajalik subtiitrite ja reapõhiste lisade jaoks.",
       "loudnormTitle": "Ühtlusta hääle helitugevust",
       "loudnormSub": "vaiksed kohad saavad esile tõstetud, valjud kohad summutatud – professionaalne heli"
     },
     "lines": {
-      "count_one": "{{count}} rida · ~{{sec}} sekundit",
+      "count_one": "{{count}} rida · ~{{sec}} sek",
       "count_other": "{{count}} rida · ~{{sec}} sekundit",
       "editHint": "— redigeeri ekraani allosas oleval ajajoonel.",
       "title": "Liinid",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Valikuline: ilma videota täidab avatar kaadri.",
       "dialogueHint": "Dialoogirežiimis on meedia lisatud allpool oleva ajajoone ridadele – „Kuidas kuvada” ja „Kuva N sekundit” ilmuvad igale meediat sisaldavale reale.",
       "seriesHeading": "Klippide seeria",
-      "seriesCount": "Sarja videod: {{count}} → sama arv klippe väljas",
+      "seriesCount": "Sarja videod: {{count}} → sama palju klippe väljas",
       "seriesChange": "Muutus",
       "seriesAdd": "Lisa sarjale videoid – üks klipp video kohta",
       "seriesBilling": "Avatari eest võetakse kogu sarja eest üks kord arve.",
@@ -1290,7 +1290,7 @@
       "styleNone": "Väljas",
       "styleWord": "Sõna-sõnalt",
       "styleKaraoke": "Karaoke",
-      "stylePlain": "Üksik rida",
+      "stylePlain": "Üks rida",
       "posLabel": "Positsioon:",
       "posBottom": "Alumine",
       "posCenter": "Keskus",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Dialoogi ligikaudne plaan: tehisintellekt otsustab, millal lähivõtteid teha ja millal mõlemat kaadris näidata (reaktsioon on staatiline foto, 0 dollarit)."
     },
     "preview": {
-      "seriesReady": "Sari valmis: {{count}} videot — kõik galeriis",
+      "seriesReady": "Sari valmis: {{count}} videod — kõik galeriis",
       "ready": "Valmis — video on galeriis",
       "footerSolo": "Sisu lisamiseks klõpsake eelvaatealal. Eelvaade uueneb koheselt.",
       "footerPlan": "Klõpsake plaanilõikudel – eelvaates kuvatakse iga kaader. Joonmeedia on alloleval ajajoonel.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — läbipaistev PNG",
       "hint": "Raami jaoks sobiva suurusega PNG: logo kuhu iganes, raam, pealdis. Katab kogu video; subtiitrid jäävad kihi kohale.",
       "progressTitle": "Edenemisriba",
-      "progressSub": "õhuke taimeririba ülaosas – vaatajad näevad, et video on lühike ja vaatavad lõpuni"
+      "progressSub": "õhuke taimeririba ülaosas – vaatajad näevad, et video on lühike ja vaatavad lõpuni",
+      "pngOnly": "Kiht peab olema läbipaistev PNG- või WebP-fail – läbipaistvuseta fail kataks kogu kaadri."
     },
     "brand": {
       "button": "Brändikomplekt",

@@ -157,7 +157,9 @@ router.get('/ugc/voices', async (req: AuthedRequest, res: Response) => {
   try {
     const key = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
     if (!key) return res.json({ voices: [], note: 'Ключ ElevenLabs не задан (Настройки → Генерация) — используются голоса по умолчанию.' });
-    const cached = elevenVoicesCache.get(req.tenantId!);
+    // Кэш-ключ включает хвост API-ключа: смена ключа тенантом сразу сбрасывает кэш.
+    const cacheKey = `${req.tenantId}:${key.slice(-8)}`;
+    const cached = elevenVoicesCache.get(cacheKey);
     if (cached && Date.now() - cached.ts < 3600_000) return res.json({ voices: cached.items });
     const r = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': key } });
     if (!r.ok) return res.status(502).json({ error: `ElevenLabs: HTTP ${r.status}` });
@@ -169,7 +171,7 @@ router.get('/ugc/voices', async (req: AuthedRequest, res: Response) => {
       category: v?.category ? String(v.category) : null,
       labels: (v?.labels && typeof v.labels === 'object') ? v.labels : {},
     })).filter((v: any) => v.id);
-    elevenVoicesCache.set(req.tenantId!, { ts: Date.now(), items });
+    elevenVoicesCache.set(cacheKey, { ts: Date.now(), items });
     res.json({ voices: items });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Не удалось получить голоса ElevenLabs' });
@@ -190,7 +192,9 @@ router.post('/ugc/brandkits', async (req: AuthedRequest, res: Response) => {
     const name = String(req.body?.name || '').trim().slice(0, 120) || 'Мой бренд';
     const data = req.body?.data && typeof req.body.data === 'object' ? req.body.data : {};
     const r = await pool.query('INSERT INTO brand_kits (tenant_id, name, data) VALUES ($1,$2,$3) RETURNING id', [req.tenantId, name, JSON.stringify(data)]);
-    res.json({ id: String(r.rows[0]?.id), name });
+    // В fallback-режиме БД (без Postgres) вставка тихо возвращает пусто — честно скажем об этом.
+    if (!r.rows?.[0]?.id) return res.status(500).json({ error: 'Бренд-киты требуют базу данных (Postgres) — сохранение недоступно.' });
+    res.json({ id: String(r.rows[0].id), name });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить бренд-кит' }); }
 });
 /** DELETE /ugc/brandkits/:id — убрать набор (только своего тенанта). */
@@ -453,6 +457,20 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const bmp = await dlBumpers();
           const inserts = await dlInserts();
           let made = 0; const skippedLangs: string[] = [];
+          // У ИИ-текста нет таймкодов разбора → субтитры строим примерно: реплики (или предложения
+          // перевода) раскладываются по длительности голоса пропорционально длине текста.
+          const approxCaps = (text: string, srcLines: string[], D: number): UgcCaption[] => {
+            const parts = (srcLines.length ? srcLines : text.split(/(?<=[.!?…])\s+/))
+              .map((s) => s.trim()).filter(Boolean).slice(0, 60);
+            const totalChars = parts.reduce((s2, p2) => s2 + p2.length, 0) || 1;
+            let t0 = 0; const out: UgcCaption[] = [];
+            for (const p2 of parts) {
+              const d = Math.max(0.8, (p2.length / totalChars) * D);
+              out.push({ t0, t1: Math.min(D, t0 + d), text: p2 });
+              t0 += d;
+            }
+            return out.filter((c) => c.t1 > c.t0 + 0.2);
+          };
 
           for (const lang of langs) {
             // 1) текст на языке серии (Claude) — 'ru' идёт как есть; провал перевода = пропуск языка.
@@ -468,6 +486,12 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, text.slice(0, 2500), gender, voiceIdSpec));
             const voice = await downloadToRenders(voiceUrl, 'ugcvoice');
             const langSuffix = lang !== 'ru' ? ` · ${lang.toUpperCase()}` : '';
+            // 3) субтитры: точные таймкоды разбора; иначе — примерная раскладка по голосу.
+            let capsForLang = captions;
+            if (!capsForLang.length && capStyle !== 'none' && scriptText) {
+              const Dv = await mediaDuration(voice.filePath);
+              if (Dv > 1) capsForLang = approxCaps(text, lang === 'ru' ? script.map((l) => String(l?.text || '')) : [], Dv);
+            }
 
             for (let f = 0; f < outFormats.length; f++) {
               const fmt = outFormats[f];
@@ -482,7 +506,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 musicPath: music?.filePath || null,
                 musicVolumePct: Number(spec.music?.volumePct) || 20,
                 musicDurationSec: musicDurSec,
-                captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
+                captions: capsForLang, capStyle: capsForLang.length ? capStyle : 'none', capPos, dims: fmt.dims,
                 inserts: inserts as UgcInsert[],
                 layerPath: layers[fmt.key] || null,
                 progressBar,

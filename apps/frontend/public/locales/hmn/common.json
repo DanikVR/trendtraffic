@@ -1197,7 +1197,7 @@
       "speakerAHeading": "Tus neeg hais lus thawj zaug (A)",
       "yourPhotoHeading": "Koj daim duab",
       "photoChosenName": "xaiv daim duab",
-      "photoEmpty": "Duab — tseem tsis tau uploaded · xaiv los ntawm Gallery",
+      "photoEmpty": "Duab — tseem tsis tau upload · xaiv los ntawm Gallery",
       "photoHint": "Ib daim duab uas tig rau pem hauv ntej. HeyGen ua rau daim duab muaj sia — daim di ncauj thiab lub ntsej muag sib phim nrog lub suab.",
       "speakerBHeading": "Tus neeg hais lus thib ob (B)",
       "photoBName": "duab B",
@@ -1223,7 +1223,7 @@
       "sub": "hais li cas",
       "sourceGen": "Sau ntawv nrog AI",
       "sourceDiarize": "Kuv cov ntaubntawv povthawj",
-      "dialogueNeedsRecording": "Ib qho kev sib tham xav tau kev kaw ob lub suab - hloov mus rau 'Kuv cov ntaubntawv kaw' thiab tshuaj xyuas cov lus hais.",
+      "dialogueNeedsRecording": "Ib qho kev sib tham xav tau kev kaw ob lub suab - hloov mus rau 'Kuv cov ntaubntawv povthawj' thiab tshuaj xyuas cov lus hais.",
       "ttsLabel": "Kev hais lus:",
       "female": "Poj niam",
       "male": "Txiv neej",
@@ -1231,7 +1231,7 @@
       "genScript": "Tsim cov ntawv sau",
       "recordingName": "kev kaw suab",
       "removeRecording": "Tshem tawm cov ntaubntawv povthawj (kuj tshem nws qhov kev tshuaj xyuas)",
-      "recordingEmpty": "Cov ntaubntawv kaw suab — tsis tau upload dua · suab los yog video",
+      "recordingEmpty": "Cov ntaubntawv kaw suab — tseem tsis tau upload · suab los yog video",
       "diarizing": "Kev tshuaj xyuas cov ntaubntawv povthawj…",
       "diarize": "Tshuaj xyuas cov lus hais",
       "diarizeHintDialogue": "Qhov kev tshuaj xyuas qhia ob lub suab sib txawv - cov kab tsaws rau ntawm txoj kab A thiab B.",
@@ -1242,17 +1242,17 @@
       "langsLabel": "Cov lus video",
       "langRuPinned": "Lavxias teb sab · thawj",
       "langsHintVoiceover": "Ib qho series: ib daim clip sib cais hauv txhua hom lus {{count}} — Claude txhais lus, ElevenLabs lub suab. Yuav luag pub dawb: tus nqi = voiceover × hom lus.",
-      "langsHintSolo": "Ib cov yeeb yaj kiab: ib daim clip sib cais hauv txhua hom lus {{count}}. Nrog tus avatar, HeyGen ua lub ntsej muag rau txhua hom lus - kim dua.",
+      "langsHintSolo": "Ib qho series: ib daim clip sib cais hauv txhua hom lus {{count}}. Nrog tus avatar, HeyGen ua lub ntsej muag rau txhua hom lus - kim dua.",
       "diarizeHintVoiceover": "Lub suab mus hla cov yeeb yaj kiab li qub. \"Sau cov lus hais\" yog xaiv tau: xav tau rau cov lus piav qhia thiab cov ntawv ntxig rau ib kab.",
       "loudnormTitle": "Sib npaug lub suab nrov",
       "loudnormSub": "cov khoom ntsiag to raug tsa, cov khoom nrov raug ua kom du - lub suab zoo li pro"
     },
     "lines": {
-      "count_one": "kab {{count}} · ~{{sec}} vib nas this",
-      "count_other": "kab {{count}} · ~{{sec}} vib nas this",
+      "count_one": "{{count}} kab · ~{{sec}} vib nas this",
+      "count_other": "{{count}} kab · ~{{sec}} vib nas this",
       "editHint": "— kho kom raug rau ntawm lub sijhawm ntawm qab ntawm qhov screen.",
       "title": "Cov kab",
-      "filterAll": "Tag nrho · {{count}}",
+      "filterAll": "Txhua yam · {{count}}",
       "filterVoiceA": "Lub Suab A · {{count}}",
       "filterVoiceB": "Lub Suab B · {{count}}",
       "hintDialogue": "Daim ntawv cim A/B — hloov lub suab · ⇣ — sib koom ua ke nrog kab tom ntej",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Txoj kev npaj sib tham txog qhov teeb meem: AI txiav txim siab thaum twg yuav tsum mus ze ze thiab thaum twg yuav tsum qhia ob qho tib si hauv tus ncej (kev teb yog daim duab tsis txav, $0)."
     },
     "preview": {
-      "seriesReady": "Npaj txhij rau cov yeeb yaj kiab: {{count}} cov yeeb yaj kiab — txhua yam nyob hauv Gallery",
+      "seriesReady": "Npaj txhij rau cov yeeb yaj kiab: {{count}} cov yeeb yaj kiab — txhua yam hauv Gallery",
       "ready": "Ua tiav lawm — daim vis dis aus nyob hauv Gallery",
       "footerSolo": "Nyem rau ntawm ib qho chaw saib ua ntej kom ntxiv cov ntsiab lus. Qhov saib ua ntej hloov kho tam sim ntawd.",
       "footerPlan": "Nyem rau ntawm cov ntu ntawm daim phiaj xwm — qhov saib ua ntej qhia txhua daim duab. Cov kab xov xwm nyob rau ntawm lub sijhawm hauv qab no.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Txheej sab saum toj",
       "sub": "logo los yog thav duab — yeej ib txwm nyob rau sab saum toj",
-      "empty": "{{hom ntawv}} — PNG pob tshab",
+      "empty": "{{format}} — PNG pob tshab",
       "hint": "Ib daim PNG uas loj rau tus ncej: lub logo nyob qhov twg los tau, ib tus ncej, ib daim ntawv piav qhia. Nyob rau saum tag nrho cov yeeb yaj kiab; cov lus piav qhia nyob saum txheej.",
       "progressTitle": "Cov kab qhia kev nce qib",
-      "progressSub": "ib daim kab nyias nyias nyob rau sab saum toj — cov neeg saib pom tias daim vis dis aus luv thiab saib mus txog thaum kawg"
+      "progressSub": "ib daim kab nyias nyias nyob rau sab saum toj — cov neeg saib pom tias daim vis dis aus luv thiab saib mus txog thaum kawg",
+      "pngOnly": "Cov txheej yuav tsum yog PNG lossis WebP pob tshab - cov ntaub ntawv tsis muaj pob tshab yuav npog tag nrho cov ncej."
     },
     "brand": {
       "button": "Cov khoom siv hom",

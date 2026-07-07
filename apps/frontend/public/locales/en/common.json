@@ -1416,7 +1416,8 @@
       "empty": "{{format}} — transparent PNG",
       "hint": "A PNG sized for the frame: a logo anywhere, a frame, a caption. Sits over the whole video; subtitles stay above the layer.",
       "progressTitle": "Progress bar",
-      "progressSub": "a thin timer strip at the top — viewers see the video is short and watch to the end"
+      "progressSub": "a thin timer strip at the top — viewers see the video is short and watch to the end",
+      "pngOnly": "The layer must be a transparent PNG or WebP — a file without transparency would cover the whole frame."
     },
     "brand": {
       "button": "Brand kit",

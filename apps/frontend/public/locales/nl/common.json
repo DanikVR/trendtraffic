@@ -1130,7 +1130,7 @@
       "perClip2": "Ongeveer $2 per clip",
       "perMin1": "Ongeveer $1 per minuut",
       "perMin3_4": "Ongeveer $3-4 per minuut",
-      "seriesSuffix": " · reeks van {{count}} — avatar eenmaal",
+      "seriesSuffix": " · reeks van {{count}} — avatar ooit",
       "filesSuffix": " · 2 bestanden — avatar eenmaal",
       "voiceoverAi": "Ongeveer $0,1–0,3 per clip",
       "voiceoverFree": "$0 — je eigen audio en video",
@@ -1173,7 +1173,7 @@
       "engLively": "Levendig",
       "engEcoHint": "Vrijwel altijd één luidspreker op het scherm – de goedkoopste optie.",
       "engBalHint": "Close-up van de spreker; zowel reacties als hoogtepunten in beeld.",
-      "engDynHint": "Meer scènes waarin beide partijen in beeld zijn en meer tussenshots — levendiger en duurder.",
+      "engDynHint": "Meer scènes waarin beide personages in beeld zijn en meer tussenshots — levendiger en duurder.",
       "engAiTrailer": "De AI arrangeert de opnames zelf.",
       "cutoutTitle": "Transparante avatarachtergrond",
       "cutoutSub": "Alleen de persoon blijft in beeld — bij de lay-out 'achtergrond met avatar aan de zijkant'.",
@@ -1230,7 +1230,7 @@
       "briefPlaceholder": "Waar de video over gaat: 'een eerlijke app-recensie, die je meteen in de eerste 3 seconden boeit'...",
       "genScript": "Script genereren",
       "recordingName": "opname",
-      "removeRecording": "Verwijder de opname (hiermee wordt ook de analyse gewist).",
+      "removeRecording": "Verwijder de opname (dit wist ook de analyse ervan).",
       "recordingEmpty": "Opname — nog niet geüpload · audio of video",
       "diarizing": "Opname analyseren…",
       "diarize": "Analyseer de spraak",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Speel een fragment af",
       "langsLabel": "Videotalen",
       "langRuPinned": "Russisch · primair",
-      "langsHintVoiceover": "Een serie: een aparte clip in elk van {{count}} talen — Claude vertaalt, ElevenLabs spreekt in. Vrijwel gratis: kosten = voice-over × talen.",
-      "langsHintSolo": "Een serie: een aparte clip in elk van {{count}} talen. Met een avatar rendert HeyGen het gezicht voor elke taal — duurder.",
+      "langsHintVoiceover": "Een serie: een aparte clip in elk van de {{count}} talen — Claude vertaalt, ElevenLabs spreekt in. Vrijwel gratis: kosten = voice-over × talen.",
+      "langsHintSolo": "Een serie: een aparte clip in elk van de {{count}} talen. Met een avatar rendert HeyGen het gezicht voor elke taal — duurder.",
       "diarizeHintVoiceover": "De audio wordt ongewijzigd over de video heen geplakt. \"Spraak transcriberen\" is optioneel: nodig voor ondertitels en tekstinvoegingen per regel.",
       "loudnormTitle": "Zorg voor een gelijkmatig stemvolume",
       "loudnormSub": "Stille gedeelten worden versterkt, luide gedeelten worden afgevlakt — professioneel klinkende audio"
     },
     "lines": {
-      "count_one": "{{count}} regel · ~{{sec}} sec",
-      "count_other": "{{count}} regels · ~{{sec}} sec",
+      "count_one": "{{count}} lijn · ~{{sec}} sec",
+      "count_other": "{{count}} lijnen · ~{{sec}} sec",
       "editHint": "— Bewerk de tijdlijn onderaan het scherm.",
       "title": "Lijnen",
       "filterAll": "Alles · {{count}}",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Globale dialoogopzet: De AI bepaalt wanneer er een close-up moet worden gemaakt en wanneer beide in beeld moeten worden getoond (een reactie is een statische foto, $0)."
     },
     "preview": {
-      "seriesReady": "Klaar voor de serie: {{count}} video's — allemaal in de galerij",
+      "seriesReady": "Serie klaar: {{count}} video's — allemaal in de galerij",
       "ready": "Klaar — de video staat in de galerij.",
       "footerSolo": "Klik op een voorbeeldgebied om inhoud toe te voegen. Het voorbeeld wordt direct bijgewerkt.",
       "footerPlan": "Klik op de plansegmenten; in de preview wordt elke opname getoond. Lijnmedia staat op de tijdlijn hieronder.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — transparante PNG",
       "hint": "Een PNG-bestand op de juiste afmetingen voor het frame: een logo, een frame of een onderschrift. Het bestand wordt over de hele video geplaatst; ondertitels blijven boven de laag.",
       "progressTitle": "Voortgangsbalk",
-      "progressSub": "een dunne timerstrip bovenaan — kijkers zien dat de video kort is en kijken hem tot het einde."
+      "progressSub": "een dunne timerstrip bovenaan — kijkers zien dat de video kort is en kijken hem tot het einde.",
+      "pngOnly": "De laag moet een transparante PNG of WebP zijn; een bestand zonder transparantie zou het hele frame bedekken."
     },
     "brand": {
       "button": "Merkkit",

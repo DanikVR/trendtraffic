@@ -1119,7 +1119,7 @@
       "saved": "Gestoor",
       "save": "Stoor",
       "ctaTooltipReady": "Die avatar praat die skrif (HeyGen) → voeg saam met video → onderskrifte → Galery",
-      "ctaTooltipMissing": "Nog steeds benodig: {{missing}}",
+      "ctaTooltipMissing": "Nog steeds nodig: {{missing}}",
       "creating": "Skep…",
       "create": "Skep video"
     },
@@ -1130,11 +1130,11 @@
       "perClip2": "≈ $2 per snit",
       "perMin1": "≈ $1 per minuut",
       "perMin3_4": "≈ $3–4 per minuut",
-      "seriesSuffix": " · reeks van {{count}} — avatar een keer",
+      "seriesSuffix": " · reeks van {{count}} — avatar eens",
       "filesSuffix": " · 2 lêers — avatar een keer",
       "voiceoverAi": "≈ $0.1–0.3 per snit",
       "voiceoverFree": "$0 — jou eie klank en video",
-      "langsSuffix": " · tale: {{telling}}"
+      "langsSuffix": " · tale: {{count}}"
     },
     "checklist": {
       "title": "Gereed om te bou",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Hou die HeyGen-ateljee-oortjie oop met 'n aktiewe intekening.",
       "apiNote": "Via die HeyGen API — sleutel in Instellings → Generering, betaal-soos-jy-gaan fakturering (~$3/min Avatar IV).",
       "delTitle": "Verwyder avatar?",
-      "delMessage": "'{{name}}' sal van jou avatar-versameling verwyder word. Die oorspronklike lêer bly in die Galery."
+      "delMessage": "'{{name}}' sal van jou avatarversameling verwyder word. Die oorspronklike lêer bly in die Galery."
     },
     "voice": {
       "title": "Stem en draaiboek",
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Speel 'n voorbeeld",
       "langsLabel": "Videotale",
       "langRuPinned": "Russies · primêre",
-      "langsHintVoiceover": "'n Reeks: 'n aparte snit in elk van {{count}} tale — Claude vertaal, ElevenLabs-stemme. Byna gratis: koste = stemopname × tale.",
-      "langsHintSolo": "'n Reeks: 'n aparte snit in elk van {{count}} tale. Met 'n avatar lewer HeyGen die gesig vir elke taal weer — duurder.",
+      "langsHintVoiceover": "'n Reeks: 'n aparte snit in elk van {{count}} tale — Claude vertaal, ElevenLabs stemme. Byna gratis: koste = stemopname × tale.",
+      "langsHintSolo": "'n Reeks: 'n aparte snit in elk van {{count}} tale. Met 'n avatar lewer HeyGen die gesig vir elke taal - duurder.",
       "diarizeHintVoiceover": "Die klank gaan oor die video soos dit is. \"Transkribeer spraak\" is opsioneel: nodig vir onderskrifte en invoegsels per reël.",
       "loudnormTitle": "Maak stemvolume gelyk",
       "loudnormSub": "stil dele word opgehef, harde dele word gladder gemaak — pro-klinkende klank"
@@ -1252,9 +1252,9 @@
       "count_other": "{{count}} reëls · ~{{sec}} sek",
       "editHint": "— wysig op die tydlyn onderaan die skerm.",
       "title": "Lyne",
-      "filterAll": "Alles · {{telling}}",
-      "filterVoiceA": "Stem A · {{telling}}",
-      "filterVoiceB": "Stem B · {{telling}}",
+      "filterAll": "Alles · {{count}}",
+      "filterVoiceA": "Stem A · {{count}}",
+      "filterVoiceB": "Stem B · {{count}}",
       "hintDialogue": "A/B-kenteken — wissel stem · ⇣ — voeg saam met die volgende reël",
       "hintMerge": "⇣ — saamsmelt met die volgende lyn",
       "holdNote": "video {{sec}}s — volledig getoon: +{{extra}}s, die volgende lyne skuif",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Boonste laag",
       "sub": "logo of raam — altyd bo-aan",
-      "empty": "{{formaat}} — deursigtige PNG",
+      "empty": "{{format}} — deursigtige PNG",
       "hint": "'n PNG-grootte vir die raam: 'n logo enige plek, 'n raam, 'n onderskrif. Dit sit oor die hele video; onderskrifte bly bo die laag.",
       "progressTitle": "Vorderingsbalk",
-      "progressSub": "'n dun timerstrook bo-aan — kykers sien die video is kort en kyk tot die einde"
+      "progressSub": "'n dun timerstrook bo-aan — kykers sien die video is kort en kyk tot die einde",
+      "pngOnly": "Die laag moet 'n deursigtige PNG of WebP wees — 'n lêer sonder deursigtigheid sal die hele raam bedek."
     },
     "brand": {
       "button": "Handelsmerkstel",

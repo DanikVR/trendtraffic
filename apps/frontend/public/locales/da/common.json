@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 dollars pr. klip",
       "perMin1": "≈ 1 dollar pr. minut",
       "perMin3_4": "≈ 3–4 dollars pr. minut",
-      "seriesSuffix": " · serie på {{count}} — avatar én gang",
+      "seriesSuffix": " · serie af {{count}} — avatar én gang",
       "filesSuffix": " · 2 filer — avatar én gang",
       "voiceoverAi": "≈ $0,1–0,3 pr. klip",
       "voiceoverFree": "0 kr. — din egen lyd og video",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Hold HeyGen Studio-fanen åben med et aktivt abonnement.",
       "apiNote": "Via HeyGen API — tast ind i Indstillinger → Generering, betal efter forbrug (~$3/min Avatar IV).",
       "delTitle": "Fjern avataren?",
-      "delMessage": "'{{name}}' vil blive fjernet fra din avatarsamling. Den originale fil forbliver i galleriet."
+      "delMessage": "'{{name}}' vil blive fjernet fra din avatarsamling. Den originale fil forbliver i Galleriet."
     },
     "voice": {
       "title": "Stemme og manuskript",
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Afspil en prøve",
       "langsLabel": "Videosprog",
       "langRuPinned": "Russisk · primærvalg",
-      "langsHintVoiceover": "En serie: et separat klip på hvert af {{count}} sprog — Claude oversætter, ElevenLabs stemmer. Næsten gratis: pris = voiceover × sprog.",
-      "langsHintSolo": "En serie: et separat klip på hvert af {{count}} sprog. Med en avatar gengiver HeyGen ansigtet for hvert sprog – dyrere.",
+      "langsHintVoiceover": "En serie: et separat klip på hvert af {{count}} sprogene — Claude oversætter, ElevenLabs stemmer. Næsten gratis: pris = voiceover × sprog.",
+      "langsHintSolo": "En serie: et separat klip i hvert af {{count}} sprogene. Med en avatar gengiver HeyGen ansigtet for hvert sprog – dyrere.",
       "diarizeHintVoiceover": "Lyden går over videoen, som den er. \"Transkriber tale\" er valgfrit: nødvendigt for undertekster og indsættelser per linje.",
       "loudnormTitle": "Udjævn stemmestyrken",
       "loudnormSub": "Stille dele løftes, høje dele udglattes — professionel lyd"
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — gennemsigtig PNG",
       "hint": "En PNG-fil i rammens størrelse: et logo hvor som helst, en ramme, en billedtekst. Den ligger over hele videoen; underteksterne forbliver over laget.",
       "progressTitle": "Statuslinje",
-      "progressSub": "en tynd timerstribe øverst – seerne ser, at videoen er kort, og ser den til slutningen"
+      "progressSub": "en tynd timerstribe øverst – seerne ser, at videoen er kort, og ser den til slutningen",
+      "pngOnly": "Laget skal være en transparent PNG eller WebP — en fil uden gennemsigtighed ville dække hele rammen."
     },
     "brand": {
       "button": "Mærkesæt",

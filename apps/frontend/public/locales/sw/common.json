@@ -1164,7 +1164,7 @@
       "retentionPresetLabel": "Ukali wa montage",
       "presetEco": "Uchumi",
       "presetPrem": "Premium",
-      "presetEcoHint": "Ukaribu wa gharama kubwa ni wa kusubiri tu na wito wa kuchukua hatua (~2 kwa kila kipande). Chaguo la bei nafuu zaidi.",
+      "presetEcoHint": "Ukaribu wa gharama kubwa ni wa kusubiri tu na wito wa kuchukua hatua (~2 kwa kila kipande cha video). Chaguo la bei nafuu zaidi.",
       "presetBalHint": "Mazungumzo ya karibu, kitendo na wito wa kuchukua hatua (~3). Sehemu tamu.",
       "presetPremHint": "Muda wa juu zaidi wa uso (~4 za karibu). Hai zaidi na bei yake ni kubwa zaidi.",
       "presetAiTrailer": "AI huamua ni picha gani inaenda wapi kulingana na maandishi yako.",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Cheza sampuli",
       "langsLabel": "Lugha za video",
       "langRuPinned": "Kirusi · msingi",
-      "langsHintVoiceover": "Mfululizo: klipu tofauti katika kila moja ya lugha {{count}} — Claude hutafsiri, sauti za ElevenLabs. Karibu bure: gharama = sauti × lugha.",
-      "langsHintSolo": "Mfululizo: klipu tofauti katika kila moja ya lugha za {{count}}. Kwa avatar, HeyGen huonyesha uso kwa kila lugha — bei yake ni kubwa zaidi.",
+      "langsHintVoiceover": "Mfululizo: kipande tofauti katika kila moja ya lugha {{count}} — Claude anatafsiri, ElevenLabs sauti. Karibu bure: gharama = sauti × lugha.",
+      "langsHintSolo": "Mfululizo: klipu tofauti katika kila moja ya lugha {{count}}. Kwa avatar, HeyGen huonyesha uso kwa kila lugha — bei yake ni kubwa zaidi.",
       "diarizeHintVoiceover": "Sauti hupitia video kama ilivyo. \"Nukuu hotuba\" ni hiari: inahitajika kwa manukuu na viingizo vya kila mstari.",
       "loudnormTitle": "Sawazisha sauti",
       "loudnormSub": "Sehemu tulivu huinuliwa, sehemu zenye sauti kubwa hurekebishwa — sauti inayosikika vizuri"
     },
     "lines": {
-      "count_one": "Mstari wa {{count}} · ~{{sec}} sekunde",
-      "count_other": "Mistari {{count}} · ~{{sec}} sekunde",
+      "count_one": "{{count}} mstari · ~{{sec}} sekunde",
+      "count_other": "{{count}} mistari · ~{{sec}} sekunde",
       "editHint": "— hariri kwenye ratiba iliyo chini ya skrini.",
       "title": "Mistari",
       "filterAll": "Zote · {{count}}",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · mlisho",
       "label11": "1:1 · mlisho wa Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "faili kwa kila ukimbiaji: {{count}} — ishara hulipwa mara moja"
+      "filesPerRun": "faili kwa kila uendeshaji: {{count}} — avatar hulipwa mara moja"
     },
     "layout": {
       "label": "Mpangilio",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Mpango wa mazungumzo yasiyo sahihi: AI huamua wakati wa kuwa karibu na wakati wa kuonyesha zote mbili katika fremu (mwitikio ni picha tuli, $0)."
     },
     "preview": {
-      "seriesReady": "Mfululizo uko tayari: Video {{count}} — zote kwenye Ghala",
+      "seriesReady": "Mfululizo uko tayari: {{count}} video — zote kwenye Ghala",
       "ready": "Imekamilika — video iko kwenye Ghala",
       "footerSolo": "Bofya eneo la hakikisho ili kuongeza maudhui. hakikisho husasishwa papo hapo.",
       "footerPlan": "Bofya sehemu za mpango — hakikisho linaonyesha kila picha. Vyombo vya habari vya mstari viko kwenye ratiba ya matukio iliyo hapa chini.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG inayoonekana wazi",
       "hint": "PNG yenye ukubwa wa fremu: nembo popote, fremu, maelezo mafupi. Inakaa juu ya video nzima; manukuu hubaki juu ya safu.",
       "progressTitle": "Upau wa maendeleo",
-      "progressSub": "kipande chembamba cha kipima muda juu — watazamaji wanaona video ni fupi na waitazame hadi mwisho"
+      "progressSub": "kipande chembamba cha kipima muda juu — watazamaji wanaona video ni fupi na waitazame hadi mwisho",
+      "pngOnly": "Safu lazima iwe PNG au WebP inayoonekana wazi — faili isiyoonekana wazi ingefunika fremu nzima."
     },
     "brand": {
       "button": "Kifaa cha chapa",

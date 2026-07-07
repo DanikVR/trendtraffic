@@ -1129,7 +1129,7 @@
       "perClip3_5": "Hər klip üçün ≈ 3–5 dollar",
       "perClip2": "Hər klip üçün ≈ 2 dollar",
       "perMin1": "Dəqiqəsinə ≈ 1 dollar",
-      "perMin3_4": "Dəqiqəsi ≈ 3–4 dollar",
+      "perMin3_4": "Dəqiqəsinə ≈ 3–4 dollar",
       "seriesSuffix": " · {{count}} seriyası — bir dəfə avatar",
       "filesSuffix": " · 2 fayl — bir dəfə avatar",
       "voiceoverAi": "Hər klip üçün ≈ $0.1–0.3",
@@ -1241,23 +1241,23 @@
       "elevenPreview": "Nümunəni çalın",
       "langsLabel": "Video dilləri",
       "langRuPinned": "Rus dili · ibtidai",
-      "langsHintVoiceover": "Seriya: {{count}} dilin hər birində ayrıca klip — Klod tərcümə edir, ElevenLabs səsləri. Demək olar ki, pulsuzdur: qiymət = səsləndirmə × dillər.",
-      "langsHintSolo": "Seriya: hər {{count}} dildə ayrıca klip. Avatarla HeyGen hər dil üçün üzü göstərir — daha bahalı.",
-      "diarizeHintVoiceover": "Səs videonun üzərindən keçdi. \"Nitqi transkripsiya et\" seçimi könüllüdür: altyazılar və sətirlərarası əlavələr üçün lazımdır.",
+      "langsHintVoiceover": "Seriya: {{count}} dillərinin hər birində ayrıca klip — Klod tərcümə edir, ElevenLabs səsləri. Demək olar ki, pulsuzdur: qiymət = səsləndirmə × dillər.",
+      "langsHintSolo": "Seriya: {{count}} dillərinin hər birində ayrıca klip. HeyGen avatarla hər dil üçün üzü göstərir — daha bahalı.",
+      "diarizeHintVoiceover": "Səs videonun üzərindən keçdi. \"Nitqi transkripsiya et\" seçimi könüllüdür: altyazılar və sətir başına əlavələr üçün lazımdır.",
       "loudnormTitle": "Səs səviyyəsinin bərabər olması",
       "loudnormSub": "Səssiz hissələr qaldırılır, səs-küylü hissələr hamarlanır — peşəkar səs"
     },
     "lines": {
-      "count_one": "{{count}} sətir · ~{{sec}} san",
+      "count_one": "{{count}} sətri · ~{{sec}} san",
       "count_other": "{{count}} sətir · ~{{sec}} san",
       "editHint": "— ekranın altındakı zaman çizelgesinde redaktə edin.",
       "title": "Xətlər",
       "filterAll": "Hamısı · {{count}}",
-      "filterVoiceA": "A səsi · {{count}}",
+      "filterVoiceA": "Səs A · {{count}}",
       "filterVoiceB": "B səsi · {{count}}",
       "hintDialogue": "A/B nişanı — səsi dəyişdir · ⇣ — növbəti sətirlə birləşdir",
       "hintMerge": "⇣ — növbəti sətirlə birləşdirin",
-      "holdNote": "video {{sec}}-lər — tam şəkildə göstərilir: +{{extra}}-lər, aşağıdakı sətirlər sürüşür",
+      "holdNote": "video {{sec}}s — tam şəkildə göstərilir: +{{extra}}s, aşağıdakı sətirlər sürüşür",
       "swapVoice": "Səs dəyişdirmə A↔B",
       "hostVoice": "Təqdimatçının səsi",
       "mediaReplace": "xətt mediası — əvəz etmək üçün klikləyin",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Təxmini dialoq planı: Süni intellekt nə vaxt yaxından çəkiləcəyinə və hər ikisini kadrda nə vaxt göstərəcəyinə qərar verir (reaksiya statik fotodur, $0)."
     },
     "preview": {
-      "seriesReady": "Seriya hazırdır: {{count}} video — hamısı Qalereyada",
+      "seriesReady": "Seriya hazırdır: {{count}} videolar — hamısı Qalereyada",
       "ready": "Hazırdır — video Qalereyadadır",
       "footerSolo": "Məzmun əlavə etmək üçün önizləmə sahəsinə klikləyin. Önizləmə dərhal yenilənir.",
       "footerPlan": "Plan seqmentlərinə klikləyin — önizləmə hər kadrı göstərir. Xətt mediası aşağıdakı zaman xəttindədir.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — şəffaf PNG",
       "hint": "Çərçivə üçün PNG ölçüsündə: istənilən yerdə loqo, çərçivə, başlıq. Bütün videonun üzərində yerləşir; alt yazılar təbəqənin üzərində qalır.",
       "progressTitle": "Tərəqqi paneli",
-      "progressSub": "yuxarı hissədə nazik taymer zolağı — izləyicilər videonun qısa olduğunu görür və sona qədər izləyirlər"
+      "progressSub": "yuxarı hissədə nazik taymer zolağı — izləyicilər videonun qısa olduğunu görür və sona qədər izləyirlər",
+      "pngOnly": "Qat şəffaf PNG və ya WebP olmalıdır — şəffaflığı olmayan bir fayl bütün çərçivəni əhatə edəcək."
     },
     "brand": {
       "button": "Brend dəsti",

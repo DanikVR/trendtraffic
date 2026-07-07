@@ -1151,14 +1151,14 @@
       "missScript": "tuhinga, rekoata rānei",
       "videoChosen": "Ngā kiriata kua tīpakohia",
       "missVideo": "kiriata",
-      "step": "taahiraa"
+      "step": "taahiraa {{n}}"
     },
     "mode": {
       "title": "Aratau ataata",
       "solo": "Kaiwhakataki kotahi",
       "retention": "Te whakakotahitanga hihiri",
       "dialogue": "Kōrero ā-tangata tokorua",
-      "soloHint": "Ka kōrerotia e te avatar te tuhinga katoa i te taha o tō kiriata. Ko te kōwhiringa māmā rawa.",
+      "soloHint": "Mā te avatar e kōrero te tuhinga katoa i te taha o tō kiriata. Ko te kōwhiringa māmā rawa.",
       "retentionHint": "Ka huri te whakaahua i ia hēkona ruarua i runga i te ara reo kotahi, kia mātaki ai ngā kaimātakitaki tae noa ki te mutunga. 'Taku whakaahua' anake.",
       "dialogueHint": "Tokorua ngā tāngata e kōrero ana me ō rāua ake kanohi. Me rua ngā whakaahua me te rekoata kōrero reo-rua.",
       "retentionPresetLabel": "Te kaha o te whakatārewatanga",
@@ -1166,7 +1166,7 @@
       "presetPrem": "Moni",
       "presetEcoHint": "He utu nui ngā whakaahua tata mō te matau me te karanga ki te mahi (~2 mō ia topenga). Ko te kōwhiringa iti rawa te utu.",
       "presetBalHint": "Ngā tirohanga tata ki te matau, te mahi me te karanga ki te mahi (~3). Te wāhi reka.",
-      "presetPremHint": "Te roanga o te wā e tangohia ai te kanohi (~4 ngā whakaahua tata). He ora ake, he utu nui ake hoki.",
+      "presetPremHint": "Te roanga o te wā e mau ana te kanohi (~4 ngā tirohanga tata). He ora ake, he utu nui ake hoki.",
       "presetAiTrailer": "Mā te AI e whakatau ko tēhea whakaahua e ahu atu ana, i runga i tō tuhinga.",
       "dialogueEngLabel": "Te tere o te kōrero",
       "engCalm": "marino",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Kia tuwhera tonu te ripa whare pikitia HeyGen me te ohaurunga hohe.",
       "apiNote": "Mā te HeyGen API — patohia ki roto i ngā Tautuhinga → Te whakaputa, te utu-i-te-whakahaere (~$3/min Avatar IV).",
       "delTitle": "Tangohia te avatar?",
-      "delMessage": "Ka tangohia a '{{name}}' i tō kohinga avatar. Ka noho tonu te kōnae taketake ki te Taiwhanga Whakaahua."
+      "delMessage": "Ka tangohia te '{{name}}' i tō kohinga avatar. Ka noho tonu te kōnae taketake ki te Taiwhanga Whakaahua."
     },
     "voice": {
       "title": "Reo me te tuhinga",
@@ -1242,14 +1242,14 @@
       "langsLabel": "Ngā reo ataata",
       "langRuPinned": "Rūhia · tuatahi",
       "langsHintVoiceover": "He raupapa: he topenga motuhake i roto i ia reo {{count}} — ka whakamāori a Claude, ko ngā reo o ElevenLabs. Tata kore utu: utu = reo ā-waha × reo.",
-      "langsHintSolo": "He raupapa: he topenga motuhake i roto i ia reo {{count}}. Mā te whakamahi i tētahi avatar, ka whakaatuhia e HeyGen te mata mō ia reo — he utu nui ake.",
+      "langsHintSolo": "He raupapa: he topenga motuhake i roto i ia reo {{count}}. Mā te whakamahi i tētahi avatar, ka whakaatu a HeyGen i te kanohi mō ia reo — he utu nui ake.",
       "diarizeHintVoiceover": "Ka tukuna te oro ki runga i te ataata i tōna āhua o nāianei. He kōwhiringa te \"Tuhituhi kōrero\": e hiahiatia ana mō ngā hauraro me ngā tāpiringa mō ia rārangi.",
       "loudnormTitle": "Whakaōritehia te rōrahi o te reo",
       "loudnormSub": "ka hikitia ngā wāhanga marino, ka whakangawaritia ngā wāhanga haruru — ororongo matatau"
     },
     "lines": {
-      "count_one": "Rārangi {{count}} · ~{{sec}} sec",
-      "count_other": "{{count}} rārangi · ~{{sec}} sec",
+      "count_one": "Rārangi {{count}} · ~{{sec}} hēkona",
+      "count_other": "rārangi {{count}} · ~{{sec}} hēkona",
       "editHint": "— whakatika i te rārangi wā kei raro i te mata.",
       "title": "Ngā Raina",
       "filterAll": "Katoa · {{count}}",
@@ -1380,7 +1380,7 @@
       "tagLineMediaBg": "Pāpāho raina · hei papamuri",
       "tagCutawayNoFace": "Tapatapahia · kāhore he kanohi · $0",
       "tagAvatarCloseup": "Avatar · tirohanga tata",
-      "openGallery": "Whakatuwheratia i roto i te Taiwhanga Whakaahua",
+      "openGallery": "Whakatuwheratia i roto i te Taiwhanga",
       "tagYourVideo": "Tō ataata",
       "emptyClipSubVoiceover": "te turanga o te anga · pato hei whiriwhiri"
     },
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Paparanga o runga",
       "sub": "tohu, anga rānei — kei runga tonu",
-      "empty": "{{hōputu}} — PNG mārama",
+      "empty": "{{format}} — PNG mārama",
       "hint": "He PNG te rahi mō te anga: he tohu i ngā wāhi katoa, he anga, he taitara. Ka noho ki runga i te ataata katoa; ka noho ngā taitara ki runga ake i te paparanga.",
       "progressTitle": "Pae ahunga whakamua",
-      "progressSub": "he rīpene taima angiangi kei runga — ka kite ngā kaimātakitaki he poto te ataata, ā, ka mātaki ki te mutunga"
+      "progressSub": "he rīpene taima angiangi kei runga — ka kite ngā kaimātakitaki he poto te ataata, ā, ka mātaki ki te mutunga",
+      "pngOnly": "Me PNG, me WebP rānei te paparanga mārama — ka kapi katoa te anga i tētahi kōnae kāore he māramatanga."
     },
     "brand": {
       "button": "Kete waitohu",

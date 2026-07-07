@@ -1119,7 +1119,7 @@
       "saved": "E bolokiloe",
       "save": "Boloka",
       "ctaTooltipReady": "Avatar e bua sengoloa (HeyGen) → e kopantsoe le video → dihlooho tse ka tlase → Gallery",
-      "ctaTooltipMissing": "Ho ntse ho hlokahala: {{e sieo}}",
+      "ctaTooltipMissing": "Ho ntse ho hlokahala: {{missing}}",
       "creating": "Ho theha…",
       "create": "Theha video"
     },
@@ -1166,7 +1166,7 @@
       "presetPrem": "Premium",
       "presetEcoHint": "Litlatsetso tse turang feela ka hook le call to action (~2 ka klipu). Khetho e theko e tlaase.",
       "presetBalHint": "Lipolelo tse haufi-ufi, ketso le pitso ea ketso (~3). Sebaka se monate.",
-      "presetPremHint": "Nako e phahameng ka ho fetisisa ea ho sheba sefahleho (~4 haufi-ufi). E phetse hantle ebile e theko e boima.",
+      "presetPremHint": "Nako e phahameng ka ho fetisisa ea sefahleho (~4 ea ho atamelana). E phetse hantle ebile e theko e boima.",
       "presetAiTrailer": "AI e etsa qeto ea hore na ke setšoantšo sefe se eang kae ho latela mongolo oa hau.",
       "dialogueEngLabel": "Ho potlakisa puisano",
       "engCalm": "Khutso",
@@ -1178,7 +1178,7 @@
       "cutoutTitle": "Semelo sa setšoantšo se bonaletsang",
       "cutoutSub": "ke motho feela ea lulang foreiming — bakeng sa sebopeho sa 'semelo se nang le setšoantšo ka lehlakoreng'",
       "voiceover": "Ha ho na setšoantšo - lentsoe le fetang",
-      "voiceoverHint": "Dinepe tsa hao + lentswe: sengoloa se ngotsweng ke AI (ElevenLabs) kapa rekoto ya hao jwalo ka ha e le jwalo. Ha ho HeyGen e amehang — hoo e ka bang mahala. Dintlha tse kentsweng ka mohala ke tsa boikgethelo."
+      "voiceoverHint": "Difilimi tsa hao + lentswe: sengoloa se ngotsweng ke AI (ElevenLabs) kapa rekoto ya hao jwalo ka ha e le jwalo. Ha ho HeyGen e amehang — hoo e ka bang mahala. Dintlha tse kentsweng ka mohala ke tsa boikgethelo."
     },
     "avatar": {
       "title": "Avatar",
@@ -1189,7 +1189,7 @@
       "myCollection": "Pokello ea ka",
       "loading": "ho kenya li-avatar…",
       "removeFromCollection": "Tlosa pokellong",
-      "empty": "Pokello ea hau ha e na letho — hlahisa li-avatar tse seng li lokisitsoe kapa eketsa foto ho tsoa Gallery.",
+      "empty": "Pokello ea hau ha e na letho — hlahisa li-avatar tse seng li lokisitsoe kapa eketsa foto ho tsoa ho Gallery.",
       "gen3": "Hlahisa li-avatar tse 3",
       "pickFromGallery": "Khetha ho tsoa ho Gallery",
       "refresh": "Lenane la khatholla",
@@ -1248,8 +1248,8 @@
       "loudnormSub": "likarolo tse khutsitseng lia phahamisoa, likarolo tse lerata lia lokisoa — molumo o nang le molumo o matla"
     },
     "lines": {
-      "count_one": "Mola oa {{count}} · ~{{sec}} metsotsoana",
-      "count_other": "Mela e {{count}} · ~{{sec}} metsotsoana",
+      "count_one": "{{count}} mola · ~{{sec}} sec",
+      "count_other": "{{count}} mela · ~{{sec}} sec",
       "editHint": "— fetola tatellano ea nako e tlase skrineng.",
       "title": "Mela",
       "filterAll": "Tsohle · {{count}}",
@@ -1275,7 +1275,7 @@
       "fitContain": "Bontša kaofela",
       "keepSound": "molumo oa video",
       "soloOptional": "Ho ikhethela: ntle le video setšoantšo se tlatsa foreimi.",
-      "dialogueHint": "Mokgweng wa puisano, mecha ya phatlalatso e hoketswe mela e lenaneng la nako le ka tlase — 'Mokhoa wa ho bontsha' le 'Bontsha bakeng sa metsotsoana e mene' di hlaha moleng ofe kapa ofe o nang le mecha ya phatlalatso.",
+      "dialogueHint": "Mokgweng wa puisano, mecha ya phatlalatso e hoketswe mela e lenaneng la nako le ka tlase — 'Mokhoa wa ho bontsha' le 'Bontsha bakeng sa metsotsoana e mene' di hlaha moleng ofe kapa ofe le mecha ya phatlalatso.",
       "seriesHeading": "Letoto la livideo",
       "seriesCount": "Livideo tse letotong: {{count}} → palo e lekanang ea likotoana tse tsoang",
       "seriesChange": "Phetoho",
@@ -1303,7 +1303,7 @@
       "sub": "boikhethelo",
       "volumeLabel": "Bolumo ba 'mino:",
       "volumeHint": "Lentswe kamehla le 100%; mokhoa o motle bakeng sa bokamorao ke 15–25%. Pina e kgutshwane ho feta di-clip loops; e telele e a kgaolwa.",
-      "empty": "'Mino — ha o so khetheloe · o lutse ka khutso tlas'a lentsoe",
+      "empty": "'Mino — ha o so kgethwe · o lutse ka khutso tlasa lentsoe",
       "durationLabel": "E bapala nako e kae",
       "playFull": "Video eohle",
       "playFirst": "Metsotsoana ea pele ea N",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · fepa",
       "label11": "1:1 · Fepa ea Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "lifaele ka ho matha: {{count}} — setšoantšo se lefshoa hang feela"
+      "filesPerRun": "lifaele ka ho matha: {{count}} — avatar e lefshoa hang feela"
     },
     "layout": {
       "label": "Sebopeho",
@@ -1352,15 +1352,15 @@
       "bSpeaking": "B o bua",
       "reactionFree": "karabelo $0",
       "cutout": "ho siea",
-      "noteRetention": "Morero o sebedisitsweng esale pele o sa lokang: pherese = Avatar IV e turang, '$0' = dikarolo tse se nang sefahleho. AI e haha moralo o nepahetseng ho tsoa mongolong wa hao.",
+      "noteRetention": "Morero o se nang thuso o sebedisitsweng esale pele: pherese = Avatar IV e turang, '$0' = dikarolo tse se nang sefahleho. AI e haha moralo o nepahetseng ho tsoa mongolong wa hao.",
       "noteDialogue": "Morero oa puisano o sa tsitsang: AI e etsa qeto ea hore na e tla ba haufi neng le hore na e tla bontšoa neng ka bobeli foreiming (karabelo ke foto e sa fetoheng, $0)."
     },
     "preview": {
-      "seriesReady": "Letoto le se le loketse: Livideo tse {{count}} — tsohle ho Gallery",
+      "seriesReady": "Letoto le se le loketse: Livideo tsa {{count}} — tsohle ho Gallery",
       "ready": "E felile — video e ho Gallery",
-      "footerSolo": "Tobetsa sebaka sa tlhahlobo ho eketsa dikahare. Ponelopele e ntjhafatswa hang-hang.",
+      "footerSolo": "Tobetsa sebaka sa tlhahlobo ea pele ho eketsa litaba. Ponelopele e ntlafatsoa hang-hang.",
       "footerPlan": "Tobetsa likarolo tsa moralo — ponelopele e bonts'a setšoantšo se seng le se seng. Mecha ea phatlalatso e ho kemiso ea nako e ka tlase.",
-      "emptyNotSelected": "{{tag}} — ha e so kgethwe",
+      "emptyNotSelected": "{{tag}} — ha e so khethoe hajwale",
       "emptyClickToChoose": "tobetsa ho khetha",
       "tagFitContainSuffix": " · kaofela",
       "emptyClipTitle": "Video — ha e so kenngoe",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG e bonaletsang",
       "hint": "PNG e boholo ba foreimi: letshwao kae kapa kae, foreimi, tlhaloso. E dula hodima video yohle; dingolwa tse ka tlase di dula ka hodima lera.",
       "progressTitle": "Sebaka sa tsoelo-pele",
-      "progressSub": "karolo e tšesaane ea nako holimo — bashebelli ba bona video e le khutšoanyane 'me ba e shebella ho fihlela qetellong"
+      "progressSub": "karolo e tšesaane ea nako holimo — bashebelli ba bona video e le khutšoanyane 'me ba e shebella ho fihlela qetellong",
+      "pngOnly": "Lera le lokela ho ba PNG e bonaletsang kapa WebP — faele e se nang bonaletsang e tla koahela foreimi eohle."
     },
     "brand": {
       "button": "Sete ea lebitso la khoebo",

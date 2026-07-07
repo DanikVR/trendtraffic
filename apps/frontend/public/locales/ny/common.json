@@ -1119,7 +1119,7 @@
       "saved": "Zasungidwa",
       "save": "Sungani",
       "ctaTooltipReady": "Chithunzicho chimalankhula za script (HeyGen) → kuphatikiza ndi kanema → mawu omasulira → Gallery",
-      "ctaTooltipMissing": "Akufunikirabe: {{akusowa}}",
+      "ctaTooltipMissing": "Kukufunikabe: {{missing}}",
       "creating": "Kupanga…",
       "create": "Pangani kanema"
     },
@@ -1134,7 +1134,7 @@
       "filesSuffix": " · Mafayilo awiri — chithunzi kamodzi",
       "voiceoverAi": "≈ $0.1–0.3 pa kagawo kalikonse",
       "voiceoverFree": "$0 — mawu ndi kanema wanu",
-      "langsSuffix": " · Zilankhulo: {{count}}"
+      "langsSuffix": " · zilankhulo: {{count}}"
     },
     "checklist": {
       "title": "Wokonzeka kumanga",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Sungani tabu ya HeyGen studio yotseguka ndi kulembetsa kogwira ntchito.",
       "apiNote": "Kudzera mu HeyGen API — dinani mu Zikhazikiko → Kupanga, kulipira-monga-mukupitilira (~$3/mphindi Avatar IV).",
       "delTitle": "Chotsani chithunzi?",
-      "delMessage": "'{{name}}' idzachotsedwa muzithunzi zanu. Fayilo yoyambirira imakhalabe mu Gallery."
+      "delMessage": "'{{name}}' idzachotsedwa muzithunzi zanu. Fayilo yoyambirira idzakhalabe mu Gallery."
     },
     "voice": {
       "title": "Mawu ndi zolemba",
@@ -1242,14 +1242,14 @@
       "langsLabel": "Zilankhulo za kanema",
       "langRuPinned": "Chirasha · primary",
       "langsHintVoiceover": "Mndandanda: kanema wosiyana m'chilankhulo chilichonse cha {{count}} — Claude amamasulira, mawu a ElevenLabs. Pafupifupi kwaulere: mtengo = mawu owonjezera × zilankhulo.",
-      "langsHintSolo": "Mndandanda: kanema wosiyana m'chilankhulo chilichonse cha {{count}}. Ndi chithunzi, HeyGen imapanga nkhope ya chilankhulo chilichonse — yokwera mtengo kwambiri.",
+      "langsHintSolo": "Mndandanda: kanema wosiyana m'chilankhulo chilichonse cha {{count}}. Ndi avatar, HeyGen imapanga nkhope ya chilankhulo chilichonse - yokwera mtengo kwambiri.",
       "diarizeHintVoiceover": "Mawuwo akufotokoza za kanemayo monga momwe alili. “Kulemba mawu” sikofunikira: ndikofunikira pa mawu ang'onoang'ono ndi mawu olembedwa pa mzere uliwonse.",
       "loudnormTitle": "Konzani voliyumu ya mawu",
       "loudnormSub": "mbali zodekha zimakwezedwa, mbali zokweza zimakonzedwa bwino — mawu omveka bwino"
     },
     "lines": {
-      "count_one": "Mzere wa {{count}} · ~{{sec}} sec",
-      "count_other": "Mizere {{count}} · ~{{sec}} sec",
+      "count_one": "{{count}} mzere · ~{{sec}} sekondi",
+      "count_other": "{{count}} mizere · ~{{sec}} sekondi",
       "editHint": "— sinthani pa nthawi yomwe ili pansi pa chinsalu.",
       "title": "Mizere",
       "filterAll": "Zonse · {{count}}",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Zosankha: popanda kanema chithunzi chimadzaza chimango.",
       "dialogueHint": "Mu njira yolankhulirana, media imalumikizidwa ku mizere yomwe ili pa nthawi yomwe ili pansipa — 'Momwe mungawonetsere' ndi 'Onetsani kwa N sec' zimawonekera pamzere uliwonse ndi media.",
       "seriesHeading": "Mndandanda wa makanema",
-      "seriesCount": "Makanema mu mndandanda: {{count}} → chiwerengero chomwecho cha makanema otuluka",
+      "seriesCount": "Makanema omwe ali mu mndandanda: {{count}} → kuchuluka komweko kwa ma clips",
       "seriesChange": "Kusintha",
       "seriesAdd": "Onjezani makanema pamndandanda — chidutswa chimodzi pa kanema aliyense",
       "seriesBilling": "Avatar imalipidwa kamodzi pa mndandanda wonse.",
@@ -1353,10 +1353,10 @@
       "reactionFree": "yankho $0",
       "cutout": "dula",
       "noteRetention": "Dongosolo lokonzekera bwino: lofiirira = Avatar IV yokwera mtengo, '$0' = magawo opanda nkhope. AI imapanga dongosolo lenileni kuchokera pamawu anu.",
-      "noteDialogue": "Ndondomeko yokambirana yovuta: AI imasankha nthawi yoti ichitike pafupi komanso nthawi yoti iwonetse zonse ziwiri mu chimango (chithunzi chokhazikika, $0)."
+      "noteDialogue": "Ndondomeko yokambirana yovuta: AI imasankha nthawi yoti ichitike pafupi komanso nthawi yoti iwonetse zonse ziwiri mu chimango (chithunzi chosasinthika, $0)."
     },
     "preview": {
-      "seriesReady": "Mndandanda wakonzeka: Makanema a {{count}} — onse mu Gallery",
+      "seriesReady": "Mndandanda wakonzeka: {{count}} makanema — onse mu Gallery",
       "ready": "Zatha — kanemayo ali mu Gallery",
       "footerSolo": "Dinani malo owoneratu kuti muwonjezere zomwe zili. Chithunzithunzicho chimasintha nthawi yomweyo.",
       "footerPlan": "Dinani magawo a dongosolo — chithunzithunzi chikuwonetsa chithunzi chilichonse. Zowonera za mzere zili pa nthawi yomwe ili pansipa.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Gawo lapamwamba",
       "sub": "logo kapena chimango — nthawi zonse chimakhala pamwamba",
-      "empty": "{{format}} — PNG yowonekera bwino",
+      "empty": "{{format}} — PNG yowonekera",
       "hint": "Kukula kwa PNG kwa chimango: chizindikiro kulikonse, chimango, mawu ofotokozera. Chimakhala pamwamba pa kanemayo yonse; mawu omasulira amakhala pamwamba pa wosanjikiza.",
       "progressTitle": "Malo olowera patsogolo",
-      "progressSub": "kachidutswa kakang'ono kowerengera nthawi pamwamba — owonera akuwona kuti kanemayo ndi waufupi ndipo ayang'ane mpaka kumapeto"
+      "progressSub": "kachidutswa kakang'ono kowerengera nthawi pamwamba — owonera akuwona kuti kanemayo ndi waufupi ndipo ayang'ane mpaka kumapeto",
+      "pngOnly": "Gawoli liyenera kukhala lowonekera bwino la PNG kapena WebP — fayilo yopanda kuwonekera bwino ingaphimbe chimango chonse."
     },
     "brand": {
       "button": "Zida za kampani",
@@ -1432,7 +1433,7 @@
       "title": "Zida za kampani",
       "sub": "Seti yosungira makongoletsedwe: gawo lapamwamba, mabampala, nyimbo, kalembedwe ka mawu ndi mawu. Dinani kamodzi — kanema aliyense ali ndi kalembedwe kofanana.",
       "loading": "zida zokwezera…",
-      "empty": "Palibe zida zomwe zilipo pano — konzani kalembedwe kanu ndikusunga ndi batani lomwe lili pansipa.",
+      "empty": "Palibe zida zomwe zilipo — konzani kalembedwe kanu ndikusunga ndi batani lomwe lili pansipa.",
       "apply": "Ikani",
       "saveCurrent": "Sungani makonda apano ngati zida za kampani",
       "defaultName": "Mtundu wanga",

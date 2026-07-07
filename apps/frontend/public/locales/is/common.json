@@ -1119,7 +1119,7 @@
       "saved": "Vistað",
       "save": "Vista",
       "ctaTooltipReady": "Avatarinn les handritið (HeyGen) → sameina myndbandið → textar → Myndasafn",
-      "ctaTooltipMissing": "Enn vantar: {{missing}}",
+      "ctaTooltipMissing": "Ennþá þörf: {{missing}}",
       "creating": "Að búa til…",
       "create": "Búa til myndband"
     },
@@ -1130,7 +1130,7 @@
       "perClip2": "≈ $2 á myndskeið",
       "perMin1": "≈ $1 á mínútu",
       "perMin3_4": "≈ 3–4 dollarar á mínútu",
-      "seriesSuffix": " · röð af {{count}} — avatar einu sinni",
+      "seriesSuffix": " · sería af {{count}} — avatar einu sinni",
       "filesSuffix": " · 2 skrár — avatar einu sinni",
       "voiceoverAi": "≈ $0,1–0,3 á myndskeið",
       "voiceoverFree": "$0 — þitt eigið hljóð og myndband",
@@ -1164,8 +1164,8 @@
       "retentionPresetLabel": "Styrkur klippingar",
       "presetEco": "Hagkerfi",
       "presetPrem": "Premium",
-      "presetEcoHint": "Dýrar nærmyndir bara á króknum og hvatningu til aðgerða (um það bil tvær á hvert myndskeið). Ódýrasti kosturinn.",
-      "presetBalHint": "Nærmyndir af króknum, aðgerðin og hvatningin til aðgerða (~3). Sæta atriðið.",
+      "presetEcoHint": "Dýrar nærmyndir, bara á króknum og með hvatningu til aðgerða (um það bil tvær á hvert myndskeið). Ódýrasti kosturinn.",
+      "presetBalHint": "Nærmyndir af króknum, aðgerðin og aðgerðahvatningin (~3). Sæta atriðið.",
       "presetPremHint": "Hámarkstími fyrir andlitsmyndir (um fjórar nærmyndir). Líflegri og dýrari.",
       "presetAiTrailer": "Gervigreind ákveður hvaða mynd fer hvert út frá textanum þínum.",
       "dialogueEngLabel": "Samræðuhraði",
@@ -1201,7 +1201,7 @@
       "photoHint": "Andlitsmynd að framan. HeyGen vekur myndina til lífsins — varir og svipbrigði samstillast við röddina.",
       "speakerBHeading": "Annar ræðumaður (B)",
       "photoBName": "mynd B",
-      "photoBEmpty": "Mynd — ekki hlaðið upp ennþá · veldu",
+      "photoBEmpty": "Mynd — ekki hlaðið upp ennþá · velja",
       "faceProviderLabel": "Avatar hreyfimynd",
       "providerApi": "Með API-lykli",
       "providerExt": "Með HeyGen áskrift",
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Spila sýnishorn",
       "langsLabel": "Tungumál myndbanda",
       "langRuPinned": "Rússneska · forval",
-      "langsHintVoiceover": "Sería: sérstakt myndskeið á hverju af {{count}} tungumálum — Claude þýðir, ElevenLabs raddir. Næstum ókeypis: kostnaður = talsetning × tungumál.",
-      "langsHintSolo": "Sería: sérstakt myndskeið á hverju af {{count}} tungumálunum. Með prófílmynd birtir HeyGen andlitið fyrir hvert tungumál — dýrara.",
+      "langsHintVoiceover": "Sería: sérstakt myndskeið á hverju {{count}} tungumáli — Claude þýðir, ElevenLabs raddir. Næstum ókeypis: kostnaður = talsetning × tungumál.",
+      "langsHintSolo": "Sería: sérstakt myndskeið á hverju {{count}} tungumáli. Með prófílmynd birtir HeyGen andlitið fyrir hvert tungumál — dýrara.",
       "diarizeHintVoiceover": "Hljóðið fer yfir myndbandið eins og það er. „Umrita tal“ er valfrjálst: nauðsynlegt fyrir texta og innskot í hverri línu.",
       "loudnormTitle": "Jafna út raddstyrk",
       "loudnormSub": "Rólegir hlutar lyftast upp, háværir hlutar mýkjast — hljóð sem hljómar fagmannlega"
@@ -1257,11 +1257,11 @@
       "filterVoiceB": "Rödd B · {{count}}",
       "hintDialogue": "A/B merki — skipta um rödd · ⇣ — sameina við næstu línu",
       "hintMerge": "⇣ — sameinast næstu línu",
-      "holdNote": "myndband {{sek}}s — sýnt í heild sinni: +{{extra}}s, eftirfarandi línur færa sig til",
+      "holdNote": "myndband {{sec}}s — sýnt í heild sinni: +{{extra}}s, eftirfarandi línur færa sig til",
       "swapVoice": "Skipta um rödd A↔B",
       "hostVoice": "Rödd kynnirans",
       "mediaReplace": "línumiðlar — smelltu til að skipta út",
-      "removeMedia": "Fjarlægja efni",
+      "removeMedia": "Fjarlægja miðla",
       "attachMedia": "Hengdu við mynd eða myndband",
       "mergeDown": "Sameina við næstu línu",
       "removeLine": "Eyða línu",
@@ -1329,7 +1329,7 @@
       "bottom": "Avatar neðst",
       "overlayLeft": "Yfir myndbandið, vinstra megin",
       "overlayRight": "Yfir myndbandið, til hægri",
-      "overlayHint": "Myndbandið fyllir út rammann, lítill prófílmynd efst"
+      "overlayHint": "Myndbandið fyllir rammann, lítill prófílmynd efst"
     },
     "timeline": {
       "title": "Tímalína línur",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — gegnsætt PNG",
       "hint": "PNG-mynd í rammastærð: lógó hvar sem er, rammi, myndatexti. Setst yfir allt myndbandið; textarnir eru fyrir ofan lagið.",
       "progressTitle": "Framvindustika",
-      "progressSub": "Þunn tímamælirönd efst — áhorfendur sjá að myndbandið er stutt og horfa til enda"
+      "progressSub": "Þunn tímamælirönd efst — áhorfendur sjá að myndbandið er stutt og horfa til enda",
+      "pngOnly": "Lagið verður að vera gegnsætt PNG eða WebP — skrá án gegnsæis myndi þekja allan rammann."
     },
     "brand": {
       "button": "Vörumerkjasett",

@@ -1241,11 +1241,11 @@
       "elevenPreview": "Groti pavyzdį",
       "langsLabel": "Vaizdo įrašų kalbos",
       "langRuPinned": "Rusų · pradinė mokykla",
-      "langsHintVoiceover": "Serialas: atskiras klipas kiekviena iš {{count}} kalbų – verčia Claude'as, įgarsina ElevenLabs. Beveik nemokamai: kaina = įgarsinimas × kalbos.",
+      "langsHintVoiceover": "Serija: atskiras klipas kiekviena iš {{count}} kalbų – verčia Claude'as, įgarsina „ElevenLabs“. Beveik nemokamai: kaina = įgarsinimas × kalbos.",
       "langsHintSolo": "Serija: atskiras klipas kiekviena iš {{count}} kalbų. Su avataru „HeyGen“ kiekviena kalba atvaizduoja veidą – brangiau.",
       "diarizeHintVoiceover": "Garsas vaizdo įraše transliuojamas toks, koks yra. „Transkribuoti kalbą“ yra neprivaloma: reikalinga subtitrams ir eilutėse esantiems intarpams.",
       "loudnormTitle": "Išlyginkite balso garsumą",
-      "loudnormSub": "Tylios dalys išryškinamos, garsios nušlifuojamos – profesionaliai skambantis garsas"
+      "loudnormSub": "Tylios dalys išryškinamos, garsios išlyginamos – profesionaliai skambantis garsas"
     },
     "lines": {
       "count_one": "{{count}} eilutė · ~{{sec}} sek.",
@@ -1254,10 +1254,10 @@
       "title": "Linijos",
       "filterAll": "Visi · {{count}}",
       "filterVoiceA": "A balsas · {{count}}",
-      "filterVoiceB": "B balsas · {{count}}",
+      "filterVoiceB": "Balsas B · {{count}}",
       "hintDialogue": "A/B ženklelis — perjungti balsą · ⇣ — sujungti su kita eilute",
       "hintMerge": "⇣ — sujungti su kita eilute",
-      "holdNote": "vaizdo įrašas {{sec}}s — rodomas visas: +{{extra}}s, šios eilutės pasislenka",
+      "holdNote": "vaizdo įrašas {{sec}}s — rodomas visas: +{{extra}}s, pasislenka šios eilutės",
       "swapVoice": "Perjungti balsą A↔B",
       "hostVoice": "Pranešėjo balsas",
       "mediaReplace": "linijinė medija – spustelėkite, jei norite pakeisti",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Pasirinktinai: be vaizdo įrašo avataras užpildo kadrą.",
       "dialogueHint": "Dialogo režime medija pridedama prie žemiau esančios laiko juostos eilučių – bet kurioje eilutėje su medija rodomi užrašai „Kaip rodyti“ ir „Rodyti N sek.“.",
       "seriesHeading": "Klipų serija",
-      "seriesCount": "Serijos vaizdo įrašai: {{count}} → tiek pat ištraukų",
+      "seriesCount": "Serijos vaizdo įrašai: {{count}} → tiek pat klipų",
       "seriesChange": "Pakeisti",
       "seriesAdd": "Pridėkite vaizdo įrašų prie serijos – po vieną klipą vienam vaizdo įrašui",
       "seriesBilling": "Avataras apmokestinamas vieną kartą už visą seriją.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · maitinimas",
       "label11": "1:1 · „Instagram“ kanalas",
       "label45": "4:5 · „Instagram“ / „Facebook“",
-      "filesPerRun": "failų skaičius per paleidimą: {{count}} — už avatarą sumokama vieną kartą"
+      "filesPerRun": "failų per paleidimą: {{count}} — už avatarą sumokama vieną kartą"
     },
     "layout": {
       "label": "Išdėstymas",
@@ -1360,7 +1360,7 @@
       "ready": "Atlikta – vaizdo įrašas yra galerijoje",
       "footerSolo": "Spustelėkite peržiūros sritį, kad pridėtumėte turinį. Peržiūra atnaujinama akimirksniu.",
       "footerPlan": "Spustelėkite plano segmentus – peržiūroje rodomas kiekvienas kadras. Linijinė medija yra žemiau esančioje laiko juostoje.",
-      "emptyNotSelected": "{{tag}} — dar nepasirinkta",
+      "emptyNotSelected": "{{tag}} — dar nepasirinktas",
       "emptyClickToChoose": "spustelėkite, kad pasirinktumėte",
       "tagFitContainSuffix": " · visa",
       "emptyClipTitle": "Vaizdo įrašas – dar neįkeltas",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — skaidrus PNG",
       "hint": "PNG dydis pritaikytas rėmeliui: logotipas bet kur, rėmelis, antraštė. Uždengia visą vaizdo įrašą; subtitrai lieka virš sluoksnio.",
       "progressTitle": "Progreso juosta",
-      "progressSub": "plona laikmačio juostelė viršuje – žiūrovai mato, kad vaizdo įrašas trumpas, ir žiūri iki galo"
+      "progressSub": "plona laikmačio juostelė viršuje – žiūrovai mato, kad vaizdo įrašas trumpas, ir žiūri iki galo",
+      "pngOnly": "Sluoksnis turi būti skaidrus PNG arba WebP – failas be skaidrumo uždengtų visą kadrą."
     },
     "brand": {
       "button": "Prekės ženklo rinkinys",

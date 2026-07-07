@@ -1119,7 +1119,7 @@
       "saved": "Disimpen",
       "save": "Simpen",
       "ctaTooltipReady": "Avatarna nyarioskeun naskah (HeyGen) → ngahiji sareng pidéo → subjudul → Galeri",
-      "ctaTooltipMissing": "Masih diperyogikeun: {{leungit}}",
+      "ctaTooltipMissing": "Masih diperyogikeun: {{missing}}",
       "creating": "Nyiptakeun…",
       "create": "Jieun pidéo"
     },
@@ -1151,7 +1151,7 @@
       "missScript": "naskah atawa rekaman",
       "videoChosen": "Rekaman dipilih",
       "missVideo": "rekaman",
-      "step": "léngkah"
+      "step": "léngkah {{n}}"
     },
     "mode": {
       "title": "Modeu pidéo",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Maénkeun conto",
       "langsLabel": "Basa vidéo",
       "langRuPinned": "Rusia · primér",
-      "langsHintVoiceover": "Séri: klip misah dina unggal {{count}} basa — Claude narjamahkeun, sora ElevenLabs. Ampir gratis: biaya = sora × basa.",
+      "langsHintVoiceover": "Séri: klip misah dina unggal basa {{count}} — Claude narjamahkeun, sora ElevenLabs. Ampir gratis: biaya = sora tambahan × basa.",
       "langsHintSolo": "Séri: klip anu misah dina unggal basa {{count}}. Ku avatar, HeyGen ngarender raray pikeun unggal basa — langkung mahal.",
       "diarizeHintVoiceover": "Audiona ngalirkeun pidéo sapertos kitu. \"Transkrip ucapan\" mah opsional: diperyogikeun pikeun subjudul sareng sisipan per baris.",
       "loudnormTitle": "Ngaratakeun volume sora",
       "loudnormSub": "bagian anu sepi diangkat, bagian anu tarik diratakeun — audio anu sorana alus"
     },
     "lines": {
-      "count_one": "baris {{count}} · ~{{sec}} detik",
-      "count_other": "{{count}} baris · ~{{sec}} detik",
+      "count_one": "{{count}} baris · ~{{sec}} detik",
+      "count_other": "{{count}} garis · ~{{sec}} detik",
       "editHint": "— édit dina garis waktu di handapeun layar.",
       "title": "Garis",
       "filterAll": "Sadayana · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Sora B · {{count}}",
       "hintDialogue": "Lencana A/B — ganti sora · ⇣ — ngahiji jeung baris salajengna",
       "hintMerge": "⇣ — ngahiji jeung baris salajengna",
-      "holdNote": "video {{sec}}s — dipidangkeun sacara lengkep: +{{extra}}s, baris-baris di handap ieu robah",
+      "holdNote": "video {{sec}}s — dipidangkeun sacara lengkep: +{{extra}}s, garis-garis ieu ngageser",
       "swapVoice": "Ganti sora A↔B",
       "hostVoice": "Sora panyatur",
       "mediaReplace": "média garis — klik pikeun ngaganti",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Rencana dialog kasar: AI mutuskeun iraha kedah ningali ti deukeut sareng iraha kedah nunjukkeun duanana dina pigura (réaksi nyaéta poto statis, $0)."
     },
     "preview": {
-      "seriesReady": "Séri parantos siap: {{count}} pidéo — sadayana aya di Galeri",
+      "seriesReady": "Séri parantos siap: pidéo {{count}} — sadayana aya di Galeri",
       "ready": "Rengse — pidéona aya di Galeri",
       "footerSolo": "Klik area pratinjau pikeun nambihan eusi. Pratinjau bakal langsung diropéa.",
       "footerPlan": "Klik segmen rencana — pratinjau nunjukkeun unggal gambar. Média garis aya dina garis waktu di handap.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG transparan",
       "hint": "Ukuran PNG pikeun pigura: logo di mana waé, pigura, caption. Nempel dina sakabéh pidéo; subtitle tetep di luhur lapisan.",
       "progressTitle": "Bilah kamajuan",
-      "progressSub": "pita timer ipis di luhur — pamiarsa ningali pidéo pondok sareng nonton dugi ka réngsé"
+      "progressSub": "pita timer ipis di luhur — pamiarsa ningali pidéo pondok sareng nonton dugi ka réngsé",
+      "pngOnly": "Lapisanna kedah PNG atanapi WebP transparan — file tanpa transparansi bakal nutupan sakumna pigura."
     },
     "brand": {
       "button": "Pakét mérek",

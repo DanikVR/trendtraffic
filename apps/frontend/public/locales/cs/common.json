@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 dolary za klip",
       "perMin1": "≈ 1 dolar za minutu",
       "perMin3_4": "≈ 3–4 dolary za minutu",
-      "seriesSuffix": " · série z {{count}} — avatar jednou",
+      "seriesSuffix": " · série {{count}} — avatar jednou",
       "filesSuffix": " · 2 soubory — avatar jednou",
       "voiceoverAi": "≈ 0,1–0,3 USD za klip",
       "voiceoverFree": "0 Kč – vlastní audio a video",
@@ -1203,7 +1203,7 @@
       "photoBName": "fotografie B",
       "photoBEmpty": "Fotografie — zatím nenahrána · vybrat",
       "faceProviderLabel": "Animace avatara",
-      "providerApi": "Prostřednictvím API klíče",
+      "providerApi": "Prostřednictvím klíče API",
       "providerExt": "Prostřednictvím předplatného HeyGen",
       "extIntro": "Rozšíření vykresluje hlavičky na kartě app.heygen.com v rámci vašeho předplatného (třikrát levnější než API).",
       "extLabel": "Rozšíření:",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Nechte kartu studia HeyGen otevřenou s aktivním předplatným.",
       "apiNote": "Prostřednictvím API HeyGen — v Nastavení → Generování vyberte fakturaci podle použití (~3 $/min.) Avatar IV.",
       "delTitle": "Odebrat avatara?",
-      "delMessage": "„{{name}}“ bude odstraněn z vaší sbírky avatarů. Původní soubor zůstane v galerii."
+      "delMessage": "Soubor „{{name}}“ bude odstraněn z vaší sbírky avatarů. Původní soubor zůstane v galerii."
     },
     "voice": {
       "title": "Hlas a scénář",
@@ -1242,14 +1242,14 @@
       "langsLabel": "Jazyky videa",
       "langRuPinned": "Ruština · základní škola",
       "langsHintVoiceover": "Série: samostatný klip v každém z {{count}} jazyků — Claude překládá, hlasy ElevenLabs. Téměř zdarma: cena = dabing × jazyky.",
-      "langsHintSolo": "Série: samostatný klip v každém z {{count}} jazyků. S avatarem HeyGen vykreslí obličej pro každý jazyk – dražší.",
+      "langsHintSolo": "Série: samostatný klip v každém z {{count}} jazyků. HeyGen pomocí avatara vykreslí obličej pro každý jazyk – dražší.",
       "diarizeHintVoiceover": "Zvuk přehrává video tak, jak je. Možnost „Přepsat řeč“ je volitelná: potřebná pro titulky a vložené texty na řádek.",
       "loudnormTitle": "Vyrovnejte hlasitost hlasu",
       "loudnormSub": "Tiché části jsou zvýrazněny, hlasité části vyhlazeny – profesionální zvuk"
     },
     "lines": {
       "count_one": "{{count}} řádek · ~{{sec}} s",
-      "count_other": "{{count}} řádků · ~{{sec}} s",
+      "count_other": "{{count}} řádky · ~{{sec}} s",
       "editHint": "— upravte na časové ose ve spodní části obrazovky.",
       "title": "Čáry",
       "filterAll": "Vše · {{count}}",
@@ -1315,13 +1315,13 @@
       "landscape": "16:9 · horizontálně",
       "both": "Obě",
       "twoFilesNote": "2 soubory na spuštění – avatar se účtuje jednou",
-      "label916": "9:16 · TikTok, Videoklipy, Krátkometrážní filmy",
+      "label916": "9:16 · TikTok, Videoklipy, Krátkometrážní videa",
       "label169": "16:9 · YouTube",
       "square": "1:1 · čtverec",
       "feed": "4:5 · krmivo",
       "label11": "1:1 · Instagramový kanál",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "souborů na spuštění: {{count}} — avatar je placen jednou"
+      "filesPerRun": "souborů na spuštění: {{count}} — avatar je zaplacen jednou"
     },
     "layout": {
       "label": "Rozvržení",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Hrubý plán dialogu: Umělá inteligence rozhoduje, kdy jít zblízka a kdy ukázat obojí v záběru (reakce je statická fotografie, 0 dolarů)."
     },
     "preview": {
-      "seriesReady": "Série připravena: {{count}} videí – všechna v galerii",
+      "seriesReady": "Série připravena: {{count}} videa – všechna v galerii",
       "ready": "Hotovo – video je v Galerii",
       "footerSolo": "Kliknutím na oblast náhledu přidáte obsah. Náhled se okamžitě aktualizuje.",
       "footerPlan": "Klikněte na segmenty plánu – náhled zobrazí jednotlivé záběry. Čárová média jsou na časové ose níže.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — průhledné PNG",
       "hint": "PNG o velikosti rámečku: logo kdekoli, rámeček, popisek. Umístí se přes celé video; titulky zůstanou nad vrstvou.",
       "progressTitle": "Ukazatel průběhu",
-      "progressSub": "tenký časovací proužek nahoře – diváci vidí, že video je krátké, a dívají se až do konce"
+      "progressSub": "tenký časovací proužek nahoře – diváci vidí, že video je krátké, a dívají se až do konce",
+      "pngOnly": "Vrstva musí být průhledný PNG nebo WebP – soubor bez průhlednosti by pokryl celý snímek."
     },
     "brand": {
       "button": "Sada pro značku",

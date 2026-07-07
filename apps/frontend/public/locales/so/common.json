@@ -1119,7 +1119,7 @@
       "saved": "La keydiyay",
       "save": "Keydi",
       "ctaTooltipReady": "Avatarku wuxuu ku hadlaa qoraalka (HeyGen) → ku dar fiidiyowga → cinwaan hoosaadyo → Gallery",
-      "ctaTooltipMissing": "Wali waa loo baahan yahay: {{maqnaanshaha}}",
+      "ctaTooltipMissing": "Wali waa loo baahan yahay: {{missing}}",
       "creating": "Abuurista…",
       "create": "Samee muuqaal"
     },
@@ -1134,7 +1134,7 @@
       "filesSuffix": " · 2 faylal — avatar hal mar",
       "voiceoverAi": "≈ $0.1–0.3 muuqaalkiiba",
       "voiceoverFree": "$0 — maqalkaaga iyo muuqaalkaaga",
-      "langsSuffix": " · luqadaha: {{tiro}}"
+      "langsSuffix": " · luqadaha: {{count}}"
     },
     "checklist": {
       "title": "Diyaar u ah in la dhiso",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Furan bogga istuudiyaha HeyGen adigoo isticmaalaya rukun firfircoon.",
       "apiNote": "Iyada oo loo marayo HeyGen API — furaha Settings → Generation, biilka lacag bixinta (~$3/daqiiqo Avatar IV).",
       "delTitle": "Ka saar avatar-ka?",
-      "delMessage": "'{{name}}' ayaa laga saari doonaa ururinta avatarkaaga. Faylka asalka ah wuxuu ku sii jiraa Gallery-ga."
+      "delMessage": "'{{name}}' ayaa laga saari doonaa ururinta avatarkaaga. Faylka asalka ah wuxuu ku sii jiri doonaa Gallery-ga."
     },
     "voice": {
       "title": "Codka & qoraalka",
@@ -1242,22 +1242,22 @@
       "langsLabel": "Luqadaha fiidiyowga",
       "langRuPinned": "Ruush · hordhaca ah",
       "langsHintVoiceover": "Taxane: muuqaal gooni ah oo mid kasta oo ka mid ah luqadaha {{count}} — Claude wuxuu turjumayaa, codadka ElevenLabs. Ku dhawaad bilaash: kharash = cod-ka-dhaaf × luqadaha.",
-      "langsHintSolo": "Taxane: muuqaal gooni ah oo ku qoran luqad kasta oo {{count}} ah. Iyada oo la adeegsanayo avatar, HeyGen waxay u soo bandhigaysaa wejiga luqad kasta - mid ka qaalisan.",
+      "langsHintSolo": "Taxane: muuqaal gooni ah oo mid kasta oo ka mid ah luqadaha {{count}} ah. Iyada oo leh muuqaal, HeyGen waxay u soo bandhigaysaa wejiga luqad kasta - mid ka qaalisan.",
       "diarizeHintVoiceover": "Codku wuxuu dul marayaa fiidiyowga sida uu yahay. \"Sheeko tarjumid\" waa ikhtiyaari: waxaa loo baahan yahay cinwaan hoosaadyo iyo gelinta xariiq kasta.",
       "loudnormTitle": "Simi mugga codka",
       "loudnormSub": "qaybaha aamusan ayaa la qaadaa, qaybaha qaylada badan ayaa la simiyaa — maqal cod-yaqaan ah"
     },
     "lines": {
-      "count_one": "{{count}} sadar · ~{{sek}} sek",
-      "count_other": "{{count}} sadar · ~{{sek}} sek",
+      "count_one": "{{count}} sadar · ~{{sec}} sek",
+      "count_other": "{{count}} sadar · ~{{sec}} sek",
       "editHint": "— wax ka beddel jadwalka ku yaal xagga hoose ee shaashadda.",
       "title": "Khadadka",
-      "filterAll": "Dhammaan · {{tiro}}",
-      "filterVoiceA": "Codka A · {{tirinta}}",
-      "filterVoiceB": "Codka B · {{tirinta}}",
+      "filterAll": "Dhammaan · {{count}}",
+      "filterVoiceA": "Codka A · {{count}}",
+      "filterVoiceB": "Codka B · {{count}}",
       "hintDialogue": "Calaamadda A/B — codka beddelka · ⇣ — ku dar xariiqda xigta",
       "hintMerge": "⇣ - ku biir safka xiga",
-      "holdNote": "fiidiyowga {{sec}}s — oo si buuxda loo muujiyay: +{{extra}}s, sadarrada soo socdaa way isbeddelaan",
+      "holdNote": "Fiidiyowga {{sec}}s — oo si buuxda loo muujiyay: +{{extra}}s, sadarrada soo socdaa way isbeddelaan",
       "swapVoice": "Beddel codka A↔B",
       "hostVoice": "Codka soo-bandhigaha",
       "mediaReplace": "warbaahinta khadka - dhagsii si aad u beddesho",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Qorshe wadahadal oo qallafsan: AI waxay go'aamisaa goorta la aadayo meel dhow iyo goorta la muujinayo labadaba qaab-dhismeedka (falcelintu waa sawir taagan, $0)."
     },
     "preview": {
-      "seriesReady": "Taxanaha diyaarsan: {{count}} fiidiyowyo — dhammaantood waxay ku jiraan Gallery-ga",
+      "seriesReady": "Taxanaha diyaarka ah: {{count}} fiidiyowyo — dhammaantood waxay ku jiraan Gallery-ga",
       "ready": "Waa la dhammeeyay — muuqaalku wuxuu ku jiraa Gallery-ga",
       "footerSolo": "Guji meel horudhac ah si aad ugu darto macluumaad. Horudhaca ayaa isla markiiba la cusbooneysiiyaa.",
       "footerPlan": "Guji qaybaha qorshaha — horudhaca ayaa muujinaya sawir kasta. Warbaahinta khadka ayaa ku jirta jadwalka hoose.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Lakabka sare",
       "sub": "astaan ama jir - had iyo jeer dusha sare",
-      "empty": "{{qaab}} — PNG hufan",
+      "empty": "{{format}} — PNG hufan",
       "hint": "Cabbirka PNG ee loogu talagalay qaab-dhismeedka: astaan meel kasta ah, qaab-dhismeed, cinwaan. Waxay dul saaran tahay muuqaalka oo dhan; cinwaan-hoosaadyadu waxay ka sarreeyaan lakabka.",
       "progressTitle": "Baarka horumarka",
-      "progressSub": "Xariiq saacad khafiif ah oo xagga sare ah — daawadayaashu waxay arkaan muuqaalku inuu gaaban yahay oo ilaa dhammaadka daawadaan"
+      "progressSub": "Xariiq saacad khafiif ah oo xagga sare ah — daawadayaashu waxay arkaan muuqaalku inuu gaaban yahay oo ilaa dhammaadka daawadaan",
+      "pngOnly": "Lakabku waa inuu ahaadaa PNG ama WebP hufan - fayl aan lahayn daahfurnaan ayaa dabooli doona qaab-dhismeedka oo dhan."
     },
     "brand": {
       "button": "Qalabka summada",

@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 doláre za klip",
       "perMin1": "≈ 1 USD za minútu",
       "perMin3_4": "≈ 3 – 4 doláre za minútu",
-      "seriesSuffix": " · séria z {{count}} — avatar raz",
+      "seriesSuffix": " · séria {{count}} — avatar raz",
       "filesSuffix": " · 2 súbory — raz avatar",
       "voiceoverAi": "≈ 0,1 – 0,3 USD za klip",
       "voiceoverFree": "0 dolárov – váš vlastný zvuk a video",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Nechajte kartu štúdia HeyGen otvorenú s aktívnym predplatným.",
       "apiNote": "Cez HeyGen API — v Nastaveniach prejdite na Generovanie, fakturácia podľa spotreby (~3 USD/min. Avatar IV).",
       "delTitle": "Odstrániť avatara?",
-      "delMessage": "„{{name}}“ bude odstránený z vašej kolekcie avatarov. Pôvodný súbor zostane v galérii."
+      "delMessage": "Súbor „{{name}}“ bude odstránený z vašej kolekcie avatarov. Pôvodný súbor zostane v galérii."
     },
     "voice": {
       "title": "Hlas a scenár",
@@ -1242,14 +1242,14 @@
       "langsLabel": "Jazyky videa",
       "langRuPinned": "Ruština · základná škola",
       "langsHintVoiceover": "Séria: samostatný klip v každom z {{count}} jazykov — Claude prekladá, hlasy ElevenLabs. Takmer zadarmo: cena = dabing × jazyky.",
-      "langsHintSolo": "Séria: samostatný klip v každom z {{count}} jazykov. S avatarom HeyGen vykreslí tvár pre každý jazyk – drahšie.",
+      "langsHintSolo": "Séria: samostatný klip v každom z jazykov {{count}}. HeyGen pomocou avatara vykreslí tvár pre každý jazyk – drahšie.",
       "diarizeHintVoiceover": "Zvuk prehráva video tak, ako je. Možnosť „Prepísať reč“ je voliteľná: je potrebná pre titulky a vkladanie textu na riadok.",
       "loudnormTitle": "Vyrovnanie hlasitosti hlasu",
       "loudnormSub": "Tiché časti sú zvýraznené, hlasné časti vyhladené – profesionálne znejúci zvuk"
     },
     "lines": {
-      "count_one": "{{count}} riadok · ~{{sec}} sek",
-      "count_other": "{{count}} riadkov · ~{{sec}} sek",
+      "count_one": "{{count}} riadok · ~{{sec}} s",
+      "count_other": "{{count}} riadky · ~{{sec}} s",
       "editHint": "– upravte na časovej osi v dolnej časti obrazovky.",
       "title": "Čiary",
       "filterAll": "Všetky · {{count}}",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · krmivo",
       "label11": "1:1 · Instagramový kanál",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "súbory na spustenie: {{count}} — za avatar sa platí raz"
+      "filesPerRun": "súborov na spustenie: {{count}} — za avatar sa platí raz"
     },
     "layout": {
       "label": "Rozloženie",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Hrubý plán dialógu: AI rozhoduje, kedy záber priblížiť a kedy oboje zobraziť v zábere (reakcia je statická fotografia, 0 dolárov)."
     },
     "preview": {
-      "seriesReady": "Pripravené videá pre seriál: {{count}} – všetky v galérii",
+      "seriesReady": "Pripravený seriál: videá {{count}} – všetky v galérii",
       "ready": "Hotovo – video je v Galérii",
       "footerSolo": "Kliknite na oblasť ukážky a pridajte obsah. Ukážka sa okamžite aktualizuje.",
       "footerPlan": "Kliknite na segmenty plánu – v ukážke sa zobrazí každý záber. Čiarové médiá sa nachádzajú na časovej osi nižšie.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — priehľadné PNG",
       "hint": "PNG súbor s veľkosťou pre daný rámček: logo kdekoľvek, rámček, popisok. Zobrazí sa cez celé video; titulky zostávajú nad vrstvou.",
       "progressTitle": "Ukazovateľ priebehu",
-      "progressSub": "tenký časovací pásik v hornej časti – diváci vidia, že video je krátke a pozerajú ho až do konca"
+      "progressSub": "tenký časovací pásik v hornej časti – diváci vidia, že video je krátke a pozerajú ho až do konca",
+      "pngOnly": "Vrstva musí byť priehľadný PNG alebo WebP – súbor bez priehľadnosti by pokryval celý rámec."
     },
     "brand": {
       "button": "Súprava značky",

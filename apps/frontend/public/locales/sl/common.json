@@ -1241,15 +1241,15 @@
       "elevenPreview": "Predvajaj vzorec",
       "langsLabel": "Jeziki videoposnetkov",
       "langRuPinned": "Ruščina · osnovnošolski",
-      "langsHintVoiceover": "Serija: ločen posnetek v vsakem od {{count}} jezikov — Claude prevaja, glasovi ElevenLabs. Skoraj brezplačno: cena = sinhronizacija × jeziki.",
-      "langsHintSolo": "Serija: ločen posnetek v vsakem od {{count}} jezikov. Z avatarjem HeyGen upodobi obraz za vsak jezik – dražje.",
+      "langsHintVoiceover": "Serija: ločen posnetek v vsakem od {{count}} jezikov – Claude prevaja, glasovi ElevenLabs. Skoraj brezplačno: cena = sinhronizacija × jeziki.",
+      "langsHintSolo": "Serija: ločen posnetek v vsakem od jezikov {{count}}. Z avatarjem HeyGen upodobi obraz za vsak jezik – dražje.",
       "diarizeHintVoiceover": "Zvok se predvaja čez videoposnetek takšen, kot je. »Prepis govora« je neobvezen: potreben je za podnapise in vstavke po vrsticah.",
       "loudnormTitle": "Izenačite glasnost glasu",
       "loudnormSub": "Tihi deli so dvignjeni, glasni deli zglajeni – profesionalen zvok"
     },
     "lines": {
       "count_one": "{{count}} vrstica · ~{{sec}} s",
-      "count_other": "{{count}} vrstic · ~{{sec}} s",
+      "count_other": "{{count}} vrstice · ~{{sec}} s",
       "editHint": "— urejanje na časovnici na dnu zaslona.",
       "title": "Črte",
       "filterAll": "Vse · {{count}}",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Grobi načrt dialoga: umetna inteligenca se odloči, kdaj bo šla od blizu in kdaj bo oboje prikazala v kadru (reakcija je statična fotografija, 0 $)."
     },
     "preview": {
-      "seriesReady": "Serija pripravljena: {{count}} videoposnetkov – vsi v galeriji",
+      "seriesReady": "Serija pripravljena: videoposnetki {{count}} – vsi v galeriji",
       "ready": "Končano – video je v galeriji",
       "footerSolo": "Kliknite območje predogleda, da dodate vsebino. Predogled se posodobi takoj.",
       "footerPlan": "Kliknite segmente načrta – predogled prikazuje vsak posnetek. Črtni medij je na spodnji časovnici.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — prozoren PNG",
       "hint": "PNG v velikosti okvirja: logotip kjer koli, okvir, napis. Nahaja se čez celoten videoposnetek; podnapisi ostanejo nad plastjo.",
       "progressTitle": "Vrstica napredka",
-      "progressSub": "tanek časovni trak na vrhu – gledalci vidijo, da je video kratek, in si ga ogledajo do konca"
+      "progressSub": "tanek časovni trak na vrhu – gledalci vidijo, da je video kratek, in si ga ogledajo do konca",
+      "pngOnly": "Plast mora biti prozorna datoteka PNG ali WebP – datoteka brez prosojnosti bi prekrila celoten okvir."
     },
     "brand": {
       "button": "Komplet blagovne znamke",

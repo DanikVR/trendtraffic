@@ -235,6 +235,9 @@ export default function UgcStudio(p: UgcStudioProps) {
   /* фиксированный набор языков серии (перевод Claude + ElevenLabs multilingual) */
   const LANG_CHOICES: [string, string][] = [['en', 'English'], ['es', 'Español'], ['de', 'Deutsch'], ['fr', 'Français'], ['pt', 'Português'], ['it', 'Italiano'], ['tr', 'Türkçe'], ['uk', 'Українська']];
 
+  /* слой принимает только прозрачный PNG/WebP — заметка при попытке выбрать иное */
+  const [layerNote, setLayerNote] = useState<string | null>(null);
+
   /* ── бренд-кит: сохранённый набор оформления (слой, заставки, музыка, субтитры, голос) ── */
   interface BrandKit { id: string; name: string; data: Partial<Pick<UgcSpec, 'layers' | 'intro' | 'outro' | 'music' | 'subtitles' | 'voiceId' | 'progressBar'>> }
   const [brandOpen, setBrandOpen] = useState(false);
@@ -787,6 +790,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               })}
             </div>
             <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.layer.hint')}</p>
+            {layerNote && <p className="text-[10px]" style={{ color: '#f59e0b' }}>{layerNote}</p>}
             <Toggle on={ugc.progressBar} title={t('ugc.layer.progressTitle')} sub={t('ugc.layer.progressSub')}
               onClick={() => ugcMutate((u) => ({ ...u, progressBar: !u.progressBar }))} />
           </Sec>
@@ -985,7 +989,12 @@ export default function UgcStudio(p: UgcStudioProps) {
             onUpload={(files) => p.uploadToGallery(files, pick === 'music' ? 'audio' : 'reference')}
             uploadAccept={pick === 'music' ? 'audio/*' : isLayer ? 'image/png,image/webp' : isImg ? 'image/*' : pick === 'lineImage' ? 'image/*,video/*' : pick === 'recording' ? 'audio/*,video/*' : 'video/*'}
             onlyType={isImg ? 'image' : pick === 'music' ? 'audio' : (pick === 'clip' || pick === 'intro' || pick === 'outro') ? 'video' : undefined}
-            onPick={(it) => p.pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
+            onPick={(it) => {
+              // Слой обязан быть прозрачным PNG/WebP: JPEG без альфы закрыл бы весь кадр в рендере.
+              if (isLayer && !/\.(png|webp)(\?|#|$)/i.test(it.fileUrl)) { setLayerNote(t('ugc.layer.pngOnly')); return; }
+              if (isLayer) setLayerNote(null);
+              p.pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') });
+            }}
           />
         );
       })()}

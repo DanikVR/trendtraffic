@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Gardez l'onglet HeyGen Studio ouvert si votre abonnement est actif.",
       "apiNote": "Via l'API HeyGen — saisissez dans Paramètres → Génération, facturation à l'utilisation (~3 $/min Avatar IV).",
       "delTitle": "Supprimer l'avatar ?",
-      "delMessage": "L'avatar « {{name}} » sera supprimé de votre collection. Le fichier original reste dans la galerie."
+      "delMessage": "L'avatar « {{name}} » sera supprimé de votre collection. Le fichier original reste dans la galerie."
     },
     "voice": {
       "title": "Voix et script",
@@ -1249,7 +1249,7 @@
     },
     "lines": {
       "count_one": "{{count}} ligne · ~{{sec}} sec",
-      "count_other": "{{count}} lignes · ~{{sec}} secondes",
+      "count_other": "{{count}} lignes · ~{{sec}} sec",
       "editHint": "— Modifier sur la chronologie en bas de l'écran.",
       "title": "Lignes",
       "filterAll": "Tous · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Voix B · {{count}}",
       "hintDialogue": "Badge A/B — changer de voix · ⇣ — fusionner avec la ligne suivante",
       "hintMerge": "⇣ — fusionner avec la ligne suivante",
-      "holdNote": "vidéo {{sec}}s — affichée en intégralité : +{{extra}}s, les lignes suivantes se déplacent",
+      "holdNote": "vidéo {{sec}}s — affichée intégralement : +{{extra}}s, les lignes suivantes se décalent",
       "swapVoice": "Changer la voix A↔B",
       "hostVoice": "Voix du présentateur",
       "mediaReplace": "média de ligne — cliquez pour remplacer",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Optionnel : sans vidéo, l'avatar remplit le cadre.",
       "dialogueHint": "En mode dialogue, les médias sont associés aux lignes de la chronologie ci-dessous — les options « Comment afficher » et « Afficher pendant N secondes » apparaissent sur toute ligne contenant des médias.",
       "seriesHeading": "Série de clips",
-      "seriesCount": "Vidéos de la série : {{count}} → le même nombre de clips publiés",
+      "seriesCount": "Vidéos de la série : {{count}} → même nombre de clips disponibles",
       "seriesChange": "Changement",
       "seriesAdd": "Ajouter des vidéos à la série — un clip par vidéo",
       "seriesBilling": "L'avatar est facturé une seule fois pour toute la série.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · flux",
       "label11": "1:1 · Flux Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "Fichiers par exécution : {{count}} — l’avatar est payé une seule fois."
+      "filesPerRun": "Fichiers par exécution : {{count}} — l’avatar est payé une seule fois"
     },
     "layout": {
       "label": "Mise en page",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plan de dialogue approximatif : l’IA décide quand faire un gros plan et quand montrer les deux dans le cadre (une réaction est une photo statique, 0 $)."
     },
     "preview": {
-      "seriesReady": "Série prête : {{count}} vidéos — toutes dans la galerie",
+      "seriesReady": "Série prête : {{count}} vidéos — toutes dans la galerie",
       "ready": "C'est fait — la vidéo est dans la galerie",
       "footerSolo": "Cliquez sur une zone d'aperçu pour ajouter du contenu. L'aperçu se met à jour instantanément.",
       "footerPlan": "Cliquez sur les segments du plan : l’aperçu affiche chaque prise de vue. Les éléments multimédias sont situés sur la chronologie en dessous.",
@@ -1422,9 +1422,10 @@
       "title": "couche supérieure",
       "sub": "logo ou cadre — toujours en haut",
       "empty": "{{format}} — PNG transparent",
-      "hint": "Un fichier PNG adapté à la taille du cadre : un logo, un cadre, une légende. Il se superpose à la vidéo ; les sous-titres restent au-dessus.",
+      "hint": "Un fichier PNG adapté à la taille du cadre : logo, cadre, légende. Il se superpose à la vidéo ; les sous-titres restent au-dessus.",
       "progressTitle": "barre de progression",
-      "progressSub": "Une fine bande de minuterie en haut indique aux spectateurs que la vidéo est courte et les incite à la regarder jusqu'au bout."
+      "progressSub": "Une fine bande de minuterie en haut indique aux spectateurs que la vidéo est courte et les incite à la regarder jusqu'au bout.",
+      "pngOnly": "Le calque doit être un PNG ou un WebP transparent — un fichier sans transparence recouvrirait toute l'image."
     },
     "brand": {
       "button": "Kit de marque",

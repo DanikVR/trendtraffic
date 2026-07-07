@@ -1119,7 +1119,7 @@
       "saved": "Konservita",
       "save": "Konservi",
       "ctaTooltipReady": "La avataro parolas la manuskripton (HeyGen) → kunfandi kun filmeto → subtekstoj → Galerio",
-      "ctaTooltipMissing": "Ankoraŭ bezonata: {{mankas}}",
+      "ctaTooltipMissing": "Ankoraŭ bezonata: {{missing}}",
       "creating": "Kreante…",
       "create": "Krei filmeton"
     },
@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 USD por agrafo",
       "perMin1": "≈ 1 USD por minuto",
       "perMin3_4": "≈ 3–4 USD por minuto",
-      "seriesSuffix": " · serio de {{count}} — avataro unufoje",
+      "seriesSuffix": " · serio de {{count}} — avataro iam",
       "filesSuffix": " · 2 dosieroj — avataro unufoje",
       "voiceoverAi": "≈ 0,1–0,3 USD por agrafo",
       "voiceoverFree": "$0 — via propra aŭdio kaj video",
@@ -1145,7 +1145,7 @@
       "missPhoto": "foto",
       "secondSpeaker": "Dua parolanto",
       "missPhotoB": "foto de la dua parolanto",
-      "recordingDiarized": "Registraĵo analizita (voĉoj A/B)",
+      "recordingDiarized": "Analizita registrado (voĉoj A/B)",
       "scriptOrRecording": "Skripto aŭ registrado preta",
       "missDiarize": "analizo de la duvoĉa registrado",
       "missScript": "manuskripto aŭ registrado",
@@ -1164,7 +1164,7 @@
       "retentionPresetLabel": "Muntado-intenseco",
       "presetEco": "Ekonomio",
       "presetPrem": "Supera",
-      "presetEcoHint": "Multekostaj proksimfotoj nur pri la hoko kaj alvoko al ago (~2 por filmeto). La plej malmultekosta opcio.",
+      "presetEcoHint": "Multekostaj proksim-bildoj nur pri la hoko kaj alvoko al ago (~2 por filmeto). La plej malmultekosta opcio.",
       "presetBalHint": "Proksimfotoj de la hoko, la ago kaj la alvoko al ago (~3). La ideala punkto.",
       "presetPremHint": "Maksimuma vizaĝtempo (~4 proksimfotoj). Pli vigla kaj pli multekosta.",
       "presetAiTrailer": "AI decidas, kiu bildo iras kien, surbaze de via teksto.",
@@ -1178,7 +1178,7 @@
       "cutoutTitle": "Travidebla avatara fono",
       "cutoutSub": "nur la persono restas en la kadro — por la aranĝo 'fono kun avataro flanke'",
       "voiceover": "Neniu avataro — voĉtranspafo",
-      "voiceoverHint": "Via filmaĵo + voĉo: per artefarita inteligenteco verkita manuskripto (ElevenLabs) aŭ via propra registrado, kia ĝi estas. Neniu HeyGen implikita — preskaŭ senpaga. Poliniaj amaskomunikilaj enigaĵoj estas laŭvolaj."
+      "voiceoverHint": "Via filmaĵo + voĉo: per artefarita inteligenteco verkita manuskripto (ElevenLabs) aŭ via propra registrado kiel ĝi estas. Neniu HeyGen implikita — preskaŭ senpaga. Poliniaj amaskomunikilaj enigaĵoj estas laŭvolaj."
     },
     "avatar": {
       "title": "Avataro",
@@ -1205,7 +1205,7 @@
       "faceProviderLabel": "Avatara animacio",
       "providerApi": "Per API-ŝlosilo",
       "providerExt": "Per abono de HeyGen",
-      "extIntro": "La kromprogramo montras la titolojn en via langeto app.heygen.com en via abono (trifoje pli malmultekoste ol la API).",
+      "extIntro": "La kromprogramo montras la titolojn en la langeto \"app.heygen.com\" en via abono (trifoje pli malmultekoste ol la API).",
       "extLabel": "Etendaĵo:",
       "extChecking": "kontrolado…",
       "extAbsent": "ne instalita",
@@ -1241,18 +1241,18 @@
       "elevenPreview": "Ludu provaĵon",
       "langsLabel": "Videolingvoj",
       "langRuPinned": "Rusa · primara",
-      "langsHintVoiceover": "Serio: aparta filmeto en ĉiu el {{count}} lingvoj — Claude tradukas, voĉoj de ElevenLabs. Preskaŭ senpaga: kosto = voĉtranspafo × lingvoj.",
-      "langsHintSolo": "Serio: aparta filmeto en ĉiu el {{count}} lingvoj. Kun avataro, HeyGen bildigas la vizaĝon por ĉiu lingvo — pli multekosta.",
+      "langsHintVoiceover": "Serio: aparta filmeto en ĉiu el la {{count}} lingvoj — Claude tradukas, voĉoj de ElevenLabs. Preskaŭ senpaga: kosto = voĉtranspafo × lingvoj.",
+      "langsHintSolo": "Serio: aparta filmeto en ĉiu el la lingvoj de {{count}}. Kun avataro, HeyGen bildigas la vizaĝon por ĉiu lingvo — pli multekosta.",
       "diarizeHintVoiceover": "La aŭdio iras super la filmeton tia, kia ĝi estas. \"Transskribi paroladon\" estas laŭvola: necesa por subtekstoj kaj poliniaj enmetaĵoj.",
       "loudnormTitle": "Egaligu voĉvolumenon",
       "loudnormSub": "kvietaj partoj leviĝas, laŭtaj partoj glatiĝas — profesia sona aŭdio"
     },
     "lines": {
-      "count_one": "{{count}} linio · ~{{sec}} sekundoj",
-      "count_other": "{{count}} linioj · ~{{sec}} sekundoj",
+      "count_one": "{{count}} linio · ~{{sec}} sekundo",
+      "count_other": "{{count}} linioj · ~{{sec}} sek",
       "editHint": "— redaktu laŭ la templinio ĉe la malsupro de la ekrano.",
       "title": "Linioj",
-      "filterAll": "Ĉiuj · {{count}}",
+      "filterAll": "Ĉio · {{count}}",
       "filterVoiceA": "Voĉo A · {{count}}",
       "filterVoiceB": "Voĉo B · {{count}}",
       "hintDialogue": "A/B insigno — ŝanĝi voĉon · ⇣ — kuniĝi kun la sekva linio",
@@ -1315,7 +1315,7 @@
       "landscape": "16:9 · horizontala",
       "both": "Ambaŭ",
       "twoFilesNote": "2 dosieroj por kuro — la avataro estas fakturita unufoje",
-      "label916": "9:16 · TikTok, Bobenoj, Kurtfilmoj",
+      "label916": "9:16 · TikTok, Filmetoj, Mallongaj Filmetoj",
       "label169": "16:9 · Jutubo",
       "square": "1:1 · kvadrato",
       "feed": "4:5 · furaĝo",
@@ -1344,7 +1344,7 @@
       "cta": "Voko al ago",
       "action": "Ago",
       "emotion": "Emocio",
-      "aCloseup": "Proksima bildo",
+      "aCloseup": "Proksima foto",
       "bCloseup": "B-proksima bildo",
       "bothInFrame": "Ambaŭ en kadro",
       "bgFace": "Fono + vizaĝo",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Malglata dialoga plano: AI decidas kiam proksimiĝi kaj kiam montri ambaŭ en kadro (reago estas statika foto, $0)."
     },
     "preview": {
-      "seriesReady": "Serio preta: {{count}} filmetoj — ĉiuj en la Galerio",
+      "seriesReady": "Serio preta: {{count}} filmetoj — ĉio en la Galerio",
       "ready": "Finita — la filmeto estas en la Galerio",
       "footerSolo": "Alklaku antaŭrigardan areon por aldoni enhavon. La antaŭrigardo ĝisdatiĝas tuj.",
       "footerPlan": "Alklaku la planajn segmentojn — la antaŭrigardo montras ĉiun foton. Linia amaskomunikilaro estas sur la templinio sube.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Supra tavolo",
       "sub": "emblemo aŭ kadro — ĉiam supre",
-      "empty": "{{formato}} — travidebla PNG",
+      "empty": "{{format}} — travidebla PNG",
       "hint": "PNG-dosiero laŭ la grandeco de la kadro: emblemo ie ajn, kadro, apudskribo. Sidas super la tuta filmeto; subtekstoj restas super la tavolo.",
       "progressTitle": "Progresbreto",
-      "progressSub": "maldika tempmezurilo supre — spektantoj vidas, ke la filmeto estas mallonga kaj rigardas ĝis la fino"
+      "progressSub": "maldika tempmezurilo supre — spektantoj vidas, ke la filmeto estas mallonga kaj rigardas ĝis la fino",
+      "pngOnly": "La tavolo devas esti travidebla PNG aŭ WebP — dosiero sen travidebleco kovrus la tutan kadron."
     },
     "brand": {
       "button": "Marka ilaro",

@@ -1130,11 +1130,11 @@
       "perClip2": "≈ 2 USD po isječku",
       "perMin1": "≈ 1 USD po minuti",
       "perMin3_4": "≈ 3–4 USD po minuti",
-      "seriesSuffix": " · serija od {{count}} — avatar jednom",
+      "seriesSuffix": " · serija {{count}} — avatar jednom",
       "filesSuffix": " · 2 datoteke — avatar jednom",
       "voiceoverAi": "≈ 0,1–0,3 USD po isječku",
       "voiceoverFree": "0 USD — vlastiti audio i video",
-      "langsSuffix": " · jezici: {{broj}}"
+      "langsSuffix": " · jezici: {{count}}"
     },
     "checklist": {
       "title": "Spremno za gradnju",
@@ -1242,17 +1242,17 @@
       "langsLabel": "Jezici videozapisa",
       "langRuPinned": "Ruski · osnovni",
       "langsHintVoiceover": "Serija: zaseban isječak na svakom od {{count}} jezika — Claude prevodi, glasovi ElevenLabsa. Gotovo besplatno: cijena = sinkronizacija × jezici.",
-      "langsHintSolo": "Serija: zaseban isječak na svakom od {{count}} jezika. S avatarom, HeyGen renderira lice za svaki jezik — skuplje.",
+      "langsHintSolo": "Serija: zaseban isječak na svakom od {{count}} jezika. S avatarom, HeyGen renderira lice za svaki jezik - skuplje.",
       "diarizeHintVoiceover": "Zvuk ide preko videa kakav jest. \"Transkripcija govora\" nije obavezna: potrebna je za titlove i umetke po retku.",
       "loudnormTitle": "Ujednačite glasnoću glasa",
       "loudnormSub": "Tihi dijelovi se podižu, glasni dijelovi se ublažavaju — profesionalni zvuk"
     },
     "lines": {
       "count_one": "{{count}} redak · ~{{sec}} sek",
-      "count_other": "{{count}} redaka · ~{{sec}} sek",
+      "count_other": "{{count}} redaka · ~{{sec}} sekundi",
       "editHint": "— uredite na vremenskoj traci pri dnu zaslona.",
       "title": "Linije",
-      "filterAll": "Svi · {{broj}}",
+      "filterAll": "Svi · {{count}}",
       "filterVoiceA": "Glas A · {{count}}",
       "filterVoiceB": "Glas B · {{count}}",
       "hintDialogue": "A/B značka — promjena glasa · ⇣ — spajanje sa sljedećim retkom",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Neobavezno: bez videa avatar ispunjava kadar.",
       "dialogueHint": "U dijaloškom načinu rada, mediji su priloženi retcima na vremenskoj crti ispod - 'Kako prikazati' i 'Prikaži N sekundi' pojavljuju se u svakom retku s medijima.",
       "seriesHeading": "Serija isječaka",
-      "seriesCount": "Videozapisi u seriji: {{count}} → isti broj isječaka",
+      "seriesCount": "Videi u seriji: {{count}} → isti broj isječaka",
       "seriesChange": "Promijeniti",
       "seriesAdd": "Dodajte videozapise u seriju — jedan isječak po videozapisu",
       "seriesBilling": "Avatar se naplaćuje jednom za cijelu seriju.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · feed",
       "label11": "1:1 · Instagram feed",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "datoteke po pokretanju: {{count}} — avatar se plaća jednom"
+      "filesPerRun": "datoteka po pokretanju: {{count}} — avatar se plaća jednom"
     },
     "layout": {
       "label": "Izgled",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Grubi plan dijaloga: Umjetna inteligencija odlučuje kada će se približiti, a kada će oboje prikazati u kadru (reakcija je statična fotografija, 0 USD)."
     },
     "preview": {
-      "seriesReady": "Serija spremna: {{count}} videozapisa — svi u Galeriji",
+      "seriesReady": "Serija spremna: {{count}} videozapisi — svi u Galeriji",
       "ready": "Gotovo — video je u Galeriji",
       "footerSolo": "Kliknite područje pregleda za dodavanje sadržaja. Pregled se odmah ažurira.",
       "footerPlan": "Kliknite segmente plana — pregled prikazuje svaki snimak. Linijski medij nalazi se na vremenskoj crti ispod.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — prozirni PNG",
       "hint": "PNG veličine okvira: logotip bilo gdje, okvir, opis. Nalazi se preko cijelog videa; titlovi ostaju iznad sloja.",
       "progressTitle": "Traka napretka",
-      "progressSub": "tanka traka timera na vrhu — gledatelji vide da je video kratak i gledaju do kraja"
+      "progressSub": "tanka traka timera na vrhu — gledatelji vide da je video kratak i gledaju do kraja",
+      "pngOnly": "Sloj mora biti prozirni PNG ili WebP — datoteka bez prozirnosti prekrila bi cijeli okvir."
     },
     "brand": {
       "button": "Komplet robne marke",

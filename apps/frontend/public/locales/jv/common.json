@@ -1119,7 +1119,7 @@
       "saved": "Disimpen",
       "save": "Simpen",
       "ctaTooltipReady": "Avatar kasebut ngomongake skrip (HeyGen) → gabung karo video → subtitle → Galeri",
-      "ctaTooltipMissing": "Isih dibutuhake: {{ilang}}",
+      "ctaTooltipMissing": "Isih dibutuhake: {{missing}}",
       "creating": "Nggawe…",
       "create": "Gawe video"
     },
@@ -1151,7 +1151,7 @@
       "missScript": "naskah utawa rekaman",
       "videoChosen": "Rekaman dipilih",
       "missVideo": "rekaman",
-      "step": "langkah"
+      "step": "langkah {{n}}"
     },
     "mode": {
       "title": "Mode video",
@@ -1241,7 +1241,7 @@
       "elevenPreview": "Muter conto",
       "langsLabel": "Basa-basa video",
       "langRuPinned": "Rusia · utama",
-      "langsHintVoiceover": "Seri: klip kapisah ing saben basa {{count}} — Claude nerjemahake, swara ElevenLabs. Meh gratis: biaya = swara × basa.",
+      "langsHintVoiceover": "Seri: klip kapisah ing saben basa {{count}} — Claude nerjemahake, swara ElevenLabs. Meh gratis: biaya = swara tambahan × basa.",
       "langsHintSolo": "Seri: klip kapisah ing saben basa {{count}}. Kanthi avatar, HeyGen nampilake rai kanggo saben basa — luwih larang.",
       "diarizeHintVoiceover": "Audione nampilake video kaya apa anane. \"Transkripsi wicara\" iku opsional: dibutuhake kanggo subtitle lan sisipan saben baris.",
       "loudnormTitle": "Ratakan volume swara",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Opsional: tanpa video, avatar bakal ngisi pigura.",
       "dialogueHint": "Ing mode dialog, media dipasang ing baris ing garis wektu ing ngisor iki — 'Cara nampilake' lan 'Tampilake sajrone N detik' katon ing baris apa wae sing ana mediane.",
       "seriesHeading": "Seri klip",
-      "seriesCount": "Video ing seri kasebut: {{count}} → jumlah klip sing padha",
+      "seriesCount": "Video ing seri iki: {{count}} → jumlah klip sing padha metu",
       "seriesChange": "Owah-owahan",
       "seriesAdd": "Tambahake video menyang seri kasebut — siji klip saben video",
       "seriesBilling": "Avatar kasebut ditagih sapisan kanggo kabeh seri.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · umpan",
       "label11": "1:1 · Umpan Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "file saben proses: {{count}} — avatar dibayar sapisan"
+      "filesPerRun": "file saben run: {{count}} — avatar dibayar sapisan"
     },
     "layout": {
       "label": "Tata letak",
@@ -1345,7 +1345,7 @@
       "action": "Tindakan",
       "emotion": "Emosi",
       "aCloseup": "Gambaran cedhak",
-      "bCloseup": "B tampilan cedhak",
+      "bCloseup": "B closeup",
       "bothInFrame": "Loro-lorone ing pigura",
       "bgFace": "Latar mburi + rai",
       "aSpeaking": "A wicara",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Rencana dialog kasar: AI nemtokake kapan arep ndeleng saka cedhak lan kapan arep nuduhake loro-lorone ing pigura (reaksi iku foto statis, $0)."
     },
     "preview": {
-      "seriesReady": "Seri wis siap: {{count}} video — kabeh ana ing Galeri",
+      "seriesReady": "Seri wis siyap: video {{count}} — kabeh ana ing Galeri",
       "ready": "Rampung — videone wis ana ing Galeri",
       "footerSolo": "Klik area pratinjau kanggo nambah konten. Pratinjau bakal dianyari langsung.",
       "footerPlan": "Klik segmen rencana — pratinjau nuduhake saben gambar. Media garis ana ing garis wektu ing ngisor iki.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG transparan",
       "hint": "Ukuran PNG kanggo pigura: logo ing ngendi wae, pigura, caption. Nempel ing kabeh video; subtitle tetep ana ing ndhuwur lapisan.",
       "progressTitle": "Bilah kemajuan",
-      "progressSub": "strip timer tipis ing sisih ndhuwur — pamirsa ndeleng video kasebut cendhak lan nonton nganti rampung"
+      "progressSub": "strip timer tipis ing sisih ndhuwur — pamirsa ndeleng video kasebut cendhak lan nonton nganti rampung",
+      "pngOnly": "Lapisan kasebut kudu PNG utawa WebP transparan — file tanpa transparansi bakal nutupi kabeh pigura."
     },
     "brand": {
       "button": "Piranti merek",

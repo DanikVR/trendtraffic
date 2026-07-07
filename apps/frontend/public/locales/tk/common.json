@@ -1119,14 +1119,14 @@
       "saved": "Saklandy",
       "save": "Sakla",
       "ctaTooltipReady": "Awatar skripti aýdýar (HeyGen) → wideo bilen birleşdirmek → subtitrler → Galereýa",
-      "ctaTooltipMissing": "Henizem gerek: {{ýok}}",
+      "ctaTooltipMissing": "Henizem gerek: {{missing}}",
       "creating": "Döredilýär…",
       "create": "Wideo dörediň"
     },
     "cost": {
       "perClip1_2": "Klip üçin ≈ $1–2",
       "perClip2_3": "Klip üçin ≈ $2–3",
-      "perClip3_5": "≈ her klip üçin 3–5 dollar",
+      "perClip3_5": "Klip üçin ≈ $3–5",
       "perClip2": "Klip üçin ≈ $2",
       "perMin1": "Minutyna ≈ $1",
       "perMin3_4": "Minutyna ≈ $3–4",
@@ -1167,7 +1167,7 @@
       "presetEcoHint": "Diňe ylgawda we herekete çagyrmakda gymmat ýakyn planlar (her klipde ~2). Iň arzan wariant.",
       "presetBalHint": "Iň ýakyn plandaky suratlar, hereket we çagyryş (~3). Iň gowy ýer.",
       "presetPremHint": "Maksimum ýüz wagty (~4 ýakyn plan). Has janly we gymmat.",
-      "presetAiTrailer": "Süni intellekt tekstiňize esaslanyp, haýsy kadryň nirede boljakdygyny kesgitleýär.",
+      "presetAiTrailer": "Tekstiňize esaslanyp, haýsy kadryň nirede boljakdygyny emeli intellekt kesgitleýär.",
       "dialogueEngLabel": "Dialogyň depgini",
       "engCalm": "Parahat",
       "engLively": "Janly",
@@ -1176,7 +1176,7 @@
       "engDynHint": "Has köp \"kadryň içinde\" sahnalar we kesilen bölekler — has janly we gymmat.",
       "engAiTrailer": "Suratlary AI özi düzýär.",
       "cutoutTitle": "Şeffaf awatar fony",
-      "cutoutSub": "kadrda diňe adam galýar — \"awataryň gapdalyndaky fon\" üçin",
+      "cutoutSub": "kadrda diňe adam galýar — \"awataryň gapdalynda fon\" dizaýny üçin",
       "voiceover": "Awatar ýok — seslendirme",
       "voiceoverHint": "Siziň wideoňyz + ses: emeli intellekt tarapyndan ýazylan ssenariý (ElevenLabs) ýa-da öz ýazgyňyz. HeyGen gatnaşmaýar — diýen ýaly mugt. Her setirde media goýmalary hökmany däl."
     },
@@ -1185,7 +1185,7 @@
       "sub": "ekranda kim bar",
       "sourceCollection": "Taýýar awatarlar",
       "sourcePhoto": "Meniň suratym",
-      "collectionLocked": "Bu re inimde — diňe 'Meniň suratym' (HeyGen)",
+      "collectionLocked": "Bu režimde — diňe 'Meniň suratym' (HeyGen)",
       "myCollection": "Meniň kolleksiýam",
       "loading": "awatarlar ýüklenýär…",
       "removeFromCollection": "Kolleksiýadan aýyr",
@@ -1241,31 +1241,31 @@
       "elevenPreview": "Nusgany oýnat",
       "langsLabel": "Wideo dilleri",
       "langRuPinned": "Rus dili · başlangyç",
-      "langsHintVoiceover": "Seriýa: her bir {{count}} dilde aýratyn klip — Klod terjime edýär, ElevenLabs sesleri. Tas mugt: bahasy = seslendirme × diller.",
-      "langsHintSolo": "Seriýa: her {{count}} dilde aýratyn klip. Awatar bilen HeyGen her dil üçin ýüzi görkezýär — gymmatrak.",
-      "diarizeHintVoiceover": "Ses wideonyň üstünden şol görnüşde geçýär. “Sözi transkripsiýa etmek” hökmany däl: subtitrler we her setir üçin goşmaçalar üçin gerek.",
+      "langsHintVoiceover": "Seriýa: {{count}} dilleriniň her birinde aýratyn klip — Klod terjime edýär, ElevenLabs sesleri. Tas mugt: bahasy = seslendirme × diller.",
+      "langsHintSolo": "Seriýa: {{count}} dilleriniň hersinde aýratyn klip. Awatar bilen HeyGen her dil üçin ýüzi görkezýär - gymmatrak.",
+      "diarizeHintVoiceover": "Ses wideonyň üstünden şol görnüşde geçýär. “Gürrüňi transkripsiýa etmek” hökmany däl: subtitrler we her setir üçin goşmaçalar üçin gerek.",
       "loudnormTitle": "Sesiň ses derejesini deňleşdirmek",
       "loudnormSub": "sessiz bölekler aýrylýar, sesli bölekler tekizlenýär — professional seslendirme"
     },
     "lines": {
       "count_one": "{{count}} setir · ~{{sec}} sek",
-      "count_other": "{{count}} setir · ~{{sec}} sek",
+      "count_other": "{{count}} setirler · ~{{sec}} sek",
       "editHint": "— ekranyň aşagyndaky wagt çyzgysynda düzediň.",
       "title": "Setirler",
-      "filterAll": "Ähli · {{count}}",
+      "filterAll": "Hemmesi · {{count}}",
       "filterVoiceA": "A sesi · {{count}}",
       "filterVoiceB": "B sesi · {{count}}",
       "hintDialogue": "A/B nyşany — sesi çalşyrmak · ⇣ — indiki setir bilen birleşdirmek",
       "hintMerge": "⇣ — indiki setir bilen birleşdirmek",
-      "holdNote": "wideo {{sec}} - doly görnüşde görkezilýär: +{{extra}}, aşakdaky setirler süýşýär",
+      "holdNote": "wideo {{sec}}s — doly görnüşde görkezilýär: +{{extra}}s, aşakdaky setirler süýşýär",
       "swapVoice": "A↔B sesini çalşyrmak",
       "hostVoice": "Alypbaryjynyň sesi",
       "mediaReplace": "setir media — çalşyrmak üçin basyň",
-      "removeMedia": "Mediany aýyr",
+      "removeMedia": "Mediany aýyryň",
       "attachMedia": "Surat ýa-da wideo goşuň",
       "mergeDown": "Indiki setir bilen birleşdir",
       "removeLine": "Setiri poz",
-      "empty": "Heniz setir ýok — ssenariý dörediň ýa-da ýazgyny seljeriň."
+      "empty": "Heniz setir ýok — ssenari dörediň ýa-da ýazgyny seljeriň."
     },
     "video": {
       "title": "Kadrlar",
@@ -1277,9 +1277,9 @@
       "soloOptional": "Isleg boýunça: wideo bolmasa, awatar kadryň içinde peýda bolýar.",
       "dialogueHint": "Dialog režiminde media aşakdaky wagt çyzygynda setirlere birikdirilýär — media bilen islendik setirde \"Nähili görkezmeli\" we \"N sekunt üçin görkez\" peýda bolýar.",
       "seriesHeading": "Klip seriýasy",
-      "seriesCount": "Seriýadaky wideolar: {{count}} → çykan klipleriň sanynyň şol bir bolmagy",
+      "seriesCount": "Seriýadaky wideolar: {{count}} → şol bir sanda klipler çykdy",
       "seriesChange": "Üýtgeşme",
-      "seriesAdd": "Seriýa wideolary goşuň — her wideo üçin bir klip",
+      "seriesAdd": "Wideolary seriýa goşuň — her wideo üçin bir klip",
       "seriesBilling": "Awatar tutuş seriýa üçin bir gezek görkezilýär.",
       "voiceoverBase": "Bu režimde wideo kadryň esasyny düzýär: ses we subtitrler ýokarky orunda durýar."
     },
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · feed",
       "label11": "1:1 · Instagram lentasy",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "her gezek işlenýän faýllar: {{count}} — awatar üçin bir gezek töleg tölenýär"
+      "filesPerRun": "her gezek işlenilen faýllar: {{count}} — awatar üçin bir gezek töleg tölenýär"
     },
     "layout": {
       "label": "Düzüm",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Dialogyň takmynan meýilnamasy: Emeli intellekt haçan ýakyn plana çekilmelidigini we ikisini hem kadrda haçan görkezmelidigini kesgitleýär (reaksiýa statik suratdyr, $0)."
     },
     "preview": {
-      "seriesReady": "Seriýa taýýar: {{count}} wideo — hemmesi Galereýada",
+      "seriesReady": "Seriýa taýýar: {{count}} wideolar — hemmesi Galereýada",
       "ready": "Taýýar — wideo Galereýada",
       "footerSolo": "Mazmun goşmak üçin deslapky syn meýdanyna basyň. Deslapky syn derrew täzelenýär.",
       "footerPlan": "Meýilnamanyň böleklerine basyň — deslapky görnüş her kadry görkezýär. Setir mediasy aşakdaky wagt çyzgysynda görkezilen.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — açyk PNG",
       "hint": "Kadr üçin PNG ölçegli: islendik ýerde logotip, kadr, ýazgy. Tutuş wideonyň üstünde ýerleşýär; subtitrler gatlagyň üstünde galýar.",
       "progressTitle": "Ösüş paneli",
-      "progressSub": "ýokarky böleginde inçe taýmer zolagy — tomaşaçylar wideonyň gysgadygyny görüp, soňuna çenli tomaşa edýärler"
+      "progressSub": "ýokarky böleginde inçe taýmer zolagy — tomaşaçylar wideonyň gysgadygyny görüp, soňuna çenli tomaşa edýärler",
+      "pngOnly": "Gatlak açyk PNG ýa-da WebP bolmaly — açyklygy bolmadyk faýl tutuş kadry örtýär."
     },
     "brand": {
       "button": "Brend toplumy",

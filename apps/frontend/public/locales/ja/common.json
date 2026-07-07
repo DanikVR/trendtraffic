@@ -1130,7 +1130,7 @@
       "perClip2": "クリップ1個あたり約2ドル",
       "perMin1": "1分あたり約1ドル",
       "perMin3_4": "1分あたり約3～4ドル",
-      "seriesSuffix": " ・{{count}}のシリーズ — アバターは一度だけ",
+      "seriesSuffix": " ・{{count}}のシリーズ — アバター1回",
       "filesSuffix": " ・2ファイル — アバター1つ",
       "voiceoverAi": "クリップ1個あたり約0.1～0.3ドル",
       "voiceoverFree": "0ドル - ご自身の音声と動画",
@@ -1144,14 +1144,14 @@
       "missAvatar": "アバター",
       "missPhoto": "写真",
       "secondSpeaker": "2番目のスピーカー",
-      "missPhotoB": "2人目のスピーカーの写真",
+      "missPhotoB": "2番目のスピーカーの写真",
       "recordingDiarized": "録音内容の分析（音声A/B）",
       "scriptOrRecording": "台本または録音準備完了",
       "missDiarize": "2声録音の分析",
       "missScript": "スクリプトまたは録音",
       "videoChosen": "選択された映像",
       "missVideo": "映像",
-      "step": "ステップ{{n}}"
+      "step": "ステップ {{n}}"
     },
     "mode": {
       "title": "ビデオモード",
@@ -1199,7 +1199,7 @@
       "photoChosenName": "写真が選択されました",
       "photoEmpty": "写真 - まだアップロードされていません · ギャラリーから選択",
       "photoHint": "正面を向いたポートレート写真。HeyGenは写真に命を吹き込みます。唇の動きや表情が音声と同期します。",
-      "speakerBHeading": "2人目のスピーカー（B）",
+      "speakerBHeading": "2人目の話者（B）",
       "photoBName": "写真B",
       "photoBEmpty": "写真 - まだアップロードされていません · 選択",
       "faceProviderLabel": "アバターアニメーション",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "有効なサブスクリプションを開いた状態で、HeyGenスタジオのタブを開いたままにしておいてください。",
       "apiNote": "HeyGen API を介して — 設定 → 生成でキーを入力し、従量課金制（アバター IV の場合、約 3 ドル/分）。",
       "delTitle": "アバターを削除しますか？",
-      "delMessage": "「{{name}}」はあなたのアバターコレクションから削除されます。元のファイルはギャラリーに残ります。"
+      "delMessage": "「{{name}}」はアバターコレクションから削除されます。元のファイルはギャラリーに残ります。"
     },
     "voice": {
       "title": "音声とスクリプト",
@@ -1240,15 +1240,15 @@
       "elevenDefault": "デフォルト設定 — 性別別（サラ／ジョージ）",
       "elevenPreview": "サンプルを再生",
       "langsLabel": "動画言語",
-      "langRuPinned": "ロシア語 · 主要言語",
-      "langsHintVoiceover": "シリーズ作品：{{count}}言語それぞれに個別のクリップが用意されている。翻訳はクロード、ナレーションはElevenLabsが担当。ほぼ無料：コスト＝ナレーション×言語数。",
-      "langsHintSolo": "シリーズ形式：{{count}}言語それぞれで個別のクリップが提供されます。アバターを使用する場合、HeyGenは各言語ごとに顔をレンダリングするため、価格が高くなります。",
+      "langRuPinned": "ロシア語 · 主要",
+      "langsHintVoiceover": "シリーズ作品：{{count}}言語ごとに個別のクリップを用意。翻訳はクロード、ナレーションはElevenLabsが担当。ほぼ無料：コスト＝ナレーション×言語数。",
+      "langsHintSolo": "A series: a separate clip in each of {{count}} languages. With an avatar, HeyGen renders the face for every language — pricier.",
       "diarizeHintVoiceover": "音声はそのまま動画に重ねて表示されます。「音声の文字起こし」はオプションです。字幕や行ごとの挿入が必要な場合に必要です。",
       "loudnormTitle": "声の大きさを均一にする",
       "loudnormSub": "静かな部分は強調され、大きな部分は滑らかになる――プロ仕様のサウンドオーディオ"
     },
     "lines": {
-      "count_one": "{{count}}行 · ~{{sec}}秒",
+      "count_one": "{{count}} ライン · ~{{sec}} 秒",
       "count_other": "{{count}}行 · ~{{sec}}秒",
       "editHint": "画面下部のタイムラインで編集してください。",
       "title": "線",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "ボイスB · {{count}}",
       "hintDialogue": "A/Bバッジ — 音声切り替え · ⇣ — 次の行と結合",
       "hintMerge": "⇣ — 次の行と結合する",
-      "holdNote": "ビデオ{{秒}}秒 — 全編表示: +{{追加}}秒、次の行が切り替わります",
+      "holdNote": "ビデオ {{sec}}s — 全体を表示: +{{extra}}s、次の行がシフトします",
       "swapVoice": "音声A↔Bを切り替える",
       "hostVoice": "プレゼンターの声",
       "mediaReplace": "ラインメディア — クリックして置き換えます",
@@ -1277,7 +1277,7 @@
       "soloOptional": "オプション：動画がない場合、アバターが画面全体に表示されます。",
       "dialogueHint": "ダイアログモードでは、メディアは下のタイムライン上の行に添付されます。メディアが添付されている行には、「表示方法」と「N秒間表示」が表示されます。",
       "seriesHeading": "クリップシリーズ",
-      "seriesCount": "シリーズ動画：{{count}} → 同数のクリップが公開されています",
+      "seriesCount": "シリーズ動画: {{count}} → 同じ数のクリップが公開されています",
       "seriesChange": "変化",
       "seriesAdd": "シリーズに動画を追加する（動画1本につきクリップ1つ）",
       "seriesBilling": "アバターはシリーズ全体を通して一度だけクレジットされる。",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · フィード",
       "label11": "1:1 · Instagramフィード",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "実行あたりのファイル数: {{count}} — アバターは一度だけ購入します"
+      "filesPerRun": "実行ごとのファイル数: {{count}} — アバターは一度だけ購入します"
     },
     "layout": {
       "label": "レイアウト",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "大まかな対話プラン：AIがクローズアップするタイミングと、フレーム内に両方を表示するタイミングを決定する（反応は静止画で、$0）。"
     },
     "preview": {
-      "seriesReady": "シリーズ準備完了：{{count}}本の動画 — すべてギャラリーに掲載",
+      "seriesReady": "シリーズ準備完了：{{count}} 動画 — すべてギャラリーにあります",
       "ready": "完了しました — 動画はギャラリーにあります",
       "footerSolo": "プレビューエリアをクリックしてコンテンツを追加すると、プレビューが即座に更新されます。",
       "footerPlan": "プランセグメントをクリックすると、プレビューで各ショットが表示されます。ラインメディアは下のタイムラインに表示されます。",
@@ -1421,17 +1421,18 @@
     "layer": {
       "title": "最上層",
       "sub": "ロゴまたはフレーム - 常に最前面に表示",
-      "empty": "透明PNG — {{format}} — 透明PNG",
+      "empty": "{{format}} — 透明なPNG",
       "hint": "フレームに合わせてサイズ調整されたPNG画像：ロゴ、フレーム、キャプションなど、あらゆる場所に配置できます。動画全体を覆うように表示され、字幕はレイヤーの上に表示されます。",
       "progressTitle": "進行状況バー",
-      "progressSub": "上部に細いタイマーストリップが表示されることで、視聴者は動画が短いことに気づき、最後まで視聴するようになる。"
+      "progressSub": "上部に細いタイマーストリップが表示されることで、視聴者は動画が短いことに気づき、最後まで視聴するようになる。",
+      "pngOnly": "レイヤーは透明なPNGまたはWebPファイルである必要があります。透明度のないファイルを使用すると、フレーム全体が覆われてしまいます。"
     },
     "brand": {
       "button": "ブランドキット",
       "tooltip": "レイヤー、バンパー、音楽、字幕、音声をワンクリックで",
       "title": "ブランドキット",
       "sub": "保存済みのスタイルセット：トップレイヤー、バンパー、音楽、字幕スタイル、音声。ワンクリックで、すべての動画を統一されたスタイルで表示できます。",
-      "loading": "キットを積み込む…",
+      "loading": "キットを積み込んでいます…",
       "empty": "まだキットはありません。スタイリングを設定して、下のボタンで保存してください。",
       "apply": "適用する",
       "saveCurrent": "現在の設定をブランドキットとして保存する",

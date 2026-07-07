@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 dolara po isječku",
       "perMin1": "≈ 1 dolar po minuti",
       "perMin3_4": "≈ 3–4 dolara po minuti",
-      "seriesSuffix": " · serija od {{count}} — avatar jednom",
+      "seriesSuffix": " · serija {{count}} — avatar jednom",
       "filesSuffix": " · 2 datoteke — avatar jednom",
       "voiceoverAi": "≈ 0,1–0,3 USD po isječku",
       "voiceoverFree": "0 dolara — vaš vlastiti audio i video",
@@ -1201,7 +1201,7 @@
       "photoHint": "Portret okrenut naprijed. HeyGen oživljava fotografiju — usne i izrazi lica sinhronizovani su s glasom.",
       "speakerBHeading": "Drugi govornik (B)",
       "photoBName": "fotografija B",
-      "photoBEmpty": "Fotografija — još nije postavljena · odaberi",
+      "photoBEmpty": "Fotografija — još nije otpremljena · odaberi",
       "faceProviderLabel": "Animacija avatara",
       "providerApi": "Putem API ključa",
       "providerExt": "Putem HeyGen pretplate",
@@ -1242,17 +1242,17 @@
       "langsLabel": "Jezici videa",
       "langRuPinned": "Ruski · osnovni",
       "langsHintVoiceover": "Serija: zaseban isječak na svakom od {{count}} jezika — Claude prevodi, glasovi ElevenLabsa. Gotovo besplatno: cijena = sinkronizacija × jezici.",
-      "langsHintSolo": "Serija: zaseban isječak na svakom od {{count}} jezika. Sa avatarom, HeyGen renderira lice za svaki jezik — skuplje.",
+      "langsHintSolo": "Serija: zaseban isječak na svakom od {{count}} jezika. HeyGen renderira lice za svaki jezik pomoću avatara — što je skuplje.",
       "diarizeHintVoiceover": "Zvuk ide preko videa kakav jeste. \"Transkripcija govora\" je opcionalna: potrebna je za titlove i umetke po redovima.",
       "loudnormTitle": "Ujednačite jačinu glasa",
       "loudnormSub": "Tihi dijelovi se pojačavaju, glasni dijelovi se ublažavaju — profesionalni zvuk"
     },
     "lines": {
-      "count_one": "{{count}} red · ~{{sec}} sek",
-      "count_other": "{{count}} redova · ~{{sec}} sek",
+      "count_one": "{{count}} linija · ~{{sec}} sek",
+      "count_other": "{{count}} linija · ~{{sec}} sekundi",
       "editHint": "— uredite na vremenskoj liniji na dnu ekrana.",
       "title": "Linije",
-      "filterAll": "Svi · {{broj}}",
+      "filterAll": "Svi · {{count}}",
       "filterVoiceA": "Glas A · {{count}}",
       "filterVoiceB": "Glas B · {{count}}",
       "hintDialogue": "A/B značka — promjena glasa · ⇣ — spajanje sa sljedećim redom",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · feed",
       "label11": "1:1 · Instagram feed",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "datoteke po pokretanju: {{count}} — avatar se plaća jednom"
+      "filesPerRun": "datoteka po pokretanju: {{count}} — avatar se plaća jednom"
     },
     "layout": {
       "label": "Raspored",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Grubi plan dijaloga: Vještačka inteligencija odlučuje kada će ići u krupni plan, a kada će oboje prikazati u kadru (reakcija je statična fotografija, 0 dolara)."
     },
     "preview": {
-      "seriesReady": "Serija spremna: {{count}} videa — svi u Galeriji",
+      "seriesReady": "Serija spremna: {{count}} videozapisi — svi u Galeriji",
       "ready": "Gotovo — video je u Galeriji",
       "footerSolo": "Kliknite na područje pregleda da biste dodali sadržaj. Pregled se odmah ažurira.",
       "footerPlan": "Kliknite na segmente plana — pregled prikazuje svaki snimak. Linijski medij se nalazi na vremenskoj liniji ispod.",
@@ -1372,7 +1372,7 @@
       "cutoutBadge": "prozirna pozadina",
       "emptyAvatarOverlay": "Avatar — još nije odabrano",
       "tagPeerACloseup": "Govornik A · krupni plan",
-      "emptyPeerA": "Govornik A — još nije odabran",
+      "emptyPeerA": "Zvučnik A — još nije odabran",
       "tagPeerBCloseup": "Govornik B · krupni plan",
       "emptyPeerB": "Zvučnik B — još nije odabran",
       "tagPeerA": "Govornik A",
@@ -1400,7 +1400,7 @@
     },
     "progress": {
       "title": "Kreiranje vašeg videa…",
-      "note": "Možete zatvoriti prozor — izgradnja se nastavlja na serveru (~2–5 min)."
+      "note": "Možete zatvoriti prozor — izrada se nastavlja na serveru (~2–5 min)."
     },
     "common": {
       "balance": "Uravnoteženo",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — prozirni PNG",
       "hint": "PNG datoteka veličine okvira: logo bilo gdje, okvir, natpis. Nalazi se preko cijelog videa; titlovi ostaju iznad sloja.",
       "progressTitle": "Traka napretka",
-      "progressSub": "tanka traka tajmera na vrhu — gledaoci vide da je video kratak i gledaju do kraja"
+      "progressSub": "tanka traka tajmera na vrhu — gledaoci vide da je video kratak i gledaju do kraja",
+      "pngOnly": "Sloj mora biti prozirni PNG ili WebP — datoteka bez prozirnosti bi prekrila cijeli okvir."
     },
     "brand": {
       "button": "Komplet brenda",

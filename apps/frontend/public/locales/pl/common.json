@@ -1119,7 +1119,7 @@
       "saved": "Zapisano",
       "save": "Ratować",
       "ctaTooltipReady": "Awatar mówi scenariusz (HeyGen) → połącz z wideo → napisy → Galeria",
-      "ctaTooltipMissing": "Nadal potrzebne: {{brakujące}}",
+      "ctaTooltipMissing": "Nadal potrzebne: {{missing}}",
       "creating": "Tworzenie…",
       "create": "Utwórz wideo"
     },
@@ -1158,7 +1158,7 @@
       "solo": "Pojedynczy prezenter",
       "retention": "Montaż dynamiczny",
       "dialogue": "Dialog dwuosobowy",
-      "soloHint": "Awatar czyta cały scenariusz obok Twojego nagrania. Najprostsza opcja.",
+      "soloHint": "Awatar recytuje cały scenariusz obok Twojego nagrania. Najprostsza opcja.",
       "retentionHint": "Ujęcie zmienia się co kilka sekund w ramach jednej ścieżki dźwiękowej, dzięki czemu widzowie oglądają do końca. Tylko „Moje zdjęcie”.",
       "dialogueHint": "Dwie osoby rozmawiają twarzą w twarz. Potrzebne są dwa zdjęcia i nagranie rozmowy dwugłosowej.",
       "retentionPresetLabel": "Intensywność montażu",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Pozostaw otwartą kartę studia HeyGen i aktywną subskrypcję.",
       "apiNote": "Za pomocą interfejsu API HeyGen — wejdź w Ustawienia → Generowanie, rozliczanie „płać za zużycie” (~3 USD/min Avatar IV).",
       "delTitle": "Usunąć awatar?",
-      "delMessage": "'{{name}}' zostanie usunięty z Twojej kolekcji awatarów. Oryginalny plik pozostanie w Galerii."
+      "delMessage": "Plik „{{name}}” zostanie usunięty z Twojej kolekcji awatarów. Oryginalny plik pozostanie w Galerii."
     },
     "voice": {
       "title": "Głos i scenariusz",
@@ -1242,14 +1242,14 @@
       "langsLabel": "Języki wideo",
       "langRuPinned": "rosyjski · podstawowy",
       "langsHintVoiceover": "Seria: osobny klip w każdym z {{count}} języków — Claude tłumaczy, ElevenLabs udziela głosu. Prawie za darmo: koszt = lektor × języki.",
-      "langsHintSolo": "Seria: osobny klip w każdym z {{count}} języków. Z awatarem HeyGen renderuje twarz dla każdego języka — drożej.",
+      "langsHintSolo": "Seria: osobny klip w każdym z języków {{count}}. Z awatarem HeyGen renderuje twarz dla każdego języka — drożej.",
       "diarizeHintVoiceover": "Dźwięk jest nanoszony na obraz w takiej formie, w jakiej jest nagrany. Opcja „Transkrypcja mowy” jest opcjonalna: potrzebna w przypadku napisów i wstawek w wierszu.",
       "loudnormTitle": "Wyrównaj głośność głosu",
       "loudnormSub": "ciche części zostają podniesione, głośne części wygładzone — dźwięk o profesjonalnym brzmieniu"
     },
     "lines": {
-      "count_one": "{{count}} wiersz · ~{{sec}} sek",
-      "count_other": "{{count}} wierszy · ~{{sec}} sek",
+      "count_one": "linia {{count}} · ~{{sec}} sek",
+      "count_other": "{{count}} linie · ~{{sec}} sek",
       "editHint": "— edytuj na osi czasu na dole ekranu.",
       "title": "Kwestia",
       "filterAll": "Wszystko · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Głos B · {{count}}",
       "hintDialogue": "Odznaka A/B — zmień głos · ⇣ — połącz z następnym wierszem",
       "hintMerge": "⇣ — połącz z następnym wierszem",
-      "holdNote": "wideo {{sek}}s — wyświetlane w całości: +{{dodatkowe}}s, następujące linie przesuwają się",
+      "holdNote": "wideo {{sec}}s — pokazane w całości: +{{extra}}s, następujące linie przesuwają się",
       "swapVoice": "Przełącz głos A↔B",
       "hostVoice": "Głos prezentera",
       "mediaReplace": "media liniowe — kliknij, aby zastąpić",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Opcjonalnie: bez filmu awatar wypełnia ramkę.",
       "dialogueHint": "W trybie dialogowym media są dołączone do wierszy na osi czasu poniżej — „Jak pokazać” i „Pokaż przez N sekund” pojawiają się w dowolnym wierszu z mediami.",
       "seriesHeading": "Seria klipów",
-      "seriesCount": "Filmy w serii: {{count}} → taka sama liczba klipów",
+      "seriesCount": "Filmy w serii: {{count}} → ta sama liczba klipów poza",
       "seriesChange": "Zmiana",
       "seriesAdd": "Dodawaj filmy do serii — jeden klip na film",
       "seriesBilling": "Awatar jest rozliczany raz za cały serial.",
@@ -1318,7 +1318,7 @@
       "label916": "9:16 · TikTok, Rolki, Krótkie filmy",
       "label169": "16:9 · YouTube",
       "square": "1:1 · kwadrat",
-      "feed": "4:5 · karmić",
+      "feed": "4:5 · karmienie",
       "label11": "1:1 · Kanał na Instagramie",
       "label45": "4:5 · Instagram / Facebook",
       "filesPerRun": "pliki na przebieg: {{count}} — awatar jest opłacany jednorazowo"
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Wstępny plan dialogu: sztuczna inteligencja decyduje, kiedy wykonać zbliżenie, a kiedy pokazać oba elementy w ramce (reakcja to statyczne zdjęcie, 0 zł)."
     },
     "preview": {
-      "seriesReady": "Gotowa seria: {{count}} filmów — wszystkie w Galerii",
+      "seriesReady": "Seria gotowa: filmy {{count}} — wszystkie w Galerii",
       "ready": "Gotowe — film znajduje się w Galerii",
       "footerSolo": "Kliknij obszar podglądu, aby dodać treść. Podgląd zaktualizuje się natychmiast.",
       "footerPlan": "Kliknij segmenty planu – podgląd pokazuje każde ujęcie. Media Line znajdują się na osi czasu poniżej.",
@@ -1366,7 +1366,7 @@
       "emptyClipTitle": "Wideo — jeszcze nie przesłane",
       "emptyClipSub": "kliknij, aby wybrać z Galerii",
       "emptyClipSubOptional": "opcjonalnie · kliknij, aby wybrać",
-      "emptyLineMediaTitle": "Media liniowe — brak jeszcze",
+      "emptyLineMediaTitle": "Media liniowe — jeszcze brak",
       "emptyLineMediaSub": "dołącz zdjęcie lub wideo do wiersza (⊞)",
       "cutoutTooltip": "Przezroczyste tło — w klipie pozostaje tylko osoba",
       "cutoutBadge": "przezroczyste tło",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — przezroczysty PNG",
       "hint": "PNG w rozmiarze ramki: logo w dowolnym miejscu, ramka, podpis. Znajduje się nad całym filmem; napisy pozostają nad warstwą.",
       "progressTitle": "Pasek postępu",
-      "progressSub": "cienki pasek z timerem na górze — widzowie widzą, że film jest krótki i oglądają go do końca"
+      "progressSub": "cienki pasek z timerem na górze — widzowie widzą, że film jest krótki i oglądają go do końca",
+      "pngOnly": "Warstwa musi być przezroczystym plikiem PNG lub WebP — plik bez przezroczystości zakryłby całą klatkę."
     },
     "brand": {
       "button": "Zestaw marki",

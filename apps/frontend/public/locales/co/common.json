@@ -1118,7 +1118,7 @@
       "saving": "Salvendu…",
       "saved": "Salvatu",
       "save": "Salvà",
-      "ctaTooltipReady": "L'avatar dice u script (HeyGen) → fusiona cù u video → sottotitoli → Galleria",
+      "ctaTooltipReady": "L'avatar dice u script (HeyGen) → fusione cù u video → sottotitoli → Galleria",
       "ctaTooltipMissing": "Ancora necessariu: {{missing}}",
       "creating": "Creendu…",
       "create": "Creà un video"
@@ -1198,7 +1198,7 @@
       "yourPhotoHeading": "A vostra foto",
       "photoChosenName": "foto selezziunata",
       "photoEmpty": "Foto — ancu micca caricata · sceglite da a Galleria",
-      "photoHint": "Un ritrattu di fronte. HeyGen dà vita à a foto - e labbre è l'espressioni si sincronizzanu cù a voce.",
+      "photoHint": "Un ritrattu di fronte. HeyGen dà vita à a foto - labbre è spressioni si sincronizzanu cù a voce.",
       "speakerBHeading": "Secondu oratore (B)",
       "photoBName": "foto B",
       "photoBEmpty": "Foto — micca ancu caricata · sceglite",
@@ -1241,18 +1241,18 @@
       "elevenPreview": "Ghjucà un campione",
       "langsLabel": "Lingue video",
       "langRuPinned": "Russu · primariu",
-      "langsHintVoiceover": "Una seria: un clip separatu in ognuna di {{count}} lingue — Claude traduce, voci ElevenLabs. Quasi gratuitu: costu = voce fuori campu × lingue.",
-      "langsHintSolo": "Una seria: un clip separatu in ognuna di {{count}} lingue. Cù un avatar, HeyGen rende a faccia per ogni lingua - più caru.",
+      "langsHintVoiceover": "Una seria: un clip separatu in ognuna di e lingue {{count}} — Claude traduce, voci ElevenLabs. Quasi gratuitu: costu = voce fuori campu × lingue.",
+      "langsHintSolo": "Una seria: un clip separatu in ognuna di e lingue {{count}}. Cù un avatar, HeyGen rende a faccia per ogni lingua - più caru.",
       "diarizeHintVoiceover": "L'audio và sopra à u video cusì com'è. \"Trascrive u discorsu\" hè facultativu: necessariu per i sottotitoli è l'inserzioni per linea.",
       "loudnormTitle": "Ancu u vulume di a voce",
       "loudnormSub": "e parte tranquille sò elevate, e parte forti sò smussate - audio prufessiunale"
     },
     "lines": {
-      "count_one": "{{count}} linea · ~{{sec}} sec",
+      "count_one": "linea {{count}} · ~{{sec}} sec",
       "count_other": "{{count}} linee · ~{{sec}} sec",
       "editHint": "— mudificà nantu à a cronologia in fondu à u screnu.",
       "title": "Linee",
-      "filterAll": "Tutti · {{count}}",
+      "filterAll": "Tuttu · {{count}}",
       "filterVoiceA": "Voce A · {{count}}",
       "filterVoiceB": "Voce B · {{count}}",
       "hintDialogue": "Insignia A/B — cambià a voce · ⇣ — fusionà cù a linea dopu",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Pianu di dialogu approssimativu: l'IA decide quandu andà in primu pianu è quandu mustrà tramindui in quadru (una reazione hè una foto statica, $ 0)."
     },
     "preview": {
-      "seriesReady": "Serie pronta: {{count}} video — tutti in a Galleria",
+      "seriesReady": "Serie pronta: video {{count}} — tutti in a Galleria",
       "ready": "Fattu - u video hè in a Galleria",
       "footerSolo": "Cliccate nantu à una zona d'anteprima per aghjunghje cuntenutu. L'anteprima s'aghjurnà subitu.",
       "footerPlan": "Cliccate nantu à i segmenti di u pianu — l'anteprima mostra ogni ripresa. I media di linea sò nantu à a cronologia quì sottu.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Stratu superiore",
       "sub": "logò o cornice — sempre in cima",
-      "empty": "{{furmatu}} — PNG trasparente",
+      "empty": "{{format}} — PNG trasparente",
       "hint": "Un PNG di a dimensione di a cornice: un logò in ogni locu, una cornice, una didascalia. Si trova sopra à tuttu u video; i sottotitoli stanu sopra à u stratu.",
       "progressTitle": "Barra di prugressu",
-      "progressSub": "una striscia di timer fina in cima - i telespettatori vedenu chì u video hè cortu è guardanu finu à a fine"
+      "progressSub": "una striscia di timer fina in cima - i telespettatori vedenu chì u video hè cortu è guardanu finu à a fine",
+      "pngOnly": "U stratu deve esse un PNG trasparente o WebP - un schedariu senza trasparenza cuprirebbe tuttu u quadru."
     },
     "brand": {
       "button": "Kit di marca",

@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Mantén abierta la pestaña del estudio HeyGen con una suscripción activa.",
       "apiNote": "Mediante la API de HeyGen: introduzca la clave en Ajustes → Generación, facturación de pago por uso (~3 $/min Avatar IV).",
       "delTitle": "¿Eliminar avatar?",
-      "delMessage": "'{{name}}' se eliminará de tu colección de avatares. El archivo original permanece en la Galería."
+      "delMessage": "'{{name}}' se eliminará de tu colección de avatares. El archivo original permanecerá en la Galería."
     },
     "voice": {
       "title": "Voz y guion",
@@ -1241,14 +1241,14 @@
       "elevenPreview": "Reproducir una muestra",
       "langsLabel": "Idiomas de vídeo",
       "langRuPinned": "Ruso · primaria",
-      "langsHintVoiceover": "Una serie: un clip independiente en cada uno de {{count}} idiomas. Claude traduce, ElevenLabs pone las voces. Casi gratis: coste = locución × idiomas.",
-      "langsHintSolo": "Una serie: un clip independiente en cada uno de {{count}} idiomas. Con un avatar, HeyGen genera el rostro para cada idioma, lo que resulta más caro.",
+      "langsHintVoiceover": "Una serie: un clip independiente en cada uno de los {{count}} idiomas. Claude traduce, ElevenLabs pone las voces. Casi gratis: coste = locución × idiomas.",
+      "langsHintSolo": "Una serie: un clip independiente en cada uno de los idiomas de {{count}}. Con un avatar, HeyGen genera el rostro para cada idioma, lo que resulta más caro.",
       "diarizeHintVoiceover": "El audio se reproduce sobre el vídeo tal cual. La opción \"Transcribir voz\" es opcional: necesaria para subtítulos e inserciones por línea.",
       "loudnormTitle": "Igualar el volumen de la voz",
       "loudnormSub": "Las partes silenciosas se realzan, las partes fuertes se suavizan: un sonido profesional."
     },
     "lines": {
-      "count_one": "{{count}} línea · ~{{sec}} seg",
+      "count_one": "Línea {{count}} · ~{{sec}} seg",
       "count_other": "{{count}} líneas · ~{{sec}} segundos",
       "editHint": "— edita en la línea de tiempo en la parte inferior de la pantalla.",
       "title": "Pauta",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · feed",
       "label11": "1:1 · Feed de Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "archivos por ejecución: {{count}} — el avatar se paga una sola vez"
+      "filesPerRun": "Archivos por ejecución: {{count}} — el avatar se paga una sola vez"
     },
     "layout": {
       "label": "Disposición",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plan de diálogo aproximado: la IA decide cuándo hacer un primer plano y cuándo mostrar ambos en el encuadre (una reacción es una foto estática, $0)."
     },
     "preview": {
-      "seriesReady": "Serie lista: {{count}} vídeos — todos en la galería",
+      "seriesReady": "Serie lista: vídeos {{count}} — todos en la galería",
       "ready": "Listo: el vídeo está en la galería.",
       "footerSolo": "Haz clic en un área de vista previa para añadir contenido. La vista previa se actualiza al instante.",
       "footerPlan": "Haz clic en los segmentos del plano: la vista previa muestra cada toma. Los medios de línea se encuentran en la línea de tiempo a continuación.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Capa superior",
       "sub": "logotipo o marco: siempre en la parte superior",
-      "empty": "{{formato}} — PNG transparente",
+      "empty": "{{format}} — PNG transparente",
       "hint": "Un archivo PNG del tamaño adecuado para el fotograma: un logotipo en cualquier parte, un marco, un pie de foto. Se superpone a todo el vídeo; los subtítulos permanecen encima de la capa.",
       "progressTitle": "barra de progreso",
-      "progressSub": "una delgada franja de temporizador en la parte superior: los espectadores ven que el video es corto y lo ven hasta el final."
+      "progressSub": "una delgada franja de temporizador en la parte superior: los espectadores ven que el video es corto y lo ven hasta el final.",
+      "pngOnly": "La capa debe ser un archivo PNG o WebP transparente; un archivo sin transparencia cubriría todo el fotograma."
     },
     "brand": {
       "button": "Kit de marca",

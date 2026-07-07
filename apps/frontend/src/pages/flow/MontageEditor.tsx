@@ -581,8 +581,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const ugcBuildStart = async () => {
     if (ugcBusy) return;
-    const useDialogue = ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
-    if (useDialogue) {
+    // «Без аватара — озвучка»: аватар/фото не нужны — только базовое видео и голос (текст/запись).
+    const useVoiceover = !!ugc.noAvatar;
+    const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
+    if (useVoiceover) {
+      if (!ugc.clip) { setUgcNote('Выберите базовое видео (шаг «Видеоряд») — в этом режиме оно основа кадра.'); return; }
+    } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
       if (!ugc.photoUrl || !ugc.photoBUrl) { setUgcNote('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
       if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { setUgcNote('Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).'); return; }
@@ -596,7 +600,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
       if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
     }
-    const useRetention = !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
+    const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
     // Диалог → spec.dialogue; удержание → spec.retention (+ B-roll для батча); иначе обычная сборка.
     const spec = useDialogue
       ? { ...ugc, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, cutout: ugc.dialogueCutout, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }

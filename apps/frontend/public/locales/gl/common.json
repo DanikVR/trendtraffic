@@ -1119,7 +1119,7 @@
       "saved": "Gardado",
       "save": "Gardar",
       "ctaTooltipReady": "O avatar pronuncia o guión (HeyGen) → fusionar co vídeo → subtítulos → Galería",
-      "ctaTooltipMissing": "Aínda necesario: {{missing}}",
+      "ctaTooltipMissing": "Aínda se precisa: {{missing}}",
       "creating": "Creando…",
       "create": "Crear vídeo"
     },
@@ -1176,7 +1176,7 @@
       "engDynHint": "Máis escenas e cortes \"tanto en cadro\": máis animados e caros.",
       "engAiTrailer": "A IA organiza as tomas por si mesma.",
       "cutoutTitle": "Fondo de avatar transparente",
-      "cutoutSub": "só a persoa permanece no marco — para o deseño \"fondo con avatar ao lado\"",
+      "cutoutSub": "só a persoa permanece no cadro — para o deseño \"fondo con avatar ao lado\"",
       "voiceover": "Sen avatar — voz en off",
       "voiceoverHint": "A túa gravación + unha voz: un guión escrito por IA (ElevenLabs) ou a túa propia gravación tal cal. Sen HeyGen, case de balde. As insercións multimedia por liña son opcionais."
     },
@@ -1241,14 +1241,14 @@
       "elevenPreview": "Reproducir unha mostra",
       "langsLabel": "Idiomas de vídeo",
       "langRuPinned": "Ruso · primaria",
-      "langsHintVoiceover": "Unha serie: un clip separado en cada unha das {{count}} linguas — Claude traduce, voces de ElevenLabs. Case de balde: custo = locución × linguas.",
-      "langsHintSolo": "Unha serie: un clip separado en cada unha das {{count}} linguas. Cun avatar, HeyGen renderiza a cara para cada lingua (máis caro).",
+      "langsHintVoiceover": "Unha serie: un clip separado en cada un dos idiomas {{count}} — Claude traduce, voces de ElevenLabs. Case de balde: custo = voz en off × idiomas.",
+      "langsHintSolo": "Unha serie: un clip separado en cada unha das linguas {{count}}. Cun avatar, HeyGen renderiza a cara para cada lingua (máis caro).",
       "diarizeHintVoiceover": "O audio vai sobre o vídeo tal cal. \"Transcribir a voz\" é opcional: necesario para os subtítulos e as insercións por liña.",
       "loudnormTitle": "Volume de voz uniforme",
       "loudnormSub": "as partes silenciosas realzanse, as partes fortes suavízanse: son profesional"
     },
     "lines": {
-      "count_one": "{{count}} liña · ~{{sec}} seg",
+      "count_one": "liña {{count}} · ~{{sec}} seg",
       "count_other": "{{count}} liñas · ~{{sec}} seg",
       "editHint": "— editar na liña de tempo na parte inferior da pantalla.",
       "title": "Liñas",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Opcional: sen vídeo, o avatar enche o cadro.",
       "dialogueHint": "No modo de diálogo, os elementos multimedia están asociados a liñas na liña de tempo seguinte: \"Como mostrar\" e \"Mostrar durante N segundos\" aparecen en calquera liña con elementos multimedia.",
       "seriesHeading": "Serie de clips",
-      "seriesCount": "Vídeos da serie: {{count}} → o mesmo número de clips publicados",
+      "seriesCount": "Vídeos da serie: {{count}} → o mesmo número de clips fóra",
       "seriesChange": "Cambio",
       "seriesAdd": "Engadir vídeos á serie: un clip por vídeo",
       "seriesBilling": "O avatar cóbrase unha vez por toda a serie.",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plan aproximado de diálogo: a IA decide cando achegarse ao primeiro plano e cando mostrar ambos no encuadre (unha reacción é unha foto estática, 0 $)."
     },
     "preview": {
-      "seriesReady": "Serie lista: {{count}} vídeos, todos na Galería",
+      "seriesReady": "Serie lista: vídeos de {{count}}, todos na Galería",
       "ready": "Feito: o vídeo está na Galería",
       "footerSolo": "Fai clic nunha área de vista previa para engadir contido. A vista previa actualízase ao instante.",
       "footerPlan": "Fai clic nos segmentos do plano: a vista previa mostra cada toma. Os elementos multimedia lineais están na liña de tempo que aparece a continuación.",
@@ -1421,14 +1421,15 @@
     "layer": {
       "title": "Capa superior",
       "sub": "logotipo ou marco — sempre enriba",
-      "empty": "{{formato}} — PNG transparente",
+      "empty": "{{format}} — PNG transparente",
       "hint": "Un ficheiro PNG co tamaño axeitado para o fotograma: un logotipo en calquera lugar, un fotograma, unha lenda. Colocase sobre todo o vídeo; os subtítulos permanecen enriba da capa.",
       "progressTitle": "Barra de progreso",
-      "progressSub": "unha fina tira de temporizador na parte superior: os espectadores ven que o vídeo é curto e o ven ata o final"
+      "progressSub": "unha fina tira de temporizador na parte superior: os espectadores ven que o vídeo é curto e o ven ata o final",
+      "pngOnly": "A capa debe ser un ficheiro PNG ou WebP transparente; un ficheiro sen transparencia cubriría todo o fotograma."
     },
     "brand": {
       "button": "Kit de marca",
-      "tooltip": "Capas, bumpers, música, subtítulos e voz: cun só clic",
+      "tooltip": "Capa, bumpers, música, subtítulos e voz: cun só clic",
       "title": "Kit de marca",
       "sub": "Un conxunto de estilos gardado: capa superior, bumpers, música, estilo de subtítulos e voz. Un só clic: todos os vídeos cun estilo coherente.",
       "loading": "cargando kits…",

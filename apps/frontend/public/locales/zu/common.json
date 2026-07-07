@@ -1241,15 +1241,15 @@
       "elevenPreview": "Dlala isampula",
       "langsLabel": "Izilimi zevidiyo",
       "langRuPinned": "IsiRashiya · okuyinhloko",
-      "langsHintVoiceover": "Uchungechunge: isiqeshana esihlukile kuzo zonke izilimi ezingu-{{count}} — uClaude uhumusha, amazwi e-ElevenLabs. Cishe mahhala: izindleko = izwi elingaphezulu × izilimi.",
-      "langsHintSolo": "Uchungechunge: isiqeshana esihlukile kuzo zonke izilimi ezingu-{{count}}. Ngesithombe, i-HeyGen iveza ubuso bazo zonke izilimi — ibiza kakhulu.",
+      "langsHintVoiceover": "Uchungechunge: isiqeshana esihlukile kuzo zonke izilimi ze-{{count}} — uClaude uhumusha, amazwi e-ElevenLabs. Cishe mahhala: izindleko = izwi elingaphezulu × izilimi.",
+      "langsHintSolo": "Uchungechunge: isiqeshana esihlukile kuzo zonke izilimi ze-{{count}}. Ngesithombe, i-HeyGen iveza ubuso bazo zonke izilimi — ibiza kakhulu.",
       "diarizeHintVoiceover": "Umsindo udlula ividiyo njengoba injalo. “Ukubhala inkulumo” kuyinto ongayikhetha: kuyadingeka emibhalweni engezansi kanye nokufakwa komugqa ngamunye.",
       "loudnormTitle": "Ivolumu yezwi elilinganayo",
       "loudnormSub": "izingxenye ezithule ziyaphakanyiswa, izingxenye ezinomsindo ziyashelela — umsindo ozwakala kahle"
     },
     "lines": {
-      "count_one": "umugqa ongu-{{count}} · ~{{sec}} isekhondi",
-      "count_other": "Imigqa engu-{{count}} · ~{{sec}} isekhondi",
+      "count_one": "{{count}} umugqa · ~{{sec}} isekhondi",
+      "count_other": "{{count}} imigqa · ~{{sec}} isekhondi",
       "editHint": "— hlela kumugqa wesikhathi ongezansi kwesikrini.",
       "title": "Imigqa",
       "filterAll": "Konke · {{count}}",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Uhlelo lwengxoxo olunzima: I-AI inquma ukuthi izosondela nini nokuthi izobonisa nini kokubili kufreyimu (ukusabela kuyisithombe esingaguquki, $0)."
     },
     "preview": {
-      "seriesReady": "Uchungechunge selulungile: amavidiyo angu-{{count}} — wonke kugalari",
+      "seriesReady": "Uchungechunge selulungile: amavidiyo angu-{{count}} — wonke aseGalari",
       "ready": "Kwenziwe — ividiyo ikuGalari",
       "footerSolo": "Chofoza indawo yokubuka kuqala ukuze ungeze okuqukethwe. Ukubuka kuqala kubuyekezwa ngokushesha.",
       "footerPlan": "Chofoza izingxenye zohlelo — ukubuka kuqala kukhombisa isithombe ngasinye. Imidiya yomugqa isesikhathini sesikhathi esingezansi.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — i-PNG esobala",
       "hint": "I-PNG enosayizi wohlaka: ilogo noma kuphi, uhlaka, amagama angezansi. Ihlala phezu kwevidiyo yonke; imibhalo engezansi ihlala ngaphezu kwesendlalelo.",
       "progressTitle": "Ibha yokuqhubeka",
-      "progressSub": "umugqa omncane wesikhathi phezulu — ababukeli babona ividiyo imfushane futhi bayibukele kuze kube sekupheleni"
+      "progressSub": "umugqa omncane wesikhathi phezulu — ababukeli babona ividiyo imfushane futhi bayibukele kuze kube sekupheleni",
+      "pngOnly": "Isendlalelo kumele sibe yi-PNG noma i-WebP esobala — ifayela elingenakho ukucaca lizomboza lonke uhlaka."
     },
     "brand": {
       "button": "Ikhithi yomkhiqizo",

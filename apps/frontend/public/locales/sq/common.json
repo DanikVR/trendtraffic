@@ -1119,7 +1119,7 @@
       "saved": "Ruajtur",
       "save": "Ruaj",
       "ctaTooltipReady": "Avatari flet skenarin (HeyGen) → bashko me videon → titra → Galeria",
-      "ctaTooltipMissing": "Ende e nevojshme: {{mungon}}",
+      "ctaTooltipMissing": "Ende e nevojshme: {{missing}}",
       "creating": "Duke krijuar…",
       "create": "Krijo video"
     },
@@ -1130,11 +1130,11 @@
       "perClip2": "≈ 2 dollarë për klip",
       "perMin1": "≈ 1 dollar për minutë",
       "perMin3_4": "≈ 3–4 dollarë për minutë",
-      "seriesSuffix": " · seri prej {{count}} — avatar një herë",
+      "seriesSuffix": " · seri e {{count}} — avatar një herë",
       "filesSuffix": " · 2 skedarë — avatar një herë",
       "voiceoverAi": "≈ 0,1–0,3 dollarë për klip",
       "voiceoverFree": "$0 — audio dhe video juaja",
-      "langsSuffix": " · gjuhë: {{count}}"
+      "langsSuffix": " · gjuhët: {{count}}"
     },
     "checklist": {
       "title": "Gati për të ndërtuar",
@@ -1151,7 +1151,7 @@
       "missScript": "skenar ose regjistrim",
       "videoChosen": "Pamjet e përzgjedhura",
       "missVideo": "pamje filmike",
-      "step": "hap {{n}}"
+      "step": "hapi {{n}}"
     },
     "mode": {
       "title": "Modaliteti i videos",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Luaj një mostër",
       "langsLabel": "Gjuhët e videove",
       "langRuPinned": "Rusisht · fillore",
-      "langsHintVoiceover": "Një seri: një klip i veçantë në secilën prej {{count}} gjuhëve — Claude përkthen, zërat e ElevenLabs. Pothuajse falas: kosto = zëri × gjuhë.",
-      "langsHintSolo": "Një seri: një klip i veçantë në secilën prej {{count}} gjuhëve. Me një avatar, HeyGen paraqet pamjen për çdo gjuhë — më e shtrenjtë.",
+      "langsHintVoiceover": "Një seri: një klip i veçantë në secilën prej gjuhëve të {{count}} — Claude përkthen, zërat e ElevenLabs. Pothuajse falas: kosto = zëri × gjuhët.",
+      "langsHintSolo": "Një seri: një klip i veçantë në secilën prej gjuhëve {{count}}. Me një avatar, HeyGen paraqet pamjen për çdo gjuhë — më e kushtueshme.",
       "diarizeHintVoiceover": "Audioja kalon mbi video ashtu siç është. \"Transkribimi i të folurit\" është opsional: i nevojshëm për titrat dhe futjet për çdo rresht.",
       "loudnormTitle": "Ekuilibroni volumin e zërit",
       "loudnormSub": "pjesët e qeta ngrihen, pjesët e zhurmshme zbuten — audio me tingull profesional"
     },
     "lines": {
-      "count_one": "{{count}} rresht · ~{{sek}} sek",
-      "count_other": "{{count}} rreshta · ~{{sek}} sek",
+      "count_one": "{{count}} linjë · ~{{sec}} sek",
+      "count_other": "{{count}} linja · ~{{sec}} sek",
       "editHint": "— modifikoni në vijën kohore në fund të ekranit.",
       "title": "Vijat",
       "filterAll": "Të gjitha · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Zëri B · {{count}}",
       "hintDialogue": "Distinktivi A/B — ndërro zërin · ⇣ — bashko me rreshtin tjetër",
       "hintMerge": "⇣ — bashko me rreshtin tjetër",
-      "holdNote": "video {{sek}} — shfaqet e plotë: +{{ekstra}}, rreshtat e mëposhtëm zhvendosen",
+      "holdNote": "video {{sec}}s — tregohet e plotë: +{{extra}}s, rreshtat e mëposhtëm zhvendosen",
       "swapVoice": "Ndërro zërin A↔B",
       "hostVoice": "Zëri i prezantuesit",
       "mediaReplace": "media e linjës — kliko për të zëvendësuar",
@@ -1311,7 +1311,7 @@
     },
     "format": {
       "label": "Formati",
-      "portrait": "9:16 · vertikalisht",
+      "portrait": "9:16 · vertikal",
       "landscape": "16:9 · horizontale",
       "both": "Të dyja",
       "twoFilesNote": "2 skedarë për çdo ekzekutim — avatari faturohet një herë",
@@ -1356,11 +1356,11 @@
       "noteDialogue": "Plan i përafërt i dialogut: IA vendos se kur të shkojë nga afër dhe kur t'i tregojë të dyja në kornizë (një reagim është një foto statike, $0)."
     },
     "preview": {
-      "seriesReady": "Seria gati: {{count}} video — të gjitha në Galeri",
+      "seriesReady": "Seria gati: videot {{count}} — të gjitha në Galeri",
       "ready": "U krye — videoja është në Galeri",
       "footerSolo": "Klikoni një zonë paraprake për të shtuar përmbajtje. Parapamja përditësohet menjëherë.",
       "footerPlan": "Klikoni segmentet e planit — pamja paraprake tregon çdo pamje. Mediat e linjës janë në vijën kohore më poshtë.",
-      "emptyNotSelected": "{{tag}} — ende nuk është zgjedhur",
+      "emptyNotSelected": "{{tag}} — nuk është zgjedhur ende",
       "emptyClickToChoose": "kliko për të zgjedhur",
       "tagFitContainSuffix": " · e tërë",
       "emptyClipTitle": "Video — nuk është ngarkuar ende",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG transparente",
       "hint": "Një PNG me madhësinë e kornizës: një logo kudo, një kornizë, një mbishkrim. Vendoset mbi të gjithë videon; titrat qëndrojnë mbi shtresën.",
       "progressTitle": "Shiriti i progresit",
-      "progressSub": "një shirit i hollë kohëmatësi në krye — shikuesit e shohin videon që është e shkurtër dhe e shikojnë deri në fund"
+      "progressSub": "një shirit i hollë kohëmatësi në krye — shikuesit e shohin videon që është e shkurtër dhe e shikojnë deri në fund",
+      "pngOnly": "Shtresa duhet të jetë një PNG ose WebP transparente — një skedar pa transparencë do të mbulonte të gjithë kornizën."
     },
     "brand": {
       "button": "Kit marke",

@@ -1119,7 +1119,7 @@
       "saved": "Naluwas",
       "save": "I-save",
       "ctaTooltipReady": "Ang avatar nagsulti sa script (HeyGen) → iusa sa video → mga subtitle → Gallery",
-      "ctaTooltipMissing": "Kinahanglan pa: {{kulang}}",
+      "ctaTooltipMissing": "Kinahanglan pa: {{missing}}",
       "creating": "Naghimo…",
       "create": "Paghimo og bidyo"
     },
@@ -1151,15 +1151,15 @@
       "missScript": "iskrip o rekording",
       "videoChosen": "Napili nga footage",
       "missVideo": "kuha",
-      "step": "lakang"
+      "step": "lakang {{n}}"
     },
     "mode": {
       "title": "Mode sa bidyo",
       "solo": "Usa ka tigpresentar",
       "retention": "Dinamikong montage",
       "dialogue": "Diyalogo sa duha ka tawo",
-      "soloHint": "Ang avatar mao ang mosulti sa tibuok script tupad sa imong footage. Ang pinakasimple nga kapilian.",
-      "retentionHint": "Ang kuha mausab matag pipila ka segundo gamit ang usa ka voice track, mao nga ang mga tumatan-aw motan-aw hangtod sa katapusan. 'Akong litrato' lamang.",
+      "soloHint": "Ang avatar mosulti sa tibuok script tupad sa imong footage. Ang pinakasimple nga kapilian.",
+      "retentionHint": "Ang kuha mausab matag pipila ka segundo gamit ang usa ka voice track, mao nga ang mga tumatan-aw motan-aw hangtod sa katapusan. 'Akong litrato' lang.",
       "dialogueHint": "Duha ka tawo ang nagsulti gamit ang ilang kaugalingong mga nawong. Nagkinahanglan og duha ka litrato ug usa ka rekording sa panagsultihanay nga may duha ka tingog.",
       "retentionPresetLabel": "Kakusog sa montage",
       "presetEco": "Ekonomiya",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Pagpatugtog og sampol",
       "langsLabel": "Mga pinulongan sa video",
       "langRuPinned": "Ruso · panguna",
-      "langsHintVoiceover": "Usa ka serye: usa ka lahi nga clip sa matag usa sa {{count}} nga mga pinulongan — si Claude ang naghubad, ang mga tingog sa ElevenLabs. Halos libre: gasto = voiceover × mga pinulongan.",
+      "langsHintVoiceover": "Usa ka serye: usa ka gilain nga clip sa matag usa sa {{count}} nga mga pinulongan — si Claude ang naghubad, ang mga tingog sa ElevenLabs. Halos libre: gasto = voiceover × mga pinulongan.",
       "langsHintSolo": "Usa ka serye: usa ka lahi nga clip sa matag usa sa {{count}} nga mga pinulongan. Uban sa usa ka avatar, ang HeyGen nag-render sa nawong alang sa matag pinulongan — mas mahal.",
       "diarizeHintVoiceover": "Ang audio motan-aw sa video kung unsa kini. Opsyonal ang \"I-transcribe ang speech\": gikinahanglan para sa mga subtitle ug per-line inserts.",
       "loudnormTitle": "Iparehas ang volume sa tingog",
       "loudnormSub": "ang mga hilom nga bahin gipataas, ang mga saba nga bahin gipahapsay — propesyonal nga tunog nga audio"
     },
     "lines": {
-      "count_one": "{{count}} linya · ~{{sec}} sec",
-      "count_other": "{{count}} linya · ~{{sec}} sec",
+      "count_one": "{{count}} linya · ~{{sec}} segundo",
+      "count_other": "mga linya sa {{count}} · ~{{sec}} segundo",
       "editHint": "— i-edit sa timeline sa ubos sa screen.",
       "title": "Mga Linya",
       "filterAll": "Tanan · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Tingog B · {{count}}",
       "hintDialogue": "A/B badge — ilisi ang tingog · ⇣ — iusa sa sunod nga linya",
       "hintMerge": "⇣ — iusa sa sunod nga linya",
-      "holdNote": "mga video {{sec}} — gipakita sa tibuok: +{{extra}}, ang mosunod nga mga linya mobalhin",
+      "holdNote": "video {{sec}}s — gipakita sa tibuok: +{{extra}}s, ang mosunod nga mga linya mobalhin",
       "swapVoice": "Ilisi ang tingog A↔B",
       "hostVoice": "Tingog sa presenter",
       "mediaReplace": "line media — i-klik aron ilisan",
@@ -1352,11 +1352,11 @@
       "bSpeaking": "B nga nagsulti",
       "reactionFree": "reaksyon $0",
       "cutout": "ginunting",
-      "noteRetention": "Kasagarang plano: purpura = mahal nga Avatar IV, '$0' = mga bahin nga walay nawong. Ang AI mohimo sa eksaktong plano gikan sa imong teksto.",
+      "noteRetention": "Plano nga gitakda nang daan: purpura = mahal nga Avatar IV, '$0' = mga bahin nga walay nawong. Ang AI mohimo sa eksaktong plano gikan sa imong teksto.",
       "noteDialogue": "Plano sa dayalogo: Ang AI ang modesisyon kung kanus-a moduol ug kanus-a ipakita ang duha sa frame (ang reaksyon usa ka static nga litrato, $0)."
     },
     "preview": {
-      "seriesReady": "Andam na ang serye: {{count}} ka mga video — tanan naa sa Gallery",
+      "seriesReady": "Andam na ang serye: {{count}} nga mga video — tanan naa sa Gallery",
       "ready": "Nahuman — ang video naa sa Gallery",
       "footerSolo": "I-klik ang usa ka lugar sa preview aron makadugang og sulod. Ang preview ma-update dayon.",
       "footerPlan": "I-klik ang mga bahin sa plano — ang preview nagpakita sa matag kuha. Ang line media naa sa timeline sa ubos.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — transparent nga PNG",
       "hint": "Usa ka PNG nga gidak-on para sa frame: usa ka logo bisan asa, usa ka frame, usa ka caption. Mopatong sa tibuok video; ang mga subtitle magpabilin sa ibabaw sa layer.",
       "progressTitle": "Bar sa pag-uswag",
-      "progressSub": "usa ka nipis nga timer strip sa ibabaw — makita sa mga tumatan-aw nga mubo ang video ug tan-awon hangtod sa katapusan"
+      "progressSub": "usa ka nipis nga timer strip sa ibabaw — makita sa mga tumatan-aw nga mubo ang video ug tan-awon hangtod sa katapusan",
+      "pngOnly": "Ang layer kinahanglan nga usa ka transparent nga PNG o WebP — ang usa ka file nga walay transparency motabon sa tibuok frame."
     },
     "brand": {
       "button": "Kit sa tatak",

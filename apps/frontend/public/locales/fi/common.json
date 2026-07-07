@@ -1159,7 +1159,7 @@
       "retention": "Dynaaminen montaasi",
       "dialogue": "Kahden hengen vuoropuhelu",
       "soloHint": "Avatar puhuu koko käsikirjoituksen videomateriaalisi vieressä. Yksinkertaisin vaihtoehto.",
-      "retentionHint": "Kuva vaihtuu muutaman sekunnin välein yhden ääniraidan aikana, joten katsojat katsovat loppuun asti. Vain \"oma kuvani\".",
+      "retentionHint": "Kuva vaihtuu muutaman sekunnin välein yhden ääniraidan aikana, joten katsojat katsovat loppuun asti. Vain \"minun kuvani\".",
       "dialogueHint": "Kaksi ihmistä puhuu omilla kasvoillaan. Tarvitaan kaksi valokuvaa ja kaksiääninen keskustelutallenteen.",
       "retentionPresetLabel": "Montaasin intensiteetti",
       "presetEco": "Talous",
@@ -1183,7 +1183,7 @@
     "avatar": {
       "title": "Avatar",
       "sub": "kuka on ruudulla",
-      "sourceCollection": "Valmiita avatareja",
+      "sourceCollection": "Valmiit avatarit",
       "sourcePhoto": "Oma valokuva",
       "collectionLocked": "Tässä tilassa — vain 'Oma valokuva' (HeyGen)",
       "myCollection": "Kokoelmani",
@@ -1198,7 +1198,7 @@
       "yourPhotoHeading": "Valokuvasi",
       "photoChosenName": "kuva valittu",
       "photoEmpty": "Kuva — ei vielä ladattu · valitse galleriasta",
-      "photoHint": "Eteenpäin katsottuna otettu muotokuva. HeyGen herättää kuvan eloon – huulet ja ilmeet synkronoituvat äänen kanssa.",
+      "photoHint": "Muotokuva edestäpäin. HeyGen herättää kuvan eloon – huulet ja ilmeet synkronoituvat äänen kanssa.",
       "speakerBHeading": "Toinen puhuja (B)",
       "photoBName": "kuva B",
       "photoBEmpty": "Kuva — ei vielä ladattu · valitse",
@@ -1248,7 +1248,7 @@
       "loudnormSub": "Hiljaiset kohdat korostuvat, kovat kohdat tasoittuvat – ammattimaisen kuuloinen ääni"
     },
     "lines": {
-      "count_one": "{{count}} rivi · ~{{sec}} sekuntia",
+      "count_one": "{{count}} rivi · ~{{sec}} sek",
       "count_other": "{{count}} riviä · ~{{sec}} sekuntia",
       "editHint": "— muokkaa aikajanalla näytön alareunassa.",
       "title": "Viivat",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Valinnainen: ilman videota avatar täyttää ruudun.",
       "dialogueHint": "Dialogitilassa media on liitetty alla olevan aikajanan riveihin — 'Näyttöohjeet' ja 'Näytä N sekuntia' näkyvät kaikilla mediaa sisältävillä riveillä.",
       "seriesHeading": "Leikesarja",
-      "seriesCount": "Sarjan videot: {{count}} → sama määrä pätkiä julkaistu",
+      "seriesCount": "Sarjan videot: {{count}} → sama määrä pätkiä",
       "seriesChange": "Muuttaa",
       "seriesAdd": "Lisää videoita sarjaan — yksi klippi videota kohden",
       "seriesBilling": "Avatar laskutetaan kerran koko sarjan ajan.",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Karkea vuoropuhelusuunnitelma: Tekoäly päättää, milloin ottaa lähikuvan ja milloin näyttää molemmat kuvassa (reaktio on staattinen valokuva, 0 dollaria)."
     },
     "preview": {
-      "seriesReady": "Sarja valmis: {{count}} videota — kaikki galleriassa",
+      "seriesReady": "Sarja valmis: {{count}} videot — kaikki Galleriassa",
       "ready": "Valmis — video on Galleriassa",
       "footerSolo": "Lisää sisältöä napsauttamalla esikatselualuetta. Esikatselu päivittyy välittömästi.",
       "footerPlan": "Napsauta suunnitelmasegmenttejä – esikatselu näyttää jokaisen otoksen. Viivamateriaali on alla olevalla aikajanalla.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — läpinäkyvä PNG",
       "hint": "Kehystä vastaava PNG-kuva: logo mihin tahansa, kehys, kuvateksti. Se peittää koko videon; tekstitykset pysyvät kerroksen yläpuolella.",
       "progressTitle": "Edistymispalkki",
-      "progressSub": "ohut ajastinnauha yläreunassa – katsojat näkevät videon lyhyenä ja katsovat sen loppuun asti"
+      "progressSub": "ohut ajastinnauha yläreunassa – katsojat näkevät videon lyhyenä ja katsovat sen loppuun asti",
+      "pngOnly": "Tason on oltava läpinäkyvä PNG- tai WebP-tiedosto – läpinäkyvyyttä vailla oleva tiedosto peittäisi koko kehyksen."
     },
     "brand": {
       "button": "Merkkisarja",

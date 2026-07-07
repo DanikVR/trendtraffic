@@ -1119,7 +1119,7 @@
       "saved": "Ti fipamọ",
       "save": "Fipamọ",
       "ctaTooltipReady": "Àfàtá náà sọ̀rọ̀ nípa ìwé àfọwọ́kọ náà (HeyGen) → dapọ̀ mọ́ fídíò → àwọn àkọlé → Àwòrán",
-      "ctaTooltipMissing": "Ó ṣì nílò rẹ̀: {{àìsí}}",
+      "ctaTooltipMissing": "Ó ṣì nílò rẹ̀: {{missing}}",
       "creating": "Ṣíṣẹ̀dá…",
       "create": "Ṣẹ̀dá fídíò"
     },
@@ -1130,11 +1130,11 @@
       "perClip2": "≈ $2 fún fíìmù kọ̀ọ̀kan",
       "perMin1": "≈ $1 fún ìṣẹ́jú kan",
       "perMin3_4": "≈ $3–4 fún ìṣẹ́jú kan",
-      "seriesSuffix": " · ìtẹ̀léra {{count}} — àwòrán lẹ́ẹ̀kan",
+      "seriesSuffix": " · ìtẹ̀léra {{count}} — àwòrán àfàmì lẹ́ẹ̀kan",
       "filesSuffix": " · Àwọn fáìlì 2 — àwòrán lẹ́ẹ̀kan",
       "voiceoverAi": "≈ $0.1–0.3 fún fíìmù kọ̀ọ̀kan",
       "voiceoverFree": "$0 — ohùn àti fídíò tìrẹ",
-      "langsSuffix": " · àwọn èdè: {{ìkà}}"
+      "langsSuffix": " · àwọn èdè: {{count}}"
     },
     "checklist": {
       "title": "Ṣetán láti kọ́",
@@ -1151,7 +1151,7 @@
       "missScript": "ìwé àfọwọ́kọ tàbí gbígbàsílẹ̀",
       "videoChosen": "Ti yan awọn aworan",
       "missVideo": "fíìmù",
-      "step": "igbesẹ {{n}}"
+      "step": "Igbesẹ {{n}}"
     },
     "mode": {
       "title": "Ipò fídíò",
@@ -1207,7 +1207,7 @@
       "providerExt": "Nipasẹ alabapin HeyGen",
       "extIntro": "Àfikún náà ń mú kí àwọn orí wà nínú taabu app.heygen.com rẹ lórí ìforúkọsílẹ̀ rẹ (ó dọ́là ní ìgbà mẹ́ta ju API lọ).",
       "extLabel": "Àfikún:",
-      "extChecking": "ṣàyẹ̀wò…",
+      "extChecking": "ṣíṣàyẹ̀wò…",
       "extAbsent": "kò fi sori ẹrọ",
       "extConnected": "ti sopọ mọ",
       "extSignIn": "ti fi sori ẹrọ — wọlé sí àkọọ́lẹ̀ HeyGen rẹ",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Jẹ́ kí taabu ile-iṣẹ HeyGen ṣí sílẹ̀ pẹ̀lú ìforúkọsílẹ̀ tí ń ṣiṣẹ́.",
       "apiNote": "Nipasẹ HeyGen API — bọtini ni Eto → Ìṣẹ̀dá, isanwo-bi-o-lọ (~$3/min Avatar IV).",
       "delTitle": "Yọ àfàmì kúrò?",
-      "delMessage": "A ó yọ '{{name}}' kúrò nínú àkójọ àwòrán rẹ. Fáìlì àtilẹ̀wá náà dúró sí inú Àwòrán."
+      "delMessage": "A o yọ '{{name}}' kuro ninu akojọpọ awọn avatar rẹ. Faili atilẹba naa wa ninu Gallery naa."
     },
     "voice": {
       "title": "Ohùn àti ìwé àfọwọ́kọ",
@@ -1248,13 +1248,13 @@
       "loudnormSub": "Àwọn apá ìdákẹ́jẹ́ẹ́ ni a gbé sókè, àwọn apá ariwo sì ń rọ̀ — ohùn tó dára"
     },
     "lines": {
-      "count_one": "{{ka}} laini · ~{{sek}} iṣẹju-aaya",
-      "count_other": "{{ka}} awọn ila · ~{{sek}} iṣẹju-aaya",
+      "count_one": "{{count}} laini · ~{{sec}} iṣẹju-aaya",
+      "count_other": "Àwọn ìlà {{count}} · ~{{sec}} ìṣẹ́jú-àáyá",
       "editHint": "— ṣe àtúnṣe lórí ìlà àkókò ní ìsàlẹ̀ iboju náà.",
       "title": "Àwọn ìlà",
-      "filterAll": "Gbogbo · {{ka}}",
-      "filterVoiceA": "Ohùn A · {{ìkà}}",
-      "filterVoiceB": "Ohùn B · {{ìkà}}",
+      "filterAll": "Gbogbo · {{count}}",
+      "filterVoiceA": "Ohùn A · {{count}}",
+      "filterVoiceB": "Ohùn B · {{count}}",
       "hintDialogue": "Àmì A/B — yí ohùn padà · ⇣ — dapọ̀ mọ́ ìlà tó tẹ̀lé",
       "hintMerge": "⇣ — dapọ mọ ila ti o tẹle",
       "holdNote": "fídíò {{sec}}s — tí a fihàn ní kíkún: +{{extra}}s, àwọn ìlà wọ̀nyí yí padà",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Àṣàyàn: láìsí fídíò, àwòrán náà kún férémù náà.",
       "dialogueHint": "Nínú ipò ìjíròrò, a so àwọn ohun èlò ìbánisọ̀rọ̀ pọ̀ mọ́ àwọn ìlà tí ó wà ní ìsàlẹ̀ yìí — ‘Bí a ṣe lè fi hàn’ àti ‘Fihàn fún N sec’ yóò farahàn lórí ìlà èyíkéyìí tí ó ní ohun èlò ìbánisọ̀rọ̀.",
       "seriesHeading": "Àwọn ìtẹ̀jáde gíláàsì",
-      "seriesCount": "Àwọn fídíò nínú ìtẹ̀léra náà: {{count}} → iye àwọn fídíò kan náà tí ó jáde",
+      "seriesCount": "Àwọn fídíò nínú ìtẹ̀jáde náà: {{count}} → iye àwọn fídíò náà kan náà tí a ti yọ jáde",
       "seriesChange": "Iyipada",
       "seriesAdd": "Fi awọn fidio kun jara naa — agekuru kan fun fidio kan",
       "seriesBilling": "A gba owo fun avatar naa lẹẹkan fun gbogbo jara naa.",
@@ -1321,7 +1321,7 @@
       "feed": "4:5 · oúnjẹ",
       "label11": "1:1 · Ìkànnì Instagram",
       "label45": "4:5 · Instagram / Facebook",
-      "filesPerRun": "Àwọn fáìlì fún ìṣiṣẹ́ kọ̀ọ̀kan: {{count}} — a san àfàtà náà fún ẹ̀ẹ̀kan ṣoṣo"
+      "filesPerRun": "Àwọn fáìlì fún ìṣiṣẹ́ kọ̀ọ̀kan: {{count}} — a ti san owó àfàtà náà lẹ́ẹ̀kan"
     },
     "layout": {
       "label": "Ìṣètò",
@@ -1360,7 +1360,7 @@
       "ready": "Ti pari — fidio naa wa ninu Gallery",
       "footerSolo": "Tẹ agbegbe awotẹlẹ kan lati ṣafikun akoonu. Awotẹlẹ naa yoo mu imudojuiwọn lẹsẹkẹsẹ.",
       "footerPlan": "Tẹ awọn apakan eto naa — awotẹlẹ naa fihan aworan kọọkan. Awọn media laini wa lori akoko tito ni isalẹ.",
-      "emptyNotSelected": "{{tag}} — kò tíì yan síbẹ̀",
+      "emptyNotSelected": "{{tag}} — kò tíì yan",
       "emptyClickToChoose": "tẹ lati yan",
       "tagFitContainSuffix": " · gbogbo",
       "emptyClipTitle": "Fídíò — kò tíì gbé sórí ìkànnì ayélujára",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG tí ó hàn gbangba",
       "hint": "Ìwọ̀n PNG fún férémù náà: àmì níbikíbi, férémù, àkọlé. Ó wà lórí gbogbo fídíò náà; àwọn àkọlé dúró lórí ìpele náà.",
       "progressTitle": "Páápù ìlọsíwájú",
-      "progressSub": "ìlà aago tín-ín-rín kan ní òkè — àwọn olùwòran rí fídíò náà kúrú tí wọ́n sì ń wò ó títí dé òpin"
+      "progressSub": "ìlà aago tín-ín-rín kan ní òkè — àwọn olùwòran rí fídíò náà kúrú tí wọ́n sì ń wò ó títí dé òpin",
+      "pngOnly": "Fíìmù náà gbọ́dọ̀ jẹ́ PNG tàbí WebP tó ṣe kedere — fáìlì tí kò ní ìfihàn yóò bo gbogbo férémù náà."
     },
     "brand": {
       "button": "Àwọn ohun èlò ìtajà ọjà",

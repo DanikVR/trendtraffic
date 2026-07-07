@@ -1119,7 +1119,7 @@
       "saved": "Echekwara",
       "save": "Chekwaa",
       "ctaTooltipReady": "Avatar ahụ na-ekwu okwu edemede ahụ (HeyGen) → jikọta ya na vidiyo → ndepụta okwu → Gallery",
-      "ctaTooltipMissing": "A ka chọrọ: {{efu}}",
+      "ctaTooltipMissing": "A ka chọrọ: {{missing}}",
       "creating": "Ịmepụta…",
       "create": "Mepụta vidiyo"
     },
@@ -1134,7 +1134,7 @@
       "filesSuffix": " · Faịlụ 2 — avatar otu ugboro",
       "voiceoverAi": "≈ $0.1–0.3 kwa klip",
       "voiceoverFree": "$0 — ọdịyo na vidiyo nke gị",
-      "langsSuffix": " · asụsụ: {{ọnụọgụ}}"
+      "langsSuffix": " · asụsụ: {{count}}"
     },
     "checklist": {
       "title": "Dị njikere iwuli",
@@ -1216,7 +1216,7 @@
       "extKeepOpen": "Debe taabụ ụlọ ihe nkiri HeyGen ka o wee meghee site na ndenye aha na-arụ ọrụ.",
       "apiNote": "Site na HeyGen API — igodo na Ntọala → Ọgbọ, ịkwụ ụgwọ-dịka ị na-aga (~$3/min Avatar IV).",
       "delTitle": "Wepu avatar?",
-      "delMessage": "A ga-ewepụ '{{aha}}' na nchịkọta avatar gị. Faịlụ mbụ ahụ ga-anọgide na Gallery ahụ."
+      "delMessage": "A ga-ewepụ '{{name}}' na nchịkọta avatar gị. Faịlụ mbụ ahụ ga-anọgide na Gallery ahụ."
     },
     "voice": {
       "title": "Olu na edemede",
@@ -1241,23 +1241,23 @@
       "elevenPreview": "Kpọọ ihe atụ",
       "langsLabel": "Asụsụ vidiyo",
       "langRuPinned": "Rọshịa · isi",
-      "langsHintVoiceover": "Usoro: obere vidiyo dị iche na asụsụ {{count}} ọ bụla — Claude sụgharịrị, olu ElevenLabs. Ọ fọrọ nke nta ka ọ bụrụ n'efu: ọnụ ahịa = olu karịrị × asụsụ.",
-      "langsHintSolo": "Usoro: vidiyo dị iche na nke ọ bụla n'ime asụsụ {{count}}. Site na avatar, HeyGen na-egosi ihu maka asụsụ ọ bụla — dị oke ọnụ.",
+      "langsHintVoiceover": "Usoro: vidiyo dị iche na nke ọ bụla n'ime asụsụ {{count}} — Claude sụgharịrị, olu ElevenLabs. Ọ fọrọ nke nta ka ọ bụrụ n'efu: ọnụ ahịa = olu na-agafe × asụsụ.",
+      "langsHintSolo": "Usoro: vidiyo dị iche na nke ọ bụla n'ime asụsụ {{count}}. Site na avatar, HeyGen na-egosi ihu maka asụsụ ọ bụla - dị oke ọnụ.",
       "diarizeHintVoiceover": "Ọdịyo ahụ na-agafe vidiyo ahụ dịka ọ dị. \"Detuo okwu\" bụ nhọrọ: achọrọ maka ndepụta okwu na ntinye nke ahịrị ọ bụla.",
       "loudnormTitle": "Mee ka olu gị dịkwuo elu",
       "loudnormSub": "a na-ebuli akụkụ dị jụụ elu, a na-eme ka akụkụ ndị dị elu dị nro — ụda na-akwado ụda"
     },
     "lines": {
-      "count_one": "{{ọnụọgụ}} ahịrị · ~{{sek}} sekọnd",
-      "count_other": "{{ọnụọgụ}} ahịrị · ~{{sek}} sekọnd",
+      "count_one": "Ahịrị {{count}} · ~{{sec}} sekọnd",
+      "count_other": "Ahịrị {{count}} · ~{{sec}} sekọnd",
       "editHint": "— dezie na usoro iheomume dị na ala ihuenyo ahụ.",
       "title": "Ahịrị",
-      "filterAll": "Niile · {{ọnụọgụ}}",
-      "filterVoiceA": "Olu A · {{ọnụọgụ}}",
-      "filterVoiceB": "Olu B · {{ọnụọgụ}}",
+      "filterAll": "Niile · {{count}}",
+      "filterVoiceA": "Olu A · {{count}}",
+      "filterVoiceB": "Olu B · {{count}}",
       "hintDialogue": "Akara A/B — olu mgbanwe · ⇣ — jikọta ya na ahịrị na-esote",
       "hintMerge": "⇣ - jikọta ya na ahịrị na-esote",
-      "holdNote": "vidiyo {{sec}}s — egosiri n'uju: +{{extra}}s, ahịrị ndị a na-agbanwe",
+      "holdNote": "vidiyo {{sec}} — egosiri n'uju: +{{extra}}s, ahịrị ndị a na-agbanwe",
       "swapVoice": "Gbanwee olu A↔B",
       "hostVoice": "Olu onye na-eweta ihe",
       "mediaReplace": "mgbasa ozi ahịrị — pịa iji dochie ya",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Nhọrọ: na-enweghị vidiyo, avatar ahụ na-ejupụta fremu ahụ.",
       "dialogueHint": "N'ụdị mkparịta ụka, a na-ejikọ mgbasa ozi na ahịrị dị na usoro iheomume dị n'okpuru - 'Otu esi egosi' na 'Gosi maka N sec' na-apụta na ahịrị ọ bụla nwere mgbasa ozi.",
       "seriesHeading": "Usoro mkpachị",
-      "seriesCount": "Vidiyo dị na usoro a: {{count}} → otu ọnụọgụgụ nke vidiyo ndị ahụ apụtala",
+      "seriesCount": "Vidiyo dị na usoro a: {{count}} → otu ọnụọgụgụ nke vidiyo ndị ahụ dị",
       "seriesChange": "Mgbanwe",
       "seriesAdd": "Tinye vidiyo na usoro ahụ — otu vidiyo kwa vidiyo",
       "seriesBilling": "A na-akwụ ụgwọ avatar ahụ otu ugboro maka usoro ahụ dum.",
@@ -1307,7 +1307,7 @@
       "durationLabel": "Ogologo oge ọ na-egwu egwu",
       "playFull": "Vidiyo dum",
       "playFirst": "Sekọnd N mbụ",
-      "durationHint": "sekọnd site na mmalite, wee mechaa gwụchaa nke ọma"
+      "durationHint": "sekọnd site na mmalite, wee gwụchaa nke ọma"
     },
     "format": {
       "label": "Usoro",
@@ -1356,11 +1356,11 @@
       "noteDialogue": "Atụmatụ mkparịta ụka siri ike: AI na-ekpebi mgbe a ga-eme nke ọma na mgbe a ga-egosi ha abụọ n'ime etiti (mmeghachi omume bụ foto kwụ ọtọ, $0)."
     },
     "preview": {
-      "seriesReady": "Usoro dị njikere: {{count}} vidiyo — niile dị na Gallery",
+      "seriesReady": "Usoro dị njikere: vidiyo {{count}} — niile dị na Gallery",
       "ready": "Emechaala — vidiyo ahụ dị na Gallery",
       "footerSolo": "Pịa mpaghara nlele iji tinye ọdịnaya. Nlele nlele ahụ na-emelite ozugbo.",
       "footerPlan": "Pịa akụkụ atụmatụ ahụ — ihe nlele ahụ na-egosi foto ọ bụla. Mgbasa ozi ahịrị dị na usoro iheomume dị n'okpuru.",
-      "emptyNotSelected": "{{tag}} — ahọpụtabeghị ya ugbu a",
+      "emptyNotSelected": "{{tag}} — ahọpụtabeghị",
       "emptyClickToChoose": "pịa iji họrọ",
       "tagFitContainSuffix": " · dum",
       "emptyClipTitle": "Vidiyo — ebugobeghị ya",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Oyi akwa dị n'elu",
       "sub": "akara ngosi ma ọ bụ etiti - mgbe niile dị n'elu",
-      "empty": "{{usoro}} — PNG doro anya",
+      "empty": "{{format}} — PNG doro anya",
       "hint": "Nha PNG maka fremu ahụ: akara ngosi ebe ọ bụla, fremu, na okwu mmalite. Ọ dị n'elu vidiyo ahụ dum; okwu mmalite na-anọ n'elu oyi akwa ahụ.",
       "progressTitle": "Ogwe ọganihu",
-      "progressSub": "obere ihe ngosi oge dị n'elu - ndị na-ekiri ya na-ahụ vidiyo ahụ dị mkpụmkpụ ma na-ekiri ruo na njedebe"
+      "progressSub": "obere ihe ngosi oge dị n'elu - ndị na-ekiri ya na-ahụ vidiyo ahụ dị mkpụmkpụ ma na-ekiri ruo na njedebe",
+      "pngOnly": "Oyi akwa ahụ ga-abụrịrị PNG ma ọ bụ WebP doro anya - faịlụ na-enweghị nghọta ga-ekpuchi etiti ahụ dum."
     },
     "brand": {
       "button": "Ngwa ika",

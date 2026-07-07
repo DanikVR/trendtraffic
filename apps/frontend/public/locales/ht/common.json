@@ -1119,7 +1119,7 @@
       "saved": "Sove",
       "save": "Sove",
       "ctaTooltipReady": "Avatar a di script la (HeyGen) → rantre ak videyo a → soutit → Galeri",
-      "ctaTooltipMissing": "Toujou nesesè: {{missing}}",
+      "ctaTooltipMissing": "Toujou bezwen: {{missing}}",
       "creating": "Ap kreye…",
       "create": "Kreye videyo"
     },
@@ -1173,7 +1173,7 @@
       "engLively": "Viv",
       "engEcoHint": "Prèske toujou yon sèl oratè sou ekran an — opsyon ki pi bon mache a.",
       "engBalHint": "Gwo plan sou moun k ap pale a; ni nan ankadreman an, ni sou reyaksyon yo, ni sou pik yo.",
-      "engDynHint": "Plis sèn 'an menm imaj' ak koupe an imaj — pi vivan e pi chè.",
+      "engDynHint": "Plis sèn 'tou de nan ankadreman' ak koupe — pi vivan e pi chè.",
       "engAiTrailer": "IA a òganize plan yo li menm.",
       "cutoutTitle": "Fon avatar transparan",
       "cutoutSub": "se sèlman moun nan ki rete nan kad la — pou layout 'background ak avatar sou bò a'",
@@ -1241,15 +1241,15 @@
       "elevenPreview": "Jwe yon echantiyon",
       "langsLabel": "Lang videyo",
       "langRuPinned": "Ris · prensipal",
-      "langsHintVoiceover": "Yon seri: yon klip apa nan chak nan {{count}} lang yo — Claude tradui, vwa ElevenLabs yo. Prèske gratis: pri = vwa off × lang.",
-      "langsHintSolo": "Yon seri: yon klip apa nan chak nan {{count}} lang yo. Avèk yon avatar, HeyGen rann figi a pou chak lang — pi chè.",
+      "langsHintVoiceover": "Yon seri: yon klip apa nan chak lang {{count}} — Claude tradui, vwa ElevenLabs yo. Prèske gratis: pri = vwa off × lang.",
+      "langsHintSolo": "Yon seri: yon klip apa nan chak lang {{count}} yo. Avèk yon avatar, HeyGen rann figi a pou chak lang — pi chè.",
       "diarizeHintVoiceover": "Odyo a ale sou videyo a jan l ye a. \"Transkri pawòl la\" se opsyonèl: nesesè pou soutit ak insert pou chak liy.",
       "loudnormTitle": "Volim vwa egal",
-      "loudnormSub": "Pati ki trankil yo leve, pati ki fò yo adousi — odyo ki sonnen pwofesyonèl"
+      "loudnormSub": "Pati ki trankil yo leve, pati ki fò yo adousi — odyo ki son pwofesyonèl"
     },
     "lines": {
-      "count_one": "{{count}} liy · ~{{sec}} segonn",
-      "count_other": "{{count}} liy · ~{{sec}} segonn",
+      "count_one": "liy {{count}} · ~{{sec}} segonn",
+      "count_other": "liy {{count}} · ~{{sec}} segonn",
       "editHint": "— modifye sou delè ki anba ekran an.",
       "title": "Liy yo",
       "filterAll": "Tout · {{count}}",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Si ou vle: san yon videyo, avatar la ranpli kad la.",
       "dialogueHint": "Nan mòd dyalòg, medya yo tache ak liy ki sou delè ki anba a — 'Kijan pou montre' ak 'Montre pou N segonn' parèt sou nenpòt liy ki gen medya.",
       "seriesHeading": "Seri klip",
-      "seriesCount": "Videyo nan seri a: {{count}} → menm kantite klip ki soti",
+      "seriesCount": "Videyo nan seri a: {{count}} → menm kantite klip deyò",
       "seriesChange": "Chanjman",
       "seriesAdd": "Ajoute videyo nan seri a — yon klip pou chak videyo",
       "seriesBilling": "Yo faktire avatar la yon sèl fwa pou tout seri a.",
@@ -1329,7 +1329,7 @@
       "bottom": "Avatar anba a",
       "overlayLeft": "Sou videyo a, agoch",
       "overlayRight": "Sou videyo a, adwat",
-      "overlayHint": "Videyo a plen tout kad la, ti avatar anlè a"
+      "overlayHint": "Videyo a ranpli tout kad la, ti avatar anlè a"
     },
     "timeline": {
       "title": "Liy delè yo",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plan dyalòg jeneral: IA deside ki lè pou l ale pre ak ki lè pou l montre tou de nan kad la (yon reyaksyon se yon foto estatik, $0)."
     },
     "preview": {
-      "seriesReady": "Seri a pare: {{count}} videyo — tout nan Galeri a",
+      "seriesReady": "Seri a pare: videyo {{count}} — tout nan Galeri a",
       "ready": "Fini — videyo a nan Galeri a",
       "footerSolo": "Klike sou yon zòn preview pou ajoute kontni. Preview la ap mete ajou imedyatman.",
       "footerPlan": "Klike sou segman plan yo — aperçu a montre chak imaj. Liy medya a sou delè ki anba a.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Kouch anwo a",
       "sub": "logo oswa ankadreman — toujou anlè",
-      "empty": "{{fòma}} — PNG transparan",
+      "empty": "{{format}} — PNG transparan",
       "hint": "Yon fichye PNG ki gen gwosè pou ankadreman an: yon logo nenpòt kote, yon ankadreman, yon tit. Li chita sou tout videyo a; soutit yo rete anlè kouch la.",
       "progressTitle": "Ba pwogrè",
-      "progressSub": "yon ti bann revèy anlè a — telespektatè yo wè videyo a kout epi yo gade l jis nan fen"
+      "progressSub": "yon ti bann revèy anlè a — telespektatè yo wè videyo a kout epi yo gade l jis nan fen",
+      "pngOnly": "Kouch la dwe yon PNG transparan oswa WebP — yon fichye san transparans ta kouvri tout kad la."
     },
     "brand": {
       "button": "Twous mak",

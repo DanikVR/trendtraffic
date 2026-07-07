@@ -1119,7 +1119,7 @@
       "saved": "Sábháilte",
       "save": "Sábháil",
       "ctaTooltipReady": "Labhraíonn an t-avatár an script (HeyGen) → cumasc leis an bhfíseán → fotheidil → Gailearaí",
-      "ctaTooltipMissing": "Ag teastáil fós: {{ar iarraidh}}",
+      "ctaTooltipMissing": "Ag teastáil fós: {{missing}}",
       "creating": "Ag cruthú…",
       "create": "Cruthaigh físeán"
     },
@@ -1127,7 +1127,7 @@
       "perClip1_2": "≈ $1–2 in aghaidh an ghearrthóg",
       "perClip2_3": "≈ $2–3 in aghaidh an ghearrthóg",
       "perClip3_5": "≈ $3–5 in aghaidh an ghearrthóg",
-      "perClip2": "≈ $2 in aghaidh an ghearrthóige",
+      "perClip2": "≈ $2 in aghaidh an ghearrthóg",
       "perMin1": "≈ $1 in aghaidh an nóiméid",
       "perMin3_4": "≈ $3–4 in aghaidh an nóiméid",
       "seriesSuffix": " · sraith de {{count}} — avatar uair amháin",
@@ -1167,7 +1167,7 @@
       "presetEcoHint": "Dlúth-sheasaimh chostasacha ar an ngréasán agus glao chun gnímh amháin (~2 in aghaidh an ghearrthóige). An rogha is saoire.",
       "presetBalHint": "Dlúthghrianghraif ar an ngreann, an gníomh agus an glao chun gnímh (~3). An pointe is fearr.",
       "presetPremHint": "Uasmhéid ama aghaidhe (~4 dlúthghaol). Níos beoga agus níos costasaí.",
-      "presetAiTrailer": "Is í an intleacht shaorga a chinneann cén pictiúr a théann cá háit bunaithe ar do théacs.",
+      "presetAiTrailer": "Is í an AI a chinneann cén pictiúr a théann cá háit bunaithe ar do théacs.",
       "dialogueEngLabel": "Luas idirphlé",
       "engCalm": "Ciúin",
       "engLively": "Beoga",
@@ -1241,8 +1241,8 @@
       "elevenPreview": "Seinn sampla",
       "langsLabel": "Teangacha físe",
       "langRuPinned": "Rúisis · bunscoil",
-      "langsHintVoiceover": "Sraith: gearrthóg ar leith i ngach ceann de na {{count}} teangacha — aistríonn Claude, guthanna ElevenLabs. Beagnach saor in aisce: costas = guthú × teangacha.",
-      "langsHintSolo": "Sraith: gearrthóg ar leith i ngach ceann de na {{count}} teangacha. Le avatar, déanann HeyGen an aghaidh a rindreáil do gach teanga — níos costasaí.",
+      "langsHintVoiceover": "Sraith: gearrthóg ar leith i ngach ceann de na teangacha {{count}} — aistríonn Claude, guthanna ElevenLabs. Beagnach saor in aisce: costas = guthú × teangacha.",
+      "langsHintSolo": "Sraith: gearrthóg ar leith i ngach ceann de na teangacha {{count}}. Le avatar, déanann HeyGen an aghaidh a rindreáil do gach teanga — níos costasaí.",
       "diarizeHintVoiceover": "Téann an fhuaim thar an bhfíseán mar atá. Tá “Tras-scríobh cainte” roghnach: ag teastáil le haghaidh fotheidil agus iontrálacha in aghaidh na líne.",
       "loudnormTitle": "Cothromú toirt an ghutha",
       "loudnormSub": "ardaítear codanna ciúine, déantar codanna glóracha a mhaolú — fuaim ghairmiúil"
@@ -1252,12 +1252,12 @@
       "count_other": "{{count}} líne · ~{{sec}} soic",
       "editHint": "— cuir in eagar ar an amlíne ag bun an scáileáin.",
       "title": "Línte",
-      "filterAll": "Uile · {{count}}",
+      "filterAll": "Gach · {{count}}",
       "filterVoiceA": "Guth A · {{count}}",
       "filterVoiceB": "Guth B · {{count}}",
       "hintDialogue": "Suaitheantas A/B — athraigh guth · ⇣ — cumasc leis an gcéad líne eile",
       "hintMerge": "⇣ — cumasc leis an gcéad líne eile",
-      "holdNote": "físeán {{sec}}s — léirithe go hiomlán: +{{extra}}s, aistrítear na línte seo a leanas",
+      "holdNote": "físeán {{sec}}s — léirithe ina iomláine: +{{extra}}s, aistríonn na línte seo a leanas",
       "swapVoice": "Athraigh guth A↔B",
       "hostVoice": "Guth an láithreora",
       "mediaReplace": "meáin líne — cliceáil chun athsholáthar",
@@ -1302,12 +1302,12 @@
       "title": "Ceol cúlra",
       "sub": "roghnach",
       "volumeLabel": "Toirt ceoil:",
-      "volumeHint": "Bíonn an guth 100% i gcónaí; is é an cleachtas is fearr don chúlra ná 15–25%. Bíonn rian níos giorra ná lúba an ghearrthóige; gearrtar ceann níos faide.",
+      "volumeHint": "Bíonn an guth 100% i gcónaí; is é 15–25% an cleachtas is fearr don chúlra. Bíonn rian níos giorra ná lúba an ghearrthóige; gearrtar ceann níos faide.",
       "empty": "Ceol — gan a bheith roghnaithe fós · suíonn go ciúin faoin nguth",
       "durationLabel": "Cé chomh fada a imríonn sé",
       "playFull": "Físeán iomlán",
       "playFirst": "An chéad N soicind",
-      "durationHint": "soicindí ón tús, ansin céimniú réidh"
+      "durationHint": "soicindí ón tús, ansin céimniú amach réidh"
     },
     "format": {
       "label": "Formáid",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plean garbh idirphlé: Cinneann an hintleacht shaorga cathain is ceart dlúth-up a thógáil agus cathain is ceart an dá rud a thaispeáint sa fhráma (is grianghraf statach é imoibriú, $0)."
     },
     "preview": {
-      "seriesReady": "Sraith réidh: {{count}} físeán — iad uile sa Ghailearaí",
+      "seriesReady": "Sraith réidh: físeáin {{count}} — iad uile sa Ghailearaí",
       "ready": "Críochnaithe — tá an físeán sa Ghailearaí",
       "footerSolo": "Cliceáil ar limistéar réamhamhairc chun ábhar a chur leis. Nuashonraítear an réamhamharc láithreach.",
       "footerPlan": "Cliceáil ar na codanna den phlean — taispeánann an réamhamharc gach urchar. Tá na meáin líne ar an amlíne thíos.",
@@ -1370,7 +1370,7 @@
       "emptyLineMediaSub": "grianghraf nó físeán a cheangal le líne (⊞)",
       "cutoutTooltip": "Cúlra trédhearcach — ní fhanann ach an duine sa ghearrthóg",
       "cutoutBadge": "cúlra trédhearcach",
-      "emptyAvatarOverlay": "Avatar — gan roghnú fós",
+      "emptyAvatarOverlay": "Avatár — gan roghnú fós",
       "tagPeerACloseup": "Cainteoir A · dlúthghaire",
       "emptyPeerA": "Cainteoir A — níor roghnaíodh fós",
       "tagPeerBCloseup": "Cainteoir B · dlúthghaire",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG trédhearcach",
       "hint": "PNG de mhéid an fhráma: lógó áit ar bith, fráma, fotheideal. Suíonn sé thar an bhfíseán ar fad; fanann na fotheidil os cionn na sraithe.",
       "progressTitle": "Barra dul chun cinn",
-      "progressSub": "stiall tanaí lasc ama ag an mbarr — feiceann lucht féachana go bhfuil an físeán gearr agus féachann siad go dtí an deireadh"
+      "progressSub": "stiall tanaí lasc ama ag an mbarr — feiceann lucht féachana go bhfuil an físeán gearr agus féachann siad go dtí an deireadh",
+      "pngOnly": "Ní mór don tsraith a bheith ina PNG nó WebP trédhearcach — chlúdódh comhad gan trédhearcacht an fráma ar fad."
     },
     "brand": {
       "button": "Trealamh branda",

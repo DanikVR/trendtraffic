@@ -1241,15 +1241,15 @@
       "elevenPreview": "Redați un sample",
       "langsLabel": "Limbi video",
       "langRuPinned": "Rusă · primar",
-      "langsHintVoiceover": "O serie: câte un clip separat în fiecare dintre {{count}} limbi — Claude traduce, voci ElevenLabs. Aproape gratuit: cost = voiceover × limbi.",
-      "langsHintSolo": "O serie: câte un clip separat în fiecare dintre {{count}} limbi. Cu un avatar, HeyGen redă fața pentru fiecare limbă — mai scump.",
+      "langsHintVoiceover": "O serie: câte un clip separat în fiecare dintre limbile {{count}} — Claude traduce, voci ElevenLabs. Aproape gratuit: cost = voiceover × limbi.",
+      "langsHintSolo": "O serie: câte un clip separat în fiecare dintre limbile {{count}}. Cu un avatar, HeyGen redă fața pentru fiecare limbă — mai scump.",
       "diarizeHintVoiceover": "Sunetul este peste videoclipul așa cum este. „Transcrierea vorbirii” este opțională: necesară pentru subtitrări și inserții pe rând.",
       "loudnormTitle": "Volumul vocii este uniform",
       "loudnormSub": "părțile liniștite sunt accentuate, părțile zgomotoase sunt netezite — sunet profesional"
     },
     "lines": {
       "count_one": "{{count}} linie · ~{{sec}} sec",
-      "count_other": "{{count}} linii · ~{{sec}} secunde",
+      "count_other": "{{count}} linii · ~{{sec}} sec",
       "editHint": "— editați în cronologia din partea de jos a ecranului.",
       "title": "Linii",
       "filterAll": "Toate · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "Vocea B · {{count}}",
       "hintDialogue": "Insignă A/B — schimbare voce · ⇣ — îmbinare cu linia următoare",
       "hintMerge": "⇣ — îmbină cu linia următoare",
-      "holdNote": "videoclip {{sec}}s — afișat integral: +{{extra}}s, următoarele rânduri se deplasează",
+      "holdNote": "videoclip {{sec}}s — afișat integral: +{{extra}}s, următoarele linii se deplasează",
       "swapVoice": "Comutare voce A↔B",
       "hostVoice": "Vocea prezentatorului",
       "mediaReplace": "suport de linie — faceți clic pentru a înlocui",
@@ -1277,7 +1277,7 @@
       "soloOptional": "Opțional: fără videoclip, avatarul umple cadrul.",
       "dialogueHint": "În modul dialog, fișierele media sunt atașate liniilor de pe cronologia de mai jos — „Cum se afișează” și „Afișează timp de N secunde” apar pe orice linie cu fișiere media.",
       "seriesHeading": "Seria de clipuri",
-      "seriesCount": "Videoclipuri din serie: {{count}} → același număr de clipuri lansate",
+      "seriesCount": "Videoclipuri din seria: {{count}} → același număr de clipuri",
       "seriesChange": "Schimba",
       "seriesAdd": "Adăugați videoclipuri la serie — câte un clip per videoclip",
       "seriesBilling": "Avatarul se facturează o singură dată pentru întreaga serie.",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Plan general de dialog: AI decide când să se facă un prim-plan și când să se afișeze ambele în cadru (o reacție este o fotografie statică, 0$)."
     },
     "preview": {
-      "seriesReady": "Serie gata: {{count}} videoclipuri — toate în Galerie",
+      "seriesReady": "Gata pentru serial: videoclipuri {{count}} — toate în Galerie",
       "ready": "Gata — videoclipul este în Galerie",
       "footerSolo": "Faceți clic pe o zonă de previzualizare pentru a adăuga conținut. Previzualizarea se actualizează instantaneu.",
       "footerPlan": "Faceți clic pe segmentele planului — previzualizarea afișează fiecare cadru. Elementele media liniare se află în cronologia de mai jos.",
@@ -1424,7 +1424,8 @@
       "empty": "{{format}} — PNG transparent",
       "hint": "Un fișier PNG dimensionat pentru cadru: un logo oriunde, un cadru, o legendă. Se așază peste întregul videoclip; subtitrările rămân deasupra stratului.",
       "progressTitle": "Bara de progres",
-      "progressSub": "o bandă subțire de cronometru în partea de sus — spectatorii văd că videoclipul este scurt și îl urmăresc până la sfârșit"
+      "progressSub": "o bandă subțire de cronometru în partea de sus — spectatorii văd că videoclipul este scurt și îl urmăresc până la sfârșit",
+      "pngOnly": "Stratul trebuie să fie un fișier PNG sau WebP transparent — un fișier fără transparență ar acoperi întregul cadru."
     },
     "brand": {
       "button": "Kit de marcă",

@@ -1130,7 +1130,7 @@
       "perClip2": "≈ 2 dolar klip bakoitzeko",
       "perMin1": "≈ 1 dolar minutuko",
       "perMin3_4": "≈ 3–4 $ minutuko",
-      "seriesSuffix": " · {{count}} seriea — avatarra behin",
+      "seriesSuffix": " · {{count}} seriea — avatar behin",
       "filesSuffix": " · 2 fitxategi — avatarra behin",
       "voiceoverAi": "≈ 0,1–0,3 $ klip bakoitzeko",
       "voiceoverFree": "0 $ — zure audioa eta bideoa",
@@ -1167,7 +1167,7 @@
       "presetEcoHint": "Garestiak diren plano hurbilak, amuan eta ekintzarako deian bakarrik (~2 klip bakoitzeko). Aukerarik merkeena.",
       "presetBalHint": "Amuaren, ekintzaren eta ekintzarako deiaren lehen planoak (~3). Puntu ezin hobea.",
       "presetPremHint": "Aurpegiko denbora maximoa (~4 plano hurbil). Biziagoa eta garestiagoa.",
-      "presetAiTrailer": "AIak erabakitzen du zein plano nora joan zure testuaren arabera.",
+      "presetAiTrailer": "AI-ak erabakitzen du zein plano nora joan zure testuaren arabera.",
       "dialogueEngLabel": "Elkarrizketaren erritmoa",
       "engCalm": "Lasai",
       "engLively": "Bizi-bizia",
@@ -1178,7 +1178,7 @@
       "cutoutTitle": "Avatar gardenaren atzeko planoa",
       "cutoutSub": "pertsona bakarrik geratzen da markoan — 'alboan avatarrarekin atzeko planoa' diseinurako",
       "voiceover": "Avatarrik gabe — ahots-gainjartzea",
-      "voiceoverHint": "Zure grabazioa + ahotsa: IA bidez idatzitako gidoia (ElevenLabs) edo zure grabazioa dagoen bezala. HeyGen gabe — ia doan. Lerro bakoitzeko multimedia txertaketak aukerakoak dira."
+      "voiceoverHint": "Zure grabazioa + ahotsa: IA bidez idatzitako gidoia (ElevenLabs) edo zure grabazioa dagoen bezala. Ez dago HeyGenik behar — ia doan. Lerro bakoitzeko multimedia txertaketak aukerakoak dira."
     },
     "avatar": {
       "title": "Avatarra",
@@ -1238,18 +1238,18 @@
       "diarizeHintSolo": "Grabazioko ahotsa kliparen ahotsa bihurtzen da.",
       "elevenLabel": "ElevenLabs ahotsa",
       "elevenDefault": "Berezkoa — generoaren arabera (Sarah / George)",
-      "elevenPreview": "Erreproduzitu lagin bat",
+      "elevenPreview": "Lagin bat erreproduzitu",
       "langsLabel": "Bideo hizkuntzak",
       "langRuPinned": "Errusiera · lehen mailako",
-      "langsHintVoiceover": "Serie bat: klip bereizi bat {{count}} hizkuntzatan — Claudek itzultzen du, ElevenLabs-en ahotsak. Ia doakoa: kostua = ahots-ahotsa × hizkuntzak.",
-      "langsHintSolo": "Serie bat: klip bereizi bat {{count}} hizkuntzatan. Avatar batekin, HeyGenek aurpegia hizkuntza guztietarako irudikatzen du — garestiagoa.",
+      "langsHintVoiceover": "Serie bat: klip bereizi bat {{count}} hizkuntza bakoitzean — Claudek itzultzen du, ElevenLabs-en ahotsak. Ia doakoa: kostua = ahots-ahotsa × hizkuntzak.",
+      "langsHintSolo": "Serie bat: {{count}} hizkuntza bakoitzean klip bereizi bat. Avatar batekin, HeyGenek hizkuntza guztietako aurpegia irudikatzen du — garestiagoa.",
       "diarizeHintVoiceover": "Audioa bideoaren gainean doa dagoen bezala. \"Ahotsa transkribatu\" aukerakoa da: beharrezkoa da azpitituluetarako eta lerro bakoitzeko txertaketetarako.",
       "loudnormTitle": "Ahots-bolumena berdindu",
       "loudnormSub": "zati isilak altxatu egiten dira, zati ozenak leundu — audio profesionala"
     },
     "lines": {
-      "count_one": "{{count}} lerro · ~{{seg}} seg",
-      "count_other": "{{count}} lerro · ~{{seg}} seg",
+      "count_one": "{{count}} lerroa · ~{{sec}} seg",
+      "count_other": "{{count}} lerroak · ~{{sec}} seg",
       "editHint": "— editatu pantailaren behealdean dagoen denbora-lerroan.",
       "title": "Lerroak",
       "filterAll": "Guztiak · {{count}}",
@@ -1257,7 +1257,7 @@
       "filterVoiceB": "B ahotsa · {{count}}",
       "hintDialogue": "A/B txapa — ahotsa aldatu · ⇣ — hurrengo lerroarekin batu",
       "hintMerge": "⇣ — hurrengo lerroarekin batu",
-      "holdNote": "bideoa {{sec}}s — osorik erakusten da: +{{extra}}s, hurrengo lerroak mugitzen dira",
+      "holdNote": "bideoa {{sec}}s — osorik erakusten da: +{{extra}}s, hurrengo lerroak mugitu egiten dira",
       "swapVoice": "Aldatu A↔B ahotsa",
       "hostVoice": "Aurkezlearen ahotsa.",
       "mediaReplace": "lerroko euskarria — egin klik ordezkatzeko",
@@ -1356,7 +1356,7 @@
       "noteDialogue": "Elkarrizketa-plan orokorra: IAk erabakitzen du noiz hurbildu eta noiz biak markoan erakutsi (erreakzio bat argazki estatiko bat da, 0 $)."
     },
     "preview": {
-      "seriesReady": "Seriea prest: {{count}} bideo — guztiak Galerian",
+      "seriesReady": "Seriea prest: {{count}} bideoak — guztiak Galerian",
       "ready": "Eginda — bideoa Galerian dago",
       "footerSolo": "Egin klik aurrebista-eremu batean edukia gehitzeko. Aurrebista berehala eguneratzen da.",
       "footerPlan": "Egin klik planaren segmentuetan — aurrebistak plano bakoitza erakusten du. Lerroko multimedia beheko denbora-lerroan dago.",
@@ -1421,10 +1421,11 @@
     "layer": {
       "title": "Goiko geruza",
       "sub": "logotipoa edo markoa — beti gainean",
-      "empty": "{{formatua}} — PNG gardena",
+      "empty": "{{format}} — PNG gardena",
       "hint": "PNG bat markorako neurrira: logotipo bat edozein lekutan, marko bat, azpititulu bat. Bideo osoaren gainean kokatzen da; azpitituluak geruzaren gainean geratzen dira.",
       "progressTitle": "Aurrerapen-barra",
-      "progressSub": "goialdean tenporizadore-zerrenda mehe bat — ikusleek bideoa laburra dela ikusten dute eta amaierara arte ikusten dute"
+      "progressSub": "goialdean tenporizadore-zerrenda mehe bat — ikusleek bideoa laburra dela ikusten dute eta amaierara arte ikusten dute",
+      "pngOnly": "Geruza PNG edo WebP gardena izan behar da — gardentasunik gabeko fitxategi batek marko osoa estaliko luke."
     },
     "brand": {
       "button": "Marka-kit-a",
