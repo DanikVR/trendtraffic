@@ -474,6 +474,7 @@ interface UgcSpec {
   dialogueEngagement: 'eco' | 'bal' | 'dyn';                // как часто оба в кадре (эконом/баланс/динамично)
   dialogueCutout: boolean;                                  // вырезать фон аватара (силуэт поверх медиа)
   photoBUrl: string | null; photoBName: string | null;      // фото «Спикер B» (A = photoUrl)
+  formats: ('9x16' | '16x9')[];                             // форматы вывода (можно оба)
 }
 const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
@@ -495,6 +496,7 @@ const UGC_DEFAULT: UgcSpec = {
   dialogueEngagement: 'bal',
   dialogueCutout: false,
   photoBUrl: null, photoBName: null,
+  formats: ['9x16'],
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
@@ -5415,7 +5417,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       {ugc.results.map((res, i) => (
                         <div key={res.url + i} className="space-y-1">
                           <video src={res.url} controls playsInline
-                            className="rounded-lg block w-full" style={{ aspectRatio: '9 / 16', maxHeight: '48vh', background: '#000' }} />
+                            className="rounded-lg block w-full" style={{ height: 'auto', maxHeight: '48vh', objectFit: 'contain', background: '#000' }} />
                           <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }} title={res.name}>{res.name}</div>
                         </div>
                       ))}
@@ -5434,6 +5436,21 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       className="rounded-lg block" style={{ aspectRatio: String(ugcResultAR), maxHeight: '72vh', maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
                   </div>
                 )}
+
+                {/* Формат вывода: 9:16 (шортс) / 16:9 (горизонталь) / оба (два файла за один прогон) */}
+                <div className="rounded-xl p-2.5 space-y-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Crop size={13} style={{ color: '#a855f7' }} /> Формат вывода</div>
+                  <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                    {([['p', '9:16', ['9x16']], ['l', '16:9', ['16x9']], ['b', 'Оба', ['9x16', '16x9']]] as [string, string, ('9x16' | '16x9')[]][]).map(([k, lbl, val]) => {
+                      const sel = ugc.formats.length === val.length && val.every((v) => ugc.formats.includes(v));
+                      return (
+                        <button key={k} onClick={() => ugcMutate((u) => ({ ...u, formats: val }))} className="py-1.5 rounded-lg text-[11px] font-700"
+                          style={{ background: sel ? '#a855f7' : 'transparent', color: sel ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}>{lbl}</button>
+                      );
+                    })}
+                  </div>
+                  {ugc.formats.length > 1 && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Два файла за один прогон — аватар рендерится один раз (цена HeyGen как за один ролик).</p>}
+                </div>
 
                 {/* Сборка */}
                 <div className="flex items-center gap-2">
