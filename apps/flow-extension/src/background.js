@@ -67,10 +67,13 @@ async function disconnect() {
 }
 
 // ---------- вкладка Flow ----------
-async function ensureFlowTab() {
+async function ensureFlowTab(allowCreate = false) {
   // Переиспользуем уже открытую вкладку Flow, если есть.
   const tabs = await chrome.tabs.query({ url: 'https://labs.google/fx/tools/flow*' });
   if (tabs.length) { STATE.flowTabId = tabs[0].id; return tabs[0].id; }
+  // Авто-режим (опрос очереди): НЕ открываем Flow сами — иначе вкладка «выскакивает».
+  // Создаём вкладку только по ЯВНОМУ действию пользователя («→ Flow» из Галереи).
+  if (!allowCreate) { STATE.flowTabId = null; return null; }
   const tab = await chrome.tabs.create({ url: 'https://labs.google/fx/tools/flow', active: false });
   STATE.flowTabId = tab.id;
   // Ждём, пока content-flow просигналит готовность.
@@ -119,9 +122,11 @@ async function tick() {
 }
 
 async function runOneTask(task) {
+  // Не открываем Flow автоматически: работаем ТОЛЬКО если вкладка Flow уже открыта пользователем.
+  // Нет открытой вкладки → задача возвращается в очередь (retry) и выполнится, когда юзер откроет Flow.
+  const tabId = await ensureFlowTab(false);
+  if (!tabId) { await reportStatus(task.id, 'retry', 'Откройте вкладку Google Flow — задача выполнится сама'); return; }
   await reportStatus(task.id, 'running');
-  const tabId = await ensureFlowTab();
-  if (!tabId) { await reportStatus(task.id, 'failed', 'не удалось открыть Flow'); return; }
 
   let result;
   try {
@@ -249,7 +254,7 @@ async function sendRecon(payload) {
 }
 /** Из Галереи TrendTraffic: открыть/сфокусировать вкладку Flow и залить туда медиа по URL. */
 async function pushToFlow(url, title, kind) {
-  const tabId = await ensureFlowTab();
+  const tabId = await ensureFlowTab(true); // явное действие пользователя — открыть Flow МОЖНО
   if (!tabId) return { ok: false, error: 'не удалось открыть Flow' };
   try {
     await chrome.tabs.update(tabId, { active: true });

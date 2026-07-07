@@ -1803,34 +1803,16 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.05), transparent 60%), var(--bg-primary)',
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
 
-        {/* «Сценарий» — над центральным узлом (просьба юзера): главный промт всегда на виду */}
+        {/* «Сценарий» — центральный хаб (просьба юзера): главный промт всегда на виду.
+            Центральный узел «Видео из галерии» убран — исходник для Omni выбирается
+            внутри самого облака Omni Flash (у него свой пикер Галереи). */}
         <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра (все ✨-шаги читают его)"
-          style={{ position: 'absolute', left: '50%', top: 'calc(50% - 84px)', transform: 'translateX(-50%)', zIndex: 7,
-            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 7,
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 700,
             background: brief.trim() ? 'rgba(99,102,241,0.16)' : 'var(--bg-secondary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)',
-            border: `1px ${brief.trim() ? 'solid rgba(99,102,241,0.5)' : 'dashed var(--border-strong)'}`, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          <Sparkles size={13} /> {brief.trim() ? `Сценарий ✓ ${brief.trim().slice(0, 26)}${brief.trim().length > 26 ? '…' : ''}` : 'Сценарий ролика — задайте тон ИИ'}
-        </button>
-
-        <button data-node-id="center" onClick={() => openSourcePicker()} title="Выбрать исходное видео"
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-          <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
-            <div style={{ width: 76, height: 76, borderRadius: '50%', overflow: 'hidden',
-              background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #818cf8 50%, var(--brand) 100%)',
-              boxShadow: '0 0 36px rgba(99,102,241,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-contrast)',
-              border: sourceUrl ? '2px solid var(--brand)' : 'none' }}>
-              <Video size={28} color={sourceUrl ? 'var(--brand)' : undefined} />
-            </div>
-          </div>
-          <div className="text-[11px] mt-2" style={{ color: sourceUrl ? 'var(--brand)' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
-            {sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
-          </div>
-        </button>
-        {/* 🔗 связать стрелкой ОТ «Видео из галереи» */}
-        <button onPointerDown={(e) => startConnect('center', e)}
-          title="Потяните, чтобы провести стрелку"
-          style={{ position: 'absolute', left: 'calc(50% + 32px)', top: 'calc(50% - 32px)', transform: 'translate(-50%,-50%)', zIndex: 9, width: 24, height: 24, borderRadius: '50%', background: pending?.from === 'center' ? 'var(--brand)' : 'var(--bg-secondary)', border: '2px solid var(--brand)', color: pending?.from === 'center' ? '#fff' : 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)', touchAction: 'none' }}>
-          <Link2 size={13} />
+            border: `1px ${brief.trim() ? 'solid rgba(99,102,241,0.5)' : 'dashed var(--border-strong)'}`, cursor: 'pointer', whiteSpace: 'nowrap',
+            boxShadow: '0 4px 22px rgba(99,102,241,0.28)' }}>
+          <Sparkles size={14} /> {brief.trim() ? `Сценарий ✓ ${brief.trim().slice(0, 26)}${brief.trim().length > 26 ? '…' : ''}` : 'Сценарий ролика — задайте тон ИИ'}
         </button>
 
         {/* ── Облачные узлы + связи-стрелки ── */}

@@ -1937,11 +1937,17 @@
  *         (картинка из Галереи) и «Своё фото» → HeyGen Avatar IV; текстовая озвучка → ElevenLabs.
  *         Enterprise-ключи сведены к anthropic/gemini/tikhub/heygen/elevenlabs/fal/openai.
  *         Hotebook пока на воркере (замена Chrome-расширением — следующий этап). ~7000 строк вырезано. */
-export const APP_VERSION = '2.0.0';
+/* 2.0.1 — Пост-релизные правки по фидбэку: (1) Flow-расширение (0.2.9) БОЛЬШЕ НЕ ОТКРЫВАЕТ
+ *         вкладку Google Flow автоматически — «выскакивающее окно» при опросе очереди убрано;
+ *         задачи выполняются только когда вкладка Flow открыта пользователем (иначе ждут в
+ *         очереди), а «→ Flow» из Галереи открывает Flow как раньше (явное действие).
+ *         (2) TrendFlow: убран центральный узел «Видео из галереи» — исходник для Omni Flash
+ *         выбирается внутри самого облака Omni (у него свой пикер Галереи); в центре — «Сценарий». */
+export const APP_VERSION = '2.0.1';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.8';
+export const FLOW_EXT_VERSION = '0.2.9';
 
 export function AppVersion() {
   return (
