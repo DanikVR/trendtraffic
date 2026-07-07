@@ -22,12 +22,13 @@ import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
 import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
-import { generatePodcastDialogue, tagUgcRetention } from './director.js';
+import { generatePodcastDialogue, tagUgcRetention, directDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeCommentator, composeOnStudio, composeUgc, composeRetentionVideo, sliceAudioToRenders, mediaDuration, downloadToRenders, downloadToRendersExt, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect, type UgcCaption, type RetComposeSeg } from './podcast_compose.js';
+import { composeHeads, composeCommentator, composeOnStudio, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, downloadToRendersExt, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
+import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { illustrateDialogue, type IllusLine } from './illustrate.js';
 import { insertGpuJob, updateGpuJob, getGpuJob, listProcessingGpuJobs, type GpuStudioParams, type GpuStudioState } from './gpu_studio_store.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
@@ -580,6 +581,131 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const captions: UgcCaption[] = script
       .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
       .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
+
+    // ── Ветка «Диалоги» (два аватара HeyGen под одну запись) ────────────────────
+    // Разбор записи на 2 голоса (A/B) → каждый говорит своим лицом. Claude решает per-turn:
+    // крупный план / оба в кадре / врезка медиа + движок IV/III (экономия). Медиа реплики умно:
+    // раскладка «Авто» (Claude) или задана; растяжка медиа сдвигает последующие реплики.
+    if (spec.dialogue?.enabled) {
+      if (!isPhoto) return res.status(400).json({ error: 'Диалоги работают в режиме «Своё фото» (HeyGen).' });
+      const useRecording = spec.source === 'diarize' && spec.recordingUrl;
+      if (!useRecording) return res.status(400).json({ error: 'Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).' });
+      const photoA: string = String(spec.dialogue.photoA || spec.photoUrl || '');
+      const photoB: string = String(spec.dialogue.photoB || '');
+      if (!photoA || !photoB) return res.status(400).json({ error: 'Загрузите два фото: «Спикер A» и «Спикер B».' });
+      const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
+      if (!hgKey) return res.status(400).json({ error: 'Для диалога нужен ключ HeyGen (Avatar IV/III) — Настройки → Генерация.' });
+      if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не скачает аудио.' });
+      const engagement: DlgEngagement = ['eco', 'bal', 'dyn'].includes(spec.dialogue.engagement) ? spec.dialogue.engagement : 'bal';
+      const isVid = (u: string) => /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
+
+      const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+      sweepJobs(ugcJobs);
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: 1, results: [] });
+      res.json({ jobId });
+
+      void (async () => {
+        const j = ugcJobs.get(jobId)!;
+        try {
+          // 1) запись (мастер-голос двух спикеров) + два фото + два talking_photo
+          j.status = 'готовлю голос';
+          const rec = await downloadToRenders(abs(String(spec.recordingUrl)), 'dlgrec');
+          const Drec = await mediaDuration(rec.filePath);
+          if (!(Drec > 1)) throw new Error('запись пустая/короткая');
+          j.status = 'загружаю фото в HeyGen';
+          const [pA, pB] = await Promise.all([downloadToRenders(abs(photoA), 'dlgpa'), downloadToRenders(abs(photoB), 'dlgpb')]);
+          const [tpA, tpB] = await Promise.all([uploadTalkingPhoto(hgKey, abs(photoA)), uploadTalkingPhoto(hgKey, abs(photoB))]);
+
+          // 2) план сегментов + LLM-режиссура (движок IV/III, two-shot, раскладка медиа)
+          j.status = 'план диалога (LLM)';
+          const linesIn: DlgLineIn[] = script.map((l: any) => ({
+            speaker: l?.speaker === 'B' ? 'B' : 'A', text: String(l?.text || ''),
+            start: Number(l?.start), end: Number(l?.end),
+            image: l?.image ? String(l.image) : null, isVideo: l?.image ? isVid(String(l.image)) : false,
+            layoutHint: ['auto', 'media-full', 'media-bg-left', 'media-bg-right', 'media-split'].includes(l?.layoutHint) ? l.layoutHint : 'auto',
+            holdSec: Number(l?.holdSec) || 0,
+          }));
+          const { segs, preset } = planDialogue(linesIn, engagement);
+          if (!segs.length) throw new Error('нет реплик — разберите запись');
+          const faceSpeech = segs.map((s, i) => ({ s, i })).filter((x) => x.s.kind === 'speech' && x.s.speaker);
+          const dir = await directDialogue({
+            tenantId: j.tenantId!,
+            turns: faceSpeech.map((x) => ({ i: x.i, speaker: x.s.speaker as 'A' | 'B', text: x.s.text, hasMedia: !!x.s.image, mediaAuto: x.s.mediaAuto })),
+            ivMax: preset.ivMax, twoshotMax: preset.twoshotMax,
+          });
+          if (dir.scores.length) applyDlgBudget(segs, dir.scores, preset);
+          else applyDlgBudget(segs, scoreDialogueHeuristic(segs), preset);
+          const ivN = segs.filter((s) => s.engine === 'iv').length;
+          const tsN = segs.filter((s) => s.layout === 'twoshot').length;
+          j.note = `${dir.note}; IV ${ivN}, два-шот ${tsN}`;
+
+          // 3) медиа реплик — качаем локально (по одному разу)
+          const mediaCache = new Map<string, string>();
+          for (const s of segs) if (s.image && !mediaCache.has(s.image)) {
+            const dl = await downloadToRenders(abs(s.image), s.isVideo ? 'dlgmv' : 'dlgmi'); mediaCache.set(s.image, dl.filePath);
+          }
+
+          // 4) рендер лиц: только там, где лицо видно (media-full/держание — без лица = дёшево)
+          j.status = 'рендер лиц (HeyGen)';
+          const faceSegs = segs.map((s, i) => ({ s, i })).filter((x) => x.s.kind === 'speech' && x.s.speaker && x.s.layout !== 'media-full' && x.s.srcT0 != null && x.s.srcT1 != null);
+          const submitted: { i: number; videoId: string }[] = [];
+          for (const { s, i } of faceSegs) {
+            const slice = await sliceAudioToRenders(rec.filePath, s.srcT0 as number, s.srcT1 as number, 'dlgseg');
+            const videoId = await submitTalkingPhotoVideo(hgKey, {
+              talkingPhotoId: s.speaker === 'A' ? tpA : tpB, useIV: s.engine === 'iv', expressive: true,
+              width: 1080, height: 1920, audioUrl: abs(slice.fileUrl),
+            });
+            submitted.push({ i, videoId });
+          }
+          const avatarPaths: Record<number, string> = {};
+          const deadline = Date.now() + 30 * 60_000;
+          const pending = new Set(submitted.map((x) => x.i));
+          while (pending.size && Date.now() < deadline) {
+            await new Promise((r2) => setTimeout(r2, 5000));
+            for (const { i, videoId } of submitted) {
+              if (!pending.has(i)) continue;
+              const st = await heygenVideoStatus(hgKey, videoId);
+              if (st.status === 'failed' || st.status === 'error') throw new Error(`HeyGen сегмент ${i}: ${st.error || 'ошибка'}`);
+              if (st.status === 'completed' && st.url) { const dl = await downloadToRenders(st.url, 'dlghead'); avatarPaths[i] = dl.filePath; pending.delete(i); }
+            }
+            j.status = `рендер лиц (${submitted.length - pending.size}/${submitted.length})`;
+          }
+          if (pending.size) throw new Error('часть сегментов HeyGen не уложилась в 30 минут');
+
+          // 5) склейка: голос (с растяжкой) + видео сегментов + титры + музыка
+          j.status = 'склейка голоса';
+          const voiceParts: DlgVoicePart[] = segs.map((s) => ({
+            dur: s.t1 - s.t0, srcT0: s.srcT0, srcT1: s.srcT1, kind: s.kind,
+            mediaPath: s.image ? mediaCache.get(s.image) || null : null, isVideo: s.isVideo, mediaFromSec: s.mediaFromSec,
+          }));
+          const voice = await buildDialogueVoice({ recordingPath: rec.filePath, parts: voiceParts });
+          const composeSegs: DlgComposeSeg[] = segs.map((s, i) => ({
+            dur: s.t1 - s.t0, layout: s.layout,
+            avatarPath: (s.layout === 'media-full' || s.kind === 'hold') ? null : (avatarPaths[i] || null),
+            avatar2Path: s.layout === 'twoshot' ? (s.speaker === 'A' ? pB.filePath : pA.filePath) : null, avatar2IsImage: true,
+            mediaPath: s.image ? mediaCache.get(s.image) || null : null, isVideo: s.isVideo, mediaFromSec: s.mediaFromSec,
+          }));
+          const caps: UgcCaption[] = segs.filter((s) => s.kind === 'speech' && s.text.trim()).map((s) => ({ t0: s.t0, t1: s.t1, text: s.text }));
+          const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'dlgmusic') : null;
+          j.status = 'финальная склейка';
+          const fileUrl = await composeDialogueVideo({
+            segments: composeSegs, voicePath: voice.filePath,
+            musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+            captions: caps, capStyle: caps.length ? capStyle : 'none', capPos,
+          });
+          const asset = await createAsset(j.tenantId!, {
+            kind: 'reference', mediaType: 'video', originalName: `UGC-диалог (${engagement})`, fileUrl, mime: 'video/mp4',
+          });
+          j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+          j.fileUrl = fileUrl; j.assetId = asset?.id || null;
+          j.status = 'done';
+        } catch (e: any) {
+          j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
+          console.warn('[ugc/build dialogue] FAILED:', j.error);
+        }
+      })();
+      return;
+    }
 
     // ── Ветка «Удержание» (сегментный конвейер, HeyGen IV/III) ──────────────────
     // Голос/скрипт один → аватар рендерим ОДИН РАЗ (посегментно IV/III), а склейку гоним по

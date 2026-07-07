@@ -12,7 +12,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles } from 'lucide-react';
-import { PodLine, PodAnim, POD_ANIMS } from './dialogueTypes';
+import { PodLine, PodAnim, POD_ANIMS, DlgMediaHint, DLG_MEDIA_HINTS } from './dialogueTypes';
 
 interface Props {
   dialogue: PodLine[];
@@ -22,11 +22,12 @@ interface Props {
   onPickImage?: (index: number) => void;
   onOmni?: (index: number) => void;
   showGestures?: boolean;
+  dialogueMode?: boolean;   // режим «Диалоги»: на реплике с медиа — выбор раскладки + растяжка показа
   accentA?: string;
   accentB?: string;
 }
 
-export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
+export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
   const dirty = () => { onDirty?.(); };
   const mutate = (fn: (d: PodLine[]) => PodLine[]) => { setDialogue(fn); dirty(); };
   const lineMutate = (i: number, patch: Partial<PodLine>) => mutate((d) => d.map((l, j) => (j === i ? { ...l, ...patch } : l)));
@@ -323,7 +324,25 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                   })}
                 </div>
               )}
-              {l.image && (
+              {/* Режим «Диалоги»: раскладка медиа + растяжка показа (сдвигает следующие реплики) */}
+              {l.image && dialogueMode && (
+                <>
+                  <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Показ:</span>
+                    {DLG_MEDIA_HINTS.map((h) => { const sel = (l.layoutHint || 'auto') === h.v; return (
+                      <button key={h.v} onClick={() => lineMutate(i, { layoutHint: h.v })} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? accentA : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? accentA : 'var(--border-medium)'}`, cursor: 'pointer' }}>{h.label}</button>
+                    ); })}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1" style={{ paddingLeft: 34 }}>
+                    <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Держать медиа:</span>
+                    <input type="number" min={0} step={0.5} value={l.holdSec ? Math.round(l.holdSec * 10) / 10 : ''}
+                      onChange={(e) => { const v = parseFloat(e.target.value); lineMutate(i, { holdSec: Number.isFinite(v) && v > 0 ? v : undefined }); }}
+                      placeholder={`${lineDur(l).toFixed(1)}`} className="w-16 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>сек {l.holdSec && l.holdSec > lineDur(l) ? `· +${(l.holdSec - lineDur(l)).toFixed(1)}с, реплики сдвинутся` : `· реплика ${lineDur(l).toFixed(1)}с`}</span>
+                  </div>
+                </>
+              )}
+              {l.image && !dialogueMode && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр:</span>
                   {([['full', 'Во весь кадр'], ['card', 'Карточка']] as ['full' | 'card', string][]).map(([m, lbl]) => { const sel = (l.mode || 'card') === m; return (
@@ -331,13 +350,13 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                   ); })}
                 </div>
               )}
-              {l.image && l.mode === 'full' && (
+              {l.image && !dialogueMode && l.mode === 'full' && (
                 <div className="flex items-center gap-1 mt-1" style={{ paddingLeft: 34 }}>
                   <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Плашка:</span>
                   <input value={l.title || ''} onChange={(e) => lineMutate(i, { title: e.target.value.slice(0, 60) })} placeholder="заголовок 2–5 слов (необязательно)" className="flex-1 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
                 </div>
               )}
-              {l.image && (l.mode || 'card') === 'card' && (
+              {l.image && !dialogueMode && (l.mode || 'card') === 'card' && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
                   {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a.v; return (
