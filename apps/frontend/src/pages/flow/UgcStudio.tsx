@@ -11,12 +11,14 @@
  * «Режим ролика» — производный от спеки: dialogueEnabled → «Диалог двоих»,
  * retentionPreset≠off → «Динамичный монтаж», иначе «Один ведущий».
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
-  UserRound, Users, Mic, Paperclip, Scissors, Music, Video, Type, Layers, Play,
+  Mic, Paperclip, Scissors, Music, Video, Type, Layers,
 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
+import UgcPreview from './UgcPreview';
+import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { type UgcSpec, type UgcPickTarget, type UgcMode, ugcModeOf } from './ugcTypes';
@@ -146,8 +148,15 @@ function LayDia({ v }: { v: UgcSpec['placement'] }) {
 export default function UgcStudio(p: UgcStudioProps) {
   const { ugc, ugcMutate } = p;
   const mode = ugcModeOf(ugc);
-  const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl : ugc.photoUrl;
   const building = p.ugcBusy === 'render';
+
+  /* панель «Реплики» над таймлайном; авто-открывается, когда реплики появились впервые */
+  const [linesOpen, setLinesOpen] = useState(false);
+  const prevLinesLen = useRef(ugc.script.length);
+  useEffect(() => {
+    if (prevLinesLen.current === 0 && ugc.script.length > 0) setLinesOpen(true);
+    prevLinesLen.current = ugc.script.length;
+  }, [ugc.script.length]);
 
   /* ── производный «Режим ролика» поверх существующих полей спеки ── */
   const setMode = (m: UgcMode) => ugcMutate((u) => {
@@ -194,107 +203,6 @@ export default function UgcStudio(p: UgcStudioProps) {
   });
 
   const scrollToSec = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-  /* ── превью кадра: чистая функция «спека → кадр» (базовая версия, фаза 2 расширит) ── */
-  const caption = (fmt: '9x16' | '16x9') => {
-    if (ugc.subtitles.style === 'none') return null;
-    const posStyle: React.CSSProperties = ugc.subtitles.pos === 'top' ? { top: '8%' } : ugc.subtitles.pos === 'center' ? { top: '50%', transform: 'translateY(-50%)' } : { bottom: '9%' };
-    return (
-      <div style={{ position: 'absolute', left: 0, right: 0, zIndex: 6, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 12px', ...posStyle }}>
-        {ugc.subtitles.style === 'word' ? (
-          <span style={{ fontSize: fmt === '16x9' ? 22 : 19, fontWeight: 850, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>Пример</span>
-        ) : (
-          <span style={{ fontSize: 11.5, fontWeight: 750, color: '#fff', textAlign: 'center', textShadow: '0 1px 6px rgba(0,0,0,.85)' }}>
-            {ugc.subtitles.style === 'karaoke' ? (<><span style={{ color: ACC2 }}>Пример</span> субтитров караоке</>) : 'Пример субтитров строкой'}
-          </span>
-        )}
-      </div>
-    );
-  };
-  const emptyCell = (title: string, sub: string, onClick: () => void) => (
-    <button onClick={onClick} className="w-full h-full flex flex-col items-center justify-center gap-1.5"
-      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9a9aa4' }}>
-      <span className="flex items-center justify-center rounded-xl" style={{ width: 46, height: 46, border: '1.5px dashed #5c5c66', color: '#8b8b93' }}><Plus size={18} /></span>
-      <b className="text-[10.5px] font-700" style={{ color: '#a3a3ad' }}>{title}</b>
-      <span className="text-[9.5px]" style={{ color: '#77777f' }}>{sub}</span>
-    </button>
-  );
-  const cellTag = (t: string) => (
-    <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 3, fontSize: 8.5, fontWeight: 750, letterSpacing: '.05em', textTransform: 'uppercase', color: '#fff', background: 'rgba(0,0,0,.5)', borderRadius: 999, padding: '2px 7px', pointerEvents: 'none' }}>{t}</span>
-  );
-  const avatarCell = (which: 'A' | 'B', tag: string) => {
-    const url = which === 'A' ? (mode === 'dialogue' ? ugc.photoUrl : avatarImg) : ugc.photoBUrl;
-    const onEmpty = which === 'B'
-      ? () => p.openUgcPick('photoB')
-      : (ugc.avatarSource === 'photo' || mode !== 'solo') ? () => p.openUgcPick('photo') : () => scrollToSec('ugc-sec-avatar');
-    return (
-      <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
-        {url ? (<>{cellTag(tag)}<img src={url} alt="" className="w-full h-full object-cover" /></>)
-          : emptyCell(`${tag} — пока не выбран`, 'нажмите, чтобы выбрать', onEmpty)}
-      </div>
-    );
-  };
-  const videoCell = (tag: string) => (
-    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
-      {ugc.clip ? (
-        <>
-          {cellTag(tag + (ugc.clipFit === 'contain' ? ' · целиком' : ''))}
-          <video src={`${ugc.clip.url}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full" style={{ objectFit: ugc.clipFit === 'contain' ? 'contain' : 'cover' }} />
-          <span className="absolute flex items-center justify-center rounded-full" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 32, height: 32, background: 'rgba(0,0,0,.45)', border: '1.5px solid rgba(255,255,255,.75)', pointerEvents: 'none' }}><Play size={14} color="#fff" fill="#fff" /></span>
-        </>
-      ) : emptyCell('Видео — пока не загружено', mode === 'solo' ? 'не обязательно · нажмите, чтобы выбрать' : 'нажмите — выбрать из Галереи', () => p.openUgcPick('clip'))}
-    </div>
-  );
-  const frame = (fmt: '9x16' | '16x9', mini?: boolean) => {
-    const dims = fmt === '9x16' ? (mini ? { w: 132, h: 235 } : { w: 246, h: 437 }) : (mini ? { w: 300, h: 169 } : { w: 496, h: 279 });
-    const row = fmt === '16x9';
-    let inner: React.ReactNode;
-    if (mode === 'dialogue') {
-      inner = (
-        <div className={`absolute inset-0 flex ${row ? 'flex-row' : 'flex-col'}`}>
-          {avatarCell('A', 'Собеседник A')}
-          <div style={{ [row ? 'borderLeft' : 'borderTop']: '1px solid rgba(255,255,255,.09)' } as React.CSSProperties} />
-          {avatarCell('B', 'Собеседник B')}
-        </div>
-      );
-    } else if (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') {
-      const side = ugc.placement === 'overlay-right' ? { right: '4%' } : { left: '4%' };
-      inner = (
-        <div className="absolute inset-0 flex">
-          {videoCell('Видеоряд')}
-          <div style={{ position: 'absolute', bottom: 0, width: '44%', height: '42%', zIndex: 4, ...side }}>
-            {avatarImg ? (
-              <img src={avatarImg} alt="" className="w-full h-full object-cover" style={{ borderRadius: '12px 12px 0 0', border: '1px solid rgba(255,255,255,.25)', borderBottom: 'none' }} />
-            ) : (
-              <button onClick={ugc.avatarSource === 'photo' ? () => p.openUgcPick('photo') : () => scrollToSec('ugc-sec-avatar')}
-                className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
-                style={{ border: '1.5px dashed #6b6b75', borderRadius: 12, background: 'rgba(0,0,0,.35)', color: '#9a9aa4', cursor: 'pointer' }}>
-                <UserRound size={16} /> Аватар — пока<br />не выбран
-              </button>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      const av = avatarCell('A', 'Аватар');
-      const vid = videoCell('Видеоряд');
-      inner = (
-        <div className={`absolute inset-0 flex ${row ? 'flex-row' : 'flex-col'}`}>
-          {ugc.placement === 'bottom' ? vid : av}
-          {ugc.placement === 'bottom' ? av : vid}
-        </div>
-      );
-    }
-    return (
-      <div key={fmt} className="flex flex-col items-center gap-2">
-        <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{fmt === '9x16' ? '9:16 · TikTok, Reels, Shorts' : '16:9 · YouTube'}</span>
-        <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: fmt === '9x16' ? 20 : 14, border: '1px solid var(--border-strong)', background: '#101013', boxShadow: '0 14px 34px rgba(0,0,0,.35)' }}>
-          {inner}
-          {caption(fmt)}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
@@ -718,7 +626,16 @@ export default function UgcStudio(p: UgcStudioProps) {
             )}
           </div>
 
-          {/* кадры или результат */}
+          {/* интерактивное превью (спека → кадр) или готовый результат */}
+          {!((ugc.results && ugc.results.length > 1) || ugc.result) ? (
+            <UgcPreview
+              ugc={ugc} mode={mode}
+              onEmptyAvatar={() => { if (ugc.avatarSource === 'photo' || mode !== 'solo') p.openUgcPick('photo'); else scrollToSec('ugc-sec-avatar'); }}
+              onEmptyPhotoB={() => p.openUgcPick('photoB')}
+              onEmptyClip={() => p.openUgcPick('clip')}
+              onOpenLines={() => setLinesOpen(true)}
+            />
+          ) : (
           <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-3" style={{ minHeight: 0 }}>
             {(ugc.results && ugc.results.length > 1) ? (
               <div className="rounded-xl p-3 space-y-2 my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)', maxWidth: 760, width: '100%' }}>
@@ -745,19 +662,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                   onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) p.setUgcResultAR(v.videoWidth / v.videoHeight); }}
                   className="rounded-lg block" style={{ aspectRatio: String(p.ugcResultAR), maxHeight: '64vh', maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
               </div>
-            ) : (
-              <>
-                {ugc.formats.includes('9x16') && frame('9x16', false)}
-                {ugc.formats.includes('16x9') && frame('16x9', ugc.formats.length > 1)}
-              </>
-            )}
+            ) : null}
           </div>
+          )}
           <p className="text-center text-[10.5px] pb-2.5 px-4" style={{ color: 'var(--text-muted)' }}>
-            {mode === 'dialogue'
-              ? 'ИИ сам решает: крупный план, оба в кадре или врезка. Медиа реплик — на таймлайне внизу.'
-              : mode === 'retention'
-                ? 'План кадра сменяется автоматически: дорогие крупные планы ИИ ставит на ключевые фразы, врезки — бесплатны.'
-                : 'Кликните по зоне превью, чтобы добавить содержимое. Превью обновляется сразу.'}
+            {mode === 'solo'
+              ? 'Кликните по зоне превью, чтобы добавить содержимое. Превью обновляется сразу.'
+              : 'Кликайте по сегментам плана — превью покажет каждый план кадра. Медиа реплик — на таймлайне внизу.'}
           </p>
 
           {/* прогресс сборки поверх канваса */}
@@ -775,31 +686,43 @@ export default function UgcStudio(p: UgcStudioProps) {
         </div>
       </div>
 
-      {/* ── Док таймлайна ── */}
-      <div className="flex-shrink-0 px-3.5 py-2" style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-medium)', maxHeight: 236, overflowY: 'auto' }}>
-        {ugc.script.length > 0 ? (
-          <>
-            <div className="flex items-center gap-2 mb-1">
-              <b className="text-[12px]" style={{ color: 'var(--text-primary)' }}>Таймлайн реплик</b>
-              <span className="text-[10.5px]" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{ugc.script.length} реплик · ~{Math.round(p.ugcScriptSec())} сек</span>
-              {mode === 'dialogue' && <span className="text-[10px] ml-auto" style={{ color: 'var(--text-muted)' }}>бейдж A/B на реплике — сменить голос · медиа с «Показывать N сек» сдвигает следующие</span>}
-            </div>
-            <DialogueTimeline
-              dialogue={ugc.script}
-              setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
-              recordingUrl={ugc.recordingUrl}
-              onPickImage={(i) => { p.setUgcLineIdx(i); p.setUgcPick('lineImage'); }}
-              dialogueMode={ugc.dialogueEnabled}
-              accentA={ACC}
-              accentB={ACC2}
-            />
-          </>
-        ) : (
-          <p className="text-center text-[11.5px] py-3" style={{ color: 'var(--text-muted)' }}>
-            <Type size={13} className="inline mr-1.5" style={{ verticalAlign: '-2px' }} />
-            Реплики появятся здесь после «Сгенерировать текст» или «Разобрать речь» — таймлайн с дорожками голосов, резкой и медиа.
-          </p>
+      {/* ── Док таймлайна (+ выдвижная панель «Реплики» поверх) ── */}
+      <div className="flex-shrink-0 relative" style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-medium)' }}>
+        {linesOpen && ugc.script.length > 0 && (
+          <UgcLinesPanel
+            ugc={ugc} ugcMutate={ugcMutate}
+            onPickMedia={(i) => { p.setUgcLineIdx(i); p.setUgcPick('lineImage'); }}
+            onClose={() => setLinesOpen(false)}
+          />
         )}
+        <div className="px-3.5 py-2" style={{ maxHeight: 236, overflowY: 'auto' }}>
+          {ugc.script.length > 0 ? (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <b className="text-[12px]" style={{ color: 'var(--text-primary)' }}>Таймлайн реплик</b>
+                <span className="text-[10.5px]" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{ugc.script.length} реплик · ~{Math.round(p.ugcScriptSec())} сек</span>
+                <button onClick={() => setLinesOpen((o) => !o)} className="ml-auto text-[10.5px] font-700 px-2.5 py-1 rounded-lg"
+                  style={{ background: linesOpen ? 'rgba(168,85,247,.14)' : 'var(--bg-tertiary)', color: linesOpen ? ACC : 'var(--text-secondary)', border: `1px solid ${linesOpen ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                  {linesOpen ? 'Скрыть реплики ▾' : 'Реплики ▴'}
+                </button>
+              </div>
+              <DialogueTimeline
+                dialogue={ugc.script}
+                setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
+                recordingUrl={ugc.recordingUrl}
+                onPickImage={(i) => { p.setUgcLineIdx(i); p.setUgcPick('lineImage'); }}
+                dialogueMode={ugc.dialogueEnabled}
+                accentA={ACC}
+                accentB={ACC2}
+              />
+            </>
+          ) : (
+            <p className="text-center text-[11.5px] py-3" style={{ color: 'var(--text-muted)' }}>
+              <Type size={13} className="inline mr-1.5" style={{ verticalAlign: '-2px' }} />
+              Реплики появятся здесь после «Сгенерировать текст» или «Разобрать речь» — таймлайн с дорожками голосов, резкой и медиа.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* ── Пикеры Галереи (единый GalleryPicker сервиса) ── */}
