@@ -8,7 +8,7 @@
 #         apps/backend/.env с авто-секретами → db:setup → pm2 (backend) →
 #         nginx (статика фронта + reverse-proxy /api,/uploads) → health-check.
 #
-# НЕ ставит OpenMontage/torch — это следующий блок (рендер «Собрать»).
+# OpenMontage/torch НЕ ставится — подсистема вырезана в v2.0.0 (docs/TRENDFLOW_CULL.md).
 # ffmpeg + python3-venv ставятся заранее как база под CPU-цепочку.
 #
 # Запуск (после git push моего коммита в origin/main):

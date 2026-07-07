@@ -10,7 +10,6 @@
 #     && bash deploy/vps-redeploy.sh
 #
 # Можно сразу прописать переменные в .env (upsert; передаются как env скрипту):
-#   RENDER_WORKER_URL=http://100.81.35.75:8800 \
 #   ANTHROPIC_API_KEY=sk-ant-... \
 #   bash deploy/vps-redeploy.sh
 # ────────────────────────────────────────────────────────────────────────────
@@ -49,12 +48,19 @@ upsert_env(){
   fi
   echo "  .env: ${key} задан"
 }
-if [ -n "${RENDER_WORKER_URL:-}${RENDER_GPU_WORKER_URL:-}${RENDER_GPU_TARGET:-}${ANTHROPIC_API_KEY:-}" ]; then
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
   log "Переменные .env (upsert)"
-  upsert_env RENDER_WORKER_URL     "${RENDER_WORKER_URL:-}"
-  upsert_env RENDER_GPU_WORKER_URL "${RENDER_GPU_WORKER_URL:-}"
-  upsert_env RENDER_GPU_TARGET     "${RENDER_GPU_TARGET:-}"
   upsert_env ANTHROPIC_API_KEY     "${ANTHROPIC_API_KEY:-}"
+fi
+
+# ── Чистка TrendFlow v2.0: мёртвые ключи удалённых подсистем (render-worker/sr-capture) ──
+if [ -f "$ENV_FILE" ]; then
+  for dead in RENDER_WORKER_URL RENDER_GPU_WORKER_URL RENDER_GPU_TARGET SR_CAPTURE_URL SR_APP_ID; do
+    if grep -q "^${dead}=" "$ENV_FILE"; then
+      sed -i "/^${dead}=/d" "$ENV_FILE"
+      echo "  .env: ${dead} удалён (подсистема вырезана в v2.0.0)"
+    fi
+  done
 fi
 
 log "Миграции БД (идемпотентно)"
@@ -70,5 +76,4 @@ sleep 4
 echo -n "backend /api/health → "; curl -fsS http://localhost:3001/api/health || echo "(ещё стартует — см. pm2 logs ${PM2_NAME})"
 echo
 log "ГОТОВО"
-echo "Приложение обновлено. Версия в углу страницы должна стать v1.1.8."
-echo "Render worker URL в .env: $(grep -m1 '^RENDER_WORKER_URL=' "$ENV_FILE" 2>/dev/null || echo 'не задан (рендер в симуляции)')"
+echo "Приложение обновлено. Версию сверь в углу страницы (APP_VERSION в AppVersion.tsx)."

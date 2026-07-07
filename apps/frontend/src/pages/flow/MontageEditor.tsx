@@ -24,7 +24,7 @@ import { AudioPlayer } from '../../components/AudioPlayer';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import DialogueTimeline from './DialogueTimeline';
-import type { DlgMediaHint } from './dialogueTypes';
+import type { PodLine } from './dialogueTypes';
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
 type CloudId = 'omni' | 'plan' | 'editor' | 'ugc' | 'hotebook' | 'flow';
@@ -291,9 +291,8 @@ const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
 // ── Общие типы дорожек/реплик (используются блоками UGC и «Комментатор») ──
 type PodVoice = 'female' | 'male';
 type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
-// Реплика: спикер + текст (+ таймкоды) + опц. медиа. Используется UGC-диалогом и «Комментатором».
-// mode/layoutHint — план показа медиа (карточка/во весь кадр/фон+лицо); holdSec — держать медиа N сек.
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: string; tStart?: number; gesture?: number; mode?: 'card' | 'full'; title?: string; layoutHint?: DlgMediaHint; holdSec?: number }
+// Реплика (PodLine) — общий тип из dialogueTypes.ts: один на UGC-диалог, «Комментатора»
+// и DialogueTimeline (локальный дубль с anim?: string ломал tsc — типы разъезжались).
 
 // ── Блок «UGC / Аватары»: кадр 9:16 из двух половин (аватар + видео) ──
 // Одна половина — говорящий аватар (из коллекции Галереи / своё фото → HeyGen), другая —

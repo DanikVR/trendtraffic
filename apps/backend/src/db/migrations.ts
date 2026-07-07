@@ -779,6 +779,13 @@ const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_tier_check;
           ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_tier_check CHECK (tier IN ('premium', 'plus', 'standard', 'standard_yearly', 'enterprise', 'trial', 'monthly', 'annual'))`,
   },
+  // ── Чистка TrendFlow v2.0 (docs/TRENDFLOW_CULL.md §7): таблицы удалённых подсистем ──
+  // render_jobs — очередь OpenMontage; gpu_studio_jobs — джобы GPU-студии подкаста;
+  // asset_captions — кэш vision-капшенов «Иллюстратора». Код удалён в v2.0.0,
+  // здесь добираем сами таблицы (FK на них нет, DROP идемпотентен).
+  { name: 'cull_v2.drop_render_jobs', sql: `DROP TABLE IF EXISTS render_jobs` },
+  { name: 'cull_v2.drop_gpu_studio_jobs', sql: `DROP TABLE IF EXISTS gpu_studio_jobs` },
+  { name: 'cull_v2.drop_asset_captions', sql: `DROP TABLE IF EXISTS asset_captions` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

@@ -1947,7 +1947,18 @@
  *         задайте тон ИИ») + попап. Фича была нерабочей: мастер-промт graph.brief нигде не читался
  *         бэком (ИИ-режиссёр был частью монтажа, вырезанного в v2.0.0). brief-персист оставлен
  *         безвредно. MontageEditor.tsx. */
-export const APP_VERSION = '2.0.3';
+/* 2.0.4 — Добор чистки v2.0 по аудиту (docs/TRENDFLOW_CULL.md §6–7, в v2.0.0 не выполнены):
+ *         (1) БД: миграции DROP TABLE IF EXISTS render_jobs / gpu_studio_jobs / asset_captions —
+ *         в 2.0.0 убрали только CREATE, таблицы-сироты оставались на проде.
+ *         (2) Репо: удалены render-worker и sr-capture целиком + deploy/vps-openmontage.sh;
+ *         из vps-redeploy.sh вырезаны RENDER-переменные, добавлена авто-чистка мёртвых
+ *         ключей .env (RENDER_WORKER_URL, RENDER_GPU_WORKER_URL, RENDER_GPU_TARGET,
+ *         SR_CAPTURE_URL, SR_APP_ID) при деплое.
+ *         (3) Фикс регрессии чистки: локальный дубль типа PodLine в MontageEditor
+ *         (anim?: string вместо PodAnim) ломал tsc фронта → «npm run build» падал и
+ *         деплой жил на фолбэке «npx vite build» без типов. Дубль удалён, PodLine
+ *         импортируется из dialogueTypes.ts. tsc backend+frontend и vite build — PASS. */
+export const APP_VERSION = '2.0.4';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает и на Google Flow, и на NotebookLM (Hotebook). БАМПАТЬ вместе с manifest при каждом
