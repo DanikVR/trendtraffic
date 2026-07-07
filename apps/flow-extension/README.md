@@ -1,5 +1,8 @@
 # TrendTraffic ↔ Google Flow — Chrome-расширение
 
+> 📖 **Полная документация интеграции** (архитектура, API, протокол сообщений, журнал
+> багов, лимиты, обслуживание, история версий): [`docs/GOOGLE_FLOW_INTEGRATION.md`](../../docs/GOOGLE_FLOW_INTEGRATION.md).
+
 Мост между TrendTraffic и **настоящим** Google Flow (`labs.google/fx/tools/flow`).
 Человек работает в Flow как обычный пользователь, а расширение:
 

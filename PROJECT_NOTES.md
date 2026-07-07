@@ -3138,3 +3138,21 @@ ssh root@web 'cd /var/www/trendtraffic && bash deploy/vps-redeploy.sh'
 **Хостинг (решение 2026-07-05):** воркер ОСТАЁТСЯ на домашнем ПК (жилой IP безопаснее для неофиц. доступа; GPU не нужен, но датацентровый IP Hostinger = Google капризнее). Переезд на CPU render-VPS возможен (нужен Xvfb для окна входа); прокси = правка без кода (`HTTP_PROXY`/`HTTPS_PROXY` в env + опц. `NOTEBOOKLM_TRANSPORT=curl_cffi`). Надёжность = WSL запущен (стартует при входе в Windows, как GPU-воркер).
 
 **Лимиты Google:** Free ~3 аудио/день, 50 чатов; Plus $7.99 = 6 аудио+6 видео; Ultra = 100-200, cinematic video только Ultra. Считаются на аккаунт → у каждого тенанта свой лимит.
+
+## 5.Ч TrendFlow: блок «Google Flow» (Veo) + Chrome-расширение — двусторонний обмен (2026-07-05 … 2026-07-07, v1.6.90 → v1.6.135, расширение v0.1.0 → v0.2.8)
+
+> 📖 Полная документация (архитектура, все `/api/flow-ext/*`, протокол сообщений, журнал багов, лимиты, обслуживание, история версий расширения) — в [`docs/GOOGLE_FLOW_INTEGRATION.md`](docs/GOOGLE_FLOW_INTEGRATION.md). Здесь — конспект для энциклопедии.
+
+**Цель:** работать с настоящим Google Flow (Veo) в СВОЁМ Google-аккаунте клиента, не выходя из TrendTraffic. 7-й облачный узел «Google Flow» в MontageEditor.
+
+**Почему расширение, а не API/iframe:** API Veo дорогой ($0.10/сек); iframe невозможен (`accounts.google.com` DENY, partitioning, OAuth в webview заблокирован); официального API у Flow нет. → **Chrome-расширение MV3** (`apps/flow-extension/`), работает как «обычный пользователь» на живой странице Flow. Раздаётся приватно `.zip` (`/flow-extension.zip`), без Web Store. Пер-тенантно: Veo платит подписка клиента.
+
+**Архитектура:** SPA (`FlowExtPanel`/`GalleryPage`) ↔ `content-bridge.js` (мост, авто-передача JWT из `localStorage['vibevox_token']`) ↔ `background.js` (SW: очередь/ingest/fetch-bytes/push-to-flow, хранит токен) ↔ `content-flow.js` (панель+автоматизация на Flow) + `injected.js` (MAIN-world перехват fetch/XHR = разведка). Бэкенд `modules/flow-ext/router.ts` (`/enqueue,/tasks,/status,/ingest,/ingest-manual,/gallery,/recon,/list,/clear`; JWT+Enterprise; таблицы `flow_ext_tasks`/`flow_ext_recon`; **смонтирован ДО глобального `express.json()` — иначе 413**). Готовое медиа → Галерея `folder='flow'`.
+
+**Два режима блока:** (1) «Клипы» — расширение берёт промпты из очереди, генерит Veo, клипы → Галерея (анти-бот пейсинг 25–70с / 20мин обязателен). (2) «Комментатор» — локально: аудио → диаризация → визуалы (Ken Burns/Omni/текст) → `composeCommentator` (ffmpeg) → Галерея; редактор = общий `DialogueTimeline`.
+
+**Двусторонний обмен:** «⬆ В галерею» (Flow→нас, выбор превьюшками+клик), «⬇ Из Галереи» (нас→Flow), кнопка «→ Flow» в нашей Галерее (картинка авто-вставка / видео скачать+поп-ап / нет расширения → поп-ап установки). Авто-открытие проекта для картинки (`openProject`).
+
+**Ключевые находки (журнал в доке):** 401 при заборе видео = CDN `flow-content.google` за авторизацией → байты качает расширение в браузере клиента; 413 = порядок middleware + nginx 210M→700M; видео не встраивается = у Flow поле `accept="image/*"` только внутри проекта (нашли через `/recon` в БД) → умная заливка по типу; video-to-video невозможен у Veo (→ Runway/Kling роадмап). Лимит медиа: 500 МБ (сервер 700mb / nginx 700M).
+
+**Дисциплина:** при релизе расширения бампать `manifest.version` И `FLOW_EXT_VERSION` (AppVersion.tsx) + пересобрать `public/flow-extension.zip`. Обновление у клиента = удалить старую карточку в `chrome://extensions` → загрузить новый unpacked → F5 на app и на Flow.
