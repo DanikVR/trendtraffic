@@ -942,3 +942,188 @@ export async function composeRetentionVideo(opts: {
     try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* */ }
   }
 }
+
+// ── Режим «Диалоги»: два аватара + умные раскладки + растяжка медиа ────────────
+
+export type DlgComposeLayout = 'closeup' | 'twoshot' | 'media-full' | 'media-bg-left' | 'media-bg-right' | 'media-split';
+
+/** Сегмент диалога для склейки. */
+export interface DlgComposeSeg {
+  dur: number;
+  layout: DlgComposeLayout;
+  avatarPath: string | null;   // лицо говорящего (HeyGen mp4, непрозрачный)
+  avatar2Path: string | null;  // второе лицо (реакция) — для twoshot; обычно СТАТИЧНОЕ фото (бесплатно)
+  avatar2IsImage?: boolean;    // avatar2Path — картинка (нужен -loop), а не видео
+  mediaPath: string | null;    // медиа реплики (локальный файл)
+  isVideo: boolean;
+  mediaFromSec: number;        // с какой секунды медиа проигрывать (растяжка/держание)
+}
+
+/** Один аудио-кусок собираемой мастер-дорожки. */
+export interface DlgVoicePart {
+  dur: number;
+  srcT0: number | null; srcT1: number | null; // окно в записи (речь); null → тишина/медиа
+  kind: 'speech' | 'hold';
+  mediaPath: string | null; isVideo: boolean; mediaFromSec: number; // для держания видео = свой звук
+}
+
+const escFF = (p: string): string => p.replace(/'/g, "'\\''");
+
+/**
+ * Собрать НЕПРЕРЫВНУЮ мастер-дорожку голоса диалога с учётом растяжки медиа: речь = срез записи
+ * (докладывается тишиной до длины сегмента), держание видео = его собственный звук (иначе тишина).
+ * Каждый кусок форсится РОВНО в свою длину (apad + -t) — сумма = сумме видео-сегментов, губы не плывут.
+ */
+export async function buildDialogueVoice(opts: { recordingPath: string; parts: DlgVoicePart[] }): Promise<{ filePath: string; total: number }> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const work = fs.mkdtempSync(path.join(RENDERS_DIR, 'dlgv-'));
+  try {
+    const files: string[] = [];
+    let total = 0;
+    const AENC = ['-ac', '2', '-ar', '48000', '-c:a', 'pcm_s16le'];
+    const silence = async (p: string, dur: number) => ffmpeg(['-y', '-f', 'lavfi', '-t', dur.toFixed(3), '-i', 'anullsrc=r=48000:cl=stereo', ...AENC, p], 60_000);
+    for (let i = 0; i < opts.parts.length; i++) {
+      const s = opts.parts[i];
+      const dur = Math.max(0.05, s.dur);
+      const p = path.join(work, `a${String(i).padStart(3, '0')}.wav`);
+      if (s.kind === 'speech' && s.srcT0 != null && s.srcT1 != null) {
+        const srcDur = Math.max(0.05, s.srcT1 - s.srcT0);
+        // срез записи [srcT0 : +srcDur] → apad до dur → трим -t dur (ровно длина сегмента)
+        await ffmpeg(['-y', '-ss', s.srcT0.toFixed(3), '-t', srcDur.toFixed(3), '-i', opts.recordingPath, '-af', 'apad', '-t', dur.toFixed(3), ...AENC, p], 120_000)
+          .catch(() => silence(p, dur));
+      } else if (s.kind === 'hold' && s.isVideo && s.mediaPath) {
+        await ffmpeg(['-y', '-ss', Math.max(0, s.mediaFromSec).toFixed(3), '-t', dur.toFixed(3), '-i', s.mediaPath, '-vn', '-af', 'apad', '-t', dur.toFixed(3), ...AENC, p], 120_000)
+          .catch(() => silence(p, dur)); // видео без звука → тишина
+      } else {
+        await silence(p, dur);
+      }
+      files.push(p); total += dur;
+    }
+    const listFile = path.join(work, 'list.txt');
+    fs.writeFileSync(listFile, files.map((f) => `file '${escFF(f)}'`).join('\n'), 'utf8');
+    const out = path.join(RENDERS_DIR, `dlg-voice-${randomUUID().slice(0, 8)}.wav`);
+    await ffmpeg(['-y', '-f', 'concat', '-safe', '0', '-i', listFile, ...AENC, out], 300_000);
+    return { filePath: out, total: Math.round(total * 100) / 100 };
+  } finally {
+    try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* */ }
+  }
+}
+
+/**
+ * Склейка ролика-диалога: каждый сегмент — своя техника (крупный план / оба в кадре верх-низ /
+ * медиа во весь кадр / медиа-фон + лицо сбоку / медиа+лицо поровну). 16:9-медиа кладётся полосой
+ * по центру с размытым фоном (TikTok). Поверх — единый непрерывный голос (voicePath от
+ * buildDialogueVoice) + титры + музыка. Длины сегментов форсятся (tpad клонирует кадр).
+ */
+export async function composeDialogueVideo(opts: {
+  segments: DlgComposeSeg[];
+  voicePath: string;
+  musicPath?: string | null; musicVolumePct?: number;
+  captions: UgcCaption[];
+  capStyle: 'none' | 'word' | 'karaoke' | 'plain';
+  capPos: 'bottom' | 'center' | 'top';
+}): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const W = 1080, H = 1920, hp = H / 2;
+  const D = await probeDuration(opts.voicePath);
+  if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  if (!opts.segments.length) throw new Error('Нет сегментов для склейки.');
+
+  // кэш аспекта медиа
+  const ratioCache = new Map<string, number>();
+  const mediaRatio = async (p: string): Promise<number> => {
+    if (ratioCache.has(p)) return ratioCache.get(p)!;
+    const sz = await probeImageSize(p);
+    const r = sz && sz.h > 0 ? sz.w / sz.h : 0.5625;
+    ratioCache.set(p, r); return r;
+  };
+
+  const work = fs.mkdtempSync(path.join(RENDERS_DIR, 'dlg-'));
+  try {
+    const clips: string[] = [];
+    for (let i = 0; i < opts.segments.length; i++) {
+      const s = opts.segments[i];
+      const Ds = Math.max(0.3, s.dur).toFixed(2);
+      const clip = path.join(work, `s${String(i).padStart(3, '0')}.mp4`);
+      const enc = ['-an', '-t', Ds, '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', clip];
+      const freeze = `tpad=stop_mode=clone:stop_duration=${Ds}`;
+      const faceCover = (fi: number, w: number, h: number, out: string) =>
+        `[${fi}:v]scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},setsar=1,fps=30,${freeze}[${out}]`;
+      const mediaIn = (): string[] => !s.mediaPath ? []
+        : s.isVideo ? ['-stream_loop', '-1', '-ss', Math.max(0, s.mediaFromSec).toFixed(3), '-t', Ds, '-i', s.mediaPath]
+          : ['-loop', '1', '-t', Ds, '-i', s.mediaPath];
+      const mediaPlace = (mi: number, w: number, h: number, ratio: number, out: string): string => {
+        const targetR = w / h;
+        if (!ratio || ratio <= targetR * 1.02) // портрет/квадрат → cover
+          return `[${mi}:v]scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},setsar=1,fps=30[${out}]`;
+        // ландшафт (16:9) → размытая полоса по центру (TikTok)
+        return `[${mi}:v]split=2[${out}b][${out}f];[${out}b]scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},boxblur=24:2[${out}bg];[${out}f]scale=${w}:-2:flags=lanczos[${out}fg];[${out}bg][${out}fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps=30[${out}]`;
+      };
+
+      const hasFace = !!s.avatarPath;
+      if (s.layout === 'closeup' || (!s.mediaPath && s.layout !== 'twoshot')) {
+        if (hasFace) await ffmpeg(['-y', '-i', s.avatarPath!, '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${freeze}`, ...enc], 300_000);
+        else await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
+      } else if (s.layout === 'twoshot' && s.avatarPath && s.avatar2Path) {
+        // говорящий (видео HeyGen) сверху + реакция второго (обычно СТАТИЧНОЕ фото — бесплатно) снизу
+        const in2 = s.avatar2IsImage ? ['-loop', '1', '-t', Ds, '-i', s.avatar2Path] : ['-i', s.avatar2Path];
+        await ffmpeg(['-y', '-i', s.avatarPath, ...in2, '-filter_complex', `${faceCover(0, W, hp, 'a')};${faceCover(1, W, hp, 'b')};[a][b]vstack=inputs=2[v]`, '-map', '[v]', ...enc], 300_000);
+      } else if (s.layout === 'twoshot' && hasFace) {
+        // нет второго лица — падаем в крупный план
+        await ffmpeg(['-y', '-i', s.avatarPath!, '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${freeze}`, ...enc], 300_000);
+      } else if (s.layout === 'media-full' || !hasFace) {
+        const r = s.mediaPath ? await mediaRatio(s.mediaPath) : 0.5625;
+        if (s.mediaPath) await ffmpeg(['-y', ...mediaIn(), '-filter_complex', mediaPlace(0, W, H, r, 'v'), '-map', '[v]', ...enc], 300_000);
+        else await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
+      } else if (s.layout === 'media-split' && s.mediaPath) {
+        const r = await mediaRatio(s.mediaPath);
+        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${mediaPlace(0, W, hp, r, 'm')};${faceCover(1, W, hp, 'a')};[m][a]vstack=inputs=2[v]`, '-map', '[v]', ...enc], 300_000);
+      } else if ((s.layout === 'media-bg-left' || s.layout === 'media-bg-right') && s.mediaPath) {
+        const r = await mediaRatio(s.mediaPath);
+        const x = s.layout === 'media-bg-left' ? '48' : 'W-w-48';
+        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${mediaPlace(0, W, H, r, 'bg')};[1:v]scale=360:640:force_original_aspect_ratio=increase:flags=lanczos,crop=360:640,setsar=1,fps=30,${freeze}[pv];[bg][pv]overlay=${x}:H-h-140[v]`, '-map', '[v]', ...enc], 300_000);
+      } else {
+        // фолбэк: тёмный кадр
+        await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
+      }
+      clips.push(clip);
+    }
+
+    // склейка + непрерывный голос + титры + музыка (как в composeRetentionVideo)
+    const listFile = path.join(work, 'list.txt');
+    fs.writeFileSync(listFile, clips.map((p) => `file '${escFF(p)}'`).join('\n'), 'utf8');
+    const visual = path.join(work, 'visual.mp4');
+    await ffmpeg(['-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-r', '30', visual],
+      Math.max(600_000, Math.round(D * 6000) + 120_000));
+
+    let assPath: string | null = null;
+    if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
+      assPath = path.join(RENDERS_DIR, `dlg-${randomUUID().slice(0, 8)}.ass`);
+      fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+    }
+    const inputs = ['-i', visual, '-i', opts.voicePath];
+    let musicIdx = -1;
+    if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', (D + 0.2).toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
+    let fc = ''; let vTag = '0:v'; let aTag = '1:a';
+    if (assPath) { fc += `[0:v]subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
+    if (musicIdx >= 0) {
+      const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
+      fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)}[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
+      aTag = '[aa]';
+    }
+    const out = `ugc-dlg-${randomUUID().slice(0, 8)}.mp4`;
+    const outPath = path.join(RENDERS_DIR, out);
+    const args = ['-y', ...inputs];
+    if (fc) args.push('-filter_complex', fc);
+    args.push('-map', vTag, '-map', aTag, '-t', D.toFixed(2), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k', outPath);
+    try {
+      await ffmpeg(args, Math.max(600_000, Math.round(D * 9000) + 180_000));
+    } finally {
+      if (assPath) { try { fs.unlinkSync(assPath); } catch { /* */ } }
+    }
+    return `/uploads/renders/${out}`;
+  } finally {
+    try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* */ }
+  }
+}
+

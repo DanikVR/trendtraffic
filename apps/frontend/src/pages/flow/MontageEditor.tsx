@@ -18,7 +18,7 @@ import {
   Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
   Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud, Info,
   BookOpen, Globe, FileText, Send, ListChecks, Table, Layers, Presentation, RefreshCw, AlertTriangle, ExternalLink,
-  Clapperboard,
+  Clapperboard, Users,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import FlowExtPanel from './FlowExtPanel';
@@ -27,6 +27,7 @@ import { AudioPlayer } from '../../components/AudioPlayer';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import DialogueTimeline from './DialogueTimeline';
+import type { DlgMediaHint } from './dialogueTypes';
 
 type MKind =
   | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
@@ -380,7 +381,7 @@ const POD_ANIMS: { v: PodAnim; label: string }[] = [
 ];
 // Реплика: спикер + текст (+ таймкоды) + опц. картинка + tStart (позиция на таймлайне Фазы 2).
 // mode/title — «Иллюстратор»: план показа медиа (карточка/во весь кадр) и заголовок индиго-плашки.
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number; gesture?: number; mode?: 'card' | 'full'; title?: string }
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number; gesture?: number; mode?: 'card' | 'full'; title?: string; layoutHint?: DlgMediaHint; holdSec?: number }
 interface PodCutaway { url: string; name: string }
 // Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
 type PodAvatarProvider = 'heygen' | 'did' | 'gpu' | 'omni';
@@ -468,6 +469,10 @@ interface UgcSpec {
   retentionPreset: 'off' | 'eco' | 'bal' | 'prem';          // off = обычная сборка
   retentionBrolls: { url: string; name: string }[];         // батч: N видео → N роликов (иначе один clip)
   results: { url: string; name: string }[];                 // готовые ролики батча
+  // Диалоги (два собеседника) — только «Своё фото» + разбор записи двух голосов (HeyGen):
+  dialogueEnabled: boolean;                                 // включён режим диалога A/B
+  dialogueEngagement: 'eco' | 'bal' | 'dyn';                // как часто оба в кадре (эконом/баланс/динамично)
+  photoBUrl: string | null; photoBName: string | null;      // фото «Спикер B» (A = photoUrl)
 }
 const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
@@ -485,6 +490,9 @@ const UGC_DEFAULT: UgcSpec = {
   retentionPreset: 'off',
   retentionBrolls: [],
   results: [],
+  dialogueEnabled: false,
+  dialogueEngagement: 'bal',
+  photoBUrl: null, photoBName: null,
 };
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
@@ -796,7 +804,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
-  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'>(null);
+  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'>(null);
   const [ugcLineIdx, setUgcLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем медиа
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
   const [ugcGalLoading, setUgcGalLoading] = useState(false);
@@ -826,7 +834,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
   }, 0);
   // Пикер медиа для UGC (видео/фото/запись/музыка/аватар в коллекцию) из Галереи — как в «Редакторе».
-  const openUgcPick = async (target: 'clip' | 'photo' | 'recording' | 'music' | 'avatarAdd' | 'retBrolls') => {
+  const openUgcPick = async (target: 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'retBrolls') => {
     setUgcPick(target); setUgcGalLoading(true); setUgcGallery([]);
     try {
       const [v, r, an, au] = await Promise.all([
@@ -850,9 +858,19 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch { setUgcGallery([]); }
     finally { setUgcGalLoading(false); }
   };
+  // Длительность видео/аудио по URL (для авто-растяжки медиа в диалоге). 0 при ошибке.
+  const probeMediaDuration = (url: string): Promise<number> => new Promise((resolve) => {
+    const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true;
+    const done = (d: number) => { v.removeAttribute('src'); v.load?.(); resolve(d); };
+    const to = window.setTimeout(() => done(0), 8000);
+    v.onloadedmetadata = () => { window.clearTimeout(to); done(Number.isFinite(v.duration) ? v.duration : 0); };
+    v.onerror = () => { window.clearTimeout(to); done(0); };
+    v.src = url;
+  });
   const pickUgcItem = (g: { url: string; name: string; type: 'video' | 'audio' | 'image' }) => {
     if (ugcPick === 'clip') ugcMutate((u) => ({ ...u, clip: { url: g.url, name: g.name } }));
     else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name }));
+    else if (ugcPick === 'photoB') ugcMutate((u) => ({ ...u, photoBUrl: g.url, photoBName: g.name }));
     else if (ugcPick === 'recording') ugcMutate((u) => (
       // Новая запись → старый разбор (реплики) и готовый ролик больше не относятся к ней: сбрасываем.
       u.recordingUrl === g.url ? { ...u, recordingUrl: g.url, recordingName: g.name }
@@ -862,7 +880,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
     else if (ugcPick === 'lineImage') {
       const i = ugcLineIdx;
-      if (i != null) ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, image: g.url, imageName: g.name } : l)) }));
+      if (i != null) {
+        ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, image: g.url, imageName: g.name } : l)) }));
+        // В диалоге: видео по умолчанию показываем ЦЕЛИКОМ (holdSec = его длина) → покажется всё,
+        // а последующие реплики автоматически сдвинутся, если оно длиннее реплики.
+        if (ugc.dialogueEnabled && g.type === 'video') void probeMediaDuration(g.url).then((dur) => {
+          if (dur > 0.5) ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, holdSec: Math.round(dur * 10) / 10 } : l)) }));
+        });
+      }
       setUgcLineIdx(null);
     }
     setUgcPick(null);
@@ -969,19 +994,29 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const ugcBuildStart = async () => {
     if (ugcBusy) return;
-    if (ugc.avatarSource === 'photo') {
+    const useDialogue = ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
+    if (useDialogue) {
+      // Диалог: два фото + разбор записи двух голосов.
+      if (!ugc.photoUrl || !ugc.photoBUrl) { setUgcNote('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
+      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { setUgcNote('Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).'); return; }
+      if (!ugc.script.some((l) => l.text.trim())) { setUgcNote('Сначала разберите запись — реплик нет.'); return; }
+    } else if (ugc.avatarSource === 'photo') {
       if (!ugc.photoUrl) { setUgcNote('Загрузите своё фото (портрет анфас) во вкладке «Своё фото».'); return; }
     } else if (ugc.avatarProvider !== 'spatialreal' || !ugc.avatarId) {
       setUgcNote('Выберите аватара в секции «SpatialReal — библиотека» или загрузите своё фото (вкладка «Своё фото»).'); return;
     }
-    const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
-    if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
-    const useRetention = ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
-    // Для удержания собираем spec с полем retention (preset + список B-roll для батча).
-    const spec = useRetention
-      ? { ...ugc, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
-      : ugc;
-    setUgcBusy('render'); setUgcNote(useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
+    if (!useDialogue) {
+      const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
+      if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
+    }
+    const useRetention = !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
+    // Диалог → spec.dialogue; удержание → spec.retention (+ B-roll для батча); иначе обычная сборка.
+    const spec = useDialogue
+      ? { ...ugc, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }
+      : useRetention
+        ? { ...ugc, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
+        : ugc;
+    setUgcBusy('render'); setUgcNote(useDialogue ? 'Запускаю диалог (два аватара)…' : useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
     try {
       const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec }) });
       const d = await r.json().catch(() => ({}));
@@ -1010,7 +1045,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch (e: any) { setUgcNote(e?.message || 'Не удалось сгенерировать текст.'); }
     finally { setUgcBusy(null); }
   };
-  // Разбор записи → реплики (переиспользуем /podcast/diarize; для 1 аватара берём весь текст).
+  // Разбор записи → реплики (переиспользуем /podcast/diarize). В режиме «Диалоги» СОХРАНЯЕМ
+  // спикеров A/B (два собеседника); иначе (1 аватар) схлопываем всё в спикера A.
   const ugcRunDiarize = async () => {
     if (ugcBusy || !ugc.recordingUrl) return;
     setUgcBusy('diarize'); setUgcNote(null);
@@ -1018,9 +1054,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(), body: JSON.stringify({ recordingUrl: ugc.recordingUrl, hostAVoice: ugc.voice }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
-      const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: 'A' as const, text: String(l.text || ''), start: Number(l.start), end: Number(l.end) })).filter((l: PodLine) => l.text.trim()) : [];
+      const keepAB = ugc.dialogueEnabled;
+      const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: (keepAB && l.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l.text || ''), start: Number(l.start), end: Number(l.end) })).filter((l: PodLine) => l.text.trim()) : [];
+      const speakers = new Set(lines.map((l) => l.speaker));
       ugcMutate((u) => ({ ...u, script: lines }));
-      setUgcNote(d.note || `Разобрано: ${lines.length} реплик.`);
+      setUgcNote(d.note || `Разобрано: ${lines.length} реплик${keepAB && speakers.size > 1 ? ' (два голоса A/B)' : ''}.`);
     } catch (e: any) { setUgcNote(e?.message || 'Не удалось разобрать запись.'); }
     finally { setUgcBusy(null); }
   };
@@ -5162,6 +5200,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
                       recordingUrl={ugc.recordingUrl}
                       onPickImage={(i) => { setUgcLineIdx(i); setUgcPick('lineImage'); }}
+                      dialogueMode={ugc.dialogueEnabled}
                       accentA="#a855f7"
                       accentB="#c084fc"
                     />
@@ -5196,8 +5235,58 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                 </div>
 
-                {/* Удержание (переключения техник) — только для «Своё фото» (HeyGen IV/III) */}
+                {/* Диалоги (два собеседника) — только «Своё фото» + разбор записи двух голосов */}
                 {ugc.avatarSource === 'photo' && (
+                  <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${ugc.dialogueEnabled ? 'rgba(168,85,247,.5)' : 'var(--border-medium)'}` }}>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, dialogueEnabled: !u.dialogueEnabled }))} className="w-full flex items-center justify-between" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      <span className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Users size={13} style={{ color: '#a855f7' }} /> Диалоги — два собеседника</span>
+                      <span className="relative inline-flex items-center" style={{ width: 34, height: 18, borderRadius: 9, background: ugc.dialogueEnabled ? '#a855f7' : 'var(--bg-secondary)', border: '1px solid var(--border-medium)', transition: 'background .15s' }}>
+                        <span style={{ position: 'absolute', top: 1, left: ugc.dialogueEnabled ? 17 : 1, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .15s' }} />
+                      </span>
+                    </button>
+                    {ugc.dialogueEnabled && (
+                      <>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Разбор записи держит <b>два голоса A/B</b>, каждый говорит своим лицом (HeyGen). Claude сам решает: крупный план / оба в кадре / врезка медиа — под удержание и экономию. «Спикер A» = ваше фото выше.</p>
+                        {/* Второе лицо */}
+                        <div>
+                          <div className="text-[10px] font-700 uppercase mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Спикер B (второе лицо)</div>
+                          {ugc.photoBUrl ? (
+                            <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                              <img src={ugc.photoBUrl} alt="" className="rounded-md object-cover" style={{ width: 44, height: 58 }} />
+                              <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.photoBName || 'фото B'}</span>
+                              <button onClick={() => openUgcPick('photoB')} title="Заменить" className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: '#a855f7', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>заменить</button>
+                              <button onClick={() => ugcMutate((u) => ({ ...u, photoBUrl: null, photoBName: null }))} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => openUgcPick('photoB')} className="w-full py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
+                              style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                              <Plus size={13} /> Фото «Спикер B» из Галереи
+                            </button>
+                          )}
+                        </div>
+                        {/* Вовлечённость */}
+                        <div>
+                          <div className="text-[10px] font-700 uppercase mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Вовлечённость (как часто оба в кадре)</div>
+                          <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                            {([['eco', 'Эконом'], ['bal', 'Баланс'], ['dyn', 'Динамично']] as [UgcSpec['dialogueEngagement'], string][]).map(([e, lbl]) => (
+                              <button key={e} onClick={() => ugcMutate((u) => ({ ...u, dialogueEngagement: e }))} className="py-1.5 rounded-lg text-[11px] font-700"
+                                style={{ background: ugc.dialogueEngagement === e ? '#a855f7' : 'transparent', color: ugc.dialogueEngagement === e ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}>{lbl}</button>
+                            ))}
+                          </div>
+                          <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                            {ugc.dialogueEngagement === 'eco' && 'Почти всегда один говорящий — самое дешёвое по HeyGen.'}
+                            {ugc.dialogueEngagement === 'bal' && 'Крупный план говорящего; оба в кадре — на реакциях/пиках.'}
+                            {ugc.dialogueEngagement === 'dyn' && 'Больше сцен «оба в кадре» и врезок — живее, дороже.'}
+                          </p>
+                        </div>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Медиа на реплике: в редакторе реплик выше выберите показ («Авто» — решит Claude) и «Держать медиа» (видео покажется целиком, реплики сдвинутся). Нужен ключ HeyGen.</p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Удержание (переключения техник) — только для «Своё фото» (HeyGen IV/III) */}
+                {ugc.avatarSource === 'photo' && !ugc.dialogueEnabled && (
                   <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                     <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Layers size={13} style={{ color: '#a855f7' }} /> Удержание — переключения планов</div>
                     <div className="grid grid-cols-4 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
@@ -5262,12 +5351,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                 {ugcPick && ugcPick !== 'retBrolls' && (
                   <GalleryPicker
                     open token={token}
-                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : ugcPick === 'lineImage' ? 'Медиа к фразе' : 'Видео (UGC)'}
+                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото · Спикер A' : ugcPick === 'photoB' ? 'Фото · Спикер B' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : ugcPick === 'lineImage' ? 'Медиа к фразе' : 'Видео (UGC)'}
                     defaultTab={ugcPick === 'music' ? 'audio' : 'reference'}
                     onClose={() => { setUgcPick(null); setUgcLineIdx(null); }}
                     onUpload={(files) => uploadToGallery(files, ugcPick === 'music' ? 'audio' : 'reference')}
-                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
-                    onlyType={ugcPick === 'photo' || ugcPick === 'avatarAdd' ? 'image' : ugcPick === 'music' ? 'audio' : ugcPick === 'clip' ? 'video' : undefined}
+                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'photoB' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
+                    onlyType={ugcPick === 'photo' || ugcPick === 'photoB' || ugcPick === 'avatarAdd' ? 'image' : ugcPick === 'music' ? 'audio' : ugcPick === 'clip' ? 'video' : undefined}
                     onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
                   />
                 )}

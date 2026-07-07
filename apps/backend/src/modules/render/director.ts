@@ -19,6 +19,7 @@ import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { getRenderWorkerUrl } from '../../config/systemConfig.js';
 import type { SegScore } from './retention.js';
+import type { DlgScore, DlgLayout } from './dialogue.js';
 
 export const DEFAULT_DIRECTOR_MODEL = 'claude-opus-4-8';
 const ALLOWED_MODELS = new Set([
@@ -280,6 +281,56 @@ export async function tagUgcRetention(opts: {
     return scores.length ? { scores, note: `LLM-разметка: ${scores.length} сегм. на IV` } : { scores: [], note: 'LLM-разметка: пусто — эвристика' };
   } catch (e: any) {
     return { scores: [], note: `LLM-разметка: ошибка ${e?.message || e} — эвристика` };
+  }
+}
+
+// ── UGC-диалоги: LLM решает раскладку и движок каждой реплики ─────────────────
+/**
+ * По репликам диалога (A/B, с пометкой «есть медиа») режиссёр решает per-turn:
+ *  • engine — какие реплики поднять на дорогой Avatar IV (крючок, эмоция, призыв), в пределах ivMax;
+ *  • twoshot — где показать ОБОИХ собеседников в кадре (реакция/спор), в пределах twoshotMax;
+ *  • mediaLayout — для реплик с медиа: как показать (во весь кадр / фон+лицо слева-справа / сверху-снизу).
+ * Пусто/ошибка → вызывающий откатывается на эвристику. Ключ Claude — как у режиссёра.
+ */
+export async function directDialogue(opts: {
+  tenantId: string;
+  turns: { i: number; speaker: 'A' | 'B'; text: string; hasMedia: boolean; mediaAuto: boolean }[];
+  ivMax: number; twoshotMax: number; model?: string;
+}): Promise<{ scores: DlgScore[]; note: string }> {
+  const turns = (opts.turns || []).filter((t) => t && Number.isInteger(t.i));
+  if (!turns.length) return { scores: [], note: 'реплик нет' };
+  const apiKey = await resolveAnthropicKey(opts.tenantId);
+  if (!apiKey) return { scores: [], note: 'диалог-режиссёр: ключ Claude не задан — эвристика' };
+  const list = turns.map((t) => `${t.i}: [${t.speaker}]${t.hasMedia ? (t.mediaAuto ? '[медиа:авто]' : '[медиа:задано]') : ''} ${String(t.text || '').slice(0, 160) || '(без текста)'}`).join('\n');
+  const system =
+    'Ты — режиссёр коротких вертикальных UGC-диалогов ДВУХ собеседников (A и B) под одну дорожку голоса. ' +
+    'На вход — реплики по порядку. Твоя задача — удержание внимания при экономии дорогого рендера. Реши по каждой важной реплике:\n' +
+    `• "engine":"iv" — поднять на ПРЕМИУМ-аватар (максимум качества): крючок в начале, сильная эмоция/панчлайн, призыв в конце. Максимум ${Math.max(1, opts.ivMax)} реплик, остальные и так на дешёвом.\n` +
+    `• "twoshot":true — показать ОБОИХ в кадре одновременно (яркая реакция, спор, поддакивание). Максимум ${Math.max(0, opts.twoshotMax)} реплик.\n` +
+    '• "mediaLayout" — ТОЛЬКО для реплик с пометкой [медиа:авто]: "media-full" (медиа во весь кадр, если реплика про «смотрите/вот это»), "media-bg-left"/"media-bg-right" (медиа на фоне, говорящий маленьким сбоку — если человек комментирует), "media-split" (медиа и лицо поровну). Реплики [медиа:задано] НЕ трогай.\n' +
+    'Верни СТРОГО JSON-массив (только значимые реплики) и ничего больше: ' +
+    '[{"i":<индекс>,"engine":"iv","twoshot":true,"mediaLayout":"media-bg-right","score":<0..100>}]. Любое поле кроме i — опционально.';
+  try {
+    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user: `Реплики:\n${list}`, maxTokens: 900 });
+    const arr = extractJsonArray(raw);
+    if (!arr) return { scores: [], note: 'диалог-режиссёр: не JSON — эвристика' };
+    const okLayout = new Set<DlgLayout>(['media-full', 'media-bg-left', 'media-bg-right', 'media-split']);
+    const scores: DlgScore[] = arr
+      .map((x: any) => {
+        const ml = String(x?.mediaLayout || '') as DlgLayout;
+        return {
+          i: Number(x?.i),
+          engine: x?.engine === 'iv' ? ('iv' as const) : undefined,
+          twoshot: typeof x?.twoshot === 'boolean' ? x.twoshot : undefined,
+          mediaLayout: okLayout.has(ml) ? ml : undefined,
+          score: Number(x?.score) || 50,
+          why: x?.engine === 'iv' ? 'IV' : x?.twoshot ? 'два-шот' : undefined,
+        } as DlgScore;
+      })
+      .filter((s) => Number.isInteger(s.i) && s.i >= 0);
+    return scores.length ? { scores, note: `диалог-режиссёр: ${scores.length} решений` } : { scores: [], note: 'диалог-режиссёр: пусто — эвристика' };
+  } catch (e: any) {
+    return { scores: [], note: `диалог-режиссёр: ошибка ${e?.message || e} — эвристика` };
   }
 }
 
