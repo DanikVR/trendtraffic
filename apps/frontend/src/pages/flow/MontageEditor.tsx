@@ -1785,10 +1785,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         <button onClick={redo} disabled={!canRedo} title="Вперёд (Ctrl+Shift+Z)"
           className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canRedo ? 'pointer' : 'not-allowed' }}><Redo2 size={15} /></button>
-        <button onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
-          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-          {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
-        </button>
+        {/* Кнопка «Сохранить» убрана из шапки: автосохранение пишет правки само ~1.6с (+ сейв при «Назад»). */}
       </div>
 
       {/* Холст-паутина (верхние чипы убраны — добавление через плавающую «+» слева сверху) */}

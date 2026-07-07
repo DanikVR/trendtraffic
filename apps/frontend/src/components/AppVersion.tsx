@@ -1958,7 +1958,10 @@
  *         (anim?: string вместо PodAnim) ломал tsc фронта → «npm run build» падал и
  *         деплой жил на фолбэке «npx vite build» без типов. Дубль удалён, PodLine
  *         импортируется из dialogueTypes.ts. tsc backend+frontend и vite build — PASS. */
-export const APP_VERSION = '2.0.4';
+/* 2.0.5 — TrendFlow: убрана кнопка «Сохранить» из шапки — автосохранение и так пишет правки
+ *         само (~1.6с debounce) + сейв при «Назад»; кнопка лишь дублировала. save()/автосейв/
+ *         saving/иконка Save остаются (используются в панели UGC). MontageEditor.tsx. */
+export const APP_VERSION = '2.0.5';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает и на Google Flow, и на NotebookLM (Hotebook). БАМПАТЬ вместе с manifest при каждом
