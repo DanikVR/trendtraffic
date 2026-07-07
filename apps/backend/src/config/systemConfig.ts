@@ -87,25 +87,8 @@ export interface SystemConfig {
   /** Регион Vertex AI (например us-central1). Дефолт us-central1. */
   vertexLocation?: string;
 
-  /**
-   * Куда маршрутизировать GPU-шаги рендера (апскейл/аватар/ген):
-   *  'home'  — домашний воркер RTX 5080 по Tailscale (бесплатно, дефолт);
-   *  'cloud' — облачный GPU-фолбэк (Modal/RunPod) по ключу;
-   *  'off'   — GPU-шаги пропускаются (только бесплатная CPU-цепочка на VPS).
-   * Переключатель в Админ-панели (см. рендер «Собрать»).
-   */
-  renderGpuTarget?: 'home' | 'cloud' | 'off';
-
-  /** URL CPU-воркера OpenMontage (рендер-VPS по Tailscale, напр. http://100.81.35.75:8800). */
-  renderWorkerUrl?: string;
-  /** URL GPU-воркера (домашний RTX 5080 по Tailscale). */
-  renderGpuWorkerUrl?: string;
   /** URL Hotebook-воркера (обёртка notebooklm-py по Tailscale, напр. http://100.x:8801). */
   notebookWorkerUrl?: string;
-  /** URL sr-capture (домашний ПК: SpatialReal-аватар → видео с альфой, по Tailscale, напр. http://100.x:8803). */
-  srCaptureUrl?: string;
-  /** App ID SpatialReal (не секрет; обычно берётся из session-token). */
-  srAppId?: string;
 }
 
 /** Дефолтная модель Gemini Live (используется, если в админке ничего не выбрано). */
@@ -282,43 +265,9 @@ export function getTikHubApiKey(): string {
   return get('tikhubApiKey', 'TIKHUB_API_KEY');
 }
 
-/**
- * Цель маршрутизации GPU-шагов рендера: 'home' | 'cloud' | 'off'.
- * Источник: system-config.json → env RENDER_GPU_TARGET → дефолт 'home'.
- * Невалидные значения нормализуются к 'home'.
- */
-export function getRenderGpuTarget(): 'home' | 'cloud' | 'off' {
-  const v = get('renderGpuTarget', 'RENDER_GPU_TARGET', 'home');
-  return v === 'cloud' || v === 'off' ? v : 'home';
-}
-
-/**
- * URL CPU-воркера OpenMontage (рендер-VPS по Tailscale, напр. http://100.81.35.75:8800).
- * Пусто → рендер идёт в режиме симуляции (executor не подключён). Источник:
- * system-config.json → env RENDER_WORKER_URL.
- */
-export function getRenderWorkerUrl(): string {
-  return String(get('renderWorkerUrl', 'RENDER_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
-}
-
-/** URL GPU-воркера (домашний RTX 5080 по Tailscale). Пусто → GPU-шаги пропускаются. */
-export function getRenderGpuWorkerUrl(): string {
-  return String(get('renderGpuWorkerUrl', 'RENDER_GPU_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
-}
-
 /** URL Hotebook-воркера (NotebookLM по Tailscale). Пусто → блок «Hotebook» показывает «не подключено». */
 export function getNotebookWorkerUrl(): string {
   return String(get('notebookWorkerUrl', 'NOTEBOOKLM_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
-}
-
-/** URL sr-capture (домашний ПК: SpatialReal-аватар → видео с альфой, по Tailscale). Пусто → «Собрать UGC» с аватаром SpatialReal вернёт понятную ошибку. */
-export function getSrCaptureUrl(): string {
-  return String(get('srCaptureUrl', 'SR_CAPTURE_URL', '') || '').trim().replace(/\/+$/, '');
-}
-
-/** App ID SpatialReal (не секрет). Обычно берётся из session-token; это фолбэк-дефолт. */
-export function getSrAppId(): string {
-  return String(get('srAppId', 'SR_APP_ID', 'app_mq8khj80_m5upcw') || '').trim();
 }
 
 /** Telegram Bot API Token */
@@ -486,12 +435,8 @@ export function getSettingsForClient(): Record<string, any> {
     tikhubApiKey: getTikHubApiKey() ? SECRET_MASK : '',
     hasTikhubKey: !!getTikHubApiKey(),
 
-    // Рендер «Собрать» — не секреты (Tailscale-адреса воркеров + переключатель GPU).
-    renderGpuTarget: getRenderGpuTarget(),
-    renderWorkerUrl: getRenderWorkerUrl(),
-    renderGpuWorkerUrl: getRenderGpuWorkerUrl(),
+    // Hotebook-воркер (Tailscale-адрес; не секрет).
     notebookWorkerUrl: getNotebookWorkerUrl(),
-    srCaptureUrl: getSrCaptureUrl(),
   };
 }
 
@@ -511,7 +456,7 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
   // (обрабатываются вручную ниже) — иначе merged[key] = string ломает типы.
   type StringKey = Exclude<
     keyof SystemConfig,
-    'telegramAdminChatIds' | 'maxConcurrentTranslationSessions' | 'geminiApiKeys' | 'geminiUseVertex' | 'renderGpuTarget'
+    'telegramAdminChatIds' | 'maxConcurrentTranslationSessions' | 'geminiApiKeys' | 'geminiUseVertex'
   >;
   const fieldMap: Array<{ key: StringKey; envFallback: string }> = [
     { key: 'livekitUrl', envFallback: 'LIVEKIT_URL' },
@@ -531,11 +476,8 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
     { key: 'tikhubApiKey', envFallback: 'TIKHUB_API_KEY' },
     { key: 'voiceFemale', envFallback: 'GEMINI_VOICE_FEMALE' },
     { key: 'voiceMale', envFallback: 'GEMINI_VOICE_MALE' },
-    // Рендер «Собрать»: адреса воркеров (не секрет, Tailscale).
-    { key: 'renderWorkerUrl', envFallback: 'RENDER_WORKER_URL' },
-    { key: 'renderGpuWorkerUrl', envFallback: 'RENDER_GPU_WORKER_URL' },
+    // Hotebook-воркер (не секрет, Tailscale).
     { key: 'notebookWorkerUrl', envFallback: 'NOTEBOOKLM_WORKER_URL' },
-    { key: 'srCaptureUrl', envFallback: 'SR_CAPTURE_URL' },
   ];
 
   for (const { key, envFallback } of fieldMap) {
@@ -580,10 +522,6 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
   if (typeof incoming.geminiUseVertex === 'boolean') merged.geminiUseVertex = incoming.geminiUseVertex;
   if (typeof incoming.vertexProject === 'string') merged.vertexProject = incoming.vertexProject.trim();
   if (typeof incoming.vertexLocation === 'string') merged.vertexLocation = incoming.vertexLocation.trim();
-  // Переключатель GPU рендера: только из фиксированного набора, иначе игнор (оставляем прежнее).
-  if (typeof incoming.renderGpuTarget === 'string' && ['home', 'cloud', 'off'].includes(incoming.renderGpuTarget)) {
-    merged.renderGpuTarget = incoming.renderGpuTarget as 'home' | 'cloud' | 'off';
-  }
 
   writeConfigFile(merged);
 

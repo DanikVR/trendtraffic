@@ -15,7 +15,7 @@
  * сценариев они не нужны.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Check, X, Copy, Trash2, Power, Loader2, Mic, Cloud, Film } from 'lucide-react';
+import { Plus, Pencil, Check, X, Copy, Trash2, Power, Loader2, Cloud } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
@@ -60,9 +60,7 @@ function graphKinds(graph: any): string[] {
   return out.slice(0, 3);
 }
 const KIND_BADGE: Record<string, { icon: React.ReactNode; color: string }> = {
-  podcast: { icon: <Mic size={13} />, color: '#ec4899' },
   omni: { icon: <Cloud size={13} />, color: '#4285F4' },
-  montage: { icon: <Film size={13} />, color: '#818cf8' },
 };
 
 export default function FlowPage() {

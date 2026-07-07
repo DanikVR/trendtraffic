@@ -1,48 +1,34 @@
 /**
  * TrendTraffic — HTTP-роутер рендера «Собрать».
  *
- *  POST /api/render/flow/:flowId  — поставить сборку сценария в очередь
- *  GET  /api/render               — список задач рендера тенанта
- *  GET  /api/render/:id           — одна задача (для поллинга статуса)
- *  GET  /api/render/config/gpu    — текущая цель GPU (для подписи в UI)
+ *  POST /api/render/ugc/build        — сборка UGC-ролика (своё фото/HeyGen, удержание, диалоги)
+ *  POST /api/render/omni/generate    — генерация видео Omni Flash
+ *  POST /api/render/commentator/compose — сборка ролика «Комментатор»
+ *  POST /api/render/podcast/dialogue — сгенерировать диалог двух ведущих
+ *  POST /api/render/podcast/diarize  — разобрать запись на 2 голоса (Gemini)
  *
  * Все эндпоинты требуют JWT. Изоляция — по tenant_id из токена (как в trends).
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { getRenderGpuTarget, getRenderWorkerUrl, getRenderGpuWorkerUrl, getSrCaptureUrl, getSrAppId } from '../../config/systemConfig.js';
-import { getFlow } from '../flows/service.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
-import { createPodcastJob, createRenderJob, getRenderJob, listRenderJobs } from './service.js';
 import { generatePodcastDialogue, tagUgcRetention, directDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
-import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeCommentator, composeOnStudio, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, downloadToRendersExt, greenBgRatio, probeImageSize, regionSimilarity, UGC_FORMATS, type StudioOverlay, type CaptionLine, type NormRect, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims } from './podcast_compose.js';
+import { elevenTTS } from './podcast_voice.js';
+import { composeCommentator, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
-import { illustrateDialogue, type IllusLine } from './illustrate.js';
-import { insertGpuJob, updateGpuJob, getGpuJob, listProcessingGpuJobs, type GpuStudioParams, type GpuStudioState } from './gpu_studio_store.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 
-// Задачи склейки сплит-скрина (в памяти процесса): jobId → статус/результат.
-const composeJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
 // Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
 const omniJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
-// Omni-студия подкаста (в памяти): jobId → статусы 2 клипов (по ведущему), для сплит-скрина/чат-правок.
-const omniPodJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; interactionId?: string | null; seconds?: number | null; costUsd?: number | null; assetId?: string | null; error?: string }>; error?: string; ts: number }>();
-// GPU-студия подкаста (домашний RTX 5080 через render-worker /avatar): jobId → вырезка на зелёный
-// + аудио + анимация (EchoMimic-v2/SadTalker) по ведущему + фон clean plate. Дальше — та же compose-studio.
-const gpuStudioJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; hosts?: Array<{ host: 'A' | 'B'; name: string; url?: string; alphaUrl?: string | null; assetId?: string | null; engine?: string | null; error?: string }>; studioUrl?: string | null; note?: string; error?: string; ts: number }>();
 
 // TTL-эвикция in-memory задач: без неё Map-ы растут до рестарта процесса.
 const JOB_TTL_MS = 6 * 3600_000;
@@ -53,32 +39,8 @@ function sweepJobs<T extends { ts: number }>(map: Map<string, T>): void {
 
 const router = Router();
 
-// ── AI-ракурсы студии (Gemini Nano Banana Pro, image-to-image) ────────────────
-/** Топовая image-модель Gemini (Nano Banana Pro) — макс. качество, сохранение лиц/студии. */
+// ── Топовая image-модель Gemini (Nano Banana Pro) — макс. качество, сохранение лиц ──
 const PODCAST_ANGLE_MODEL = 'gemini-3-pro-image';
-const ANGLE_PROMPTS: Record<string, string> = {
-  left: 'с камеры, смещённой влево (вид немного слева)',
-  right: 'с камеры, смещённой вправо (вид немного справа)',
-  up: 'с более высокой точки (лёгкий верхний ракурс, камера сверху)',
-  down: 'с более низкой точки (лёгкий нижний ракурс, камера снизу)',
-  back: 'из-за спин ведущих (вид со спины/сбоку, видно студию перед ними)',
-  closeup: 'более крупным планом обоих ведущих',
-  wide: 'общим широким планом всей студии',
-};
-function anglePrompt(preset: string, custom: string): string {
-  // Свой промт — основная инструкция от пользователя + сохранение личности/студии.
-  if (preset === 'custom') {
-    return 'На фото — студия и те же люди. '
-      + (custom || 'Покажи сцену с другого ракурса') + '. '
-      + 'Сохрани те же лица, причёски, одежду, студию, освещение и цветовую гамму. '
-      + 'Фотореалистично, высокое качество. Верни только изображение.';
-  }
-  const a = ANGLE_PROMPTS[preset] || 'с другого ракурса';
-  return `На фото — студия подкаста и два ведущих. Перерисуй ЭТУ ЖЕ сцену ${a}, как другой ракурс той же съёмки. `
-    + 'Строго сохрани те же лица, причёски, одежду, телосложение, студию, мебель, технику, освещение и цветовую гамму. '
-    + 'Фотореалистично, высокое качество, кинематографично. Верни только изображение.'
-    + (custom ? ` Дополнительно: ${custom}.` : '');
-}
 async function fetchImageBase64(url: string): Promise<{ base64: string; mime: string } | null> {
   // 3 попытки: сетевой чих на самофетче /uploads ронял весь рендер («не удалось загрузить фото»).
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -93,11 +55,6 @@ async function fetchImageBase64(url: string): Promise<{ base64: string; mime: st
   }
   return null;
 }
-
-/** Пресеты подачи/эмоции из UI → эмоция голоса HeyGen (для голосов с emotion_support). */
-const HEYGEN_EMOTION_MAP: Record<string, string> = {
-  friendly: 'Friendly', confident: 'Broadcaster', excited: 'Excited', calm: 'Soothing', serious: 'Serious',
-};
 
 interface AuthedRequest extends Request {
   tenantId?: string;
@@ -121,23 +78,7 @@ function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
 
 router.use(requireAuth);
 
-/** POST /flow/:flowId — собрать сценарий → задача в очередь. body: { inputUrl? } */
-router.post('/flow/:flowId', async (req: AuthedRequest, res: Response) => {
-  try {
-    const flow = await getFlow(req.tenantId!, req.params.flowId);
-    if (!flow) return res.status(404).json({ error: 'Сценарий не найден' });
-    const inputUrl = typeof req.body?.inputUrl === 'string' ? req.body.inputUrl : null;
-    const { job, error } = await createRenderJob(req.tenantId!, { flow, inputUrl });
-    if (error) return res.status(400).json({ error });
-    res.status(201).json({ job });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка постановки в очередь' });
-  }
-});
-
 // ── Подкаст-сцена (2 ведущих) ─────────────────────────────────────────────────
-// Спец-роуты ('/podcast/dialogue', '/podcast/diarize') регистрируем ДО '/podcast/:flowId',
-// иначе параметрический маршрут перехватит их (flowId='dialogue').
 
 /** POST /podcast/dialogue — сгенерировать диалог двух ведущих по брифу. */
 router.post('/podcast/dialogue', async (req: AuthedRequest, res: Response) => {
@@ -156,9 +97,7 @@ router.post('/podcast/dialogue', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /podcast/diarize — разобрать запись подкаста на 2 голоса.
- *  Приоритет: Gemini (аудио-понимание тенант-ключом, качественно, с подсказкой пола) →
- *  воркер (акустическая кластеризация / pyannote при HF-ключе / паузы). */
+/** POST /podcast/diarize — разобрать запись подкаста на 2 голоса (Gemini, тенант-ключом). */
 router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
   try {
     const recordingUrl = typeof req.body?.recordingUrl === 'string' ? req.body.recordingUrl : '';
@@ -170,100 +109,21 @@ router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
       ? recordingUrl
       : (base ? base + (recordingUrl.startsWith('/') ? recordingUrl : '/' + recordingUrl) : recordingUrl);
 
-    // 1) Gemini — качественная диаризация тенант-ключом (тот же, что и AI-ракурсы).
+    // Gemini — качественная диаризация тенант-ключом (тот же, что и AI-ракурсы).
     const geminiKey = await getEffectiveGeminiKey(req.tenantId!);
-    if (geminiKey && /^https?:\/\//i.test(absUrl)) {
-      try {
-        const g = await diarizeWithGemini({ apiKey: geminiKey, audioUrl: absUrl, hostAVoice, hostBVoice });
-        if (g.lines.length) return res.json({ lines: g.lines, tracks: [], note: g.note });
-      } catch (e: any) {
-        console.warn('[podcast/diarize] Gemini не справился, фолбэк на воркер:', e?.message || e);
-      }
+    if (!geminiKey) {
+      return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API) — им разбираем запись на голоса.' });
     }
-
-    // 2) Фолбэк — рендер-воркер (кластеризация / pyannote / паузы).
-    const worker = getRenderGpuWorkerUrl() || getRenderWorkerUrl();
-    if (!worker) {
-      return res.status(503).json({ error: geminiKey
-        ? 'Gemini не смог разобрать запись, а рендер-воркер не подключён.'
-        : 'Подключите Gemini-ключ (Настройки → Gemini API) для точного разбора, либо рендер-воркер.' });
+    if (!/^https?:\/\//i.test(absUrl)) {
+      return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — Gemini не сможет скачать запись по относительной ссылке.' });
     }
-    const hfToken = await getEffectiveProviderKey(req.tenantId!, 'hf');
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 600_000);
-    try {
-      const r = await fetch(`${worker}/diarize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input_url: recordingUrl, base_url: base, hf_token: hfToken || null }),
-        signal: ctrl.signal,
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) return res.status(502).json({ error: (d as any)?.error || `воркер вернул HTTP ${r.status}` });
-      res.json({ lines: (d as any)?.lines || [], tracks: (d as any)?.tracks || [], note: (d as any)?.note || null });
-    } finally {
-      clearTimeout(t);
+    const g = await diarizeWithGemini({ apiKey: geminiKey, audioUrl: absUrl, hostAVoice, hostBVoice });
+    if (!g.lines.length) {
+      return res.status(502).json({ error: 'Gemini не смог разобрать запись — попробуйте другую запись или повторите.' });
     }
+    res.json({ lines: g.lines, tracks: [], note: g.note });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка разбора записи' });
-  }
-});
-
-/** POST /podcast/illustrate — «Иллюстратор»: автоподбор видеоряда (b-roll) под реплики.
- *  body: { dialogue:[{idx?,speaker,text,dur}], brief? } → { lines:[{idx,image,imageName,anim,mode,title}], note }.
- *  Кандидаты = Галерея (референсы + «Из анализа») + скачанные тренды; картинкам один раз
- *  генерятся описания (Gemini vision, кэш asset_captions); раскадровка — Gemini, без ключа —
- *  фолбэк на пересечение ключевых слов. Ничего не рендерит — только заполняет реплики. */
-router.post('/podcast/illustrate', async (req: AuthedRequest, res: Response) => {
-  try {
-    const rawLines: any[] = Array.isArray(req.body?.dialogue) ? req.body.dialogue : [];
-    const lines: IllusLine[] = rawLines
-      .map((l, i) => ({
-        idx: Number.isFinite(Number(l?.idx)) ? Number(l.idx) : i,
-        speaker: (l?.speaker === 'B' ? 'B' : 'A') as 'A' | 'B',
-        text: String(l?.text || '').trim(),
-        dur: Number.isFinite(Number(l?.dur)) && Number(l.dur) > 0 ? Number(l.dur) : Math.max(1.5, Math.min(12, String(l?.text || '').length * 0.06)),
-      }))
-      .filter((l) => l.text)
-      .slice(0, 120);
-    if (!lines.length) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
-    const brief = typeof req.body?.brief === 'string' ? req.body.brief : '';
-    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const r = await illustrateDialogue({ tenantId: req.tenantId!, apiKey, lines, brief, publicBase: base });
-    if (!r.shots.length) return res.json({ lines: [], note: r.note });
-    res.json({ lines: r.shots, note: r.note });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка автоподбора иллюстраций' });
-  }
-});
-
-/** POST /podcast/angle — AI-ракурс студии (Gemini Nano Banana Pro, image-to-image).
- *  body: { imageUrl, preset?, prompt? } → { mediaUrl, assetId }. */
-router.post('/podcast/angle', async (req: AuthedRequest, res: Response) => {
-  try {
-    const imageUrl = typeof req.body?.imageUrl === 'string' ? req.body.imageUrl : '';
-    const preset = typeof req.body?.preset === 'string' ? req.body.preset : 'left';
-    const custom = typeof req.body?.prompt === 'string' ? req.body.prompt.slice(0, 400) : '';
-    if (!imageUrl) return res.status(400).json({ error: 'Не указано исходное фото (imageUrl).' });
-    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
-    if (!apiKey) return res.status(400).json({ error: 'Подключите свой Gemini-ключ (Настройки → Gemini API) — ракурсы рисует Gemini.' });
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = /^https?:\/\//i.test(imageUrl) ? imageUrl : (base ? base + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl) : imageUrl);
-    const img = await fetchImageBase64(abs);
-    if (!img) return res.status(400).json({ error: 'Не удалось загрузить исходное фото.' });
-    const gen = await generateImage({
-      apiKey, model: PODCAST_ANGLE_MODEL,
-      prompt: anglePrompt(preset, custom),
-      inputImages: [{ base64: img.base64, mime: img.mime }],
-    });
-    const asset = await createAsset(req.tenantId!, {
-      kind: 'reference', mediaType: 'image', originalName: `Ракурс студии (${preset})`,
-      fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
-    });
-    res.json({ mediaUrl: gen.mediaUrl, assetId: asset?.id || null });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка генерации ракурса' });
   }
 });
 
@@ -366,166 +226,9 @@ router.delete('/ugc/avatars/:id', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-// ── Публичные аватары SpatialReal (оживление их realtime-движком) ────────────
-// Студия (app.spatialreal.ai/avatars/library) тянет список через
-// GET {console}/v2/console/public-avatars — эндпоинт вытащен из их бандла
-// (list-API в доках нет). Реальный формат (снят с прода): {"publicAvatars":
-// [{id,name,description,coverUrl,remark,...}]}. Авторизация — по тенантскому
-// ключу SpatialReal: session-token → Bearer (X-Api-Key напрямую даёт 401).
-// Библиотека ГЛОБАЛЬНАЯ (одна на всех) и меняется у них редко → грузим ОДИН РАЗ:
-// кэш в памяти + файл uploads/sr-avatars/library.json (переживает рестарты pm2),
-// превью скачиваем к себе в uploads/sr-avatars/ (не зависим от их CDN).
-// TTL 7 дней; кнопка «повторить» (?force=1) обновляет принудительно.
-const SR_CONSOLE_HOSTS = ['https://console.us-west.spatialwalk.cloud', 'https://console.ap-northeast.spatialwalk.cloud'];
-type SrAvatar = { id: string; name: string; previewUrl: string | null };
-const SR_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../uploads/sr-avatars');
-const SR_LIB_FILE = path.join(SR_DIR, 'library.json');
-const SR_CACHE_TTL_MS = 7 * 24 * 3600_000;
-let srLibCache: { list: SrAvatar[]; ts: number } | null = null;
-
-function srLibLoad(): { list: SrAvatar[]; ts: number } | null {
-  if (srLibCache) return srLibCache;
-  try {
-    const d = JSON.parse(fs.readFileSync(SR_LIB_FILE, 'utf8'));
-    if (Array.isArray(d?.list) && Number.isFinite(d?.ts)) { srLibCache = { list: d.list, ts: d.ts }; return srLibCache; }
-  } catch { /* нет файла — ок */ }
-  return null;
-}
-function srLibSave(list: SrAvatar[]): void {
-  srLibCache = { list, ts: Date.now() };
-  try { fs.mkdirSync(SR_DIR, { recursive: true }); fs.writeFileSync(SR_LIB_FILE, JSON.stringify(srLibCache)); } catch (e: any) { console.warn('[ugc/sr] не смог сохранить library.json:', e?.message); }
-}
-
-/** Скачивает превью аватара к себе (uploads/sr-avatars/<id>.<ext>) → локальный URL; при сбое — исходный. */
-async function srCachePreview(id: string, url: string | null): Promise<string | null> {
-  if (!url) return null;
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 15_000);
-    const r = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
-    if (!r.ok) return url;
-    const ct = r.headers.get('content-type') || '';
-    if (!/image\//i.test(ct)) return url;
-    const ext = /png/i.test(ct) ? 'png' : /webp/i.test(ct) ? 'webp' : 'jpg';
-    const buf = Buffer.from(await r.arrayBuffer());
-    if (buf.length < 512) return url;
-    fs.mkdirSync(SR_DIR, { recursive: true });
-    const safe = id.replace(/[^a-z0-9-]/gi, '');
-    fs.writeFileSync(path.join(SR_DIR, `${safe}.${ext}`), buf);
-    return `/uploads/sr-avatars/${safe}.${ext}`;
-  } catch { return url; }
-}
-
-/** ВАЖНО: SpatialReal отвечает HTTP 200 даже на ошибки — реальный статус лежит в body.errors[].status
- *  (JSON:API-конверт). Поэтому status здесь = errors[0].status, если конверт ошибочный. */
-async function srFetchJson(url: string, headers: Record<string, string>, method = 'GET', body?: string): Promise<{ status: number; d: any; errDetail?: string }> {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 20_000);
-  try {
-    const r = await fetch(url, { method, headers, body, signal: ctrl.signal });
-    const d = await r.json().catch(() => null);
-    const err = Array.isArray(d?.errors) && d.errors.length ? d.errors[0] : null;
-    if (err) return { status: Number(err.status) || (r.ok ? 400 : r.status), d, errDetail: String(err.detail || err.title || '') };
-    return { status: r.status, d };
-  } finally { clearTimeout(t); }
-}
-
-/** Разбор ответа public-avatars. Реальный формат: {"publicAvatars":[{id,name,coverUrl,...}]}
- *  (снят с прод-лога [ugc/sr]); остальные ключи оставлены защитно. */
-function srParseAvatars(d: any): { id: string; name: string; previewUrl: string | null }[] {
-  const arr: any[] = Array.isArray(d?.publicAvatars) ? d.publicAvatars
-    : Array.isArray(d?.personalAvatars) ? d.personalAvatars
-    : Array.isArray(d) ? d
-    : Array.isArray(d?.data) ? d.data
-    : Array.isArray(d?.avatars) ? d.avatars
-    : Array.isArray(d?.items) ? d.items
-    : Array.isArray(d?.list) ? d.list
-    : Array.isArray(d?.data?.items) ? d.data.items
-    : Array.isArray(d?.data?.list) ? d.data.list : [];
-  const out: { id: string; name: string; previewUrl: string | null }[] = [];
-  for (const raw of arr) {
-    const it = raw && typeof raw === 'object' ? { ...raw, ...(raw.attributes && typeof raw.attributes === 'object' ? raw.attributes : {}) } : {};
-    const id = String(it.id || it.uuid || it.avatar_id || it.avatarId || it.character_id || it.characterId || raw?.id || '').trim();
-    if (!id) continue;
-    const name = String(it.name || it.title || it.display_name || it.displayName || 'Аватар').trim();
-    let preview: string | null = null;
-    for (const k of ['avatar_url', 'avatarUrl', 'preview_image_url', 'previewImageUrl', 'preview_url', 'previewUrl', 'image_url', 'imageUrl', 'cover_url', 'coverUrl', 'cover', 'thumbnail_url', 'thumbnailUrl', 'thumbnail', 'portrait_url', 'photo_url', 'image', 'preview', 'icon']) {
-      const v = it[k];
-      if (typeof v === 'string' && /^https?:\/\//i.test(v)) { preview = v; break; }
-    }
-    if (!preview) {
-      // последний шанс: любое http-поле, похожее на картинку
-      for (const v of Object.values(it)) {
-        if (typeof v === 'string' && /^https?:\/\/.*\.(png|jpe?g|webp|gif)(\?|$)/i.test(v)) { preview = v; break; }
-      }
-    }
-    out.push({ id, name, previewUrl: preview });
-  }
-  return out;
-}
-
-/** GET /ugc/avatars/spatialreal — публичная библиотека SpatialReal по тенантскому ключу. */
-router.get('/ugc/avatars/spatialreal', async (req: AuthedRequest, res: Response) => {
-  try {
-    // Библиотека глобальная: раз загрузили (память или файл) — отдаём сразу, в сеть не ходим.
-    const force = String(req.query.force || '') === '1';
-    const cached = srLibLoad();
-    if (cached && !force && Date.now() - cached.ts < SR_CACHE_TTL_MS) {
-      return res.json({ avatars: cached.list, cached: true });
-    }
-    const apiKey = await getEffectiveProviderKey(req.tenantId!, 'spatialreal');
-    if (!apiKey) {
-      // Ключа у этого тенанта нет, но библиотека могла быть загружена ранее (глобальная) — отдаём её.
-      if (cached) return res.json({ avatars: cached.list, cached: true });
-      return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация (раздел «Платные», SpatialReal) — библиотека аватаров тянется по нему.' });
-    }
-    const tried: string[] = [];
-    let badKey = false;
-    for (const host of SR_CONSOLE_HOSTS) {
-      // session-token → Bearer (X-Api-Key напрямую даёт 401 unauthenticated — проверено на проде)
-      try {
-        const st = await srFetchJson(`${host}/v1/console/session-tokens`, { 'X-Api-Key': apiKey.trim(), 'Content-Type': 'application/json' }, 'POST',
-          JSON.stringify({ expireAt: Math.floor(Date.now() / 1000) + 600 }));
-        const token = st.d?.sessionToken || st.d?.session_token || st.d?.data?.sessionToken || st.d?.token;
-        if (token) {
-          const r = await srFetchJson(`${host}/v2/console/public-avatars`, { Authorization: `Bearer ${token}` });
-          tried.push(`${host} bearer→${r.status}${r.errDetail ? ` (${r.errDetail})` : ''}`);
-          if (r.status >= 200 && r.status < 300) {
-            const list = srParseAvatars(r.d);
-            if (list.length) {
-              // Превью — к себе в uploads/sr-avatars (конкурентность 4), чтобы не зависеть от их CDN.
-              for (let i = 0; i < list.length; i += 4) {
-                await Promise.all(list.slice(i, i + 4).map(async (a) => { a.previewUrl = await srCachePreview(a.id, a.previewUrl); }));
-              }
-              srLibSave(list);
-              return res.json({ avatars: list });
-            }
-            console.warn('[ugc/sr] public-avatars ок, но распарсили 0 — сырой ответ:', JSON.stringify(r.d).slice(0, 800));
-            tried.push(`${host} parse→0`);
-          }
-        } else {
-          tried.push(`${host} token→${st.status}${st.errDetail ? ` (${st.errDetail})` : ''}`);
-          if (/invalid api key/i.test(st.errDetail || '') || st.status === 401 || st.status === 403) badKey = true;
-        }
-      } catch (e: any) { tried.push(`${host} err:${e?.message || e}`); }
-    }
-    console.warn('[ugc/sr] библиотека SpatialReal не получена:', tried.join(' | '));
-    // Свежая загрузка не удалась, но есть старый кэш (даже просроченный/при force) — лучше отдать его.
-    if (cached) return res.json({ avatars: cached.list, cached: true, note: 'Не удалось обновить — показана сохранённая библиотека.' });
-    res.status(badKey ? 400 : 502).json({
-      error: badKey
-        ? 'SpatialReal: ключ невалиден («invalid api key»). Перепроверьте ключ в Настройки → Генерация → SpatialReal (взять: app.spatialreal.ai → Developer → API Key).'
-        : `SpatialReal не отдал библиотеку (${tried.join('; ')}). Проверьте ключ в Настройки → Генерация.`,
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка загрузки библиотеки SpatialReal' });
-  }
-});
-
-// ── Сборка UGC: SpatialReal-аватар говорит скрипт → склейка с видео + титры ───
-// Аватар рендерит sr-capture (домашний ПК юзера, SR_CAPTURE_URL, Tailscale):
-// голос → их realtime-движок → webm С АЛЬФОЙ. Дальше composeUgc: vstack (сверху/снизу)
-// или маленький аватар ПОВЕРХ видео (overlay-left/right, альфа = виден только человек).
+// ── Сборка UGC: аватар говорит скрипт → склейка с видео + титры ───
+// composeUgc: vstack (сверху/снизу) или маленький аватар ПОВЕРХ видео
+// (overlay-left/right, альфа = виден только человек).
 const ugcJobs = new Map<string, {
   tenantId?: string; status: string; error?: string; fileUrl?: string; assetId?: string | null; ts: number;
   results?: { url: string; name: string }[]; total?: number; note?: string;
@@ -544,27 +247,6 @@ function linesForRetention(script: any[], durSec: number): RetLine[] {
   return out;
 }
 
-/** app_id из session-token JWT (Фаза-0: токен несёт app_id) — свой App ID у тенанта не храним. */
-function srAppIdFromToken(token: string): string | null {
-  try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
-    const v = payload.app_id || payload.appId || payload.aid || null;
-    return typeof v === 'string' && v ? v : null;
-  } catch { return null; }
-}
-
-async function srMakeSessionToken(apiKey: string, expireSec = 3600): Promise<string> {
-  let last = '';
-  for (const host of SR_CONSOLE_HOSTS) {
-    const st = await srFetchJson(`${host}/v1/console/session-tokens`, { 'X-Api-Key': apiKey.trim(), 'Content-Type': 'application/json' }, 'POST',
-      JSON.stringify({ expireAt: Math.floor(Date.now() / 1000) + expireSec })).catch((e) => ({ status: 0, d: null, errDetail: String(e?.message || e) }));
-    const token = st.d?.sessionToken || st.d?.session_token || st.d?.data?.sessionToken || st.d?.token;
-    if (token) return token;
-    last = st.errDetail || `HTTP ${st.status}`;
-  }
-  throw new Error(`SpatialReal не выдал session-token (${last}). Проверьте ключ в Настройки → Генерация.`);
-}
-
 /** POST /ugc/build — запустить сборку. body: { spec: UgcSpec-подмножество }. → { jobId }. */
 router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
   try {
@@ -572,6 +254,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const script: any[] = Array.isArray(spec.script) ? spec.script : [];
     const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
     const isPhoto = spec.avatarSource === 'photo';
+    // «Коллекция» = выбранный аватар из Галереи; его картинка идёт в HeyGen как обычное фото.
+    const galleryAvatarUrl = spec.avatarSource === 'collection' ? String(spec.avatarUrl || '') : '';
+    const avatarPhotoUrl = String(spec.photoUrl || galleryAvatarUrl || '');
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
     const gender: 'male' | 'female' = spec.voice === 'male' ? 'male' : 'female';
@@ -839,14 +524,17 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       return;
     }
 
-    // ── Ветка «Своё фото» → HeyGen Avatar IV (видео+звук синхронны — задержки нет) ──
-    if (isPhoto) {
-      if (!spec.photoUrl) return res.status(400).json({ error: 'Загрузите своё фото (портрет анфас) в разделе «Своё фото».' });
+    // ── Ветка «Своё фото» / «Коллекция» → HeyGen Avatar IV (галерейный аватар = то же фото) ──
+    // Озвучка: своя запись (diarize) ИЛИ текст → ElevenLabs (11 Labs) → HeyGen поёт наше аудио.
+    if (isPhoto || galleryAvatarUrl) {
+      if (!avatarPhotoUrl) return res.status(400).json({ error: 'Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).' });
       const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-      if (!hgKey) return res.status(400).json({ error: 'Для оживления своего фото добавьте ключ HeyGen в Настройки → Генерация (Avatar IV).' });
+      if (!hgKey) return res.status(400).json({ error: 'Для оживления фото добавьте ключ HeyGen в Настройки → Генерация (Avatar IV).' });
       const useRecording = spec.source === 'diarize' && spec.recordingUrl;
       if (!useRecording && !scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
-      if (useRecording && !base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не сможет скачать вашу запись.' });
+      const elevenKey = useRecording ? null : await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
+      if (!useRecording && !elevenKey) return res.status(400).json({ error: 'Для озвучки текста нужен ключ ElevenLabs (Настройки → Генерация), либо используйте «Разобрать запись».' });
+      if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не скачает аудио.' });
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
@@ -857,12 +545,13 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         const j = ugcJobs.get(jobId)!;
         try {
           j.status = 'загружаю фото в HeyGen';
-          const tpId = await uploadTalkingPhoto(hgKey, abs(String(spec.photoUrl)));
-          const voiceId = useRecording ? undefined : ((await pickVoice(hgKey, gender)) || undefined);
+          const tpId = await uploadTalkingPhoto(hgKey, abs(avatarPhotoUrl));
+          j.status = useRecording ? 'готовлю запись' : 'озвучка (ElevenLabs)';
+          const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, scriptText.slice(0, 2500), gender));
           j.status = 'генерирую аватар (Avatar IV)';
           const videoId = await submitTalkingPhotoVideo(hgKey, {
             talkingPhotoId: tpId, useIV: true, expressive: true, width: 1080, height: 1920,
-            ...(useRecording ? { audioUrl: abs(String(spec.recordingUrl)) } : { voiceId, text: scriptText.slice(0, 1500) }),
+            audioUrl: voiceUrl,
           });
           const deadline = Date.now() + 20 * 60_000;
           let hgUrl = '';
@@ -909,101 +598,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       return;
     }
 
-    // ── Ветка «Коллекция» SpatialReal → sr-capture (домашний ПК) ──
-    if (spec.avatarProvider !== 'spatialreal' || !spec.avatarId) {
-      return res.status(400).json({ error: 'Выберите аватара в секции «SpatialReal — библиотека» ИЛИ загрузите своё фото (вкладка «Своё фото»).' });
-    }
-    const cap = getSrCaptureUrl();
-    if (!cap) return res.status(400).json({ error: 'Сервис рендера аватара (sr-capture) не подключён: задайте SR_CAPTURE_URL на сервере.' });
-    // Живость сервиса — сразу, а не через 2 минуты пайплайна.
-    try {
-      const h = await fetch(`${cap}/health`, { signal: AbortSignal.timeout(6000) });
-      if (!h.ok) throw new Error(`HTTP ${h.status}`);
-    } catch (e: any) {
-      return res.status(502).json({ error: `Сервис рендера аватара недоступен (${e?.message || e}). Проверьте, что домашний ПК включён и sr-capture запущен.` });
-    }
-    const apiKey = await getEffectiveProviderKey(req.tenantId!, 'spatialreal');
-    if (!apiKey) return res.status(400).json({ error: 'Добавьте ключ SpatialReal в Настройки → Генерация.' });
-
-    // Голос: «Разобрать запись» → сама запись (ваш голос); «Сгенерировать» → ElevenLabs по скрипту.
-    let voiceUrl: string;
-    if (spec.source === 'diarize' && spec.recordingUrl) {
-      voiceUrl = String(spec.recordingUrl);
-    } else {
-      if (!scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
-      const elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
-      if (!elevenKey) return res.status(400).json({ error: 'Для озвучки сгенерированного текста нужен ключ ElevenLabs (Настройки → Генерация) — либо используйте «Разобрать запись» со своим аудио.' });
-      voiceUrl = await elevenTTS(elevenKey, scriptText, gender);
-    }
-    if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — sr-capture не сможет скачать аудио.' });
-
-    const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-    sweepJobs(ugcJobs);
-    ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
-    res.json({ jobId });
-
-    // Дальше — в фоне; фронт поллит /ugc/build/status.
-    void (async () => {
-      const j = ugcJobs.get(jobId)!;
-      try {
-        j.status = 'токен SpatialReal';
-        const token = await srMakeSessionToken(apiKey);
-        const appId = srAppIdFromToken(token) || getSrAppId();
-        if (!appId) throw new Error('Не удалось определить App ID SpatialReal (нет в токене; задайте SR_APP_ID).');
-
-        j.status = 'аватар говорит (реальное время)';
-        const sr = await fetch(`${cap}/render`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionToken: token, appId, avatarId: spec.avatarId, audioUrl: abs(voiceUrl) }),
-        });
-        const srd: any = await sr.json().catch(() => ({}));
-        if (!sr.ok || !srd.job_id) throw new Error(`sr-capture: ${srd?.error || `HTTP ${sr.status}`}`);
-        const deadline = Date.now() + 30 * 60_000;
-        let outName = '';
-        while (Date.now() < deadline) {
-          await new Promise((r2) => setTimeout(r2, 3000));
-          const st = await fetch(`${cap}/status?job=${encodeURIComponent(srd.job_id)}`).then((r2) => r2.json()).catch(() => null);
-          if (!st) continue;
-          if (st.status === 'failed') throw new Error(`рендер аватара: ${st.error || 'ошибка'}`);
-          if (st.status === 'done' && st.output_name) { outName = st.output_name; break; }
-          j.status = `аватар говорит (${st.status}${st.frames ? `, кадров ${st.frames}` : ''})`;
-        }
-        if (!outName) throw new Error('рендер аватара не уложился в 30 минут');
-
-        j.status = 'скачиваю аватара';
-        const avatar = await downloadToRendersExt(`${cap}/files/${outName}`, 'ugchead', 'webm');
-        const voice = await downloadToRenders(abs(voiceUrl), 'ugcvoice');
-        const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
-        const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
-
-        for (let f = 0; f < outFormats.length; f++) {
-          const fmt = outFormats[f];
-          j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'склейка + титры';
-          const fileUrl = await composeUgc({
-            avatarPath: avatar.filePath, avatarKind: 'alpha',
-            voicePath: voice.filePath,
-            clipPath: clip?.filePath || null,
-            clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
-            clipMuted: spec.clipMuted !== false,
-            placement: placement as any,
-            musicPath: music?.filePath || null,
-            musicVolumePct: Number(spec.music?.volumePct) || 20,
-            captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
-          });
-          const asset = await createAsset(j.tenantId!, {
-            kind: 'reference', mediaType: 'video',
-            originalName: `UGC — ${String(spec.avatarName || 'аватар')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
-            fileUrl, mime: 'video/mp4',
-          });
-          j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
-          if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
-        }
-        j.status = 'done';
-      } catch (e: any) {
-        j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
-        console.warn('[ugc/build] FAILED:', j.error);
-      }
-    })();
+    // Ни одна ветка не подошла (не «Своё фото», не «Удержание», не «Диалоги»).
+    return res.status(400).json({ error: 'Загрузите своё фото (вкладка «Своё фото») — сборка идёт через HeyGen.' });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка запуска сборки UGC' });
   }
@@ -1014,515 +610,6 @@ router.get('/ugc/build/status', (req: AuthedRequest, res: Response) => {
   const j = ugcJobs.get(String(req.query.job || ''));
   if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача не найдена (возможно, сервер перезапускался — запустите сборку заново).' });
   res.json({ status: j.status, error: j.error, fileUrl: j.fileUrl, assetId: j.assetId, results: j.results, total: j.total, note: j.note });
-});
-
-/** POST /podcast/animate — ЗАПУСТИТЬ рендер говорящих голов ведущих у выбранного провайдера.
- *  body: { provider, mode:'standard'|'iv', voiceSource:'heygen'|'record'|'elevenlabs', emotion?, spec }.
- *  HeyGen: грузим фото каждого ведущего → talking_photo → video/generate (текст его реплик,
- *  голос по полу, эмоция-пресет). Возвращаем video_id по каждому ведущему — фронт опрашивает
- *  /podcast/animate/status. Сабмит быстрый (укладывается в таймаут), сам рендер идёт у HeyGen. */
-router.post('/podcast/animate', async (req: AuthedRequest, res: Response) => {
-  try {
-    const provider = ['heygen', 'did', 'gpu'].includes(req.body?.provider) ? req.body.provider : 'heygen';
-    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
-    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
-    const seconds = dialogue.reduce((s, l) => {
-      const st = Number(l?.start); const en = Number(l?.end);
-      return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, String(l?.text || '').length * 0.06)));
-    }, 0);
-    const minsR = Math.round(Math.max(0.1, seconds / 60) * 10) / 10;
-
-    if (provider === 'gpu') {
-      const gpu = getRenderGpuWorkerUrl();
-      if (!gpu) return res.status(400).json({ error: 'GPU-воркер (SadTalker) не подключён. Подключите домашний RTX/облачный GPU в Настройки → Генерация → Рендер — тогда анимация будет без оплаты за минуту.' });
-      // Рендер на GPU живёт в /podcast/gpu-studio (вырезка из общего фото → EchoMimic/SadTalker);
-      // свежий фронт делегирует туда сам — эта нота осталась для старых бандлов/прямых вызовов.
-      return res.json({ note: `GPU-воркер подключён (${minsR} мин, без оплаты за минуту). Жмите «Оживить НА студии (домашний GPU)» — рендер голов идёт через GPU-студию.` });
-    }
-    if (provider === 'did') {
-      return res.json({ note: 'D-ID / Hedra: сейчас НЕ подключены (ключей нет). Получите ключ D-ID (studio.d-id.com) или Hedra и добавьте в Настройки → Генерация — тогда включу их этим же аниматором. Пока рекомендую HeyGen.' });
-    }
-    // HeyGen — основной провайдер.
-    const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-    if (!key) return res.status(400).json({ error: 'Добавьте ключ HeyGen в Настройки → Генерация (раздел «Платные», HeyGen). Получить ключ: app.heygen.com/settings/api.' });
-    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
-    if (!hostA.photoUrl || !hostB.photoUrl) return res.status(400).json({ error: 'Нужны фото обоих ведущих (студия лиц / ракурсы).' });
-    if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
-
-    const emotion = HEYGEN_EMOTION_MAP[String(req.body?.emotion || '')] || undefined;
-    const useIV = req.body?.mode === 'iv';
-    const voiceSource = ['heygen', 'record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'heygen';
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
-    // HeyGen скачивает audio_url/фото сам — без публичной базы относительные ссылки для него мертвы.
-    if (!base && voiceSource !== 'heygen') {
-      return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен на сервере — HeyGen не сможет скачать аудио-дорожку. Обратитесь к администратору.' });
-    }
-    const rawTextFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
-      .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
-    const textFor = (spk: 'A' | 'B') => rawTextFor(spk).slice(0, 1500);
-    const segsFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
-      .map((l) => ({ start: Number(l?.start), end: Number(l?.end) }))
-      .filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
-
-    if (voiceSource === 'record' && !spec.recordingUrl) {
-      return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись подкаста (вкладка «Разобрать запись»).' });
-    }
-    let elevenKey: string | null = null;
-    if (voiceSource === 'elevenlabs') {
-      elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
-      if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs в Настройки → Генерация.' });
-    }
-
-    // Общая длина диалога (макс. конец) — чтобы дорожки ведущих были на всю длину.
-    const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    // Фаза 1: готовим ВСЁ, что может упасть (аудио, фото), ДО первого сабмита — иначе при
-    // ошибке на ведущем B рендер A уже запущен у HeyGen (кредиты потрачены, videoId потерян).
-    const warns: string[] = [];
-    const prepared: Array<{ spk: 'A' | 'B'; name: string; text: string; audioUrl?: string; voiceId?: string; tpId: string }> = [];
-    for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
-      const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
-      const fullText = rawTextFor(spk);
-      const text = textFor(spk) || `Реплики ведущего ${spk}.`;
-      // Голос: реальная запись → нарезка сегментов; ElevenLabs → TTS; иначе HeyGen TTS (текст).
-      let audioUrl: string | undefined;
-      let voiceId: string | undefined;
-      if (voiceSource === 'record') {
-        const segs = segsFor(spk);
-        if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
-        audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
-      } else if (voiceSource === 'elevenlabs') {
-        if (fullText.length > 2500) warns.push(`текст ведущего ${spk} обрезан до 2500 симв. (лимит ElevenLabs)`);
-        audioUrl = abs(await elevenTTS(elevenKey!, fullText, gender, host.elevenVoiceId));
-      } else {
-        if (fullText.length > 1500) warns.push(`текст ведущего ${spk} обрезан до 1500 симв. (лимит HeyGen TTS)`);
-        voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
-        if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
-      }
-      const tpId = await uploadTalkingPhoto(key, abs(host.photoUrl));
-      prepared.push({ spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId });
-    }
-    const src = voiceSource === 'record' ? 'реальные голоса из записи' : voiceSource === 'elevenlabs' ? 'голос ElevenLabs' : 'голос HeyGen';
-    const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
-    // Фаза 2: сабмитим обоих. Если второй не запустился — честно отдаём первого (он уже рендерится).
-    const jobs: any[] = [];
-    for (const p of prepared) {
-      try {
-        const videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV });
-        jobs.push({ host: p.spk, name: p.name, videoId });
-      } catch (e: any) {
-        if (!jobs.length) throw e;
-        return res.json({ jobs, note: `HeyGen: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится — опрашиваю его.${warnNote}` });
-      }
-    }
-    return res.json({ jobs, note: `HeyGen${useIV ? ' (Avatar IV)' : ''}: запущен рендер 2 голов, ${src} (~1–3 мин). Опрашиваю статус…${warnNote}` });
-  } catch (err: any) {
-    res.status(400).json({ error: `HeyGen: ${err?.message || 'ошибка запуска рендера'}` });
-  }
-});
-
-// Головы, уже сохранённые в Галерею (videoId → fileUrl), чтобы не качать повторно на каждом опросе.
-const savedHeads = new Map<string, string>();
-// Скачивания голов в полёте: параллельные опросы (интервал 10с < время скачивания) без этого
-// качали одну голову дважды и плодили дубликаты в Галерее.
-const headDownloads = new Map<string, Promise<string | null>>();
-
-function rememberHead(id: string, url: string): void {
-  savedHeads.set(id, url);
-  // мягкий кап, чтобы Map не рос бесконечно за жизнь процесса
-  if (savedHeads.size > 500) {
-    const oldest = savedHeads.keys().next().value;
-    if (oldest !== undefined) savedHeads.delete(oldest);
-  }
-}
-
-/** GET /podcast/animate/status?ids=v1,v2 — статусы рендеров HeyGen; готовые скачиваем в Галерею по порядку. */
-router.get('/podcast/animate/status', async (req: AuthedRequest, res: Response) => {
-  try {
-    const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-    if (!key) return res.status(400).json({ error: 'Ключ HeyGen не найден.' });
-    const tenantId = req.tenantId!;
-    const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4);
-    const statuses = await Promise.all(ids.map(async (id) => {
-      const st = await heygenVideoStatus(key, id);
-      // Логируем причину падения HeyGen — иначе на фронте только глухое «ошибка», диагностировать нечем.
-      if (st.status === 'failed' || st.status === 'error') console.warn(`[animate/status] голова ${id}: ${st.status} — ${st.error || 'HeyGen не вернул причину'}`);
-      let assetUrl: string | null = savedHeads.get(id) || null;
-      if (st.status === 'completed' && st.url && !assetUrl) {
-        let dl = headDownloads.get(id);
-        if (!dl) {
-          dl = (async () => {
-            try {
-              const f = await downloadToRenders(st.url!, 'podhead');
-              await createAsset(tenantId, {
-                kind: 'reference', mediaType: 'video', originalName: 'Аватар-ведущий (HeyGen)',
-                fileUrl: f.fileUrl, filePath: f.filePath, mime: 'video/mp4', size: f.size,
-              }).catch(() => null); // Галерея опц. — файл уже сохранён
-              rememberHead(id, f.fileUrl);
-              return f.fileUrl;
-            } catch { return null; } finally { headDownloads.delete(id); }
-          })();
-          headDownloads.set(id, dl);
-        }
-        assetUrl = await dl;
-      }
-      // отдаём наш сохранённый URL (постоянный) если есть, иначе временную ссылку HeyGen
-      return { id, status: st.status, url: assetUrl || st.url || null, assetUrl, error: st.error || null };
-    }));
-    res.json({ statuses });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка статуса аниматора' });
-  }
-});
-
-/** POST /podcast/compose — склеить две головы в сплит-скрин (+ запись как аудио, + фон-музыка).
- *  body: { headA, headB, audioUrl?, musicUrl?, musicVolume? } → { jobId }. Идёт в фоне (poll status). */
-router.post('/podcast/compose', async (req: AuthedRequest, res: Response) => {
-  try {
-    const headA = typeof req.body?.headA === 'string' ? req.body.headA : '';
-    const headB = typeof req.body?.headB === 'string' ? req.body.headB : '';
-    if (!headA || !headB) return res.status(400).json({ error: 'Нужны обе готовые головы (headA, headB).' });
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
-    const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
-    const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
-    const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
-    const jobId = 'cmp_' + Math.random().toString(36).slice(2, 10);
-    sweepJobs(composeJobs);
-    const tenantId = req.tenantId!;
-    composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
-    // Фоновая задача: склейка может занять минуты (не блокируем ответ / прокси).
-    (async () => {
-      try {
-        const fileUrl = await composeHeads({ headA: abs(headA)!, headB: abs(headB)!, audioUrl, musicUrl, musicVolume });
-        let assetId: string | null = null;
-        try {
-          const asset = await createAsset(tenantId, {
-            kind: 'reference', mediaType: 'video', originalName: 'Подкаст сплит-скрин (аватары)',
-            fileUrl, mime: 'video/mp4',
-          });
-          assetId = asset?.id || null;
-        } catch { /* Галерея опц. */ }
-        composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
-      } catch (e: any) {
-        composeJobs.set(jobId, { tenantId, status: 'failed', error: e?.message || 'ошибка склейки', ts: Date.now() });
-      }
-    })();
-    res.json({ jobId, note: 'Склеиваю сплит-скрин — идёт в фоне, опрашиваю статус…' });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка склейки' });
-  }
-});
-
-/** GET /podcast/compose/status?jobId=... — статус склейки сплит-скрина. */
-router.get('/podcast/compose/status', (req: AuthedRequest, res: Response) => {
-  const jobId = String(req.query.jobId || '');
-  const j = composeJobs.get(jobId);
-  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача склейки не найдена' });
-  res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, error: j.error || null });
-});
-
-// ── HeyGen «на студии»: вырезать ЛЮДЕЙ из общего фото (Nano, на зелёный) → HeyGen анимирует (Avatar IV,
-// тело/руки) → chroma-key на фон студии. talking_photo нельзя вырезать сам (проверено вживую: transparent
-// отклоняется, green игнорируется), поэтому маттинг делаем ДО HeyGen на входном фото. ──
-/** Вырезать одного ведущего (A=лево / B=право) из общего фото студии на зелёный фон (Nano img2img).
- *  КЛЮЧЕВОЕ: композиция кадра сохраняется 1:1 (человек НЕ перемещается и НЕ масштабируется) —
- *  тогда после кропа в тот же 9:16, что и clean plate, оверлей 0:0 сажает аватара ровно на его
- *  место в студии. → локальный путь + /uploads URL. */
-/** Рамка ведущего на общем фото (доли кадра 0..1) — задаёт, КОГО именно вырезать. */
-interface FaceBox { x: number; y: number; w: number; h: number }
-
-async function personCutoutGreen(apiKey: string, groupUrlAbs: string, side: 'A' | 'B', box?: FaceBox | null, strict = false, model: string = PODCAST_ANGLE_MODEL): Promise<{ url: string; path: string }> {
-  const img = await fetchImageBase64(groupUrlAbs);
-  if (!img) throw new Error('не удалось загрузить общее фото студии');
-  const sideHint = side === 'A' ? 'на ЛЕВОЙ стороне кадра' : 'на ПРАВОЙ стороне кадра';
-  // Рамка пользователя точнее эвристики «лево/право» (люди могут сидеть не по краям).
-  const pct = (v: number) => `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`;
-  const where = box
-    ? `в отмеченной пользователем области кадра: по горизонтали от ${pct(box.x)} до ${pct(box.x + box.w)} ширины, `
-      + `по вертикали от ${pct(box.y)} до ${pct(box.y + box.h)} высоты (ориентир: ${sideHint})`
-    : sideHint;
-  const gen = await generateImage({
-    apiKey, model,
-    prompt: `Оставь на изображении РОВНО ОДНОГО человека — того, что ${where}. `
-      + 'На фото есть и ДРУГИЕ люди — убери их ВСЕХ ПОЛНОСТЬЮ, до единого. Ни одного другого человека, '
-      + 'ни его части (лицо, рука, плечо, силуэт, тень, даже частично на краю кадра) остаться НЕ должно — '
-      + 'как будто их там никогда не было. Также убери всю студию, мебель, стол, микрофоны и фон. '
-      + 'Замени ВСЁ, кроме целевого человека, СПЛОШНЫМ равномерным ярко-зелёным #00FF00 (хромакей). '
-      + 'КРИТИЧНО: сохрани КОМПОЗИЦИЮ КАДРА ТОЧНО как на исходном фото — тот же размер кадра, целевой человек остаётся '
-      + 'РОВНО на своём месте, в том же масштабе и позе, НЕ перемещай его в центр и НЕ приближай. '
-      + 'Сохрани его как есть — в полный рост, руки, плечи, чёткие аккуратные края (волосы, силуэт). '
-      + 'Целевой человек ПОЛНОСТЬЮ НЕПРОЗРАЧНЫЙ и плотный: сквозь него НЕ должен просвечивать зелёный фон, '
-      + 'никакой полупрозрачности или смешивания с фоном. '
-      + 'Фотореалистично. Верни только изображение.'
-      // повторная попытка: прошлый результат — не зелёный фон, полупрозрачный человек ИЛИ остался второй
-      + (strict
-        ? ' ОБЯЗАТЕЛЬНОЕ УСЛОВИЕ: на итоге РОВНО ОДИН полностью непрозрачный человек на СПЛОШНОМ ярко-зелёном '
-          + 'фоне #00FF00. НИ ОДНОГО другого человека или его части. НИКАКОЙ студии, мебели, столов, экранов, '
-          + 'микрофонов, интерьера. Если остался ещё хоть один человек (или его часть/силуэт), ИЛИ фон не зелёный, '
-          + 'ИЛИ человек хоть частично прозрачен — результат НЕВЕРЕН.'
-        : ''),
-    inputImages: [{ base64: img.base64, mime: img.mime }],
-  });
-  return { url: gen.mediaUrl, path: gen.filePath };
-}
-
-/** Clean plate: убрать ЛЮДЕЙ с общего фото и дорисовать студию за ними (Nano img2img).
- *  Это фон для compose-studio — иначе за аватарами выглядывают исходные статичные фигуры. */
-async function studioCleanPlate(apiKey: string, groupUrlAbs: string, strict = false): Promise<string> {
-  const img = await fetchImageBase64(groupUrlAbs);
-  if (!img) throw new Error('не удалось загрузить общее фото студии');
-  const gen = await generateImage({
-    apiKey, model: PODCAST_ANGLE_MODEL,
-    prompt: 'Убери с фото ВСЕХ людей полностью. Дорисуй студию за ними: мебель, кресла/стулья, стол, '
-      + 'микрофоны, фон — так, как они выглядели бы без людей. '
-      + 'ЛЮДЕЙ НЕ ДОЛЖНО БЫТЬ ВИДНО ВООБЩЕ — ни полупрозрачных силуэтов, ни контуров, ни «призраков»: '
-      + 'кресла и стол полностью пустые. '
-      + 'КРИТИЧНО: сохрани композицию кадра, ракурс, освещение, тени и цветовую гамму ТОЧНО как на исходном фото — '
-      + 'ничего не перемещай и не перерисовывай, кроме мест, где были люди. '
-      + 'Фотореалистично, высокое качество. Верни только изображение.'
-      // повторная попытка: прошлый результат оставил полупрозрачные силуэты людей
-      + (strict
-        ? ' ОБЯЗАТЕЛЬНОЕ УСЛОВИЕ: если на результате останется хоть частично видимый человек или его '
-          + 'полупрозрачный след — результат НЕВЕРЕН. Полностью замени области с людьми пустой мебелью и фоном студии.'
-        : ''),
-    inputImages: [{ base64: img.base64, mime: img.mime }],
-  });
-  return gen.mediaUrl;
-}
-
-/** POST /podcast/heygen-studio — вырезать людей из общего фото → HeyGen анимирует на зелёном.
- *  body: { spec, mode?, voiceSource?, emotion? } → { jobs:[{host,name,videoId}], studioUrl }. Голову качаем через /podcast/animate/status, затем /podcast/compose-studio. */
-router.post('/podcast/heygen-studio', async (req: AuthedRequest, res: Response) => {
-  try {
-    const key = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-    if (!key) return res.status(400).json({ error: 'Добавьте ключ HeyGen (Настройки → Генерация).' });
-    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
-    if (!apiKey) return res.status(400).json({ error: 'Нужен Gemini-ключ (Настройки → Gemini API) — им вырезаем людей из фото.' });
-    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
-    const groupPhotoUrl = typeof spec.groupPhotoUrl === 'string' && spec.groupPhotoUrl ? spec.groupPhotoUrl : '';
-    if (!groupPhotoUrl) return res.status(400).json({ error: 'Нужно общее фото студии (студия лиц) — из него вырежем обоих ведущих.' });
-    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
-    if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
-    const emotion = HEYGEN_EMOTION_MAP[String(req.body?.emotion || '')] || undefined;
-    const useIV = req.body?.mode !== 'standard'; // по умолчанию Avatar IV — больше движения тела/рук
-    const voiceSource = ['heygen', 'record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'heygen';
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
-    if (!base && voiceSource !== 'heygen') {
-      return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен на сервере — HeyGen не сможет скачать аудио-дорожку. Обратитесь к администратору.' });
-    }
-    // Фото реально доступно? (файл могли удалить из Галереи — удаление стирает и файл с диска)
-    if (!(await fetchImageBase64(abs(groupPhotoUrl)))) {
-      console.warn('[heygen-studio] общее фото студии недоступно:', abs(groupPhotoUrl));
-      return res.status(400).json({ error: 'Общее фото студии недоступно — файл, похоже, удалён из Галереи. Откройте «Студию лиц» и выберите или загрузите фото заново.' });
-    }
-    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
-    const rawTextFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
-    const textFor = (spk: 'A' | 'B') => rawTextFor(spk).slice(0, 1500);
-    const segsFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk).map((l) => ({ start: Number(l?.start), end: Number(l?.end) })).filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
-    if (voiceSource === 'record' && !spec.recordingUrl) return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись (Разобрать запись).' });
-    let elevenKey: string | null = null;
-    if (voiceSource === 'elevenlabs') { elevenKey = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'); if (!elevenKey) return res.status(400).json({ error: 'Добавьте ключ ElevenLabs.' }); }
-    const totalSec = dialogue.reduce((m, l) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    // Фаза 1 (параллельно по ведущему): голос + full-frame вырезка на зелёный (композиция
-    // кадра 1:1) + talking_photo. Всё падучее ДО сабмитов. Параллельно — clean plate (студия
-    // БЕЗ людей): иначе за аватарами выглядывают исходные статичные фигуры.
-    // ПРИНЦИП: аспект выхода = аспект фото (16:9 фото → ролик 16:9, 9:16 → 9:16) — вырезка и
-    // фон это один и тот же полный кадр, склейка кладёт головы во весь кадр без координат.
-    const warns: string[] = [];
-    const cleanPromise: Promise<string | null> = studioCleanPlate(apiKey, abs(groupPhotoUrl)).catch((e: any) => {
-      console.warn('[heygen-studio] clean plate не удался, фон = исходное фото:', e?.message || e);
-      return null;
-    });
-    // Размер фото → размер видео HeyGen того же аспекта (иначе HeyGen пере-кадрирует
-    // talking_photo, и композиция «вырезка = кадр фона» ломается).
-    const photoSize = await probeImageSize(abs(groupPhotoUrl));
-    const par = photoSize && photoSize.h > 0 ? photoSize.w / photoSize.h : 9 / 16;
-    const heyDim = par >= 1.2 ? { width: 1280, height: 720 } : par <= 0.83 ? { width: 720, height: 1280 } : { width: 720, height: 720 };
-    // Соло-режим: если рамкой отмечен только ОДИН ведущий — работаем с одним (одна вырезка,
-    // один голос, одна голова в склейке).
-    const facesArr: any[] = Array.isArray(spec.faces) ? spec.faces : [];
-    const hasFaceA = facesArr.some((f: any) => f?.speaker === 'A');
-    const hasFaceB = facesArr.some((f: any) => f?.speaker === 'B');
-    const hostsList: Array<readonly ['A' | 'B', any]> = hasFaceA && !hasFaceB ? [['A', hostA]]
-      : (!hasFaceA && hasFaceB ? [['B', hostB]] : [['A', hostA], ['B', hostB]]);
-    const prepared = await Promise.all(hostsList.map(async ([spk, host]) => {
-      const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
-      const fullText = rawTextFor(spk);
-      const text = textFor(spk) || `Реплики ведущего ${spk}.`;
-      let audioUrl: string | undefined; let voiceId: string | undefined;
-      if (voiceSource === 'record') {
-        const segs = segsFor(spk);
-        if (!segs.length) throw new Error(`нет сегментов записи для ведущего ${spk} (разберите запись на 2 голоса)`);
-        audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
-      } else if (voiceSource === 'elevenlabs') {
-        if (fullText.length > 2500) warns.push(`текст ведущего ${spk} обрезан до 2500 симв. (лимит ElevenLabs)`);
-        audioUrl = abs(await elevenTTS(elevenKey!, fullText, gender, host.elevenVoiceId));
-      } else {
-        if (fullText.length > 1500) warns.push(`текст ведущего ${spk} обрезан до 1500 симв. (лимит HeyGen TTS)`);
-        voiceId = (await pickVoice(key, gender, !!emotion)) || undefined;
-        if (!voiceId) throw new Error('не удалось подобрать голос HeyGen');
-      }
-      // Рамка ведущего из «студии лиц» (если обведена) — вырезаем именно её содержимое
-      const face = facesArr.find((f: any) => f?.speaker === spk && f?.box
-        && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))));
-      const box: { x: number; y: number; w: number; h: number } | null = face
-        ? { x: Number(face.box.x), y: Number(face.box.y), w: Number(face.box.w), h: Number(face.box.h) } : null;
-      // Рамка ДРУГОГО ведущего (центр 70%, чтобы не задеть целевого, если он краем заходит):
-      // после вырезки ЭТОГО ведущего область второго ОБЯЗАНА стать зелёной. Если там осталось
-      // не-зелёное — Gemini не убрал второго, и в склейке его СТАТИЧНАЯ фигура ляжет ВЕРХНИМ
-      // слоем поверх живого аватара (второй ведущий «застывает картинкой»). Ловим это ДО HeyGen.
-      const otherSpk: 'A' | 'B' = spk === 'A' ? 'B' : 'A';
-      const otherFace = facesArr.find((f: any) => f?.speaker === otherSpk && f?.box
-        && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))));
-      const ob = otherFace ? { x: Number(otherFace.box.x), y: Number(otherFace.box.y), w: Number(otherFace.box.w), h: Number(otherFace.box.h) } : null;
-      const otherBox = ob ? { x: ob.x + ob.w * 0.15, y: ob.y + ob.h * 0.15, w: ob.w * 0.7, h: ob.h * 0.7 } : null;
-      // Full-frame вырезка: тот же кадр, что clean plate (композиция 1:1, без кропов) —
-      // в склейке голова кладётся во весь кадр, аватар на своём месте по построению.
-      const makeCut = (strict: boolean) => personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, strict);
-      // Валидация вырезки ДО HeyGen (кредиты не тратятся), три режима сбоя Gemini:
-      // (1) фон не зелёный (вернул студию) — chromakey нечего убирать;
-      // (2) ведущий «растворён» (полупрозрачен ПОВЕРХ зелёного) — фон зелёный, проверка (1)
-      //     проходит, но после chromakey аватар в ролике полупрозрачный призрак. Ловим по
-      //     доле зелёного ВНУТРИ рамки ведущего: у плотного человека её почти нет.
-      // (3) второй человек НЕ удалён — его область не стала зелёной (см. otherBox выше).
-      const cutProblem = async (c: { url: string; path: string }): Promise<string | null> => {
-        const bgRatio = await greenBgRatio(c.path || abs(c.url));
-        if (bgRatio != null && bgRatio < 0.22) return 'фон остался студией (не зелёный)';
-        if (box) {
-          const inBox = await greenBgRatio(c.path || abs(c.url), box);
-          if (inBox != null && inBox > 0.55) return 'ведущий получился полупрозрачным (сквозь него виден зелёный)';
-        }
-        if (otherBox) {
-          const otherGreen = await greenBgRatio(c.path || abs(c.url), otherBox);
-          if (otherGreen != null && otherGreen < 0.5) return 'в кадре остался второй человек (его область не стала зелёной)';
-        }
-        return null;
-      };
-      let cut = await makeCut(false);
-      let problem = await cutProblem(cut);
-      if (problem) {
-        console.warn(`[heygen-studio] вырезка ${spk}: ${problem} — повторяю строже`);
-        cut = await makeCut(true);
-        problem = await cutProblem(cut);
-        if (problem) {
-          throw new Error(`вырезка ведущего ${spk}: ${problem} (дважды) — нажмите «Оживить НА студии» ещё раз`);
-        }
-      }
-      // Размер HeyGen — по аспекту САМОЙ вырезки, с локального файла (сетевая проба фото могла
-      // молча падать → HeyGen рендерил 9:16 при фото 16:9, и голова терялась при вписывании).
-      const cutSize = await probeImageSize(cut.path || abs(cut.url));
-      const car = cutSize && cutSize.h > 0 ? cutSize.w / cutSize.h : par;
-      const dim = car >= 1.2 ? { width: 1280, height: 720 } : car <= 0.83 ? { width: 720, height: 1280 } : { width: 720, height: 720 };
-      const tpId = await uploadTalkingPhoto(key, abs(cut.url));
-      return { spk, name: host.name || `Ведущий ${spk}`, text, audioUrl, voiceId, tpId, dim };
-    }));
-    const cleanUrl = await cleanPromise;
-    if (!cleanUrl) warns.push('clean plate не удался — фоном будет исходное фото (за аватарами могут выглядывать статичные фигуры)');
-    let studioUrl = cleanUrl || groupPhotoUrl;
-    // Валидация clean plate: если область рамки почти не изменилась (SSIM высок) — Gemini не
-    // удалил людей, а «растворил» до полупрозрачных призраков; такой фон портит склейку.
-    if (cleanUrl) {
-      const boxes = facesArr
-        .filter((f: any) => f?.box && [f.box.x, f.box.y, f.box.w, f.box.h].every((v: any) => Number.isFinite(Number(v))))
-        .map((f: any) => ({ x: Number(f.box.x), y: Number(f.box.y), w: Number(f.box.w), h: Number(f.box.h) }));
-      const simOf = async (url: string): Promise<number | null> => {
-        const sims = await Promise.all(boxes.map((b: any) => regionSimilarity(abs(groupPhotoUrl), abs(url), b)));
-        const vals = sims.filter((v): v is number => v != null);
-        return vals.length ? Math.max(...vals) : null;
-      };
-      if (boxes.length) {
-        let sim = await simOf(cleanUrl);
-        if (sim != null && sim > 0.8) {
-          console.warn(`[heygen-studio] clean plate: SSIM ${sim.toFixed(2)} в рамках — «призраки», повторяю строже`);
-          const retryUrl = await studioCleanPlate(apiKey, abs(groupPhotoUrl), true).catch(() => null);
-          if (retryUrl) {
-            const sim2 = await simOf(retryUrl);
-            if (sim2 == null || sim2 <= sim) { studioUrl = retryUrl; sim = sim2; }
-          }
-          if (sim != null && sim > 0.8) warns.push('фон мог сохранить полупрозрачные следы ведущих («призраки») — если видны в ролике, нажмите «Оживить НА студии» ещё раз');
-        }
-      }
-    }
-    const warnNote = warns.length ? ` ⚠ ${warns.join('; ')}.` : '';
-    // Фаза 2: сабмитим (размер видео = аспект фото); частичный сбой отдаём честно.
-    const jobs: any[] = [];
-    for (const p of prepared) {
-      try {
-        let videoId: string;
-        try {
-          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, expressive: true, ...(p.dim || heyDim) });
-        } catch {
-          // talking_style может не поддерживаться движком/аккаунтом — повтор без него
-          videoId = await submitTalkingPhotoVideo(key, { talkingPhotoId: p.tpId, voiceId: p.voiceId, text: p.text, audioUrl: p.audioUrl, emotion, useIV, ...(p.dim || heyDim) });
-        }
-        jobs.push({ host: p.spk, name: p.name, videoId });
-      } catch (e: any) {
-        if (!jobs.length) throw e;
-        return res.json({ jobs, studioUrl, note: `HeyGen-студия: ведущий ${p.spk} НЕ запустился (${e?.message || 'ошибка'}); ведущий ${jobs[0].host} уже рендерится.${warnNote}` });
-      }
-    }
-    const soloNote = hostsList.length === 1 ? ` Режим одного ведущего (${hostsList[0][0]}).` : '';
-    res.json({ jobs, studioUrl, note: `Вырезал ведущих (полный кадр, выход = формат фото)${cleanUrl ? ' + дорисовал студию без людей (clean plate)' : ''} → HeyGen${useIV ? ' (Avatar IV)' : ''} анимирует (~1–3 мин).${soloNote}${warnNote}` });
-  } catch (err: any) {
-    res.status(400).json({ error: `HeyGen-студия: ${err?.message || 'ошибка'}` });
-  }
-});
-
-/** POST /podcast/compose-studio — chroma-key голов на ФОТО СТУДИИ (clean plate).
- *  body: {headA, headB?, studioUrl, audioUrl?, musicUrl?, musicVolume?, overlays?} → {jobId}.
- *  Аспект выхода = аспект фото студии; головы кладутся во весь кадр (композиция 1:1).
- *  headB опционален (соло-режим). overlays — медиа реплик по таймкодам. */
-router.post('/podcast/compose-studio', async (req: AuthedRequest, res: Response) => {
-  try {
-    const headA = typeof req.body?.headA === 'string' ? req.body.headA : '';
-    const headB = typeof req.body?.headB === 'string' ? req.body.headB : '';
-    const studioUrl = typeof req.body?.studioUrl === 'string' ? req.body.studioUrl : '';
-    if (!headA || !studioUrl) return res.status(400).json({ error: 'Нужны готовая голова и фото студии (headA, studioUrl).' });
-    // альфа-дорожки голов (GPU-путь): с ними склейка идёт alphamerge вместо хромакея
-    const alphaA = typeof req.body?.alphaA === 'string' && req.body.alphaA ? req.body.alphaA : null;
-    const alphaB = typeof req.body?.alphaB === 'string' && req.body.alphaB ? req.body.alphaB : null;
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = (u?: string) => (u && !/^https?:\/\//i.test(u) && base) ? base + (u.startsWith('/') ? u : '/' + u) : u;
-    const audioUrl = abs(typeof req.body?.audioUrl === 'string' ? req.body.audioUrl : undefined);
-    const musicUrl = abs(typeof req.body?.musicUrl === 'string' ? req.body.musicUrl : undefined);
-    const musicVolume = Number.isFinite(Number(req.body?.musicVolume)) ? Number(req.body.musicVolume) : 20;
-    const overlays: StudioOverlay[] = (Array.isArray(req.body?.overlays) ? req.body.overlays : [])
-      .filter((o: any) => o && typeof o.url === 'string' && o.url && Number.isFinite(Number(o.tStart)) && Number.isFinite(Number(o.dur)))
-      .slice(0, 24)
-      .map((o: any) => ({
-        url: abs(String(o.url))!, tStart: Number(o.tStart), dur: Number(o.dur), video: o.video === true,
-        mode: o.mode === 'full' ? 'full' as const : 'card' as const,
-        fx: ['kb_in', 'kb_out', 'none'].includes(o.fx) ? o.fx : undefined,
-        title: typeof o.title === 'string' && o.title.trim() ? o.title.trim().slice(0, 60) : undefined,
-      }));
-    // Титры реплик (стиль «Новости»): фронт шлёт готовые интервалы из таймлайна диалога.
-    const captions: CaptionLine[] = (Array.isArray(req.body?.captions) ? req.body.captions : [])
-      .filter((c: any) => c && Number.isFinite(Number(c.t0)) && Number.isFinite(Number(c.t1)) && typeof c.text === 'string' && c.text.trim())
-      .slice(0, 400)
-      .map((c: any) => ({ t0: Number(c.t0), t1: Number(c.t1), text: String(c.text).trim().slice(0, 220) }));
-    // Рамки ведущих (доли кадра) для детерминированной обрезки в склейке — каждый со своей стороны.
-    const parseBox = (b: any): NormRect | null => (b && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(Number(b[k]))))
-      ? { x: Number(b.x), y: Number(b.y), w: Number(b.w), h: Number(b.h) } : null;
-    const boxA = parseBox(req.body?.boxA);
-    const boxB = parseBox(req.body?.boxB);
-    const jobId = 'cmps_' + Math.random().toString(36).slice(2, 10);
-    sweepJobs(composeJobs);
-    const tenantId = req.tenantId!;
-    composeJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
-    (async () => {
-      try {
-        const fileUrl = await composeOnStudio({ studioUrl: abs(studioUrl)!, headA: abs(headA)!, headB: headB ? abs(headB)! : null, headAAlpha: alphaA ? abs(alphaA)! : null, headBAlpha: alphaB ? abs(alphaB)! : null, audioUrl, musicUrl, musicVolume, overlays, captions, boxA, boxB });
-        let assetId: string | null = null;
-        try { const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Подкаст: ведущие на студии (HeyGen)', fileUrl, mime: 'video/mp4' }); assetId = asset?.id || null; } catch { /* Галерея опц. */ }
-        composeJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
-      } catch (e: any) { composeJobs.set(jobId, { tenantId, status: 'failed', error: e?.message || 'ошибка наложения на студию', ts: Date.now() }); }
-    })();
-    res.json({ jobId, note: 'Накладываю ведущих на студию (chroma-key) — в фоне, опрашиваю статус…' });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка наложения на студию' });
-  }
 });
 
 // ── «Комментатор»: единая дорожка = голос, полноэкранный визуал на сегмент (Ken Burns/Omni/видео) ──
@@ -1703,419 +790,6 @@ router.post('/omni/frame', async (req: AuthedRequest, res: Response) => {
     res.json({ url: f.fileUrl, assetId });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Не удалось извлечь кадр' });
-  }
-});
-
-// ── Omni-студия подкаста ──
-// ПРИОРИТЕТ: если есть ОБЩЕЕ фото студии (groupPhotoUrl) → один image_to_video оживляет ЦЕЛУЮ сцену
-// (оба ведущих в одном кадре — проверено вживую, single-image так НЕ блокируется). Иначе фолбэк —
-// по ведущему отдельно (2 клипа) + склейка composeHeads. Omni НЕ принимает аудио на вход и блокирует
-// СКЛЕЙКУ двух РАЗНЫХ фото (reference_to_video → "prohibited content"). Реальный голос — ветка HeyGen.
-// Правки — /omni/edit по interactionId клипа (диалоговое редактирование во главе).
-function omniHostPrompt(name: string, gender: 'male' | 'female', lines: string): string {
-  const who = gender === 'male' ? 'мужчина' : 'женщина';
-  const say = lines
-    ? ` Он(а) естественно, синхронно двигая губами, произносит по-русски: «${lines.slice(0, 600)}».`
-    : ' Он(а) смотрит в камеру и естественно говорит по-русски.';
-  return `Вертикальное видео 9:16. Человек с фотографии — ведущий подкаста (${who}, ${name}), в уютной студии. `
-    + `Живая мимика и лёгкие движения головы, тёплый студийный свет, фотореалистично.${say}`;
-}
-/** Промт для ЦЕЛОЙ сцены из общего фото студии (оба ведущих в одном кадре). */
-function omniScenePrompt(nameA: string, nameB: string, dialogueText: string): string {
-  const convo = dialogueText ? ` Они оживлённо обсуждают по-русски: «${dialogueText.slice(0, 700)}».` : '';
-  return `Вертикальное видео 9:16. На фотографии — студия подкаста с двумя ведущими (${nameA} слева и ${nameB} справа). `
-    + `Оба ведущих в кадре ЖИВО разговаривают: смотрят друг на друга и в камеру, естественная мимика, синхронные движения губ, лёгкие жесты.${convo} `
-    + `Тёплый студийный свет, фотореалистично, единый цельный кадр (НЕ сплит-скрин).`;
-}
-
-/** POST /podcast/omni-animate — оживить подкаст через Omni Flash: общее фото → ЦЕЛАЯ сцена, иначе по ведущему. body: { spec, aspect? } → { jobId }. */
-router.post('/podcast/omni-animate', async (req: AuthedRequest, res: Response) => {
-  try {
-    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
-    if (!apiKey) return res.status(400).json({ error: 'Подключите Gemini-ключ (Настройки → Gemini API) — Omni-студия работает на нём.' });
-    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
-    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
-    const groupPhotoUrl = typeof spec.groupPhotoUrl === 'string' && spec.groupPhotoUrl ? spec.groupPhotoUrl : '';
-    if (!groupPhotoUrl && (!hostA.photoUrl || !hostB.photoUrl)) return res.status(400).json({ error: 'Нужно общее фото студии (студия лиц) или фото обоих ведущих.' });
-    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
-    const aspect = req.body?.aspect === '16:9' ? '16:9' : '9:16';
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
-    const textFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk)
-      .map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
-    const jobId = 'omnipod_' + Math.random().toString(36).slice(2, 10);
-    sweepJobs(omniPodJobs);
-    const tenantId = req.tenantId!;
-    omniPodJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
-    const nameA = hostA.name || 'Ведущий A'; const nameB = hostB.name || 'Ведущий B';
-    // Фон: синхронные вызовы Omni (~40с каждый) > таймаут прокси → в фоне, poll status.
-    (async () => {
-      const hosts: any[] = [];
-      if (groupPhotoUrl) {
-        // ПРИОРИТЕТ: одна ЦЕЛАЯ сцена из общего фото студии (оба ведущих в кадре, без сплит-скрина).
-        const name = 'Студийная сцена';
-        try {
-          const img = await fetchImageBase64(abs(groupPhotoUrl));
-          if (!img) { hosts.push({ host: 'scene', name, error: 'не удалось загрузить общее фото студии' }); }
-          else {
-            const allText = dialogue.map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
-            const gen = await generateOmniVideo({ apiKey, prompt: omniScenePrompt(nameA, nameB, allText), inputImage: { base64: img.base64, mime: img.mime }, aspect });
-            let assetId: string | null = null;
-            try {
-              const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Omni-студия: сцена', fileUrl: gen.fileUrl, mime: 'video/mp4' });
-              assetId = asset?.id || null;
-            } catch { /* Галерея опц. */ }
-            hosts.push({ host: 'scene', name, url: gen.fileUrl, interactionId: gen.interactionId || null, seconds: gen.seconds || null, costUsd: gen.costUsd || null, assetId });
-          }
-        } catch (e: any) {
-          hosts.push({ host: 'scene', name, error: e?.message || 'ошибка Omni' });
-        }
-      } else {
-        // Фолбэк: по ведущему отдельно (2 клипа) — Omni не совмещает 2 РАЗНЫХ фото в одном кадре.
-        for (const [spk, host] of [['A', hostA], ['B', hostB]] as const) {
-          const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
-          const name = host.name || `Ведущий ${spk}`;
-          try {
-            const img = await fetchImageBase64(abs(host.photoUrl));
-            if (!img) { hosts.push({ host: spk, name, error: 'не удалось загрузить фото' }); continue; }
-            const gen = await generateOmniVideo({ apiKey, prompt: omniHostPrompt(name, gender, textFor(spk)), inputImage: { base64: img.base64, mime: img.mime }, aspect });
-            let assetId: string | null = null;
-            try {
-              const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: `Omni-ведущий ${name}`, fileUrl: gen.fileUrl, mime: 'video/mp4' });
-              assetId = asset?.id || null;
-            } catch { /* Галерея опц. */ }
-            hosts.push({ host: spk, name, url: gen.fileUrl, interactionId: gen.interactionId || null, seconds: gen.seconds || null, costUsd: gen.costUsd || null, assetId });
-          } catch (e: any) {
-            hosts.push({ host: spk, name, error: e?.message || 'ошибка Omni' });
-          }
-        }
-      }
-      const anyOk = hosts.some((h) => h.url);
-      omniPodJobs.set(jobId, { tenantId, status: anyOk ? 'done' : 'failed', hosts, error: anyOk ? undefined : (hosts.find((h) => h.error)?.error || 'не удалось оживить'), ts: Date.now() });
-    })();
-    res.json({ jobId, note: groupPhotoUrl
-      ? `Omni оживляет ЦЕЛУЮ сцену из общего фото студии (~30–60с, ≈$${(10 * OMNI_VIDEO_USD_PER_SEC).toFixed(2)}). Опрашиваю…`
-      : `Omni оживляет фото ведущих по одному (~30–60с каждый, ≈$${(20 * OMNI_VIDEO_USD_PER_SEC).toFixed(2)} за 2 клипа). Опрашиваю…` });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка Omni-студии' });
-  }
-});
-
-/** GET /podcast/omni-animate/status?jobId=... — статусы 2 Omni-клипов ведущих (+ interactionId для правок). */
-router.get('/podcast/omni-animate/status', (req: AuthedRequest, res: Response) => {
-  const j = omniPodJobs.get(String(req.query.jobId || ''));
-  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача Omni-студии не найдена' });
-  res.json({ status: j.status, hosts: j.hosts || [], error: j.error || null });
-});
-
-// ── GPU-студия: оркестрация с персистом в БД — джоб ПЕРЕЖИВАЕТ рестарт бэкенда ──
-// Деплой = pm2 restart по несколько раз в день; джоб, живший в памяти, умирал вместе с
-// процессом (фронт: «Прошлая GPU-генерация не найдена»), а воркер продолжал рендерить
-// «в никуда» — потерянные 10–30 минут GPU. Теперь прогресс каждого шага пишется в
-// gpu_studio_jobs, и при старте бэкенда недоделанные джобы реанимируются: готовые головы
-// пропускаются, запущенный воркер-джоб доопрашивается (воркер свою половину переживает
-// сам с v1.6.87), недостающие шаги перевыполняются (файлы аудио/вырезок в uploads целы).
-async function runGpuStudioJob(jobId: string, tenantId: string, params: GpuStudioParams, state: GpuStudioState): Promise<void> {
-  const persist = async (status: 'processing' | 'done' | 'failed', error?: string | null) => {
-    gpuStudioJobs.set(jobId, { tenantId, status, hosts: state.hosts as any, studioUrl: state.studioUrl || null, error: error || undefined, ts: Date.now() });
-    await updateGpuJob(jobId, { status, state, error: error ?? null });
-  };
-  try {
-    const spec = params.spec || {};
-    const voiceSource = params.voiceSource;
-    const engine = params.engine || undefined;
-    const gpuWorker = getRenderGpuWorkerUrl();
-    if (!gpuWorker) throw new Error('GPU-воркер не подключён (Админ → Конфигурация → Рендер)');
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    if (!base) throw new Error('PUBLIC_BASE_URL не настроен');
-    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : base + (u.startsWith('/') ? u : '/' + u);
-    // Ключи берём на КАЖДОМ запуске (в т.ч. при реанимации) — они не хранятся в джобе.
-    const apiKey = await getEffectiveGeminiKey(tenantId);
-    if (!apiKey) throw new Error('нет Gemini-ключа (Настройки → Gemini API)');
-    let elevenKey: string | null = null;
-    if (voiceSource === 'elevenlabs') {
-      elevenKey = await getEffectiveProviderKey(tenantId, 'elevenlabs');
-      if (!elevenKey) throw new Error('нет ключа ElevenLabs');
-    }
-
-    const groupPhotoUrl = String(spec.groupPhotoUrl || '');
-    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
-    const hostA = spec.hostA || {}; const hostB = spec.hostB || {};
-    const dialFor = (spk: 'A' | 'B') => dialogue.filter((l) => (l?.speaker === 'B' ? 'B' : 'A') === spk);
-    const rawTextFor = (spk: 'A' | 'B') => dialFor(spk).map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
-    const segsFor = (spk: 'A' | 'B') => dialFor(spk).map((l) => ({ start: Number(l?.start), end: Number(l?.end) })).filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start);
-    const totalSec = dialogue.reduce((m: number, l: any) => { const e = Number(l?.end); return Number.isFinite(e) && e > m ? e : m; }, 0);
-    const facesArr: any[] = Array.isArray(spec.faces) ? spec.faces : [];
-    const hasA = facesArr.some((f) => f?.speaker === 'A'); const hasB = facesArr.some((f) => f?.speaker === 'B');
-    const hostsList: Array<readonly ['A' | 'B', any]> = hasA && !hasB ? [['A', hostA]] : (!hasA && hasB ? [['B', hostB]] : [['A', hostA], ['B', hostB]]);
-    const boxOf = (spk: 'A' | 'B') => { const f = facesArr.find((x) => x?.speaker === spk && x?.box && [x.box.x, x.box.y, x.box.w, x.box.h].every((v: any) => Number.isFinite(Number(v)))); return f ? { x: Number(f.box.x), y: Number(f.box.y), w: Number(f.box.w), h: Number(f.box.h) } : null; };
-
-    // Один вызов домашнего воркера: {зелёная вырезка, аудио} → видео на зелёном (скачиваем к себе).
-    // POST быстрый (воркер сразу отдаёт job_id), инференс идёт в ФОНЕ → опрашиваем /avatar/status.
-    // Долгое HTTP-соединение НЕ держим — оно рвётся по таймаутам fetch/undici(300с)/форвардера.
-    const postWorker = async (path: string, bodyObj: any): Promise<any> => {
-      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 60_000);
-      try {
-        const r = await fetch(`${gpuWorker}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj), signal: ctrl.signal });
-        const d: any = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d?.error || `GPU-воркер HTTP ${r.status}`);
-        return d;
-      } finally { clearTimeout(t); }
-    };
-    /** Дождаться воркер-джоб и скачать результат. Отдельно от сабмита: id джоба персистится
-     *  ДО долгого опроса — после рестарта бэкенда мы просто продолжаем опрашивать этот id. */
-    const pollWorkerAvatar = async (wjob: string): Promise<{ url: string; alphaUrl: string | null; engine: string | null }> => {
-      for (let i = 0; i < 480; i++) {                       // до ~40 мин (инференс идёт минуты)
-        await new Promise((res) => setTimeout(res, 5000));
-        let st: any = null;
-        try {
-          const sc = new AbortController(); const stt = setTimeout(() => sc.abort(), 30_000);
-          try { const sr = await fetch(`${gpuWorker}/avatar/status?job=${encodeURIComponent(wjob)}`, { signal: sc.signal }); st = await sr.json().catch(() => null); }
-          finally { clearTimeout(stt); }
-        } catch { continue; }                               // сетевой сбой опроса — ретрай
-        if (!st) continue;
-        if (st.status === 'done' && st.output_name) {
-          const dl = await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(st.output_name)}`, 'gpuhead');
-          // альфа-дорожка (RVM): с ней склейка идёт alphamerge вместо хромакея — чище края волос
-          let alphaUrl: string | null = null;
-          if (st.alpha_name) {
-            try { alphaUrl = (await downloadToRenders(`${gpuWorker}/files/${encodeURIComponent(st.alpha_name)}`, 'gpuhead-a')).fileUrl; }
-            catch (e: any) { console.warn('[gpu-studio] альфа не скачалась (склею хромакеем):', e?.message || e); }
-          }
-          return { url: dl.fileUrl, alphaUrl, engine: st.engine || null };
-        }
-        if (st.status === 'failed') throw new Error(st.note || 'GPU-аватар не удался');
-        if (st.status === 'not_found') throw new Error('GPU-задача потеряна (воркер перезапущен) — повторите');
-      }
-      throw new Error('GPU-аватар: таймаут ожидания (~40 мин)');
-    };
-
-    // clean plate: при реанимации переиспользуем готовый (не жжём Gemini заново)
-    if (!state.studioUrl) {
-      const cleanUrl = await studioCleanPlate(apiKey, abs(groupPhotoUrl)).catch(() => null);
-      state.studioUrl = cleanUrl || groupPhotoUrl;
-      await persist('processing');
-    }
-
-    for (const [spk, host] of hostsList) {
-      const name = host.name || `Ведущий ${spk}`;
-      let h = state.hosts.find((x) => x.host === spk);
-      if (!h) { h = { host: spk, name }; state.hosts.push(h); }
-      h.name = name;
-      if (h.url) continue;                                   // голова добита до рестарта — пропуск
-      h.error = undefined;
-      try {
-        // 1) аудио (ваш голос по таймкодам / ElevenLabs); готовая дорожка переживает рестарт
-        if (!h.audioUrl) {
-          if (voiceSource === 'record') {
-            const segs = segsFor(spk);
-            if (!segs.length) throw new Error('нет сегментов записи (разберите запись на 2 голоса)');
-            h.audioUrl = abs(await buildHostAudio(spec.recordingUrl, base, segs, totalSec));
-          } else {
-            const gender: 'male' | 'female' = host.voice === 'male' ? 'male' : 'female';
-            h.audioUrl = abs(await elevenTTS(elevenKey!, rawTextFor(spk), gender, host.elevenVoiceId));
-          }
-          await persist('processing');
-        }
-        // 2) вырезка + сабмит воркеру — только если воркер-джоб ещё не запускался
-        if (!h.workerJobId) {
-          const box = boxOf(spk);
-          const ob = boxOf(spk === 'A' ? 'B' : 'A');
-          const otherBox = ob ? { x: ob.x + ob.w * 0.15, y: ob.y + ob.h * 0.15, w: ob.w * 0.7, h: ob.h * 0.7 } : null;
-          const cutProblem = async (c: { url: string; path: string }): Promise<string | null> => {
-            const bg = await greenBgRatio(c.path || abs(c.url)); if (bg != null && bg < 0.22) return 'фон остался студией (не зелёный)';
-            if (box) { const ib = await greenBgRatio(c.path || abs(c.url), box); if (ib != null && ib > 0.55) return 'ведущий получился полупрозрачным'; }
-            if (otherBox) { const og = await greenBgRatio(c.path || abs(c.url), otherBox); if (og != null && og < 0.5) return 'в кадре остался второй человек'; }
-            return null;
-          };
-          // Джоб фоновый (минуты GPU впереди) → транзиентный сбой Gemini (503 «high demand» /
-          // сетевой обрыв) не роняем сразу: поверх внутреннего ретрая generateImage ждём спайк
-          // с растущими паузами (спайк 06.07 длился 25+ минут). Нетранзиентные ошибки — сразу.
-          // Если pro-image так и не ожила — последняя попытка лёгкой моделью: она хуже держит
-          // личность, но валидация вырезки ниже (зелёный фон/плотность/второй человек) защищает
-          // от плохого результата — лучше шанс, чем гарантированный отказ.
-          let cut: { url: string; path: string } | null = null;
-          let cutErr: any = null;
-          for (let att = 1; att <= 5 && !cut; att++) {
-            try { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false); }
-            catch (e) {
-              cutErr = e;
-              if (!isTransientGenError(e)) throw e;
-              if (att < 5) await new Promise((r) => setTimeout(r, Math.min(120_000, 20_000 * att)));
-            }
-          }
-          if (!cut) {
-            console.warn(`[gpu-studio] pro-image не ожила за 5 попыток — пробую lite-модель для вырезки ${spk}`);
-            try { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, false, NANO_LITE_MODEL); }
-            catch { throw cutErr; }
-          }
-          let problem = await cutProblem(cut);
-          if (problem) { cut = await personCutoutGreen(apiKey, abs(groupPhotoUrl), spk, box, true); problem = await cutProblem(cut); if (problem) throw new Error(`вырезка ведущего ${spk}: ${problem}`); }
-          // 3) анимация на домашнем GPU. «Реалистичная студия» (по умолч.): жестикулирует ТОЛЬКО
-          // говорящий. Прокидываем сегменты речи хоста + интенсивность (ползунок) + оверрайд на реплику.
-          const realistic = (spec.realisticStudio !== false);
-          const toGain = (pct: number) => Math.max(0, Math.min(1.3, (pct / 100) * 1.3));
-          const intens = Number(host?.gestureIntensity);
-          const levelGain = Number.isFinite(intens) ? toGain(intens) : (spk === 'A' ? 0.9 : 0.6);
-          // оверрайд на конкретную реплику: line.gesture (0..100) → своя амплитуда; 0 = без жестов; undefined = авто (интенсивность хоста)
-          const lineGain = (l: any): number | undefined => {
-            const g = Number(l?.gesture);
-            return (l?.gesture === undefined || l?.gesture === null || !Number.isFinite(g)) ? undefined : toGain(g);
-          };
-          const workerSegs = dialFor(spk)
-            .map((l) => ({ s: Number(l?.start), e: Number(l?.end), g: lineGain(l) }))
-            .filter((x) => Number.isFinite(x.s) && Number.isFinite(x.e) && x.e > x.s)
-            .map((x) => (x.g === undefined ? [x.s, x.e] : [x.s, x.e, x.g]));
-          const extra = realistic ? {
-            realistic_studio: true,
-            speech_segs: workerSegs,
-            total_sec: totalSec,
-            level_gain: levelGain,
-            pose_style: spk === 'A' ? 1 : 2,       // разная хореография рук у A и B
-            phase: spk === 'A' ? 0 : 48,
-          } : {};
-          const start = await postWorker('/avatar', { image_url: abs(cut.url), audio_url: h.audioUrl, base_url: base, engine, ...extra });
-          if (!start?.job_id) throw new Error(start?.note || 'GPU-воркер не принял задачу');
-          h.workerJobId = String(start.job_id);
-          await persist('processing');            // ← ключ к реанимации: id воркер-джоба в БД до опроса
-        }
-        // 4) опрос воркера + скачивание (после рестарта продолжается с этого места)
-        const av = await pollWorkerAvatar(h.workerJobId!);
-        let assetId: string | null = null;
-        try { const a = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: `GPU-ведущий ${name}`, fileUrl: av.url, mime: 'video/mp4' }); assetId = a?.id || null; } catch { /* Галерея опц. */ }
-        h.url = av.url; h.alphaUrl = av.alphaUrl || null; h.assetId = assetId; h.engine = av.engine;
-        await persist('processing');
-      } catch (e: any) {
-        h.error = e?.message || 'ошибка';
-        await persist('processing');
-      }
-    }
-    const anyOk = state.hosts.some((x) => x.url);
-    await persist(anyOk ? 'done' : 'failed', anyOk ? null : (state.hosts.find((x) => x.error)?.error || 'не удалось оживить на GPU'));
-  } catch (e: any) {
-    await persist('failed', `GPU-студия: ${e?.message || 'ошибка'}`);
-  }
-}
-
-/** POST /podcast/gpu-studio — «на студии» на ДОМАШНЕМ GPU (без облака/кредитов HeyGen):
- *  вырезка ведущих на зелёный (Gemini, та же валидация) + аудио (ваш голос/ElevenLabs) →
- *  render-worker /avatar (EchoMimic-v2 = жесты / SadTalker = голова) → зелёные головы + clean plate.
- *  Дальше — та же /podcast/compose-studio. body: { spec, voiceSource?, engine? } → { jobId }.
- *  Джоб персистится в БД и переживает рестарт бэкенда (см. runGpuStudioJob). */
-router.post('/podcast/gpu-studio', async (req: AuthedRequest, res: Response) => {
-  try {
-    const gpuWorker = getRenderGpuWorkerUrl();
-    if (!gpuWorker) return res.status(400).json({ error: 'GPU-воркер (домашний ПК) не подключён. Запустите render-worker/install-gpu.sh и укажите адрес в Админ → Конфигурация → Рендер (RENDER_GPU_WORKER_URL).' });
-    const apiKey = await getEffectiveGeminiKey(req.tenantId!);
-    if (!apiKey) return res.status(400).json({ error: 'Нужен Gemini-ключ (Настройки → Gemini API) — им вырезаем людей из фото.' });
-    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
-    const groupPhotoUrl = typeof spec.groupPhotoUrl === 'string' && spec.groupPhotoUrl ? spec.groupPhotoUrl : '';
-    if (!groupPhotoUrl) return res.status(400).json({ error: 'Нужно общее фото студии (студия лиц).' });
-    const dialogue: any[] = Array.isArray(spec.dialogue) ? spec.dialogue : [];
-    if (!dialogue.some((l) => String(l?.text || '').trim())) return res.status(400).json({ error: 'Нужен диалог: сгенерируйте, загрузите или разберите запись.' });
-    // Локальные движки — АУДИО-ведомые (нет HeyGen TTS): нужен реальный голос (запись/ElevenLabs).
-    const voiceSource = (['record', 'elevenlabs'].includes(req.body?.voiceSource) ? req.body.voiceSource : 'record') as 'record' | 'elevenlabs';
-    const engine = ['echomimic', 'sadtalker'].includes(String(req.body?.engine)) ? String(req.body.engine) : undefined;
-    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-    if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — GPU-воркер не скачает фото/аудио. Обратитесь к администратору.' });
-    const abs = (u: string) => /^https?:\/\//i.test(u) ? u : base + (u.startsWith('/') ? u : '/' + u);
-    // Фото реально доступно? Частый кейс: файл удалили из Галереи (удаление стирает и файл с
-    // диска), а сценарий ссылается на мёртвый URL — раньше это всплывало через минуту ошибкой
-    // «не удалось загрузить» в карточках голов. Падаем СРАЗУ и с понятной причиной.
-    if (!(await fetchImageBase64(abs(groupPhotoUrl)))) {
-      console.warn('[gpu-studio] общее фото студии недоступно:', abs(groupPhotoUrl));
-      return res.status(400).json({ error: 'Общее фото студии недоступно — файл, похоже, удалён из Галереи. Откройте «Студию лиц» и выберите или загрузите фото заново.' });
-    }
-    if (voiceSource === 'elevenlabs' && !(await getEffectiveProviderKey(req.tenantId!, 'elevenlabs'))) {
-      return res.status(400).json({ error: 'Добавьте ключ ElevenLabs или выберите «Из записи».' });
-    }
-    if (voiceSource === 'record' && !spec.recordingUrl) return res.status(400).json({ error: 'Для «Из записи» нужна загруженная запись (Разобрать запись).' });
-
-    const jobId = 'gpupod_' + Math.random().toString(36).slice(2, 10);
-    sweepJobs(gpuStudioJobs);
-    const tenantId = req.tenantId!;
-    const params: GpuStudioParams = { spec, voiceSource, engine: engine || null };
-    const state: GpuStudioState = { studioUrl: null, hosts: [] };
-    gpuStudioJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
-    await insertGpuJob(jobId, tenantId, params, state);
-    void runGpuStudioJob(jobId, tenantId, params, state);
-
-    res.json({ jobId, note: 'GPU-студия: вырезаю ведущих, озвучиваю и анимирую на домашнем ПК (несколько минут). Опрашиваю статус…' });
-  } catch (err: any) {
-    res.status(500).json({ error: `GPU-студия: ${err?.message || 'ошибка'}` });
-  }
-});
-
-/** GET /podcast/gpu-studio/status?jobId=... — статус GPU-студии: головы (зелёные) + фон студии.
- *  После рестарта бэкенда память пуста — статус поднимается из gpu_studio_jobs (БД). */
-router.get('/podcast/gpu-studio/status', async (req: AuthedRequest, res: Response) => {
-  const id = String(req.query.jobId || '');
-  let j = gpuStudioJobs.get(id);
-  if (!j) {
-    const row = await getGpuJob(id);
-    if (row) {
-      j = { tenantId: row.tenantId, status: row.status, hosts: (row.state.hosts || []) as any, studioUrl: row.state.studioUrl || null, error: row.error || undefined, ts: Date.now() };
-      gpuStudioJobs.set(id, j);
-    }
-  }
-  if (!j || (j.tenantId && j.tenantId !== req.tenantId)) return res.status(404).json({ error: 'Задача GPU-студии не найдена' });
-  res.json({ status: j.status, hosts: j.hosts || [], studioUrl: j.studioUrl || null, error: j.error || null });
-});
-
-// Реанимация GPU-студии после рестарта: недоделанные джобы продолжаются с того же места
-// (готовые головы пропускаются, запущенный воркер-джоб доопрашивается). Задержка — дать
-// подняться БД/миграциям.
-setTimeout(async () => {
-  try {
-    const rows = await listProcessingGpuJobs();
-    for (const r of rows) {
-      gpuStudioJobs.set(r.id, { tenantId: r.tenantId, status: 'processing', hosts: (r.state.hosts || []) as any, studioUrl: r.state.studioUrl || null, ts: Date.now() });
-      console.log('[gpu-studio] реанимирую джоб после рестарта бэкенда:', r.id);
-      void runGpuStudioJob(r.id, r.tenantId, r.params, r.state);
-    }
-    if (rows.length) console.log(`[gpu-studio] реанимировано джобов: ${rows.length}`);
-  } catch (e: any) {
-    console.warn('[gpu-studio] реанимация не удалась:', e?.message || e);
-  }
-}, 4000);
-
-/** POST /podcast/:flowId — собрать подкаст-сцену → задача в очередь. body: { spec? } */
-router.post('/podcast/:flowId', async (req: AuthedRequest, res: Response) => {
-  try {
-    const flow = await getFlow(req.tenantId!, req.params.flowId);
-    if (!flow) return res.status(404).json({ error: 'Сценарий не найден' });
-    const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : null;
-    const { job, error } = await createPodcastJob(req.tenantId!, { flow, spec });
-    if (error) return res.status(400).json({ error });
-    res.status(201).json({ job });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка постановки в очередь' });
-  }
-});
-
-/** GET / — последние задачи рендера тенанта. */
-router.get('/', async (req: AuthedRequest, res: Response) => {
-  try {
-    const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 50;
-    res.json({ jobs: await listRenderJobs(req.tenantId!, limit), gpuTarget: getRenderGpuTarget() });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
-  }
-});
-
-/** GET /config/gpu — текущая цель GPU (home|cloud|off). */
-router.get('/config/gpu', (_req: AuthedRequest, res: Response) => {
-  res.json({ gpuTarget: getRenderGpuTarget() });
-});
-
-/** GET /:id — одна задача (поллинг статуса). */
-router.get('/:id', async (req: AuthedRequest, res: Response) => {
-  try {
-    const job = await getRenderJob(req.tenantId!, req.params.id);
-    if (!job) return res.status(404).json({ error: 'Задача не найдена' });
-    res.json({ job });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
   }
 });
 

@@ -1,22 +1,19 @@
 /**
- * MontageEditor — радиальный («паутина») редактор монтажного сценария TrendFlow.
+ * MontageEditor — радиальный («паутина») холст сценария TrendFlow.
  *
- * В центре — исходное видео; вокруг по лучам — узлы-процессы (на базе инструментов
- * OpenMontage). Цепочка вокруг центра: порядок узлов = порядок применения.
- *  • узлы настраиваются КНОПКАМИ (с умными дефолтами — «не задумываясь»);
- *    мультивыбор где нужно (Экспорт — несколько площадок);
- *  • опц. текстовое поле + 📎 медиа из Галереи + ✨ЛЛМ; кнопка «Готово»;
- *  • применённые процессы — чипами сверху с «редактировать»;
- *  • пустой сценарий → витрина пресетов (группы × 3).
+ * В центре — исходное видео; вокруг — облачные блоки (перетаскиваемые узлы):
+ * Omni Flash (+Комментатор), UGC, Hotebook, Редактор, Google Flow, Контент-план.
+ * Блоки связываются стрелками; у каждого — своя панель настроек.
  *
- * Хранение — в flows.graph.nodes (JSONB).
+ * Хранение — в flows.graph (JSONB): source, cloud, cloudEdges, omni, editor, ugc,
+ * hotebook, flow.commentator, brief.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Video, Scissors, Crop, VolumeX, Type, Music, Mic, Palette, Image,
-  UserRound, Search, Maximize2, Share2, Newspaper,
-  Plus, Pencil, Trash2, X, Minus, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
-  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, Pause, Combine, UploadCloud, Info,
+  Video, Scissors, Crop, Type, Music, Mic, Image,
+  UserRound, Search, Share2,
+  Plus, Pencil, Trash2, X, Loader2, ArrowLeft, Sparkles, Paperclip, Save, Wand2, Check,
+  Cloud, CalendarDays, Download, Link2, Film, Undo2, Redo2, Play, UploadCloud,
   BookOpen, Globe, FileText, Send, ListChecks, Table, Layers, Presentation, RefreshCw, AlertTriangle, ExternalLink,
   Clapperboard, Users,
 } from 'lucide-react';
@@ -29,88 +26,11 @@ import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPic
 import DialogueTimeline from './DialogueTimeline';
 import type { DlgMediaHint } from './dialogueTypes';
 
-type MKind =
-  | 'news' | 'research' | 'length' | 'format' | 'silence' | 'subtitles' | 'audio'
-  | 'voiceover' | 'color' | 'broll' | 'avatar' | 'upscale' | 'export';
-
-interface Choice { id: string; label: string; multi?: boolean; def: string[]; opts: { v: string; label: string }[]; }
-interface Meta { label: string; icon: React.ReactNode; hint: string; choices?: Choice[]; text?: string; media?: string; audio?: string; llm?: boolean; }
-
-interface MNode {
-  id: string;
-  kind: MKind;
-  text: string;
-  mediaUrl: string | null;
-  mediaName: string | null;
-  /** Своё аудио для блока «Аватар» (говорит аватар вместо TTS). */
-  audioUrl: string | null;
-  audioName: string | null;
-  /** Доп. медиа (B-roll «Медиафайлы» принимает НЕСКОЛЬКО файлов из Галереи). */
-  medias?: { url: string; name: string }[];
-  useLlm: boolean;
-  choices: Record<string, string[]>;
-}
-
-const META: Record<MKind, Meta> = {
-  news:      { label: 'Новости', icon: <Newspaper size={18} />, hint: 'Источник: RSS / Telegram / сайт / рубрика → текст + фото',
-    choices: [{ id: 'type', label: 'Тип источника', def: ['rss'], opts: [{ v: 'rss', label: 'RSS' }, { v: 'telegram', label: 'Telegram' }, { v: 'site', label: 'Сайт' }, { v: 'rubric', label: 'Рубрика' }] }],
-    text: 'RSS-URL, @telegram-канал или ссылка на сайт — возьмём последнюю запись (текст + фото)', llm: true },
-  research:  { label: 'Исследование', icon: <Search size={18} />, hint: 'Веб-поиск темы + источники', text: 'Тема для ресёрча…', llm: true },
-  length:    { label: 'Длина', icon: <Scissors size={18} />, hint: 'Длительность / лучший момент (ИИ) — авто-нарезка; ручная обрезка — в облаке «Редактор»',
-    choices: [{ id: 'duration', label: 'Длительность', def: ['30'], opts: [{ v: '15', label: '15 сек' }, { v: '30', label: '30 сек' }, { v: '60', label: '60 сек' }, { v: 'best', label: 'Лучший момент (ЛЛМ)' }, { v: 'full', label: 'Весь' }] }],
-    text: 'или диапазон 0:10–0:40', llm: true },
-  format:    { label: 'Формат', icon: <Crop size={18} />, hint: 'Ориентация под площадку',
-    choices: [{ id: 'orient', label: 'Ориентация', def: ['9:16'], opts: [{ v: '9:16', label: 'Вертикаль 9:16' }, { v: '16:9', label: 'Гориз 16:9' }, { v: '1:1', label: 'Квадрат' }, { v: '4:5', label: '4:5' }, { v: '21:9', label: 'Cinematic' }] }] },
-  silence:   { label: 'Паузы', icon: <VolumeX size={18} />, hint: 'Тишина между словами',
-    choices: [{ id: 'mode', label: 'Что делать с паузами', def: ['cut'], opts: [{ v: 'none', label: 'Не трогать' }, { v: 'cut', label: 'Вырезать' }, { v: 'speed', label: 'Ускорить' }] }] },
-  subtitles: { label: 'Субтитры', icon: <Type size={18} />, hint: 'Распознаём речь и вшиваем титры',
-    choices: [
-      { id: 'style', label: 'Стиль', def: ['word'], opts: [{ v: 'none', label: 'Без' }, { v: 'word', label: 'По словам' }, { v: 'karaoke', label: 'Караоке' }, { v: 'plain', label: 'Обычные' }] },
-    ] },
-  audio:     { label: 'Аудио', icon: <Music size={18} />, hint: 'Музыка + баланс с голосом',
-    choices: [
-      { id: 'vol', label: 'Громкость музыки', def: ['mid'], opts: [{ v: 'low', label: 'Тихо' }, { v: 'mid', label: 'Средне' }, { v: 'high', label: 'Громко' }] },
-      { id: 'duck', label: 'Приглушать под голос', def: ['on'], opts: [{ v: 'on', label: 'Вкл' }, { v: 'off', label: 'Выкл' }] },
-    ], media: 'Музыка из Галереи' },
-  voiceover: { label: 'Озвучка', icon: <Mic size={18} />, hint: 'Текст → голос (TTS)',
-    choices: [{ id: 'voice', label: 'Голос', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] }],
-    text: 'текст для озвучки…', llm: true },
-  color:     { label: 'Цветокор', icon: <Palette size={18} />, hint: 'Настроение картинки: пресет или свой LUT',
-    choices: [{ id: 'preset', label: 'Пресет', def: ['none'], opts: [{ v: 'none', label: 'Без' }, { v: 'warm', label: 'Тёплый' }, { v: 'cold', label: 'Холодный' }, { v: 'cinema', label: 'Кино' }, { v: 'bw', label: 'Ч/Б' }, { v: 'vivid', label: 'Яркий' }] }],
-    media: 'LUT-файл (.cube) из Галереи — заменяет пресет' },
-  broll:     { label: 'Медиафайлы', icon: <Image size={18} />, hint: 'Перебивки: стоки, кадры источника (фото из блока «Новости») или свои файлы из Галереи (можно несколько)',
-    choices: [{ id: 'src', label: 'Откуда брать', def: ['stock'], opts: [{ v: 'stock', label: 'Стоки' }, { v: 'source', label: 'Кадры источника' }, { v: 'reference', label: 'Свои файлы' }] }],
-    text: 'что вставить и когда…', media: 'Добавить из Галереи', llm: true },
-  avatar:    { label: 'Аватар', icon: <UserRound size={18} />, hint: 'Говорящая голова из аудио: фото + твой голос → аватар (EchoMimic/SadTalker на GPU)',
-    choices: [
-      { id: 'engine', label: 'Движок', def: ['auto'], opts: [{ v: 'auto', label: 'Авто (по медиа)' }, { v: 'echomimic', label: 'EchoMimic-v2 (жесты)' }, { v: 'sadtalker', label: 'SadTalker (голова)' }] },
-      { id: 'voice', label: 'Голос (если TTS)', def: ['female'], opts: [{ v: 'female', label: 'Женский' }, { v: 'male', label: 'Мужской' }] },
-    ],
-    text: 'сценарий для аватара (если без своего аудио)…', media: 'Фото / видео-аватар', audio: 'Голос: моё аудио', llm: true },
-  upscale:   { label: 'Апскейл', icon: <Maximize2 size={18} />, hint: 'Повысить чёткость',
-    choices: [{ id: 'scale', label: 'Множитель', def: ['off'], opts: [{ v: 'off', label: 'Выкл' }, { v: '2', label: '2×' }, { v: '4', label: '4×' }] }] },
-  export:    { label: 'Экспорт', icon: <Share2 size={18} />, hint: 'Куда выводим (можно несколько)',
-    choices: [{ id: 'platforms', label: 'Площадки', multi: true, def: ['tiktok', 'reels', 'shorts'], opts: [{ v: 'tiktok', label: 'TikTok' }, { v: 'reels', label: 'Reels' }, { v: 'shorts', label: 'Shorts' }, { v: 'youtube', label: 'YouTube' }, { v: 'instagram', label: 'Inst-лента' }] }] },
-};
-
-const KIND_ORDER: MKind[] = ['news', 'research', 'length', 'format', 'silence', 'subtitles', 'audio', 'voiceover', 'color', 'broll', 'avatar', 'upscale', 'export'];
-
-// Что делает ИИ-режиссёр (Claude), когда у узла включён ✨ЛЛМ.
-const DIR_HINT: Partial<Record<MKind, string>> = {
-  voiceover: 'Claude напишет сценарий по вашему брифу выше, затем Piper его озвучит.',
-  research: 'Claude найдёт материал по теме в вебе — он станет опорой для озвучки.',
-  news: 'Ссылка/@канал читается напрямую (текст+фото), Claude перепишет для озвучки; тема без ссылки — веб-поиск.',
-  length: 'Claude выберет самый сильный момент по транскрипту и обрежет под длительность.',
-  broll: 'Claude подберёт запрос для стоков (Pexels/Pixabay) по сценарию ролика.',
-  avatar: 'Claude напишет сценарий по брифу — аватар его произнесёт (HeyGen или GPU).',
-};
-
-// Облачные узлы графа (перетаскиваемые): Omni Flash (генерация видео), Контент-план, Подкаст.
-type CloudId = 'omni' | 'plan' | 'podcast' | 'editor' | 'ugc' | 'hotebook' | 'flow';
+// Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
+type CloudId = 'omni' | 'plan' | 'editor' | 'ugc' | 'hotebook' | 'flow';
 const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
   omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
   plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
-  podcast: { label: 'Подкаст', icon: <Mic size={22} />, color: '#ec4899', glow: 'rgba(236,72,153,.35)', def: { x: 15, y: 76 } },
   editor: { label: 'Редактор', icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
   ugc: { label: 'UGC', icon: <Video size={22} />, color: '#a855f7', glow: 'rgba(168,85,247,.35)', def: { x: 50, y: 12 } },
   hotebook: { label: 'Hotebook', icon: <BookOpen size={22} />, color: '#22d3ee', glow: 'rgba(34,211,238,.35)', def: { x: 50, y: 88 } },
@@ -368,89 +288,24 @@ const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
   { key: 'analyzed', label: 'Из анализа', icon: <Sparkles size={13} /> },
 ];
 
-// ── Подкаст-сцена (2 ведущих): спецификация облачного узла «Подкаст» ──
+// ── Общие типы дорожек/реплик (используются блоками UGC и «Комментатор») ──
 type PodVoice = 'female' | 'male';
 type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
-type PodLayout = 'overlay' | 'topbar'; // где картинка в сплит-скрине
-interface PodHost { photoUrl: string | null; photoName: string | null; voice: PodVoice; name: string; gestureIntensity?: number }
-// Анимация «выезда» картинки, прикреплённой к реплике.
-type PodAnim = 'auto' | 'slide-left' | 'slide-right' | 'slide-up' | 'fade' | 'zoom';
-const POD_ANIMS: { v: PodAnim; label: string }[] = [
-  { v: 'auto', label: 'Авто' }, { v: 'slide-left', label: '← Слева' }, { v: 'slide-right', label: 'Справа →' },
-  { v: 'slide-up', label: '↑ Снизу' }, { v: 'zoom', label: 'Зум' }, { v: 'fade', label: 'Проявление' },
-];
-// Реплика: спикер + текст (+ таймкоды) + опц. картинка + tStart (позиция на таймлайне Фазы 2).
-// mode/title — «Иллюстратор»: план показа медиа (карточка/во весь кадр) и заголовок индиго-плашки.
-interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: PodAnim; tStart?: number; gesture?: number; mode?: 'card' | 'full'; title?: string; layoutHint?: DlgMediaHint; holdSec?: number }
-interface PodCutaway { url: string; name: string }
-// Анимация ведущих (говорящие головы): провайдер + версия. Стоимость зависит от провайдера.
-type PodAvatarProvider = 'heygen' | 'did' | 'gpu' | 'omni';
-type PodAvatarMode = 'standard' | 'iv' | 'v';           // HeyGen: стандартный / Avatar IV / Avatar V (V — задел, пока неактивен: нужен видео-референс + Enterprise-API)
-type PodVoiceSource = 'heygen' | 'record' | 'elevenlabs'; // откуда голос для аниматора
-interface PodAvatar { provider: PodAvatarProvider; mode: PodAvatarMode; voiceSource: PodVoiceSource; emotion?: string }
-// Пресеты подачи/эмоции (топ-кнопки) — маппятся в эмоцию голоса HeyGen на бэке.
-const POD_EMOTIONS: { v: string; label: string }[] = [
-  { v: 'friendly', label: 'Дружелюбно' }, { v: 'confident', label: 'Уверенно' },
-  { v: 'excited', label: 'Восторженно' }, { v: 'calm', label: 'Спокойно' }, { v: 'serious', label: 'Серьёзно' },
-];
-const POD_AVATARS: { v: PodAvatarProvider; label: string; quality: string; cost: string; perMin: number; note: string }[] = [
-  { v: 'omni', label: 'Omni-студия', quality: '★★★★★ живая сцена + правки чатом', cost: 'ИИ-голос ~$0.10/с', perMin: 0, note: 'Omni Flash оживляет фото КАЖДОГО ведущего и правится чатом (диалоговое редактирование). Голос — синтетический (Omni). Для реального голоса из записи выберите HeyGen. Нужен Gemini-ключ.' },
-  { v: 'heygen', label: 'HeyGen', quality: '★★★★★ фотореализм', cost: 'премиум', perMin: 0.6, note: 'Лучшее качество, версии 3/4/5. Нужен ключ HeyGen (Настройки → Генерация).' },
-  { v: 'did', label: 'D-ID / Hedra', quality: '★★★★ хорошо', cost: 'дешевле в разы', perMin: 0.12, note: 'Говорящая голова из фото за меньшие деньги. Нужен ключ провайдера.' },
-  { v: 'gpu', label: 'Домашний GPU (жесты)', quality: '★★★★ жесты рук/корпуса', cost: 'бесплатно', perMin: 0, note: 'На вашем ПК (RTX), без оплаты за минуту: EchoMimic-v2 = говорящий С ЖЕСТАМИ рук/корпуса (если установлен), иначе SadTalker (только голова). Голос: «Из записи» или ElevenLabs. Нужен запущенный GPU-воркер (render-worker/install-gpu.sh). Кнопка «Оживить НА студии (домашний GPU)».' },
-];
-// Лицо на групповом фото: бокс в долях изображения (0..1) + назначенный спикер.
-interface PodFace { id: string; box: { x: number; y: number; w: number; h: number }; speaker: 'A' | 'B' }
-interface PodcastSpec {
-  hostA: PodHost; hostB: PodHost;
-  source: PodSource; brief: string; dialogue: PodLine[];
-  recordingUrl: string | null; recordingName: string | null;
-  cutaways: PodCutaway[]; layout: PodLayout; segSec: number; platforms: string[];
-  // Фаза 1 «Студия лиц»: групповое фото → детекция/разметка лиц → кадры-ракурсы.
-  groupPhotoUrl: string | null; groupPhotoName: string | null; faces: PodFace[];
-  // Фаза 2 «Таймлайн»: режим наложения дорожек (микс в воркере по tStart реплик).
-  timeline?: boolean;
-  // Анимация ведущих (говорящие головы): выбор провайдера/версии.
-  avatar?: PodAvatar;
-  // Фоновая музыка на весь ролик (генерим/загружаем): url + громкость % (обрезается по длине видео).
-  music?: { url: string; name: string; volumePct: number } | null;
-  // Результаты/статус аниматора — сохраняются в спеку, чтобы пережить выход/вход в сценарий.
-  animActive?: { kind: 'omnipod' | 'heygen' | 'gpupod'; jobId?: string; videoIds?: string[] } | null;
-  animResult?: { host: string; name: string; videoId: string; url: string | null; interactionId?: string | null; alphaUrl?: string | null }[] | null;
-  // Фон студии для «Собрать НА студии»: clean plate (студия без людей), выживает выход/вход.
-  studioBgUrl?: string | null;
-  // Окна ведущих в долях исходного фото — посадка аватаров на свои места при склейке.
-  studioPlace?: { A?: { x: number; y: number; w: number; h: number }; B?: { x: number; y: number; w: number; h: number } } | null;
-  // GPU-студия: «Реалистичная студия» — жестикулирует ТОЛЬКО говорящий, слушающий спокоен (по таймкодам диалога).
-  realisticStudio?: boolean;
-  // Стиль «Новости»: вжигать титры реплик + плашки-заголовки в студийную склейку.
-  newsStyle?: boolean;
-}
-const POD_DEFAULT: PodcastSpec = {
-  hostA: { photoUrl: null, photoName: null, voice: 'female', name: 'Ведущий A', gestureIntensity: 70 },
-  hostB: { photoUrl: null, photoName: null, voice: 'male', name: 'Ведущий B', gestureIntensity: 45 },
-  source: 'gen', brief: '', dialogue: [],
-  realisticStudio: true,
-  newsStyle: true,
-  recordingUrl: null, recordingName: null,
-  cutaways: [], layout: 'overlay', segSec: 0, platforms: ['tiktok', 'reels', 'shorts'],
-  groupPhotoUrl: null, groupPhotoName: null, faces: [],
-  timeline: false,
-  avatar: { provider: 'heygen', mode: 'iv', voiceSource: 'heygen', emotion: 'friendly' },
-  music: null,
-};
+// Реплика: спикер + текст (+ таймкоды) + опц. медиа. Используется UGC-диалогом и «Комментатором».
+// mode/layoutHint — план показа медиа (карточка/во весь кадр/фон+лицо); holdSec — держать медиа N сек.
+interface PodLine { speaker: 'A' | 'B'; text: string; start?: number; end?: number; image?: string; imageName?: string; anim?: string; tStart?: number; gesture?: number; mode?: 'card' | 'full'; title?: string; layoutHint?: DlgMediaHint; holdSec?: number }
 
 // ── Блок «UGC / Аватары»: кадр 9:16 из двух половин (аватар + видео) ──
-// Одна половина — говорящий аватар (движок EchoMimic-v2 на домашнем GPU / своё фото), другая —
+// Одна половина — говорящий аватар (из коллекции Галереи / своё фото → HeyGen), другая —
 // произвольное видео из Галереи; аватар ставится сверху или снизу. Скрипт — генерация/разбор
-// записи (как в подкасте). Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
+// записи. Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
 type UgcAvatarSource = 'collection' | 'photo';
 interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
 interface UgcSpec {
   avatarSource: UgcAvatarSource;
   avatarId: string | null;                                  // выбранный из коллекции
   avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
-  avatarProvider: 'gallery' | 'spatialreal';                // gallery=EchoMimic-вход, spatialreal=их realtime-движок
+  avatarProvider: 'gallery';                                // аватар из Галереи (коллекция) / своё фото → HeyGen
   photoUrl: string | null; photoName: string | null;        // своё фото
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
   voice: PodVoice;
@@ -527,160 +382,6 @@ const newSeg = (start: number, end: number): OmniSeg =>
 const OMNI_DEFAULT: OmniSpec = { segments: [newSeg(0, 0.2)] };
 const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
-/** Узел пресета: kind или kind с готовыми настройками (кнопки/текст/✨). */
-type PresetNode = MKind | { kind: MKind; choices?: Record<string, string[]>; text?: string; llm?: boolean };
-interface Preset { name: string; kinds: PresetNode[]; }
-// Порядок узлов = порядок применения: Формат ДО титров (кроп не отрежет вшитые
-// субтитры), титры ПОСЛЕ озвучки (транскрибируют голос), музыка — после титров.
-const NEWS_CHAIN = (type: string): PresetNode[] => [
-  { kind: 'news', choices: { type: [type] }, llm: true },
-  { kind: 'voiceover', llm: true }, 'format', { kind: 'broll', llm: true }, 'subtitles', 'audio', 'export',
-];
-const PRESET_GROUPS: { group: string; presets: Preset[] }[] = [
-  { group: 'Новости', presets: [
-    { name: 'Новости из RSS', kinds: NEWS_CHAIN('rss') },
-    { name: 'Из Telegram-канала', kinds: NEWS_CHAIN('telegram') },
-    { name: 'С сайта (рубрика)', kinds: NEWS_CHAIN('site') },
-  ] },
-  { group: 'Короткие ролики', presets: [
-    { name: 'Клип-фабрика', kinds: ['length', 'format', 'silence', 'subtitles', 'audio', 'export'] },
-    { name: 'Лучший момент → шортс', kinds: [{ kind: 'length', choices: { duration: ['best'] }, llm: true }, 'format', 'subtitles', 'audio', 'export'] },
-    { name: 'Reels-нарезка', kinds: [{ kind: 'length', choices: { duration: ['15'] } }, 'format', 'silence', { kind: 'color', choices: { preset: ['vivid'] } }, 'subtitles', 'export'] },
-  ] },
-  { group: 'Говорящие', presets: [
-    { name: 'Аватар из аудио', kinds: [{ kind: 'avatar', llm: false }, 'subtitles', 'export'] },
-    { name: 'Говорящая голова', kinds: ['length', 'format', 'color', 'subtitles', 'audio', 'export'] },
-    { name: 'Аватар-спикер', kinds: [{ kind: 'research', llm: true }, { kind: 'avatar', llm: true }, 'subtitles', 'audio', 'export'] },
-    { name: 'UGC-отзыв', kinds: [{ kind: 'avatar', llm: true }, 'subtitles', 'audio', 'export'] },
-  ] },
-  { group: 'Постановочные', presets: [
-    { name: 'Кинематик', kinds: ['length', { kind: 'format', choices: { orient: ['21:9'] } }, { kind: 'color', choices: { preset: ['cinema'] } }, 'audio', 'export'] },
-    { name: 'Объяснитель', kinds: [{ kind: 'research', llm: true }, { kind: 'voiceover', llm: true }, 'format', { kind: 'broll', llm: true }, 'subtitles', 'audio', 'export'] },
-    { name: 'Документалка', kinds: ['length', { kind: 'format', choices: { orient: ['16:9'] } }, { kind: 'broll', llm: true }, { kind: 'color', choices: { preset: ['cinema'] } }, 'audio', 'export'] },
-  ] },
-  { group: 'Сервисные', presets: [
-    { name: 'Скрин-демо', kinds: ['length', 'silence', 'subtitles', 'audio', 'export'] },
-    { name: 'Дубляж', kinds: ['voiceover', 'subtitles', 'export'] },
-    { name: 'Гибрид', kinds: ['length', 'format', { kind: 'broll', llm: true }, 'subtitles', 'audio', 'export'] },
-  ] },
-];
-
-let _seq = 0;
-const newId = () => `m${Date.now().toString(36)}${(_seq++).toString(36)}`;
-function newNode(kind: MKind): MNode {
-  const choices: Record<string, string[]> = {};
-  (META[kind].choices || []).forEach((c) => { choices[c.id] = [...c.def]; });
-  return { id: newId(), kind, text: '', mediaUrl: null, mediaName: null, audioUrl: null, audioName: null, useLlm: false, choices };
-}
-function hydrate(kind: MKind, choices: any): Record<string, string[]> {
-  const out: Record<string, string[]> = { ...(choices && typeof choices === 'object' ? choices : {}) };
-  (META[kind]?.choices || []).forEach((c) => { if (!Array.isArray(out[c.id])) out[c.id] = [...c.def]; });
-  return out;
-}
-
-/** Краткая сводка выбранных параметров узла (для мелкой подписи под кружком). */
-function nodeSummary(n: MNode): string {
-  const parts: string[] = [];
-  (META[n.kind].choices || []).forEach((c) => {
-    const labels = (n.choices[c.id] || [])
-      .map((v) => c.opts.find((o) => o.v === v)?.label)
-      .filter((x): x is string => !!x && x !== 'Без' && x !== 'Не трогать' && x !== 'Выкл');
-    if (labels.length) parts.push(labels.join(', '));
-  });
-  if (n.useLlm) parts.unshift('✨ИИ');
-  const s = parts.join(' · ');
-  return s.length > 40 ? s.slice(0, 39) + '…' : s;
-}
-
-// ── ДНК тренда (Фаза 2): автозаполнение блоков из сохранённого анализа ──────────
-interface DnaBeat { t: number; desc: string; intensity?: 'low' | 'mid' | 'high' }
-interface TrendDNA {
-  hookType: string; whyItWorks: string; targetAudience: string; viralFactors: string[];
-  copyReadyScript: string; howToAdapt: string[];
-  summary: string; sceneBeats: DnaBeat[]; hookAnalysis: string; visualStyle: string;
-  audioDialogue: string; whyResonates: string[]; howToReplicate: string[];
-  keywords: string[]; brief: string;
-  meta?: { platform?: string; author?: string; durationSec?: number; music?: string };
-  quality?: { lufs?: number; brightness?: number; vqScore?: number; originW?: number; originH?: number; needUpscale?: boolean };
-  benchmark?: { engagementRate?: number; likeRate?: number; saveRate?: number };
-}
-const secToClock = (sec: number) => { const m = Math.floor(sec / 60), s = Math.round(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; };
-
-function dnaDuration(sec?: number): string {
-  if (!sec || sec <= 0) return '30';
-  if (sec <= 20) return '15';
-  if (sec <= 45) return '30';
-  return '60';
-}
-function dnaColorPreset(style: string): string {
-  const s = (style || '').toLowerCase();
-  if (/ярк|насыщ|vivid|bright|колор/.test(s)) return 'vivid';
-  if (/тёпл|тепл|warm|закат|золот/.test(s)) return 'warm';
-  if (/холод|cold|синий|blue/.test(s)) return 'cold';
-  if (/кино|cinema|cinematic|плён|плен|\bfilm/.test(s)) return 'cinema';
-  if (/ч\/б|чёрно|черно|\bbw\b|monochrome|black.?and.?white/.test(s)) return 'bw';
-  return 'none';
-}
-function dnaPlatforms(platform?: string): string[] {
-  switch (platform) {
-    case 'instagram': return ['reels', 'instagram'];
-    case 'youtube': return ['shorts', 'youtube'];
-    case 'tiktok': return ['tiktok'];
-    default: return ['tiktok', 'reels', 'shorts'];
-  }
-}
-/** Создаёт узел заданного типа с переопределением текста/ЛЛМ/одиночных выборов. */
-function mkNode(kind: MKind, over: { text?: string; useLlm?: boolean; choices?: Record<string, string> }): MNode {
-  const n = newNode(kind);
-  if (over.text != null) n.text = over.text;
-  if (over.useLlm != null) n.useLlm = over.useLlm;
-  if (over.choices) for (const [k, v] of Object.entries(over.choices)) n.choices[k] = [v];
-  return n;
-}
-/** Раскладывает ДНК тренда по блокам TrendFlow + отдаёт скомпилированный бриф. */
-function dnaToGraph(d: TrendDNA): { nodes: MNode[]; brief: string } {
-  const kw = (d.keywords || []).slice(0, 8).join(', ');
-  const beats = (d.sceneBeats || []).filter((b) => Number.isFinite(b.t));
-
-  // Длина: из тайм-кодов сцен — реальный диапазон нарезки (его читает video_trimmer);
-  // нет тайм-кодов → отдаём пресет длительности + ЛЛМ «лучший момент».
-  let lenText = ''; let lenLlm = true;
-  if (beats.length) {
-    const start = Math.max(0, Math.floor(Math.min(...beats.map((b) => b.t))));
-    let end = Math.ceil(Math.max(...beats.map((b) => b.t)));
-    if (d.meta?.durationSec) end = Math.min(Math.ceil(d.meta.durationSec), end + 1);
-    if (end <= start) end = start + (d.meta?.durationSec ? Math.ceil(d.meta.durationSec) : 15);
-    lenText = `${secToClock(start)}–${secToClock(end)}`; lenLlm = false;
-  }
-
-  // B-roll: тема (ключи) + тайминг вставок по ритму оригинала.
-  const brollBits: string[] = [];
-  if (kw) brollBits.push(`Вставки по теме: ${kw}`);
-  if (beats.length >= 2) brollBits.push(`Тайминг по ритму: ${beats.slice(0, 4).map((b) => secToClock(b.t)).join(', ')}`);
-
-  const nodes: MNode[] = [
-    mkNode('length', { useLlm: lenLlm, choices: { duration: dnaDuration(d.meta?.durationSec) }, text: lenText }),
-    mkNode('format', { choices: { orient: '9:16' } }),
-    mkNode('voiceover', {
-      text: d.copyReadyScript || '',
-      useLlm: !d.copyReadyScript,        // есть готовый скрипт → читаем как есть; нет → пишет Claude по брифу
-      choices: { voice: 'female' },
-    }),
-    // B-roll ДО титров (перебивки не закрывают вшитый текст), титры ПОСЛЕ озвучки.
-    mkNode('broll', { useLlm: true, choices: { src: 'stock' },
-      text: brollBits.join(' · ') || (d.howToReplicate || []).slice(0, 2).join('; ') }),
-    mkNode('subtitles', { choices: { style: 'word' } }),
-    mkNode('audio', { choices: { vol: 'mid', duck: 'on' } }),
-    mkNode('color', { choices: { preset: dnaColorPreset(d.visualStyle) } }),
-  ];
-  // Апскейл — только если оригинал низкого качества / <1080p (GPU-шаг, добавляем по делу).
-  if (d.quality?.needUpscale) nodes.push(mkNode('upscale', { choices: { scale: '2' } }));
-  const exportNode = newNode('export');
-  exportNode.choices.platforms = dnaPlatforms(d.meta?.platform); // мультивыбор площадок
-  nodes.push(exportNode);
-  return { nodes, brief: d.brief || '' };
-}
-
 export default function MontageEditor({ flowId, onBack, isNew }: { flowId: string; onBack: () => void; isNew?: boolean }) {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
@@ -688,28 +389,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [name, setName] = useState('Сценарий');
   const [brief, setBrief] = useState('');          // главный промт: общий сценарий ролика (для ИИ-режиссёра)
   const [showBrief, setShowBrief] = useState(false);
-  const [nodes, setNodes] = useState<MNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showPicker, setShowPicker] = useState(false);
-  const [addOpen, setAddOpen] = useState(false); // нижнее поле «Добавить»: свёрнуто/раскрыто
-  const [showPresets, setShowPresets] = useState(false);
-  const [attachFor, setAttachFor] = useState<string | null>(null);
-  const [attachSlot, setAttachSlot] = useState<'media' | 'audio'>('media'); // куда привязывать выбранный файл
   const [media, setMedia] = useState<{ id: string; fileUrl: string; title: string; kind: string; folder: 'trends' | 'reference' | 'audio' | 'analyzed'; cover?: string }[]>([]);
   const [imgPick, setImgPick] = useState<string | null>(null);   // #3: segId, для которого выбираем старт-кадр из галереи картинок
   const [imgPickQ, setImgPickQ] = useState('');
   const imgUploadRef = useRef<HTMLInputElement | null>(null);
-  const [podPickTab, setPodPickTab] = useState<'all' | 'trends' | 'reference' | 'audio' | 'analyzed'>('all'); // вкладка-папка в пикере
-  const [podPickQ, setPodPickQ] = useState(''); // поиск в пикере
-  const [uploading, setUploading] = useState(false);   // загрузка медиа с устройства
-  const [dragOver, setDragOver] = useState(false);     // подсветка зоны drag-and-drop
-  const attachInputRef = useRef<HTMLInputElement | null>(null);
-  const [building, setBuilding] = useState(false);
-  const [buildJob, setBuildJob] = useState<any | null>(null);
-  const [buildMinimized, setBuildMinimized] = useState(false); // свернуть прогресс → рендер в фоне
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
@@ -718,20 +404,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const srcUploadRef = useRef<HTMLInputElement | null>(null);
   const [srcTab, setSrcTab] = useState<'all' | 'analyzed' | 'trend' | 'reference'>('all'); // вкладка-папка пикера источника
   const [srcQuery, setSrcQuery] = useState('');
-  // ДНК тренда (Фаза 2): анализ выбранного источника + панель автозаполнения блоков.
+  const [srcNote, setSrcNote] = useState<string | null>(null); // ошибка загрузки видео в пикере источника
+  // Источник (исходное видео): ассет для передачи в облачные блоки (Omni и др.).
   const [sourceAssetId, setSourceAssetId] = useState<string | null>(null);
-  const [dna, setDna] = useState<TrendDNA | null>(null);
-  const [dnaLoading, setDnaLoading] = useState(false);
-  const [showDnaPanel, setShowDnaPanel] = useState(false);
-  // Пакетная сборка: выбор нескольких источников → по ролику на каждый (одна цепочка блоков).
-  const [picked, setPicked] = useState<{ url: string; name: string; assetId?: string }[]>([]);
-  const [batchJobs, setBatchJobs] = useState<{ source: string; job: any }[]>([]);
-  const [batchRunning, setBatchRunning] = useState(false);
-  const [showBatch, setShowBatch] = useState(false);
-  const [batchMinimized, setBatchMinimized] = useState(false);
-  const [batchNote, setBatchNote] = useState<string | null>(null);
-  // Облачные узлы (Omni / Контент-план): позиции (%), связи-стрелки, режим связывания, панель.
-  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, podcast: { ...CLOUD.podcast.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def }, hotebook: { ...CLOUD.hotebook.def }, flow: { ...CLOUD.flow.def } });
+  // Облачные узлы: позиции (%), связи-стрелки, режим связывания, панель.
+  const [cloud, setCloud] = useState<Record<CloudId, { x: number; y: number }>>({ omni: { ...CLOUD.omni.def }, plan: { ...CLOUD.plan.def }, editor: { ...CLOUD.editor.def }, ugc: { ...CLOUD.ugc.def }, hotebook: { ...CLOUD.hotebook.def }, flow: { ...CLOUD.flow.def } });
   const [cloudEdges, setCloudEdges] = useState<{ from: string; to: string }[]>([]);
   const [pending, setPending] = useState<{ from: string; x: number; y: number } | null>(null); // тянем стрелку
   const pendingRef = useRef<{ from: string; x: number; y: number } | null>(null);
@@ -759,51 +436,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const stripRef = useRef<HTMLDivElement | null>(null);
   const srcVideoRef = useRef<HTMLVideoElement | null>(null);
   const omniDragRef = useRef<null | { id: string; handle: 'move' | 'start' | 'end'; s0: number; e0: number; x0: number }>(null);
-  // Подкаст: спецификация сцены (2 ведущих) + UI-состояния панели.
-  const [pod, setPod] = useState<PodcastSpec>(POD_DEFAULT);
   // «Комментатор» (блок Google Flow): состояние в graph.flow.commentator — переживает закрытие
   // панели, поллинг сборки живёт ЗДЕСЬ (не в панели) → крутит кольцо у узла и возобновляется.
   const [flowComm, setFlowComm] = useState<{ audioUrl?: string; audioName?: string; format?: '9:16' | '16:9'; lines?: PodLine[]; buildJobId?: string | null; resultUrl?: string | null }>({});
   const [commBusy, setCommBusy] = useState<null | 'diarize' | 'build'>(null);
   const [commFreshDone, setCommFreshDone] = useState(false); // ролик собрался — зелёная точка у узла
   const commPollRef = useRef<number | null>(null);
-  const [podBusy, setPodBusy] = useState<null | 'dialogue' | 'diarize' | 'upload' | 'detect' | 'apply' | 'illustrate'>(null);
-  const [illusNote, setIllusNote] = useState<string | null>(null); // заметка «Иллюстратора» (автоподбор видеоряда)
-  const [resetDiarizeOpen, setResetDiarizeOpen] = useState(false); // свой confirm-модал «Сбросить разбор»
-  const [podNote, setPodNote] = useState<string | null>(null);
-  const [animBusy, setAnimBusy] = useState(false);          // идёт рендер говорящих голов
-  const [animNote, setAnimNote] = useState<string | null>(null);
-  const [animJobs, setAnimJobs] = useState<{ host: string; name: string; videoId: string; status?: string; url?: string | null; interactionId?: string | null; alphaUrl?: string | null; edit?: string; editing?: boolean; error?: string | null }[]>([]);
-  const [studioBg, setStudioBg] = useState<string | null>(null); // HeyGen «на студии»: фон-фото студии для compose-studio (chroma-key)
-  const animPollRef = useRef<number | null>(null);
-  // Ссылки на <video> превью голов (по videoId) — для кнопки «Запустить обоих» разом.
-  const headVidRefs = useRef<Record<string, HTMLVideoElement | null>>({});
-  const playBothHeads = () => {
-    const vids = animJobs.map((j) => headVidRefs.current[j.videoId]).filter((v): v is HTMLVideoElement => !!v);
-    vids.forEach((v) => { try { v.currentTime = 0; v.muted = false; v.play().catch(() => {}); } catch { /* */ } });
-  };
-  // Позиция кадрирования превью головы = ЦЕНТР рамки ведущего (голова по центру ячейки, не срезана).
-  // Раньше жёстко left/right — ведущего резало у края; центр рамки показывает его посредине.
-  const headObjPos = (host: string): string => {
-    const b = pod.faces.find((f) => f.speaker === host)?.box;
-    if (!b) return '50% 50%';
-    const cx = Math.min(100, Math.max(0, (b.x + b.w / 2) * 100));
-    const cy = Math.min(100, Math.max(0, (b.y + b.h / 2) * 100));
-    return `${cx.toFixed(1)}% ${cy.toFixed(1)}%`;
-  };
   // Компонент жив? Опросы переустанавливают setTimeout ПОСЛЕ await fetch — clearTimeout в cleanup
   // снимает только уже запланированный таймер, и без этого флага цикл «воскресал» после unmount.
   const pollAliveRef = useRef(true);
-  const [composeBusy, setComposeBusy] = useState(false);       // склейка сплит-скрина
-  const [composeNote, setComposeNote] = useState<string | null>(null);
-  const [composeUrl, setComposeUrl] = useState<string | null>(null);
-  const [composeAR, setComposeAR] = useState<string>('9 / 16'); // аспект плеера финала = аспект самого видео (16:9→16:9)
-  const composePollRef = useRef<number | null>(null);
-  const [podPick, setPodPick] = useState<null | 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg' | 'music'>(null);
-  const [podLineIdx, setPodLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем картинку
-  const [loadDlgOpen, setLoadDlgOpen] = useState(false);  // модал «Загрузить диалог» (текст/JSON/из Исследования)
-  const [loadDlgText, setLoadDlgText] = useState('');
-  const podPickInputRef = useRef<HTMLInputElement | null>(null);
   // ── Блок «UGC / Аватары»: состояние + обработчики ──
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
@@ -817,10 +458,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcAvLoading, setUgcAvLoading] = useState(false);
   const [ugcAvBrief, setUgcAvBrief] = useState('');
   const [ugcAvNote, setUgcAvNote] = useState<string | null>(null);
-  // Публичные аватары SpatialReal (оживление их движком): грузятся вместе с коллекцией.
-  const [ugcSrAvatars, setUgcSrAvatars] = useState<{ id: string; name: string; previewUrl: string | null }[] | null>(null);
-  const [ugcSrLoading, setUgcSrLoading] = useState(false);
-  const [ugcSrNote, setUgcSrNote] = useState<string | null>(null);
   // Фидбэк кнопки «Сохранить» в панели UGC: автосейв делает сохранение «невидимым» — показываем галку.
   const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
   // Аспект готового ролика (из метаданных видео) — плеер под 9:16/16:9, а не пиллар-бокс.
@@ -933,19 +570,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const pickUgcAvatar = (a: { id: string; url: string; name: string }) =>
     ugcMutate((u) => ({ ...u, avatarId: a.id, avatarUrl: a.url, avatarName: a.name, avatarProvider: 'gallery' }));
-  const loadUgcSrAvatars = async (force = false) => {
-    if (ugcSrLoading || (ugcSrAvatars !== null && !force)) return;
-    setUgcSrLoading(true); setUgcSrNote(null);
-    try {
-      const r = await fetch(`/api/render/ugc/avatars/spatialreal${force ? '?force=1' : ''}`, { headers: headers() });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
-      setUgcSrAvatars(Array.isArray(d.avatars) ? d.avatars : []);
-    } catch (e: any) { setUgcSrAvatars([]); setUgcSrNote(e?.message || 'Библиотека SpatialReal недоступна.'); }
-    finally { setUgcSrLoading(false); }
-  };
-  const pickUgcSrAvatar = (a: { id: string; name: string; previewUrl: string | null }) =>
-    ugcMutate((u) => ({ ...u, avatarId: a.id, avatarUrl: a.previewUrl, avatarName: a.name, avatarProvider: 'spatialreal' }));
   // Крестик на плитке — открывает свой ConfirmModal (не браузерный confirm).
   const askDelUgcAvatar = (a: { id: string; url: string; name: string }, e: React.MouseEvent) => {
     e.stopPropagation(); setUgcDelAvatar(a);
@@ -959,9 +583,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (ugc.avatarProvider === 'gallery' && ugc.avatarId === a.id) ugcMutate((u) => ({ ...u, avatarId: null, avatarUrl: null, avatarName: null }));
     } catch { setUgcAvNote('Не удалось удалить аватар.'); }
   };
-  // Открыли панель UGC на вкладке «Коллекция» — оба грида подгружаются сразу, по тапу на узел.
+  // Открыли панель UGC на вкладке «Коллекция» — грузим коллекцию аватаров по тапу на узел.
   useEffect(() => {
-    if (cloudPanel === 'ugc' && ugc.avatarSource === 'collection') { void loadUgcAvatars(); void loadUgcSrAvatars(); }
+    if (cloudPanel === 'ugc' && ugc.avatarSource === 'collection') { void loadUgcAvatars(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudPanel, ugc.avatarSource]);
   // ── Сборка UGC: аватар говорит (sr-capture) → склейка с видео + титры → Галерея ──
@@ -1006,8 +630,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       if (!ugc.script.some((l) => l.text.trim())) { setUgcNote('Сначала разберите запись — реплик нет.'); return; }
     } else if (ugc.avatarSource === 'photo') {
       if (!ugc.photoUrl) { setUgcNote('Загрузите своё фото (портрет анфас) во вкладке «Своё фото».'); return; }
-    } else if (ugc.avatarProvider !== 'spatialreal' || !ugc.avatarId) {
-      setUgcNote('Выберите аватара в секции «SpatialReal — библиотека» или загрузите своё фото (вкладка «Своё фото»).'); return;
+    } else if (!ugc.avatarId) {
+      setUgcNote('Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).'); return;
     }
     if (!useDialogue) {
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
@@ -1066,18 +690,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     } catch (e: any) { setUgcNote(e?.message || 'Не удалось разобрать запись.'); }
     finally { setUgcBusy(null); }
   };
-  // «Студия лиц»: рисование боксов поверх группового фото.
-  const faceWrapRef = useRef<HTMLDivElement | null>(null);
-  const [drawBox, setDrawBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const drawStartRef = useRef<{ x: number; y: number } | null>(null);
-  // AI-ракурсы студии: кастомный промт, своя картинка-вход (с диска), сгенерированные превью.
-  const [angleBusy, setAngleBusy] = useState<string | null>(null);
-  const [anglePromptText, setAnglePromptText] = useState('');
-  const [podAngles, setPodAngles] = useState<{ url: string; preset: string }[]>([]);
-  const [angleSrc, setAngleSrc] = useState<{ url: string; name: string } | null>(null); // своя картинка-вход (иначе групповое фото)
-  const angleInputRef = useRef<HTMLInputElement | null>(null);
   const [nameEdit, setNameEdit] = useState(false); // инлайн-редактирование имени сценария
-  const [diarizeDone, setDiarizeDone] = useState(false); // разбор записи завершён → мигающий кружок на узле «Подкаст»
   // ── Блок «Hotebook» (NotebookLM): состояние панели ──
   const [hb, setHb] = useState<HbSpec>(HB_DEFAULT);
   const hbMutate = (fn: (h: HbSpec) => HbSpec) => { setHb((h) => fn(h)); setDirty(true); };
@@ -1111,16 +724,10 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   useEffect(() => { hbJobsRef.current = hbJobs; }, [hbJobs]);
   const hbActive = hbJobs.some((j) => j.status === 'queued' || j.status === 'running');
   const hbBusyAny = hbActive || hbChatBusy || hbSrcBusy || hbGenBusy;
-  const [srcDuration, setSrcDuration] = useState<number>(0);
-  const [lenSel, setLenSel] = useState<{ start: number; end: number }>({ start: 0, end: 1 }); // отрезок в узле «Длина»
-  const [exporting, setExporting] = useState(false); // имитация передачи в API площадок
-  const [exportPct, setExportPct] = useState(0);
-  const [connected, setConnected] = useState<Set<string>>(new Set()); // подключённые аккаунты площадок (мок до этапа C)
+  const [srcDuration, setSrcDuration] = useState<number>(0); // длительность исходника (Omni-лента)
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<CloudId | null>(null);
   const movedRef = useRef(false);
-
-  const update = (fn: (n: MNode[]) => MNode[]) => { setNodes((prev) => fn(prev)); setDirty(true); };
 
   useEffect(() => {
     (async () => {
@@ -1131,29 +738,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         if (res.ok && d.flow) {
           setName(d.flow.name || 'Сценарий');
           if (typeof d.flow.graph?.brief === 'string') setBrief(d.flow.graph.brief);
-          const g = d.flow.graph?.nodes || [];
-          const mapped: MNode[] = g.filter((x: any) => x?.type === 'montage' && x?.data?.kind && META[x.data.kind as MKind])
-            .map((x: any) => ({ id: x.id, kind: x.data.kind, text: x.data.text || '', mediaUrl: x.data.mediaUrl || null, mediaName: x.data.mediaName || null,
-              audioUrl: x.data.audioUrl || null, audioName: x.data.audioName || null,
-              medias: Array.isArray(x.data.medias) ? x.data.medias.filter((m: any) => m?.url) : [],
-              useLlm: !!x.data.useLlm, choices: hydrate(x.data.kind, x.data.choices) }));
-          setNodes(mapped);
           const src = d.flow.graph?.source;
           if (src && typeof src.url === 'string') {
             setSourceUrl(src.url); setSourceName(src.name || 'видео');
-            if (typeof src.assetId === 'string' && src.assetId) {
-              setSourceAssetId(src.assetId);
-              // Подтянуть сохранённую ДНК этого видео → покажем чип «Из тренда» (без авто-применения).
-              try {
-                const ar = await fetch(`/api/trends/media/${src.assetId}/analysis`, { headers: headers() });
-                if (ar.ok) { const adn = (await ar.json()).analysis?.dna; if (adn) setDna(adn as TrendDNA); }
-              } catch { /* нет анализа — не страшно */ }
-            }
+            if (typeof src.assetId === 'string' && src.assetId) setSourceAssetId(src.assetId);
           }
           if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
           if (Array.isArray(d.flow.graph?.cloudEdges)) {
-            // «Контент-план» скрыт — старые связи с ним не рисуем и не копим.
-            setCloudEdges(d.flow.graph.cloudEdges.filter((e: any) => e?.from !== 'plan' && e?.to !== 'plan'));
+            // Облако «Подкаст» убрано — старые связи с ним не рисуем и не копим.
+            setCloudEdges(d.flow.graph.cloudEdges.filter((e: any) => e?.from !== 'podcast' && e?.to !== 'podcast'));
           }
           if (d.flow.graph?.omni && typeof d.flow.graph.omni === 'object') {
             const raw = Array.isArray(d.flow.graph.omni.segments) ? d.flow.graph.omni.segments : [];
@@ -1182,17 +775,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               else if (sg.genJobId) { setOG(sg.id, { busy: true, note: 'Возобновляю…' }); pollOmni(sg.id, sg.genJobId); }
             }
           }
-          if (d.flow.graph?.podcast && typeof d.flow.graph.podcast === 'object') {
-            const pp = d.flow.graph.podcast;
-            setPod({
-              ...POD_DEFAULT, ...pp,
-              hostA: { ...POD_DEFAULT.hostA, ...(pp.hostA || {}) },
-              hostB: { ...POD_DEFAULT.hostB, ...(pp.hostB || {}) },
-              dialogue: Array.isArray(pp.dialogue) ? pp.dialogue : [],
-              cutaways: Array.isArray(pp.cutaways) ? pp.cutaways : [],
-              faces: Array.isArray(pp.faces) ? pp.faces : [],
-            });
-          }
           if (d.flow.graph?.editor && typeof d.flow.graph.editor === 'object') {
             const ed = d.flow.graph.editor;
             if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео', type: c.type === 'audio' ? 'audio' : 'video' })));
@@ -1202,6 +784,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
             const uu = d.flow.graph.ugc;
             setUgc({
               ...UGC_DEFAULT, ...uu,
+              // Старое сохранённое 'spatialreal' не воскрешаем — провайдер теперь только 'gallery'.
+              avatarProvider: 'gallery',
               script: Array.isArray(uu.script) ? uu.script : [],
               subtitles: { ...UGC_DEFAULT.subtitles, ...(uu.subtitles || {}) },
             });
@@ -1225,7 +809,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               resultUrl: fc.resultUrl || null,
             });
           }
-          if (mapped.length === 0 && isNew) setShowPresets(true); // пресеты — только для НОВОГО сценария
         }
       } catch { /* пусто */ }
       finally { setLoading(false); }
@@ -1235,14 +818,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const save = async () => {
     setSaving(true);
     try {
-      const graphNodes = nodes.map((n, i) => ({ id: n.id, type: 'montage', position: { x: i, y: 0 }, data: { kind: n.kind, text: n.text, mediaUrl: n.mediaUrl, mediaName: n.mediaName, audioUrl: n.audioUrl, audioName: n.audioName, medias: n.medias || [], useLlm: n.useLlm, choices: n.choices } }));
       const source = sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null;
-      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: graphNodes, edges: [], source, cloud, cloudEdges, omni: omniSpec, podcast: pod, editor: { clips: editorClips, result: editorResult }, ugc, hotebook: hb, flow: { commentator: flowComm }, brief } }) });
+      await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: [], edges: [], source, cloud, cloudEdges, omni: omniSpec, editor: { clips: editorClips, result: editorResult }, ugc, hotebook: hb, flow: { commentator: flowComm }, brief } }) });
       setDirty(false);
     } catch { /* */ }
     finally { setSaving(false); }
   };
-  // Авто-сохранение: любые правки (в т.ч. вся спека «Подкаста») сохраняются сами через ~1.6с —
+  // Авто-сохранение: любые правки сохраняются сами через ~1.6с —
   // выйдешь и вернёшься в сценарий → всё на месте. Ничего не теряется без кнопки «Сохранить».
   const saveRef = useRef(save);
   useEffect(() => { saveRef.current = save; });
@@ -1257,15 +839,15 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const restoringRef = useRef(false);
   const [, setHistTick] = useState(0);
   const docSnap = useCallback((): string => JSON.stringify({
-    name, brief, nodes, pod,
+    name, brief,
     // volatile gen-поля (genJobId/genUrl/genInteractionId) НЕ в undo-историю: их пишет фоновый поллинг, а не юзер.
     omniSpec: { segments: omniSpec.segments.map(({ genJobId, genUrl, genInteractionId, ...s }) => s) },
     cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId,
-  }), [name, brief, nodes, pod, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId]);
+  }), [name, brief, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId]);
   const applyDoc = (s: string) => {
     let d: any; try { d = JSON.parse(s); } catch { return; }
     restoringRef.current = true;
-    setName(d.name); setBrief(d.brief); setNodes(d.nodes); setPod(d.pod);
+    setName(d.name); setBrief(d.brief);
     // omniSpec в истории без gen-полей → возвращаем их из ТЕКУЩЕГО состояния по id (не теряем активную задачу/превью).
     setOmniSpec((cur) => {
       const genById = new Map(cur.segments.map((sg) => [sg.id, { genJobId: sg.genJobId ?? null, genUrl: sg.genUrl ?? null, genInteractionId: sg.genInteractionId ?? null }]));
@@ -1541,453 +1123,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     omniDragRef.current = null;
   };
 
-  // ── Длина: визуальный выбор отрезка на ленте → пишет диапазон m:ss–m:ss в текст узла ──
-  const toClock = (sec: number) => { const m = Math.floor(sec / 60), s = Math.round(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; };
-  const parseRange = (txt: string, dur: number): { start: number; end: number } | null => {
-    const m = txt.match(/(\d+):(\d\d)\s*[-–—]\s*(\d+):(\d\d)/);
-    if (m && dur > 0) {
-      const a = (+m[1] * 60 + +m[2]) / dur, b = (+m[3] * 60 + +m[4]) / dur;
-      if (b > a) return { start: Math.max(0, Math.min(1, a)), end: Math.max(0, Math.min(1, b)) };
-    }
-    return null;
-  };
-  const writeLenRange = (id: string, sel: { start: number; end: number }) => {
-    setLenSel(sel);
-    if (srcDuration > 0) patchNode(id, { text: `${toClock(sel.start * srcDuration)}–${toClock(sel.end * srcDuration)}` });
-  };
-
-  // ── Экспорт: «Начать экспорт» с имитацией тайминга (реальная передача в API — этап C) ──
-  const startExport = () => {
-    if (exporting) return;
-    setExporting(true); setExportPct(0);
-    const tick = () => setExportPct((p) => {
-      if (p >= 100) { setExporting(false); return 100; }
-      const next = Math.min(100, p + 7 + Math.round(p / 12));
-      setTimeout(tick, 220);
-      return next;
-    });
-    setTimeout(tick, 220);
-  };
-
-  // При открытии узла «Длина» — подтянуть отрезок из его текста (если задан диапазон).
-  useEffect(() => {
-    const n = nodes.find((x) => x.id === selectedId);
-    if (n?.kind === 'length') setLenSel(parseRange(n.text || '', srcDuration) || { start: 0, end: 1 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, srcDuration]);
-
-  // «Собрать» — сохранить сценарий, поставить задачу рендера, поллить прогресс.
-  const build = async () => {
-    if (building || batchRunning) return;
-    if (!sourceUrl && !canBuildWithoutSource) {
-      // Без исходника рендерить нечего: открываем пикер и подсказываем по-русски.
-      // (цепочки с Новостями/Озвучкой умеют собираться «с нуля» — их пропускаем)
-      setSelectedId(null); setCloudPanel(null); setShowSource(true);
-      setBuildJob({ status: 'failed', progress: 0, steps: [], error: 'Сначала выберите исходное видео: клик по центральному узлу «Видео из галереи».' });
-      return;
-    }
-    setBuilding(true);
-    setBuildMinimized(false);
-    setBuildJob({ status: 'queued', progress: 0, steps: [] });
-    try {
-      if (dirty) await save();
-      const res = await fetch(`/api/render/flow/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({ inputUrl: sourceUrl }) });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
-      let job = d.job;
-      setBuildJob(job);
-      for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
-        await new Promise((r) => setTimeout(r, 2000));
-        if (!pollAliveRef.current) return; // компонент размонтирован — прекращаем опрос
-        const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
-        if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
-      }
-    } catch (e: any) {
-      const raw = String(e?.message || 'Ошибка');
-      const msg = /inputUrl|source/i.test(raw)
-        ? 'Не выбрано исходное видео — кликните центральный узел и выберите файл из Галереи.'
-        : raw;
-      setBuildJob({ status: 'failed', error: msg, progress: 0, steps: [] });
-    } finally {
-      setBuilding(false);
-    }
-  };
-
-  // ── Подкаст: мутации спеки, диалог/диаризация, медиа, сборка ──────────────────
-  const podMutate = (fn: (p: PodcastSpec) => PodcastSpec) => { setPod((p) => fn(p)); setDirty(true); };
-  /** Сохранить результат/активную задачу аниматора в спеку (авто-сейв → переживает выход/вход). */
-  const persistAnim = (patch: Partial<Pick<PodcastSpec, 'animActive' | 'animResult' | 'studioBgUrl' | 'studioPlace'>>) => { setPod((p) => ({ ...p, ...patch })); setDirty(true); };
-
-  /** Сгенерировать диалог двух ведущих по брифу (Claude). */
-  const genDialogue = async () => {
-    if (podBusy) return;
-    if (!pod.brief.trim()) { setPodNote('Опишите тему подкаста для генерации диалога.'); return; }
-    setPodBusy('dialogue'); setPodNote(null);
-    try {
-      const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ brief: pod.brief, nameA: pod.hostA.name, nameB: pod.hostB.name }) });
-      const d = await res.json();
-      // timeline: false — новые TTS-реплики без start/tStart; в старом режиме таймлайна
-      // (после прошлой диаризации) они раскладывались по оценкам и резались невпопад
-      if (res.ok && Array.isArray(d.lines) && d.lines.length) { podMutate((p) => ({ ...p, dialogue: d.lines, timeline: false })); setPodNote(d.note || null); }
-      else setPodNote(d?.note || d?.error || 'Не удалось сгенерировать диалог.');
-    } catch { setPodNote('Ошибка сети при генерации диалога.'); }
-    finally { setPodBusy(null); }
-  };
-
-  /** «Иллюстратор»: автоподбор видеоряда (b-roll) из Галереи под реплики. Заполняет
-   *  dialogue[].image/anim/mode/title — ручные правки после этого работают как раньше. */
-  const runIllustrate = async () => {
-    if (podBusy) return;
-    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setIllusNote('Сначала нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
-    setPodBusy('illustrate'); setIllusNote(null);
-    try {
-      const body = {
-        dialogue: pod.dialogue.map((l, i) => ({ idx: i, speaker: l.speaker, text: l.text, dur: lineDur(l) })),
-        brief: pod.brief || '',
-      };
-      const res = await fetch('/api/render/podcast/illustrate', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
-      const d = await res.json();
-      if (!res.ok) { setIllusNote(d?.error || 'Автоподбор не удался.'); return; }
-      const byIdx = new Map<number, any>((Array.isArray(d.lines) ? d.lines : []).map((s: any) => [Number(s.idx), s]));
-      if (!byIdx.size) { setIllusNote(d?.note || 'Подходящих материалов не нашлось.'); return; }
-      podMutate((p) => ({
-        ...p,
-        dialogue: p.dialogue.map((l, j) => {
-          const s = byIdx.get(j);
-          if (!s || !s.image) return l;
-          return { ...l, image: String(s.image), imageName: s.imageName ? String(s.imageName) : undefined,
-            anim: (POD_ANIMS.some((a) => a.v === s.anim) ? s.anim : 'fade') as PodAnim,
-            mode: s.mode === 'card' ? 'card' as const : 'full' as const,
-            title: s.title ? String(s.title) : undefined };
-        }),
-      }));
-      setIllusNote(d.note || 'Иллюстрации подобраны. Проверьте реплики — план и плашку можно поменять у каждой.');
-    } catch { setIllusNote('Ошибка сети при автоподборе.'); }
-    finally { setPodBusy(null); }
-  };
-
-  /** Разобрать текст/JSON в реплики двух ведущих (для «Загрузить диалог»). */
-  const parseDialogueInput = (raw: string): PodLine[] => {
-    const s = (raw || '').trim();
-    if (!s) return [];
-    const toAB = (who: string, names: string[]): 'A' | 'B' => {
-      const low = who.toLowerCase().trim();
-      if (/(^|\b)(b|2)(\b|$)|ведущ\w*\s*[бb]|второй|male|муж/.test(low) || low === 'б') return 'B';
-      if (/(^|\b)(a|1)(\b|$)|ведущ\w*\s*[аa]|перв|female|жен/.test(low) || low === 'а') return 'A';
-      if (who && !names.includes(who)) names.push(who);
-      // 1-й уникальный голос → A, 2-й → B, дальше чередуем (раньше 3-й+ молча уходили в A)
-      return names.indexOf(who) % 2 === 1 ? 'B' : 'A';
-    };
-    // JSON?
-    if (s[0] === '[' || s[0] === '{') {
-      try {
-        const j = JSON.parse(s);
-        const arr = Array.isArray(j) ? j : (j.dialogue || j.lines || j.segments);
-        if (Array.isArray(arr)) {
-          const names: string[] = [];
-          return arr
-            .map((it: any) => {
-              const sp = String(it?.speaker ?? it?.role ?? it?.name ?? '').trim();
-              const text = String(it?.text ?? it?.content ?? it?.line ?? '').trim();
-              // сохраняем таймкоды, если они есть в JSON (сегменты диаризации)
-              const st = Number(it?.start); const en = Number(it?.end);
-              return {
-                speaker: toAB(sp, names), text,
-                ...(Number.isFinite(st) ? { start: st } : {}),
-                ...(Number.isFinite(en) && (!Number.isFinite(st) || en > st) ? { end: en } : {}),
-              } as PodLine;
-            })
-            .filter((l) => l.text);
-        }
-      } catch { /* не JSON — разберём как текст */ }
-    }
-    // Текст: строки «Имя: реплика» (либо просто чередуем).
-    const names: string[] = [];
-    const out: PodLine[] = [];
-    for (const rawLine of s.split(/\r?\n/)) {
-      const line = rawLine.trim();
-      if (!line) continue;
-      const m = line.match(/^\s*([^:：]{1,32})[:：]\s*(.+)$/);
-      if (m) out.push({ speaker: toAB(m[1], names), text: m[2].trim() });
-      else if (out.length) out[out.length - 1].text += ' ' + line; // продолжение реплики
-      else out.push({ speaker: 'A', text: line });
-    }
-    return out.filter((l) => l.text.trim());
-  };
-  /** Применить загруженный диалог из модала. */
-  const applyLoadedDialogue = () => {
-    const lines = parseDialogueInput(loadDlgText);
-    if (!lines.length) { setPodNote('Не разобрать. Формат: строки «A: …» / «B: …» или JSON [{ "speaker": "A", "text": "…" }].'); return; }
-    podMutate((p) => ({ ...p, dialogue: lines, timeline: false }));
-    setLoadDlgOpen(false); setLoadDlgText(''); setPodNote(`Загружено реплик: ${lines.length}.`);
-  };
-  /** Узлы «Исследование»/«Новости» текущего сценария с текстом — источник для «Загрузить диалог». */
-  const researchNodes = nodes.filter((n) => (n.kind === 'research' || n.kind === 'news') && (n.text || '').trim());
-
-  /** Разобрать загруженную запись на 2 голоса (диаризация). */
-  const runDiarize = async () => {
-    if (podBusy || !pod.recordingUrl) return;
-    setPodBusy('diarize'); setPodNote(null);
-    try {
-      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ recordingUrl: pod.recordingUrl, hostAVoice: pod.hostA.voice, hostBVoice: pod.hostB.voice }) });
-      const d = await res.json();
-      if (res.ok && Array.isArray(d.lines) && d.lines.length) {
-        // Авто-раскладка: ставим клипы на их реальные времена (tStart=start) и включаем таймлайн.
-        // Голос аниматора автоматически «Из записи»: раз запись разобрана — в ролик идёт СВОЙ
-        // голос по таймкодам, HeyGen делает только мимику/липсинк (не пере-озвучивает TTS-ом).
-        podMutate((p) => ({ ...p, timeline: true,
-          avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: 'record' },
-          dialogue: d.lines.map((l: any) => {
-          // Number(): строковые таймкоды (фолбэк-воркер) иначе молча теряли авто-раскладку
-          const st = Number(l.start); const en = Number(l.end);
-          return {
-            speaker: l.speaker === 'B' ? 'B' : 'A', text: String(l.text || ''),
-            ...(Number.isFinite(st) ? { start: st, tStart: st } : {}),
-            ...(Number.isFinite(en) ? { end: en } : {}),
-          };
-        }) }));
-        setPodNote((d.note ? d.note + ' · ' : '') + 'Голос аниматора: «Из записи» (ваш голос, HeyGen — только мимика).');
-        setDiarizeDone(true);  // мигающий кружок на узле «Подкаст»
-      } else setPodNote(d?.note || d?.error || 'Не удалось разобрать запись.');
-    } catch { setPodNote('Ошибка сети при разборе записи.'); }
-    finally { setPodBusy(null); }
-  };
-
-  /** Суммарная длительность диалога (сек) — для оценки стоимости анимации. */
-  const dialogTotalSec = (): number => pod.dialogue.reduce((s, l) => s + lineDur(l), 0);
-  /** Опрос статуса рендеров HeyGen до готовности (потолок ~30 мин). */
-  const pollAnimate = (ids: string[]) => {
-    let ticks = 0;
-    const tick = async () => {
-      try {
-        const res = await fetch('/api/render/podcast/animate/status?ids=' + ids.join(','), { headers: headers() });
-        const d = await res.json();
-        if (res.ok && Array.isArray(d.statuses) && d.statuses.length) {
-          let merged: typeof animJobs = [];
-          setAnimJobs((prev) => { merged = prev.map((j) => { const s = d.statuses.find((x: any) => x.id === j.videoId); return s ? { ...j, status: s.status, url: s.url, error: s.error || null } : j; }); return merged; });
-          const done = d.statuses.every((s: any) => s.status === 'completed' || s.status === 'failed');
-          if (done) {
-            setAnimBusy(false);
-            // Причину падения HeyGen показываем явно (раньше было глухое «ошибка») — по ней сразу понятно, что делать.
-            const failed = d.statuses.filter((s: any) => s.status === 'failed');
-            const reasons = Array.from(new Set(failed.map((s: any) => String(s.error || '').trim()).filter(Boolean)));
-            setAnimNote(failed.length
-              ? (reasons.length ? `Часть голов не отрендерилась. HeyGen: ${reasons.join('; ')}` : 'Часть голов не отрендерилась (HeyGen не вернул причину). Попробуйте ещё раз — часто это временный сбой/квота.')
-              : 'Готово! Говорящие головы ведущих отрендерены. Ниже — превью.');
-            persistAnim({ animActive: null, animResult: merged.map((j) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
-            return;
-          }
-        }
-      } catch { /* ретрай */ }
-      if (!pollAliveRef.current) return;
-      if (++ticks > 180) { setAnimBusy(false); setAnimNote('Опрос рендера остановлен по таймауту (30 мин) — готовые головы ищите в Галерее.'); return; }
-      animPollRef.current = window.setTimeout(tick, 10000);
-    };
-    tick();
-  };
-  /** Запустить рендер говорящих голов ведущих у выбранного провайдера (HeyGen — реально). */
-  /** Отменить идущий рендер аниматора (HeyGen/студия/Omni): останавливаем опрос, чистим
-   *  превью и сохранённое возобновление (animActive) — после перезахода рендер не «воскреснет».
-   *  Уже запущенный у провайдера рендер доработает на его стороне, результат игнорируется. */
-  const cancelAnimate = () => {
-    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-    setAnimBusy(false);
-    setAnimJobs([]);
-    setAnimNote('Отменено: опрос остановлен, результат не будет использован. Уже запущенный у провайдера рендер доработает на его стороне (кредиты за запуск не возвращаются). Можно запускать заново.');
-    persistAnim({ animActive: null });
-  };
-  const runAnimate = async () => {
-    if (animBusy) return;
-    const av = pod.avatar || POD_DEFAULT.avatar!;
-    if (av.provider === 'omni') { void runOmniAnimate(); return; }
-    // Домашний GPU: единственный рабочий путь — GPU-студия (вырезка из общего фото → EchoMimic).
-    // Раньше кнопка била в бэкенд-заглушку «подключу следующим шагом» и молча ничего не делала.
-    if (av.provider === 'gpu') { void runGpuStudio(); return; }
-    if (av.provider === 'heygen' && (!pod.hostA.photoUrl || !pod.hostB.photoUrl)) { setAnimNote('Сначала добавьте фото обоих ведущих (студия лиц / ракурсы).'); return; }
-    if (av.provider === 'heygen' && !pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
-    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-    setAnimBusy(true); setAnimNote(null); setAnimJobs([]);
-    try {
-      const res = await fetch('/api/render/podcast/animate', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ provider: av.provider, mode: av.mode, voiceSource: av.voiceSource, emotion: av.emotion, spec: pod }) });
-      const d = await res.json();
-      if (!res.ok) { setAnimNote(d?.error || 'Аниматор недоступен.'); setAnimBusy(false); return; }
-      if (Array.isArray(d.jobs) && d.jobs.length) {
-        setAnimJobs(d.jobs.map((j: any) => ({ ...j, status: 'processing', url: null })));
-        setAnimNote(d.note || 'Идёт рендер…');
-        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null });
-        pollAnimate(d.jobs.map((j: any) => j.videoId));
-      } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
-    } catch { setAnimNote('Ошибка сети при запуске аниматора.'); setAnimBusy(false); }
-  };
-  /** Опрос статуса склейки сплит-скрина (потолок ~30 мин). */
-  const pollCompose = (jobId: string) => {
-    let ticks = 0;
-    const tick = async () => {
-      try {
-        const res = await fetch('/api/render/podcast/compose/status?jobId=' + jobId, { headers: headers() });
-        const d = await res.json();
-        if (res.ok && d.status && d.status !== 'processing') {
-          setComposeBusy(false);
-          if (d.status === 'done' && d.fileUrl) { setComposeUrl(d.fileUrl); setComposeNote('Готово! Сплит-скрин собран и сохранён в Галерею.'); }
-          else setComposeNote(d.error || 'Склейка не удалась.');
-          return;
-        }
-      } catch { /* ретрай */ }
-      if (!pollAliveRef.current) return;
-      if (++ticks > 225) { setComposeBusy(false); setComposeNote('Опрос склейки остановлен по таймауту (30 мин) — результат ищите в Галерее.'); return; }
-      composePollRef.current = window.setTimeout(tick, 8000);
-    };
-    tick();
-  };
-  /** Склеить готовые головы: на студии (полный кадр, аспект = фото; можно с ОДНОЙ головой)
-   *  или легаси сплит-скрин (нужны обе). */
-  const runCompose = async () => {
-    if (composeBusy) return;
-    const a = animJobs.find((j) => j.host === 'A' && j.url && j.status === 'completed');
-    const b = animJobs.find((j) => j.host === 'B' && j.url && j.status === 'completed');
-    const bg = studioBg || pod.studioBgUrl || null;
-    const onStudio = !!bg;
-    const ready = [a, b].filter((j) => j?.url);
-    if (onStudio ? !ready.length : (!a?.url || !b?.url)) {
-      setComposeNote(onStudio ? 'Сначала дождитесь готовности головы ведущего.' : 'Сначала дождитесь готовности обеих голов.');
-      return;
-    }
-    if (composePollRef.current) { clearTimeout(composePollRef.current); composePollRef.current = null; }
-    setComposeBusy(true); setComposeNote(null); setComposeUrl(null);
-    try {
-      const av = pod.avatar || POD_DEFAULT.avatar!;
-      const body: any = {
-        headA: onStudio ? ready[0]!.url : a!.url,
-        ...(onStudio ? (ready[1]?.url ? { headB: ready[1]!.url } : {}) : { headB: b!.url }),
-        audioUrl: av.voiceSource === 'record' ? pod.recordingUrl : undefined,
-        musicUrl: pod.music?.url || undefined, musicVolume: pod.music?.volumePct ?? 20 };
-      if (onStudio) {
-        body.studioUrl = bg;
-        // альфа-дорожки GPU-голов (RVM): склейка пойдёт alphamerge вместо хромакея
-        if (ready[0]?.alphaUrl) body.alphaA = ready[0].alphaUrl;
-        if (ready[1]?.alphaUrl) body.alphaB = ready[1].alphaUrl;
-        // медиа реплик (картинки/видео) — по своим интервалам: 'full' = во весь кадр
-        // (фото с Ken Burns), 'card' = карточка по центру; title → индиго-плашка
-        body.overlays = pod.dialogue
-          .map((l, i, arr) => l.image ? {
-            url: l.image, tStart: lineT(l, i, arr), dur: lineDur(l), video: isVideoUrl(l.image),
-            mode: l.mode === 'full' ? 'full' : 'card',
-            title: l.mode === 'full' && l.title ? l.title : undefined,
-          } : null)
-          .filter(Boolean)
-          .slice(0, 24);
-        // Стиль «Новости»: титры реплик вжигаются в склейку (тайминги из таймлайна диалога)
-        if (pod.newsStyle !== false) {
-          body.captions = pod.dialogue
-            .map((l, i, arr) => (l.text || '').trim() ? { t0: lineT(l, i, arr), t1: lineT(l, i, arr) + lineDur(l), text: l.text.trim() } : null)
-            .filter(Boolean);
-        }
-        // Рамки ведущих → детерминированная обрезка в склейке (каждый со своей стороны):
-        // даже если в вырезке остался второй человек, он отсекается. Только когда обе головы.
-        if (ready.length >= 2) {
-          const fa = pod.faces.find((f) => f.speaker === 'A')?.box;
-          const fb = pod.faces.find((f) => f.speaker === 'B')?.box;
-          if (fa && fb) { body.boxA = fa; body.boxB = fb; }
-        }
-      }
-      const res = await fetch(onStudio ? '/api/render/podcast/compose-studio' : '/api/render/podcast/compose', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
-      const d = await res.json();
-      if (!res.ok || !d.jobId) { setComposeNote(d?.error || 'Не удалось запустить склейку.'); setComposeBusy(false); return; }
-      setComposeNote(d.note || 'Склеиваю…');
-      pollCompose(d.jobId);
-    } catch { setComposeNote('Ошибка сети при склейке.'); setComposeBusy(false); }
-  };
-
-  // ── HeyGen «на студии»: вырезать людей из общего фото (Nano→зелёный) → HeyGen (Avatar IV) → наложим на студию ──
-  const runHeyGenStudio = async () => {
-    if (animBusy) return;
-    if (!pod.groupPhotoUrl) { setAnimNote('Нужно общее фото студии (студия лиц) — из него вырежем обоих ведущих.'); return; }
-    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
-    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-    setAnimBusy(true); setAnimNote(null); setAnimJobs([]); setStudioBg(null); setComposeUrl(null);
-    try {
-      const av = pod.avatar || POD_DEFAULT.avatar!;
-      const res = await fetch('/api/render/podcast/heygen-studio', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod, mode: av.mode, voiceSource: av.voiceSource, emotion: av.emotion }) });
-      const d = await res.json();
-      if (!res.ok) { setAnimNote(d?.error || 'HeyGen-студия недоступна.'); setAnimBusy(false); return; }
-      if (Array.isArray(d.jobs) && d.jobs.length) {
-        setAnimJobs(d.jobs.map((j: any) => ({ ...j, status: 'processing', url: null })));
-        const bg = d.studioUrl || pod.groupPhotoUrl || null;
-        setStudioBg(bg);
-        setAnimNote(d.note || 'HeyGen анимирует…');
-        // studioBgUrl (clean plate) — в спеку: «Собрать НА студии» работает и после выхода/входа
-        persistAnim({ animActive: { kind: 'heygen', videoIds: d.jobs.map((j: any) => j.videoId) }, animResult: null, studioBgUrl: bg, studioPlace: d.place || null });
-        pollAnimate(d.jobs.map((j: any) => j.videoId));
-      } else { setAnimNote(d.note || 'Готово.'); setAnimBusy(false); }
-    } catch { setAnimNote('Ошибка сети (HeyGen-студия).'); setAnimBusy(false); }
-  };
-
-  // ── GPU-студия (домашний ПК, без облака/кредитов): вырезка на зелёный + аудио → render-worker
-  //    /avatar (EchoMimic-v2 жесты / SadTalker голова) → зелёные головы + clean plate → «Собрать НА студии». ──
-  const runGpuStudio = async () => {
-    if (animBusy) return;
-    if (!pod.groupPhotoUrl) { setAnimNote('Нужно общее фото студии (студия лиц) — из него вырежем ведущих.'); return; }
-    if (!pod.dialogue.some((l) => (l.text || '').trim())) { setAnimNote('Нужен диалог: сгенерируйте, загрузите или разберите запись.'); return; }
-    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-    setAnimBusy(true); setAnimNote(null); setAnimJobs([]); setStudioBg(null); setComposeUrl(null);
-    try {
-      const av = pod.avatar || POD_DEFAULT.avatar!;
-      // GPU-движки ведутся аудио: голос «Из записи» или ElevenLabs (не HeyGen TTS).
-      const voiceSource = av.voiceSource === 'elevenlabs' ? 'elevenlabs' : 'record';
-      const res = await fetch('/api/render/podcast/gpu-studio', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod, voiceSource }) });
-      const d = await res.json();
-      if (!res.ok || !d.jobId) { setAnimNote(d?.error || 'GPU-студия недоступна.'); setAnimBusy(false); return; }
-      setAnimNote(d.note || 'GPU оживляет ведущих…');
-      persistAnim({ animActive: { kind: 'gpupod', jobId: d.jobId }, animResult: null });
-      pollGpuStudio(d.jobId);
-    } catch { setAnimNote('Ошибка сети (GPU-студия).'); setAnimBusy(false); }
-  };
-  const pollGpuStudio = (jobId: string) => {
-    let ticks = 0;
-    const tick = async () => {
-      try {
-        const res = await fetch('/api/render/podcast/gpu-studio/status?jobId=' + jobId, { headers: headers() });
-        if (res.status === 404) { setAnimBusy(false); persistAnim({ animActive: null }); setAnimNote('Прошлая GPU-генерация не найдена (сервер мог перезапуститься). Готовые головы ищите в Галерее.'); return; }
-        const d = await res.json();
-        if (res.ok && d.status && d.status !== 'processing') {
-          setAnimBusy(false);
-          const hosts = Array.isArray(d.hosts) ? d.hosts : [];
-          const jobs = hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'gpu-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, alphaUrl: h.alphaUrl || null, error: h.error || null }));
-          setAnimJobs(jobs);
-          if (d.studioUrl) setStudioBg(d.studioUrl);
-          persistAnim({ animActive: null, animResult: jobs.map((j: any) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: null, alphaUrl: j.alphaUrl || null })), studioBgUrl: d.studioUrl || null });
-          const failed = hosts.filter((h: any) => h.error);
-          setAnimNote(d.status === 'failed'
-            ? ('GPU не смог оживить: ' + (d.error || failed.map((h: any) => h.error).join('; ')))
-            : (failed.length ? ('Часть готова. Ошибки: ' + failed.map((h: any) => `${h.host}: ${h.error}`).join('; ')) : 'Готово! GPU оживил ведущих. Жми «Собрать НА студии».'));
-          return;
-        }
-      } catch { /* ретрай */ }
-      if (!pollAliveRef.current) return;
-      if (++ticks > 300) { setAnimBusy(false); setAnimNote('Опрос GPU остановлен по таймауту — готовые головы ищите в Галерее.'); return; }
-      animPollRef.current = window.setTimeout(tick, 8000);
-    };
-    tick();
-  };
-
-  // ── Omni-студия: оживить фото каждого ведущего через Omni Flash (по одному) → 2 клипа с ИИ-голосом ──
-  const runOmniAnimate = async () => {
-    if (animBusy) return;
-    if (!pod.groupPhotoUrl && (!pod.hostA.photoUrl || !pod.hostB.photoUrl)) { setAnimNote('Добавьте общее фото студии (студия лиц) или фото обоих ведущих.'); return; }
-    if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-    setAnimBusy(true); setAnimNote(null); setAnimJobs([]);
-    try {
-      const res = await fetch('/api/render/podcast/omni-animate', { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod, aspect: '9:16' }) });
-      const d = await res.json();
-      if (!res.ok || !d.jobId) { setAnimNote(d?.error || 'Omni-студия недоступна.'); setAnimBusy(false); return; }
-      setAnimNote(d.note || 'Omni оживляет ведущих…');
-      persistAnim({ animActive: { kind: 'omnipod', jobId: d.jobId }, animResult: null });
-      pollOmniAnimate(d.jobId);
-    } catch { setAnimNote('Ошибка сети при запуске Omni-студии.'); setAnimBusy(false); }
-  };
   // ── «Комментатор»: сборка + поллинг ЗДЕСЬ (переживает закрытие панели) ──
   const pollCommentatorBuild = (jobId: string) => {
     let ticks = 0;
@@ -2045,626 +1180,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flowComm.buildJobId]);
 
-  const pollOmniAnimate = (jobId: string) => {
-    let ticks = 0;
-    const tick = async () => {
-      try {
-        const res = await fetch('/api/render/podcast/omni-animate/status?jobId=' + jobId, { headers: headers() });
-        if (res.status === 404) { setAnimBusy(false); persistAnim({ animActive: null }); setAnimNote('Прошлая Omni-генерация не найдена (сервер мог перезапуститься). Готовые клипы ищите в Галерее.'); return; }
-        const d = await res.json();
-        if (res.ok && d.status && d.status !== 'processing') {
-          setAnimBusy(false);
-          const hosts = Array.isArray(d.hosts) ? d.hosts : [];
-          const jobs = hosts.map((h: any) => ({ host: h.host, name: h.name, videoId: 'omni-' + h.host, status: h.url ? 'completed' : 'failed', url: h.url || null, interactionId: h.interactionId || null }));
-          setAnimJobs(jobs);
-          persistAnim({ animActive: null, animResult: jobs.map((j: any) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
-          setAnimNote(d.status === 'failed' ? (d.error || 'Omni не смог оживить ведущих.') : 'Готово! Omni оживил ведущих. Правь клипы чатом ниже или склей сплит-скрин.');
-          return;
-        }
-      } catch { /* ретрай */ }
-      if (!pollAliveRef.current) return;
-      if (++ticks > 225) { setAnimBusy(false); setAnimNote('Опрос Omni остановлен по таймауту (30 мин) — готовые клипы ищите в Галерее.'); return; }
-      animPollRef.current = window.setTimeout(tick, 8000);
-    };
-    tick();
-  };
-  /** Чат-правка Omni-клипа одного ведущего (та же сессия Interactions, previous_interaction_id). */
-  const runOmniHostEdit = async (host: string) => {
-    const job = animJobs.find((j) => j.host === host);
-    const prompt = (job?.edit || '').trim();
-    if (!job?.interactionId || !prompt || job.editing) return;
-    setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: true } : j));
-    try {
-      const res = await fetch('/api/render/omni/edit', { method: 'POST', headers: headers(), body: JSON.stringify({ previousInteractionId: job.interactionId, prompt, aspect: '9:16' }) });
-      const d = await res.json();
-      if (!res.ok || !d.jobId) { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote(d?.error || 'Правка не запустилась.'); return; }
-      let ticks = 0;
-      const poll = async () => {
-        try {
-          const r = await fetch('/api/render/omni/status?jobId=' + d.jobId, { headers: headers() });
-          const s = await r.json();
-          if (r.ok && s.status && s.status !== 'processing') {
-            let merged: typeof animJobs = [];
-            setAnimJobs((prev) => { merged = prev.map((j) => j.host === host ? { ...j, editing: false, edit: '', url: s.fileUrl || j.url, interactionId: s.interactionId || j.interactionId } : j); return merged; });
-            persistAnim({ animResult: merged.map((j) => ({ host: j.host, name: j.name, videoId: j.videoId, url: j.url || null, interactionId: j.interactionId || null })) });
-            if (s.status === 'failed') setAnimNote(s.error || 'Правка не удалась.');
-            return;
-          }
-        } catch { /* ретрай */ }
-        if (!pollAliveRef.current || ++ticks > 150) return;
-        omniPollRef.current[d.jobId] = window.setTimeout(poll, 8000);
-      };
-      poll();
-    } catch { setAnimJobs((prev) => prev.map((j) => j.host === host ? { ...j, editing: false } : j)); setAnimNote('Ошибка сети при правке.'); }
-  };
-
-  // Восстановление результатов аниматора при возврате в сценарий + возобновление опроса, если генерация ещё шла.
-  const animHydratedRef = useRef(false);
-  useEffect(() => {
-    if (loading || animHydratedRef.current) return;
-    animHydratedRef.current = true;
-    const res = pod.animResult; const active = pod.animActive;
-    if (Array.isArray(res) && res.length) setAnimJobs(res.map((r) => ({ ...r, status: r.url ? 'completed' : 'failed' })));
-    if (pod.studioBgUrl) setStudioBg(pod.studioBgUrl); // clean plate выживает выход/вход
-    if (active && active.kind === 'omnipod' && active.jobId) {
-      setAnimBusy(true); setAnimNote('Возобновляю Omni-генерацию (шла в фоне)…'); pollOmniAnimate(active.jobId);
-    } else if (active && active.kind === 'heygen' && Array.isArray(active.videoIds) && active.videoIds.length) {
-      setAnimBusy(true); setAnimNote('Возобновляю рендер HeyGen…');
-      setAnimJobs(active.videoIds.map((id, i) => ({ host: i === 0 ? 'A' : 'B', name: (res && res[i]?.name) || `Ведущий ${i === 0 ? 'A' : 'B'}`, videoId: id, status: 'processing', url: null })));
-      pollAnimate(active.videoIds);
-    } else if (active && active.kind === 'gpupod' && active.jobId) {
-      setAnimBusy(true); setAnimNote('Возобновляю GPU-генерацию (шла в фоне)…'); pollGpuStudio(active.jobId);
-    }
-  }, [loading]);
-
-  const podLineMutate = (i: number, patch: Partial<PodLine>) =>
-    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
-  const podLineAdd = () => podMutate((p) => ({ ...p, dialogue: [...p.dialogue, { speaker: p.dialogue.length % 2 ? 'B' : 'A', text: '' }] }));
-  const podLineDel = (i: number) => {
-    podMutate((p) => ({ ...p, dialogue: p.dialogue.filter((_, j) => j !== i) }));
-    setSelLine((s) => (s == null ? s : s === i ? null : s > i ? s - 1 : s)); // индексы сдвинулись
-  };
-
-  // ── Таймлайн (Фаза 2): длительность/позиция клипа, вкл. режим наложения, перетаскивание ──
-  const lineDur = (l: PodLine): number => {
-    if (Number.isFinite(l.start) && Number.isFinite(l.end) && (l.end as number) > (l.start as number)) return (l.end as number) - (l.start as number);
-    return Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)); // оценка для TTS (нет реальной длины)
-  };
-  /** Позиция клипа на таймлайне: tStart → исходный start → встык за предыдущим того же набора. */
-  const lineT = (l: PodLine, i: number, arr: PodLine[]): number => {
-    if (Number.isFinite(l.tStart)) return l.tStart as number;
-    if (Number.isFinite(l.start)) return l.start as number;
-    let acc = 0;
-    for (let j = 0; j < i; j++) acc += lineDur(arr[j]);
-    return acc;
-  };
-  /** Включить/выключить режим таймлайна; при включении проставляем tStart по умолчанию. */
-  const toggleTimeline = () => podMutate((p) => {
-    const on = !p.timeline;
-    const dialogue = on ? p.dialogue.map((l, i, arr) => ({ ...l, tStart: lineT(l, i, arr) })) : p.dialogue;
-    return { ...p, timeline: on, dialogue };
-  });
-  const tlSetStart = (i: number, t: number) =>
-    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, tStart: Math.max(0, Math.round(t * 20) / 20) } : l)) }));
-  /** Разрезать клип i в позиции tCut (сек на таймлайне) на две реплики. */
-  const splitLineAt = (i: number, tCut: number) => {
-    const arr = pod.dialogue;
-    const l = arr[i]; if (!l) return;
-    // позиция клипа = lineT (tStart → start → встык): раньше клип без tStart считался от 0,
-    // и ножницы резали не там, куда указывал бегунок
-    const t = lineT(l, i, arr);
-    const d = lineDur(l);
-    const off = tCut - t;
-    if (off <= 0.1 || off >= d - 0.1) return; // слишком близко к краю — не режем
-    const frac = off / d;
-    const words = (l.text || '').split(/\s+/).filter(Boolean);
-    const hasTC = Number.isFinite(l.start) && Number.isFinite(l.end);
-    if (!hasTC && words.length < 2) return; // TTS-реплику из одного слова не разрезать (пустая половина)
-    const cw = Math.max(1, Math.round(words.length * frac));
-    const mid = hasTC ? (l.start as number) + (l.end as number - (l.start as number)) * frac : undefined;
-    const a: PodLine = { ...l, text: words.slice(0, cw).join(' ') || l.text, tStart: t, ...(hasTC ? { end: mid } : {}) };
-    const b: PodLine = { ...l, text: words.slice(cw).join(' '), tStart: Math.round((t + off) * 20) / 20, image: undefined, imageName: undefined, anim: undefined, ...(hasTC ? { start: mid } : {}) };
-    podMutate((p) => ({ ...p, dialogue: [...p.dialogue.slice(0, i), a, b, ...p.dialogue.slice(i + 1)] }));
-    setSelLine((s) => (s != null && s > i ? s + 1 : s)); // индексы ниже разреза сдвинулись
-  };
-  const tlDragRef = useRef<{ i: number; startX: number; startY: number; startT: number; spk: 'A' | 'B'; cur?: 'A' | 'B' } | null>(null);
-  const [tlPps, setTlPps] = useState(44); // пикселей на секунду — масштаб таймлайна (зум)
-  const tlPpsRef = useRef(44);
-  useEffect(() => { tlPpsRef.current = tlPps; }, [tlPps]);
-  const [tlPlayhead, setTlPlayhead] = useState(0);     // бегунок (сек) — где режут ножницы
-  const tlPlayDragRef = useRef(false);
-  const tlMovedRef = useRef(false); // был ли драг клипа (чтобы клик ≠ перетаскивание)
-  const tlWrapRef = useRef<HTMLDivElement | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false); // список реплик свёрнут/раскрыт
-  const [selLine, setSelLine] = useState<number | null>(null); // выбранная реплика (клик по клипу)
-  const [tlPlaying, setTlPlaying] = useState(false);   // идёт воспроизведение с бегунка
-  const tlRafRef = useRef<number | null>(null);
-  const tlRafPrevRef = useRef<number | null>(null);
-  // Web Audio: микшируем клипы по их tStart, чтобы наложенные (перебивание) звучали ОДНОВРЕМЕННО.
-  const tlCtxRef = useRef<AudioContext | null>(null);
-  const tlBufRef = useRef<AudioBuffer | null>(null);
-  const tlBufUrlRef = useRef<string | null>(null);
-  const tlSrcsRef = useRef<AudioBufferSourceNode[]>([]);
-  const tlMmss = (s: number): string => { const m = Math.floor(s / 60); const ss = Math.floor(s % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
-  /** Медиа реплики — видео? (чтобы показать нужную иконку и во воркере наложить как видео). */
-  const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
-  /** Разрезать клип, над которым стоит бегунок, в его позиции. */
-  const cutAtPlayhead = () => {
-    const arr = pod.dialogue;
-    const idx = arr.findIndex((l, i) => { const t = lineT(l, i, arr); return tlPlayhead > t + 0.1 && tlPlayhead < t + lineDur(l) - 0.1; });
-    if (idx >= 0) splitLineAt(idx, tlPlayhead);
-  };
-  /** Вместить весь таймлайн в видимую ширину (минимальный масштаб). */
-  const fitTimeline = () => {
-    const arr = pod.dialogue;
-    const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
-    const w = (tlWrapRef.current?.clientWidth || 520) - 48;
-    setTlPps(Math.max(3, Math.min(160, w / total)));
-  };
-  /** Объединить реплику i со следующей: тексты, времена и медиа сливаются в один клип. */
-  const mergeLineDown = (i: number) => {
-    podMutate((p) => {
-      const a = p.dialogue[i]; const b = p.dialogue[i + 1];
-      if (!a || !b) return p;
-      const tA = lineT(a, i, p.dialogue);
-      const tB = lineT(b, i + 1, p.dialogue);
-      // после перетаскивания сосед по массиву может стоять РАНЬШЕ по времени — сливаем по
-      // времени (иначе получался end < start, и клип молча переставал играть)
-      const [first, second] = tB < tA ? [b, a] : [a, b];
-      const starts = [a.start, b.start].filter((x): x is number => Number.isFinite(x));
-      const ends = [a.end, b.end].filter((x): x is number => Number.isFinite(x));
-      const merged: PodLine = {
-        ...a,
-        text: [first.text, second.text].map((x) => (x || '').trim()).filter(Boolean).join(' '),
-        tStart: Math.min(tA, tB),
-        ...(starts.length ? { start: Math.min(...starts) } : {}),
-        ...(ends.length ? { end: Math.max(...ends) } : {}),
-        image: a.image || b.image, imageName: a.imageName || b.imageName, anim: a.anim || b.anim,
-      };
-      return { ...p, dialogue: [...p.dialogue.slice(0, i), merged, ...p.dialogue.slice(i + 2)] };
-    });
-    setSelLine((s) => (s == null ? s : s === i + 1 ? i : s > i + 1 ? s - 1 : s));
-  };
-  /** Остановить все запланированные аудио-источники таймлайна. */
-  const tlStopSources = () => { for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } } tlSrcsRef.current = []; };
-  // Поколение запуска: tlPlay ждёт декодирование записи (секунды) — Стоп/повторный Play за это
-  // время должен отменить «догоняющий» запуск, иначе играет призрачное аудио + второй raf-цикл.
-  const tlPlaySeqRef = useRef(0);
-  /** Остановить воспроизведение таймлайна (аудио + анимация бегунка). */
-  const tlStop = () => {
-    tlPlaySeqRef.current++;
-    setTlPlaying(false);
-    tlStopSources();
-    if (tlRafRef.current != null) { cancelAnimationFrame(tlRafRef.current); tlRafRef.current = null; }
-    tlRafPrevRef.current = null;
-  };
-  /** Декодировать запись в AudioBuffer (кэш по url). */
-  const tlLoadBuffer = async (): Promise<AudioBuffer | null> => {
-    if (!pod.recordingUrl) return null;
-    const ctx = tlCtxRef.current || (tlCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)());
-    if (tlBufRef.current && tlBufUrlRef.current === pod.recordingUrl) return tlBufRef.current;
-    const r = await fetch(pod.recordingUrl);
-    const ab = await r.arrayBuffer();
-    const buf = await ctx.decodeAudioData(ab.slice(0));
-    tlBufRef.current = buf; tlBufUrlRef.current = pod.recordingUrl;
-    return buf;
-  };
-  /** Воспроизвести с жёлтого бегунка. Каждый клип играет свой отрезок записи в позиции tStart —
-   *  наложенные клипы (перебивание) звучат ОДНОВРЕМЕННО (Web Audio микширует). */
-  const tlPlay = async () => {
-    tlStop(); // снимаем предыдущий цикл (raf/источники), если был
-    const seq = tlPlaySeqRef.current;
-    const arr = pod.dialogue;
-    const total = Math.max(1, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
-    let from = tlPlayhead; if (from >= total - 0.05) { from = 0; setTlPlayhead(0); }
-    setTlPlaying(true);
-    let buf: AudioBuffer | null = null;
-    try { buf = await tlLoadBuffer(); } catch { buf = null; }
-    const ctx = tlCtxRef.current;
-    if (buf && ctx) {
-      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch { /* тихо */ } }
-      if (seq !== tlPlaySeqRef.current) return; // пока декодировали — нажали Стоп/Play заново
-      tlStopSources();
-      const t0 = ctx.currentTime + 0.08;
-      arr.forEach((l, i) => {
-        const st = Number(l.start); const en = Number(l.end);
-        if (!Number.isFinite(st) || !Number.isFinite(en) || en <= st) return; // нет реального отрезка
-        const tStart = lineT(l, i, arr);
-        const clipEnd = tStart + (en - st);
-        if (clipEnd <= from) return;                       // клип целиком до бегунка
-        let offset = st; let dur = en - st; let when = t0 + (tStart - from);
-        if (tStart < from) { const skip = from - tStart; offset = st + skip; dur -= skip; when = t0; } // клип начался раньше бегунка
-        offset = Math.max(0, Math.min(offset, buf!.duration - 0.02));
-        dur = Math.min(dur, buf!.duration - offset);
-        if (dur <= 0.02) return;
-        const src = ctx.createBufferSource(); src.buffer = buf!; src.connect(ctx.destination);
-        try { src.start(when, offset, dur); tlSrcsRef.current.push(src); } catch { /* тихо */ }
-      });
-      const tick = () => {
-        const c = tlCtxRef.current; if (!c) return;
-        const cur = from + (c.currentTime - t0);
-        if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
-        if (cur >= 0) setTlPlayhead(cur);
-        tlRafRef.current = requestAnimationFrame(tick);
-      };
-      tlRafRef.current = requestAnimationFrame(tick);
-      return;
-    }
-    // Нет записи / не удалось декодировать — просто ведём бегунок по времени.
-    if (seq !== tlPlaySeqRef.current) return; // запуск отменили, пока грузили запись
-    tlRafPrevRef.current = null;
-    const tick = (ts: number) => {
-      if (tlRafPrevRef.current == null) tlRafPrevRef.current = ts;
-      const cur = from + (ts - tlRafPrevRef.current) / 1000;
-      if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
-      setTlPlayhead(cur);
-      tlRafRef.current = requestAnimationFrame(tick);
-    };
-    tlRafRef.current = requestAnimationFrame(tick);
-  };
-  const tlTogglePlay = () => { if (tlPlaying) tlStop(); else { tlPlay().catch(() => setTlPlaying(false)); } };
-  useEffect(() => {
-    const move = (e: PointerEvent) => {
-      const d = tlDragRef.current;
-      if (d) {
-        tlMovedRef.current = true;
-        const nt = Math.max(0, Math.round((d.startT + (e.clientX - d.startX) / tlPpsRef.current) * 20) / 20);
-        // Вертикальный перенос между дорожками (вниз с A → B, вверх с B → A):
-        // порог 30px ≈ высота дорожки + вертикаль должна ДОМИНИРОВАТЬ (|dy| ≥ 0.6·|dx|) — иначе
-        // длинный горизонтальный драг по времени со «съехавшей» рукой случайно менял ведущего;
-        // гистерезис (возврат при <14px) — без дребезга A↔B на границе полос.
-        const dx = e.clientX - d.startX;
-        const dy = e.clientY - d.startY;
-        const other: 'A' | 'B' = d.spk === 'A' ? 'B' : 'A';
-        const toOther = d.spk === 'A' ? dy : -dy; // насколько ушли в сторону чужой дорожки
-        let spk: 'A' | 'B' = d.cur || d.spk;
-        if (spk === d.spk) {
-          if (toOther >= 30 && Math.abs(dy) >= Math.abs(dx) * 0.6) spk = other;
-        } else if (toOther < 14) {
-          spk = d.spk;
-        }
-        d.cur = spk;
-        setPod((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === d.i ? { ...l, tStart: nt, speaker: spk } : l)) }));
-      } else if (tlPlayDragRef.current && tlWrapRef.current) {
-        const r = tlWrapRef.current.getBoundingClientRect();
-        const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32; // 32 = отступ подписи дорожки
-        const nt = Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20);
-        setTlPlayhead(nt);
-        // ручная перемотка — останавливаем воспроизведение (и raf-режим без аудио тоже,
-        // иначе цикл каждый кадр перетирает позицию и бегунок «вырывается из рук»)
-        if (tlSrcsRef.current.length || tlRafRef.current != null) tlStop();
-      }
-    };
-    const up = () => {
-      if (tlDragRef.current) {
-        tlDragRef.current = null;
-        if (tlMovedRef.current) setDirty(true); // клик без движения — не «грязним» документ
-        // сбрасываем флаг ПОСЛЕ click-события (иначе прерванный драг проглатывает следующий клик)
-        window.setTimeout(() => { tlMovedRef.current = false; }, 0);
-      }
-      tlPlayDragRef.current = false;
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    return () => {
-      pollAliveRef.current = false; // тикеры в полёте (await fetch) не переустановят таймеры
-      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
-      if (tlRafRef.current != null) cancelAnimationFrame(tlRafRef.current);
-      for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } }
-      if (tlCtxRef.current) { try { tlCtxRef.current.close(); } catch { /* тихо */ } tlCtxRef.current = null; }
-      if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-      if (composePollRef.current) { clearTimeout(composePollRef.current); composePollRef.current = null; }
-      Object.values(omniPollRef.current).forEach((t) => clearTimeout(t));
-    };
+  // Размонтаж: гасим фоновые опросы (Omni/Комментатор) — тикеры в полёте не переустановят таймеры.
+  useEffect(() => () => {
+    pollAliveRef.current = false;
+    if (commPollRef.current) { clearTimeout(commPollRef.current); commPollRef.current = null; }
+    Object.values(omniPollRef.current).forEach((t) => clearTimeout(t));
   }, []);
-
-  // Медиа для подкаста: выбор из Галереи / загрузка с устройства → в нужное поле спеки.
-  type PodPickTarget = 'hostA' | 'hostB' | 'cutaway' | 'recording' | 'group' | 'lineimg' | 'music';
-  const openPodPick = (target: PodPickTarget) => { setPodPick(target); setPodPickTab('all'); setPodPickQ(''); loadMedia(); };
-  const applyPodMedia = (target: PodPickTarget, m: { fileUrl: string; title: string }) => {
-    podMutate((p) => {
-      if (target === 'hostA') return { ...p, hostA: { ...p.hostA, photoUrl: m.fileUrl, photoName: m.title } };
-      if (target === 'hostB') return { ...p, hostB: { ...p.hostB, photoUrl: m.fileUrl, photoName: m.title } };
-      // запись выбрана → голос аниматора сразу «Из записи» (свой голос, HeyGen — только мимика)
-      if (target === 'recording') return { ...p, recordingUrl: m.fileUrl, recordingName: m.title, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: 'record' } };
-      if (target === 'group') return { ...p, groupPhotoUrl: m.fileUrl, groupPhotoName: m.title, faces: [] };
-      if (target === 'lineimg' && podLineIdx != null) return { ...p, dialogue: p.dialogue.map((l, j) => (j === podLineIdx ? { ...l, image: m.fileUrl, imageName: m.title } : l)) };
-      if (target === 'music') return { ...p, music: { url: m.fileUrl, name: m.title, volumePct: p.music?.volumePct ?? 20 } };
-      return { ...p, cutaways: [...p.cutaways, { url: m.fileUrl, name: m.title }] };
-    });
-    setPodPick(null);
-  };
-  const uploadPodFiles = async (files: FileList | File[]) => {
-    const target = podPick; const list = Array.from(files || []).filter(Boolean);
-    if (!target || !list.length) return;
-    const kind = (target === 'recording' || target === 'music') ? 'audio' : 'reference';
-    setPodBusy('upload'); let last: any = null;
-    try {
-      for (const f of list) {
-        // eslint-disable-next-line no-await-in-loop
-        const res = await fetch(`/api/trends/media/upload?kind=${kind}`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: (() => { const fd = new FormData(); fd.append('file', f); return fd; })() });
-        if (res.ok) { const d = await res.json(); if (d.asset) last = d.asset; }
-      }
-      await loadMedia();
-      if (last) applyPodMedia(target, { fileUrl: last.fileUrl, title: last.originalName || 'файл' });
-    } catch { /* тихо */ }
-    finally { setPodBusy(null); }
-  };
-
-  // ── Студия лиц (Фаза 1): групповое фото → детекция/разметка → кроп крупных планов ──
-  /** Координаты события → доли изображения (0..1) внутри обёртки фото. */
-  const faceXY = (e: React.PointerEvent) => {
-    const r = faceWrapRef.current?.getBoundingClientRect();
-    if (!r) return { x: 0, y: 0 };
-    return { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) };
-  };
-  const nextSpeaker = (): 'A' | 'B' => (pod.faces.some((f) => f.speaker === 'A') ? 'B' : 'A');
-  // Перетаскивание/ресайз УЖЕ нарисованной рамки: move — за тело, resize — за уголок.
-  const faceDragRef = useRef<{ id: string; mode: 'move' | 'resize'; sx: number; sy: number; box: { x: number; y: number; w: number; h: number }; moved: boolean } | null>(null);
-  const faceBoxDown = (e: React.PointerEvent, id: string, mode: 'move' | 'resize') => {
-    if (e.button !== 0) return; // только левая кнопка (правая = контекстное меню, без «залипания»)
-    e.stopPropagation(); // не даём обёртке начать рисовать новую рамку
-    const f = pod.faces.find((x) => x.id === id); if (!f) return;
-    // capture: события идут сюда, даже когда курсор вылетел за фото — жест не обрывается на границе
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* тихо */ }
-    const p = faceXY(e);
-    faceDragRef.current = { id, mode, sx: p.x, sy: p.y, box: { ...f.box }, moved: false };
-  };
-  const faceDown = (e: React.PointerEvent) => {
-    if (pod.faces.length >= 2) return; // только два персонажа
-    drawStartRef.current = faceXY(e);
-    setDrawBox({ ...drawStartRef.current, w: 0, h: 0 });
-  };
-  const faceMove = (e: React.PointerEvent) => {
-    const drag = faceDragRef.current;
-    if (drag) {
-      // кнопку отпустили вне окна (Alt-Tab/меню) — жест мёртв, не таскаем «за наведением»
-      if (!(e.buttons & 1)) { faceDragRef.current = null; return; }
-      const p = faceXY(e);
-      const dx = p.x - drag.sx; const dy = p.y - drag.sy;
-      if (Math.abs(dx) + Math.abs(dy) > 0.003) drag.moved = true;
-      const b = drag.box;
-      // клампы: сначала минимальный размер, потом «не вылезать за кадр» (иначе у края w>1-x)
-      const nb = drag.mode === 'move'
-        ? { ...b, x: Math.max(0, Math.min(1 - b.w, b.x + dx)), y: Math.max(0, Math.min(1 - b.h, b.y + dy)) }
-        : { ...b, w: Math.min(Math.max(0.01, 1 - b.x), Math.max(0.04, b.w + dx)), h: Math.min(Math.max(0.01, 1 - b.y), Math.max(0.04, b.h + dy)) };
-      // без setDirty на каждый кадр — пометим изменённым при отпускании (и только если двигали)
-      setPod((prev) => ({ ...prev, faces: prev.faces.map((f) => (f.id === drag.id ? { ...f, box: nb } : f)) }));
-      return;
-    }
-    if (!drawStartRef.current) return;
-    const p = faceXY(e); const s = drawStartRef.current;
-    setDrawBox({ x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
-  };
-  const faceUp = () => {
-    if (faceDragRef.current) {
-      const moved = faceDragRef.current.moved;
-      faceDragRef.current = null;
-      if (moved) setDirty(true); // клик без движения не «грязнит» документ
-      return;
-    }
-    const b = drawBox; drawStartRef.current = null; setDrawBox(null);
-    if (b && b.w > 0.03 && b.h > 0.03) {
-      podMutate((p) => ({ ...p, faces: [...p.faces, { id: `f${Date.now().toString(36)}${p.faces.length}`, box: b, speaker: nextSpeaker() }] }));
-    }
-  };
-  // Роли взаимоисключающие: назначили A одному лицу → второе автоматически становится B (персонажей всего 2).
-  const faceAssign = (id: string, speaker: 'A' | 'B') => podMutate((p) => ({
-    ...p,
-    faces: p.faces.map((f) => (f.id === id ? { ...f, speaker } : { ...f, speaker: speaker === 'A' ? 'B' : 'A' })),
-  }));
-  const faceDel = (id: string) => podMutate((p) => ({ ...p, faces: p.faces.filter((f) => f.id !== id) }));
-
-  /** Грузит HTMLImageElement из URL (same-origin → canvas не «грязнится»). */
-  const loadImage = (url: string): Promise<HTMLImageElement> => new Promise((resolve, reject) => {
-    const img = new window.Image(); img.crossOrigin = 'anonymous'; // window.Image — DOM-конструктор (Image затенён иконкой lucide)
-    img.onload = () => resolve(img); img.onerror = reject; img.src = url;
-  });
-
-  /** Детекция лиц через MediaPipe (надёжно, любой современный браузер) → [{x,y,w,h}] в долях. */
-  const detectMediapipe = async (img: HTMLImageElement): Promise<{ x: number; y: number; w: number; h: number }[]> => {
-    const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18';
-    const vision: any = await import(/* @vite-ignore */ `${CDN}/vision_bundle.mjs`);
-    const fileset = await vision.FilesetResolver.forVisionTasks(`${CDN}/wasm`);
-    const detector = await vision.FaceDetector.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite' },
-      runningMode: 'IMAGE',
-    });
-    const W = img.naturalWidth || 1, H = img.naturalHeight || 1;
-    const res = detector.detect(img);
-    return (res?.detections || []).map((d: any) => {
-      const b = d.boundingBox; return { x: b.originX / W, y: b.originY / H, w: b.width / W, h: b.height / H };
-    });
-  };
-  /** Детекция через браузерный FaceDetector (фолбэк). */
-  const detectNative = async (img: HTMLImageElement): Promise<{ x: number; y: number; w: number; h: number }[]> => {
-    const FD = (window as any).FaceDetector;
-    if (!FD) return [];
-    const faces = await new FD({ fastMode: true, maxDetectedFaces: 2 }).detect(img);
-    const W = img.naturalWidth || 1, H = img.naturalHeight || 1;
-    return (faces || []).map((f: any) => ({ x: f.boundingBox.x / W, y: f.boundingBox.y / H, w: f.boundingBox.width / W, h: f.boundingBox.height / H }));
-  };
-  /** Авто-распознавание: MediaPipe → FaceDetector → ручная обводка. Берём 2 крупнейших лица слева→направо. */
-  const detectFaces = async () => {
-    if (!pod.groupPhotoUrl || podBusy) return;
-    setPodBusy('detect'); setPodNote(null);
-    try {
-      const img = await loadImage(pod.groupPhotoUrl);
-      let raw: { x: number; y: number; w: number; h: number }[] = [];
-      try { raw = await detectMediapipe(img); } catch { raw = []; }
-      if (!raw.length) { try { raw = await detectNative(img); } catch { raw = []; } }
-      if (!raw.length) { setPodNote('Ведущие не найдены автоматически — обведите каждого рамкой по фото (мышью).'); return; }
-      // 2 крупнейших лица слева→направо → A, B; рамку расширяем с лица до ВЕДУЩЕГО ЦЕЛИКОМ
-      // (рамка теперь задаёт, кого вырезаем на студию, и участок для крупного плана)
-      const top = raw.sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 2).sort((a, b) => a.x - b.x);
-      const person = (f: { x: number; y: number; w: number; h: number }) => {
-        const cx = f.x + f.w / 2;
-        const w = Math.min(1, f.w * 3.4); const x = Math.min(Math.max(0, cx - w / 2), 1 - w);
-        const y = Math.max(0, f.y - f.h * 0.55); const h = Math.min(1 - y, f.h * 5.6);
-        return { x, y, w, h };
-      };
-      const boxes: PodFace[] = top.map((box, i) => ({ id: `f${Date.now().toString(36)}${i}`, box: person(box), speaker: i === 0 ? 'A' : 'B' }));
-      podMutate((p) => ({ ...p, faces: boxes }));
-      setPodNote(`Найдено ведущих: ${boxes.length}. Слева — A, справа — B (рамки можно поправить/перерисовать).`);
-    } catch { setPodNote('Не удалось распознать — обведите вручную.'); }
-    finally { setPodBusy(null); }
-  };
-
-  /** Кроп области → квадратный JPEG-Blob. Рамка может быть и лицом, и ведущим целиком:
-   *  большую рамку берём почти как есть (небольшой запас), маленькую (лицо) расширяем под
-   *  голову/плечи — иначе кадр из «рамки-ведущего» разрастался на всё фото. */
-  const cropBox = (img: HTMLImageElement, box: { x: number; y: number; w: number; h: number }, out = 640): Promise<Blob | null> => {
-    const W = img.naturalWidth, H = img.naturalHeight;
-    const isPerson = box.w >= 0.28 || box.h >= 0.38; // крупная рамка — обведён ведущий целиком
-    let x: number, y: number, w: number, h: number;
-    if (isPerson) {
-      // КВАДРАТНЫЙ кроп вокруг центра рамки по БОЛЬШЕЙ стороне: масштаб ведущего не зависит
-      // от формы рамки. Раньше cover-впис в квадрат зумил по МЕНЬШЕЙ стороне → у'же рамка
-      // (женщина) выходила крупнее мужчины. Теперь A и B в одном масштабе.
-      const side = Math.max(box.w * W, box.h * H) * 1.12;
-      const cx = (box.x + box.w / 2) * W, cy = (box.y + box.h / 2) * H;
-      x = cx - side / 2; y = cy - side / 2; w = side; h = side;
-    } else {
-      x = (box.x - box.w * 0.7) * W; y = (box.y - box.h * 0.9) * H;
-      w = box.w * 2.4 * W; h = box.h * 3.3 * H;
-    }
-    x = Math.max(0, x); y = Math.max(0, y); w = Math.min(W - x, w); h = Math.min(H - y, h);
-    const c = document.createElement('canvas'); c.width = out; c.height = out;
-    const ctx = c.getContext('2d'); if (!ctx) return Promise.resolve(null);
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, out, out);
-    const scale = Math.max(out / w, out / h);
-    const dw = w * scale, dh = h * scale;
-    ctx.drawImage(img, x, y, w, h, (out - dw) / 2, (out - dh) / 2, dw, dh);
-    return new Promise((resolve) => c.toBlob((b) => resolve(b), 'image/jpeg', 0.9));
-  };
-
-  const uploadBlob = async (blob: Blob, filename: string): Promise<any | null> => {
-    const fd = new FormData(); fd.append('file', new File([blob], filename, { type: blob.type || 'image/jpeg' }));
-    const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
-    if (!res.ok) return null;
-    return (await res.json()).asset || null;
-  };
-
-  /** «Сделать кадры»: кроп крупных планов A/B → фото ведущих; общий план → вставка. */
-  const applyFaces = async () => {
-    if (!pod.groupPhotoUrl || podBusy) return;
-    if (!pod.faces.some((f) => f.speaker === 'A') && !pod.faces.some((f) => f.speaker === 'B')) {
-      setPodNote('Обведите каждого ведущего рамкой и назначьте A/B (или нажмите «Найти ведущих»).'); return;
-    }
-    setPodBusy('apply'); setPodNote(null);
-    try {
-      const img = await loadImage(pod.groupPhotoUrl);
-      const urls: { A?: string; B?: string } = {};
-      for (const sp of ['A', 'B'] as const) {
-        const face = pod.faces.find((f) => f.speaker === sp);
-        if (!face) continue;
-        const blob = await cropBox(img, face.box);
-        if (!blob) continue;
-        const asset = await uploadBlob(blob, `host-${sp}.jpg`);
-        if (!asset) continue;
-        urls[sp] = asset.fileUrl;
-      }
-      // патч собираем ВНУТРИ функционального апдейта: кроп+аплоад занимают секунды, и копия
-      // pod из замыкания перетёрла бы правки имени/голоса, сделанные за это время
-      podMutate((p) => ({
-        ...p,
-        ...(urls.A ? { hostA: { ...p.hostA, photoUrl: urls.A, photoName: 'Ведущий A (кадр)' } } : {}),
-        ...(urls.B ? { hostB: { ...p.hostB, photoUrl: urls.B, photoName: 'Ведущий B (кадр)' } } : {}),
-      }));
-      setPodNote('Готово: крупные планы ведущих созданы из общего фото.');
-    } catch { setPodNote('Не удалось сделать кадры из фото.'); }
-    finally { setPodBusy(null); }
-  };
-
-  /** AI-ракурс студии (Gemini Nano Banana Pro): перерисовать групповое фото под другим ракурсом. */
-  const genAngle = async (preset: string) => {
-    const baseUrl = angleSrc?.url || pod.groupPhotoUrl;
-    if (!baseUrl || angleBusy) return;
-    setAngleBusy(preset); setPodNote(null);
-    try {
-      const res = await fetch('/api/render/podcast/angle', { method: 'POST', headers: headers(),
-        body: JSON.stringify({ imageUrl: baseUrl, preset, prompt: anglePromptText }) });
-      const d = await res.json();
-      if (res.ok && d.mediaUrl) setPodAngles((prev) => [{ url: d.mediaUrl, preset }, ...prev]);
-      else setPodNote(d?.error || 'Не удалось сгенерировать ракурс.');
-    } catch { setPodNote('Ошибка сети при генерации ракурса.'); }
-    finally { setAngleBusy(null); }
-  };
-  /** Загрузить свою картинку-вход для AI-ракурсов (с диска). */
-  const uploadAngleSrc = async (files: FileList | File[]) => {
-    const f = Array.from(files || [])[0];
-    if (!f) return;
-    setAngleBusy('upload'); setPodNote(null);
-    try {
-      const asset = await uploadBlob(f, f.name || 'image.jpg');
-      if (asset) setAngleSrc({ url: asset.fileUrl, name: asset.originalName || 'фото' });
-      else setPodNote('Не удалось загрузить картинку.');
-    } catch { setPodNote('Ошибка загрузки картинки.'); }
-    finally { setAngleBusy(null); }
-  };
-
-  // ── Картинки к фразам (B-roll): прикрепляем картинку к реплике, выезжает на этой фразе ──
-  const openPodLineImage = (i: number) => { setPodLineIdx(i); setPodPick('lineimg'); setPodPickTab('all'); setPodPickQ(''); loadMedia(); };
-  const setLineImage = (i: number, url: string | null, name?: string) =>
-    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, image: url || undefined, imageName: name } : l)) }));
-  const setLineAnim = (i: number, anim: PodAnim) =>
-    podMutate((p) => ({ ...p, dialogue: p.dialogue.map((l, j) => (j === i ? { ...l, anim } : l)) }));
-
-  /** Чего не хватает для сборки подкаста (null = можно собирать). */
-  const podBuildHint = (): string | null => {
-    if (!pod.hostA.photoUrl || !pod.hostB.photoUrl) return 'Сделайте кадры обоих ведущих (или выберите фото вручную).';
-    if (pod.source === 'diarize') return pod.recordingUrl ? null : 'Загрузите запись (можно сразу «Собрать» — разберём сами).';
-    return pod.dialogue.some((l) => l.text.trim()) ? null : 'Сгенерируйте или впишите диалог ведущих.';
-  };
-
-  /** «Собрать подкаст» — сохранить спеку, поставить задачу podcast_compose, поллить прогресс. */
-  const buildPodcast = async () => {
-    if (building) return;
-    setCloudPanel(null);
-    setBuilding(true); setBuildMinimized(false);
-    setBuildJob({ status: 'queued', progress: 0, steps: [] });
-    try {
-      if (dirty) await save();
-      const res = await fetch(`/api/render/podcast/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({ spec: pod }) });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
-      let job = d.job; setBuildJob(job);
-      for (let i = 0; i < 600 && job && (job.status === 'queued' || job.status === 'running'); i++) {
-        await new Promise((r) => setTimeout(r, 2000));
-        if (!pollAliveRef.current) return; // ушли со страницы — не опрашиваем ещё 20 минут
-        const pr = await fetch(`/api/render/${job.id}`, { headers: headers() });
-        if (pr.ok) { job = (await pr.json()).job; setBuildJob(job); }
-      }
-    } catch (e: any) {
-      setBuildJob({ status: 'failed', error: e?.message || 'Ошибка', progress: 0, steps: [] });
-    } finally {
-      setBuilding(false);
-    }
-  };
-
-  const addNode = (kind: MKind) => { const n = newNode(kind); update((p) => [...p, n]); setShowPicker(false); setSelectedId(n.id); };
-  const removeNode = (id: string) => { update((p) => p.filter((n) => n.id !== id)); if (selectedId === id) setSelectedId(null); };
-  const patchNode = (id: string, patch: Partial<MNode>) => update((p) => p.map((n) => (n.id === id ? { ...n, ...patch } : n)));
-  const setChoice = (id: string, c: Choice, v: string) => update((p) => p.map((n) => {
-    if (n.id !== id) return n;
-    const cur = n.choices[c.id] || [];
-    const next = c.multi ? (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]) : [v];
-    return { ...n, choices: { ...n.choices, [c.id]: next } };
-  }));
-
-  const applyPreset = (preset: Preset) => {
-    setName(preset.name);
-    setNodes(preset.kinds.map((p) => {
-      const spec = typeof p === 'string' ? { kind: p } : p;
-      const n = newNode(spec.kind);
-      if (spec.choices) Object.entries(spec.choices).forEach(([k, v]) => { n.choices[k] = [...v]; });
-      if (spec.text) n.text = spec.text;
-      if (spec.llm) n.useLlm = true;
-      return n;
-    }));
-    setDirty(true); setShowPresets(false);
-  };
-
   // Вся Галерея с папками (как в разделе «Галерея»): тренды + референс + аудио + из анализа.
   const loadMedia = async () => {
     try {
@@ -2690,7 +1211,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       setMedia(out);
     } catch { setMedia([]); }
   };
-  const openAttach = (id: string, slot: 'media' | 'audio' = 'media') => { setAttachSlot(slot); setAttachFor(id); loadMedia(); };
 
   // Загрузка файлов с устройства (или drag-and-drop) прямо из блока узла → в Галерею + привязка к узлу.
   /** Универсальная загрузка в Галерею для GalleryPicker: заливает файл(ы), отдаёт новые элементы (auto-pick делает пикер).
@@ -2717,44 +1237,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return out;
   };
 
-  const uploadMediaFiles = async (files: FileList | File[]) => {
-    const list = Array.from(files).filter(Boolean);
-    if (!list.length || !attachFor) return;
-    const node = nodes.find((x) => x.id === attachFor);
-    const kind = (attachSlot === 'audio' || node?.kind === 'audio') ? 'audio' : 'reference';
-    setUploading(true);
-    let lastAsset: any = null;
-    const uploaded: { url: string; name: string }[] = [];
-    try {
-      for (const f of list) {
-        const fd = new FormData();
-        fd.append('file', f);
-        // eslint-disable-next-line no-await-in-loop
-        const res = await fetch(`/api/trends/media/upload?kind=${kind}`, {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          body: fd,
-        });
-        if (res.ok) {
-          const d = await res.json();
-          if (d.asset) { lastAsset = d.asset; uploaded.push({ url: d.asset.fileUrl, name: d.asset.originalName || 'файл' }); }
-        }
-      }
-      await loadMedia();
-      if (attachSlot === 'audio') {
-        if (lastAsset) patchNode(attachFor, { audioUrl: lastAsset.fileUrl, audioName: lastAsset.originalName || 'аудио' });
-      } else if (node?.kind === 'broll') {
-        // «Медиафайлы»: ВСЕ загруженные файлы добавляются в список узла.
-        const cur = node.medias || [];
-        const add = uploaded.filter((u) => !cur.some((x) => x.url === u.url));
-        if (add.length) patchNode(attachFor, { medias: [...cur, ...add] });
-      } else if (lastAsset) {
-        patchNode(attachFor, { mediaUrl: lastAsset.fileUrl, mediaName: lastAsset.originalName || 'файл' });
-      }
-    } catch { /* тихо */ }
-    finally { setUploading(false); }
-  };
-
   // Пикер исходного видео: проанализированные (с ДНК) + скачанные тренды + видео-референсы.
   /** Загрузить список источников (как в Галерее): анализ + скачанные тренды + референс-видео. */
   const loadSources = async () => {
@@ -2777,14 +1259,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const openSourcePicker = async () => {
     setShowSource(true);
-    setPicked([]); setBatchNote(null); setSrcTab('all'); setSrcQuery('');
+    setSrcNote(null); setSrcTab('all'); setSrcQuery('');
     await loadSources();
   };
   /** «Добавить видео» из пикера источника → грузим в Референс Галереи и перечитываем список. */
   const uploadSourceVideo = async (files: FileList | File[] | null) => {
     const list = Array.from(files || []).filter(Boolean);
     if (!list.length) return;
-    setSrcUploading(true); setBatchNote(null);
+    setSrcUploading(true); setSrcNote(null);
     try {
       for (const f of list) {
         const fd = new FormData(); fd.append('file', f);
@@ -2794,101 +1276,23 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       }
       await loadSources();
       setSrcTab('reference');   // загруженное лежит в «Референс»
-    } catch (e: any) { setBatchNote(e?.message || 'Ошибка загрузки видео'); }
+    } catch (e: any) { setSrcNote(e?.message || 'Ошибка загрузки видео'); }
     finally { setSrcUploading(false); if (srcUploadRef.current) srcUploadRef.current.value = ''; }
   };
 
-  // ── ДНК тренда: применить к графу / подтянуть по ассету / выбрать источник ──
-  /** Раскладывает ДНК по блокам сценария + задаёт общий «Сценарий» (brief). */
-  const applyDna = (d: TrendDNA) => {
-    const { nodes: nn, brief: bb } = dnaToGraph(d);
-    setNodes(nn);
-    if (bb) setBrief(bb);
-    if (d.meta?.author) setName(`По тренду: ${d.meta.author}`.slice(0, 60));
-    setDirty(true);
-    setShowDnaPanel(false);
-    setShowPresets(false);
-    setSelectedId(null);
-  };
-  /** Загружает сохранённую ДНК ассета. Пустой сценарий → авто-заполнение; иначе — панель подтверждения. */
-  const fetchDna = async (assetId: string) => {
-    setDnaLoading(true);
-    try {
-      const r = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: headers() });
-      if (!r.ok) { setDna(null); return; }
-      const d = (await r.json()).analysis?.dna as TrendDNA | undefined;
-      if (!d) { setDna(null); return; }
-      setDna(d);
-      if (nodes.length === 0) applyDna(d);   // пустой сценарий → данные «приезжают вместе с видео»
-      else setShowDnaPanel(true);            // есть блоки → спросим перед заменой
-    } catch { setDna(null); }
-    finally { setDnaLoading(false); }
-  };
+  // ── Выбор источника (исходное видео для облачных блоков) ──
   const selectSource = (s: { url: string; name: string; assetId?: string }) => {
     setSourceUrl(s.url); setSourceName(s.name); setSourceAssetId(s.assetId || null);
-    setDna(null); setDirty(true); setShowSource(false);
-    if (s.assetId) fetchDna(s.assetId);
+    setDirty(true); setShowSource(false);
   };
   const clearSource = () => {
-    setSourceUrl(null); setSourceName(null); setSourceAssetId(null); setDna(null);
+    setSourceUrl(null); setSourceName(null); setSourceAssetId(null);
     setDirty(true); setShowSource(false);
   };
 
-  // ── Пакетная сборка: один сценарий (цепочка блоков) → по ролику на каждый источник ──
-  const togglePick = (s: { url: string; name: string; assetId?: string }) => {
-    setBatchNote(null);
-    setPicked((p) => (p.some((x) => x.url === s.url) ? p.filter((x) => x.url !== s.url) : [...p, s]));
-  };
-  /**
-   * Ставит в очередь по одной задаче рендера на каждый выбранный источник — все
-   * через текущую цепочку блоков (граф flow). Воркер берёт их по очереди
-   * (single-flight): «сначала одно, потом второе…». Поллит прогресс всех задач.
-   */
-  const runBatch = async (items: { url: string; name: string }[]) => {
-    if (batchRunning || building) return;
-    if (nodes.length === 0) { setBatchNote('Сначала добавьте блоки в сценарий — по ним соберётся каждый ролик.'); return; }
-    if (items.length === 0) return;
-    setShowSource(false);
-    setBatchRunning(true); setBatchMinimized(false); setShowBatch(true);
-    const jobs: { source: string; job: any }[] = items.map((s) => ({ source: s.name, job: { status: 'queued', progress: 0, steps: [] } }));
-    setBatchJobs(jobs.map((j) => ({ ...j })));
-    try {
-      if (dirty) await save();
-      // Ставим задачи по порядку — чтобы очередь сохранила «первое, второе, третье».
-      for (let k = 0; k < items.length; k++) {
-        try {
-          const res = await fetch(`/api/render/flow/${flowId}`, { method: 'POST', headers: headers(), body: JSON.stringify({ inputUrl: items[k].url }) });
-          const d = await res.json();
-          jobs[k].job = res.ok && d.job ? d.job : { status: 'failed', error: d?.error || `HTTP ${res.status}`, progress: 0, steps: [] };
-        } catch (e: any) {
-          jobs[k].job = { status: 'failed', error: e?.message || 'Ошибка', progress: 0, steps: [] };
-        }
-        setBatchJobs(jobs.map((j) => ({ ...j })));
-      }
-      // Поллим все незавершённые, пока не дойдут до done/failed (или таймаут поллера).
-      const terminal = (st?: string) => st === 'done' || st === 'failed';
-      for (let i = 0; i < 1200; i++) {
-        if (jobs.every((j) => terminal(j.job?.status))) break;
-        await new Promise((r) => setTimeout(r, 3000));
-        await Promise.all(jobs.map(async (entry) => {
-          if (!entry.job?.id || terminal(entry.job.status)) return;
-          try {
-            const pr = await fetch(`/api/render/${entry.job.id}`, { headers: headers() });
-            if (pr.ok) entry.job = (await pr.json()).job;
-          } catch { /* пропустим тик */ }
-        }));
-        setBatchJobs(jobs.map((j) => ({ ...j })));
-      }
-    } finally {
-      setBatchRunning(false);
-    }
-  };
-
-  const selected = nodes.find((n) => n.id === selectedId) || null;
-
   // ── Облачные узлы: позиции, связи-стрелки, перетаскивание ──────────────────
   const cloudPoint = (id: string): { x: number; y: number } | null => {
-    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan' || id === 'podcast' || id === 'editor') ? cloud[id] : null;
+    const base = id === 'center' ? { x: 50, y: 50 } : (id === 'omni' || id === 'plan' || id === 'editor') ? cloud[id] : null;
     // Точка соединения 🔗 — у верх-правого края узла (лента идёт от неё, не из центра).
     return base ? { x: base.x + 2.6, y: base.y - 3 } : null;
   };
@@ -2901,7 +1305,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
   const onCloudClick = (id: CloudId) => {
     if (movedRef.current) { movedRef.current = false; return; } // был drag узла — не открываем панель
-    if (id === 'podcast') setDiarizeDone(false); // открыли — мигание погасло
     if (id === 'hotebook') setHbFreshDone(false); // открыли — зелёная точка погасла
     if (id === 'flow') setCommFreshDone(false);
     setCloudPanel(id);
@@ -3307,21 +1710,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const positions = useMemo(() => {
-    const n = nodes.length;
-    return nodes.map((_, i) => {
-      const ang = (-90 + (360 / Math.max(n, 1)) * i) * Math.PI / 180;
-      return { left: 50 + 27 * Math.cos(ang), top: 50 + 30 * Math.sin(ang) };
-    });
-  }, [nodes]);
-
-  // Какой блок цепочки прямо сейчас исполняется воркером (для подсветки узла при сборке).
-  const runningKind: MKind | null = building
-    ? ((buildJob?.steps || []).find((s: any) => s?.status === 'running')?.kind ?? null)
-    : null;
-  // Цепочка умеет собираться «с нуля» (без исходника): есть Новости или Озвучка с текстом/✨.
-  const canBuildWithoutSource = nodes.some((n) => n.kind === 'news' || (n.kind === 'voiceover' && (n.useLlm || (n.text || '').trim())));
-
   if (loading) {
     return <div className="flex items-center justify-center" style={{ height: '70vh' }}><Loader2 size={26} className="animate-spin" style={{ color: 'var(--text-muted)' }} /></div>;
   }
@@ -3404,25 +1792,9 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           style={{ background: brief.trim() ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
           <Sparkles size={15} /> Сценарий{brief.trim() ? ' ✓' : ''}
         </button>
-        {(dna || dnaLoading) && (
-          <button onClick={() => dna && setShowDnaPanel(true)} disabled={!dna} title="Заполнить блоки сценария по данным тренда"
-            className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-60"
-            style={{ background: 'rgba(99,102,241,0.14)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.4)', cursor: dna ? 'pointer' : 'wait' }}>
-            {dnaLoading ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Из тренда
-          </button>
-        )}
         <button onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
-        </button>
-        {/* «Собрать» в шапке — всегда видима (плавающую кнопку перекрывают модалки панелей). */}
-        <button onClick={build} disabled={building || batchRunning || nodes.length === 0}
-          title={nodes.length === 0 ? 'Добавьте блоки в сценарий' : !sourceUrl ? 'Сначала выберите исходное видео (центральный узел)' : 'Собрать ролик из сценария'}
-          className="inline-flex items-center gap-1.5 text-sm font-700 px-3.5 py-1.5 rounded-lg disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: 'var(--brand-contrast)', border: 'none',
-            cursor: building ? 'wait' : nodes.length === 0 ? 'not-allowed' : 'pointer' }}>
-          {building ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />}
-          {building ? `Собираю… ${buildJob?.progress || 0}%` : 'Собрать'}
         </button>
       </div>
 
@@ -3430,49 +1802,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       <div ref={canvasRef} className="flex-1" style={{ position: 'relative', overflow: 'hidden',
         background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.05), transparent 60%), var(--bg-primary)',
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
-
-        {/* Плавающая «+» (левый верхний угол): клик → веером выезжают иконки процессов (без подписей) */}
-        <div style={{ position: 'absolute', left: 14, top: 14, zIndex: 40 }}>
-          <button onClick={() => setAddOpen((o) => !o)} title={addOpen ? 'Закрыть' : 'Добавить процесс'}
-            className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', boxShadow: '0 6px 20px rgba(99,102,241,.3)', cursor: 'pointer', transition: 'transform .25s cubic-bezier(.34,1.6,.64,1)', transform: addOpen ? 'rotate(135deg)' : 'none' }}>
-            <Plus size={22} />
-          </button>
-          {addOpen && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, maxWidth: 176 }}>
-              {KIND_ORDER.map((k, i) => (
-                <button key={k} onClick={() => { addNode(k); setAddOpen(false); }} title={META[k].label}
-                  className="me-fan-item w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--brand)', cursor: 'pointer', animationDelay: `${i * 0.03}s` }}>
-                  {React.cloneElement(META[k].icon as any, { size: 17 })}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Плавающая кнопка «Собрать видео» — всегда под рукой (правый нижний угол холста) */}
-        <button onClick={build} disabled={building || batchRunning || nodes.length === 0}
-          title={nodes.length === 0 ? 'Добавьте процессы в сценарий' : 'Собрать ролик из сценария'}
-          className="me-fab"
-          style={{ position: 'absolute', right: 18, bottom: 18, zIndex: 45, display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '13px 20px', borderRadius: 999, border: 'none', fontSize: 15, fontWeight: 800,
-            background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: 'var(--brand-contrast)',
-            boxShadow: '0 8px 26px rgba(99,102,241,0.5)', cursor: building ? 'wait' : nodes.length === 0 ? 'not-allowed' : 'pointer',
-            opacity: nodes.length === 0 ? 0.5 : 1 }}>
-          {building ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />}
-          {building ? `Собираю… ${buildJob?.progress || 0}%` : 'Собрать видео'}
-        </button>
-
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} aria-hidden="true">
-          {positions.map((p, i) => (
-            <line key={i} x1="50" y1="50" x2={p.left} y2={p.top}
-              className={building ? 'me-line-flow' : undefined}
-              stroke={building ? 'rgba(129,140,248,0.55)' : 'var(--border-strong)'}
-              strokeWidth={building ? 0.26 : 0.18}
-              strokeDasharray={building ? '1.4 3.2' : undefined} />
-          ))}
-        </svg>
 
         {/* «Сценарий» — над центральным узлом (просьба юзера): главный промт всегда на виду */}
         <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра (все ✨-шаги читают его)"
@@ -3483,19 +1812,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           <Sparkles size={13} /> {brief.trim() ? `Сценарий ✓ ${brief.trim().slice(0, 26)}${brief.trim().length > 26 ? '…' : ''}` : 'Сценарий ролика — задайте тон ИИ'}
         </button>
 
-        <button data-node-id="center" onClick={() => openSourcePicker()} title={building ? 'Идёт сборка…' : 'Выбрать исходное видео'}
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: building ? 'default' : 'pointer' }}>
+        <button data-node-id="center" onClick={() => openSourcePicker()} title="Выбрать исходное видео"
+          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}>
           <div style={{ position: 'relative', width: 76, height: 76, margin: '0 auto' }}>
-            {building && <span className="me-ring" />}
-            <div className={building ? 'me-build' : undefined} style={{ width: 76, height: 76, borderRadius: '50%', overflow: 'hidden',
+            <div style={{ width: 76, height: 76, borderRadius: '50%', overflow: 'hidden',
               background: sourceUrl ? '#000' : 'radial-gradient(circle at 36% 34%, #fff, #818cf8 50%, var(--brand) 100%)',
               boxShadow: '0 0 36px rgba(99,102,241,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-contrast)',
               border: sourceUrl ? '2px solid var(--brand)' : 'none' }}>
-              <Video size={28} color={sourceUrl ? 'var(--brand)' : undefined} className={building ? 'animate-pulse' : undefined} />
+              <Video size={28} color={sourceUrl ? 'var(--brand)' : undefined} />
             </div>
           </div>
-          <div className="text-[11px] mt-2" style={{ color: building ? 'var(--brand)' : sourceUrl ? 'var(--brand)' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
-            {building ? `Собираю… ${buildJob?.progress || 0}%` : sourceUrl ? (sourceName || 'видео выбрано') : canBuildWithoutSource ? 'Без исходника — из материалов' : 'Видео из галереи'}
+          <div className="text-[11px] mt-2" style={{ color: sourceUrl ? 'var(--brand)' : 'var(--text-secondary)', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '1px 7px', borderRadius: 6, display: 'inline-block' }}>
+            {sourceUrl ? (sourceName || 'видео выбрано') : 'Видео из галереи'}
           </div>
         </button>
         {/* 🔗 связать стрелкой ОТ «Видео из галереи» */}
@@ -3505,35 +1833,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           <Link2 size={13} />
         </button>
 
-        {nodes.map((n, i) => (
-          <button key={n.id} onClick={() => setSelectedId(n.id)} className="me-node me-node-in"
-            style={{ position: 'absolute', left: `${positions[i].left}%`, top: `${positions[i].top}%`, transform: 'translate(-50%,-50%)', animationDelay: `${i * 0.05}s`,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', cursor: 'pointer' }}>
-            {runningKind === n.kind && <span className="me-busyring" style={{ width: 60, height: 60, top: -7 }} />}
-            <span style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--bg-secondary)', border: `${selectedId === n.id ? 2 : 1}px solid ${selectedId === n.id ? 'var(--brand)' : 'var(--border-strong)'}`,
-              color: selectedId === n.id ? 'var(--brand)' : 'var(--text-secondary)' }}>{META[n.kind].icon}</span>
-            <span className="text-[11px]" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{META[n.kind].label}</span>
-            {nodeSummary(n) && (
-              <span style={{ fontSize: 9, lineHeight: 1.15, color: 'var(--brand)', maxWidth: 96, textAlign: 'center', whiteSpace: 'normal', fontWeight: 600, background: 'var(--bg-primary)', padding: '1px 5px', borderRadius: 5 }}>{nodeSummary(n)}</span>
-            )}
-            {(n.mediaUrl || n.useLlm) && (
-              <span style={{ position: 'absolute', top: -2, right: 4, display: 'inline-flex', gap: 2 }}>
-                {n.mediaUrl && <Paperclip size={11} style={{ color: '#10b981' }} />}
-                {n.useLlm && <Sparkles size={11} style={{ color: 'var(--brand)' }} />}
-              </span>
-            )}
-          </button>
-        ))}
-
-        {nodes.length === 0 && (
-          <div style={{ position: 'absolute', left: '50%', top: '64%', transform: 'translateX(-50%)', textAlign: 'center' }}>
-            <button onClick={() => setShowPresets(true)} className="text-sm font-600 px-4 py-2 rounded-xl"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Выбрать пресет сценария</button>
-          </div>
-        )}
-
-        {/* ── Облачные узлы (Omni / Контент-план) + связи-стрелки ── */}
+        {/* ── Облачные узлы + связи-стрелки ── */}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }} aria-hidden="true">
           {cloudEdges.map((e, i) => {
             const p = cloudPoint(e.from), q = cloudPoint(e.to);
@@ -3554,12 +1854,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
           );
         })}
         {/* «Контент-план» скрыт до реализации (этап C): узел был пустым стабом. */}
-        {(['omni', 'podcast', 'editor', 'ugc', 'hotebook', 'flow'] as CloudId[]).map((id) => {
+        {(['omni', 'editor', 'ugc', 'hotebook', 'flow'] as CloudId[]).map((id) => {
           const pos = cloud[id] || CLOUD[id].def; const cfg = CLOUD[id];
           return (
             <div key={id} data-node-id={id} onPointerDown={() => { dragRef.current = id; movedRef.current = false; }}
               style={{ position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
-              {id === 'podcast' && (!!podBusy || building || !!angleBusy || animBusy || composeBusy) && <span className="me-busyring" />}
               {id === 'omni' && omniBusy && <span className="me-busyring" />}
               {id === 'ugc' && !!ugcBusy && <span className="me-busyring" />}
               {id === 'hotebook' && hbBusyAny && <span className="me-busyring" />}
@@ -3570,9 +1869,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   border: `2px solid ${pending?.from === id ? 'var(--brand)' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
                 {cfg.icon}
               </button>
-              {id === 'podcast' && diarizeDone && (
-                <span className="me-dot" title="Разбор записи готов" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
-              )}
               {id === 'hotebook' && hbFreshDone && !hbBusyAny && (
                 <span className="me-dot" title="Артефакт готов — открыт блок и Галерея → Hotebook" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
               )}
@@ -3594,298 +1890,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         )}
       </div>
 
-      {/* Панель раскрытого узла */}
-      {selected && (
-        <div onClick={() => setSelectedId(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, margin: '0 12px 84px', maxHeight: '72vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><span style={{ color: 'var(--brand)' }}>{META[selected.kind].icon}</span> {META[selected.kind].label}</span>
-              <button onClick={() => setSelectedId(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{META[selected.kind].hint}</p>
-
-            {/* Кнопки-выборы */}
-            {META[selected.kind].choices?.map((c) => (
-              <div key={c.id} className="mb-3">
-                <div className="text-[11px] font-600 mb-1.5" style={{ color: 'var(--text-muted)' }}>{c.label}{c.multi ? ' (можно несколько)' : ''}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {c.opts.map((o) => {
-                    const sel = (selected.choices[c.id] || []).includes(o.v);
-                    return (
-                      <button key={o.v} onClick={() => setChoice(selected.id, c, o.v)} className="inline-flex items-center gap-1 text-xs font-600 px-2.5 py-1.5 rounded-lg transition-colors"
-                        style={{ background: sel ? 'var(--brand)' : 'var(--bg-tertiary)', color: sel ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: `1px solid ${sel ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                        {sel && <Check size={12} />}{o.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {/* Длина: визуальная нарезка на ленте исходного видео */}
-            {selected.kind === 'length' && (
-              <div className="mb-3">
-                <div className="text-[11px] font-600 mb-1.5" style={{ color: 'var(--text-muted)' }}>Нарезка на ленте</div>
-                {!sourceUrl ? (
-                  <button onClick={() => { setSelectedId(null); openSourcePicker(); }}
-                    className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
-                    <Video size={14} /> Выберите исходное видео, чтобы резать по ленте →
-                  </button>
-                ) : (
-                  <>
-                    <video src={sourceUrl} controls preload="metadata"
-                      onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
-                      style={{ width: '100%', maxHeight: 170, borderRadius: 10, background: '#000', marginBottom: 8 }} />
-                    <div className="relative w-full mb-1.5" style={{ height: 30, borderRadius: 7, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 2, bottom: 2, left: `${lenSel.start * 100}%`, width: `${Math.max(0.02, lenSel.end - lenSel.start) * 100}%`, background: 'rgba(99,102,241,0.85)', borderRadius: 5 }} />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      <span>С: <b style={{ color: 'var(--brand)' }}>{fmtT(lenSel.start)}</b></span>
-                      <span>По: <b style={{ color: 'var(--brand)' }}>{fmtT(lenSel.end)}</b></span>
-                    </div>
-                    <input type="range" min={0} max={1} step={0.005} value={lenSel.start}
-                      onChange={(e) => { const v = Math.min(parseFloat(e.target.value), lenSel.end - 0.02); writeLenRange(selected.id, { start: Math.max(0, v), end: lenSel.end }); }}
-                      className="w-full" style={{ accentColor: 'var(--brand)' }} />
-                    <input type="range" min={0} max={1} step={0.005} value={lenSel.end}
-                      onChange={(e) => { const v = Math.max(parseFloat(e.target.value), lenSel.start + 0.02); writeLenRange(selected.id, { start: lenSel.start, end: Math.min(1, v) }); }}
-                      className="w-full" style={{ accentColor: 'var(--brand)' }} />
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Отрезок пишется в поле диапазона ниже. Пресеты «15/30/60с», «Лучший момент» и «Весь» — альтернатива нарезке.</p>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Экспорт: подключение аккаунтов + запуск передачи в API площадок */}
-            {selected.kind === 'export' && (
-              <div className="mb-3 space-y-2.5">
-                <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Аккаунты площадок</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(selected.choices.platforms || []).length === 0 ? (
-                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Выберите площадки выше.</span>
-                  ) : (selected.choices.platforms || []).map((p) => {
-                    const on = connected.has(p);
-                    return (
-                      <button key={p} onClick={() => setConnected((s) => { const n = new Set(s); n.has(p) ? n.delete(p) : n.add(p); return n; })}
-                        title={on ? 'Аккаунт подключён (нажмите, чтобы отвязать)' : 'Подключить аккаунт площадки'}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-600 px-2.5 py-1.5 rounded-lg"
-                        style={{ background: on ? 'rgba(16,185,129,0.12)' : 'var(--bg-tertiary)', color: on ? '#10b981' : 'var(--text-secondary)', border: `1px solid ${on ? 'rgba(16,185,129,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                        {on ? <Check size={12} /> : <Link2 size={12} />} {on ? `${p} ✓` : `Подключить ${p}`}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button onClick={startExport} disabled={exporting || (selected.choices.platforms || []).length === 0}
-                  className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
-                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', cursor: exporting ? 'wait' : 'pointer' }}>
-                  {exporting && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${exportPct}%`, background: 'rgba(99,102,241,0.18)', transition: 'width .2s' }} />}
-                  <span className="relative inline-flex items-center gap-2">
-                    {exporting ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
-                    {exporting ? `Передаю в API… ${exportPct}%` : exportPct === 100 ? 'Отправлено ✓ — повторить' : 'Начать экспорт'}
-                  </span>
-                </button>
-                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Реальная публикация в соцсети — раздел «Публикатор» (этап C). Здесь — постановка площадок и запуск передачи.</p>
-              </div>
-            )}
-
-            {/* Текст (опц.) */}
-            {META[selected.kind].text && (
-              <textarea value={selected.text} onChange={(e) => patchNode(selected.id, { text: e.target.value })} rows={2} placeholder={META[selected.kind].text}
-                className="w-full px-3 py-2 rounded-xl text-sm outline-none mb-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-            )}
-
-            {/* Медиа + Аудио + ЛЛМ. «Медиафайлы» (broll) принимает НЕСКОЛЬКО файлов — чипы с ✕. */}
-            {(META[selected.kind].media || META[selected.kind].audio || META[selected.kind].llm) && (
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                {selected.kind === 'broll' ? (
-                  <>
-                    {(selected.medias || []).map((m) => (
-                      <span key={m.url} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
-                        <Paperclip size={13} /> <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
-                        <button title="Удалить файл" onClick={() => patchNode(selected.id, { medias: (selected.medias || []).filter((x) => x.url !== m.url) })}
-                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={12} /></button>
-                      </span>
-                    ))}
-                    <button onClick={() => openAttach(selected.id)} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-strong)', cursor: 'pointer' }}>
-                      <Plus size={13} /> {(selected.medias || []).length ? 'Добавить ещё' : META[selected.kind].media}
-                    </button>
-                  </>
-                ) : META[selected.kind].media && (selected.mediaUrl ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    <Paperclip size={13} /> {selected.mediaName || 'файл'}
-                    <button onClick={() => patchNode(selected.id, { mediaUrl: null, mediaName: null })} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={12} /></button>
-                  </span>
-                ) : (
-                  <button onClick={() => openAttach(selected.id)} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                    <Paperclip size={13} /> {META[selected.kind].media}
-                  </button>
-                ))}
-                {META[selected.kind].audio && (selected.audioUrl ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(236,72,153,0.12)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.3)' }}>
-                    <Music size={13} /> {selected.audioName || 'аудио'}
-                    <button onClick={() => patchNode(selected.id, { audioUrl: null, audioName: null })} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={12} /></button>
-                  </span>
-                ) : (
-                  <button onClick={() => openAttach(selected.id, 'audio')} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                    <Music size={13} /> {META[selected.kind].audio}
-                  </button>
-                ))}
-                {META[selected.kind].llm && (
-                  <button onClick={() => patchNode(selected.id, { useLlm: !selected.useLlm })} className="inline-flex items-center gap-1.5 text-xs font-600 px-2.5 py-1.5 rounded-lg"
-                    style={{ background: selected.useLlm ? 'rgba(99,102,241,0.15)' : 'var(--bg-tertiary)', color: selected.useLlm ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${selected.useLlm ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                    <Sparkles size={13} /> ЛЛМ {selected.useLlm ? 'вкл' : 'выкл'}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Что сделает ИИ-режиссёр при включённом ЛЛМ */}
-            {META[selected.kind].llm && selected.useLlm && DIR_HINT[selected.kind] && (
-              <p className="text-[11px] mb-4 flex items-start gap-1.5" style={{ color: 'var(--brand)' }}>
-                <Sparkles size={12} className="mt-[1px] flex-shrink-0" /> {DIR_HINT[selected.kind]}
-              </p>
-            )}
-
-            <div className="flex items-center gap-2">
-              <button onClick={() => removeNode(selected.id)} title="Удалить узел из сценария"
-                className="inline-flex items-center justify-center gap-1.5 text-sm font-600 px-3 py-2.5 rounded-xl flex-shrink-0"
-                style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
-                <Trash2 size={15} /> Удалить
-              </button>
-              <button onClick={() => setSelectedId(null)} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Готово</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Выбор процесса */}
-      {showPicker && (
-        <div onClick={() => setShowPicker(false)} style={{ position: 'absolute', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-grow" style={{ width: '100%', maxWidth: 560, margin: '0 12px 88px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-            <div className="text-sm font-700 mb-3" style={{ color: 'var(--text-primary)' }}>Добавить процесс</div>
-            <div className="grid grid-cols-3 gap-2">
-              {KIND_ORDER.map((k) => (
-                <button key={k} onClick={() => addNode(k)} className="flex flex-col items-center gap-1.5 py-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }} title={META[k].hint}>
-                  <span style={{ color: 'var(--brand)' }}>{META[k].icon}</span>
-                  <span className="text-[11px]">{META[k].label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Витрина пресетов */}
-      {showPresets && (
-        <div onClick={() => setShowPresets(false)} style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 640, maxHeight: '86vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Выберите пресет сценария</span>
-              <button onClick={() => setShowPresets(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-            <div className="space-y-4">
-              {PRESET_GROUPS.map((g) => (
-                <div key={g.group}>
-                  <div className="text-[11px] font-700 uppercase mb-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.06em' }}>{g.group}</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {g.presets.map((p) => (
-                      <button key={p.name} onClick={() => applyPreset(p)} className="text-left p-3 rounded-xl transition-colors hover:border-[var(--text-accent)]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                        <div className="text-sm font-700 mb-1" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
-                        <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.kinds.map((k) => META[typeof k === 'string' ? k : k.kind].label).join(' · ')}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Выбор медиа: из Галереи + загрузка с устройства + drag-and-drop */}
-      {attachFor && (() => {
-        const attachNode = nodes.find((x) => x.id === attachFor);
-        const isAudio = attachSlot === 'audio';
-        const multi = attachNode?.kind === 'broll' && !isAudio;
-        const pickedKeys = multi ? new Set((attachNode?.medias || []).map((m) => m.url)) : undefined;
-        return (
-          <GalleryPicker
-            open token={token}
-            title={isAudio ? 'Аудио (голос аватара)' : multi ? 'Медиафайлы' : 'Медиа'}
-            defaultTab={isAudio ? 'audio' : 'reference'}
-            multi={multi}
-            pickedKeys={pickedKeys}
-            onClose={() => setAttachFor(null)}
-            onUpload={(files) => uploadToGallery(files, isAudio ? 'audio' : 'reference')}
-            uploadAccept={isAudio ? 'audio/*' : 'image/*,video/*,audio/*'}
-            onPick={(it) => {
-              if (isAudio) { patchNode(attachFor!, { audioUrl: it.fileUrl, audioName: it.title }); return; }
-              if (multi) {
-                const list = attachNode?.medias || [];
-                const has = list.some((x) => x.url === it.fileUrl);
-                patchNode(attachFor!, { medias: has ? list.filter((x) => x.url !== it.fileUrl) : [...list, { url: it.fileUrl, name: it.title }] });
-                return;
-              }
-              patchNode(attachFor!, { mediaUrl: it.fileUrl, mediaName: it.title });
-            }}
-          />
-        );
-      })()}
-
-      {/* Подкаст: выбор медиа (фото ведущих / картинка-вставка / запись) — единый пикер Галереи */}
-      {podPick && (
-        <GalleryPicker
-          open token={token}
-          title={podPick === 'recording' ? 'Запись подкаста' : podPick === 'music' ? 'Фоновая музыка (весь ролик)' : podPick === 'lineimg' ? 'Медиа к реплике (фото или видео)' : podPick === 'cutaway' ? 'Картинка-вставка' : podPick === 'group' ? 'Групповое фото ведущих' : `Фото — ${podPick === 'hostA' ? pod.hostA.name : pod.hostB.name}`}
-          defaultTab={(podPick === 'recording' || podPick === 'music') ? 'audio' : 'reference'}
-          onClose={() => setPodPick(null)}
-          onUpload={(files) => uploadToGallery(files, (podPick === 'recording' || podPick === 'music') ? 'audio' : 'reference')}
-          uploadAccept={podPick === 'music' ? 'audio/*' : podPick === 'recording' ? 'audio/*,video/*' : (podPick === 'lineimg' || podPick === 'cutaway') ? 'image/*,video/*' : 'image/*'}
-          onPick={(it) => applyPodMedia(podPick, { fileUrl: it.fileUrl, title: it.title })}
-        />
-      )}
-
-      {/* Загрузить диалог: вставить текст/JSON или взять из блока «Исследование» */}
-      {loadDlgOpen && (
-        <div onClick={() => setLoadDlgOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 94, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Загрузить диалог</span>
-              <button onClick={() => setLoadDlgOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-              Вставьте диалог: строки «A: реплика» / «B: реплика» (или по именам ведущих), либо JSON вида
-              <code style={{ color: 'var(--text-secondary)' }}> [{'{'}"speaker":"A","text":"…"{'}'}]</code>. Первый голос → A, второй → B.
-            </p>
-            {researchNodes.length > 0 && (
-              <div className="mb-2">
-                <div className="text-[11px] font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Из блока «Исследование»</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {researchNodes.map((n) => (
-                    <button key={n.id} onClick={() => setLoadDlgText((t) => (t.trim() ? t + '\n' + (n.text || '') : (n.text || '')))}
-                      className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                      <Newspaper size={12} /> {n.kind === 'news' ? 'Новости' : 'Исследование'}: вставить текст
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <textarea value={loadDlgText} onChange={(e) => setLoadDlgText(e.target.value)} rows={10}
-              placeholder={'A: Привет! Сегодня обсудим ИИ в быту.\nB: Да, тема спорная — давай разберёмся…'}
-              className="w-full px-3 py-2 rounded-xl text-[13px] outline-none"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical', fontFamily: 'inherit' }} />
-            <div className="flex items-center justify-end gap-2 mt-3">
-              <button onClick={() => { setLoadDlgText(''); }} className="text-[12px] font-600 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Очистить</button>
-              <button onClick={applyLoadedDialogue} disabled={!loadDlgText.trim()} className="text-[13px] font-700 px-4 py-2 rounded-lg inline-flex items-center gap-2 disabled:opacity-50"
-                style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                <Check size={15} /> Загрузить в реплики
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Выбор исходного видео */}
       {showSource && (
@@ -3899,8 +1903,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               <button onClick={clearSource} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>✕ Убрать источник</button>
             )}
             <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-              <Sparkles size={11} style={{ color: 'var(--brand)', display: 'inline', verticalAlign: '-1px' }} /> — есть анализ: одно такое видео заполнит блоки по тренду.
-              Отметьте <b>несколько</b> — соберём по ролику на каждое (одна цепочка блоков).
+              Выберите исходное видео — оно станет входом для облачных блоков (Omni и др.).
             </p>
             {(() => {
               const SRC_TABS = ([['all', 'Все'], ['analyzed', 'Из анализа'], ['trend', 'Тренды'], ['reference', 'Референс']] as const)
@@ -3933,59 +1936,25 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Нажмите «Добавить видео» выше или скачайте тренды.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {shown.map((s) => {
-                  const isPicked = picked.some((x) => x.url === s.url);
-                  const order = picked.findIndex((x) => x.url === s.url);
-                  return (
-                  <button key={s.url} onClick={() => togglePick(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${isPicked || sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                {shown.map((s) => (
+                  <button key={s.url} onClick={() => selectSource(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     {s.assetId && (
-                      <span title="Есть анализ (ДНК тренда)" style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
+                      <span title="Есть анализ" style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
                     )}
-                    {isPicked && (
-                      <span title={`В пакете №${order + 1}`} style={{ position: 'absolute', top: 4, left: 4, zIndex: 2, minWidth: 20, height: 20, padding: '0 5px', borderRadius: 999, background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, fontSize: 10, fontWeight: 800, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Check size={11} />{order + 1}</span>
-                    )}
-                    <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPicked ? 0.85 : 1 }}>
+                    <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {s.thumb
                         ? <img src={s.thumb} alt="" className="w-full h-full object-cover" />
                         : <video src={`${s.url}#t=0.1`} muted preload="metadata" playsInline className="w-full h-full object-cover" />}
                     </div>
                     <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{s.name}</div>
                   </button>
-                  );
-                })}
+                ))}
               </div>
             )}
                 </>
               );
             })()}
-            {batchNote && <p className="text-[11px] mt-2" style={{ color: '#f59e0b' }}>{batchNote}</p>}
-            {/* Липкая панель действий: видна без прокрутки в конец списка */}
-            <div className="flex items-center gap-2" style={{ position: 'sticky', bottom: -16, zIndex: 3, margin: '12px -16px -16px', padding: '10px 16px 12px',
-              background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-medium)' }}>
-              <span className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>Выбрано: {picked.length}</span>
-              {picked.length === 0 && canBuildWithoutSource && (
-                <button onClick={() => { if (sourceUrl) clearSource(); setShowSource(false); }}
-                  title="Соберём ролик целиком из материалов: фото новости + озвучка + стоковые перебивки"
-                  className="inline-flex items-center gap-1.5 text-sm font-600 px-3.5 py-2.5 rounded-xl"
-                  style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
-                  <Wand2 size={15} /> Без исходника
-                </button>
-              )}
-              {picked.length === 1 && (
-                <button onClick={() => selectSource(picked[0])} className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
-                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                  <Check size={16} /> Выбрать видео
-                </button>
-              )}
-              {picked.length >= 2 && (
-                <button onClick={() => runBatch(picked)} disabled={nodes.length === 0}
-                  title={nodes.length === 0 ? 'Сначала добавьте блоки в сценарий' : `Собрать ${picked.length} роликов`}
-                  className="inline-flex items-center gap-1.5 text-sm font-700 px-4 py-2.5 rounded-xl"
-                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: nodes.length === 0 ? 'not-allowed' : 'pointer', opacity: nodes.length === 0 ? 0.5 : 1 }}>
-                  <Film size={16} /> Собрать пакет ({picked.length})
-                </button>
-              )}
-            </div>
+            {srcNote && <p className="text-[11px] mt-2" style={{ color: '#f59e0b' }}>{srcNote}</p>}
           </div>
         </div>
       )}
@@ -4031,76 +2000,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
               )}
               <button onClick={() => { save(); setShowBrief(false); }} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
                 style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Заполнить из тренда — раскладка ДНК по блокам */}
-      {showDnaPanel && dna && (
-        <div onClick={() => setShowDnaPanel(false)} style={{ position: 'absolute', inset: 0, zIndex: 93, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 540, maxHeight: '86vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><Wand2 size={18} style={{ color: 'var(--brand)' }} /> Заполнить из тренда</span>
-              <button onClick={() => setShowDnaPanel(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-              Разложим анализ тренда по блокам сценария и зададим общий «Сценарий». Дальше правьте в блоках — это единый источник правды для сборки.
-            </p>
-
-            {/* Сводка ДНК */}
-            <div className="rounded-xl p-3 mb-3 text-[12px] space-y-1" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-              {dna.hookType && <div><b style={{ color: 'var(--text-primary)' }}>Хук:</b> {dna.hookType}</div>}
-              {dna.targetAudience && <div><b style={{ color: 'var(--text-primary)' }}>Аудитория:</b> {dna.targetAudience}</div>}
-              <div style={{ color: 'var(--text-muted)' }}>
-                Сцен: {dna.sceneBeats?.length || 0} · Скрипт озвучки: {dna.copyReadyScript ? 'есть' : '—'} · Ключи: {(dna.keywords || []).length}
-              </div>
-            </div>
-
-            {/* Цель (бенчмарк тренда) + технические таргеты качества */}
-            {(dna.benchmark || dna.quality) && (
-              <div className="rounded-xl p-3 mb-3 text-[12px] space-y-1.5" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                {dna.benchmark && (dna.benchmark.engagementRate != null || dna.benchmark.likeRate != null || dna.benchmark.saveRate != null) && (
-                  <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color: 'var(--text-secondary)' }}>
-                    <span><b style={{ color: 'var(--brand)' }}>Цель — превзойти тренд:</b></span>
-                    {dna.benchmark.engagementRate != null && <span>ER {dna.benchmark.engagementRate}%</span>}
-                    {dna.benchmark.likeRate != null && <span>лайки {dna.benchmark.likeRate}%</span>}
-                    {dna.benchmark.saveRate != null && <span>сохранения {dna.benchmark.saveRate}%</span>}
-                  </div>
-                )}
-                {dna.quality && (dna.quality.lufs != null || dna.quality.brightness != null || dna.quality.vqScore != null || dna.quality.needUpscale) && (
-                  <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color: 'var(--text-muted)' }}>
-                    <span>Качество:</span>
-                    {dna.quality.lufs != null && <span>{dna.quality.lufs} LUFS</span>}
-                    {dna.quality.brightness != null && <span>яркость {Math.round(dna.quality.brightness)}</span>}
-                    {dna.quality.vqScore != null && <span>VQ {dna.quality.vqScore}</span>}
-                    {dna.quality.originH ? <span>{dna.quality.originW ? `${dna.quality.originW}×` : ''}{dna.quality.originH}</span> : null}
-                    {dna.quality.needUpscale && <span style={{ color: 'var(--brand)' }}>→ апскейл 2×</span>}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Что будет создано */}
-            <div className="text-[11px] font-600 mb-1.5" style={{ color: 'var(--text-muted)' }}>Блоки сценария</div>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {dnaToGraph(dna).nodes.map((n, i) => (
-                <span key={i} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-                  <span style={{ color: 'var(--brand)', display: 'inline-flex' }}>{React.cloneElement(META[n.kind].icon as any, { size: 13 })}</span>{META[n.kind].label}
-                </span>
-              ))}
-            </div>
-
-            {nodes.length > 0 && (
-              <p className="text-[11px] mb-3 inline-flex items-start gap-1.5" style={{ color: '#f59e0b' }}>
-                <Minus size={12} className="mt-[1px] flex-shrink-0" /> Текущие блоки ({nodes.length}) и «Сценарий» будут заменены.
-              </p>
-            )}
-
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowDnaPanel(false)} className="text-sm font-600 px-3 py-2.5 rounded-xl" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Отмена</button>
-              <button onClick={() => applyDna(dna)} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Wand2 size={16} /> Заполнить блоки</button>
             </div>
           </div>
         </div>
@@ -4350,680 +2249,11 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </>
                 )}
               </div>
-            ) : cloudPanel === 'podcast' ? (
-              <div className="space-y-3.5">
-                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  Сцена-подкаст: <b style={{ color: '#ec4899' }}>два ведущих</b> в сплит-скрине, у каждого — своя
-                  голосовая дорожка. Дорожки можно <b>сгенерировать</b> (диалог + TTS) или <b>разобрать</b> готовую
-                  запись на 2 голоса. К каждой фразе можно прикрепить <b>картинку</b> — она эффектно выезжает в этот момент.
-                </p>
-
-                {/* Студия лиц: одно групповое фото → детекция/разметка → назначение A/B → кадры */}
-                <div className="space-y-2.5">
-                  <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Студия лиц — одно фото обоих ведущих</div>
-                  {!pod.groupPhotoUrl ? (
-                    <button onClick={() => openPodPick('group')}
-                      className="w-full py-6 rounded-xl text-[12px] font-600 inline-flex flex-col items-center justify-center gap-1.5"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
-                      <Image size={22} style={{ color: '#ec4899' }} />
-                      Загрузить общее фото ведущих
-                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>распознаем/обведём лица и сделаем крупные планы</span>
-                    </button>
-                  ) : (
-                    <>
-                      <div ref={faceWrapRef}
-                        onPointerDown={faceDown} onPointerMove={faceMove} onPointerUp={faceUp} onPointerLeave={faceUp} onPointerCancel={faceUp}
-                        style={{ position: 'relative', width: '100%', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-medium)', cursor: 'crosshair', touchAction: 'none', userSelect: 'none' }}>
-                        <img src={pod.groupPhotoUrl} alt="" draggable={false} style={{ width: '100%', display: 'block', pointerEvents: 'none' }} />
-                        {pod.faces.map((f) => (
-                          <div key={f.id} onPointerDown={(e) => faceBoxDown(e, f.id, 'move')} title="Тяните рамку, чтобы переместить; за уголок — изменить размер"
-                            style={{ position: 'absolute', left: `${f.box.x * 100}%`, top: `${f.box.y * 100}%`, width: `${f.box.w * 100}%`, height: `${f.box.h * 100}%`, border: `2px solid ${f.speaker === 'A' ? '#ec4899' : '#8b5cf6'}`, borderRadius: 4, cursor: 'move', touchAction: 'none' }}>
-                            <div style={{ position: 'absolute', top: -21, left: -2, display: 'flex', gap: 2 }}>
-                              {(['A', 'B'] as const).map((sp) => (
-                                <button key={sp} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); faceAssign(f.id, sp); }}
-                                  style={{ fontSize: 10, fontWeight: 700, width: 20, height: 18, borderRadius: 4, border: 'none', cursor: 'pointer', background: f.speaker === sp ? (sp === 'A' ? '#ec4899' : '#8b5cf6') : 'rgba(0,0,0,0.6)', color: '#fff' }}>{sp}</button>
-                              ))}
-                              <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); faceDel(f.id); }}
-                                style={{ width: 18, height: 18, borderRadius: 4, border: 'none', cursor: 'pointer', background: 'rgba(0,0,0,0.6)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={11} /></button>
-                            </div>
-                            {/* уголок ресайза (правый-нижний; почти внутри рамки — overflow:hidden обёртки не срезает его у края фото) */}
-                            <div onPointerDown={(e) => faceBoxDown(e, f.id, 'resize')} title="Изменить размер рамки"
-                              style={{ position: 'absolute', right: -2, bottom: -2, width: 14, height: 14, borderRadius: 4, cursor: 'nwse-resize', background: f.speaker === 'A' ? '#ec4899' : '#8b5cf6', border: '2px solid rgba(0,0,0,0.5)' }} />
-                          </div>
-                        ))}
-                        {drawBox && (
-                          <div style={{ position: 'absolute', left: `${drawBox.x * 100}%`, top: `${drawBox.y * 100}%`, width: `${drawBox.w * 100}%`, height: `${drawBox.h * 100}%`, border: '2px dashed #ec4899', borderRadius: 4, background: 'rgba(236,72,153,0.12)', pointerEvents: 'none' }} />
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button onClick={detectFaces} disabled={!!podBusy}
-                          className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
-                          style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                          {podBusy === 'detect' ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Найти ведущих (авто)
-                        </button>
-                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>или обведите КАЖДОГО ведущего рамкой целиком · A — розовый, B — фиолетовый. Рамка задаёт, кого вырезаем и анимируем на студии.</span>
-                        <div className="flex-1" />
-                        <button onClick={() => openPodPick('group')} className="text-[11px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>сменить фото</button>
-                        <button onClick={() => podMutate((p) => ({ ...p, groupPhotoUrl: null, groupPhotoName: null, faces: [] }))} className="text-[11px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>удалить</button>
-                      </div>
-                      <button onClick={applyFaces} disabled={!!podBusy}
-                        className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                        style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                        {podBusy === 'apply' ? <Loader2 size={15} className="animate-spin" /> : <Crop size={15} />} Сделать кадры ведущих
-                      </button>
-                      <div className="text-[11px]" style={{ color: 'var(--text-muted)', marginTop: -4 }}>
-                        Кадры — отдельные фото A/B (нужны для обычного «Оживить ведущих» и сплит-скрина).
-                        Для «Оживить НА студии» кадры не обязательны: там ведущие вырезаются прямо из этого фото по рамкам.
-                      </div>
-
-                      {/* AI-ракурсы студии — другой вид той же студии для разнообразия */}
-                      <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                        <div className="text-[11px] font-600 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                          <Sparkles size={12} style={{ color: '#ec4899' }} /> AI-ракурсы студии — те же ведущие, другой вид камеры
-                        </div>
-
-                        <input ref={angleInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-                          onChange={(e) => { if (e.target.files?.length) uploadAngleSrc(e.target.files); e.currentTarget.value = ''; }} />
-                        <textarea value={anglePromptText}
-                          onChange={(e) => { setAnglePromptText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }}
-                          rows={1} placeholder="свой промт (необязательно): «приблизь, в кадре только женщина, мужчина — лишь рука»…"
-                          className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', resize: 'none', overflow: 'hidden', minHeight: 34 }} />
-                        <button onClick={() => genAngle('custom')} disabled={!!angleBusy || !anglePromptText.trim()}
-                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                          style={{ background: '#ec4899', color: '#fff', border: 'none', cursor: anglePromptText.trim() ? 'pointer' : 'not-allowed' }}>
-                          {angleBusy === 'custom' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Применить свой промт
-                        </button>
-
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>ракурсы:</span>
-                          {([['left', '← Левее'], ['right', 'Правее →'], ['up', '↑ Сверху'], ['down', '↓ Снизу'], ['back', 'Сзади'], ['closeup', 'Крупнее']] as [string, string][]).map(([p, lbl]) => (
-                            <button key={p} onClick={() => genAngle(p)} disabled={!!angleBusy}
-                              className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5 disabled:opacity-60"
-                              style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                              {angleBusy === p ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {lbl}
-                            </button>
-                          ))}
-                          <button onClick={() => angleInputRef.current?.click()} disabled={angleBusy === 'upload'}
-                            className="text-[11px] font-600 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5"
-                            style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px dashed var(--border-strong)', cursor: 'pointer' }}>
-                            {angleBusy === 'upload' ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />} своё фото
-                          </button>
-                        </div>
-                        {(angleSrc || podAngles.length > 0) && (
-                          <div className="flex flex-wrap gap-2">
-                            {angleSrc && (
-                              <div className="relative rounded-lg overflow-hidden" style={{ width: 64, height: 64, border: '2px solid #ec4899' }}>
-                                <img src={angleSrc.url} alt="" className="w-full h-full object-cover" />
-                                <span style={{ position: 'absolute', left: 0, bottom: 0, fontSize: 8, color: '#fff', background: 'rgba(236,72,153,0.9)', padding: '0 3px', borderTopRightRadius: 4 }}>вход</span>
-                                <button onClick={() => setAngleSrc(null)} className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
-                              </div>
-                            )}
-                            {podAngles.map((a, i) => (
-                              <div key={i} className="relative rounded-lg overflow-hidden" style={{ width: 64, height: 64, border: '1px solid var(--border-medium)' }}>
-                                <img src={a.url} alt="" className="w-full h-full object-cover" />
-                                <button onClick={() => setPodAngles((prev) => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Готовые ракурсы попадают в Галерею → прикрепляй их к фразам кнопкой 🖼.</p>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Спикеры A/B: крупный план + имя + голос */}
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {(['hostA', 'hostB'] as const).map((hk) => {
-                      const h = pod[hk]; const label = hk === 'hostA' ? 'A' : 'B';
-                      return (
-                        <div key={hk} className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                          <div className="w-full rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000', border: `1px solid ${h.photoUrl ? (label === 'A' ? '#ec4899' : '#8b5cf6') : 'var(--border-medium)'}` }}>
-                            {h.photoUrl ? <img src={h.photoUrl} alt="" className="w-full h-full object-cover" />
-                              : <span className="flex flex-col items-center gap-1" style={{ color: 'var(--text-muted)' }}><UserRound size={22} /><span className="text-[10px]">Крупный план {label}</span></span>}
-                          </div>
-                          <input value={h.name} onChange={(e) => podMutate((p) => ({ ...p, [hk]: { ...p[hk], name: e.target.value } }))}
-                            className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                          <div className="grid grid-cols-2 gap-1">
-                            {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
-                              <button key={v} onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], voice: v } }))}
-                                className="py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1"
-                                style={{ background: h.voice === v ? '#ec4899' : 'var(--bg-secondary)', color: h.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${h.voice === v ? '#ec4899' : 'var(--border-medium)'}` }}>
-                                <Mic size={11} /> {lbl}
-                              </button>
-                            ))}
-                          </div>
-                          {pod.avatar?.provider === 'gpu' && (() => {
-                            const gi = Math.round(h.gestureIntensity ?? (label === 'A' ? 70 : 45));
-                            return (
-                              <div title="Насколько размашисто ведущий жестикулирует руками, ПОКА ГОВОРИТ. 0% — почти без жестов, 100% — активно. Слушая, руки спокойны. У A и B по умолчанию разные значения — чтобы дуэт не двигался одинаково.">
-                                <div className="flex items-center justify-between text-[9px] mb-0.5" style={{ color: 'var(--text-muted)' }}>
-                                  <span>Жестикуляция (пока говорит)</span><span style={{ color: '#8b5cf6', fontWeight: 700 }}>{gi}%</span>
-                                </div>
-                                <input type="range" min={0} max={100} step={5} value={gi}
-                                  onChange={(e) => podMutate((p) => ({ ...p, [hk]: { ...p[hk], gestureIntensity: Number(e.target.value) } }))}
-                                  className="w-full" style={{ accentColor: '#8b5cf6', height: 4 }} />
-                              </div>
-                            );
-                          })()}
-                          <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => openPodPick(hk)} className="text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>выбрать вручную</button>
-                            {h.photoUrl && <button onClick={() => podMutate((p) => ({ ...p, [hk]: { ...p[hk], photoUrl: null, photoName: null } }))} className="text-[10px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>убрать кадр</button>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Источник дорожек */}
-                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                  {([['gen', 'Сгенерировать диалог'], ['diarize', 'Разобрать запись']] as [PodSource, string][]).map(([s, lbl]) => (
-                    <button key={s} onClick={() => podMutate((p) => ({ ...p, source: s }))}
-                      className="py-2 rounded-lg text-[12px] font-600 transition-all"
-                      style={{ background: pod.source === s ? 'var(--bg-secondary)' : 'transparent', color: pod.source === s ? '#ec4899' : 'var(--text-muted)', boxShadow: pod.source === s ? '0 1px 3px rgba(0,0,0,0.12)' : 'none' }}>
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-
-                {pod.source === 'gen' ? (
-                  <div className="space-y-2">
-                    <textarea value={pod.brief} onChange={(e) => podMutate((p) => ({ ...p, brief: e.target.value }))} rows={2}
-                      placeholder="Тема подкаста: «Спор о том, нужен ли людям ИИ-ассистент в быту»…"
-                      className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                    <div className="grid grid-cols-2 gap-2">
-                      <button onClick={genDialogue} disabled={podBusy === 'dialogue'}
-                        className="py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                        style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                        {podBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать
-                      </button>
-                      <div className="flex items-stretch gap-1">
-                        <button onClick={() => setLoadDlgOpen(true)}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
-                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                          <Download size={15} /> Загрузить диалог
-                        </button>
-                        <span className="me-tip" tabIndex={0} style={{ flexShrink: 0, width: 34, borderRadius: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: 'help', justifyContent: 'center' }}>
-                          <Info size={16} />
-                          <span className="me-tip-pop">
-                            <b>Как подготовить текст диалога</b><br />
-                            Каждая реплика — с новой строки, в начале укажите, кто говорит:<br />
-                            <code style={{ color: 'var(--text-secondary)' }}>A: Привет, сегодня обсудим…</code><br />
-                            <code style={{ color: 'var(--text-secondary)' }}>B: Да, поехали!</code><br />
-                            Можно по именам ведущих — первый голос станет A, второй B.<br /><br />
-                            <b>Или JSON:</b><br />
-                            <code style={{ color: 'var(--text-secondary)' }}>[{'{'}"speaker":"A","text":"…"{'}'}, {'{'}"speaker":"B","text":"…"{'}'}]</code><br />
-                            Поддерживаются поля speaker/role/name и text/content/line.<br /><br />
-                            Ещё можно вставить текст из блока «Исследование»/«Новости» сценария — кнопкой внутри окна.
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {pod.recordingUrl ? (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                        <Music size={15} style={{ color: '#ec4899' }} />
-                        <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{pod.recordingName || 'запись'}</span>
-                        <button onClick={() => podMutate((p) => ({ ...p, recordingUrl: null, recordingName: null,
-                          // записи больше нет — голос «Из записи» невозможен, откатываем на TTS
-                          ...(p.avatar?.voiceSource === 'record' ? { avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: 'heygen' as PodVoiceSource } } : {}) }))} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => openPodPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                        <Paperclip size={14} /> Загрузить запись подкаста (аудио/видео)
-                      </button>
-                    )}
-                    <button onClick={runDiarize} disabled={podBusy === 'diarize' || !pod.recordingUrl}
-                      className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
-                      style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                      {podBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} Разобрать на 2 голоса
-                    </button>
-                    {pod.dialogue.length > 0 && (
-                      <>
-                        <button disabled={podBusy === 'diarize'} onClick={() => setResetDiarizeOpen(true)}
-                          className="w-full py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                          style={{ background: 'transparent', color: '#ef4444', border: '1px dashed rgba(239,68,68,0.5)', cursor: podBusy === 'diarize' ? 'not-allowed' : 'pointer' }}>
-                          <X size={13} /> Сбросить разбор (удалить реплики)
-                        </button>
-                        {/* свой модал вместо браузерного window.confirm (уродлив и вне дизайна) */}
-                        <ConfirmModal
-                          open={resetDiarizeOpen}
-                          title="Сбросить разбор?"
-                          message="Удалятся реплики, таймлайн и отрендеренные по ним головы. Сама запись останется — можно разобрать её заново или загрузить другую."
-                          confirmLabel="Сбросить"
-                          cancelLabel="Отмена"
-                          variant="danger"
-                          onCancel={() => setResetDiarizeOpen(false)}
-                          onConfirm={() => {
-                            setResetDiarizeOpen(false);
-                            // чистим ВСЁ, что построено на старом разборе: иначе «Собрать» склеит
-                            // старые головы (липсинк под удалённые реплики) с новым диалогом
-                            if (animPollRef.current) { clearTimeout(animPollRef.current); animPollRef.current = null; }
-                            setAnimBusy(false); setAnimJobs([]); setAnimNote(null);
-                            setStudioBg(null); setComposeUrl(null); setComposeNote(null);
-                            setDiarizeDone(false);
-                            tlStop(); setSelLine(null); setTlPlayhead(0);
-                            podMutate((p) => ({ ...p, dialogue: [], timeline: false, animActive: null, animResult: null, studioBgUrl: null, studioPlace: null }));
-                            setPodNote('Разбор удалён. Разберите запись заново или загрузите другую.');
-                          }}
-                        />
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Таймлайн (Фаза 2) — вверху; наложение голосовых дорожек (Web Audio микширует наложения) */}
-                {pod.dialogue.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between flex-wrap gap-1.5">
-                      <span className="text-[11px] font-600 inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                        Таймлайн (наложение голосов)
-                        {pod.timeline && (() => { const arr = pod.dialogue; const total = Math.max(0, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l))); return <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{tlMmss(tlPlayhead)} / {tlMmss(total)}</span>; })()}
-                      </span>
-                      <div className="inline-flex items-center gap-1.5">
-                        {pod.timeline && (
-                          <>
-                            <button onClick={tlTogglePlay} title={tlPlaying ? 'Пауза' : 'Воспроизвести с бегунка'} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: tlPlaying ? '#10b981' : 'var(--bg-tertiary)', color: tlPlaying ? '#fff' : '#10b981', border: `1px solid ${tlPlaying ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{tlPlaying ? <Pause size={13} /> : <Play size={13} />}</button>
-                            <button onClick={cutAtPlayhead} title="Разрезать по бегунку (✂)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
-                            <button onClick={() => setTlPps((v) => Math.max(3, Math.round(v / 1.4)))} title="Уменьшить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
-                            <button onClick={() => setTlPps((v) => Math.min(160, Math.round(v * 1.4)))} title="Увеличить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
-                            <button onClick={fitTimeline} title="Вместить всё на экран" className="text-[10px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>вместить</button>
-                          </>
-                        )}
-                        <button onClick={toggleTimeline}
-                          className="text-[11px] font-600 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5"
-                          style={{ background: pod.timeline ? '#ec4899' : 'var(--bg-tertiary)', color: pod.timeline ? '#fff' : 'var(--text-secondary)', border: `1px solid ${pod.timeline ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                          <Film size={12} /> {pod.timeline ? 'Таймлайн вкл' : 'Включить таймлайн'}
-                        </button>
-                      </div>
-                    </div>
-                    {pod.timeline && (() => {
-                      const arr = pod.dialogue;
-                      const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
-                      const W = Math.ceil(total) * tlPps + 40;
-                      const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
-                      const phLeft = 32 + tlPlayhead * tlPps;
-                      return (
-                        <div ref={tlWrapRef} style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)' }}>
-                          <div style={{ position: 'relative', width: W, padding: '4px 0' }}>
-                            <div onPointerDown={(e) => { tlPlayDragRef.current = true; const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect(); setTlPlayhead(Math.max(0, Math.round(((e.clientX - rect.left - 32) / tlPps) * 20) / 20)); }}
-                              style={{ position: 'relative', height: 16, marginLeft: 32, cursor: 'col-resize', touchAction: 'none' }}>
-                              {Array.from({ length: Math.floor(total / step) + 1 }).map((_, k) => { const s = k * step; return (
-                                <span key={k} style={{ position: 'absolute', left: s * tlPps, top: 1, fontSize: 8, color: 'var(--text-muted)' }}>{tlMmss(s)}</span>
-                              ); })}
-                            </div>
-                            {(['A', 'B'] as const).map((trk) => (
-                              <div key={trk} style={{ position: 'relative', height: 34, marginTop: 4 }}>
-                                <span style={{ position: 'absolute', left: 6, top: 9, fontSize: 10, fontWeight: 700, color: trk === 'A' ? '#ec4899' : '#8b5cf6' }}>{trk}</span>
-                                <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
-                                  {arr.map((l, i) => {
-                                    if ((l.speaker === 'B' ? 'B' : 'A') !== trk) return null;
-                                    const t = lineT(l, i, arr); const d = lineDur(l);
-                                    const w = Math.max(6, d * tlPps - 2);
-                                    const sel = selLine === i;
-                                    const showText = w >= 40;       // на мелком зуме подписи прячем — чистые плашки
-                                    const showThumb = w >= 46 && !!l.image;
-                                    const vid = isVideoUrl(l.image);
-                                    return (
-                                      <div key={i}
-                                        onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startY: e.clientY, startT: t, spk: trk }; }}
-                                        onClick={() => { if (tlMovedRef.current) { tlMovedRef.current = false; return; } setSelLine(i); setDialogOpen(true); setTimeout(() => document.getElementById(`pl-${i}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60); }}
-                                        title={l.text}
-                                        style={{ position: 'absolute', left: t * tlPps, width: w, top: 2, height: 30, borderRadius: 7,
-                                          background: trk === 'A' ? 'linear-gradient(180deg, rgba(244,114,182,0.96), rgba(219,39,119,0.96))' : 'linear-gradient(180deg, rgba(167,139,250,0.96), rgba(124,58,237,0.96))',
-                                          color: '#fff', fontSize: 9, lineHeight: '30px',
-                                          padding: showText ? '0 6px' : '0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none',
-                                          border: sel ? 'none' : '1px solid rgba(255,255,255,0.18)',
-                                          boxShadow: sel ? '0 0 0 2px #fff, 0 0 0 4px #ec4899' : '0 1px 3px rgba(0,0,0,0.28)' }}>
-                                        {showThumb && (vid
-                                          ? <span style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, borderRadius: 4, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={12} fill="#fff" style={{ color: '#fff' }} /></span>
-                                          : <img src={l.image} alt="" style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, objectFit: 'cover', borderRadius: 4 }} />)}
-                                        {showText
-                                          ? <span style={{ pointerEvents: 'none' }}>{l.text || `реплика ${i + 1}`}</span>
-                                          : (l.image && <span style={{ position: 'absolute', left: 3, top: 3, width: 6, height: 6, borderRadius: '50%', background: '#fff', opacity: 0.9 }} />)}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ))}
-                            <div style={{ position: 'absolute', left: phLeft, top: 0, bottom: 0, width: 2, background: '#fbbf24', zIndex: 5, pointerEvents: 'none' }}>
-                              <span onPointerDown={(e) => { e.stopPropagation(); tlPlayDragRef.current = true; }} style={{ position: 'absolute', top: 0, left: -6, width: 14, height: 14, borderRadius: '50%', background: '#fbbf24', cursor: 'col-resize', pointerEvents: 'auto', touchAction: 'none' }} />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                    {pod.timeline && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с жёлтого бегунка; тащи клипы по времени, а ВВЕРХ/ВНИЗ — на дорожку другого ведущего (реплика меняет голос A↔B); бегунок ведёшь и ✂ режет по нему (появляется новая реплика); −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = перебивание.</p>}
-                  </div>
-                )}
-
-                {/* Реплики — свёрнуты, открываются; клик по клипу подсвечивает */}
-                {pod.dialogue.length > 0 && (
-                  <div className="space-y-1.5">
-                    {/* «Иллюстратор»: авто-видеоряд из Галереи под смысл реплик (как перебивки в новостях) */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button onClick={runIllustrate} disabled={podBusy === 'illustrate'}
-                        title="Автоподбор видеоряда из Галереи (референсы, «Из анализа», скачанные тренды) под смысл каждой реплики: фото — во весь кадр с движением Ken Burns, видео — фрагментами. Плашки и план можно поправить у каждой реплики."
-                        className="flex-1 min-w-[190px] inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-700"
-                        style={{ background: 'rgba(99,102,241,0.14)', color: '#6366f1', border: '1px solid #6366f1', cursor: 'pointer' }}>
-                        {podBusy === 'illustrate' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Иллюстрации: авто-видеоряд
-                      </button>
-                      <label className="inline-flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
-                        title="Вжигать в студийную склейку титры реплик и индиго-плашки заголовков (стиль новостей)">
-                        <input type="checkbox" checked={pod.newsStyle !== false} onChange={(e) => podMutate((p) => ({ ...p, newsStyle: e.target.checked }))} /> Титры + плашки
-                      </label>
-                    </div>
-                    {illusNote && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{illusNote}</p>}
-                    <button onClick={() => setDialogOpen((o) => !o)} className="w-full flex items-center justify-between text-[11px] font-600 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                      <span>Реплики ({pod.dialogue.length}) — открыть/свернуть</span>
-                      <span>{dialogOpen ? '▾' : '▸'}</span>
-                    </button>
-                    {dialogOpen && (
-                      <div className="space-y-1.5" style={{ maxHeight: 280, overflowY: 'auto' }}>
-                        {pod.dialogue.map((l, i) => (
-                          <div key={i} id={`pl-${i}`} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${selLine === i ? '#ec4899' : 'var(--border-medium)'}` }}>
-                            <div className="flex items-start gap-1.5">
-                              <button onClick={() => podLineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить ведущего"
-                                className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5"
-                                style={{ background: l.speaker === 'A' ? '#ec4899' : '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
-                              <textarea value={l.text} onChange={(e) => podLineMutate(i, { text: e.target.value })} rows={1}
-                                className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                              {l.image ? (
-                                <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
-                                  {isVideoUrl(l.image) ? (
-                                    <>
-                                      <video src={l.image} muted preload="metadata" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
-                                      <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={11} fill="#fff" style={{ color: '#fff' }} /></span>
-                                    </>
-                                  ) : (
-                                    <img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: '1px solid #ec4899' }} />
-                                  )}
-                                  <button onClick={() => setLineImage(i, null)} title="Убрать медиа" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
-                                </div>
-                              ) : (
-                                <button onClick={() => openPodLineImage(i)} title="Прикрепить фото или видео к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ec4899', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Image size={13} /></button>
-                              )}
-                              {i < pod.dialogue.length - 1 && (
-                                <button onClick={() => mergeLineDown(i)} title="Объединить со следующей репликой" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#8b5cf6', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Combine size={13} /></button>
-                              )}
-                              <button onClick={() => podLineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
-                            </div>
-                            {pod.avatar?.provider === 'gpu' && (pod.realisticStudio ?? true) && (
-                              <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }} title="Переопределить жестикуляцию ИМЕННО на этой реплике (иначе — как у ведущего). «Без» — на этой фразе руки спокойны.">Жест:</span>
-                                {([['Авто', undefined], ['Без', 0], ['Слабо', 30], ['Средне', 60], ['Сильно', 95]] as [string, number | undefined][]).map(([lbl, val]) => {
-                                  const sel = val === undefined ? (l.gesture === undefined || l.gesture === null) : l.gesture === val;
-                                  return (
-                                    <button key={lbl} onClick={() => podLineMutate(i, { gesture: val })}
-                                      className="text-[10px] font-600 px-1.5 py-0.5 rounded-md"
-                                      style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {l.image && (
-                              <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр:</span>
-                                {([['full', 'Во весь кадр'], ['card', 'Карточка']] as ['full' | 'card', string][]).map(([m, lbl]) => { const sel = (l.mode || 'card') === m; return (
-                                  <button key={m} onClick={() => podLineMutate(i, { mode: m })}
-                                    title={m === 'full' ? 'Новостной b-roll: фото — с движением Ken Burns, видео — фрагментом во весь кадр' : 'Карточка поверх сцены (62% кадра)'}
-                                    className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#6366f1' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#6366f1' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                                ); })}
-                              </div>
-                            )}
-                            {l.image && l.mode === 'full' && (
-                              <div className="flex items-center gap-1 mt-1" style={{ paddingLeft: 34 }}>
-                                <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }} title="Заголовок индиго-плашки (lower third) на время показа кадра. Пусто — без плашки.">Плашка:</span>
-                                <input value={l.title || ''} onChange={(e) => podLineMutate(i, { title: e.target.value.slice(0, 60) })} placeholder="заголовок 2–5 слов (необязательно)"
-                                  className="flex-1 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
-                              </div>
-                            )}
-                            {l.image && (l.mode || 'card') === 'card' && (
-                              <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
-                                {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a.v; return (
-                                  <button key={a.v} onClick={() => setLineAnim(i, a.v)} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{a.label}</button>
-                                ); })}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        <button onClick={podLineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#ec4899', background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Анимация ведущих — говорящие головы (выбор провайдера + оценка стоимости) */}
-                {(() => {
-                  const av = pod.avatar || POD_DEFAULT.avatar!;
-                  const cur = POD_AVATARS.find((a) => a.v === av.provider) || POD_AVATARS[0];
-                  const mins = Math.max(0.1, dialogTotalSec() / 60);
-                  const est = av.provider === 'omni'
-                    ? '≈ $2 за 2 клипа (2 × ~10с × ~$0.10/с) + правки чатом'
-                    : cur.perMin > 0 ? `≈ $${(mins * cur.perMin).toFixed(2)} за ролик (${Math.round(mins * 10) / 10} мин × $${cur.perMin}/мин)` : 'без оплаты за минуту';
-                  return (
-                    <div className="space-y-2 rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                      <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><UserRound size={13} style={{ color: '#ec4899' }} /> Анимация ведущих (говорящие головы)</div>
-                      <div className="grid grid-cols-2 gap-1">
-                        {POD_AVATARS.map((a) => { const sel = av.provider === a.v; return (
-                          <button key={a.v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), provider: a.v } }))}
-                            className="rounded-lg px-1.5 py-1.5 text-left" style={{ background: sel ? 'rgba(236,72,153,0.14)' : 'var(--bg-secondary)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                            <div className="text-[11px] font-700" style={{ color: sel ? '#ec4899' : 'var(--text-primary)' }}>{a.label}</div>
-                            <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{a.quality}</div>
-                            <div className="text-[9px] font-600" style={{ color: a.perMin === 0 ? '#10b981' : 'var(--text-secondary)' }}>{a.cost}</div>
-                          </button>
-                        ); })}
-                      </div>
-                      {av.provider === 'heygen' && (
-                        <>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Режим:</span>
-                            {/* Avatar V — задел: пока неактивен (нужен реальный 15-сек видео-референс + Enterprise-API HeyGen; к ИИ-ведущим из фото не подключить). */}
-                            {([['standard', 'Стандарт', false], ['iv', 'Avatar IV (жесты/мимика)', false], ['v', 'Avatar V (по видео)', true]] as [PodAvatarMode, string, boolean][]).map(([m, lbl, disabled]) => { const sel = (av.mode || 'standard') === m; return (
-                              <button key={m} disabled={disabled}
-                                title={disabled ? 'Avatar V учит движения по реальному 15-сек видео человека + нужен Enterprise-доступ HeyGen API. К ИИ-ведущим из фото пока не подключён.' : ''}
-                                onClick={() => { if (disabled) return; podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), mode: m } })); }}
-                                className="text-[10px] font-700 px-2 py-1 rounded-md disabled:opacity-40" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: disabled ? 'not-allowed' : 'pointer' }}>{lbl}</button>
-                            ); })}
-                          </div>
-                          <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                            <b>Avatar IV</b> — из фото ведущего (наш случай): мимика, липсинк и авто-жесты руками, если в кадре виден корпус.
-                            <br /><b>Avatar V</b> (скоро) — «живее», но учится по реальному 15-сек видео человека и требует Enterprise-API HeyGen; к ИИ-ведущим из фото не применяется.
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Голос:</span>
-                            {([['record', 'Из записи (реальные)'], ['heygen', 'HeyGen TTS'], ['elevenlabs', 'ElevenLabs']] as [PodVoiceSource, string][]).map(([vs, lbl]) => { const sel = (av.voiceSource || 'heygen') === vs; const disabled = vs === 'record' && !pod.recordingUrl; return (
-                              <button key={vs} disabled={disabled} title={disabled ? 'Нужна загруженная запись подкаста' : ''} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), voiceSource: vs } }))}
-                                className="text-[10px] font-600 px-2 py-1 rounded-md disabled:opacity-40" style={{ background: sel ? '#8b5cf6' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#8b5cf6' : 'var(--border-medium)'}`, cursor: disabled ? 'not-allowed' : 'pointer' }}>{lbl}</button>
-                            ); })}
-                          </div>
-                          <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                            «Из записи» — в ролик идёт ВАШ голос как есть (по таймкодам реплик), HeyGen делает только мимику и липсинк.
-                            Включается автоматически после «Разобрать запись».
-                          </div>
-                        </>
-                      )}
-                      {/* Подача/эмоция (движение) — топ-пресеты */}
-                      {av.provider === 'heygen' && (av.voiceSource || 'heygen') === 'heygen' && (
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Подача/эмоция:</span>
-                          {POD_EMOTIONS.map((e) => { const sel = (av.emotion || 'friendly') === e.v; return (
-                            <button key={e.v} onClick={() => podMutate((p) => ({ ...p, avatar: { ...(p.avatar || POD_DEFAULT.avatar!), emotion: e.v } }))}
-                              className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#ec4899' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#ec4899' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{e.label}</button>
-                          ); })}
-                        </div>
-                      )}
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cur.note} Оценка: <b style={{ color: 'var(--text-secondary)' }}>{est}</b>. Голос «Из записи» = реальные голоса ведущих (по таймкодам), ElevenLabs — настраивается в ElevenLabs. Suno — это музыка (фон), не речь.</p>
-                      {/* Фоновая музыка на весь ролик */}
-                      <div className="rounded-lg p-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-700 inline-flex items-center gap-1" style={{ color: 'var(--text-primary)' }}><Music size={11} style={{ color: '#8b5cf6' }} /> Фоновая музыка (весь ролик)</span>
-                          {pod.music && <button onClick={() => podMutate((p) => ({ ...p, music: null }))} className="text-[10px]" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>убрать</button>}
-                        </div>
-                        {pod.music ? (
-                          <>
-                            <div className="text-[10px] truncate mb-1" style={{ color: 'var(--text-secondary)' }}>{pod.music.name}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Громкость {pod.music.volumePct}%</span>
-                              <input type="range" min={0} max={100} value={pod.music.volumePct} onChange={(e) => podMutate((p) => ({ ...p, music: p.music ? { ...p.music, volumePct: Number(e.target.value) } : p.music }))} style={{ flex: 1, accentColor: '#8b5cf6' }} />
-                            </div>
-                          </>
-                        ) : (
-                          <button onClick={() => openPodPick('music')} className="w-full py-1.5 rounded-md text-[11px] font-600" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>+ Добавить музыку (загрузить / из галереи)</button>
-                        )}
-                        <p className="text-[9px] mt-1" style={{ color: 'var(--text-muted)' }}>Если музыка длиннее ролика — обрежется. Генерацию через Suno добавлю следующим шагом.</p>
-                      </div>
-                      {av.provider === 'omni' && (
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{pod.groupPhotoUrl ? 'Есть общее фото студии → Omni оживит ВСЮ сцену одним клипом (оба ведущих в кадре, ИИ-голос), затем правь чатом.' : 'Нет общего фото — Omni оживит каждого ведущего отдельным клипом (2 лица в одном кадре модель блокирует). Загрузи общее фото студии (студия лиц) для цельной сцены.'} Реплики берутся из диалога.</p>
-                      )}
-                      {/* Розовая (классический сплит-скрин по фото хостов) — только облачные провайдеры;
-                          при «Домашнем GPU» единственный путь — зелёная GPU-студия, вторая кнопка путала. */}
-                      {av.provider !== 'gpu' && (
-                        <button onClick={runAnimate} disabled={animBusy}
-                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                          style={{ background: 'rgba(236,72,153,0.14)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.4)', cursor: 'pointer' }}>
-                          {animBusy ? <Loader2 size={14} className="animate-spin" /> : <UserRound size={14} />} {animBusy ? (av.provider === 'omni' ? 'Omni оживляет…' : 'Рендер идёт…') : (av.provider === 'omni' ? 'Оживить ведущих (Omni)' : 'Анимировать ведущих (сплит-скрин)')}
-                        </button>
-                      )}
-                      {av.provider === 'heygen' && pod.groupPhotoUrl && (
-                        <>
-                          <button onClick={runHeyGenStudio} disabled={animBusy}
-                            className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                            style={{ background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                            {animBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} Оживить НА студии (вырезать людей → HeyGen)
-                          </button>
-                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии»: вырезаю обоих ведущих из общего фото → HeyGen оживляет (Avatar IV, тело/руки) на зелёном → накладываю на фон студии. Голос — по выбору выше.</p>
-                        </>
-                      )}
-                      {/* Без groupPhotoUrl кнопку НЕ прячем (розовой при gpu больше нет — иначе
-                          не осталось бы ни одной): клик честно попросит общее фото студии. */}
-                      {av.provider === 'gpu' && (
-                        <>
-                          <button onClick={() => podMutate((p) => ({ ...p, realisticStudio: !(p.realisticStudio ?? true) }))}
-                            title="Жестикулирует ТОЛЬКО тот, кто говорит; слушающий держит руки спокойно. Автоматически по таймкодам диалога — ручных настроек не нужно."
-                            className="w-full py-2 px-2.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-between gap-2"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                            <span>🎬 Реалистичная студия <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>— жестикулирует только говорящий</span></span>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-700" style={{ background: (pod.realisticStudio ?? true) ? '#8b5cf6' : 'var(--bg-secondary)', color: (pod.realisticStudio ?? true) ? '#fff' : 'var(--text-muted)' }}>{(pod.realisticStudio ?? true) ? 'ВКЛ' : 'ВЫКЛ'}</span>
-                          </button>
-                          <button onClick={runGpuStudio} disabled={animBusy}
-                            className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                            style={{ background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                            {animBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} Оживить НА студии (домашний GPU)
-                          </button>
-                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«На студии» на вашем ПК (без кредитов): вырезаю ведущих из общего фото → домашний GPU оживляет (EchoMimic-v2 = жесты рук/корпуса; если не установлен — SadTalker, только голова) на зелёном → фон студии. Голос: «Из записи» или ElevenLabs. Нужен запущенный GPU-воркер (render-worker/install-gpu.sh).</p>
-                        </>
-                      )}
-                      {animBusy && (
-                        <button onClick={cancelAnimate}
-                          className="w-full py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                          style={{ background: 'transparent', color: '#ef4444', border: '1px dashed rgba(239,68,68,0.5)', cursor: 'pointer' }}>
-                          <X size={13} /> Отменить рендер
-                        </button>
-                      )}
-                      {animNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{animNote}</p>}
-                      {animJobs.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2">
-                          {animJobs.map((j) => (
-                            <div key={j.videoId} className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                              <div style={{ aspectRatio: '9 / 16', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                {j.url ? <video ref={(el) => { headVidRefs.current[j.videoId] = el; }} src={j.url} controls playsInline preload="metadata" className="w-full h-full object-cover" style={{ objectPosition: headObjPos(j.host) }} />
-                                  : <div className="flex flex-col items-center gap-1 px-2 text-center">
-                                      {j.status === 'failed' ? <X size={18} style={{ color: '#ef4444' }} /> : <Loader2 size={18} className="animate-spin" style={{ color: '#ec4899' }} />}
-                                      <span className="text-[9px]" style={{ color: j.status === 'failed' ? '#ef4444' : 'var(--text-muted)' }}>{j.status === 'failed' ? (j.error ? `ошибка: ${j.error}` : 'ошибка') : 'рендер…'}</span>
-                                    </div>}
-                              </div>
-                              <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }}>{j.name} ({j.host}){j.url ? ' ✓' : ''}</div>
-                              {av.provider === 'omni' && j.url && j.interactionId && (
-                                <div className="px-1.5 pb-1.5 space-y-1">
-                                  <input value={j.edit || ''} onChange={(e) => { const val = e.target.value; setAnimJobs((prev) => prev.map((x) => x.host === j.host ? { ...x, edit: val } : x)); }}
-                                    placeholder="Правка чатом: «улыбнись», «крупнее»…"
-                                    className="w-full text-[10px] px-1.5 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
-                                  <button onClick={() => runOmniHostEdit(j.host)} disabled={j.editing || !(j.edit || '').trim()}
-                                    className="w-full text-[10px] font-700 py-1 rounded-md inline-flex items-center justify-center gap-1 disabled:opacity-50"
-                                    style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                    {j.editing ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />} {j.editing ? 'Меняю…' : 'Изменить клип'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {animJobs.filter((j) => j.url).length >= 2 && (
-                        <button onClick={playBothHeads} type="button"
-                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2"
-                          style={{ background: 'transparent', color: '#ec4899', border: '1px solid rgba(236,72,153,0.5)', cursor: 'pointer' }}>
-                          <Play size={14} /> Запустить обоих
-                        </button>
-                      )}
-                      {animJobs.length >= 2 && animJobs.every((j) => j.status === 'completed' && j.url) && (
-                        <button onClick={runCompose} disabled={composeBusy}
-                          className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                          style={{ background: '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                          {composeBusy ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />} {composeBusy ? (studioBg ? 'Собираю на студии…' : 'Склеиваю сплит-скрин…') : (studioBg ? 'Собрать НА студии (chroma-key)' : 'Склеить сплит-скрин + музыка')}
-                        </button>
-                      )}
-                      {composeNote && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{composeNote}</p>}
-                      {composeUrl && (
-                        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-medium)' }}>
-                          <video src={composeUrl} controls className="w-full"
-                            onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setComposeAR(`${v.videoWidth} / ${v.videoHeight}`); }}
-                            style={{ aspectRatio: composeAR, maxHeight: '70vh', background: '#000' }} />
-                          <div className="text-[10px] px-1.5 py-1" style={{ color: 'var(--text-secondary)' }}>{studioBg ? 'Готово: ведущие на фоне студии ✓ (в Галерее)' : 'Готовый сплит-скрин ✓ (сохранён в Галерею)'}</div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Мин. длина реплики */}
-                <div className="space-y-1">
-                  <div className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Мин. длина реплики</div>
-                  <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)', maxWidth: 220 }}>
-                    {([[0, 'Авто'], [4, '4с'], [6, '6с']] as [number, string][]).map(([s, lbl]) => (
-                      <button key={s} onClick={() => podMutate((p) => ({ ...p, segSec: s }))}
-                        className="py-1.5 rounded-lg text-[11px] font-700"
-                        style={{ background: pod.segSec === s ? 'var(--bg-secondary)' : 'transparent', color: pod.segSec === s ? '#ec4899' : 'var(--text-muted)' }}>{lbl}</button>
-                    ))}
-                  </div>
-                </div>
-
-                {podNote && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{podNote}</p>}
-
-                <div className="rounded-xl p-3 text-[11px]" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
-                  Сплит-скрин собирается на воркере (ffmpeg): без GPU — статичные фото + 2 голоса,
-                  на GPU — говорящие головы (SadTalker). «Разобрать запись» использует pyannote при
-                  наличии HF-ключа (иначе — разбивка по паузам).
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button onClick={() => save()} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Save size={15} /> Сохранить</button>
-                  <button onClick={buildPodcast} disabled={building || !!podBuildHint()} title={podBuildHint() || ''}
-                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg,#ec4899,#f472b6)', color: '#fff', border: 'none', cursor: podBuildHint() ? 'not-allowed' : 'pointer' }}>
-                    {building ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} Собрать подкаст
-                  </button>
-                </div>
-                {podBuildHint() && !building && (
-                  <p className="text-[11px] text-center" style={{ color: '#f59e0b' }}>{podBuildHint()}</p>
-                )}
-              </div>
             ) : cloudPanel === 'ugc' ? (
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                   UGC на аватарах: кадр <b style={{ color: '#a855f7' }}>9:16 из двух половин</b> — говорящий аватар
-                  (движок <b>EchoMimic-v2</b> на вашем GPU) и произвольное видео. Аватар ставится сверху или снизу;
+                  (из коллекции Галереи или своё фото → <b>HeyGen</b>) и произвольное видео. Аватар ставится сверху или снизу;
                   скрипт можно сгенерировать или разобрать запись; снизу — титры.
                 </p>
 
@@ -5038,39 +2268,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   </div>
                   {ugc.avatarSource === 'collection' ? (
                     <div className="space-y-2">
-                      {/* Библиотека SpatialReal — оживление их realtime-движком */}
-                      <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>SpatialReal — библиотека (их движок)</div>
-                      {ugcSrLoading ? (
-                        <p className="text-[11px] py-2 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> тяну библиотеку SpatialReal…</p>
-                      ) : (ugcSrAvatars || []).length ? (
-                        <div className="grid grid-cols-4 gap-1.5" style={{ maxHeight: 180, overflowY: 'auto' }}>
-                          {(ugcSrAvatars || []).map((a) => {
-                            const sel = ugc.avatarProvider === 'spatialreal' && ugc.avatarId === a.id;
-                            return (
-                              <div key={a.id} onClick={() => pickUgcSrAvatar(a)} title={`${a.name} (SpatialReal)`} className="relative rounded-lg overflow-hidden"
-                                style={{ aspectRatio: '3/4', background: '#000', cursor: 'pointer',
-                                  border: sel ? '2px solid #a855f7' : '1px solid var(--border-medium)',
-                                  boxShadow: sel ? '0 0 0 2px rgba(168,85,247,.3)' : 'none' }}>
-                                {a.previewUrl ? (
-                                  <img src={a.previewUrl} alt={a.name} loading="lazy" className="w-full h-full object-cover" />
-                                ) : (
-                                  <span className="flex items-center justify-center w-full h-full text-[16px] font-700" style={{ color: '#a855f7', background: 'var(--bg-secondary)' }}>{(a.name || '?').slice(0, 1)}</span>
-                                )}
-                                <span className="absolute bottom-0 left-0 right-0 px-1 py-0.5 text-[9px] truncate" style={{ background: 'rgba(0,0,0,.55)', color: '#fff' }}>{a.name}</span>
-                                {sel && (
-                                  <span className="absolute top-1 left-1 rounded-full flex items-center justify-center" style={{ width: 18, height: 18, background: '#a855f7' }}><Check size={12} color="#fff" /></span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="rounded-lg p-2 text-[11px]" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}>
-                          {ugcSrNote || 'Библиотека SpatialReal пока пуста.'}{' '}
-                          <button onClick={() => loadUgcSrAvatars(true)} style={{ background: 'transparent', border: 'none', color: '#a855f7', cursor: 'pointer', padding: 0, font: 'inherit', textDecoration: 'underline' }}>повторить</button>
-                        </div>
-                      )}
-                      {/* Моя коллекция (вход EchoMimic: Gemini-генерации + свои фото) */}
+                      {/* Моя коллекция (Gemini-генерации + свои фото из Галереи) */}
                       <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Моя коллекция</div>
                       {ugcAvLoading ? (
                         <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> загружаю аватары…</p>
@@ -5117,7 +2315,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                         style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                       <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                         Выбран: <b style={{ color: ugc.avatarName ? '#a855f7' : 'var(--text-secondary)' }}>{ugc.avatarName || 'не выбран'}</b>
-                        {ugc.avatarName ? <span style={{ color: 'var(--text-muted)' }}> · {ugc.avatarProvider === 'spatialreal' ? 'оживит SpatialReal' : 'оживит EchoMimic (ваш GPU)'}</span> : null}
+                        {ugc.avatarName ? <span style={{ color: 'var(--text-muted)' }}> · оживит HeyGen</span> : null}
                       </div>
                       {ugcAvNote && <p className="text-[11px]" style={{ color: '#f59e0b' }}>{ugcAvNote}</p>}
                     </div>
@@ -5460,14 +2658,14 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     {saving ? 'Сохраняю…' : ugcSavedFlash ? 'Сохранено' : 'Сохранить'}
                   </button>
                   <button onClick={() => void ugcBuildStart()} disabled={ugcBusy === 'render'}
-                    title="Аватар говорит скрипт (SpatialReal) → склейка с видео → титры → Галерея"
+                    title="Аватар говорит скрипт (HeyGen) → склейка с видео → титры → Галерея"
                     className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'pointer' }}>
                     {ugcBusy === 'render' ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {ugcBusy === 'render' ? 'Собираю…' : 'Собрать UGC'}
                   </button>
                 </div>
                 <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Автосохранение включено: правки пишутся сами через пару секунд — кнопка лишь страховка.</p>
-                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Сборка идёт на сервере — можно закрыть панель, прогресс не потеряется. «Коллекция» → аватар SpatialReal (на вашем ПК); «Своё фото» → HeyGen Avatar IV (в облаке, ~2–5 мин).</p>
+                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Сборка идёт на сервере — можно закрыть панель, прогресс не потеряется. Аватар (коллекция или своё фото) оживит HeyGen Avatar IV (в облаке, ~2–5 мин).</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">
@@ -6001,152 +3199,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         }}
       />
 
-      {/* Прогресс сборки «Собрать» — в углу, чтобы не закрывать паутину и центральный узел
-          (импульсы и кольцо активного блока видны во время рендера). */}
-      {buildJob && !buildMinimized && (
-        <div style={{ position: 'absolute', right: 16, bottom: 16, zIndex: 95, width: 'min(430px, calc(100% - 32px))', maxHeight: '70%', overflow: 'auto' }}>
-          <div className="me-pop-in" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                {building && <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} />}
-                {buildJob.status === 'done' ? 'Готово ✓' : buildJob.status === 'failed' ? 'Ошибка' : 'Собираю ролик…'}
-              </span>
-              <button onClick={() => (building ? setBuildMinimized(true) : setBuildJob(null))}
-                title={building ? 'Свернуть — рендер продолжится в фоне' : 'Закрыть'}
-                className="inline-flex items-center gap-1 text-xs font-600 px-2 py-1 rounded-lg"
-                style={{ background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                {building ? <><Minus size={14} /> Свернуть</> : <X size={18} />}
-              </button>
-            </div>
-            <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-tertiary)', overflow: 'hidden', marginBottom: 10 }}>
-              <div className={building ? 'me-shimmer' : undefined} style={{ height: '100%', width: `${buildJob.status === 'done' ? 100 : (buildJob.progress || 0)}%`,
-                background: building ? undefined : (buildJob.status === 'failed' ? '#ef4444' : '#10b981'), transition: 'width .4s' }} />
-            </div>
-            <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-              Шагов: {buildJob.steps?.length || 0} · статус: {buildJob.status}
-            </div>
-            {Array.isArray(buildJob.steps) && buildJob.steps.length > 0 && (
-              <div className="space-y-1 mb-2" style={{ maxHeight: 200, overflow: 'auto' }}>
-                {buildJob.steps.map((s: any, i: number) => (
-                  <div key={i} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ color: s.status === 'done' ? '#10b981' : s.status === 'skipped' ? '#f59e0b' : s.status === 'running' ? 'var(--brand)' : 'var(--text-muted)' }}>●</span>
-                    {META[s.kind as MKind]?.label || s.kind}
-                    <span style={{ color: 'var(--text-muted)' }}>{s.status}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {buildJob.error && <p className="text-xs" style={{ color: '#ef4444' }}>{buildJob.error}</p>}
-            {buildJob.status === 'done' && (
-              <p className="text-xs mt-1" style={{ color: buildJob.resultAssetId ? '#10b981' : 'var(--text-muted)' }}>
-                {buildJob.resultAssetId ? 'Ролик добавлен в Галерею → вкладка «Референс».' : (buildJob.note || 'Конвейер выполнен.')}
-              </p>
-            )}
-            {buildJob.status === 'done' && buildJob.resultUrl && (
-              <a href={buildJob.resultUrl} download className="mt-3 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 px-4 rounded-xl w-full"
-                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', textDecoration: 'none' }}>
-                <Download size={16} /> Скачать видео
-              </a>
-            )}
-            {building && (
-              <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
-                Можно свернуть — ролик соберётся в фоне и появится в Галерее.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Плавающая пилюля: рендер в фоне (свернули прогресс) */}
-      {buildJob && buildMinimized && (
-        <button onClick={() => setBuildMinimized(false)} className={`me-float-in${buildJob.status === 'done' ? ' me-ready' : ''}`}
-          title={buildJob.status === 'done' ? 'Ролик готов — открыть' : 'Идёт сборка — открыть'}
-          style={{ position: 'absolute', right: 16, bottom: 84, zIndex: 96, display: 'inline-flex', alignItems: 'center', gap: 10,
-            background: 'var(--bg-secondary)', border: `1px solid ${buildJob.status === 'failed' ? '#ef4444' : buildJob.status === 'done' ? '#10b981' : 'var(--brand)'}`,
-            borderRadius: 999, padding: '8px 14px 8px 10px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.4)' }}>
-          {buildJob.status === 'done'
-            ? <Check size={16} style={{ color: '#10b981' }} />
-            : buildJob.status === 'failed'
-            ? <X size={16} style={{ color: '#ef4444' }} />
-            : <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} />}
-          <span className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>
-            {buildJob.status === 'done' ? 'Ролик готов' : buildJob.status === 'failed' ? 'Ошибка сборки' : `Собираю… ${buildJob.progress || 0}%`}
-          </span>
-        </button>
-      )}
-
-      {/* Прогресс ПАКЕТНОЙ сборки (N источников → N роликов) */}
-      {showBatch && batchJobs.length > 0 && !batchMinimized && (() => {
-        const done = batchJobs.filter((b) => b.job?.status === 'done').length;
-        const failed = batchJobs.filter((b) => b.job?.status === 'failed').length;
-        const total = batchJobs.length;
-        return (
-        <div onClick={() => (batchRunning ? setBatchMinimized(true) : setShowBatch(false))} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 480, maxHeight: '82vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                {batchRunning ? <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Film size={16} style={{ color: 'var(--brand)' }} />}
-                Пакет: {done}/{total} готово{failed ? ` · ${failed} с ошибкой` : ''}
-              </span>
-              <button onClick={() => (batchRunning ? setBatchMinimized(true) : setShowBatch(false))}
-                title={batchRunning ? 'Свернуть — сборка продолжится в фоне' : 'Закрыть'}
-                className="inline-flex items-center gap-1 text-xs font-600 px-2 py-1 rounded-lg"
-                style={{ background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                {batchRunning ? <><Minus size={14} /> Свернуть</> : <X size={18} />}
-              </button>
-            </div>
-            <div className="space-y-2.5">
-              {batchJobs.map((b, i) => {
-                const st = b.job?.status; const pct = st === 'done' ? 100 : (b.job?.progress || 0);
-                const col = st === 'failed' ? '#ef4444' : st === 'done' ? '#10b981' : 'var(--brand)';
-                return (
-                  <div key={i} className="rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[11px] font-700" style={{ color: 'var(--text-muted)' }}>#{i + 1}</span>
-                      <span className="text-xs font-600 flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{b.source}</span>
-                      <span className="text-[11px] font-700" style={{ color: col }}>
-                        {st === 'done' ? 'Готово ✓' : st === 'failed' ? 'Ошибка' : st === 'queued' ? 'В очереди' : `${pct}%`}
-                      </span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 999, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
-                      <div className={st !== 'done' && st !== 'failed' && batchRunning ? 'me-shimmer' : undefined}
-                        style={{ height: '100%', width: `${pct}%`, background: st === 'failed' ? '#ef4444' : st === 'done' ? '#10b981' : undefined, transition: 'width .4s' }} />
-                    </div>
-                    {b.job?.error && <p className="text-[11px] mt-1" style={{ color: '#ef4444' }}>{b.job.error}</p>}
-                    {st === 'done' && b.job?.resultUrl && (
-                      <a href={b.job.resultUrl} download className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-700" style={{ color: 'var(--brand)', textDecoration: 'none' }}>
-                        <Download size={12} /> Скачать
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
-              {batchRunning
-                ? 'Ролики собираются по очереди. Можно свернуть — всё доделается в фоне и появится в Галерее («Референс»).'
-                : 'Готовые ролики добавлены в Галерею → вкладка «Референс».'}
-            </p>
-          </div>
-        </div>
-        );
-      })()}
-
-      {/* Плавающая пилюля: пакетная сборка в фоне */}
-      {showBatch && batchJobs.length > 0 && batchMinimized && (() => {
-        const done = batchJobs.filter((b) => b.job?.status === 'done').length;
-        const total = batchJobs.length;
-        return (
-        <button onClick={() => setBatchMinimized(false)} className={`me-float-in${!batchRunning ? ' me-ready' : ''}`}
-          title={batchRunning ? 'Идёт пакетная сборка — открыть' : 'Пакет готов — открыть'}
-          style={{ position: 'absolute', right: 16, bottom: 140, zIndex: 96, display: 'inline-flex', alignItems: 'center', gap: 10,
-            background: 'var(--bg-secondary)', border: `1px solid ${batchRunning ? 'var(--brand)' : '#10b981'}`,
-            borderRadius: 999, padding: '8px 14px 8px 10px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.4)' }}>
-          {batchRunning ? <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Check size={16} style={{ color: '#10b981' }} />}
-          <span className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>Пакет {done}/{total}</span>
-        </button>
-        );
-      })()}
     </div>
   );
 }
