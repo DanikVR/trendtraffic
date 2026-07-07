@@ -387,8 +387,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
 
   const [name, setName] = useState('Сценарий');
-  const [brief, setBrief] = useState('');          // главный промт: общий сценарий ролика (для ИИ-режиссёра)
-  const [showBrief, setShowBrief] = useState(false);
+  const [brief, setBrief] = useState('');          // сохраняется в graph.brief; UI-кнопки «Сценарий» убраны — фича не читалась бэком (ИИ-режиссёр вырезан в v2.0.0)
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -1787,11 +1786,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         <button onClick={redo} disabled={!canRedo} title="Вперёд (Ctrl+Shift+Z)"
           className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canRedo ? 'pointer' : 'not-allowed' }}><Redo2 size={15} /></button>
-        <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра"
-          className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg"
-          style={{ background: brief.trim() ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${brief.trim() ? 'rgba(99,102,241,0.4)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-          <Sparkles size={15} /> Сценарий{brief.trim() ? ' ✓' : ''}
-        </button>
         <button onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-1.5 rounded-lg disabled:opacity-50"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
@@ -1803,17 +1797,8 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.05), transparent 60%), var(--bg-primary)',
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
 
-        {/* «Сценарий» — центральный хаб (просьба юзера): главный промт всегда на виду.
-            Центральный узел «Видео из галерии» убран — исходник для Omni выбирается
-            внутри самого облака Omni Flash (у него свой пикер Галереи). */}
-        <button onClick={() => setShowBrief(true)} title="Общий сценарий ролика — главный промт для ИИ-режиссёра (все ✨-шаги читают его)"
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 7,
-            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 700,
-            background: brief.trim() ? 'rgba(99,102,241,0.16)' : 'var(--bg-secondary)', color: brief.trim() ? 'var(--brand)' : 'var(--text-secondary)',
-            border: `1px ${brief.trim() ? 'solid rgba(99,102,241,0.5)' : 'dashed var(--border-strong)'}`, cursor: 'pointer', whiteSpace: 'nowrap',
-            boxShadow: '0 4px 22px rgba(99,102,241,0.28)' }}>
-          <Sparkles size={14} /> {brief.trim() ? `Сценарий ✓ ${brief.trim().slice(0, 26)}${brief.trim().length > 26 ? '…' : ''}` : 'Сценарий ролика — задайте тон ИИ'}
-        </button>
+        {/* Центральная кнопка «Сценарий ролика» убрана: фича brief не читалась бэком
+            (ИИ-режиссёр вырезан в v2.0.0). Центр холста оставлен пустым. */}
 
         {/* ── Облачные узлы + связи-стрелки ── */}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }} aria-hidden="true">
@@ -1960,32 +1945,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
         );
       })()}
 
-      {/* Главный промт — общий сценарий ролика (для ИИ-режиссёра) */}
-      {showBrief && (
-        <div onClick={() => setShowBrief(false)} style={{ position: 'absolute', inset: 0, zIndex: 92, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 520, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}><Sparkles size={18} style={{ color: 'var(--brand)' }} /> Сценарий ролика</span>
-              <button onClick={() => setShowBrief(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-              Опишите ролик одним абзацем — это <b>главный промт</b>. ИИ-режиссёр учитывает его во всех ✨ЛЛМ-шагах
-              (озвучка, исследование, выбор момента, субтитры). Узлы ниже — точечные настройки поверх этого замысла.
-            </p>
-            <textarea value={brief} onChange={(e) => { setBrief(e.target.value); setDirty(true); }} rows={6}
-              placeholder="Напр.: «Динамичный вертикальный ролик про утреннюю рутину продуктивного человека. Энергичный тон, разговорный язык, хук в первые 2 секунды, призыв подписаться в конце»."
-              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none mb-3"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-            <div className="flex items-center gap-2">
-              {brief.trim() && (
-                <button onClick={() => { setBrief(''); setDirty(true); }} className="text-sm font-600 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>Очистить</button>
-              )}
-              <button onClick={() => { save(); setShowBrief(false); }} className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-700 py-2.5 rounded-xl"
-                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Check size={16} /> Сохранить сценарий</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Попап «Сценарий ролика» удалён вместе с кнопками (brief не читается бэком). */}
 
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
       {cloudPanel && (
