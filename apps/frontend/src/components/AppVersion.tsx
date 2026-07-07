@@ -1897,7 +1897,16 @@
  *         Flow «Загрузки»» и шагами (открой Flow → «Загрузки» → выбери файл). Картинка — как было
  *         (авто-вставка через расширение). GalleryPage.tsx (sendToFlow ветвится по mediaType +
  *         videoPopup). */
-export const APP_VERSION = '1.6.131';
+/* 1.6.132 — UGC-диалоги: ОПЦИОНАЛЬНАЯ ВЫРЕЗКА ФОНА аватара (силуэт поверх медиа). Тумблер
+ *         «Вырезать фон аватара» в диалоге. Раньше в раскладке «фон + лицо сбоку» (media-bg-left/
+ *         right) аватар клался НЕПРОЗРАЧНЫМ прямоугольником со своим фоном. Теперь опц.: HeyGen
+ *         рендерит говорящего на ЗЕЛЁНОМ (submitTalkingPhotoVideo bgColor='#00FF00' → video_input.
+ *         background) → composeDialogueVideo делает chroma-key+despill (avatarChroma) → чистый
+ *         силуэт поверх медиа. Только media-bg (крупный план/two-shot/split — фон = сцена, не
+ *         трогаем). Безопасный фолбэк: HeyGen оставил свой фон (нет зелёного) → chromakey ничего
+ *         не режет = как прежде (бокс). avatar.ts, podcast_compose.ts (DlgComposeSeg.avatarChroma),
+ *         router.ts, MontageEditor.tsx. Синтетика PASS (зелёное→медиа, человек остался, нет утечки). */
+export const APP_VERSION = '1.6.132';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
