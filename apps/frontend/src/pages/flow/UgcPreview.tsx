@@ -8,6 +8,7 @@
  * типового плана пресета; точное распределение по фразам делает ИИ на сборке.
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound } from 'lucide-react';
 import type { UgcMode, UgcSpec } from './ugcTypes';
 
@@ -17,56 +18,56 @@ const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefe
 
 /* ── план сегментов (иллюстрация пресета; реальный план строит ИИ по тексту) ── */
 type SegView = 'closeup' | 'split' | 'broll' | 'pip' | 'dlgA' | 'dlgB' | 'both';
-interface PlanSeg { label: string; sub: string; kind: 'iv' | 'iii' | 'free'; view: SegView }
+interface PlanSeg { labelKey: string; sub?: string; subKey?: string; kind: 'iv' | 'iii' | 'free'; view: SegView }
 
 function retPlan(preset: UgcSpec['retentionPreset']): PlanSeg[] {
   if (preset === 'eco') return [
-    { label: 'Крючок', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
-    { label: 'Связка', sub: 'Avatar III', kind: 'iii', view: 'split' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'Призыв', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.hook', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.bridge', sub: 'Avatar III', kind: 'iii', view: 'split' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.cta', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
   ];
   if (preset === 'prem') return [
-    { label: 'Крючок', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
-    { label: 'Связка', sub: 'Avatar III', kind: 'iii', view: 'split' },
-    { label: 'Действие', sub: 'Avatar IV', kind: 'iv', view: 'pip' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'Эмоция', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
-    { label: 'Призыв', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.hook', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.bridge', sub: 'Avatar III', kind: 'iii', view: 'split' },
+    { labelKey: 'ugc.plan.action', sub: 'Avatar IV', kind: 'iv', view: 'pip' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.emotion', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.cta', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
   ];
   return [
-    { label: 'Крючок', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
-    { label: 'Связка', sub: 'Avatar III', kind: 'iii', view: 'split' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'Действие', sub: 'Avatar IV', kind: 'iv', view: 'pip' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'Призыв', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.hook', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
+    { labelKey: 'ugc.plan.bridge', sub: 'Avatar III', kind: 'iii', view: 'split' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.action', sub: 'Avatar IV', kind: 'iv', view: 'pip' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.cta', sub: 'Avatar IV', kind: 'iv', view: 'closeup' },
   ];
 }
 function dlgPlan(engagement: UgcSpec['dialogueEngagement']): PlanSeg[] {
   if (engagement === 'eco') return [
-    { label: 'A крупно', sub: 'говорит A', kind: 'iii', view: 'dlgA' },
-    { label: 'B крупно', sub: 'говорит B', kind: 'iii', view: 'dlgB' },
-    { label: 'A крупно', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'B крупно', sub: 'говорит B', kind: 'iii', view: 'dlgB' },
+    { labelKey: 'ugc.plan.aCloseup', subKey: 'ugc.plan.aSpeaking', kind: 'iii', view: 'dlgA' },
+    { labelKey: 'ugc.plan.bCloseup', subKey: 'ugc.plan.bSpeaking', kind: 'iii', view: 'dlgB' },
+    { labelKey: 'ugc.plan.aCloseup', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.bCloseup', subKey: 'ugc.plan.bSpeaking', kind: 'iii', view: 'dlgB' },
   ];
   if (engagement === 'dyn') return [
-    { label: 'Оба в кадре', sub: 'реакция $0', kind: 'iv', view: 'both' },
-    { label: 'A крупно', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'Фон + лицо', sub: 'вырезка', kind: 'iii', view: 'pip' },
-    { label: 'B крупно', sub: 'Avatar IV', kind: 'iv', view: 'dlgB' },
-    { label: 'Оба в кадре', sub: 'реакция $0', kind: 'iii', view: 'both' },
+    { labelKey: 'ugc.plan.bothInFrame', subKey: 'ugc.plan.reactionFree', kind: 'iv', view: 'both' },
+    { labelKey: 'ugc.plan.aCloseup', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.bgFace', subKey: 'ugc.plan.cutout', kind: 'iii', view: 'pip' },
+    { labelKey: 'ugc.plan.bCloseup', sub: 'Avatar IV', kind: 'iv', view: 'dlgB' },
+    { labelKey: 'ugc.plan.bothInFrame', subKey: 'ugc.plan.reactionFree', kind: 'iii', view: 'both' },
   ];
   return [
-    { label: 'A крупно', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
-    { label: 'Оба в кадре', sub: 'реакция $0', kind: 'iii', view: 'both' },
-    { label: 'B крупно', sub: 'говорит B', kind: 'iii', view: 'dlgB' },
-    { label: 'Фон + лицо', sub: 'вырезка', kind: 'iii', view: 'pip' },
-    { label: 'Врезка', sub: '$0', kind: 'free', view: 'broll' },
-    { label: 'A крупно', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
+    { labelKey: 'ugc.plan.aCloseup', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
+    { labelKey: 'ugc.plan.bothInFrame', subKey: 'ugc.plan.reactionFree', kind: 'iii', view: 'both' },
+    { labelKey: 'ugc.plan.bCloseup', subKey: 'ugc.plan.bSpeaking', kind: 'iii', view: 'dlgB' },
+    { labelKey: 'ugc.plan.bgFace', subKey: 'ugc.plan.cutout', kind: 'iii', view: 'pip' },
+    { labelKey: 'ugc.plan.cutaway', sub: '$0', kind: 'free', view: 'broll' },
+    { labelKey: 'ugc.plan.aCloseup', sub: 'Avatar IV', kind: 'iv', view: 'dlgA' },
   ];
 }
 
@@ -87,6 +88,7 @@ export interface UgcPreviewProps {
 const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
 export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines }: UgcPreviewProps) {
+  const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl : ugc.photoUrl;
   const firstLineMedia = ugc.script.find((l) => !!l.image)?.image || null;
 
@@ -97,11 +99,12 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const seg = plan ? plan[Math.min(curSeg, plan.length - 1)] : null;
 
   /* живые субтитры: слова из первой реплики реального скрипта (или образец) */
+  const capSample = t('ugc.subtitles.demoWords');
   const words = useMemo(() => {
     const t = (ugc.script[0]?.text || '').trim();
-    const ws = t ? t.split(/\s+/).slice(0, 8) : ['Пример', 'живых', 'субтитров'];
+    const ws = t ? t.split(/\s+/).slice(0, 8) : capSample.split(' ');
     return ws.length >= 2 ? ws : [...ws, '…'];
-  }, [ugc.script]);
+  }, [ugc.script, capSample]);
   const [widx, setWidx] = useState(0);
   const animate = !reducedMotion && (ugc.subtitles.style === 'word' || ugc.subtitles.style === 'karaoke');
   useEffect(() => {
@@ -144,18 +147,18 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const faceCell = (url: string | null, tag: string, onEmpty: () => void, emptyTitle?: string) => (
     <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
       {url ? (<>{cellTag(tag)}<img src={url} alt="" className="w-full h-full object-cover" /></>)
-        : emptyCell(emptyTitle || `${tag} — пока не выбран`, 'нажмите, чтобы выбрать', onEmpty)}
+        : emptyCell(emptyTitle || t('ugc.preview.emptyNotSelected', { tag }), t('ugc.preview.emptyClickToChoose'), onEmpty)}
     </div>
   );
   const clipCell = (tag: string, emptySub?: string) => (
     <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
       {ugc.clip ? (
         <>
-          {cellTag(tag + (ugc.clipFit === 'contain' ? ' · целиком' : ''))}
+          {cellTag(tag + (ugc.clipFit === 'contain' ? t('ugc.preview.tagFitContainSuffix') : ''))}
           <video src={`${ugc.clip.url}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full" style={{ objectFit: ugc.clipFit === 'contain' ? 'contain' : 'cover' }} />
           <span className="absolute flex items-center justify-center rounded-full" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 32, height: 32, background: 'rgba(0,0,0,.45)', border: '1.5px solid rgba(255,255,255,.75)', pointerEvents: 'none' }}><Play size={14} color="#fff" fill="#fff" /></span>
         </>
-      ) : emptyCell('Видео — пока не загружено', emptySub || 'нажмите — выбрать из Галереи', onEmptyClip)}
+      ) : emptyCell(t('ugc.preview.emptyClipTitle'), emptySub || t('ugc.preview.emptyClipSub'), onEmptyClip)}
     </div>
   );
   /* «медиа реплики» в диалоге: превью первого прикреплённого медиа; пусто → в панель «Реплики» */
@@ -168,7 +171,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
             ? <video src={`${firstLineMedia}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full object-cover" />
             : <img src={firstLineMedia} alt="" className="w-full h-full object-cover" />}
         </>
-      ) : emptyCell('Медиа реплики — пока нет', 'прикрепите фото или видео к реплике (⊞)', onOpenLines)}
+      ) : emptyCell(t('ugc.preview.emptyLineMediaTitle'), t('ugc.preview.emptyLineMediaSub'), onOpenLines)}
     </div>
   );
 
@@ -177,9 +180,9 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     <div style={{ position: 'absolute', bottom: 0, width: '44%', height: '42%', zIndex: 4, ...(side === 'right' ? { right: '4%' } : { left: '4%' }) }}>
       {url ? (
         cutout ? (
-          <div className="w-full h-full" style={{ ...CHECKER, borderRadius: '12px 12px 0 0', padding: 4 }} title="Прозрачный фон — в ролике останется только человек">
+          <div className="w-full h-full" style={{ ...CHECKER, borderRadius: '12px 12px 0 0', padding: 4 }} title={t('ugc.preview.cutoutTooltip')}>
             <img src={url} alt="" className="w-full h-full object-cover" style={{ borderRadius: '9px 9px 0 0' }} />
-            <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 750, letterSpacing: '.04em', textTransform: 'uppercase', color: '#fff', background: ACC, borderRadius: 999, padding: '1.5px 7px', whiteSpace: 'nowrap' }}>прозрачный фон</span>
+            <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 750, letterSpacing: '.04em', textTransform: 'uppercase', color: '#fff', background: ACC, borderRadius: 999, padding: '1.5px 7px', whiteSpace: 'nowrap' }}>{t('ugc.preview.cutoutBadge')}</span>
           </div>
         ) : (
           <img src={url} alt="" className="w-full h-full object-cover" style={{ borderRadius: '12px 12px 0 0', border: '1px solid rgba(255,255,255,.25)', borderBottom: 'none' }} />
@@ -187,7 +190,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       ) : (
         <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
           style={{ border: '1.5px dashed #6b6b75', borderRadius: 12, background: 'rgba(0,0,0,.35)', color: '#9a9aa4', cursor: 'pointer' }}>
-          <UserRound size={16} /> Аватар — пока<br />не выбран
+          <UserRound size={16} /> {t('ugc.preview.emptyAvatarOverlay')}
         </button>
       )}
     </div>
@@ -203,45 +206,45 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
 
     if (mode === 'dialogue') {
       const view = seg?.view || 'dlgA';
-      if (view === 'dlgA') return full(faceCell(ugc.photoUrl, 'Собеседник A · крупный план', onEmptyAvatar, 'Собеседник A — пока не выбран'));
-      if (view === 'dlgB') return full(faceCell(ugc.photoBUrl, 'Собеседник B · крупный план', onEmptyPhotoB, 'Собеседник B — пока не выбран'));
+      if (view === 'dlgA') return full(faceCell(ugc.photoUrl, t('ugc.preview.tagPeerACloseup'), onEmptyAvatar, t('ugc.preview.emptyPeerA')));
+      if (view === 'dlgB') return full(faceCell(ugc.photoBUrl, t('ugc.preview.tagPeerBCloseup'), onEmptyPhotoB, t('ugc.preview.emptyPeerB')));
       if (view === 'both') return stack(
-        faceCell(ugc.photoUrl, 'Собеседник A', onEmptyAvatar, 'Собеседник A — пока не выбран'),
-        faceCell(ugc.photoBUrl, 'Собеседник B · реакция $0', onEmptyPhotoB, 'Собеседник B — пока не выбран'),
+        faceCell(ugc.photoUrl, t('ugc.preview.tagPeerA'), onEmptyAvatar, t('ugc.preview.emptyPeerA')),
+        faceCell(ugc.photoBUrl, t('ugc.preview.tagPeerBReaction'), onEmptyPhotoB, t('ugc.preview.emptyPeerB')),
       );
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
-          {lineMediaCell('Медиа реплики · фоном')}
+          {lineMediaCell(t('ugc.preview.tagLineMediaBg'))}
           {overlayAvatar('left', ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar)}
         </div>
       );
-      return full(lineMediaCell('Врезка · лица нет · $0'));
+      return full(lineMediaCell(t('ugc.preview.tagCutawayNoFace')));
     }
 
     if (mode === 'retention') {
       const view = seg?.view || 'closeup';
-      if (view === 'closeup') return full(faceCell(avatarImg, 'Аватар · крупный план', onEmptyAvatar));
+      if (view === 'closeup') return full(faceCell(avatarImg, t('ugc.preview.tagAvatarCloseup'), onEmptyAvatar));
       if (view === 'split') return ugc.placement === 'bottom'
-        ? stack(clipCell('Видеоряд'), faceCell(avatarImg, 'Аватар', onEmptyAvatar))
-        : stack(faceCell(avatarImg, 'Аватар', onEmptyAvatar), clipCell('Видеоряд'));
+        ? stack(clipCell(t('ugc.common.footage')), faceCell(avatarImg, t('ugc.common.avatar'), onEmptyAvatar))
+        : stack(faceCell(avatarImg, t('ugc.common.avatar'), onEmptyAvatar), clipCell(t('ugc.common.footage')));
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
-          {clipCell('Видеоряд')}
+          {clipCell(t('ugc.common.footage'))}
           {overlayAvatar('left', false, avatarImg, onEmptyAvatar)}
         </div>
       );
-      return full(clipCell('Врезка · лица нет · $0'));
+      return full(clipCell(t('ugc.preview.tagCutawayNoFace')));
     }
 
     /* solo: раскладка спеки */
     if (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') return (
       <div className="absolute inset-0 flex">
-        {clipCell('Видеоряд')}
+        {clipCell(t('ugc.common.footage'))}
         {overlayAvatar(ugc.placement === 'overlay-right' ? 'right' : 'left', false, avatarImg, onEmptyAvatar)}
       </div>
     );
-    const av = faceCell(avatarImg, 'Аватар', onEmptyAvatar);
-    const vid = clipCell('Видеоряд', 'не обязательно · нажмите, чтобы выбрать');
+    const av = faceCell(avatarImg, t('ugc.common.avatar'), onEmptyAvatar);
+    const vid = clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'));
     return ugc.placement === 'bottom' ? stack(vid, av) : stack(av, vid);
   };
 
@@ -249,7 +252,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     const dims = fmt === '9x16' ? (mini ? { w: 132, h: 235 } : { w: 246, h: 437 }) : (mini ? { w: 300, h: 169 } : { w: 496, h: 279 });
     return (
       <div key={fmt} className="flex flex-col items-center gap-2">
-        <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{fmt === '9x16' ? '9:16 · TikTok, Reels, Shorts' : '16:9 · YouTube'}</span>
+        <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{fmt === '9x16' ? t('ugc.format.label916') : t('ugc.format.label169')}</span>
         <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: fmt === '9x16' ? 20 : 14, border: '1px solid var(--border-strong)', background: '#101013', boxShadow: '0 14px 34px rgba(0,0,0,.35)' }}>
           {frameInner(fmt)}
           {caption(fmt)}
@@ -283,16 +286,16 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
                 <button key={i} onClick={() => setCurSeg(i)}
                   className="flex flex-col items-center rounded-lg px-2.5 py-1"
                   style={{ ...st, border: `1px solid ${String(st.borderColor)}`, cursor: 'pointer', minWidth: 58, boxShadow: on ? `0 0 0 2px var(--bg-primary), 0 0 0 3.5px ${ACC2}` : 'none' }}>
-                  <span className="text-[9.5px] font-750" style={{ letterSpacing: '.02em' }}>{s.label}</span>
-                  <span className="text-[8.5px] font-650" style={{ color: s.kind === 'iv' ? 'rgba(255,255,255,.78)' : s.kind === 'free' ? '#10b981' : undefined, opacity: s.kind === 'iii' ? .8 : 1 }}>{s.sub}</span>
+                  <span className="text-[9.5px] font-750" style={{ letterSpacing: '.02em' }}>{t(s.labelKey)}</span>
+                  <span className="text-[8.5px] font-650" style={{ color: s.kind === 'iv' ? 'rgba(255,255,255,.78)' : s.kind === 'free' ? '#10b981' : undefined, opacity: s.kind === 'iii' ? .8 : 1 }}>{s.subKey ? t(s.subKey) : s.sub}</span>
                 </button>
               );
             })}
           </div>
           <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
             {mode === 'retention'
-              ? 'Примерный план пресета: фиолетовое — дорогой Avatar IV, «$0» — сегменты без лица. Точный план ИИ строит по вашему тексту.'
-              : 'Примерный план диалога: ИИ решает, когда крупный план, когда оба в кадре (реакция — статичное фото, $0).'}
+              ? t('ugc.plan.noteRetention')
+              : t('ugc.plan.noteDialogue')}
           </span>
         </div>
       )}
