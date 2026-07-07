@@ -1929,7 +1929,15 @@
  *         image-поля, затем вставляет. Устойчивость к перезагрузке: pendingInject в storage +
  *         resumePendingInject при загрузке в проект доводит вставку. injectUrlCore унифицировал
  *         inject-url и pickGalleryItem. content-flow.js, manifest 0.2.7→0.2.8. */
-export const APP_VERSION = '1.6.135';
+/* 2.0.0 — БОЛЬШАЯ ЧИСТКА TrendFlow (мажор). Убрано всё, что шло через домашний ПК и
+ *         линейный монтаж OpenMontage. TrendFlow теперь = 6 облаков: Google Flow(+Комментатор),
+ *         Omni, UGC, Hotebook, Редактор, Контент-план. УДАЛЕНО: облако «Подкаст» (студия
+ *         говорящих голов на GPU), линейный редактор монтажа + попап «Выберите пресет сценария»,
+ *         SpatialReal, домашние воркеры (render-worker/sr-capture). UGC-аватар: «Коллекция»
+ *         (картинка из Галереи) и «Своё фото» → HeyGen Avatar IV; текстовая озвучка → ElevenLabs.
+ *         Enterprise-ключи сведены к anthropic/gemini/tikhub/heygen/elevenlabs/fal/openai.
+ *         Hotebook пока на воркере (замена Chrome-расширением — следующий этап). ~7000 строк вырезано. */
+export const APP_VERSION = '2.0.0';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
