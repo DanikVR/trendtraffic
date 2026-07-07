@@ -306,6 +306,7 @@ interface UgcSpec {
   avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
   avatarProvider: 'gallery';                                // аватар из Галереи (коллекция) / своё фото → HeyGen
   photoUrl: string | null; photoName: string | null;        // своё фото
+  faceProvider: 'heygen_api' | 'heygen_ext';                // чем рендерить лицо: HeyGen API (ключ) ИЛИ подписка через расширение
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
   voice: PodVoice;
   source: PodSource;                                        // 'gen' | 'diarize'
@@ -334,6 +335,7 @@ const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
   avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
   photoUrl: null, photoName: null,
+  faceProvider: 'heygen_api',
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],
   recordingUrl: null, recordingName: null,
@@ -462,6 +464,23 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugcResultAR, setUgcResultAR] = useState(9 / 16);
   // Аватар к удалению из коллекции (свой ConfirmModal вместо браузерного confirm).
   const [ugcDelAvatar, setUgcDelAvatar] = useState<{ id: string; url: string; name: string } | null>(null);
+  // Присутствие/подключение единого расширения TrendTraffic (Flow · NotebookLM · HeyGen). Мост вещает
+  // одну метку 'tt-flow-ext' для всех сервисов — её же слушают FlowExtPanel и Hotebook.
+  const [hgExt, setHgExt] = useState<{ present: boolean | null; connected: boolean }>({ present: null, connected: false });
+  useEffect(() => {
+    const onMsg = (ev: MessageEvent) => {
+      if (ev.source !== window) return;
+      const d = ev.data as { source?: string; type?: string; connected?: boolean; ok?: boolean };
+      if (!d || d.source !== 'tt-flow-ext') return;
+      if (d.type === 'present' || d.type === 'status') setHgExt((s) => ({ ...s, present: true }));
+      if (d.type === 'status') setHgExt((s) => ({ ...s, connected: !!d.connected }));
+      if (d.type === 'connected') setHgExt({ present: true, connected: !!d.ok });
+    };
+    window.addEventListener('message', onMsg);
+    window.postMessage({ source: 'trendtraffic', type: 'status' }, window.location.origin);
+    const t = window.setTimeout(() => setHgExt((s) => (s.present === null ? { ...s, present: false } : s)), 1400);
+    return () => { window.removeEventListener('message', onMsg); window.clearTimeout(t); };
+  }, []);
   const ugcSaveNow = async () => {
     await save();
     setUgcSavedFlash(true);
@@ -2275,6 +2294,29 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                       <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Ваше фото оживит <b>HeyGen Avatar IV</b> (портрет анфас). Голос — по тексту (жен/муж ниже) или из вашей записи. Нужен ключ HeyGen в Настройки → Генерация.</p>
                     </div>
                   )}
+                  {/* Провайдер рендера лица: HeyGen API (ключ, ~$3/мин) ИЛИ подписка через расширение (втрое дешевле) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Рендер лица:</span>
+                      {([['heygen_api', 'HeyGen API'], ['heygen_ext', 'По подписке']] as [UgcSpec['faceProvider'], string][]).map(([p, lbl]) => (
+                        <button key={p} onClick={() => ugcMutate((u) => ({ ...u, faceProvider: p }))} className="flex-1 py-1.5 rounded-lg text-[10px] font-700"
+                          style={{ background: ugc.faceProvider === p ? 'rgba(14,158,119,0.14)' : 'var(--bg-secondary)', color: ugc.faceProvider === p ? '#0E9E77' : 'var(--text-muted)', border: `1px solid ${ugc.faceProvider === p ? '#0E9E77' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                      ))}
+                    </div>
+                    {ugc.faceProvider === 'heygen_ext' ? (
+                      <div className="text-[10px] px-2 py-1.5 rounded-md leading-relaxed" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+                        Головы рендерит расширение в вашей вкладке <b>app.heygen.com</b> по подписке (втрое дешевле API).{' '}
+                        Расширение:{' '}
+                        <b style={{ color: hgExt.present === false ? '#ef4444' : hgExt.connected ? '#0E9E77' : hgExt.present ? '#f59e0b' : 'var(--text-muted)' }}>
+                          {hgExt.present === null ? 'проверяю…' : hgExt.present === false ? 'не установлено' : hgExt.connected ? 'подключено' : 'установлено, войдите в аккаунт'}
+                        </b>.
+                        {hgExt.present === false ? <> <a href="/trendtraffic-extension.zip" download style={{ color: '#0E9E77', textDecoration: 'underline' }}>Скачать расширение</a> (единое — Flow · NotebookLM · HeyGen).</> : null}
+                        {' '}Держите открытой вкладку студии HeyGen с активной подпиской.
+                      </div>
+                    ) : (
+                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Через HeyGen API (ключ в Настройки → Генерация), оплата pay-as-you-go (~$3/мин Avatar IV).</p>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Положение:</span>
                     {([['top', 'Сверху'], ['bottom', 'Снизу'], ['overlay-left', 'Фон · слева'], ['overlay-right', 'Фон · справа']] as [UgcSpec['placement'], string][]).map(([p, lbl]) => (

@@ -47,6 +47,7 @@ import renderRouter from './modules/render/router.js';
 import notebooklmRouter from './modules/notebooklm/router.js';
 import flowExtRouter, { INGEST_LIMIT as FLOW_INGEST_LIMIT } from './modules/flow-ext/router.js';
 import notebooklmExtRouter, { INGEST_LIMIT as NLM_INGEST_LIMIT } from './modules/notebooklm-ext/router.js';
+import heygenExtRouter, { INGEST_LIMIT as HEYGEN_INGEST_LIMIT } from './modules/heygen-ext/router.js';
 import videoEditRouter from './modules/video_edit/router.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
@@ -151,6 +152,10 @@ app.use('/api/flow-ext', express.json({ limit: FLOW_INGEST_LIMIT }), flowExtRout
 // /ingest, поэтому свой БОЛЬШОЙ json-лимит ДО глобального express.json() (иначе 413).
 // JWT + Enterprise — внутри роутера.
 app.use('/api/notebooklm-ext', express.json({ limit: NLM_INGEST_LIMIT }), notebooklmExtRouter);
+
+// 2.7 HeyGen по подписке — расширение шлёт готовые «головы» (talking-photo mp4) base64 в /ingest,
+// нужен большой json-лимит ДО глобального express.json(). JWT + Enterprise — внутри роутера.
+app.use('/api/heygen-ext', express.json({ limit: HEYGEN_INGEST_LIMIT }), heygenExtRouter);
 
 // 3. Подключение глобального парсера JSON-данных для остальных эндпоинтов
 app.use(express.json());

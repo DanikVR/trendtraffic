@@ -19,7 +19,8 @@ import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
 import { generatePodcastDialogue, tagUgcRetention, directDialogue } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
-import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
+import { heygenVideoStatus, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
+import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
 import { composeCommentator, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
@@ -247,6 +248,63 @@ function linesForRetention(script: any[], durSec: number): RetLine[] {
   return out;
 }
 
+/**
+ * Отрендерить «говорящие головы» одним из двух путей и вернуть segIndex → локальный filePath.
+ *  - 'api'  : HeyGen API (x-api-key, pay-as-you-go ~$3/мин) — как было всегда.
+ *  - 'ext'  : очередь расширения (HeyGen по ПОДПИСКЕ клиента, втрое дешевле; enqueue → wait).
+ * Обе ветки принимают один список HeadSpec — так три сценария (photo/удержание/диалоги)
+ * рендерят лица единообразно, а выбор провайдера — один флаг. Каждая голова: своё фото +
+ * аудио-сегмент (свой голос/ElevenLabs) + движок IV/III + размеры (+опц. хромакей).
+ */
+async function renderTalkingHeads(opts: {
+  tenantId: string;
+  jobId: string;
+  provider: 'api' | 'ext';
+  hgKey: string | null;                 // нужен только для 'api'
+  heads: HeadSpec[];                    // photoUrl/audioUrl — уже АБСОЛЮТНЫЕ
+  onProgress?: (done: number, total: number) => void;
+}): Promise<Record<number, string>> {
+  const out: Record<number, string> = {};
+  if (!opts.heads.length) return out;
+
+  // Подписочный путь: кладём головы в очередь расширения и ждём готовые mp4.
+  if (opts.provider === 'ext') {
+    const ids = await enqueueHeygenHeads(opts.tenantId, opts.jobId, opts.heads);
+    const results = await waitHeygenHeads(opts.tenantId, ids, { onProgress: opts.onProgress });
+    for (const r of results) out[r.segIndex] = r.filePath;
+    return out;
+  }
+
+  // API-путь: talking_photo кэшируем по фото (одно фото = один upload), сабмит + поллинг.
+  if (!opts.hgKey) throw new Error('нет ключа HeyGen');
+  const tpCache = new Map<string, string>();
+  const submitted: { segIndex: number; videoId: string }[] = [];
+  for (const h of opts.heads) {
+    let tpId = tpCache.get(h.photoUrl);
+    if (!tpId) { tpId = await uploadTalkingPhoto(opts.hgKey, h.photoUrl); tpCache.set(h.photoUrl, tpId); }
+    const videoId = await submitTalkingPhotoVideo(opts.hgKey, {
+      talkingPhotoId: tpId, useIV: h.useIV !== false, expressive: h.expressive !== false,
+      width: h.width || 1080, height: h.height || 1920, audioUrl: h.audioUrl,
+      ...(h.bgColor ? { bgColor: h.bgColor } : {}),
+    });
+    submitted.push({ segIndex: h.segIndex, videoId });
+  }
+  const deadline = Date.now() + 30 * 60_000;
+  const pending = new Set(submitted.map((x) => x.segIndex));
+  while (pending.size && Date.now() < deadline) {
+    await new Promise((r2) => setTimeout(r2, 5000));
+    for (const { segIndex, videoId } of submitted) {
+      if (!pending.has(segIndex)) continue;
+      const st = await heygenVideoStatus(opts.hgKey, videoId);
+      if (st.status === 'failed' || st.status === 'error') throw new Error(`HeyGen сегмент ${segIndex}: ${st.error || 'ошибка'}`);
+      if (st.status === 'completed' && st.url) { const dl = await downloadToRenders(st.url, 'head'); out[segIndex] = dl.filePath; pending.delete(segIndex); }
+    }
+    opts.onProgress?.(submitted.length - pending.size, submitted.length);
+  }
+  if (pending.size) throw new Error('часть сегментов HeyGen не уложилась в 30 минут');
+  return out;
+}
+
 /** POST /ugc/build — запустить сборку. body: { spec: UgcSpec-подмножество }. → { jobId }. */
 router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
   try {
@@ -254,6 +312,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const script: any[] = Array.isArray(spec.script) ? spec.script : [];
     const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
     const isPhoto = spec.avatarSource === 'photo';
+    // Провайдер рендера лица: 'ext' = HeyGen по ПОДПИСКЕ через расширение браузера (втрое дешевле,
+    // но нужна открытая вкладка студии HeyGen у клиента); иначе 'api' — HeyGen API (x-api-key).
+    const faceProvider: 'api' | 'ext' = spec.faceProvider === 'heygen_ext' ? 'ext' : 'api';
     // «Коллекция» = выбранный аватар из Галереи; его картинка идёт в HeyGen как обычное фото.
     const galleryAvatarUrl = spec.avatarSource === 'collection' ? String(spec.avatarUrl || '') : '';
     const avatarPhotoUrl = String(spec.photoUrl || galleryAvatarUrl || '');
@@ -282,8 +343,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       const photoA: string = String(spec.dialogue.photoA || spec.photoUrl || '');
       const photoB: string = String(spec.dialogue.photoB || '');
       if (!photoA || !photoB) return res.status(400).json({ error: 'Загрузите два фото: «Спикер A» и «Спикер B».' });
-      const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-      if (!hgKey) return res.status(400).json({ error: 'Для диалога нужен ключ HeyGen (Avatar IV/III) — Настройки → Генерация.' });
+      const hgKey = faceProvider === 'api' ? await getEffectiveProviderKey(req.tenantId!, 'heygen') : null;
+      if (faceProvider === 'api' && !hgKey) return res.status(400).json({ error: 'Для диалога нужен ключ HeyGen (Avatar IV/III) — Настройки → Генерация, либо переключите провайдер на «HeyGen по подписке».' });
       if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не скачает аудио.' });
       const engagement: DlgEngagement = ['eco', 'bal', 'dyn'].includes(spec.dialogue.engagement) ? spec.dialogue.engagement : 'bal';
       const cutout = !!spec.dialogue.cutout; // вырезать фон аватара в раскладке «фон+лицо сбоку»
@@ -303,9 +364,10 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const rec = await downloadToRenders(abs(String(spec.recordingUrl)), 'dlgrec');
           const Drec = await mediaDuration(rec.filePath);
           if (!(Drec > 1)) throw new Error('запись пустая/короткая');
-          j.status = 'загружаю фото в HeyGen';
+          j.status = 'готовлю фото спикеров';
+          // pA/pB — локальные копии фото для two-shot (второй спикер статичным фото). Загрузку
+          // talking_photo в HeyGen делает renderTalkingHeads (кэш по фото — каждое грузится 1 раз).
           const [pA, pB] = await Promise.all([downloadToRenders(abs(photoA), 'dlgpa'), downloadToRenders(abs(photoB), 'dlgpb')]);
-          const [tpA, tpB] = await Promise.all([uploadTalkingPhoto(hgKey, abs(photoA)), uploadTalkingPhoto(hgKey, abs(photoB))]);
 
           // 2) план сегментов + LLM-режиссура (движок IV/III, two-shot, раскладка медиа)
           j.status = 'план диалога (LLM)';
@@ -336,34 +398,25 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const dl = await downloadToRenders(abs(s.image), s.isVideo ? 'dlgmv' : 'dlgmi'); mediaCache.set(s.image, dl.filePath);
           }
 
-          // 4) рендер лиц: только там, где лицо видно (media-full/держание — без лица = дёшево)
-          j.status = 'рендер лиц (HeyGen)';
+          // 4) рендер лиц: только там, где лицо видно (media-full/держание — без лица = дёшево).
+          // Каждая голова — фото своего спикера (A/B), движок IV/III; 'ext' = по подписке через расширение.
+          j.status = faceProvider === 'ext' ? 'рендер лиц по подписке (открой вкладку студии HeyGen)' : 'рендер лиц (HeyGen)';
           const faceSegs = segs.map((s, i) => ({ s, i })).filter((x) => x.s.kind === 'speech' && x.s.speaker && x.s.layout !== 'media-full' && x.s.srcT0 != null && x.s.srcT1 != null);
-          const submitted: { i: number; videoId: string }[] = [];
+          const photoAabs = abs(photoA), photoBabs = abs(photoB);
+          const heads: HeadSpec[] = [];
           for (const { s, i } of faceSegs) {
             const slice = await sliceAudioToRenders(rec.filePath, s.srcT0 as number, s.srcT1 as number, 'dlgseg');
-            const videoId = await submitTalkingPhotoVideo(hgKey, {
-              talkingPhotoId: s.speaker === 'A' ? tpA : tpB, useIV: s.engine === 'iv', expressive: true,
-              width: 1080, height: 1920, audioUrl: abs(slice.fileUrl),
+            heads.push({
+              segIndex: i, photoUrl: s.speaker === 'A' ? photoAabs : photoBabs,
+              audioUrl: abs(slice.fileUrl), useIV: s.engine === 'iv', width: 1080, height: 1920, expressive: true,
               // фон+лицо сбоку + вырезка → рендерим на зелёном (HeyGen матирует фото), потом chroma-key
               ...(cutout && isBgLayout(s.layout) ? { bgColor: '#00FF00' } : {}),
             });
-            submitted.push({ i, videoId });
           }
-          const avatarPaths: Record<number, string> = {};
-          const deadline = Date.now() + 30 * 60_000;
-          const pending = new Set(submitted.map((x) => x.i));
-          while (pending.size && Date.now() < deadline) {
-            await new Promise((r2) => setTimeout(r2, 5000));
-            for (const { i, videoId } of submitted) {
-              if (!pending.has(i)) continue;
-              const st = await heygenVideoStatus(hgKey, videoId);
-              if (st.status === 'failed' || st.status === 'error') throw new Error(`HeyGen сегмент ${i}: ${st.error || 'ошибка'}`);
-              if (st.status === 'completed' && st.url) { const dl = await downloadToRenders(st.url, 'dlghead'); avatarPaths[i] = dl.filePath; pending.delete(i); }
-            }
-            j.status = `рендер лиц (${submitted.length - pending.size}/${submitted.length})`;
-          }
-          if (pending.size) throw new Error('часть сегментов HeyGen не уложилась в 30 минут');
+          const avatarPaths = await renderTalkingHeads({
+            tenantId: j.tenantId!, jobId, provider: faceProvider, hgKey, heads,
+            onProgress: (d, t) => { j.status = `рендер лиц (${d}/${t})`; },
+          });
 
           // 5) склейка: голос (с растяжкой) + видео сегментов + титры + музыка
           j.status = 'склейка голоса';
@@ -411,8 +464,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     // только фон). Только HeyGen (IV/III) — SpatialReal не мешаем.
     if (spec.retention?.preset && isPhoto) {
       if (!spec.photoUrl) return res.status(400).json({ error: 'Загрузите своё фото (портрет анфас) во вкладке «Своё фото».' });
-      const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-      if (!hgKey) return res.status(400).json({ error: 'Для удержания нужен ключ HeyGen (Avatar IV/III) — Настройки → Генерация.' });
+      const hgKey = faceProvider === 'api' ? await getEffectiveProviderKey(req.tenantId!, 'heygen') : null;
+      if (faceProvider === 'api' && !hgKey) return res.status(400).json({ error: 'Для удержания нужен ключ HeyGen (Avatar IV/III) — Настройки → Генерация, либо переключите провайдер на «HeyGen по подписке».' });
       const useRecording = spec.source === 'diarize' && spec.recordingUrl;
       const elevenKey = useRecording ? null : await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
       if (!useRecording && !scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
@@ -451,40 +504,20 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const faceCount = segsPlan.filter((s) => s.engine !== 'free').length;
           j.note = `${tag.note}; лицевых сегментов ${faceCount}`;
 
-          // 3) фото → talking_photo (один раз)
-          j.status = 'загружаю фото в HeyGen';
-          const tpId = await uploadTalkingPhoto(hgKey, abs(String(spec.photoUrl)));
-          const voiceId = (await pickVoice(hgKey, gender)) || undefined;
-
-          // 4) рендер лицевых сегментов (посегментно IV/III) — сабмит + поллинг
-          j.status = 'рендер лица (HeyGen)';
+          // 3) нарезка аудио под лицевые сегменты + рендер голов (посегментно IV/III).
+          // Одно фото на все головы (хелпер кэширует talking_photo). 'ext' = по подписке через расширение.
+          j.status = faceProvider === 'ext' ? 'рендер лица по подписке (открой вкладку студии HeyGen)' : 'рендер лица (HeyGen)';
           const faceIdx = segsPlan.map((s, i) => ({ s, i })).filter((x) => x.s.engine !== 'free');
-          const submitted: { i: number; videoId: string }[] = [];
+          const photoAbs = abs(String(spec.photoUrl));
+          const heads: HeadSpec[] = [];
           for (const { s, i } of faceIdx) {
             const slice = await sliceAudioToRenders(voice.filePath, s.t0, s.t1, 'retseg');
-            const videoId = await submitTalkingPhotoVideo(hgKey, {
-              talkingPhotoId: tpId, useIV: s.engine === 'iv', expressive: true, width: 1080, height: 1920,
-              audioUrl: abs(slice.fileUrl),
-            });
-            submitted.push({ i, videoId });
+            heads.push({ segIndex: i, photoUrl: photoAbs, audioUrl: abs(slice.fileUrl), useIV: s.engine === 'iv', width: 1080, height: 1920, expressive: true });
           }
-          const avatarPaths: Record<number, string> = {};
-          const deadline = Date.now() + 30 * 60_000;
-          const pending = new Set(submitted.map((x) => x.i));
-          while (pending.size && Date.now() < deadline) {
-            await new Promise((r2) => setTimeout(r2, 5000));
-            for (const { i, videoId } of submitted) {
-              if (!pending.has(i)) continue;
-              const st = await heygenVideoStatus(hgKey, videoId);
-              if (st.status === 'failed' || st.status === 'error') throw new Error(`HeyGen сегмент ${i}: ${st.error || 'ошибка'}`);
-              if (st.status === 'completed' && st.url) {
-                const dl = await downloadToRenders(st.url, 'rethead');
-                avatarPaths[i] = dl.filePath; pending.delete(i);
-              }
-            }
-            j.status = `рендер лица (${submitted.length - pending.size}/${submitted.length})`;
-          }
-          if (pending.size) throw new Error('часть сегментов HeyGen не уложилась в 30 минут');
+          const avatarPaths = await renderTalkingHeads({
+            tenantId: j.tenantId!, jobId, provider: faceProvider, hgKey, heads,
+            onProgress: (d, t) => { j.status = `рендер лица (${d}/${t})`; },
+          });
 
           // 5) склейка по каждому B-roll (аватар переиспользуем — батч дешёвый)
           const composeSegs = (segsPlan.map((s, i) => ({
@@ -528,8 +561,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     // Озвучка: своя запись (diarize) ИЛИ текст → ElevenLabs (11 Labs) → HeyGen поёт наше аудио.
     if (isPhoto || galleryAvatarUrl) {
       if (!avatarPhotoUrl) return res.status(400).json({ error: 'Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).' });
-      const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
-      if (!hgKey) return res.status(400).json({ error: 'Для оживления фото добавьте ключ HeyGen в Настройки → Генерация (Avatar IV).' });
+      const hgKey = faceProvider === 'api' ? await getEffectiveProviderKey(req.tenantId!, 'heygen') : null;
+      if (faceProvider === 'api' && !hgKey) return res.status(400).json({ error: 'Для оживления фото добавьте ключ HeyGen в Настройки → Генерация (Avatar IV), либо переключите провайдер на «HeyGen по подписке».' });
       const useRecording = spec.source === 'diarize' && spec.recordingUrl;
       if (!useRecording && !scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или разберите запись.' });
       const elevenKey = useRecording ? null : await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
@@ -544,28 +577,18 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       void (async () => {
         const j = ugcJobs.get(jobId)!;
         try {
-          j.status = 'загружаю фото в HeyGen';
-          const tpId = await uploadTalkingPhoto(hgKey, abs(avatarPhotoUrl));
           j.status = useRecording ? 'готовлю запись' : 'озвучка (ElevenLabs)';
           const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, scriptText.slice(0, 2500), gender));
-          j.status = 'генерирую аватар (Avatar IV)';
-          const videoId = await submitTalkingPhotoVideo(hgKey, {
-            talkingPhotoId: tpId, useIV: true, expressive: true, width: 1080, height: 1920,
-            audioUrl: voiceUrl,
+          // Голова: цельный Avatar IV на всю дорожку голоса. 'ext' = по подписке через расширение.
+          j.status = faceProvider === 'ext' ? 'аватар по подписке (открой вкладку студии HeyGen)' : 'генерирую аватар (Avatar IV)';
+          const heads = await renderTalkingHeads({
+            tenantId: j.tenantId!, jobId, provider: faceProvider, hgKey,
+            heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true }],
+            onProgress: (d, t) => { j.status = faceProvider === 'ext' ? `аватар по подписке (${d}/${t})` : 'генерирую аватар (Avatar IV)'; },
           });
-          const deadline = Date.now() + 20 * 60_000;
-          let hgUrl = '';
-          while (Date.now() < deadline) {
-            await new Promise((r2) => setTimeout(r2, 5000));
-            const st = await heygenVideoStatus(hgKey, videoId);
-            if (st.status === 'failed' || st.status === 'error') throw new Error(`HeyGen: ${st.error || 'ошибка рендера'}`);
-            if (st.status === 'completed' && st.url) { hgUrl = st.url; break; }
-            j.status = `генерирую аватар (Avatar IV, ${st.status})`;
-          }
-          if (!hgUrl) throw new Error('HeyGen не отдал видео за 20 минут');
+          const avatarPath = heads[0];
+          if (!avatarPath) throw new Error('HeyGen не отдал видео');
 
-          j.status = 'скачиваю аватар';
-          const avatar = await downloadToRenders(hgUrl, 'ugchead-hg');
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
 
@@ -573,8 +596,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const fmt = outFormats[f];
             j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'склейка + титры';
             const fileUrl = await composeUgc({
-              avatarPath: avatar.filePath, avatarKind: 'opaque',
-              voicePath: avatar.filePath, // голос уже в mp4 HeyGen — берём его аудио
+              avatarPath, avatarKind: 'opaque',
+              voicePath: avatarPath, // голос уже в mp4 HeyGen — берём его аудио
               clipPath: clip?.filePath || null,
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
               clipMuted: spec.clipMuted !== false,
@@ -584,7 +607,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
             });
             const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV)${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4',
+              kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4',
             });
             j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
             if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
