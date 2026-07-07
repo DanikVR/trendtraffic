@@ -472,6 +472,7 @@ interface UgcSpec {
   // Диалоги (два собеседника) — только «Своё фото» + разбор записи двух голосов (HeyGen):
   dialogueEnabled: boolean;                                 // включён режим диалога A/B
   dialogueEngagement: 'eco' | 'bal' | 'dyn';                // как часто оба в кадре (эконом/баланс/динамично)
+  dialogueCutout: boolean;                                  // вырезать фон аватара (силуэт поверх медиа)
   photoBUrl: string | null; photoBName: string | null;      // фото «Спикер B» (A = photoUrl)
 }
 const UGC_DEFAULT: UgcSpec = {
@@ -492,6 +493,7 @@ const UGC_DEFAULT: UgcSpec = {
   results: [],
   dialogueEnabled: false,
   dialogueEngagement: 'bal',
+  dialogueCutout: false,
   photoBUrl: null, photoBName: null,
 };
 
@@ -1012,7 +1014,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     const useRetention = !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
     // Диалог → spec.dialogue; удержание → spec.retention (+ B-roll для батча); иначе обычная сборка.
     const spec = useDialogue
-      ? { ...ugc, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }
+      ? { ...ugc, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, cutout: ugc.dialogueCutout, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }
       : useRetention
         ? { ...ugc, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
         : ugc;
@@ -5279,6 +5281,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                             {ugc.dialogueEngagement === 'dyn' && 'Больше сцен «оба в кадре» и врезок — живее, дороже.'}
                           </p>
                         </div>
+                        {/* Вырезка фона аватара — силуэт поверх медиа (раскладка «фон + лицо сбоку») */}
+                        <button onClick={() => ugcMutate((u) => ({ ...u, dialogueCutout: !u.dialogueCutout }))} className="w-full flex items-center justify-between p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                          <span className="text-[11px] font-600 text-left" style={{ color: 'var(--text-secondary)' }}>Вырезать фон аватара<br /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>силуэт поверх медиа (без прямоугольника), раскладка «фон + лицо сбоку»</span></span>
+                          <span className="relative inline-flex flex-shrink-0 items-center" style={{ width: 34, height: 18, borderRadius: 9, background: ugc.dialogueCutout ? '#a855f7' : 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                            <span style={{ position: 'absolute', top: 1, left: ugc.dialogueCutout ? 17 : 1, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .15s' }} />
+                          </span>
+                        </button>
                         <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Медиа на реплике: в редакторе реплик выше выберите показ («Авто» — решит Claude) и «Держать медиа» (видео покажется целиком, реплики сдвинутся). Нужен ключ HeyGen.</p>
                       </>
                     )}

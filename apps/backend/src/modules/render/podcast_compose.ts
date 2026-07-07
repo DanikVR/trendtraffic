@@ -954,6 +954,7 @@ export interface DlgComposeSeg {
   avatarPath: string | null;   // лицо говорящего (HeyGen mp4, непрозрачный)
   avatar2Path: string | null;  // второе лицо (реакция) — для twoshot; обычно СТАТИЧНОЕ фото (бесплатно)
   avatar2IsImage?: boolean;    // avatar2Path — картинка (нужен -loop), а не видео
+  avatarChroma?: string | null; // hex-цвет фона аватара для вырезки (напр. '0x00FF00') — силуэт поверх медиа
   mediaPath: string | null;    // медиа реплики (локальный файл)
   isVideo: boolean;
   mediaFromSec: number;        // с какой секунды медиа проигрывать (растяжка/держание)
@@ -1081,7 +1082,10 @@ export async function composeDialogueVideo(opts: {
       } else if ((s.layout === 'media-bg-left' || s.layout === 'media-bg-right') && s.mediaPath) {
         const r = await mediaRatio(s.mediaPath);
         const x = s.layout === 'media-bg-left' ? '48' : 'W-w-48';
-        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${mediaPlace(0, W, H, r, 'bg')};[1:v]scale=360:640:force_original_aspect_ratio=increase:flags=lanczos,crop=360:640,setsar=1,fps=30,${freeze}[pv];[bg][pv]overlay=${x}:H-h-140[v]`, '-map', '[v]', ...enc], 300_000);
+        // Вырезка фона: если аватар отрендерен на однотонном фоне (avatarChroma) — chroma-key + despill →
+        // силуэт человека поверх медиа; иначе непрозрачный бокс со своим фоном (как раньше).
+        const key = s.avatarChroma ? `,chromakey=${s.avatarChroma}:0.16:0.06,despill=type=green:mix=0.5:expand=0` : '';
+        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${mediaPlace(0, W, H, r, 'bg')};[1:v]scale=360:640:force_original_aspect_ratio=increase:flags=lanczos,crop=360:640,setsar=1,fps=30,${freeze}${key}[pv];[bg][pv]overlay=${x}:H-h-140[v]`, '-map', '[v]', ...enc], 300_000);
       } else {
         // фолбэк: тёмный кадр
         await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
