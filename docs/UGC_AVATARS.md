@@ -266,3 +266,41 @@ worktree от origin/main + `vps-redeploy.sh` (web-VPS; воркеры HeyGen �
 
 **На будущее:** живой E2E на ключе клиента; EchoMimic-путь для своих фото в «Коллекции»; вырезка фона
 для других раскладок/режимов при запросе.
+
+---
+
+## 13. UGC-СТУДИЯ v2.0.6 (2026-07-08): полноэкранный редактор + режим «Без аватара»
+
+Панель UGC стала полноэкранной студией (`UgcStudio.tsx` + `UgcPreview.tsx` + `UgcLinesPanel.tsx`;
+состояние по-прежнему в MontageEditor). Все строки — i18next `common:ugc.*` (ru+en в репо,
+остальные языки — `npm run translate:locales`).
+
+**Четвёртый режим** `spec.noAvatar` → `composeVoiceover`: базовое видео во весь кадр + голос
+(запись как есть, опц. `spec.loudnorm`, ЛИБО текст → ElevenLabs) + врезки/слой/прогресс/субтитры/
+музыка/заставки. HeyGen не участвует.
+
+**Новые поля спеки (все опциональны, старые graph совместимы):**
+
+| Поле | Что делает |
+|---|---|
+| `formats` | теперь и `'1x1'` (1080×1080), `'4x5'` (1080×1350) — мультивыбор |
+| `music.durationSec` | музыка первые N сек + afade out (null = весь ролик) |
+| `intro` / `outro` | `{url,name}` — заставки, `concatBumpers` приклеивает как есть |
+| `layers` | `{[fmt]: {url,name}}` — PNG-слой на формат, overlay ПОД субтитрами |
+| `progressBar` | полоса прогресса сверху (drawbox, растёт с t) |
+| `noAvatar` / `loudnorm` | режим озвучки + выравнивание громкости записи |
+| `voiceId` | голос ElevenLabs аккаунта (список: `GET /ugc/voices`, кэш 1ч) |
+| `langs` | серия языков: перевод Claude → TTS multilingual → файлы «· EN»; в соло HeyGen-голова НА КАЖДЫЙ язык |
+
+**Врезки медиа реплик** (соло+озвучка): строки скрипта с `image` и валидными `start/end`
+(нужен «Разобрать речь») ложатся во весь кадр `overlay enable='between(t,a,b)'` (≤12 шт).
+
+**Бренд-киты:** таблица `brand_kits` (миграция `brand_kits.table`), `GET/POST/DELETE /ugc/brandkits`;
+кит хранит `{layers,intro,outro,music,subtitles,voiceId,progressBar}`.
+
+**Фикс `orientCells`:** ячейки всегда чётные + stack донормализует до точного W×H — до этого
+4:5 выходил 1080×1348 (crop yuv420p молча резал нечётную высоту), а split-сегменты retention
+могли получить размер, отличный от closeup-сегментов (падение concat).
+
+**Проверено:** синтетика ffmpeg реальными композерами (форматы, музыка-обрезка, voiceover,
+заставки, экстры, retention 4:5+слой) — PASS; живые HeyGen/ElevenLabs/перевод — на ключах клиента.

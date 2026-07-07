@@ -12,17 +12,18 @@
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import pool from '../../db/index.js';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
-import { generatePodcastDialogue, tagUgcRetention, directDialogue } from './director.js';
+import { generatePodcastDialogue, tagUgcRetention, directDialogue, translateUgcScript } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
@@ -149,6 +150,61 @@ function ugcAvatarPrompt(persona: string, variantIdx: number): string {
 }
 
 /** GET /ugc/avatars — список коллекции аватаров тенанта. */
+// ── Голоса ElevenLabs: список из аккаунта клиента (включая клоны) для выбора озвучки ──
+const elevenVoicesCache = new Map<string, { ts: number; items: { id: string; name: string; preview: string | null; category: string | null; labels: Record<string, string> }[] }>();
+/** GET /ugc/voices — голоса ElevenLabs по ключу тенанта (кэш 1 час). → { voices: [{id,name,preview,category,labels}] } */
+router.get('/ugc/voices', async (req: AuthedRequest, res: Response) => {
+  try {
+    const key = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
+    if (!key) return res.json({ voices: [], note: 'Ключ ElevenLabs не задан (Настройки → Генерация) — используются голоса по умолчанию.' });
+    // Кэш-ключ включает хвост API-ключа: смена ключа тенантом сразу сбрасывает кэш.
+    const cacheKey = `${req.tenantId}:${key.slice(-8)}`;
+    const cached = elevenVoicesCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < 3600_000) return res.json({ voices: cached.items });
+    const r = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': key } });
+    if (!r.ok) return res.status(502).json({ error: `ElevenLabs: HTTP ${r.status}` });
+    const d: any = await r.json().catch(() => ({}));
+    const items = (Array.isArray(d?.voices) ? d.voices : []).slice(0, 80).map((v: any) => ({
+      id: String(v?.voice_id || ''),
+      name: String(v?.name || 'голос'),
+      preview: v?.preview_url ? String(v.preview_url) : null,
+      category: v?.category ? String(v.category) : null,
+      labels: (v?.labels && typeof v.labels === 'object') ? v.labels : {},
+    })).filter((v: any) => v.id);
+    elevenVoicesCache.set(cacheKey, { ts: Date.now(), items });
+    res.json({ voices: items });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Не удалось получить голоса ElevenLabs' });
+  }
+});
+
+// ── Бренд-киты: сохранённый набор оформления (слой, заставки, музыка, субтитры, голос) ──
+/** GET /ugc/brandkits → { kits: [{id,name,data}] } (данные тенанта, новые сверху). */
+router.get('/ugc/brandkits', async (req: AuthedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT id, name, data FROM brand_kits WHERE tenant_id = $1 ORDER BY id DESC LIMIT 50', [req.tenantId]);
+    res.json({ kits: r.rows.map((x: any) => ({ id: String(x.id), name: x.name, data: x.data })) });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Бренд-киты недоступны' }); }
+});
+/** POST /ugc/brandkits — сохранить набор. body: { name, data: {layers?,intro?,outro?,music?,subtitles?,voiceId?,progressBar?} }. */
+router.post('/ugc/brandkits', async (req: AuthedRequest, res: Response) => {
+  try {
+    const name = String(req.body?.name || '').trim().slice(0, 120) || 'Мой бренд';
+    const data = req.body?.data && typeof req.body.data === 'object' ? req.body.data : {};
+    const r = await pool.query('INSERT INTO brand_kits (tenant_id, name, data) VALUES ($1,$2,$3) RETURNING id', [req.tenantId, name, JSON.stringify(data)]);
+    // В fallback-режиме БД (без Postgres) вставка тихо возвращает пусто — честно скажем об этом.
+    if (!r.rows?.[0]?.id) return res.status(500).json({ error: 'Бренд-киты требуют базу данных (Postgres) — сохранение недоступно.' });
+    res.json({ id: String(r.rows[0].id), name });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить бренд-кит' }); }
+});
+/** DELETE /ugc/brandkits/:id — убрать набор (только своего тенанта). */
+router.delete('/ugc/brandkits/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    await pool.query('DELETE FROM brand_kits WHERE tenant_id = $1 AND id = $2', [req.tenantId, Number(req.params.id) || 0]);
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить бренд-кит' }); }
+});
+
 router.get('/ugc/avatars', async (req: AuthedRequest, res: Response) => {
   try {
     const items = await listFolder(req.tenantId!, UGC_AVATARS_FOLDER);
@@ -321,16 +377,163 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
     const abs = (u: string) => /^https?:\/\//i.test(u) ? u : (base ? base + (u.startsWith('/') ? u : '/' + u) : u);
     const gender: 'male' | 'female' = spec.voice === 'male' ? 'male' : 'female';
+    const voiceIdSpec: string | undefined = String(spec.voiceId || '').trim() || undefined;   // голос ElevenLabs из аккаунта клиента
+    // Языки серии (перевод Claude → TTS multilingual): 'ru' — основной; работает для ИИ-текста
+    // в ветках «Один ведущий» и «Без аватара» (запись не переводим — там свой голос).
+    const langsSpec: string[] = Array.isArray(spec.langs)
+      ? [...new Set((spec.langs as any[]).map((x) => String(x || '').toLowerCase().trim()).filter((x) => /^[a-z]{2,3}$/.test(x)))]
+      : [];
+    const voiceLangs: string[] = ['ru', ...langsSpec.filter((l) => l !== 'ru')];
     const scriptText = script.map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
     const capStyle: 'none' | 'word' | 'karaoke' | 'plain' = ['none', 'word', 'karaoke', 'plain'].includes(spec.subtitles?.style) ? spec.subtitles.style : 'word';
     const capPos: 'bottom' | 'center' | 'top' = ['bottom', 'center', 'top'].includes(spec.subtitles?.pos) ? spec.subtitles.pos : 'bottom';
     const captions: UgcCaption[] = script
       .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
       .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
-    // Форматы вывода: 9:16 (портрет) и/или 16:9 (ландшафт). Аватар рендерим 1 раз, склейку — на каждый формат.
-    const fmtKeys: ('9x16' | '16x9')[] = (Array.isArray(spec.formats) ? spec.formats : []).filter((f: any) => f === '9x16' || f === '16x9');
-    const outFormats: { key: '9x16' | '16x9'; dims: FrameDims; label: string }[] = (fmtKeys.length ? fmtKeys : (['9x16'] as ('9x16' | '16x9')[]))
-      .map((k) => ({ key: k, dims: UGC_FORMATS[k], label: k === '16x9' ? '16:9' : '9:16' }));
+    // Форматы вывода: 9:16 / 16:9 / 1:1 / 4:5, любые сочетания. Аватар рендерим 1 раз, склейку — на каждый формат.
+    const FMT_LABEL: Record<UgcFormatKey, string> = { '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' };
+    const fmtKeys: UgcFormatKey[] = (Array.isArray(spec.formats) ? spec.formats : []).filter((f: any): f is UgcFormatKey => f in UGC_FORMATS);
+    const outFormats: { key: UgcFormatKey; dims: FrameDims; label: string }[] = (fmtKeys.length ? fmtKeys : (['9x16'] as UgcFormatKey[]))
+      .map((k) => ({ key: k, dims: UGC_FORMATS[k], label: FMT_LABEL[k] }));
+    // Музыка: играть первые N секунд (иначе весь ролик) — общий парс для всех веток.
+    const musicDurSec: number | null = Number(spec.music?.durationSec) > 0 ? Number(spec.music.durationSec) : null;
+    // Верхний PNG-слой (свой на каждый формат) + полоса прогресса + заставки до/после.
+    const layerUrlFor = (key: UgcFormatKey): string => String(spec.layers?.[key]?.url || '');
+    const progressBar = !!spec.progressBar;
+    const introUrl = String(spec.intro?.url || '');
+    const outroUrl = String(spec.outro?.url || '');
+    // Врезки медиа реплик (для соло и «Без аватара»): нужны валидные таймкоды разбора.
+    const insertSpecs: { url: string; isVideo: boolean; t0: number; t1: number }[] = script
+      .filter((l) => l?.image && Number.isFinite(Number(l?.start)) && Number.isFinite(Number(l?.end)) && Number(l.end) > Number(l.start))
+      .slice(0, 12)
+      .map((l) => ({ url: String(l.image), isVideo: /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(String(l.image)), t0: Number(l.start), t1: Number(l.end) }));
+    // Общие загрузчики: слои per-format, заставки, врезки (кэш по url) — используются ветками ниже.
+    const dlLayers = async (): Promise<Partial<Record<UgcFormatKey, string>>> => {
+      const out: Partial<Record<UgcFormatKey, string>> = {};
+      for (const f of outFormats) {
+        const u = layerUrlFor(f.key);
+        if (u) out[f.key] = (await downloadToRenders(abs(u), 'ugclyr')).filePath;
+      }
+      return out;
+    };
+    const dlBumpers = async (): Promise<{ intro: string | null; outro: string | null }> => ({
+      intro: introUrl ? (await downloadToRenders(abs(introUrl), 'ugcin')).filePath : null,
+      outro: outroUrl ? (await downloadToRenders(abs(outroUrl), 'ugcout')).filePath : null,
+    });
+    const dlInserts = async (): Promise<{ path: string; isVideo: boolean; t0: number; t1: number }[]> => {
+      const cache = new Map<string, string>();
+      const out: { path: string; isVideo: boolean; t0: number; t1: number }[] = [];
+      for (const ins of insertSpecs) {
+        if (!cache.has(ins.url)) cache.set(ins.url, (await downloadToRenders(abs(ins.url), ins.isVideo ? 'ugcinsv' : 'ugcinsi')).filePath);
+        out.push({ path: cache.get(ins.url)!, isVideo: ins.isVideo, t0: ins.t0, t1: ins.t1 });
+      }
+      return out;
+    };
+
+    // ── Ветка «Без аватара — озвучка» ────────────────────────────────────────────
+    // Ваше видео + голос (своя запись как есть ИЛИ текст → ElevenLabs). HeyGen не участвует:
+    // цена ≈ только озвучка. Врезки медиа реплик (по таймкодам разбора), слой, прогресс,
+    // субтитры, музыка и заставки — как в остальных ветках. loudnorm ровняет свою запись.
+    if (spec.noAvatar) {
+      const useRecording = spec.source === 'diarize' && spec.recordingUrl;
+      if (!useRecording && !scriptText) return res.status(400).json({ error: 'Нет текста: сгенерируйте скрипт или загрузите запись.' });
+      const elevenKey = useRecording ? null : await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
+      if (!useRecording && !elevenKey) return res.status(400).json({ error: 'Для озвучки текста нужен ключ ElevenLabs (Настройки → Генерация), либо используйте свою запись.' });
+      const loudnormOn = !!useRecording && spec.loudnorm !== false;
+
+      // Языки серии — только для ИИ-текста (свою запись не переводим).
+      const langs = useRecording ? ['ru'] : voiceLangs;
+      const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+      sweepJobs(ugcJobs);
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length * langs.length, results: [] });
+      res.json({ jobId });
+
+      void (async () => {
+        const j = ugcJobs.get(jobId)!;
+        try {
+          const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
+          const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
+          const layers = await dlLayers();
+          const bmp = await dlBumpers();
+          const inserts = await dlInserts();
+          let made = 0; const skippedLangs: string[] = [];
+          // У ИИ-текста нет таймкодов разбора → субтитры строим примерно: реплики (или предложения
+          // перевода) раскладываются по длительности голоса пропорционально длине текста.
+          const approxCaps = (text: string, srcLines: string[], D: number): UgcCaption[] => {
+            const parts = (srcLines.length ? srcLines : text.split(/(?<=[.!?…])\s+/))
+              .map((s) => s.trim()).filter(Boolean).slice(0, 60);
+            const totalChars = parts.reduce((s2, p2) => s2 + p2.length, 0) || 1;
+            let t0 = 0; const out: UgcCaption[] = [];
+            for (const p2 of parts) {
+              const d = Math.max(0.8, (p2.length / totalChars) * D);
+              out.push({ t0, t1: Math.min(D, t0 + d), text: p2 });
+              t0 += d;
+            }
+            return out.filter((c) => c.t1 > c.t0 + 0.2);
+          };
+
+          for (const lang of langs) {
+            // 1) текст на языке серии (Claude) — 'ru' идёт как есть; провал перевода = пропуск языка.
+            let text = scriptText;
+            if (lang !== 'ru') {
+              j.status = `перевод · ${lang.toUpperCase()}`;
+              const tr = await translateUgcScript({ tenantId: j.tenantId!, text: scriptText, lang });
+              if (!tr) { skippedLangs.push(lang); continue; }
+              text = tr;
+            }
+            // 2) голос: запись как есть ИЛИ TTS на языке (ElevenLabs multilingual).
+            j.status = useRecording ? 'готовлю запись' : `озвучка (ElevenLabs${lang !== 'ru' ? ` · ${lang.toUpperCase()}` : ''})`;
+            const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, text.slice(0, 2500), gender, voiceIdSpec));
+            const voice = await downloadToRenders(voiceUrl, 'ugcvoice');
+            const langSuffix = lang !== 'ru' ? ` · ${lang.toUpperCase()}` : '';
+            // 3) субтитры: точные таймкоды разбора; иначе — примерная раскладка по голосу.
+            let capsForLang = captions;
+            if (!capsForLang.length && capStyle !== 'none' && scriptText) {
+              const Dv = await mediaDuration(voice.filePath);
+              if (Dv > 1) capsForLang = approxCaps(text, lang === 'ru' ? script.map((l) => String(l?.text || '')) : [], Dv);
+            }
+
+            for (let f = 0; f < outFormats.length; f++) {
+              const fmt = outFormats[f];
+              made++;
+              j.status = `склейка ${fmt.label}${langSuffix} (${made}/${j.total})`;
+              let fileUrl = await composeVoiceover({
+                clipPath: clip?.filePath || null,
+                clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+                clipMuted: spec.clipMuted !== false,
+                voicePath: voice.filePath,
+                loudnorm: loudnormOn,
+                musicPath: music?.filePath || null,
+                musicVolumePct: Number(spec.music?.volumePct) || 20,
+                musicDurationSec: musicDurSec,
+                captions: capsForLang, capStyle: capsForLang.length ? capStyle : 'none', capPos, dims: fmt.dims,
+                inserts: inserts as UgcInsert[],
+                layerPath: layers[fmt.key] || null,
+                progressBar,
+              });
+              if (bmp.intro || bmp.outro) {
+                j.status = 'приклеиваю заставки';
+                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+              }
+              const asset = await createAsset(j.tenantId!, {
+                kind: 'reference', mediaType: 'video',
+                originalName: `UGC — озвучка без аватара${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`,
+                fileUrl, mime: 'video/mp4',
+              });
+              j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+              if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+            }
+          }
+          if (!j.results!.length) throw new Error(skippedLangs.length ? `перевод не удался (${skippedLangs.join(', ')}) — проверьте ключ Claude` : 'нет результатов');
+          j.note = skippedLangs.length ? `пропущены языки: ${skippedLangs.join(', ')} (перевод недоступен)` : undefined;
+          j.status = 'done';
+        } catch (e: any) {
+          j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
+          console.warn('[ugc/build voiceover] FAILED:', j.error);
+        }
+      })();
+      return;
+    }
 
     // ── Ветка «Диалоги» (два аватара HeyGen под одну запись) ────────────────────
     // Разбор записи на 2 голоса (A/B) → каждый говорит своим лицом. Claude решает per-turn:
@@ -434,15 +637,23 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           }));
           const caps: UgcCaption[] = segs.filter((s) => s.kind === 'speech' && s.text.trim()).map((s) => ({ t0: s.t0, t1: s.t1, text: s.text }));
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'dlgmusic') : null;
+          const layers = await dlLayers();
+          const bmp = await dlBumpers();
           // склейка в каждый формат (аватар уже отрендерен один раз — форматы почти бесплатны)
           for (let f = 0; f < outFormats.length; f++) {
             const fmt = outFormats[f];
             j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'финальная склейка';
-            const fileUrl = await composeDialogueVideo({
+            let fileUrl = await composeDialogueVideo({
               segments: composeSegs, voicePath: voice.filePath,
               musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+              musicDurationSec: musicDurSec,
+              layerPath: layers[fmt.key] || null, progressBar,
               captions: caps, capStyle: caps.length ? capStyle : 'none', capPos, dims: fmt.dims,
             });
+            if (bmp.intro || bmp.outro) {
+              j.status = 'приклеиваю заставки';
+              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+            }
             const asset = await createAsset(j.tenantId!, {
               kind: 'reference', mediaType: 'video', originalName: `UGC-диалог (${engagement})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4',
             });
@@ -488,7 +699,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         try {
           // 1) непрерывный голос + локальный файл + длина
           j.status = 'готовлю голос';
-          const voiceUrl = useRecording ? String(spec.recordingUrl) : await elevenTTS(elevenKey!, scriptText.slice(0, 2500), gender);
+          const voiceUrl = useRecording ? String(spec.recordingUrl) : await elevenTTS(elevenKey!, scriptText.slice(0, 2500), gender, voiceIdSpec);
           const voice = await downloadToRenders(abs(voiceUrl), 'retvoice');
           const D = await mediaDuration(voice.filePath);
           if (!(D > 1)) throw new Error('голос пустой/короткий');
@@ -527,6 +738,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const capStyleR: 'none' | 'word' | 'karaoke' | 'plain' = capStyle;
           const caps: UgcCaption[] = lines.map((l) => ({ t0: l.start, t1: l.end, text: l.text })).filter((c) => c.t1 > c.t0 && c.text.trim());
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'retmusic') : null;
+          const layers = await dlLayers();
+          const bmp = await dlBumpers();
 
           const totalOut = brolls.length * outFormats.length;
           for (let b = 0; b < brolls.length; b++) {
@@ -534,11 +747,17 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             for (let f = 0; f < outFormats.length; f++) {
               const fmt = outFormats[f]; const n = b * outFormats.length + f + 1;
               j.status = totalOut > 1 ? `склейка ${n}/${totalOut}` : 'склейка + титры';
-              const fileUrl = await composeRetentionVideo({
+              let fileUrl = await composeRetentionVideo({
                 segments: composeSegs, brollPath: clip?.filePath || null, voicePath: voice.filePath,
                 clipFit, musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+                musicDurationSec: musicDurSec,
+                layerPath: layers[fmt.key] || null, progressBar,
                 captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos, dims: fmt.dims,
               });
+              if (bmp.intro || bmp.outro) {
+                j.status = 'приклеиваю заставки';
+                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+              }
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
                 originalName: `UGC-удержание ${preset.name}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
@@ -569,49 +788,75 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       if (!useRecording && !elevenKey) return res.status(400).json({ error: 'Для озвучки текста нужен ключ ElevenLabs (Настройки → Генерация), либо используйте «Разобрать запись».' });
       if (!base) return res.status(400).json({ error: 'PUBLIC_BASE_URL не настроен — HeyGen не скачает аудио.' });
 
+      // Языки серии — только для ИИ-текста; ВНИМАНИЕ: аватар HeyGen рендерится на КАЖДЫЙ язык (дороже).
+      const langs = useRecording ? ['ru'] : voiceLangs;
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length * langs.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
         const j = ugcJobs.get(jobId)!;
         try {
-          j.status = useRecording ? 'готовлю запись' : 'озвучка (ElevenLabs)';
-          const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, scriptText.slice(0, 2500), gender));
-          // Голова: цельный Avatar IV на всю дорожку голоса. 'ext' = по подписке через расширение.
-          j.status = faceProvider === 'ext' ? 'аватар по подписке (открой вкладку студии HeyGen)' : 'генерирую аватар (Avatar IV)';
-          const heads = await renderTalkingHeads({
-            tenantId: j.tenantId!, jobId, provider: faceProvider, hgKey,
-            heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true }],
-            onProgress: (d, t) => { j.status = faceProvider === 'ext' ? `аватар по подписке (${d}/${t})` : 'генерирую аватар (Avatar IV)'; },
-          });
-          const avatarPath = heads[0];
-          if (!avatarPath) throw new Error('HeyGen не отдал видео');
-
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
+          const layers = await dlLayers();
+          const bmp = await dlBumpers();
+          const inserts = await dlInserts();   // врезки медиа реплик (только при таймкодах разбора)
+          let made = 0; const skippedLangs: string[] = [];
 
-          for (let f = 0; f < outFormats.length; f++) {
-            const fmt = outFormats[f];
-            j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'склейка + титры';
-            const fileUrl = await composeUgc({
-              avatarPath, avatarKind: 'opaque',
-              voicePath: avatarPath, // голос уже в mp4 HeyGen — берём его аудио
-              clipPath: clip?.filePath || null,
-              clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
-              clipMuted: spec.clipMuted !== false,
-              placement: placement as any,
-              musicPath: music?.filePath || null,
-              musicVolumePct: Number(spec.music?.volumePct) || 20,
-              captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
+          for (const lang of langs) {
+            let text = scriptText;
+            if (lang !== 'ru') {
+              j.status = `перевод · ${lang.toUpperCase()}`;
+              const tr = await translateUgcScript({ tenantId: j.tenantId!, text: scriptText, lang });
+              if (!tr) { skippedLangs.push(lang); continue; }
+              text = tr;
+            }
+            const langSuffix = lang !== 'ru' ? ` · ${lang.toUpperCase()}` : '';
+            j.status = useRecording ? 'готовлю запись' : `озвучка (ElevenLabs${langSuffix})`;
+            const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, text.slice(0, 2500), gender, voiceIdSpec));
+            // Голова: цельный Avatar IV на всю дорожку голоса. 'ext' = по подписке через расширение.
+            j.status = faceProvider === 'ext' ? 'аватар по подписке (открой вкладку студии HeyGen)' : `генерирую аватар (Avatar IV${langSuffix})`;
+            const heads = await renderTalkingHeads({
+              tenantId: j.tenantId!, jobId: `${jobId}${lang !== 'ru' ? `-${lang}` : ''}`, provider: faceProvider, hgKey,
+              heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true }],
+              onProgress: (d, t2) => { j.status = faceProvider === 'ext' ? `аватар по подписке (${d}/${t2})` : `генерирую аватар (Avatar IV${langSuffix})`; },
             });
-            const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4',
-            });
-            j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
-            if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+            const avatarPath = heads[0];
+            if (!avatarPath) throw new Error('HeyGen не отдал видео');
+
+            for (let f = 0; f < outFormats.length; f++) {
+              const fmt = outFormats[f];
+              made++;
+              j.status = `склейка ${fmt.label}${langSuffix} (${made}/${j.total})`;
+              let fileUrl = await composeUgc({
+                avatarPath, avatarKind: 'opaque',
+                voicePath: avatarPath, // голос уже в mp4 HeyGen — берём его аудио
+                clipPath: clip?.filePath || null,
+                clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+                clipMuted: spec.clipMuted !== false,
+                placement: placement as any,
+                musicPath: music?.filePath || null,
+                musicVolumePct: Number(spec.music?.volumePct) || 20,
+                musicDurationSec: musicDurSec,
+                inserts: inserts as UgcInsert[],
+                layerPath: layers[fmt.key] || null, progressBar,
+                captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
+              });
+              if (bmp.intro || bmp.outro) {
+                j.status = 'приклеиваю заставки';
+                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+              }
+              const asset = await createAsset(j.tenantId!, {
+                kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4',
+              });
+              j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+              if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+            }
           }
+          if (!j.results!.length) throw new Error(skippedLangs.length ? `перевод не удался (${skippedLangs.join(', ')}) — проверьте ключ Claude` : 'нет результатов');
+          j.note = skippedLangs.length ? `пропущены языки: ${skippedLangs.join(', ')} (перевод недоступен)` : undefined;
           j.status = 'done';
         } catch (e: any) {
           j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);

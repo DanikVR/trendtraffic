@@ -25,6 +25,8 @@ import { ConfirmModal } from '../../components/ConfirmModal';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import DialogueTimeline from './DialogueTimeline';
 import type { PodLine } from './dialogueTypes';
+import UgcStudio from './UgcStudio';
+import { UGC_DEFAULT, type UgcSpec, type UgcPickTarget } from './ugcTypes';
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
 type CloudId = 'omni' | 'plan' | 'editor' | 'ugc' | 'hotebook' | 'flow';
@@ -288,72 +290,6 @@ const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
   { key: 'analyzed', label: 'Из анализа', icon: <Sparkles size={13} /> },
 ];
 
-// ── Общие типы дорожек/реплик (используются блоками UGC и «Комментатор») ──
-type PodVoice = 'female' | 'male';
-type PodSource = 'gen' | 'diarize';   // дорожки: сгенерировать диалог / разобрать запись
-// Реплика (PodLine) — общий тип из dialogueTypes.ts: один на UGC-диалог, «Комментатора»
-// и DialogueTimeline (локальный дубль с anim?: string ломал tsc — типы разъезжались).
-
-// ── Блок «UGC / Аватары»: кадр 9:16 из двух половин (аватар + видео) ──
-// Одна половина — говорящий аватар (из коллекции Галереи / своё фото → HeyGen), другая —
-// произвольное видео из Галереи; аватар ставится сверху или снизу. Скрипт — генерация/разбор
-// записи. Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
-type UgcAvatarSource = 'collection' | 'photo';
-interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
-interface UgcSpec {
-  avatarSource: UgcAvatarSource;
-  avatarId: string | null;                                  // выбранный из коллекции
-  avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
-  avatarProvider: 'gallery';                                // аватар из Галереи (коллекция) / своё фото → HeyGen
-  photoUrl: string | null; photoName: string | null;        // своё фото
-  faceProvider: 'heygen_api' | 'heygen_ext';                // чем рендерить лицо: HeyGen API (ключ) ИЛИ подписка через расширение
-  placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
-  voice: PodVoice;
-  source: PodSource;                                        // 'gen' | 'diarize'
-  brief: string;
-  script: PodLine[];                                        // реплики (один аватар)
-  recordingUrl: string | null; recordingName: string | null;
-  clip: { url: string; name: string } | null;              // вторая половина — видео
-  clipFit: 'cover' | 'contain'; clipMuted: boolean;
-  subtitles: UgcSubtitles;                                  // титры (переиспользуем блок субтитров)
-  music: { url: string; name: string; volumePct: number } | null;
-  platforms: string[];
-  buildJobId: string | null;                                // идущая сборка (переживает перезаход)
-  result: { url: string; name: string } | null;             // готовый ролик
-  // Удержание (переключения техник) — только для «Своё фото» (HeyGen IV/III):
-  retentionPreset: 'off' | 'eco' | 'bal' | 'prem';          // off = обычная сборка
-  retentionBrolls: { url: string; name: string }[];         // батч: N видео → N роликов (иначе один clip)
-  results: { url: string; name: string }[];                 // готовые ролики батча
-  // Диалоги (два собеседника) — только «Своё фото» + разбор записи двух голосов (HeyGen):
-  dialogueEnabled: boolean;                                 // включён режим диалога A/B
-  dialogueEngagement: 'eco' | 'bal' | 'dyn';                // как часто оба в кадре (эконом/баланс/динамично)
-  dialogueCutout: boolean;                                  // вырезать фон аватара (силуэт поверх медиа)
-  photoBUrl: string | null; photoBName: string | null;      // фото «Спикер B» (A = photoUrl)
-  formats: ('9x16' | '16x9')[];                             // форматы вывода (можно оба)
-}
-const UGC_DEFAULT: UgcSpec = {
-  avatarSource: 'collection', avatarId: null,
-  avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
-  photoUrl: null, photoName: null,
-  faceProvider: 'heygen_api',
-  placement: 'top', voice: 'female',
-  source: 'gen', brief: '', script: [],
-  recordingUrl: null, recordingName: null,
-  clip: null, clipFit: 'cover', clipMuted: true,
-  subtitles: { style: 'word', pos: 'bottom', wishes: '' },
-  music: null,
-  platforms: ['tiktok', 'reels', 'shorts'],
-  buildJobId: null,
-  result: null,
-  retentionPreset: 'off',
-  retentionBrolls: [],
-  results: [],
-  dialogueEnabled: false,
-  dialogueEngagement: 'bal',
-  dialogueCutout: false,
-  photoBUrl: null, photoBName: null,
-  formats: ['9x16'],
-};
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
 // engine: 'omni' — сгенерировать новый клип (Veo 3.1, 4/6/8с, текст/кадр→видео);
@@ -449,7 +385,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
-  const [ugcPick, setUgcPick] = useState<null | 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'>(null);
+  const [ugcPick, setUgcPick] = useState<UgcPickTarget | null>(null);
   const [ugcLineIdx, setUgcLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем медиа
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
   const [ugcGalLoading, setUgcGalLoading] = useState(false);
@@ -492,7 +428,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
   }, 0);
   // Пикер медиа для UGC (видео/фото/запись/музыка/аватар в коллекцию) из Галереи — как в «Редакторе».
-  const openUgcPick = async (target: 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'retBrolls') => {
+  const openUgcPick = async (target: Exclude<UgcPickTarget, 'lineImage'>) => {
     setUgcPick(target); setUgcGalLoading(true); setUgcGallery([]);
     try {
       const [v, r, an, au] = await Promise.all([
@@ -534,7 +470,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       u.recordingUrl === g.url ? { ...u, recordingUrl: g.url, recordingName: g.name }
         : { ...u, recordingUrl: g.url, recordingName: g.name, script: [], result: null }
     ));
-    else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
+    else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20, durationSec: u.music?.durationSec ?? null } }));
+    else if (ugcPick === 'intro') ugcMutate((u) => ({ ...u, intro: { url: g.url, name: g.name } }));
+    else if (ugcPick === 'outro') ugcMutate((u) => ({ ...u, outro: { url: g.url, name: g.name } }));
+    else if (typeof ugcPick === 'string' && ugcPick.startsWith('layer_')) {
+      const fmt = ugcPick.slice('layer_'.length) as UgcSpec['formats'][number];
+      ugcMutate((u) => ({ ...u, layers: { ...u.layers, [fmt]: { url: g.url, name: g.name } } }));
+    }
     else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
     else if (ugcPick === 'lineImage') {
       const i = ugcLineIdx;
@@ -639,8 +581,12 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   };
   const ugcBuildStart = async () => {
     if (ugcBusy) return;
-    const useDialogue = ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
-    if (useDialogue) {
+    // «Без аватара — озвучка»: аватар/фото не нужны — только базовое видео и голос (текст/запись).
+    const useVoiceover = !!ugc.noAvatar;
+    const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
+    if (useVoiceover) {
+      if (!ugc.clip) { setUgcNote('Выберите базовое видео (шаг «Видеоряд») — в этом режиме оно основа кадра.'); return; }
+    } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
       if (!ugc.photoUrl || !ugc.photoBUrl) { setUgcNote('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
       if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { setUgcNote('Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).'); return; }
@@ -654,7 +600,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
       if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
     }
-    const useRetention = !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
+    const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
     // Диалог → spec.dialogue; удержание → spec.retention (+ B-roll для батча); иначе обычная сборка.
     const spec = useDialogue
       ? { ...ugc, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, cutout: ugc.dialogueCutout, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }
@@ -1962,8 +1908,31 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
 
       {/* Попап «Сценарий ролика» удалён вместе с кнопками (brief не читается бэком). */}
 
+      {/* UGC — полноэкранная студия (вместо модалки): состояние остаётся здесь, студия — представление */}
+      {cloudPanel === 'ugc' && (
+        <UgcStudio
+          token={token}
+          ugc={ugc} ugcMutate={ugcMutate}
+          saving={saving} ugcSavedFlash={ugcSavedFlash} ugcSaveNow={ugcSaveNow}
+          ugcBusy={ugcBusy} ugcNote={ugcNote}
+          ugcAvatars={ugcAvatars} ugcAvLoading={ugcAvLoading}
+          ugcAvBrief={ugcAvBrief} setUgcAvBrief={setUgcAvBrief} ugcAvNote={ugcAvNote}
+          loadUgcAvatars={loadUgcAvatars} genUgcAvatars={genUgcAvatars}
+          pickUgcAvatar={pickUgcAvatar} askDelUgcAvatar={askDelUgcAvatar}
+          ugcDelAvatar={ugcDelAvatar} setUgcDelAvatar={setUgcDelAvatar} doDelUgcAvatar={doDelUgcAvatar}
+          hgExt={hgExt}
+          ugcGenScript={ugcGenScript} ugcRunDiarize={ugcRunDiarize} ugcBuildStart={ugcBuildStart}
+          ugcScriptSec={ugcScriptSec}
+          ugcPick={ugcPick} setUgcPick={setUgcPick} setUgcLineIdx={setUgcLineIdx}
+          openUgcPick={openUgcPick} pickUgcItem={pickUgcItem}
+          uploadToGallery={uploadToGallery}
+          ugcResultAR={ugcResultAR} setUgcResultAR={setUgcResultAR}
+          onClose={() => setCloudPanel(null)}
+        />
+      )}
+
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
-      {cloudPanel && (
+      {cloudPanel && cloudPanel !== 'ugc' && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : cloudPanel === 'hotebook' ? 680 : 600, maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
@@ -2205,447 +2174,6 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                     </button>
                   </>
                 )}
-              </div>
-            ) : cloudPanel === 'ugc' ? (
-              <div className="space-y-3.5">
-                <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  UGC на аватарах: кадр <b style={{ color: '#a855f7' }}>9:16 из двух половин</b> — говорящий аватар
-                  (из коллекции Галереи или своё фото → <b>HeyGen</b>) и произвольное видео. Аватар ставится сверху или снизу;
-                  скрипт можно сгенерировать или разобрать запись; снизу — титры.
-                </p>
-
-                {/* Аватар: источник + положение + голос */}
-                <div className="rounded-xl p-2.5 space-y-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><UserRound size={13} style={{ color: '#a855f7' }} /> Аватар</div>
-                  <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    {([['collection', 'Коллекция'], ['photo', 'Своё фото']] as [UgcAvatarSource, string][]).map(([s, lbl]) => (
-                      <button key={s} onClick={() => ugcMutate((u) => ({ ...u, avatarSource: s }))}
-                        className="py-2 rounded-lg text-[12px] font-600" style={{ background: ugc.avatarSource === s ? 'var(--bg-tertiary)' : 'transparent', color: ugc.avatarSource === s ? '#a855f7' : 'var(--text-muted)' }}>{lbl}</button>
-                    ))}
-                  </div>
-                  {ugc.avatarSource === 'collection' ? (
-                    <div className="space-y-2">
-                      {/* Моя коллекция (Gemini-генерации + свои фото из Галереи) */}
-                      <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Моя коллекция</div>
-                      {ugcAvLoading ? (
-                        <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> загружаю аватары…</p>
-                      ) : (ugcAvatars || []).length ? (
-                        <div className="grid grid-cols-4 gap-1.5" style={{ maxHeight: 236, overflowY: 'auto' }}>
-                          {(ugcAvatars || []).map((a) => {
-                            const sel = ugc.avatarProvider === 'gallery' && ugc.avatarId === a.id;
-                            return (
-                              <div key={a.id} onClick={() => pickUgcAvatar(a)} title={a.name} className="relative rounded-lg overflow-hidden group"
-                                style={{ aspectRatio: '3/4', background: '#000', cursor: 'pointer',
-                                  border: sel ? '2px solid #a855f7' : '1px solid var(--border-medium)',
-                                  boxShadow: sel ? '0 0 0 2px rgba(168,85,247,.3)' : 'none' }}>
-                                <img src={a.url} alt={a.name} loading="lazy" className="w-full h-full object-cover" />
-                                {sel && (
-                                  <span className="absolute bottom-1 left-1 rounded-full flex items-center justify-center" style={{ width: 18, height: 18, background: '#a855f7' }}><Check size={12} color="#fff" /></span>
-                                )}
-                                <button onClick={(e) => askDelUgcAvatar(a, e)} title="Убрать из коллекции"
-                                  className="absolute top-1 right-1 rounded-full items-center justify-center hidden group-hover:flex"
-                                  style={{ width: 18, height: 18, background: 'rgba(0,0,0,.65)', border: 'none', color: '#f87171', cursor: 'pointer' }}><X size={11} /></button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="rounded-lg p-3 text-[11px] text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}>
-                          Коллекция пуста — сгенерируйте готовых аватаров (Gemini) или добавьте фото из Галереи.
-                        </div>
-                      )}
-                      <div className="flex gap-1.5">
-                        <button onClick={genUgcAvatars} disabled={ugcBusy === 'avatars'} className="flex-1 py-2 rounded-lg text-[11px] font-700 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
-                          style={{ background: 'rgba(168,85,247,0.14)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
-                          {ugcBusy === 'avatars' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Сгенерировать 3
-                        </button>
-                        <button onClick={() => openUgcPick('avatarAdd')} className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5"
-                          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                          <Plus size={13} /> Из Галереи
-                        </button>
-                        <button onClick={() => loadUgcAvatars(true)} disabled={ugcAvLoading} title="Обновить список" className="px-2 py-2 rounded-lg"
-                          style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><RefreshCw size={13} /></button>
-                      </div>
-                      <input value={ugcAvBrief} onChange={(e) => setUgcAvBrief(e.target.value)}
-                        placeholder="кого сгенерировать: «девушка 25 лет, casual, дружелюбная»…"
-                        className="w-full px-2 py-1.5 rounded-lg text-[11px] outline-none"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                      <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                        Выбран: <b style={{ color: ugc.avatarName ? '#a855f7' : 'var(--text-secondary)' }}>{ugc.avatarName || 'не выбран'}</b>
-                        {ugc.avatarName ? <span style={{ color: 'var(--text-muted)' }}> · оживит HeyGen</span> : null}
-                      </div>
-                      {ugcAvNote && <p className="text-[11px]" style={{ color: '#f59e0b' }}>{ugcAvNote}</p>}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {ugc.photoUrl ? (
-                        <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                          <img src={ugc.photoUrl} alt="" className="rounded-md object-cover" style={{ width: 52, height: 68 }} />
-                          <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.photoName || 'фото выбрано'}</span>
-                          <button onClick={() => openUgcPick('photo')} title="Заменить" className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: '#a855f7', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>заменить</button>
-                          <button onClick={() => ugcMutate((u) => ({ ...u, photoUrl: null, photoName: null }))} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
-                        </div>
-                      ) : (
-                        <button onClick={() => openUgcPick('photo')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                          style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                          Выбрать своё фото из Галереи
-                        </button>
-                      )}
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Ваше фото оживит <b>HeyGen Avatar IV</b> (портрет анфас). Голос — по тексту (жен/муж ниже) или из вашей записи. Нужен ключ HeyGen в Настройки → Генерация.</p>
-                    </div>
-                  )}
-                  {/* Провайдер рендера лица: HeyGen API (ключ, ~$3/мин) ИЛИ подписка через расширение (втрое дешевле) */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Рендер лица:</span>
-                      {([['heygen_api', 'HeyGen API'], ['heygen_ext', 'По подписке']] as [UgcSpec['faceProvider'], string][]).map(([p, lbl]) => (
-                        <button key={p} onClick={() => ugcMutate((u) => ({ ...u, faceProvider: p }))} className="flex-1 py-1.5 rounded-lg text-[10px] font-700"
-                          style={{ background: ugc.faceProvider === p ? 'rgba(14,158,119,0.14)' : 'var(--bg-secondary)', color: ugc.faceProvider === p ? '#0E9E77' : 'var(--text-muted)', border: `1px solid ${ugc.faceProvider === p ? '#0E9E77' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                      ))}
-                    </div>
-                    {ugc.faceProvider === 'heygen_ext' ? (
-                      <div className="text-[10px] px-2 py-1.5 rounded-md leading-relaxed" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                        Головы рендерит расширение в вашей вкладке <b>app.heygen.com</b> по подписке (втрое дешевле API).{' '}
-                        Расширение:{' '}
-                        <b style={{ color: hgExt.present === false ? '#ef4444' : hgExt.connected ? '#0E9E77' : hgExt.present ? '#f59e0b' : 'var(--text-muted)' }}>
-                          {hgExt.present === null ? 'проверяю…' : hgExt.present === false ? 'не установлено' : hgExt.connected ? 'подключено' : 'установлено, войдите в аккаунт'}
-                        </b>.
-                        {hgExt.present === false ? <> <a href="/trendtraffic-extension.zip" download style={{ color: '#0E9E77', textDecoration: 'underline' }}>Скачать расширение</a> (единое — Flow · NotebookLM · HeyGen).</> : null}
-                        {' '}Держите открытой вкладку студии HeyGen с активной подпиской.
-                      </div>
-                    ) : (
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Через HeyGen API (ключ в Настройки → Генерация), оплата pay-as-you-go (~$3/мин Avatar IV).</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Положение:</span>
-                    {([['top', 'Сверху'], ['bottom', 'Снизу'], ['overlay-left', 'Фон · слева'], ['overlay-right', 'Фон · справа']] as [UgcSpec['placement'], string][]).map(([p, lbl]) => (
-                      <button key={p} onClick={() => ugcMutate((u) => ({ ...u, placement: p }))} className="flex-1 py-1.5 rounded-lg text-[10px] font-700"
-                        style={{ background: ugc.placement === p ? '#a855f7' : 'var(--bg-secondary)', color: ugc.placement === p ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.placement === p ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                    ))}
-                  </div>
-                  {(ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') && (
-                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>«Фон» = видео во весь кадр, аватар маленьким поверх (фон аватара прозрачный — виден только человек).</p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Голос:</span>
-                    {([['female', 'Жен'], ['male', 'Муж']] as [PodVoice, string][]).map(([v, lbl]) => (
-                      <button key={v} onClick={() => ugcMutate((u) => ({ ...u, voice: v }))} className="flex-1 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1"
-                        style={{ background: ugc.voice === v ? '#a855f7' : 'var(--bg-secondary)', color: ugc.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.voice === v ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}><Mic size={11} /> {lbl}</button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Скрипт: генерация / разбор записи */}
-                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                  {([['gen', 'Сгенерировать текст'], ['diarize', 'Разобрать запись']] as [PodSource, string][]).map(([s, lbl]) => (
-                    <button key={s} onClick={() => ugcMutate((u) => ({ ...u, source: s }))} className="py-2 rounded-lg text-[12px] font-600"
-                      style={{ background: ugc.source === s ? 'var(--bg-secondary)' : 'transparent', color: ugc.source === s ? '#a855f7' : 'var(--text-muted)' }}>{lbl}</button>
-                  ))}
-                </div>
-                {ugc.source === 'gen' ? (
-                  <div className="space-y-2">
-                    <textarea value={ugc.brief} onChange={(e) => ugcMutate((u) => ({ ...u, brief: e.target.value }))} rows={2}
-                      placeholder="О чём говорит аватар: «честный отзыв на приложение, крючок в первые 3 секунды»…"
-                      className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                    <button onClick={ugcGenScript} disabled={ugcBusy === 'dialogue'} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                      style={{ background: 'rgba(168,85,247,0.14)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
-                      {ugcBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать текст
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {ugc.recordingUrl ? (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                        <Music size={15} style={{ color: '#a855f7' }} />
-                        <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.recordingName || 'запись'}</span>
-                        <button onClick={() => ugcMutate((u) => ({ ...u, recordingUrl: null, recordingName: null, script: [], result: null }))} title="Убрать запись (сбросит и её разбор)" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => openUgcPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                        <Paperclip size={14} /> Загрузить запись (аудио/видео)
-                      </button>
-                    )}
-                    <button onClick={ugcRunDiarize} disabled={ugcBusy === 'diarize' || !ugc.recordingUrl} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
-                      style={{ background: 'rgba(168,85,247,0.14)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
-                      {ugcBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} Разобрать речь
-                    </button>
-                  </div>
-                )}
-                {ugc.script.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Реплик в скрипте: <b style={{ color: 'var(--text-secondary)' }}>{ugc.script.length}</b> (~{Math.round(ugcScriptSec())}с)</div>
-                    {/* Стандартный редактор диалога (тот же, что в Подкасте/Комментаторе): таймлайн + правка реплик. */}
-                    <DialogueTimeline
-                      dialogue={ugc.script}
-                      setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
-                      recordingUrl={ugc.recordingUrl}
-                      onPickImage={(i) => { setUgcLineIdx(i); setUgcPick('lineImage'); }}
-                      dialogueMode={ugc.dialogueEnabled}
-                      accentA="#a855f7"
-                      accentB="#c084fc"
-                    />
-                  </div>
-                )}
-
-                {/* Вторая половина — видео */}
-                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Video size={13} style={{ color: '#a855f7' }} /> Вторая половина — видео</div>
-                  {ugc.clip ? (
-                    <div className="flex items-center gap-2">
-                      <video src={`${ugc.clip.url}#t=0.1`} muted className="rounded-lg" style={{ width: 44, height: 78, objectFit: 'cover', background: '#000' }} />
-                      <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.clip.name}</span>
-                      <button onClick={() => ugcMutate((u) => ({ ...u, clip: null }))} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
-                    </div>
-                  ) : (
-                    <button onClick={() => openUgcPick('clip')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                      style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                      <Download size={14} /> Загрузить видео (галерея)
-                    </button>
-                  )}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-1">
-                      {([['cover', 'Заполнить'], ['contain', 'Вписать']] as ['cover' | 'contain', string][]).map(([f, lbl]) => (
-                        <button key={f} onClick={() => ugcMutate((u) => ({ ...u, clipFit: f }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
-                          style={{ background: ugc.clipFit === f ? '#a855f7' : 'var(--bg-secondary)', color: ugc.clipFit === f ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.clipFit === f ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                      ))}
-                    </div>
-                    <label className="text-[11px] inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={ugc.clipMuted} onChange={(e) => ugcMutate((u) => ({ ...u, clipMuted: e.target.checked }))} /> без звука видео
-                    </label>
-                  </div>
-                </div>
-
-                {/* Диалоги (два собеседника) — только «Своё фото» + разбор записи двух голосов */}
-                {ugc.avatarSource === 'photo' && (
-                  <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${ugc.dialogueEnabled ? 'rgba(168,85,247,.5)' : 'var(--border-medium)'}` }}>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, dialogueEnabled: !u.dialogueEnabled }))} className="w-full flex items-center justify-between" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-                      <span className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Users size={13} style={{ color: '#a855f7' }} /> Диалоги — два собеседника</span>
-                      <span className="relative inline-flex items-center" style={{ width: 34, height: 18, borderRadius: 9, background: ugc.dialogueEnabled ? '#a855f7' : 'var(--bg-secondary)', border: '1px solid var(--border-medium)', transition: 'background .15s' }}>
-                        <span style={{ position: 'absolute', top: 1, left: ugc.dialogueEnabled ? 17 : 1, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .15s' }} />
-                      </span>
-                    </button>
-                    {ugc.dialogueEnabled && (
-                      <>
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Разбор записи держит <b>два голоса A/B</b>, каждый говорит своим лицом (HeyGen). Claude сам решает: крупный план / оба в кадре / врезка медиа — под удержание и экономию. «Спикер A» = ваше фото выше.</p>
-                        {/* Второе лицо */}
-                        <div>
-                          <div className="text-[10px] font-700 uppercase mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Спикер B (второе лицо)</div>
-                          {ugc.photoBUrl ? (
-                            <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                              <img src={ugc.photoBUrl} alt="" className="rounded-md object-cover" style={{ width: 44, height: 58 }} />
-                              <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.photoBName || 'фото B'}</span>
-                              <button onClick={() => openUgcPick('photoB')} title="Заменить" className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: '#a855f7', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>заменить</button>
-                              <button onClick={() => ugcMutate((u) => ({ ...u, photoBUrl: null, photoBName: null }))} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
-                            </div>
-                          ) : (
-                            <button onClick={() => openUgcPick('photoB')} className="w-full py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                              style={{ background: 'var(--bg-secondary)', color: '#a855f7', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                              <Plus size={13} /> Фото «Спикер B» из Галереи
-                            </button>
-                          )}
-                        </div>
-                        {/* Вовлечённость */}
-                        <div>
-                          <div className="text-[10px] font-700 uppercase mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Вовлечённость (как часто оба в кадре)</div>
-                          <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                            {([['eco', 'Эконом'], ['bal', 'Баланс'], ['dyn', 'Динамично']] as [UgcSpec['dialogueEngagement'], string][]).map(([e, lbl]) => (
-                              <button key={e} onClick={() => ugcMutate((u) => ({ ...u, dialogueEngagement: e }))} className="py-1.5 rounded-lg text-[11px] font-700"
-                                style={{ background: ugc.dialogueEngagement === e ? '#a855f7' : 'transparent', color: ugc.dialogueEngagement === e ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}>{lbl}</button>
-                            ))}
-                          </div>
-                          <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                            {ugc.dialogueEngagement === 'eco' && 'Почти всегда один говорящий — самое дешёвое по HeyGen.'}
-                            {ugc.dialogueEngagement === 'bal' && 'Крупный план говорящего; оба в кадре — на реакциях/пиках.'}
-                            {ugc.dialogueEngagement === 'dyn' && 'Больше сцен «оба в кадре» и врезок — живее, дороже.'}
-                          </p>
-                        </div>
-                        {/* Вырезка фона аватара — силуэт поверх медиа (раскладка «фон + лицо сбоку») */}
-                        <button onClick={() => ugcMutate((u) => ({ ...u, dialogueCutout: !u.dialogueCutout }))} className="w-full flex items-center justify-between p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                          <span className="text-[11px] font-600 text-left" style={{ color: 'var(--text-secondary)' }}>Вырезать фон аватара<br /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>силуэт поверх медиа (без прямоугольника), раскладка «фон + лицо сбоку»</span></span>
-                          <span className="relative inline-flex flex-shrink-0 items-center" style={{ width: 34, height: 18, borderRadius: 9, background: ugc.dialogueCutout ? '#a855f7' : 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                            <span style={{ position: 'absolute', top: 1, left: ugc.dialogueCutout ? 17 : 1, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .15s' }} />
-                          </span>
-                        </button>
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Медиа на реплике: в редакторе реплик выше выберите показ («Авто» — решит Claude) и «Держать медиа» (видео покажется целиком, реплики сдвинутся). Нужен ключ HeyGen.</p>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Удержание (переключения техник) — только для «Своё фото» (HeyGen IV/III) */}
-                {ugc.avatarSource === 'photo' && !ugc.dialogueEnabled && (
-                  <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                    <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Layers size={13} style={{ color: '#a855f7' }} /> Удержание — переключения планов</div>
-                    <div className="grid grid-cols-4 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                      {([['off', 'Выкл'], ['eco', 'Эконом'], ['bal', 'Баланс'], ['prem', 'Премиум']] as [UgcSpec['retentionPreset'], string][]).map(([p, lbl]) => (
-                        <button key={p} onClick={() => ugcMutate((u) => ({ ...u, retentionPreset: p }))} className="py-1.5 rounded-lg text-[11px] font-700"
-                          style={{ background: ugc.retentionPreset === p ? '#a855f7' : 'transparent', color: ugc.retentionPreset === p ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}>{lbl}</button>
-                      ))}
-                    </div>
-                    {ugc.retentionPreset !== 'off' && (
-                      <>
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                          {ugc.retentionPreset === 'eco' && 'IV только на крючок и призыв, максимум «только видео». Дешевле всего (~2 IV-сегмента).'}
-                          {ugc.retentionPreset === 'bal' && 'IV на крючок, действие и призыв; III на связки, много врезок. Золотая середина (~3 IV).'}
-                          {ugc.retentionPreset === 'prem' && 'IV на крючок, действие, доп. лицо и призыв. Больше лица, дороже (~4 IV).'}
-                        </p>
-                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр каждые несколько секунд меняет технику (крупный план / верх-низ / только видео / PiP) под одну дорожку голоса. Где IV/III — решает LLM по тексту.</p>
-                        {/* Батч: N видео из Галереи → N роликов (аватар рендерится один раз) */}
-                        <div className="rounded-lg p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)' }}>
-                          <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>Батч: несколько видео → несколько роликов</div>
-                          {ugc.retentionBrolls.length > 0 ? (
-                            <div className="space-y-1">
-                              <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Выбрано видео: <b style={{ color: '#a855f7' }}>{ugc.retentionBrolls.length}</b> → столько же роликов на выходе</div>
-                              <div className="flex gap-1.5">
-                                <button onClick={() => openUgcPick('retBrolls')} className="flex-1 py-1.5 rounded-md text-[11px] font-600" style={{ background: 'var(--bg-tertiary)', color: '#a855f7', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>изменить набор</button>
-                                <button onClick={() => ugcMutate((u) => ({ ...u, retentionBrolls: [] }))} className="px-2 py-1.5 rounded-md text-[11px]" style={{ background: 'transparent', color: '#ef4444', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>очистить</button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button onClick={() => openUgcPick('retBrolls')} className="w-full py-2 rounded-md text-[11px] font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                              <Plus size={13} /> Выбрать несколько видео (иначе — одно «Вторая половина» выше)
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Титры — переиспускаем блок субтитров (subtitle_gen на воркере) */}
-                <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Type size={13} style={{ color: '#a855f7' }} /> Титры</div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Стиль:</span>
-                    {([['none', 'Без'], ['word', 'По словам'], ['karaoke', 'Караоке'], ['plain', 'Обычные']] as [UgcSubtitles['style'], string][]).map(([s, lbl]) => (
-                      <button key={s} onClick={() => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, style: s } }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
-                        style={{ background: ugc.subtitles.style === s ? '#a855f7' : 'var(--bg-secondary)', color: ugc.subtitles.style === s ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.subtitles.style === s ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Позиция:</span>
-                    {([['bottom', 'Низ'], ['center', 'Центр'], ['top', 'Верх']] as [UgcSubtitles['pos'], string][]).map(([p, lbl]) => (
-                      <button key={p} onClick={() => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, pos: p } }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
-                        style={{ background: ugc.subtitles.pos === p ? '#a855f7' : 'var(--bg-secondary)', color: ugc.subtitles.pos === p ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.subtitles.pos === p ? '#a855f7' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
-                    ))}
-                  </div>
-                  <input value={ugc.subtitles.wishes} onChange={(e) => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, wishes: e.target.value } }))}
-                    placeholder="пожелания: шрифт, кегль, обводка, цвет, тень…" className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                </div>
-
-                {/* Инлайн-пикер медиа (видео/фото/запись/музыка) из Галереи */}
-                {ugcPick && ugcPick !== 'retBrolls' && (
-                  <GalleryPicker
-                    open token={token}
-                    title={ugcPick === 'music' ? 'Музыка' : ugcPick === 'photo' ? 'Фото · Спикер A' : ugcPick === 'photoB' ? 'Фото · Спикер B' : ugcPick === 'recording' ? 'Запись' : ugcPick === 'avatarAdd' ? 'Аватар из Галереи' : ugcPick === 'lineImage' ? 'Медиа к фразе' : 'Видео (UGC)'}
-                    defaultTab={ugcPick === 'music' ? 'audio' : 'reference'}
-                    onClose={() => { setUgcPick(null); setUgcLineIdx(null); }}
-                    onUpload={(files) => uploadToGallery(files, ugcPick === 'music' ? 'audio' : 'reference')}
-                    uploadAccept={ugcPick === 'music' ? 'audio/*' : (ugcPick === 'photo' || ugcPick === 'photoB' || ugcPick === 'avatarAdd') ? 'image/*' : ugcPick === 'lineImage' ? 'image/*,video/*' : ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
-                    onlyType={ugcPick === 'photo' || ugcPick === 'photoB' || ugcPick === 'avatarAdd' ? 'image' : ugcPick === 'music' ? 'audio' : ugcPick === 'clip' ? 'video' : undefined}
-                    onPick={(it) => pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
-                  />
-                )}
-
-                {/* Батч-пикер видео для удержания: мульти-выбор, каждое видео → отдельный ролик */}
-                {ugcPick === 'retBrolls' && (
-                  <GalleryPicker
-                    open multi token={token}
-                    title="Видео для батча (каждое → свой ролик)"
-                    note="Клик добавляет видео; можно выбрать несколько. На каждое получится готовый ролик с аватаром."
-                    defaultTab="reference"
-                    onlyType="video"
-                    uploadAccept="video/*"
-                    pickedKeys={new Set(ugc.retentionBrolls.map((b) => b.url))}
-                    onClose={() => setUgcPick(null)}
-                    onUpload={(files) => uploadToGallery(files, 'reference')}
-                    onPick={(it) => ugcMutate((u) => (
-                      u.retentionBrolls.some((b) => b.url === it.fileUrl)
-                        ? { ...u, retentionBrolls: u.retentionBrolls.filter((b) => b.url !== it.fileUrl) }
-                        : { ...u, retentionBrolls: [...u.retentionBrolls, { url: it.fileUrl, name: it.title }] }
-                    ))}
-                  />
-                )}
-
-                {/* Удаление аватара из коллекции — свой модал, без браузерного confirm */}
-                <ConfirmModal
-                  open={!!ugcDelAvatar}
-                  title="Убрать аватар?"
-                  message={ugcDelAvatar ? `«${ugcDelAvatar.name}» будет убран из вашей коллекции аватаров. Исходный файл в Галерее останется.` : ''}
-                  confirmLabel="Убрать"
-                  cancelLabel="Отмена"
-                  variant="danger"
-                  onCancel={() => setUgcDelAvatar(null)}
-                  onConfirm={() => { if (ugcDelAvatar) void doDelUgcAvatar(ugcDelAvatar); }}
-                />
-
-                {ugcNote && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{ugcNote}</p>}
-
-                {/* Результат — один ролик или батч (несколько) */}
-                {ugc.results && ugc.results.length > 1 ? (
-                  <div className="rounded-xl p-2 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(168,85,247,.4)' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Батч: {ugc.results.length} роликов (все в Галерее)</span>
-                      <button onClick={() => ugcMutate((u) => ({ ...u, result: null, results: [] }))} title="Скрыть" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {ugc.results.map((res, i) => (
-                        <div key={res.url + i} className="space-y-1">
-                          <video src={res.url} controls playsInline
-                            className="rounded-lg block w-full" style={{ height: 'auto', maxHeight: '48vh', objectFit: 'contain', background: '#000' }} />
-                          <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }} title={res.name}>{res.name}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : ugc.result && (
-                  <div className="rounded-xl p-2 space-y-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(168,85,247,.4)' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-700" style={{ color: '#a855f7' }}>Готовый ролик (он же в Галерее)</span>
-                      <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title="Скрыть" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
-                    </div>
-                    {/* Крупный плеер: аспект ролика + большая высота (проверенный на проде
-                        подход v1.6.113, только выше — «крупнее» по просьбе). */}
-                    <video src={ugc.result.url} controls playsInline autoPlay
-                      onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setUgcResultAR(v.videoWidth / v.videoHeight); }}
-                      className="rounded-lg block" style={{ aspectRatio: String(ugcResultAR), maxHeight: '72vh', maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
-                  </div>
-                )}
-
-                {/* Формат вывода: 9:16 (шортс) / 16:9 (горизонталь) / оба (два файла за один прогон) */}
-                <div className="rounded-xl p-2.5 space-y-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  <div className="text-[11px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Crop size={13} style={{ color: '#a855f7' }} /> Формат вывода</div>
-                  <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    {([['p', '9:16', ['9x16']], ['l', '16:9', ['16x9']], ['b', 'Оба', ['9x16', '16x9']]] as [string, string, ('9x16' | '16x9')[]][]).map(([k, lbl, val]) => {
-                      const sel = ugc.formats.length === val.length && val.every((v) => ugc.formats.includes(v));
-                      return (
-                        <button key={k} onClick={() => ugcMutate((u) => ({ ...u, formats: val }))} className="py-1.5 rounded-lg text-[11px] font-700"
-                          style={{ background: sel ? '#a855f7' : 'transparent', color: sel ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}>{lbl}</button>
-                      );
-                    })}
-                  </div>
-                  {ugc.formats.length > 1 && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Два файла за один прогон — аватар рендерится один раз (цена HeyGen как за один ролик).</p>}
-                </div>
-
-                {/* Сборка */}
-                <div className="flex items-center gap-2">
-                  <button onClick={() => void ugcSaveNow()} disabled={saving} className="text-sm font-600 px-3 py-2.5 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-60"
-                    style={{ background: 'var(--bg-tertiary)', color: ugcSavedFlash ? '#22c55e' : 'var(--text-secondary)', border: `1px solid ${ugcSavedFlash ? 'rgba(34,197,94,.5)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                    {saving ? <Loader2 size={15} className="animate-spin" /> : ugcSavedFlash ? <Check size={15} /> : <Save size={15} />}
-                    {saving ? 'Сохраняю…' : ugcSavedFlash ? 'Сохранено' : 'Сохранить'}
-                  </button>
-                  <button onClick={() => void ugcBuildStart()} disabled={ugcBusy === 'render'}
-                    title="Аватар говорит скрипт (HeyGen) → склейка с видео → титры → Галерея"
-                    className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-700 py-2.5 rounded-xl disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                    {ugcBusy === 'render' ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {ugcBusy === 'render' ? 'Собираю…' : 'Собрать UGC'}
-                  </button>
-                </div>
-                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Автосохранение включено: правки пишутся сами через пару секунд — кнопка лишь страховка.</p>
-                <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Сборка идёт на сервере — можно закрыть панель, прогресс не потеряется. Аватар (коллекция или своё фото) оживит HeyGen Avatar IV (в облаке, ~2–5 мин).</p>
               </div>
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">

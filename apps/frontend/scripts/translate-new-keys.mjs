@@ -25,20 +25,24 @@ const ROOT = path.resolve(__dirname, '..');
 const LOCALES_DIR = path.join(ROOT, 'public', 'locales');
 const SOURCE_LANG = 'en';
 
-// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: разделитель дней в ленте чата комнаты) ──
-// Прошлые батчи (settings.changePwd.*, auth.reset.*) уже переведены во всех локалях —
+// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: вся UGC-студия v2.0.6) ──
+// Прошлые батчи (chat.*, settings.changePwd.*, auth.reset.*) уже переведены во всех локалях —
 // их повторно гонять не нужно. Перед новым прогоном замени список на свежие ключи.
-const KEY_PATHS = [
-  'chat.empty',
-  'chat.newMessages',
-  'chat.fromTranscript',
-  'chat.audioMessage',
-  'chat.queued',
-  'chat.delivered',
-  'chat.fileFallback',
-  'chat.openImage',
-  'chat.explainTone',
-];
+// Батч UGC собирается программно: ВСЕ листья дерева `ugc.*` из en/common.json (~280 ключей,
+// включая плюрал-формы _one/_other) — руками такой список не поддержать.
+const KEY_PATHS = await (async () => {
+  const en = JSON.parse(await fs.readFile(path.join(LOCALES_DIR, 'en', 'common.json'), 'utf-8'));
+  const out = [];
+  (function walk(node, prefix) {
+    for (const [k, v] of Object.entries(node)) {
+      const p = prefix ? `${prefix}.${k}` : k;
+      if (typeof v === 'string') out.push(p);
+      else if (v && typeof v === 'object') walk(v, p);
+    }
+  })(en.ugc || {}, 'ugc');
+  console.log(`Батч UGC: ${out.length} ключей`);
+  return out;
+})();
 
 // Наши коды → коды Google Translate (некоторые отличаются).
 const GOOGLE_CODE_MAP = { zh: 'zh-CN', he: 'iw', jv: 'jw' };
@@ -80,6 +84,28 @@ function protectPrefix(s) {
   const m = s.match(/^([✓✔←→»«\s]+)/u);
   if (m) return { prefix: m[1], rest: s.slice(m[1].length) };
   return { prefix: '', rest: s };
+}
+
+// ── Защита {{интерполяций}} от переводчика (как в translate-locales.mjs) ──
+// Без неё Google переводит ИМЕНА переменных ({{count}} → {{telling}}/{{ቆጠራ}}…) и i18next
+// перестаёт подставлять значения. {{…}} маскируются токенами __VVn__ и восстанавливаются.
+function protectPlaceholders(str) {
+  const map = [];
+  const protectedStr = String(str).replace(/\{\{[^}]+\}\}/g, (m) => {
+    const token = `__VV${map.length}__`;
+    map.push(m);
+    return token;
+  });
+  return { protectedStr, map };
+}
+function restorePlaceholders(translatedStr, map) {
+  let out = String(translatedStr);
+  map.forEach((original, idx) => {
+    for (const v of [`__VV${idx}__`, `__vv${idx}__`, `_VV${idx}_`, `__ VV${idx} __`, `__VV ${idx}__`]) {
+      out = out.split(v).join(original);
+    }
+  });
+  return out;
 }
 
 async function translateBatch(apiKey, texts, targetLang) {
@@ -135,10 +161,18 @@ async function main() {
 
     let translated;
     try {
-      // Защищаем ведущие глифы, переводим, восстанавливаем.
+      // Защищаем ведущие глифы и {{интерполяции}}, переводим ЧАНКАМИ (лимит Google —
+      // 128 сегментов/запрос), затем восстанавливаем плейсхолдеры и глифы.
       const parts = enValues.map(protectPrefix);
-      const out = await translateBatch(apiKey, parts.map((p) => p.rest), lang);
-      translated = parts.map((p, i) => p.prefix + (out[i] ?? p.rest));
+      const guarded = parts.map((p) => protectPlaceholders(p.rest));
+      const rests = guarded.map((g) => g.protectedStr);
+      const CHUNK = 100;
+      const out = [];
+      for (let i = 0; i < rests.length; i += CHUNK) {
+        const piece = await translateBatch(apiKey, rests.slice(i, i + CHUNK), lang);
+        out.push(...piece);
+      }
+      translated = parts.map((p, i) => p.prefix + restorePlaceholders(out[i] ?? guarded[i].protectedStr, guarded[i].map));
       ok++;
     } catch (e) {
       // API не справился для языка — кладём английский, чтобы ключ существовал.
