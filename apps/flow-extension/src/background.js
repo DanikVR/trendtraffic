@@ -228,7 +228,7 @@ async function fetchBytes(url) {
     const res = (await tryFetch({ credentials: 'include' })) || (await tryFetch({}));
     if (!res) return { ok: false, error: 'скачивание не удалось (CDN отклонил запрос)' };
     const buf = await res.arrayBuffer();
-    if (buf.byteLength > 64 * 1024 * 1024) return { ok: false, error: 'видео >64МБ — велико для заливки в Flow' };
+    if (buf.byteLength > 150 * 1024 * 1024) return { ok: false, error: 'медиа >150МБ — слишком большое' };
     const bytes = new Uint8Array(buf);
     let binary = ''; const CH = 0x8000;
     for (let i = 0; i < bytes.length; i += CH) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
@@ -245,6 +245,20 @@ async function sendRecon(payload) {
       body: JSON.stringify({ data: payload.data || {}, url: payload.url || null }),
     });
     return { ok: res.ok };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+/** Из Галереи TrendTraffic: открыть/сфокусировать вкладку Flow и залить туда медиа по URL. */
+async function pushToFlow(url, title) {
+  const tabId = await ensureFlowTab();
+  if (!tabId) return { ok: false, error: 'не удалось открыть Flow' };
+  try {
+    await chrome.tabs.update(tabId, { active: true });
+    const t = await chrome.tabs.get(tabId);
+    if (t && t.windowId != null) await chrome.windows.update(t.windowId, { focused: true });
+  } catch { /* фокус — best-effort */ }
+  try {
+    const r = await chrome.tabs.sendMessage(tabId, { type: 'inject-url', url, title });
+    return r || { ok: true };
   } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 
@@ -301,6 +315,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       case 'send-recon':
         sendResponse(await sendRecon(msg.payload || {}));
+        break;
+      case 'push-to-flow':
+        sendResponse(await pushToFlow(msg.url, msg.title));
         break;
       default:
         sendResponse({ ok: false, error: 'unknown message' });

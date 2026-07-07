@@ -60,6 +60,10 @@
     } else if (d.type === 'status') {
       const r = await toBg({ type: 'tt-status' });
       toPage({ type: 'status', ...(r || { connected: false }) });
+    } else if (d.type === 'push-to-flow') {
+      // Из Галереи TrendTraffic: открыть Flow и залить туда медиа по URL.
+      const r = await toBg({ type: 'push-to-flow', url: d.url, title: d.title });
+      toPage({ type: 'push-to-flow-result', ok: !!(r && r.ok), error: r && r.error });
     }
   });
 

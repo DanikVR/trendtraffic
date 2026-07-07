@@ -38,9 +38,9 @@ export const FLOW_FOLDER = 'flow';
 /** Referer для скачивания результата (Google-CDN капризен к источнику). */
 const FLOW_REFERER = 'https://labs.google/';
 
-/** Максимальная база64-заливка (fallback, когда прямой ссылки нет). Обычно
- *  расширение шлёт sourceUrl и сюда не попадает. */
-const INGEST_JSON_LIMIT = '96mb';
+/** Максимальная база64-заливка «В галерею» (расширение шлёт готовые видео/картинки base64).
+ *  210mb ≈ под лимит nginx (210M): base64 раздувает ×1.37, т.е. реальный клип до ~150 МБ. */
+const INGEST_JSON_LIMIT = '210mb';
 
 const __dirname_f = path.dirname(fileURLToPath(import.meta.url));
 const FLOW_DIR = path.resolve(__dirname_f, '../../../../uploads/source-videos');

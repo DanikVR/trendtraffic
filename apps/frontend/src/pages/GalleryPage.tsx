@@ -19,7 +19,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
-  Download, Play, BookOpen,
+  Download, Play, BookOpen, Clapperboard,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -27,6 +27,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
+import { FLOW_EXT_VERSION } from '../components/AppVersion';
 
 type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
 
@@ -89,6 +90,34 @@ export default function GalleryPage() {
   const [viewer, setViewer] = useState<{ url: string; title: string } | null>(null);
   const [analysis, setAnalysis] = useState<{ title: string; dna: any } | null>(null); // просмотр сохранённого разбора
   const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
+  const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
+  const [flowMsg, setFlowMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [extPopup, setExtPopup] = useState(false);
+  useEffect(() => {
+    const onMsg = (ev: MessageEvent) => {
+      if (ev.source !== window) return;
+      const d = ev.data;
+      if (!d || d.source !== 'tt-flow-ext') return;
+      if (d.type === 'present' || d.type === 'status' || d.type === 'connected') setExtStatus('present');
+      if (d.type === 'push-to-flow-result') {
+        setFlowMsg(d.ok ? { ok: true, text: 'Отправлено в Google Flow — переключитесь на вкладку Flow.' } : { ok: false, text: 'Не удалось: ' + (d.error || 'ошибка') });
+        setTimeout(() => setFlowMsg(null), 6000);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    window.postMessage({ source: 'trendtraffic', type: 'status' }, window.location.origin);
+    const t = setTimeout(() => setExtStatus((s) => (s === 'checking' ? 'absent' : s)), 1400);
+    return () => { window.removeEventListener('message', onMsg); clearTimeout(t); };
+  }, []);
+  const sendToFlow = (v: GalleryItem) => {
+    if (extStatus !== 'present') { setExtPopup(true); return; }
+    const abs = /^https?:/i.test(v.fileUrl) ? v.fileUrl : window.location.origin + (v.fileUrl.startsWith('/') ? v.fileUrl : '/' + v.fileUrl);
+    window.postMessage({ source: 'trendtraffic', type: 'push-to-flow', url: abs, title: v.title }, window.location.origin);
+    setFlowMsg({ ok: true, text: `Отправляю «${v.title}» в Google Flow…` });
+    setTimeout(() => setFlowMsg(null), 6000);
+  };
 
   const openAnalysis = async (v: GalleryItem) => {
     setAnalysis({ title: v.title, dna: null }); setAnalysisLoading(true);
@@ -405,6 +434,14 @@ export default function GalleryPage() {
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                         {v.webUrl ? <ExternalLink size={14} /> : <Play size={14} />}
                       </a>
+                      {/* → Google Flow (видео/картинки): отправить в Flow через расширение */}
+                      {(v.mediaType === 'video' || v.mediaType === 'image') && (
+                        <button type="button" onClick={() => sendToFlow(v)} title="Отправить в Google Flow (Veo) через расширение"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                          style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
+                          <Clapperboard size={14} />
+                        </button>
+                      )}
                       {/* Удалить */}
                       <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл"
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
@@ -462,6 +499,39 @@ export default function GalleryPage() {
             ) : (
               <AnalysisView dna={analysis.dna} />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Тост-уведомление отправки в Flow */}
+      {flowMsg && (
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 96, maxWidth: 360, padding: '10px 14px', borderRadius: 12, background: 'var(--bg-secondary)', border: `1px solid ${flowMsg.ok ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}`, color: flowMsg.ok ? '#10b981' : '#ef4444', fontSize: 13, fontWeight: 600, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+          {flowMsg.text}
+        </div>
+      )}
+
+      {/* Поп-ап «нужно расширение» — если расширение не установлено */}
+      {extPopup && (
+        <div onClick={() => setExtPopup(false)} style={{ position: 'fixed', inset: 0, zIndex: 97, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 470, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}><Clapperboard size={18} color="#fff" /></span>
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Нужно расширение Google Flow</span>
+            </div>
+            <p className="text-[13px] mb-3" style={{ color: 'var(--text-secondary)' }}>
+              Чтобы отправлять медиа прямо в Google Flow, установите наше Chrome-расширение (v{FLOW_EXT_VERSION}). Один раз — дальше подключается автоматически.
+            </p>
+            <a href="/flow-extension.zip" download className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl" style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
+              <Download size={15} /> Скачать расширение
+            </a>
+            <ol className="list-decimal ml-4 text-[12px] space-y-1 mt-3" style={{ color: 'var(--text-muted)' }}>
+              <li>Распакуйте .zip в отдельную папку.</li>
+              <li><code>chrome://extensions</code> → «Режим разработчика» → «Загрузить распакованное» → эта папка.</li>
+              <li>Войдите в свой Google на <b>labs.google/flow</b>, вернитесь сюда и снова нажмите «→ Flow».</li>
+            </ol>
+            <div className="flex justify-end mt-3">
+              <button onClick={() => setExtPopup(false)} className="text-[13px] font-600 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Закрыть</button>
+            </div>
           </div>
         </div>
       )}

@@ -251,6 +251,13 @@
       if (!els.pick) return;
       els.pick.classList.remove('hide');
       els.pick.innerHTML = '';
+      // Ссылка на ПОЛНУЮ Галерею (выбор как в редакторе: превью/поиск/папки + кнопка «→ Flow»).
+      const full = document.createElement('div');
+      full.className = 'it'; full.style.fontWeight = '700';
+      full.textContent = '📂 Открыть полную Галерею →';
+      full.title = 'Галерея TrendTraffic — выбор как в редакторе, на каждом файле кнопка «→ Flow»';
+      full.addEventListener('click', () => window.open('https://app.trendtraffic.pro/gallery', '_blank'));
+      els.pick.appendChild(full);
       if (placeholder) { const p = document.createElement('div'); p.className = 'ph'; p.textContent = placeholder; els.pick.appendChild(p); }
       for (const it of (items || [])) {
         const row = document.createElement('div'); row.className = 'it';
@@ -407,10 +414,12 @@
   // Скачать медиа ИЗ СТРАНИЦЫ (её cookie/Referer/Origin) → dataUrl. С cookie и без (подписанные URL их отвергают).
   async function pageFetchDataUrl(url) {
     const tryF = async (opts) => { try { const r = await fetch(url, opts); return r.ok ? r : null; } catch { return null; } };
-    const res = (await tryF({ credentials: 'include' })) || (await tryF({}));
+    // Сначала БЕЗ credentials (CDN Flow отдаёт ACAO:* — так CORS не ругается в консоли), потом с cookie.
+    const res = (await tryF({})) || (await tryF({ credentials: 'include' }));
     if (!res) throw new Error('page fetch fail');
     const blob = await res.blob();
     if (blob.size < 64) throw new Error('пусто');
+    if (blob.size > 150 * 1024 * 1024) throw new Error('слишком большое (>150МБ)');
     return await blobToDataUrl(blob);
   }
   async function grabMediaData(el) {
@@ -528,6 +537,19 @@
     if (msg.type === 'ping') { sendResponse({ ready: true }); return; }
     if (msg.type === 'run-task') {
       runTask(msg.task).then(sendResponse).catch((e) => sendResponse({ ok: false, reason: String(e && e.message || e) }));
+      return true; // async
+    }
+    if (msg.type === 'inject-url') {
+      // Из Галереи TrendTraffic: скачать медиа (background, обход CORS) → залить в поле загрузки Flow.
+      (async () => {
+        ui.line('получаю медиа из Галереи…');
+        const b = await send({ type: 'fetch-bytes', url: msg.url });
+        if (!b || !b.ok) { ui.line('⚠ не скачалось из Галереи' + (b && b.error ? ': ' + b.error : '')); sendResponse({ ok: false, error: b && b.error }); return; }
+        const base = String(msg.title || 'gallery').replace(/[^\w.-]+/g, '_').slice(0, 60).replace(/\.(mp4|webm|mov|png|jpe?g)$/i, '');
+        const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, base + guessExt(b.mime)));
+        ui.line(res.ok ? '✓ вставлено в Flow из Галереи — выбери как исходное/референс' : ('⚠ поле загрузки в Flow не найдено (' + res.reason + ')'));
+        sendResponse(res);
+      })();
       return true; // async
     }
   });

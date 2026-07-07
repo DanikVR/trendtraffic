@@ -1862,11 +1862,19 @@
  *         (дефолт ~100КБ) — тот резал тело раньше маршрутного лимита 96mb. Перенёс монтирование
  *         /api/flow-ext ВЫШЕ глобального express.json() (к quest-flow/mcp/social-ext). nginx уже
  *         210M. server.ts. Обновлять расширение (v0.2.4) НЕ нужно. */
-export const APP_VERSION = '1.6.127';
+/* 1.6.128 — Google Flow: (1) КНОПКА «→ Flow» В ГАЛЕРЕЕ (расширение v0.2.5) — на каждом видео/фото
+ *         кнопка отправляет медиа прямо в Google Flow через расширение (postMessage push-to-flow →
+ *         background открывает/фокусирует вкладку Flow → content-flow inject-url качает байты и
+ *         кладёт в поле загрузки); нет расширения → поп-ап «Скачать расширение» + инструкция.
+ *         «Из Галереи» в панели Flow теперь ведёт и в ПОЛНУЮ Галерею (выбор как в редакторе).
+ *         (2) ЛИМИТ клипа поднят: сервер INGEST 96mb→210mb (под nginx 210M), расширение 64→150МБ.
+ *         GalleryPage.tsx (кнопка+детект+поп-ап), content-bridge/background/content-flow
+ *         (push-to-flow/inject-url), flow-ext/router.ts, manifest 0.2.4→0.2.5. */
+export const APP_VERSION = '1.6.128';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.4';
+export const FLOW_EXT_VERSION = '0.2.5';
 
 export function AppVersion() {
   return (
