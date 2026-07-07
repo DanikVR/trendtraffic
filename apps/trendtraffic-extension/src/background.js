@@ -29,10 +29,16 @@ const TASK_TIMEOUT_MS = 8 * 60_000;    // потолок ожидания одн
 const NLM_TASK_TIMEOUT_MS = 12 * 60_000; // потолок ожидания одной генерации артефакта
 const NLM_CREATE_WAIT_MS = 45_000;       // ожидание появления /notebook/<uuid> после «создать»
 
+// ── HeyGen (рендер говорящих голов по подписке; вкладка app.heygen.com) ─────────
+const HG_PACE_MIN_MS = 8_000;            // мин. пауза между головами
+const HG_PACE_MAX_MS = 20_000;           // макс. пауза между головами
+const HG_TASK_TIMEOUT_MS = 25 * 60_000;  // генерация головы + скачивание
+
 const STATE = {
   token: null, apiBase: null,
   flowTabId: null, busyFlow: false, pausedUntil: 0,
   nlmLooping: false, nlmLoggedIn: false,
+  hgBusy: false,
 };
 
 // ---------- утилиты ----------
@@ -424,11 +430,84 @@ async function sendReconNlm(payload) {
   } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 
+// ==================== HeyGen (третий сервис) ====================
+// Рендер «говорящих голов» по подписке клиента: очередь /api/heygen-ext → вкладка app.heygen.com →
+// content-heygen делает генерацию под сессией → mp4 обратно. Независимо от Flow/NotebookLM.
+async function hgFindTab() {
+  const tabs = await chrome.tabs.query({ url: 'https://app.heygen.com/*' });
+  return tabs.length ? tabs[0].id : null;
+}
+function hgWaitReady(tabId, timeoutMs = 30_000) {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const iv = setInterval(async () => {
+      try { const r = await chrome.tabs.sendMessage(tabId, { type: 'ping' }); if (r && r.ready) { clearInterval(iv); resolve(true); return; } }
+      catch { /* content ещё не поднялся */ }
+      if (Date.now() - started > timeoutMs) { clearInterval(iv); resolve(false); }
+    }, 1200);
+  });
+}
+async function heygenStatus(taskId, status, note) {
+  try {
+    await fetch(api('/api/heygen-ext/status'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ taskId, status, note: note || null }),
+    });
+  } catch { /* best-effort */ }
+}
+async function heygenIngest(task, result) {
+  const res = await fetch(api('/api/heygen-ext/ingest'), {
+    method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ taskId: task.id, sourceUrl: result.sourceUrl || null, dataUrl: result.dataUrl || null }),
+  });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+}
+async function runHeygenTask(task) {
+  const tabId = await hgFindTab();
+  if (!tabId) { await heygenStatus(task.id, 'retry', 'Откройте вкладку студии app.heygen.com — голова отрендерится сама'); return; }
+  const ready = await hgWaitReady(tabId);
+  if (!ready) { await heygenStatus(task.id, 'retry', 'Студия HeyGen ещё грузится — повторю позже'); return; }
+  await heygenStatus(task.id, 'running');
+  let result;
+  try { result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'render-head', task }), HG_TASK_TIMEOUT_MS); }
+  catch (e) { await heygenStatus(task.id, 'failed', String(e && e.message || e)); return; }
+  if (result && result.retry) { await heygenStatus(task.id, 'retry', result.reason || 'повтор'); return; }
+  if (!result || !result.ok) { await heygenStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }
+  try { await heygenIngest(task, result); await heygenStatus(task.id, 'done'); }
+  catch (e) { await heygenStatus(task.id, 'failed', 'ingest: ' + (e && e.message)); }
+}
+async function tickHeygen() {
+  if (STATE.hgBusy || !STATE.token || !STATE.apiBase) return;
+  STATE.hgBusy = true;
+  try {
+    const res = await fetch(api('/api/heygen-ext/tasks?limit=1'), { headers: authHeaders() });
+    if (res.status === 401) { log('HeyGen: токен протух'); await disconnect(); return; }
+    if (!res.ok) { log('HeyGen tasks HTTP', res.status); return; }
+    const data = await res.json().catch(() => ({}));
+    const task = (data.tasks || [])[0];
+    if (!task) return;
+    await runHeygenTask(task);
+    await sleep(jitter(HG_PACE_MIN_MS, HG_PACE_MAX_MS));
+  } catch (e) { log('HeyGen ошибка цикла:', e && e.message); }
+  finally { STATE.hgBusy = false; }
+}
+async function sendReconHeygen(payload) {
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  try {
+    const res = await fetch(api('/api/heygen-ext/recon'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ data: payload.data || {}, url: payload.url || null }),
+    });
+    return { ok: res.ok };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+
 // ---------- главный цикл ----------
 function tick() {
   if (!STATE.token || !STATE.apiBase) return;
-  void tickFlow();   // Flow: одна задача за тик + пейсинг
-  void nlmLoop();    // NotebookLM: свой long-poll цикл (no-op, если уже крутится)
+  void tickFlow();    // Flow: одна задача за тик + пейсинг
+  void nlmLoop();     // NotebookLM: свой long-poll цикл (no-op, если уже крутится)
+  void tickHeygen();  // HeyGen: одна голова за тик + пейсинг
 }
 
 // ---------- сообщения ----------
@@ -467,6 +546,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: true });
         break;
       case 'nlm-send-recon': sendResponse(await sendReconNlm(msg.payload || {})); break;
+
+      // — HeyGen —
+      case 'hg-bearer': await chrome.storage.local.set({ heygenBearer: msg.token, heygenBearerAt: Date.now() }); sendResponse({ ok: true }); break;
+      case 'hg-send-recon': sendResponse(await sendReconHeygen(msg.payload || {})); break;
 
       default: sendResponse({ ok: false, error: 'unknown message' });
     }

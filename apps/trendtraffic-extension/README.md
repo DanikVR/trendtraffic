@@ -1,16 +1,18 @@
-# TrendTraffic для Google — единое Chrome-расширение (Flow + NotebookLM)
+# TrendTraffic — единое Chrome-расширение (Flow · NotebookLM · HeyGen)
 
-Одно расширение, один установочный `.zip`. Работает сразу на двух сервисах Google
-в **реальном браузере** пользователя (его живой вход в Google, жилой IP):
+Одно расширение, один установочный `.zip`. Работает сразу на трёх сервисах в
+**реальном браузере** пользователя (его живой вход, жилой IP):
 
 | Сервис | Сайт | Блок в TrendFlow | Что делает |
 |--------|------|------------------|------------|
 | **Google Flow** (Veo) | `labs.google/fx/tools/flow` | «Google Flow» | очередь промптов → авто-генерация клипов → Галерея `folder='flow'`; обмен видео/картинками «⬆ В галерею»/«⬇ Из Галереи» |
 | **Google NotebookLM** | `notebooklm.google.com` | «Hotebook» | источники (URL/текст/файл из Галереи, в т.ч. видео+анализ), чат, генерация 9 артефактов → Галерея `folder='hotebook'` |
+| **HeyGen** (Avatar IV/III) | `app.heygen.com` | «UGC / Аватары» | рендер говорящих голов по **вашей подписке** HeyGen (втрое дешевле API) → mp4 в пайплайн UGC |
 
-Панель поверх сайта выглядит по-разному: **индиго** «TrendTraffic → Flow» на Flow,
-**бирюзовая** «TrendTraffic → Hotebook» на NotebookLM. Один вход по JWT (берётся из
-`localStorage['vibevox_token']` на app.trendtraffic.pro) обслуживает обе очереди.
+Панель поверх сайта включается **по хосту**: «TrendTraffic → Flow» на Flow,
+«TrendTraffic → Hotebook» на NotebookLM, «TrendTraffic → HeyGen» на HeyGen — каждый
+content-script грузится только на своём домене. Один вход по JWT (берётся из
+`localStorage['vibevox_token']` на app.trendtraffic.pro) обслуживает все очереди.
 
 Раздаётся приватно (`.zip` → *Load unpacked*), без Chrome Web Store.
 
@@ -36,7 +38,19 @@
 | `src/injected.js` | Flow (MAIN) | перехват `fetch/XHR` Flow → разведка + bearer |
 | `src/content-notebook.js` | NotebookLM (isolated) | панель + командный роутер (источники/чат/студия артефактов) |
 | `src/injected-nlm.js` | NotebookLM (MAIN) | перехват `fetch/XHR` NotebookLM → разведка + bearer |
+| `src/content-heygen.js` | HeyGen (isolated) | панель + драйвер рендера головы под сессией (`render-head`) |
+| `src/injected-heygen.js` | HeyGen (MAIN) | перехват `fetch/XHR` студии → разведка API + session-bearer |
 | `src/content-bridge.js` | наш домен | `window.postMessage` ↔ background (передача JWT, авто-подключение) |
+
+## HeyGen: как устроен рендер по подписке
+
+UGC-сборка с провайдером «По подписке» кладёт задачи-«головы» (фото + аудио-сегмент +
+Avatar IV/III) в `POST /api/render/ugc/build` → очередь `heygen_ext_tasks`. Расширение
+забирает их (`GET /api/heygen-ext/tasks`), повторяет ровно те вызовы, что делает сама
+студия под сессией клиента (upload talking_photo → `v2/video/generate` на наше аудио →
+poll → скачивание mp4), и шлёт результат в `POST /api/heygen-ext/ingest`. Пайплайн UGC
+ждёт готовые головы и собирает финальный ролик. Эндпоинты — в `CONFIG` начале
+`content-heygen.js`, правятся по снимку разведки (`/api/heygen-ext/recon`).
 
 ## NotebookLM: как устроен обмен
 
