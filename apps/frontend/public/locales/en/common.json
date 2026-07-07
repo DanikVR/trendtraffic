@@ -1279,7 +1279,11 @@
       "sub": "optional",
       "volumeLabel": "Music volume:",
       "volumeHint": "Voice is always 100%; best practice for background is 15–25%. A track shorter than the clip loops; a longer one is trimmed.",
-      "empty": "Music — not chosen yet · sits quietly under the voice"
+      "empty": "Music — not chosen yet · sits quietly under the voice",
+      "durationLabel": "How long it plays",
+      "playFull": "Whole video",
+      "playFirst": "First N seconds",
+      "durationHint": "seconds from the start, then a smooth fade-out"
     },
     "format": {
       "label": "Format",
@@ -1288,7 +1292,12 @@
       "both": "Both",
       "twoFilesNote": "2 files per run — the avatar is billed once",
       "label916": "9:16 · TikTok, Reels, Shorts",
-      "label169": "16:9 · YouTube"
+      "label169": "16:9 · YouTube",
+      "square": "1:1 · square",
+      "feed": "4:5 · feed",
+      "label11": "1:1 · Instagram feed",
+      "label45": "4:5 · Instagram / Facebook",
+      "filesPerRun": "files per run: {{count}} — the avatar is paid for once"
     },
     "layout": {
       "label": "Layout",
@@ -1346,7 +1355,8 @@
       "tagPeerBReaction": "Speaker B · reaction $0",
       "tagLineMediaBg": "Line media · as background",
       "tagCutawayNoFace": "Cutaway · no face · $0",
-      "tagAvatarCloseup": "Avatar · close-up"
+      "tagAvatarCloseup": "Avatar · close-up",
+      "openGallery": "Open in Gallery"
     },
     "picker": {
       "photoA": "Photo · first speaker",

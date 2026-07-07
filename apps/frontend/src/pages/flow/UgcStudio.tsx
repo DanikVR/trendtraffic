@@ -21,7 +21,7 @@ import UgcPreview from './UgcPreview';
 import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
-import { type UgcSpec, type UgcPickTarget, type UgcMode, ugcModeOf } from './ugcTypes';
+import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf } from './ugcTypes';
 import { useTranslation } from 'react-i18next';
 
 const ACC = '#a855f7';       // фирменный цвет блока UGC
@@ -564,6 +564,26 @@ export default function UgcStudio(p: UgcStudioProps) {
                   <b className="text-[11px]" style={{ color: ACC, fontVariantNumeric: 'tabular-nums', minWidth: 34, textAlign: 'right' }}>{ugc.music.volumePct}%</b>
                 </div>
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.music.volumeHint')}</p>
+                {/* Сколько играет: весь ролик (зациклится/обрежется) или только первые N секунд (затем затухание) */}
+                <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.music.durationLabel')}</div>
+                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                  {([[null, t('ugc.music.playFull')], [15, t('ugc.music.playFirst')]] as [number | null, string][]).map(([v, lbl]) => {
+                    const sel = (v === null) === !(Number(ugc.music?.durationSec) > 0);
+                    return (
+                      <button key={String(v)} onClick={() => ugcMutate((u) => (u.music ? { ...u, music: { ...u.music, durationSec: v === null ? null : (Number(u.music.durationSec) > 0 ? u.music.durationSec : 15) } } : u))}
+                        className="py-1.5 rounded-lg text-[10.5px] font-700"
+                        style={{ background: sel ? ACC : 'transparent', color: sel ? '#fff' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>{lbl}</button>
+                    );
+                  })}
+                </div>
+                {Number(ugc.music.durationSec) > 0 && (
+                  <div className="flex items-center gap-2">
+                    <input type="number" min={3} step={1} value={Math.round(Number(ugc.music.durationSec))}
+                      onChange={(e) => { const v = Math.max(3, Number(e.target.value) || 15); ugcMutate((u) => (u.music ? { ...u, music: { ...u.music, durationSec: v } } : u)); }}
+                      className="px-2 py-1 rounded-md text-[11px] outline-none" style={{ width: 64, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', fontVariantNumeric: 'tabular-nums' }} />
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.music.durationHint')}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <button onClick={() => p.openUgcPick('music')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
@@ -598,11 +618,20 @@ export default function UgcStudio(p: UgcStudioProps) {
           {/* тулбар формата и раскладки */}
           <div className="flex items-center gap-3 flex-wrap px-4 py-2.5">
             <span className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.05em' }}>{t('ugc.format.label')}</span>
-            <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-              {([['p', t('ugc.format.portrait'), ['9x16']], ['l', t('ugc.format.landscape'), ['16x9']], ['b', t('ugc.format.both'), ['9x16', '16x9']]] as [string, string, ('9x16' | '16x9')[]][]).map(([k, lbl, val]) => {
-                const sel = ugc.formats.length === val.length && val.every((v) => ugc.formats.includes(v));
+            <div className="flex gap-1 p-1 rounded-xl flex-wrap" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+              {/* Мультивыбор: клик добавляет/убирает формат (минимум один остаётся); порядок фиксированный. */}
+              {([['9x16', t('ugc.format.portrait')], ['16x9', t('ugc.format.landscape')], ['1x1', t('ugc.format.square')], ['4x5', t('ugc.format.feed')]] as [UgcFormat, string][]).map(([k, lbl]) => {
+                const sel = ugc.formats.includes(k);
                 return (
-                  <button key={k} onClick={() => ugcMutate((u) => ({ ...u, formats: val }))} className="px-3 py-1.5 rounded-lg text-[11px] font-700"
+                  <button key={k}
+                    onClick={() => ugcMutate((u) => {
+                      const on = u.formats.includes(k);
+                      if (on && u.formats.length <= 1) return u;
+                      const order: UgcFormat[] = ['9x16', '16x9', '1x1', '4x5'];
+                      const next = on ? u.formats.filter((f) => f !== k) : order.filter((f) => f === k || u.formats.includes(f));
+                      return { ...u, formats: next };
+                    })}
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-700"
                     style={{ background: sel ? 'rgba(168,85,247,.14)' : 'transparent', color: sel ? ACC : 'var(--text-muted)', border: sel ? `1px solid ${ACC}` : '1px solid transparent', cursor: 'pointer' }}>{lbl}</button>
                 );
               })}
@@ -624,7 +653,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               </>
             )}
             {ugc.formats.length > 1 && (
-              <span className="text-[10.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>{t('ugc.format.twoFilesNote')}</span>
+              <span className="text-[10.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>{t('ugc.format.filesPerRun', { count: ugc.formats.length })}</span>
             )}
           </div>
 
@@ -641,9 +670,12 @@ export default function UgcStudio(p: UgcStudioProps) {
           <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-3" style={{ minHeight: 0 }}>
             {(ugc.results && ugc.results.length > 1) ? (
               <div className="rounded-xl p-3 space-y-2 my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)', maxWidth: 760, width: '100%' }}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <span className="text-[12px] font-700" style={{ color: ACC }}>{t('ugc.preview.seriesReady', { count: ugc.results.length })}</span>
-                  <button onClick={() => ugcMutate((u) => ({ ...u, result: null, results: [] }))} title={t('ugc.common.hide')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={15} /></button>
+                  <span className="inline-flex items-center gap-2">
+                    <a href="/gallery" className="text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, textDecoration: 'none' }}>{t('ugc.preview.openGallery')}</a>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, result: null, results: [] }))} title={t('ugc.common.hide')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={15} /></button>
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {ugc.results.map((res, i) => (
@@ -658,7 +690,10 @@ export default function UgcStudio(p: UgcStudioProps) {
               <div className="rounded-xl p-3 space-y-2 my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)' }}>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-[12px] font-700" style={{ color: ACC }}>{t('ugc.preview.ready')}</span>
-                  <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title={t('ugc.common.hide')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={15} /></button>
+                  <span className="inline-flex items-center gap-2">
+                    <a href="/gallery" className="text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, textDecoration: 'none' }}>{t('ugc.preview.openGallery')}</a>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title={t('ugc.common.hide')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={15} /></button>
+                  </span>
                 </div>
                 <video src={ugc.result.url} controls playsInline autoPlay
                   onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) p.setUgcResultAR(v.videoWidth / v.videoHeight); }}

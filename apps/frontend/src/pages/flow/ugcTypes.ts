@@ -7,6 +7,7 @@ import type { PodLine } from './dialogueTypes';
 
 export type UgcVoice = 'female' | 'male';
 export type UgcScriptSource = 'gen' | 'diarize';   // озвучка: сгенерировать текст / разобрать запись
+export type UgcFormat = '9x16' | '16x9' | '1x1' | '4x5';   // форматы вывода (мультивыбор)
 
 // ── Блок «UGC / Аватары»: кадр 9:16 из двух половин (аватар + видео) ──
 // Одна половина — говорящий аватар (из коллекции Галереи / своё фото → HeyGen), другая —
@@ -30,7 +31,7 @@ export interface UgcSpec {
   clip: { url: string; name: string } | null;              // вторая половина — видео
   clipFit: 'cover' | 'contain'; clipMuted: boolean;
   subtitles: UgcSubtitles;                                  // титры (переиспользуем блок субтитров)
-  music: { url: string; name: string; volumePct: number } | null;
+  music: { url: string; name: string; volumePct: number; durationSec?: number | null } | null;   // durationSec: играть первые N сек (null = весь ролик)
   platforms: string[];
   buildJobId: string | null;                                // идущая сборка (переживает перезаход)
   result: { url: string; name: string } | null;             // готовый ролик
@@ -43,7 +44,7 @@ export interface UgcSpec {
   dialogueEngagement: 'eco' | 'bal' | 'dyn';                // как часто оба в кадре (эконом/баланс/динамично)
   dialogueCutout: boolean;                                  // вырезать фон аватара (силуэт поверх медиа)
   photoBUrl: string | null; photoBName: string | null;      // фото «Спикер B» (A = photoUrl)
-  formats: ('9x16' | '16x9')[];                             // форматы вывода (можно оба)
+  formats: UgcFormat[];                                     // форматы вывода (любое сочетание, ≥1)
 }
 export const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,

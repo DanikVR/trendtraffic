@@ -304,14 +304,30 @@ function hasAudioStream(input: string): Promise<boolean> {
 
 // ── Ориентация кадра (9:16 портрет ИЛИ 16:9 ландшафт) — общие помощники для UGC-композиторов ──
 export interface FrameDims { W: number; H: number }
-export const UGC_FORMATS: Record<'9x16' | '16x9', FrameDims> = { '9x16': { W: 1080, H: 1920 }, '16x9': { W: 1920, H: 1080 } };
+export type UgcFormatKey = '9x16' | '16x9' | '1x1' | '4x5';
+export const UGC_FORMATS: Record<UgcFormatKey, FrameDims> = {
+  '9x16': { W: 1080, H: 1920 },   // TikTok / Reels / Shorts
+  '16x9': { W: 1920, H: 1080 },   // YouTube
+  '1x1':  { W: 1080, H: 1080 },   // лента Instagram (квадрат; W==H → vstack, как портрет)
+  '4x5':  { W: 1080, H: 1350 },   // Instagram/Facebook лента
+};
 
-/** Разложить кадр на 2 ячейки: портрет → верх/низ (vstack), ландшафт → лево/право (hstack). */
+/** Разложить кадр на 2 ячейки: портрет → верх/низ (vstack), ландшафт → лево/право (hstack).
+ *  Ячейки всегда ЧЁТНЫЕ (yuv420p: crop нечётной высоты молча режет пиксель — 4:5 выходил 1348
+ *  вместо 1350). Если сумма чётных ячеек < кадра (H/2 нечётно, как у 1080×1350) — stack
+ *  донормализует результат scale'ом до точного W×H (растяжка на 2px невидима). */
 function orientCells(W: number, H: number): { landscape: boolean; cw: number; ch: number; stack: (a: string, b: string, out: string) => string } {
   const landscape = W > H;
-  const cw = landscape ? (W - (W % 2)) / 2 : W;
-  const ch = landscape ? H : (H - (H % 2)) / 2;
-  const stack = (a: string, b: string, out: string) => landscape ? `[${a}][${b}]hstack=inputs=2[${out}]` : `[${a}][${b}]vstack=inputs=2[${out}]`;
+  const even = (n: number) => Math.max(2, Math.floor(n / 2) * 2);
+  const cw = landscape ? even(W / 2) : W;
+  const ch = landscape ? H : even(H / 2);
+  const needFix = landscape ? cw * 2 !== W : ch * 2 !== H;
+  const stack = (a: string, b: string, out: string) => {
+    const dir = landscape ? 'hstack' : 'vstack';
+    return needFix
+      ? `[${a}][${b}]${dir}=inputs=2[${out}_s];[${out}_s]scale=${W}:${H}:flags=lanczos,setsar=1[${out}]`
+      : `[${a}][${b}]${dir}=inputs=2[${out}]`;
+  };
   return { landscape, cw, ch, stack };
 }
 
@@ -343,6 +359,7 @@ export async function composeUgc(opts: {
   clipMuted: boolean;
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right';
   musicPath?: string | null; musicVolumePct?: number;
+  musicDurationSec?: number | null;   // играть только первые N сек (null/0 = весь ролик); хвост — afade
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
@@ -366,7 +383,12 @@ export async function composeUgc(opts: {
   if (opts.clipPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.clipPath); clipIdx = idx++; }
   const voiceIdx = idx++; inputs.push('-i', opts.voicePath);
   let musicIdx = -1;
-  if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.musicPath); musicIdx = idx++; }
+  // Музыка: зациклена; играет весь ролик ЛИБО первые musicDurationSec (короче ролика), хвост гасим afade.
+  const musT = Math.min(
+    Number(opts.musicDurationSec) > 0 ? (opts.musicDurationSec as number) : Number.POSITIVE_INFINITY,
+    D + 0.2,
+  );
+  if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', musT.toFixed(2), '-i', opts.musicPath); musicIdx = idx++; }
 
   const fit = (w: number, h: number) => opts.clipFit === 'contain'
     ? `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=0x0d0f16`
@@ -422,7 +444,8 @@ export async function composeUgc(opts: {
   if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=0.9[a_c]`); mixTags.push('[a_c]'); }
   if (musicIdx >= 0) {
     const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
-    aIns.push(`[${musicIdx}:a]volume=${vol.toFixed(2)}[a_m]`); mixTags.push('[a_m]');
+    const fadeSt = Math.max(0, musT - 1.2);
+    aIns.push(`[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${fadeSt.toFixed(2)}:d=1.2[a_m]`); mixTags.push('[a_m]');
   }
   let aTag = '[a_v]';
   if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
@@ -464,6 +487,7 @@ export async function composeRetentionVideo(opts: {
   voicePath: string;
   clipFit: 'cover' | 'contain';
   musicPath?: string | null; musicVolumePct?: number;
+  musicDurationSec?: number | null;
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
@@ -536,12 +560,13 @@ export async function composeRetentionVideo(opts: {
     }
     const inputs = ['-i', visual, '-i', opts.voicePath];
     let musicIdx = -1;
-    if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', (D + 0.2).toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
+    const musT = Math.min(Number(opts.musicDurationSec) > 0 ? (opts.musicDurationSec as number) : Number.POSITIVE_INFINITY, D + 0.2);
+    if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', musT.toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
     let fc = ''; let vTag = '0:v'; let aTag = '1:a';
     if (assPath) { fc += `[0:v]subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
     if (musicIdx >= 0) {
       const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
-      fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)}[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
+      fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${Math.max(0, musT - 1.2).toFixed(2)}:d=1.2[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
       aTag = '[aa]';
     }
     const out = `ugc-ret-${randomUUID().slice(0, 8)}.mp4`;
@@ -638,6 +663,7 @@ export async function composeDialogueVideo(opts: {
   segments: DlgComposeSeg[];
   voicePath: string;
   musicPath?: string | null; musicVolumePct?: number;
+  musicDurationSec?: number | null;
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
@@ -724,12 +750,13 @@ export async function composeDialogueVideo(opts: {
     }
     const inputs = ['-i', visual, '-i', opts.voicePath];
     let musicIdx = -1;
-    if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', (D + 0.2).toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
+    const musT = Math.min(Number(opts.musicDurationSec) > 0 ? (opts.musicDurationSec as number) : Number.POSITIVE_INFINITY, D + 0.2);
+    if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', musT.toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
     let fc = ''; let vTag = '0:v'; let aTag = '1:a';
     if (assPath) { fc += `[0:v]subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
     if (musicIdx >= 0) {
       const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
-      fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)}[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
+      fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${Math.max(0, musT - 1.2).toFixed(2)}:d=1.2[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
       aTag = '[aa]';
     }
     const out = `ugc-dlg-${randomUUID().slice(0, 8)}.mp4`;

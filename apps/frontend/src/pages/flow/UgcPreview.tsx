@@ -10,7 +10,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound } from 'lucide-react';
-import type { UgcMode, UgcSpec } from './ugcTypes';
+import type { UgcFormat, UgcMode, UgcSpec } from './ugcTypes';
 
 const ACC = '#a855f7';
 const ACC2 = '#c084fc';
@@ -113,7 +113,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return () => window.clearInterval(t);
   }, [animate, words]);
 
-  const caption = (fmt: '9x16' | '16x9') => {
+  const caption = (fmt: UgcFormat) => {
     if (ugc.subtitles.style === 'none') return null;
     const pos: React.CSSProperties = ugc.subtitles.pos === 'top' ? { top: '8%' } : ugc.subtitles.pos === 'center' ? { top: '50%', transform: 'translateY(-50%)' } : { bottom: '9%' };
     const hot = widx % words.length;
@@ -197,7 +197,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   );
 
   /* ── содержимое кадра по режиму и активному сегменту плана ── */
-  const frameInner = (fmt: '9x16' | '16x9') => {
+  const frameInner = (fmt: UgcFormat) => {   // 16:9 → раскладка в строку; 9:16 / 1:1 / 4:5 → в столбец
     const row = fmt === '16x9';
     const stack = (a: React.ReactNode, b: React.ReactNode) => (
       <div className={`absolute inset-0 flex ${row ? 'flex-row' : 'flex-col'}`}>{a}{b}</div>
@@ -248,12 +248,20 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return ugc.placement === 'bottom' ? stack(vid, av) : stack(av, vid);
   };
 
-  const frame = (fmt: '9x16' | '16x9', mini?: boolean) => {
-    const dims = fmt === '9x16' ? (mini ? { w: 132, h: 235 } : { w: 246, h: 437 }) : (mini ? { w: 300, h: 169 } : { w: 496, h: 279 });
+  /* кадры всех форматов: первый выбранный — крупно, остальные миниатюрами */
+  const FRAME_DIMS: Record<UgcFormat, { main: { w: number; h: number }; mini: { w: number; h: number }; capKey: string; radius: number }> = {
+    '9x16': { main: { w: 246, h: 437 }, mini: { w: 132, h: 235 }, capKey: 'ugc.format.label916', radius: 20 },
+    '16x9': { main: { w: 496, h: 279 }, mini: { w: 300, h: 169 }, capKey: 'ugc.format.label169', radius: 14 },
+    '1x1':  { main: { w: 300, h: 300 }, mini: { w: 168, h: 168 }, capKey: 'ugc.format.label11',  radius: 16 },
+    '4x5':  { main: { w: 272, h: 340 }, mini: { w: 150, h: 187 }, capKey: 'ugc.format.label45',  radius: 16 },
+  };
+  const frame = (fmt: UgcFormat, mini?: boolean) => {
+    const meta = FRAME_DIMS[fmt];
+    const dims = mini ? meta.mini : meta.main;
     return (
       <div key={fmt} className="flex flex-col items-center gap-2">
-        <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{fmt === '9x16' ? t('ugc.format.label916') : t('ugc.format.label169')}</span>
-        <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: fmt === '9x16' ? 20 : 14, border: '1px solid var(--border-strong)', background: '#101013', boxShadow: '0 14px 34px rgba(0,0,0,.35)' }}>
+        <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{t(meta.capKey)}</span>
+        <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: '#101013', boxShadow: '0 14px 34px rgba(0,0,0,.35)' }}>
           {frameInner(fmt)}
           {caption(fmt)}
         </div>
@@ -267,8 +275,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       <style>{'@keyframes ugcCapPop{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}} .ugc-cap-pop{animation:ugcCapPop .3s cubic-bezier(.2,1.6,.4,1)}'}</style>
 
       <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-1" style={{ minHeight: 0 }}>
-        {ugc.formats.includes('9x16') && frame('9x16', false)}
-        {ugc.formats.includes('16x9') && frame('16x9', ugc.formats.length > 1)}
+        {ugc.formats.map((f, i) => frame(f, i > 0))}
       </div>
 
       {/* полоса плана: кликните сегмент — превью покажет этот план кадра */}

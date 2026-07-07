@@ -22,7 +22,7 @@ import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
@@ -327,10 +327,13 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const captions: UgcCaption[] = script
       .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
       .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
-    // Форматы вывода: 9:16 (портрет) и/или 16:9 (ландшафт). Аватар рендерим 1 раз, склейку — на каждый формат.
-    const fmtKeys: ('9x16' | '16x9')[] = (Array.isArray(spec.formats) ? spec.formats : []).filter((f: any) => f === '9x16' || f === '16x9');
-    const outFormats: { key: '9x16' | '16x9'; dims: FrameDims; label: string }[] = (fmtKeys.length ? fmtKeys : (['9x16'] as ('9x16' | '16x9')[]))
-      .map((k) => ({ key: k, dims: UGC_FORMATS[k], label: k === '16x9' ? '16:9' : '9:16' }));
+    // Форматы вывода: 9:16 / 16:9 / 1:1 / 4:5, любые сочетания. Аватар рендерим 1 раз, склейку — на каждый формат.
+    const FMT_LABEL: Record<UgcFormatKey, string> = { '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' };
+    const fmtKeys: UgcFormatKey[] = (Array.isArray(spec.formats) ? spec.formats : []).filter((f: any): f is UgcFormatKey => f in UGC_FORMATS);
+    const outFormats: { key: UgcFormatKey; dims: FrameDims; label: string }[] = (fmtKeys.length ? fmtKeys : (['9x16'] as UgcFormatKey[]))
+      .map((k) => ({ key: k, dims: UGC_FORMATS[k], label: FMT_LABEL[k] }));
+    // Музыка: играть первые N секунд (иначе весь ролик) — общий парс для всех веток.
+    const musicDurSec: number | null = Number(spec.music?.durationSec) > 0 ? Number(spec.music.durationSec) : null;
 
     // ── Ветка «Диалоги» (два аватара HeyGen под одну запись) ────────────────────
     // Разбор записи на 2 голоса (A/B) → каждый говорит своим лицом. Claude решает per-turn:
@@ -441,6 +444,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const fileUrl = await composeDialogueVideo({
               segments: composeSegs, voicePath: voice.filePath,
               musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+              musicDurationSec: musicDurSec,
               captions: caps, capStyle: caps.length ? capStyle : 'none', capPos, dims: fmt.dims,
             });
             const asset = await createAsset(j.tenantId!, {
@@ -537,6 +541,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               const fileUrl = await composeRetentionVideo({
                 segments: composeSegs, brollPath: clip?.filePath || null, voicePath: voice.filePath,
                 clipFit, musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+                musicDurationSec: musicDurSec,
                 captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos, dims: fmt.dims,
               });
               const asset = await createAsset(j.tenantId!, {
@@ -604,6 +609,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               placement: placement as any,
               musicPath: music?.filePath || null,
               musicVolumePct: Number(spec.music?.volumePct) || 20,
+              musicDurationSec: musicDurSec,
               captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
             });
             const asset = await createAsset(j.tenantId!, {
