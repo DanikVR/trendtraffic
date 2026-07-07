@@ -1883,11 +1883,19 @@
  *         (2) ЛИМИТ клипа поднят: сервер INGEST 96mb→210mb (под nginx 210M), расширение 64→150МБ.
  *         GalleryPage.tsx (кнопка+детект+поп-ап), content-bridge/background/content-flow
  *         (push-to-flow/inject-url), flow-ext/router.ts, manifest 0.2.4→0.2.5. */
-export const APP_VERSION = '1.6.129';
+/* 1.6.130 — Google Flow фидбэк (расширение v0.2.6): (1) recon показал: у Flow ОДНО поле загрузки
+ *         accept="image/*" → видео туда = ошибка «формат не поддерживается». Теперь заливка
+ *         УМНАЯ ПО ТИПУ (findFileInput(kind)/acceptsKind): картинку в image-поле (ОК), видео НЕ
+ *         втыкаем в image-поле — честно «Flow принимает только картинки, видео через «Загрузки»».
+ *         Имя файла в Flow стандартное (flow-image.png/flow-video.mp4), не «свой формат».
+ *         (2) ЛИМИТ выше: сервер 210mb→700mb, nginx 210M→700M (в деплое), расширение 150→500МБ.
+ *         kind проброшен Галерея→push-to-flow→inject-url. content-flow/background/content-bridge,
+ *         GalleryPage.tsx, flow-ext/router.ts, manifest 0.2.5→0.2.6. */
+export const APP_VERSION = '1.6.130';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.5';
+export const FLOW_EXT_VERSION = '0.2.6';
 
 export function AppVersion() {
   return (

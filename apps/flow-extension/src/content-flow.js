@@ -350,8 +350,9 @@
         try {
           const b = await send({ type: 'fetch-bytes', url });
           if (b && b.ok) {
-            const up = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'ref' + guessExt(b.mime)));
-            ui.line(up.ok ? 'референс залит в Flow' : ('референс: поле загрузки не найдено'));
+            const k = kindOfMime(b.mime);
+            const up = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
+            ui.line(up.ok ? 'референс залит в Flow' : ('референс: ' + up.reason));
             await sleep(700);
           } else { ui.line('референс не скачался' + (b && b.error ? ': ' + b.error : '')); }
         } catch { /* референс best-effort */ }
@@ -419,7 +420,7 @@
     if (!res) throw new Error('page fetch fail');
     const blob = await res.blob();
     if (blob.size < 64) throw new Error('пусто');
-    if (blob.size > 150 * 1024 * 1024) throw new Error('слишком большое (>150МБ)');
+    if (blob.size > 500 * 1024 * 1024) throw new Error('слишком большое (>500МБ)');
     return await blobToDataUrl(blob);
   }
   async function grabMediaData(el) {
@@ -454,25 +455,37 @@
     if (r && r.ok) ui.line('✓ ' + what + ' в Галерее → вкладка «Google Flow»');
     else ui.line('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить» в TrendTraffic'));
   }
-  // Поле загрузки Flow (часто скрыто — по visible НЕ фильтруем); при отсутствии кликаем «добавить медиа».
-  function findFileInput() {
-    const inputs = [...document.querySelectorAll('input[type="file"]')];
-    return inputs.find((i) => /video/i.test(i.accept || '')) || inputs.find((i) => !i.accept || /image|video|\*/i.test(i.accept)) || inputs[0] || null;
+  // Подходит ли input[type=file] под тип (image/video). Пустой accept или */* — принимает всё.
+  function acceptsKind(inp, kind) {
+    const a = String(inp.accept || '').toLowerCase().trim();
+    if (!a || a === '*' || a.includes('*/*')) return true;
+    return kind === 'video' ? a.includes('video') : a.includes('image');
   }
-  async function revealFileInput() {
-    let inp = findFileInput();
-    if (inp) return inp;
+  // Поле загрузки Flow под нужный ТИП (скрытые тоже). Для видео НЕ берём image-only поле —
+  // иначе Flow ругается «Графический формат не поддерживается» (у Flow тут одно поле image/*).
+  function findFileInput(kind) {
+    const inputs = [...document.querySelectorAll('input[type="file"]')];
+    const ok = inputs.filter((i) => acceptsKind(i, kind));
+    return ok.find((i) => String(i.accept || '').toLowerCase().includes(kind === 'video' ? 'video' : 'image')) || ok[0] || null;
+  }
+  // Кликнуть «добавить медиа/загрузки/upload», чтобы Flow отрисовал поле загрузки.
+  async function revealUploadUI() {
     const btns = [...document.querySelectorAll('button,[role="button"],[aria-label]')].filter(visible);
     const add = btns.find((b) => {
       const t = ((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || '')).toLowerCase();
       return SELECTORS.addMediaText.some((k) => t.includes(k));
     });
-    if (add) { add.click(); await sleep(800); inp = findFileInput(); }
-    return inp;
+    if (add) { add.click(); await sleep(800); }
   }
-  async function injectFileIntoFlow(file) {
-    const inp = await revealFileInput();
-    if (!inp) return { ok: false, reason: 'upload-input не найден' };
+  async function injectFileIntoFlow(file, kind) {
+    let inp = findFileInput(kind);
+    if (!inp) { await revealUploadUI(); inp = findFileInput(kind); }
+    if (!inp) {
+      // Для видео есть только image-поле → честно сообщаем (не втыкаем видео в image → ошибка Flow).
+      const imageOnly = [...document.querySelectorAll('input[type="file"]')].some((i) => /image/i.test(i.accept || '') && !/video|\*/i.test(i.accept || ''));
+      if (kind === 'video' && imageOnly) return { ok: false, reason: 'Flow здесь принимает только картинки — видео залей через раздел «Загрузки» Flow' };
+      return { ok: false, reason: 'поле загрузки не найдено' };
+    }
     try {
       const dt = new DataTransfer(); dt.items.add(file);
       inp.files = dt.files;
@@ -483,31 +496,38 @@
   }
   function dataUrlToFile(dataUrl, name) {
     const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl || '');
-    const mime = m ? m[1] : 'video/mp4';
+    const mime = m ? m[1] : 'application/octet-stream';
     const bin = atob(m ? m[2] : '');
     const arr = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     return new File([arr], name, { type: mime });
   }
-  const guessExt = (mime) => (/webm/i.test(mime || '') ? '.webm' : /quicktime|mov/i.test(mime || '') ? '.mov' : '.mp4');
+  const kindOfMime = (mime) => (/^image\//i.test(mime || '') ? 'image' : 'video');
+  // Стандартное расширение под тип — чистое имя файла в Flow (без «своего формата»).
+  const extFor = (mime, kind) => {
+    const m = String(mime || '').toLowerCase();
+    if ((kind || kindOfMime(m)) === 'image') return m.includes('png') ? '.png' : m.includes('webp') ? '.webp' : m.includes('gif') ? '.gif' : '.jpg';
+    return m.includes('webm') ? '.webm' : (m.includes('quicktime') || m.includes('mov')) ? '.mov' : '.mp4';
+  };
+  const guessExt = (mime) => extFor(mime, kindOfMime(mime));
   // «Из Галереи»: список видео → пикер в панели.
   async function openGalleryPicker() {
     ui.showPicker('загрузка списка…', []);
     const r = await send({ type: 'gallery-list' });
     if (!r || !r.ok) { ui.showPicker('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить»'), []); return; }
-    if (!r.items || !r.items.length) { ui.showPicker('в Галерее нет видео', []); return; }
+    if (!r.items || !r.items.length) { ui.showPicker('в Галерее нет медиа', []); return; }
     ui.showPicker(null, r.items);
   }
-  // Выбор видео из Галереи → скачиваем байты в фоне (обход CORS) → File → в поле загрузки Flow.
+  // Выбор медиа из Галереи → скачиваем байты в фоне (обход CORS) → File → в поле загрузки Flow.
   async function pickGalleryItem(item) {
     ui.hidePicker();
-    ui.line('качаю «' + (item.title || 'видео') + '»…');
+    ui.line('качаю «' + (item.title || 'медиа') + '»…');
     const b = await send({ type: 'fetch-bytes', url: item.fileUrl });
     if (!b || !b.ok) { ui.line('⚠ ' + ((b && b.error) || 'ошибка загрузки')); return; }
-    const name = (item.title || 'gallery').replace(/[^\w.-]+/g, '_').slice(0, 60).replace(/\.(mp4|webm|mov)$/i, '') + guessExt(b.mime);
-    const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, name));
-    if (res.ok) ui.line('✓ видео вставлено в Flow — выбери его как исходное/референс и генерируй');
-    else ui.line('⚠ поле загрузки Flow не найдено (' + res.reason + ') — жму «разведка вёрстки»');
+    const k = (item.type === 'image' || item.type === 'video') ? item.type : kindOfMime(b.mime);
+    const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
+    if (res.ok) ui.line('✓ ' + (k === 'image' ? 'картинка' : 'видео') + ' вставлено в Flow — выбери как исходное/референс');
+    else ui.line('⚠ ' + res.reason);
   }
   // Авто-разведка: снимок вёрстки Flow (кандидаты полей/кнопок/загрузки/видео + эндпоинты) → бэкенд.
   function collectRecon() {
@@ -545,9 +565,9 @@
         ui.line('получаю медиа из Галереи…');
         const b = await send({ type: 'fetch-bytes', url: msg.url });
         if (!b || !b.ok) { ui.line('⚠ не скачалось из Галереи' + (b && b.error ? ': ' + b.error : '')); sendResponse({ ok: false, error: b && b.error }); return; }
-        const base = String(msg.title || 'gallery').replace(/[^\w.-]+/g, '_').slice(0, 60).replace(/\.(mp4|webm|mov|png|jpe?g)$/i, '');
-        const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, base + guessExt(b.mime)));
-        ui.line(res.ok ? '✓ вставлено в Flow из Галереи — выбери как исходное/референс' : ('⚠ поле загрузки в Flow не найдено (' + res.reason + ')'));
+        const k = (msg.kind === 'image' || msg.kind === 'video') ? msg.kind : kindOfMime(b.mime);
+        const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
+        ui.line(res.ok ? ('✓ ' + (k === 'image' ? 'картинка' : 'видео') + ' вставлено в Flow из Галереи') : ('⚠ ' + res.reason));
         sendResponse(res);
       })();
       return true; // async

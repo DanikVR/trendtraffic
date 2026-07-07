@@ -62,8 +62,8 @@
       toPage({ type: 'status', ...(r || { connected: false }) });
     } else if (d.type === 'push-to-flow') {
       // Из Галереи TrendTraffic: открыть Flow и залить туда медиа по URL.
-      const r = await toBg({ type: 'push-to-flow', url: d.url, title: d.title });
-      toPage({ type: 'push-to-flow-result', ok: !!(r && r.ok), error: r && r.error });
+      const r = await toBg({ type: 'push-to-flow', url: d.url, title: d.title, kind: d.kind });
+      toPage({ type: 'push-to-flow-result', ok: !!(r && r.ok), error: r && (r.error || r.reason) });
     }
   });
 

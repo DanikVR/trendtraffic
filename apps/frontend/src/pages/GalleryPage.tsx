@@ -114,7 +114,7 @@ export default function GalleryPage() {
   const sendToFlow = (v: GalleryItem) => {
     if (extStatus !== 'present') { setExtPopup(true); return; }
     const abs = /^https?:/i.test(v.fileUrl) ? v.fileUrl : window.location.origin + (v.fileUrl.startsWith('/') ? v.fileUrl : '/' + v.fileUrl);
-    window.postMessage({ source: 'trendtraffic', type: 'push-to-flow', url: abs, title: v.title }, window.location.origin);
+    window.postMessage({ source: 'trendtraffic', type: 'push-to-flow', url: abs, title: v.title, kind: v.mediaType === 'image' ? 'image' : 'video' }, window.location.origin);
     setFlowMsg({ ok: true, text: `Отправляю «${v.title}» в Google Flow…` });
     setTimeout(() => setFlowMsg(null), 6000);
   };
