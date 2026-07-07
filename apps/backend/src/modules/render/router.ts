@@ -26,7 +26,7 @@ import { generatePodcastDialogue, tagUgcRetention, directDialogue } from './dire
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, pickVoice, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { buildHostAudio, elevenTTS } from './podcast_voice.js';
-import { composeHeads, composeCommentator, composeOnStudio, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, downloadToRendersExt, greenBgRatio, probeImageSize, regionSimilarity, type StudioOverlay, type CaptionLine, type NormRect, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart } from './podcast_compose.js';
+import { composeHeads, composeCommentator, composeOnStudio, composeUgc, composeRetentionVideo, composeDialogueVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, downloadToRendersExt, greenBgRatio, probeImageSize, regionSimilarity, UGC_FORMATS, type StudioOverlay, type CaptionLine, type NormRect, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { illustrateDialogue, type IllusLine } from './illustrate.js';
@@ -581,6 +581,10 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const captions: UgcCaption[] = script
       .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
       .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
+    // Форматы вывода: 9:16 (портрет) и/или 16:9 (ландшафт). Аватар рендерим 1 раз, склейку — на каждый формат.
+    const fmtKeys: ('9x16' | '16x9')[] = (Array.isArray(spec.formats) ? spec.formats : []).filter((f: any) => f === '9x16' || f === '16x9');
+    const outFormats: { key: '9x16' | '16x9'; dims: FrameDims; label: string }[] = (fmtKeys.length ? fmtKeys : (['9x16'] as ('9x16' | '16x9')[]))
+      .map((k) => ({ key: k, dims: UGC_FORMATS[k], label: k === '16x9' ? '16:9' : '9:16' }));
 
     // ── Ветка «Диалоги» (два аватара HeyGen под одну запись) ────────────────────
     // Разбор записи на 2 голоса (A/B) → каждый говорит своим лицом. Claude решает per-turn:
@@ -603,7 +607,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: 1, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -692,17 +696,21 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           }));
           const caps: UgcCaption[] = segs.filter((s) => s.kind === 'speech' && s.text.trim()).map((s) => ({ t0: s.t0, t1: s.t1, text: s.text }));
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'dlgmusic') : null;
-          j.status = 'финальная склейка';
-          const fileUrl = await composeDialogueVideo({
-            segments: composeSegs, voicePath: voice.filePath,
-            musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
-            captions: caps, capStyle: caps.length ? capStyle : 'none', capPos,
-          });
-          const asset = await createAsset(j.tenantId!, {
-            kind: 'reference', mediaType: 'video', originalName: `UGC-диалог (${engagement})`, fileUrl, mime: 'video/mp4',
-          });
-          j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
-          j.fileUrl = fileUrl; j.assetId = asset?.id || null;
+          // склейка в каждый формат (аватар уже отрендерен один раз — форматы почти бесплатны)
+          for (let f = 0; f < outFormats.length; f++) {
+            const fmt = outFormats[f];
+            j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'финальная склейка';
+            const fileUrl = await composeDialogueVideo({
+              segments: composeSegs, voicePath: voice.filePath,
+              musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+              captions: caps, capStyle: caps.length ? capStyle : 'none', capPos, dims: fmt.dims,
+            });
+            const asset = await createAsset(j.tenantId!, {
+              kind: 'reference', mediaType: 'video', originalName: `UGC-диалог (${engagement})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4',
+            });
+            j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+            if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+          }
           j.status = 'done';
         } catch (e: any) {
           j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
@@ -734,7 +742,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: brolls.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: brolls.length * outFormats.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -802,21 +810,25 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const caps: UgcCaption[] = lines.map((l) => ({ t0: l.start, t1: l.end, text: l.text })).filter((c) => c.t1 > c.t0 && c.text.trim());
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'retmusic') : null;
 
+          const totalOut = brolls.length * outFormats.length;
           for (let b = 0; b < brolls.length; b++) {
-            j.status = brolls.length > 1 ? `склейка ${b + 1}/${brolls.length}` : 'склейка + титры';
             const clip = brolls[b].url ? await downloadToRenders(abs(brolls[b].url), 'retclip') : null;
-            const fileUrl = await composeRetentionVideo({
-              segments: composeSegs, brollPath: clip?.filePath || null, voicePath: voice.filePath,
-              clipFit, musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
-              captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos,
-            });
-            const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video',
-              originalName: `UGC-удержание ${preset.name}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}`,
-              fileUrl, mime: 'video/mp4',
-            });
-            j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
-            if (b === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+            for (let f = 0; f < outFormats.length; f++) {
+              const fmt = outFormats[f]; const n = b * outFormats.length + f + 1;
+              j.status = totalOut > 1 ? `склейка ${n}/${totalOut}` : 'склейка + титры';
+              const fileUrl = await composeRetentionVideo({
+                segments: composeSegs, brollPath: clip?.filePath || null, voicePath: voice.filePath,
+                clipFit, musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
+                captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos, dims: fmt.dims,
+              });
+              const asset = await createAsset(j.tenantId!, {
+                kind: 'reference', mediaType: 'video',
+                originalName: `UGC-удержание ${preset.name}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
+                fileUrl, mime: 'video/mp4',
+              });
+              j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+              if (b === 0 && f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+            }
           }
           j.status = 'done';
         } catch (e: any) {
@@ -838,7 +850,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now() });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -868,22 +880,27 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
 
-          j.status = 'склейка + титры';
-          const fileUrl = await composeUgc({
-            avatarPath: avatar.filePath, avatarKind: 'opaque',
-            voicePath: avatar.filePath, // голос уже в mp4 HeyGen — берём его аудио
-            clipPath: clip?.filePath || null,
-            clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
-            clipMuted: spec.clipMuted !== false,
-            placement: placement as any,
-            musicPath: music?.filePath || null,
-            musicVolumePct: Number(spec.music?.volumePct) || 20,
-            captions, capStyle: captions.length ? capStyle : 'none', capPos,
-          });
-          const asset = await createAsset(j.tenantId!, {
-            kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV)`, fileUrl, mime: 'video/mp4',
-          });
-          j.fileUrl = fileUrl; j.assetId = asset?.id || null; j.status = 'done';
+          for (let f = 0; f < outFormats.length; f++) {
+            const fmt = outFormats[f];
+            j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'склейка + титры';
+            const fileUrl = await composeUgc({
+              avatarPath: avatar.filePath, avatarKind: 'opaque',
+              voicePath: avatar.filePath, // голос уже в mp4 HeyGen — берём его аудио
+              clipPath: clip?.filePath || null,
+              clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+              clipMuted: spec.clipMuted !== false,
+              placement: placement as any,
+              musicPath: music?.filePath || null,
+              musicVolumePct: Number(spec.music?.volumePct) || 20,
+              captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
+            });
+            const asset = await createAsset(j.tenantId!, {
+              kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV)${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4',
+            });
+            j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+            if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+          }
+          j.status = 'done';
         } catch (e: any) {
           j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
           console.warn('[ugc/build photo] FAILED:', j.error);
@@ -922,7 +939,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
 
     const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
     sweepJobs(ugcJobs);
-    ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now() });
+    ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
     res.json({ jobId });
 
     // Дальше — в фоне; фронт поллит /ugc/build/status.
@@ -959,24 +976,29 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
         const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
 
-        j.status = 'склейка + титры';
-        const fileUrl = await composeUgc({
-          avatarPath: avatar.filePath, avatarKind: 'alpha',
-          voicePath: voice.filePath,
-          clipPath: clip?.filePath || null,
-          clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
-          clipMuted: spec.clipMuted !== false,
-          placement: placement as any,
-          musicPath: music?.filePath || null,
-          musicVolumePct: Number(spec.music?.volumePct) || 20,
-          captions, capStyle: captions.length ? capStyle : 'none', capPos,
-        });
-        const asset = await createAsset(j.tenantId!, {
-          kind: 'reference', mediaType: 'video',
-          originalName: `UGC — ${String(spec.avatarName || 'аватар')}`,
-          fileUrl, mime: 'video/mp4',
-        });
-        j.fileUrl = fileUrl; j.assetId = asset?.id || null; j.status = 'done';
+        for (let f = 0; f < outFormats.length; f++) {
+          const fmt = outFormats[f];
+          j.status = outFormats.length > 1 ? `склейка ${fmt.label} (${f + 1}/${outFormats.length})` : 'склейка + титры';
+          const fileUrl = await composeUgc({
+            avatarPath: avatar.filePath, avatarKind: 'alpha',
+            voicePath: voice.filePath,
+            clipPath: clip?.filePath || null,
+            clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+            clipMuted: spec.clipMuted !== false,
+            placement: placement as any,
+            musicPath: music?.filePath || null,
+            musicVolumePct: Number(spec.music?.volumePct) || 20,
+            captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
+          });
+          const asset = await createAsset(j.tenantId!, {
+            kind: 'reference', mediaType: 'video',
+            originalName: `UGC — ${String(spec.avatarName || 'аватар')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
+            fileUrl, mime: 'video/mp4',
+          });
+          j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+          if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+        }
+        j.status = 'done';
       } catch (e: any) {
         j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
         console.warn('[ugc/build] FAILED:', j.error);

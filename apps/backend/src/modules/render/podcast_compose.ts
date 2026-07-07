@@ -714,9 +714,32 @@ function hasAudioStream(input: string): Promise<boolean> {
   });
 }
 
+// ── Ориентация кадра (9:16 портрет ИЛИ 16:9 ландшафт) — общие помощники для UGC-композиторов ──
+export interface FrameDims { W: number; H: number }
+export const UGC_FORMATS: Record<'9x16' | '16x9', FrameDims> = { '9x16': { W: 1080, H: 1920 }, '16x9': { W: 1920, H: 1080 } };
+
+/** Разложить кадр на 2 ячейки: портрет → верх/низ (vstack), ландшафт → лево/право (hstack). */
+function orientCells(W: number, H: number): { landscape: boolean; cw: number; ch: number; stack: (a: string, b: string, out: string) => string } {
+  const landscape = W > H;
+  const cw = landscape ? (W - (W % 2)) / 2 : W;
+  const ch = landscape ? H : (H - (H % 2)) / 2;
+  const stack = (a: string, b: string, out: string) => landscape ? `[${a}][${b}]hstack=inputs=2[${out}]` : `[${a}][${b}]vstack=inputs=2[${out}]`;
+  return { landscape, cw, ch, stack };
+}
+
+/** Вписать вход [idx] в w×h: аспект близок к целевому → cover (заполнить, кроп); иначе центр +
+ *  размытый фон (полоса) — работает и для 16:9-в-9:16, и для 9:16-в-16:9. freeze — tpad для видео. */
+function placeFilter(idx: number, w: number, h: number, ratio: number, out: string, freeze = ''): string {
+  const targetR = w / h;
+  const fr = freeze ? `${freeze},` : '';
+  const near = ratio >= targetR * 0.85 && ratio <= targetR * 1.18;
+  if (near) return `[${idx}:v]${fr}scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},setsar=1,fps=30[${out}]`;
+  return `[${idx}:v]${fr}split=2[${out}s0][${out}s1];[${out}s0]scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},boxblur=24:2[${out}bg];[${out}s1]scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=lanczos[${out}fg];[${out}bg][${out}fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps=30[${out}]`;
+}
+
 /**
- * Собрать UGC-ролик 1080×1920:
- *  - placement 'top'/'bottom' — кадр из двух половин: аватар отдельным блоком (тёмная подложка,
+ * Собрать UGC-ролик (портрет 1080×1920 или ландшафт 1920×1080 по dims):
+ *  - placement 'top'/'bottom' — кадр из двух ячеек: аватар отдельным блоком (тёмная подложка,
  *    альфа сохраняет силуэт) + видео во второй половине (cover/contain по clipFit);
  *  - placement 'overlay-left'/'overlay-right' — видео во весь кадр, аватар МАЛЕНЬКИМ поверх
  *    (прозрачный фон — виден только человек), снизу слева/справа.
@@ -735,9 +758,10 @@ export async function composeUgc(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
-  const W = 1080, H = 1920;
+  const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
   const opaque = opts.avatarKind === 'opaque';
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
@@ -779,20 +803,20 @@ export async function composeUgc(opts: {
       parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
     }
   } else {
-    // Два блока: аватар + клип; порядок по placement.
-    const halfH = H / 2;
+    // Две ячейки: аватар + клип. Портрет → верх/низ (vstack), ландшафт → лево/право (hstack).
+    const { cw, ch, stack } = orientCells(W, H);
     if (opaque) {
-      // HeyGen: непрозрачное видео заполняет свою половину (cover).
-      parts.push(`[0:v]${fit(W, halfH)},setsar=1,fps=30[ahalf]`);
+      // HeyGen: непрозрачное видео заполняет свою ячейку (cover).
+      parts.push(`[0:v]${fit(cw, ch)},setsar=1,fps=30[ahalf]`);
     } else {
       // sr-capture: прозрачный силуэт на тёмной подложке.
-      parts.push(`color=c=0x0d0f16:s=${W}x${halfH}:r=30:d=${Ds}[abg]`);
-      parts.push(`[0:v]scale=-2:${halfH}:flags=lanczos,format=yuva420p[av]`);
+      parts.push(`color=c=0x0d0f16:s=${cw}x${ch}:r=30:d=${Ds}[abg]`);
+      parts.push(`[0:v]scale=-2:${ch}:flags=lanczos,format=yuva420p[av]`);
       parts.push(`[abg][av]overlay=(W-w)/2:0:eof_action=pass[ahalf]`);
     }
-    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, halfH)},setsar=1,fps=30[chalf]`);
-    else parts.push(`color=c=0x161a24:s=${W}x${halfH}:r=30:d=${Ds}[chalf]`);
-    parts.push(opts.placement === 'top' ? `[ahalf][chalf]vstack=inputs=2[vmain]` : `[chalf][ahalf]vstack=inputs=2[vmain]`);
+    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(cw, ch)},setsar=1,fps=30[chalf]`);
+    else parts.push(`color=c=0x161a24:s=${cw}x${ch}:r=30:d=${Ds}[chalf]`);
+    parts.push(opts.placement === 'top' ? stack('ahalf', 'chalf', 'vmain') : stack('chalf', 'ahalf', 'vmain'));
   }
 
   // Титры
@@ -855,9 +879,12 @@ export async function composeRetentionVideo(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
-  const W = 1080, H = 1920, hp = H / 2;
+  const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
+  const { landscape, cw, ch, stack } = orientCells(W, H);
+  const AVR = 1080 / 1920; // аватар HeyGen всегда портрет
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
   if (!opts.segments.length) throw new Error('Нет сегментов для склейки.');
@@ -881,14 +908,17 @@ export async function composeRetentionVideo(opts: {
         if (broll) await ffmpeg(['-y', '-stream_loop', '-1', '-t', Ds, '-i', broll, '-vf', `${fitClip(W, H)},fps=30`, ...enc], 300_000);
         else await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
       } else if (s.layout === 'closeup') {
-        await ffmpeg(['-y', '-i', s.avatarPath, '-vf', `${cover(W, H)},fps=30,${freeze}`, ...enc], 300_000);
+        // портрет: аватар заполняет кадр (cover); ландшафт: портретный аватар по центру + размытый фон
+        if (!landscape) await ffmpeg(['-y', '-i', s.avatarPath, '-vf', `${cover(W, H)},fps=30,${freeze}`, ...enc], 300_000);
+        else await ffmpeg(['-y', '-i', s.avatarPath, '-filter_complex', placeFilter(0, W, H, AVR, 'v', freeze), '-map', '[v]', ...enc], 300_000);
       } else if (s.layout === 'split') {
+        // портрет → верх/низ (vstack), ландшафт → лево/право (hstack)
         const ins = ['-i', s.avatarPath];
         if (broll) ins.push('-stream_loop', '-1', '-t', Ds, '-i', broll);
-        const avf = `[0:v]${cover(W, hp)},fps=30,${freeze}[a]`;
-        const clf = broll ? `[1:v]${fitClip(W, hp)},fps=30[c]` : `color=0x161a24:s=${W}x${hp}:r=30:d=${Ds}[c]`;
-        const stack = s.placement === 'bottom' ? `[c][a]vstack=inputs=2[v]` : `[a][c]vstack=inputs=2[v]`;
-        await ffmpeg(['-y', ...ins, '-filter_complex', `${avf};${clf};${stack}`, '-map', '[v]', ...enc], 300_000);
+        const avf = `[0:v]${cover(cw, ch)},fps=30,${freeze}[a]`;
+        const clf = broll ? `[1:v]${fitClip(cw, ch)},fps=30[c]` : `color=0x161a24:s=${cw}x${ch}:r=30:d=${Ds}[c]`;
+        const st = s.placement === 'bottom' ? stack('c', 'a', 'v') : stack('a', 'c', 'v');
+        await ffmpeg(['-y', ...ins, '-filter_complex', `${avf};${clf};${st}`, '-map', '[v]', ...enc], 300_000);
       } else { // pip
         const ins: string[] = [];
         let bg: string;
@@ -1023,9 +1053,12 @@ export async function composeDialogueVideo(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
-  const W = 1080, H = 1920, hp = H / 2;
+  const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
+  const { landscape, cw, ch, stack } = orientCells(W, H);
+  const AVR = 1080 / 1920; // аватар HeyGen всегда портрет
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
   if (!opts.segments.length) throw new Error('Нет сегментов для склейки.');
@@ -1053,39 +1086,35 @@ export async function composeDialogueVideo(opts: {
       const mediaIn = (): string[] => !s.mediaPath ? []
         : s.isVideo ? ['-stream_loop', '-1', '-ss', Math.max(0, s.mediaFromSec).toFixed(3), '-t', Ds, '-i', s.mediaPath]
           : ['-loop', '1', '-t', Ds, '-i', s.mediaPath];
-      const mediaPlace = (mi: number, w: number, h: number, ratio: number, out: string): string => {
-        const targetR = w / h;
-        if (!ratio || ratio <= targetR * 1.02) // портрет/квадрат → cover
-          return `[${mi}:v]scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},setsar=1,fps=30[${out}]`;
-        // ландшафт (16:9) → размытая полоса по центру (TikTok)
-        return `[${mi}:v]split=2[${out}b][${out}f];[${out}b]scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},boxblur=24:2[${out}bg];[${out}f]scale=${w}:-2:flags=lanczos[${out}fg];[${out}bg][${out}fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps=30[${out}]`;
-      };
 
       const hasFace = !!s.avatarPath;
       if (s.layout === 'closeup' || (!s.mediaPath && s.layout !== 'twoshot')) {
-        if (hasFace) await ffmpeg(['-y', '-i', s.avatarPath!, '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${freeze}`, ...enc], 300_000);
+        // портрет → аватар заполняет кадр; ландшафт → портретный аватар по центру + размытый фон
+        if (hasFace && !landscape) await ffmpeg(['-y', '-i', s.avatarPath!, '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${freeze}`, ...enc], 300_000);
+        else if (hasFace) await ffmpeg(['-y', '-i', s.avatarPath!, '-filter_complex', placeFilter(0, W, H, AVR, 'v', freeze), '-map', '[v]', ...enc], 300_000);
         else await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
       } else if (s.layout === 'twoshot' && s.avatarPath && s.avatar2Path) {
-        // говорящий (видео HeyGen) сверху + реакция второго (обычно СТАТИЧНОЕ фото — бесплатно) снизу
+        // говорящий (видео HeyGen) + реакция второго (обычно СТАТИЧНОЕ фото — бесплатно); портрет=верх/низ, ландшафт=лево/право
         const in2 = s.avatar2IsImage ? ['-loop', '1', '-t', Ds, '-i', s.avatar2Path] : ['-i', s.avatar2Path];
-        await ffmpeg(['-y', '-i', s.avatarPath, ...in2, '-filter_complex', `${faceCover(0, W, hp, 'a')};${faceCover(1, W, hp, 'b')};[a][b]vstack=inputs=2[v]`, '-map', '[v]', ...enc], 300_000);
+        await ffmpeg(['-y', '-i', s.avatarPath, ...in2, '-filter_complex', `${faceCover(0, cw, ch, 'a')};${faceCover(1, cw, ch, 'b')};${stack('a', 'b', 'v')}`, '-map', '[v]', ...enc], 300_000);
       } else if (s.layout === 'twoshot' && hasFace) {
         // нет второго лица — падаем в крупный план
-        await ffmpeg(['-y', '-i', s.avatarPath!, '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${freeze}`, ...enc], 300_000);
+        if (!landscape) await ffmpeg(['-y', '-i', s.avatarPath!, '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,${freeze}`, ...enc], 300_000);
+        else await ffmpeg(['-y', '-i', s.avatarPath!, '-filter_complex', placeFilter(0, W, H, AVR, 'v', freeze), '-map', '[v]', ...enc], 300_000);
       } else if (s.layout === 'media-full' || !hasFace) {
         const r = s.mediaPath ? await mediaRatio(s.mediaPath) : 0.5625;
-        if (s.mediaPath) await ffmpeg(['-y', ...mediaIn(), '-filter_complex', mediaPlace(0, W, H, r, 'v'), '-map', '[v]', ...enc], 300_000);
+        if (s.mediaPath) await ffmpeg(['-y', ...mediaIn(), '-filter_complex', placeFilter(0, W, H, r, 'v'), '-map', '[v]', ...enc], 300_000);
         else await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
       } else if (s.layout === 'media-split' && s.mediaPath) {
-        const r = await mediaRatio(s.mediaPath);
-        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${mediaPlace(0, W, hp, r, 'm')};${faceCover(1, W, hp, 'a')};[m][a]vstack=inputs=2[v]`, '-map', '[v]', ...enc], 300_000);
+        const r = await mediaRatio(s.mediaPath); // медиа в одной ячейке, лицо в другой (портрет=верх/низ, ландшафт=лево/право)
+        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${placeFilter(0, cw, ch, r, 'm')};${faceCover(1, cw, ch, 'a')};${stack('m', 'a', 'v')}`, '-map', '[v]', ...enc], 300_000);
       } else if ((s.layout === 'media-bg-left' || s.layout === 'media-bg-right') && s.mediaPath) {
         const r = await mediaRatio(s.mediaPath);
         const x = s.layout === 'media-bg-left' ? '48' : 'W-w-48';
         // Вырезка фона: если аватар отрендерен на однотонном фоне (avatarChroma) — chroma-key + despill →
         // силуэт человека поверх медиа; иначе непрозрачный бокс со своим фоном (как раньше).
         const key = s.avatarChroma ? `,chromakey=${s.avatarChroma}:0.16:0.06,despill=type=green:mix=0.5:expand=0` : '';
-        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${mediaPlace(0, W, H, r, 'bg')};[1:v]scale=360:640:force_original_aspect_ratio=increase:flags=lanczos,crop=360:640,setsar=1,fps=30,${freeze}${key}[pv];[bg][pv]overlay=${x}:H-h-140[v]`, '-map', '[v]', ...enc], 300_000);
+        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${placeFilter(0, W, H, r, 'bg')};[1:v]scale=360:640:force_original_aspect_ratio=increase:flags=lanczos,crop=360:640,setsar=1,fps=30,${freeze}${key}[pv];[bg][pv]overlay=${x}:H-h-140[v]`, '-map', '[v]', ...enc], 300_000);
       } else {
         // фолбэк: тёмный кадр
         await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
