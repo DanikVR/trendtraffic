@@ -205,6 +205,13 @@
       };
       handle.addEventListener('pointerup', end);
       handle.addEventListener('pointercancel', end);
+      // Прижать панель в видимую область при смене размеров окна (моб. режим/резайз) — иначе уезжает за экран.
+      window.addEventListener('resize', () => {
+        const w = host.offsetWidth, h = host.offsetHeight;
+        const l = parseInt(host.style.left, 10), t = parseInt(host.style.top, 10);
+        if (Number.isFinite(l)) host.style.left = Math.max(4, Math.min(window.innerWidth - w - 4, l)) + 'px';
+        if (Number.isFinite(t)) host.style.top = Math.max(4, Math.min(window.innerHeight - h - 4, t)) + 'px';
+      });
     }
     function line(t) {
       if (!els.lg) return;
@@ -226,6 +233,14 @@
       if (paused) status('wait', 'пауза');
       else if (r.connected) status('on', 'работает');
       else status('off', 'войдите в аккаунт');
+      // «Войдите в аккаунт» — кликабельно: открывает TrendTraffic (там авто-подключение).
+      if (els.st) {
+        const off = !r.connected && !paused;
+        els.st.style.cursor = off ? 'pointer' : 'default';
+        els.st.style.textDecoration = off ? 'underline' : 'none';
+        els.st.title = off ? 'Открыть TrendTraffic и войти — подключится само' : '';
+        els.st.onclick = off ? () => window.open('https://app.trendtraffic.pro/flow', '_blank') : null;
+      }
       // Бегущая лента горит, когда «работает» (подключено и не на паузе).
       if (els.wire) els.wire.classList.toggle('on', !!r.connected && !paused);
       // Первый раз, как только подключились, — молча снимаем вёрстку Flow (авто-разведка).
@@ -356,22 +371,47 @@
   // Последнее медиа (видео/картинка), кликнутое юзером в Flow — приоритетный кандидат для «В галерею».
   let lastClickedMedia = null;
   document.addEventListener('click', (e) => {
-    try { const m = e.target && e.target.closest && e.target.closest('video,img'); if (m) lastClickedMedia = m; } catch { /* */ }
+    try {
+      const path = (e.composedPath && e.composedPath()) || [];
+      const m = path.find((n) => n && (n.tagName === 'VIDEO' || n.tagName === 'IMG')) || (e.target && e.target.closest && e.target.closest('video,img'));
+      if (m) lastClickedMedia = m;
+    } catch { /* */ }
   }, true);
   const usableMediaSrc = (el) => (el.tagName === 'VIDEO'
     ? (el.currentSrc || el.src || (el.querySelector('source') || {}).src || '')
     : (el.currentSrc || el.src || ''));
   const byArea = (a, b) => (b.clientWidth * b.clientHeight) - (a.clientWidth * a.clientHeight);
+  // Глубокий querySelectorAll — сквозь shadow-DOM (Flow рендерит части в web-components).
+  function queryAllDeep(sel) {
+    const out = []; const seen = new Set();
+    const walk = (root) => {
+      let list; try { list = root.querySelectorAll(sel); } catch { list = []; }
+      for (const e of list) if (!seen.has(e)) { seen.add(e); out.push(e); }
+      let all; try { all = root.querySelectorAll('*'); } catch { all = []; }
+      for (const e of all) if (e.shadowRoot) walk(e.shadowRoot);
+    };
+    walk(document);
+    return out;
+  }
   // Лучший результат в Flow (видео ИЛИ картинка): приоритет — что кликнул юзер; иначе крупнейшее
-  // видимое видео; иначе крупнейшая видимая картинка (мелкие иконки < 160px отсекаем).
+  // видимое видео; иначе крупнейшая видимая картинка (мелкие иконки < 120px отсекаем).
   function findResultMedia() {
-    const vids = [...document.querySelectorAll('video')].filter(visible).filter(usableMediaSrc);
+    const vids = queryAllDeep('video').filter(visible).filter(usableMediaSrc);
     if (vids.length) { vids.sort(byArea); return (lastClickedMedia && vids.includes(lastClickedMedia)) ? lastClickedMedia : vids[0]; }
-    const imgs = [...document.querySelectorAll('img')].filter(visible).filter(usableMediaSrc)
-      .filter((i) => i.clientWidth >= 160 && i.clientHeight >= 160);
+    const imgs = queryAllDeep('img').filter(visible).filter(usableMediaSrc)
+      .filter((i) => i.clientWidth >= 120 && i.clientHeight >= 120);
     if (!imgs.length) return null;
     imgs.sort(byArea);
     return (lastClickedMedia && imgs.includes(lastClickedMedia)) ? lastClickedMedia : imgs[0];
+  }
+  // Скачать медиа ИЗ СТРАНИЦЫ (её cookie/Referer/Origin) → dataUrl. С cookie и без (подписанные URL их отвергают).
+  async function pageFetchDataUrl(url) {
+    const tryF = async (opts) => { try { const r = await fetch(url, opts); return r.ok ? r : null; } catch { return null; } };
+    const res = (await tryF({ credentials: 'include' })) || (await tryF({}));
+    if (!res) throw new Error('page fetch fail');
+    const blob = await res.blob();
+    if (blob.size < 64) throw new Error('пусто');
+    return await blobToDataUrl(blob);
   }
   async function grabMediaData(el) {
     const kind = el.tagName === 'VIDEO' ? 'video' : 'image';
@@ -382,8 +422,9 @@
       try { return { dataUrl: await blobToDataUrl(await (await fetch(src)).blob()), kind }; }
       catch { return { sourceUrl: src, kind }; }
     }
-    // http(s): CDN Google-Flow требует авторизацию (наш сервер ловит HTTP 401). Качаем байты
-    // в браузере юзера — background с его Google-cookie (credentials) → dataUrl. Фолбэк — sourceUrl.
+    // http(s): CDN Flow за авторизацией (сервер ловит 401). 3 пути → dataUrl:
+    // 1) из СТРАНИЦЫ (её сессия), 2) background (extension, cookie хоста, обход CORS), 3) фолбэк sourceUrl.
+    try { return { dataUrl: await pageFetchDataUrl(src), kind }; } catch { /* → дальше */ }
     try {
       const b = await send({ type: 'fetch-bytes', url: src });
       if (b && b.ok && b.dataUrl) return { dataUrl: b.dataUrl, kind };
@@ -398,6 +439,8 @@
     ui.line('забираю ' + what + ' из Flow…');
     const data = await grabMediaData(el);
     if (!data.sourceUrl && !data.dataUrl) { ui.line('⚠ не удалось прочитать медиа'); return; }
+    // Диагностика: если байты скачать не удалось (остался sourceUrl) — покажем хост CDN.
+    if (data.sourceUrl && !data.dataUrl) { try { ui.line('CDN за авторизацией: ' + new URL(data.sourceUrl).host + ' — пробую через сервер'); } catch { /* */ } }
     const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
     if (r && r.ok) ui.line('✓ ' + what + ' в Галерее → вкладка «Google Flow»');
     else ui.line('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить» в TrendTraffic'));

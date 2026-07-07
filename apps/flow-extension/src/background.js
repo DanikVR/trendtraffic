@@ -223,9 +223,10 @@ async function fetchBytes(url) {
   if (!url) return { ok: false, error: 'нет url' };
   if (url.startsWith('/') && STATE.apiBase) url = STATE.apiBase.replace(/\/+$/, '') + url; // относительный → абсолютный
   try {
-    // credentials:'include' — шлём куки хоста (для CDN Google-Flow за авторизацией: качаем от имени юзера).
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) return { ok: false, error: 'HTTP ' + res.status };
+    // Пробуем С cookie (CDN за Google-сессией) и БЕЗ (подписанные URL, которые куки отвергают).
+    const tryFetch = async (opts) => { try { const r = await fetch(url, opts); return r.ok ? r : null; } catch { return null; } };
+    const res = (await tryFetch({ credentials: 'include' })) || (await tryFetch({}));
+    if (!res) return { ok: false, error: 'скачивание не удалось (CDN отклонил запрос)' };
     const buf = await res.arrayBuffer();
     if (buf.byteLength > 64 * 1024 * 1024) return { ok: false, error: 'видео >64МБ — велико для заливки в Flow' };
     const bytes = new Uint8Array(buf);

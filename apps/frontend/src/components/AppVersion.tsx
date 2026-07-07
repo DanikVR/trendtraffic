@@ -1849,11 +1849,18 @@
  *         его Google-cookie) → dataUrl → на сервер. host_permissions расширены (*.googleapis.com,
  *         *.ggpht.com). Фолбэк на sourceUrl сохранён. content-flow.js (grabMediaData), background.js
  *         (fetchBytes), manifest 0.2.2→0.2.3, пересобран zip. */
-export const APP_VERSION = '1.6.125';
+/* 1.6.126 — Google Flow, фидбэк (расширение v0.2.4): (1) статус «войдите в аккаунт» стал
+ *         КЛИКАБЕЛЬНЫМ — открывает /flow (там авто-подключение). (2) «не передаётся видео/картинка»:
+ *         поиск медиа стал ГЛУБОКИМ (queryAllDeep сквозь shadow-DOM) + клик ловится через
+ *         composedPath; закачка байтов теперь 3 пути — из СТРАНИЦЫ (её сессия) → background
+ *         (с cookie и без — подписанные URL куки отвергают) → фолбэк sourceUrl; при неудаче в лог
+ *         пишется ХОСТ CDN (для точечной добивки). (3) панель пропадала в мобильном режиме —
+ *         прижимаем к вьюпорту при resize. content-flow.js, background.js, manifest 0.2.3→0.2.4. */
+export const APP_VERSION = '1.6.126';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.3';
+export const FLOW_EXT_VERSION = '0.2.4';
 
 export function AppVersion() {
   return (
