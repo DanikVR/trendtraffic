@@ -1913,7 +1913,17 @@
  *         не главную». (3) «Открыть Google Flow» в поп-апе видео → страница проектов /fx/tools/flow
  *         (ближе к «Загрузки»). content-flow.js (showMediaPicker/flashHighlight/collectVisibleMedia/
  *         grabAndSend), GalleryPage.tsx, manifest 0.2.6→0.2.7. */
-export const APP_VERSION = '1.6.133';
+/* 1.6.134 — UGC ФОРМАТ ВЫВОДА 9:16 / 16:9 / ОБА (весь UGC). Раньше всё жёстко 9:16 (1080×1920).
+ *         Теперь селектор «Формат вывода»: 9:16 (шортс) / 16:9 (горизонталь) / Оба. «Оба» = два
+ *         файла за один прогон, аватар HeyGen рендерится ОДИН раз → цена как за один ролик (логика
+ *         батча). Все три композитора (composeUgc/composeRetentionVideo/composeDialogueVideo)
+ *         ориентационные (параметр dims): split/two-shot/блоки — портрет верх-низ (vstack), ландшафт
+ *         бок-о-бок (hstack); медиа и портретный аватар в «неродной» ориентации — по центру +
+ *         размытый фон (placeFilter, бандинг в обе стороны). Общие orientCells/placeFilter/UGC_FORMATS.
+ *         Роутер: все ветки /ugc/build склеивают на каждый выбранный формат. Фронт: spec.formats,
+ *         сетка результатов = реальный аспект. podcast_compose.ts, router.ts, MontageEditor.tsx.
+ *         Синтетика PASS: 3 композитора × 2 формата = верные размеры, ландшафтный hstack ок. */
+export const APP_VERSION = '1.6.134';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
