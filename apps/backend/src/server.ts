@@ -146,6 +146,11 @@ app.use('/api/mcp', express.json({ limit: '30mb' }), mcpRouter);
 // inline base64 в Gemini, поэтому свой большой json-лимит ДО глобального (иначе 413).
 app.use('/api/social-ext/ai-proxy', express.json({ limit: '64mb' }), socialExtAiRouter);
 
+// 2.5 Google Flow — расширение шлёт готовые видео/картинки как base64 (fallback), поэтому нужен
+// БОЛЬШОЙ json-лимит ДО глобального express.json() (иначе глобальный дефолт ~100КБ режет тело
+// раньше и отдаёт 413 на «В галерею»). JWT + Enterprise — внутри роутера.
+app.use('/api/flow-ext', express.json({ limit: FLOW_INGEST_LIMIT }), flowExtRouter);
+
 // 3. Подключение глобального парсера JSON-данных для остальных эндпоинтов
 app.use(express.json());
 
@@ -199,10 +204,8 @@ app.use('/api/social-ext/ig-manifest', socialExtManifestRouter);
 app.use('/api/render', renderRouter);
 // HOTEBOOK: блок NotebookLM (источники/чат/артефакты) — JWT + Enterprise внутри роутера
 app.use('/api/notebooklm', notebooklmRouter);
-// GOOGLE FLOW: очередь задач для Chrome-расширения (apps/flow-extension) + приём
-// готовых клипов в Галерею (folder='flow') — JWT + Enterprise внутри роутера.
-// Свой json-лимит: расширение может слать видео как base64 fallback.
-app.use('/api/flow-ext', express.json({ limit: FLOW_INGEST_LIMIT }), flowExtRouter);
+// GOOGLE FLOW (/api/flow-ext) смонтирован ВЫШЕ — до глобального express.json() (нужен большой
+// json-лимит для base64-видео/картинок «В галерею», иначе 413).
 // TRENDTRAFFIC: обрезка/нарезка видео (движок редактора-просмотрщика) — JWT внутри роутера
 app.use('/api/video-edit', videoEditRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)
