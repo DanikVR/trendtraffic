@@ -125,6 +125,15 @@ function ModeDia({ kind }: { kind: UgcMode }) {
       <i style={b({ left: 3, right: 3, bottom: 3, height: 17, background: '#f472b6', opacity: .9 })} />
     </span>
   );
+  if (kind === 'voiceover') return (
+    <span style={box}>
+      <i style={b({ inset: 3, background: 'var(--text-disabled)', opacity: .45 })} />
+      <i style={b({ left: 6, bottom: 6, width: 3, height: 7, background: ACC2 })} />
+      <i style={b({ left: 11, bottom: 6, width: 3, height: 12, background: ACC2 })} />
+      <i style={b({ left: 16, bottom: 6, width: 3, height: 5, background: ACC2 })} />
+      <i style={b({ left: 21, bottom: 6, width: 3, height: 10, background: ACC2 })} />
+    </span>
+  );
   return (
     <span style={box}>
       <i style={b({ left: 3, right: 3, top: 3, height: 19, background: ACC2, opacity: .9 })} />
@@ -166,10 +175,11 @@ export default function UgcStudio(p: UgcStudioProps) {
       // Возврат в соло: если «Моё фото» пустое, а из коллекции аватар выбран — вернуть вкладку коллекции,
       // чтобы выбор не «терялся» визуально после захода в Диалог/Монтаж (они форсят photo).
       const back = !u.photoUrl && u.avatarUrl ? 'collection' as const : u.avatarSource;
-      return { ...u, dialogueEnabled: false, retentionPreset: 'off', avatarSource: back };
+      return { ...u, noAvatar: false, dialogueEnabled: false, retentionPreset: 'off', avatarSource: back };
     }
-    if (m === 'retention') return { ...u, dialogueEnabled: false, retentionPreset: u.retentionPreset === 'off' ? 'bal' : u.retentionPreset, avatarSource: 'photo' };
-    return { ...u, dialogueEnabled: true, retentionPreset: 'off', avatarSource: 'photo' };
+    if (m === 'retention') return { ...u, noAvatar: false, dialogueEnabled: false, retentionPreset: u.retentionPreset === 'off' ? 'bal' : u.retentionPreset, avatarSource: 'photo' };
+    if (m === 'dialogue') return { ...u, noAvatar: false, dialogueEnabled: true, retentionPreset: 'off', avatarSource: 'photo' };
+    return { ...u, noAvatar: true, dialogueEnabled: false, retentionPreset: 'off' };   // voiceover
   });
 
   /* ── готовность к сборке (чек-лист + причина недоступности CTA) ── */
@@ -177,34 +187,109 @@ export default function UgcStudio(p: UgcStudioProps) {
   const voiceOk = mode === 'dialogue'
     ? ugc.script.length > 0
     : (ugc.script.length > 0 || (ugc.source === 'diarize' && !!ugc.recordingUrl));
-  const videoOk = mode === 'retention' ? (!!ugc.clip || ugc.retentionBrolls.length > 0) : true;
+  const videoOk = mode === 'retention' ? (!!ugc.clip || ugc.retentionBrolls.length > 0) : (mode === 'voiceover' ? !!ugc.clip : true);
   const checks: { label: string; ok: boolean; hint: string; miss: string }[] = [
-    { label: ugc.avatarSource === 'collection' ? t('ugc.checklist.avatarChosen') : t('ugc.checklist.photoChosen'), ok: avatarOk, hint: t('ugc.checklist.step', { n: 2 }), miss: ugc.avatarSource === 'collection' ? t('ugc.checklist.missAvatar') : t('ugc.checklist.missPhoto') },
+    ...(mode !== 'voiceover' ? [{ label: ugc.avatarSource === 'collection' ? t('ugc.checklist.avatarChosen') : t('ugc.checklist.photoChosen'), ok: avatarOk, hint: t('ugc.checklist.step', { n: 2 }), miss: ugc.avatarSource === 'collection' ? t('ugc.checklist.missAvatar') : t('ugc.checklist.missPhoto') }] : []),
     ...(mode === 'dialogue' ? [{ label: t('ugc.checklist.secondSpeaker'), ok: !!ugc.photoBUrl, hint: t('ugc.checklist.step', { n: 2 }), miss: t('ugc.checklist.missPhotoB') }] : []),
     { label: mode === 'dialogue' ? t('ugc.checklist.recordingDiarized') : t('ugc.checklist.scriptOrRecording'), ok: voiceOk, hint: t('ugc.checklist.step', { n: 3 }), miss: mode === 'dialogue' ? t('ugc.checklist.missDiarize') : t('ugc.checklist.missScript') },
-    ...(mode === 'retention' ? [{ label: t('ugc.checklist.videoChosen'), ok: videoOk, hint: t('ugc.checklist.step', { n: 4 }), miss: t('ugc.checklist.missVideo') }] : []),
+    ...(mode === 'retention' || mode === 'voiceover' ? [{ label: t('ugc.checklist.videoChosen'), ok: videoOk, hint: t('ugc.checklist.step', { n: 4 }), miss: t('ugc.checklist.missVideo') }] : []),
   ];
   const allOk = checks.every((c) => c.ok) && (mode !== 'dialogue' || !!ugc.photoBUrl);
   const missing = checks.filter((c) => !c.ok).map((c) => c.miss).join(', ');
 
-  /* ── смета (ориентиры из докки UGC_AVATARS.md) ── */
-  const costBase = mode === 'retention'
-    ? ({ off: '', eco: t('ugc.cost.perClip1_2'), bal: t('ugc.cost.perClip2_3'), prem: t('ugc.cost.perClip3_5') }[ugc.retentionPreset])
-    : mode === 'dialogue'
-      ? ({ eco: t('ugc.cost.perClip2'), bal: t('ugc.cost.perClip2_3'), dyn: t('ugc.cost.perClip3_5') }[ugc.dialogueEngagement])
-      : (ugc.faceProvider === 'heygen_ext' ? t('ugc.cost.perMin1') : t('ugc.cost.perMin3_4'));
-  const costExtra = mode === 'retention' && ugc.retentionBrolls.length > 1
-    ? t('ugc.cost.seriesSuffix', { count: ugc.retentionBrolls.length })
-    : (ugc.formats.length > 1 ? t('ugc.cost.filesSuffix') : '');
+  /* серия языков (перевод Claude + TTS multilingual) — только ИИ-текст в соло/озвучке */
+  const langsActive = ugc.source === 'gen' && (mode === 'solo' || mode === 'voiceover');
+  const extraLangsCount = langsActive ? ugc.langs.filter((l) => l !== 'ru').length : 0;
 
-  /* Esc закрывает студию (если не открыт пикер/подтверждение) */
+  /* ── смета (ориентиры из докки UGC_AVATARS.md) ── */
+  const costBase = mode === 'voiceover'
+    ? (ugc.source === 'gen' ? t('ugc.cost.voiceoverAi') : t('ugc.cost.voiceoverFree'))
+    : mode === 'retention'
+      ? ({ off: '', eco: t('ugc.cost.perClip1_2'), bal: t('ugc.cost.perClip2_3'), prem: t('ugc.cost.perClip3_5') }[ugc.retentionPreset])
+      : mode === 'dialogue'
+        ? ({ eco: t('ugc.cost.perClip2'), bal: t('ugc.cost.perClip2_3'), dyn: t('ugc.cost.perClip3_5') }[ugc.dialogueEngagement])
+        : (ugc.faceProvider === 'heygen_ext' ? t('ugc.cost.perMin1') : t('ugc.cost.perMin3_4'));
+  const costExtra = (mode === 'retention' && ugc.retentionBrolls.length > 1
+    ? t('ugc.cost.seriesSuffix', { count: ugc.retentionBrolls.length })
+    : (ugc.formats.length > 1 ? t('ugc.cost.filesSuffix') : ''))
+    + (extraLangsCount > 0 ? t('ugc.cost.langsSuffix', { count: extraLangsCount + 1 }) : '');
+
+  const scrollToSec = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  /* ── голоса ElevenLabs аккаунта (включая клоны) для озвучки ИИ-текста ── */
+  const [elVoices, setElVoices] = useState<{ id: string; name: string; preview: string | null; category: string | null }[] | null>(null);
+  const [elNote, setElNote] = useState<string | null>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !p.ugcPick && !p.ugcDelAvatar) p.onClose(); };
+    if (ugc.source !== 'gen' || elVoices !== null) return;
+    void fetch('/api/render/ugc/voices', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } })
+      .then((r) => r.json())
+      .then((d) => { setElVoices(Array.isArray(d?.voices) ? d.voices : []); if (d?.note) setElNote(String(d.note)); })
+      .catch(() => setElVoices([]));
+  }, [ugc.source, elVoices, p.token]);
+  const prevAudioRef = useRef<HTMLAudioElement | null>(null);
+  const playPreview = (url: string) => {
+    try { prevAudioRef.current?.pause(); const a = new Audio(url); prevAudioRef.current = a; void a.play(); } catch { /* превью не критично */ }
+  };
+  useEffect(() => () => { try { prevAudioRef.current?.pause(); } catch { /* */ } }, []);
+
+  /* фиксированный набор языков серии (перевод Claude + ElevenLabs multilingual) */
+  const LANG_CHOICES: [string, string][] = [['en', 'English'], ['es', 'Español'], ['de', 'Deutsch'], ['fr', 'Français'], ['pt', 'Português'], ['it', 'Italiano'], ['tr', 'Türkçe'], ['uk', 'Українська']];
+
+  /* ── бренд-кит: сохранённый набор оформления (слой, заставки, музыка, субтитры, голос) ── */
+  interface BrandKit { id: string; name: string; data: Partial<Pick<UgcSpec, 'layers' | 'intro' | 'outro' | 'music' | 'subtitles' | 'voiceId' | 'progressBar'>> }
+  const [brandOpen, setBrandOpen] = useState(false);
+  const [brandKits, setBrandKits] = useState<BrandKit[] | null>(null);
+  const [brandNote, setBrandNote] = useState<string | null>(null);
+  const authHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) });
+  const loadBrandKits = async () => {
+    try {
+      const r = await fetch('/api/render/ugc/brandkits', { headers: authHeaders() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+      setBrandKits(Array.isArray(d?.kits) ? d.kits : []);
+    } catch (e: any) { setBrandKits([]); setBrandNote(String(e?.message || e)); }
+  };
+  const openBrand = () => { setBrandOpen(true); setBrandNote(null); void loadBrandKits(); };
+  const applyBrand = (k: BrandKit) => {
+    ugcMutate((u) => ({
+      ...u,
+      ...(k.data.layers ? { layers: k.data.layers } : {}),
+      ...(k.data.intro !== undefined ? { intro: k.data.intro } : {}),
+      ...(k.data.outro !== undefined ? { outro: k.data.outro } : {}),
+      ...(k.data.music !== undefined ? { music: k.data.music } : {}),
+      ...(k.data.subtitles ? { subtitles: k.data.subtitles } : {}),
+      ...(k.data.voiceId !== undefined ? { voiceId: k.data.voiceId } : {}),
+      ...(k.data.progressBar !== undefined ? { progressBar: !!k.data.progressBar } : {}),
+    }));
+    setBrandOpen(false);
+  };
+  const saveBrand = async () => {
+    try {
+      const name = `${t('ugc.brand.defaultName')} ${new Date().toLocaleDateString()}`;
+      const data = { layers: ugc.layers, intro: ugc.intro, outro: ugc.outro, music: ugc.music, subtitles: ugc.subtitles, voiceId: ugc.voiceId, progressBar: ugc.progressBar };
+      const r = await fetch('/api/render/ugc/brandkits', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name, data }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+      await loadBrandKits();
+    } catch (e: any) { setBrandNote(String(e?.message || e)); }
+  };
+  const deleteBrand = async (id: string) => {
+    try {
+      await fetch(`/api/render/ugc/brandkits/${id}`, { method: 'DELETE', headers: authHeaders() });
+      await loadBrandKits();
+    } catch { /* мягко */ }
+  };
+
+  /* Esc: закрывает бренд-модалку → иначе студию (если не открыт пикер/подтверждение) */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (brandOpen) { setBrandOpen(false); return; }
+      if (!p.ugcPick && !p.ugcDelAvatar) p.onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-
-  const scrollToSec = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
@@ -225,6 +310,11 @@ export default function UgcStudio(p: UgcStudioProps) {
           {p.saving ? <Loader2 size={13} className="animate-spin" /> : p.ugcSavedFlash ? <Check size={13} /> : <Save size={13} />}
           {p.saving ? t('ugc.topbar.saving') : p.ugcSavedFlash ? t('ugc.topbar.saved') : t('ugc.topbar.save')}
         </button>
+        <button onClick={openBrand} title={t('ugc.brand.tooltip')}
+          className="text-[11px] px-2.5 py-1.5 rounded-full font-600"
+          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+          ◆ {t('ugc.brand.button')}
+        </button>
         <span className="text-[11px] px-2.5 py-1.5 rounded-full" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
           {costBase}{costExtra}
         </span>
@@ -243,8 +333,8 @@ export default function UgcStudio(p: UgcStudioProps) {
 
           {/* 1. Режим ролика */}
           <Sec n={1} title={t('ugc.mode.title')} done>
-            <div className="grid grid-cols-3 gap-1.5">
-              {([['solo', t('ugc.mode.solo')], ['retention', t('ugc.mode.retention')], ['dialogue', t('ugc.mode.dialogue')]] as [UgcMode, string][]).map(([m, lbl]) => (
+            <div className="grid grid-cols-2 gap-1.5">
+              {([['solo', t('ugc.mode.solo')], ['retention', t('ugc.mode.retention')], ['dialogue', t('ugc.mode.dialogue')], ['voiceover', t('ugc.mode.voiceover')]] as [UgcMode, string][]).map(([m, lbl]) => (
                 <button key={m} onClick={() => setMode(m)} className="flex flex-col items-center gap-1.5 rounded-xl px-1 py-2"
                   style={{ background: mode === m ? 'rgba(168,85,247,.12)' : 'var(--bg-secondary)', border: `1px solid ${mode === m ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                   <ModeDia kind={m} />
@@ -256,6 +346,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               {mode === 'solo' && t('ugc.mode.soloHint')}
               {mode === 'retention' && t('ugc.mode.retentionHint')}
               {mode === 'dialogue' && t('ugc.mode.dialogueHint')}
+              {mode === 'voiceover' && t('ugc.mode.voiceoverHint')}
             </p>
             {mode === 'retention' && (
               <>
@@ -291,6 +382,7 @@ export default function UgcStudio(p: UgcStudioProps) {
           </Sec>
 
           {/* 2. Аватар */}
+          {mode !== 'voiceover' && (
           <div id="ugc-sec-avatar">
           <Sec n={2} title={t('ugc.avatar.title')} sub={t('ugc.avatar.sub')} done={avatarOk && (mode !== 'dialogue' || !!ugc.photoBUrl)}>
             <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
@@ -413,6 +505,7 @@ export default function UgcStudio(p: UgcStudioProps) {
             </div>
           </Sec>
           </div>
+          )}
 
           {/* 3. Голос и текст */}
           <Sec n={3} title={t('ugc.voice.title')} sub={t('ugc.voice.sub')} done={voiceOk}>
@@ -434,6 +527,38 @@ export default function UgcStudio(p: UgcStudioProps) {
                       style={{ background: ugc.voice === v ? ACC : 'var(--bg-secondary)', color: ugc.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.voice === v ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}><Mic size={11} /> {lbl}</button>
                   ))}
                 </div>
+                {/* Голоса ElevenLabs из аккаунта клиента (включая клоны); ▶ — послушать образец */}
+                {elVoices && elVoices.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.voice.elevenLabel')}</div>
+                    <div className="space-y-1" style={{ maxHeight: 168, overflowY: 'auto' }}>
+                      <button onClick={() => ugcMutate((u) => ({ ...u, voiceId: null }))}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left"
+                        style={{ background: !ugc.voiceId ? 'rgba(168,85,247,.12)' : 'var(--bg-secondary)', border: `1px solid ${!ugc.voiceId ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                        <span className="text-[11px] font-650" style={{ color: !ugc.voiceId ? ACC : 'var(--text-secondary)' }}>{t('ugc.voice.elevenDefault')}</span>
+                      </button>
+                      {elVoices.map((v) => {
+                        const on = ugc.voiceId === v.id;
+                        return (
+                          <div key={v.id} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                            style={{ background: on ? 'rgba(168,85,247,.12)' : 'var(--bg-secondary)', border: `1px solid ${on ? ACC : 'var(--border-medium)'}` }}>
+                            {v.preview ? (
+                              <button onClick={() => playPreview(v.preview!)} title={t('ugc.voice.elevenPreview')}
+                                className="flex-shrink-0 flex items-center justify-center rounded-full"
+                                style={{ width: 22, height: 22, background: 'var(--bg-tertiary)', border: '1px solid var(--border-strong)', color: ACC, cursor: 'pointer', fontSize: 9 }}>▶</button>
+                            ) : <span style={{ width: 22 }} />}
+                            <button onClick={() => ugcMutate((u) => ({ ...u, voiceId: v.id }))} className="flex-1 min-w-0 text-left" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                              <span className="text-[11px] font-650 block truncate" style={{ color: on ? ACC : 'var(--text-secondary)' }}>{v.name}</span>
+                              {v.category && <span className="text-[9.5px]" style={{ color: 'var(--text-muted)' }}>{v.category}</span>}
+                            </button>
+                            {on && <Check size={12} style={{ color: ACC, flexShrink: 0 }} />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {elNote && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{elNote}</p>}
                 <textarea value={ugc.brief} onChange={(e) => ugcMutate((u) => ({ ...u, brief: e.target.value }))} rows={2}
                   placeholder={t('ugc.voice.briefPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
@@ -461,8 +586,34 @@ export default function UgcStudio(p: UgcStudioProps) {
                   {p.ugcBusy === 'diarize' ? <Loader2 size={15} className="animate-spin" /> : <Scissors size={15} />} {p.ugcBusy === 'diarize' ? t('ugc.voice.diarizing') : t('ugc.voice.diarize')}
                 </button>
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  {mode === 'dialogue' ? t('ugc.voice.diarizeHintDialogue') : t('ugc.voice.diarizeHintSolo')}
+                  {mode === 'dialogue' ? t('ugc.voice.diarizeHintDialogue') : mode === 'voiceover' ? t('ugc.voice.diarizeHintVoiceover') : t('ugc.voice.diarizeHintSolo')}
                 </p>
+                {mode === 'voiceover' && (
+                  <Toggle on={ugc.loudnorm} title={t('ugc.voice.loudnormTitle')} sub={t('ugc.voice.loudnormSub')}
+                    onClick={() => ugcMutate((u) => ({ ...u, loudnorm: !u.loudnorm }))} />
+                )}
+              </div>
+            )}
+            {/* Языки серии: отдельный ролик на каждом языке (перевод Claude → ElevenLabs multilingual) */}
+            {langsActive && (
+              <div className="space-y-1">
+                <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.voice.langsLabel')}</div>
+                <div className="flex gap-1 flex-wrap">
+                  <span className="text-[10px] font-650 px-2.5 py-1 rounded-full" style={{ background: ACC, color: '#fff', border: `1px solid ${ACC}` }}>{t('ugc.voice.langRuPinned')}</span>
+                  {LANG_CHOICES.map(([code, label]) => {
+                    const on = ugc.langs.includes(code);
+                    return (
+                      <button key={code} onClick={() => ugcMutate((u) => ({ ...u, langs: on ? u.langs.filter((l) => l !== code) : [...u.langs.filter((l) => l === 'ru' || LANG_CHOICES.some(([c]) => c === l)), code] }))}
+                        className="text-[10px] font-650 px-2.5 py-1 rounded-full"
+                        style={{ background: on ? 'rgba(168,85,247,.14)' : 'var(--bg-secondary)', color: on ? ACC : 'var(--text-muted)', border: `1px solid ${on ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>{label}</button>
+                    );
+                  })}
+                </div>
+                {extraLangsCount > 0 && (
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    {mode === 'voiceover' ? t('ugc.voice.langsHintVoiceover', { count: extraLangsCount + 1 }) : t('ugc.voice.langsHintSolo', { count: extraLangsCount + 1 })}
+                  </p>
+                )}
               </div>
             )}
             {ugc.script.length > 0 && (
@@ -504,6 +655,9 @@ export default function UgcStudio(p: UgcStudioProps) {
             {mode === 'dialogue' && (
               <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.video.dialogueHint')}</p>
             )}
+            {mode === 'voiceover' && (
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.video.voiceoverBase')}</p>
+            )}
             {mode === 'retention' && (
               <div className="rounded-lg p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-medium)' }}>
                 <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.video.seriesHeading')}</div>
@@ -523,6 +677,25 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.video.seriesBilling')}</p>
               </div>
             )}
+            {/* Заставки до и после: готовое видео из Галереи приклеивается как есть */}
+            <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.bumpers.heading')}</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {([['intro', ugc.intro, t('ugc.bumpers.introEmpty')], ['outro', ugc.outro, t('ugc.bumpers.outroEmpty')]] as ['intro' | 'outro', { url: string; name: string } | null, string][]).map(([kind, val, emptyLbl]) => (
+                val ? (
+                  <div key={kind} className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <video src={`${val.url}#t=0.1`} muted className="rounded" style={{ width: 30, height: 30, objectFit: 'cover', background: '#000', flexShrink: 0 }} />
+                    <span className="text-[10px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }} title={val.name}>{val.name}</span>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, [kind]: null }))} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}><X size={12} /></button>
+                  </div>
+                ) : (
+                  <button key={kind} onClick={() => p.openUgcPick(kind)} className="py-2 rounded-lg text-[10.5px] font-600 inline-flex items-center justify-center gap-1"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                    <Plus size={11} /> {emptyLbl}
+                  </button>
+                )
+              ))}
+            </div>
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.bumpers.hint')}</p>
           </Sec>
 
           {/* 5. Субтитры */}
@@ -591,6 +764,31 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <Music size={14} /> {t('ugc.music.empty')}
               </button>
             )}
+          </Sec>
+
+          {/* 7. Верхний слой: прозрачный PNG под формат (лого/рамка) — поверх видео, под субтитрами */}
+          <Sec n={7} title={t('ugc.layer.title')} sub={t('ugc.layer.sub')} done={ugc.formats.some((f) => !!ugc.layers[f]) || ugc.progressBar}>
+            <div className={ugc.formats.length > 1 ? 'grid grid-cols-2 gap-1.5' : 'space-y-1.5'}>
+              {ugc.formats.map((f) => {
+                const val = ugc.layers[f];
+                const cap = ({ '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' } as Record<UgcFormat, string>)[f];
+                return val ? (
+                  <div key={f} className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <img src={val.url} alt="" className="rounded" style={{ width: 26, height: 26, objectFit: 'contain', background: 'repeating-conic-gradient(#3a3a42 0% 25%, #2a2a30 0% 50%) 0 0 / 10px 10px', flexShrink: 0 }} />
+                    <span className="text-[10px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }} title={val.name}>{cap} · {val.name}</span>
+                    <button onClick={() => ugcMutate((u) => { const layers = { ...u.layers }; delete layers[f]; return { ...u, layers }; })} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}><X size={12} /></button>
+                  </div>
+                ) : (
+                  <button key={f} onClick={() => p.openUgcPick(`layer_${f}` as UgcPickTarget as Exclude<UgcPickTarget, 'lineImage'>)} className="w-full py-2 rounded-lg text-[10.5px] font-600 inline-flex items-center justify-center gap-1"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
+                    <Plus size={11} /> {t('ugc.layer.empty', { format: cap })}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.layer.hint')}</p>
+            <Toggle on={ugc.progressBar} title={t('ugc.layer.progressTitle')} sub={t('ugc.layer.progressSub')}
+              onClick={() => ugcMutate((u) => ({ ...u, progressBar: !u.progressBar }))} />
           </Sec>
 
           {/* Чек-лист готовности */}
@@ -763,18 +961,34 @@ export default function UgcStudio(p: UgcStudioProps) {
       </div>
 
       {/* ── Пикеры Галереи (единый GalleryPicker сервиса) ── */}
-      {p.ugcPick && p.ugcPick !== 'retBrolls' && (
-        <GalleryPicker
-          open token={p.token}
-          title={p.ugcPick === 'music' ? t('ugc.music.title') : p.ugcPick === 'photo' ? t('ugc.picker.photoA') : p.ugcPick === 'photoB' ? t('ugc.picker.photoB') : p.ugcPick === 'recording' ? t('ugc.picker.recording') : p.ugcPick === 'avatarAdd' ? t('ugc.picker.avatarAdd') : p.ugcPick === 'lineImage' ? t('ugc.picker.lineImage') : t('ugc.common.footage')}
-          defaultTab={p.ugcPick === 'music' ? 'audio' : 'reference'}
-          onClose={() => { p.setUgcPick(null); p.setUgcLineIdx(null); }}
-          onUpload={(files) => p.uploadToGallery(files, p.ugcPick === 'music' ? 'audio' : 'reference')}
-          uploadAccept={p.ugcPick === 'music' ? 'audio/*' : (p.ugcPick === 'photo' || p.ugcPick === 'photoB' || p.ugcPick === 'avatarAdd') ? 'image/*' : p.ugcPick === 'lineImage' ? 'image/*,video/*' : p.ugcPick === 'recording' ? 'audio/*,video/*' : 'video/*'}
-          onlyType={p.ugcPick === 'photo' || p.ugcPick === 'photoB' || p.ugcPick === 'avatarAdd' ? 'image' : p.ugcPick === 'music' ? 'audio' : p.ugcPick === 'clip' ? 'video' : undefined}
-          onPick={(it) => p.pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
-        />
-      )}
+      {p.ugcPick && p.ugcPick !== 'retBrolls' && (() => {
+        const pick = p.ugcPick!;
+        const isLayer = pick.startsWith('layer_');
+        const isImg = pick === 'photo' || pick === 'photoB' || pick === 'avatarAdd' || isLayer;
+        const title = pick === 'music' ? t('ugc.music.title')
+          : pick === 'photo' ? t('ugc.picker.photoA')
+          : pick === 'photoB' ? t('ugc.picker.photoB')
+          : pick === 'recording' ? t('ugc.picker.recording')
+          : pick === 'avatarAdd' ? t('ugc.picker.avatarAdd')
+          : pick === 'lineImage' ? t('ugc.picker.lineImage')
+          : pick === 'intro' ? t('ugc.picker.intro')
+          : pick === 'outro' ? t('ugc.picker.outro')
+          : isLayer ? t('ugc.picker.layer')
+          : t('ugc.common.footage');
+        return (
+          <GalleryPicker
+            open token={p.token}
+            title={title}
+            note={isLayer ? t('ugc.picker.layerNote') : (pick === 'intro' || pick === 'outro') ? t('ugc.picker.bumperNote') : undefined}
+            defaultTab={pick === 'music' ? 'audio' : 'reference'}
+            onClose={() => { p.setUgcPick(null); p.setUgcLineIdx(null); }}
+            onUpload={(files) => p.uploadToGallery(files, pick === 'music' ? 'audio' : 'reference')}
+            uploadAccept={pick === 'music' ? 'audio/*' : isLayer ? 'image/png,image/webp' : isImg ? 'image/*' : pick === 'lineImage' ? 'image/*,video/*' : pick === 'recording' ? 'audio/*,video/*' : 'video/*'}
+            onlyType={isImg ? 'image' : pick === 'music' ? 'audio' : (pick === 'clip' || pick === 'intro' || pick === 'outro') ? 'video' : undefined}
+            onPick={(it) => p.pickUgcItem({ url: it.fileUrl, name: it.title, type: (it.type === 'image' || it.type === 'audio' ? it.type : 'video') })}
+          />
+        );
+      })()}
       {p.ugcPick === 'retBrolls' && (
         <GalleryPicker
           open multi token={p.token}
@@ -792,6 +1006,53 @@ export default function UgcStudio(p: UgcStudioProps) {
               : { ...u, retentionBrolls: [...u.retentionBrolls, { url: it.fileUrl, name: it.title }] }
           ))}
         />
+      )}
+
+      {/* ── Бренд-кит: применить/сохранить набор оформления ── */}
+      {brandOpen && (
+        <div onClick={() => setBrandOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl p-4" style={{ width: 'min(460px, 94vw)', maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', boxShadow: '0 14px 34px rgba(0,0,0,.4)' }}>
+            <div className="flex items-center justify-between mb-1">
+              <b className="text-[13.5px]" style={{ color: 'var(--text-primary)' }}>◆ {t('ugc.brand.title')}</b>
+              <button onClick={() => setBrandOpen(false)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
+            </div>
+            <p className="text-[11px] mb-3" style={{ color: 'var(--text-muted)' }}>{t('ugc.brand.sub')}</p>
+            {brandKits === null ? (
+              <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> {t('ugc.brand.loading')}</p>
+            ) : brandKits.length === 0 ? (
+              <p className="text-[11px] py-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.brand.empty')}</p>
+            ) : (
+              <div className="space-y-2 mb-3">
+                {brandKits.map((k) => {
+                  const parts: string[] = [];
+                  if (k.data.layers && Object.keys(k.data.layers).length) parts.push(t('ugc.brand.chipLayer'));
+                  if (k.data.intro || k.data.outro) parts.push(t('ugc.brand.chipBumpers'));
+                  if (k.data.music) parts.push(t('ugc.brand.chipMusic'));
+                  if (k.data.subtitles) parts.push(t('ugc.brand.chipSubtitles'));
+                  if (k.data.voiceId) parts.push(t('ugc.brand.chipVoice'));
+                  if (k.data.progressBar) parts.push(t('ugc.layer.progressTitle'));
+                  return (
+                    <div key={k.id} className="rounded-xl p-2.5" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
+                      <div className="flex items-center gap-2">
+                        <b className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{k.name}</b>
+                        <button onClick={() => applyBrand(k)} className="text-[11px] font-700 px-2.5 py-1 rounded-lg"
+                          style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, cursor: 'pointer' }}>{t('ugc.brand.apply')}</button>
+                        <button onClick={() => void deleteBrand(k.id)} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={13} /></button>
+                      </div>
+                      {parts.length > 0 && <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{parts.join(' · ')}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button onClick={() => void saveBrand()} className="w-full py-2 rounded-xl text-[11.5px] font-650"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+              ＋ {t('ugc.brand.saveCurrent')}
+            </button>
+            {brandNote && <p className="text-[10.5px] mt-2" style={{ color: '#f59e0b' }}>{brandNote}</p>}
+            <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.brand.note')}</p>
+          </div>
+        </div>
       )}
 
       {/* Удаление аватара из коллекции */}

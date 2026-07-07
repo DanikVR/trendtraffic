@@ -1123,7 +1123,10 @@
       "perMin1": "≈ $1 per minute",
       "perMin3_4": "≈ $3–4 per minute",
       "seriesSuffix": " · series of {{count}} — avatar once",
-      "filesSuffix": " · 2 files — avatar once"
+      "filesSuffix": " · 2 files — avatar once",
+      "voiceoverAi": "≈ $0.1–0.3 per clip",
+      "voiceoverFree": "$0 — your own audio and video",
+      "langsSuffix": " · languages: {{count}}"
     },
     "checklist": {
       "title": "Ready to build",
@@ -1165,7 +1168,9 @@
       "engDynHint": "More 'both in frame' scenes and cutaways — livelier and pricier.",
       "engAiTrailer": "AI arranges the shots itself.",
       "cutoutTitle": "Transparent avatar background",
-      "cutoutSub": "only the person stays in frame — for the 'background with avatar on the side' layout"
+      "cutoutSub": "only the person stays in frame — for the 'background with avatar on the side' layout",
+      "voiceover": "No avatar — voiceover",
+      "voiceoverHint": "Your footage + a voice: an AI-written script (ElevenLabs) or your own recording as is. No HeyGen involved — nearly free. Per-line media inserts are optional."
     },
     "avatar": {
       "title": "Avatar",
@@ -1222,7 +1227,17 @@
       "diarizing": "Analyzing recording…",
       "diarize": "Analyze speech",
       "diarizeHintDialogue": "The analysis tells the two voices apart — lines land on tracks A and B.",
-      "diarizeHintSolo": "The voice from the recording becomes the clip's voice."
+      "diarizeHintSolo": "The voice from the recording becomes the clip's voice.",
+      "elevenLabel": "ElevenLabs voice",
+      "elevenDefault": "Default — by gender (Sarah / George)",
+      "elevenPreview": "Play a sample",
+      "langsLabel": "Video languages",
+      "langRuPinned": "Russian · primary",
+      "langsHintVoiceover": "A series: a separate clip in each of {{count}} languages — Claude translates, ElevenLabs voices. Nearly free: cost = voiceover × languages.",
+      "langsHintSolo": "A series: a separate clip in each of {{count}} languages. With an avatar, HeyGen renders the face for every language — pricier.",
+      "diarizeHintVoiceover": "The audio goes over the video as is. “Transcribe speech” is optional: needed for subtitles and per-line inserts.",
+      "loudnormTitle": "Even out voice volume",
+      "loudnormSub": "quiet parts get lifted, loud parts smoothed — pro-sounding audio"
     },
     "lines": {
       "count_one": "{{count}} line · ~{{sec}} sec",
@@ -1257,7 +1272,8 @@
       "seriesCount": "Videos in the series: {{count}} → the same number of clips out",
       "seriesChange": "Change",
       "seriesAdd": "Add videos to the series — one clip per video",
-      "seriesBilling": "The avatar is billed once for the whole series."
+      "seriesBilling": "The avatar is billed once for the whole series.",
+      "voiceoverBase": "In this mode the video is the base of the frame: voice and subtitles go on top."
     },
     "subtitles": {
       "title": "Subtitles",
@@ -1356,7 +1372,9 @@
       "tagLineMediaBg": "Line media · as background",
       "tagCutawayNoFace": "Cutaway · no face · $0",
       "tagAvatarCloseup": "Avatar · close-up",
-      "openGallery": "Open in Gallery"
+      "openGallery": "Open in Gallery",
+      "tagYourVideo": "Your video",
+      "emptyClipSubVoiceover": "the base of the frame · tap to choose"
     },
     "picker": {
       "photoA": "Photo · first speaker",
@@ -1365,7 +1383,12 @@
       "avatarAdd": "Avatar from Gallery",
       "lineImage": "Media for the line",
       "retBrollsTitle": "Videos for the series — one clip per video",
-      "retBrollsNote": "Clicking adds a video; you can select several. The avatar is billed once for the whole series."
+      "retBrollsNote": "Clicking adds a video; you can select several. The avatar is billed once for the whole series.",
+      "intro": "Intro bumper",
+      "outro": "Outro bumper",
+      "layer": "Top layer (PNG)",
+      "layerNote": "A transparent PNG prepared for the frame format — it will sit over the whole video.",
+      "bumperNote": "Attached to the video as is, no processing."
     },
     "progress": {
       "title": "Creating your video…",
@@ -1380,6 +1403,37 @@
       "cancel": "Cancel",
       "footage": "Footage",
       "avatar": "Avatar"
+    },
+    "bumpers": {
+      "heading": "Intro and outro bumpers — optional",
+      "introEmpty": "Intro — none",
+      "outroEmpty": "Outro — none",
+      "hint": "A ready-made video from the Gallery is attached as is, no processing: a logo intro (2–10 sec), a “subscribe” outro."
+    },
+    "layer": {
+      "title": "Top layer",
+      "sub": "logo or frame — always on top",
+      "empty": "{{format}} — transparent PNG",
+      "hint": "A PNG sized for the frame: a logo anywhere, a frame, a caption. Sits over the whole video; subtitles stay above the layer.",
+      "progressTitle": "Progress bar",
+      "progressSub": "a thin timer strip at the top — viewers see the video is short and watch to the end"
+    },
+    "brand": {
+      "button": "Brand kit",
+      "tooltip": "Layer, bumpers, music, subtitles and voice — in one click",
+      "title": "Brand kit",
+      "sub": "A saved styling set: top layer, bumpers, music, subtitle style and voice. One click — every video in a consistent style.",
+      "loading": "loading kits…",
+      "empty": "No kits yet — set up your styling and save it with the button below.",
+      "apply": "Apply",
+      "saveCurrent": "Save current settings as a brand kit",
+      "defaultName": "My brand",
+      "note": "Brand kits are shared across all scenarios of your account.",
+      "chipLayer": "Layer",
+      "chipBumpers": "Bumpers",
+      "chipMusic": "Music",
+      "chipSubtitles": "Subtitles",
+      "chipVoice": "Voice"
     }
   }
 }

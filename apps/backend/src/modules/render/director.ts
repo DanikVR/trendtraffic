@@ -138,6 +138,26 @@ export async function generatePodcastDialogue(opts: {
   }
 }
 
+// ── Мультиязычная серия UGC: перевод скрипта на язык озвучки ─────────────────
+/** Переводит текст ролика на язык lang (ISO-код, напр. 'en'). null при ошибке/без ключа —
+ *  вызывающий пропускает язык с заметкой, конвейер не падает. */
+export async function translateUgcScript(opts: {
+  tenantId: string; text: string; lang: string; model?: string;
+}): Promise<string | null> {
+  const text = (opts.text || '').trim();
+  if (!text) return null;
+  const apiKey = await resolveAnthropicKey(opts.tenantId);
+  if (!apiKey) return null;
+  const system =
+    'Ты — переводчик коротких видео-скриптов для озвучки (Reels/Shorts/TikTok). ' +
+    `Переведи текст на язык с ISO-кодом «${opts.lang}» разговорно и естественно, сохраняя энергию, ` +
+    'крючки и краткость фраз (текст пойдёт в TTS). Верни ТОЛЬКО перевод — без пояснений, кавычек и меток.';
+  try {
+    const out = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user: text.slice(0, 2500), maxTokens: 2000 });
+    return out.trim() || null;
+  } catch { return null; }
+}
+
 // ── UGC-удержание: LLM решает, какие сегменты поднять на дорогой Avatar IV ────
 /**
  * Оценивает, какие сегменты скрипта важнее всего показать на премиум-аватаре (IV): крючок,

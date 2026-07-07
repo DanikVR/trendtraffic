@@ -428,7 +428,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
     return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
   }, 0);
   // Пикер медиа для UGC (видео/фото/запись/музыка/аватар в коллекцию) из Галереи — как в «Редакторе».
-  const openUgcPick = async (target: 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'retBrolls') => {
+  const openUgcPick = async (target: Exclude<UgcPickTarget, 'lineImage'>) => {
     setUgcPick(target); setUgcGalLoading(true); setUgcGallery([]);
     try {
       const [v, r, an, au] = await Promise.all([
@@ -470,7 +470,13 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
       u.recordingUrl === g.url ? { ...u, recordingUrl: g.url, recordingName: g.name }
         : { ...u, recordingUrl: g.url, recordingName: g.name, script: [], result: null }
     ));
-    else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20 } }));
+    else if (ugcPick === 'music') ugcMutate((u) => ({ ...u, music: { url: g.url, name: g.name, volumePct: 20, durationSec: u.music?.durationSec ?? null } }));
+    else if (ugcPick === 'intro') ugcMutate((u) => ({ ...u, intro: { url: g.url, name: g.name } }));
+    else if (ugcPick === 'outro') ugcMutate((u) => ({ ...u, outro: { url: g.url, name: g.name } }));
+    else if (typeof ugcPick === 'string' && ugcPick.startsWith('layer_')) {
+      const fmt = ugcPick.slice('layer_'.length) as UgcSpec['formats'][number];
+      ugcMutate((u) => ({ ...u, layers: { ...u.layers, [fmt]: { url: g.url, name: g.name } } }));
+    }
     else if (ugcPick === 'avatarAdd') void addUgcAvatar(g.url, g.name);
     else if (ugcPick === 'lineImage') {
       const i = ugcLineIdx;

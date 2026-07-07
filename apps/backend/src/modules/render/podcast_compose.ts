@@ -331,6 +331,82 @@ function orientCells(W: number, H: number): { landscape: boolean; cw: number; ch
   return { landscape, cw, ch, stack };
 }
 
+// ── Оверлеи поверх собранного кадра (ПОД субтитрами): врезки → верхний слой → полоса прогресса ──
+/** Врезка: медиа во весь кадр на время реплики (t0..t1). Изображение — loop, видео — со сдвигом PTS. */
+export interface UgcInsert { path: string; isVideo: boolean; t0: number; t1: number }
+
+/** Собирает inputs+фильтры для: врезок (overlay enable=between), верхнего PNG-слоя (растянут точно
+ *  в кадр — полотно готовится под формат) и полосы прогресса (drawbox, ширина растёт с t).
+ *  Порядок: контент → слой → прогресс; субтитры вжигаются ПОЗЖЕ и остаются поверх слоя. */
+function overlayExtras(o: {
+  startIdx: number; W: number; H: number; D: number; Ds: string;
+  inserts?: UgcInsert[] | null; layerPath?: string | null; progressBar?: boolean;
+  vIn: string;   // '[vmain]' / '[0:v]'
+}): { inputs: string[]; parts: string[]; vOut: string; nextIdx: number } {
+  const inputs: string[] = []; const parts: string[] = [];
+  let idx = o.startIdx; let cur = o.vIn; let step = 0;
+  const next = () => { step++; return `[vx${step}]`; };
+  for (const ins of (o.inserts || []).slice(0, 12)) {
+    const t0 = Math.max(0, ins.t0); const t1 = Math.min(o.D + 0.2, ins.t1);
+    if (!(t1 > t0 + 0.15)) continue;
+    const segDur = (t1 - t0 + 0.2).toFixed(2);
+    if (ins.isVideo) inputs.push('-stream_loop', '-1', '-t', segDur, '-i', ins.path);
+    else inputs.push('-loop', '1', '-t', segDur, '-i', ins.path);
+    const tag = `ins${idx}`;
+    parts.push(`[${idx}:v]scale=${o.W}:${o.H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${o.W}:${o.H},setsar=1,fps=30,setpts=PTS-STARTPTS+${t0.toFixed(2)}/TB[${tag}]`);
+    const out = next();
+    parts.push(`${cur}[${tag}]overlay=0:0:enable='between(t,${t0.toFixed(2)},${t1.toFixed(2)})':eof_action=pass${out}`);
+    cur = out; idx++;
+  }
+  if (o.layerPath) {
+    inputs.push('-loop', '1', '-t', o.Ds, '-i', o.layerPath);
+    parts.push(`[${idx}:v]scale=${o.W}:${o.H}:flags=lanczos,setsar=1,format=rgba[lyr]`);
+    const out = next();
+    parts.push(`${cur}[lyr]overlay=0:0:eof_action=pass${out}`);
+    cur = out; idx++;
+  }
+  if (o.progressBar) {
+    const out = next();
+    parts.push(`${cur}drawbox=x=0:y=0:w='iw*min(t/${Math.max(0.5, o.D).toFixed(2)}\\,1)':h=8:color=0xA855F7@0.9:t=fill${out}`);
+    cur = out;
+  }
+  return { inputs, parts, vOut: cur, nextIdx: idx };
+}
+
+/** Приклеить заставки как есть (нормализация только кадра/фпс/аудио-формата): интро + ролик + аутро.
+ *  Перекодировка одним проходом concat-фильтром; у заставок без звука подставляется тишина. */
+export async function concatBumpers(opts: {
+  mainPath: string; introPath?: string | null; outroPath?: string | null; dims?: FrameDims;
+}): Promise<string> {
+  const { introPath, outroPath } = opts;
+  if (!introPath && !outroPath) return opts.mainPath;
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  // mainPath принимает и локальный путь, и URL-путь '/uploads/renders/…' (результат композеров).
+  const mainPath = opts.mainPath.startsWith('/uploads/renders/')
+    ? path.join(RENDERS_DIR, path.basename(opts.mainPath))
+    : opts.mainPath;
+  const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
+  const segs = [introPath, mainPath, outroPath].filter((p): p is string => !!p);
+  const inputs: string[] = []; const parts: string[] = []; const refs: string[] = [];
+  for (let i = 0; i < segs.length; i++) {
+    inputs.push('-i', segs[i]);
+    const dur = await probeDuration(segs[i]);
+    parts.push(`[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,format=yuv420p[v${i}]`);
+    if (await hasAudioStream(segs[i])) {
+      parts.push(`[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}]`);
+    } else {
+      parts.push(`anullsrc=r=44100:cl=stereo,atrim=0:${Math.max(0.2, dur).toFixed(2)}[a${i}]`);
+    }
+    refs.push(`[v${i}][a${i}]`);
+  }
+  parts.push(`${refs.join('')}concat=n=${segs.length}:v=1:a=1[vc][ac]`);
+  const out = `ugc-bmp-${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(RENDERS_DIR, out);
+  await ffmpeg(['-y', ...inputs, '-filter_complex', parts.join(';'), '-map', '[vc]', '-map', '[ac]',
+    '-r', '30', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k', outPath], 900_000);
+  return `/uploads/renders/${out}`;
+}
+
 /** Вписать вход [idx] в w×h: аспект близок к целевому → cover (заполнить, кроп); иначе центр +
  *  размытый фон (полоса) — работает и для 16:9-в-9:16, и для 9:16-в-16:9. freeze — tpad для видео. */
 function placeFilter(idx: number, w: number, h: number, ratio: number, out: string, freeze = ''): string {
@@ -364,6 +440,9 @@ export async function composeUgc(opts: {
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
+  inserts?: UgcInsert[] | null; // врезки медиа реплик во весь кадр (по таймкодам разбора)
+  layerPath?: string | null;    // верхний PNG-слой (лого/рамка), под субтитрами
+  progressBar?: boolean;        // полоса прогресса сверху кадра
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
@@ -429,6 +508,10 @@ export async function composeUgc(opts: {
     parts.push(opts.placement === 'top' ? stack('ahalf', 'chalf', 'vmain') : stack('chalf', 'ahalf', 'vmain'));
   }
 
+  // Врезки медиа реплик + верхний слой + полоса прогресса — ПОД субтитрами.
+  const extras = overlayExtras({ startIdx: idx, W, H, D, Ds, inserts: opts.inserts, layerPath: opts.layerPath, progressBar: opts.progressBar, vIn: vTag });
+  inputs.push(...extras.inputs); parts.push(...extras.parts); vTag = extras.vOut; idx = extras.nextIdx;
+
   // Титры
   let assPath: string | null = null;
   if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
@@ -467,6 +550,93 @@ export async function composeUgc(opts: {
   return `/uploads/renders/${out}`;
 }
 
+/**
+ * «Без аватара — озвучка»: базовый видеоряд во весь кадр (зациклен на длину голоса) + голос
+ * (своя запись как есть или TTS) + врезки медиа по таймкодам реплик + верхний слой + полоса
+ * прогресса + субтитры + музыка. HeyGen не участвует — цена ролика ≈ только озвучка.
+ * Композиция повторяет composeUgc без аватара; loudnorm выравнивает громкость своей записи.
+ */
+export async function composeVoiceover(opts: {
+  clipPath?: string | null;
+  clipFit: 'cover' | 'contain';
+  clipMuted: boolean;
+  voicePath: string;
+  loudnorm?: boolean;
+  musicPath?: string | null; musicVolumePct?: number; musicDurationSec?: number | null;
+  captions: UgcCaption[];
+  capStyle: 'none' | 'word' | 'karaoke' | 'plain';
+  capPos: 'bottom' | 'center' | 'top';
+  dims?: FrameDims;
+  inserts?: UgcInsert[] | null;
+  layerPath?: string | null;
+  progressBar?: boolean;
+}): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
+  const D = await probeDuration(opts.voicePath);
+  if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  const Ds = (D + 0.2).toFixed(2);
+  const clipAudio = !!opts.clipPath && !opts.clipMuted && await hasAudioStream(opts.clipPath);
+
+  const inputs: string[] = [];
+  let idx = 0; let clipIdx = -1;
+  if (opts.clipPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.clipPath); clipIdx = idx++; }
+  const voiceIdx = idx++; inputs.push('-i', opts.voicePath);
+  let musicIdx = -1;
+  const musT = Math.min(Number(opts.musicDurationSec) > 0 ? (opts.musicDurationSec as number) : Number.POSITIVE_INFINITY, D + 0.2);
+  if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', musT.toFixed(2), '-i', opts.musicPath); musicIdx = idx++; }
+
+  const fit = (w: number, h: number) => opts.clipFit === 'contain'
+    ? `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=0x0d0f16`
+    : `scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h}`;
+
+  const parts: string[] = [];
+  let vTag = '[vmain]';
+  if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30[vmain]`);
+  else parts.push(`color=c=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[vmain]`);
+
+  const extras = overlayExtras({ startIdx: idx, W, H, D, Ds, inserts: opts.inserts, layerPath: opts.layerPath, progressBar: opts.progressBar, vIn: vTag });
+  inputs.push(...extras.inputs); parts.push(...extras.parts); vTag = extras.vOut; idx = extras.nextIdx;
+
+  let assPath: string | null = null;
+  if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
+    assPath = path.join(RENDERS_DIR, `ugc-${randomUUID().slice(0, 8)}.ass`);
+    fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+    parts.push(`${vTag}subtitles='${subFilterPath(assPath)}'[vout]`);
+    vTag = '[vout]';
+  }
+
+  // Звук: голос (опц. loudnorm — ровная громкость своей записи) + звук клипа + музыка.
+  const voiceF = opts.loudnorm ? 'loudnorm=I=-16:TP=-1.5:LRA=11' : 'anull';
+  const aIns: string[] = [`[${voiceIdx}:a]${voiceF}[a_v]`];
+  const mixTags: string[] = ['[a_v]'];
+  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=0.9[a_c]`); mixTags.push('[a_c]'); }
+  if (musicIdx >= 0) {
+    const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
+    aIns.push(`[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${Math.max(0, musT - 1.2).toFixed(2)}:d=1.2[a_m]`); mixTags.push('[a_m]');
+  }
+  let aTag = '[a_v]';
+  if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
+  // loudnorm требует прогона голоса через фильтр даже без микса.
+  parts.push(...(mixTags.length > 1 || opts.loudnorm ? aIns : []));
+  const mapA = mixTags.length > 1 ? aTag : (opts.loudnorm ? '[a_v]' : `${voiceIdx}:a`);
+
+  const fc = parts.join(';');
+  const out = `ugc-vo-${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(RENDERS_DIR, out);
+  const args = ['-y', ...inputs, '-filter_complex', fc,
+    '-map', vTag, '-map', mapA,
+    '-t', Ds, '-r', '30', '-pix_fmt', 'yuv420p',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k',
+    outPath];
+  try {
+    await ffmpeg(args, Math.max(600_000, Math.round(D * 9000) + 180_000));
+  } finally {
+    if (assPath) { try { fs.unlinkSync(assPath); } catch { /* */ } }
+  }
+  return `/uploads/renders/${out}`;
+}
+
 // ── UGC-удержание: склейка сегментов (техники показа) в один ролик 1080×1920 ──
 export interface RetComposeSeg {
   dur: number;
@@ -488,6 +658,7 @@ export async function composeRetentionVideo(opts: {
   clipFit: 'cover' | 'contain';
   musicPath?: string | null; musicVolumePct?: number;
   musicDurationSec?: number | null;
+  layerPath?: string | null; progressBar?: boolean;   // верхний PNG-слой + полоса прогресса (под субтитрами)
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
@@ -562,8 +733,11 @@ export async function composeRetentionVideo(opts: {
     let musicIdx = -1;
     const musT = Math.min(Number(opts.musicDurationSec) > 0 ? (opts.musicDurationSec as number) : Number.POSITIVE_INFINITY, D + 0.2);
     if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', musT.toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
-    let fc = ''; let vTag = '0:v'; let aTag = '1:a';
-    if (assPath) { fc += `[0:v]subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
+    // Верхний слой + полоса прогресса — до субтитров (титры остаются поверх слоя).
+    const extras = overlayExtras({ startIdx: musicIdx >= 0 ? 3 : 2, W, H, D, Ds: (D + 0.2).toFixed(2), layerPath: opts.layerPath, progressBar: opts.progressBar, vIn: '[0:v]' });
+    inputs.push(...extras.inputs);
+    let fc = extras.parts.join(';'); let vTag = extras.parts.length ? extras.vOut : '0:v'; let aTag = '1:a';
+    if (assPath) { fc += `${fc ? ';' : ''}${vTag.startsWith('[') ? vTag : `[${vTag}]`}subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
     if (musicIdx >= 0) {
       const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
       fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${Math.max(0, musT - 1.2).toFixed(2)}:d=1.2[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;
@@ -664,6 +838,7 @@ export async function composeDialogueVideo(opts: {
   voicePath: string;
   musicPath?: string | null; musicVolumePct?: number;
   musicDurationSec?: number | null;
+  layerPath?: string | null; progressBar?: boolean;   // верхний PNG-слой + полоса прогресса (под субтитрами)
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
@@ -752,8 +927,11 @@ export async function composeDialogueVideo(opts: {
     let musicIdx = -1;
     const musT = Math.min(Number(opts.musicDurationSec) > 0 ? (opts.musicDurationSec as number) : Number.POSITIVE_INFINITY, D + 0.2);
     if (opts.musicPath) { inputs.push('-stream_loop', '-1', '-t', musT.toFixed(2), '-i', opts.musicPath); musicIdx = 2; }
-    let fc = ''; let vTag = '0:v'; let aTag = '1:a';
-    if (assPath) { fc += `[0:v]subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
+    // Верхний слой + полоса прогресса — до субтитров (титры остаются поверх слоя).
+    const extras = overlayExtras({ startIdx: musicIdx >= 0 ? 3 : 2, W, H, D, Ds: (D + 0.2).toFixed(2), layerPath: opts.layerPath, progressBar: opts.progressBar, vIn: '[0:v]' });
+    inputs.push(...extras.inputs);
+    let fc = extras.parts.join(';'); let vTag = extras.parts.length ? extras.vOut : '0:v'; let aTag = '1:a';
+    if (assPath) { fc += `${fc ? ';' : ''}${vTag.startsWith('[') ? vTag : `[${vTag}]`}subtitles='${subFilterPath(assPath)}'[vv]`; vTag = '[vv]'; }
     if (musicIdx >= 0) {
       const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
       fc += `${fc ? ';' : ''}[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${Math.max(0, musT - 1.2).toFixed(2)}:d=1.2[bg];[1:a][bg]amix=inputs=2:normalize=0:duration=first:dropout_transition=0[aa]`;

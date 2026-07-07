@@ -15,6 +15,22 @@ interface Migration {
 }
 
 const MIGRATIONS: Migration[] = [
+  // Бренд-киты UGC-студии: сохранённый набор оформления тенанта (верхний слой, заставки,
+  // музыка, стиль субтитров, голос) — «Применить» в один клик, все ролики в едином стиле.
+  {
+    name: 'brand_kits.table',
+    sql: `CREATE TABLE IF NOT EXISTS brand_kits (
+            id BIGSERIAL PRIMARY KEY,
+            tenant_id VARCHAR(255) NOT NULL,
+            name VARCHAR(120) NOT NULL,
+            data JSONB NOT NULL DEFAULT '{}',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          )`,
+  },
+  {
+    name: 'brand_kits.tenant_idx',
+    sql: `CREATE INDEX IF NOT EXISTS brand_kits_tenant_idx ON brand_kits (tenant_id)`,
+  },
   {
     name: 'subscriptions.cancel_at_period_end',
     sql: `ALTER TABLE subscriptions

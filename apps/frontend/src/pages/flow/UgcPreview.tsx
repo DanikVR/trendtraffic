@@ -204,6 +204,10 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     );
     const full = (node: React.ReactNode) => <div className="absolute inset-0 flex">{node}</div>;
 
+    if (mode === 'voiceover') {
+      // «Без аватара»: базовое видео во весь кадр; врезки/слой/субтитры — поверх на сборке.
+      return full(clipCell(t('ugc.preview.tagYourVideo'), t('ugc.preview.emptyClipSubVoiceover')));
+    }
     if (mode === 'dialogue') {
       const view = seg?.view || 'dlgA';
       if (view === 'dlgA') return full(faceCell(ugc.photoUrl, t('ugc.preview.tagPeerACloseup'), onEmptyAvatar, t('ugc.preview.emptyPeerA')));
@@ -263,6 +267,11 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
         <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{t(meta.capKey)}</span>
         <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: '#101013', boxShadow: '0 14px 34px rgba(0,0,0,.35)' }}>
           {frameInner(fmt)}
+          {/* верхний PNG-слой юзера — как в рендере: поверх видео, ПОД субтитрами */}
+          {ugc.layers[fmt] && (
+            <img src={ugc.layers[fmt]!.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 5, pointerEvents: 'none' }} />
+          )}
+          {ugc.progressBar && <span className="ugc-progress" style={{ position: 'absolute', top: 0, left: 0, height: 4, background: ACC2, zIndex: 5, pointerEvents: 'none', borderRadius: '0 2px 2px 0' }} />}
           {caption(fmt)}
         </div>
       </div>
@@ -272,7 +281,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   return (
     <>
       {/* однократные кейфреймы для «слова» субтитров */}
-      <style>{'@keyframes ugcCapPop{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}} .ugc-cap-pop{animation:ugcCapPop .3s cubic-bezier(.2,1.6,.4,1)}'}</style>
+      <style>{'@keyframes ugcCapPop{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}} .ugc-cap-pop{animation:ugcCapPop .3s cubic-bezier(.2,1.6,.4,1)} .ugc-progress{width:38%} @media (prefers-reduced-motion: no-preference){.ugc-progress{animation:ugcProg 6s linear infinite}} @keyframes ugcProg{from{width:0}to{width:100%}}'}</style>
 
       <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-1" style={{ minHeight: 0 }}>
         {ugc.formats.map((f, i) => frame(f, i > 0))}

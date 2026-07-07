@@ -45,6 +45,18 @@ export interface UgcSpec {
   dialogueCutout: boolean;                                  // вырезать фон аватара (силуэт поверх медиа)
   photoBUrl: string | null; photoBName: string | null;      // фото «Спикер B» (A = photoUrl)
   formats: UgcFormat[];                                     // форматы вывода (любое сочетание, ≥1)
+  // Режим «Без аватара — озвучка» (ваше видео + голос, HeyGen не участвует):
+  noAvatar: boolean;
+  loudnorm: boolean;                                        // выровнять громкость своей записи (loudnorm)
+  // Голос ElevenLabs из аккаунта клиента (null = дефолт по полу: Sarah/George):
+  voiceId: string | null;
+  // Языки серии (перевод Claude → TTS multilingual); 'ru' — основной:
+  langs: string[];
+  // Заставки до/после (приклеиваются как есть) и верхний PNG-слой на каждый формат:
+  intro: { url: string; name: string } | null;
+  outro: { url: string; name: string } | null;
+  layers: Partial<Record<UgcFormat, { url: string; name: string }>>;
+  progressBar: boolean;                                     // полоса прогресса сверху кадра
 }
 export const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
@@ -68,12 +80,23 @@ export const UGC_DEFAULT: UgcSpec = {
   dialogueCutout: false,
   photoBUrl: null, photoBName: null,
   formats: ['9x16'],
+  noAvatar: false,
+  loudnorm: true,
+  voiceId: null,
+  langs: ['ru'],
+  intro: null,
+  outro: null,
+  layers: {},
+  progressBar: false,
 };
 
 /** Цель пикера Галереи в UGC-студии (какое поле заполняем выбранным файлом). */
-export type UgcPickTarget = 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls';
+export type UgcPickTarget =
+  | 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'
+  | 'intro' | 'outro'
+  | `layer_${UgcFormat}`;
 
-/** Производный режим ролика (три взаимоисключающие ветки /ugc/build). */
-export type UgcMode = 'solo' | 'retention' | 'dialogue';
+/** Производный режим ролика (четыре взаимоисключающие ветки /ugc/build). */
+export type UgcMode = 'solo' | 'retention' | 'dialogue' | 'voiceover';
 export const ugcModeOf = (u: UgcSpec): UgcMode =>
-  u.dialogueEnabled ? 'dialogue' : (u.retentionPreset !== 'off' ? 'retention' : 'solo');
+  u.noAvatar ? 'voiceover' : u.dialogueEnabled ? 'dialogue' : (u.retentionPreset !== 'off' ? 'retention' : 'solo');
