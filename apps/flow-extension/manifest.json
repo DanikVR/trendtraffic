@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TrendTraffic ↔ Google Flow",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Мост TrendTraffic ↔ Google Flow: очередь промптов, авто-генерация Veo, двусторонний обмен видео с Галереей (В галерею / Из Галереи) и авто-разведка вёрстки.",
   "minimum_chrome_version": "116",
   "permissions": ["storage", "downloads", "scripting", "tabs", "alarms"],

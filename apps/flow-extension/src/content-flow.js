@@ -524,9 +524,28 @@
     });
     if (add) { add.click(); await sleep(800); }
   }
+  // Открыть ПРОЕКТ, если мы на списке/главной (там поля загрузки нет — оно только внутри проекта).
+  // Клик «Создать проект»/карточку → ждём SPA-роут в /project/ + появление image-поля. Flow = SPA,
+  // поэтому content-script переживает переход (без полной перезагрузки).
+  async function openProject() {
+    if (/\/project\//.test(location.href)) return true;
+    const clickable = [...document.querySelectorAll('button,[role="button"],a')].filter(visible);
+    const create = clickable.find((b) => /создать проект|create project|new project/i.test(((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || '')).toLowerCase()));
+    const card = clickable.find((b) => b.tagName === 'A' && /\/project\//.test(b.getAttribute('href') || ''));
+    const target = create || card;
+    if (!target) return false;
+    ui.line('открываю проект в Flow…');
+    target.click();
+    for (let i = 0; i < 14; i++) { await sleep(700); if (/\/project\//.test(location.href) && findFileInput('image')) return true; }
+    return /\/project\//.test(location.href) && !!findFileInput('image');
+  }
   async function injectFileIntoFlow(file, kind) {
     let inp = findFileInput(kind);
     if (!inp) { await revealUploadUI(); inp = findFileInput(kind); }
+    // Картинка, поля нет и мы НЕ в проекте (на списке/главной) → сами откроем проект и повторим.
+    if (!inp && kind === 'image' && !/\/project\//.test(location.href)) {
+      if (await openProject()) { await revealUploadUI(); inp = findFileInput(kind); }
+    }
     if (!inp) {
       // Для видео есть только image-поле → честно сообщаем (не втыкаем видео в image → ошибка Flow).
       const imageOnly = [...document.querySelectorAll('input[type="file"]')].some((i) => /image/i.test(i.accept || '') && !/video|\*/i.test(i.accept || ''));
@@ -565,16 +584,10 @@
     if (!r.items || !r.items.length) { ui.showPicker('в Галерее нет медиа', []); return; }
     ui.showPicker(null, r.items);
   }
-  // Выбор медиа из Галереи → скачиваем байты в фоне (обход CORS) → File → в поле загрузки Flow.
+  // Выбор медиа из Галереи → скачиваем в фоне (обход CORS) → File → в поле загрузки Flow (+ авто-открытие проекта).
   async function pickGalleryItem(item) {
     ui.hidePicker();
-    ui.line('качаю «' + (item.title || 'медиа') + '»…');
-    const b = await send({ type: 'fetch-bytes', url: item.fileUrl });
-    if (!b || !b.ok) { ui.line('⚠ ' + ((b && b.error) || 'ошибка загрузки')); return; }
-    const k = (item.type === 'image' || item.type === 'video') ? item.type : kindOfMime(b.mime);
-    const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
-    if (res.ok) ui.line('✓ ' + (k === 'image' ? 'картинка' : 'видео') + ' вставлено в Flow — выбери как исходное/референс');
-    else ui.line('⚠ ' + res.reason);
+    await injectUrlCore(item.fileUrl, item.type, item.title, false);
   }
   // Авто-разведка: снимок вёрстки Flow (кандидаты полей/кнопок/загрузки/видео + эндпоинты) → бэкенд.
   function collectRecon() {
@@ -598,6 +611,36 @@
     if (!silent) ui.line(r && r.ok ? '✓ разведка вёрстки отправлена' : ('⚠ разведка: ' + ((r && r.error) || 'нет подключения')));
   }
 
+  // Скачать медиа Галереи (background) → File → залить в Flow. isRetry — повтор после открытия проекта.
+  // Пока НЕ в проекте, сохраняем «отложенную вставку» в storage: если Flow перезагрузит страницу при
+  // открытии проекта, при следующей загрузке (уже в /project/) вставка доведётся сама.
+  async function injectUrlCore(url, kind, title, isRetry) {
+    if (!isRetry && !/\/project\//.test(location.href)) {
+      try { chrome.storage.local.set({ pendingInject: { url, kind, title, ts: Date.now() } }); } catch { /* */ }
+    }
+    ui.line('получаю медиа из Галереи…');
+    const b = await send({ type: 'fetch-bytes', url });
+    if (!b || !b.ok) { ui.line('⚠ не скачалось из Галереи' + (b && b.error ? ': ' + b.error : '')); try { chrome.storage.local.remove('pendingInject'); } catch { /* */ } return { ok: false, error: b && b.error }; }
+    const k = (kind === 'image' || kind === 'video') ? kind : kindOfMime(b.mime);
+    const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
+    ui.line(res.ok ? ('✓ ' + (k === 'image' ? 'картинка' : 'видео') + ' вставлено в Flow из Галереи') : ('⚠ ' + res.reason));
+    if (res.ok) { try { chrome.storage.local.remove('pendingInject'); } catch { /* */ } }
+    return res;
+  }
+  // При загрузке content-script: если есть свежая «отложенная вставка» и мы уже в проекте — довести.
+  function resumePendingInject() {
+    try {
+      chrome.storage.local.get('pendingInject', (d) => {
+        const p = d && d.pendingInject;
+        if (!p || !p.url) return;
+        chrome.storage.local.remove('pendingInject'); // одна попытка — без циклов
+        if (Date.now() - (p.ts || 0) < 90000 && /\/project\//.test(location.href)) {
+          setTimeout(() => injectUrlCore(p.url, p.kind, p.title, true), 2500);
+        }
+      });
+    } catch { /* */ }
+  }
+
   // ---------- команды от background ----------
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg) return;
@@ -608,15 +651,7 @@
     }
     if (msg.type === 'inject-url') {
       // Из Галереи TrendTraffic: скачать медиа (background, обход CORS) → залить в поле загрузки Flow.
-      (async () => {
-        ui.line('получаю медиа из Галереи…');
-        const b = await send({ type: 'fetch-bytes', url: msg.url });
-        if (!b || !b.ok) { ui.line('⚠ не скачалось из Галереи' + (b && b.error ? ': ' + b.error : '')); sendResponse({ ok: false, error: b && b.error }); return; }
-        const k = (msg.kind === 'image' || msg.kind === 'video') ? msg.kind : kindOfMime(b.mime);
-        const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
-        ui.line(res.ok ? ('✓ ' + (k === 'image' ? 'картинка' : 'видео') + ' вставлено в Flow из Галереи') : ('⚠ ' + res.reason));
-        sendResponse(res);
-      })();
+      injectUrlCore(msg.url, msg.kind, msg.title, false).then(sendResponse).catch((e) => sendResponse({ ok: false, error: String(e && e.message || e) }));
       return true; // async
     }
   });
@@ -625,5 +660,6 @@
   injectInterceptor();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ui.mount());
   else ui.mount();
+  resumePendingInject(); // довести вставку, если Flow перезагрузился при открытии проекта
   log('content-flow готов');
 })();

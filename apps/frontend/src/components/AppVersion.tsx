@@ -1913,11 +1913,17 @@
  *         не главную». (3) «Открыть Google Flow» в поп-апе видео → страница проектов /fx/tools/flow
  *         (ближе к «Загрузки»). content-flow.js (showMediaPicker/flashHighlight/collectVisibleMedia/
  *         grabAndSend), GalleryPage.tsx, manifest 0.2.6→0.2.7. */
-export const APP_VERSION = '1.6.133';
+/* 1.6.134 — Google Flow (расширение v0.2.8): картинка «→ Flow» на СПИСКЕ проектов падала «поле
+ *         не найдено» (поле только внутри проекта). Теперь расширение САМО ОТКРЫВАЕТ ПРОЕКТ —
+ *         openProject() кликает «Создать проект»/карточку, ждёт SPA-роут в /project/ + появление
+ *         image-поля, затем вставляет. Устойчивость к перезагрузке: pendingInject в storage +
+ *         resumePendingInject при загрузке в проект доводит вставку. injectUrlCore унифицировал
+ *         inject-url и pickGalleryItem. content-flow.js, manifest 0.2.7→0.2.8. */
+export const APP_VERSION = '1.6.134';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.7';
+export const FLOW_EXT_VERSION = '0.2.8';
 
 export function AppVersion() {
   return (
