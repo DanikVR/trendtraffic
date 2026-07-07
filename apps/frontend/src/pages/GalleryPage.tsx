@@ -19,7 +19,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
-  Download, Play, BookOpen, Clapperboard,
+  Download, Play, BookOpen, Clapperboard, ArrowRight,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -95,6 +95,7 @@ export default function GalleryPage() {
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
   const [flowMsg, setFlowMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [extPopup, setExtPopup] = useState(false);
+  const [videoPopup, setVideoPopup] = useState<GalleryItem | null>(null); // видео → скачать + инструкция
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
       if (ev.source !== window) return;
@@ -112,9 +113,12 @@ export default function GalleryPage() {
     return () => { window.removeEventListener('message', onMsg); clearTimeout(t); };
   }, []);
   const sendToFlow = (v: GalleryItem) => {
+    // Видео: Flow НЕ принимает авто-вставкой (у Flow поле только image/*). Скачиваем файл + инструкция «залей вручную».
+    if (v.mediaType === 'video') { downloadOne(v); setVideoPopup(v); return; }
+    // Картинка: авто-вставка через расширение (нет расширения → поп-ап установки).
     if (extStatus !== 'present') { setExtPopup(true); return; }
     const abs = /^https?:/i.test(v.fileUrl) ? v.fileUrl : window.location.origin + (v.fileUrl.startsWith('/') ? v.fileUrl : '/' + v.fileUrl);
-    window.postMessage({ source: 'trendtraffic', type: 'push-to-flow', url: abs, title: v.title, kind: v.mediaType === 'image' ? 'image' : 'video' }, window.location.origin);
+    window.postMessage({ source: 'trendtraffic', type: 'push-to-flow', url: abs, title: v.title, kind: 'image' }, window.location.origin);
     setFlowMsg({ ok: true, text: `Отправляю «${v.title}» в Google Flow…` });
     setTimeout(() => setFlowMsg(null), 6000);
   };
@@ -436,7 +440,7 @@ export default function GalleryPage() {
                       </a>
                       {/* → Google Flow (видео/картинки): отправить в Flow через расширение */}
                       {(v.mediaType === 'video' || v.mediaType === 'image') && (
-                        <button type="button" onClick={() => sendToFlow(v)} title="Отправить в Google Flow (Veo) через расширение"
+                        <button type="button" onClick={() => sendToFlow(v)} title={v.mediaType === 'video' ? 'Скачать и загрузить в Google Flow (видео — вручную через «Загрузки»)' : 'Отправить картинку в Google Flow (Veo) через расширение'}
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
                           style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
                           <Clapperboard size={14} />
@@ -531,6 +535,45 @@ export default function GalleryPage() {
             </ol>
             <div className="flex justify-end mt-3">
               <button onClick={() => setExtPopup(false)} className="text-[13px] font-600 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Видео → Flow: файл скачивается + инструкция залить вручную в «Загрузки» (Flow видео авто-вставкой не берёт) */}
+      {videoPopup && (
+        <div onClick={() => setVideoPopup(null)} style={{ position: 'fixed', inset: 0, zIndex: 98, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}><Clapperboard size={18} color="#fff" /></span>
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Видео → Google Flow</span>
+            </div>
+            <p className="text-[13px] mb-1" style={{ color: '#10b981', fontWeight: 600 }}>✓ Видео скачивается на устройство.</p>
+            <p className="text-[12.5px] mb-1" style={{ color: 'var(--text-secondary)' }}>
+              Google Flow принимает видео только вручную — через раздел «Загрузки». Авто-вставку видео Flow не поддерживает (только картинки).
+            </p>
+
+            {/* Точная стрелка: скачано → Flow «Загрузки» */}
+            <div className="flex items-center justify-center gap-2 my-3 p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}><Download size={14} /> Скачано</span>
+              <ArrowRight size={22} style={{ color: '#6366f1' }} />
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}><UploadCloud size={14} /> Flow → «Загрузки»</span>
+            </div>
+
+            <ol className="list-decimal ml-4 text-[12.5px] space-y-1" style={{ color: 'var(--text-secondary)' }}>
+              <li>Открой <b>Google Flow</b> (кнопка ниже).</li>
+              <li>Слева выбери раздел <b>«Загрузки»</b>.</li>
+              <li>Нажми <b>«Загрузить»</b> → выбери скачанный файл <b>«{videoPopup.title}»</b>.</li>
+            </ol>
+
+            <div className="flex items-center gap-2 mt-4">
+              <a href="https://labs.google/flow" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl" style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
+                <ExternalLink size={15} /> Открыть Google Flow
+              </a>
+              <button onClick={() => downloadOne(videoPopup)} className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2.5 rounded-xl" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                <Download size={15} /> Скачать ещё раз
+              </button>
+              <button onClick={() => setVideoPopup(null)} className="text-[13px] font-600 px-3 py-2.5 rounded-xl ml-auto" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Закрыть</button>
             </div>
           </div>
         </div>

@@ -1891,7 +1891,13 @@
  *         (2) ЛИМИТ выше: сервер 210mb→700mb, nginx 210M→700M (в деплое), расширение 150→500МБ.
  *         kind проброшен Галерея→push-to-flow→inject-url. content-flow/background/content-bridge,
  *         GalleryPage.tsx, flow-ext/router.ts, manifest 0.2.5→0.2.6. */
-export const APP_VERSION = '1.6.130';
+/* 1.6.131 — Google Flow: «→ Flow» на ВИДЕО = скачать файл + поп-ап-инструкция (только фронт,
+ *         расширение не трогаем). Раз Flow видео авто-вставкой не берёт (поле image/*), при клике
+ *         на видео-карточке файл СКАЧИВАЕТСЯ на устройство + модалка с ТОЧНОЙ СТРЕЛКОЙ «Скачано ➜
+ *         Flow «Загрузки»» и шагами (открой Flow → «Загрузки» → выбери файл). Картинка — как было
+ *         (авто-вставка через расширение). GalleryPage.tsx (sendToFlow ветвится по mediaType +
+ *         videoPopup). */
+export const APP_VERSION = '1.6.131';
 
 /** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
  *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
