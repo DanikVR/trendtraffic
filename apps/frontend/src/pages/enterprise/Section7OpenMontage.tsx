@@ -12,12 +12,13 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Wand2, Save, Loader2, CheckCircle2, XCircle, AlertTriangle, Trash2, ExternalLink } from 'lucide-react';
+import { Wand2, Save, Loader2, CheckCircle2, XCircle, AlertTriangle, Trash2, ExternalLink, Download, ChevronDown, ChevronUp, Clapperboard, HelpCircle } from 'lucide-react';
 import { AuroraCard } from '../../components/AuroraCard';
 import { AuroraButton } from '../../components/AuroraButton';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { ApiKeyField } from '../../components/enterprise/ApiKeyField';
 import { useAppStore } from '../../store/useAppStore';
+import { FLOW_EXT_VERSION } from '../../components/AppVersion';
 
 type ProviderStatus = 'active' | 'invalid' | 'quota_exceeded' | 'unknown' | null;
 
@@ -150,6 +151,58 @@ function ProviderCard({ p, token, onChanged }: { p: ProviderInfo; token: string 
   );
 }
 
+/** Карточка «Скачать Chrome-расширение Google Flow» + версия + инструкция по установке.
+ *  Страница настроек = «энциклопедия»: отсюда всегда качается свежая версия (FLOW_EXT_VERSION). */
+function FlowExtensionCard() {
+  const [open, setOpen] = useState(false);
+  return (
+    <AuroraCard className="p-4 space-y-3">
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+          <Clapperboard size={18} color="#fff" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Chrome-расширение Google Flow</span>
+            <span className="text-[11px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>v{FLOW_EXT_VERSION}</span>
+          </div>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Мост с настоящим Google Flow (Veo): очередь промптов + двусторонний обмен видео/картинками с Галереей («⬆ В галерею» / «⬇ Из Галереи»). Подключение автоматическое, пока вы залогинены здесь.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <a href="/flow-extension.zip" download
+          className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2 rounded-xl"
+          style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
+          <Download size={15} /> Скачать расширение
+        </a>
+        <button onClick={() => setOpen((v) => !v)}
+          className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl"
+          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+          <HelpCircle size={15} /> Как установить {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+      </div>
+
+      {open && (
+        <div className="text-[12.5px] leading-relaxed rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
+          <ol className="list-decimal ml-4 space-y-1.5">
+            <li>Скачайте <b>.zip</b> (кнопка выше) и <b>распакуйте</b> в отдельную папку.</li>
+            <li>Откройте <code>chrome://extensions</code> → включите <b>«Режим разработчика»</b> (справа сверху).</li>
+            <li>Нажмите <b>«Загрузить распакованное»</b> → выберите папку с расширением.</li>
+            <li>Откройте <b>labs.google/flow</b> и войдите в свой Google — справа снизу появится панель. Когда «бежит лента» — всё работает.</li>
+            <li>Готово. <b>Подключение автоматическое</b>, пока вы залогинены в TrendTraffic — кнопку «Подключить» жать не нужно.</li>
+          </ol>
+          <p className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+            <b>Обновление версии:</b> удалите старую карточку в <code>chrome://extensions</code>, повторите с новым .zip, затем обновите вкладку app.trendtraffic.pro (F5).
+          </p>
+        </div>
+      )}
+    </AuroraCard>
+  );
+}
+
 export function Section7OpenMontage() {
   const { token, user } = useAppStore();
   const isSuperadmin = user?.role === 'superadmin';
@@ -198,6 +251,8 @@ export function Section7OpenMontage() {
           </p>
         </div>
       </div>
+
+      <FlowExtensionCard />
 
       {isSuperadmin && (
         <AuroraCard className="p-3">

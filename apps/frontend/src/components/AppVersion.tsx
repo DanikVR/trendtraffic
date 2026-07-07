@@ -1839,7 +1839,15 @@
  *         «бегущая лента» когда работает + подписи «работает»/«войдите в аккаунт» (было
  *         «подключено/не подключено»). «Открыть TrendTraffic» → /flow. manifest 0.2.1→0.2.2,
  *         пересобран zip. content-bridge.js, content-flow.js, FlowExtPanel.tsx. */
-export const APP_VERSION = '1.6.123';
+/* 1.6.124 — Настройки Enterprise → «Генерация»: карточка «Chrome-расширение Google Flow» (скачать
+ *         .zip + версия из FLOW_EXT_VERSION + раскрывающаяся инструкция «Как установить»). По
+ *         просьбе юзера: страница настроек = энциклопедия, откуда всегда качается свежее расширение.
+ *         Версию FLOW_EXT_VERSION бампаем вместе с manifest расширения. Section7OpenMontage.tsx. */
+export const APP_VERSION = '1.6.124';
+
+/** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
+ *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
+export const FLOW_EXT_VERSION = '0.2.2';
 
 export function AppVersion() {
   return (
