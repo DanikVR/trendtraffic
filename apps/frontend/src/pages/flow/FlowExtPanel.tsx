@@ -132,7 +132,7 @@ export default function FlowExtPanel({
         ))}
       </div>
       {mode === 'commentator' ? <CommentatorPanel token={token} flowId={flowId} state={commState} onChange={onCommChange} onBuild={onCommBuild} onDiarize={onCommDiarize} commBusy={commBusy} /> : (<>
-      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает готовые клипы в Галерею → вкладка «Google Flow». В панели расширения прямо на Flow — кнопки <b>«⬆ В галерею»</b> и <b>«⬇ Из Галереи»</b> для двустороннего обмена видео/картинками (обновите расширение до v0.2.2). Подключение теперь <b>автоматическое</b>: пока вы залогинены здесь, расширение само берёт доступ — кнопка «Подключить» лишь на всякий случай.</p>
+      <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает готовые клипы в Галерею → вкладка «Google Flow». В панели расширения прямо на Flow — кнопки <b>«⬆ В галерею»</b> и <b>«⬇ Из Галереи»</b> для двустороннего обмена видео/картинками. Единое расширение TrendTraffic работает и на Flow, и на NotebookLM (блок «Hotebook»). Подключение <b>автоматическое</b>: пока вы залогинены здесь, расширение само берёт доступ — кнопка «Подключить» лишь на всякий случай.</p>
 
       {/* 1. Расширение */}
       <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
@@ -151,7 +151,7 @@ export default function FlowExtPanel({
               <ExternalLink size={14} /> Открыть Flow
             </button>
             {extPresent === false ? (
-              <a href="/flow-extension.zip" download className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg" style={{ background: '#6366f1', color: '#fff' }}>
+              <a href="/trendtraffic-extension.zip" download className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg" style={{ background: '#6366f1', color: '#fff' }}>
                 <Download size={14} /> Скачать
               </a>
             ) : (

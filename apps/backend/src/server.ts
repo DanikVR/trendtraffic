@@ -46,6 +46,7 @@ import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as 
 import renderRouter from './modules/render/router.js';
 import notebooklmRouter from './modules/notebooklm/router.js';
 import flowExtRouter, { INGEST_LIMIT as FLOW_INGEST_LIMIT } from './modules/flow-ext/router.js';
+import notebooklmExtRouter, { INGEST_LIMIT as NLM_INGEST_LIMIT } from './modules/notebooklm-ext/router.js';
 import videoEditRouter from './modules/video_edit/router.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
@@ -145,6 +146,11 @@ app.use('/api/social-ext/ai-proxy', express.json({ limit: '64mb' }), socialExtAi
 // БОЛЬШОЙ json-лимит ДО глобального express.json() (иначе глобальный дефолт ~100КБ режет тело
 // раньше и отдаёт 413 на «В галерею»). JWT + Enterprise — внутри роутера.
 app.use('/api/flow-ext', express.json({ limit: FLOW_INGEST_LIMIT }), flowExtRouter);
+
+// 2.6 NotebookLM (Hotebook) — расширение шлёт готовые артефакты (аудио/видео/pdf) base64 в
+// /ingest, поэтому свой БОЛЬШОЙ json-лимит ДО глобального express.json() (иначе 413).
+// JWT + Enterprise — внутри роутера.
+app.use('/api/notebooklm-ext', express.json({ limit: NLM_INGEST_LIMIT }), notebooklmExtRouter);
 
 // 3. Подключение глобального парсера JSON-данных для остальных эндпоинтов
 app.use(express.json());

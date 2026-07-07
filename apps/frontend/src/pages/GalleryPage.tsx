@@ -27,7 +27,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
-import { FLOW_EXT_VERSION } from '../components/AppVersion';
+import { TT_EXT_VERSION } from '../components/AppVersion';
 
 type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
 
@@ -523,9 +523,9 @@ export default function GalleryPage() {
               <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Нужно расширение Google Flow</span>
             </div>
             <p className="text-[13px] mb-3" style={{ color: 'var(--text-secondary)' }}>
-              Чтобы отправлять медиа прямо в Google Flow, установите наше Chrome-расширение (v{FLOW_EXT_VERSION}). Один раз — дальше подключается автоматически.
+              Чтобы отправлять медиа прямо в Google Flow, установите наше единое Chrome-расширение TrendTraffic (v{TT_EXT_VERSION}) — оно же работает и с NotebookLM. Один раз — дальше подключается автоматически.
             </p>
-            <a href="/flow-extension.zip" download className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl" style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
+            <a href="/trendtraffic-extension.zip" download className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl" style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
               <Download size={15} /> Скачать расширение
             </a>
             <ol className="list-decimal ml-4 text-[12px] space-y-1 mt-3" style={{ color: 'var(--text-muted)' }}>

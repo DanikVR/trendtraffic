@@ -1,15 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "TrendTraffic ↔ Google Flow",
-  "version": "0.2.9",
-  "description": "Мост TrendTraffic ↔ Google Flow: очередь промптов, авто-генерация Veo, двусторонний обмен видео с Галереей (В галерею / Из Галереи) и авто-разведка вёрстки.",
+  "name": "TrendTraffic для Google (Flow + NotebookLM)",
+  "version": "1.0.0",
+  "description": "Единое расширение TrendTraffic: мост с настоящими Google Flow (Veo) и Google NotebookLM (Hotebook). Очередь задач в реальном браузере, автоматизация генераций и обмен медиа/артефактами с Галереей. Ставится один раз — работает на обоих сервисах.",
   "minimum_chrome_version": "116",
   "permissions": ["storage", "downloads", "scripting", "tabs", "alarms"],
   "host_permissions": [
     "https://labs.google/*",
+    "https://notebooklm.google.com/*",
     "https://*.googleapis.com/*",
     "https://*.googleusercontent.com/*",
     "https://*.ggpht.com/*",
+    "https://*.gstatic.com/*",
     "https://*.google.com/*",
     "https://app.trendtraffic.pro/*",
     "http://localhost:*/*",
@@ -20,6 +22,12 @@
     {
       "matches": ["https://labs.google/fx/tools/flow*", "https://labs.google/fx/*/tools/flow*"],
       "js": ["src/content-flow.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://notebooklm.google.com/*"],
+      "js": ["src/content-notebook.js"],
       "run_at": "document_idle",
       "all_frames": false
     },
@@ -39,6 +47,10 @@
     {
       "resources": ["src/injected.js"],
       "matches": ["https://labs.google/*"]
+    },
+    {
+      "resources": ["src/injected-nlm.js"],
+      "matches": ["https://notebooklm.google.com/*"]
     }
   ]
 }

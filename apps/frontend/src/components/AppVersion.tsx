@@ -1943,11 +1943,12 @@
  *         очереди), а «→ Flow» из Галереи открывает Flow как раньше (явное действие).
  *         (2) TrendFlow: убран центральный узел «Видео из галереи» — исходник для Omni Flash
  *         выбирается внутри самого облака Omni (у него свой пикер Галереи); в центре — «Сценарий». */
-export const APP_VERSION = '2.0.1';
+export const APP_VERSION = '2.0.2';
 
-/** Версия Chrome-расширения Google Flow (apps/flow-extension/manifest.json). БАМПАТЬ вместе с
- *  manifest при каждом релизе расширения — показывается на карточке «Скачать» в Настройках. */
-export const FLOW_EXT_VERSION = '0.2.9';
+/** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
+ *  работает и на Google Flow, и на NotebookLM (Hotebook). БАМПАТЬ вместе с manifest при каждом
+ *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
+export const TT_EXT_VERSION = '1.0.0';
 
 export function AppVersion() {
   return (

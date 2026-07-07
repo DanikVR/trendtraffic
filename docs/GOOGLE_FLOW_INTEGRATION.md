@@ -66,16 +66,21 @@ Veo оплачивается его подпиской, а не нами (API Ve
                  • список медиа Галереи, recon
 ```
 
-**Файлы расширения** (`apps/flow-extension/`):
+**Файлы расширения** (`apps/trendtraffic-extension/` — ЕДИНОЕ расширение Flow + NotebookLM;
+раньше был отдельный `apps/flow-extension`, удалён — Flow-скрипты перенесены байт-в-байт):
 
 | Файл | Мир | Роль |
 |------|-----|------|
-| `manifest.json` | — | MV3, права, host_permissions, content-scripts |
-| `src/background.js` | service-worker | очередь/поллинг, ingest, fetch-bytes, push-to-flow, хранит токен |
+| `manifest.json` | — | MV3, права, host_permissions, content-scripts (Flow + NotebookLM + наш домен) |
+| `src/background.js` | service-worker | ОБЕ очереди: Flow (`/api/flow-ext/*`) + NotebookLM (`/api/notebooklm-ext/*`) |
 | `src/content-flow.js` | Flow (isolated) | панель поверх Flow + вся автоматизация (заливка/забор медиа) |
 | `src/injected.js` | Flow (MAIN) | перехват `fetch/XHR` Flow → разведка эндпоинтов + bearer |
-| `src/content-bridge.js` | наш домен | мост SPA ↔ background (авто-передача JWT) |
+| `src/content-notebook.js` | NotebookLM (isolated) | панель + командный роутер + студия артефактов |
+| `src/injected-nlm.js` | NotebookLM (MAIN) | перехват `fetch/XHR` NotebookLM → разведка + bearer |
+| `src/content-bridge.js` | наш домен | мост SPA ↔ background (авто-передача JWT, обслуживает обе очереди) |
 | `README.md` | — | краткая инструкция установки |
+
+> Про NotebookLM-часть и бэкенд `/api/notebooklm-ext` — отдельный документ `docs/HOTEBOOK_EXTENSION.md`.
 
 **Наш код:**
 
@@ -85,8 +90,8 @@ Veo оплачивается его подпиской, а не нами (API Ve
 | Блок в сценарии | `apps/frontend/src/pages/flow/FlowExtPanel.tsx`, `CommentatorPanel.tsx`, `DialogueTimeline.tsx`, `dialogueTypes.ts`, узел `'flow'` в `MontageEditor.tsx` |
 | Галерея | `apps/frontend/src/pages/GalleryPage.tsx` (кнопка «→ Flow») |
 | Карточка скачивания | `apps/frontend/src/pages/enterprise/Section7OpenMontage.tsx` (вкладка «Генерация») |
-| Версия расширения | `FLOW_EXT_VERSION` в `apps/frontend/src/components/AppVersion.tsx` |
-| Раздача `.zip` | `apps/frontend/public/flow-extension.zip` (Vite → dist → nginx `/flow-extension.zip`) |
+| Версия расширения | `TT_EXT_VERSION` в `apps/frontend/src/components/AppVersion.tsx` |
+| Раздача `.zip` | `apps/frontend/public/trendtraffic-extension.zip` (Vite → dist → nginx `/trendtraffic-extension.zip`) |
 
 ---
 
@@ -266,26 +271,27 @@ SELECT url, updated_at FROM flow_ext_recon ORDER BY updated_at DESC LIMIT 1;
 
 **Обновление расширения у клиента (unpacked):**
 `chrome://extensions` → удалить старую карточку → скачать свежий `.zip`
-(Настройки → Генерация → «Скачать расширение», или `app.trendtraffic.pro/flow-extension.zip`)
+(Настройки → Генерация → «Скачать расширение», или `app.trendtraffic.pro/trendtraffic-extension.zip`)
 → распаковать в новую папку → «Загрузить распакованное». В шапке панели — номер версии.
 Обновить вкладку `app.trendtraffic.pro` (F5), чтобы подхватился новый `content-bridge`.
 
 **Дисциплина версий (важно!):** при каждом релизе расширения бампать **обе**:
-`manifest.json` `version` **и** `FLOW_EXT_VERSION` в `AppVersion.tsx` (иначе карточка
-«Скачать» покажет старую версию), + пересобрать `apps/frontend/public/flow-extension.zip`.
+`manifest.json` `version` **и** `TT_EXT_VERSION` в `AppVersion.tsx` (иначе карточка
+«Скачать» покажет старую версию), + пересобрать `apps/frontend/public/trendtraffic-extension.zip`.
 
-Пересборка zip (Windows PowerShell, `zip` CLI нет):
+Пересборка zip (Windows, `tar.exe`=bsdtar даёт форвард-слэши — читают и Chrome, и `unzip`):
 ```powershell
-Compress-Archive -Path manifest.json,README.md,src -DestinationPath ..\frontend\public\flow-extension.zip -Force
+cd apps\trendtraffic-extension
+tar.exe -a -c -f ..\frontend\public\trendtraffic-extension.zip manifest.json README.md src
 ```
-> `Compress-Archive` пишет пути с обратными слэшами — Windows/Chrome читают, но Linux
-> `unzip` их не находит (на VPS `unzip` вообще нет) → содержимое zip сверять локально.
+> Альтернатива `Compress-Archive` пишет пути с обратными слэшами — Windows/Chrome читают,
+> но Linux `unzip` их не находит. `tar.exe -a` этого лишён → предпочтительнее.
 
 **Деплой:** `git push origin <branch>:main` → SSH `root@72.62.0.184`
 `git reset --hard origin/main && bash deploy/vps-redeploy.sh`. При изменении лимитов —
 поднять `client_max_body_size` в `/etc/nginx/sites-available/trendtraffic` + `nginx -s reload`.
-Проверка: версия в бандле, размер раздаваемого `/flow-extension.zip` == локального,
-`/api/flow-ext/*`→401 (роут жив), публичный HTTPS→200.
+Проверка: версия в бандле, размер раздаваемого `/trendtraffic-extension.zip` == локального,
+`/api/flow-ext/*` и `/api/notebooklm-ext/*`→401 (роуты живы), публичный HTTPS→200.
 
 ---
 

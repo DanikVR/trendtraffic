@@ -1453,7 +1453,7 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   }, [loading]);
   const hbErr = async (res: globalThis.Response): Promise<string> => {
     const d = await res.json().catch(() => ({} as any));
-    if (d?.errorKind && ['auth', 'api_changed', 'offline', 'not_configured', 'quota'].includes(d.errorKind)) void hbRefreshStatus(true);
+    if (d?.errorKind && ['ext_offline', 'ext_login', 'error'].includes(d.errorKind)) void hbRefreshStatus(true);
     return d?.error || `Ошибка ${res.status}`;
   };
   // После добавления источника: зелёный фидбэк + перечитать АВТОРИТЕТНЫЙ список из блокнота
@@ -2728,45 +2728,37 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
                   )}
                 </div>
 
-                {/* Плашка синхронизации с Google (auth / api_changed / quota / offline) */}
+                {/* Плашка подключения расширения (ext_offline / ext_login) */}
                 {hbStatus && !hbStatus.ok && (
                   <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.45)' }}>
                     <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-700" style={{ color: '#f59e0b' }}>
-                        {hbStatus.errorKind === 'auth' ? 'Синхронизация с Google нарушена — нужно переподключить аккаунт'
-                          : hbStatus.errorKind === 'api_changed' ? 'Google изменил внутренний API NotebookLM — идёт рассинхронизация'
-                          : hbStatus.errorKind === 'quota' ? 'Суточный лимит Google-аккаунта исчерпан'
-                          : hbStatus.errorKind === 'offline' ? 'Hotebook-воркер недоступен'
-                          : hbStatus.errorKind === 'not_configured' ? 'Hotebook-воркер не настроен'
-                          : 'Сбой сети между воркером и Google'}
+                        {hbStatus.errorKind === 'ext_offline' ? 'Расширение Hotebook не на связи'
+                          : hbStatus.errorKind === 'ext_login' ? 'Нужен вход в Google (NotebookLM)'
+                          : 'Синхронизация не работает'}
                       </div>
                       <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                        {hbStatus.errorKind === 'auth' ? 'Сессия Google-аккаунта истекла или отозвана. Переподключите её в Настройках Enterprise → вкладка «Hotebook».'
-                          : hbStatus.errorKind === 'api_changed' ? 'Обычно лечится обновлением библиотеки notebooklm-py на воркере. Генерации и чат временно не работают.'
-                          : hbStatus.errorKind === 'quota' ? 'Генерации возобновятся после сброса лимита (обычно на следующий день) — или повысите план Google AI на аккаунте.'
-                          : hbStatus.errorKind === 'offline' ? 'Включите машину Hotebook-воркера (и проверьте Tailscale), затем нажмите «Проверить».'
-                          : hbStatus.errorKind === 'not_configured' ? 'Задайте адрес воркера (NOTEBOOKLM_WORKER_URL) в админ-панели или .env бэкенда.'
-                          : 'Проверьте интернет на машине воркера и нажмите «Проверить».'}
+                        {hbStatus.errorKind === 'ext_offline' ? 'Установите единое расширение TrendTraffic (Настройки → «Генерация») и откройте вкладку notebooklm.google.com в этом браузере.'
+                          : hbStatus.errorKind === 'ext_login' ? 'Расширение на связи, но вход в notebooklm.google.com не выполнен. Откройте сайт и войдите в свой Google-аккаунт.'
+                          : 'Проверьте расширение и открытую вкладку NotebookLM, затем нажмите «Проверить».'}
                       </p>
                       <div className="flex gap-1.5 mt-1.5">
                         <button onClick={() => void hbRefreshStatus(true)} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg"
                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                           <RefreshCw size={11} /> Проверить
                         </button>
-                        {hbStatus.errorKind === 'auth' && (
-                          <a href="/settings/enterprise" className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg"
-                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--brand)', textDecoration: 'none' }}>
-                            <ExternalLink size={11} /> Открыть настройки
-                          </a>
-                        )}
+                        <button onClick={() => window.open('https://notebooklm.google.com', '_blank', 'noopener')} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg"
+                          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--brand)', cursor: 'pointer' }}>
+                          <ExternalLink size={11} /> Открыть NotebookLM
+                        </button>
                       </div>
                     </div>
                   </div>
                 )}
-                {hbStatus?.ok && hbStatus.email && (
+                {hbStatus?.ok && (
                   <div className="text-[10px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                    <Check size={11} style={{ color: '#10b981' }} /> Подключено: {hbStatus.email}
+                    <Check size={11} style={{ color: '#10b981' }} /> Расширение подключено, NotebookLM открыт
                   </div>
                 )}
 

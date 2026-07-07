@@ -1,7 +1,36 @@
 # Hotebook → NotebookLM Chrome-расширение (замена воркера)
 
-> **Дата:** 2026-07-07 · **База:** `origin/main` (аудит на `ab81414`; пересверить номера строк при исполнении).
-> **Идея:** зеркалим Google-Flow-расширение (`apps/flow-extension/` + `modules/flow-ext`) → NotebookLM работает в **реальном Chrome юзера** (реальный вход Google, жилой IP). Убивает `notebooklm-worker/` (Playwright/FastAPI), домашний ПК/VPS-воркер, `storage_state`, keepalive, auth-плашку и датацентр-детект Google.
+> **Дата:** 2026-07-07 · **База:** `origin/main`.
+> **Идея:** зеркалим Google-Flow-расширение → NotebookLM работает в **реальном Chrome юзера** (реальный вход Google, жилой IP). Убивает `notebooklm-worker/` (Playwright/FastAPI), домашний ПК/VPS-воркер, `storage_state`, keepalive, auth-плашку и датацентр-детект Google.
+
+## ✅ Статус реализации (2026-07-07, ветка `feat/notebooklm-extension`)
+
+**РЕАЛИЗОВАНО как ЕДИНОЕ расширение** (по просьбе юзера — один установочный файл на Flow и NotebookLM):
+- **`apps/trendtraffic-extension/`** — единое MV3-расширение. Flow-скрипты (`content-flow.js`,
+  `content-bridge.js`, `injected.js`) скопированы из старого `apps/flow-extension` **байт-в-байт**
+  (Flow-логика не тронута). Новое: `content-notebook.js` (панель + командный роутер + студия
+  9 артефактов), `injected-nlm.js` (recon NotebookLM), `background.js` — **ОБЪЕДИНЁННЫЙ**
+  (Flow-очередь + NotebookLM `/poll`/actions/tasks/ingest). Старый `apps/flow-extension` удалён.
+- **`apps/backend/src/modules/notebooklm/ext_bridge.ts`** — общий слой: очередь действий
+  (`notebooklm_ext_actions`), клейм джоб, присутствие (`notebooklm_ext_presence`), справочники.
+- **`apps/backend/src/modules/notebooklm-ext/router.ts`** — приёмник расширения:
+  `GET /poll` (long-poll: действие ИЛИ джоба), `POST /action-result`, `POST /status`,
+  `POST /ingest` (→ Галерея `hotebook`), `GET /gallery`, `POST|GET /recon`. Смонтирован в
+  `server.ts` до глобального `express.json()` (700 МБ, base64-артефакты).
+- **`modules/notebooklm/router.ts`** — REWIRED: `wfetch(воркер)` → очередь расширения
+  (`enqueueAction`+`waitAction`); генерация → джоба; `/jobs/:id` = чистый select; `/status` =
+  присутствие расширения (`ext_offline`/`ext_login`); **все `/auth/*` + `wfetch`/`loginSids` УДАЛЕНЫ**.
+  Публичный контракт `/api/notebooklm/*` СОХРАНЁН — фронт (`MontageEditor` hb*) почти не изменился.
+- **Фронт:** карточка «Скачать расширение» в Настройки → «Генерация» (`Section7OpenMontage`,
+  единая, `/trendtraffic-extension.zip` + `TT_EXT_VERSION`); `Section8Hotebook` переписан
+  (без стриминг-логина/`storage_state`/окна воркера → «установите расширение + войдите в
+  notebooklm.google.com»); плашки узла под `ext_offline`/`ext_login`.
+
+**Осталось / доказать вживую:** селекторы `content-notebook.js` (`SELECTORS`/`LABELS`/`GEN_UI`)
+написаны best-effort и **уточняются разведкой** с живой страницы (кнопка «разведка вёрстки» +
+авто-`POST /recon`) — как когда-то `content-flow.js`. Живой E2E (создать блокнот → источник →
+чат → артефакт в Галерею) на аккаунте юзера НЕ гонялся. Воркер `notebooklm-worker/` физически
+ещё не выключен (systemd/данные — §9), но код на него больше не ходит.
 
 ---
 
