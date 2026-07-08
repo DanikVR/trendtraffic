@@ -1,22 +1,18 @@
 /**
- * TrendTraffic — HTTP-роутер Публикатора (вкладка Галереи, Ф1).
+ * TrendTraffic — HTTP-роутер Публикатора (вкладка Галереи; Ф1–Ф5).
  *
- *  GET    /api/publisher/status                 — есть ли ключ Blotato у тенанта (+статус проверки)
- *  GET    /api/publisher/accounts               — подключённые соцаккаунты (кэш 5 мин, ?refresh=1)
- *  GET    /api/publisher/accounts/:id/subaccounts — страницы FB / LinkedIn / плейлисты YouTube
- *  GET    /api/publisher/pinterest/boards       — доски Pinterest (?accountId=)
- *  POST   /api/publisher/posts                  — опубликовать: 1 медиа × N аккаунтов (now|time|slot)
- *  GET    /api/publisher/posts                  — наша история + ленивый синк статусов из Blotato
- *  POST   /api/publisher/posts/:id/retry        — повторить упавший таргет
- *  DELETE /api/publisher/posts/:id              — отменить запланированный / убрать запись из истории
+ *  Ф1:  GET /status · GET /accounts (+/:id/subaccounts, /pinterest/boards)
+ *       POST /posts · GET /posts · POST /posts/:id/retry · DELETE /posts/:id
+ *  Ф2:  GET/POST/DELETE /slots (+GET /slots/next) — СВОИ слоты «Моё расписание»
+ *       PATCH /posts/:id — перенос запланированного на новое время
+ *       GET/POST/PATCH/DELETE /chains — цепочки (ручные: серия по слотам; авто: см. Ф4)
+ *  Ф3:  POST /ai-caption — Пост-движок (Claude, A/B, per-платформа, хэштеги)
+ *       GET/POST/DELETE /templates — шаблоны текстов
+ *  Ф5:  GET /analytics — топ постов Blotato (X/IG/FB/Threads/Bluesky)
  *
- * Ключ — BYO per-tenant (решение юзера 08.07.2026): tenant_provider_keys, id 'blotato'
- * (вводится в Настройки → Ключи, там же реальная проверка). Подключение соцсетей —
- * ТОЛЬКО в кабинете my.blotato.com: у Blotato нет API для этого, плитки сетей в UI
- * ведут сразу на нужную страницу кабинета.
- *
- * Доступ: все платные тарифы (Премиум/Энтерпрайз/триал) — решение В2; гейт тот же,
- * что у Трендов (hasEnterpriseAccess = «полный доступ», Premium его тоже имеет).
+ * Ключ — BYO per-tenant (tenant_provider_keys, id 'blotato'); доступ — все платные тарифы.
+ * Бизнес-логика (сабмит, слоты, цепочки, подписи, ретраи) — в service.ts, её же использует
+ * планировщик scheduler.ts.
  */
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
@@ -25,11 +21,16 @@ import { randomUUID } from 'crypto';
 import pool from '../../db/index.js';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
-import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import {
-  listAccounts, listSubaccounts, listPinterestBoards, createPost, getPostStatus, cancelScheduled,
-  BlotatoError, BLOTATO_PLATFORMS, BLOTATO_SETTINGS_URL, type BlotatoPlatform, type BlotatoAccount,
+  listAccounts, listSubaccounts, listPinterestBoards, cancelScheduled, updateScheduledTime, getAnalytics,
+  BlotatoError, BLOTATO_PLATFORMS, BLOTATO_SETTINGS_URL, type BlotatoAccount,
 } from './blotato.js';
+import {
+  tenantBlotatoKey, submitPost, resubmitRow, syncPendingTenant,
+  listSlots, addSlots, removeSlot, nextFreeSlotTimes,
+  listChains, createManualChain, cancelChain,
+  generateCaptions, type TargetInput,
+} from './service.js';
 
 const router = Router();
 
@@ -64,10 +65,6 @@ async function requireFullAccess(req: AuthedRequest, res: Response, next: NextFu
 router.use(requireAuth);
 router.use(requireFullAccess);
 
-/** Ключ Blotato тенанта; null → фронт показывает онбординг (ввести в Настройки → Ключи). */
-async function tenantKey(req: AuthedRequest): Promise<string | null> {
-  return getEffectiveProviderKey(req.tenantId, 'blotato');
-}
 const NO_KEY = {
   error: 'no_key',
   message: 'Ключ Blotato не задан. Заведите свой аккаунт my.blotato.com и вставьте API-ключ в Настройки → Ключи → Blotato.',
@@ -81,21 +78,19 @@ function absBase(req: Request): string {
   const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0] || req.protocol || 'https';
   return `${proto}://${req.get('host')}`;
 }
-const absUrl = (base: string, u?: string | null): string =>
-  (u && !/^https?:\/\//i.test(u) ? base + (u.startsWith('/') ? u : '/' + u) : (u || ''));
 
 // ── Кэш аккаунтов (память процесса, TTL 5 мин; ?refresh=1 сбрасывает) ────────
 const accCache = new Map<string, { at: number; accounts: BlotatoAccount[] }>();
 const ACC_TTL = 5 * 60_000;
 
 router.get('/status', async (req: AuthedRequest, res: Response) => {
-  const key = await tenantKey(req);
+  const key = await tenantBlotatoKey(req.tenantId!);
   res.json({ hasKey: !!key, settingsUrl: BLOTATO_SETTINGS_URL, platforms: BLOTATO_PLATFORMS });
 });
 
 router.get('/accounts', async (req: AuthedRequest, res: Response) => {
   try {
-    const key = await tenantKey(req);
+    const key = await tenantBlotatoKey(req.tenantId!);
     if (!key) return res.status(409).json(NO_KEY);
     const tId = req.tenantId!;
     const cached = accCache.get(tId);
@@ -115,7 +110,7 @@ router.get('/accounts', async (req: AuthedRequest, res: Response) => {
 
 router.get('/accounts/:id/subaccounts', async (req: AuthedRequest, res: Response) => {
   try {
-    const key = await tenantKey(req);
+    const key = await tenantBlotatoKey(req.tenantId!);
     if (!key) return res.status(409).json(NO_KEY);
     res.json({ items: await listSubaccounts(key, String(req.params.id)) });
   } catch (e: any) { res.status(502).json({ error: e?.message || 'Blotato недоступен' }); }
@@ -123,194 +118,40 @@ router.get('/accounts/:id/subaccounts', async (req: AuthedRequest, res: Response
 
 router.get('/pinterest/boards', async (req: AuthedRequest, res: Response) => {
   try {
-    const key = await tenantKey(req);
+    const key = await tenantBlotatoKey(req.tenantId!);
     if (!key) return res.status(409).json(NO_KEY);
     res.json({ items: await listPinterestBoards(key, req.query.accountId ? String(req.query.accountId) : undefined) });
   } catch (e: any) { res.status(502).json({ error: e?.message || 'Blotato недоступен' }); }
 });
 
-// ── Сборка платформенного target (обязательные поля — с безопасными дефолтами) ──
-function buildTarget(platform: BlotatoPlatform, o: Record<string, any>, fallbackTitle: string): Record<string, unknown> {
-  switch (platform) {
-    case 'tiktok': return {
-      targetType: 'tiktok',
-      privacyLevel: o.privacyLevel || 'PUBLIC_TO_EVERYONE',
-      disabledComments: !!o.disabledComments,
-      disabledDuet: !!o.disabledDuet,
-      disabledStitch: !!o.disabledStitch,
-      isBrandedContent: !!o.isBrandedContent,
-      isYourBrand: !!o.isYourBrand,
-      // Наши ролики — сгенерированные: честный дефолт «ИИ-контент» (отключаемо в студии).
-      isAiGenerated: o.isAiGenerated !== false,
-      ...(o.isDraft ? { isDraft: true } : {}),
-      ...(o.title ? { title: String(o.title).slice(0, 90) } : {}),
-    };
-    case 'youtube': return {
-      targetType: 'youtube',
-      title: String(o.title || fallbackTitle || 'Video').slice(0, 100),
-      privacyStatus: o.privacyStatus || 'public',
-      shouldNotifySubscribers: o.shouldNotifySubscribers !== false,
-      ...(o.isMadeForKids != null ? { isMadeForKids: !!o.isMadeForKids } : {}),
-      ...(o.containsSyntheticMedia != null ? { containsSyntheticMedia: !!o.containsSyntheticMedia } : {}),
-    };
-    case 'instagram': return {
-      targetType: 'instagram',
-      ...(o.mediaType && o.mediaType !== 'post' ? { mediaType: o.mediaType } : {}),
-    };
-    case 'facebook': return {
-      targetType: 'facebook',
-      pageId: String(o.pageId || ''),
-      ...(o.mediaType ? { mediaType: o.mediaType } : {}),
-      ...(o.link ? { link: o.link } : {}),
-    };
-    case 'linkedin': return { targetType: 'linkedin', ...(o.pageId ? { pageId: String(o.pageId) } : {}) };
-    case 'pinterest': return {
-      targetType: 'pinterest',
-      boardId: String(o.boardId || ''),
-      ...(o.title ? { title: o.title } : {}),
-      ...(o.link ? { link: o.link } : {}),
-      ...(o.altText ? { altText: o.altText } : {}),
-    };
-    case 'threads': return { targetType: 'threads', ...(o.replyControl ? { replyControl: o.replyControl } : {}) };
-    default: return { targetType: platform }; // twitter | bluesky
-  }
-}
-
-/** Обязательные поля, без которых Blotato гарантированно вернёт ошибку, — валидируем ДО сабмита. */
-function targetPrecheck(platform: BlotatoPlatform, o: Record<string, any>): string | null {
-  if (platform === 'facebook' && !o.pageId) return 'Facebook: не выбрана страница (pageId)';
-  if (platform === 'pinterest' && !o.boardId) return 'Pinterest: не выбрана доска (boardId)';
-  return null;
-}
-
-interface PostTargetInput {
-  accountId: string;
-  platform: string;
-  options?: Record<string, any>;
-  textOverride?: string;
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// ── Посты ────────────────────────────────────────────────────────────────────
 
 /** POST /posts — { assetId?|mediaUrl?, text, mode:'now'|'time'|'slot', scheduledAt?, targets:[...] } */
 router.post('/posts', async (req: AuthedRequest, res: Response) => {
   try {
-    const key = await tenantKey(req);
-    if (!key) return res.status(409).json(NO_KEY);
-    const tId = req.tenantId!;
-    const { assetId, mediaUrl, text = '', mode = 'now', scheduledAt, targets } = (req.body || {}) as {
-      assetId?: string; mediaUrl?: string; text?: string; mode?: 'now' | 'time' | 'slot';
-      scheduledAt?: string; targets?: PostTargetInput[];
-    };
-    if (!Array.isArray(targets) || targets.length === 0) return res.status(400).json({ error: 'Не выбраны аккаунты (targets)' });
-    if (targets.length > 12) return res.status(400).json({ error: 'Слишком много целей за раз (максимум 12)' });
-    if (mode === 'time' && !scheduledAt) return res.status(400).json({ error: 'Не задано время публикации (scheduledAt)' });
-
-    // Медиа: из Галереи (assetId — проверяем принадлежность тенанту) или готовый URL.
-    let fileUrl = String(mediaUrl || '');
-    let title = '';
-    if (assetId) {
-      const r = await pool.query(
-        `SELECT file_url, original_name FROM media_assets WHERE id = $1 AND tenant_id = $2`,
-        [assetId, tId]
-      );
-      if (!r.rows[0]) return res.status(404).json({ error: 'Файл не найден в Галерее' });
-      fileUrl = r.rows[0].file_url;
-      title = r.rows[0].original_name || '';
-    }
-    const base = absBase(req);
-    const publicUrl = absUrl(base, fileUrl);
-    const mediaUrls = publicUrl ? [publicUrl] : [];
-    const fallbackTitle = (title || text || 'Video').split('\n')[0].trim().slice(0, 100);
-    const scheduledTime = mode === 'time' ? new Date(String(scheduledAt)).toISOString() : undefined;
-    if (mode === 'time' && Number.isNaN(Date.parse(String(scheduledAt)))) {
-      return res.status(400).json({ error: 'Некорректное время публикации' });
-    }
-
-    const groupId = randomUUID();
-    const results: { id: string; platform: string; accountId: string; ok: boolean; error?: string }[] = [];
-
-    for (let i = 0; i < targets.length; i++) {
-      const t = targets[i];
-      const platform = String(t.platform || '').toLowerCase() as BlotatoPlatform;
-      const rowId = randomUUID();
-      const opts = t.options || {};
-      const rowText = (t.textOverride ?? text) || '';
-      let submissionId: string | null = null;
-      let status = mode === 'now' ? 'submitted' : 'scheduled';
-      let error: string | null = null;
-
-      if (!(BLOTATO_PLATFORMS as readonly string[]).includes(platform)) {
-        status = 'failed'; error = `Платформа не поддерживается: ${t.platform}`;
-      } else {
-        const pre = targetPrecheck(platform, opts);
-        if (pre) { status = 'failed'; error = pre; }
-        else {
-          try {
-            const target = buildTarget(platform, opts, fallbackTitle);
-            const r = await createPost(key, {
-              accountId: String(t.accountId), platform, text: rowText, mediaUrls, target,
-              scheduledTime, useNextFreeSlot: mode === 'slot' || undefined,
-            });
-            submissionId = r.submissionId;
-          } catch (e: any) {
-            status = 'failed';
-            error = e instanceof BlotatoError ? e.message : (e?.message || 'Ошибка Blotato');
-          }
-        }
-      }
-
-      await pool.query(
-        `INSERT INTO publisher_posts
-           (id, tenant_id, group_id, asset_id, media_url, text, platform, account_id, account_name,
-            target, mode, scheduled_at, submission_id, status, error)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-        [rowId, tId, groupId, assetId || null, fileUrl || null, rowText, platform, String(t.accountId),
-         opts.accountName || null, JSON.stringify(opts), mode,
-         scheduledTime || null, submissionId, status, error]
-      );
-      results.push({ id: rowId, platform, accountId: String(t.accountId), ok: status !== 'failed', error: error || undefined });
-      if (i < targets.length - 1) await sleep(350); // бережём лимит 30 постов/мин
-    }
-
-    const okCount = results.filter((r) => r.ok).length;
-    res.status(okCount > 0 ? 201 : 502).json({ groupId, results, ok: okCount, failed: results.length - okCount });
+    const b = (req.body || {}) as any;
+    const out = await submitPost({
+      tenantId: req.tenantId!, baseUrl: absBase(req),
+      assetId: b.assetId || undefined, mediaUrl: b.mediaUrl || undefined, title: b.title || undefined,
+      text: String(b.text || ''), mode: (b.mode === 'time' || b.mode === 'slot') ? b.mode : 'now',
+      scheduledAt: b.scheduledAt, targets: (b.targets || []) as TargetInput[],
+    });
+    const ok = out.results.filter((r) => r.ok).length;
+    res.status(ok > 0 ? 201 : 502).json({ ...out, ok, failed: out.results.length - ok });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message || 'Не удалось опубликовать' });
+    const msg = e?.message || 'Не удалось опубликовать';
+    res.status(/Ключ Blotato/.test(msg) ? 409 : 400).json({ error: msg });
   }
 });
-
-/** Ленивый синк статусов: до 8 самых старых «в полёте» строк за запрос ленты. */
-async function syncPending(tId: string, key: string): Promise<void> {
-  const r = await pool.query(
-    `SELECT id, submission_id FROM publisher_posts
-     WHERE tenant_id = $1 AND submission_id IS NOT NULL AND status IN ('submitted','scheduled')
-       AND updated_at < NOW() - INTERVAL '20 seconds'
-     ORDER BY updated_at ASC LIMIT 8`,
-    [tId]
-  );
-  if (!r.rows.length) return;
-  await Promise.allSettled(r.rows.map(async (row: any) => {
-    const st = await getPostStatus(key, row.submission_id);
-    if (st.type === 'published') {
-      await pool.query(`UPDATE publisher_posts SET status='published', post_url=$2, error=NULL, updated_at=NOW() WHERE id=$1`, [row.id, st.postUrl]);
-    } else if (st.type === 'failed') {
-      await pool.query(`UPDATE publisher_posts SET status='failed', error=$2, updated_at=NOW() WHERE id=$1`, [row.id, st.errorMessage || 'Ошибка публикации']);
-    } else {
-      await pool.query(`UPDATE publisher_posts SET updated_at=NOW() WHERE id=$1`, [row.id]); // не душим одну и ту же строку
-    }
-  }));
-}
 
 router.get('/posts', async (req: AuthedRequest, res: Response) => {
   try {
     const tId = req.tenantId!;
-    const key = await tenantKey(req);
-    if (key) { try { await syncPending(tId, key); } catch { /* синк — best-effort */ } }
+    try { await syncPendingTenant(tId); } catch { /* синк — best-effort */ }
     const limit = Math.min(Number(req.query.limit) || 200, 400);
     const r = await pool.query(
-      `SELECT id, group_id, asset_id, media_url, text, platform, account_id, account_name,
-              mode, scheduled_at, submission_id, status, post_url, error, created_at
+      `SELECT id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
+              mode, scheduled_at, submission_id, status, post_url, error, retries, next_retry_at, created_at
        FROM publisher_posts WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2`,
       [tId, limit]
     );
@@ -318,43 +159,36 @@ router.get('/posts', async (req: AuthedRequest, res: Response) => {
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось загрузить посты' }); }
 });
 
-/** Повторить упавший таргет (пересобираем сабмит из сохранённой строки). */
+/** Повторить упавший таргет (та же логика, что у авторетраев). */
 router.post('/posts/:id/retry', async (req: AuthedRequest, res: Response) => {
   try {
-    const key = await tenantKey(req);
-    if (!key) return res.status(409).json(NO_KEY);
+    const out = await resubmitRow(req.tenantId!, String(req.params.id), absBase(req));
+    if (out.ok) return res.json({ ok: true });
+    res.status(502).json({ error: out.error || 'Не удалось повторить' });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось повторить' }); }
+});
+
+/** Перенос запланированного поста на новое время (Ф2, календарь). */
+router.patch('/posts/:id', async (req: AuthedRequest, res: Response) => {
+  try {
     const tId = req.tenantId!;
+    const when = String((req.body || {}).scheduledAt || '');
+    if (!when || Number.isNaN(Date.parse(when))) return res.status(400).json({ error: 'Некорректное время (scheduledAt)' });
+    if (new Date(when).getTime() < Date.now() + 60_000) return res.status(400).json({ error: 'Время должно быть в будущем' });
     const r = await pool.query(`SELECT * FROM publisher_posts WHERE id = $1 AND tenant_id = $2`, [String(req.params.id), tId]);
     const row = r.rows[0];
     if (!row) return res.status(404).json({ error: 'Пост не найден' });
-    if (row.status !== 'failed') return res.status(400).json({ error: 'Повторить можно только упавший пост' });
-
-    const platform = String(row.platform) as BlotatoPlatform;
-    const opts = typeof row.target === 'object' && row.target ? row.target : {};
-    const pre = targetPrecheck(platform, opts);
-    if (pre) return res.status(400).json({ error: pre });
-    const base = absBase(req);
-    const mediaUrls = row.media_url ? [absUrl(base, row.media_url)] : [];
-    // Время в прошлом → публикуем сейчас; будущее сохранённое время — уважаем.
-    const sched = row.scheduled_at && new Date(row.scheduled_at).getTime() > Date.now()
-      ? new Date(row.scheduled_at).toISOString() : undefined;
-    try {
-      const out = await createPost(key, {
-        accountId: String(row.account_id), platform, text: row.text || '', mediaUrls,
-        target: buildTarget(platform, opts, (row.text || 'Video').split('\n')[0].slice(0, 100)),
-        scheduledTime: sched, useNextFreeSlot: row.mode === 'slot' || undefined,
-      });
-      await pool.query(
-        `UPDATE publisher_posts SET submission_id=$2, status=$3, error=NULL, updated_at=NOW() WHERE id=$1`,
-        [row.id, out.submissionId, (sched || row.mode === 'slot') ? 'scheduled' : 'submitted']
-      );
-      res.json({ ok: true });
-    } catch (e: any) {
-      const msg = e instanceof BlotatoError ? e.message : (e?.message || 'Ошибка Blotato');
-      await pool.query(`UPDATE publisher_posts SET error=$2, updated_at=NOW() WHERE id=$1`, [row.id, msg]);
-      res.status(502).json({ error: msg });
+    if (row.status !== 'scheduled' || !row.submission_id) return res.status(400).json({ error: 'Переносить можно только запланированный пост' });
+    const key = await tenantBlotatoKey(tId);
+    if (!key) return res.status(409).json(NO_KEY);
+    const iso = new Date(when).toISOString();
+    try { await updateScheduledTime(key, row.submission_id, iso); }
+    catch (e: any) {
+      return res.status(502).json({ error: e instanceof BlotatoError ? `Blotato: ${e.message}` : (e?.message || 'Не удалось перенести') });
     }
-  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось повторить' }); }
+    await pool.query(`UPDATE publisher_posts SET scheduled_at=$2, updated_at=NOW() WHERE id=$1`, [row.id, iso]);
+    res.json({ ok: true, scheduledAt: iso });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось перенести' }); }
 });
 
 /** Отмена запланированного (снимаем из Blotato) или удаление записи из истории. */
@@ -365,11 +199,10 @@ router.delete('/posts/:id', async (req: AuthedRequest, res: Response) => {
     const row = r.rows[0];
     if (!row) return res.status(404).json({ error: 'Пост не найден' });
     if (row.status === 'scheduled' && row.submission_id) {
-      const key = await tenantKey(req);
+      const key = await tenantBlotatoKey(tId);
       if (!key) return res.status(409).json(NO_KEY);
       try { await cancelScheduled(key, row.submission_id); }
       catch (e: any) {
-        // Уже опубликован/не найден в Blotato — не блокируем чистку записи.
         if (!(e instanceof BlotatoError && (e.status === 404 || e.status === 400))) {
           return res.status(502).json({ error: e?.message || 'Не удалось отменить в Blotato' });
         }
@@ -380,6 +213,150 @@ router.delete('/posts/:id', async (req: AuthedRequest, res: Response) => {
     await pool.query(`DELETE FROM publisher_posts WHERE id = $1`, [row.id]);
     res.json({ ok: true, deleted: true });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить' }); }
+});
+
+// ── Ф2: слоты «Моё расписание» (наши, UTC) ───────────────────────────────────
+router.get('/slots', async (req: AuthedRequest, res: Response) => {
+  try {
+    const slots = await listSlots(req.tenantId!);
+    const next = await nextFreeSlotTimes(req.tenantId!, 3, Date.now() + 60_000);
+    res.json({ slots, next: next.map((d) => d.toISOString()) });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось загрузить слоты' }); }
+});
+
+router.post('/slots', async (req: AuthedRequest, res: Response) => {
+  try {
+    const arr = Array.isArray((req.body || {}).slots) ? (req.body.slots as any[]) : [];
+    if (!arr.length) return res.status(400).json({ error: 'Передайте slots: [{dow,hh,mm}]' });
+    if (arr.length > 60) return res.status(400).json({ error: 'Слишком много слотов за раз' });
+    await addSlots(req.tenantId!, arr);
+    res.json({ ok: true, slots: await listSlots(req.tenantId!) });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить слоты' }); }
+});
+
+router.delete('/slots/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    await removeSlot(req.tenantId!, Number(req.params.id));
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить слот' }); }
+});
+
+router.get('/slots/next', async (req: AuthedRequest, res: Response) => {
+  try {
+    const count = Math.max(1, Math.min(Number(req.query.count) || 1, 30));
+    const next = await nextFreeSlotTimes(req.tenantId!, count, Date.now() + 60_000);
+    res.json({ next: next.map((d) => d.toISOString()) });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось рассчитать слот' }); }
+});
+
+// ── Ф2/Ф4: цепочки ──────────────────────────────────────────────────────────
+router.get('/chains', async (req: AuthedRequest, res: Response) => {
+  try { res.json({ chains: await listChains(req.tenantId!) }); }
+  catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось загрузить цепочки' }); }
+});
+
+router.post('/chains', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const kind = b.kind === 'auto' ? 'auto' : 'manual';
+    const name = String(b.name || '').trim().slice(0, 160) || (kind === 'auto' ? 'Авто-цепочка' : 'Серия');
+    const targets = (Array.isArray(b.targets) ? b.targets : []) as TargetInput[];
+    if (!targets.length) return res.status(400).json({ error: 'Не выбраны аккаунты цепочки' });
+    const caption = (b.caption && typeof b.caption === 'object') ? b.caption : {};
+    if (kind === 'manual') {
+      const out = await createManualChain({
+        tenantId: req.tenantId!, baseUrl: absBase(req), name,
+        items: Array.isArray(b.items) ? b.items : [], targets, caption,
+      });
+      return res.status(201).json(out);
+    }
+    // auto: только создать запись — контент подберёт тик (ролики автопилота auto-ugc)
+    const id = randomUUID();
+    const dailyCap = Math.max(1, Math.min(Number(b.dailyCap) || 3, 20));
+    await pool.query(
+      `INSERT INTO publisher_chains (id, tenant_id, name, kind, items, targets, caption, daily_cap, enabled, cursor)
+       VALUES ($1,$2,$3,'auto','[]',$4,$5,$6,TRUE,0)`,
+      [id, req.tenantId!, name, JSON.stringify(targets), JSON.stringify(caption), dailyCap]
+    );
+    res.status(201).json({ chainId: id });
+  } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось создать цепочку' }); }
+});
+
+router.patch('/chains/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const sets: string[] = []; const vals: any[] = [req.tenantId!, String(req.params.id)];
+    if (typeof b.enabled === 'boolean') { vals.push(b.enabled); sets.push(`enabled=$${vals.length}, fail_streak=0, last_error=NULL`); }
+    if (b.dailyCap != null) { vals.push(Math.max(1, Math.min(Number(b.dailyCap) || 3, 20))); sets.push(`daily_cap=$${vals.length}`); }
+    if (typeof b.name === 'string' && b.name.trim()) { vals.push(b.name.trim().slice(0, 160)); sets.push(`name=$${vals.length}`); }
+    if (!sets.length) return res.status(400).json({ error: 'Нечего менять' });
+    await pool.query(`UPDATE publisher_chains SET ${sets.join(', ')}, updated_at=NOW() WHERE tenant_id=$1 AND id=$2`, vals);
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось обновить цепочку' }); }
+});
+
+router.delete('/chains/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const out = await cancelChain(req.tenantId!, String(req.params.id), true);
+    res.json({ ok: true, ...out });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить цепочку' }); }
+});
+
+// ── Ф3: Пост-движок + шаблоны текстов ────────────────────────────────────────
+router.post('/ai-caption', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const out = await generateCaptions({
+      tenantId: req.tenantId!,
+      title: b.title ? String(b.title) : undefined,
+      assetId: b.assetId ? String(b.assetId) : undefined,
+      platforms: Array.isArray(b.platforms) ? b.platforms : [],
+      tone: b.tone, language: b.language, count: b.count, brief: b.brief,
+    });
+    res.json(out);
+  } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось сгенерировать подпись' }); }
+});
+
+router.get('/templates', async (req: AuthedRequest, res: Response) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, name, text, created_at FROM publisher_templates WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 50`,
+      [req.tenantId!]);
+    res.json({ templates: r.rows });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось загрузить шаблоны' }); }
+});
+
+router.post('/templates', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const name = String(b.name || '').trim().slice(0, 120);
+    const text = String(b.text || '').slice(0, 5000);
+    if (!name || !text) return res.status(400).json({ error: 'Нужны name и text' });
+    const r = await pool.query(
+      `INSERT INTO publisher_templates (tenant_id, name, text) VALUES ($1,$2,$3) RETURNING id, name, text, created_at`,
+      [req.tenantId!, name, text]);
+    res.status(201).json({ template: r.rows[0] });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить шаблон' }); }
+});
+
+router.delete('/templates/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    await pool.query(`DELETE FROM publisher_templates WHERE tenant_id=$1 AND id=$2`, [req.tenantId!, Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить шаблон' }); }
+});
+
+// ── Ф5: аналитика Blotato (X/IG/FB/Threads/Bluesky; TikTok/YT — «Каналы»/TikHub) ──
+router.get('/analytics', async (req: AuthedRequest, res: Response) => {
+  try {
+    const key = await tenantBlotatoKey(req.tenantId!);
+    if (!key) return res.status(409).json(NO_KEY);
+    const days = Math.max(1, Math.min(Number(req.query.days) || 30, 90));
+    res.json({ items: await getAnalytics(key, days), days });
+  } catch (e: any) {
+    const msg = e instanceof BlotatoError ? e.message : (e?.message || 'Blotato недоступен');
+    res.status(e instanceof BlotatoError && e.status === 401 ? 409 : 502).json({ error: msg });
+  }
 });
 
 export default router;

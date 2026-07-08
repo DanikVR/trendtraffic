@@ -115,22 +115,22 @@ export interface CreatePostArgs {
   text: string;
   /** Абсолютные публичные URL медиа ([] = текстовый пост). */
   mediaUrls: string[];
-  /** Платформенный target ЦЕЛИКОМ (targetType + опции) — собирает роутер. */
+  /** Платформенный target ЦЕЛИКОМ (targetType + опции) — собирает сервис. */
   target: Record<string, unknown>;
   /** ISO UTC — запланировать на время. */
   scheduledTime?: string;
   /** Занять ближайший свободный слот расписания Blotato. */
   useNextFreeSlot?: boolean;
+  /** Тред (X/Threads/Bluesky): дополнительные посты после первого. */
+  additionalPosts?: { text: string }[];
 }
 
 /** POST /posts → postSubmissionId. Ошибки Blotato пробрасываются BlotatoError с их message. */
 export async function createPost(key: string, args: CreatePostArgs): Promise<{ submissionId: string | null }> {
+  const content: Record<string, unknown> = { text: args.text, platform: args.platform, mediaUrls: args.mediaUrls };
+  if (args.additionalPosts?.length) content.additionalPosts = args.additionalPosts;
   const body: Record<string, unknown> = {
-    post: {
-      accountId: args.accountId,
-      content: { text: args.text, platform: args.platform, mediaUrls: args.mediaUrls },
-      target: args.target,
-    },
+    post: { accountId: args.accountId, content, target: args.target },
   };
   if (args.scheduledTime) body.scheduledTime = args.scheduledTime;
   if (args.useNextFreeSlot) body.useNextFreeSlot = true;
@@ -166,4 +166,19 @@ export async function getPostStatus(key: string, submissionId: string): Promise<
 /** Отмена запланированного поста (DELETE /schedules/:id — id = postSubmissionId). */
 export async function cancelScheduled(key: string, submissionId: string): Promise<void> {
   await bfetch(key, `/schedules/${encodeURIComponent(submissionId)}`, { method: 'DELETE' });
+}
+
+/** Перенос запланированного поста на новое время (PATCH /schedules/:id). */
+export async function updateScheduledTime(key: string, submissionId: string, scheduledTimeIso: string): Promise<void> {
+  await bfetch(key, `/schedules/${encodeURIComponent(submissionId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ scheduledTime: scheduledTimeIso }),
+  });
+}
+
+/** Аналитика опубликованного (X/IG/FB/Threads/Bluesky; TikTok/YouTube их API не покрывает).
+ *  Форму ответа парсим защитно — отдаём массив как есть, фронт показывает известные поля. */
+export async function getAnalytics(key: string, days = 30): Promise<any[]> {
+  const d = await bfetch(key, `/analytics?days=${Math.max(1, Math.min(days, 90))}`);
+  return Array.isArray(d?.items) ? d.items : Array.isArray(d?.posts) ? d.posts : Array.isArray(d) ? d : [];
 }

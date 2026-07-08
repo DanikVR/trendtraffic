@@ -2089,7 +2089,30 @@
  *         гейт «все платные» (hasEnterpriseAccess). /settings/enterprise понимает ?section=.
  *         Файлы: publisher/PublisherTab+PublisherStudio, GalleryPage, BottomTabBar, BillingPage,
  *         EnterpriseSettingsPage; бэк: modules/publisher/*, provider_keys, migrations, server. */
-export const APP_VERSION = '2.1.4';
+/* 2.1.5 — ПУБЛИКАТОР Ф2–Ф5 (весь план до конца): (Ф2) СВОИ слоты «Моё расписание»
+ *         (publisher_slots, UTC в БД / местное время в UI; слоты Blotato не используем —
+ *         гейтятся его тарифом) + «Следующий слот» = наш расчёт по свободным слотам;
+ *         саб-вкладка «Календарь» (неделя ‹›, посты чипами по дням, перенос через PATCH
+ *         /schedules Blotato, отмена); ручные ЦЕПОЧКИ: мультивыбор Галереи → «Опубликовать (N)»
+ *         → серия раскладывается по свободным слотам СРАЗУ (publisher_chains kind=manual).
+ *         (Ф3) ПОСТ-ДВИЖОК: POST /ai-caption — Claude (ключ «ИИ-режиссёр», модель
+ *         режиссёра) пишет A/B-варианты подписи с хэштегами и per-платформенными версиями
+ *         на контексте TrendDNA ролика; в студии — панель ✦ (3 тона), «Применить» раскладывает
+ *         base+хэштеги и overrides; вкладки текста «Все + per-платформа ✎» (textOverride
+ *         per target); ТРЕД для X/Threads/Bluesky (пустая строка = следующий пост,
+ *         additionalPosts); ШАБЛОНЫ текстов (publisher_templates, вставка/сохранение).
+ *         (Ф4) АВТО-ЦЕПОЧКИ: kind=auto публикует свежие НЕопубликованные ролики автопилота
+ *         (папка auto-ugc) в ближайший свободный слот с авто-подписью (фолбэк без ИИ:
+ *         название + ключевые слова ДНК); dailyCap, автопауза после 3 фейлов, тумблер
+ *         активна/пауза. Планировщик scheduler.ts (тик/мин, старт в server.ts). (Ф5) петля:
+ *         авторетраи упавших с бэкоффом 2→4→8 мин (до 3, retries/next_retry_at), фоновый
+ *         статус-синк каждые 5 мин (вне открытой ленты), саб-вкладка «Аналитика»
+ *         (GET /v2/analytics Blotato: X/IG/FB/Threads/Bluesky; TikTok/YT — «Каналы»/TikHub,
+ *         защитный парсинг полей). Комменты/директ НЕ делались — план Б (Ayrshare) по
+ *         решению юзера. Файлы: publisher/{PublisherTab,PublisherStudio}, GalleryPage;
+ *         бэк: publisher/{service,scheduler,blotato,router}, migrations (+slots/chains/
+ *         templates/retries), server (startPublisherScheduler). */
+export const APP_VERSION = '2.1.5';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

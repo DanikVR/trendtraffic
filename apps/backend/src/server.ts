@@ -46,6 +46,7 @@ import { startTrendAutopilot } from './modules/trends/autopilot.js';
 import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter, manifestRouter as socialExtManifestRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import publisherRouter from './modules/publisher/router.js';
+import { startPublisherScheduler } from './modules/publisher/scheduler.js';
 import notebooklmRouter from './modules/notebooklm/router.js';
 import flowExtRouter, { INGEST_LIMIT as FLOW_INGEST_LIMIT } from './modules/flow-ext/router.js';
 import notebooklmExtRouter, { INGEST_LIMIT as NLM_INGEST_LIMIT } from './modules/notebooklm-ext/router.js';
@@ -283,6 +284,8 @@ const server = app.listen(PORT, () => {
   startChannelSnapshotScheduler();
   // 6.5 Автопилот трендов: конвейер «тренд → автоанализ → UGC» (Enterprise-only)
   startTrendAutopilot();
+  // 6.6 Публикатор: авто-цепочки (auto-ugc → слот), авторетраи, фоновый статус-синк
+  startPublisherScheduler();
 });
 
 export { app, server };

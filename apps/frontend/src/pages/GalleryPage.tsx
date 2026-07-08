@@ -34,7 +34,7 @@ import { useAppStore } from '../store/useAppStore';
 import { TT_EXT_VERSION } from '../components/AppVersion';
 import { coverSrc } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
-import { PublisherTab } from './publisher/PublisherTab';
+import { PublisherTab, type ChainDraft } from './publisher/PublisherTab';
 import { PublisherStudio } from './publisher/PublisherStudio';
 
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference' | 'publisher';
@@ -135,6 +135,8 @@ export default function GalleryPage() {
   // Публикатор: полноэкранная студия поста (initial = медиа с карточки) + счётчик перезагрузки ленты.
   const [pubStudio, setPubStudio] = useState<{ assetId?: string; mediaUrl?: string; title?: string } | null>(null);
   const [pubReload, setPubReload] = useState(0);
+  // Мультивыбор → «Опубликовать (N)»: черновик серии для цепочки Публикатора (Ф2/Ф3).
+  const [pubChainDraft, setPubChainDraft] = useState<ChainDraft | null>(null);
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -682,7 +684,8 @@ export default function GalleryPage() {
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
       ) : tab === 'publisher' ? (
         /* «Публикатор» (Ф1): постинг через Blotato (BYO-ключ) — плитки сетей, лента, студия поста */
-        <PublisherTab token={token} reloadKey={pubReload} onNewPost={() => setPubStudio({})} />
+        <PublisherTab token={token} reloadKey={pubReload} onNewPost={() => setPubStudio({})}
+          chainDraft={pubChainDraft} onChainDraftConsumed={() => setPubChainDraft(null)} />
       ) : tab === 'trendhub' ? (
         renderTrendHub()
       ) : (
@@ -722,10 +725,27 @@ export default function GalleryPage() {
                 Удалить{selectedCount > 0 ? ` · ${selectedCount}` : ''}
               </button>
             </div>
-            <AuroraButton onClick={downloadSelected} disabled={selectedCount === 0}
-              icon={<Download size={16} />}>
-              {`Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
-            </AuroraButton>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Пакет в Публикатор: выбранные видео/фото → серия по слотам «Моего расписания» */}
+              <button type="button" disabled={selectedCount === 0}
+                onClick={() => {
+                  const chainItems = filtered
+                    .filter((v) => selected.has(v.id) && (v.mediaType === 'video' || v.mediaType === 'image'))
+                    .map((v) => ({ assetId: v.id, mediaUrl: v.fileUrl, title: v.title }));
+                  if (!chainItems.length) return;
+                  setPubChainDraft({ items: chainItems });
+                  setTab('publisher');
+                }}
+                title="Опубликовать выбранные серией: ролики займут слоты «Моего расписания» в Публикаторе"
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
+                style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', cursor: 'pointer' }}>
+                <Send size={15} /> Опубликовать{selectedCount > 0 ? ` (${selectedCount})` : ''}
+              </button>
+              <AuroraButton onClick={downloadSelected} disabled={selectedCount === 0}
+                icon={<Download size={16} />}>
+                {`Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
+              </AuroraButton>
+            </div>
           </div>
           )}
 
