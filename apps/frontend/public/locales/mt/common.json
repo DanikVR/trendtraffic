@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Żomm it-tab tal-istudjo HeyGen miftuħa b'abbonament attiv.",
       "apiNote": "Permezz tal-HeyGen API — daħħal Settings → Ġenerazzjoni, kontijiet pay-as-you-go (~$3/min Avatar IV).",
       "delTitle": "Tneħħi l-avatar?",
-      "delMessage": "'{{name}}' se jitneħħa mill-kollezzjoni tal-avatars tiegħek. Il-fajl oriġinali jibqa' fil-Gallerija."
+      "delMessage": "'{{name}}' se jitneħħa mill-kollezzjoni tal-avatars tiegħek. Il-fajl oriġinali jibqa' fil-Gallerija.",
+      "photoEmptyTitle": "Ritratt għadu ma ġiex imtella'"
     },
     "voice": {
       "title": "Vuċi u skript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Serje: klipp separat f'kull waħda mil-lingwi {{count}}. B'avatar, HeyGen jirrendi l-wiċċ għal kull lingwa — aktar għali.",
       "diarizeHintVoiceover": "L-awdjo jmur fuq il-vidjo kif inhu. “Traskrizzjoni tad-diskors” hija fakultattiva: meħtieġa għas-sottotitli u l-inserzjonijiet għal kull linja.",
       "loudnormTitle": "Volum tal-vuċi uniformi",
-      "loudnormSub": "il-partijiet kwieti jitneħħew, il-partijiet qawwija jittaffew — awdjo b'ħoss professjonali"
+      "loudnormSub": "il-partijiet kwieti jitneħħew, il-partijiet qawwija jittaffew — awdjo b'ħoss professjonali",
+      "recordingEmptyTitle": "Ir-reġistrazzjoni għadha ma ġietx imtella'",
+      "recordingEmptySub": "awdjo jew vidjo mill-Gallerija"
     },
     "lines": {
       "count_one": "{{count}} linja · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Bidla",
       "seriesAdd": "Żid vidjows mas-serje — klipp wieħed għal kull vidjow",
       "seriesBilling": "L-avatar jiġi ċċarġjat darba waħda għas-sensiela kollha.",
-      "voiceoverBase": "F'dan il-mod il-vidjow huwa l-bażi tal-frejm: il-vuċi u s-sottotitli jmorru fuq nett."
+      "voiceoverBase": "F'dan il-mod il-vidjow huwa l-bażi tal-frejm: il-vuċi u s-sottotitli jmorru fuq nett.",
+      "emptyTitle": "Il-vidjo għadu ma ġiex imtella'",
+      "emptySub": "agħżel mill-Gallerija"
     },
     "subtitles": {
       "title": "Sottotitoli",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kemm idum jilgħab",
       "playFull": "Vidjo sħiħ",
       "playFirst": "L-ewwel N sekondi",
-      "durationHint": "sekondi mill-bidu, imbagħad fade-out bla xkiel"
+      "durationHint": "sekondi mill-bidu, imbagħad fade-out bla xkiel",
+      "emptyTitle": "Il-mużika għadha ma ntgħażiltx",
+      "emptySub": "jdoqq bil-kwiet taħt il-vuċi"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bumpers tal-introduzzjoni u tal-għeluq — mhux obbligatorji",
       "introEmpty": "Introduzzjoni — xejn",
       "outroEmpty": "Outro — xejn",
-      "hint": "Vidjo lest mill-Gallerija huwa mehmuż kif inhu, mingħajr ipproċessar: introduzzjoni tal-logo (2–10 sekondi), tmiem ta' \"subscribe\"."
+      "hint": "Vidjo lest mill-Gallerija huwa mehmuż kif inhu, mingħajr ipproċessar: introduzzjoni tal-logo (2–10 sekondi), tmiem ta' \"subscribe\".",
+      "introTitle": "Introduzzjoni",
+      "outroTitle": "L-aħħar",
+      "addSub": "żid vidjo"
     },
     "layer": {
       "title": "Saff ta' fuq",
@@ -1425,7 +1435,8 @@
       "hint": "PNG bid-daqs tal-frejm: logo kullimkien, frejm, caption. Joqgħod fuq il-vidjow kollu; is-sottotitli jibqgħu 'l fuq mis-saff.",
       "progressTitle": "Bar tal-progress",
       "progressSub": "strixxa rqiqa ta' timer fil-parti ta' fuq — it-telespettaturi jaraw li l-vidjow huwa qasir u jarawh sat-tmiem",
-      "pngOnly": "Is-saff irid ikun PNG jew WebP trasparenti — fajl mingħajr trasparenza jkopri l-qafas kollu."
+      "pngOnly": "Is-saff irid ikun PNG jew WebP trasparenti — fajl mingħajr trasparenza jkopri l-qafas kollu.",
+      "emptySub": "PNG trasparenti"
     },
     "brand": {
       "button": "Kit tal-marka",

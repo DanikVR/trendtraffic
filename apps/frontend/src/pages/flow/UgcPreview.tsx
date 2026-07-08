@@ -71,8 +71,19 @@ function dlgPlan(engagement: UgcSpec['dialogueEngagement']): PlanSeg[] {
   ];
 }
 
+/* Палитра кадра — CSS-переменные из UgcStudio (.ugc-studio / .dark .ugc-studio):
+   на светлой теме кадр светлый, на тёмной — тёмный. Фолбэки = тёмные значения. */
+const F = {
+  bg: 'var(--ugcf-bg, #101013)',
+  cell: 'var(--ugcf-cell, #101013)',
+  title: 'var(--ugcf-title, #a3a3ad)',
+  sub: 'var(--ugcf-sub, #77777f)',
+  dash: 'var(--ugcf-dash, #5c5c66)',
+  veil: 'var(--ugcf-veil, rgba(0,0,0,.35))',
+  shadow: 'var(--ugcf-shadow, 0 14px 34px rgba(0,0,0,.35))',
+};
 const CHECKER: React.CSSProperties = {
-  backgroundImage: 'conic-gradient(#3a3a42 25%, #2a2a30 0 50%, #3a3a42 0 75%, #2a2a30 0)',
+  backgroundImage: 'conic-gradient(var(--ugcf-chk1, #3a3a42) 25%, var(--ugcf-chk2, #2a2a30) 0 50%, var(--ugcf-chk1, #3a3a42) 0 75%, var(--ugcf-chk2, #2a2a30) 0)',
   backgroundSize: '14px 14px',
 };
 
@@ -138,20 +149,20 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   );
   const emptyCell = (title: string, sub: string, onClick: () => void) => (
     <button onClick={onClick} className="w-full h-full flex flex-col items-center justify-center gap-1.5"
-      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9a9aa4' }}>
-      <span className="flex items-center justify-center rounded-xl" style={{ width: 46, height: 46, border: '1.5px dashed #5c5c66', color: '#8b8b93' }}><Plus size={18} /></span>
-      <b className="text-[10.5px] font-700" style={{ color: '#a3a3ad' }}>{title}</b>
-      <span className="text-[9.5px]" style={{ color: '#77777f' }}>{sub}</span>
+      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: F.sub }}>
+      <span className="flex items-center justify-center rounded-xl" style={{ width: 46, height: 46, border: `1.5px dashed ${F.dash}`, color: F.sub }}><Plus size={18} /></span>
+      <b className="text-[10.5px] font-700" style={{ color: F.title }}>{title}</b>
+      <span className="text-[9.5px]" style={{ color: F.sub }}>{sub}</span>
     </button>
   );
   const faceCell = (url: string | null, tag: string, onEmpty: () => void, emptyTitle?: string) => (
-    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
+    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: F.cell }}>
       {url ? (<>{cellTag(tag)}<img src={url} alt="" className="w-full h-full object-cover" /></>)
         : emptyCell(emptyTitle || t('ugc.preview.emptyNotSelected', { tag }), t('ugc.preview.emptyClickToChoose'), onEmpty)}
     </div>
   );
   const clipCell = (tag: string, emptySub?: string) => (
-    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
+    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: F.cell }}>
       {ugc.clip ? (
         <>
           {cellTag(tag + (ugc.clipFit === 'contain' ? t('ugc.preview.tagFitContainSuffix') : ''))}
@@ -163,7 +174,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   );
   /* «медиа реплики» в диалоге: превью первого прикреплённого медиа; пусто → в панель «Реплики» */
   const lineMediaCell = (tag: string) => (
-    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: '#101013' }}>
+    <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: F.cell }}>
       {firstLineMedia ? (
         <>
           {cellTag(tag)}
@@ -189,7 +200,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
         )
       ) : (
         <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
-          style={{ border: '1.5px dashed #6b6b75', borderRadius: 12, background: 'rgba(0,0,0,.35)', color: '#9a9aa4', cursor: 'pointer' }}>
+          style={{ border: `1.5px dashed ${F.dash}`, borderRadius: 12, background: F.veil, color: F.title, cursor: 'pointer' }}>
           <UserRound size={16} /> {t('ugc.preview.emptyAvatarOverlay')}
         </button>
       )}
@@ -265,7 +276,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return (
       <div key={fmt} className="flex flex-col items-center gap-2">
         <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{t(meta.capKey)}</span>
-        <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: '#101013', boxShadow: '0 14px 34px rgba(0,0,0,.35)' }}>
+        <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: F.bg, boxShadow: F.shadow }}>
           {frameInner(fmt)}
           {/* верхний PNG-слой юзера — как в рендере: поверх видео, ПОД субтитрами */}
           {ugc.layers[fmt] && (

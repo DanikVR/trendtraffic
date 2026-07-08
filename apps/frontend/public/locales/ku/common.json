@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Bi abonetiyek çalak, tabloya studyoya HeyGen vekirî bihêle.",
       "apiNote": "Bi rêya HeyGen API — di Mîhengan → Çêkirin, fatûreya bi rêya dravdanê (~$3/deqîqe Avatar IV) de bikirtînin.",
       "delTitle": "Avatarê jê bibe? Gelo avatar were rakirin?",
-      "delMessage": "'{{name}}' dê ji koleksiyona avatarên te were rakirin. Pelê orîjînal di Galeriyê de dimîne."
+      "delMessage": "'{{name}}' dê ji koleksiyona avatarên te were rakirin. Pelê orîjînal di Galeriyê de dimîne.",
+      "photoEmptyTitle": "Wêne hîn nehatiye barkirin"
     },
     "voice": {
       "title": "Deng û senaryo",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Rêze: klîpek cuda ji bo her yek ji zimanên {{count}}. Bi avatarekê, HeyGen rûyê her zimanî nîşan dide - bihatir.",
       "diarizeHintVoiceover": "Deng wekî xwe li ser vîdyoyê tê. \"Transkribekirina axaftinê\" vebijarkî ye: ji bo jêrnivîsan û têxistinên li ser rêzê pêdivî ye.",
       "loudnormTitle": "Dengê dengî hevseng bike",
-      "loudnormSub": "beşên bêdeng tên rakirin, beşên bi deng tên nermkirin - dengê profesyonel"
+      "loudnormSub": "beşên bêdeng tên rakirin, beşên bi deng tên nermkirin - dengê profesyonel",
+      "recordingEmptyTitle": "Tomarkirin hîn nehatiye barkirin",
+      "recordingEmptySub": "deng an vîdyo ji Galeriyê"
     },
     "lines": {
       "count_one": "xeta {{count}} · ~{{sec}} çirke",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Gûherrandin",
       "seriesAdd": "Vîdyoyê li rêzefîlmê zêde bikin - yek klîp ji bo her vîdyoyê",
       "seriesBilling": "Avatar ji bo tevahiya rêzefîlmê carekê tê nîşandan.",
-      "voiceoverBase": "Di vê modê de vîdyo bingeha çarçoveyê ye: deng û jêrnivîs li jor diçin."
+      "voiceoverBase": "Di vê modê de vîdyo bingeha çarçoveyê ye: deng û jêrnivîs li jor diçin.",
+      "emptyTitle": "Vîdyo hîn nehatiye barkirin",
+      "emptySub": "ji Galeriyê hilbijêre"
     },
     "subtitles": {
       "title": "Jêrnivîs",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Çiqas dirêj dilîze",
       "playFull": "Tevahiya vîdyoyê",
       "playFirst": "N çirkeyên pêşîn",
-      "durationHint": "çend saniye ji destpêkê ve, paşê windabûnek nerm"
+      "durationHint": "çend saniye ji destpêkê ve, paşê windabûnek nerm",
+      "emptyTitle": "Muzîk hîn nehatiye hilbijartin",
+      "emptySub": "di bin deng de bêdeng dilîze"
     },
     "format": {
       "label": "Çap",
@@ -1416,7 +1423,10 @@
       "heading": "Parametreyên destpêkê û outro — vebijarkî",
       "introEmpty": "Pêşgotin — tune",
       "outroEmpty": "Dawî — tune",
-      "hint": "Vîdyoyek amade ji Galeriyê wekî xwe, bêyî pêvajoyê pêvekirî ye: pêşgotinek ji bo logoyê (2–10 saniye), dawîyek ji bo \"abonetiyê\"."
+      "hint": "Vîdyoyek amade ji Galeriyê wekî xwe, bêyî pêvajoyê pêvekirî ye: pêşgotinek ji bo logoyê (2–10 saniye), dawîyek ji bo \"abonetiyê\".",
+      "introTitle": "Pêşgotin",
+      "outroTitle": "Dawî",
+      "addSub": "vîdyoyek lê zêde bike"
     },
     "layer": {
       "title": "Qata jorîn",
@@ -1425,7 +1435,8 @@
       "hint": "PNG-yek bi mezinahiya çarçovê: logoyek li her derê, çarçoveyek, jêrnivîsek. Li ser tevahiya vîdyoyê rûdine; jêrnivîs li jor qatê dimînin.",
       "progressTitle": "Barika pêşketinê",
       "progressSub": "şerîtek demjimêrê ya zirav li jor - temaşevan dibînin ku vîdyo kurt e û heta dawiyê temaşe dikin",
-      "pngOnly": "Divê çîn PNG an WebP-yeke zelal be — pelek bê şefafî dê tevahiya çarçoveyê bigire nav xwe."
+      "pngOnly": "Divê çîn PNG an WebP-yeke zelal be — pelek bê şefafî dê tevahiya çarçoveyê bigire nav xwe.",
+      "emptySub": "PNG-ya zelal"
     },
     "brand": {
       "button": "Kîta marqeyê",

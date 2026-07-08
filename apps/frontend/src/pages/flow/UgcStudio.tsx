@@ -14,7 +14,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
-  Mic, Paperclip, Scissors, Music, Video, Type, Layers,
+  Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound,
 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import UgcPreview from './UgcPreview';
@@ -65,6 +65,26 @@ export interface UgcStudioProps {
 }
 
 /* ── мелкие строительные блоки студии ── */
+
+/* Имя файла в чипе: две строки мелким и обрез многоточием — длинные названия из Галереи
+   («Снимок экрана 2026-07-08 в 14.03.12.png») раньше обрезались до бессмыслицы. */
+const NAME_CLAMP: React.CSSProperties = {
+  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+  overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3,
+};
+
+/* Пустой слот выбора медиа: иконка в плашке → заголовок → подсказка (как в Canva),
+   вместо прежней строки «иконка + длинный текст», которая разъезжалась при переносе. */
+function EmptySlot({ icon, title, sub, onClick, pad }: { icon: React.ReactNode; title: string; sub?: string; onClick: () => void; pad?: number }) {
+  return (
+    <button onClick={onClick} className="w-full flex flex-col items-center justify-center gap-1 rounded-xl text-center"
+      style={{ padding: `${pad ?? 12}px 10px`, background: 'var(--bg-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+      <span className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ width: 28, height: 28, background: 'rgba(168,85,247,.10)', color: ACC }}>{icon}</span>
+      <b className="text-[11.5px] font-650 leading-tight" style={{ color: 'var(--text-secondary)' }}>{title}</b>
+      {sub && <span className="text-[10px] leading-tight" style={{ color: 'var(--text-muted)' }}>{sub}</span>}
+    </button>
+  );
+}
 
 function Sec({ n, title, sub, done, children }: { n: number; title: string; sub?: string; done?: boolean; children: React.ReactNode }) {
   return (
@@ -295,7 +315,13 @@ export default function UgcStudio(p: UgcStudioProps) {
   });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+    <div className="ugc-studio" style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+      {/* Палитра кадра превью: на светлой теме рамки СВЕТЛЫЕ (не чёрный «телевизор»),
+          на тёмной — прежние тёмные. Тема сервиса = класс .dark на <html>. */}
+      <style>{`
+        .ugc-studio{--ugcf-bg:#eceef4;--ugcf-cell:#e4e7ef;--ugcf-title:#5a626f;--ugcf-sub:#8b93a1;--ugcf-dash:#b4bbc9;--ugcf-veil:rgba(255,255,255,.55);--ugcf-chk1:#d8dbe3;--ugcf-chk2:#c9cdd8;--ugcf-shadow:0 14px 34px rgba(35,42,70,.16)}
+        .dark .ugc-studio{--ugcf-bg:#101013;--ugcf-cell:#101013;--ugcf-title:#a3a3ad;--ugcf-sub:#77777f;--ugcf-dash:#5c5c66;--ugcf-veil:rgba(0,0,0,.35);--ugcf-chk1:#3a3a42;--ugcf-chk2:#2a2a30;--ugcf-shadow:0 14px 34px rgba(0,0,0,.35)}
+      `}</style>
       {/* ── Топбар ── */}
       <div className="flex items-center gap-3 px-3.5 flex-shrink-0" style={{ height: 54, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-medium)' }}>
         <button onClick={p.onClose} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-600"
@@ -429,22 +455,24 @@ export default function UgcStudio(p: UgcStudioProps) {
                     {t('ugc.avatar.empty')}
                   </div>
                 )}
-                <div className="flex gap-1.5">
-                  <button onClick={p.genUgcAvatars} disabled={p.ugcBusy === 'avatars'} className="flex-1 py-2 rounded-lg text-[11px] font-700 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
-                    style={{ background: 'rgba(168,85,247,0.14)', color: ACC, border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
-                    {p.ugcBusy === 'avatars' ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} {t('ugc.avatar.gen3')}
-                  </button>
-                  <button onClick={() => p.openUgcPick('avatarAdd')} className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                    <Plus size={13} /> {t('ugc.avatar.pickFromGallery')}
-                  </button>
-                  <button onClick={() => p.loadUgcAvatars(true)} disabled={p.ugcAvLoading} title={t('ugc.avatar.refresh')} className="px-2 py-2 rounded-lg"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><RefreshCw size={13} /></button>
-                </div>
                 <input value={p.ugcAvBrief} onChange={(e) => p.setUgcAvBrief(e.target.value)}
                   placeholder={t('ugc.avatar.briefPlaceholder')}
-                  className="w-full px-2 py-1.5 rounded-lg text-[11px] outline-none"
+                  className="w-full px-2.5 py-2 rounded-lg text-[11px] outline-none"
                   style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                <button onClick={p.genUgcAvatars} disabled={p.ugcBusy === 'avatars'} className="w-full py-2.5 rounded-xl text-[11.5px] font-700 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                  style={{ background: 'rgba(168,85,247,0.14)', color: ACC, border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
+                  {p.ugcBusy === 'avatars' ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {t('ugc.avatar.gen3')}
+                </button>
+                <div className="flex gap-1.5">
+                  <button onClick={() => p.openUgcPick('avatarAdd')} className="flex-1 py-2 rounded-xl text-[11px] font-600 inline-flex items-center justify-center gap-1.5"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+                    <Plus size={13} /> {t('ugc.avatar.pickFromGallery')}
+                  </button>
+                  <button onClick={() => p.loadUgcAvatars(true)} disabled={p.ugcAvLoading} title={t('ugc.avatar.refresh')} className="rounded-xl inline-flex items-center justify-center disabled:opacity-60"
+                    style={{ width: 36, background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    {p.ugcAvLoading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                  </button>
+                </div>
                 {p.ugcAvNote && <p className="text-[11px]" style={{ color: '#f59e0b' }}>{p.ugcAvNote}</p>}
               </div>
             ) : (
@@ -452,16 +480,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{mode === 'dialogue' ? t('ugc.avatar.speakerAHeading') : t('ugc.avatar.yourPhotoHeading')}</div>
                 {ugc.photoUrl ? (
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <img src={ugc.photoUrl} alt="" className="rounded-md object-cover" style={{ width: 52, height: 68 }} />
-                    <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.photoName || t('ugc.avatar.photoChosenName')}</span>
-                    <button onClick={() => p.openUgcPick('photo')} className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, photoUrl: null, photoName: null }))} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                    <img src={ugc.photoUrl} alt="" className="rounded-md object-cover flex-shrink-0" style={{ width: 52, height: 68 }} />
+                    <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.photoName || undefined}>{ugc.photoName || t('ugc.avatar.photoChosenName')}</span>
+                    <button onClick={() => p.openUgcPick('photo')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, photoUrl: null, photoName: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                   </div>
                 ) : (
-                  <button onClick={() => p.openUgcPick('photo')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                    style={{ background: 'var(--bg-secondary)', color: ACC, border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                    {t('ugc.avatar.photoEmpty')}
-                  </button>
+                  <EmptySlot icon={<UserRound size={14} />} title={t('ugc.avatar.photoEmptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('photo')} />
                 )}
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.photoHint')}</p>
                 {mode === 'dialogue' && (
@@ -469,16 +494,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                     <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.speakerBHeading')}</div>
                     {ugc.photoBUrl ? (
                       <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                        <img src={ugc.photoBUrl} alt="" className="rounded-md object-cover" style={{ width: 44, height: 58 }} />
-                        <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.photoBName || t('ugc.avatar.photoBName')}</span>
-                        <button onClick={() => p.openUgcPick('photoB')} className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                        <button onClick={() => ugcMutate((u) => ({ ...u, photoBUrl: null, photoBName: null }))} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                        <img src={ugc.photoBUrl} alt="" className="rounded-md object-cover flex-shrink-0" style={{ width: 44, height: 58 }} />
+                        <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.photoBName || undefined}>{ugc.photoBName || t('ugc.avatar.photoBName')}</span>
+                        <button onClick={() => p.openUgcPick('photoB')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                        <button onClick={() => ugcMutate((u) => ({ ...u, photoBUrl: null, photoBName: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                       </div>
                     ) : (
-                      <button onClick={() => p.openUgcPick('photoB')} className="w-full py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                        style={{ background: 'var(--bg-secondary)', color: ACC, border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                        <Plus size={13} /> {t('ugc.avatar.photoBEmpty')}
-                      </button>
+                      <EmptySlot icon={<UserRound size={14} />} title={t('ugc.avatar.photoEmptyTitle')} sub={t('ugc.preview.emptyClickToChoose')} pad={9} onClick={() => p.openUgcPick('photoB')} />
                     )}
                   </>
                 )}
@@ -574,15 +596,12 @@ export default function UgcStudio(p: UgcStudioProps) {
               <div className="space-y-2">
                 {ugc.recordingUrl ? (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <Music size={15} style={{ color: ACC }} />
-                    <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.recordingName || t('ugc.voice.recordingName')}</span>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, recordingUrl: null, recordingName: null, script: [], result: null }))} title={t('ugc.voice.removeRecording')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
+                    <Music size={15} className="flex-shrink-0" style={{ color: ACC }} />
+                    <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.recordingName || undefined}>{ugc.recordingName || t('ugc.voice.recordingName')}</span>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, recordingUrl: null, recordingName: null, script: [], result: null }))} title={t('ugc.voice.removeRecording')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={14} /></button>
                   </div>
                 ) : (
-                  <button onClick={() => p.openUgcPick('recording')} className="w-full py-2.5 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                    <Paperclip size={14} /> {t('ugc.voice.recordingEmpty')}
-                  </button>
+                  <EmptySlot icon={<Paperclip size={14} />} title={t('ugc.voice.recordingEmptyTitle')} sub={t('ugc.voice.recordingEmptySub')} onClick={() => p.openUgcPick('recording')} />
                 )}
                 <button onClick={p.ugcRunDiarize} disabled={p.ugcBusy === 'diarize' || !ugc.recordingUrl} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{ background: 'rgba(168,85,247,0.14)', color: ACC, border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
@@ -629,17 +648,14 @@ export default function UgcStudio(p: UgcStudioProps) {
           {/* 4. Видеоряд */}
           <Sec n={4} title={t('ugc.video.title')} sub={t('ugc.video.sub')} done={!!ugc.clip || (mode === 'retention' && ugc.retentionBrolls.length > 0)}>
             {ugc.clip ? (
-              <div className="flex items-center gap-2">
-                <video src={`${ugc.clip.url}#t=0.1`} muted className="rounded-lg" style={{ width: 44, height: 78, objectFit: 'cover', background: '#000' }} />
-                <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.clip.name}</span>
-                <button onClick={() => p.openUgcPick('clip')} className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                <button onClick={() => ugcMutate((u) => ({ ...u, clip: null }))} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+              <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                <video src={`${ugc.clip.url}#t=0.1`} muted className="rounded-lg flex-shrink-0" style={{ width: 44, height: 78, objectFit: 'cover', background: 'var(--bg-tertiary)' }} />
+                <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.clip.name}>{ugc.clip.name}</span>
+                <button onClick={() => p.openUgcPick('clip')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                <button onClick={() => ugcMutate((u) => ({ ...u, clip: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
               </div>
             ) : (
-              <button onClick={() => p.openUgcPick('clip')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                style={{ background: 'var(--bg-secondary)', color: ACC, border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                <Video size={14} /> {t('ugc.video.empty')}
-              </button>
+              <EmptySlot icon={<Video size={14} />} title={t('ugc.video.emptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('clip')} />
             )}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
@@ -683,18 +699,15 @@ export default function UgcStudio(p: UgcStudioProps) {
             {/* Заставки до и после: готовое видео из Галереи приклеивается как есть */}
             <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.bumpers.heading')}</div>
             <div className="grid grid-cols-2 gap-1.5">
-              {([['intro', ugc.intro, t('ugc.bumpers.introEmpty')], ['outro', ugc.outro, t('ugc.bumpers.outroEmpty')]] as ['intro' | 'outro', { url: string; name: string } | null, string][]).map(([kind, val, emptyLbl]) => (
+              {([['intro', ugc.intro, t('ugc.bumpers.introTitle')], ['outro', ugc.outro, t('ugc.bumpers.outroTitle')]] as ['intro' | 'outro', { url: string; name: string } | null, string][]).map(([kind, val, slotTitle]) => (
                 val ? (
                   <div key={kind} className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <video src={`${val.url}#t=0.1`} muted className="rounded" style={{ width: 30, height: 30, objectFit: 'cover', background: '#000', flexShrink: 0 }} />
-                    <span className="text-[10px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }} title={val.name}>{val.name}</span>
+                    <video src={`${val.url}#t=0.1`} muted className="rounded flex-shrink-0" style={{ width: 30, height: 30, objectFit: 'cover', background: 'var(--bg-tertiary)' }} />
+                    <span className="text-[10px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={val.name}>{val.name}</span>
                     <button onClick={() => ugcMutate((u) => ({ ...u, [kind]: null }))} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}><X size={12} /></button>
                   </div>
                 ) : (
-                  <button key={kind} onClick={() => p.openUgcPick(kind)} className="py-2 rounded-lg text-[10.5px] font-600 inline-flex items-center justify-center gap-1"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                    <Plus size={11} /> {emptyLbl}
-                  </button>
+                  <EmptySlot key={kind} icon={<Plus size={13} />} title={slotTitle} sub={t('ugc.bumpers.addSub')} pad={7} onClick={() => p.openUgcPick(kind)} />
                 )
               ))}
             </div>
@@ -727,10 +740,10 @@ export default function UgcStudio(p: UgcStudioProps) {
             {ugc.music ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                  <Music size={15} style={{ color: ACC }} />
-                  <span className="text-[12px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{ugc.music.name}</span>
-                  <button onClick={() => p.openUgcPick('music')} className="text-[11px] px-2 py-1 rounded-md" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                  <button onClick={() => ugcMutate((u) => ({ ...u, music: null }))} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                  <Music size={15} className="flex-shrink-0" style={{ color: ACC }} />
+                  <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.music.name}>{ugc.music.name}</span>
+                  <button onClick={() => p.openUgcPick('music')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                  <button onClick={() => ugcMutate((u) => ({ ...u, music: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{t('ugc.music.volumeLabel')}</span>
@@ -762,10 +775,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                 )}
               </div>
             ) : (
-              <button onClick={() => p.openUgcPick('music')} className="w-full py-2.5 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5"
-                style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                <Music size={14} /> {t('ugc.music.empty')}
-              </button>
+              <EmptySlot icon={<Music size={14} />} title={t('ugc.music.emptyTitle')} sub={t('ugc.music.emptySub')} onClick={() => p.openUgcPick('music')} />
             )}
           </Sec>
 
@@ -777,15 +787,12 @@ export default function UgcStudio(p: UgcStudioProps) {
                 const cap = ({ '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' } as Record<UgcFormat, string>)[f];
                 return val ? (
                   <div key={f} className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <img src={val.url} alt="" className="rounded" style={{ width: 26, height: 26, objectFit: 'contain', background: 'repeating-conic-gradient(#3a3a42 0% 25%, #2a2a30 0% 50%) 0 0 / 10px 10px', flexShrink: 0 }} />
-                    <span className="text-[10px] flex-1 truncate" style={{ color: 'var(--text-secondary)' }} title={val.name}>{cap} · {val.name}</span>
+                    <img src={val.url} alt="" className="rounded" style={{ width: 26, height: 26, objectFit: 'contain', background: 'repeating-conic-gradient(var(--ugcf-chk1, #3a3a42) 0% 25%, var(--ugcf-chk2, #2a2a30) 0% 50%) 0 0 / 10px 10px', flexShrink: 0 }} />
+                    <span className="text-[10px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={val.name}>{cap} · {val.name}</span>
                     <button onClick={() => ugcMutate((u) => { const layers = { ...u.layers }; delete layers[f]; return { ...u, layers }; })} title={t('ugc.common.remove')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}><X size={12} /></button>
                   </div>
                 ) : (
-                  <button key={f} onClick={() => p.openUgcPick(`layer_${f}` as UgcPickTarget as Exclude<UgcPickTarget, 'lineImage'>)} className="w-full py-2 rounded-lg text-[10.5px] font-600 inline-flex items-center justify-center gap-1"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                    <Plus size={11} /> {t('ugc.layer.empty', { format: cap })}
-                  </button>
+                  <EmptySlot key={f} icon={<Layers size={13} />} title={cap} sub={t('ugc.layer.emptySub')} pad={7} onClick={() => p.openUgcPick(`layer_${f}` as UgcPickTarget as Exclude<UgcPickTarget, 'lineImage'>)} />
                 );
               })}
             </div>

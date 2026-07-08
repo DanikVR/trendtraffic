@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Komeza ufungure akadirishya ka studio ya HeyGen ukoresheje uburyo bwo kwiyandikisha buri gihe.",
       "apiNote": "Binyuze kuri HeyGen API — shyiramo Igenamiterere → Gukora, kwishyura uko ugenda (~$3/iminota Avatar IV).",
       "delTitle": "Kuraho ishusho?",
-      "delMessage": "'{{name}}' izakurwa mu ikusanyirizo ry'amashusho yawe. Dosiye y'umwimerere iguma muri Gallery."
+      "delMessage": "'{{name}}' izakurwa mu ikusanyirizo ry'amashusho yawe. Dosiye y'umwimerere iguma muri Gallery.",
+      "photoEmptyTitle": "Ifoto ntirashyirwa ku rubuga kugeza ubu"
     },
     "voice": {
       "title": "Ijwi n'inyandiko",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Urukurikirane: agace k'amashusho kari muri buri rurimi rwa {{count}}. Hamwe n'avatar, HeyGen iragaragaza isura ya buri rurimi — ihenze cyane.",
       "diarizeHintVoiceover": "Amajwi akurikirana videwo uko iri. \"Kwandika ijambo\" ni ngombwa: birakenewe mu nyandiko ngufi n'izindi zishyirwa kuri buri murongo.",
       "loudnormTitle": "Tonganya ijwi ryose",
-      "loudnormSub": "ibice bituje birazamurwa, ibice birenga bigatunganywa — amajwi yumvikana neza"
+      "loudnormSub": "ibice bituje birazamurwa, ibice birenga bigatunganywa — amajwi yumvikana neza",
+      "recordingEmptyTitle": "Amajwi ntarashyirwa ku rubuga",
+      "recordingEmptySub": "amajwi cyangwa videwo bivuye muri Gallery"
     },
     "lines": {
       "count_one": "{{count}} umurongo · ~{{sec}} amasegonda",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Impinduka",
       "seriesAdd": "Ongeraho videwo muri uru rukurikirane — igice kimwe kuri buri videwo",
       "seriesBilling": "Avatar yishyuzwa rimwe kuri uru rutonde rwose.",
-      "voiceoverBase": "Muri ubu buryo, videwo ni yo shingiro ry'ishusho: ijwi n'amagambo yo hejuru ni byo biba hejuru."
+      "voiceoverBase": "Muri ubu buryo, videwo ni yo shingiro ry'ishusho: ijwi n'amagambo yo hejuru ni byo biba hejuru.",
+      "emptyTitle": "Videwo ntirashyirwa ku rubuga kugeza ubu",
+      "emptySub": "guhitamo muri Gallery"
     },
     "subtitles": {
       "title": "Imitwe ihinnye",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Igihe bimara",
       "playFull": "Videwo yose",
       "playFirst": "Amasegonda ya mbere ya N",
-      "durationHint": "amasegonda kuva ku ntangiriro, hanyuma hagahita hagaragara ubusa"
+      "durationHint": "amasegonda kuva ku ntangiriro, hanyuma hagahita hagaragara ubusa",
+      "emptyTitle": "Umuziki nturatorwa",
+      "emptySub": "akina bucece munsi y'ijwi"
     },
     "format": {
       "label": "Imiterere",
@@ -1416,7 +1423,10 @@
       "heading": "Amabampara yo gutangiza no hanze — nta yandi mahirwe",
       "introEmpty": "Intangiriro — nta na kimwe",
       "outroEmpty": "Nta na kimwe",
-      "hint": "Videwo yakozwe neza yo muri Gallery irashyirwa kuri konti nk'uko iri, nta gutunganya: intangiriro y'ikirango (amasegonda 2-10), \"subscribe\" outro."
+      "hint": "Videwo yakozwe neza yo muri Gallery irashyirwa kuri konti nk'uko iri, nta gutunganya: intangiriro y'ikirango (amasegonda 2-10), \"subscribe\" outro.",
+      "introTitle": "Intangiriro",
+      "outroTitle": "Outro",
+      "addSub": "ongeramo videwo"
     },
     "layer": {
       "title": "Icyiciro cyo hejuru",
@@ -1425,7 +1435,8 @@
       "hint": "Ingano ya PNG kuri fremu: ikirango aho ari ho hose, fremu, ibisobanuro. Iba hejuru ya videwo yose; amagambo ahinnye aguma hejuru y'urwego.",
       "progressTitle": "Umurongo w'iterambere",
       "progressSub": "agace gato k'igihe hejuru — abareba babona ko videwo ari ngufi hanyuma bakareba kugeza ku iherezo",
-      "pngOnly": "Urupapuro rugomba kuba PNG cyangwa WebP ibonerana — dosiye idafite ibonerana yatwikira fremu yose."
+      "pngOnly": "Urupapuro rugomba kuba PNG cyangwa WebP ibonerana — dosiye idafite ibonerana yatwikira fremu yose.",
+      "emptySub": "PNG ibonerana"
     },
     "brand": {
       "button": "Ibikoresho by'ikirango",

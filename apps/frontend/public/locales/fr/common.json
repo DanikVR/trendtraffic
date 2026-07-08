@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Gardez l'onglet HeyGen Studio ouvert si votre abonnement est actif.",
       "apiNote": "Via l'API HeyGen — saisissez dans Paramètres → Génération, facturation à l'utilisation (~3 $/min Avatar IV).",
       "delTitle": "Supprimer l'avatar ?",
-      "delMessage": "L'avatar « {{name}} » sera supprimé de votre collection. Le fichier original reste dans la galerie."
+      "delMessage": "L'avatar « {{name}} » sera supprimé de votre collection. Le fichier original reste dans la galerie.",
+      "photoEmptyTitle": "Photo non encore téléchargée"
     },
     "voice": {
       "title": "Voix et script",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Une série : un clip distinct dans chacune des {{count}} langues. Avec un avatar, HeyGen modélise le visage pour chaque langue – plus cher.",
       "diarizeHintVoiceover": "L'audio se superpose à la vidéo telle quelle. L'option « Transcription vocale » est facultative : elle est nécessaire pour les sous-titres et les insertions ligne par ligne.",
       "loudnormTitle": "Égaliser le volume de la voix",
-      "loudnormSub": "Les passages discrets sont mis en valeur, les passages plus forts sont adoucis — un son de qualité professionnelle"
+      "loudnormSub": "Les passages discrets sont mis en valeur, les passages plus forts sont adoucis — un son de qualité professionnelle",
+      "recordingEmptyTitle": "Enregistrement non encore téléchargé",
+      "recordingEmptySub": "audio ou vidéo de la galerie"
     },
     "lines": {
       "count_one": "{{count}} ligne · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Changement",
       "seriesAdd": "Ajouter des vidéos à la série — un clip par vidéo",
       "seriesBilling": "L'avatar est facturé une seule fois pour toute la série.",
-      "voiceoverBase": "Dans ce mode, la vidéo constitue la base du cadre : la voix et les sous-titres apparaissent par-dessus."
+      "voiceoverBase": "Dans ce mode, la vidéo constitue la base du cadre : la voix et les sous-titres apparaissent par-dessus.",
+      "emptyTitle": "Vidéo non encore téléchargée",
+      "emptySub": "choisir dans la galerie"
     },
     "subtitles": {
       "title": "Sous-titres",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Combien de temps ça dure ?",
       "playFull": "Vidéo complète",
       "playFirst": "Premières N secondes",
-      "durationHint": "quelques secondes après le début, puis un fondu enchaîné en douceur."
+      "durationHint": "quelques secondes après le début, puis un fondu enchaîné en douceur.",
+      "emptyTitle": "Musique non encore choisie",
+      "emptySub": "joue doucement sous la voix"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Générique d'introduction et de conclusion — optionnel",
       "introEmpty": "Introduction — aucune",
       "outroEmpty": "Conclusion — aucune",
-      "hint": "Une vidéo prête à l'emploi de la Galerie est jointe telle quelle, sans traitement : une introduction avec logo (2 à 10 secondes), une conclusion « s'abonner »."
+      "hint": "Une vidéo prête à l'emploi de la Galerie est jointe telle quelle, sans traitement : une introduction avec logo (2 à 10 secondes), une conclusion « s'abonner ».",
+      "introTitle": "Introduction",
+      "outroTitle": "Conclusion",
+      "addSub": "ajouter une vidéo"
     },
     "layer": {
       "title": "couche supérieure",
@@ -1425,7 +1435,8 @@
       "hint": "Un fichier PNG adapté à la taille du cadre : logo, cadre, légende. Il se superpose à la vidéo ; les sous-titres restent au-dessus.",
       "progressTitle": "barre de progression",
       "progressSub": "Une fine bande de minuterie en haut indique aux spectateurs que la vidéo est courte et les incite à la regarder jusqu'au bout.",
-      "pngOnly": "Le calque doit être un PNG ou un WebP transparent — un fichier sans transparence recouvrirait toute l'image."
+      "pngOnly": "Le calque doit être un PNG ou un WebP transparent — un fichier sans transparence recouvrirait toute l'image.",
+      "emptySub": "PNG transparent"
     },
     "brand": {
       "button": "Kit de marque",

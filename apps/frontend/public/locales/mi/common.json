@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Kia tuwhera tonu te ripa whare pikitia HeyGen me te ohaurunga hohe.",
       "apiNote": "Mā te HeyGen API — patohia ki roto i ngā Tautuhinga → Te whakaputa, te utu-i-te-whakahaere (~$3/min Avatar IV).",
       "delTitle": "Tangohia te avatar?",
-      "delMessage": "Ka tangohia te '{{name}}' i tō kohinga avatar. Ka noho tonu te kōnae taketake ki te Taiwhanga Whakaahua."
+      "delMessage": "Ka tangohia te '{{name}}' i tō kohinga avatar. Ka noho tonu te kōnae taketake ki te Taiwhanga Whakaahua.",
+      "photoEmptyTitle": "Kāore anō kia tukuna ake te whakaahua"
     },
     "voice": {
       "title": "Reo me te tuhinga",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "He raupapa: he topenga motuhake i roto i ia reo {{count}}. Mā te whakamahi i tētahi avatar, ka whakaatu a HeyGen i te kanohi mō ia reo — he utu nui ake.",
       "diarizeHintVoiceover": "Ka tukuna te oro ki runga i te ataata i tōna āhua o nāianei. He kōwhiringa te \"Tuhituhi kōrero\": e hiahiatia ana mō ngā hauraro me ngā tāpiringa mō ia rārangi.",
       "loudnormTitle": "Whakaōritehia te rōrahi o te reo",
-      "loudnormSub": "ka hikitia ngā wāhanga marino, ka whakangawaritia ngā wāhanga haruru — ororongo matatau"
+      "loudnormSub": "ka hikitia ngā wāhanga marino, ka whakangawaritia ngā wāhanga haruru — ororongo matatau",
+      "recordingEmptyTitle": "Kāore anō kia tukuatuhia te rekoata",
+      "recordingEmptySub": "oro, ataata rānei mai i te Taiwhanga Whakaahua"
     },
     "lines": {
       "count_one": "Rārangi {{count}} · ~{{sec}} hēkona",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Huri",
       "seriesAdd": "Tāpirihia ngā ataata ki te raupapa — kotahi te topenga mō ia ataata",
       "seriesBilling": "Kotahi te pire mō te avatar mō te raupapa katoa.",
-      "voiceoverBase": "I tēnei aratau, ko te ataata te pūtake o te anga: ko te reo me ngā hauraro kei runga."
+      "voiceoverBase": "I tēnei aratau, ko te ataata te pūtake o te anga: ko te reo me ngā hauraro kei runga.",
+      "emptyTitle": "Kāore anō kia tukuna ake te ataata",
+      "emptySub": "tīpako mai i te Taiwhanga"
     },
     "subtitles": {
       "title": "Ngā Taitararoto",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kia pēhea te roa o te purei",
       "playFull": "Ataata katoa",
       "playFirst": "N hēkona tuatahi",
-      "durationHint": "hēkona mai i te tīmatanga, kātahi ka memeha haere"
+      "durationHint": "hēkona mai i te tīmatanga, kātahi ka memeha haere",
+      "emptyTitle": "Kāore anō kia whiriwhiria te puoro",
+      "emptySub": "ka takaro marie i raro i te reo"
     },
     "format": {
       "label": "Hōputu",
@@ -1416,7 +1423,10 @@
       "heading": "Ngā parepare whakataki me ngā parepare whakamutunga — he kōwhiringa",
       "introEmpty": "Whakataki — kāore",
       "outroEmpty": "Whakamutunga — kāore",
-      "hint": "Kua tāpirihia he ataata kua oti te hanga mai i te Taiwhanga Whakaahua, kāore he tukatuka: he kupu whakataki mō te tohu (2–10 hēkona), he kupu whakamutunga \"ohauru\"."
+      "hint": "Kua tāpirihia he ataata kua oti te hanga mai i te Taiwhanga Whakaahua, kāore he tukatuka: he kupu whakataki mō te tohu (2–10 hēkona), he kupu whakamutunga \"ohauru\".",
+      "introTitle": "Kupu Whakataki",
+      "outroTitle": "Whakamutunga",
+      "addSub": "tāpirihia he ataata"
     },
     "layer": {
       "title": "Paparanga o runga",
@@ -1425,7 +1435,8 @@
       "hint": "He PNG te rahi mō te anga: he tohu i ngā wāhi katoa, he anga, he taitara. Ka noho ki runga i te ataata katoa; ka noho ngā taitara ki runga ake i te paparanga.",
       "progressTitle": "Pae ahunga whakamua",
       "progressSub": "he rīpene taima angiangi kei runga — ka kite ngā kaimātakitaki he poto te ataata, ā, ka mātaki ki te mutunga",
-      "pngOnly": "Me PNG, me WebP rānei te paparanga mārama — ka kapi katoa te anga i tētahi kōnae kāore he māramatanga."
+      "pngOnly": "Me PNG, me WebP rānei te paparanga mārama — ka kapi katoa te anga i tētahi kōnae kāore he māramatanga.",
+      "emptySub": "PNG mārama"
     },
     "brand": {
       "button": "Kete waitohu",

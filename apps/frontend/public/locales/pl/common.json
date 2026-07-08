@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Pozostaw otwartą kartę studia HeyGen i aktywną subskrypcję.",
       "apiNote": "Za pomocą interfejsu API HeyGen — wejdź w Ustawienia → Generowanie, rozliczanie „płać za zużycie” (~3 USD/min Avatar IV).",
       "delTitle": "Usunąć awatar?",
-      "delMessage": "Plik „{{name}}” zostanie usunięty z Twojej kolekcji awatarów. Oryginalny plik pozostanie w Galerii."
+      "delMessage": "Plik „{{name}}” zostanie usunięty z Twojej kolekcji awatarów. Oryginalny plik pozostanie w Galerii.",
+      "photoEmptyTitle": "Zdjęcie nie zostało jeszcze przesłane"
     },
     "voice": {
       "title": "Głos i scenariusz",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Seria: osobny klip w każdym z języków {{count}}. Z awatarem HeyGen renderuje twarz dla każdego języka — drożej.",
       "diarizeHintVoiceover": "Dźwięk jest nanoszony na obraz w takiej formie, w jakiej jest nagrany. Opcja „Transkrypcja mowy” jest opcjonalna: potrzebna w przypadku napisów i wstawek w wierszu.",
       "loudnormTitle": "Wyrównaj głośność głosu",
-      "loudnormSub": "ciche części zostają podniesione, głośne części wygładzone — dźwięk o profesjonalnym brzmieniu"
+      "loudnormSub": "ciche części zostają podniesione, głośne części wygładzone — dźwięk o profesjonalnym brzmieniu",
+      "recordingEmptyTitle": "Nagranie nie zostało jeszcze przesłane",
+      "recordingEmptySub": "audio lub wideo z Galerii"
     },
     "lines": {
       "count_one": "linia {{count}} · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Zmiana",
       "seriesAdd": "Dodawaj filmy do serii — jeden klip na film",
       "seriesBilling": "Awatar jest rozliczany raz za cały serial.",
-      "voiceoverBase": "W tym trybie wideo stanowi podstawę klatki, a głos i napisy są umieszczane na górze."
+      "voiceoverBase": "W tym trybie wideo stanowi podstawę klatki, a głos i napisy są umieszczane na górze.",
+      "emptyTitle": "Film nie został jeszcze przesłany",
+      "emptySub": "wybierz z Galerii"
     },
     "subtitles": {
       "title": "Napisy na filmie obcojęzycznym",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Jak długo to trwa",
       "playFull": "Cały film",
       "playFirst": "Pierwsze N sekund",
-      "durationHint": "sekund od początku, a następnie płynne wyciszenie"
+      "durationHint": "sekund od początku, a następnie płynne wyciszenie",
+      "emptyTitle": "Muzyka jeszcze nie wybrana",
+      "emptySub": "gra cicho pod głosem"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Zderzaki wprowadzające i końcowe — opcjonalne",
       "introEmpty": "Wstęp — brak",
       "outroEmpty": "Outro — brak",
-      "hint": "Dołączono gotowy film z Galerii w formie gotowej, bez żadnej obróbki: wprowadzenie z logo (2–10 sek.) i zakończenie z napisem „subskrybuj”."
+      "hint": "Dołączono gotowy film z Galerii w formie gotowej, bez żadnej obróbki: wprowadzenie z logo (2–10 sek.) i zakończenie z napisem „subskrybuj”.",
+      "introTitle": "Wprowadzenie",
+      "outroTitle": "Zakończenie",
+      "addSub": "dodaj wideo"
     },
     "layer": {
       "title": "Warstwa wierzchnia",
@@ -1425,7 +1435,8 @@
       "hint": "PNG w rozmiarze ramki: logo w dowolnym miejscu, ramka, podpis. Znajduje się nad całym filmem; napisy pozostają nad warstwą.",
       "progressTitle": "Pasek postępu",
       "progressSub": "cienki pasek z timerem na górze — widzowie widzą, że film jest krótki i oglądają go do końca",
-      "pngOnly": "Warstwa musi być przezroczystym plikiem PNG lub WebP — plik bez przezroczystości zakryłby całą klatkę."
+      "pngOnly": "Warstwa musi być przezroczystym plikiem PNG lub WebP — plik bez przezroczystości zakryłby całą klatkę.",
+      "emptySub": "przezroczysty PNG"
     },
     "brand": {
       "button": "Zestaw marki",

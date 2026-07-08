@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Coinnigh an cluaisín stiúideo HeyGen ar oscailt le síntiús gníomhach.",
       "apiNote": "Trí API HeyGen — eochair i Socruithe → Giniúint, billeáil íoc-de-réir-a-úsáideann-tú (~$3/nóim Avatar IV).",
       "delTitle": "Bain an t-avatár?",
-      "delMessage": "Bainfear '{{name}}' as do bhailiúchán avatar. Fanfaidh an comhad bunaidh sa Ghailearaí."
+      "delMessage": "Bainfear '{{name}}' as do bhailiúchán avatar. Fanfaidh an comhad bunaidh sa Ghailearaí.",
+      "photoEmptyTitle": "Níor uaslódáil an grianghraf fós"
     },
     "voice": {
       "title": "Guth & script",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Sraith: gearrthóg ar leith i ngach ceann de na teangacha {{count}}. Le avatar, déanann HeyGen an aghaidh a rindreáil do gach teanga — níos costasaí.",
       "diarizeHintVoiceover": "Téann an fhuaim thar an bhfíseán mar atá. Tá “Tras-scríobh cainte” roghnach: ag teastáil le haghaidh fotheidil agus iontrálacha in aghaidh na líne.",
       "loudnormTitle": "Cothromú toirt an ghutha",
-      "loudnormSub": "ardaítear codanna ciúine, déantar codanna glóracha a mhaolú — fuaim ghairmiúil"
+      "loudnormSub": "ardaítear codanna ciúine, déantar codanna glóracha a mhaolú — fuaim ghairmiúil",
+      "recordingEmptyTitle": "Níor uaslódáil an taifeadadh fós",
+      "recordingEmptySub": "fuaim nó físeán ón nGailearaí"
     },
     "lines": {
       "count_one": "líne {{count}} · ~{{sec}} soic",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Athraigh",
       "seriesAdd": "Cuir físeáin leis an tsraith — gearrthóg amháin in aghaidh an fhíseáin",
       "seriesBilling": "Gearrtar an bille don avatar uair amháin don tsraith iomlán.",
-      "voiceoverBase": "Sa mhodh seo is é an físeán bunús an fhráma: téann an guth agus na fotheidil ar a bharr."
+      "voiceoverBase": "Sa mhodh seo is é an físeán bunús an fhráma: téann an guth agus na fotheidil ar a bharr.",
+      "emptyTitle": "Níl an físeán uaslódáilte fós",
+      "emptySub": "roghnaigh ón nGailearaí"
     },
     "subtitles": {
       "title": "Fotheidil",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Cé chomh fada a imríonn sé",
       "playFull": "Físeán iomlán",
       "playFirst": "An chéad N soicind",
-      "durationHint": "soicindí ón tús, ansin céimniú amach réidh"
+      "durationHint": "soicindí ón tús, ansin céimniú amach réidh",
+      "emptyTitle": "Ceol nach bhfuil roghnaithe fós",
+      "emptySub": "ag seinm go ciúin faoin nguth"
     },
     "format": {
       "label": "Formáid",
@@ -1416,7 +1423,10 @@
       "heading": "Buamadóirí réamhrá agus deiridh — roghnach",
       "introEmpty": "Réamhrá — níl aon cheann ann",
       "outroEmpty": "Amach — níl aon cheann",
-      "hint": "Tá físeán réamhdhéanta ón nGailearaí ceangailte mar atá, gan aon phróiseáil: réamhrá lógó (2–10 soicind), deireadh “liostáil”."
+      "hint": "Tá físeán réamhdhéanta ón nGailearaí ceangailte mar atá, gan aon phróiseáil: réamhrá lógó (2–10 soicind), deireadh “liostáil”.",
+      "introTitle": "Réamhrá",
+      "outroTitle": "Amach",
+      "addSub": "cuir físeán leis"
     },
     "layer": {
       "title": "an ciseal barr",
@@ -1425,7 +1435,8 @@
       "hint": "PNG de mhéid an fhráma: lógó áit ar bith, fráma, fotheideal. Suíonn sé thar an bhfíseán ar fad; fanann na fotheidil os cionn na sraithe.",
       "progressTitle": "Barra dul chun cinn",
       "progressSub": "stiall tanaí lasc ama ag an mbarr — feiceann lucht féachana go bhfuil an físeán gearr agus féachann siad go dtí an deireadh",
-      "pngOnly": "Ní mór don tsraith a bheith ina PNG nó WebP trédhearcach — chlúdódh comhad gan trédhearcacht an fráma ar fad."
+      "pngOnly": "Ní mór don tsraith a bheith ina PNG nó WebP trédhearcach — chlúdódh comhad gan trédhearcacht an fráma ar fad.",
+      "emptySub": "PNG trédhearcach"
     },
     "brand": {
       "button": "Trealamh branda",

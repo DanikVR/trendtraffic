@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Cadwch y tab stiwdio HeyGen ar agor gyda thanysgrifiad gweithredol.",
       "apiNote": "Drwy API HeyGen — allweddwch yn Gosodiadau → Cynhyrchu, bilio talu wrth ddefnyddio (~$3/munud Avatar IV).",
       "delTitle": "Dileu'r avatar?",
-      "delMessage": "Bydd '{{name}}' yn cael ei dynnu o'ch casgliad avatar. Mae'r ffeil wreiddiol yn aros yn yr Oriel."
+      "delMessage": "Bydd '{{name}}' yn cael ei dynnu o'ch casgliad avatar. Mae'r ffeil wreiddiol yn aros yn yr Oriel.",
+      "photoEmptyTitle": "Llun heb ei uwchlwytho eto"
     },
     "voice": {
       "title": "Llais a sgript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Cyfres: clip ar wahân ym mhob un o'r ieithoedd {{count}}. Gyda avatar, mae HeyGen yn rendro'r wyneb ar gyfer pob iaith — yn ddrytach.",
       "diarizeHintVoiceover": "Mae'r sain yn mynd dros y fideo fel y mae. Mae \"Trawsgrifio lleferydd\" yn ddewisol: mae ei angen ar gyfer isdeitlau a mewnosodiadau fesul llinell.",
       "loudnormTitle": "Cyfartalu cyfaint y llais",
-      "loudnormSub": "mae rhannau tawel yn cael eu codi, mae rhannau uchel yn cael eu llyfnhau — sain sy'n swnio'n broffesiynol"
+      "loudnormSub": "mae rhannau tawel yn cael eu codi, mae rhannau uchel yn cael eu llyfnhau — sain sy'n swnio'n broffesiynol",
+      "recordingEmptyTitle": "Recordiad heb ei uwchlwytho eto",
+      "recordingEmptySub": "sain neu fideo o'r Oriel"
     },
     "lines": {
       "count_one": "llinell {{count}} · ~{{sec}} eiliad",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Newid",
       "seriesAdd": "Ychwanegu fideos at y gyfres — un clip fesul fideo",
       "seriesBilling": "Caiff yr avatar ei bilio unwaith am y gyfres gyfan.",
-      "voiceoverBase": "Yn y modd hwn y fideo yw sylfaen y ffrâm: mae llais ac isdeitlau yn mynd ar ei ben."
+      "voiceoverBase": "Yn y modd hwn y fideo yw sylfaen y ffrâm: mae llais ac isdeitlau yn mynd ar ei ben.",
+      "emptyTitle": "Fideo heb ei uwchlwytho eto",
+      "emptySub": "dewis o'r Oriel"
     },
     "subtitles": {
       "title": "Isdeitlau",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Am ba hyd y mae'n chwarae",
       "playFull": "Fideo cyfan",
       "playFirst": "N eiliad cyntaf",
-      "durationHint": "eiliadau o'r dechrau, yna pylu allan llyfn"
+      "durationHint": "eiliadau o'r dechrau, yna pylu allan llyfn",
+      "emptyTitle": "Cerddoriaeth heb ei dewis eto",
+      "emptySub": "yn chwarae'n dawel o dan y llais"
     },
     "format": {
       "label": "Fformat",
@@ -1416,7 +1423,10 @@
       "heading": "Bympars cyflwyniad ac orchymyn — dewisol",
       "introEmpty": "Cyflwyniad — dim",
       "outroEmpty": "Allaniad — dim",
-      "hint": "Mae fideo parod o'r Oriel wedi'i atodi fel y mae, dim prosesu: cyflwyniad logo (2–10 eiliad), outro \"tanysgrifio\"."
+      "hint": "Mae fideo parod o'r Oriel wedi'i atodi fel y mae, dim prosesu: cyflwyniad logo (2–10 eiliad), outro \"tanysgrifio\".",
+      "introTitle": "Cyflwyniad",
+      "outroTitle": "Allaniad",
+      "addSub": "ychwanegu fideo"
     },
     "layer": {
       "title": "Haen uchaf",
@@ -1425,7 +1435,8 @@
       "hint": "PNG o faint ar gyfer y ffrâm: logo unrhyw le, ffrâm, capsiwn. Yn eistedd dros y fideo cyfan; mae isdeitlau'n aros uwchben yr haen.",
       "progressTitle": "Bar cynnydd",
       "progressSub": "stribed amserydd tenau ar y brig — mae gwylwyr yn gweld bod y fideo yn fyr ac yn gwylio hyd y diwedd",
-      "pngOnly": "Rhaid i'r haen fod yn PNG neu'n WebP tryloyw — byddai ffeil heb dryloywder yn gorchuddio'r ffrâm gyfan."
+      "pngOnly": "Rhaid i'r haen fod yn PNG neu'n WebP tryloyw — byddai ffeil heb dryloywder yn gorchuddio'r ffrâm gyfan.",
+      "emptySub": "PNG tryloyw"
     },
     "brand": {
       "button": "Pecyn brand",

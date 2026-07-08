@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Gcina ithebhu yesitudiyo seHeyGen ivuliwe ngobhaliso olusebenzayo.",
       "apiNote": "Nge-HeyGen API — faka iiSetingi → Ukwenza, ukuhlawula njengoko uqhubeka (~$3/min Avatar IV).",
       "delTitle": "Susa umfanekiso?",
-      "delMessage": "I-'{{name}}' izakususwa kwiqoqo lakho le-avatar. Ifayile yokuqala ihlala kwiGalari."
+      "delMessage": "I-'{{name}}' izakususwa kwiqoqo lakho le-avatar. Ifayile yokuqala ihlala kwiGalari.",
+      "photoEmptyTitle": "Ifoto ayikalayishwa okwangoku"
     },
     "voice": {
       "title": "Ilizwi kunye neskripthi",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Uthotho: ikliphu eyahlukileyo kulwimi ngalunye lwe-{{count}}. Nge-avatar, i-HeyGen yenza ubuso bolwimi ngalunye bube buhle ngakumbi.",
       "diarizeHintVoiceover": "Isandi sidlula ividiyo njengoko injalo. \"Ukubhala intetho\" akunyanzelekanga: kuyafuneka kwii-subtitles kunye nee-inserts zomgca ngamnye.",
       "loudnormTitle": "Isandi selizwi silingana",
-      "loudnormSub": "iindawo ezizolileyo ziyaphakanyiswa, iindawo ezinomsindo ziyalungiswa — isandi esivakalayo"
+      "loudnormSub": "iindawo ezizolileyo ziyaphakanyiswa, iindawo ezinomsindo ziyalungiswa — isandi esivakalayo",
+      "recordingEmptyTitle": "Ukurekhoda akukalayishwa okwangoku",
+      "recordingEmptySub": "iaudio okanye ividiyo evela kwiGalari"
     },
     "lines": {
       "count_one": "{{count}} umgca · ~{{sec}} isekhondi",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Utshintsho",
       "seriesAdd": "Yongeza iividiyo kuthotho — ikliphu enye ngevidiyo nganye",
       "seriesBilling": "I-avatar ihlawuliswa kube kanye kulo lonke uthotho.",
-      "voiceoverBase": "Kule ndlela ividiyo isisiseko sefreyimu: ilizwi kunye nemibhalo engezantsi iya phezulu."
+      "voiceoverBase": "Kule ndlela ividiyo isisiseko sefreyimu: ilizwi kunye nemibhalo engezantsi iya phezulu.",
+      "emptyTitle": "Ividiyo ayikalayishwa okwangoku",
+      "emptySub": "khetha kwiGalari"
     },
     "subtitles": {
       "title": "Imibhalo engezantsi",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Ixesha elingakanani elidlalwayo",
       "playFull": "Ividiyo yonke",
       "playFirst": "Imizuzwana yokuqala engu-N",
-      "durationHint": "imizuzwana ukususela ekuqaleni, emva koko kuphuma uthuli oluthambileyo"
+      "durationHint": "imizuzwana ukususela ekuqaleni, emva koko kuphuma uthuli oluthambileyo",
+      "emptyTitle": "Umculo awukakhethwa okwangoku",
+      "emptySub": "idlala ngokuthula phantsi kwelizwi"
     },
     "format": {
       "label": "Ifomathi",
@@ -1416,7 +1423,10 @@
       "heading": "Iibhampa zentshayelelo neze-outro — ozikhethelayo",
       "introEmpty": "Intshayelelo — akukho",
       "outroEmpty": "Ngaphandle — akukho",
-      "hint": "Ividiyo esele yenziwe kwiGalari iqhotyoshelwe njengoko injalo, akukho kulungiswa: intshayelelo yelogo (imizuzwana emi-2 ukuya kweli-10), i-outro \"yokubhalisa\"."
+      "hint": "Ividiyo esele yenziwe kwiGalari iqhotyoshelwe njengoko injalo, akukho kulungiswa: intshayelelo yelogo (imizuzwana emi-2 ukuya kweli-10), i-outro \"yokubhalisa\".",
+      "introTitle": "Intshayelelo",
+      "outroTitle": "I-Outro",
+      "addSub": "yongeza ividiyo"
     },
     "layer": {
       "title": "Umaleko ophezulu",
@@ -1425,7 +1435,8 @@
       "hint": "I-PNG enobukhulu befreyimu: ilogo naphi na, ifreyimu, inkcazo. Ihlala phezu kwevidiyo yonke; imibhalo engezantsi ihlala ngaphezulu komaleko.",
       "progressTitle": "Ibha yenkqubela phambili",
       "progressSub": "umgca wexesha obhityileyo phezulu — ababukeli babona ividiyo imfutshane baze bayibukele de kube sekupheleni",
-      "pngOnly": "Umaleko kufuneka ube yi-PNG okanye i-WebP ebonakalayo — ifayile engenazo izinto ezibonakalayo iya kugubungela yonke ifreyimu."
+      "pngOnly": "Umaleko kufuneka ube yi-PNG okanye i-WebP ebonakalayo — ifayile engenazo izinto ezibonakalayo iya kugubungela yonke ifreyimu.",
+      "emptySub": "i-PNG ebonakalayo"
     },
     "brand": {
       "button": "Ikhithi yebhrendi",

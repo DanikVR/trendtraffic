@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Hou die HeyGen-ateljee-oortjie oop met 'n aktiewe intekening.",
       "apiNote": "Via die HeyGen API — sleutel in Instellings → Generering, betaal-soos-jy-gaan fakturering (~$3/min Avatar IV).",
       "delTitle": "Verwyder avatar?",
-      "delMessage": "'{{name}}' sal van jou avatarversameling verwyder word. Die oorspronklike lêer bly in die Galery."
+      "delMessage": "'{{name}}' sal van jou avatarversameling verwyder word. Die oorspronklike lêer bly in die Galery.",
+      "photoEmptyTitle": "Foto nog nie opgelaai nie"
     },
     "voice": {
       "title": "Stem en draaiboek",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "'n Reeks: 'n aparte snit in elk van {{count}} tale. Met 'n avatar lewer HeyGen die gesig vir elke taal - duurder.",
       "diarizeHintVoiceover": "Die klank gaan oor die video soos dit is. \"Transkribeer spraak\" is opsioneel: nodig vir onderskrifte en invoegsels per reël.",
       "loudnormTitle": "Maak stemvolume gelyk",
-      "loudnormSub": "stil dele word opgehef, harde dele word gladder gemaak — pro-klinkende klank"
+      "loudnormSub": "stil dele word opgehef, harde dele word gladder gemaak — pro-klinkende klank",
+      "recordingEmptyTitle": "Opname nog nie opgelaai nie",
+      "recordingEmptySub": "klank of video vanaf die Galery"
     },
     "lines": {
       "count_one": "{{count}} lyn · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Verandering",
       "seriesAdd": "Voeg video's by die reeks — een snit per video",
       "seriesBilling": "Die avatar word een keer vir die hele reeks gefaktureer.",
-      "voiceoverBase": "In hierdie modus is die video die basis van die raam: stem en onderskrifte gaan bo-op."
+      "voiceoverBase": "In hierdie modus is die video die basis van die raam: stem en onderskrifte gaan bo-op.",
+      "emptyTitle": "Video nog nie opgelaai nie",
+      "emptySub": "kies uit Galery"
     },
     "subtitles": {
       "title": "Ondertitels",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hoe lank dit speel",
       "playFull": "Hele video",
       "playFirst": "Eerste N sekondes",
-      "durationHint": "sekondes vanaf die begin, dan 'n gladde uitfasering"
+      "durationHint": "sekondes vanaf die begin, dan 'n gladde uitfasering",
+      "emptyTitle": "Musiek nog nie gekies nie",
+      "emptySub": "speel stil onder die stem"
     },
     "format": {
       "label": "Formaat",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- en outro-bumpers — opsioneel",
       "introEmpty": "Inleiding — geen",
       "outroEmpty": "Uitstappie — geen",
-      "hint": "'n Gereedgemaakte video uit die Galery is aangeheg soos dit is, geen verwerking nie: 'n logo-inleiding (2–10 sek), 'n \"teken in\"-outro."
+      "hint": "'n Gereedgemaakte video uit die Galery is aangeheg soos dit is, geen verwerking nie: 'n logo-inleiding (2–10 sek), 'n \"teken in\"-outro.",
+      "introTitle": "Inleiding",
+      "outroTitle": "Uitloop",
+      "addSub": "voeg 'n video by"
     },
     "layer": {
       "title": "Boonste laag",
@@ -1425,7 +1435,8 @@
       "hint": "'n PNG-grootte vir die raam: 'n logo enige plek, 'n raam, 'n onderskrif. Dit sit oor die hele video; onderskrifte bly bo die laag.",
       "progressTitle": "Vorderingsbalk",
       "progressSub": "'n dun timerstrook bo-aan — kykers sien die video is kort en kyk tot die einde",
-      "pngOnly": "Die laag moet 'n deursigtige PNG of WebP wees — 'n lêer sonder deursigtigheid sal die hele raam bedek."
+      "pngOnly": "Die laag moet 'n deursigtige PNG of WebP wees — 'n lêer sonder deursigtigheid sal die hele raam bedek.",
+      "emptySub": "deursigtige PNG"
     },
     "brand": {
       "button": "Handelsmerkstel",

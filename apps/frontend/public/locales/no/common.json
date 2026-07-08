@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Hold HeyGen studio-fanen åpen med et aktivt abonnement.",
       "apiNote": "Via HeyGen API – tast inn i Innstillinger → Generering, betal etter bruk-fakturering (~$3/min Avatar IV).",
       "delTitle": "Fjerne avataren?",
-      "delMessage": "«{{name}}» vil bli fjernet fra avatarsamlingen din. Den opprinnelige filen forblir i galleriet."
+      "delMessage": "«{{name}}» vil bli fjernet fra avatarsamlingen din. Den opprinnelige filen forblir i galleriet.",
+      "photoEmptyTitle": "Bildet er ikke lastet opp ennå"
     },
     "voice": {
       "title": "Stemme og manus",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "En serie: et separat klipp på hvert av {{count}}-språkene. Med en avatar gjengir HeyGen ansiktet for hvert språk – dyrere.",
       "diarizeHintVoiceover": "Lyden går over videoen som den er. «Transkriber tale» er valgfritt: nødvendig for undertekster og linjevise innlegg.",
       "loudnormTitle": "Jevn ut stemmevolumet",
-      "loudnormSub": "stille deler løftes, høye deler jevnes ut – proff lyd"
+      "loudnormSub": "stille deler løftes, høye deler jevnes ut – proff lyd",
+      "recordingEmptyTitle": "Opptaket er ikke lastet opp ennå",
+      "recordingEmptySub": "lyd eller video fra galleriet"
     },
     "lines": {
       "count_one": "{{count}} linje · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Endre",
       "seriesAdd": "Legg til videoer i serien – ett klipp per video",
       "seriesBilling": "Avataren faktureres én gang for hele serien.",
-      "voiceoverBase": "I denne modusen er videoen grunnlaget for bildet: tale og undertekster legges øverst."
+      "voiceoverBase": "I denne modusen er videoen grunnlaget for bildet: tale og undertekster legges øverst.",
+      "emptyTitle": "Videoen er ikke lastet opp ennå",
+      "emptySub": "velg fra galleriet"
     },
     "subtitles": {
       "title": "Undertekster",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hvor lenge den spiller",
       "playFull": "Hele videoen",
       "playFirst": "De første N sekundene",
-      "durationHint": "sekunder fra starten, deretter en jevn uttoning"
+      "durationHint": "sekunder fra starten, deretter en jevn uttoning",
+      "emptyTitle": "Musikk ikke valgt ennå",
+      "emptySub": "spiller stille under stemmen"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- og outro-bumpere – valgfritt",
       "introEmpty": "Introduksjon – ingen",
       "outroEmpty": "Avslutning – ingen",
-      "hint": "En ferdiglaget video fra galleriet er vedlagt som den er, uten behandling: en logointro (2–10 sekunder), en «abonner»-outro."
+      "hint": "En ferdiglaget video fra galleriet er vedlagt som den er, uten behandling: en logointro (2–10 sekunder), en «abonner»-outro.",
+      "introTitle": "Introduksjon",
+      "outroTitle": "Slutt",
+      "addSub": "legg til en video"
     },
     "layer": {
       "title": "Topplaget",
@@ -1425,7 +1435,8 @@
       "hint": "En PNG-fil i riktig størrelse for rammen: en logo hvor som helst, en ramme, en bildetekst. Den ligger over hele videoen; undertekstene forblir over laget.",
       "progressTitle": "Fremdriftslinje",
       "progressSub": "en tynn timerstripe øverst – seerne ser at videoen er kort og ser den til slutten",
-      "pngOnly": "Laget må være en gjennomsiktig PNG- eller WebP-fil – en fil uten gjennomsiktighet ville dekke hele rammen."
+      "pngOnly": "Laget må være en gjennomsiktig PNG- eller WebP-fil – en fil uten gjennomsiktighet ville dekke hele rammen.",
+      "emptySub": "gjennomsiktig PNG"
     },
     "brand": {
       "button": "Merkesett",

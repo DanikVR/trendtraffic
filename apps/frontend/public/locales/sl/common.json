@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Zavihek studia HeyGen naj bo odprt z aktivno naročnino.",
       "apiNote": "Prek API-ja HeyGen — v Nastavitve → Generiranje odprite Nastavitve, obračunavanje po porabi (~3 USD/min Avatar IV).",
       "delTitle": "Odstraniti avatar?",
-      "delMessage": "'{{name}}' bo odstranjen iz vaše zbirke avatarjev. Izvirna datoteka ostane v galeriji."
+      "delMessage": "'{{name}}' bo odstranjen iz vaše zbirke avatarjev. Izvirna datoteka ostane v galeriji.",
+      "photoEmptyTitle": "Fotografija še ni naložena"
     },
     "voice": {
       "title": "Glas in scenarij",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Serija: ločen posnetek v vsakem od jezikov {{count}}. Z avatarjem HeyGen upodobi obraz za vsak jezik – dražje.",
       "diarizeHintVoiceover": "Zvok se predvaja čez videoposnetek takšen, kot je. »Prepis govora« je neobvezen: potreben je za podnapise in vstavke po vrsticah.",
       "loudnormTitle": "Izenačite glasnost glasu",
-      "loudnormSub": "Tihi deli so dvignjeni, glasni deli zglajeni – profesionalen zvok"
+      "loudnormSub": "Tihi deli so dvignjeni, glasni deli zglajeni – profesionalen zvok",
+      "recordingEmptyTitle": "Posnetek še ni naložen",
+      "recordingEmptySub": "zvok ali video iz galerije"
     },
     "lines": {
       "count_one": "{{count}} vrstica · ~{{sec}} s",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Sprememba",
       "seriesAdd": "Dodajte videoposnetke v serijo – en posnetek na videoposnetek",
       "seriesBilling": "Avatar se zaračuna enkrat za celotno serijo.",
-      "voiceoverBase": "V tem načinu je video osnova kadra: glas in podnapisi so na vrhu."
+      "voiceoverBase": "V tem načinu je video osnova kadra: glas in podnapisi so na vrhu.",
+      "emptyTitle": "Videoposnetek še ni naložen",
+      "emptySub": "izberite iz galerije"
     },
     "subtitles": {
       "title": "Podnapisi",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kako dolgo se predvaja",
       "playFull": "Celoten videoposnetek",
       "playFirst": "Prvih N sekund",
-      "durationHint": "sekund od začetka, nato pa gladko postopno utišanje"
+      "durationHint": "sekund od začetka, nato pa gladko postopno utišanje",
+      "emptyTitle": "Glasba še ni izbrana",
+      "emptySub": "tiho igra pod glasom"
     },
     "format": {
       "label": "Oblika",
@@ -1416,7 +1423,10 @@
       "heading": "Uvodni in zaključni odbijači – neobvezno",
       "introEmpty": "Uvod — brez",
       "outroEmpty": "Konec — brez",
-      "hint": "Priložen je že pripravljen videoposnetek iz galerije, brez obdelave: uvod z logotipom (2–10 sekund), zaključek z napisom »naroči se«."
+      "hint": "Priložen je že pripravljen videoposnetek iz galerije, brez obdelave: uvod z logotipom (2–10 sekund), zaključek z napisom »naroči se«.",
+      "introTitle": "Uvod",
+      "outroTitle": "Konec",
+      "addSub": "dodaj videoposnetek"
     },
     "layer": {
       "title": "Zgornja plast",
@@ -1425,7 +1435,8 @@
       "hint": "PNG v velikosti okvirja: logotip kjer koli, okvir, napis. Nahaja se čez celoten videoposnetek; podnapisi ostanejo nad plastjo.",
       "progressTitle": "Vrstica napredka",
       "progressSub": "tanek časovni trak na vrhu – gledalci vidijo, da je video kratek, in si ga ogledajo do konca",
-      "pngOnly": "Plast mora biti prozorna datoteka PNG ali WebP – datoteka brez prosojnosti bi prekrila celoten okvir."
+      "pngOnly": "Plast mora biti prozorna datoteka PNG ali WebP – datoteka brez prosojnosti bi prekrila celoten okvir.",
+      "emptySub": "prozoren PNG"
     },
     "brand": {
       "button": "Komplet blagovne znamke",

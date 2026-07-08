@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Panatilihing bukas ang tab na HeyGen studio gamit ang isang aktibong subscription.",
       "apiNote": "Sa pamamagitan ng HeyGen API — pindutin ang Mga Setting → Pagbuo, pay-as-you-go na pagsingil (~$3/min Avatar IV).",
       "delTitle": "Alisin ang avatar?",
-      "delMessage": "Aalisin ang '{{name}}' sa iyong koleksyon ng avatar. Mananatili ang orihinal na file sa Gallery."
+      "delMessage": "Aalisin ang '{{name}}' sa iyong koleksyon ng avatar. Mananatili ang orihinal na file sa Gallery.",
+      "photoEmptyTitle": "Hindi pa na-upload ang larawan"
     },
     "voice": {
       "title": "Boses at iskrip",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Isang serye: isang hiwalay na clip sa bawat isa sa mga wikang {{count}}. Gamit ang isang avatar, nire-render ng HeyGen ang mukha para sa bawat wika — mas mahal.",
       "diarizeHintVoiceover": "Ang audio ay ipapakita sa video nang walang pagbabago. Opsyonal ang \"I-transcribe ang speech\": kailangan para sa mga subtitle at per-line insert.",
       "loudnormTitle": "Pantayin ang lakas ng boses",
-      "loudnormSub": "ang mga tahimik na bahagi ay naaangat, ang mga maiingay na bahagi ay pinapakinis — pro-sounding audio"
+      "loudnormSub": "ang mga tahimik na bahagi ay naaangat, ang mga maiingay na bahagi ay pinapakinis — pro-sounding audio",
+      "recordingEmptyTitle": "Hindi pa na-upload ang recording",
+      "recordingEmptySub": "audio o video mula sa Gallery"
     },
     "lines": {
       "count_one": "linyang {{count}} · ~{{sec}} segundo",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Pagbabago",
       "seriesAdd": "Magdagdag ng mga video sa serye — isang clip bawat video",
       "seriesBilling": "Ang avatar ay sinisingil nang isang beses para sa buong serye.",
-      "voiceoverBase": "Sa mode na ito, ang video ang nasa base ng frame: ang boses at mga subtitle ang nangunguna."
+      "voiceoverBase": "Sa mode na ito, ang video ang nasa base ng frame: ang boses at mga subtitle ang nangunguna.",
+      "emptyTitle": "Hindi pa na-upload ang video",
+      "emptySub": "pumili mula sa Gallery"
     },
     "subtitles": {
       "title": "Mga Subtitle",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Gaano katagal ito tumutugtog",
       "playFull": "Buong video",
       "playFirst": "Unang N segundo",
-      "durationHint": "ilang segundo mula sa simula, pagkatapos ay isang maayos na pagkupas"
+      "durationHint": "ilang segundo mula sa simula, pagkatapos ay isang maayos na pagkupas",
+      "emptyTitle": "Hindi pa napipili ang musika",
+      "emptySub": "tahimik na tumutugtog sa ilalim ng boses"
     },
     "format": {
       "label": "Pormat",
@@ -1416,7 +1423,10 @@
       "heading": "Mga intro at outro bumper — opsyonal",
       "introEmpty": "Panimula — wala",
       "outroEmpty": "Paglabas — wala",
-      "hint": "Isang handa nang video mula sa Gallery ang nakalakip nang walang anumang pagbabago: isang intro ng logo (2–10 segundo), isang outro na may temang “subscribe”."
+      "hint": "Isang handa nang video mula sa Gallery ang nakalakip nang walang anumang pagbabago: isang intro ng logo (2–10 segundo), isang outro na may temang “subscribe”.",
+      "introTitle": "Panimula",
+      "outroTitle": "Paglabas",
+      "addSub": "magdagdag ng video"
     },
     "layer": {
       "title": "Pangunahing patong",
@@ -1425,7 +1435,8 @@
       "hint": "Isang PNG na sukat para sa frame: isang logo kahit saan, isang frame, isang caption. Nakalagay sa buong video; ang mga subtitle ay nananatili sa itaas ng layer.",
       "progressTitle": "Bar ng pag-unlad",
       "progressSub": "isang manipis na timer strip sa itaas — makikita ng mga manonood na maikli ang video at mapapanood hanggang dulo",
-      "pngOnly": "Ang layer ay dapat isang transparent na PNG o WebP — ang isang file na walang transparency ay tatakpan ang buong frame."
+      "pngOnly": "Ang layer ay dapat isang transparent na PNG o WebP — ang isang file na walang transparency ay tatakpan ang buong frame.",
+      "emptySub": "transparent na PNG"
     },
     "brand": {
       "button": "Kit ng tatak",

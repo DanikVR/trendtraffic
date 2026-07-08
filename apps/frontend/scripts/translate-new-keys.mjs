@@ -25,24 +25,16 @@ const ROOT = path.resolve(__dirname, '..');
 const LOCALES_DIR = path.join(ROOT, 'public', 'locales');
 const SOURCE_LANG = 'en';
 
-// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: вся UGC-студия v2.0.6) ──
-// Прошлые батчи (chat.*, settings.changePwd.*, auth.reset.*) уже переведены во всех локалях —
-// их повторно гонять не нужно. Перед новым прогоном замени список на свежие ключи.
-// Батч UGC собирается программно: ВСЕ листья дерева `ugc.*` из en/common.json (~280 ключей,
-// включая плюрал-формы _one/_other) — руками такой список не поддержать.
-const KEY_PATHS = await (async () => {
-  const en = JSON.parse(await fs.readFile(path.join(LOCALES_DIR, 'en', 'common.json'), 'utf-8'));
-  const out = [];
-  (function walk(node, prefix) {
-    for (const [k, v] of Object.entries(node)) {
-      const p = prefix ? `${prefix}.${k}` : k;
-      if (typeof v === 'string') out.push(p);
-      else if (v && typeof v === 'object') walk(v, p);
-    }
-  })(en.ugc || {}, 'ugc');
-  console.log(`Батч UGC: ${out.length} ключей`);
-  return out;
-})();
+// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: слоты UGC-студии v2.0.7 — title/sub) ──
+// Прошлые батчи (вся ugc.* v2.0.6 — ~290 ключей, chat.*, settings.changePwd.*, auth.reset.*)
+// уже переведены во всех локалях — их повторно гонять не нужно.
+// Перед новым прогоном замени список на свежие ключи.
+const KEY_PATHS = [
+  // Перегон после правки en-источников: «add a bumper» Google переводил как
+  // автомобильный бампер, «sits quietly…» — буквально. Заменены на однозначные.
+  'ugc.music.emptySub',
+  'ugc.bumpers.addSub',
+];
 
 // Наши коды → коды Google Translate (некоторые отличаются).
 const GOOGLE_CODE_MAP = { zh: 'zh-CN', he: 'iw', jv: 'jw' };

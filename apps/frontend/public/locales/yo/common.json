@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Jẹ́ kí taabu ile-iṣẹ HeyGen ṣí sílẹ̀ pẹ̀lú ìforúkọsílẹ̀ tí ń ṣiṣẹ́.",
       "apiNote": "Nipasẹ HeyGen API — bọtini ni Eto → Ìṣẹ̀dá, isanwo-bi-o-lọ (~$3/min Avatar IV).",
       "delTitle": "Yọ àfàmì kúrò?",
-      "delMessage": "A o yọ '{{name}}' kuro ninu akojọpọ awọn avatar rẹ. Faili atilẹba naa wa ninu Gallery naa."
+      "delMessage": "A o yọ '{{name}}' kuro ninu akojọpọ awọn avatar rẹ. Faili atilẹba naa wa ninu Gallery naa.",
+      "photoEmptyTitle": "A ko tii gbe aworan soke sibẹ"
     },
     "voice": {
       "title": "Ohùn àti ìwé àfọwọ́kọ",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Ẹ̀ka kan: fídíò ọ̀tọ̀ọ̀tọ̀ ní èdè {{count}} kọ̀ọ̀kan. Pẹ̀lú àwòrán àfàmì, HeyGen ṣe àfihàn ojú fún gbogbo èdè — ó wọ́n jù.",
       "diarizeHintVoiceover": "Ohùn náà ń lọ lórí fídíò náà gẹ́gẹ́ bí ó ti rí. “Ṣàtúnkọ ọ̀rọ̀” jẹ́ àṣàyàn: ó ṣe pàtàkì fún àwọn àkọlé àti àwọn ìfikún ìlà kọ̀ọ̀kan.",
       "loudnormTitle": "Mu iwọn didun ohun pọ si",
-      "loudnormSub": "Àwọn apá ìdákẹ́jẹ́ẹ́ ni a gbé sókè, àwọn apá ariwo sì ń rọ̀ — ohùn tó dára"
+      "loudnormSub": "Àwọn apá ìdákẹ́jẹ́ẹ́ ni a gbé sókè, àwọn apá ariwo sì ń rọ̀ — ohùn tó dára",
+      "recordingEmptyTitle": "Gbigbasilẹ ko tii gbe sori ayelujara sibẹsibẹ",
+      "recordingEmptySub": "ohun tàbí fídíò láti Gallery"
     },
     "lines": {
       "count_one": "{{count}} laini · ~{{sec}} iṣẹju-aaya",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Iyipada",
       "seriesAdd": "Fi awọn fidio kun jara naa — agekuru kan fun fidio kan",
       "seriesBilling": "A gba owo fun avatar naa lẹẹkan fun gbogbo jara naa.",
-      "voiceoverBase": "Nínú ipò yìí, fídíò náà ni ìpìlẹ̀ férémù náà: ohùn àti àkọlé ọ̀rọ̀ ló wà ní orí rẹ̀."
+      "voiceoverBase": "Nínú ipò yìí, fídíò náà ni ìpìlẹ̀ férémù náà: ohùn àti àkọlé ọ̀rọ̀ ló wà ní orí rẹ̀.",
+      "emptyTitle": "A ko tii gbe fidio sori ayelujara sibẹsibẹ",
+      "emptySub": "yan lati inu Gallery"
     },
     "subtitles": {
       "title": "Àwọn àkọlé",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Bawo ni pipẹ ti o ṣere",
       "playFull": "Fídíò gbogbo",
       "playFirst": "Àáyá N àkọ́kọ́",
-      "durationHint": "ìṣẹ́jú-àáyá láti ìbẹ̀rẹ̀, lẹ́yìn náà ìparẹ́ díẹ̀díẹ̀"
+      "durationHint": "ìṣẹ́jú-àáyá láti ìbẹ̀rẹ̀, lẹ́yìn náà ìparẹ́ díẹ̀díẹ̀",
+      "emptyTitle": "A kò tíì yan orin síbẹ̀",
+      "emptySub": "ń kọrin jẹ́ẹ́jẹ́ẹ́ lábẹ́ ohùn náà"
     },
     "format": {
       "label": "Ìlànà ìrísí",
@@ -1416,7 +1423,10 @@
       "heading": "Àwọn bumpers ìṣáájú àti ti òde — àṣàyàn",
       "introEmpty": "Ìṣáájú — kò sí",
       "outroEmpty": "Ìkejì — kò sí",
-      "hint": "Fídíò tí a ti ṣe tán láti inú Gallery náà ni a so mọ́ gẹ́gẹ́ bí ó ti wà, kò sí ìṣiṣẹ́: ìṣáájú àmì ìdámọ̀ (2–10 ìṣẹ́jú-àáyá), ìṣáájú “forúkọsílẹ̀”."
+      "hint": "Fídíò tí a ti ṣe tán láti inú Gallery náà ni a so mọ́ gẹ́gẹ́ bí ó ti wà, kò sí ìṣiṣẹ́: ìṣáájú àmì ìdámọ̀ (2–10 ìṣẹ́jú-àáyá), ìṣáájú “forúkọsílẹ̀”.",
+      "introTitle": "Ìṣáájú",
+      "outroTitle": "Outro",
+      "addSub": "fi fidio kun"
     },
     "layer": {
       "title": "Ipele oke",
@@ -1425,7 +1435,8 @@
       "hint": "Ìwọ̀n PNG fún férémù náà: àmì níbikíbi, férémù, àkọlé. Ó wà lórí gbogbo fídíò náà; àwọn àkọlé dúró lórí ìpele náà.",
       "progressTitle": "Páápù ìlọsíwájú",
       "progressSub": "ìlà aago tín-ín-rín kan ní òkè — àwọn olùwòran rí fídíò náà kúrú tí wọ́n sì ń wò ó títí dé òpin",
-      "pngOnly": "Fíìmù náà gbọ́dọ̀ jẹ́ PNG tàbí WebP tó ṣe kedere — fáìlì tí kò ní ìfihàn yóò bo gbogbo férémù náà."
+      "pngOnly": "Fíìmù náà gbọ́dọ̀ jẹ́ PNG tàbí WebP tó ṣe kedere — fáìlì tí kò ní ìfihàn yóò bo gbogbo férémù náà.",
+      "emptySub": "PNG tí ó ṣe kedere"
     },
     "brand": {
       "button": "Àwọn ohun èlò ìtajà ọjà",

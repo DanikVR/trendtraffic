@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Turiet HeyGen studijas cilni atvērtu ar aktīvu abonementu.",
       "apiNote": "Izmantojot HeyGen API — ievadiet Iestatījumi → Ģenerēšana, priekšapmaksas norēķini (~3 USD/min Avatar IV).",
       "delTitle": "Noņemt avatāru?",
-      "delMessage": "'{{name}}' tiks noņemts no jūsu avatāru kolekcijas. Sākotnējais fails paliks galerijā."
+      "delMessage": "'{{name}}' tiks noņemts no jūsu avatāru kolekcijas. Sākotnējais fails paliks galerijā.",
+      "photoEmptyTitle": "Fotoattēls vēl nav augšupielādēts"
     },
     "voice": {
       "title": "Balss un scenārijs",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Sērija: atsevišķs klips katrā no {{count}} valodām. Ar avatāru HeyGen atveido seju katrā valodā — dārgāk.",
       "diarizeHintVoiceover": "Audio tiek atskaņots video tādā veidā, kā tas ir. “Transkribēt runu” ir neobligāta opcija: nepieciešama subtitriem un rindiņu ieliktņiem.",
       "loudnormTitle": "Izlīdziniet balss skaļumu",
-      "loudnormSub": "klusās daļas tiek izceltas, skaļās daļas izlīdzinātas — profesionālas skaņas skaņa"
+      "loudnormSub": "klusās daļas tiek izceltas, skaļās daļas izlīdzinātas — profesionālas skaņas skaņa",
+      "recordingEmptyTitle": "Ieraksts vēl nav augšupielādēts",
+      "recordingEmptySub": "audio vai video no galerijas"
     },
     "lines": {
       "count_one": "{{count}} līnija · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Mainīt",
       "seriesAdd": "Pievienot sērijai videoklipus — pa vienam klipam katrā videoklipā",
       "seriesBilling": "Avatars tiek apmaksāts vienu reizi par visu sēriju.",
-      "voiceoverBase": "Šajā režīmā video ir kadra pamatā: balss un subtitri atrodas augšpusē."
+      "voiceoverBase": "Šajā režīmā video ir kadra pamatā: balss un subtitri atrodas augšpusē.",
+      "emptyTitle": "Video vēl nav augšupielādēts",
+      "emptySub": "izvēlēties no galerijas"
     },
     "subtitles": {
       "title": "Subtitri",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Cik ilgi tas spēlē",
       "playFull": "Viss video",
       "playFirst": "Pirmās N sekundes",
-      "durationHint": "sekundes no sākuma, pēc tam vienmērīga izzušana"
+      "durationHint": "sekundes no sākuma, pēc tam vienmērīga izzušana",
+      "emptyTitle": "Mūzika vēl nav izvēlēta",
+      "emptySub": "klusi spēlē zem balss"
     },
     "format": {
       "label": "Formāts",
@@ -1416,7 +1423,10 @@
       "heading": "Ievada un noslēguma buferi — pēc izvēles",
       "introEmpty": "Ievads — nav",
       "outroEmpty": "Noslēgums — nav",
-      "hint": "Pievienots gatavs video no galerijas bez apstrādes: logotipa ievads (2–10 sekundes), abonēšanas noslēgums."
+      "hint": "Pievienots gatavs video no galerijas bez apstrādes: logotipa ievads (2–10 sekundes), abonēšanas noslēgums.",
+      "introTitle": "Ievads",
+      "outroTitle": "Noslēgums",
+      "addSub": "pievienot videoklipu"
     },
     "layer": {
       "title": "Augšējais slānis",
@@ -1425,7 +1435,8 @@
       "hint": "PNG fails atbilstoši rāmja izmēram: logotips jebkur, rāmis, paraksts. Tas pārklāj visu video; subtitri paliek virs slāņa.",
       "progressTitle": "Progresa josla",
       "progressSub": "šaura taimera josla augšpusē — skatītāji redz, ka video ir īss, un noskatās līdz galam",
-      "pngOnly": "Slānim jābūt caurspīdīgam PNG vai WebP failam — fails bez caurspīdīguma pārklātu visu kadru."
+      "pngOnly": "Slānim jābūt caurspīdīgam PNG vai WebP failam — fails bez caurspīdīguma pārklātu visu kadru.",
+      "emptySub": "caurspīdīgs PNG"
     },
     "brand": {
       "button": "Zīmola komplekts",

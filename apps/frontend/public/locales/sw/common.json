@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Weka kichupo cha studio ya HeyGen kikiwa wazi ukitumia usajili unaoendelea.",
       "apiNote": "Kupitia HeyGen API — ingiza Mipangilio → Uzalishaji, bili ya malipo unapoendelea (~$3/dakika Avatar IV).",
       "delTitle": "Ondoa ishara?",
-      "delMessage": "'{{name}}' itaondolewa kwenye mkusanyiko wako wa avatar. Faili asilia itabaki kwenye Ghala."
+      "delMessage": "'{{name}}' itaondolewa kwenye mkusanyiko wako wa avatar. Faili asilia itabaki kwenye Ghala.",
+      "photoEmptyTitle": "Picha haijapakiwa bado"
     },
     "voice": {
       "title": "Sauti na hati",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Mfululizo: klipu tofauti katika kila moja ya lugha {{count}}. Kwa avatar, HeyGen huonyesha uso kwa kila lugha — bei yake ni kubwa zaidi.",
       "diarizeHintVoiceover": "Sauti hupitia video kama ilivyo. \"Nukuu hotuba\" ni hiari: inahitajika kwa manukuu na viingizo vya kila mstari.",
       "loudnormTitle": "Sawazisha sauti",
-      "loudnormSub": "Sehemu tulivu huinuliwa, sehemu zenye sauti kubwa hurekebishwa — sauti inayosikika vizuri"
+      "loudnormSub": "Sehemu tulivu huinuliwa, sehemu zenye sauti kubwa hurekebishwa — sauti inayosikika vizuri",
+      "recordingEmptyTitle": "Rekodi haijapakiwa bado",
+      "recordingEmptySub": "sauti au video kutoka kwenye Ghala"
     },
     "lines": {
       "count_one": "{{count}} mstari · ~{{sec}} sekunde",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Badilisha",
       "seriesAdd": "Ongeza video kwenye mfululizo — klipu moja kwa kila video",
       "seriesBilling": "Avatar hutozwa mara moja kwa mfululizo mzima.",
-      "voiceoverBase": "Katika hali hii, video ndiyo msingi wa fremu: sauti na manukuu huwekwa juu."
+      "voiceoverBase": "Katika hali hii, video ndiyo msingi wa fremu: sauti na manukuu huwekwa juu.",
+      "emptyTitle": "Video bado haijapakiwa",
+      "emptySub": "chagua kutoka kwenye Ghala"
     },
     "subtitles": {
       "title": "Manukuu",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Inacheza kwa muda gani",
       "playFull": "Video nzima",
       "playFirst": "Sekunde N za kwanza",
-      "durationHint": "sekunde chache tangu mwanzo, kisha kufifia laini"
+      "durationHint": "sekunde chache tangu mwanzo, kisha kufifia laini",
+      "emptyTitle": "Muziki bado haujachaguliwa",
+      "emptySub": "hucheza kimya kimya chini ya sauti"
     },
     "format": {
       "label": "Muundo",
@@ -1416,7 +1423,10 @@
       "heading": "Bamba za utangulizi na nje — hiari",
       "introEmpty": "Utangulizi — hakuna",
       "outroEmpty": "Outro — hakuna",
-      "hint": "Video iliyotengenezwa tayari kutoka kwenye Ghala imeambatishwa kama ilivyo, hakuna usindikaji: utangulizi wa nembo (sekunde 2–10), utangulizi wa \"jiandikishe\"."
+      "hint": "Video iliyotengenezwa tayari kutoka kwenye Ghala imeambatishwa kama ilivyo, hakuna usindikaji: utangulizi wa nembo (sekunde 2–10), utangulizi wa \"jiandikishe\".",
+      "introTitle": "Utangulizi",
+      "outroTitle": "Outro",
+      "addSub": "ongeza video"
     },
     "layer": {
       "title": "Safu ya juu",
@@ -1425,7 +1435,8 @@
       "hint": "PNG yenye ukubwa wa fremu: nembo popote, fremu, maelezo mafupi. Inakaa juu ya video nzima; manukuu hubaki juu ya safu.",
       "progressTitle": "Upau wa maendeleo",
       "progressSub": "kipande chembamba cha kipima muda juu — watazamaji wanaona video ni fupi na waitazame hadi mwisho",
-      "pngOnly": "Safu lazima iwe PNG au WebP inayoonekana wazi — faili isiyoonekana wazi ingefunika fremu nzima."
+      "pngOnly": "Safu lazima iwe PNG au WebP inayoonekana wazi — faili isiyoonekana wazi ingefunika fremu nzima.",
+      "emptySub": "PNG inayoonekana wazi"
     },
     "brand": {
       "button": "Kifaa cha chapa",

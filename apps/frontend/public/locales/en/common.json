@@ -1208,7 +1208,8 @@
       "extKeepOpen": "Keep the HeyGen studio tab open with an active subscription.",
       "apiNote": "Via the HeyGen API — key in Settings → Generation, pay-as-you-go billing (~$3/min Avatar IV).",
       "delTitle": "Remove avatar?",
-      "delMessage": "'{{name}}' will be removed from your avatar collection. The original file stays in the Gallery."
+      "delMessage": "'{{name}}' will be removed from your avatar collection. The original file stays in the Gallery.",
+      "photoEmptyTitle": "Photo not uploaded yet"
     },
     "voice": {
       "title": "Voice & script",
@@ -1237,7 +1238,9 @@
       "langsHintSolo": "A series: a separate clip in each of {{count}} languages. With an avatar, HeyGen renders the face for every language — pricier.",
       "diarizeHintVoiceover": "The audio goes over the video as is. “Transcribe speech” is optional: needed for subtitles and per-line inserts.",
       "loudnormTitle": "Even out voice volume",
-      "loudnormSub": "quiet parts get lifted, loud parts smoothed — pro-sounding audio"
+      "loudnormSub": "quiet parts get lifted, loud parts smoothed — pro-sounding audio",
+      "recordingEmptyTitle": "Recording not uploaded yet",
+      "recordingEmptySub": "audio or video from the Gallery"
     },
     "lines": {
       "count_one": "{{count}} line · ~{{sec}} sec",
@@ -1273,7 +1276,9 @@
       "seriesChange": "Change",
       "seriesAdd": "Add videos to the series — one clip per video",
       "seriesBilling": "The avatar is billed once for the whole series.",
-      "voiceoverBase": "In this mode the video is the base of the frame: voice and subtitles go on top."
+      "voiceoverBase": "In this mode the video is the base of the frame: voice and subtitles go on top.",
+      "emptyTitle": "Video not uploaded yet",
+      "emptySub": "pick from Gallery"
     },
     "subtitles": {
       "title": "Subtitles",
@@ -1299,7 +1304,9 @@
       "durationLabel": "How long it plays",
       "playFull": "Whole video",
       "playFirst": "First N seconds",
-      "durationHint": "seconds from the start, then a smooth fade-out"
+      "durationHint": "seconds from the start, then a smooth fade-out",
+      "emptyTitle": "Music not chosen yet",
+      "emptySub": "plays quietly under the voice"
     },
     "format": {
       "label": "Format",
@@ -1408,7 +1415,10 @@
       "heading": "Intro and outro bumpers — optional",
       "introEmpty": "Intro — none",
       "outroEmpty": "Outro — none",
-      "hint": "A ready-made video from the Gallery is attached as is, no processing: a logo intro (2–10 sec), a “subscribe” outro."
+      "hint": "A ready-made video from the Gallery is attached as is, no processing: a logo intro (2–10 sec), a “subscribe” outro.",
+      "introTitle": "Intro",
+      "outroTitle": "Outro",
+      "addSub": "add a video"
     },
     "layer": {
       "title": "Top layer",
@@ -1417,7 +1427,8 @@
       "hint": "A PNG sized for the frame: a logo anywhere, a frame, a caption. Sits over the whole video; subtitles stay above the layer.",
       "progressTitle": "Progress bar",
       "progressSub": "a thin timer strip at the top — viewers see the video is short and watch to the end",
-      "pngOnly": "The layer must be a transparent PNG or WebP — a file without transparency would cover the whole frame."
+      "pngOnly": "The layer must be a transparent PNG or WebP — a file without transparency would cover the whole frame.",
+      "emptySub": "transparent PNG"
     },
     "brand": {
       "button": "Brand kit",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Jaga tab studio HeyGen tetep dibuka ku langganan anu aktip.",
       "apiNote": "Ngaliwatan HeyGen API — asupkeun Setélan → Ngahasilkeun, mayar tagihan sakumaha anu dianggo (~$3/mnt Avatar IV).",
       "delTitle": "Hapus avatarna?",
-      "delMessage": "'{{name}}' bakal dihapus tina koleksi avatar anjeun. File aslina tetep aya di Galeri."
+      "delMessage": "'{{name}}' bakal dihapus tina koleksi avatar anjeun. File aslina tetep aya di Galeri.",
+      "photoEmptyTitle": "Poto teu acan diunggah"
     },
     "voice": {
       "title": "Sora & naskah",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Séri: klip anu misah dina unggal basa {{count}}. Ku avatar, HeyGen ngarender raray pikeun unggal basa — langkung mahal.",
       "diarizeHintVoiceover": "Audiona ngalirkeun pidéo sapertos kitu. \"Transkrip ucapan\" mah opsional: diperyogikeun pikeun subjudul sareng sisipan per baris.",
       "loudnormTitle": "Ngaratakeun volume sora",
-      "loudnormSub": "bagian anu sepi diangkat, bagian anu tarik diratakeun — audio anu sorana alus"
+      "loudnormSub": "bagian anu sepi diangkat, bagian anu tarik diratakeun — audio anu sorana alus",
+      "recordingEmptyTitle": "Rekaman teu acan diunggah",
+      "recordingEmptySub": "audio atanapi pidéo tina Galeri"
     },
     "lines": {
       "count_one": "{{count}} baris · ~{{sec}} detik",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Robah",
       "seriesAdd": "Tambahkeun pidéo kana séri — hiji klip per pidéo",
       "seriesBilling": "Avatar éta ditagihkeun sakali pikeun sakabéh séri.",
-      "voiceoverBase": "Dina modeu ieu, pidéo mangrupikeun dasar pigura: sora sareng subtitle aya di luhur."
+      "voiceoverBase": "Dina modeu ieu, pidéo mangrupikeun dasar pigura: sora sareng subtitle aya di luhur.",
+      "emptyTitle": "Videona tacan diunggah",
+      "emptySub": "pilih ti Galeri"
     },
     "subtitles": {
       "title": "Subjudul",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Sabaraha lami éta diputer",
       "playFull": "Sakabéh pidéo",
       "playFirst": "N detik kahiji",
-      "durationHint": "sababaraha detik ti mimiti, teras fadeout anu mulus"
+      "durationHint": "sababaraha detik ti mimiti, teras fadeout anu mulus",
+      "emptyTitle": "Musikna tacan dipilih",
+      "emptySub": "maén lalaunan handapeun sora"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bumper intro sareng outro — opsional",
       "introEmpty": "Bubuka — teu aya",
       "outroEmpty": "Outro — euweuh",
-      "hint": "Pidéo anu tos siap ti Galeri dilampirkeun sapertos kitu, teu kedah diolah: bubuka logo (2–10 detik), outro \"langganan\"."
+      "hint": "Pidéo anu tos siap ti Galeri dilampirkeun sapertos kitu, teu kedah diolah: bubuka logo (2–10 detik), outro \"langganan\".",
+      "introTitle": "Bubuka",
+      "outroTitle": "Outro",
+      "addSub": "tambahkeun pidéo"
     },
     "layer": {
       "title": "Lapisan luhur",
@@ -1425,7 +1435,8 @@
       "hint": "Ukuran PNG pikeun pigura: logo di mana waé, pigura, caption. Nempel dina sakabéh pidéo; subtitle tetep di luhur lapisan.",
       "progressTitle": "Bilah kamajuan",
       "progressSub": "pita timer ipis di luhur — pamiarsa ningali pidéo pondok sareng nonton dugi ka réngsé",
-      "pngOnly": "Lapisanna kedah PNG atanapi WebP transparan — file tanpa transparansi bakal nutupan sakumna pigura."
+      "pngOnly": "Lapisanna kedah PNG atanapi WebP transparan — file tanpa transparansi bakal nutupan sakumna pigura.",
+      "emptySub": "PNG transparan"
     },
     "brand": {
       "button": "Pakét mérek",

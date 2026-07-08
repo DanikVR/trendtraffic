@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantén abierta la pestaña del estudio HeyGen con una suscripción activa.",
       "apiNote": "Mediante la API de HeyGen: introduzca la clave en Ajustes → Generación, facturación de pago por uso (~3 $/min Avatar IV).",
       "delTitle": "¿Eliminar avatar?",
-      "delMessage": "'{{name}}' se eliminará de tu colección de avatares. El archivo original permanecerá en la Galería."
+      "delMessage": "'{{name}}' se eliminará de tu colección de avatares. El archivo original permanecerá en la Galería.",
+      "photoEmptyTitle": "La foto aún no se ha subido."
     },
     "voice": {
       "title": "Voz y guion",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Una serie: un clip independiente en cada uno de los idiomas de {{count}}. Con un avatar, HeyGen genera el rostro para cada idioma, lo que resulta más caro.",
       "diarizeHintVoiceover": "El audio se reproduce sobre el vídeo tal cual. La opción \"Transcribir voz\" es opcional: necesaria para subtítulos e inserciones por línea.",
       "loudnormTitle": "Igualar el volumen de la voz",
-      "loudnormSub": "Las partes silenciosas se realzan, las partes fuertes se suavizan: un sonido profesional."
+      "loudnormSub": "Las partes silenciosas se realzan, las partes fuertes se suavizan: un sonido profesional.",
+      "recordingEmptyTitle": "La grabación aún no se ha subido.",
+      "recordingEmptySub": "audio o video de la galería"
     },
     "lines": {
       "count_one": "Línea {{count}} · ~{{sec}} seg",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Cambiar",
       "seriesAdd": "Agrega videos a la serie: un clip por video.",
       "seriesBilling": "El avatar se factura una sola vez por toda la serie.",
-      "voiceoverBase": "En este modo, el vídeo es la base del encuadre: la voz y los subtítulos se colocan encima."
+      "voiceoverBase": "En este modo, el vídeo es la base del encuadre: la voz y los subtítulos se colocan encima.",
+      "emptyTitle": "El vídeo aún no se ha subido.",
+      "emptySub": "Seleccione de la galería"
     },
     "subtitles": {
       "title": "Subtítulos",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Cuánto tiempo dura",
       "playFull": "Vídeo completo",
       "playFirst": "Primeros N segundos",
-      "durationHint": "segundos desde el principio, luego un suave desvanecimiento"
+      "durationHint": "segundos desde el principio, luego un suave desvanecimiento",
+      "emptyTitle": "Música aún no elegida",
+      "emptySub": "suena suavemente bajo la voz"
     },
     "format": {
       "label": "Formato",
@@ -1416,7 +1423,10 @@
       "heading": "Cortinillas de introducción y cierre (opcional)",
       "introEmpty": "Introducción — ninguna",
       "outroEmpty": "Outro — ninguno",
-      "hint": "Se adjunta un vídeo ya preparado de la galería, sin ningún tipo de procesamiento: una introducción con el logotipo (de 2 a 10 segundos) y una despedida con la palabra \"suscríbete\"."
+      "hint": "Se adjunta un vídeo ya preparado de la galería, sin ningún tipo de procesamiento: una introducción con el logotipo (de 2 a 10 segundos) y una despedida con la palabra \"suscríbete\".",
+      "introTitle": "Introducción",
+      "outroTitle": "Outro",
+      "addSub": "agregar un video"
     },
     "layer": {
       "title": "Capa superior",
@@ -1425,7 +1435,8 @@
       "hint": "Un archivo PNG del tamaño adecuado para el fotograma: un logotipo en cualquier parte, un marco, un pie de foto. Se superpone a todo el vídeo; los subtítulos permanecen encima de la capa.",
       "progressTitle": "barra de progreso",
       "progressSub": "una delgada franja de temporizador en la parte superior: los espectadores ven que el video es corto y lo ven hasta el final.",
-      "pngOnly": "La capa debe ser un archivo PNG o WebP transparente; un archivo sin transparencia cubriría todo el fotograma."
+      "pngOnly": "La capa debe ser un archivo PNG o WebP transparente; un archivo sin transparencia cubriría todo el fotograma.",
+      "emptySub": "PNG transparente"
     },
     "brand": {
       "button": "Kit de marca",

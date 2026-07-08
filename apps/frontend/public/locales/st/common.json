@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Boloka tab ea studio ea HeyGen e butsoe ka peeletso e sebetsang.",
       "apiNote": "Ka HeyGen API — tobetsa ho Litlhophiso → Ho hlahisa, ho lefa ha o ntse o tsoela pele (~$3/min Avatar IV).",
       "delTitle": "Tlosa setšoantšo?",
-      "delMessage": "'{{name}}' e tla tlosoa pokellong ea hau ea setšoantšo. Faele ea pele e lula ho Gallery."
+      "delMessage": "'{{name}}' e tla tlosoa pokellong ea hau ea setšoantšo. Faele ea pele e lula ho Gallery.",
+      "photoEmptyTitle": "Foto ha e so kenngoe"
     },
     "voice": {
       "title": "Lentsoe le sengoloa",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Letoto: sekotwana se arohaneng puong ka 'ngoe ea {{count}}. Ka avatar, HeyGen e etsa hore sefahleho sa puo e 'ngoe le e 'ngoe se be theko e boima.",
       "diarizeHintVoiceover": "Molumo o fetisa video ka tsela eo e leng ka yona. “Ngola puo” ke boikgethelo: e a hlokahala bakeng sa dingolwa tse ka tlase le dingolwa tse kentsweng ka mola.",
       "loudnormTitle": "Tekanyo ea molumo oa lentsoe",
-      "loudnormSub": "likarolo tse khutsitseng lia phahamisoa, likarolo tse lerata lia lokisoa — molumo o nang le molumo o matla"
+      "loudnormSub": "likarolo tse khutsitseng lia phahamisoa, likarolo tse lerata lia lokisoa — molumo o nang le molumo o matla",
+      "recordingEmptyTitle": "Ho rekota ha ho so kenngoe",
+      "recordingEmptySub": "molumo kapa video ho tsoa Gallery"
     },
     "lines": {
       "count_one": "{{count}} mola · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Phetoho",
       "seriesAdd": "Kenya livideo letotong — sekotwana se le seng ka video",
       "seriesBilling": "Avatar e lefisoa hanngoe bakeng sa letoto lohle.",
-      "voiceoverBase": "Mokgweng ona video ke motheo wa foreimi: lentswe le di-subtitle di ya hodimo."
+      "voiceoverBase": "Mokgweng ona video ke motheo wa foreimi: lentswe le di-subtitle di ya hodimo.",
+      "emptyTitle": "Video ha e so kenngoe",
+      "emptySub": "khetha ho tsoa ho Gallery"
     },
     "subtitles": {
       "title": "Lihlooho tse ka tlase",
@@ -1307,7 +1312,9 @@
       "durationLabel": "E bapala nako e kae",
       "playFull": "Video eohle",
       "playFirst": "Metsotsoana ea pele ea N",
-      "durationHint": "metsotsoana ho tloha qalong, ebe ho fela ha khanya e boreleli"
+      "durationHint": "metsotsoana ho tloha qalong, ebe ho fela ha khanya e boreleli",
+      "emptyTitle": "'Mino ha o so khethoe",
+      "emptySub": "e bapala ka khutso tlas'a lentsoe"
     },
     "format": {
       "label": "Sebopeho",
@@ -1416,7 +1423,10 @@
       "heading": "Libampa tsa selelekela le tsa kantle — boikhethelo",
       "introEmpty": "Selelekela — ha ho letho",
       "outroEmpty": "Kantle ho tsohle — ha ho letho",
-      "hint": "Video e seng e lokisitsoe ho tsoa Gallery e hoketsoe joalo ka ha e le joalo, ha ho na ts'ebetso: selelekela sa logo (metsotsoana e 2-10), tlhahiso ea \"ngoliso\"."
+      "hint": "Video e seng e lokisitsoe ho tsoa Gallery e hoketsoe joalo ka ha e le joalo, ha ho na ts'ebetso: selelekela sa logo (metsotsoana e 2-10), tlhahiso ea \"ngoliso\".",
+      "introTitle": "Selelekela",
+      "outroTitle": "Selelekela",
+      "addSub": "eketsa video"
     },
     "layer": {
       "title": "Lera le ka holimo",
@@ -1425,7 +1435,8 @@
       "hint": "PNG e boholo ba foreimi: letshwao kae kapa kae, foreimi, tlhaloso. E dula hodima video yohle; dingolwa tse ka tlase di dula ka hodima lera.",
       "progressTitle": "Sebaka sa tsoelo-pele",
       "progressSub": "karolo e tšesaane ea nako holimo — bashebelli ba bona video e le khutšoanyane 'me ba e shebella ho fihlela qetellong",
-      "pngOnly": "Lera le lokela ho ba PNG e bonaletsang kapa WebP — faele e se nang bonaletsang e tla koahela foreimi eohle."
+      "pngOnly": "Lera le lokela ho ba PNG e bonaletsang kapa WebP — faele e se nang bonaletsang e tla koahela foreimi eohle.",
+      "emptySub": "PNG e bonaletsang"
     },
     "brand": {
       "button": "Sete ea lebitso la khoebo",

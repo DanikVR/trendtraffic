@@ -1216,7 +1216,8 @@
       "extKeepOpen": "保持 HeyGen 工作室标签页打开，并确保订阅有效。",
       "apiNote": "通过 HeyGen API — 在设置 → 世代中输入，按需付费计费（每分钟 Avatar IV 约 3 美元）。",
       "delTitle": "移除头像？",
-      "delMessage": "“{{name}}”将从您的头像收藏中移除。原始文件将保留在图库中。"
+      "delMessage": "“{{name}}”将从您的头像收藏中移除。原始文件将保留在图库中。",
+      "photoEmptyTitle": "照片尚未上传"
     },
     "voice": {
       "title": "配音和剧本",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "系列视频：每个语言（共{{count}}种语言）都配有一个单独的视频片段。如果使用头像，HeyGen 会为每种语言渲染面部——价格更高。",
       "diarizeHintVoiceover": "音频将直接叠加在视频上。“转录语音”是可选的：字幕和逐行插入字幕时需要启用此功能。",
       "loudnormTitle": "音量均匀",
-      "loudnormSub": "安静的部分被提升，嘈杂的部分被柔化——专业级音质"
+      "loudnormSub": "安静的部分被提升，嘈杂的部分被柔化——专业级音质",
+      "recordingEmptyTitle": "录像尚未上传",
+      "recordingEmptySub": "来自画廊的音频或视频"
     },
     "lines": {
       "count_one": "{{count}} 线 · ~{{sec}} 秒",
@@ -1281,7 +1284,9 @@
       "seriesChange": "改变",
       "seriesAdd": "向系列中添加视频——每个视频添加一个片段",
       "seriesBilling": "该角色在整个系列中只收取一次费用。",
-      "voiceoverBase": "在这种模式下，视频是画面的基础：声音和字幕位于其上。"
+      "voiceoverBase": "在这种模式下，视频是画面的基础：声音和字幕位于其上。",
+      "emptyTitle": "视频尚未上传",
+      "emptySub": "从图库中选择"
     },
     "subtitles": {
       "title": "字幕",
@@ -1307,7 +1312,9 @@
       "durationLabel": "播放时长",
       "playFull": "完整视频",
       "playFirst": "前 N 秒",
-      "durationHint": "开始几秒钟后，画面平滑淡出。"
+      "durationHint": "开始几秒钟后，画面平滑淡出。",
+      "emptyTitle": "音乐尚未选定",
+      "emptySub": "在人声的轻柔伴奏下播放。"
     },
     "format": {
       "label": "格式",
@@ -1416,7 +1423,10 @@
       "heading": "片头片尾动画——可选",
       "introEmpty": "简介——无",
       "outroEmpty": "结尾——无",
-      "hint": "画廊提供的现成视频已附上，未经任何处理：一个徽标片头（2-10 秒），一个“订阅”片尾。"
+      "hint": "画廊提供的现成视频已附上，未经任何处理：一个徽标片头（2-10 秒），一个“订阅”片尾。",
+      "introTitle": "引言",
+      "outroTitle": "结尾",
+      "addSub": "添加视频"
     },
     "layer": {
       "title": "顶层",
@@ -1425,7 +1435,8 @@
       "hint": "一个尺寸适合视频边框的 PNG 图片：可以是任意位置的 logo、边框或标题。它会覆盖整个视频；字幕会显示在图层上方。",
       "progressTitle": "进度条",
       "progressSub": "顶部有一条细长的倒计时条——观众看到视频很短，就会一直看到最后。",
-      "pngOnly": "该图层必须是透明的 PNG 或 WebP 格式——不透明的文件会覆盖整个画面。"
+      "pngOnly": "该图层必须是透明的 PNG 或 WebP 格式——不透明的文件会覆盖整个画面。",
+      "emptySub": "透明PNG"
     },
     "brand": {
       "button": "品牌套装",

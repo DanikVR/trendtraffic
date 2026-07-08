@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Haltu HeyGen vinnustofuflipanum opnum með virkri áskrift.",
       "apiNote": "Í gegnum HeyGen API — farið inn í Stillingar → Kynslóð, greiðslur eftir notkun (~$3/mín. Avatar IV).",
       "delTitle": "Fjarlægja prófílmynd?",
-      "delMessage": "'{{name}}' verður fjarlægt úr prófílmyndasafninu þínu. Upprunalega skráin verður áfram í myndasafninu."
+      "delMessage": "'{{name}}' verður fjarlægt úr prófílmyndasafninu þínu. Upprunalega skráin verður áfram í myndasafninu.",
+      "photoEmptyTitle": "Mynd ekki hlaðið upp ennþá"
     },
     "voice": {
       "title": "Rödd og handrit",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Sería: sérstakt myndskeið á hverju {{count}} tungumáli. Með prófílmynd birtir HeyGen andlitið fyrir hvert tungumál — dýrara.",
       "diarizeHintVoiceover": "Hljóðið fer yfir myndbandið eins og það er. „Umrita tal“ er valfrjálst: nauðsynlegt fyrir texta og innskot í hverri línu.",
       "loudnormTitle": "Jafna út raddstyrk",
-      "loudnormSub": "Rólegir hlutar lyftast upp, háværir hlutar mýkjast — hljóð sem hljómar fagmannlega"
+      "loudnormSub": "Rólegir hlutar lyftast upp, háværir hlutar mýkjast — hljóð sem hljómar fagmannlega",
+      "recordingEmptyTitle": "Upptaka ekki hlaðið upp ennþá",
+      "recordingEmptySub": "hljóð eða myndband úr myndasafninu"
     },
     "lines": {
       "count_one": "{{count}} lína · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Breyting",
       "seriesAdd": "Bæta við myndböndum í seríuna — eitt klipp fyrir hvert myndband",
       "seriesBilling": "Avatarinn er rukkaður einu sinni fyrir alla seríuna.",
-      "voiceoverBase": "Í þessum ham er myndbandið grunnur rammans: rödd og textar fara ofan á."
+      "voiceoverBase": "Í þessum ham er myndbandið grunnur rammans: rödd og textar fara ofan á.",
+      "emptyTitle": "Myndbandið hefur ekki enn verið hlaðið upp",
+      "emptySub": "velja úr myndasafni"
     },
     "subtitles": {
       "title": "Textar",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hversu lengi það spilar",
       "playFull": "Allt myndbandið",
       "playFirst": "Fyrstu N sekúndurnar",
-      "durationHint": "sekúndum frá upphafi, síðan mjúk útdráttur"
+      "durationHint": "sekúndum frá upphafi, síðan mjúk útdráttur",
+      "emptyTitle": "Tónlist ekki valin ennþá",
+      "emptySub": "leikur hljóðlega undir röddinni"
     },
     "format": {
       "label": "Snið",
@@ -1416,7 +1423,10 @@
       "heading": "Inngangs- og útgangsbumperar — valfrjálst",
       "introEmpty": "Inngangur — enginn",
       "outroEmpty": "Útgangur — enginn",
-      "hint": "Tilbúið myndband úr myndasafninu fylgir eins og það er, án vinnslu: kynning á merkinu (2–10 sekúndur), lokakafli fyrir „áskrift“."
+      "hint": "Tilbúið myndband úr myndasafninu fylgir eins og það er, án vinnslu: kynning á merkinu (2–10 sekúndur), lokakafli fyrir „áskrift“.",
+      "introTitle": "Inngangur",
+      "outroTitle": "Útgangur",
+      "addSub": "bæta við myndbandi"
     },
     "layer": {
       "title": "Efsta lagið",
@@ -1425,7 +1435,8 @@
       "hint": "PNG-mynd í rammastærð: lógó hvar sem er, rammi, myndatexti. Setst yfir allt myndbandið; textarnir eru fyrir ofan lagið.",
       "progressTitle": "Framvindustika",
       "progressSub": "Þunn tímamælirönd efst — áhorfendur sjá að myndbandið er stutt og horfa til enda",
-      "pngOnly": "Lagið verður að vera gegnsætt PNG eða WebP — skrá án gegnsæis myndi þekja allan rammann."
+      "pngOnly": "Lagið verður að vera gegnsætt PNG eða WebP — skrá án gegnsæis myndi þekja allan rammann.",
+      "emptySub": "gegnsætt PNG"
     },
     "brand": {
       "button": "Vörumerkjasett",

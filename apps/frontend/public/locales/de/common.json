@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Halten Sie den HeyGen Studio-Tab bei einem aktiven Abonnement geöffnet.",
       "apiNote": "Über die HeyGen API — Schlüssel in Einstellungen → Generierung, Abrechnung nach Verbrauch (~3 $/min Avatar IV).",
       "delTitle": "Avatar entfernen?",
-      "delMessage": "„{{name}}“ wird aus Ihrer Avatar-Sammlung entfernt. Die Originaldatei bleibt in der Galerie erhalten."
+      "delMessage": "„{{name}}“ wird aus Ihrer Avatar-Sammlung entfernt. Die Originaldatei bleibt in der Galerie erhalten.",
+      "photoEmptyTitle": "Foto noch nicht hochgeladen"
     },
     "voice": {
       "title": "Stimme & Skript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Eine Serie: ein separater Clip in jeder der {{count}} Sprachen. Mit einem Avatar rendert HeyGen das Gesicht für jede Sprache – teurer.",
       "diarizeHintVoiceover": "Der Ton wird unverändert über das Video gelegt. Die Option „Sprache transkribieren“ ist optional und wird für Untertitel und zeilenweise Einblendungen benötigt.",
       "loudnormTitle": "Gleichmäßige Lautstärke",
-      "loudnormSub": "Leise Passagen werden angehoben, laute Passagen geglättet – für professionell klingenden Ton."
+      "loudnormSub": "Leise Passagen werden angehoben, laute Passagen geglättet – für professionell klingenden Ton.",
+      "recordingEmptyTitle": "Aufnahme noch nicht hochgeladen",
+      "recordingEmptySub": "Audio oder Video aus der Galerie"
     },
     "lines": {
       "count_one": "{{count}} Zeile · ~{{sec}} Sekunde",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Ändern",
       "seriesAdd": "Füge der Serie Videos hinzu – ein Clip pro Video",
       "seriesBilling": "Der Avatar wird nur einmal für die gesamte Serie abgerechnet.",
-      "voiceoverBase": "In diesem Modus bildet das Video die Basis des Bildes: Ton und Untertitel werden darübergelegt."
+      "voiceoverBase": "In diesem Modus bildet das Video die Basis des Bildes: Ton und Untertitel werden darübergelegt.",
+      "emptyTitle": "Video noch nicht hochgeladen",
+      "emptySub": "Aus der Galerie auswählen"
     },
     "subtitles": {
       "title": "Untertitel",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Wie lange es spielt",
       "playFull": "Das gesamte Video",
       "playFirst": "Die ersten N Sekunden",
-      "durationHint": "Sekunden nach Beginn, dann ein sanftes Ausblenden"
+      "durationHint": "Sekunden nach Beginn, dann ein sanftes Ausblenden",
+      "emptyTitle": "Die Musik wurde noch nicht ausgewählt.",
+      "emptySub": "spielt leise unter der Stimme"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- und Outro-Jumper – optional",
       "introEmpty": "Einleitung — keine",
       "outroEmpty": "Abspann — keiner",
-      "hint": "Ein fertiges Video aus der Galerie ist unverändert beigefügt: ein Logo-Intro (2–10 Sek.), ein „Abonnieren“-Outro."
+      "hint": "Ein fertiges Video aus der Galerie ist unverändert beigefügt: ein Logo-Intro (2–10 Sek.), ein „Abonnieren“-Outro.",
+      "introTitle": "Einleitung",
+      "outroTitle": "Abspann",
+      "addSub": "Video hinzufügen"
     },
     "layer": {
       "title": "Oberschicht",
@@ -1425,7 +1435,8 @@
       "hint": "Eine PNG-Datei in der passenden Größe für den Frame: ein Logo an beliebiger Stelle, ein Rahmen, eine Bildunterschrift. Sie liegt über dem gesamten Video; Untertitel bleiben über der Ebene.",
       "progressTitle": "Fortschrittsanzeige",
       "progressSub": "Ein schmaler Zeitstreifen am oberen Rand signalisiert den Zuschauern, dass das Video kurz ist und sie bis zum Ende ansehen.",
-      "pngOnly": "Die Ebene muss eine transparente PNG- oder WebP-Datei sein – eine Datei ohne Transparenz würde den gesamten Rahmen verdecken."
+      "pngOnly": "Die Ebene muss eine transparente PNG- oder WebP-Datei sein – eine Datei ohne Transparenz würde den gesamten Rahmen verdecken.",
+      "emptySub": "transparentes PNG"
     },
     "brand": {
       "button": "Marken-Set",

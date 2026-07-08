@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Chengeta tabu yeHeyGen studio yakavhurika nekunyorera kuri kushanda.",
       "apiNote": "Kuburikidza neHeyGen API — tinya muZvirongwa → Kugadzira, kubhadhara-se-u-go (~$3/min Avatar IV).",
       "delTitle": "Bvisa mufananidzo here?",
-      "delMessage": "'{{name}}' ichabviswa kubva muunganidzwa weavatar yako. Faira rekutanga rinogara muGallery."
+      "delMessage": "'{{name}}' ichabviswa kubva muunganidzwa weavatar yako. Faira rekutanga rinogara muGallery.",
+      "photoEmptyTitle": "Mufananidzo hausati waiswa"
     },
     "voice": {
       "title": "Izwi & chinyorwa",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Nhevedzano: clip yakasiyana mumutauro wega wega we {{count}}. Neavatar, HeyGen inoita kuti chiso chemutauro wega wega chive chakakodzera - mutengo wakanyanya.",
       "diarizeHintVoiceover": "Odhiyo inodzokorora vhidhiyo sezvairi. \"Kunyora hurukuro\" hazvidiwi: inodiwa pakunyora zvinyorwa pasi pechinyorwa uye pakuisa mutsetse wega wega.",
       "loudnormTitle": "Enzanisa vhoriyamu yezwi",
-      "loudnormSub": "zvikamu zvakanyarara zvinosimudzwa, zvikamu zvine ruzha zvinogadziriswa — ruzha rwepro-sounding"
+      "loudnormSub": "zvikamu zvakanyarara zvinosimudzwa, zvikamu zvine ruzha zvinogadziriswa — ruzha rwepro-sounding",
+      "recordingEmptyTitle": "Kurekodha hakusati kwaiswa",
+      "recordingEmptySub": "odhiyo kana vhidhiyo kubva kuGallery"
     },
     "lines": {
       "count_one": "{{count}} mutsetse · ~{{sec}} sekondi",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Chinja",
       "seriesAdd": "Wedzera mavhidhiyo kune akatevedzana — chikamu chimwe chete pavhidhiyo imwe neimwe",
       "seriesBilling": "Avatar inobhadhariswa kamwe chete panhevedzano yese.",
-      "voiceoverBase": "Mumuitiro uyu vhidhiyo ndiyo hwaro hwefuremu: izwi nezvinyorwa zvinoiswa pamusoro."
+      "voiceoverBase": "Mumuitiro uyu vhidhiyo ndiyo hwaro hwefuremu: izwi nezvinyorwa zvinoiswa pamusoro.",
+      "emptyTitle": "Vhidhiyo haisati yaiswa",
+      "emptySub": "sarudza kubva kuGallery"
     },
     "subtitles": {
       "title": "Manyoro enyaya",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Inotamba kwenguva yakareba sei",
       "playFull": "Vhidhiyo yese",
       "playFirst": "Masekondi ekutanga N",
-      "durationHint": "masekonzi kubva pakutanga, wozobva wapera zvakanaka"
+      "durationHint": "masekonzi kubva pakutanga, wozobva wapera zvakanaka",
+      "emptyTitle": "Mimhanzi haisati yasarudzwa",
+      "emptySub": "inotamba chinyararire pasi pezwi"
     },
     "format": {
       "label": "Rudzi",
@@ -1416,7 +1423,10 @@
       "heading": "Mabhampa ekutanga nekunze — sarudzo",
       "introEmpty": "Nhanganyaya — hapana",
       "outroEmpty": "Kunze - hapana",
-      "hint": "Vhidhiyo yakagadzirwa kubva kuGallery yakabatanidzwa sezvairi, pasina kugadziriswa: sumo yelogo (2–10 sec), \"subscribe\" outro."
+      "hint": "Vhidhiyo yakagadzirwa kubva kuGallery yakabatanidzwa sezvairi, pasina kugadziriswa: sumo yelogo (2–10 sec), \"subscribe\" outro.",
+      "introTitle": "Sumo",
+      "outroTitle": "Outro",
+      "addSub": "wedzera vhidhiyo"
     },
     "layer": {
       "title": "Rutivi rwepamusoro",
@@ -1425,7 +1435,8 @@
       "hint": "PNG saizi yefuremu: logo chero kupi, furemu, chinyorwa. Chinogara pamusoro pevhidhiyo yese; zvinyorwa zvidiki zvinogara pamusoro pechikamu.",
       "progressTitle": "Bhawa rekufambira mberi",
       "progressSub": "chikamu chidiki chenguva chiri pamusoro — vaoni vanoona vhidhiyo yacho ipfupi uye tarisai kusvika kumagumo",
-      "pngOnly": "Chinyorwa ichi chinofanira kunge chiri chePNG kana WebP inoonekera — faira risina kuonekera rinofukidza furemu yese."
+      "pngOnly": "Chinyorwa ichi chinofanira kunge chiri chePNG kana WebP inoonekera — faira risina kuonekera rinofukidza furemu yese.",
+      "emptySub": "PNG yakajeka"
     },
     "brand": {
       "button": "Kiti yemhando yepamusoro",

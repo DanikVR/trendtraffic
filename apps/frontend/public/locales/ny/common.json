@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Sungani tabu ya HeyGen studio yotseguka ndi kulembetsa kogwira ntchito.",
       "apiNote": "Kudzera mu HeyGen API — dinani mu Zikhazikiko → Kupanga, kulipira-monga-mukupitilira (~$3/mphindi Avatar IV).",
       "delTitle": "Chotsani chithunzi?",
-      "delMessage": "'{{name}}' idzachotsedwa muzithunzi zanu. Fayilo yoyambirira idzakhalabe mu Gallery."
+      "delMessage": "'{{name}}' idzachotsedwa muzithunzi zanu. Fayilo yoyambirira idzakhalabe mu Gallery.",
+      "photoEmptyTitle": "Chithunzi sichinakwezedwebe"
     },
     "voice": {
       "title": "Mawu ndi zolemba",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Mndandanda: kanema wosiyana m'chilankhulo chilichonse cha {{count}}. Ndi avatar, HeyGen imapanga nkhope ya chilankhulo chilichonse - yokwera mtengo kwambiri.",
       "diarizeHintVoiceover": "Mawuwo akufotokoza za kanemayo monga momwe alili. “Kulemba mawu” sikofunikira: ndikofunikira pa mawu ang'onoang'ono ndi mawu olembedwa pa mzere uliwonse.",
       "loudnormTitle": "Konzani voliyumu ya mawu",
-      "loudnormSub": "mbali zodekha zimakwezedwa, mbali zokweza zimakonzedwa bwino — mawu omveka bwino"
+      "loudnormSub": "mbali zodekha zimakwezedwa, mbali zokweza zimakonzedwa bwino — mawu omveka bwino",
+      "recordingEmptyTitle": "Kujambula sikunakwezedwebe",
+      "recordingEmptySub": "mawu kapena kanema kuchokera ku Gallery"
     },
     "lines": {
       "count_one": "{{count}} mzere · ~{{sec}} sekondi",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Kusintha",
       "seriesAdd": "Onjezani makanema pamndandanda — chidutswa chimodzi pa kanema aliyense",
       "seriesBilling": "Avatar imalipidwa kamodzi pa mndandanda wonse.",
-      "voiceoverBase": "Mu mawonekedwe awa, kanema ndiye maziko a chimango: mawu ndi mawu ang'onoang'ono amaikidwa pamwamba."
+      "voiceoverBase": "Mu mawonekedwe awa, kanema ndiye maziko a chimango: mawu ndi mawu ang'onoang'ono amaikidwa pamwamba.",
+      "emptyTitle": "Kanema sanakwezedwebe",
+      "emptySub": "sankhani kuchokera ku Gallery"
     },
     "subtitles": {
       "title": "Ma subtitles",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Imasewera nthawi yayitali bwanji",
       "playFull": "Kanema wonse",
       "playFirst": "Masekondi oyamba a N",
-      "durationHint": "masekondi kuyambira pachiyambi, kenako kutha kosalala"
+      "durationHint": "masekondi kuyambira pachiyambi, kenako kutha kosalala",
+      "emptyTitle": "Nyimbo sizinasankhidwebe",
+      "emptySub": "imasewera pang'onopang'ono pansi pa mawu"
     },
     "format": {
       "label": "Mtundu",
@@ -1416,7 +1423,10 @@
       "heading": "Mabampa oyambira ndi akunja — mwakufuna",
       "introEmpty": "Chiyambi — palibe",
       "outroEmpty": "Outro — palibe",
-      "hint": "Kanema wokonzedwa kale kuchokera ku Gallery waphatikizidwa monga momwe ulili, palibe kukonza: chiyambi cha logo (masekondi 2-10), \"kulembetsa\" outro."
+      "hint": "Kanema wokonzedwa kale kuchokera ku Gallery waphatikizidwa monga momwe ulili, palibe kukonza: chiyambi cha logo (masekondi 2-10), \"kulembetsa\" outro.",
+      "introTitle": "Chiyambi",
+      "outroTitle": "Outro",
+      "addSub": "onjezani kanema"
     },
     "layer": {
       "title": "Gawo lapamwamba",
@@ -1425,7 +1435,8 @@
       "hint": "Kukula kwa PNG kwa chimango: chizindikiro kulikonse, chimango, mawu ofotokozera. Chimakhala pamwamba pa kanemayo yonse; mawu omasulira amakhala pamwamba pa wosanjikiza.",
       "progressTitle": "Malo olowera patsogolo",
       "progressSub": "kachidutswa kakang'ono kowerengera nthawi pamwamba — owonera akuwona kuti kanemayo ndi waufupi ndipo ayang'ane mpaka kumapeto",
-      "pngOnly": "Gawoli liyenera kukhala lowonekera bwino la PNG kapena WebP — fayilo yopanda kuwonekera bwino ingaphimbe chimango chonse."
+      "pngOnly": "Gawoli liyenera kukhala lowonekera bwino la PNG kapena WebP — fayilo yopanda kuwonekera bwino ingaphimbe chimango chonse.",
+      "emptySub": "PNG yowonekera"
     },
     "brand": {
       "button": "Zida za kampani",

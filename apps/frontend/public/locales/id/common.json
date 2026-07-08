@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Biarkan tab studio HeyGen tetap terbuka dengan langganan yang aktif.",
       "apiNote": "Melalui API HeyGen — masukkan kunci di Pengaturan → Generasi, pembayaran per penggunaan (~$3/menit Avatar IV).",
       "delTitle": "Hapus avatar?",
-      "delMessage": "'{{name}}' akan dihapus dari koleksi avatar Anda. File aslinya tetap ada di Galeri."
+      "delMessage": "'{{name}}' akan dihapus dari koleksi avatar Anda. File aslinya tetap ada di Galeri.",
+      "photoEmptyTitle": "Foto belum diunggah"
     },
     "voice": {
       "title": "Suara & naskah",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Sebuah seri: klip terpisah dalam masing-masing dari {{count}} bahasa. Dengan avatar, HeyGen menampilkan wajah untuk setiap bahasa — lebih mahal.",
       "diarizeHintVoiceover": "Audio akan ditampilkan di atas video apa adanya. \"Transkripsikan ucapan\" bersifat opsional: diperlukan untuk subtitle dan sisipan per baris.",
       "loudnormTitle": "Menyeimbangkan volume suara",
-      "loudnormSub": "Bagian yang tenang ditingkatkan, bagian yang keras dihaluskan — audio yang terdengar profesional."
+      "loudnormSub": "Bagian yang tenang ditingkatkan, bagian yang keras dihaluskan — audio yang terdengar profesional.",
+      "recordingEmptyTitle": "Rekaman belum diunggah",
+      "recordingEmptySub": "audio atau video dari Galeri"
     },
     "lines": {
       "count_one": "Garis {{count}} · ~{{sec}} detik",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Mengubah",
       "seriesAdd": "Tambahkan video ke dalam seri — satu klip per video.",
       "seriesBilling": "Nama karakter utama hanya tercantum sekali untuk keseluruhan seri.",
-      "voiceoverBase": "Dalam mode ini, video menjadi dasar bingkai: suara dan teks terjemahan ditempatkan di atasnya."
+      "voiceoverBase": "Dalam mode ini, video menjadi dasar bingkai: suara dan teks terjemahan ditempatkan di atasnya.",
+      "emptyTitle": "Video belum diunggah",
+      "emptySub": "pilih dari Galeri"
     },
     "subtitles": {
       "title": "Teks terjemahan",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Berapa lama durasi pemutarannya?",
       "playFull": "Video lengkap",
       "playFirst": "N detik pertama",
-      "durationHint": "beberapa detik setelah dimulai, lalu memudar dengan halus."
+      "durationHint": "beberapa detik setelah dimulai, lalu memudar dengan halus.",
+      "emptyTitle": "Musik belum dipilih",
+      "emptySub": "bermain pelan di bawah suara"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bumper intro dan outro — opsional",
       "introEmpty": "Pendahuluan — tidak ada",
       "outroEmpty": "Penutup — tidak ada",
-      "hint": "Video siap pakai dari Galeri dilampirkan apa adanya, tanpa pengeditan: intro logo (2–10 detik), outro \"berlangganan\"."
+      "hint": "Video siap pakai dari Galeri dilampirkan apa adanya, tanpa pengeditan: intro logo (2–10 detik), outro \"berlangganan\".",
+      "introTitle": "Pendahuluan",
+      "outroTitle": "Penutup",
+      "addSub": "tambahkan video"
     },
     "layer": {
       "title": "Lapisan atas",
@@ -1425,7 +1435,8 @@
       "hint": "Gambar PNG yang ukurannya sesuai dengan bingkai: logo di mana saja, bingkai, keterangan. Menempati seluruh video; teks terjemahan tetap berada di atas lapisan.",
       "progressTitle": "Bilah kemajuan",
       "progressSub": "strip pengatur waktu tipis di bagian atas — pemirsa melihat video tersebut pendek dan menonton hingga akhir.",
-      "pngOnly": "Lapisan tersebut harus berupa PNG atau WebP transparan — file tanpa transparansi akan menutupi seluruh bingkai."
+      "pngOnly": "Lapisan tersebut harus berupa PNG atau WebP transparan — file tanpa transparansi akan menutupi seluruh bingkai.",
+      "emptySub": "PNG transparan"
     },
     "brand": {
       "button": "Perlengkapan merek",

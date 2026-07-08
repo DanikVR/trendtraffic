@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Pidä HeyGen-studion välilehti auki aktiivisella tilauksella.",
       "apiNote": "HeyGen-rajapinnan kautta — valitse Asetukset → Sukupolvi, maksu käytön mukaan -laskutus (~3 dollaria/min Avatar IV).",
       "delTitle": "Poistetaanko avatari?",
-      "delMessage": "'{{name}}' poistetaan avatar-kokoelmastasi. Alkuperäinen tiedosto pysyy galleriassa."
+      "delMessage": "'{{name}}' poistetaan avatar-kokoelmastasi. Alkuperäinen tiedosto pysyy galleriassa.",
+      "photoEmptyTitle": "Kuvaa ei ole vielä ladattu"
     },
     "voice": {
       "title": "Ääni ja käsikirjoitus",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Sarja: erillinen klippi kullakin {{count}} kielellä. Avatarin avulla HeyGen renderöi kasvot jokaiselle kielelle – kalliimpi.",
       "diarizeHintVoiceover": "Ääni kuuluu videon päällä sellaisenaan. ”Puheen litterointi” on valinnainen: sitä tarvitaan tekstityksiin ja rivikohtaisiin lisäyksiin.",
       "loudnormTitle": "Tasaista äänenvoimakkuutta",
-      "loudnormSub": "Hiljaiset kohdat korostuvat, kovat kohdat tasoittuvat – ammattimaisen kuuloinen ääni"
+      "loudnormSub": "Hiljaiset kohdat korostuvat, kovat kohdat tasoittuvat – ammattimaisen kuuloinen ääni",
+      "recordingEmptyTitle": "Tallennetta ei ole vielä ladattu",
+      "recordingEmptySub": "ääni- tai videotiedostot Galleriasta"
     },
     "lines": {
       "count_one": "{{count}} rivi · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Muuttaa",
       "seriesAdd": "Lisää videoita sarjaan — yksi klippi videota kohden",
       "seriesBilling": "Avatar laskutetaan kerran koko sarjan ajan.",
-      "voiceoverBase": "Tässä tilassa video on ruudun perusta: ääni ja tekstitys tulevat päällimmäiseksi."
+      "voiceoverBase": "Tässä tilassa video on ruudun perusta: ääni ja tekstitys tulevat päällimmäiseksi.",
+      "emptyTitle": "Videota ei ole vielä ladattu",
+      "emptySub": "valitse galleriasta"
     },
     "subtitles": {
       "title": "Tekstitykset",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kuinka kauan se soittaa",
       "playFull": "Koko video",
       "playFirst": "Ensimmäiset N sekuntia",
-      "durationHint": "sekuntia alusta, sitten tasainen häivytys"
+      "durationHint": "sekuntia alusta, sitten tasainen häivytys",
+      "emptyTitle": "Musiikkia ei ole vielä valittu",
+      "emptySub": "soittaa hiljaa äänen alla"
     },
     "format": {
       "label": "Muoto",
@@ -1416,7 +1423,10 @@
       "heading": "Johdanto- ja loppupuskurit – valinnaisia",
       "introEmpty": "Johdanto — ei mitään",
       "outroEmpty": "Loppu — ei mitään",
-      "hint": "Galleriasta on liitetty valmis video sellaisenaan, ilman käsittelyä: logon esittely (2–10 sekuntia) ja tilausvideon lopputeksti."
+      "hint": "Galleriasta on liitetty valmis video sellaisenaan, ilman käsittelyä: logon esittely (2–10 sekuntia) ja tilausvideon lopputeksti.",
+      "introTitle": "Johdanto",
+      "outroTitle": "Loppu",
+      "addSub": "lisää video"
     },
     "layer": {
       "title": "Päällyskerros",
@@ -1425,7 +1435,8 @@
       "hint": "Kehystä vastaava PNG-kuva: logo mihin tahansa, kehys, kuvateksti. Se peittää koko videon; tekstitykset pysyvät kerroksen yläpuolella.",
       "progressTitle": "Edistymispalkki",
       "progressSub": "ohut ajastinnauha yläreunassa – katsojat näkevät videon lyhyenä ja katsovat sen loppuun asti",
-      "pngOnly": "Tason on oltava läpinäkyvä PNG- tai WebP-tiedosto – läpinäkyvyyttä vailla oleva tiedosto peittäisi koko kehyksen."
+      "pngOnly": "Tason on oltava läpinäkyvä PNG- tai WebP-tiedosto – läpinäkyvyyttä vailla oleva tiedosto peittäisi koko kehyksen.",
+      "emptySub": "läpinäkyvä PNG"
     },
     "brand": {
       "button": "Merkkisarja",

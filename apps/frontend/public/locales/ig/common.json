@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Debe taabụ ụlọ ihe nkiri HeyGen ka o wee meghee site na ndenye aha na-arụ ọrụ.",
       "apiNote": "Site na HeyGen API — igodo na Ntọala → Ọgbọ, ịkwụ ụgwọ-dịka ị na-aga (~$3/min Avatar IV).",
       "delTitle": "Wepu avatar?",
-      "delMessage": "A ga-ewepụ '{{name}}' na nchịkọta avatar gị. Faịlụ mbụ ahụ ga-anọgide na Gallery ahụ."
+      "delMessage": "A ga-ewepụ '{{name}}' na nchịkọta avatar gị. Faịlụ mbụ ahụ ga-anọgide na Gallery ahụ.",
+      "photoEmptyTitle": "Ebugobeghị foto ahụ"
     },
     "voice": {
       "title": "Olu na edemede",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Usoro: vidiyo dị iche na nke ọ bụla n'ime asụsụ {{count}}. Site na avatar, HeyGen na-egosi ihu maka asụsụ ọ bụla - dị oke ọnụ.",
       "diarizeHintVoiceover": "Ọdịyo ahụ na-agafe vidiyo ahụ dịka ọ dị. \"Detuo okwu\" bụ nhọrọ: achọrọ maka ndepụta okwu na ntinye nke ahịrị ọ bụla.",
       "loudnormTitle": "Mee ka olu gị dịkwuo elu",
-      "loudnormSub": "a na-ebuli akụkụ dị jụụ elu, a na-eme ka akụkụ ndị dị elu dị nro — ụda na-akwado ụda"
+      "loudnormSub": "a na-ebuli akụkụ dị jụụ elu, a na-eme ka akụkụ ndị dị elu dị nro — ụda na-akwado ụda",
+      "recordingEmptyTitle": "Ebugobeghị ndekọ ahụ",
+      "recordingEmptySub": "ọdịyo ma ọ bụ vidiyo site na Gallery"
     },
     "lines": {
       "count_one": "Ahịrị {{count}} · ~{{sec}} sekọnd",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Mgbanwe",
       "seriesAdd": "Tinye vidiyo na usoro ahụ — otu vidiyo kwa vidiyo",
       "seriesBilling": "A na-akwụ ụgwọ avatar ahụ otu ugboro maka usoro ahụ dum.",
-      "voiceoverBase": "N'ụdị a, vidiyo ahụ bụ isi ihe dị na etiti ahụ: olu na ndepụta okwu na-aga n'elu."
+      "voiceoverBase": "N'ụdị a, vidiyo ahụ bụ isi ihe dị na etiti ahụ: olu na ndepụta okwu na-aga n'elu.",
+      "emptyTitle": "Ebugobeghị vidiyo e tinyere",
+      "emptySub": "họrọ site na Gallery"
     },
     "subtitles": {
       "title": "Ndepụta Okwu",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Ogologo oge ọ na-egwu egwu",
       "playFull": "Vidiyo dum",
       "playFirst": "Sekọnd N mbụ",
-      "durationHint": "sekọnd site na mmalite, wee gwụchaa nke ọma"
+      "durationHint": "sekọnd site na mmalite, wee gwụchaa nke ọma",
+      "emptyTitle": "A họrọbeghị egwu ugbu a",
+      "emptySub": "na-akpọ egwu nwayọ n'okpuru olu"
     },
     "format": {
       "label": "Usoro",
@@ -1416,7 +1423,10 @@
       "heading": "Mkpọbata okwu mmalite na nke mpụga — nhọrọ",
       "introEmpty": "Okwu Mmalite - ọ dịghị",
       "outroEmpty": "Ọzọ - ọ dịghị",
-      "hint": "E tinyere vidiyo emere nke ọma site na Gallery dịka ọ dị, enweghị nhazi: mmalite akara ngosi (sekọnd 2–10), mwepụta \"ịdenye aha\"."
+      "hint": "E tinyere vidiyo emere nke ọma site na Gallery dịka ọ dị, enweghị nhazi: mmalite akara ngosi (sekọnd 2–10), mwepụta \"ịdenye aha\".",
+      "introTitle": "Okwu Mmalite",
+      "outroTitle": "Mbugharị",
+      "addSub": "tinye vidiyo"
     },
     "layer": {
       "title": "Oyi akwa dị n'elu",
@@ -1425,7 +1435,8 @@
       "hint": "Nha PNG maka fremu ahụ: akara ngosi ebe ọ bụla, fremu, na okwu mmalite. Ọ dị n'elu vidiyo ahụ dum; okwu mmalite na-anọ n'elu oyi akwa ahụ.",
       "progressTitle": "Ogwe ọganihu",
       "progressSub": "obere ihe ngosi oge dị n'elu - ndị na-ekiri ya na-ahụ vidiyo ahụ dị mkpụmkpụ ma na-ekiri ruo na njedebe",
-      "pngOnly": "Oyi akwa ahụ ga-abụrịrị PNG ma ọ bụ WebP doro anya - faịlụ na-enweghị nghọta ga-ekpuchi etiti ahụ dum."
+      "pngOnly": "Oyi akwa ahụ ga-abụrịrị PNG ma ọ bụ WebP doro anya - faịlụ na-enweghị nghọta ga-ekpuchi etiti ahụ dum.",
+      "emptySub": "PNG doro anya"
     },
     "brand": {
       "button": "Ngwa ika",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Håll fliken HeyGen Studio öppen med en aktiv prenumeration.",
       "apiNote": "Via HeyGen API — skriv in i Inställningar → Generering, betala per användning (~3 USD/min Avatar IV).",
       "delTitle": "Ta bort avataren?",
-      "delMessage": "'{{name}}' kommer att tas bort från din avatarsamling. Originalfilen finns kvar i galleriet."
+      "delMessage": "'{{name}}' kommer att tas bort från din avatarsamling. Originalfilen finns kvar i galleriet.",
+      "photoEmptyTitle": "Fotot har inte laddats upp än"
     },
     "voice": {
       "title": "Röst och manus",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "En serie: ett separat klipp på varje {{count}}-språk. Med en avatar renderar HeyGen ansiktet för varje språk – dyrare.",
       "diarizeHintVoiceover": "Ljudet går över videon som det är. \"Transkribera tal\" är valfritt: behövs för undertexter och radvisa inlägg.",
       "loudnormTitle": "Jämna ut röstvolymen",
-      "loudnormSub": "tysta delar lyfts, högljudda delar jämnas ut — proffsigt ljud"
+      "loudnormSub": "tysta delar lyfts, högljudda delar jämnas ut — proffsigt ljud",
+      "recordingEmptyTitle": "Inspelningen har inte laddats upp ännu",
+      "recordingEmptySub": "ljud eller video från galleriet"
     },
     "lines": {
       "count_one": "{{count}} rad · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Ändra",
       "seriesAdd": "Lägg till videor i serien — ett klipp per video",
       "seriesBilling": "Avataren debiteras en gång för hela serien.",
-      "voiceoverBase": "I det här läget är videon basen i bilden: röst och undertexter visas överst."
+      "voiceoverBase": "I det här läget är videon basen i bilden: röst och undertexter visas överst.",
+      "emptyTitle": "Videon har inte laddats upp än",
+      "emptySub": "välj från galleriet"
     },
     "subtitles": {
       "title": "Undertexter",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hur länge den spelar",
       "playFull": "Hela videon",
       "playFirst": "Första N sekunderna",
-      "durationHint": "sekunder från början, sedan en mjuk uttoning"
+      "durationHint": "sekunder från början, sedan en mjuk uttoning",
+      "emptyTitle": "Musiken är inte vald än",
+      "emptySub": "spelar tyst under rösten"
     },
     "format": {
       "label": "Formatera",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- och outro-bumpers — valfritt",
       "introEmpty": "Introduktion — ingen",
       "outroEmpty": "Slutresultat — inget",
-      "hint": "En färdig video från galleriet bifogas i befintligt skick, ingen bearbetning: en logotypintro (2–10 sekunder), ett prenumerationsavslut."
+      "hint": "En färdig video från galleriet bifogas i befintligt skick, ingen bearbetning: en logotypintro (2–10 sekunder), ett prenumerationsavslut.",
+      "introTitle": "Introduktion",
+      "outroTitle": "Slutresultat",
+      "addSub": "lägg till en video"
     },
     "layer": {
       "title": "Översta lagret",
@@ -1425,7 +1435,8 @@
       "hint": "En PNG-fil i ramstorlek: en logotyp var som helst, en ram, en bildtext. Den ligger över hela videon; undertexterna visas ovanför lagret.",
       "progressTitle": "Förloppsindikator",
       "progressSub": "en tunn timerremsa högst upp – tittarna ser att videon är kort och tittar till slutet",
-      "pngOnly": "Lagret måste vara en transparent PNG eller WebP – en fil utan transparens skulle täcka hela bildrutan."
+      "pngOnly": "Lagret måste vara en transparent PNG eller WebP – en fil utan transparens skulle täcka hela bildrutan.",
+      "emptySub": "transparent PNG"
     },
     "brand": {
       "button": "Varumärkessats",

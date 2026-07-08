@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Jaga tab studio HeyGen tetep mbukak nganggo langganan aktif.",
       "apiNote": "Liwat HeyGen API — ketik ing Setelan → Generasi, bayar-sambil-gunakake tagihan (~$3/menit Avatar IV).",
       "delTitle": "Mbusak avatar?",
-      "delMessage": "'{{name}}' bakal dibusak saka koleksi avatarmu. File asline tetep ana ing Galeri."
+      "delMessage": "'{{name}}' bakal dibusak saka koleksi avatarmu. File asline tetep ana ing Galeri.",
+      "photoEmptyTitle": "Foto durung diunggah"
     },
     "voice": {
       "title": "Swara & naskah",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Seri: klip kapisah ing saben basa {{count}}. Kanthi avatar, HeyGen nampilake rai kanggo saben basa — luwih larang.",
       "diarizeHintVoiceover": "Audione nampilake video kaya apa anane. \"Transkripsi wicara\" iku opsional: dibutuhake kanggo subtitle lan sisipan saben baris.",
       "loudnormTitle": "Ratakan volume swara",
-      "loudnormSub": "bagean sing sepi diangkat, bagean sing banter diratakake — audio sing swarane profesional"
+      "loudnormSub": "bagean sing sepi diangkat, bagean sing banter diratakake — audio sing swarane profesional",
+      "recordingEmptyTitle": "Rekaman durung diunggah",
+      "recordingEmptySub": "audio utawa video saka Galeri"
     },
     "lines": {
       "count_one": "baris {{count}} · ~{{sec}} detik",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Owah-owahan",
       "seriesAdd": "Tambahake video menyang seri kasebut — siji klip saben video",
       "seriesBilling": "Avatar kasebut ditagih sapisan kanggo kabeh seri.",
-      "voiceoverBase": "Ing mode iki, video minangka dhasar pigura: swara lan subtitle ana ing ndhuwur."
+      "voiceoverBase": "Ing mode iki, video minangka dhasar pigura: swara lan subtitle ana ing ndhuwur.",
+      "emptyTitle": "Videone durung diunggah",
+      "emptySub": "pilih saka Galeri"
     },
     "subtitles": {
       "title": "Subjudul",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Suwene muter",
       "playFull": "Video sakabèhé",
       "playFirst": "N detik pisanan",
-      "durationHint": "sawetara detik saka wiwitan, banjur fadeout sing alus"
+      "durationHint": "sawetara detik saka wiwitan, banjur fadeout sing alus",
+      "emptyTitle": "Musik durung dipilih",
+      "emptySub": "muter alon-alon ing sangisore swara"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bumper intro lan outro — opsional",
       "introEmpty": "Pambuka — ora ana",
       "outroEmpty": "Outro — ora ana",
-      "hint": "Video sing wis digawe saka Galeri dilampirake kaya apa adanya, ora perlu diproses: intro logo (2–10 detik), outro \"langganan\"."
+      "hint": "Video sing wis digawe saka Galeri dilampirake kaya apa adanya, ora perlu diproses: intro logo (2–10 detik), outro \"langganan\".",
+      "introTitle": "Pambuka",
+      "outroTitle": "Outro",
+      "addSub": "tambahake video"
     },
     "layer": {
       "title": "Lapisan ndhuwur",
@@ -1425,7 +1435,8 @@
       "hint": "Ukuran PNG kanggo pigura: logo ing ngendi wae, pigura, caption. Nempel ing kabeh video; subtitle tetep ana ing ndhuwur lapisan.",
       "progressTitle": "Bilah kemajuan",
       "progressSub": "strip timer tipis ing sisih ndhuwur — pamirsa ndeleng video kasebut cendhak lan nonton nganti rampung",
-      "pngOnly": "Lapisan kasebut kudu PNG utawa WebP transparan — file tanpa transparansi bakal nutupi kabeh pigura."
+      "pngOnly": "Lapisan kasebut kudu PNG utawa WebP transparan — file tanpa transparansi bakal nutupi kabeh pigura.",
+      "emptySub": "PNG transparan"
     },
     "brand": {
       "button": "Piranti merek",

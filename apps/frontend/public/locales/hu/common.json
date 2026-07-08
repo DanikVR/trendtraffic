@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Tartsd nyitva a HeyGen stúdió fület egy aktív előfizetéssel.",
       "apiNote": "A HeyGen API-n keresztül — a Beállítások → Generáció menüpontban, használatalapú számlázás (~$3/perc Avatar IV).",
       "delTitle": "Avatár eltávolítása?",
-      "delMessage": "A(z) „{{name}}” fájl eltávolításra kerül az avatargyűjteményedből. Az eredeti fájl a Galériában marad."
+      "delMessage": "A(z) „{{name}}” fájl eltávolításra kerül az avatargyűjteményedből. Az eredeti fájl a Galériában marad.",
+      "photoEmptyTitle": "A fotó még nincs feltöltve"
     },
     "voice": {
       "title": "Hang és forgatókönyv",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Egy sorozat: külön klip {{count}} nyelvenként. A HeyGen egy avatárral minden nyelvhez renderelte az arcot – drágább.",
       "diarizeHintVoiceover": "A hanganyag a videó felett átmegy, ahogy van. A „Beszéd átírása” opció opcionális: feliratokhoz és soronkénti beszúrásokhoz szükséges.",
       "loudnormTitle": "Kiegyenlíti a hangerőt",
-      "loudnormSub": "a halk részek kiemelődnek, a hangosak elsimasulnak – professzionális hangzás"
+      "loudnormSub": "a halk részek kiemelődnek, a hangosak elsimasulnak – professzionális hangzás",
+      "recordingEmptyTitle": "A felvétel még nincs feltöltve",
+      "recordingEmptySub": "hang- vagy videófelvétel a Galériából"
     },
     "lines": {
       "count_one": "{{count}} sor · ~{{sec}} mp",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Változás",
       "seriesAdd": "Videók hozzáadása a sorozathoz – videónként egy klip",
       "seriesBilling": "Az avatárt egyszer számlázzák a teljes sorozatra.",
-      "voiceoverBase": "Ebben a módban a videó a képkocka alapja: a hang és a feliratok felül jelennek meg."
+      "voiceoverBase": "Ebben a módban a videó a képkocka alapja: a hang és a feliratok felül jelennek meg.",
+      "emptyTitle": "A videó még nincs feltöltve",
+      "emptySub": "válassz a Galériából"
     },
     "subtitles": {
       "title": "Feliratok",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Meddig játszik",
       "playFull": "Teljes videó",
       "playFirst": "Első N másodperc",
-      "durationHint": "másodperc a kezdetektől, majd egy sima elhalványulás"
+      "durationHint": "másodperc a kezdetektől, majd egy sima elhalványulás",
+      "emptyTitle": "A zene még nincs kiválasztva",
+      "emptySub": "halkan játszik a hang alatt"
     },
     "format": {
       "label": "Formátum",
@@ -1416,7 +1423,10 @@
       "heading": "Bevezető és kivezető rövid összefoglalók – opcionális",
       "introEmpty": "Bevezetés — nincs",
       "outroEmpty": "Zárójel — nincs",
-      "hint": "A Galériából egy kész videó csatolva van, feldolgozás nélkül: egy logóbevezető (2–10 másodperc), egy „feliratkozás” befejező rész."
+      "hint": "A Galériából egy kész videó csatolva van, feldolgozás nélkül: egy logóbevezető (2–10 másodperc), egy „feliratkozás” befejező rész.",
+      "introTitle": "Bevezetés",
+      "outroTitle": "Záró",
+      "addSub": "videó hozzáadása"
     },
     "layer": {
       "title": "Felső réteg",
@@ -1425,7 +1435,8 @@
       "hint": "Kerethez méretezett PNG: logó bárhol, keret, felirat. Az egész videót lefedi; a feliratok a réteg felett maradnak.",
       "progressTitle": "Folyamatjelző sáv",
       "progressSub": "egy vékony időzítőcsík a tetején – a nézők látják, hogy a videó rövid, és a végéig nézik",
-      "pngOnly": "A rétegnek átlátszó PNG vagy WebP formátumúnak kell lennie – egy átlátszóság nélküli fájl lefedné az egész képkockát."
+      "pngOnly": "A rétegnek átlátszó PNG vagy WebP formátumúnak kell lennie – egy átlátszóság nélküli fájl lefedné az egész képkockát.",
+      "emptySub": "átlátszó PNG"
     },
     "brand": {
       "button": "Márkakészlet",

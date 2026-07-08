@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Nechajte kartu štúdia HeyGen otvorenú s aktívnym predplatným.",
       "apiNote": "Cez HeyGen API — v Nastaveniach prejdite na Generovanie, fakturácia podľa spotreby (~3 USD/min. Avatar IV).",
       "delTitle": "Odstrániť avatara?",
-      "delMessage": "Súbor „{{name}}“ bude odstránený z vašej kolekcie avatarov. Pôvodný súbor zostane v galérii."
+      "delMessage": "Súbor „{{name}}“ bude odstránený z vašej kolekcie avatarov. Pôvodný súbor zostane v galérii.",
+      "photoEmptyTitle": "Fotografia ešte nebola nahraná"
     },
     "voice": {
       "title": "Hlas a scenár",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Séria: samostatný klip v každom z jazykov {{count}}. HeyGen pomocou avatara vykreslí tvár pre každý jazyk – drahšie.",
       "diarizeHintVoiceover": "Zvuk prehráva video tak, ako je. Možnosť „Prepísať reč“ je voliteľná: je potrebná pre titulky a vkladanie textu na riadok.",
       "loudnormTitle": "Vyrovnanie hlasitosti hlasu",
-      "loudnormSub": "Tiché časti sú zvýraznené, hlasné časti vyhladené – profesionálne znejúci zvuk"
+      "loudnormSub": "Tiché časti sú zvýraznené, hlasné časti vyhladené – profesionálne znejúci zvuk",
+      "recordingEmptyTitle": "Nahrávka ešte nebola nahraná",
+      "recordingEmptySub": "zvuk alebo video z galérie"
     },
     "lines": {
       "count_one": "{{count}} riadok · ~{{sec}} s",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Zmena",
       "seriesAdd": "Pridajte videá do série – jeden klip na video",
       "seriesBilling": "Avatar sa účtuje raz za celú sériu.",
-      "voiceoverBase": "V tomto režime je video základom záberu: hlas a titulky idú navrchu."
+      "voiceoverBase": "V tomto režime je video základom záberu: hlas a titulky idú navrchu.",
+      "emptyTitle": "Video ešte nebolo nahrané",
+      "emptySub": "vybrať z galérie"
     },
     "subtitles": {
       "title": "Titulky",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Ako dlho to hrá",
       "playFull": "Celé video",
       "playFirst": "Prvých N sekúnd",
-      "durationHint": "sekúnd od začiatku, potom plynulé zoslabovanie"
+      "durationHint": "sekúnd od začiatku, potom plynulé zoslabovanie",
+      "emptyTitle": "Hudba ešte nebola vybraná",
+      "emptySub": "hrá potichu pod hlasom"
     },
     "format": {
       "label": "Formát",
@@ -1416,7 +1423,10 @@
       "heading": "Úvodné a záverečné nárazníky – voliteľné",
       "introEmpty": "Úvod — žiadny",
       "outroEmpty": "Záver — žiadny",
-      "hint": "Priložené je hotové video z Galérie bez úprav: úvodné logo (2–10 sekúnd), záverečné video s textom „prihlásiť sa na odber“."
+      "hint": "Priložené je hotové video z Galérie bez úprav: úvodné logo (2–10 sekúnd), záverečné video s textom „prihlásiť sa na odber“.",
+      "introTitle": "Úvod",
+      "outroTitle": "Záver",
+      "addSub": "pridať video"
     },
     "layer": {
       "title": "Vrchná vrstva",
@@ -1425,7 +1435,8 @@
       "hint": "PNG súbor s veľkosťou pre daný rámček: logo kdekoľvek, rámček, popisok. Zobrazí sa cez celé video; titulky zostávajú nad vrstvou.",
       "progressTitle": "Ukazovateľ priebehu",
       "progressSub": "tenký časovací pásik v hornej časti – diváci vidia, že video je krátke a pozerajú ho až do konca",
-      "pngOnly": "Vrstva musí byť priehľadný PNG alebo WebP – súbor bez priehľadnosti by pokryval celý rámec."
+      "pngOnly": "Vrstva musí byť priehľadný PNG alebo WebP – súbor bez priehľadnosti by pokryval celý rámec.",
+      "emptySub": "priehľadný PNG"
     },
     "brand": {
       "button": "Súprava značky",

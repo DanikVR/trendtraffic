@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Tazomy misokatra ny takelaka studio HeyGen miaraka amin'ny famandrihana mavitrika.",
       "apiNote": "Amin'ny alàlan'ny HeyGen API — midira ao amin'ny Settings → Generation, pay-as-you-go billing (~$3/min Avatar IV).",
       "delTitle": "Esory ve ny sarin'abidia?",
-      "delMessage": "Hoesorina amin'ny fanangonana avatar-nao ny '{{name}}'. Hijanona ao amin'ny Gallery ny rakitra tany am-boalohany."
+      "delMessage": "Hoesorina amin'ny fanangonana avatar-nao ny '{{name}}'. Hijanona ao amin'ny Gallery ny rakitra tany am-boalohany.",
+      "photoEmptyTitle": "Mbola tsy nampidirina ny sary"
     },
     "voice": {
       "title": "Feo sy script",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Andian-dahatsoratra: horonan-tsary misaraka amin'ny fiteny {{count}} tsirairay. Amin'ny alalan'ny avatar, ny HeyGen dia mampiseho ny endrika ho an'ny fiteny tsirairay — lafo kokoa.",
       "diarizeHintVoiceover": "Mandeha araka ny maha-izy azy ny feo ao amin'ny lahatsary. Tsy voatery ny \"mandika teny\": ilaina amin'ny dikanteny sy fampidirana isaky ny andalana.",
       "loudnormTitle": "Ampitovy ny hamafin'ny feo",
-      "loudnormSub": "Asandratra ireo faritra mangina, ary milamina ireo faritra mitabataba — feo matihanina"
+      "loudnormSub": "Asandratra ireo faritra mangina, ary milamina ireo faritra mitabataba — feo matihanina",
+      "recordingEmptyTitle": "Mbola tsy nampidirina ny rakitsoratra",
+      "recordingEmptySub": "feo na horonan-tsary avy amin'ny Galeriana"
     },
     "lines": {
       "count_one": "{{count}} andalana · ~{{sec}} segondra",
@@ -1281,7 +1284,9 @@
       "seriesChange": "FIOVANA",
       "seriesAdd": "Ampio horonan-tsary amin'ny andian-tantara — sombin-tsary iray isaky ny horonan-tsary",
       "seriesBilling": "Indray mandeha monja no faktioran'ny avatar mandritra ny andiany iray manontolo.",
-      "voiceoverBase": "Amin'ity fomba ity, ny lahatsary no fototry ny frame: ny feo sy ny dikanteny no eo an-tampony."
+      "voiceoverBase": "Amin'ity fomba ity, ny lahatsary no fototry ny frame: ny feo sy ny dikanteny no eo an-tampony.",
+      "emptyTitle": "Mbola tsy nampidirina ny lahatsary",
+      "emptySub": "mifidiana avy amin'ny Galeria"
     },
     "subtitles": {
       "title": "dikan'teny",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hafiriana no hilalaovany",
       "playFull": "Lahatsary manontolo",
       "playFirst": "N segondra voalohany",
-      "durationHint": "segondra vitsy manomboka eo am-piandohana, avy eo dia mihena tsikelikely ny feo"
+      "durationHint": "segondra vitsy manomboka eo am-piandohana, avy eo dia mihena tsikelikely ny feo",
+      "emptyTitle": "Mbola tsy voafidy ny mozika",
+      "emptySub": "milalao mangina eo ambanin'ny feo"
     },
     "format": {
       "label": "endrika",
@@ -1416,7 +1423,10 @@
       "heading": "Bumper fampidirana sy famaranana — tsy voatery",
       "introEmpty": "Fampidirana — tsy misy",
       "outroEmpty": "Famaranana — tsy misy",
-      "hint": "Misy lahatsary efa vita avy amin'ny Galeriana mipetaka amin'izao fotoana izao, tsy mila fikirakirana: fampidirana ny logo (2–10 segondra), famaranana \"misoratra anarana\"."
+      "hint": "Misy lahatsary efa vita avy amin'ny Galeriana mipetaka amin'izao fotoana izao, tsy mila fikirakirana: fampidirana ny logo (2–10 segondra), famaranana \"misoratra anarana\".",
+      "introTitle": "fampidirana",
+      "outroTitle": "Famaranana",
+      "addSub": "ampio lahatsary"
     },
     "layer": {
       "title": "Sosona ambony",
@@ -1425,7 +1435,8 @@
       "hint": "Sary PNG ho an'ny sary: logo na aiza na aiza, sary, lohateny. Mipetraka eo ambonin'ny lahatsary manontolo; ny dikanteny dia mijanona eo ambonin'ny sosona.",
       "progressTitle": "Bara fandrosoana",
       "progressSub": "tsipika famantaranandro manify eo an-tampony — ho hitan'ny mpijery fa fohy ny lahatsary ary hojereny hatramin'ny farany",
-      "pngOnly": "Tsy maintsy PNG na WebP mangarahara ny sosona — rakitra tsy misy mangarahara dia handrakotra ny frame iray manontolo."
+      "pngOnly": "Tsy maintsy PNG na WebP mangarahara ny sosona — rakitra tsy misy mangarahara dia handrakotra ny frame iray manontolo.",
+      "emptySub": "PNG mangarahara"
     },
     "brand": {
       "button": "Kitapo marika",
