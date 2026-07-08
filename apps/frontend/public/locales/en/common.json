@@ -1383,6 +1383,8 @@
       "cutoutTooltip": "Transparent background — only the person stays in the clip",
       "cutoutBadge": "transparent background",
       "emptyAvatarOverlay": "Avatar — not selected yet",
+      "avatarDragBadge": "Drag",
+      "avatarDragHint": "Drag the avatar around the frame, the corner resizes it. Each format keeps its own position.",
       "avatarResizeTip": "Drag the corner to resize; drag the avatar to move it",
       "tagPeerACloseup": "Speaker A · close-up",
       "emptyPeerA": "Speaker A — not selected yet",

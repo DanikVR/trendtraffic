@@ -9,7 +9,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Plus, UserRound } from 'lucide-react';
+import { Play, Plus, UserRound, Move, Maximize2 } from 'lucide-react';
 import type { UgcAvatarRect, UgcFormat, UgcMode, UgcSpec } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
@@ -110,6 +110,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl : ugc.photoUrl;
   const firstLineMedia = ugc.script.find((l) => !!l.image)?.image || null;
+  // «Один ведущий» + раскладка «поверх видео» = аватар маленьким, его МОЖНО двигать/масштабировать на превью.
+  const isOverlaySolo = mode === 'solo' && (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right');
 
   /* ── аватар-оверлей: перетаскивание и размер прямо на кадре превью ──
      Позиция per-format в долях кадра (ugc.avatarRects); во время жеста — локальный rect,
@@ -118,7 +120,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const rectFor = (fmt: UgcFormat, side: 'left' | 'right'): UgcAvatarRect =>
     (liveRect?.fmt === fmt ? liveRect.rect : null) || ugc.avatarRects?.[fmt] || AV_DEF[side];
   const clamp01 = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, side: 'left' | 'right', kind: 'move' | 'size', emptyClick?: () => void) => {
+  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, side: 'left' | 'right', kind: 'move' | 'size') => {
     if (!onAvatarRect || e.button !== 0) return;
     const frameEl = (e.currentTarget as HTMLElement).closest('[data-ugc-frame]') as HTMLElement | null;
     if (!frameEl) return;
@@ -138,7 +140,6 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
       if (moved) onAvatarRect(fmt, { x: +last.x.toFixed(4), y: +last.y.toFixed(4), w: +last.w.toFixed(4), h: +last.h.toFixed(4) });
-      else emptyClick?.();   // клик без движения по пустому слоту = открыть пикер
       setLiveRect(null);
     };
     window.addEventListener('pointermove', onMove);
@@ -243,17 +244,19 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   );
 
   /* аватар маленьким поверх видео; cutout → шахматная кайма и без «карточки» (иллюстрация прозрачного фона).
-     draggable (соло-оверлей): тащим за сам аватар, размер — за уголок; позиция per-format уезжает в рендер. */
-  const overlayAvatar = (side: 'left' | 'right', cutout: boolean, url: string | null, onEmpty: () => void, fmt: UgcFormat, draggable = false) => {
+     draggable (соло-оверлей) + есть аватар: тащим за сам аватар, размер — за уголок; позиция per-format
+     уезжает в рендер. Пусто → обычная кнопка выбора (двигать нечего). mini → компактная фурнитура. */
+  const overlayAvatar = (side: 'left' | 'right', cutout: boolean, url: string | null, onEmpty: () => void, fmt: UgcFormat, draggable = false, mini = false) => {
     const rc = rectFor(fmt, side);
-    const canDrag = draggable && !!onAvatarRect;
+    const canDrag = draggable && !!onAvatarRect && !!url;   // двигать можно только реальный аватар
+    const handle = mini ? 16 : 20;
     return (
     <div
-      onPointerDown={canDrag ? (e) => dragAvatar(e, fmt, side, 'move', url ? undefined : onEmpty) : undefined}
+      onPointerDown={canDrag ? (e) => dragAvatar(e, fmt, side, 'move') : undefined}
       style={{
         position: 'absolute', zIndex: 4,
         left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`,
-        ...(canDrag ? { cursor: 'move', touchAction: 'none' } : {}),
+        ...(canDrag ? { cursor: 'grab', touchAction: 'none' } : {}),
       }}>
       {url ? (
         cutout ? (
@@ -265,18 +268,27 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
           <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,.25)' }} />
         )
       ) : (
-        <button onClick={canDrag ? undefined : onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
-          style={{ border: `1.5px dashed ${F.dash}`, borderRadius: 12, background: F.veil, color: F.title, cursor: canDrag ? 'move' : 'pointer', pointerEvents: canDrag ? 'none' : 'auto' }}>
+        <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
+          style={{ border: `1.5px dashed ${F.dash}`, borderRadius: 12, background: F.veil, color: F.title, cursor: 'pointer' }}>
           <UserRound size={16} /> {t('ugc.preview.emptyAvatarOverlay')}
         </button>
       )}
       {canDrag && (
         <>
-          <span style={{ position: 'absolute', inset: 0, border: '1.5px solid rgba(168,85,247,.7)', borderRadius: 10, pointerEvents: 'none' }} />
+          {/* заметная рамка захвата: фиолетовая + белый ободок (видна на любом фоне) */}
+          <span style={{ position: 'absolute', inset: 0, border: `2px solid ${ACC}`, borderRadius: 11, pointerEvents: 'none', boxShadow: '0 0 0 1.5px rgba(255,255,255,.6)' }} />
+          {/* значок-подсказка «Двигать» сверху по центру — сразу видно, что аватар таскается */}
+          <span style={{ position: 'absolute', top: 5, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', alignItems: 'center', gap: 3, background: ACC, color: '#fff', borderRadius: 999, padding: mini ? '2px 5px' : '2px 8px', fontSize: mini ? 8 : 9.5, fontWeight: 750, whiteSpace: 'nowrap', pointerEvents: 'none', boxShadow: '0 1px 5px rgba(0,0,0,.45)' }}>
+            <Move size={mini ? 9 : 11} />{!mini && <span>{t('ugc.preview.avatarDragBadge')}</span>}
+          </span>
+          {/* уголок-ручка размера: крупная, с иконкой, внутри бокса (не режется overflow кадра) */}
           <span
             onPointerDown={(e) => dragAvatar(e, fmt, side, 'size')}
             title={t('ugc.preview.avatarResizeTip')}
-            style={{ position: 'absolute', right: -6, bottom: -6, width: 14, height: 14, borderRadius: '50%', background: ACC, border: '2px solid #fff', cursor: 'nwse-resize', touchAction: 'none', boxShadow: '0 1px 4px rgba(0,0,0,.5)' }} />
+            className="flex items-center justify-center"
+            style={{ position: 'absolute', right: 3, bottom: 3, width: handle, height: handle, borderRadius: 6, background: ACC, border: '2px solid #fff', color: '#fff', cursor: 'nwse-resize', touchAction: 'none', boxShadow: '0 1px 5px rgba(0,0,0,.5)' }}>
+            <Maximize2 size={mini ? 8 : 10} style={{ pointerEvents: 'none' }} />
+          </span>
         </>
       )}
     </div>
@@ -284,7 +296,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   };
 
   /* ── содержимое кадра по режиму и активному сегменту плана ── */
-  const frameInner = (fmt: UgcFormat) => {   // 16:9 → раскладка в строку; 9:16 / 1:1 / 4:5 → в столбец
+  const frameInner = (fmt: UgcFormat, mini = false) => {   // 16:9 → раскладка в строку; 9:16 / 1:1 / 4:5 → в столбец
     const row = fmt === '16x9';
     const stack = (a: React.ReactNode, b: React.ReactNode) => (
       <div className={`absolute inset-0 flex ${row ? 'flex-row' : 'flex-col'}`}>{a}{b}</div>
@@ -331,7 +343,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     if (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') return (
       <div className="absolute inset-0 flex">
         {clipCell(t('ugc.common.footage'))}
-        {overlayAvatar(ugc.placement === 'overlay-right' ? 'right' : 'left', false, avatarImg, onEmptyAvatar, fmt, true)}
+        {overlayAvatar(ugc.placement === 'overlay-right' ? 'right' : 'left', false, avatarImg, onEmptyAvatar, fmt, true, mini)}
       </div>
     );
     const av = faceCell(avatarImg, t('ugc.common.avatar'), onEmptyAvatar);
@@ -353,7 +365,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       <div key={fmt} className="flex flex-col items-center gap-2">
         <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{t(meta.capKey)}</span>
         <div className="relative overflow-hidden" data-ugc-frame={fmt} style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: F.bg, boxShadow: F.shadow }}>
-          {frameInner(fmt)}
+          {frameInner(fmt, mini)}
           {/* верхний PNG-слой юзера — как в рендере: поверх видео, ПОД субтитрами */}
           {ugc.layers[fmt] && (
             <img src={ugc.layers[fmt]!.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 5, pointerEvents: 'none' }} />
@@ -373,6 +385,14 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-1" style={{ minHeight: 0 }}>
         {ugc.formats.map((f, i) => frame(f, i > 0))}
       </div>
+
+      {/* подсказка под кадрами: в раскладке «поверх видео» аватар двигается/масштабируется мышкой */}
+      {isOverlaySolo && onAvatarRect && (
+        <div className="flex items-center justify-center gap-1.5 px-4 pb-1 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+          <span className="inline-flex items-center justify-center rounded-md" style={{ width: 18, height: 18, background: 'rgba(168,85,247,.16)', color: ACC }}><Move size={11} /></span>
+          {t('ugc.preview.avatarDragHint')}
+        </div>
+      )}
 
       {/* полоса плана: кликните сегмент — превью покажет этот план кадра */}
       {plan && (
