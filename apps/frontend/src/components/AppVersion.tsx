@@ -2067,7 +2067,7 @@
  *         «Установите расширение TrendTraffic» (инлайн-раскрытие Скачать + Как установить, копия
  *         карточки из Настройки Enterprise → Генерация). Файлы: features.ts, router.tsx,
  *         MainLayout, BottomTabBar, GalleryPage, SocialExtensionPage. */
-export const APP_VERSION = '2.1.2';
+export const APP_VERSION = '2.1.3';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

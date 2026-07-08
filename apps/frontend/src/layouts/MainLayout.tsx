@@ -136,20 +136,11 @@ export function MainLayout() {
         className="hidden lg:flex flex-col w-[68px] border-r flex-shrink-0"
         style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}
       >
-        {/* Header (всегда свёрнут): лого-иконка → домой (Галерея) + язык + тема, стопкой */}
-        <div className="flex flex-col items-center gap-2 px-2 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+        {/* Header (всегда свёрнут): только лого-иконка → домой (Галерея).
+            Язык и тема переехали ВНИЗ сайдбара — по слову юзера (2026-07-08). */}
+        <div className="flex flex-col items-center px-2 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <button type="button" onClick={() => navigate('/gallery')} className="no-select" aria-label={t('sidebar.logoAria')} title="Галерея — на главный экран">
             <VibeVoxIcon size={32} bordered />
-          </button>
-          <LanguageSwitcher />
-          <button
-            id="sidebar-theme-toggle"
-            onClick={() => toggleGlobalTheme(isDark, setIsDark)}
-            title={isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200"
-            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-          >
-            {isDark ? <Sun size={15} strokeWidth={1.5} /> : <Moon size={15} strokeWidth={1.5} />}
           </button>
         </div>
 
@@ -220,8 +211,18 @@ export function MainLayout() {
           </div>
         )}
 
-        {/* Свёрнутый сайдбар (всегда): тариф + аватар иконками */}
+        {/* Низ сайдбара (по слову юзера 2026-07-08): язык + тема, затем тариф + аватар */}
         <div className="p-2 pb-4 flex flex-col items-center gap-2">
+          <LanguageSwitcher />
+          <button
+            id="sidebar-theme-toggle"
+            onClick={() => toggleGlobalTheme(isDark, setIsDark)}
+            title={isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')}
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200"
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+          >
+            {isDark ? <Sun size={15} strokeWidth={1.5} /> : <Moon size={15} strokeWidth={1.5} />}
+          </button>
           <button type="button" onClick={() => navigate('/billing')} title={t('balance.tariffs')}
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--brand)' }}>
