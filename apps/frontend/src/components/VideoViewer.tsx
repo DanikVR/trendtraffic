@@ -14,13 +14,13 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   X, Play, Pause, Scissors, RotateCw, Crop, Undo2, RefreshCw, Save, Loader2, Download,
   SkipBack, SkipForward, Check, Music, Pencil, Plus, Volume2, VolumeX, Cloud,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { downloadMedia } from './chat/MediaLightbox';
+import { FlowBlockOverlay, type FlowBlockRequest } from './FlowBlockOverlay';
 
 export interface VideoEditResult { fileUrl: string; assetId: string | null; }
 
@@ -84,7 +84,6 @@ function normalize(segs: Seg[]): Seg[] {
 export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind }: VideoViewerProps) {
   const isAudio = kind === 'audio';
   const token = useAppStore((s) => s.token);
-  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +110,8 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   const [editingName, setEditingName] = useState(false);
   const [marks, setMarks] = useState<Seg[]>([]);
   const [muted, setMuted] = useState(false); // звук включён по умолчанию
+  // Omni Flash поверх редактора: запрос на открытие блока (null — закрыт).
+  const [omniReq, setOmniReq] = useState<FlowBlockRequest | null>(null);
 
   const canEdit = (editable ?? true) && isLocal(curUrl);
 
@@ -121,12 +122,14 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     setKeep([]); setRotate(0); setSelIn(0); setSelOut(0); setHistory([]);
     setErr(null); setSavedOk(false);
     setNameEdit(title || 'Видео'); setEditingName(false); setMarks([]);
+    setOmniReq(null);
   }, [open, url, title]);
 
   // Esc + блокировка скролла фона.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      if (omniReq) return; // поверх открыт блок Omni Flash — клавиши редактора не перехватываем
       if (e.key === 'Escape') { onClose(); return; }
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -141,7 +144,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, time, canEdit]);
+  }, [open, time, canEdit, omniReq]);
 
   const onMeta = () => {
     const v = videoRef.current; if (!v) return;
@@ -242,11 +245,12 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   useEffect(() => { selInRef.current = selIn; }, [selIn]);
   useEffect(() => { selOutRef.current = selOut; }, [selOut]);
 
-  // Omni Flash: текущее видео → новый сценарий TrendFlow с этим источником, облако Omni открыто.
+  // Omni Flash: оверлей ПОВЕРХ редактора — новый сценарий с этим видео-источником и
+  // открытым облаком Omni. Закрытие оверлея возвращает сюда же, в редактор (не выходим).
   const openInOmni = () => {
     const name = (nameEdit || title || 'Видео').trim();
-    onClose();
-    navigate(`/flow?open=omni&src=${encodeURIComponent(curUrl)}&srcName=${encodeURIComponent(name)}`);
+    videoRef.current?.pause();
+    setOmniReq({ cloud: 'omni', src: curUrl, srcName: name });
   };
 
   const save = async () => {
@@ -464,6 +468,9 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
           </div>
         )}
       </div>
+
+      {/* Omni Flash ПОВЕРХ редактора: закрыл — вернулся сюда же, к этому видео */}
+      {omniReq && <FlowBlockOverlay req={omniReq} onClose={() => setOmniReq(null)} />}
     </div>
   );
 }

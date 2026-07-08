@@ -18,7 +18,6 @@ import {
   Settings,
   Phone,
   Menu,
-  Workflow,
   TrendingUp,
   Users,
   Image,
@@ -77,7 +76,8 @@ export function MainLayout() {
       : []),
     ...(FEATURES.gallery ? [{ path: '/gallery', icon: Image, label: t('nav.gallery', 'Галерея'), exact: false }] : []),
     ...(FEATURES.publisher ? [{ path: '/publisher', icon: Send, label: t('nav.publisher', 'Публикатор'), exact: false }] : []),
-    ...(FEATURES.flow  ? [{ path: '/flow', icon: Workflow, label: 'TrendFlow',  exact: false }] : []),
+    // Пункт «TrendFlow» убран (2026-07-08, слово юзера): Галерея = главный экран,
+    // блоки открываются из неё оверлеем. Роут /flow жив (deep-link/прямая ссылка).
     // «Каналы» → анализ всех видео канала (/channels). Гейт Enterprise — RequireEnterprise.
     ...(FEATURES.channels ? [{ path: '/channels', icon: Users, label: t('nav.channels', 'Каналы'), exact: false }] : []),
   ];

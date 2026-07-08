@@ -1,24 +1,26 @@
 /**
- * GalleryPage — медиа-библиотека (TrendTraffic).
+ * GalleryPage — ГЛАВНЫЙ ЭКРАН TrendTraffic (медиа-хаб «всё через Галерею»).
  *
- * Дизайн «1:1 с разделом Тренды (social-extension)»: сегмент-вкладки-папки (индиго),
- * плотная сетка карточек с обложкой+оверлеями (чекбокс, просмотры, длительность),
- * тулбар «Найдено · Выбрать всё · Удалить выбранные · Скачать выбранные».
+ * Раздел «TrendFlow» из меню убран (2026-07-08): блоки открываются ИЗ Галереи оверлеем
+ * (FlowBlockOverlay поверх экрана) и закрываются ОБРАТНО в тот же раздел. Единый стиль:
+ * первой в сетке каждой вкладки — плитка «+ Добавить» (открывает блок раздела).
  *
- * Четыре папки (вкладки):
- *  - Тренды     — скачанные видео из «Трендов» (source_videos, downloaded).
- *  - Референс   — загружаемые изображения/видео (media_assets kind='reference').
- *  - Аудио      — загружаемые аудиофайлы (media_assets kind='audio').
- *  - Из анализа — сохранённое со страницы аналитики (media_assets folder='analyzed').
+ * Вкладки:
+ *  - Тренды      — сверху «Запросы трендов» (история сканов; клик → «Тренды» с готовой
+ *                  выдачей), ниже «Анализ» (все сохранённые разборы video_analyses).
+ *  - Hotebook    — артефакты NotebookLM; «+» открывает блок Hotebook.
+ *  - Google Flow — клипы Google Flow (folder=flow); «+» открывает блок Flow.
+ *  - UGC         — рендеры студии (folder=ugc) + «Макеты» (бренд-киты); «+» открывает студию.
+ *  - Видео       — все загрузки и продукция (kind=reference|audio) с фильтром «Видео | Аудио»;
+ *                  кнопка «Медиа» принимает фото/видео/аудио и раскладывает по типу файла.
  *
- * Поиск, проигрывание/просмотр, выбор (в т.ч. «выбрать всё»), скачивание на устройство,
- * удаление одного и массовое. Загрузка медиа/аудио — иконками рядом с «Обновить».
+ * Поиск, просмотр (VideoViewer), выбор, скачивание, удаление — как раньше.
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
+  Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X,
 } from 'lucide-react';
@@ -30,8 +32,11 @@ import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
 import { TT_EXT_VERSION } from '../components/AppVersion';
 import { coverSrc } from '../components/TrendSearch';
+import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
 
-type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook' | 'flow' | 'ugc' | 'trendhub';
+type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference';
+/** Фильтр внутри вкладки «Видео»: медиа (изображения+видео, kind=reference) или аудио. */
+type MediaKind = 'reference' | 'audio';
 
 interface GalleryItem {
   id: string;
@@ -47,31 +52,19 @@ interface GalleryItem {
   hasAnalysis?: boolean; // «Из анализа»: есть сохранённый разбор → бейдж + просмотр
 }
 
-// Галерея = ГЛАВНЫЙ ЭКРАН (2026-07-08): всё проходит через неё. Единый стиль раздела:
-// первой в сетке стоит плитка «+ Добавить» — она открывает соответствующий блок
-// (Hotebook / Google Flow / UGC-студию / скан Трендов), рядом — сохранённые файлы раздела.
-//  - TrendFlow   — всё, что произвёл TrendFlow (ролики, склейки, кадры) + ручные загрузки.
-//  - Аудио       — аудиофайлы.
-//  - Из анализа  — сохранённое со страницы аналитики (+ бейдж «Анализ»).
-//  - Hotebook    — артефакты NotebookLM; «+» открывает блок Hotebook.
-//  - Google Flow — клипы из Google Flow (Veo); «+» открывает блок Flow.
-//  - UGC         — рендеры UGC-студии + макеты (бренд-киты); «+» открывает студию.
-//  - Тренды      — проанализированные видео (с разбором) + сохранённые запросы сканов;
-//                  клик по запросу открывает «Тренды» с уже готовой выдачей по слову.
+// Порядок по фидбэку юзера (2026-07-08): блоки впереди, «Видео» (бывш. TrendFlow,
+// объединённый с «Аудио» фильтром) — в конце строки. «Из анализа» убрана — разборы
+// живут во вкладке «Тренды».
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'reference', label: 'TrendFlow' },
-  { key: 'audio', label: 'Аудио' },
-  { key: 'analyzed', label: 'Из анализа' },
+  { key: 'trendhub', label: 'Тренды' },
   { key: 'hotebook', label: 'Hotebook' },
   { key: 'flow', label: 'Google Flow' },
   { key: 'ugc', label: 'UGC' },
-  { key: 'trendhub', label: 'Тренды' },
+  { key: 'reference', label: 'Видео' },
 ];
 
 function tabIcon(key: Tab, size = 15) {
-  if (key === 'trends') return <Video size={size} />;
-  if (key === 'reference') return <ImageIcon size={size} />;
-  if (key === 'audio') return <Music size={size} />;
+  if (key === 'reference') return <Video size={size} />;
   if (key === 'hotebook') return <BookOpen size={size} />;
   if (key === 'flow') return <Clapperboard size={size} />;
   if (key === 'ugc') return <Users size={size} />;
@@ -115,7 +108,9 @@ interface BrandKit { id: string; name: string; data?: any }
 export default function GalleryPage() {
   const { token } = useAppStore();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('reference');
+  const [tab, setTab] = useState<Tab>('trendhub');
+  const [mediaKind, setMediaKind] = useState<MediaKind>('reference'); // фильтр «Видео | Аудио» внутри вкладки «Видео»
+  const [blockReq, setBlockReq] = useState<FlowBlockRequest | null>(null); // блок TrendFlow поверх Галереи
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -176,26 +171,15 @@ export default function GalleryPage() {
   };
 
   const mediaInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
 
   const authHeader = (): HeadersInit => (token ? { Authorization: `Bearer ${token}` } : {});
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...authHeader() });
 
-  const load = async (which: Tab = tab) => {
+  const load = async (which: Tab = tab, kindOverride?: MediaKind) => {
     setLoading(true); setError(null); setSelected(new Set());
     try {
-      if (which === 'trends') {
-        const res = await fetch('/api/trends/videos?downloaded=1&limit=200', { headers: jsonHeaders() });
-        if (res.ok) {
-          const d = await res.json();
-          setItems((d.videos || []).map((v: any): GalleryItem => ({
-            id: v.id, mediaType: 'video', fileUrl: v.fileUrl, coverUrl: v.coverUrl,
-            title: `@${v.author}`, subtitle: v.description, webUrl: v.webUrl,
-            durationSec: v.durationSec, stats: v.stats, isTrend: true,
-          })));
-        }
-      } else if (which === 'trendhub') {
-        // «Тренды»: разбор (video_analyses) + запросы сканов — двумя запросами параллельно.
+      if (which === 'trendhub') {
+        // «Тренды»: запросы сканов + разборы (video_analyses) — двумя запросами параллельно.
         setItems([]);
         const [ar, qr] = await Promise.all([
           fetch('/api/trends/analyses?limit=200', { headers: jsonHeaders() }),
@@ -204,9 +188,9 @@ export default function GalleryPage() {
         setAnalyses(ar.ok ? ((await ar.json()).analyses || []) : []);
         setTrendQueries(qr.ok ? ((await qr.json()).queries || []) : []);
       } else {
-        // Папочные вкладки: 'analyzed'/'hotebook'/'flow'/'ugc' → folder=…; иначе по kind.
-        const FOLDER_TABS: Partial<Record<Tab, string>> = { analyzed: 'analyzed', hotebook: 'hotebook', flow: 'flow', ugc: 'ugc' };
-        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${which}`;
+        // «Видео» → по kind (фильтр Видео|Аудио); блоки → по folder.
+        const FOLDER_TABS: Partial<Record<Tab, string>> = { hotebook: 'hotebook', flow: 'flow', ugc: 'ugc' };
+        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${kindOverride ?? mediaKind}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
           const d = await res.json();
@@ -226,18 +210,18 @@ export default function GalleryPage() {
     } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab]);
+  useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab, mediaKind]);
 
-  // ── «+ Добавить» — первой плиткой каждого раздела: открывает блок раздела ──
+  // ── «+ Добавить» — первой плиткой каждого раздела ──
+  // Блоки (Hotebook/Flow/UGC) открываются ОВЕРЛЕЕМ поверх Галереи: закрыл — вернулся
+  // в этот же раздел. «Видео» — дублирует кнопку «Медиа» (файл сам решает, куда лечь).
   const addAction = (which: Tab): { label: string; hint: string; run: () => void } => {
     switch (which) {
-      case 'audio': return { label: 'Добавить аудио', hint: 'Загрузить аудиофайлы с устройства', run: () => audioInputRef.current?.click() };
-      case 'analyzed': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео и сохранить в галерею', run: () => navigate('/social-extension?tab=analytics') };
-      case 'hotebook': return { label: 'Добавить', hint: 'Открыть блок «Hotebook»: источники, чат и генерация артефактов', run: () => navigate('/flow?open=hotebook') };
-      case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => navigate('/flow?open=flow') };
-      case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: собрать ролик с аватаром/озвучкой', run: () => navigate('/flow?open=ugc') };
-      case 'trendhub': return { label: 'Добавить тренд', hint: 'Открыть «Тренды»: сканировать и анализировать', run: () => navigate('/social-extension') };
-      default: return { label: 'Добавить', hint: 'Открыть TrendFlow — сценарии производства видео (или загрузите файлы кнопкой «Медиа»)', run: () => navigate('/flow') };
+      case 'hotebook': return { label: 'Добавить', hint: 'Открыть блок «Hotebook»: источники, чат и генерация артефактов', run: () => setBlockReq({ cloud: 'hotebook' }) };
+      case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => setBlockReq({ cloud: 'flow' }) };
+      case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: собрать ролик с аватаром/озвучкой', run: () => setBlockReq({ cloud: 'ugc' }) };
+      case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics') };
+      default: return { label: 'Добавить', hint: 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»', run: () => mediaInputRef.current?.click() };
     }
   };
   // Рендер-функция (не компонент — чтобы не перемонтировалась на каждый рендер страницы).
@@ -282,6 +266,49 @@ export default function GalleryPage() {
     const anTitle = (a: TrendAnalysisItem) => a.title || a.dna?.meta?.author || 'Видео';
     return (
       <>
+        {/* Запросы трендов — СВЕРХУ (по фидбэку юзера): клик открывает готовую выдачу */}
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+              <Search size={15} style={{ color: 'var(--brand)' }} /> Запросы трендов
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — клик: «Тренды» откроются с готовой выдачей по этому слову</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {/* «+ Добавить тренд» — первым, как и в остальных разделах */}
+            <button type="button" onClick={() => navigate('/social-extension')}
+              title="Открыть «Тренды»: сканировать по новому ключевому слову"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-600 transition-colors hover:border-[var(--border-stronger)]"
+              style={{ background: 'transparent', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <Plus size={14} /> Добавить тренд
+            </button>
+            {fQs.map((x) => (
+              <span key={x.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                <button type="button"
+                  onClick={() => navigate(`/social-extension?q=${encodeURIComponent(x.query)}&platform=${encodeURIComponent(x.platform)}`)}
+                  title={`Открыть «Тренды» с готовой выдачей: «${x.query}» (${x.platform})`}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-600"
+                  style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <TrendingUp size={13} style={{ color: 'var(--brand)' }} />
+                  {x.query}
+                  <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>· {x.platform}{x.resultCount ? ` · ${x.resultCount}` : ''}</span>
+                </button>
+                <button type="button" onClick={() => void deleteQuery(x)} title="Убрать запрос из истории"
+                  className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+          </div>
+          {fQs.length === 0 && (
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Пока нет запросов. Сканируйте тренды по ключевому слову — запросы сохранятся здесь, чтобы не набирать их дважды.
+            </p>
+          )}
+        </div>
+
         {/* Анализ */}
         <div className="space-y-2.5">
           <div className="flex items-center gap-2">
@@ -349,45 +376,8 @@ export default function GalleryPage() {
           </div>
           {fAn.length === 0 && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-              Пока нет разборов. Нажмите «+ Добавить тренд» и проанализируйте видео — разобранное появится здесь с обложкой и данными анализа.
+              Пока нет разборов. Нажмите «+» и проанализируйте видео — разобранное появится здесь с обложкой и данными анализа.
             </p>
-          )}
-        </div>
-
-        {/* Запросы трендов */}
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-              <Search size={15} style={{ color: 'var(--brand)' }} /> Запросы трендов
-            </span>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — клик: «Тренды» откроются с готовой выдачей по этому слову</span>
-          </div>
-          {fQs.length === 0 ? (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Пока нет запросов. Сканируйте тренды по ключевому слову — запросы сохранятся здесь, чтобы не набирать их дважды.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {fQs.map((x) => (
-                <span key={x.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  <button type="button"
-                    onClick={() => navigate(`/social-extension?q=${encodeURIComponent(x.query)}&platform=${encodeURIComponent(x.platform)}`)}
-                    title={`Открыть «Тренды» с готовой выдачей: «${x.query}» (${x.platform})`}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-600"
-                    style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <TrendingUp size={13} style={{ color: 'var(--brand)' }} />
-                    {x.query}
-                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>· {x.platform}{x.resultCount ? ` · ${x.resultCount}` : ''}</span>
-                  </button>
-                  <button type="button" onClick={() => void deleteQuery(x)} title="Убрать запрос из истории"
-                    className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                    <X size={13} />
-                  </button>
-                </span>
-              ))}
-            </div>
           )}
         </div>
       </>
@@ -409,7 +399,7 @@ export default function GalleryPage() {
   const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
   const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(visibleIds));
 
-  const deleteBase = tab === 'trends' ? '/api/trends/videos' : '/api/trends/media';
+  const deleteBase = '/api/trends/media';
 
   const doDeleteOne = async (id: string) => {
     setBusy(true); setError(null);
@@ -456,24 +446,33 @@ export default function GalleryPage() {
     targets.forEach((v, i) => setTimeout(() => downloadOne(v), i * 350));
   };
 
-  const handleFiles = async (files: FileList | null, kind: 'reference' | 'audio') => {
+  // Одна кнопка «Медиа» на все типы: kind каждого файла определяется по его MIME
+  // (audio/* → «Аудио», изображения и видео → «Видео»). После загрузки открываем
+  // вкладку «Видео» с фильтром по тому, что загрузилось.
+  const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true); setError(null);
     try {
+      let audioCount = 0;
       for (const file of Array.from(files)) {
+        const kind: MediaKind = (file.type || '').startsWith('audio/') ? 'audio' : 'reference';
+        if (kind === 'audio') audioCount++;
         const fd = new FormData();
         fd.append('file', file);
         // ВАЖНО: для FormData НЕ задаём Content-Type — браузер сам проставит boundary.
         const res = await fetch(`/api/trends/media/upload?kind=${kind}`, { method: 'POST', headers: authHeader(), body: fd });
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
       }
-      setTab(kind); // load() сработает по смене вкладки
-      if (tab === kind) await load(kind);
+      // Все файлы — аудио → фильтр «Аудио», иначе «Видео». load() перезапустит эффект
+      // [tab, mediaKind]; если ни tab, ни фильтр не сменились — перезагружаем явно.
+      const nextKind: MediaKind = audioCount === files.length ? 'audio' : 'reference';
+      const changed = tab !== 'reference' || mediaKind !== nextKind;
+      setTab('reference'); setMediaKind(nextKind);
+      if (!changed) await load('reference', nextKind);
     } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
     finally {
       setUploading(false);
       if (mediaInputRef.current) mediaInputRef.current.value = '';
-      if (audioInputRef.current) audioInputRef.current.value = '';
     }
   };
 
@@ -515,27 +514,19 @@ export default function GalleryPage() {
 
   return (
     <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-4">
-      {/* Header: иконка + заголовок + загрузка + обновить */}
+      {/* Header: иконка + заголовок + одна кнопка «Медиа» (любые файлы) + обновить */}
       <div className="flex items-center gap-3 flex-wrap">
         <img src="/icons/nav-gallery.png" alt="" draggable={false}
              className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Галерея</h1>
-          <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Главный экран: «+ Добавить» открывает блоки, рядом — всё сохранённое (TrendFlow, Hotebook, Google Flow, UGC, Тренды).</p>
         </div>
-        {/* Загрузка медиа (изображения/видео) */}
-        <input ref={mediaInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files, 'reference')} />
-        <button type="button" onClick={() => mediaInputRef.current?.click()} disabled={uploading} title="Загрузить изображения/видео в «Референс»"
+        {/* Загрузка любых файлов: фото/видео → «Видео», аудио → «Аудио» (по типу файла) */}
+        <input ref={mediaInputRef} type="file" accept="image/*,video/*,audio/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+        <button type="button" onClick={() => mediaInputRef.current?.click()} disabled={uploading} title="Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»"
           className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl disabled:opacity-50 transition-colors"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />} Медиа
-        </button>
-        {/* Загрузка аудио */}
-        <input ref={audioInputRef} type="file" accept="audio/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files, 'audio')} />
-        <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploading} title="Загрузить аудио в «Аудио»"
-          className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl disabled:opacity-50 transition-colors"
-          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-          {uploading ? <Loader2 size={16} className="animate-spin" /> : <Music size={16} />} Аудио
         </button>
         <AuroraButton variant="secondary" onClick={() => load()} disabled={loading} icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}>Обновить</AuroraButton>
       </div>
@@ -574,6 +565,19 @@ export default function GalleryPage() {
         renderTrendHub()
       ) : (
         <>
+          {/* «Видео»: кнопки-фильтры Видео | Аудио (аудио объединено с медиафайлами) */}
+          {tab === 'reference' && (
+            <div className="inline-flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
+              {([['reference', 'Видео', <Video key="v" size={14} />], ['audio', 'Аудио', <Music key="a" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
+                <button key={k} type="button" onClick={() => setMediaKind(k)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-600 transition-all whitespace-nowrap"
+                  style={{ background: mediaKind === k ? 'var(--brand)' : 'transparent', color: mediaKind === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                  {ic} {lbl}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Тулбар результатов — когда есть файлы */}
           {filtered.length > 0 && (
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -707,12 +711,11 @@ export default function GalleryPage() {
           {/* Пусто: подсказка под плиткой «+» */}
           {filtered.length === 0 && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-              {tab === 'reference' ? 'Пока пусто. Всё, что произведёт TrendFlow, появится здесь; файлы можно загрузить кнопкой «Медиа».'
-                : tab === 'audio' ? 'Пока пусто. Загрузите аудио плиткой «+» или кнопкой «Аудио».'
-                : tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
+              {tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
                 : tab === 'flow' ? 'Пока пусто. Нажмите «+» — откроется блок «Google Flow» (Veo): готовые клипы попадут сюда.'
                 : tab === 'ugc' ? 'Пока пусто. Нажмите «+» — откроется UGC-студия: собранные ролики и макеты появятся здесь.'
-                : 'Пока пусто. Сохраняйте видео из «Аналитики» («Добавить в галерею») — они появятся здесь.'}
+                : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио кнопкой «Медиа» или плиткой «+» — аудиофайлы лягут сюда.'
+                : 'Пока пусто. Загрузите фото/видео кнопкой «Медиа» или плиткой «+»; здесь же появляется всё, что производят блоки.'}
             </p>
           )}
         </>
@@ -736,6 +739,9 @@ export default function GalleryPage() {
         onClose={() => setViewer(null)}
         onSaved={() => { void load(); }}
       />
+
+      {/* Блок TrendFlow ПОВЕРХ Галереи: закрыл — вернулся в этот же раздел (+ обновляем его) */}
+      {blockReq && <FlowBlockOverlay req={blockReq} onClose={() => { setBlockReq(null); void load(); }} />}
 
       {/* Просмотр сохранённого анализа видео (тот же разбор, что на вкладке «Аналитика») */}
       {analysis && (
