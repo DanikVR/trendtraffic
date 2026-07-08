@@ -23,7 +23,6 @@ import {
   Zap,
   ShieldAlert,
   Download,
-  Workflow,
   TrendingUp,
   Users,
   Image,
@@ -56,7 +55,7 @@ export function BottomTabBar() {
   // Локализованные пункты More-sheet — i18n заново резолвится при смене языка.
   const moreItems = [
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
-    ...(FEATURES.flow ? [{ path: '/flow', icon: <Workflow size={20} strokeWidth={1.5} />, label: 'TrendFlow', sublabel: t('moreSheet.flow.sub', 'Сценарии бота для каналов'), accent: '#7c5cff' }] : []),
+    // Пункт «TrendFlow» убран (2026-07-08): Галерея = главный экран, блоки открываются из неё.
     // «Тренды» → расширение (/social-extension). Не-Enterprise редиректит на Тарифы. /trends удалён.
     ...(FEATURES.socialMediaExt
       ? [{ path: '/social-extension', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Поиск горячих видео + аналитика'), accent: '#f59e0b' }]
