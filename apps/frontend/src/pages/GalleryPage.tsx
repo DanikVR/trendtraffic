@@ -653,7 +653,7 @@ export default function GalleryPage() {
               {ugcTpls.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   {ugcTpls.map((k) => (
-                    <button key={k.id} type="button" onClick={() => navigate('/flow?open=ugc')}
+                    <button key={k.id} type="button" onClick={() => setBlockReq({ cloud: 'ugc' })}
                       title="Открыть UGC-студию (шаблоны — кнопка «Шаблон» в шапке)"
                       className="flex flex-col items-start gap-0.5 pl-3 pr-3 py-1.5 rounded-xl text-left"
                       style={{ background: 'var(--bg-tertiary)', border: `1px solid ${k.autopublish?.enabled ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
