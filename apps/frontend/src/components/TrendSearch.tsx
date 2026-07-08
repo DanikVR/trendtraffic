@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
   Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X,
@@ -125,6 +126,10 @@ export interface TrendSearchProps {
   sectionTabs?: React.ReactNode;
 }
 
+// «Запросы трендов» из Галереи (?q=слово): маркер обработанного запроса на уровне модуля —
+// защита от повторного авто-скана при StrictMode/ремоунте (скан тратит кредиты TikHub).
+let autoScanConsumed = '';
+
 export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTabs }: TrendSearchProps) {
   const [platform, setPlatform] = useState<Source>('tiktok');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -197,6 +202,33 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
 
   useEffect(() => { loadVideos(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
+  // «Запросы трендов» из Галереи: /social-extension?q=слово[&platform=…] — префилл + авто-скан,
+  // чтобы окно трендов с этим словом открывалось сразу готовым (без повторного набора).
+  // Сам скан уходит через pendingScan на СЛЕДУЮЩЕМ рендере — когда platform/kind уже применились.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [pendingScan, setPendingScan] = useState<string | null>(null);
+  useEffect(() => {
+    const q = (searchParams.get('q') || '').trim();
+    if (!q) return;
+    const key = searchParams.toString();
+    if (autoScanConsumed === key) return;
+    autoScanConsumed = key;
+    const p = searchParams.get('platform');
+    if (p && PLATFORMS.some((x) => x.id === p)) selectPlatform(p as Source);
+    setKind('keyword');
+    setQuery(q);
+    setSearchParams({}, { replace: true }); // F5 не должен пересканировать
+    setPendingScan(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  useEffect(() => {
+    if (!pendingScan) return;
+    const q = pendingScan;
+    setPendingScan(null);
+    void handleScan(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingScan]);
+
   // Фоновое скачивание идёт на сервере → опрашиваем статусы, пока что-то качается.
   const anyDownloading = Object.values(perPlatform).some((b) => b.videos.some((v) => v.status === 'downloading'));
   useEffect(() => {
@@ -206,18 +238,20 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anyDownloading]);
 
-  const handleScan = async () => {
-    if (kind === 'keyword' && !query.trim()) { setError('Введите ключевое слово'); return; }
+  // qOverride — готовый запрос из «Запросов трендов» Галереи (setQuery асинхронен, поэтому
+  // авто-скан передаёт слово напрямую). unknown: onClick подсовывает MouseEvent — игнорируем.
+  const handleScan = async (qOverride?: unknown) => {
+    const q = typeof qOverride === 'string' ? qOverride.trim() : query.trim();
+    if (kind === 'keyword' && !q) { setError('Введите ключевое слово'); return; }
     setScanning(true); setError(null); setNotice(null);
     try {
       const res = await fetch('/api/trends/scan', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ kind, query: query.trim(), count, mode, sortType, publishTime, platform, filters }),
+        body: JSON.stringify({ kind, query: q, count, mode, sortType, publishTime, platform, filters }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       const found: StoredVideo[] = data.videos || [];
-      const q = query.trim();
       setPerPlatform((s) => {
         const cur = s[platform] || { query: '', videos: [] };
         return { ...s, [platform]: { query: q, videos: dedupVideos([...found, ...cur.videos]) } };

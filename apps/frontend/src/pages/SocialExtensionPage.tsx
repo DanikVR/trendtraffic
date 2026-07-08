@@ -13,6 +13,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
@@ -52,6 +53,14 @@ export default function SocialExtensionPage() {
   const { token } = useAppStore();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [tab, setTab] = useState<Tab>('search');
+  // Deep-link из Галереи: ?q=слово → секция «Поиск» (авто-скан делает TrendSearch);
+  // ?tab=analytics → секция «Аналитика» (плитка «+» раздела «Из анализа»).
+  const location = useLocation();
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    if (sp.has('q')) setTab('search');
+    else if (sp.get('tab') === 'analytics') setTab('analytics');
+  }, [location.search]);
   const [url, setUrl] = useState('');
   const [queue, setQueue] = useState<{ url: string; cover?: string }[]>([]);
   const appliedRef = useRef<string>('');

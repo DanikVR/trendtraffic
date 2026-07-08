@@ -16,10 +16,11 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Image as ImageIcon, Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
-  Download, Play, BookOpen, Clapperboard, ArrowRight,
+  Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -28,8 +29,9 @@ import { VideoViewer } from '../components/VideoViewer';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
 import { TT_EXT_VERSION } from '../components/AppVersion';
+import { coverSrc } from '../components/TrendSearch';
 
-type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
+type Tab = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook' | 'flow' | 'ugc' | 'trendhub';
 
 interface GalleryItem {
   id: string;
@@ -45,15 +47,25 @@ interface GalleryItem {
   hasAnalysis?: boolean; // «Из анализа»: есть сохранённый разбор → бейдж + просмотр
 }
 
-// «Тренды» из Галереи убраны (по слову юзера, 2026-07-02): скачанные тренды живут на
-// странице «Тренды» и в пикерах источника. Вкладка «Референс» переименована в «TrendFlow» —
-// сюда падает ВСЁ, что произвёл TrendFlow (готовые ролики, склейки, кадры, головы HeyGen,
-// Omni-клипы) + загруженные вручную медиа.
+// Галерея = ГЛАВНЫЙ ЭКРАН (2026-07-08): всё проходит через неё. Единый стиль раздела:
+// первой в сетке стоит плитка «+ Добавить» — она открывает соответствующий блок
+// (Hotebook / Google Flow / UGC-студию / скан Трендов), рядом — сохранённые файлы раздела.
+//  - TrendFlow   — всё, что произвёл TrendFlow (ролики, склейки, кадры) + ручные загрузки.
+//  - Аудио       — аудиофайлы.
+//  - Из анализа  — сохранённое со страницы аналитики (+ бейдж «Анализ»).
+//  - Hotebook    — артефакты NotebookLM; «+» открывает блок Hotebook.
+//  - Google Flow — клипы из Google Flow (Veo); «+» открывает блок Flow.
+//  - UGC         — рендеры UGC-студии + макеты (бренд-киты); «+» открывает студию.
+//  - Тренды      — проанализированные видео (с разбором) + сохранённые запросы сканов;
+//                  клик по запросу открывает «Тренды» с уже готовой выдачей по слову.
 const TABS: { key: Tab; label: string }[] = [
   { key: 'reference', label: 'TrendFlow' },
   { key: 'audio', label: 'Аудио' },
   { key: 'analyzed', label: 'Из анализа' },
   { key: 'hotebook', label: 'Hotebook' },
+  { key: 'flow', label: 'Google Flow' },
+  { key: 'ugc', label: 'UGC' },
+  { key: 'trendhub', label: 'Тренды' },
 ];
 
 function tabIcon(key: Tab, size = 15) {
@@ -61,6 +73,9 @@ function tabIcon(key: Tab, size = 15) {
   if (key === 'reference') return <ImageIcon size={size} />;
   if (key === 'audio') return <Music size={size} />;
   if (key === 'hotebook') return <BookOpen size={size} />;
+  if (key === 'flow') return <Clapperboard size={size} />;
+  if (key === 'ugc') return <Users size={size} />;
+  if (key === 'trendhub') return <TrendingUp size={size} />;
   return <Sparkles size={size} />;
 }
 
@@ -76,8 +91,30 @@ function dur(s?: number): string {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
+interface TrendAnalysisItem {
+  id: string;
+  mediaAssetId?: string;
+  sourceUrl?: string;
+  platform?: string;
+  dna: any;
+  fileUrl?: string;  // видео в Галерее (если сохранено)
+  title?: string;
+  createdAt?: string;
+}
+
+interface TrendQueryItem {
+  id: string;
+  query: string;
+  platform: string;
+  resultCount: number;
+  createdAt: string;
+}
+
+interface BrandKit { id: string; name: string; data?: any }
+
 export default function GalleryPage() {
   const { token } = useAppStore();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('reference');
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +127,11 @@ export default function GalleryPage() {
   const [viewer, setViewer] = useState<{ url: string; title: string } | null>(null);
   const [analysis, setAnalysis] = useState<{ title: string; dna: any } | null>(null); // просмотр сохранённого разбора
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  // «Тренды»: проанализированные видео + сохранённые запросы сканов.
+  const [analyses, setAnalyses] = useState<TrendAnalysisItem[]>([]);
+  const [trendQueries, setTrendQueries] = useState<TrendQueryItem[]>([]);
+  // «UGC»: макеты (бренд-киты студии).
+  const [kits, setKits] = useState<BrandKit[]>([]);
 
   // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
@@ -152,9 +194,19 @@ export default function GalleryPage() {
             durationSec: v.durationSec, stats: v.stats, isTrend: true,
           })));
         }
+      } else if (which === 'trendhub') {
+        // «Тренды»: разбор (video_analyses) + запросы сканов — двумя запросами параллельно.
+        setItems([]);
+        const [ar, qr] = await Promise.all([
+          fetch('/api/trends/analyses?limit=200', { headers: jsonHeaders() }),
+          fetch('/api/trends/history?limit=60', { headers: jsonHeaders() }),
+        ]);
+        setAnalyses(ar.ok ? ((await ar.json()).analyses || []) : []);
+        setTrendQueries(qr.ok ? ((await qr.json()).queries || []) : []);
       } else {
-        // 'analyzed' → папка «Из анализа»; 'hotebook' → папка артефактов NotebookLM; иначе по kind.
-        const qsMedia = which === 'analyzed' ? 'folder=analyzed' : which === 'hotebook' ? 'folder=hotebook' : `kind=${which}`;
+        // Папочные вкладки: 'analyzed'/'hotebook'/'flow'/'ugc' → folder=…; иначе по kind.
+        const FOLDER_TABS: Partial<Record<Tab, string>> = { analyzed: 'analyzed', hotebook: 'hotebook', flow: 'flow', ugc: 'ugc' };
+        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${which}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
           const d = await res.json();
@@ -163,11 +215,184 @@ export default function GalleryPage() {
             title: a.originalName || 'файл', isTrend: false, hasAnalysis: !!a.hasAnalysis,
           })));
         }
+        // «UGC»: рядом с рендерами — макеты (бренд-киты студии).
+        if (which === 'ugc') {
+          try {
+            const kr = await fetch('/api/render/ugc/brandkits', { headers: jsonHeaders() });
+            setKits(kr.ok ? ((await kr.json()).kits || []) : []);
+          } catch { setKits([]); }
+        }
       }
     } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab]);
+
+  // ── «+ Добавить» — первой плиткой каждого раздела: открывает блок раздела ──
+  const addAction = (which: Tab): { label: string; hint: string; run: () => void } => {
+    switch (which) {
+      case 'audio': return { label: 'Добавить аудио', hint: 'Загрузить аудиофайлы с устройства', run: () => audioInputRef.current?.click() };
+      case 'analyzed': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео и сохранить в галерею', run: () => navigate('/social-extension?tab=analytics') };
+      case 'hotebook': return { label: 'Добавить', hint: 'Открыть блок «Hotebook»: источники, чат и генерация артефактов', run: () => navigate('/flow?open=hotebook') };
+      case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => navigate('/flow?open=flow') };
+      case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: собрать ролик с аватаром/озвучкой', run: () => navigate('/flow?open=ugc') };
+      case 'trendhub': return { label: 'Добавить тренд', hint: 'Открыть «Тренды»: сканировать и анализировать', run: () => navigate('/social-extension') };
+      default: return { label: 'Добавить', hint: 'Открыть TrendFlow — сценарии производства видео (или загрузите файлы кнопкой «Медиа»)', run: () => navigate('/flow') };
+    }
+  };
+  // Рендер-функция (не компонент — чтобы не перемонтировалась на каждый рендер страницы).
+  const renderAddTile = (which: Tab) => {
+    const a = addAction(which);
+    return (
+      <button type="button" onClick={a.run} title={a.hint}
+        className="rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors hover:border-[var(--border-stronger)]"
+        style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: 180 }}>
+        <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border-strong)' }}>
+          <Plus size={26} />
+        </span>
+        <span className="text-sm font-600 px-2 text-center">{a.label}</span>
+        <span className="text-[11px] px-3 text-center leading-snug" style={{ color: 'var(--text-muted)' }}>{a.hint}</span>
+      </button>
+    );
+  };
+
+  // «UGC»: удалить макет (бренд-кит студии).
+  const deleteKit = async (k: BrandKit) => {
+    try {
+      const r = await fetch(`/api/render/ugc/brandkits/${k.id}`, { method: 'DELETE', headers: jsonHeaders() });
+      if (r.ok) setKits((prev) => prev.filter((x) => x.id !== k.id));
+    } catch { /* не критично */ }
+  };
+
+  // «Тренды»: убрать запрос из истории сканов.
+  const deleteQuery = async (q: TrendQueryItem) => {
+    try {
+      const r = await fetch('/api/trends/history/delete', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ query: q.query }) });
+      if (r.ok) setTrendQueries((prev) => prev.filter((x) => x.query.toLowerCase() !== q.query.toLowerCase()));
+    } catch { /* не критично */ }
+  };
+
+  // Вкладка «Тренды»: раздел «Анализ» (разобранные видео с обложкой и данными) +
+  // раздел «Запросы трендов» (клик — «Тренды» открываются с готовой выдачей по слову).
+  const renderTrendHub = () => {
+    const q = query.trim().toLowerCase();
+    const fAn = q ? analyses.filter((a) =>
+      (a.title || '').toLowerCase().includes(q) || (a.dna?.meta?.author || '').toLowerCase().includes(q) || (a.sourceUrl || '').toLowerCase().includes(q)) : analyses;
+    const fQs = q ? trendQueries.filter((x) => x.query.toLowerCase().includes(q)) : trendQueries;
+    const anTitle = (a: TrendAnalysisItem) => a.title || a.dna?.meta?.author || 'Видео';
+    return (
+      <>
+        {/* Анализ */}
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+              <Sparkles size={15} style={{ color: '#22d3ee' }} /> Анализ
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fAn.length} — уже разобранные видео: обложка + данные анализа</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {renderAddTile('trendhub')}
+            {fAn.map((a) => {
+              const cover = a.dna?.meta?.cover as string | undefined;
+              const title = anTitle(a);
+              const openDna = () => setAnalysis({ title, dna: a.dna || {} });
+              return (
+                <AuroraCard key={a.id} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                  <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                    {a.fileUrl ? (
+                      <button type="button" onClick={() => setViewer({ url: a.fileUrl!, title })} className="group/vid block w-full h-full relative" title="Открыть в просмотрщике (с обрезкой)">
+                        <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
+                        <span className="absolute inset-0 flex items-center justify-center opacity-90 group-hover/vid:opacity-100">
+                          <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', backdropFilter: 'blur(4px)' }}>
+                            <Play size={22} className="ml-0.5" />
+                          </span>
+                        </span>
+                      </button>
+                    ) : cover ? (
+                      <button type="button" onClick={openDna} className="block w-full h-full" title="Открыть разбор">
+                        <img src={coverSrc(cover)} alt={title} loading="lazy" className="w-full h-full object-cover" />
+                      </button>
+                    ) : (
+                      <button type="button" onClick={openDna} className="w-full h-full flex items-center justify-center" title="Открыть разбор"
+                        style={{ background: 'transparent', border: 'none', color: '#22d3ee', cursor: 'pointer' }}>
+                        <Sparkles size={34} />
+                      </button>
+                    )}
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openDna(); }}
+                      title="Открыть разбор виральности этого видео"
+                      className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 text-[10px] font-700 px-2 py-1 rounded-lg transition-transform hover:scale-105"
+                      style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
+                      <Sparkles size={11} /> Анализ
+                    </button>
+                  </div>
+                  <div className="p-3 flex flex-col gap-1.5 flex-1">
+                    <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={title}>{title}</div>
+                    {a.dna?.hookType && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{a.dna.hookType}</p>}
+                    <div className="flex items-center gap-1 pt-1 mt-auto">
+                      {a.sourceUrl && (
+                        <a href={a.sourceUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                          <ExternalLink size={14} />
+                        </a>
+                      )}
+                      <button type="button" onClick={openDna} title="Открыть разбор"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors hover:opacity-90"
+                        style={{ background: 'rgba(34,211,238,0.14)', color: '#22d3ee' }}>
+                        <Sparkles size={15} />
+                      </button>
+                    </div>
+                  </div>
+                </AuroraCard>
+              );
+            })}
+          </div>
+          {fAn.length === 0 && (
+            <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              Пока нет разборов. Нажмите «+ Добавить тренд» и проанализируйте видео — разобранное появится здесь с обложкой и данными анализа.
+            </p>
+          )}
+        </div>
+
+        {/* Запросы трендов */}
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+              <Search size={15} style={{ color: 'var(--brand)' }} /> Запросы трендов
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — клик: «Тренды» откроются с готовой выдачей по этому слову</span>
+          </div>
+          {fQs.length === 0 ? (
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Пока нет запросов. Сканируйте тренды по ключевому слову — запросы сохранятся здесь, чтобы не набирать их дважды.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {fQs.map((x) => (
+                <span key={x.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <button type="button"
+                    onClick={() => navigate(`/social-extension?q=${encodeURIComponent(x.query)}&platform=${encodeURIComponent(x.platform)}`)}
+                    title={`Открыть «Тренды» с готовой выдачей: «${x.query}» (${x.platform})`}
+                    className="inline-flex items-center gap-1.5 text-[13px] font-600"
+                    style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <TrendingUp size={13} style={{ color: 'var(--brand)' }} />
+                    {x.query}
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>· {x.platform}{x.resultCount ? ` · ${x.resultCount}` : ''}</span>
+                  </button>
+                  <button type="button" onClick={() => void deleteQuery(x)} title="Убрать запрос из истории"
+                    className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -296,7 +521,7 @@ export default function GalleryPage() {
              className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Галерея</h1>
-          <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Медиа-библиотека: тренды, референсы, аудио и сохранённое из анализа.</p>
+          <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Главный экран: «+ Добавить» открывает блоки, рядом — всё сохранённое (TrendFlow, Hotebook, Google Flow, UGC, Тренды).</p>
         </div>
         {/* Загрузка медиа (изображения/видео) */}
         <input ref={mediaInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files, 'reference')} />
@@ -316,7 +541,7 @@ export default function GalleryPage() {
       </div>
 
       {/* Папки — сегмент-вкладки (индиго-заливка активной), как секции в «Трендах» */}
-      <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+      <div className="flex flex-wrap gap-1 p-1 rounded-xl sm:inline-flex" style={{ background: 'var(--bg-tertiary)' }}>
         {TABS.map((tb) => {
           const active = tab === tb.key;
           return (
@@ -345,23 +570,12 @@ export default function GalleryPage() {
 
       {loading ? (
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
-      ) : filtered.length === 0 ? (
-        <AuroraCard className="p-10 sm:p-14 text-center">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
-            {tabIcon(tab, 26)}
-          </div>
-          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Пока пусто</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-            {tab === 'trends' ? 'Скачайте видео на странице «Тренды».'
-              : tab === 'reference' ? 'Загрузите изображения/видео кнопкой «Медиа».'
-              : tab === 'audio' ? 'Загрузите аудио кнопкой «Аудио».'
-              : tab === 'hotebook' ? 'Генерируйте аудио, видео, отчёты и другие артефакты в блоке «Hotebook» сценария TrendFlow — готовое появится здесь.'
-              : 'Сохраняйте видео из «Аналитики» (вкладка «Тренды» → «Добавить в галерею») — они появятся здесь.'}
-          </p>
-        </AuroraCard>
+      ) : tab === 'trendhub' ? (
+        renderTrendHub()
       ) : (
         <>
-          {/* Тулбар результатов */}
+          {/* Тулбар результатов — когда есть файлы */}
+          {filtered.length > 0 && (
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Найдено: {filtered.length}</span>
@@ -384,9 +598,34 @@ export default function GalleryPage() {
               {`Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
             </AuroraButton>
           </div>
+          )}
 
-          {/* Сетка карточек */}
+          {/* «UGC»: макеты (бренд-киты студии) — рядом с рендерами */}
+          {tab === 'ugc' && kits.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 text-[13px] font-700" style={{ color: 'var(--text-secondary)' }}>
+                <LayoutTemplate size={15} /> Макеты:
+              </span>
+              {kits.map((k) => (
+                <span key={k.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <button type="button" onClick={() => navigate('/flow?open=ugc')} title="Открыть UGC-студию — макет применяется в шаге «Оформление»"
+                    className="text-[13px] font-600" style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    {k.name || 'Макет'}
+                  </button>
+                  <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет"
+                    className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Сетка карточек: первой — плитка «+ Добавить» (открывает блок раздела) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {renderAddTile(tab)}
             {filtered.map((v) => {
               const isSel = selected.has(v.id);
               return (
@@ -464,6 +703,18 @@ export default function GalleryPage() {
               );
             })}
           </div>
+
+          {/* Пусто: подсказка под плиткой «+» */}
+          {filtered.length === 0 && (
+            <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              {tab === 'reference' ? 'Пока пусто. Всё, что произведёт TrendFlow, появится здесь; файлы можно загрузить кнопкой «Медиа».'
+                : tab === 'audio' ? 'Пока пусто. Загрузите аудио плиткой «+» или кнопкой «Аудио».'
+                : tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
+                : tab === 'flow' ? 'Пока пусто. Нажмите «+» — откроется блок «Google Flow» (Veo): готовые клипы попадут сюда.'
+                : tab === 'ugc' ? 'Пока пусто. Нажмите «+» — откроется UGC-студия: собранные ролики и макеты появятся здесь.'
+                : 'Пока пусто. Сохраняйте видео из «Аналитики» («Добавить в галерею») — они появятся здесь.'}
+            </p>
+          )}
         </>
       )}
 

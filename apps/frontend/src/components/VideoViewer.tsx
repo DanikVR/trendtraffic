@@ -14,9 +14,10 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, Play, Pause, Scissors, RotateCw, Crop, Undo2, RefreshCw, Save, Loader2, Download,
-  SkipBack, SkipForward, Check, Music, Pencil, Plus, Volume2, VolumeX,
+  SkipBack, SkipForward, Check, Music, Pencil, Plus, Volume2, VolumeX, Cloud,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { downloadMedia } from './chat/MediaLightbox';
@@ -83,6 +84,7 @@ function normalize(segs: Seg[]): Seg[] {
 export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind }: VideoViewerProps) {
   const isAudio = kind === 'audio';
   const token = useAppStore((s) => s.token);
+  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -240,6 +242,13 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   useEffect(() => { selInRef.current = selIn; }, [selIn]);
   useEffect(() => { selOutRef.current = selOut; }, [selOut]);
 
+  // Omni Flash: текущее видео → новый сценарий TrendFlow с этим источником, облако Omni открыто.
+  const openInOmni = () => {
+    const name = (nameEdit || title || 'Видео').trim();
+    onClose();
+    navigate(`/flow?open=omni&src=${encodeURIComponent(curUrl)}&srcName=${encodeURIComponent(name)}`);
+  };
+
   const save = async () => {
     if (!hasChanges || saving) return;
     setSaving(true); setErr(null); setSavedOk(false);
@@ -362,11 +371,22 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
           <div className="text-xs tabular-nums ml-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
             {fmtTime(time)} <span style={{ color: 'rgba(255,255,255,0.4)' }}>/ {fmtTime(duration)}</span>
           </div>
-          {canEdit && (
-            <div className="ml-auto text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Итог: <span style={{ color: 'var(--brand)' }}>{fmtTime(resultDuration)}</span>
-            </div>
-          )}
+          <div className="ml-auto flex items-center gap-2.5">
+            {/* Omni Flash: перегенерация/рестайл этого видео — открывает блок Omni в TrendFlow */}
+            {!isAudio && isLocal(curUrl) && (
+              <button type="button" onClick={openInOmni}
+                title="Открыть в Omni Flash — сгенерировать/переделать фрагменты этого видео (блок Omni в TrendFlow)"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-700 transition-opacity hover:opacity-90"
+                style={{ background: 'rgba(66,133,244,0.16)', color: '#8ab4f8', border: '1px solid rgba(66,133,244,0.45)' }}>
+                <Cloud size={15} /> <span className="hidden sm:inline">Omni Flash</span>
+              </button>
+            )}
+            {canEdit && (
+              <div className="text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                Итог: <span style={{ color: 'var(--brand)' }}>{fmtTime(resultDuration)}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Дорожка-таймлайн */}

@@ -15,6 +15,7 @@
  * сценариев они не нужны.
  */
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Pencil, Check, X, Copy, Trash2, Power, Loader2, Cloud } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -39,6 +40,11 @@ interface FlowRow {
   created_at?: string;
   updated_at?: string;
 }
+
+// Deep-link из Галереи: /flow?open=<облако>[&src=<url>&srcName=&srcAssetId=].
+// Маркер на уровне модуля — защита от двойного срабатывания эффекта (StrictMode).
+let deepLinkConsumed = '';
+const DEEP_CLOUDS = ['omni', 'plan', 'editor', 'ugc', 'hotebook', 'flow'];
 
 // Дата обновления цифрами + время: «02.07.2026, 14:35».
 function fmtDateTime(iso?: string): string {
@@ -84,6 +90,62 @@ export default function FlowPage() {
   const [confirmMass, setConfirmMass] = useState(false);
   const [massBusy, setMassBusy] = useState(false);
   const [flowKinds, setFlowKinds] = useState<Record<string, string[]>>({}); // иконки-бейджи содержимого по графу
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [initialCloud, setInitialCloud] = useState<string | null>(null); // авто-открыть облако в редакторе
+
+  // Deep-link из Галереи/редактора видео: открыть конкретное облако-блок.
+  //  • ?open=omni&src=<url> — новый сценарий с этим видео-источником → облако Omni Flash;
+  //  • ?open=hotebook|flow|ugc|… — последний сценарий (или новый, если нет ни одного).
+  useEffect(() => {
+    const open = searchParams.get('open');
+    if (!open || !DEEP_CLOUDS.includes(open)) return;
+    const key = searchParams.toString();
+    if (deepLinkConsumed === key) return; // StrictMode/повторный рендер — уже обработали
+    deepLinkConsumed = key;
+    const src = searchParams.get('src');
+    const srcName = searchParams.get('srcName');
+    const srcAssetId = searchParams.get('srcAssetId');
+    (async () => {
+      try {
+        let flowId: string | null = null;
+        if (src) {
+          // Видео из Галереи → новый сценарий с этим источником.
+          const flowName = (srcName ? `${open === 'omni' ? 'Omni Flash' : 'Сценарий'} — ${srcName}` : 'Новый сценарий').slice(0, 120);
+          const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: flowName }) });
+          const cd = await cr.json();
+          if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
+          flowId = cd.flow?.id || null;
+          if (flowId) {
+            await fetch(`/api/flows/${flowId}`, {
+              method: 'PUT', headers: headers(),
+              body: JSON.stringify({ graph: { source: { url: src, name: srcName || 'Видео', ...(srcAssetId ? { assetId: srcAssetId } : {}) } } }),
+            });
+          }
+        } else {
+          // Последний сценарий (flows отсортированы по updated_at DESC); нет ни одного — создаём.
+          const r = await fetch('/api/flows', { headers: headers() });
+          const d = await r.json().catch(() => ({}));
+          flowId = (d.flows || [])[0]?.id || null;
+          if (!flowId) {
+            const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: 'Новый сценарий' }) });
+            const cd = await cr.json();
+            if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
+            flowId = cd.flow?.id || null;
+          }
+        }
+        if (flowId) {
+          setInitialCloud(open);
+          setOpenedNew(false);
+          setEditingId(flowId);
+        }
+      } catch (e: any) {
+        setError(e?.message || 'Не удалось открыть блок');
+      } finally {
+        setSearchParams({}, { replace: true }); // чтобы F5 не создавал сценарии повторно
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -212,7 +274,8 @@ export default function FlowPage() {
   if (editingId) {
     return (
       <React.Suspense fallback={<div className="py-12 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>}>
-        <MontageEditor flowId={editingId} isNew={openedNew} onBack={() => { setEditingId(null); setOpenedNew(false); load(); }} />
+        <MontageEditor key={editingId} flowId={editingId} isNew={openedNew} initialCloud={initialCloud}
+          onBack={() => { setEditingId(null); setOpenedNew(false); setInitialCloud(null); load(); }} />
       </React.Suspense>
     );
   }

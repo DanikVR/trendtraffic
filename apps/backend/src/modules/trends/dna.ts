@@ -336,6 +336,33 @@ export async function saveTrendDNA(
   }
 }
 
+/**
+ * Все сохранённые анализы тенанта — раздел «Тренды → Анализ» в Галерее.
+ * Джойним media_assets: если видео сохранено в Галерею, отдаём его файл (превью/плеер).
+ */
+export async function listTrendDNA(tenantId: string, limit = 100): Promise<Array<StoredTrendDNA & { fileUrl?: string; title?: string }>> {
+  try {
+    const r = await pool.query(
+      `SELECT va.id, va.media_asset_id, va.source_video_id, va.platform, va.external_id, va.source_url,
+              va.dna, va.model, va.created_at, ma.file_url AS ma_file_url, ma.original_name AS ma_name
+       FROM video_analyses va
+       LEFT JOIN media_assets ma ON ma.id = va.media_asset_id AND ma.tenant_id = va.tenant_id
+       WHERE va.tenant_id = $1
+       ORDER BY va.created_at DESC
+       LIMIT $2`,
+      [tenantId, Math.max(1, Math.min(300, limit))]
+    );
+    return r.rows.map((row: any) => ({
+      ...mapRow(row),
+      fileUrl: row.ma_file_url || undefined,
+      title: row.ma_name || undefined,
+    }));
+  } catch (e) {
+    console.warn('[trends] listTrendDNA failed:', (e as Error).message);
+    return [];
+  }
+}
+
 /** Возвращает сохранённую ДНК по видео Галереи (для автозаполнения TrendFlow). */
 export async function getTrendDNAByAsset(tenantId: string, mediaAssetId: string): Promise<StoredTrendDNA | null> {
   try {
