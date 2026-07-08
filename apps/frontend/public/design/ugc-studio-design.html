@@ -1,0 +1,1925 @@
+<meta charset="utf-8">
+<title>UGC-студия — макет редизайна</title>
+<style>
+  [hidden]{display:none !important}
+  /* ══ Токены (1:1 с index.css прода: светлая по умолчанию, тёмная через media/data-theme) ══ */
+  :root{
+    --bg:#F9FAFB; --surface:#FFFFFF; --field:#F1F5F9; --line:#E2E8F0; --line2:#CBD5E1;
+    --tx:#1A1A1A; --tx2:#4B5563; --mut:#6B7280; --dis:#9CA3AF;
+    --acc:#9333EA; --acc2:#A855F7; --accSoft:rgba(147,51,234,.09); --accLine:rgba(147,51,234,.35);
+    --ok:#15803D; --okSoft:rgba(21,128,61,.10); --warn:#B45309; --err:#DC2626;
+    --dot:#E2E5EA; --shadow:0 10px 30px rgba(15,23,42,.08);
+    --chip-b:#FFFFFF;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0E0E0D; --surface:#1A1A18; --field:#22221F; --line:#2A2A27; --line2:#3A3A35;
+      --tx:#FAFAF9; --tx2:#C9CBD1; --mut:#9CA3AF; --dis:#5A5A55;
+      --acc:#A855F7; --acc2:#C084FC; --accSoft:rgba(168,85,247,.14); --accLine:rgba(168,85,247,.45);
+      --ok:#10B981; --okSoft:rgba(16,185,129,.12); --warn:#F59E0B; --err:#EF4444;
+      --dot:#232320; --shadow:0 14px 34px rgba(0,0,0,.45);
+      --chip-b:#22221F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E0E0D; --surface:#1A1A18; --field:#22221F; --line:#2A2A27; --line2:#3A3A35;
+    --tx:#FAFAF9; --tx2:#C9CBD1; --mut:#9CA3AF; --dis:#5A5A55;
+    --acc:#A855F7; --acc2:#C084FC; --accSoft:rgba(168,85,247,.14); --accLine:rgba(168,85,247,.45);
+    --ok:#10B981; --okSoft:rgba(16,185,129,.12); --warn:#F59E0B; --err:#EF4444;
+    --dot:#232320; --shadow:0 14px 34px rgba(0,0,0,.45);
+    --chip-b:#22221F;
+  }
+  :root[data-theme="light"]{
+    --bg:#F9FAFB; --surface:#FFFFFF; --field:#F1F5F9; --line:#E2E8F0; --line2:#CBD5E1;
+    --tx:#1A1A1A; --tx2:#4B5563; --mut:#6B7280; --dis:#9CA3AF;
+    --acc:#9333EA; --acc2:#A855F7; --accSoft:rgba(147,51,234,.09); --accLine:rgba(147,51,234,.35);
+    --ok:#15803D; --okSoft:rgba(21,128,61,.10); --warn:#B45309; --err:#DC2626;
+    --dot:#E2E5EA; --shadow:0 10px 30px rgba(15,23,42,.08);
+    --chip-b:#FFFFFF;
+  }
+
+  *{box-sizing:border-box; margin:0}
+  html,body{background:var(--bg); color:var(--tx);
+    font-family:"Geist","Geist Sans",-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased}
+  button{font:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  button:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--acc); outline-offset:2px; border-radius:8px}
+  input,textarea{font:inherit; color:var(--tx)}
+  ::placeholder{color:var(--dis)}
+
+  /* ══ Обёртка страницы-спецификации ══ */
+  .wrap{max-width:1460px; margin:0 auto; padding:26px 22px 80px}
+  .intro{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:14px}
+  .intro h1{font-size:21px; font-weight:750; letter-spacing:-.01em}
+  .intro h1 em{font-style:normal; color:var(--acc)}
+  .intro p{color:var(--mut); font-size:12.5px; max-width:640px; margin-top:4px}
+  .legend{display:flex; gap:6px; flex-wrap:wrap}
+  .legend span{font-size:11px; color:var(--tx2); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px 10px}
+  .legend .reset{color:var(--acc); border-color:var(--accLine); font-weight:650}
+
+  /* ══ Сцена и каркас приложения ══ */
+  .stage{overflow-x:auto; border-radius:18px}
+  .app{min-width:1180px; height:820px; display:grid; grid-template-rows:54px 1fr 178px;
+    background:var(--bg); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); overflow:hidden}
+
+  /* — Топбар — */
+  .topbar{display:flex; align-items:center; gap:12px; padding:0 14px; background:var(--surface); border-bottom:1px solid var(--line)}
+  .tb-back{display:inline-flex; align-items:center; gap:7px; color:var(--tx2); font-size:12.5px; font-weight:600; padding:7px 10px; border-radius:10px}
+  .tb-back:hover{background:var(--field)}
+  .tb-title{display:flex; flex-direction:column; line-height:1.15}
+  .tb-title b{font-size:13.5px; font-weight:720}
+  .tb-title span{font-size:10.5px; color:var(--mut)}
+  .tb-spacer{flex:1}
+  .tb-saved{display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--mut)}
+  .tb-saved i{width:7px; height:7px; border-radius:50%; background:var(--ok); display:inline-block}
+  .tb-cost{font-size:11.5px; color:var(--tx2); background:var(--field); border:1px solid var(--line); padding:6px 11px; border-radius:999px; font-variant-numeric:tabular-nums}
+  .tb-cost b{color:var(--tx); font-weight:700}
+  .cta{display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:720; color:#fff;
+    background:linear-gradient(135deg, var(--acc), var(--acc2)); padding:9px 18px; border-radius:12px; transition:opacity .15s, transform .1s}
+  .cta:not(:disabled):hover{transform:translateY(-1px)}
+  .cta:disabled{opacity:.45; cursor:not-allowed}
+
+  /* — Корпус: панель + канвас — */
+  .body{display:grid; grid-template-columns:348px 1fr; min-height:0}
+  .rail{border-right:1px solid var(--line); background:var(--surface); overflow-y:auto; padding:12px 12px 16px; display:flex; flex-direction:column; gap:10px}
+  .rail::-webkit-scrollbar{width:8px} .rail::-webkit-scrollbar-thumb{background:var(--line2); border-radius:4px}
+
+  .sec{border:1px solid var(--line); border-radius:14px; background:var(--bg); padding:11px 12px}
+  .sec-h{display:flex; align-items:center; gap:9px; margin-bottom:9px}
+  .step{width:20px; height:20px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:10.5px; font-weight:750; color:var(--mut); background:var(--field); border:1px solid var(--line2)}
+  .step.done{background:var(--ok); border-color:var(--ok); color:#fff}
+  .sec-h b{font-size:12.5px; font-weight:720}
+  .sec-h small{color:var(--mut); font-size:10.5px; margin-left:auto; font-weight:550}
+  .hint{font-size:10.8px; color:var(--mut); line-height:1.5}
+  .lbl{font-size:10px; font-weight:750; text-transform:uppercase; letter-spacing:.055em; color:var(--mut); margin:10px 0 6px}
+  .new-tag{font-size:9px; font-weight:800; letter-spacing:.06em; color:var(--ok); background:var(--okSoft); border-radius:999px; padding:2px 7px; text-transform:uppercase}
+
+  /* — Сегменты и пилюли — */
+  .seg{display:grid; gap:4px; padding:4px; background:var(--field); border-radius:12px}
+  .seg.c2{grid-template-columns:1fr 1fr} .seg.c3{grid-template-columns:1fr 1fr 1fr} .seg.c4{grid-template-columns:repeat(4,1fr)}
+  .seg button{padding:7px 4px; border-radius:9px; font-size:11.5px; font-weight:650; color:var(--mut); transition:background .12s,color .12s}
+  .seg button:hover{color:var(--tx2)}
+  .seg button.on{background:var(--surface); color:var(--acc); box-shadow:0 1px 4px rgba(0,0,0,.14)}
+  .pills{display:flex; gap:5px; flex-wrap:wrap}
+  .pill{font-size:11px; font-weight:640; color:var(--mut); background:var(--field); border:1px solid var(--line); border-radius:999px; padding:5px 11px; transition:all .12s}
+  .pill.on{background:var(--acc); border-color:var(--acc); color:#fff}
+  .money{font-size:9.5px; font-weight:800; margin-left:5px; opacity:.75; letter-spacing:.04em}
+
+  /* — Карточки режима — */
+  .modes{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+  .mode{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:8px 6px 7px; display:flex; flex-direction:column; align-items:center; gap:6px; transition:border-color .12s, background .12s}
+  .mode.on{border-color:var(--acc); background:var(--accSoft); box-shadow:0 0 0 1px var(--acc) inset}
+  .mode span{font-size:10.6px; font-weight:680; color:var(--tx2); text-align:center; line-height:1.25}
+  .mode.on span{color:var(--acc)}
+  .mdia{width:34px; height:56px; border-radius:7px; border:1.5px solid var(--line2); position:relative; overflow:hidden; background:var(--field)}
+  .mode.on .mdia{border-color:var(--acc)}
+  .mdia i{position:absolute; border-radius:3px; background:var(--acc2); opacity:.85}
+  .mdia u{position:absolute; border-radius:3px; background:var(--mut); opacity:.5}
+
+  /* — Слоты загрузки — */
+  .slot{display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:1.5px dashed var(--line2); border-radius:12px; background:var(--field); padding:9px 11px; transition:border-color .13s, background .13s}
+  .slot:hover{border-color:var(--acc); background:var(--accSoft)}
+  .slot .ph{width:40px; height:52px; border-radius:8px; flex:none; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--line); color:var(--dis)}
+  .slot .ph.sq{height:40px}
+  .slot .tt{display:flex; flex-direction:column; gap:2px; min-width:0}
+  .slot .tt b{font-size:12px; font-weight:680; color:var(--tx2)}
+  .slot .tt span{font-size:10.5px; color:var(--mut)}
+  .slot.filled{border-style:solid; border-color:var(--line); background:var(--surface)}
+  .slot.filled .tt b{color:var(--tx)}
+  .slot .thumb{width:40px; height:52px; border-radius:8px; flex:none; position:relative; overflow:hidden; border:1px solid var(--line)}
+  .slot .act{margin-left:auto; display:flex; gap:6px; align-items:center; flex:none}
+  .slot .act .rep{font-size:10.5px; font-weight:650; color:var(--acc); background:var(--accSoft); border-radius:8px; padding:4px 9px}
+  .slot .act .del{color:var(--err); font-size:14px; line-height:1; padding:4px 6px; border-radius:8px}
+  .slot .act .del:hover{background:var(--field)}
+
+  /* — Тумблер — */
+  .tgl-row{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; width:100%; text-align:left; padding:8px 10px; border-radius:11px; border:1px solid var(--line); background:var(--surface)}
+  .tgl-row .tt b{display:block; font-size:11.8px; font-weight:680; color:var(--tx)}
+  .tgl-row .tt span{font-size:10.4px; color:var(--mut)}
+  .tgl{width:34px; height:19px; border-radius:10px; background:var(--field); border:1px solid var(--line2); position:relative; flex:none; margin-top:2px; transition:background .14s}
+  .tgl::after{content:""; position:absolute; top:1.5px; left:2px; width:13px; height:13px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:left .14s}
+  .tgl.on{background:var(--acc); border-color:var(--acc)}
+  .tgl.on::after{left:17px}
+
+  /* — Аватары в коллекции — */
+  .avgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+  .avtile{aspect-ratio:3/4; border-radius:10px; position:relative; overflow:hidden; border:1px solid var(--line); padding:0; transition:transform .1s}
+  .avtile:hover{transform:translateY(-1px)}
+  .avtile.on{border:2px solid var(--acc); box-shadow:0 0 0 2px var(--accSoft)}
+  .avtile .nm{position:absolute; left:0; right:0; bottom:0; font-size:9px; font-weight:650; color:#fff; background:linear-gradient(transparent, rgba(0,0,0,.62)); padding:10px 4px 3px; text-align:center}
+  .avtile .ok{position:absolute; top:4px; right:4px; width:16px; height:16px; border-radius:50%; background:var(--acc); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center}
+  .sil{position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center}
+  .sil svg{width:78%; height:auto; display:block}
+
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:11.5px; font-weight:700; border-radius:11px; padding:8px 12px; transition:opacity .12s}
+  .btn.acc{color:var(--acc); background:var(--accSoft); border:1px solid var(--accLine)}
+  .btn.ghost{color:var(--tx2); background:var(--field); border:1px dashed var(--line2)}
+  .btn.wide{width:100%}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+
+  textarea.inp, input.inp{width:100%; background:var(--field); border:1px solid var(--line); border-radius:11px; padding:8px 11px; font-size:12px; outline:none; resize:vertical}
+  textarea.inp:focus, input.inp:focus{border-color:var(--accLine)}
+
+  .status-chip{display:inline-flex; align-items:center; gap:6px; font-size:10.6px; font-weight:650; border-radius:999px; padding:4px 10px}
+  .status-chip.ok{color:var(--ok); background:var(--okSoft)}
+  .status-chip i{width:6px; height:6px; border-radius:50%; background:currentColor}
+
+  /* — Чек-лист готовности — */
+  .check{border:1px solid var(--line); border-radius:14px; background:var(--surface); padding:11px 12px; margin-top:auto}
+  .check .row{display:flex; align-items:center; gap:9px; padding:4px 0; font-size:11.8px; color:var(--tx2)}
+  .check .row em{font-style:normal; margin-left:auto; font-size:10.4px; color:var(--mut)}
+  .ck{width:16px; height:16px; border-radius:50%; flex:none; border:1.5px solid var(--line2); display:flex; align-items:center; justify-content:center; font-size:9.5px; color:#fff}
+  .ck.on{background:var(--ok); border-color:var(--ok)}
+
+  /* — Канвас — */
+  .canvas-zone{position:relative; display:flex; flex-direction:column; min-width:0; background:var(--bg);
+    background-image:radial-gradient(var(--dot) 1px, transparent 1.4px); background-size:19px 19px}
+  .ctoolbar{display:flex; align-items:center; gap:12px; padding:11px 16px; flex-wrap:wrap}
+  .ctoolbar .lbl{margin:0 2px 0 0}
+  .fmt{display:flex; gap:4px; padding:4px; background:var(--surface); border:1px solid var(--line); border-radius:12px}
+  .fmt button{display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:680; color:var(--mut); padding:6px 11px; border-radius:9px}
+  .fmt button.on{background:var(--accSoft); color:var(--acc); box-shadow:0 0 0 1px var(--accLine) inset}
+  .fmt .fico{display:inline-block; border:1.5px solid currentColor; border-radius:2.5px}
+  .fmt .fv{width:8px; height:13px} .fmt .fh{width:15px; height:9px}
+  .fmt .fsq{width:11px; height:11px} .fmt .f45{width:10px; height:12px}
+  .layouts{display:flex; gap:5px; padding:4px; background:var(--surface); border:1px solid var(--line); border-radius:12px}
+  .lay{width:30px; height:48px; border-radius:7px; border:1.5px solid var(--line2); position:relative; overflow:hidden; background:var(--field); padding:0}
+  .lay i{position:absolute; background:var(--acc2); opacity:.9}
+  .lay u{position:absolute; background:var(--mut); opacity:.45}
+  .lay.on{border-color:var(--acc); box-shadow:0 0 0 1.5px var(--accSoft)}
+  .canvas-mid{flex:1; display:flex; align-items:center; justify-content:center; gap:20px; padding:6px 16px; min-height:0; flex-wrap:wrap}
+
+  .frame-wrap{display:flex; flex-direction:column; align-items:center; gap:8px}
+  .frame-cap{font-size:10.5px; color:var(--mut); font-weight:600; letter-spacing:.02em}
+  .frame{position:relative; border-radius:20px; border:1px solid var(--line2); background:#101012; overflow:hidden; box-shadow:var(--shadow)}
+  .frame.v{width:266px; height:472px}
+  .frame.h{width:540px; height:304px; border-radius:16px}
+  .frame.sq{width:300px; height:300px; border-radius:16px}
+  .frame.p45{width:270px; height:338px; border-radius:16px}
+  .frame.v.mini{width:148px; height:263px; border-radius:14px}
+  .frame.h.mini{width:300px; height:169px; border-radius:12px}
+  .frame.sq.mini{width:166px; height:166px; border-radius:12px}
+  .frame.p45.mini{width:148px; height:185px; border-radius:12px}
+  .frame.mini .cap-word{font-size:12px}
+  .frame.mini .cap-line{font-size:8.6px}
+  .progressbar{position:absolute; top:0; left:0; height:3px; width:38%; background:var(--acc2); z-index:5; pointer-events:none; border-radius:0 2px 2px 0}
+  @media (prefers-reduced-motion: no-preference){
+    .progressbar{animation:pbar 6s linear infinite}
+    @keyframes pbar{from{width:0} to{width:100%}}
+  }
+  .cells{position:absolute; inset:0; display:flex}
+  .cells.v{flex-direction:column} .cells.h{flex-direction:row}
+
+  .cell{position:relative; flex:1; min-height:0; min-width:0; display:flex; align-items:center; justify-content:center; overflow:hidden}
+  .cell + .cell{border-top:1px solid rgba(255,255,255,.09)}
+  .cells.h .cell + .cell{border-top:none; border-left:1px solid rgba(255,255,255,.09)}
+  .cell .empty{display:flex; flex-direction:column; align-items:center; gap:7px; color:#8b8b93; text-align:center; padding:8px; width:100%; height:100%; justify-content:center; background:transparent; border:none}
+  .cell .empty .dash{width:54px; height:54px; border-radius:14px; border:1.5px dashed #5c5c66; display:flex; align-items:center; justify-content:center; color:#71717c}
+  .cell .empty b{font-size:11px; font-weight:680; color:#a3a3ad}
+  .cell .empty span{font-size:9.6px; color:#77777f}
+  .cell:hover .empty .dash{border-color:var(--acc2); color:var(--acc2)}
+  .cell .tag{position:absolute; top:7px; left:7px; font-size:9px; font-weight:750; letter-spacing:.05em; text-transform:uppercase; color:#fff; background:rgba(0,0,0,.5); backdrop-filter:blur(3px); border-radius:999px; padding:3px 8px; pointer-events:none; z-index:3}
+  .cell .fillv{position:absolute; inset:0}
+  .checker{background-image:conic-gradient(#3a3a42 25%, #2a2a30 0 50%, #3a3a42 0 75%, #2a2a30 0); background-size:16px 16px}
+  .cell .avfull{position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center}
+  .cell .avfull svg{width:72%; height:auto}
+  .vstripes{position:absolute; inset:0; background:repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 14px, transparent 14px 30px)}
+  .playbtn{width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.45); border:1.5px solid rgba(255,255,255,.75); position:relative; z-index:2}
+  .playbtn::after{content:""; position:absolute; left:53%; top:50%; transform:translate(-50%,-50%); border-left:10px solid #fff; border-top:6px solid transparent; border-bottom:6px solid transparent}
+  .overlay-av{position:absolute; z-index:4; bottom:0; width:46%; height:44%; display:flex; align-items:flex-end; justify-content:center; padding:0; background:none; border:none}
+  .overlay-av.card{border-radius:12px 12px 0 0; overflow:hidden; border:1px solid rgba(255,255,255,.22); border-bottom:none}
+  .overlay-av svg{width:100%; height:auto; filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
+  .overlay-av .oa-empty{position:absolute; inset:0; border:1.5px dashed #6b6b75; border-radius:12px; display:flex; flex-direction:column; gap:4px; align-items:center; justify-content:center; color:#9a9aa4; font-size:9.5px; font-weight:650; background:rgba(0,0,0,.35)}
+
+  /* субтитры на канвасе */
+  .caption{position:absolute; left:0; right:0; z-index:6; display:flex; justify-content:center; pointer-events:none; padding:0 14px}
+  .caption.pos-bottom{bottom:9%} .caption.pos-center{top:50%; transform:translateY(-50%)} .caption.pos-top{top:8%}
+  .cap-word{font-size:21px; font-weight:850; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.9); letter-spacing:.01em}
+  .frame.h .cap-word{font-size:24px}
+  .cap-line{font-size:12px; font-weight:750; color:#fff; text-align:center; text-shadow:0 1px 6px rgba(0,0,0,.8); line-height:1.35}
+  .cap-line .k{transition:color .15s}
+  .cap-line .k.hot{color:var(--acc2)}
+  @media (prefers-reduced-motion: no-preference){
+    .cap-word{animation:pop .34s cubic-bezier(.2,1.6,.4,1)}
+    @keyframes pop{from{transform:scale(.55); opacity:0} to{transform:scale(1); opacity:1}}
+  }
+
+  /* полоса плана (динамичный монтаж/диалог) */
+  .planstrip{display:flex; flex-direction:column; gap:6px; align-items:center; padding:2px 16px 12px}
+  .planstrip .ps-cap{font-size:10.5px; color:var(--mut)}
+  .ps-row{display:flex; gap:4px}
+  .ps-seg{border-radius:8px; padding:5px 10px; font-size:9.8px; font-weight:720; letter-spacing:.02em; border:1px solid var(--line); color:var(--tx2); background:var(--surface); display:flex; flex-direction:column; align-items:center; gap:1px; min-width:56px}
+  .ps-seg small{font-size:8.6px; font-weight:650; color:var(--mut); letter-spacing:.03em}
+  .ps-seg.iv{background:var(--acc); border-color:var(--acc); color:#fff}
+  .ps-seg.iv small{color:rgba(255,255,255,.75)}
+  .ps-seg.iii{background:var(--accSoft); border-color:var(--accLine); color:var(--acc)}
+  .ps-seg.free small{color:var(--ok)}
+  .ps-seg.cur{box-shadow:0 0 0 2px var(--acc2)}
+  .canvas-note{text-align:center; font-size:10.6px; color:var(--mut); padding:0 16px 12px}
+
+  /* прогресс и результат */
+  .buildover{position:absolute; inset:0; z-index:20; background:color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center}
+  .buildcard{background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:20px 24px; width:330px}
+  .buildcard h3{font-size:13.5px; font-weight:750; margin-bottom:3px}
+  .buildcard .sub{font-size:11px; color:var(--mut); margin-bottom:13px}
+  .bstep{display:flex; align-items:center; gap:9px; padding:5px 0; font-size:12px; color:var(--mut)}
+  .bstep.don{color:var(--tx2)} .bstep.run{color:var(--acc); font-weight:650}
+  .spin{width:13px; height:13px; border-radius:50%; border:2px solid var(--accSoft); border-top-color:var(--acc); flex:none}
+  @media (prefers-reduced-motion: no-preference){ .spin{animation:rot .7s linear infinite} @keyframes rot{to{transform:rotate(360deg)}} }
+  .result-actions{display:flex; gap:8px; justify-content:center; padding-bottom:14px}
+
+  /* — Док таймлайна — */
+  .dock{border-top:1px solid var(--line); background:var(--surface); display:flex; flex-direction:column; min-height:0}
+  .dock-h{display:flex; align-items:center; gap:10px; padding:8px 14px 6px}
+  .dock-h b{font-size:12px; font-weight:720}
+  .dock-h .cnt{font-size:10.5px; color:var(--mut); font-variant-numeric:tabular-nums}
+  .dock-h .tools{margin-left:auto; display:flex; gap:5px}
+  .tlbtn{width:26px; height:26px; border-radius:8px; background:var(--field); border:1px solid var(--line); color:var(--tx2); font-size:11px; display:inline-flex; align-items:center; justify-content:center}
+  .tlbtn.play{color:var(--ok)}
+  .dock-body{position:relative; flex:1; overflow-x:auto; overflow-y:hidden; padding:2px 14px 6px}
+  .dock-empty{display:flex; align-items:center; justify-content:center; height:100%; color:var(--mut); font-size:11.5px; gap:8px}
+  .tl{position:relative; height:100%; min-width:640px}
+  .ruler{position:relative; height:14px; margin-left:26px}
+  .ruler span{position:absolute; top:0; font-size:8.6px; color:var(--dis); font-variant-numeric:tabular-nums}
+  .track{position:relative; height:30px; margin-top:5px}
+  .track .tname{position:absolute; left:0; top:7px; font-size:10px; font-weight:800}
+  .track .lane{position:absolute; left:26px; right:0; top:0; bottom:0; border-radius:8px; background:var(--field)}
+  .clip{position:absolute; top:2px; height:26px; border-radius:7px; color:#fff; font-size:9.4px; font-weight:600; line-height:26px; padding:0 7px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid rgba(255,255,255,.25); box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .clip.A{background:linear-gradient(180deg, var(--acc2), var(--acc))}
+  .clip.B{background:linear-gradient(180deg,#f472b6,#db2777)}
+  .clip.sel{box-shadow:0 0 0 2px var(--surface), 0 0 0 3.5px var(--acc)}
+  .clip .mediadot{display:inline-block; width:6px; height:6px; border-radius:2px; background:#fff; opacity:.9; margin-right:5px}
+  .playhead{position:absolute; top:14px; bottom:0; width:2px; background:var(--warn); z-index:5; pointer-events:none}
+  .playhead::before{content:""; position:absolute; top:-6px; left:-5px; width:12px; height:12px; border-radius:50%; background:var(--warn)}
+  .clipprops{display:flex; align-items:center; gap:7px; flex-wrap:wrap; padding:5px 14px 9px; border-top:1px dashed var(--line)}
+  .clipprops .who{font-size:10.6px; font-weight:750; color:var(--acc)}
+  .clipprops .lbl{margin:0}
+  .mini-pills{display:flex; gap:4px; flex-wrap:wrap}
+  .mini-pills .pill{font-size:10px; padding:3.5px 9px}
+  .holdin{width:52px; background:var(--field); border:1px solid var(--line); border-radius:8px; padding:3.5px 7px; font-size:10.5px; outline:none; font-variant-numeric:tabular-nums}
+
+  /* — Пикер Галереи — */
+  .picker-back{position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:20px}
+  .picker{width:min(560px, 94vw); background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:16px}
+  .picker h3{font-size:13.5px; font-weight:750; margin-bottom:2px}
+  .picker .sub{font-size:11px; color:var(--mut); margin-bottom:12px}
+  .pk-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+  .pk-item{border-radius:11px; overflow:hidden; border:1px solid var(--line); position:relative; padding:0; aspect-ratio:3/4; transition:transform .1s}
+  .pk-item:hover{transform:translateY(-2px)}
+  .pk-item.picked{border:2px solid var(--acc)}
+  .pk-item .nm{position:absolute; left:0; right:0; bottom:0; font-size:9px; color:#fff; background:linear-gradient(transparent, rgba(0,0,0,.7)); padding:12px 5px 4px; text-align:center; font-weight:600}
+  .pk-item .dur{position:absolute; top:5px; right:5px; font-size:8.6px; font-weight:700; color:#fff; background:rgba(0,0,0,.55); border-radius:6px; padding:2px 5px; font-variant-numeric:tabular-nums}
+  .pk-item.up{border-style:dashed; border-color:var(--line2); background:var(--field); color:var(--mut); display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center; font-size:10.5px; font-weight:650}
+  .pk-foot{display:flex; justify-content:space-between; align-items:center; margin-top:12px}
+  .pk-foot .note{font-size:10.5px; color:var(--mut)}
+
+  /* — Голоса ElevenLabs — */
+  .voices{display:flex; flex-direction:column; gap:5px; max-height:184px; overflow-y:auto; padding-right:2px}
+  .vrow{display:flex; align-items:center; gap:9px; padding:6px 9px; border-radius:11px; border:1px solid var(--line); background:var(--surface); cursor:pointer; text-align:left}
+  .vrow.on{border-color:var(--acc); background:var(--accSoft); box-shadow:0 0 0 1px var(--acc) inset}
+  .vrow .vp{width:26px; height:26px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:var(--field); border:1px solid var(--line2); color:var(--acc); font-size:9px}
+  .vrow .tt{display:flex; flex-direction:column; min-width:0}
+  .vrow .tt b{font-size:11.6px; font-weight:680; color:var(--tx)}
+  .vrow .tt span{font-size:10px; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .vrow .df{margin-left:auto; font-size:8.6px; font-weight:750; letter-spacing:.05em; color:var(--acc); background:var(--accSoft); border-radius:999px; padding:2px 7px; text-transform:uppercase; flex:none}
+  .eq{display:inline-flex; align-items:flex-end; gap:1.5px; height:11px}
+  .eq i{width:2.5px; background:var(--acc); border-radius:1px; height:4px}
+  @media (prefers-reduced-motion: no-preference){
+    .eq i{animation:eq .5s ease-in-out infinite alternate}
+    .eq i:nth-child(2){animation-delay:.16s} .eq i:nth-child(3){animation-delay:.32s}
+    @keyframes eq{from{height:3px} to{height:11px}}
+  }
+
+  /* — Музыка: громкость и длительность — */
+  input[type="range"].vol{width:100%; accent-color:var(--acc); height:20px; margin:2px 0}
+  .volrow{display:flex; align-items:center; gap:8px; font-size:11px; color:var(--tx2)}
+  .volrow b{font-variant-numeric:tabular-nums; color:var(--acc); min-width:34px; text-align:right}
+  .leadin{width:56px; background:var(--field); border:1px solid var(--line); border-radius:8px; padding:4px 7px; font-size:11px; outline:none; font-variant-numeric:tabular-nums}
+
+  /* — Заставки до/после — */
+  .bumpers{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+  .bumpers .slot{padding:7px 9px}
+  .bumpers .slot .ph{width:34px; height:34px}
+  .bumpers .slot .thumb{width:34px; height:34px}
+
+  /* — Панель «Реплики» над таймлайном — */
+  .dock{position:relative}
+  .drawer{position:absolute; left:0; right:0; bottom:100%; z-index:16; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -14px 30px rgba(0,0,0,.20); padding:10px 14px 12px; max-height:298px; display:flex; flex-direction:column; gap:8px}
+  .drawer .dr-h{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .drawer .dr-h b{font-size:12px; font-weight:720}
+  .dr-list{overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px}
+  .dr-row{border:1px solid var(--line); border-radius:11px; background:var(--bg); padding:6px 8px}
+  .dr-row.selq{border-color:var(--acc)}
+  .dr-main{display:flex; align-items:center; gap:7px}
+  .spk{width:26px; height:26px; border-radius:9px; flex:none; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer}
+  .spk.A{background:linear-gradient(180deg, var(--acc2), var(--acc))}
+  .spk.B{background:linear-gradient(180deg,#f472b6,#db2777)}
+  .dr-row input.txt{flex:1; background:var(--field); border:1px solid var(--line); border-radius:9px; padding:6px 9px; font-size:11.5px; outline:none; min-width:0; color:var(--tx)}
+  .dr-row input.txt:focus{border-color:var(--accLine)}
+  .dr-ico{width:26px; height:26px; border-radius:9px; flex:none; background:var(--field); border:1px solid var(--line); color:var(--tx2); display:inline-flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer}
+  .dr-ico:hover{color:var(--acc); border-color:var(--accLine)}
+  .dr-ico.warn:hover{color:var(--err); border-color:var(--err)}
+  .mchip{display:inline-flex; align-items:center; gap:5px; flex:none; font-size:9.4px; font-weight:650; color:#fff; border-radius:8px; padding:4px 7px; max-width:118px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:none; cursor:pointer}
+  .dr-note{font-size:10px; color:var(--mut); padding:4px 2px 0 33px}
+  .dr-note b{color:var(--acc)}
+
+  /* — Таймлайн: заставки и держание медиа — */
+  .clip.bump{background:repeating-linear-gradient(115deg, var(--field) 0 8px, var(--line) 8px 11px); color:var(--tx2); border:1px dashed var(--line2); cursor:default}
+  .clip .holdext{position:absolute; top:0; bottom:0; border-radius:0 7px 7px 0; background:repeating-linear-gradient(115deg, rgba(255,255,255,.30) 0 6px, rgba(255,255,255,.10) 6px 12px); border-left:1px dashed rgba(255,255,255,.65); pointer-events:none}
+
+  /* — Верхний слой: лого/рамка/подпись на канвасе — */
+  .ovl-logo{position:absolute; top:9px; right:9px; width:28px; height:28px; border-radius:50%; background:rgba(168,85,247,.92); color:#fff; font-weight:800; font-size:9.5px; display:flex; align-items:center; justify-content:center; z-index:5; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.45)}
+  .ovl-frame{position:absolute; inset:7px; border:2px solid rgba(255,255,255,.85); border-radius:13px; z-index:5; pointer-events:none}
+  .ovl-strip{position:absolute; left:0; right:0; bottom:0; padding:4px 0; text-align:center; font-size:8.6px; font-weight:750; letter-spacing:.08em; color:#fff; background:rgba(0,0,0,.45); z-index:5; pointer-events:none}
+  .thumb.checker{display:flex; align-items:center; justify-content:center}
+
+  /* — Бренд-кит — */
+  .tb-brand{cursor:pointer; transition:border-color .12s, color .12s}
+  .tb-brand:hover{border-color:var(--accLine); color:var(--acc)}
+  .bk-row{border:1px solid var(--line); border-radius:13px; background:var(--bg); padding:11px 13px; display:flex; flex-direction:column; gap:8px; margin-bottom:8px}
+  .bk-row .bk-h{display:flex; align-items:center; gap:9px}
+  .bk-row .bk-h b{font-size:12.6px; font-weight:720}
+  .bk-chips{display:flex; gap:5px; flex-wrap:wrap}
+  .bk-chips span{font-size:10px; font-weight:640; color:var(--tx2); background:var(--field); border:1px solid var(--line); border-radius:999px; padding:3px 9px}
+  .bk-apply{margin-left:auto}
+  .bk-save{width:100%; border:1.5px dashed var(--line2); background:var(--field); color:var(--mut); border-radius:12px; padding:9px; font-size:11.5px; font-weight:650}
+  .bk-save:hover{border-color:var(--acc); color:var(--acc)}
+
+  /* — Пикер: вкладки настоящей Галереи — */
+  .pk-tabs{display:flex; gap:4px; margin:0 0 8px; flex-wrap:wrap}
+  .pk-tabs .pill{font-size:10.5px; padding:4px 10px}
+  .pk-up{width:100%; border:1.5px dashed var(--line2); background:var(--field); color:var(--mut); border-radius:11px; padding:8px; font-size:11px; font-weight:650; margin-bottom:8px}
+  .pk-up:hover{border-color:var(--acc); color:var(--acc)}
+  .pk-search{width:100%; background:var(--field); border:1px solid var(--line); border-radius:10px; padding:7px 10px; font-size:11.5px; outline:none; margin-bottom:9px; color:var(--tx)}
+  .pk-empty{grid-column:1/-1; text-align:center; color:var(--mut); font-size:11px; padding:26px 0}
+
+  /* ══ Спецификация под макетом ══ */
+  .spec{margin-top:34px}
+  .spec > h2{font-size:16px; font-weight:750; letter-spacing:-.005em; margin-bottom:4px}
+  .spec > .sub{color:var(--mut); font-size:12.5px; margin-bottom:14px; max-width:720px}
+  .anatomy{display:grid; grid-template-columns:290px 1fr; gap:18px; align-items:start}
+  .ana-map{border:1px solid var(--line); border-radius:14px; background:var(--surface); padding:10px; display:grid; grid-template-rows:26px 1fr 44px; gap:6px; height:270px}
+  .ana-box{border:1.5px solid var(--line2); border-radius:9px; position:relative; background:var(--field); display:flex; align-items:center; justify-content:center; color:var(--mut); font-size:10px; font-weight:650}
+  .ana-mid{display:grid; grid-template-columns:96px 1fr; gap:6px}
+  .ana-n{position:absolute; top:-8px; left:-8px; width:18px; height:18px; border-radius:50%; background:var(--acc); color:#fff; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center}
+  .ana-list{display:flex; flex-direction:column; gap:9px}
+  .ana-item{display:flex; gap:11px; align-items:flex-start}
+  .ana-item .n{width:20px; height:20px; border-radius:50%; flex:none; background:var(--acc); color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .ana-item b{font-size:12.8px; font-weight:720}
+  .ana-item p{font-size:11.8px; color:var(--tx2); margin-top:1px; max-width:62ch}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:14px; background:var(--surface)}
+  table.dict{border-collapse:collapse; width:100%; min-width:860px; font-size:12px}
+  .dict th{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); text-align:left; padding:9px 13px; border-bottom:1px solid var(--line); background:var(--field)}
+  .dict td{padding:8px 13px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--tx2)}
+  .dict tr:last-child td{border-bottom:none}
+  .dict td.old{color:var(--mut); text-decoration:line-through; text-decoration-color:color-mix(in srgb, var(--err) 55%, transparent); text-decoration-thickness:1px}
+  .dict td.new{color:var(--tx); font-weight:650}
+  .dict td.en{color:var(--tx2); font-style:italic}
+  .dict td.why{color:var(--mut); font-size:11.3px; max-width:340px}
+  .dict tr.grp td{background:var(--field); color:var(--acc); font-weight:800; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; padding:7px 13px}
+
+  .prin{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px}
+  .prin .card{border:1px solid var(--line); border-radius:13px; background:var(--surface); padding:12px 14px}
+  .prin b{font-size:12.4px; font-weight:720; display:block; margin-bottom:3px}
+  .prin p{font-size:11.6px; color:var(--tx2)}
+  .phases{display:flex; flex-direction:column; gap:8px}
+  .phase{display:flex; gap:12px; border:1px solid var(--line); border-radius:13px; background:var(--surface); padding:11px 14px; align-items:flex-start}
+  .phase .n{width:22px; height:22px; border-radius:7px; flex:none; background:var(--accSoft); color:var(--acc); font-weight:800; font-size:11.5px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .phase b{font-size:12.6px; font-weight:720}
+  .phase p{font-size:11.6px; color:var(--tx2); margin-top:2px}
+  .phase code{font-size:10.8px; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--acc)}
+  .foot{margin-top:26px; color:var(--dis); font-size:11px; text-align:center}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <div>
+      <h1>UGC-студия — <em>полноэкранный редизайн</em></h1>
+      <p>Интерактивный макет: кликайте по слотам превью («Пока не загружено» → выбор из Галереи), переключайте режимы, формат, раскладку, стили субтитров и сегменты плана. Всё на дизайн-токенах приложения — темы светлая/тёмная по теме просмотра.</p>
+    </div>
+    <div class="legend">
+      <span>▸ слоты превью кликабельны</span>
+      <span>▸ субтитры — живой пример</span>
+      <span>▸ «Реплики» на таймлайне — редактор диалога</span>
+      <button class="reset" id="resetAll" type="button">Сбросить демо</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════ МАКЕТ ПРИЛОЖЕНИЯ ═══════════════ -->
+  <div class="stage">
+    <div class="app" id="app">
+
+      <!-- Топбар -->
+      <div class="topbar">
+        <button class="tb-back" type="button">← <span>Сценарий</span></button>
+        <div class="tb-title">
+          <b>UGC-студия</b>
+          <span>Ролик с говорящим аватаром</span>
+        </div>
+        <div class="tb-spacer"></div>
+        <span class="tb-saved"><i></i> Сохранено</span>
+        <button class="tb-cost tb-brand" id="brandBtn" data-act="brand" type="button" title="Слой, заставки, музыка, субтитры и голос — одним кликом">◆ Бренд-кит</button>
+        <span class="tb-cost" id="costChip">≈ <b>$2–3</b> за ролик</span>
+        <button class="cta" id="ctaBuild" type="button" disabled>Создать видео</button>
+      </div>
+
+      <!-- Корпус -->
+      <div class="body">
+
+        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+        <div class="rail" id="rail">
+
+          <!-- 1. Режим -->
+          <div class="sec" id="sec-mode">
+            <div class="sec-h"><span class="step done" data-ck="mode">1</span><b>Режим ролика</b></div>
+            <div class="modes">
+              <button class="mode on" data-act="mode" data-v="solo" type="button">
+                <span class="mdia"><i style="left:4px;right:4px;top:4px;height:22px"></i><u style="left:4px;right:4px;bottom:4px;height:20px"></u></span>
+                <span>Один ведущий</span>
+              </button>
+              <button class="mode" data-act="mode" data-v="retention" type="button">
+                <span class="mdia"><i style="left:3px;top:3px;width:12px;height:16px"></i><u style="right:3px;top:3px;width:11px;height:16px"></u><u style="left:3px;top:22px;width:26px;height:12px"></u><i style="left:3px;bottom:3px;width:26px;height:13px;opacity:.5"></i></span>
+                <span>Динамичный монтаж</span>
+              </button>
+              <button class="mode" data-act="mode" data-v="dialogue" type="button">
+                <span class="mdia"><i style="left:4px;right:4px;top:4px;height:22px"></i><i style="left:4px;right:4px;bottom:4px;height:20px;background:#f472b6"></i></span>
+                <span>Диалог двоих</span>
+              </button>
+              <button class="mode" data-act="mode" data-v="voiceover" type="button">
+                <span class="mdia"><u style="inset:3px"></u><i style="left:6px;bottom:6px;width:3px;height:7px"></i><i style="left:11px;bottom:6px;width:3px;height:12px"></i><i style="left:16px;bottom:6px;width:3px;height:5px"></i><i style="left:21px;bottom:6px;width:3px;height:10px"></i></span>
+                <span>Без аватара — озвучка</span>
+              </button>
+            </div>
+            <p class="hint" id="modeHint" style="margin-top:8px">Аватар говорит весь текст, рядом — ваш видеоряд. Самый простой вариант.</p>
+
+            <!-- пресеты динамичного монтажа -->
+            <div id="retBox" hidden>
+              <div class="lbl">Насыщенность монтажа</div>
+              <div class="seg c3" id="retSeg">
+                <button data-act="retpre" data-v="eco" type="button">Эконом<span class="money">$</span></button>
+                <button data-act="retpre" data-v="bal" class="on" type="button">Баланс<span class="money">$$</span></button>
+                <button data-act="retpre" data-v="prem" type="button">Премиум<span class="money">$$$</span></button>
+              </div>
+              <p class="hint" id="retHint" style="margin-top:6px">План сменяется каждые несколько секунд. Дорогие крупные планы ИИ ставит только на ключевые фразы — примерно 3 на ролик.</p>
+            </div>
+
+            <!-- динамика диалога -->
+            <div id="dlgBox" hidden>
+              <div class="lbl">Динамика диалога</div>
+              <div class="seg c3" id="dlgSeg">
+                <button data-act="dlgdyn" data-v="eco" type="button">Спокойно<span class="money">$</span></button>
+                <button data-act="dlgdyn" data-v="bal" class="on" type="button">Баланс<span class="money">$$</span></button>
+                <button data-act="dlgdyn" data-v="dyn" type="button">Живо<span class="money">$$$</span></button>
+              </div>
+              <p class="hint" id="dlgHint" style="margin-top:6px">Крупный план говорящего; оба в кадре — на реакциях и пиках. ИИ распределяет планы сам.</p>
+            </div>
+          </div>
+
+          <!-- 2. Аватар -->
+          <div class="sec" id="sec-avatar">
+            <div class="sec-h"><span class="step" data-ck="avatar">2</span><b>Аватар</b><small>кто в кадре</small></div>
+            <div class="seg c2" id="avSrcSeg">
+              <button class="on" data-act="avsrc" data-v="collection" type="button">Готовые аватары</button>
+              <button data-act="avsrc" data-v="photo" type="button">Моё фото</button>
+            </div>
+
+            <div id="avCollection">
+              <div class="lbl">Моя коллекция</div>
+              <div class="avgrid" id="avGrid"></div>
+              <div style="display:flex; gap:6px; margin-top:8px">
+                <button class="btn acc" style="flex:1" type="button">✦ Сгенерировать 3 аватара</button>
+                <button class="btn ghost" style="flex:1" data-act="open-picker" data-kind="avatar" type="button">Выбрать из Галереи</button>
+              </div>
+            </div>
+
+            <div id="avPhoto" hidden>
+              <div class="lbl" id="photoALbl">Ваше фото</div>
+              <div id="photoASlot"></div>
+              <p class="hint" style="margin-top:6px">Портрет анфас. Фото оживит HeyGen — губы и мимика синхронизируются с голосом.</p>
+              <div id="photoBWrap" hidden>
+                <div class="lbl">Второй собеседник</div>
+                <div id="photoBSlot"></div>
+              </div>
+            </div>
+
+            <div class="lbl">Оживление аватара</div>
+            <div class="seg c2" id="provSeg">
+              <button class="on" data-act="prov" data-v="api" type="button">По ключу API</button>
+              <button data-act="prov" data-v="sub" type="button">По подписке HeyGen</button>
+            </div>
+            <div style="margin-top:6px" id="provStatus">
+              <span class="status-chip ok"><i></i> Ключ HeyGen подключён</span>
+            </div>
+
+            <div id="transpWrap" hidden style="margin-top:9px">
+              <button class="tgl-row" data-act="transp" type="button">
+                <span class="tt"><b>Прозрачный фон аватара</b><span>в кадре останется только человек, без прямоугольника</span></span>
+                <span class="tgl" id="transpTgl"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Голос и текст -->
+          <div class="sec" id="sec-voice">
+            <div class="sec-h"><span class="step" data-ck="script">3</span><b>Голос и текст</b><small>что говорит</small></div>
+            <div class="seg c2" id="vsrcSeg">
+              <button class="on" data-act="vsrc" data-v="ai" type="button">Написать с ИИ</button>
+              <button data-act="vsrc" data-v="rec" type="button">Моя запись</button>
+            </div>
+
+            <div id="vsAi">
+              <div class="lbl" style="display:flex; align-items:center; gap:7px">Голос ElevenLabs <span class="status-chip ok" style="text-transform:none; letter-spacing:0; font-weight:600"><i></i> ключ подключён</span></div>
+              <div class="voices" id="voiceList"></div>
+              <p class="hint" style="margin-top:6px">Нажмите ▶ — послушать образец. Список приходит из вашего аккаунта ElevenLabs (включая клонированные голоса).</p>
+              <div class="lbl" style="display:flex; align-items:center; gap:7px">Языки ролика <span class="new-tag" style="text-transform:none; letter-spacing:0">новое</span></div>
+              <div class="pills" id="langChips"></div>
+              <p class="hint" id="langHint" style="margin-top:6px">Русский — основной. Добавьте языки — получите серию: отдельный ролик на каждом языке.</p>
+              <div class="lbl">О чём ролик</div>
+              <textarea class="inp" rows="2" placeholder="Например: честный отзыв на приложение, крючок в первые 3 секунды…"></textarea>
+              <button class="btn acc wide" style="margin-top:8px" data-act="gen-script" id="genBtn" type="button">✦ Сгенерировать текст</button>
+            </div>
+
+            <div id="vsRec" hidden>
+              <div id="recSlot"></div>
+              <button class="tgl-row" data-act="loudnorm" type="button" style="margin-top:8px">
+                <span class="tt"><b>Выровнять громкость голоса <span class="new-tag" style="margin-left:4px">новое</span></b><span>тихие места подтянутся, громкие сгладятся — звук как у профи</span></span>
+                <span class="tgl on" id="loudTgl"></span>
+              </button>
+              <button class="btn acc wide" style="margin-top:8px" data-act="diarize" id="diarBtn" type="button" disabled>✂ Разобрать речь</button>
+              <p class="hint" id="recHint" style="margin-top:6px">Голос из записи станет голосом ролика.</p>
+            </div>
+
+            <p class="hint" id="scriptInfo" hidden style="margin-top:8px"></p>
+          </div>
+
+          <!-- 4. Видеоряд -->
+          <div class="sec" id="sec-video">
+            <div class="sec-h"><span class="step" data-ck="video">4</span><b>Видеоряд</b><small>что на экране</small></div>
+            <div id="videoSlot"></div>
+            <div style="display:flex; gap:10px; align-items:center; margin-top:9px; flex-wrap:wrap">
+              <div class="pills" id="fitPills">
+                <button class="pill on" data-act="fit" data-v="cover" type="button">Заполнить кадр</button>
+                <button class="pill" data-act="fit" data-v="contain" type="button">Показать целиком</button>
+              </div>
+              <button class="tgl-row" data-act="sound" type="button" style="flex:1; min-width:150px; padding:6px 10px">
+                <span class="tt"><b style="font-size:11px">Звук из видео</b></span>
+                <span class="tgl" id="soundTgl"></span>
+              </button>
+            </div>
+            <div id="batchWrap" hidden>
+              <div class="lbl">Серия роликов</div>
+              <div id="batchSlot"></div>
+              <p class="hint" style="margin-top:6px">На каждое видео — отдельный ролик. Аватар оплачивается один раз.</p>
+            </div>
+            <div class="lbl">Заставки до и после — не обязательно</div>
+            <div class="bumpers">
+              <div id="introSlot"></div>
+              <div id="outroSlot"></div>
+            </div>
+            <p class="hint" style="margin-top:6px">Готовое видео из Галереи приклеится как есть, без преобразований: логотип в начале (2–10 сек), «подпишись» в конце. Не выбрали — ролик без заставок.</p>
+          </div>
+
+          <!-- 5. Субтитры -->
+          <div class="sec" id="sec-subs">
+            <div class="sec-h"><span class="step done" data-ck="subs">5</span><b>Субтитры</b><small>живой пример — в превью</small></div>
+            <div class="lbl">Стиль</div>
+            <div class="pills" id="subStylePills">
+              <button class="pill" data-act="substyle" data-v="off" type="button">Выключены</button>
+              <button class="pill on" data-act="substyle" data-v="word" type="button">По словам</button>
+              <button class="pill" data-act="substyle" data-v="karaoke" type="button">Караоке</button>
+              <button class="pill" data-act="substyle" data-v="line" type="button">Строкой</button>
+            </div>
+            <div class="lbl">Положение</div>
+            <div class="seg c3" id="subPosSeg">
+              <button data-act="subpos" data-v="top" type="button">Сверху</button>
+              <button data-act="subpos" data-v="center" type="button">По центру</button>
+              <button class="on" data-act="subpos" data-v="bottom" type="button">Снизу</button>
+            </div>
+            <input class="inp" style="margin-top:9px" placeholder="Пожелания к стилю: цвет, шрифт, обводка…">
+          </div>
+
+          <!-- 6. Музыка -->
+          <div class="sec" id="sec-music">
+            <div class="sec-h"><span class="step" data-ck="music">6</span><b>Фоновая музыка</b><small>не обязательно</small><span class="new-tag" style="margin-left:6px">новое</span></div>
+            <div id="musicSlot"></div>
+            <div id="musicCtrls"></div>
+          </div>
+
+          <!-- 7. Верхний слой -->
+          <div class="sec" id="sec-layer">
+            <div class="sec-h"><span class="step" data-ck="layer">7</span><b>Верхний слой</b><small>не обязательно</small><span class="new-tag" style="margin-left:6px">новое</span></div>
+            <div id="layerSlots" class="bumpers"></div>
+            <p class="hint" style="margin-top:6px">Прозрачный PNG под формат кадра: логотип в любом месте, рамка, подпись канала. Ложится поверх всего видео на всю длину; субтитры — поверх слоя. Не выбрали — без слоя.</p>
+            <button class="tgl-row" data-act="progress" type="button" style="margin-top:9px">
+              <span class="tt"><b>Полоса прогресса <span class="new-tag" style="margin-left:4px">новое</span></b><span>тонкая полоска-таймер сверху кадра — зритель видит, что ролик короткий, и досматривает</span></span>
+              <span class="tgl" id="progressTgl"></span>
+            </button>
+          </div>
+
+          <!-- Чек-лист -->
+          <div class="check" id="checkCard">
+            <div class="lbl" style="margin-top:0">Готовность к сборке</div>
+            <div id="checkRows"></div>
+          </div>
+        </div>
+
+        <!-- КАНВАС -->
+        <div class="canvas-zone" id="canvasZone">
+          <div class="ctoolbar">
+            <span class="lbl">Формат</span>
+            <div class="fmt" id="fmtSeg">
+              <button class="on" data-act="format" data-v="v" type="button"><span class="fico fv"></span> 9:16</button>
+              <button data-act="format" data-v="h" type="button"><span class="fico fh"></span> 16:9</button>
+              <button data-act="format" data-v="sq" type="button"><span class="fico fsq"></span> 1:1</button>
+              <button data-act="format" data-v="p45" type="button"><span class="fico f45"></span> 4:5</button>
+            </div>
+            <div id="layWrap" style="display:flex; align-items:center; gap:12px">
+              <span class="lbl">Раскладка</span>
+              <div class="layouts" id="laySeg">
+                <button class="lay on" data-act="place" data-v="top" title="Аватар сверху" type="button"><i style="left:3px;right:3px;top:3px;height:19px"></i><u style="left:3px;right:3px;bottom:3px;height:18px"></u></button>
+                <button class="lay" data-act="place" data-v="bottom" title="Аватар снизу" type="button"><u style="left:3px;right:3px;top:3px;height:18px"></u><i style="left:3px;right:3px;bottom:3px;height:19px"></i></button>
+                <button class="lay" data-act="place" data-v="left" title="Поверх видео, слева" type="button"><u style="inset:3px"></u><i style="left:4px;bottom:4px;width:11px;height:16px;border-radius:6px 6px 0 0"></i></button>
+                <button class="lay" data-act="place" data-v="right" title="Поверх видео, справа" type="button"><u style="inset:3px"></u><i style="right:4px;bottom:4px;width:11px;height:16px;border-radius:6px 6px 0 0"></i></button>
+              </div>
+            </div>
+            <span class="tb-cost" id="fmtNote" style="display:none">получите два файла — аватар оплачивается один раз</span>
+          </div>
+
+          <div class="canvas-mid" id="canvasMid"><!-- фреймы рендерит JS --></div>
+
+          <div class="planstrip" id="planStrip" hidden></div>
+          <div class="canvas-note" id="canvasNote">Кликните по зоне превью, чтобы добавить содержимое. Превью обновляется мгновенно.</div>
+          <div class="result-actions" id="resultActions" hidden>
+            <button class="btn acc" type="button">Открыть в Галерее</button>
+            <button class="btn ghost" data-act="again" type="button">Создать ещё</button>
+          </div>
+
+          <div class="buildover" id="buildOver" hidden>
+            <div class="buildcard">
+              <h3>Создаём видео…</h3>
+              <div class="sub">Можно закрыть окно — сборка продолжится на сервере.</div>
+              <div id="buildSteps"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ДОК ТАЙМЛАЙНА -->
+      <div class="dock">
+        <div class="drawer" id="drawer" hidden></div>
+        <div class="dock-h">
+          <b>Таймлайн реплик</b>
+          <span class="cnt" id="tlCnt"></span>
+          <div class="tools">
+            <button class="tlbtn" id="drawerBtn" data-act="drawer" style="width:auto; padding:0 10px; font-size:10.5px; font-weight:700" type="button">Реплики ▴</button>
+            <button class="tlbtn play" id="tlPlay" title="Воспроизвести" type="button">▶</button>
+            <button class="tlbtn" title="Разрезать по бегунку" type="button">✂</button>
+            <button class="tlbtn" title="Мельче" type="button">−</button>
+            <button class="tlbtn" title="Крупнее" type="button">+</button>
+            <button class="tlbtn" style="width:auto; padding:0 9px; font-size:10px" type="button">Показать всё</button>
+          </div>
+        </div>
+        <div class="dock-body" id="dockBody">
+          <div class="dock-empty" id="dockEmpty">Реплики появятся здесь после «Сгенерировать текст» или «Распознать речь»</div>
+          <div class="tl" id="tl" hidden></div>
+        </div>
+        <div class="clipprops" id="clipProps" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ АНАТОМИЯ ═══════════════ -->
+  <section class="spec">
+    <h2>Анатомия экрана</h2>
+    <p class="sub">Классическая схема видеоредакторов (CapCut, Canva, Descript): настройки слева, живое превью в центре, таймлайн снизу. Пользователь всегда видит, ЧТО он собирает.</p>
+    <div class="anatomy">
+      <div class="ana-map">
+        <div class="ana-box"><span class="ana-n">1</span>Топбар: имя · смета · «Создать видео»</div>
+        <div class="ana-mid">
+          <div class="ana-box"><span class="ana-n">2</span>Шаги 1–6</div>
+          <div class="ana-box"><span class="ana-n">3</span>Интерактивное превью</div>
+        </div>
+        <div class="ana-box"><span class="ana-n">4</span>Таймлайн реплик</div>
+      </div>
+      <div class="ana-list">
+        <div class="ana-item"><span class="n">1</span><div><b>Топбар</b><p>Выход в сценарий, автосохранение, живая смета стоимости и главная кнопка «Создать видео» — всегда на одном месте, недоступна пока не выполнен чек-лист.</p></div></div>
+        <div class="ana-item"><span class="n">2</span><div><b>Шаги 1–6</b><p>Режим → Аватар → Голос и текст → Видеоряд → Субтитры → Музыка. Нумерация + зелёные галочки показывают прогресс. Секции видны только релевантные: «Второй собеседник» появляется в Диалоге, «Серия» — в Динамичном монтаже.</p></div></div>
+        <div class="ana-item"><span class="n">3</span><div><b>Интерактивное превью</b><p>Кадр телефона (9:16) или широкий (16:9). Каждая зона кликабельна: пустая — «Пока не загружено», после выбора сразу показывает содержимое; прозрачный фон — силуэт на шахматке. Субтитры — живой пример прямо в кадре. Для монтажа/диалога — полоса плана с сегментами (какой план дорогой, какой бесплатный).</p></div></div>
+        <div class="ana-item"><span class="n">4</span><div><b>Таймлайн реплик</b><p>Существующий DialogueTimeline на всю ширину: дорожки голосов A/B, перетаскивание, резка, привязка медиа. Свойства выбранной реплики (показ, длительность, появление) — строкой под дорожками.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ АУДИТ ПО КОДУ ═══════════════ -->
+  <section class="spec">
+    <h2>Проверено по коду (origin/main)</h2>
+    <p class="sub">Что бэкенд уже умеет, а что нужно доделать — по каждой функции этого экрана.</p>
+    <div class="prin">
+      <div class="card"><b><span style="color:var(--ok)">✓</span> Фоновая музыка: цикл и обрезка готовы</b><p>Во всех трёх склейках трек зациклен и обрезан по длине ролика (stream_loop −1, t = D), громкость в процентах уже принимается (дефолт 20%, потолок 150%). Не хватало только интерфейса — ползунок и «сколько играет» подключаем к готовому. Опция «первые N секунд» — маленькая доводка (t = min(N, D) + затухание).</p></div>
+      <div class="card"><b><span style="color:var(--ok)">✓</span> Медиа длиннее реплики — в Диалоге работает</b><p>При выборе видео из Галереи длительность замеряется на фронте и ставится «показ целиком»; после речи медиа держится (сегмент без лица — $0), следующие реплики сдвигаются, мастер-голос сплайсится — губы не плывут.</p></div>
+      <div class="card"><b><span style="color:var(--warn)">⚠</span> Обычный режим: врезки реплик пока не собираются</b><p>Бэкенд обычной ветки использует только текст реплик (субтитры) и один зацикленный видеоряд; прикреплённые к репликам фото/видео игнорируются, хотя контролы в UI есть. Доводка: собрать обычный режим через тот же план сегментов, что и диалог.</p></div>
+      <div class="card"><b><span style="color:var(--ok)">✓</span> ElevenLabs: озвучка готова, выбора голоса не было</b><p>elevenTTS уже принимает voiceId (Sarah и George по умолчанию, модель multilingual v2). Добавляем: эндпоинт списка голосов вашего аккаунта (GET /ugc/voices, кэш) + прослушивание превью + проброс выбранного голоса в сборку.</p></div>
+      <div class="card"><b><span style="color:var(--ok)">✓</span> Галерея едина по всему сервису</b><p>GalleryPicker — один компонент на все блоки: вкладки (TrendFlow · Аудио · Из анализа · Тренды · Hotebook), поиск, загрузка с устройства, мини-плеер аудио. Студия подключает его же — переработаем Галерею, обновится везде разом.</p></div>
+      <div class="card"><b><span style="color:var(--warn)">⚠</span> Заставки до и после — новая функция</b><p>В спеке и бэкенде их нет. Добавляем spec.intro / spec.outro + склейка concat с нормализацией к формату кадра (контент заставки не преобразуется). Не выбрали — ролик собирается как раньше.</p></div>
+      <div class="card"><b><span style="color:var(--ok)">✓</span> Режим «Без аватара» — композитор уже есть</b><p>Блок «Комментатор» умеет ровно это: дорожка голоса + полноэкранные врезки по репликам (видео cover, фото с Ken Burns и фейдами) + музыка с процентом громкости. Нужна ветка в /ugc/build без HeyGen: базовый видеоряд подкладывается в сегменты без врезок. Цена ролика ≈ только озвучка.</p></div>
+      <div class="card"><b><span style="color:var(--warn)">⚠</span> Верхний слой — один ffmpeg-фильтр</b><p>Прозрачный PNG растягивается точно в кадр (пользователь готовил полотно под формат) и кладётся overlay поверх собранного видео, до вжигания субтитров — титры остаются читаемыми. При «Оба формата» — свой PNG на каждый формат.</p></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ СЛОВАРЬ ═══════════════ -->
+  <section class="spec">
+    <h2>Словарь интерфейса: было → стало</h2>
+    <p class="sub">Все строки блока переименованы по принципу «кнопка = глагол, раздел = существительное, никаких сокращений и жаргона». Колонка EN — референс для перевода на 108 языков.</p>
+    <div class="tblwrap">
+      <table class="dict">
+        <thead><tr><th style="width:26%">Было (в проде)</th><th style="width:24%">Стало (RU)</th><th style="width:22%">EN-референс</th><th>Зачем</th></tr></thead>
+        <tbody>
+          <tr class="grp"><td colspan="4">Экран и режимы</td></tr>
+          <tr><td class="old">UGC (панель-модалка 600px)</td><td class="new">UGC-студия · «Ролик с говорящим аватаром»</td><td class="en">UGC Studio · Talking-avatar video</td><td class="why">Полноэкранный редактор; подзаголовок объясняет суть без чтения абзаца</td></tr>
+          <tr><td class="old">— (режима не было: тумблер «Диалоги» + пресет «Удержание» в разных местах)</td><td class="new">Режим ролика: Один ведущий / Динамичный монтаж / Диалог двоих / Без аватара — озвучка</td><td class="en">Video mode: Single host / Dynamic cuts / Two-host dialogue / No avatar — voiceover</td><td class="why">Ветки бэкенда стали явным выбором с картинками; «Без аватара» = ваше видео + голос (ИИ-текст или запись), почти бесплатно</td></tr>
+          <tr><td class="old">Собрать UGC</td><td class="new">Создать видео</td><td class="en">Create video</td><td class="why">Без жаргона; результат — видео, а не «UGC»</td></tr>
+          <tr><td class="old">Сборка идёт на сервере — можно закрыть панель…</td><td class="new">Можно закрыть окно — сборка продолжится на сервере</td><td class="en">You can close this window — rendering continues on the server</td><td class="why">Короче, действие вперёд</td></tr>
+          <tr class="grp"><td colspan="4">Аватар</td></tr>
+          <tr><td class="old">Коллекция</td><td class="new">Готовые аватары</td><td class="en">Avatar library</td><td class="why">«Коллекция» не говорит, коллекция чего</td></tr>
+          <tr><td class="old">Своё фото</td><td class="new">Моё фото</td><td class="en">My photo</td><td class="why">Единое лицо обращения во всём интерфейсе</td></tr>
+          <tr><td class="old">Сгенерировать 3</td><td class="new">Сгенерировать 3 аватара</td><td class="en">Generate 3 avatars</td><td class="why">Объект действия обязателен — иначе непереводимо</td></tr>
+          <tr><td class="old">Рендер лица: HeyGen API / По подписке</td><td class="new">Оживление аватара: По ключу API / По подписке HeyGen</td><td class="en">Avatar animation: With API key / With HeyGen subscription</td><td class="why">«Рендер лица» — жаргон; «оживление» понятно всем</td></tr>
+          <tr><td class="old">Положение: Сверху / Снизу / Фон · слева / Фон · справа</td><td class="new">Раскладка (визуальный выбор миниатюрами): Аватар сверху / Аватар снизу / Поверх видео, слева / Поверх видео, справа</td><td class="en">Layout: Avatar on top / Avatar at bottom / Over video, left / Over video, right</td><td class="why">Точка-разделитель «·» ломает перевод; миниатюры понятны без слов</td></tr>
+          <tr><td class="old">Голос: Жен / Муж</td><td class="new">Голос ElevenLabs — карточки голосов с прослушиванием ▶; Sarah / George по умолчанию, включая клоны из вашего аккаунта</td><td class="en">ElevenLabs voice — voice cards with preview</td><td class="why">Бэкенд уже принимает voiceId; вместо двух абстрактных полов — реальные голоса с образцом</td></tr>
+          <tr><td class="old">Спикер B (второе лицо)</td><td class="new">Второй собеседник</td><td class="en">Second speaker</td><td class="why">«Спикер B» — внутренняя терминология диаризации</td></tr>
+          <tr><td class="old">Вовлечённость (как часто оба в кадре): Эконом / Баланс / Динамично</td><td class="new">Динамика диалога: Спокойно / Баланс / Живо + значки $ $$ $$$</td><td class="en">Dialogue dynamics: Calm / Balanced / Lively</td><td class="why">Названия описывают результат, значки — цену</td></tr>
+          <tr><td class="old">Вырезать фон аватара</td><td class="new">Прозрачный фон аватара · «в кадре останется только человек»</td><td class="en">Transparent avatar background · "only the person stays in frame"</td><td class="why">Пользователь мыслит результатом; превью сразу показывает шахматку</td></tr>
+          <tr class="grp"><td colspan="4">Голос и текст</td></tr>
+          <tr><td class="old">Сгенерировать текст (таб)</td><td class="new">Написать с ИИ</td><td class="en">Write with AI</td><td class="why">Таб — про способ, кнопка внутри — про действие</td></tr>
+          <tr><td class="old">Разобрать запись (таб)</td><td class="new">Моя запись</td><td class="en">My recording</td><td class="why">«Разобрать» — процесс, а не источник</td></tr>
+          <tr><td class="old">Разобрать речь (кнопка)</td><td class="new">Разобрать речь — имя не меняем; главная кнопка вкладки, крупная, с ✂</td><td class="en">Transcribe speech</td><td class="why">Знакомое действие — оставляем и делаем заметнее; после разбора авто-открывается панель «Реплики»</td></tr>
+          <tr><td class="old">Загрузить запись (аудио/видео)</td><td class="new">Слот: «Пока не загружено» + подпись «аудио или видео из Галереи»</td><td class="en">Nothing uploaded yet · audio or video from Gallery</td><td class="why">Единый паттерн пустых слотов во всём блоке</td></tr>
+          <tr><td class="old">Реплик в скрипте: N (~X с)</td><td class="new">N реплик · X сек · правьте на таймлайне ниже</td><td class="en">{n} lines · {s} sec · edit on the timeline below</td><td class="why">Подсказывает следующий шаг; ICU-плейсхолдеры</td></tr>
+          <tr class="grp"><td colspan="4">Видеоряд</td></tr>
+          <tr><td class="old">Вторая половина — видео</td><td class="new">Видеоряд · «что на экране»</td><td class="en">Footage · "what's on screen"</td><td class="why">«Половина» неверна для раскладки «поверх видео»</td></tr>
+          <tr><td class="old">Загрузить видео (галерея)</td><td class="new">Слот: «Пока не загружено» + «нажмите — выбрать из Галереи»</td><td class="en">Nothing uploaded yet — tap to choose from Gallery</td><td class="why">Кликается и слот, и зона в превью</td></tr>
+          <tr><td class="old">Заполнить / Вписать</td><td class="new">Заполнить кадр / Показать целиком</td><td class="en">Fill the frame / Fit whole video</td><td class="why">Одиночные глаголы без объекта не переводятся однозначно</td></tr>
+          <tr><td class="old">без звука видео (чекбокс)</td><td class="new">Звук из видео (тумблер, по умолчанию выключен)</td><td class="en">Video sound (off by default)</td><td class="why">Позитивная формулировка вместо отрицания</td></tr>
+          <tr><td class="old">Батч: несколько видео → несколько роликов</td><td class="new">Серия роликов · «на каждое видео — отдельный ролик, аватар оплачивается один раз»</td><td class="en">Video series · one clip per video, the avatar is paid for once</td><td class="why">«Батч» — жаргон разработчиков</td></tr>
+          <tr class="grp"><td colspan="4">Субтитры</td></tr>
+          <tr><td class="old">Титры</td><td class="new">Субтитры</td><td class="en">Captions</td><td class="why">Титры — это начальные/финальные надписи фильма</td></tr>
+          <tr><td class="old">Без / По словам / Караоке / Обычные</td><td class="new">Выключены / По словам / Караоке / Строкой — с живым примером в превью</td><td class="en">Off / Word by word / Karaoke / Full line</td><td class="why">«Без» и «Обычные» непереводимы без контекста; стиль видно в кадре</td></tr>
+          <tr><td class="old">Позиция: Низ / Центр / Верх</td><td class="new">Положение: Снизу / По центру / Сверху</td><td class="en">Position: Bottom / Middle / Top</td><td class="why">Полные наречия, единый падеж</td></tr>
+          <tr><td class="old">пожелания: шрифт, кегль, обводка, цвет, тень…</td><td class="new">Пожелания к стилю: цвет, шрифт, обводка…</td><td class="en">Style notes: color, font, outline…</td><td class="why">«Кегль» — типографский жаргон</td></tr>
+          <tr class="grp"><td colspan="4">Музыка, заставки, слой (новое)</td></tr>
+          <tr><td class="old">— (музыки в интерфейсе не было)</td><td class="new">Громкость музыки: ползунок 0–100%, по умолчанию 20% · «голос всегда 100%»</td><td class="en">Music volume {n}% · voice stays at 100%</td><td class="why">Бэкенд уже микширует в процентах — лучшая практика фона 15–25%</td></tr>
+          <tr><td class="old">—</td><td class="new">Сколько играет: Весь ролик / Первые {s} секунд · «короче ролика — зациклится, длиннее — обрежется»</td><td class="en">Plays: Whole video (looped) / First {s} seconds</td><td class="why">Поведение цикла/обрезки уже в бэкенде — говорим о нём словами</td></tr>
+          <tr><td class="old">—</td><td class="new">Заставка в начале / Заставка в конце · «приклеится как есть, без преобразований»</td><td class="en">Intro bumper / Outro bumper · added as is, no processing</td><td class="why">Брендовая заставка 2–10 сек; не выбрали — ролик без неё</td></tr>
+          <tr><td class="old">—</td><td class="new">Верхний слой: прозрачный PNG под формат кадра — «поверх всего видео; субтитры — поверх слоя»</td><td class="en">Top layer: transparent PNG over the whole video; captions stay above</td><td class="why">Логотип в любом месте, рамка, подпись канала; слот на каждый выбранный формат</td></tr>
+          <tr><td class="old">—</td><td class="new">Полоса прогресса · «зритель видит, что ролик короткий, и досматривает»</td><td class="en">Progress bar · viewers see the video is short and watch to the end</td><td class="why">Приём удержания TikTok; один drawbox-фильтр</td></tr>
+          <tr><td class="old">—</td><td class="new">Выровнять громкость голоса · «тихие места подтянутся, громкие сгладятся»</td><td class="en">Even out voice volume</td><td class="why">loudnorm для своей записи; включено по умолчанию</td></tr>
+          <tr><td class="old">—</td><td class="new">Языки ролика: Русский — основной + любые ещё · «серия: отдельный ролик на каждом языке»</td><td class="en">Video languages: one clip per language</td><td class="why">Перевод Claude + ElevenLabs multilingual; в «Без аватара» цена = озвучка × языки</td></tr>
+          <tr><td class="old">—</td><td class="new">Бренд-кит (кнопка в шапке): «Применить» / «Сохранить текущие настройки как бренд-кит»</td><td class="en">Brand kit: Apply / Save current settings as a brand kit</td><td class="why">Слой + заставки + музыка + субтитры + голос одним кликом — все ролики в едином стиле</td></tr>
+          <tr class="grp"><td colspan="4">Формат и монтаж</td></tr>
+          <tr><td class="old">Формат вывода (внизу панели, после результата): 9:16 / 16:9 / Оба</td><td class="new">Формат — над превью, любое сочетание: 9:16 / 16:9 / 1:1 / 4:5; первый выбранный — крупно, остальные миниатюрами</td><td class="en">Format — any combination: 9:16 / 16:9 / 1:1 / 4:5</td><td class="why">Формат определяет весь кадр — выбирается первым; 1:1 и 4:5 = лента Instagram/Facebook (композиторы уже ориентационные)</td></tr>
+          <tr><td class="old">Два файла за один прогон — аватар рендерится один раз…</td><td class="new">Файлов за прогон: {n}. Аватар оплачивается один раз.</td><td class="en">{n} files per run. The avatar is paid for once.</td><td class="why">Работает для любого числа форматов; ICU-плейсхолдер</td></tr>
+          <tr><td class="old">Удержание — переключения планов: Выкл / Эконом / Баланс / Премиум</td><td class="new">Режим «Динамичный монтаж» + Насыщенность: Эконом / Баланс / Премиум ($ $$ $$$)</td><td class="en">Dynamic cuts · Intensity: Saver / Balanced / Premium</td><td class="why">«Удержание» — метрика аналитики, не настройка; «Выкл» стал отдельным режимом «Один ведущий»</td></tr>
+          <tr class="grp"><td colspan="4">Таймлайн (DialogueTimeline)</td></tr>
+          <tr><td class="old">Таймлайн (наложение голосов)</td><td class="new">Таймлайн реплик</td><td class="en">Script timeline</td><td class="why">Наложение — деталь реализации</td></tr>
+          <tr><td class="old">Реплики (N) — открыть/свернуть (список в панели настроек)</td><td class="new">Кнопка «Реплики» — выдвижная панель над таймлайном: фильтр «Все · Голос A · Голос B», правка текста, смена голоса кликом по бейджу, объединение ⇣, медиа с длительностью</td><td class="en">Lines — panel over the timeline: filter All / Voice A / Voice B</td><td class="why">Редактирование диалога по голосам — рядом с дорожками, а не в узкой колонке; заставки на дорожке видны штриховкой</td></tr>
+          <tr><td class="old">вместить</td><td class="new">Показать всё</td><td class="en">Fit all</td><td class="why">Глагол действия с большой буквы</td></tr>
+          <tr><td class="old">Показ: Авто (Клод) / Во весь кадр / Фон · лицо слева / Фон · лицо справа / Сверху-снизу</td><td class="new">Как показать: Авто (решит ИИ) / Во весь кадр / Фоном, аватар слева / Фоном, аватар справа / Пополам</td><td class="en">Show as: Auto (AI decides) / Full frame / Background, avatar left / Background, avatar right / Split screen</td><td class="why">Имя модели — деталь; «·» удалён; «Пополам» работает в обоих форматах</td></tr>
+          <tr><td class="old">Держать медиа: N сек · реплики сдвинутся</td><td class="new">Показывать: N сек · «дольше реплики — остальные сдвинутся»</td><td class="en">Show for: {s} sec · longer than the line — the rest shifts</td><td class="why">Проще; поясняющая фраза отделена</td></tr>
+          <tr><td class="old">Кадр: Во весь кадр / Карточка</td><td class="new">Показ: Во весь кадр / Карточкой</td><td class="en">Show: Full frame / As a card</td><td class="why">Единый творительный падеж</td></tr>
+          <tr><td class="old">Плашка: заголовок 2–5 слов</td><td class="new">Подпись на экране</td><td class="en">On-screen title</td><td class="why">«Плашка» — жаргон дизайнеров</td></tr>
+          <tr><td class="old">Выезд: ← Слева / Справа → / ↑ Снизу / Зум / Проявление</td><td class="new">Появление: Слева / Справа / Снизу / Зум / Проявление (стрелки — иконками)</td><td class="en">Entrance: Left / Right / Bottom / Zoom / Fade</td><td class="why">Стрелки в строках ломают RTL-языки</td></tr>
+          <tr class="grp"><td colspan="4">Статусы и результат</td></tr>
+          <tr><td class="old">Выбран: не выбран</td><td class="new">Пустой слот: «Пока не выбрано»; выбранный — карточка с миниатюрой</td><td class="en">Not selected yet</td><td class="why">Статус живёт на самом объекте, а не отдельной строкой</td></tr>
+          <tr><td class="old">Собираю…</td><td class="new">Создаём видео… + этапы (Озвучка → Оживление → Склейка → Субтитры)</td><td class="en">Creating video… · Voice → Avatar → Editing → Captions</td><td class="why">Видимый прогресс вместо неопределённого спиннера</td></tr>
+          <tr><td class="old">Готовый ролик (он же в Галерее)</td><td class="new">Готово — видео в Галерее</td><td class="en">Done — saved to your Gallery</td><td class="why">Результат + место одним предложением</td></tr>
+          <tr><td class="old">Батч: N роликов (все в Галерее)</td><td class="new">Серия готова: N видео в Галерее</td><td class="en">Series ready: {n} videos in your Gallery</td><td class="why">Единая лексика «серии»</td></tr>
+          <tr><td class="old">— (ключ HeyGen упомянут в 4 подсказках мелким шрифтом)</td><td class="new">Чек-лист готовности: Аватар · Текст · Видеоряд · Ключ HeyGen — с зелёными галочками</td><td class="en">Ready to create: Avatar · Script · Footage · HeyGen key</td><td class="why">Все условия сборки в одном месте; кнопка объясняет, чего не хватает</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ПРИНЦИПЫ i18n ═══════════════ -->
+  <section class="spec">
+    <h2>Принципы для перевода на 108 языков</h2>
+    <p class="sub">Правила, по которым переписан словарь — и по которым пишутся все новые строки.</p>
+    <div class="prin">
+      <div class="card"><b>Одна строка — одна мысль</b><p>Никакой склейки из кусков («Фон · слева»). Порядок слов в других языках другой — склейка ломает перевод.</p></div>
+      <div class="card"><b>Кнопка — глагол, раздел — существительное</b><p>«Создать видео», «Распознать речь» / «Аватар», «Видеоряд». Пользователь ищет действие глазами.</p></div>
+      <div class="card"><b>Без сокращений и жаргона</b><p>«Жен» → «Женский», «батч» → «серия», «плашка» → «подпись на экране», «рендер лица» → «оживление аватара».</p></div>
+      <div class="card"><b>ICU-плейсхолдеры и плюрализация</b><p>«{n} реплик · {s} сек» — числа только через плейсхолдеры, формы множественного числа отдаёт i18n-библиотека.</p></div>
+      <div class="card"><b>Направление — иконкой, не символом</b><p>Стрелки «←/→» в строках ломают RTL (арабский, иврит). Пространственный смысл несут миниатюры-диаграммы, текст его дублирует словами.</p></div>
+      <div class="card"><b>Ключи словаря</b><p>Все строки — в одном файле <span style="font-family:ui-monospace,monospace; font-size:10.5px">ugcStrings.ts</span> с ключами вида ugc.avatar.transparent.hint — готовая база для конвейера перевода.</p></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ЕЩЁ ИДЕИ ═══════════════ -->
+  <section class="spec">
+    <h2>Что ещё можно добавить дёшево</h2>
+    <p class="sub">Простые варианты на уже работающем коде. Решение принято: 1, 2, 5, 6, 7 — в работе (уже на макете выше), 3 и 4 — отложены.</p>
+    <div class="prin">
+      <div class="card"><b>1 · Форматы 1:1 и 4:5 <span style="color:var(--ok)">✓ в работе</span></b><p>Instagram-лента и Facebook. Композиторы уже ориентационные — добавить два размера в список форматов. На макете: формат — мультивыбор, первый крупно, остальные миниатюрами.</p></div>
+      <div class="card"><b>2 · Выровнять громкость голоса <span style="color:var(--ok)">✓ в работе</span></b><p>Для «своей записи»: нормализация loudnorm одним ffmpeg-фильтром — голос всегда ровный. Тумблер на вкладке «Моя запись», включён по умолчанию.</p></div>
+      <div class="card"><b>3 · Обложка ролика <span style="color:var(--mut)">отложено</span></b><p>Выбрать кадр из видео или фото из Галереи → первый кадр и превью. Механика обложек в сервисе уже есть (store_cover).</p></div>
+      <div class="card"><b>4 · A/B-варианты крючка <span style="color:var(--mut)">отложено</span></b><p>ИИ пишет 2–3 разных первых фразы → серия роликов с разными хуками. В «Без аватара» — почти бесплатно.</p></div>
+      <div class="card"><b>5 · Полоса прогресса <span style="color:var(--ok)">✓ в работе</span></b><p>Тонкая полоска-таймер сверху кадра — приём удержания TikTok. Один drawbox-фильтр. Тумблер в «Верхнем слое», на превью — живая анимация.</p></div>
+      <div class="card"><b>6 · Ролик на нескольких языках <span style="color:var(--ok)">✓ в работе</span></b><p>Claude переводит → ElevenLabs multilingual озвучивает → серия по языкам за прогон. Чипы «Языки ролика» в «Голосе и тексте»; в «Без аватара» цена = озвучка × языки.</p></div>
+      <div class="card"><b>7 · Бренд-кит <span style="color:var(--ok)">✓ в работе</span></b><p>Слой + заставки + музыка + стиль субтитров + голос. Кнопка «◆ Бренд-кит» в шапке: «Применить» и «Сохранить текущие настройки».</p></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ПЛАН ═══════════════ -->
+  <section class="spec">
+    <h2>План внедрения</h2>
+    <p class="sub">Бэкенд не меняется: /ugc/build, статусы, форматы и все три ветки уже готовы. Работа — только фронтенд.</p>
+    <div class="phases">
+      <div class="phase"><span class="n">1</span><div><b>Каркас студии</b><p>Новый <code>UgcStudio.tsx</code> — полноэкранный оверлей вместо модалки 600px. Состояние и <code>UgcSpec</code> не меняются — совместимость со старыми сценариями в graph. Клик по облаку UGC открывает студию.</p></div></div>
+      <div class="phase"><span class="n">2</span><div><b>Интерактивное превью</b><p><code>UgcPreview.tsx</code>: чистая функция «спека → кадр». Кликабельные зоны с пустыми состояниями, прозрачный фон шахматкой, живые субтитры, формат и раскладка у превью, полоса плана для монтажа и диалога.</p></div></div>
+      <div class="phase"><span class="n">3</span><div><b>Левая панель и словарь</b><p>Шесть секций-шагов, «Режим ролика» с миниатюрами. Все строки — в <code>ugcStrings.ts</code> (было→стало по таблице выше) — база для 108 языков.</p></div></div>
+      <div class="phase"><span class="n">4</span><div><b>Док таймлайна</b><p><code>DialogueTimeline</code> вниз на всю ширину (компонент prop-driven — переносится без правок), свойства выбранной реплики строкой под дорожками.</p></div></div>
+      <div class="phase"><span class="n">5</span><div><b>Готовность и сборка</b><p>Чек-лист условий, живая смета, этапы прогресса на превью (из note бэкенда), результат с плеером и «Открыть в Галерее». Музыка: ползунок громкости (бэкенд уже зацикливает и обрезает, дефолт 20%) + опция «первые N секунд» с затуханием. Форматы: + 1:1 и 4:5 в <code>UGC_FORMATS</code> (мультивыбор, композиторы уже ориентационные).</p></div></div>
+      <div class="phase"><span class="n">6</span><div><b>Голоса, заставки, режим «Без аватара», слой, языки, бренд</b><p>ElevenLabs: <code>GET /ugc/voices</code> + проброс <code>spec.voiceId</code> в готовый <code>elevenTTS</code>. Заставки: <code>spec.intro/outro</code> + concat. Режим «Без аватара»: ветка /ugc/build на базе <code>composeCommentator</code> + loudnorm (<code>spec.loudnorm</code>, по умолчанию вкл). Верхний слой: <code>spec.layers</code> по форматам + overlay перед субтитрами; полоса прогресса — drawbox. Языки: <code>spec.langs</code> — перевод скрипта Claude → TTS multilingual → серия файлов «· EN». Бренд-кит: пресеты тенанта (таблица <code>brand_kits</code>: слой, заставки, музыка, стиль субтитров, голос) + «Применить»/«Сохранить». Врезки медиа у реплик в обычном режиме — через план сегментов, как в диалоге.</p></div></div>
+      <div class="phase"><span class="n">7</span><div><b>Полировка</b><p>Светлая тема, клавиатура и фокус, узкие экраны (превью сверху, секции снизу), пустые состояния Галереи.</p></div></div>
+    </div>
+  </section>
+
+  <p class="foot">Макет · дизайн-токены приложения (Geist, панельная тема) · интерактив демонстрационный, продовая логика не задета</p>
+</div>
+
+<!-- Пикер Галереи (единый GalleryPicker сервиса) -->
+<div class="picker-back" id="pickerBack" hidden>
+  <div class="picker" role="dialog" aria-modal="true">
+    <h3 id="pkTitle">Выбор из Галереи</h3>
+    <div class="sub" id="pkSub">Нажмите на файл — он сразу появится в превью.</div>
+    <div class="pk-tabs" id="pkTabs"></div>
+    <button class="pk-up" type="button">⬆ Загрузить с устройства — файл попадёт в Галерею и сразу выберется</button>
+    <input class="pk-search" id="pkSearch" placeholder="Поиск по Галерее…">
+    <div class="pk-grid" id="pkGrid"></div>
+    <div class="pk-foot">
+      <span class="note" id="pkNote"></span>
+      <button class="btn ghost" data-act="close-picker" type="button">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Бренд-кит -->
+<div class="picker-back" id="brandBack" hidden>
+  <div class="picker" role="dialog" aria-modal="true" style="width:min(500px, 94vw)">
+    <h3>Бренд-кит</h3>
+    <div class="sub">Сохранённый набор оформления: верхний слой, заставки, музыка, стиль субтитров и голос. Один клик — все ролики в едином стиле.</div>
+    <div id="brandList"></div>
+    <button class="bk-save" data-act="brand-save" type="button">＋ Сохранить текущие настройки как новый бренд-кит</button>
+    <div class="pk-foot">
+      <span class="note">Бренд-киты общие для всех сценариев аккаунта.</span>
+      <button class="btn ghost" data-act="close-brand" type="button">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s, r){ return (r||document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── демо-данные ── */
+  function silSVG(tint){
+    return '<svg viewBox="0 0 100 74" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<circle cx="50" cy="24" r="15.5" fill="'+tint+'"/>' +
+      '<path d="M16 74 C18 52 32 43 50 43 C68 43 82 52 84 74 Z" fill="'+tint+'"/></svg>';
+  }
+  var AVATARS = [
+    {name:'Алина',  bg:'linear-gradient(160deg,#7c3aed,#4f46e5)', tint:'#E9D5FF'},
+    {name:'Марк',   bg:'linear-gradient(160deg,#0ea5e9,#0f766e)', tint:'#BAE6FD'},
+    {name:'Ева',    bg:'linear-gradient(160deg,#f59e0b,#dc2626)', tint:'#FDE68A'},
+    {name:'Тимур',  bg:'linear-gradient(160deg,#10b981,#065f46)', tint:'#A7F3D0'},
+    {name:'Соня',   bg:'linear-gradient(160deg,#ec4899,#9d174d)', tint:'#FBCFE8'},
+    {name:'Дэн',    bg:'linear-gradient(160deg,#64748b,#1e293b)', tint:'#CBD5E1'}
+  ];
+  var CLIPS = [
+    {name:'Распаковка.mp4',        bg:'linear-gradient(150deg,#f97316,#7c2d12)', dur:'0:19'},
+    {name:'Обзор квартиры.mp4',    bg:'linear-gradient(150deg,#14b8a6,#134e4a)', dur:'0:32'},
+    {name:'Прогулка по городу.mp4',bg:'linear-gradient(150deg,#3b82f6,#1e3a8a)', dur:'0:27'},
+    {name:'Скринкаст приложения.mp4', bg:'linear-gradient(150deg,#6366f1,#312e81)', dur:'0:44'},
+    {name:'Готовка.mp4',           bg:'linear-gradient(150deg,#ef4444,#7f1d1d)', dur:'0:21'},
+    {name:'Стрит-интервью.mp4',    bg:'linear-gradient(150deg,#22c55e,#14532d)', dur:'0:38'}
+  ];
+  var RECS = [
+    {name:'Голосовое о продукте.m4a', bg:'linear-gradient(150deg,#a855f7,#581c87)', dur:'0:24'},
+    {name:'Интервью вдвоём.mp3',      bg:'linear-gradient(150deg,#ec4899,#831843)', dur:'1:12'},
+    {name:'Запись с телефона.mp4',    bg:'linear-gradient(150deg,#06b6d4,#164e63)', dur:'0:41'}
+  ];
+  var MUSIC = [
+    {name:'Upbeat Pop.mp3',  bg:'linear-gradient(150deg,#f59e0b,#92400e)', dur:'2:10'},
+    {name:'Lo-fi Chill.mp3', bg:'linear-gradient(150deg,#8b5cf6,#4c1d95)', dur:'1:54'},
+    {name:'Cinematic.mp3',   bg:'linear-gradient(150deg,#475569,#0f172a)', dur:'2:31'}
+  ];
+  var VOICES = [
+    {id:'sarah',  name:'Sarah',  desc:'тёплый женский · мультиязычный', df:true},
+    {id:'george', name:'George', desc:'глубокий мужской · спокойный', df:true},
+    {id:'alice',  name:'Alice',  desc:'энергичный женский · реклама'},
+    {id:'daniel', name:'Daniel', desc:'дикторский мужской · новости'},
+    {id:'lily',   name:'Lily',   desc:'мягкий женский · сторителлинг'}
+  ];
+  var LINE_CLIPS = [
+    {name:'Врезка интерфейса.mp4', bg:'linear-gradient(150deg,#6366f1,#312e81)', dur:'0:07', sec:7},
+    {name:'Скрин отзыва.jpg',      bg:'linear-gradient(150deg,#f59e0b,#7c2d12)', dur:'', sec:0},
+    {name:'Демо фичи.mp4',         bg:'linear-gradient(150deg,#14b8a6,#134e4a)', dur:'0:05', sec:5}
+  ];
+  var BUMPERS = [
+    {name:'Логотип-заставка.mp4',  bg:'linear-gradient(150deg,#a855f7,#312e81)', dur:'0:03', sec:3},
+    {name:'Бренд-интро.mp4',       bg:'linear-gradient(150deg,#ef4444,#7f1d1d)', dur:'0:02', sec:2},
+    {name:'Подпишись-аутро.mp4',   bg:'linear-gradient(150deg,#0ea5e9,#0c4a6e)', dur:'0:05', sec:5}
+  ];
+  var LAYERS = [
+    {name:'Лого в углу.png',      bg:'linear-gradient(150deg,#312e81,#0f172a)', kind:'logo',  dur:''},
+    {name:'Рамка + лого.png',     bg:'linear-gradient(150deg,#4c1d95,#1e1b4b)', kind:'frame', dur:''},
+    {name:'Подпись @канала.png',  bg:'linear-gradient(150deg,#0f766e,#134e4a)', kind:'strip', dur:''}
+  ];
+  var FMTS = [
+    {k:'v',   lbl:'9:16', cap:'9:16 · TikTok, Reels, Shorts'},
+    {k:'h',   lbl:'16:9', cap:'16:9 · YouTube'},
+    {k:'sq',  lbl:'1:1',  cap:'1:1 · лента Instagram'},
+    {k:'p45', lbl:'4:5',  cap:'4:5 · Instagram / Facebook'}
+  ];
+  var LANGS = [['ru','Русский'],['en','English'],['es','Español'],['de','Deutsch'],['fr','Français'],['pt','Português']];
+  var BRANDS = [
+    {name:'TrendTraffic основной', layer:1, intro:0, outro:2, music:1, subStyle:'word', voiceId:'sarah'}
+  ];
+  var LINES_BASE = [
+    {sp:'A', t:'Стоп. Это изменит твой контент', d:2.6},
+    {sp:'A', t:'Я монтировала каждый ролик по три часа', d:3.1, m:1},
+    {sp:'B', t:'Серьёзно? И что изменилось?', d:2.2},
+    {sp:'A', t:'Теперь аватар делает это за меня', d:2.7},
+    {sp:'B', t:'Покажи, как это работает', d:2.0, m:0},
+    {sp:'A', t:'Смотри до конца — внизу ссылка', d:2.5}
+  ];
+  var CAP_WORDS = ['Стоп.','Это','изменит','твой','контент'];
+
+  /* ── состояние ── */
+  var S;
+  function freshState(){
+    return {
+      mode:'solo', formats:['v'], place:'top',
+      avSrc:'collection', avatar:null, photoA:null, photoB:null,
+      prov:'api', transparent:false,
+      vsrc:'ai', voiceId:'sarah', playingVoice:null,
+      langs:['ru'],
+      lines:null, lineFilter:'all', drawer:false, lineMediaIdx:null,
+      rec:null, genBusy:false, diarBusy:false, loudnorm:true,
+      video:null, fit:'cover', sound:false, batch:[],
+      intro:null, outro:null,
+      subStyle:'word', subPos:'bottom',
+      music:null, musicVol:20, musicLen:'full', musicLead:15,
+      layers:{v:null, h:null, sq:null, p45:null},
+      progressBar:false,
+      retPre:'bal', dlgDyn:'bal',
+      curSeg:0, selClip:-1,
+      building:false, done:false,
+      widx:0
+    };
+  }
+  S = freshState();
+  var pickerKind = null, pkTab = 'reference', pkQuery = '';
+  function makeLines(){
+    return LINES_BASE.map(function(l){
+      return {sp:l.sp, t:l.t, d:l.d, media: (l.m != null ? Object.assign({}, LINE_CLIPS[l.m]) : null)};
+    });
+  }
+  function lineList(){ return S.lines || []; }
+  function dispSp(l){ return S.mode==='dialogue' ? l.sp : 'A'; }
+  function effDur(l){ return (S.mode==='dialogue' && l.media && l.media.sec > l.d) ? l.media.sec : l.d; }
+  /* модель таймлайна: заставка в начале → реплики (с растяжкой) → заставка в конце */
+  function timelineModel(){
+    var items = []; var t = 0;
+    if (S.intro){ items.push({type:'bump', label:'Заставка · '+S.intro.sec+'с', start:0, d:S.intro.sec}); t = S.intro.sec; }
+    lineList().forEach(function(l, i){
+      items.push({type:'line', i:i, l:l, start:t, d:l.d, hold: effDur(l) - l.d});
+      t += effDur(l);
+    });
+    if (S.outro){ items.push({type:'bump', label:'Заставка · '+S.outro.sec+'с', start:t, d:S.outro.sec}); t += S.outro.sec; }
+    return {items:items, total:t};
+  }
+
+  /* ── строки-подсказки ── */
+  var MODE_HINT = {
+    solo:'Аватар говорит весь текст, рядом — ваш видеоряд. Самый простой вариант.',
+    retention:'Кадр сменяет план каждые несколько секунд под одну дорожку голоса — так зритель досматривает до конца.',
+    dialogue:'Два человека говорят своими лицами. Нужны два фото и запись разговора двух голосов.',
+    voiceover:'Аватара нет: ваше видео + голос — текст с ИИ (ElevenLabs) или ваша запись как есть. Врезки картинок и видео по репликам — по желанию. Почти бесплатно.'
+  };
+  var RET_HINT = {
+    eco:'Дорогой крупный план — только на крючок и призыв (~2 на ролик). Больше «только видео» — дешевле всего.',
+    bal:'Крупные планы на крючок, действие и призыв (~3). Золотая середина.',
+    prem:'Максимум лица (~4 крупных плана), меньше пауз. Живее и дороже.'
+  };
+  var DLG_HINT = {
+    eco:'Почти всегда один говорящий в кадре — самый дешёвый вариант.',
+    bal:'Крупный план говорящего; оба в кадре — на реакциях и пиках. ИИ распределяет планы сам.',
+    dyn:'Больше сцен «оба в кадре» и врезок — динамичнее и дороже.'
+  };
+  var COST = {
+    solo:{api:'≈ <b>$3–4</b> за минуту', sub:'≈ <b>$1</b> за минуту'},
+    retention:{eco:'≈ <b>$1–2</b> за ролик', bal:'≈ <b>$2–3</b> за ролик', prem:'≈ <b>$3–5</b> за ролик'},
+    dialogue:{eco:'≈ <b>$2</b> за ролик', bal:'≈ <b>$2–3</b> за ролик', dyn:'≈ <b>$3–5</b> за ролик'},
+    voiceover:{ai:'≈ <b>$0.1–0.3</b> — только озвучка', rec:'<b>$0</b> — своё аудио и видео'}
+  };
+
+  /* ── планы сегментов ── */
+  function retPlan(){
+    if (S.retPre==='eco') return [
+      {l:'Крючок', s:'Avatar IV', k:'iv', view:'closeup'},
+      {l:'Связка', s:'Avatar III', k:'iii', view:'split'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'Призыв', s:'Avatar IV', k:'iv', view:'closeup'}];
+    if (S.retPre==='prem') return [
+      {l:'Крючок', s:'Avatar IV', k:'iv', view:'closeup'},
+      {l:'Связка', s:'Avatar III', k:'iii', view:'split'},
+      {l:'Действие', s:'Avatar IV', k:'iv', view:'pip'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'Эмоция', s:'Avatar IV', k:'iv', view:'closeup'},
+      {l:'Призыв', s:'Avatar IV', k:'iv', view:'closeup'}];
+    return [
+      {l:'Крючок', s:'Avatar IV', k:'iv', view:'closeup'},
+      {l:'Связка', s:'Avatar III', k:'iii', view:'split'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'Действие', s:'Avatar IV', k:'iv', view:'pip'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'Призыв', s:'Avatar IV', k:'iv', view:'closeup'}];
+  }
+  function dlgPlan(){
+    if (S.dlgDyn==='eco') return [
+      {l:'A крупно', s:'говорит A', k:'iii', view:'dlgA'},
+      {l:'B крупно', s:'говорит B', k:'iii', view:'dlgB'},
+      {l:'A крупно', s:'Avatar IV', k:'iv', view:'dlgA'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'B крупно', s:'говорит B', k:'iii', view:'dlgB'}];
+    if (S.dlgDyn==='dyn') return [
+      {l:'Оба в кадре', s:'реакция $0', k:'iv', view:'dlgBoth'},
+      {l:'A крупно', s:'Avatar IV', k:'iv', view:'dlgA'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'Оба в кадре', s:'реакция $0', k:'iii', view:'dlgBoth'},
+      {l:'B крупно', s:'Avatar IV', k:'iv', view:'dlgB'},
+      {l:'Оба в кадре', s:'реакция $0', k:'iii', view:'dlgBoth'}];
+    return [
+      {l:'A крупно', s:'Avatar IV', k:'iv', view:'dlgA'},
+      {l:'Оба в кадре', s:'реакция $0', k:'iii', view:'dlgBoth'},
+      {l:'B крупно', s:'говорит B', k:'iii', view:'dlgB'},
+      {l:'Фон + лицо', s:'вырезка', k:'iii', view:'pip'},
+      {l:'Врезка', s:'$0', k:'free', view:'broll'},
+      {l:'A крупно', s:'Avatar IV', k:'iv', view:'dlgA'}];
+  }
+
+  /* ── помощники разметки ── */
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function slotEmpty(kind, title, sub, icoSq){
+    return '<button class="slot" data-act="open-picker" data-kind="'+kind+'" type="button">' +
+      '<span class="ph'+(icoSq?' sq':'')+'">＋</span>' +
+      '<span class="tt"><b>'+title+'</b><span>'+sub+'</span></span></button>';
+  }
+  function slotFilled(kind, obj, delAct, isAudio){
+    var thumb = isAudio
+      ? '<span class="thumb" style="background:'+obj.bg+'; height:40px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px">♪</span>'
+      : '<span class="thumb" style="background:'+obj.bg+'"><span class="vstripes"></span></span>';
+    return '<div class="slot filled">' + thumb +
+      '<span class="tt"><b>'+esc(obj.name)+'</b><span>'+(obj.dur? obj.dur+' · ':'')+'из Галереи</span></span>' +
+      '<span class="act"><button class="rep" data-act="open-picker" data-kind="'+kind+'" type="button">Заменить</button>' +
+      '<button class="del" data-act="'+delAct+'" title="Убрать" type="button">✕</button></span></div>';
+  }
+  function avatarFilledSlot(kind, av, delAct){
+    return '<div class="slot filled">' +
+      '<span class="thumb" style="background:'+av.bg+'"><span class="sil">'+silSVG(av.tint)+'</span></span>' +
+      '<span class="tt"><b>'+esc(av.name)+'</b><span>оживит HeyGen</span></span>' +
+      '<span class="act"><button class="rep" data-act="open-picker" data-kind="'+kind+'" type="button">Заменить</button>' +
+      '<button class="del" data-act="'+delAct+'" title="Убрать" type="button">✕</button></span></div>';
+  }
+
+  /* ── канвас: содержимое ячеек ── */
+  function avatarCellHTML(av, opts){
+    opts = opts || {};
+    var label = opts.label || 'Аватар';
+    var act = opts.act || 'canvas-avatar';
+    if (!av) return '<button class="empty" data-act="'+act+'" type="button">' +
+      '<span class="dash">'+silIcon()+'</span><b>'+label+' — пока не выбран</b><span>нажмите, чтобы выбрать</span></button>';
+    var bg = opts.transparent ? 'checker' : '';
+    var style = opts.transparent ? '' : 'background:'+av.bg;
+    return '<span class="tag">'+label+(opts.transparent?' · прозрачный фон':'')+'</span>' +
+      '<div class="fillv '+bg+'" style="'+style+'"><div class="avfull">'+silSVG(av.tint)+'</div></div>';
+  }
+  function silIcon(){ return '<svg width="26" height="20" viewBox="0 0 100 74"><circle cx="50" cy="24" r="15.5" fill="currentColor"/><path d="M16 74 C18 52 32 43 50 43 C68 43 82 52 84 74 Z" fill="currentColor"/></svg>'; }
+  function videoCellHTML(v, opts){
+    opts = opts || {};
+    var label = opts.label || 'Видеоряд';
+    if (!v) return '<button class="empty" data-act="canvas-video" type="button">' +
+      '<span class="dash">▶</span><b>Видео — пока не загружено</b><span>нажмите — выбрать из Галереи</span></button>';
+    var fitNote = S.fit==='contain' ? ' · целиком' : '';
+    return '<span class="tag">'+label+fitNote+'</span>' +
+      '<div class="fillv" style="background:'+v.bg+'"><span class="vstripes"></span></div>' +
+      '<span class="playbtn"></span>';
+  }
+  function captionHTML(){
+    if (S.subStyle==='off') return '';
+    var pos = 'pos-'+S.subPos;
+    if (S.subStyle==='word'){
+      var w = CAP_WORDS[S.widx % CAP_WORDS.length];
+      return '<div class="caption '+pos+'"><span class="cap-word" id="capWord">'+esc(w)+'</span></div>';
+    }
+    var hot = S.subStyle==='karaoke' ? (S.widx % CAP_WORDS.length) : -1;
+    var spans = CAP_WORDS.map(function(w,i){
+      return '<span class="k'+(i===hot?' hot':'')+'">'+esc(w)+'</span>';
+    }).join(' ');
+    return '<div class="caption '+pos+'"><span class="cap-line" id="capLine">'+spans+'</span></div>';
+  }
+
+  function frameHTML(kind, mini){
+    var isV = kind!=='h'; /* портретная раскладка для 9:16, 1:1 и 4:5 */
+    var cls = 'frame '+kind+(mini?' mini':'');
+    var inner = '';
+    var view = currentView();
+
+    if (view==='voicefull'){
+      inner = '<div class="cells"><div class="cell">'+videoCellHTML(activeVideo(),{label:'Ваше видео'})+'</div></div>';
+    } else if (view==='closeup' || view==='dlgA' || view==='dlgB'){
+      var av = view==='dlgB' ? (S.photoB||null) : activeAvatar();
+      var lbl = view==='dlgA' ? 'Собеседник A' : view==='dlgB' ? 'Собеседник B' : 'Аватар · крупный план';
+      inner = '<div class="cells"><div class="cell">'+avatarCellHTML(av,{label:lbl, act:view==='dlgB'?'canvas-avatarB':'canvas-avatar'})+'</div></div>';
+    } else if (view==='dlgBoth'){
+      inner = '<div class="cells '+(isV?'v':'h')+'">' +
+        '<div class="cell">'+avatarCellHTML(activeAvatar(),{label:'Собеседник A'})+'</div>' +
+        '<div class="cell">'+avatarCellHTML(S.photoB,{label:'Собеседник B', act:'canvas-avatarB'})+'</div></div>';
+    } else if (view==='broll'){
+      inner = '<div class="cells"><div class="cell">'+videoCellHTML(activeVideo(),{label:'Врезка · лица нет · $0'})+'</div></div>';
+    } else if (view==='pip'){
+      inner = '<div class="cells"><div class="cell">'+videoCellHTML(activeVideo(),{})+'</div></div>' + overlayAvatarHTML('left');
+    } else if (S.place==='left' || S.place==='right'){
+      inner = '<div class="cells"><div class="cell">'+videoCellHTML(activeVideo(),{})+'</div></div>' + overlayAvatarHTML(S.place);
+    } else {
+      var avCell = '<div class="cell">'+avatarCellHTML(activeAvatar(),{})+'</div>';
+      var vCell  = '<div class="cell">'+videoCellHTML(activeVideo(),{})+'</div>';
+      var order  = S.place==='bottom' ? vCell+avCell : avCell+vCell;
+      inner = '<div class="cells '+(isV?'v':'h')+'">'+order+'</div>';
+    }
+    return '<div class="frame-wrap"><span class="frame-cap">'+fmtMeta(kind).cap+'</span>' +
+      '<div class="'+cls+'">'+inner+layerHTML(kind)+(S.progressBar?'<span class="progressbar"></span>':'')+captionHTML()+'</div></div>';
+  }
+  function overlayAvatarHTML(side){
+    var av = activeAvatar();
+    var pos = side==='right' ? 'right:4%' : 'left:4%';
+    if (!av) return '<button class="overlay-av" style="'+pos+'" data-act="canvas-avatar" type="button"><span class="oa-empty">'+silIcon()+'<span>Аватар — пока<br>не выбран</span></span></button>';
+    if (S.transparent){
+      return '<button class="overlay-av" style="'+pos+'" data-act="canvas-avatar" title="Прозрачный фон — виден только человек" type="button">'+silSVG(av.tint)+'</button>';
+    }
+    return '<button class="overlay-av card" style="'+pos+'; background:'+av.bg+'" data-act="canvas-avatar" type="button"><span style="position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center">'+silSVG(av.tint)+'</span></button>';
+  }
+  function activeAvatar(){ return S.avSrc==='photo' ? S.photoA : S.avatar; }
+  function activeVideo(){ return S.video; }
+  function currentView(){
+    if (S.mode==='voiceover') return 'voicefull';
+    if (S.mode==='retention') return retPlan()[Math.min(S.curSeg, retPlan().length-1)].view;
+    if (S.mode==='dialogue') return dlgPlan()[Math.min(S.curSeg, dlgPlan().length-1)].view;
+    return 'normal';
+  }
+  /* верхний слой: лого / рамка / подпись — поверх видео, под субтитрами */
+  function layerHTML(orient){
+    var L = S.layers[orient];
+    if (!L) return '';
+    if (L.kind==='frame') return '<span class="ovl-frame"></span><span class="ovl-logo">TT</span>';
+    if (L.kind==='strip') return '<span class="ovl-strip">@TRENDTRAFFIC</span>';
+    return '<span class="ovl-logo">TT</span>';
+  }
+
+  /* ── рендер ── */
+  function setSeg(rootSel, act, val){
+    $$(rootSel+' [data-act="'+act+'"]').forEach(function(b){ b.classList.toggle('on', b.dataset.v===val); });
+  }
+  function render(){
+    /* режим */
+    $$('#sec-mode .mode').forEach(function(b){ b.classList.toggle('on', b.dataset.v===S.mode); });
+    $('#modeHint').textContent = MODE_HINT[S.mode];
+    $('#retBox').hidden = S.mode!=='retention';
+    $('#dlgBox').hidden = S.mode!=='dialogue';
+    setSeg('#retSeg','retpre',S.retPre); $('#retHint').textContent = RET_HINT[S.retPre];
+    setSeg('#dlgSeg','dlgdyn',S.dlgDyn); $('#dlgHint').textContent = DLG_HINT[S.dlgDyn];
+
+    /* аватар (в озвучке без аватара секция скрыта целиком) */
+    $('#sec-avatar').hidden = S.mode==='voiceover';
+    var avSrcEff = S.mode==='dialogue' ? 'photo' : S.avSrc;
+    setSeg('#avSrcSeg','avsrc',avSrcEff);
+    $$('#avSrcSeg button').forEach(function(b){
+      if (S.mode==='dialogue' && b.dataset.v==='collection'){ b.disabled = true; b.style.opacity=.4; b.title='В диалоге — только «Моё фото»'; }
+      else { b.disabled = false; b.style.opacity=1; b.title=''; }
+    });
+    $('#avCollection').hidden = avSrcEff!=='collection';
+    $('#avPhoto').hidden = avSrcEff!=='photo';
+    $('#photoALbl').textContent = S.mode==='dialogue' ? 'Первый собеседник (A)' : 'Ваше фото';
+    renderAvGrid();
+    $('#photoASlot').innerHTML = S.photoA
+      ? avatarFilledSlot('photoA', S.photoA, 'del-photoA')
+      : slotEmpty('photoA','Фото — пока не загружено','портрет анфас, из Галереи');
+    $('#photoBWrap').hidden = S.mode!=='dialogue';
+    $('#photoBSlot').innerHTML = S.photoB
+      ? avatarFilledSlot('photoB', S.photoB, 'del-photoB')
+      : slotEmpty('photoB','Фото — пока не загружено','второй голос из записи');
+    setSeg('#provSeg','prov',S.prov);
+    $('#provStatus').innerHTML = S.prov==='api'
+      ? '<span class="status-chip ok"><i></i> Ключ HeyGen подключён</span>'
+      : '<span class="status-chip ok"><i></i> Расширение подключено · вкладка app.heygen.com открыта</span>';
+    var transpVisible = S.mode!=='voiceover' && ((S.place==='left'||S.place==='right') || S.mode==='dialogue');
+    $('#transpWrap').hidden = !transpVisible;
+    $('#transpTgl').classList.toggle('on', S.transparent);
+
+    /* голос и текст */
+    setSeg('#vsrcSeg','vsrc',S.vsrc);
+    $('#vsAi').hidden = S.vsrc!=='ai';
+    $('#vsRec').hidden = S.vsrc!=='rec';
+    renderVoices();
+    renderLangs();
+    $('#loudTgl').classList.toggle('on', S.loudnorm);
+    $('#recSlot').innerHTML = S.rec
+      ? slotFilled('rec', S.rec, 'del-rec', true)
+      : slotEmpty('rec','Запись — пока не загружена','аудио или видео из Галереи', true);
+    $('#diarBtn').disabled = !S.rec || S.diarBusy;
+    $('#diarBtn').innerHTML = S.diarBusy ? 'Разбираем запись…' : '✂ Разобрать речь';
+    $('#genBtn').innerHTML = S.genBusy ? 'Пишем текст…' : '✦ Сгенерировать текст';
+    $('#recHint').textContent = S.mode==='dialogue'
+      ? 'Разбор различит два голоса — реплики лягут на дорожки A и B.'
+      : S.mode==='voiceover'
+        ? 'Аудио ляжет на видео как есть. «Разобрать речь» — по желанию: нужен для субтитров и врезок по репликам.'
+        : 'Голос из записи станет голосом ролика.';
+    var info = $('#scriptInfo');
+    info.hidden = !S.lines;
+    if (S.lines){
+      var n = lineList().length, sec = Math.round(lineList().reduce(function(a,l){return a+l.d;},0));
+      info.innerHTML = '<b style="color:var(--tx)">'+n+' реплик · '+sec+' сек'
+        + (S.mode==='dialogue' ? ' · два голоса A/B' : '') + '</b> — правка в панели «Реплики» на таймлайне.';
+    }
+
+    /* видеоряд */
+    $('#videoSlot').innerHTML = S.video
+      ? slotFilled('video', S.video, 'del-video')
+      : slotEmpty('video','Видео — пока не загружено','нажмите — выбрать из Галереи');
+    setSeg('#fitPills','fit',S.fit);
+    $('#soundTgl').classList.toggle('on', S.sound);
+    $('#batchWrap').hidden = S.mode!=='retention';
+    $('#batchSlot').innerHTML = S.batch.length
+      ? '<div class="slot filled"><span class="ph sq" style="color:var(--acc); font-weight:800">'+S.batch.length+'</span>' +
+        '<span class="tt"><b>Видео в серии: '+S.batch.length+'</b><span>роликов на выходе: '+S.batch.length+'</span></span>' +
+        '<span class="act"><button class="rep" data-act="open-picker" data-kind="batch" type="button">Изменить</button>' +
+        '<button class="del" data-act="del-batch" type="button">✕</button></span></div>'
+      : slotEmpty('batch','Добавить видео в серию','несколько видео — отдельный ролик на каждое', true);
+
+    /* заставки до/после */
+    $('#introSlot').innerHTML = S.intro
+      ? bumperFilled('intro', S.intro, 'del-intro')
+      : slotEmpty('intro','В начале — нет','выбрать заставку', true);
+    $('#outroSlot').innerHTML = S.outro
+      ? bumperFilled('outro', S.outro, 'del-outro')
+      : slotEmpty('outro','В конце — нет','выбрать заставку', true);
+
+    /* субтитры и музыка */
+    setSeg('#subStylePills','substyle',S.subStyle);
+    setSeg('#subPosSeg','subpos',S.subPos);
+    $('#musicSlot').innerHTML = S.music
+      ? slotFilled('music', S.music, 'del-music', true)
+      : slotEmpty('music','Музыка — пока не выбрана','тихо подложится под голос', true);
+    renderMusicCtrls();
+    renderLayerSlots();
+
+    /* канвас-тулбар: форматы — мультивыбор */
+    $$('#fmtSeg [data-act="format"]').forEach(function(b){ b.classList.toggle('on', S.formats.indexOf(b.dataset.v)>=0); });
+    $('#layWrap').style.display = S.mode==='solo' ? 'flex' : 'none';
+    setSeg('#laySeg','place',S.place);
+    var fmtN = $('#fmtNote');
+    fmtN.style.display = S.formats.length>1 ? '' : 'none';
+    fmtN.textContent = 'файлов за прогон: '+S.formats.length + (S.mode==='voiceover' ? '' : ' — аватар оплачивается один раз');
+
+    /* канвас: первый формат крупно, остальные — миниатюрами */
+    var mid = $('#canvasMid');
+    if (S.done){
+      var extraDone = (S.formats.length>1 ? ' · файлов: '+S.formats.length : '') +
+        (S.langs.length>1 ? ' · языков: '+S.langs.length : '') +
+        (S.mode==='retention'&&S.batch.length>1 ? ' · серия из '+S.batch.length : '');
+      mid.innerHTML = '<div class="frame-wrap"><span class="frame-cap" style="color:var(--ok); font-weight:750">Готово — видео в Галерее' + extraDone + '</span>' +
+        '<div class="frame '+S.formats[0]+'" style="display:flex; align-items:center; justify-content:center; background:#101012">' +
+        '<div class="fillv" style="background:'+(activeVideo()? activeVideo().bg : 'linear-gradient(150deg,#312e81,#0f172a)')+'; opacity:.55"></div>' +
+        '<span class="playbtn" style="width:52px; height:52px"></span>' + captionHTML() + '</div></div>';
+    } else {
+      mid.innerHTML = S.formats.map(function(k, i){ return frameHTML(k, i>0); }).join('');
+    }
+    $('#resultActions').hidden = !S.done;
+    $('#canvasNote').textContent = S.done
+      ? 'Название с суффиксом формата: «UGC · 9:16» / «UGC · 16:9».'
+      : (S.mode==='solo' ? 'Кликните по зоне превью, чтобы добавить содержимое. Превью обновляется мгновенно.'
+        : S.mode==='voiceover' ? 'Видео во весь кадр, голос поверх. Врезки к репликам — в панели «Реплики» на таймлайне.'
+        : 'Кликайте по сегментам плана — превью покажет каждый план кадра.');
+
+    /* полоса плана */
+    var strip = $('#planStrip');
+    if (S.mode==='solo' || S.mode==='voiceover' || S.done){ strip.hidden = true; }
+    else {
+      strip.hidden = false;
+      var plan = S.mode==='retention' ? retPlan() : dlgPlan();
+      if (S.curSeg >= plan.length) S.curSeg = 0;
+      strip.innerHTML = '<div class="ps-row">' + plan.map(function(p,i){
+        return '<button class="ps-seg '+p.k+(i===S.curSeg?' cur':'')+'" data-act="seg" data-v="'+i+'" type="button">'+p.l+'<small>'+p.s+'</small></button>';
+      }).join('') + '</div><span class="ps-cap">' +
+      (S.mode==='retention' ? 'План ролика: фиолетовое — дорогой Avatar IV (ставит ИИ на ключевые фразы), «$0» — сегменты без лица.'
+        : 'План диалога: ИИ решает, когда крупный план, когда оба в кадре (реакция — статичное фото, $0).') + '</span>';
+    }
+
+    renderTimeline();
+    renderDrawer();
+    renderCheck();
+    $('#costChip').innerHTML = costText();
+  }
+
+  function renderAvGrid(){
+    $('#avGrid').innerHTML = AVATARS.slice(0,4).map(function(a,i){
+      var on = S.avatar && S.avatar.name===a.name;
+      return '<button class="avtile'+(on?' on':'')+'" data-act="pick-av" data-v="'+i+'" style="background:'+a.bg+'" title="'+a.name+'" type="button">' +
+        '<span class="sil">'+silSVG(a.tint)+'</span><span class="nm">'+a.name+'</span>'+(on?'<span class="ok">✓</span>':'')+'</button>';
+    }).join('');
+  }
+
+  /* ── слоты-помощники (заставки, голоса, музыка) ── */
+  function fmtMeta(k){ return FMTS.filter(function(f){ return f.k===k; })[0] || FMTS[0]; }
+  function layerSlot(orient){
+    var L = S.layers[orient];
+    var cap = fmtMeta(orient).lbl;
+    if (!L) return '<button class="slot" data-act="open-picker" data-kind="layer_'+orient+'" type="button">' +
+      '<span class="ph sq">＋</span><span class="tt"><b>'+cap+' — нет</b><span>прозрачный PNG</span></span></button>';
+    return '<div class="slot filled">' +
+      '<span class="thumb checker" style="height:34px"><span style="font-size:7.5px; font-weight:800; color:#fff; background:rgba(0,0,0,.4); border-radius:4px; padding:1px 4px">PNG</span></span>' +
+      '<span class="tt"><b>'+esc(L.name)+'</b><span>'+cap+' · поверх всего</span></span>' +
+      '<span class="act"><button class="rep" data-act="open-picker" data-kind="layer_'+orient+'" type="button">Заменить</button>' +
+      '<button class="del" data-act="del-layer" data-v="'+orient+'" title="Убрать" type="button">✕</button></span></div>';
+  }
+  function renderLayerSlots(){
+    $('#layerSlots').innerHTML = S.formats.map(function(k){ return layerSlot(k); }).join('');
+    $('#layerSlots').style.gridTemplateColumns = S.formats.length>1 ? '1fr 1fr' : '1fr';
+    $('#progressTgl').classList.toggle('on', S.progressBar);
+  }
+  function renderLangs(){
+    var wrap = $('#langChips');
+    wrap.innerHTML = LANGS.map(function(l){
+      var on = S.langs.indexOf(l[0])>=0;
+      var fixed = l[0]==='ru';
+      return '<button class="pill'+(on?' on':'')+'" data-act="lang" data-v="'+l[0]+'" title="'+(fixed?'Основной язык':'')+'" type="button">'+l[1]+(fixed?' · основной':'')+'</button>';
+    }).join('');
+    $('#langHint').textContent = S.langs.length>1
+      ? 'Серия: отдельный ролик на каждом из '+S.langs.length+' языков — перевод Claude, озвучка ElevenLabs multilingual.' +
+        (S.mode==='voiceover' ? ' Почти бесплатно: цена = озвучка × языки.' : ' С аватаром лицо HeyGen рендерится на каждый язык — дороже.')
+      : 'Русский — основной. Добавьте языки — получите серию: отдельный ролик на каждом языке.';
+  }
+  function brandChips(k){
+    var subLbl = {word:'По словам', karaoke:'Караоке', line:'Строкой', off:'Без субтитров'}[k.subStyle] || k.subStyle;
+    var vc = VOICES.filter(function(x){ return x.id===k.voiceId; })[0];
+    return '<span>Слой: '+esc(LAYERS[k.layer].name)+'</span><span>Заставки: 2</span><span>Музыка: '+esc(MUSIC[k.music].name)+'</span>' +
+      '<span>Субтитры: '+subLbl+'</span><span>Голос: '+(vc?vc.name:'Sarah')+'</span>';
+  }
+  function renderBrand(){
+    $('#brandList').innerHTML = BRANDS.map(function(k, i){
+      return '<div class="bk-row"><div class="bk-h"><b>◆ '+esc(k.name)+'</b>' +
+        '<button class="btn acc bk-apply" data-act="brand-apply" data-v="'+i+'" type="button">Применить</button></div>' +
+        '<div class="bk-chips">'+brandChips(k)+'</div></div>';
+    }).join('');
+  }
+  function bumperFilled(kind, b, delAct){
+    return '<div class="slot filled">' +
+      '<span class="thumb" style="background:'+b.bg+'"><span class="vstripes"></span></span>' +
+      '<span class="tt"><b>'+esc(b.name)+'</b><span>'+b.dur+' · без преобразований</span></span>' +
+      '<span class="act"><button class="del" data-act="'+delAct+'" title="Убрать" type="button">✕</button></span></div>';
+  }
+  function renderVoices(){
+    $('#voiceList').innerHTML = VOICES.map(function(v){
+      var on = S.voiceId===v.id;
+      var playing = S.playingVoice===v.id;
+      return '<div class="vrow'+(on?' on':'')+'" data-act="pick-voice" data-v="'+v.id+'" role="button" tabindex="0">' +
+        '<button class="vp" data-act="vplay" data-v="'+v.id+'" title="Послушать образец" type="button">' +
+        (playing ? '<span class="eq"><i></i><i></i><i></i></span>' : '▶') + '</button>' +
+        '<span class="tt"><b>'+v.name+'</b><span>'+v.desc+'</span></span>' +
+        (v.df ? '<span class="df">по умолчанию</span>' : '') + '</div>';
+    }).join('');
+  }
+  function renderMusicCtrls(){
+    var box = $('#musicCtrls');
+    if (!S.music){ box.innerHTML = ''; return; }
+    box.innerHTML =
+      '<div class="lbl">Громкость музыки</div>' +
+      '<div class="volrow"><input type="range" class="vol" id="musicVol" min="0" max="100" step="5" value="'+S.musicVol+'"><b id="musicVolVal">'+S.musicVol+'%</b></div>' +
+      '<p class="hint">Голос всегда 100%. Лучшая практика для фона — 15–25%.</p>' +
+      '<div class="lbl">Сколько играет</div>' +
+      '<div class="seg c2">' +
+        '<button data-act="musiclen" data-v="full" class="'+(S.musicLen==='full'?'on':'')+'" type="button">Весь ролик</button>' +
+        '<button data-act="musiclen" data-v="lead" class="'+(S.musicLen==='lead'?'on':'')+'" type="button">Первые N секунд</button>' +
+      '</div>' +
+      (S.musicLen==='lead'
+        ? '<div class="volrow" style="margin-top:7px">Играет первые <input class="leadin" id="musicLead" type="number" min="3" step="1" value="'+S.musicLead+'"> секунд, дальше — только голос.</div>'
+        : '') +
+      '<p class="hint" style="margin-top:6px">Трек короче ролика — зациклится по кругу; длиннее — обрежется. В конце — плавное затухание.</p>';
+  }
+
+  /* ── таймлайн ── */
+  var PPS = 40;
+  function renderTimeline(){
+    var model = timelineModel();
+    var ls = lineList();
+    $('#dockEmpty').style.display = ls.length ? 'none' : 'flex';
+    var tl = $('#tl');
+    tl.hidden = !ls.length;
+    $('#drawerBtn').style.display = ls.length ? '' : 'none';
+    $('#tlCnt').textContent = ls.length
+      ? (ls.length + ' реплик · 0:' + String(Math.round(model.total)).padStart(2,'0')
+        + ((S.intro||S.outro) ? ' · с заставками' : ''))
+      : '';
+    if (!ls.length){ $('#clipProps').hidden = true; return; }
+    var W = Math.ceil(model.total*PPS) + 60;
+    var ruler = '';
+    for (var s=0; s<=Math.floor(model.total); s+=2) ruler += '<span style="left:'+(s*PPS)+'px">0:'+String(s).padStart(2,'0')+'</span>';
+    function trackHTML(trk, color){
+      var clips = model.items.map(function(it){
+        if (it.type==='bump') return trk==='A'
+          ? '<span class="clip bump" style="left:'+(it.start*PPS)+'px; width:'+(it.d*PPS-3)+'px" title="Заставка — приклеивается как есть">'+it.label+'</span>'
+          : '';
+        var l = it.l;
+        if (dispSp(l)!==trk) return '';
+        var sel = S.selClip===it.i ? ' sel' : '';
+        var wSpeech = it.d*PPS, wHold = it.hold>0.05 ? it.hold*PPS : 0;
+        var holdHtml = wHold ? '<span class="holdext" style="left:'+wSpeech+'px; width:'+(wHold-3)+'px" title="Медиа держится: видео целиком"></span>' : '';
+        return '<button class="clip '+trk+sel+'" data-act="clip" data-v="'+it.i+'" style="left:'+(it.start*PPS)+'px; width:'+(wSpeech+wHold-3)+'px" title="'+esc(l.t)+'" type="button">' +
+          (l.media?'<span class="mediadot"></span>':'') + esc(l.t) + holdHtml + '</button>';
+      }).join('');
+      return '<div class="track"><span class="tname" style="color:'+color+'">'+trk+'</span><div class="lane">'+clips+'</div></div>';
+    }
+    var showB = S.mode==='dialogue';
+    tl.style.minWidth = W+'px';
+    tl.innerHTML = '<div class="ruler">'+ruler+'</div>' + trackHTML('A','var(--acc)') + (showB?trackHTML('B','#ec4899'):'') +
+      '<div class="playhead" style="left:'+(26 + ((S.intro?S.intro.sec:0)+1.1)*PPS)+'px"></div>';
+
+    /* свойства выбранной реплики */
+    var props = $('#clipProps');
+    var L = ls[S.selClip];
+    if (S.selClip<0 || !L){ props.hidden = true; return; }
+    props.hidden = false;
+    var mediaPills = '';
+    if (L.media){
+      var vid = L.media.sec > 0;
+      if (S.mode==='dialogue'){
+        var shift = vid && L.media.sec > L.d ? (L.media.sec - L.d) : 0;
+        mediaPills = '<span class="lbl">Как показать:</span><span class="mini-pills">' +
+          ['Авто (решит ИИ)','Во весь кадр','Фоном, аватар слева','Фоном, аватар справа','Пополам'].map(function(x,i){
+            return '<button class="pill'+(i===0?' on':'')+'" type="button">'+x+'</button>';
+          }).join('') + '</span>' +
+          '<span class="lbl">Показывать:</span><input class="holdin" value="'+(vid?L.media.sec.toFixed(1):L.d.toFixed(1))+'">' +
+          '<span class="hint">' + (shift ? 'сек · видео целиком: +'+shift.toFixed(1)+'с, реплики сдвинутся' : 'сек · в пределах реплики') + '</span>';
+      } else {
+        mediaPills = '<span class="lbl">Показ:</span><span class="mini-pills">' +
+          ['Во весь кадр','Карточкой'].map(function(x,i){
+            return '<button class="pill'+(i===1?' on':'')+'" type="button">'+x+'</button>';
+          }).join('') + '</span>' +
+          '<span class="lbl">Появление:</span><span class="mini-pills">' +
+          ['Авто','Слева','Справа','Снизу','Зум','Проявление'].map(function(x,i){
+            return '<button class="pill'+(i===0?' on':'')+'" type="button">'+x+'</button>';
+          }).join('') + '</span>';
+      }
+    } else {
+      mediaPills = '<button class="pill" data-act="dr-media" data-v="'+S.selClip+'" type="button">⊞ Прикрепить фото или видео</button>';
+    }
+    props.innerHTML = '<span class="who">Реплика '+(S.selClip+1)+' · '+dispSp(L)+'</span>' +
+      '<span class="hint" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">«'+esc(L.t)+'»</span>' + mediaPills;
+  }
+
+  /* ── панель «Реплики» ── */
+  function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+  function renderDrawer(){
+    var d = $('#drawer');
+    var ls = lineList();
+    var open = S.drawer && ls.length > 0;
+    d.hidden = !open;
+    $('#drawerBtn').textContent = open ? 'Скрыть реплики ▾' : 'Реплики ▴';
+    if (!open) return;
+    var cnt = {A:0, B:0};
+    ls.forEach(function(l){ cnt[dispSp(l)]++; });
+    var filters = [['all','Все · '+ls.length]];
+    if (S.mode==='dialogue'){ filters.push(['A','Голос A · '+cnt.A]); filters.push(['B','Голос B · '+cnt.B]); }
+    var head = '<div class="dr-h"><b>Реплики</b><span class="mini-pills">' +
+      filters.map(function(f){ return '<button class="pill'+(S.lineFilter===f[0]?' on':'')+'" data-act="dr-filter" data-v="'+f[0]+'" type="button">'+f[1]+'</button>'; }).join('') +
+      '</span><span class="hint" style="margin-left:auto">' +
+      (S.mode==='dialogue' ? 'бейдж A/B — сменить голос · ⇣ — объединить со следующей' : '⇣ — объединить со следующей') +
+      '</span><button class="dr-ico" data-act="drawer" title="Скрыть" type="button">✕</button></div>';
+    var rows = ls.map(function(l, i){
+      if (S.lineFilter!=='all' && dispSp(l)!==S.lineFilter) return '';
+      var vid = l.media && l.media.sec > 0;
+      var holdNote = (S.mode==='dialogue' && vid && l.media.sec > l.d)
+        ? '<div class="dr-note">видео <b>'+l.media.dur+'</b> — покажется целиком: +'+(l.media.sec-l.d).toFixed(1)+'с, следующие реплики сдвинутся</div>' : '';
+      var media = l.media
+        ? '<button class="mchip" style="background:'+l.media.bg+'" data-act="dr-media" data-v="'+i+'" title="'+escAttr(l.media.name)+' — заменить">'+(vid?'▶ '+l.media.dur:'🖼')+'</button>'
+        : '<button class="dr-ico" data-act="dr-media" data-v="'+i+'" title="Прикрепить фото или видео" type="button">⊞</button>';
+      return '<div class="dr-row'+(S.selClip===i?' selq':'')+'" data-act="dr-row" data-v="'+i+'">' +
+        '<div class="dr-main">' +
+        '<button class="spk '+dispSp(l)+'" data-act="dr-spk" data-v="'+i+'" title="'+(S.mode==='dialogue'?'Сменить голос A↔B':'Голос ведущего')+'" type="button">'+dispSp(l)+'</button>' +
+        '<input class="txt" data-i="'+i+'" value="'+escAttr(l.t)+'">' + media +
+        (i < ls.length-1 ? '<button class="dr-ico" data-act="dr-merge" data-v="'+i+'" title="Объединить со следующей" type="button">⇣</button>' : '') +
+        '<button class="dr-ico warn" data-act="dr-del" data-v="'+i+'" title="Удалить реплику" type="button">✕</button>' +
+        '</div>' + holdNote + '</div>';
+    }).join('');
+    d.innerHTML = head + '<div class="dr-list">' + rows + '</div>';
+  }
+
+  /* ── чек-лист и CTA ── */
+  function checks(){
+    var rows = [];
+    if (S.mode==='voiceover'){
+      rows.push(S.vsrc==='ai'
+        ? {t:'Текст готов', ok:!!S.lines, hint:'шаг 3'}
+        : {t:'Аудио загружено', ok:!!S.rec, hint:'шаг 3'});
+      rows.push({t:'Видеоряд выбран', ok:!!S.video, hint:'шаг 4'});
+      if (S.vsrc==='ai') rows.push({t:'Ключ ElevenLabs', ok:true, hint:'настройки'});
+      return rows;
+    }
+    var avOk = !!activeAvatar();
+    rows.push({t:S.avSrc==='photo'||S.mode==='dialogue' ? 'Фото выбрано' : 'Аватар выбран', ok:avOk, hint:'шаг 2'});
+    if (S.mode==='dialogue') rows.push({t:'Второй собеседник', ok:!!S.photoB, hint:'шаг 2'});
+    rows.push({t:'Текст готов', ok:!!S.lines, hint:'шаг 3'});
+    var vidOk = !!S.video || (S.mode==='retention' && S.batch.length>0);
+    rows.push({t:'Видеоряд выбран', ok:vidOk, hint:'шаг 4'});
+    rows.push({t:S.prov==='api'?'Ключ HeyGen':'Подписка HeyGen', ok:true, hint:'настройки'});
+    return rows;
+  }
+  function renderCheck(){
+    var rows = checks();
+    $('#checkRows').innerHTML = rows.map(function(r){
+      return '<div class="row"><span class="ck'+(r.ok?' on':'')+'">'+(r.ok?'✓':'')+'</span>'+r.t+'<em>'+(r.ok?'':r.hint)+'</em></div>';
+    }).join('');
+    var allOk = rows.every(function(r){return r.ok;});
+    var cta = $('#ctaBuild');
+    cta.disabled = !allOk || S.building;
+    cta.textContent = S.building ? 'Создаём…' : (S.done ? 'Создать ещё раз' : 'Создать видео');
+    cta.title = allOk ? '' : 'Осталось: ' + rows.filter(function(r){return !r.ok;}).map(function(r){return r.t.toLowerCase();}).join(', ');
+    /* галочки шагов */
+    var stepOk = {
+      mode:true,
+      avatar:!!activeAvatar() && (S.mode!=='dialogue' || !!S.photoB),
+      script:S.mode==='voiceover' && S.vsrc==='rec' ? !!(S.rec || S.lines) : !!S.lines,
+      video:!!S.video || (S.mode==='retention' && S.batch.length>0),
+      subs:true,
+      music:!!S.music,
+      layer:S.formats.some(function(k){ return !!S.layers[k]; }) || S.progressBar
+    };
+    $$('.step').forEach(function(st){
+      var k = st.dataset.ck;
+      if (k in stepOk) st.classList.toggle('done', !!stepOk[k]);
+    });
+  }
+  function costText(){
+    var base;
+    if (S.mode==='voiceover') base = COST.voiceover[S.vsrc];
+    else if (S.mode==='solo') base = COST.solo[S.prov];
+    else if (S.mode==='retention') base = COST.retention[S.retPre];
+    else base = COST.dialogue[S.dlgDyn];
+    var extra = '';
+    if (S.mode==='retention' && S.batch.length>1) extra = ' · серия из '+S.batch.length+' — аватар 1 раз';
+    else if (S.formats.length>1) extra = S.mode==='voiceover' ? ' · файлов: '+S.formats.length : ' · файлов: '+S.formats.length+' — аватар 1 раз';
+    if (S.vsrc==='ai' && S.langs.length>1) extra += ' · языков: '+S.langs.length;
+    return base + extra;
+  }
+
+  /* ── пикер: единый GalleryPicker сервиса (вкладки, поиск, загрузка) ── */
+  var PK = {
+    avatar:{title:'Аватар из Галереи', sub:'Портрет анфас — его оживит HeyGen.', av:true},
+    photoA:{title:'Фото · первый собеседник', sub:'Портрет анфас из Галереи.', av:true},
+    photoB:{title:'Фото · второй собеседник', sub:'Лицо для голоса B из записи.', av:true},
+    video:{title:'Видеоряд из Галереи', sub:'Нажмите на файл — он сразу появится в превью.'},
+    batch:{title:'Видео для серии', sub:'Выберите несколько — на каждое получится отдельный ролик.', multi:true},
+    rec:{title:'Запись из Галереи', sub:'Аудио или видео с вашим голосом.', audio:true},
+    music:{title:'Фоновая музыка', sub:'Подложится тихо, голос останется главным.', audio:true},
+    intro:{title:'Заставка в начале', sub:'Приклеится перед роликом как есть, без преобразований.'},
+    outro:{title:'Заставка в конце', sub:'Приклеится после ролика как есть, без преобразований.'},
+    lineMedia:{title:'Медиа к реплике', sub:'Фото или видео — покажется, пока звучит эта реплика (видео — целиком).'},
+    layer:{title:'Верхний слой', sub:'Прозрачный PNG — ляжет поверх всего видео, субтитры выше слоя.'}
+  };
+  var GTABS = [['reference','TrendFlow'],['audio','Аудио'],['analyzed','Из анализа'],['trends','Тренды'],['hotebook','Hotebook']];
+  function pkCfg(kind){
+    if (kind && kind.indexOf('layer_')===0){
+      var m = fmtMeta(kind.slice(6));
+      return {title:'Верхний слой · '+m.lbl, sub:PK.layer.sub};
+    }
+    return PK[kind];
+  }
+  function pkItems(){
+    var k = pickerKind;
+    if (PK[k] && PK[k].av) return AVATARS;
+    var byTab;
+    if (k==='music') byTab = { audio: MUSIC };
+    else if (k==='rec') byTab = { audio: RECS, reference: CLIPS };
+    else if (k==='intro' || k==='outro') byTab = { reference: BUMPERS };
+    else if (k.indexOf('layer_')===0) byTab = { reference: LAYERS };
+    else if (k==='lineMedia') byTab = { reference: LINE_CLIPS.concat(CLIPS.slice(0,2)), analyzed: CLIPS.slice(0,3), trends: CLIPS.slice(3) };
+    else byTab = { reference: CLIPS, analyzed: CLIPS.slice(0,3), trends: CLIPS.slice(3) };
+    var items = byTab[pkTab] || [];
+    if (pkQuery) items = items.filter(function(it){ return it.name.toLowerCase().indexOf(pkQuery.toLowerCase()) >= 0; });
+    return items;
+  }
+  function renderPicker(){
+    var cfg = pkCfg(pickerKind);
+    $('#pkTitle').textContent = cfg.title;
+    $('#pkSub').textContent = cfg.sub;
+    $('#pkTabs').innerHTML = cfg.av ? '' : GTABS.map(function(t){
+      return '<button class="pill'+(pkTab===t[0]?' on':'')+'" data-act="pk-tab" data-v="'+t[0]+'" type="button">'+t[1]+'</button>';
+    }).join('');
+    var items = pkItems();
+    $('#pkGrid').innerHTML = (items.length ? items.map(function(it,i){
+      var picked = cfg.multi && S.batch.indexOf(it.name)>=0;
+      var inner = cfg.av
+        ? '<span class="sil">'+silSVG(it.tint)+'</span>'
+        : '<span class="vstripes"></span>' + (it.dur?'<span class="dur">'+it.dur+'</span>':'');
+      return '<button class="pk-item'+(picked?' picked':'')+'" data-act="pick-item" data-v="'+i+'" style="background:'+it.bg+'" type="button">'+inner+'<span class="nm">'+esc(it.name)+'</span></button>';
+    }).join('') : '<div class="pk-empty">В этой папке пусто</div>');
+    $('#pkNote').textContent = cfg.multi
+      ? 'Выбрано: '+S.batch.length
+      : 'Единая Галерея сервиса — обновим её, обновится во всех блоках.';
+  }
+  function openPicker(kind){
+    pickerKind = kind; pkQuery = '';
+    pkTab = pkCfg(kind).audio ? 'audio' : 'reference';
+    var srch = $('#pkSearch'); srch.value = '';
+    renderPicker();
+    $('#pickerBack').hidden = false;
+  }
+  function pickItem(v){
+    var items = pkItems();
+    var it = v==='up' ? items[0] : items[Number(v)];
+    if (!it) { closePicker(); return; }
+    if (pickerKind==='batch'){
+      var at = S.batch.indexOf(it.name);
+      if (at>=0) S.batch.splice(at,1); else S.batch.push(it.name);
+      renderPicker(); render(); return;
+    }
+    if (pickerKind.indexOf('layer_')===0){
+      S.layers[pickerKind.slice(6)] = Object.assign({}, it);
+      closePicker(); render(); return;
+    }
+    if (pickerKind==='avatar') S.avatar = it;
+    else if (pickerKind==='photoA') S.photoA = it;
+    else if (pickerKind==='photoB') S.photoB = it;
+    else if (pickerKind==='video') S.video = it;
+    else if (pickerKind==='rec'){ S.rec = it; S.lines = null; S.drawer = false; S.selClip = -1; }
+    else if (pickerKind==='music') S.music = it;
+    else if (pickerKind==='intro') S.intro = it;
+    else if (pickerKind==='outro') S.outro = it;
+    else if (pickerKind==='lineMedia' && S.lineMediaIdx != null && S.lines){
+      S.lines[S.lineMediaIdx].media = Object.assign({}, it);
+      S.lineMediaIdx = null;
+    }
+    closePicker(); render();
+  }
+  function closePicker(){ $('#pickerBack').hidden = true; pickerKind = null; }
+
+  /* ── сборка (демо) ── */
+  function startBuild(){
+    if (S.building) return;
+    S.building = true; S.done = false; render();
+    var vc = VOICES.filter(function(x){ return x.id===S.voiceId; })[0];
+    var hasLayer = S.formats.some(function(k){ return !!S.layers[k]; }) || S.progressBar;
+    var steps = [S.vsrc==='rec'
+      ? 'Готовлю запись' + (S.loudnorm ? ' · выравниваю громкость' : '')
+      : 'Озвучка · ElevenLabs ('+(vc?vc.name:'Sarah')+')' + (S.langs.length>1 ? ' · языков: '+S.langs.length : '')];
+    if (S.mode!=='voiceover') steps.push('Оживление аватара (HeyGen)');
+    steps.push('Склейка' + (S.formats.length>1?' · форматов: '+S.formats.length:''));
+    steps.push('Субтитры и музыка' + (hasLayer?' · верхний слой':''));
+    if (S.intro || S.outro) steps.push('Приклеиваю заставки');
+    var over = $('#buildOver'); over.hidden = false;
+    var idx = 0;
+    function draw(){
+      $('#buildSteps').innerHTML = steps.map(function(st,i){
+        var cls = i<idx?'don':(i===idx?'run':'');
+        var ico = i<idx?'✓':(i===idx?'<span class="spin"></span>':'○');
+        return '<div class="bstep '+cls+'">'+(i<idx?'<span style="color:var(--ok)">✓</span>':ico)+'<span>'+st+'</span></div>';
+      }).join('');
+    }
+    draw();
+    var t = setInterval(function(){
+      idx++;
+      if (idx>steps.length){ clearInterval(t); over.hidden = true; S.building=false; S.done=true; render(); return; }
+      draw();
+    }, reduced?250:800);
+  }
+
+  /* ── события ── */
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.dataset.act, v = el.dataset.v;
+    switch(act){
+      case 'mode':
+        S.mode = v; S.curSeg = 0; S.selClip = -1;
+        if (v==='dialogue'){ S.avSrc='photo'; }
+        break;
+      case 'retpre': S.retPre = v; S.curSeg = 0; break;
+      case 'dlgdyn': S.dlgDyn = v; S.curSeg = 0; break;
+      case 'avsrc': if (!(S.mode==='dialogue' && v==='collection')) S.avSrc = v; break;
+      case 'pick-av': S.avatar = AVATARS[Number(v)]; break;
+      case 'prov': S.prov = v; break;
+      case 'transp': S.transparent = !S.transparent; break;
+      case 'vsrc': S.vsrc = v; break;
+      case 'pick-voice': S.voiceId = v; break;
+      case 'vplay': {
+        var was = S.playingVoice===v;
+        S.playingVoice = was ? null : v;
+        if (!was) setTimeout(function(){ if (S.playingVoice===v){ S.playingVoice=null; renderVoices(); } }, 1800);
+        renderVoices(); return;
+      }
+      case 'gen-script':
+        if (S.genBusy) break;
+        S.genBusy = true; render();
+        setTimeout(function(){ S.genBusy=false; S.lines = makeLines(); S.drawer = true; S.selClip = -1; render(); }, reduced?200:900);
+        return;
+      case 'diarize':
+        if (S.diarBusy || !S.rec) break;
+        S.diarBusy = true; render();
+        setTimeout(function(){ S.diarBusy=false; S.lines = makeLines(); S.drawer = true; S.selClip = -1; render(); }, reduced?200:1100);
+        return;
+      case 'fit': S.fit = v; break;
+      case 'sound': S.sound = !S.sound; break;
+      case 'format': {
+        var fat = S.formats.indexOf(v);
+        if (fat>=0){ if (S.formats.length>1) S.formats.splice(fat,1); }
+        else S.formats = FMTS.map(function(f){ return f.k; }).filter(function(k){ return k===v || S.formats.indexOf(k)>=0; });
+        S.done = false;
+        break;
+      }
+      case 'loudnorm': S.loudnorm = !S.loudnorm; break;
+      case 'progress': S.progressBar = !S.progressBar; break;
+      case 'lang': {
+        if (v==='ru') return;
+        var lat = S.langs.indexOf(v);
+        if (lat>=0) S.langs.splice(lat,1); else S.langs.push(v);
+        break;
+      }
+      case 'brand': renderBrand(); $('#brandBack').hidden = false; return;
+      case 'close-brand': $('#brandBack').hidden = true; return;
+      case 'brand-apply': {
+        var K = BRANDS[Number(v)]; if (!K) return;
+        S.formats.forEach(function(k){ S.layers[k] = Object.assign({}, LAYERS[K.layer]); });
+        S.intro = Object.assign({}, BUMPERS[K.intro]);
+        S.outro = Object.assign({}, BUMPERS[K.outro]);
+        S.music = Object.assign({}, MUSIC[K.music]);
+        S.subStyle = K.subStyle; S.voiceId = K.voiceId;
+        $('#brandBack').hidden = true;
+        var bb = $('#brandBtn'); bb.textContent = '◆ Бренд применён ✓';
+        setTimeout(function(){ bb.textContent = '◆ Бренд-кит'; }, 1800);
+        break;
+      }
+      case 'brand-save': {
+        var curLayer = null;
+        S.formats.forEach(function(k){ curLayer = curLayer || S.layers[k]; });
+        var idxOf = function(arr, it){ if (!it) return -1; for (var q2=0;q2<arr.length;q2++){ if (arr[q2].name===it.name) return q2; } return -1; };
+        BRANDS.push({
+          name:'Мой бренд '+BRANDS.length,
+          layer: Math.max(0, idxOf(LAYERS, curLayer)),
+          intro: Math.max(0, idxOf(BUMPERS, S.intro)),
+          outro: Math.max(0, idxOf(BUMPERS, S.outro) < 0 ? 2 : idxOf(BUMPERS, S.outro)),
+          music: Math.max(0, idxOf(MUSIC, S.music)),
+          subStyle: S.subStyle, voiceId: S.voiceId
+        });
+        renderBrand(); return;
+      }
+      case 'place': S.place = v; S.done=false; break;
+      case 'substyle': S.subStyle = v; break;
+      case 'subpos': S.subPos = v; break;
+      case 'musiclen': S.musicLen = v; break;
+      case 'seg': S.curSeg = Number(v); S.done=false; break;
+      case 'clip': S.selClip = (S.selClip===Number(v) ? -1 : Number(v)); break;
+      case 'drawer': S.drawer = !S.drawer; break;
+      case 'dr-filter': S.lineFilter = v; break;
+      case 'dr-row': S.selClip = Number(v); break;
+      case 'dr-spk': {
+        if (S.mode!=='dialogue') return;
+        var L = S.lines && S.lines[Number(v)]; if (!L) return;
+        L.sp = L.sp==='A' ? 'B' : 'A';
+        break;
+      }
+      case 'dr-merge': {
+        var i2 = Number(v);
+        if (!S.lines || !S.lines[i2] || !S.lines[i2+1]) return;
+        var a = S.lines[i2], b = S.lines[i2+1];
+        a.t = (a.t + ' ' + b.t).trim(); a.d = Math.round((a.d + b.d)*10)/10; a.media = a.media || b.media;
+        S.lines.splice(i2+1, 1);
+        if (S.selClip===i2+1) S.selClip = i2; else if (S.selClip>i2+1) S.selClip--;
+        break;
+      }
+      case 'dr-del': {
+        var i3 = Number(v);
+        if (!S.lines || !S.lines[i3]) return;
+        S.lines.splice(i3, 1);
+        if (S.selClip===i3) S.selClip = -1; else if (S.selClip>i3) S.selClip--;
+        break;
+      }
+      case 'dr-media': S.lineMediaIdx = Number(v); openPicker('lineMedia'); return;
+      case 'open-picker': openPicker(el.dataset.kind); return;
+      case 'pick-item': pickItem(v); return;
+      case 'pk-tab': pkTab = v; renderPicker(); return;
+      case 'close-picker': closePicker(); return;
+      case 'canvas-avatar': openPicker(S.avSrc==='photo'||S.mode==='dialogue' ? 'photoA' : 'avatar'); return;
+      case 'canvas-avatarB': openPicker('photoB'); return;
+      case 'canvas-video': openPicker('video'); return;
+      case 'del-photoA': S.photoA = null; break;
+      case 'del-photoB': S.photoB = null; break;
+      case 'del-video': S.video = null; break;
+      case 'del-rec': S.rec = null; S.lines = null; S.drawer = false; S.selClip = -1; break;
+      case 'del-music': S.music = null; break;
+      case 'del-batch': S.batch = []; break;
+      case 'del-intro': S.intro = null; break;
+      case 'del-outro': S.outro = null; break;
+      case 'del-layer': S.layers[v] = null; break;
+      case 'again': S.done = false; break;
+      default: return;
+    }
+    S.building || render();
+  });
+  /* правка текста реплики, громкость и длительность музыки — без полного ререндера на каждый символ */
+  document.addEventListener('input', function(e){
+    var t = e.target;
+    if (t.id==='musicVol'){ S.musicVol = Number(t.value)||0; var lb = $('#musicVolVal'); if (lb) lb.textContent = S.musicVol+'%'; return; }
+    if (t.id==='musicLead'){ S.musicLead = Math.max(1, Number(t.value)||15); return; }
+    if (t.id==='pkSearch'){ pkQuery = t.value; renderPicker(); return; }
+    if (t.classList && t.classList.contains('txt') && S.lines){
+      var i = Number(t.dataset.i);
+      if (S.lines[i]) S.lines[i].t = t.value;
+    }
+  });
+  document.addEventListener('change', function(e){
+    var t = e.target;
+    if (t.id==='musicVol' || t.id==='musicLead' || (t.classList && t.classList.contains('txt'))){ if (!S.building) render(); }
+  });
+  $('#pickerBack').addEventListener('click', function(e){ if (e.target === this) closePicker(); });
+  $('#brandBack').addEventListener('click', function(e){ if (e.target === this) this.hidden = true; });
+  $('#ctaBuild').addEventListener('click', startBuild);
+  $('#resetAll').addEventListener('click', function(){ S = freshState(); render(); });
+  document.addEventListener('keydown', function(e){ if (e.key==='Escape'){ closePicker(); $('#brandBack').hidden = true; } });
+
+  /* живые субтитры */
+  if (!reduced){
+    setInterval(function(){
+      if (S.subStyle==='off') return;
+      S.widx++;
+      var w = $('#capWord'), l = $('#capLine');
+      if (S.subStyle==='word' && w){
+        var nw = CAP_WORDS[S.widx % CAP_WORDS.length];
+        var parent = w.parentElement;
+        parent.innerHTML = '<span class="cap-word" id="capWord">'+esc(nw)+'</span>';
+      } else if (S.subStyle==='karaoke' && l){
+        var hot = S.widx % CAP_WORDS.length;
+        $$('.k', l).forEach(function(k,i){ k.classList.toggle('hot', i===hot); });
+      }
+    }, 620);
+  }
+
+  render();
+})();
+</script>
