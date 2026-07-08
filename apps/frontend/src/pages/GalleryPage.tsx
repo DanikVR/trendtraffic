@@ -57,9 +57,9 @@ interface GalleryItem {
 // живут во вкладке «Тренды».
 const TABS: { key: Tab; label: string }[] = [
   { key: 'trendhub', label: 'Тренды' },
-  { key: 'hotebook', label: 'Hotebook' },
-  { key: 'flow', label: 'Google Flow' },
   { key: 'ugc', label: 'UGC' },
+  { key: 'flow', label: 'Google Flow' },
+  { key: 'hotebook', label: 'Hotebook' },
   { key: 'reference', label: 'Видео' },
 ];
 
@@ -105,6 +105,15 @@ interface TrendQueryItem {
 
 interface BrandKit { id: string; name: string; data?: any }
 
+interface HbJob { id: string; type: string; status: string; title?: string | null }
+
+// Тип артефакта Hotebook → человекочитаемое имя (для карточки «генерится»).
+const HB_JOB_LABEL: Record<string, string> = {
+  audio: 'Аудиопересказ', video: 'Видеообзор', report: 'Отчёт', quiz: 'Тест',
+  table: 'Таблица', infographic: 'Инфографика', flashcards: 'Карточки',
+  mindmap: 'Ментальная карта', slides: 'Презентация',
+};
+
 export default function GalleryPage() {
   const { token } = useAppStore();
   const navigate = useNavigate();
@@ -130,6 +139,8 @@ export default function GalleryPage() {
   // «UGC» → Авто: шаблоны конвейера (ключевик-бейдж) + автоматические ролики (folder='auto-ugc').
   const [ugcTpls, setUgcTpls] = useState<{ id: string; name: string; trendKeyword?: string; autopublish?: any }[]>([]);
   const [autoUgc, setAutoUgc] = useState<GalleryItem[]>([]);
+  // «Hotebook»: активные генерации (плейсхолдер-карточки со спиннером до готовности артефакта).
+  const [hbJobs, setHbJobs] = useState<HbJob[]>([]);
 
   // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
@@ -222,11 +233,33 @@ export default function GalleryPage() {
             })));
           } catch { setAutoUgc([]); }
         }
+        // «Hotebook»: активные генерации → карточки-плейсхолдеры со спиннером.
+        if (which === 'hotebook') {
+          try {
+            const jr = await fetch('/api/notebooklm/jobs?active=1', { headers: jsonHeaders() });
+            setHbJobs(jr.ok ? ((await jr.json()).jobs || []) : []);
+          } catch { setHbJobs([]); }
+        } else setHbJobs([]);
       }
     } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab, mediaKind]);
+
+  // Пока на Hotebook есть активные генерации — опрашиваем; при завершении перезагружаем артефакты.
+  useEffect(() => {
+    if (tab !== 'hotebook' || hbJobs.length === 0) return;
+    const t = setInterval(async () => {
+      try {
+        const jr = await fetch('/api/notebooklm/jobs?active=1', { headers: jsonHeaders() });
+        const next: HbJob[] = jr.ok ? ((await jr.json()).jobs || []) : [];
+        setHbJobs(next);
+        if (next.length < hbJobs.length) await load('hotebook'); // что-то завершилось → подтянуть готовые
+      } catch { /* тихо */ }
+    }, 4000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, hbJobs.length]);
 
   // ── «+ Добавить» — первой плиткой каждого раздела ──
   // Блоки (Hotebook/Flow/UGC) открываются ОВЕРЛЕЕМ поверх Галереи: закрыл — вернулся
@@ -236,7 +269,7 @@ export default function GalleryPage() {
       case 'hotebook': return { label: 'Добавить', hint: 'Открыть блок «Hotebook»: источники, чат и генерация артефактов', run: () => setBlockReq({ cloud: 'hotebook' }) };
       case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => setBlockReq({ cloud: 'flow' }) };
       case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: собрать ролик с аватаром/озвучкой', run: () => setBlockReq({ cloud: 'ugc' }) };
-      case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics') };
+      case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
       default: return { label: 'Добавить', hint: 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»', run: () => mediaInputRef.current?.click() };
     }
   };
@@ -292,7 +325,7 @@ export default function GalleryPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {/* «+ Добавить тренд» — первым, как и в остальных разделах */}
-            <button type="button" onClick={() => navigate('/social-extension')}
+            <button type="button" onClick={() => navigate('/social-extension?from=gallery')}
               title="Открыть «Тренды»: сканировать по новому ключевому слову"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-600 transition-colors hover:border-[var(--border-stronger)]"
               style={{ background: 'transparent', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
@@ -688,6 +721,26 @@ export default function GalleryPage() {
           {/* Сетка карточек: первой — плитка «+ Добавить» (открывает блок раздела) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {renderAddTile(tab)}
+            {/* Hotebook: активные генерации — карточка-плейсхолдер со спиннером до готовности */}
+            {tab === 'hotebook' && hbJobs.map((j) => (
+              <AuroraCard key={`job-${j.id}`} className="group p-0 overflow-hidden flex flex-col">
+                <div className="relative w-full flex flex-col items-center justify-center gap-3"
+                  style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                  <span className="absolute inset-0 animate-pulse" aria-hidden="true"
+                    style={{ background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.18), transparent 65%)' }} />
+                  <Loader2 size={30} className="animate-spin" style={{ color: 'var(--brand)', zIndex: 1 }} />
+                  <span className="text-[11px] font-700 px-3 text-center" style={{ color: 'var(--text-secondary)', zIndex: 1 }}>
+                    {HB_JOB_LABEL[j.type] || 'Артефакт'}
+                  </span>
+                  <span className="text-[10px] px-3 text-center" style={{ color: 'var(--text-muted)', zIndex: 1 }}>генерируется…</span>
+                </div>
+                <div className="p-3">
+                  <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={j.title || undefined}>
+                    {j.title || HB_JOB_LABEL[j.type] || 'Генерация'}
+                  </div>
+                </div>
+              </AuroraCard>
+            ))}
             {filtered.map((v) => {
               const isSel = selected.has(v.id);
               return (
@@ -766,8 +819,8 @@ export default function GalleryPage() {
             })}
           </div>
 
-          {/* Пусто: подсказка под плиткой «+» */}
-          {filtered.length === 0 && (
+          {/* Пусто: подсказка под плиткой «+» (не показываем, если идёт генерация Hotebook) */}
+          {filtered.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0) && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
               {tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
                 : tab === 'flow' ? 'Пока пусто. Нажмите «+» — откроется блок «Google Flow» (Veo): готовые клипы попадут сюда.'
