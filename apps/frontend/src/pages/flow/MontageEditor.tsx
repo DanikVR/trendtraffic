@@ -792,6 +792,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
               subtitles: { ...UGC_DEFAULT.subtitles, ...(uu.subtitles || {}) },
               clipImages: Array.isArray(uu.clipImages) ? uu.clipImages.filter((x: any) => x && typeof x.url === 'string') : [],
               analysisUse: { ...UGC_DEFAULT.analysisUse, ...(uu.analysisUse || {}) },
+              // Кастомные позиции аватара-оверлея (драг на превью) — старые сценарии их не имеют.
+              avatarRects: uu.avatarRects && typeof uu.avatarRects === 'object' ? uu.avatarRects : {},
             });
           }
           if (d.flow.graph?.hotebook && typeof d.flow.graph.hotebook === 'object') {

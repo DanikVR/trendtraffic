@@ -2112,7 +2112,19 @@
  *         решению юзера. Файлы: publisher/{PublisherTab,PublisherStudio}, GalleryPage;
  *         бэк: publisher/{service,scheduler,blotato,router}, migrations (+slots/chains/
  *         templates/retries), server (startPublisherScheduler). */
-export const APP_VERSION = '2.1.5';
+/* 2.1.6 — UGC-СТУДИЯ: (1) Аватар-оверлей двигается и масштабируется прямо на превью (drag +
+ *         уголок-резайз), позиция СВОЯ на каждый формат (avatarRects в спеке, доли кадра 0..1);
+ *         рендер ставит аватара ровно туда же (composeUgc avatarRect, overlay-раскладки);
+ *         пресеты раскладки/кнопка «Сбросить позицию аватара» очищают кастом. (2) «Пожелания
+ *         к стилю» субтитров разбираются ДЕТЕРМИНИРОВАННО (цвет слова/hex RU+EN, цвет и толщина
+ *         обводки, размер «крупный/120%/шрифт 80», подложка-плашка) — живой пример в превью
+ *         красится мгновенно, под полем — чипы «Понято: цвет/обводка/размер»; ТОТ ЖЕ разбор
+ *         применяется к ASS-титрам рендера во всех 4 ветках (соло/озвучка/удержание/диалог) —
+ *         раньше wishes игнорировались. Парсер в двух копиях: ugcCapWishes.ts (фронт) +
+ *         cap_wishes.ts (бэк) — синхронизировать. Файлы: UgcPreview, UgcStudio, ugcTypes,
+ *         MontageEditor (гидрация), locales ru/en; бэк: podcast_compose (buildUgcAss wish,
+ *         composeUgc avatarRect), render/router (парс spec.avatarRects + capWish). */
+export const APP_VERSION = '2.1.6';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

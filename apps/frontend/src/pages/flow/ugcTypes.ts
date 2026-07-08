@@ -15,6 +15,9 @@ export type UgcFormat = '9x16' | '16x9' | '1x1' | '4x5';   // форматы в�
 // записи. Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
 export type UgcAvatarSource = 'collection' | 'photo';
 export interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
+// Кастомная позиция/размер аватара-оверлея (раскладки overlay-*): доли кадра 0..1,
+// своя на каждый формат. Пусто = дефолт раскладки (как было). Выставляется драгом на превью.
+export interface UgcAvatarRect { x: number; y: number; w: number; h: number }
 export interface UgcSpec {
   avatarSource: UgcAvatarSource;
   avatarId: string | null;                                  // выбранный из коллекции
@@ -59,6 +62,8 @@ export interface UgcSpec {
   intro: { url: string; name: string } | null;
   outro: { url: string; name: string } | null;
   layers: Partial<Record<UgcFormat, { url: string; name: string }>>;
+  // Позиция аватара-оверлея per-format (драг на превью); {} = пресеты раскладки.
+  avatarRects: Partial<Record<UgcFormat, UgcAvatarRect>>;
   progressBar: boolean;                                     // полоса прогресса сверху кадра
   // «Использовать анализ» (ДНК тренда) — гибко по блокам: что именно подмешивать.
   // analysis = выбранный разбор (id из video_analyses + снимок нужных полей ДНК);
@@ -104,6 +109,7 @@ export const UGC_DEFAULT: UgcSpec = {
   intro: null,
   outro: null,
   layers: {},
+  avatarRects: {},
   progressBar: false,
   analysis: null,
   analysisUse: { script: true, video: true, subtitles: true, retention: true },

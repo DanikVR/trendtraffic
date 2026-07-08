@@ -10,7 +10,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound } from 'lucide-react';
-import type { UgcFormat, UgcMode, UgcSpec } from './ugcTypes';
+import type { UgcAvatarRect, UgcFormat, UgcMode, UgcSpec } from './ugcTypes';
+import { parseCapWishes } from './ugcCapWishes';
 
 const ACC = '#a855f7';
 const ACC2 = '#c084fc';
@@ -94,14 +95,55 @@ export interface UgcPreviewProps {
   onEmptyPhotoB: () => void;
   onEmptyClip: () => void;
   onOpenLines: () => void;   // «медиа реплики» в диалоге живёт на таймлайне — открыть панель «Реплики»
+  onAvatarRect?: (fmt: UgcFormat, rect: UgcAvatarRect) => void;   // драг/резайз аватара-оверлея на превью
 }
+
+/* Дефолтные прямоугольники аватара-оверлея (совпадают с прежним статичным CSS: 44%×42%, низ, отступ 4%). */
+const AV_DEF: Record<'left' | 'right', UgcAvatarRect> = {
+  left: { x: 0.04, y: 0.58, w: 0.44, h: 0.42 },
+  right: { x: 0.52, y: 0.58, w: 0.44, h: 0.42 },
+};
 
 const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
-export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines }: UgcPreviewProps) {
+export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect }: UgcPreviewProps) {
   const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl : ugc.photoUrl;
   const firstLineMedia = ugc.script.find((l) => !!l.image)?.image || null;
+
+  /* ── аватар-оверлей: перетаскивание и размер прямо на кадре превью ──
+     Позиция per-format в долях кадра (ugc.avatarRects); во время жеста — локальный rect,
+     коммит в спеку одним ugcMutate на pointerup (не спамим автосейв). */
+  const [liveRect, setLiveRect] = useState<{ fmt: UgcFormat; rect: UgcAvatarRect } | null>(null);
+  const rectFor = (fmt: UgcFormat, side: 'left' | 'right'): UgcAvatarRect =>
+    (liveRect?.fmt === fmt ? liveRect.rect : null) || ugc.avatarRects?.[fmt] || AV_DEF[side];
+  const clamp01 = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, side: 'left' | 'right', kind: 'move' | 'size', emptyClick?: () => void) => {
+    if (!onAvatarRect || e.button !== 0) return;
+    const frameEl = (e.currentTarget as HTMLElement).closest('[data-ugc-frame]') as HTMLElement | null;
+    if (!frameEl) return;
+    e.preventDefault(); e.stopPropagation();
+    const fr = frameEl.getBoundingClientRect();
+    const r0 = rectFor(fmt, side);
+    const sx = e.clientX, sy = e.clientY;
+    let last = r0; let moved = false;
+    const onMove = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / fr.width, dy = (ev.clientY - sy) / fr.height;
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 3) moved = true;
+      last = kind === 'move'
+        ? { ...r0, x: clamp01(r0.x + dx, 0, 1 - r0.w), y: clamp01(r0.y + dy, 0, 1 - r0.h) }
+        : { x: r0.x, y: r0.y, w: clamp01(r0.w + dx, 0.12, 1 - r0.x), h: clamp01(r0.h + dy, 0.12, 1 - r0.y) };
+      setLiveRect({ fmt, rect: last });
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      if (moved) onAvatarRect(fmt, { x: +last.x.toFixed(4), y: +last.y.toFixed(4), w: +last.w.toFixed(4), h: +last.h.toFixed(4) });
+      else emptyClick?.();   // клик без движения по пустому слоту = открыть пикер
+      setLiveRect(null);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  };
 
   /* полоса плана: активный сегмент; сбрасывается при смене режима/пресета */
   const plan: PlanSeg[] | null = mode === 'retention' ? retPlan(ugc.retentionPreset) : mode === 'dialogue' ? dlgPlan(ugc.dialogueEngagement) : null;
@@ -124,18 +166,32 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return () => window.clearInterval(t);
   }, [animate, words]);
 
-  const caption = (fmt: UgcFormat) => {
+  /* Пожелания к стилю: цвет/обводка/размер/подложка — парсятся на каждый ввод и красят
+     живой пример мгновенно. Тот же разбор применяет бэкенд к ASS-титрам рендера. */
+  const wish = useMemo(() => parseCapWishes(ugc.subtitles.wishes), [ugc.subtitles.wishes]);
+  const caption = (fmt: UgcFormat, frameW: number) => {
     if (ugc.subtitles.style === 'none') return null;
     const pos: React.CSSProperties = ugc.subtitles.pos === 'top' ? { top: '8%' } : ugc.subtitles.pos === 'center' ? { top: '50%', transform: 'translateY(-50%)' } : { bottom: '9%' };
     const hot = widx % words.length;
+    const scale = (wish?.sizePct || 100) / 100;
+    // Обводка: ASS-пиксели (кадр 1080/1920) → пиксели превью; рисуем 8-направленной тенью.
+    const baseW = fmt === '16x9' ? 1920 : 1080;
+    const ow = wish?.bg ? 0 : (wish?.outlineWidth ?? 4);
+    const r = ow > 0 ? Math.max(1, Math.round((ow / baseW) * frameW * 2)) : 0;
+    const oc = wish?.outlineColor || 'rgba(10,10,14,.85)';
+    const outline = r > 0
+      ? `${r}px 0 0 ${oc}, -${r}px 0 0 ${oc}, 0 ${r}px 0 ${oc}, 0 -${r}px 0 ${oc}, ${r}px ${r}px 0 ${oc}, -${r}px -${r}px 0 ${oc}, ${r}px -${r}px 0 ${oc}, -${r}px ${r}px 0 ${oc}, `
+      : '';
+    const bgChip: React.CSSProperties = wish?.bg ? { background: wish.bg, padding: '2px 8px', borderRadius: 6 } : {};
+    const txtColor = wish?.color || '#fff';
     return (
       <div style={{ position: 'absolute', left: 0, right: 0, zIndex: 6, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 12px', ...pos }}>
         {ugc.subtitles.style === 'word' ? (
-          <span key={hot} className="ugc-cap-pop" style={{ fontSize: fmt === '16x9' ? 22 : 19, fontWeight: 850, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{words[hot]}</span>
+          <span key={hot} className="ugc-cap-pop" style={{ fontSize: (fmt === '16x9' ? 22 : 19) * scale, fontWeight: 850, color: txtColor, textShadow: `${outline}0 2px 8px rgba(0,0,0,.8)`, ...bgChip }}>{words[hot]}</span>
         ) : (
-          <span style={{ fontSize: 11.5, fontWeight: 750, color: '#fff', textAlign: 'center', textShadow: '0 1px 6px rgba(0,0,0,.85)', lineHeight: 1.35 }}>
+          <span style={{ fontSize: 11.5 * scale, fontWeight: 750, color: txtColor, textAlign: 'center', textShadow: `${outline}0 1px 6px rgba(0,0,0,.85)`, lineHeight: 1.35, ...bgChip }}>
             {ugc.subtitles.style === 'karaoke'
-              ? words.map((w, i) => <span key={i} style={{ color: i === hot ? ACC2 : '#fff', transition: 'color .15s' }}>{w}{i < words.length - 1 ? ' ' : ''}</span>)
+              ? words.map((w, i) => <span key={i} style={{ color: i === hot ? (wish?.color || ACC2) : '#fff', transition: 'color .15s' }}>{w}{i < words.length - 1 ? ' ' : ''}</span>)
               : words.join(' ')}
           </span>
         )}
@@ -186,26 +242,46 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     </div>
   );
 
-  /* аватар маленьким поверх видео; cutout → шахматная кайма и без «карточки» (иллюстрация прозрачного фона) */
-  const overlayAvatar = (side: 'left' | 'right', cutout: boolean, url: string | null, onEmpty: () => void) => (
-    <div style={{ position: 'absolute', bottom: 0, width: '44%', height: '42%', zIndex: 4, ...(side === 'right' ? { right: '4%' } : { left: '4%' }) }}>
+  /* аватар маленьким поверх видео; cutout → шахматная кайма и без «карточки» (иллюстрация прозрачного фона).
+     draggable (соло-оверлей): тащим за сам аватар, размер — за уголок; позиция per-format уезжает в рендер. */
+  const overlayAvatar = (side: 'left' | 'right', cutout: boolean, url: string | null, onEmpty: () => void, fmt: UgcFormat, draggable = false) => {
+    const rc = rectFor(fmt, side);
+    const canDrag = draggable && !!onAvatarRect;
+    return (
+    <div
+      onPointerDown={canDrag ? (e) => dragAvatar(e, fmt, side, 'move', url ? undefined : onEmpty) : undefined}
+      style={{
+        position: 'absolute', zIndex: 4,
+        left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`,
+        ...(canDrag ? { cursor: 'move', touchAction: 'none' } : {}),
+      }}>
       {url ? (
         cutout ? (
           <div className="w-full h-full" style={{ ...CHECKER, borderRadius: '12px 12px 0 0', padding: 4 }} title={t('ugc.preview.cutoutTooltip')}>
-            <img src={url} alt="" className="w-full h-full object-cover" style={{ borderRadius: '9px 9px 0 0' }} />
+            <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: '9px 9px 0 0' }} />
             <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 750, letterSpacing: '.04em', textTransform: 'uppercase', color: '#fff', background: ACC, borderRadius: 999, padding: '1.5px 7px', whiteSpace: 'nowrap' }}>{t('ugc.preview.cutoutBadge')}</span>
           </div>
         ) : (
-          <img src={url} alt="" className="w-full h-full object-cover" style={{ borderRadius: '12px 12px 0 0', border: '1px solid rgba(255,255,255,.25)', borderBottom: 'none' }} />
+          <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,.25)' }} />
         )
       ) : (
-        <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
-          style={{ border: `1.5px dashed ${F.dash}`, borderRadius: 12, background: F.veil, color: F.title, cursor: 'pointer' }}>
+        <button onClick={canDrag ? undefined : onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
+          style={{ border: `1.5px dashed ${F.dash}`, borderRadius: 12, background: F.veil, color: F.title, cursor: canDrag ? 'move' : 'pointer', pointerEvents: canDrag ? 'none' : 'auto' }}>
           <UserRound size={16} /> {t('ugc.preview.emptyAvatarOverlay')}
         </button>
       )}
+      {canDrag && (
+        <>
+          <span style={{ position: 'absolute', inset: 0, border: '1.5px solid rgba(168,85,247,.7)', borderRadius: 10, pointerEvents: 'none' }} />
+          <span
+            onPointerDown={(e) => dragAvatar(e, fmt, side, 'size')}
+            title={t('ugc.preview.avatarResizeTip')}
+            style={{ position: 'absolute', right: -6, bottom: -6, width: 14, height: 14, borderRadius: '50%', background: ACC, border: '2px solid #fff', cursor: 'nwse-resize', touchAction: 'none', boxShadow: '0 1px 4px rgba(0,0,0,.5)' }} />
+        </>
+      )}
     </div>
-  );
+    );
+  };
 
   /* ── содержимое кадра по режиму и активному сегменту плана ── */
   const frameInner = (fmt: UgcFormat) => {   // 16:9 → раскладка в строку; 9:16 / 1:1 / 4:5 → в столбец
@@ -230,7 +306,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
           {lineMediaCell(t('ugc.preview.tagLineMediaBg'))}
-          {overlayAvatar('left', ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar)}
+          {overlayAvatar('left', ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar, fmt)}
         </div>
       );
       return full(lineMediaCell(t('ugc.preview.tagCutawayNoFace')));
@@ -245,17 +321,17 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
           {clipCell(t('ugc.common.footage'))}
-          {overlayAvatar('left', false, avatarImg, onEmptyAvatar)}
+          {overlayAvatar('left', false, avatarImg, onEmptyAvatar, fmt)}
         </div>
       );
       return full(clipCell(t('ugc.preview.tagCutawayNoFace')));
     }
 
-    /* solo: раскладка спеки */
+    /* solo: раскладка спеки; в оверлее аватар — перетаскиваемый (позиция per-format в спеку) */
     if (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') return (
       <div className="absolute inset-0 flex">
         {clipCell(t('ugc.common.footage'))}
-        {overlayAvatar(ugc.placement === 'overlay-right' ? 'right' : 'left', false, avatarImg, onEmptyAvatar)}
+        {overlayAvatar(ugc.placement === 'overlay-right' ? 'right' : 'left', false, avatarImg, onEmptyAvatar, fmt, true)}
       </div>
     );
     const av = faceCell(avatarImg, t('ugc.common.avatar'), onEmptyAvatar);
@@ -276,14 +352,14 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return (
       <div key={fmt} className="flex flex-col items-center gap-2">
         <span className="text-[10.5px] font-600" style={{ color: 'var(--text-muted)' }}>{t(meta.capKey)}</span>
-        <div className="relative overflow-hidden" style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: F.bg, boxShadow: F.shadow }}>
+        <div className="relative overflow-hidden" data-ugc-frame={fmt} style={{ width: dims.w, height: dims.h, borderRadius: mini ? Math.min(meta.radius, 13) : meta.radius, border: '1px solid var(--border-strong)', background: F.bg, boxShadow: F.shadow }}>
           {frameInner(fmt)}
           {/* верхний PNG-слой юзера — как в рендере: поверх видео, ПОД субтитрами */}
           {ugc.layers[fmt] && (
             <img src={ugc.layers[fmt]!.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 5, pointerEvents: 'none' }} />
           )}
           {ugc.progressBar && <span className="ugc-progress" style={{ position: 'absolute', top: 0, left: 0, height: 4, background: ACC2, zIndex: 5, pointerEvents: 'none', borderRadius: '0 2px 2px 0' }} />}
-          {caption(fmt)}
+          {caption(fmt, dims.w)}
         </div>
       </div>
     );

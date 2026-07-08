@@ -24,6 +24,7 @@ import { heygenVideoStatus, submitTalkingPhotoVideo, uploadTalkingPhoto } from '
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
 import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { parseCapWishes } from './cap_wishes.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
@@ -420,6 +421,19 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
     const script: any[] = Array.isArray(spec.script) ? spec.script : [];
     const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
+    // Кастомные позиции аватара-оверлея (драг на превью студии): per-format доли кадра 0..1.
+    const avatarRects: Partial<Record<UgcFormatKey, { x: number; y: number; w: number; h: number }>> = {};
+    if (spec.avatarRects && typeof spec.avatarRects === 'object') {
+      const cl = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+      for (const k of Object.keys(spec.avatarRects)) {
+        if (!(k in UGC_FORMATS)) continue;
+        const r = spec.avatarRects[k];
+        const x = Number(r?.x), y = Number(r?.y), w = Number(r?.w), h = Number(r?.h);
+        if (![x, y, w, h].every(Number.isFinite)) continue;
+        const cw = cl(w, 0.05, 1), chh = cl(h, 0.05, 1);
+        avatarRects[k as UgcFormatKey] = { x: cl(x, 0, 1 - cw), y: cl(y, 0, 1 - chh), w: cw, h: chh };
+      }
+    }
     const isPhoto = spec.avatarSource === 'photo';
     // Провайдер рендера лица: 'ext' = HeyGen по ПОДПИСКЕ через расширение браузера (втрое дешевле,
     // но нужна открытая вкладка студии HeyGen у клиента); иначе 'api' — HeyGen API (x-api-key).
@@ -440,6 +454,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const scriptText = script.map((l) => String(l?.text || '').trim()).filter(Boolean).join(' ');
     const capStyle: 'none' | 'word' | 'karaoke' | 'plain' = ['none', 'word', 'karaoke', 'plain'].includes(spec.subtitles?.style) ? spec.subtitles.style : 'word';
     const capPos: 'bottom' | 'center' | 'top' = ['bottom', 'center', 'top'].includes(spec.subtitles?.pos) ? spec.subtitles.pos : 'bottom';
+    // «Пожелания к стилю» титров: тот же детерминированный разбор, что красит живой пример
+    // в превью студии (цвет/обводка/размер/подложка) — рендер обязан совпадать с превью.
+    const capWish = parseCapWishes(String(spec.subtitles?.wishes || ''));
     const captions: UgcCaption[] = script
       .map((l) => ({ t0: Number(l?.start), t1: Number(l?.end), text: String(l?.text || '') }))
       .filter((c) => Number.isFinite(c.t0) && Number.isFinite(c.t1) && c.t1 > c.t0 && c.text.trim());
@@ -596,7 +613,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 musicPath: music?.filePath || null,
                 musicVolumePct: Number(spec.music?.volumePct) || 20,
                 musicDurationSec: musicDurSec,
-                captions: capsForLang, capStyle: capsForLang.length ? capStyle : 'none', capPos, dims: fmt.dims,
+                captions: capsForLang, capStyle: capsForLang.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
                 inserts: inserts as UgcInsert[],
                 layerPath: layers[fmt.key] || null,
                 progressBar,
@@ -738,7 +755,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
               musicDurationSec: musicDurSec,
               layerPath: layers[fmt.key] || null, progressBar,
-              captions: caps, capStyle: caps.length ? capStyle : 'none', capPos, dims: fmt.dims,
+              captions: caps, capStyle: caps.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
             });
             if (bmp.intro || bmp.outro) {
               j.status = 'приклеиваю заставки';
@@ -842,7 +859,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 clipFit, musicPath: music?.filePath || null, musicVolumePct: Number(spec.music?.volumePct) || 20,
                 musicDurationSec: musicDurSec,
                 layerPath: layers[fmt.key] || null, progressBar,
-                captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos, dims: fmt.dims,
+                captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos, capWish, dims: fmt.dims,
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';
@@ -927,12 +944,13 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
                 clipMuted: spec.clipMuted !== false,
                 placement: placement as any,
+                avatarRect: avatarRects[fmt.key] || null,   // кастомная позиция с превью (только overlay-*)
                 musicPath: music?.filePath || null,
                 musicVolumePct: Number(spec.music?.volumePct) || 20,
                 musicDurationSec: musicDurSec,
                 inserts: inserts as UgcInsert[],
                 layerPath: layers[fmt.key] || null, progressBar,
-                captions, capStyle: captions.length ? capStyle : 'none', capPos, dims: fmt.dims,
+                captions, capStyle: captions.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';

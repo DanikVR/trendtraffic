@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import ffmpegStatic from 'ffmpeg-static';
+import type { UgcCapWish } from './cap_wishes.js';
 
 const __d = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_ROOT = path.resolve(__d, '../../../../uploads');
@@ -299,25 +300,46 @@ export async function sliceAudioToRenders(inputPath: string, t0: number, t1: num
 
 export interface UgcCaption { t0: number; t1: number; text: string }
 
+/** #rrggbb → ASS &H00BBGGRR (альфа 00 = непрозрачно). */
+function assColor(hex: string): string {
+  const h = hex.replace('#', '');
+  const r = h.slice(0, 2), g = h.slice(2, 4), b = h.slice(4, 6);
+  return `&H00${b}${g}${r}`.toUpperCase();
+}
+
 /** ASS для UGC: стили титров «Обычные» (строка), «По словам» (слово за словом крупно),
- *  «Караоке» (строка с заливкой слов фиолетовым по мере речи). Позиция: низ/центр/верх. */
+ *  «Караоке» (строка с заливкой слов фиолетовым по мере речи). Позиция: низ/центр/верх.
+ *  wish — разобранные «Пожелания к стилю» (цвет/обводка/размер/подложка): они же красят
+ *  живой пример в превью студии, рендер обязан совпадать. */
 function buildUgcAss(opts: {
   W: number; H: number;
   captions: UgcCaption[];
   style: 'word' | 'karaoke' | 'plain';
   pos: 'bottom' | 'center' | 'top';
+  wish?: UgcCapWish | null;
 }): string {
   const align = opts.pos === 'bottom' ? 2 : opts.pos === 'center' ? 5 : 8;
   const marginV = opts.pos === 'bottom' ? 170 : opts.pos === 'top' ? 140 : 0;
-  const fs1 = opts.style === 'word' ? 92 : 62;
+  const wish = opts.wish || null;
+  const pct = wish?.sizePct ? wish.sizePct / 100 : 1;
+  const fs1 = Math.round((opts.style === 'word' ? 92 : 62) * pct);
+  const fsK = Math.round(62 * pct);
   // Фиолетовый акцент UGC #a855f7 → ASS BBGGRR = F755A8.
+  const primCap = wish?.color ? assColor(wish.color) : '&H00FFFFFF';
+  const primKar = wish?.color ? assColor(wish.color) : '&H00F755A8';   // караоке: цвет = заливка спетых слов
+  // Подложка-плашка: BorderStyle=3 — бокс красится OutlineColour (обводка при этом не рисуется).
+  const bg = wish?.bg ? assColor(wish.bg) : null;
+  const outlineC = bg ?? (wish?.outlineColor ? assColor(wish.outlineColor) : '&H00141414');
+  const outlineW = bg ? 12 : Math.max(0, Math.min(12, wish?.outlineWidth ?? 4));
+  const borderStyle = bg ? 3 : 1;
+  const shadow = bg ? 0 : 1;
   const head = [
     '[Script Info]', 'ScriptType: v4.00+', `PlayResX: ${opts.W}`, `PlayResY: ${opts.H}`,
     'WrapStyle: 0', 'ScaledBorderAndShadow: yes', '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-    `Style: Cap,DejaVu Sans,${fs1},&H00FFFFFF,&H00FFFFFF,&H00141414,&H7A000000,-1,0,0,0,100,100,0,0,1,4,1,${align},60,60,${marginV},1`,
-    `Style: Kar,DejaVu Sans,62,&H00F755A8,&H00FFFFFF,&H00141414,&H7A000000,-1,0,0,0,100,100,0,0,1,4,1,${align},60,60,${marginV},1`,
+    `Style: Cap,DejaVu Sans,${fs1},${primCap},&H00FFFFFF,${outlineC},&H7A000000,-1,0,0,0,100,100,0,0,${borderStyle},${outlineW},${shadow},${align},60,60,${marginV},1`,
+    `Style: Kar,DejaVu Sans,${fsK},${primKar},&H00FFFFFF,${outlineC},&H7A000000,-1,0,0,0,100,100,0,0,${borderStyle},${outlineW},${shadow},${align},60,60,${marginV},1`,
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
@@ -511,10 +533,14 @@ export async function composeUgc(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  capWish?: UgcCapWish | null;  // «Пожелания к стилю» титров (цвет/обводка/размер) — как в превью
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
   inserts?: UgcInsert[] | null; // врезки медиа реплик во весь кадр (по таймкодам разбора)
   layerPath?: string | null;    // верхний PNG-слой (лого/рамка), под субтитрами
   progressBar?: boolean;        // полоса прогресса сверху кадра
+  // Кастомная позиция аватара-оверлея (драг на превью студии): доли кадра 0..1.
+  // Только для placement overlay-*; null = прежние фиксированные координаты.
+  avatarRect?: { x: number; y: number; w: number; h: number } | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
@@ -551,17 +577,33 @@ export async function composeUgc(opts: {
     // Фон: клип во весь кадр (или тёмный фон), аватар маленьким поверх снизу слева/справа.
     if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30[bg]`);
     else parts.push(`color=c=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`);
-    const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
-    if (opaque) {
-      // HeyGen: непрозрачный PiP-бокс (со своим фоном), cover-кроп в вертикальный прямоугольник.
-      const bw = 360, bh = 640;
-      parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
-      parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+    const rect = opts.avatarRect;
+    if (rect) {
+      // Кастомная позиция с превью: бокс в долях кадра → пиксели (чётные — yuv420p).
+      const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
+      const bw = even(W * rect.w), bh = even(H * rect.h);
+      const bx = Math.round(W * rect.x), by = Math.round(H * rect.y);
+      if (opaque) {
+        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
+        parts.push(`[bg][av]overlay=${bx}:${by}:eof_action=pass[vmain]`);
+      } else {
+        // Силуэт: вписываем по высоте бокса, центр по X, прижат к низу бокса.
+        parts.push(`[0:v]scale=-2:${bh}:flags=lanczos,format=yuva420p[av]`);
+        parts.push(`[bg][av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass[vmain]`);
+      }
     } else {
-      // sr-capture: прозрачный силуэт (виден только человек).
-      const aH = 720;
-      parts.push(`[0:v]scale=-2:${aH}:flags=lanczos,format=yuva420p[av]`);
-      parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+      const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
+      if (opaque) {
+        // HeyGen: непрозрачный PiP-бокс (со своим фоном), cover-кроп в вертикальный прямоугольник.
+        const bw = 360, bh = 640;
+        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
+        parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+      } else {
+        // sr-capture: прозрачный силуэт (виден только человек).
+        const aH = 720;
+        parts.push(`[0:v]scale=-2:${aH}:flags=lanczos,format=yuva420p[av]`);
+        parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+      }
     }
   } else {
     // Две ячейки: аватар + клип. Портрет → верх/низ (vstack), ландшафт → лево/право (hstack).
@@ -588,7 +630,7 @@ export async function composeUgc(opts: {
   let assPath: string | null = null;
   if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
     assPath = path.join(RENDERS_DIR, `ugc-${randomUUID().slice(0, 8)}.ass`);
-    fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+    fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos, wish: opts.capWish }), 'utf8');
     parts.push(`${vTag}subtitles='${subFilterPath(assPath)}'[vout]`);
     vTag = '[vout]';
   }
@@ -638,6 +680,7 @@ export async function composeVoiceover(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  capWish?: UgcCapWish | null;
   dims?: FrameDims;
   inserts?: UgcInsert[] | null;
   layerPath?: string | null;
@@ -673,7 +716,7 @@ export async function composeVoiceover(opts: {
   let assPath: string | null = null;
   if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
     assPath = path.join(RENDERS_DIR, `ugc-${randomUUID().slice(0, 8)}.ass`);
-    fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+    fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos, wish: opts.capWish }), 'utf8');
     parts.push(`${vTag}subtitles='${subFilterPath(assPath)}'[vout]`);
     vTag = '[vout]';
   }
@@ -734,6 +777,7 @@ export async function composeRetentionVideo(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  capWish?: UgcCapWish | null;
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
@@ -799,7 +843,7 @@ export async function composeRetentionVideo(opts: {
     let assPath: string | null = null;
     if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
       assPath = path.join(RENDERS_DIR, `ret-${randomUUID().slice(0, 8)}.ass`);
-      fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+      fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos, wish: opts.capWish }), 'utf8');
     }
     const inputs = ['-i', visual, '-i', opts.voicePath];
     let musicIdx = -1;
@@ -914,6 +958,7 @@ export async function composeDialogueVideo(opts: {
   captions: UgcCaption[];
   capStyle: 'none' | 'word' | 'karaoke' | 'plain';
   capPos: 'bottom' | 'center' | 'top';
+  capWish?: UgcCapWish | null;
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
@@ -993,7 +1038,7 @@ export async function composeDialogueVideo(opts: {
     let assPath: string | null = null;
     if (opts.capStyle !== 'none' && opts.captions.some((c) => c.t1 > c.t0 && String(c.text || '').trim())) {
       assPath = path.join(RENDERS_DIR, `dlg-${randomUUID().slice(0, 8)}.ass`);
-      fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos }), 'utf8');
+      fs.writeFileSync(assPath, buildUgcAss({ W, H, captions: opts.captions, style: opts.capStyle, pos: opts.capPos, wish: opts.capWish }), 'utf8');
     }
     const inputs = ['-i', visual, '-i', opts.voicePath];
     let musicIdx = -1;

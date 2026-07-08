@@ -1299,7 +1299,13 @@
       "posCenter": "Center",
       "posTop": "Top",
       "wishesPlaceholder": "Style notes: color, font, outline…",
-      "demoWords": "Live subtitles example"
+      "demoWords": "Live subtitles example",
+      "parsedPrefix": "Got it — live in the preview:",
+      "parsedColor": "color",
+      "parsedOutline": "outline",
+      "parsedOutlineOff": "no outline",
+      "parsedSize": "size {{pct}}%",
+      "parsedBg": "backdrop"
     },
     "music": {
       "title": "Background music",
@@ -1334,7 +1340,8 @@
       "bottom": "Avatar on the bottom",
       "overlayLeft": "Over the video, left",
       "overlayRight": "Over the video, right",
-      "overlayHint": "video fills the frame, avatar small on top"
+      "overlayHint": "video fills the frame; drag and resize the avatar right on the preview",
+      "resetAvatar": "Reset avatar position"
     },
     "timeline": {
       "title": "Lines timeline",
@@ -1376,6 +1383,7 @@
       "cutoutTooltip": "Transparent background — only the person stays in the clip",
       "cutoutBadge": "transparent background",
       "emptyAvatarOverlay": "Avatar — not selected yet",
+      "avatarResizeTip": "Drag the corner to resize; drag the avatar to move it",
       "tagPeerACloseup": "Speaker A · close-up",
       "emptyPeerA": "Speaker A — not selected yet",
       "tagPeerBCloseup": "Speaker B · close-up",

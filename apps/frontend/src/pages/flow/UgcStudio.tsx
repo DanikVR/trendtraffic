@@ -11,7 +11,7 @@
  * «Режим ролика» — производный от спеки: dialogueEnabled → «Диалог двоих»,
  * retentionPreset≠off → «Динамичный монтаж», иначе «Один ведущий».
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
   Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound, ImagePlus,
@@ -22,6 +22,7 @@ import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf } from './ugcTypes';
+import { parseCapWishes } from './ugcCapWishes';
 import { useTranslation } from 'react-i18next';
 
 const ACC = '#a855f7';       // фирменный цвет блока UGC
@@ -162,6 +163,16 @@ function ModeDia({ kind }: { kind: UgcMode }) {
   );
 }
 
+/* чип распознанного пожелания к стилю титров: подпись + образец цвета */
+function WishChip({ label, color }: { label: string; color?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
+      {color && <span style={{ width: 9, height: 9, borderRadius: 3, background: color, border: '1px solid rgba(127,127,127,.45)', display: 'inline-block' }} />}
+      {label}
+    </span>
+  );
+}
+
 /* мини-диаграмма раскладки кадра (для тулбара превью) */
 function LayDia({ v }: { v: UgcSpec['placement'] }) {
   const b = (s: React.CSSProperties): React.CSSProperties => ({ position: 'absolute', borderRadius: 2.5, ...s });
@@ -236,6 +247,10 @@ export default function UgcStudio(p: UgcStudioProps) {
     + (extraLangsCount > 0 ? t('ugc.cost.langsSuffix', { count: extraLangsCount + 1 }) : '');
 
   const scrollToSec = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  /* Пожелания к стилю титров: распознанные цвет/обводка/размер — чипы под полем + живой пример */
+  const capWish = useMemo(() => parseCapWishes(ugc.subtitles.wishes), [ugc.subtitles.wishes]);
+  const hasAvatarRects = Object.keys(ugc.avatarRects || {}).length > 0;
 
   /* ── голоса ElevenLabs аккаунта (включая клоны) для озвучки ИИ-текста ── */
   const [elVoices, setElVoices] = useState<{ id: string; name: string; preview: string | null; category: string | null }[] | null>(null);
@@ -914,6 +929,20 @@ export default function UgcStudio(p: UgcStudioProps) {
             <input value={ugc.subtitles.wishes} onChange={(e) => ugcMutate((u) => ({ ...u, subtitles: { ...u.subtitles, wishes: e.target.value } }))}
               placeholder={t('ugc.subtitles.wishesPlaceholder')} className="w-full px-2 py-1.5 rounded-lg text-[12px] outline-none"
               style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+            {/* Что распознали из пожеланий — эти же стили сразу красят живой пример в превью и рендер */}
+            {capWish && (
+              <div className="flex items-center gap-1.5 flex-wrap text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <span>{t('ugc.subtitles.parsedPrefix')}</span>
+                {capWish.color && <WishChip label={t('ugc.subtitles.parsedColor')} color={capWish.color} />}
+                {(capWish.outlineColor || capWish.outlineWidth != null) && (
+                  capWish.outlineWidth === 0
+                    ? <WishChip label={t('ugc.subtitles.parsedOutlineOff')} />
+                    : <WishChip label={t('ugc.subtitles.parsedOutline')} color={capWish.outlineColor || '#141414'} />
+                )}
+                {capWish.sizePct != null && <WishChip label={t('ugc.subtitles.parsedSize', { pct: capWish.sizePct })} />}
+                {capWish.bg && <WishChip label={t('ugc.subtitles.parsedBg')} color={capWish.bg} />}
+              </div>
+            )}
           </Sec>
 
           {/* 6. Фоновая музыка (бэкенд поддерживает во всех режимах: цикл + обрезка + громкость %) */}
@@ -1031,7 +1060,8 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <span className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.05em' }}>{t('ugc.layout.label')}</span>
                 <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
                   {([['top', t('ugc.layout.top')], ['bottom', t('ugc.layout.bottom')], ['overlay-left', t('ugc.layout.overlayLeft')], ['overlay-right', t('ugc.layout.overlayRight')]] as [UgcSpec['placement'], string][]).map(([v, lbl]) => (
-                    <button key={v} onClick={() => ugcMutate((u) => ({ ...u, placement: v }))} title={lbl} className="rounded-lg"
+                    // Клик по пресету сбрасывает кастомные позиции аватара (avatarRects) — пресет = «как из коробки».
+                    <button key={v} onClick={() => ugcMutate((u) => ({ ...u, placement: v, avatarRects: {} }))} title={lbl} className="rounded-lg"
                       style={{ padding: 3, background: ugc.placement === v ? 'rgba(168,85,247,.14)' : 'transparent', border: `1px solid ${ugc.placement === v ? ACC : 'transparent'}`, cursor: 'pointer' }}>
                       <LayDia v={v} />
                     </button>
@@ -1039,6 +1069,12 @@ export default function UgcStudio(p: UgcStudioProps) {
                 </div>
                 {(ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') && (
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.layout.overlayHint')}</span>
+                )}
+                {hasAvatarRects && (
+                  <button onClick={() => ugcMutate((u) => ({ ...u, avatarRects: {} }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    {t('ugc.layout.resetAvatar')}
+                  </button>
                 )}
               </>
             )}
@@ -1055,6 +1091,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               onEmptyPhotoB={() => p.openUgcPick('photoB')}
               onEmptyClip={() => p.openUgcPick('clip')}
               onOpenLines={() => setLinesOpen(true)}
+              onAvatarRect={(fmt, rect) => ugcMutate((u) => ({ ...u, avatarRects: { ...u.avatarRects, [fmt]: rect } }))}
             />
           ) : (
           <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-3" style={{ minHeight: 0 }}>
