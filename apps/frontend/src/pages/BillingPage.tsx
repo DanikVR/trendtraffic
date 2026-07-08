@@ -36,7 +36,7 @@ const PREMIUM_FEATURES: PlanFeature[] = [
   { icon: <Workflow size={14} />, text: 'TrendFlow — сборка роликов по сценам: монтаж, формат 9:16/1:1/16:9, субтитры, озвучка, цвет, экспорт' },
   { icon: <Video size={14} />, text: 'Генерация видео через ВАШИ подключённые API: видео, аватары, озвучка, рестайл (Anthropic Claude, FAL.ai, OpenAI, ElevenLabs, HeyGen и др.)' },
   { icon: <Gift size={14} />, text: 'Подключение бесплатных API для генерации и видео: Pexels, Pixabay, Unsplash, HuggingFace' },
-  { icon: <Send size={14} />, text: 'Публикатор — публикация роликов в TikTok, Instagram, YouTube, Facebook, X (скоро)' },
+  { icon: <Send size={14} />, text: 'Публикатор — публикация роликов из Галереи в TikTok, Instagram, YouTube, X, Facebook, LinkedIn, Threads, Bluesky, Pinterest (через ваш Blotato)' },
   { icon: <Tags size={14} />, text: 'Промокоды и реферальная система' },
 ];
 

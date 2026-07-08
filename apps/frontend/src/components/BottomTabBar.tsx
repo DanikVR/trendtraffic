@@ -60,7 +60,7 @@ export function BottomTabBar() {
     { path: '/gallery?tab=ugc', icon: <Users size={20} strokeWidth={1.5} />, label: 'UGC', sublabel: 'Ролики с аватаром', accent: '#a855f7' },
     { path: '/gallery?tab=flow', icon: <Image size={20} strokeWidth={1.5} />, label: 'Google Flow', sublabel: 'Клипы Veo', accent: '#4285F4' },
     { path: '/gallery?tab=reference', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Видео'), sublabel: 'Медиа и аудио', accent: '#10b981' },
-    { path: '/gallery?tab=publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: 'Скоро', accent: '#7c5cff' },
+    { path: '/gallery?tab=publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: 'Посты в соцсети', accent: '#7c5cff' },
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
 

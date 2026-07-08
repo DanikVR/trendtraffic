@@ -7,7 +7,7 @@
  * новый таб = добавить элемент в SECTIONS массив + лениво-импортированный компонент.
  */
 
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Workflow, Loader2, Lock, Plug, TrendingUp, Wand2, BookOpen } from 'lucide-react';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
@@ -79,6 +79,14 @@ export function EnterpriseSettingsPage() {
   ];
 
   const [active, setActive] = useState<string>(SECTIONS[0].key);
+
+  // Deep-link ?section=<key> — например, /settings/enterprise?section=openmontage
+  // из онбординга Публикатора («Ввести ключ в Настройках» → сразу секция «Генерация»).
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('section');
+    if (s && SECTIONS.some((x) => x.key === s)) setActive(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!isEnterprise) {
     // Не Enterprise — показываем заглушку с upsell. Альтернатива — redirect.

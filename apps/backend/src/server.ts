@@ -45,6 +45,7 @@ import { startChannelSnapshotScheduler } from './modules/channels/scheduler.js';
 import { startTrendAutopilot } from './modules/trends/autopilot.js';
 import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter, manifestRouter as socialExtManifestRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
+import publisherRouter from './modules/publisher/router.js';
 import notebooklmRouter from './modules/notebooklm/router.js';
 import flowExtRouter, { INGEST_LIMIT as FLOW_INGEST_LIMIT } from './modules/flow-ext/router.js';
 import notebooklmExtRouter, { INGEST_LIMIT as NLM_INGEST_LIMIT } from './modules/notebooklm-ext/router.js';
@@ -209,6 +210,9 @@ app.use('/api/social-ext/download', socialExtVideoRouter);
 app.use('/api/social-ext/ig-manifest', socialExtManifestRouter);
 // TRENDTRAFFIC: рендер «Собрать» (очередь сборки роликов) — JWT внутри роутера
 app.use('/api/render', renderRouter);
+// TRENDTRAFFIC: Публикатор (вкладка Галереи) — постинг в соцсети через Blotato,
+// BYO-ключ тенанта (Настройки → Ключи). JWT + гейт платных тарифов внутри роутера.
+app.use('/api/publisher', publisherRouter);
 // HOTEBOOK: блок NotebookLM (источники/чат/артефакты) — JWT + Enterprise внутри роутера
 app.use('/api/notebooklm', notebooklmRouter);
 // GOOGLE FLOW (/api/flow-ext) смонтирован ВЫШЕ — до глобального express.json() (нужен большой
