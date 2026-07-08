@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Khaws qhov HeyGen studio tab qhib nrog kev sau npe ua haujlwm.",
       "apiNote": "Los ntawm HeyGen API — ntaus ntawv rau hauv Chaw → Tsim, them nqi raws li koj siv (~ $ 3 / feeb Avatar IV).",
       "delTitle": "Tshem tawm daim duab avatar?",
-      "delMessage": "'{{name}}' yuav raug tshem tawm ntawm koj cov duab avatar. Cov ntaub ntawv qub tseem nyob hauv Gallery."
+      "delMessage": "'{{name}}' yuav raug tshem tawm ntawm koj cov duab avatar. Cov ntaub ntawv qub tseem nyob hauv Gallery.",
+      "photoEmptyTitle": "Tsis tau upload duab dua"
     },
     "voice": {
       "title": "Suab & tsab ntawv sau",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Ib qho series: ib daim clip sib cais hauv txhua hom lus {{count}}. Nrog tus avatar, HeyGen ua lub ntsej muag rau txhua hom lus - kim dua.",
       "diarizeHintVoiceover": "Lub suab mus hla cov yeeb yaj kiab li qub. \"Sau cov lus hais\" yog xaiv tau: xav tau rau cov lus piav qhia thiab cov ntawv ntxig rau ib kab.",
       "loudnormTitle": "Sib npaug lub suab nrov",
-      "loudnormSub": "cov khoom ntsiag to raug tsa, cov khoom nrov raug ua kom du - lub suab zoo li pro"
+      "loudnormSub": "cov khoom ntsiag to raug tsa, cov khoom nrov raug ua kom du - lub suab zoo li pro",
+      "recordingEmptyTitle": "Tsis tau upload cov ntaub ntawv kaw tseg",
+      "recordingEmptySub": "suab los yog video los ntawm Gallery"
     },
     "lines": {
       "count_one": "{{count}} kab · ~{{sec}} vib nas this",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Hloov pauv",
       "seriesAdd": "Ntxiv cov yeeb yaj kiab rau hauv cov yeeb yaj kiab - ib daim clip rau ib daim video",
       "seriesBilling": "Tus avatar raug them ib zaug rau tag nrho cov koob.",
-      "voiceoverBase": "Hauv hom no daim vis dis aus yog lub hauv paus ntawm tus ncej: lub suab thiab cov lus piav qhia mus rau sab saum toj."
+      "voiceoverBase": "Hauv hom no daim vis dis aus yog lub hauv paus ntawm tus ncej: lub suab thiab cov lus piav qhia mus rau sab saum toj.",
+      "emptyTitle": "Tsis tau upload video dua li",
+      "emptySub": "xaiv los ntawm Gallery"
     },
     "subtitles": {
       "title": "Cov lus piav qhia",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Nws ua si ntev npaum li cas",
       "playFull": "Tag nrho cov yeeb yaj kiab",
       "playFirst": "Thawj N vib nas this",
-      "durationHint": "vib nas this txij thaum pib, tom qab ntawd maj mam ploj mus"
+      "durationHint": "vib nas this txij thaum pib, tom qab ntawd maj mam ploj mus",
+      "emptyTitle": "Tsis tau xaiv suab paj nruag",
+      "emptySub": "ua si ntsiag to hauv qab lub suab"
     },
     "format": {
       "label": "Hom ntawv",
@@ -1416,7 +1423,10 @@
       "heading": "Cov bumpers pib thiab xaus - xaiv tau",
       "introEmpty": "Kev Taw Qhia - tsis muaj dab tsi",
       "outroEmpty": "Outro - tsis muaj",
-      "hint": "Ib daim vis dis aus uas twb ua tiav lawm los ntawm Gallery tau muab txuas rau raws li nws yog, tsis tas ua dab tsi: kev qhia txog lub logo (2–10 vib nas this), kev xaus ntawm \"sau npe\"."
+      "hint": "Ib daim vis dis aus uas twb ua tiav lawm los ntawm Gallery tau muab txuas rau raws li nws yog, tsis tas ua dab tsi: kev qhia txog lub logo (2–10 vib nas this), kev xaus ntawm \"sau npe\".",
+      "introTitle": "Kev Taw Qhia",
+      "outroTitle": "Qhov Kawg",
+      "addSub": "ntxiv ib daim video"
     },
     "layer": {
       "title": "Txheej sab saum toj",
@@ -1425,7 +1435,8 @@
       "hint": "Ib daim PNG uas loj rau tus ncej: lub logo nyob qhov twg los tau, ib tus ncej, ib daim ntawv piav qhia. Nyob rau saum tag nrho cov yeeb yaj kiab; cov lus piav qhia nyob saum txheej.",
       "progressTitle": "Cov kab qhia kev nce qib",
       "progressSub": "ib daim kab nyias nyias nyob rau sab saum toj — cov neeg saib pom tias daim vis dis aus luv thiab saib mus txog thaum kawg",
-      "pngOnly": "Cov txheej yuav tsum yog PNG lossis WebP pob tshab - cov ntaub ntawv tsis muaj pob tshab yuav npog tag nrho cov ncej."
+      "pngOnly": "Cov txheej yuav tsum yog PNG lossis WebP pob tshab - cov ntaub ntawv tsis muaj pob tshab yuav npog tag nrho cov ncej.",
+      "emptySub": "PNG pob tshab"
     },
     "brand": {
       "button": "Cov khoom siv hom",

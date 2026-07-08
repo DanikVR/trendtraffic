@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantén aberta a lapela de HeyGen studio cunha subscrición activa.",
       "apiNote": "Mediante a API de HeyGen, escribe en Configuración → Xeración, facturación por uso (~3 $/min Avatar IV).",
       "delTitle": "Eliminar o avatar?",
-      "delMessage": "Eliminarase \"{{name}}\" da túa colección de avatares. O ficheiro orixinal permanece na Galería."
+      "delMessage": "Eliminarase \"{{name}}\" da túa colección de avatares. O ficheiro orixinal permanece na Galería.",
+      "photoEmptyTitle": "Foto aínda non cargada"
     },
     "voice": {
       "title": "Voz e guión",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Unha serie: un clip separado en cada unha das linguas {{count}}. Cun avatar, HeyGen renderiza a cara para cada lingua (máis caro).",
       "diarizeHintVoiceover": "O audio vai sobre o vídeo tal cal. \"Transcribir a voz\" é opcional: necesario para os subtítulos e as insercións por liña.",
       "loudnormTitle": "Volume de voz uniforme",
-      "loudnormSub": "as partes silenciosas realzanse, as partes fortes suavízanse: son profesional"
+      "loudnormSub": "as partes silenciosas realzanse, as partes fortes suavízanse: son profesional",
+      "recordingEmptyTitle": "Gravación aínda non cargada",
+      "recordingEmptySub": "audio ou vídeo da Galería"
     },
     "lines": {
       "count_one": "liña {{count}} · ~{{sec}} seg",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Cambio",
       "seriesAdd": "Engadir vídeos á serie: un clip por vídeo",
       "seriesBilling": "O avatar cóbrase unha vez por toda a serie.",
-      "voiceoverBase": "Neste modo, o vídeo é a base do cadro: a voz e os subtítulos van enriba."
+      "voiceoverBase": "Neste modo, o vídeo é a base do cadro: a voz e os subtítulos van enriba.",
+      "emptyTitle": "Vídeo aínda non cargado",
+      "emptySub": "escoller da Galería"
     },
     "subtitles": {
       "title": "Subtítulos",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Canto tempo se reproduce",
       "playFull": "Vídeo completo",
       "playFirst": "Primeiros N segundos",
-      "durationHint": "segundos desde o comezo, despois un suave esvaecemento"
+      "durationHint": "segundos desde o comezo, despois un suave esvaecemento",
+      "emptyTitle": "Música aínda non escollida",
+      "emptySub": "toca en voz baixa"
     },
     "format": {
       "label": "Formato",
@@ -1416,7 +1423,10 @@
       "heading": "Bumpers de introdución e peche (opcionais)",
       "introEmpty": "Introdución — ningunha",
       "outroEmpty": "Outro — ningún",
-      "hint": "Adxúntase un vídeo xa feito da Galería tal cal, sen procesamento: unha introdución ao logotipo (2–10 segundos) e un final de \"subscrición\"."
+      "hint": "Adxúntase un vídeo xa feito da Galería tal cal, sen procesamento: unha introdución ao logotipo (2–10 segundos) e un final de \"subscrición\".",
+      "introTitle": "Introdución",
+      "outroTitle": "Outro",
+      "addSub": "engadir un vídeo"
     },
     "layer": {
       "title": "Capa superior",
@@ -1425,7 +1435,8 @@
       "hint": "Un ficheiro PNG co tamaño axeitado para o fotograma: un logotipo en calquera lugar, un fotograma, unha lenda. Colocase sobre todo o vídeo; os subtítulos permanecen enriba da capa.",
       "progressTitle": "Barra de progreso",
       "progressSub": "unha fina tira de temporizador na parte superior: os espectadores ven que o vídeo é curto e o ven ata o final",
-      "pngOnly": "A capa debe ser un ficheiro PNG ou WebP transparente; un ficheiro sen transparencia cubriría todo o fotograma."
+      "pngOnly": "A capa debe ser un ficheiro PNG ou WebP transparente; un ficheiro sen transparencia cubriría todo o fotograma.",
+      "emptySub": "PNG transparente"
     },
     "brand": {
       "button": "Kit de marca",

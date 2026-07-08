@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Aktiv abunə ilə HeyGen studiyası sekmesini açıq saxlayın.",
       "apiNote": "HeyGen API vasitəsilə — Parametrlər → Generasiya bölməsinə daxil olun, istifadəyə yararlı ödəniş (~$3/dəq Avatar IV).",
       "delTitle": "Avatar silinsin?",
-      "delMessage": "'{{name}}' avatar kolleksiyanızdan silinəcək. Orijinal fayl Qalereyada qalacaq."
+      "delMessage": "'{{name}}' avatar kolleksiyanızdan silinəcək. Orijinal fayl Qalereyada qalacaq.",
+      "photoEmptyTitle": "Şəkil hələ yüklənməyib"
     },
     "voice": {
       "title": "Səs və ssenari",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Seriya: {{count}} dillərinin hər birində ayrıca klip. HeyGen avatarla hər dil üçün üzü göstərir — daha bahalı.",
       "diarizeHintVoiceover": "Səs videonun üzərindən keçdi. \"Nitqi transkripsiya et\" seçimi könüllüdür: altyazılar və sətir başına əlavələr üçün lazımdır.",
       "loudnormTitle": "Səs səviyyəsinin bərabər olması",
-      "loudnormSub": "Səssiz hissələr qaldırılır, səs-küylü hissələr hamarlanır — peşəkar səs"
+      "loudnormSub": "Səssiz hissələr qaldırılır, səs-küylü hissələr hamarlanır — peşəkar səs",
+      "recordingEmptyTitle": "Səsyazma hələ yüklənməyib",
+      "recordingEmptySub": "Qalereyadan audio və ya video"
     },
     "lines": {
       "count_one": "{{count}} sətri · ~{{sec}} san",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Dəyişiklik",
       "seriesAdd": "Seriyaya videolar əlavə edin — hər videoya bir klip",
       "seriesBilling": "Avatar bütün seriya üçün bir dəfə göstərilir.",
-      "voiceoverBase": "Bu rejimdə video kadrın əsasını təşkil edir: səs və altyazılar yuxarıda göstərilir."
+      "voiceoverBase": "Bu rejimdə video kadrın əsasını təşkil edir: səs və altyazılar yuxarıda göstərilir.",
+      "emptyTitle": "Video hələ yüklənməyib",
+      "emptySub": "Qalereyadan seçin"
     },
     "subtitles": {
       "title": "Altyazılar",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Nə qədər çalınır",
       "playFull": "Bütün video",
       "playFirst": "İlk N saniyə",
-      "durationHint": "başlanğıcdan saniyələr sonra, sonra hamar bir fade-out"
+      "durationHint": "başlanğıcdan saniyələr sonra, sonra hamar bir fade-out",
+      "emptyTitle": "Musiqi hələ seçilməyib",
+      "emptySub": "səsin altında sakitcə çalır"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Giriş və çıxış bamperləri — isteğe bağlıdır",
       "introEmpty": "Giriş — heç biri",
       "outroEmpty": "Xarici — yox",
-      "hint": "Qalereyadan hazır video əlavə olunub, emal tələb olunmur: loqonun təqdimatı (2–10 saniyə), “abunə olun” nəticəsi."
+      "hint": "Qalereyadan hazır video əlavə olunub, emal tələb olunmur: loqonun təqdimatı (2–10 saniyə), “abunə olun” nəticəsi.",
+      "introTitle": "Giriş",
+      "outroTitle": "Xarici",
+      "addSub": "video əlavə edin"
     },
     "layer": {
       "title": "Üst təbəqə",
@@ -1425,7 +1435,8 @@
       "hint": "Çərçivə üçün PNG ölçüsündə: istənilən yerdə loqo, çərçivə, başlıq. Bütün videonun üzərində yerləşir; alt yazılar təbəqənin üzərində qalır.",
       "progressTitle": "Tərəqqi paneli",
       "progressSub": "yuxarı hissədə nazik taymer zolağı — izləyicilər videonun qısa olduğunu görür və sona qədər izləyirlər",
-      "pngOnly": "Qat şəffaf PNG və ya WebP olmalıdır — şəffaflığı olmayan bir fayl bütün çərçivəni əhatə edəcək."
+      "pngOnly": "Qat şəffaf PNG və ya WebP olmalıdır — şəffaflığı olmayan bir fayl bütün çərçivəni əhatə edəcək.",
+      "emptySub": "şəffaf PNG"
     },
     "brand": {
       "button": "Brend dəsti",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Halt den HeyGen Studio Tab op mat engem aktiven Abonnement.",
       "apiNote": "Iwwer d'HeyGen API — gitt an Astellungen → Generatioun an, Bezuelung no Gebrauch (~3 $/min Avatar IV).",
       "delTitle": "Avatar ewechhuelen?",
-      "delMessage": "'{{name}}' gëtt aus Ärer Avatar-Sammlung geläscht. Déi original Datei bleift an der Galerie."
+      "delMessage": "'{{name}}' gëtt aus Ärer Avatar-Sammlung geläscht. Déi original Datei bleift an der Galerie.",
+      "photoEmptyTitle": "Foto nach net eropgelueden"
     },
     "voice": {
       "title": "Stëmm & Skript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Eng Serie: e separaten Clip an all {{count}} Sprooch. Mat engem Avatar rendert HeyGen d'Gesiicht fir all Sprooch - méi deier.",
       "diarizeHintVoiceover": "Den Audio geet iwwer d'Video sou wéi en ass. \"Sprooch transkribéieren\" ass optional: néideg fir Ënnertitelen an Zeil-pro-Zeil-Inserts.",
       "loudnormTitle": "Stëmmlautstäerkt gläichméisseg ausgläichen",
-      "loudnormSub": "Roueg Deeler ginn opgehuewen, haart Deeler ginn ausgeglach - professionell kléngend Audio"
+      "loudnormSub": "Roueg Deeler ginn opgehuewen, haart Deeler ginn ausgeglach - professionell kléngend Audio",
+      "recordingEmptyTitle": "Opnam nach net eropgelueden",
+      "recordingEmptySub": "Audio oder Video aus der Galerie"
     },
     "lines": {
       "count_one": "{{count}} Zeil · ~{{sec}} Sekonn",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Ännerung",
       "seriesAdd": "Videoen an d'Serie bäifügen - ee Clip pro Video",
       "seriesBilling": "Den Avatar gëtt eemol fir déi ganz Serie berechent.",
-      "voiceoverBase": "An dësem Modus ass d'Video d'Basis vum Bild: Stëmm an Ënnertitelen kommen uewen."
+      "voiceoverBase": "An dësem Modus ass d'Video d'Basis vum Bild: Stëmm an Ënnertitelen kommen uewen.",
+      "emptyTitle": "Video nach net eropgelueden",
+      "emptySub": "aus der Galerie auswielen"
     },
     "subtitles": {
       "title": "Ënnertitelen",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Wéi laang et spillt",
       "playFull": "Ganzt Video",
       "playFirst": "Déi éischt N Sekonnen",
-      "durationHint": "Sekonnen nom Ufank, dann e sanften Ausstieg"
+      "durationHint": "Sekonnen nom Ufank, dann e sanften Ausstieg",
+      "emptyTitle": "Musek nach net ausgewielt",
+      "emptySub": "spillt roueg ënner der Stëmm"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- an Outro-Bumper - optional",
       "introEmpty": "Intro — keen",
       "outroEmpty": "Outro — keen",
-      "hint": "E fäerdege Video aus der Galerie ass sou wéi et ass, ouni Veraarbechtung, ugehaangen: eng Logo-Intro (2–10 Sekonnen), en \"Abonnéieren\"-Outro."
+      "hint": "E fäerdege Video aus der Galerie ass sou wéi et ass, ouni Veraarbechtung, ugehaangen: eng Logo-Intro (2–10 Sekonnen), en \"Abonnéieren\"-Outro.",
+      "introTitle": "Aféierung",
+      "outroTitle": "Ausgang",
+      "addSub": "e Video derbäisetzen"
     },
     "layer": {
       "title": "iewescht Schicht",
@@ -1425,7 +1435,8 @@
       "hint": "E PNG an der Gréisst fir de Frame: e Logo iergendwou, e Frame, eng Ënnerschrëft. Sëtzt iwwer dem ganze Video; Ënnertitelen bleiwen iwwer dem Layer.",
       "progressTitle": "Fortschrëttsbalke",
       "progressSub": "e schmuele Timersträifen uewen - d'Zuschauer gesinn, datt de Video kuerz ass a kucken bis zum Schluss",
-      "pngOnly": "De Layer muss eng transparent PNG oder WebP sinn - eng Datei ouni Transparenz géif de ganze Frame ofdecken."
+      "pngOnly": "De Layer muss eng transparent PNG oder WebP sinn - eng Datei ouni Transparenz géif de ganze Frame ofdecken.",
+      "emptySub": "transparent PNG"
     },
     "brand": {
       "button": "Markenkit",

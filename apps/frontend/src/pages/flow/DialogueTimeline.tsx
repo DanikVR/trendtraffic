@@ -10,7 +10,7 @@
  * (хост открывает свой пикер и кладёт image в реплику), showGestures (подкаст GPU), onDirty.
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles } from 'lucide-react';
 import { PodLine, PodAnim, POD_ANIMS, DlgMediaHint, DLG_MEDIA_HINTS } from './dialogueTypes';
 
@@ -26,6 +26,11 @@ interface Props {
   accentA?: string;
   accentB?: string;
 }
+
+/* Пределы масштаба: до 2000 px/сек — иначе плотные реплики (диаризация речи режет
+   фразы по 0.1–0.5с) физически не разглядеть; старый потолок 160 был про «длинные» клипы. */
+const MIN_PPS = 2;
+const MAX_PPS = 2000;
 
 export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
   const dirty = () => { onDirty?.(); };
@@ -85,7 +90,14 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const tlDragRef = useRef<{ i: number; startX: number; startY: number; startT: number; spk: 'A' | 'B'; cur?: 'A' | 'B' } | null>(null);
   const [tlPps, setTlPps] = useState(44);
   const tlPpsRef = useRef(44);
-  useEffect(() => { tlPpsRef.current = tlPps; }, [tlPps]);
+  /* Якорь зума применяется СИНХРОННО после рендера с новым pps (layout-эффект):
+     rAF-вариант дрейфовал при серии кликов/колеса — следующий шаг читал старый scrollLeft. */
+  const tlZoomAnchorRef = useRef<{ t: number; x: number } | null>(null);
+  useLayoutEffect(() => {
+    tlPpsRef.current = tlPps;
+    const a = tlZoomAnchorRef.current;
+    if (a && tlWrapRef.current) { tlWrapRef.current.scrollLeft = Math.max(0, 32 + a.t * tlPps - a.x); tlZoomAnchorRef.current = null; }
+  }, [tlPps]);
   const [tlPlayhead, setTlPlayhead] = useState(0);
   const tlPlayDragRef = useRef(false);
   const tlMovedRef = useRef(false);
@@ -110,7 +122,23 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     const arr = dialogue;
     const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
     const w = (tlWrapRef.current?.clientWidth || 520) - 48;
-    setTlPps(Math.max(3, Math.min(160, w / total)));
+    setTlPps(Math.max(MIN_PPS, Math.min(160, w / total)));
+    if (tlWrapRef.current) tlWrapRef.current.scrollLeft = 0;
+  };
+  /* Зум с якорем: точка под бегунком (если он в кадре) или центр вьюпорта остаётся на месте.
+     Без якоря глубокий зум «улетал» — прокрутку приходилось искать руками. */
+  const zoomAt = (nextPps: number, anchorX?: number) => {
+    const wrap = tlWrapRef.current;
+    const oldPps = tlPpsRef.current;
+    const next = Math.max(MIN_PPS, Math.min(MAX_PPS, nextPps));
+    if (!wrap || next === oldPps) { setTlPps(next); return; }
+    let ax = anchorX;
+    if (ax == null) {
+      const phX = 32 + tlPlayhead * oldPps - wrap.scrollLeft;
+      ax = phX >= 0 && phX <= wrap.clientWidth ? phX : wrap.clientWidth / 2;
+    }
+    tlZoomAnchorRef.current = { t: Math.max(0, (wrap.scrollLeft + ax - 32) / oldPps), x: ax };
+    setTlPps(next);
   };
   const tlStopSources = () => { for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } } tlSrcsRef.current = []; };
   const tlStop = () => {
@@ -216,6 +244,28 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   }, []);
   useEffect(() => () => tlStop(), []);
 
+  /* Ctrl+колесо над таймлайном = зум к курсору (как в CapCut/Premiere).
+     Нативный слушатель с passive:false — React-обёртка не даёт preventDefault для wheel.
+     Зависимость hasLines: при монтировании с ПУСТЫМ диалогом (подкаст/Комментатор) компонент
+     возвращает null и div-а ещё нет — слушатель вешается, когда таймлайн реально появился. */
+  const hasLines = dialogue.length > 0;
+  useEffect(() => {
+    const el = tlWrapRef.current; if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const oldPps = tlPpsRef.current;
+      const next = Math.max(MIN_PPS, Math.min(MAX_PPS, oldPps * (e.deltaY < 0 ? 1.18 : 1 / 1.18)));
+      if (next === oldPps) return;
+      const x = e.clientX - el.getBoundingClientRect().left;
+      tlZoomAnchorRef.current = { t: Math.max(0, (el.scrollLeft + x - 32) / oldPps), x };
+      setTlPps(next);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasLines]);
+
   if (!dialogue.length) return null;
   const arr = dialogue;
   const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
@@ -234,8 +284,8 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
         <div className="inline-flex items-center gap-1.5">
           <button onClick={tlTogglePlay} title={tlPlaying ? 'Пауза' : 'Воспроизвести с бегунка'} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: tlPlaying ? '#10b981' : 'var(--bg-tertiary)', color: tlPlaying ? '#fff' : '#10b981', border: `1px solid ${tlPlaying ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{tlPlaying ? <Pause size={13} /> : <Play size={13} />}</button>
           <button onClick={cutAtPlayhead} title="Разрезать по бегунку (✂)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
-          <button onClick={() => setTlPps((v) => Math.max(3, Math.round(v / 1.4)))} title="Уменьшить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
-          <button onClick={() => setTlPps((v) => Math.min(160, Math.round(v * 1.4)))} title="Увеличить масштаб" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
+          <button onClick={() => zoomAt(tlPpsRef.current / 1.4)} title="Уменьшить масштаб (Ctrl+колесо)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
+          <button onClick={() => zoomAt(tlPpsRef.current * 1.4)} title="Увеличить масштаб (Ctrl+колесо)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
           <button onClick={fitTimeline} title="Вместить всё" className="text-[10px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>вместить</button>
         </div>
       </div>
@@ -284,7 +334,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
           </div>
         </div>
       </div>
-      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с бегунка; тащи клипы по времени, ВВЕРХ/ВНИЗ — на дорожку другого голоса; бегунок ведёшь и ✂ режет по нему; −/+/вместить — масштаб. Клик по клипу открывает реплику ниже. Наложение A/B = одновременно.</p>
+      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с бегунка; тащи клипы по времени, ВВЕРХ/ВНИЗ — на дорожку другого голоса; бегунок ведёшь и ✂ режет по нему; −/+/вместить или Ctrl+колесо — масштаб (зум держит точку под бегунком/курсором). Клик по клипу открывает реплику ниже. Наложение A/B = одновременно.</p>
 
       {/* Реплики */}
       <button onClick={() => setDialogOpen((o) => !o)} className="w-full flex items-center justify-between text-[11px] font-600 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Kenbe onglet estidyo HeyGen lan ouvè avèk yon abònman aktif.",
       "apiNote": "Atravè API HeyGen lan — tape nan Anviwònman → Jenerasyon, faktirasyon peye-jan-ou-itilize (~$3/min Avatar IV).",
       "delTitle": "Retire avatar la?",
-      "delMessage": "Yo pral retire '{{name}}' nan koleksyon avatar ou a. Fichye orijinal la ap rete nan Galeri a."
+      "delMessage": "Yo pral retire '{{name}}' nan koleksyon avatar ou a. Fichye orijinal la ap rete nan Galeri a.",
+      "photoEmptyTitle": "Foto a poko telechaje"
     },
     "voice": {
       "title": "Vwa ak senaryo",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Yon seri: yon klip apa nan chak lang {{count}} yo. Avèk yon avatar, HeyGen rann figi a pou chak lang — pi chè.",
       "diarizeHintVoiceover": "Odyo a ale sou videyo a jan l ye a. \"Transkri pawòl la\" se opsyonèl: nesesè pou soutit ak insert pou chak liy.",
       "loudnormTitle": "Volim vwa egal",
-      "loudnormSub": "Pati ki trankil yo leve, pati ki fò yo adousi — odyo ki son pwofesyonèl"
+      "loudnormSub": "Pati ki trankil yo leve, pati ki fò yo adousi — odyo ki son pwofesyonèl",
+      "recordingEmptyTitle": "Anrejistreman an poko telechaje",
+      "recordingEmptySub": "odyo oswa videyo ki soti nan Galeri a"
     },
     "lines": {
       "count_one": "liy {{count}} · ~{{sec}} segonn",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Chanjman",
       "seriesAdd": "Ajoute videyo nan seri a — yon klip pou chak videyo",
       "seriesBilling": "Yo faktire avatar la yon sèl fwa pou tout seri a.",
-      "voiceoverBase": "Nan mòd sa a, videyo a se baz kad la: vwa ak soutit yo ale anlè."
+      "voiceoverBase": "Nan mòd sa a, videyo a se baz kad la: vwa ak soutit yo ale anlè.",
+      "emptyTitle": "Videyo a poko telechaje",
+      "emptySub": "chwazi nan Galeri a"
     },
     "subtitles": {
       "title": "Sous-titres",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Konbyen tan li jwe",
       "playFull": "Videyo konplè a",
       "playFirst": "Premye N segonn yo",
-      "durationHint": "segonn depi nan kòmansman an, apre sa yon fennen dous"
+      "durationHint": "segonn depi nan kòmansman an, apre sa yon fennen dous",
+      "emptyTitle": "Mizik la poko chwazi",
+      "emptySub": "jwe dousman anba vwa a"
     },
     "format": {
       "label": "Fòma",
@@ -1416,7 +1423,10 @@
       "heading": "Bumpers pou entwodiksyon ak bout — opsyonèl",
       "introEmpty": "Entwodiksyon — okenn",
       "outroEmpty": "Outro — okenn",
-      "hint": "Yon videyo ki deja fèt nan Galeri a atache jan li ye a, san okenn pwosesis: yon entwodiksyon logo (2-10 segonn), yon bout \"abònman\"."
+      "hint": "Yon videyo ki deja fèt nan Galeri a atache jan li ye a, san okenn pwosesis: yon entwodiksyon logo (2-10 segonn), yon bout \"abònman\".",
+      "introTitle": "Entwodiksyon",
+      "outroTitle": "Lòt bò a",
+      "addSub": "ajoute yon videyo"
     },
     "layer": {
       "title": "Kouch anwo a",
@@ -1425,7 +1435,8 @@
       "hint": "Yon fichye PNG ki gen gwosè pou ankadreman an: yon logo nenpòt kote, yon ankadreman, yon tit. Li chita sou tout videyo a; soutit yo rete anlè kouch la.",
       "progressTitle": "Ba pwogrè",
       "progressSub": "yon ti bann revèy anlè a — telespektatè yo wè videyo a kout epi yo gade l jis nan fen",
-      "pngOnly": "Kouch la dwe yon PNG transparan oswa WebP — yon fichye san transparans ta kouvri tout kad la."
+      "pngOnly": "Kouch la dwe yon PNG transparan oswa WebP — yon fichye san transparans ta kouvri tout kad la.",
+      "emptySub": "PNG transparan"
     },
     "brand": {
       "button": "Twous mak",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "HeyGen stüdyo sekmesini aktif aboneliğinizle açık tutun.",
       "apiNote": "HeyGen API'si aracılığıyla — Ayarlar → Üretim bölümünden giriş yapın, kullandıkça öde faturalandırma (~3$/dk Avatar IV).",
       "delTitle": "Avatarı kaldırmak mı?",
-      "delMessage": "'{{name}}' avatar koleksiyonunuzdan kaldırılacaktır. Orijinal dosya Galeri'de kalacaktır."
+      "delMessage": "'{{name}}' avatar koleksiyonunuzdan kaldırılacaktır. Orijinal dosya Galeri'de kalacaktır.",
+      "photoEmptyTitle": "Fotoğraf henüz yüklenmedi."
     },
     "voice": {
       "title": "Ses ve senaryo",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Bir dizi: {{count}} dilin her birinde ayrı bir klip. Bir avatar ile HeyGen, her dil için yüzü yeniden oluşturuyor — daha pahalı.",
       "diarizeHintVoiceover": "Ses, videonun üzerine olduğu gibi eklenir. \"Konuşmayı yazıya dök\" seçeneği isteğe bağlıdır: altyazılar ve satır başı eklemeler için gereklidir.",
       "loudnormTitle": "Ses seviyesini dengeleyin.",
-      "loudnormSub": "Sessiz kısımlar belirginleşir, yüksek sesli kısımlar yumuşatılır — profesyonel ses kalitesi."
+      "loudnormSub": "Sessiz kısımlar belirginleşir, yüksek sesli kısımlar yumuşatılır — profesyonel ses kalitesi.",
+      "recordingEmptyTitle": "Kayıt henüz yüklenmedi.",
+      "recordingEmptySub": "Galeriden ses veya video"
     },
     "lines": {
       "count_one": "{{count}} satır · ~{{sec}} saniye",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Değiştirmek",
       "seriesAdd": "Seriye videolar ekleyin — her videoya bir klip.",
       "seriesBilling": "Avatar karakteri tüm dizi için yalnızca bir kez ücretlendirilir.",
-      "voiceoverBase": "Bu modda video çerçevenin tabanını oluşturur: ses ve altyazılar üstüne yerleştirilir."
+      "voiceoverBase": "Bu modda video çerçevenin tabanını oluşturur: ses ve altyazılar üstüne yerleştirilir.",
+      "emptyTitle": "Video henüz yüklenmedi.",
+      "emptySub": "Galeriden seçin"
     },
     "subtitles": {
       "title": "Altyazılar",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Ne kadar süreyle oynatılır",
       "playFull": "Videonun tamamı",
       "playFirst": "İlk N saniye",
-      "durationHint": "Başlangıçtan itibaren saniyeler, ardından yumuşak bir şekilde kaybolma."
+      "durationHint": "Başlangıçtan itibaren saniyeler, ardından yumuşak bir şekilde kaybolma.",
+      "emptyTitle": "Müzik henüz seçilmedi.",
+      "emptySub": "sesin altında sessizce çalıyor"
     },
     "format": {
       "label": "Biçim",
@@ -1416,7 +1423,10 @@
       "heading": "Giriş ve çıkış müzikleri — isteğe bağlı",
       "introEmpty": "Giriş — yok",
       "outroEmpty": "Kapanış müziği — yok",
-      "hint": "Galeriden alınmış hazır bir video, herhangi bir işlem yapılmadan olduğu gibi eklenmiştir: bir logo girişi (2-10 saniye), bir \"abone ol\" çıkışı."
+      "hint": "Galeriden alınmış hazır bir video, herhangi bir işlem yapılmadan olduğu gibi eklenmiştir: bir logo girişi (2-10 saniye), bir \"abone ol\" çıkışı.",
+      "introTitle": "Giriş",
+      "outroTitle": "Kapanış",
+      "addSub": "video ekle"
     },
     "layer": {
       "title": "Üst katman",
@@ -1425,7 +1435,8 @@
       "hint": "Çerçeve boyutuna uygun bir PNG dosyası: herhangi bir yere logo, çerçeve veya alt yazı yerleştirilebilir. Tüm videonun üzerine oturur; alt yazılar katmanın üstünde kalır.",
       "progressTitle": "İlerleme çubuğu",
       "progressSub": "Üst kısımda ince bir zamanlayıcı şeridi bulunuyor; izleyiciler videonun kısa olduğunu görüyor ve sonuna kadar izliyor.",
-      "pngOnly": "Katman şeffaf bir PNG veya WebP dosyası olmalıdır; şeffaflığı olmayan bir dosya tüm çerçeveyi kaplayacaktır."
+      "pngOnly": "Katman şeffaf bir PNG veya WebP dosyası olmalıdır; şeffaflığı olmayan bir dosya tüm çerçeveyi kaplayacaktır.",
+      "emptySub": "şeffaf PNG"
     },
     "brand": {
       "button": "Marka kiti",

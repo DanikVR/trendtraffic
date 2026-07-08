@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Furan bogga istuudiyaha HeyGen adigoo isticmaalaya rukun firfircoon.",
       "apiNote": "Iyada oo loo marayo HeyGen API — furaha Settings → Generation, biilka lacag bixinta (~$3/daqiiqo Avatar IV).",
       "delTitle": "Ka saar avatar-ka?",
-      "delMessage": "'{{name}}' ayaa laga saari doonaa ururinta avatarkaaga. Faylka asalka ah wuxuu ku sii jiri doonaa Gallery-ga."
+      "delMessage": "'{{name}}' ayaa laga saari doonaa ururinta avatarkaaga. Faylka asalka ah wuxuu ku sii jiri doonaa Gallery-ga.",
+      "photoEmptyTitle": "Sawirka weli lama soo gelin"
     },
     "voice": {
       "title": "Codka & qoraalka",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Taxane: muuqaal gooni ah oo mid kasta oo ka mid ah luqadaha {{count}} ah. Iyada oo leh muuqaal, HeyGen waxay u soo bandhigaysaa wejiga luqad kasta - mid ka qaalisan.",
       "diarizeHintVoiceover": "Codku wuxuu dul marayaa fiidiyowga sida uu yahay. \"Sheeko tarjumid\" waa ikhtiyaari: waxaa loo baahan yahay cinwaan hoosaadyo iyo gelinta xariiq kasta.",
       "loudnormTitle": "Simi mugga codka",
-      "loudnormSub": "qaybaha aamusan ayaa la qaadaa, qaybaha qaylada badan ayaa la simiyaa — maqal cod-yaqaan ah"
+      "loudnormSub": "qaybaha aamusan ayaa la qaadaa, qaybaha qaylada badan ayaa la simiyaa — maqal cod-yaqaan ah",
+      "recordingEmptyTitle": "Duubista weli lama soo gelin",
+      "recordingEmptySub": "maqal ama muuqaal laga soo qaaday Gallery-ga"
     },
     "lines": {
       "count_one": "{{count}} sadar · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Isbeddel",
       "seriesAdd": "Ku dar fiidiyowyada taxanaha — hal muuqaal fiidiyowgiiba",
       "seriesBilling": "Avatar-ka waxaa hal mar lagu dallacaa taxanaha oo dhan.",
-      "voiceoverBase": "Qaabkan muuqaalku waa saldhigga qaab-dhismeedka: codka iyo cinwaan-hoosaadyadu way sarreeyaan."
+      "voiceoverBase": "Qaabkan muuqaalku waa saldhigga qaab-dhismeedka: codka iyo cinwaan-hoosaadyadu way sarreeyaan.",
+      "emptyTitle": "Fiidiyowga weli lama soo gelin",
+      "emptySub": "ka soo qaado Gallery"
     },
     "subtitles": {
       "title": "Cinwaan-hoosaadyo",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Intee in le'eg ayay ciyaareysaa",
       "playFull": "Fiidiyowga oo dhan",
       "playFirst": "Ilbiriqsiyada N ee ugu horreeya",
-      "durationHint": "ilbiriqsiyo laga bilaabo bilowgii, ka dibna si habsami leh ayuu u libdhayaa"
+      "durationHint": "ilbiriqsiyo laga bilaabo bilowgii, ka dibna si habsami leh ayuu u libdhayaa",
+      "emptyTitle": "Muusig weli lama dooran",
+      "emptySub": "Si aamusnaan ah ayuu u ciyaaraa codka hoostiisa"
     },
     "format": {
       "label": "Qaabka",
@@ -1416,7 +1423,10 @@
       "heading": "Bambarro hordhac ah iyo kuwa dibadda ah - ikhtiyaari ah",
       "introEmpty": "Hordhac - midna",
       "outroEmpty": "Ka baxsan - midna",
-      "hint": "Muuqaal diyaarsan oo laga soo qaaday Gallery-ga ayaa ku lifaaqan sida uu yahay, ma jiro habayn: hordhac astaan ah (2-10 ilbiriqsi), \"ku biir\"."
+      "hint": "Muuqaal diyaarsan oo laga soo qaaday Gallery-ga ayaa ku lifaaqan sida uu yahay, ma jiro habayn: hordhac astaan ah (2-10 ilbiriqsi), \"ku biir\".",
+      "introTitle": "Hordhac",
+      "outroTitle": "Outro",
+      "addSub": "ku dar muuqaal"
     },
     "layer": {
       "title": "Lakabka sare",
@@ -1425,7 +1435,8 @@
       "hint": "Cabbirka PNG ee loogu talagalay qaab-dhismeedka: astaan meel kasta ah, qaab-dhismeed, cinwaan. Waxay dul saaran tahay muuqaalka oo dhan; cinwaan-hoosaadyadu waxay ka sarreeyaan lakabka.",
       "progressTitle": "Baarka horumarka",
       "progressSub": "Xariiq saacad khafiif ah oo xagga sare ah — daawadayaashu waxay arkaan muuqaalku inuu gaaban yahay oo ilaa dhammaadka daawadaan",
-      "pngOnly": "Lakabku waa inuu ahaadaa PNG ama WebP hufan - fayl aan lahayn daahfurnaan ayaa dabooli doona qaab-dhismeedka oo dhan."
+      "pngOnly": "Lakabku waa inuu ahaadaa PNG ama WebP hufan - fayl aan lahayn daahfurnaan ayaa dabooli doona qaab-dhismeedka oo dhan.",
+      "emptySub": "PNG hufan"
     },
     "brand": {
       "button": "Qalabka summada",

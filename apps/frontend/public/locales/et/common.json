@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Hoidke HeyGeni stuudio vahekaart aktiivse tellimusega avatuna.",
       "apiNote": "HeyGeni API kaudu — sisestage Seaded → Generatsioon, tasu vastavalt kasutamisele (~3 dollarit/min Avatar IV).",
       "delTitle": "Eemalda avatari?",
-      "delMessage": "'{{name}}' eemaldatakse teie avatarikogust. Algne fail jääb galeriisse."
+      "delMessage": "'{{name}}' eemaldatakse teie avatarikogust. Algne fail jääb galeriisse.",
+      "photoEmptyTitle": "Foto pole veel üles laaditud"
     },
     "voice": {
       "title": "Hääl ja stsenaarium",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Seeria: eraldi klipp igas {{count}} keeles. HeyGen renderdab avatari abil iga keele näo – kallim on see.",
       "diarizeHintVoiceover": "Heli esitatakse video peal muutmata kujul. „Kõne transkribeerimine” on valikuline: vajalik subtiitrite ja reapõhiste lisade jaoks.",
       "loudnormTitle": "Ühtlusta hääle helitugevust",
-      "loudnormSub": "vaiksed kohad saavad esile tõstetud, valjud kohad summutatud – professionaalne heli"
+      "loudnormSub": "vaiksed kohad saavad esile tõstetud, valjud kohad summutatud – professionaalne heli",
+      "recordingEmptyTitle": "Salvestist pole veel üles laaditud",
+      "recordingEmptySub": "heli või video galeriist"
     },
     "lines": {
       "count_one": "{{count}} rida · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Muutus",
       "seriesAdd": "Lisa sarjale videoid – üks klipp video kohta",
       "seriesBilling": "Avatari eest võetakse kogu sarja eest üks kord arve.",
-      "voiceoverBase": "Selles režiimis on video kaadri alus: hääl ja subtiitrid on peal."
+      "voiceoverBase": "Selles režiimis on video kaadri alus: hääl ja subtiitrid on peal.",
+      "emptyTitle": "Videot pole veel üles laaditud",
+      "emptySub": "vali galeriist"
     },
     "subtitles": {
       "title": "Subtiitrid",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kui kaua see mängib",
       "playFull": "Terve video",
       "playFirst": "Esimesed N sekundit",
-      "durationHint": "sekundit algusest peale, seejärel sujuv hääbumine"
+      "durationHint": "sekundit algusest peale, seejärel sujuv hääbumine",
+      "emptyTitle": "Muusikat pole veel valitud",
+      "emptySub": "mängib vaikselt hääle all"
     },
     "format": {
       "label": "Formaat",
@@ -1416,7 +1423,10 @@
       "heading": "Sissejuhatavad ja väljaulatuvad lühivideod – valikuline",
       "introEmpty": "Sissejuhatus — puudub",
       "outroEmpty": "Lõpp — puudub",
-      "hint": "Galeriist pärit valmisvideo on lisatud olemasoleval kujul, ilma töötluseta: logoga tutvustus (2–10 sekundit), tellimisvideo lõpp."
+      "hint": "Galeriist pärit valmisvideo on lisatud olemasoleval kujul, ilma töötluseta: logoga tutvustus (2–10 sekundit), tellimisvideo lõpp.",
+      "introTitle": "Sissejuhatus",
+      "outroTitle": "Lõpp",
+      "addSub": "lisa video"
     },
     "layer": {
       "title": "Pealmine kiht",
@@ -1425,7 +1435,8 @@
       "hint": "Raami jaoks sobiva suurusega PNG: logo kuhu iganes, raam, pealdis. Katab kogu video; subtiitrid jäävad kihi kohale.",
       "progressTitle": "Edenemisriba",
       "progressSub": "õhuke taimeririba ülaosas – vaatajad näevad, et video on lühike ja vaatavad lõpuni",
-      "pngOnly": "Kiht peab olema läbipaistev PNG- või WebP-fail – läbipaistvuseta fail kataks kogu kaadri."
+      "pngOnly": "Kiht peab olema läbipaistev PNG- või WebP-fail – läbipaistvuseta fail kataks kogu kaadri.",
+      "emptySub": "läbipaistev PNG"
     },
     "brand": {
       "button": "Brändikomplekt",

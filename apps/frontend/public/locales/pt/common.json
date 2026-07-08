@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantenha a aba do estúdio HeyGen aberta com uma assinatura ativa.",
       "apiNote": "Via API HeyGen — chave em Configurações → Geração, cobrança por uso (aproximadamente US$ 3/min para Avatar IV).",
       "delTitle": "Remover avatar?",
-      "delMessage": "O avatar '{{name}}' será removido da sua coleção. O arquivo original permanecerá na Galeria."
+      "delMessage": "O avatar '{{name}}' será removido da sua coleção. O arquivo original permanecerá na Galeria.",
+      "photoEmptyTitle": "A foto ainda não foi carregada."
     },
     "voice": {
       "title": "Voz e roteiro",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Uma série: um clipe separado em cada um dos idiomas {{count}}. Com um avatar, o HeyGen renderiza o rosto para cada idioma — mais caro.",
       "diarizeHintVoiceover": "O áudio é sobreposto ao vídeo sem alterações. A opção \"Transcrever fala\" é opcional: necessária para legendas e inserções linha a linha.",
       "loudnormTitle": "Equilibre o volume da voz",
-      "loudnormSub": "As partes silenciosas são realçadas, as partes altas são suavizadas — áudio com som profissional."
+      "loudnormSub": "As partes silenciosas são realçadas, as partes altas são suavizadas — áudio com som profissional.",
+      "recordingEmptyTitle": "A gravação ainda não foi carregada.",
+      "recordingEmptySub": "áudio ou vídeo da Galeria"
     },
     "lines": {
       "count_one": "{{count}} linha · ~{{sec}} seg",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Mudar",
       "seriesAdd": "Adicione vídeos à série — um clipe por vídeo.",
       "seriesBilling": "O avatar é creditado apenas uma vez para toda a série.",
-      "voiceoverBase": "Nesse modo, o vídeo é a base da imagem: o áudio e as legendas ficam sobrepostos."
+      "voiceoverBase": "Nesse modo, o vídeo é a base da imagem: o áudio e as legendas ficam sobrepostos.",
+      "emptyTitle": "Vídeo ainda não carregado",
+      "emptySub": "Escolha na Galeria"
     },
     "subtitles": {
       "title": "Legendas",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Quanto tempo dura a reprodução?",
       "playFull": "Vídeo completo",
       "playFirst": "Primeiros N segundos",
-      "durationHint": "segundos após o início, seguido de um suave desvanecimento."
+      "durationHint": "segundos após o início, seguido de um suave desvanecimento.",
+      "emptyTitle": "Música ainda não escolhida.",
+      "emptySub": "toca baixinho por baixo da voz"
     },
     "format": {
       "label": "Formatar",
@@ -1416,7 +1423,10 @@
       "heading": "Vinhetas de abertura e encerramento — opcionais",
       "introEmpty": "Introdução — nenhuma",
       "outroEmpty": "Outro — nenhum",
-      "hint": "Um vídeo pronto da Galeria está anexado tal como está, sem qualquer edição: uma introdução com o logotipo (2–10 segundos) e uma vinheta de encerramento com o pedido de inscrição."
+      "hint": "Um vídeo pronto da Galeria está anexado tal como está, sem qualquer edição: uma introdução com o logotipo (2–10 segundos) e uma vinheta de encerramento com o pedido de inscrição.",
+      "introTitle": "Introdução",
+      "outroTitle": "Outro",
+      "addSub": "adicionar um vídeo"
     },
     "layer": {
       "title": "Camada superior",
@@ -1425,7 +1435,8 @@
       "hint": "Um PNG dimensionado para o quadro: um logotipo em qualquer lugar, uma moldura, uma legenda. Sobrepõe-se a todo o vídeo; as legendas permanecem acima da camada.",
       "progressTitle": "Barra de progresso",
       "progressSub": "Uma fina faixa de tempo na parte superior — os espectadores veem que o vídeo é curto e assistem até o final.",
-      "pngOnly": "A camada deve ser um PNG ou WebP transparente — um arquivo sem transparência cobriria toda a imagem."
+      "pngOnly": "A camada deve ser um PNG ou WebP transparente — um arquivo sem transparência cobriria toda a imagem.",
+      "emptySub": "PNG transparente"
     },
     "brand": {
       "button": "Kit de marca",

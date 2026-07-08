@@ -1216,7 +1216,8 @@
       "extKeepOpen": "HeyGen studiýasynyň goýmasyny işjeň abuna ýazylyş bilen açyk saklaň.",
       "apiNote": "HeyGen API arkaly — Sazlamalar → Neşir et, töleg arkaly töleg (~$3/min Awatar IV) düwmesine basyň.",
       "delTitle": "Awatary aýyrmalymy?",
-      "delMessage": "'{{name}}' awatar kolleksiýaňyzdan aýrylar. Asyl faýl Galereýada galar."
+      "delMessage": "'{{name}}' awatar kolleksiýaňyzdan aýrylar. Asyl faýl Galereýada galar.",
+      "photoEmptyTitle": "Surat heniz ýüklenmedi"
     },
     "voice": {
       "title": "Ses we ssenari",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Seriýa: {{count}} dilleriniň hersinde aýratyn klip. Awatar bilen HeyGen her dil üçin ýüzi görkezýär - gymmatrak.",
       "diarizeHintVoiceover": "Ses wideonyň üstünden şol görnüşde geçýär. “Gürrüňi transkripsiýa etmek” hökmany däl: subtitrler we her setir üçin goşmaçalar üçin gerek.",
       "loudnormTitle": "Sesiň ses derejesini deňleşdirmek",
-      "loudnormSub": "sessiz bölekler aýrylýar, sesli bölekler tekizlenýär — professional seslendirme"
+      "loudnormSub": "sessiz bölekler aýrylýar, sesli bölekler tekizlenýär — professional seslendirme",
+      "recordingEmptyTitle": "Ýazgy heniz ýüklenmedi",
+      "recordingEmptySub": "Galereýadan ses ýa-da wideo"
     },
     "lines": {
       "count_one": "{{count}} setir · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Üýtgeşme",
       "seriesAdd": "Wideolary seriýa goşuň — her wideo üçin bir klip",
       "seriesBilling": "Awatar tutuş seriýa üçin bir gezek görkezilýär.",
-      "voiceoverBase": "Bu režimde wideo kadryň esasyny düzýär: ses we subtitrler ýokarky orunda durýar."
+      "voiceoverBase": "Bu režimde wideo kadryň esasyny düzýär: ses we subtitrler ýokarky orunda durýar.",
+      "emptyTitle": "Wideo heniz ýüklenmedi",
+      "emptySub": "Galereýadan saýlaň"
     },
     "subtitles": {
       "title": "Subtitrler",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Näçe wagtlap oýnalýar",
       "playFull": "Tutuş wideo",
       "playFirst": "Ilkinji N sekund",
-      "durationHint": "başyndan birnäçe sekunt soň, soňra ýumşak öçme"
+      "durationHint": "başyndan birnäçe sekunt soň, soňra ýumşak öçme",
+      "emptyTitle": "Aýdym-saz heniz saýlanmady",
+      "emptySub": "sesiň aşagynda sessiz oýnaýar"
     },
     "format": {
       "label": "Formatlamak",
@@ -1416,7 +1423,10 @@
       "heading": "Giriş we daşarky bamperler — isleg boýunça",
       "introEmpty": "Giriş — ýok",
       "outroEmpty": "Çykyş — ýok",
-      "hint": "Galereýadan taýýar wideo goşuldy, işlenilmeýär: logotipiň girişi (2–10 sek), \"abuna ýazylyň\" soňky bölegi."
+      "hint": "Galereýadan taýýar wideo goşuldy, işlenilmeýär: logotipiň girişi (2–10 sek), \"abuna ýazylyň\" soňky bölegi.",
+      "introTitle": "Giriş",
+      "outroTitle": "Çykyş",
+      "addSub": "wideo goş"
     },
     "layer": {
       "title": "Üstki gatlak",
@@ -1425,7 +1435,8 @@
       "hint": "Kadr üçin PNG ölçegli: islendik ýerde logotip, kadr, ýazgy. Tutuş wideonyň üstünde ýerleşýär; subtitrler gatlagyň üstünde galýar.",
       "progressTitle": "Ösüş paneli",
       "progressSub": "ýokarky böleginde inçe taýmer zolagy — tomaşaçylar wideonyň gysgadygyny görüp, soňuna çenli tomaşa edýärler",
-      "pngOnly": "Gatlak açyk PNG ýa-da WebP bolmaly — açyklygy bolmadyk faýl tutuş kadry örtýär."
+      "pngOnly": "Gatlak açyk PNG ýa-da WebP bolmaly — açyklygy bolmadyk faýl tutuş kadry örtýär.",
+      "emptySub": "açyk PNG"
     },
     "brand": {
       "button": "Brend toplumy",

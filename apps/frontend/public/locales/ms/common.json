@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Pastikan tab studio HeyGen dibuka dengan langganan aktif.",
       "apiNote": "Melalui API HeyGen — masukkan Tetapan → Penjanaan, pengebilan bayar-as-you-guna (~$3/min Avatar IV).",
       "delTitle": "Alih keluar avatar?",
-      "delMessage": "'{{name}}' akan dialih keluar daripada koleksi avatar anda. Fail asal kekal dalam Galeri."
+      "delMessage": "'{{name}}' akan dialih keluar daripada koleksi avatar anda. Fail asal kekal dalam Galeri.",
+      "photoEmptyTitle": "Foto belum dimuat naik lagi"
     },
     "voice": {
       "title": "Suara & skrip",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Siri: klip berasingan dalam setiap bahasa {{count}}. Dengan avatar, HeyGen memaparkan wajah untuk setiap bahasa — lebih mahal.",
       "diarizeHintVoiceover": "Audio memaparkan video seperti sedia ada. \"Transkripsikan pertuturan\" adalah pilihan: diperlukan untuk sari kata dan sisipan setiap baris.",
       "loudnormTitle": "Ratakan kelantangan suara",
-      "loudnormSub": "bahagian yang senyap diangkat, bahagian yang bising diratakan — audio yang berbunyi profesional"
+      "loudnormSub": "bahagian yang senyap diangkat, bahagian yang bising diratakan — audio yang berbunyi profesional",
+      "recordingEmptyTitle": "Rakaman belum dimuat naik lagi",
+      "recordingEmptySub": "audio atau video daripada Galeri"
     },
     "lines": {
       "count_one": "Baris {{count}} · ~{{sec}} saat",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Perubahan",
       "seriesAdd": "Tambahkan video pada siri ini — satu klip setiap video",
       "seriesBilling": "Avatar dibilkan sekali untuk keseluruhan siri.",
-      "voiceoverBase": "Dalam mod ini, video adalah bahagian bawah bingkai: suara dan sari kata diletakkan di bahagian atas."
+      "voiceoverBase": "Dalam mod ini, video adalah bahagian bawah bingkai: suara dan sari kata diletakkan di bahagian atas.",
+      "emptyTitle": "Video belum dimuat naik lagi",
+      "emptySub": "pilih daripada Galeri"
     },
     "subtitles": {
       "title": "Sari kata",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Berapa lama ia dimainkan",
       "playFull": "Keseluruhan video",
       "playFirst": "N saat pertama",
-      "durationHint": "beberapa saat dari permulaan, kemudian pudar yang lancar"
+      "durationHint": "beberapa saat dari permulaan, kemudian pudar yang lancar",
+      "emptyTitle": "Muzik belum dipilih lagi",
+      "emptySub": "bermain dengan senyap di bawah suara"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bampar intro dan outro — pilihan",
       "introEmpty": "Pengenalan — tiada",
       "outroEmpty": "Outro — tiada",
-      "hint": "Video siap sedia daripada Galeri dilampirkan sebagaimana adanya, tanpa pemprosesan: pengenalan logo (2–10 saat), outro “langgan”."
+      "hint": "Video siap sedia daripada Galeri dilampirkan sebagaimana adanya, tanpa pemprosesan: pengenalan logo (2–10 saat), outro “langgan”.",
+      "introTitle": "Pengenalan",
+      "outroTitle": "Outro",
+      "addSub": "tambah video"
     },
     "layer": {
       "title": "Lapisan atas",
@@ -1425,7 +1435,8 @@
       "hint": "Saiz PNG untuk bingkai: logo di mana-mana sahaja, bingkai, kapsyen. Terletak di atas keseluruhan video; sari kata kekal di atas lapisan.",
       "progressTitle": "Bar kemajuan",
       "progressSub": "jalur pemasa nipis di bahagian atas — penonton melihat video itu pendek dan menonton hingga tamat",
-      "pngOnly": "Lapisan tersebut mestilah PNG atau WebP lutsinar — fail tanpa ketelusan akan meliputi seluruh bingkai."
+      "pngOnly": "Lapisan tersebut mestilah PNG atau WebP lutsinar — fail tanpa ketelusan akan meliputi seluruh bingkai.",
+      "emptySub": "PNG lutsinar"
     },
     "brand": {
       "button": "Kit jenama",

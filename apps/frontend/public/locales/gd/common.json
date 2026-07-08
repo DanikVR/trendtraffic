@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Cùm taba stiùidio HeyGen fosgailte le ballrachd gnìomhach.",
       "apiNote": "Tro API HeyGen — cuir a-steach Roghainnean → Ginealach, bileachadh pàigh-mar-a-chleachdadh-tu (~$3/min Avatar IV).",
       "delTitle": "Avatar a thoirt air falbh?",
-      "delMessage": "Thèid '{{name}}' a thoirt air falbh bhon chruinneachadh avatar agad. Bidh am faidhle tùsail a’ fuireach san Ghailearaidh."
+      "delMessage": "Thèid '{{name}}' a thoirt air falbh bhon chruinneachadh avatar agad. Bidh am faidhle tùsail a’ fuireach san Ghailearaidh.",
+      "photoEmptyTitle": "Cha deach an dealbh a luchdachadh suas fhathast"
     },
     "voice": {
       "title": "Guth & sgriobt",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Sreath: criomag air leth anns gach aon de na cànanan {{count}}. Le avatar, bidh HeyGen a’ lìbhrigeadh an aodainn airson gach cànan - nas daoire.",
       "diarizeHintVoiceover": "Thèid an claisneachd thairis air a’ bhidio mar a tha e. Tha “Tar-sgrìobhadh òraid” roghainneil: riatanach airson fo-thiotalan agus cuir-a-steach gach loidhne.",
       "loudnormTitle": "Co-ionannachd a dhèanamh air meud a’ ghutha",
-      "loudnormSub": "bidh pàirtean sàmhach air an togail, pàirtean àrda air an rèiteachadh - claisneachd proifeasanta"
+      "loudnormSub": "bidh pàirtean sàmhach air an togail, pàirtean àrda air an rèiteachadh - claisneachd proifeasanta",
+      "recordingEmptyTitle": "Cha deach clàradh a luchdachadh suas fhathast",
+      "recordingEmptySub": "claisneachd no bhidio bhon Ghailearaidh"
     },
     "lines": {
       "count_one": "loidhne {{count}} · ~{{sec}} diog",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Atharraich",
       "seriesAdd": "Cuir bhideothan ris an t-sreath — aon chriomag gach bhidio",
       "seriesBilling": "Thèid cunntas a thoirt don avatar aon uair airson an t-sreath gu lèir.",
-      "voiceoverBase": "Anns a’ mhodh seo, ’s e a’ bhidio bunait a’ fhrèam: bidh guth agus fo-thiotalan air a’ mhullach."
+      "voiceoverBase": "Anns a’ mhodh seo, ’s e a’ bhidio bunait a’ fhrèam: bidh guth agus fo-thiotalan air a’ mhullach.",
+      "emptyTitle": "Cha deach a’ bhidio a luchdachadh suas fhathast",
+      "emptySub": "tagh bhon Ghailearaidh"
     },
     "subtitles": {
       "title": "Fo-thiotalan",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Dè cho fada 's a chluicheas e",
       "playFull": "Bhidio slàn",
       "playFirst": "A’ chiad N diogan",
-      "durationHint": "diogan bhon toiseach, an uairsin seargadh rèidh"
+      "durationHint": "diogan bhon toiseach, an uairsin seargadh rèidh",
+      "emptyTitle": "Ceòl nach deach a thaghadh fhathast",
+      "emptySub": "a’ cluich gu sàmhach fo ghuth"
     },
     "format": {
       "label": "Cruth",
@@ -1416,7 +1423,10 @@
       "heading": "Bampairean ro-ràdh is deireadh — roghainneil",
       "introEmpty": "Ro-ràdh — chan eil gin ann",
       "outroEmpty": "A-mach às an seo — chan eil gin ann",
-      "hint": "Tha bhidio deiseil bhon Ghailearaidh ceangailte mar a tha e, gun phròiseasadh: ro-ràdh suaicheantas (2–10 diogan), outro “fo-sgrìobh”."
+      "hint": "Tha bhidio deiseil bhon Ghailearaidh ceangailte mar a tha e, gun phròiseasadh: ro-ràdh suaicheantas (2–10 diogan), outro “fo-sgrìobh”.",
+      "introTitle": "Ro-ràdh",
+      "outroTitle": "A-mach às",
+      "addSub": "cuir bhidio ris"
     },
     "layer": {
       "title": "An ìre as àirde",
@@ -1425,7 +1435,8 @@
       "hint": "Meud PNG airson a’ fhrèam: suaicheantas an àite sam bith, frèam, fo-thiotal. Suidhidh e thairis air a’ bhidio gu lèir; bidh fo-thiotalan a’ fuireach os cionn na sreath.",
       "progressTitle": "Bàr adhartais",
       "progressSub": "stiall tana timer aig a’ mhullach — chì luchd-amhairc gu bheil am bhidio goirid agus coimheadaidh iad chun na crìche",
-      "pngOnly": "Feumaidh an sreath a bhith na PNG no WebP follaiseach — bhiodh faidhle às aonais follaiseachd a’ còmhdach a’ fhrèam gu lèir."
+      "pngOnly": "Feumaidh an sreath a bhith na PNG no WebP follaiseach — bhiodh faidhle às aonais follaiseachd a’ còmhdach a’ fhrèam gu lèir.",
+      "emptySub": "PNG follaiseach"
     },
     "brand": {
       "button": "Pasgan branda",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Ipadayon nga bukas ang HeyGen studio tab nga adunay aktibong suskrisyon.",
       "apiNote": "Pinaagi sa HeyGen API — i-klik ang Settings → Generation, pay-as-you-go billing (~$3/min Avatar IV).",
       "delTitle": "Tangtanga ang avatar?",
-      "delMessage": "Ang '{{name}}' matangtang gikan sa imong koleksyon sa avatar. Ang orihinal nga file magpabilin sa Gallery."
+      "delMessage": "Ang '{{name}}' matangtang gikan sa imong koleksyon sa avatar. Ang orihinal nga file magpabilin sa Gallery.",
+      "photoEmptyTitle": "Wala pa ma-upload ang litrato"
     },
     "voice": {
       "title": "Tingog ug iskrip",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Usa ka serye: usa ka lahi nga clip sa matag usa sa {{count}} nga mga pinulongan. Uban sa usa ka avatar, ang HeyGen nag-render sa nawong alang sa matag pinulongan — mas mahal.",
       "diarizeHintVoiceover": "Ang audio motan-aw sa video kung unsa kini. Opsyonal ang \"I-transcribe ang speech\": gikinahanglan para sa mga subtitle ug per-line inserts.",
       "loudnormTitle": "Iparehas ang volume sa tingog",
-      "loudnormSub": "ang mga hilom nga bahin gipataas, ang mga saba nga bahin gipahapsay — propesyonal nga tunog nga audio"
+      "loudnormSub": "ang mga hilom nga bahin gipataas, ang mga saba nga bahin gipahapsay — propesyonal nga tunog nga audio",
+      "recordingEmptyTitle": "Wala pa ma-upload ang recording",
+      "recordingEmptySub": "audio o video gikan sa Gallery"
     },
     "lines": {
       "count_one": "{{count}} linya · ~{{sec}} segundo",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Pag-ilis",
       "seriesAdd": "Idugang ang mga video sa serye — usa ka clip matag video",
       "seriesBilling": "Ang avatar gipaningil kausa ra alang sa tibuok serye.",
-      "voiceoverBase": "Niini nga mode, ang video mao ang base sa frame: ang tingog ug mga subtitle ang naa sa ibabaw."
+      "voiceoverBase": "Niini nga mode, ang video mao ang base sa frame: ang tingog ug mga subtitle ang naa sa ibabaw.",
+      "emptyTitle": "Wala pa gi-upload ang video",
+      "emptySub": "pilia gikan sa Galeriya"
     },
     "subtitles": {
       "title": "Mga Subtitle",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Unsa ka dugay kini magdula",
       "playFull": "Tibuok nga bidyo",
       "playFirst": "Unang N segundos",
-      "durationHint": "segundos gikan sa pagsugod, unya usa ka hapsay nga pag-fadeout"
+      "durationHint": "segundos gikan sa pagsugod, unya usa ka hapsay nga pag-fadeout",
+      "emptyTitle": "Wala pa napili ang musika",
+      "emptySub": "hilom nga nagpatugtog ubos sa tingog"
     },
     "format": {
       "label": "Pormat",
@@ -1416,7 +1423,10 @@
       "heading": "Mga bumper sa intro ug outro — opsyonal",
       "introEmpty": "Pasiuna — wala",
       "outroEmpty": "Outro — wala",
-      "hint": "Usa ka andam nang video gikan sa Gallery ang gilakip nga wala’y problema, dili na kinahanglan iproseso: usa ka intro sa logo (2–10 segundos), usa ka outro nga “subscribe”."
+      "hint": "Usa ka andam nang video gikan sa Gallery ang gilakip nga wala’y problema, dili na kinahanglan iproseso: usa ka intro sa logo (2–10 segundos), usa ka outro nga “subscribe”.",
+      "introTitle": "Pasiuna",
+      "outroTitle": "Pag-ulbo",
+      "addSub": "pagdugang og bidyo"
     },
     "layer": {
       "title": "Ibabaw nga lut-od",
@@ -1425,7 +1435,8 @@
       "hint": "Usa ka PNG nga gidak-on para sa frame: usa ka logo bisan asa, usa ka frame, usa ka caption. Mopatong sa tibuok video; ang mga subtitle magpabilin sa ibabaw sa layer.",
       "progressTitle": "Bar sa pag-uswag",
       "progressSub": "usa ka nipis nga timer strip sa ibabaw — makita sa mga tumatan-aw nga mubo ang video ug tan-awon hangtod sa katapusan",
-      "pngOnly": "Ang layer kinahanglan nga usa ka transparent nga PNG o WebP — ang usa ka file nga walay transparency motabon sa tibuok frame."
+      "pngOnly": "Ang layer kinahanglan nga usa ka transparent nga PNG o WebP — ang usa ka file nga walay transparency motabon sa tibuok frame.",
+      "emptySub": "transparent nga PNG"
     },
     "brand": {
       "button": "Kit sa tatak",

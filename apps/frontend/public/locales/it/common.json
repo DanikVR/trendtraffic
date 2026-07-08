@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantieni aperta la scheda dello studio HeyGen con un abbonamento attivo.",
       "apiNote": "Tramite l'API di HeyGen: vai su Impostazioni → Generazione, fatturazione a consumo (circa 3$/min Avatar IV).",
       "delTitle": "Rimuovere l'avatar?",
-      "delMessage": "L'avatar '{{name}}' verrà rimosso dalla tua collezione. Il file originale rimarrà nella Galleria."
+      "delMessage": "L'avatar '{{name}}' verrà rimosso dalla tua collezione. Il file originale rimarrà nella Galleria.",
+      "photoEmptyTitle": "Foto non ancora caricata."
     },
     "voice": {
       "title": "Voce e sceneggiatura",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Una serie: una clip separata in ciascuna delle {{count}} lingue. Con un avatar, HeyGen crea il volto per ogni lingua — più costoso.",
       "diarizeHintVoiceover": "L'audio viene riprodotto sul video così com'è. La funzione \"Trascrivi il parlato\" è facoltativa: necessaria per i sottotitoli e per gli inserimenti riga per riga.",
       "loudnormTitle": "Regolare il volume della voce",
-      "loudnormSub": "Le parti silenziose vengono amplificate, quelle rumorose smussate: un audio dal suono professionale."
+      "loudnormSub": "Le parti silenziose vengono amplificate, quelle rumorose smussate: un audio dal suono professionale.",
+      "recordingEmptyTitle": "La registrazione non è ancora stata caricata.",
+      "recordingEmptySub": "audio o video dalla Galleria"
     },
     "lines": {
       "count_one": "{{count}} linea · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Modifica",
       "seriesAdd": "Aggiungi i video alla serie: una clip per video.",
       "seriesBilling": "L'avatar viene fatturato una sola volta per l'intera serie.",
-      "voiceoverBase": "In questa modalità il video costituisce la base dell'inquadratura: la voce e i sottotitoli si trovano sopra."
+      "voiceoverBase": "In questa modalità il video costituisce la base dell'inquadratura: la voce e i sottotitoli si trovano sopra.",
+      "emptyTitle": "Video non ancora caricato",
+      "emptySub": "scegli dalla Galleria"
     },
     "subtitles": {
       "title": "Sottotitoli",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Quanto dura",
       "playFull": "Video completo",
       "playFirst": "Primi N secondi",
-      "durationHint": "pochi secondi dall'inizio, poi una dissolvenza graduale"
+      "durationHint": "pochi secondi dall'inizio, poi una dissolvenza graduale",
+      "emptyTitle": "Musica non ancora selezionata",
+      "emptySub": "suona piano sottovoce"
     },
     "format": {
       "label": "Formato",
@@ -1416,7 +1423,10 @@
       "heading": "Sigle di apertura e chiusura - facoltative",
       "introEmpty": "Introduzione — nessuna",
       "outroEmpty": "Finale — nessuno",
-      "hint": "Il video già pronto della Galleria è allegato così com'è, senza alcuna elaborazione: un'introduzione con il logo (2-10 secondi) e una conclusione con il messaggio \"iscriviti\"."
+      "hint": "Il video già pronto della Galleria è allegato così com'è, senza alcuna elaborazione: un'introduzione con il logo (2-10 secondi) e una conclusione con il messaggio \"iscriviti\".",
+      "introTitle": "Introduzione",
+      "outroTitle": "Outro",
+      "addSub": "aggiungi un video"
     },
     "layer": {
       "title": "Strato superiore",
@@ -1425,7 +1435,8 @@
       "hint": "Un'immagine PNG dimensionata per la cornice: un logo ovunque, una cornice, una didascalia. Si sovrappone all'intero video; i sottotitoli rimangono sopra il livello.",
       "progressTitle": "Barra di avanzamento",
       "progressSub": "una sottile striscia di timer in alto: gli spettatori vedono che il video è breve e lo guardano fino alla fine",
-      "pngOnly": "Il livello deve essere un file PNG o WebP trasparente; un file senza trasparenza coprirebbe l'intera inquadratura."
+      "pngOnly": "Il livello deve essere un file PNG o WebP trasparente; un file senza trasparenza coprirebbe l'intera inquadratura.",
+      "emptySub": "PNG trasparente"
     },
     "brand": {
       "button": "Kit del marchio",

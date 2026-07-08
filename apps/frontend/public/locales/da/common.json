@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Hold HeyGen Studio-fanen åben med et aktivt abonnement.",
       "apiNote": "Via HeyGen API — tast ind i Indstillinger → Generering, betal efter forbrug (~$3/min Avatar IV).",
       "delTitle": "Fjern avataren?",
-      "delMessage": "'{{name}}' vil blive fjernet fra din avatarsamling. Den originale fil forbliver i Galleriet."
+      "delMessage": "'{{name}}' vil blive fjernet fra din avatarsamling. Den originale fil forbliver i Galleriet.",
+      "photoEmptyTitle": "Foto ikke uploadet endnu"
     },
     "voice": {
       "title": "Stemme og manuskript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "En serie: et separat klip i hvert af {{count}} sprogene. Med en avatar gengiver HeyGen ansigtet for hvert sprog – dyrere.",
       "diarizeHintVoiceover": "Lyden går over videoen, som den er. \"Transkriber tale\" er valgfrit: nødvendigt for undertekster og indsættelser per linje.",
       "loudnormTitle": "Udjævn stemmestyrken",
-      "loudnormSub": "Stille dele løftes, høje dele udglattes — professionel lyd"
+      "loudnormSub": "Stille dele løftes, høje dele udglattes — professionel lyd",
+      "recordingEmptyTitle": "Optagelsen er ikke uploadet endnu",
+      "recordingEmptySub": "lyd eller video fra galleriet"
     },
     "lines": {
       "count_one": "{{count}} linje · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Forandring",
       "seriesAdd": "Tilføj videoer til serien — ét klip pr. video",
       "seriesBilling": "Avataren faktureres én gang for hele serien.",
-      "voiceoverBase": "I denne tilstand er videoen grundlaget for billedet: stemme og undertekster kommer øverst."
+      "voiceoverBase": "I denne tilstand er videoen grundlaget for billedet: stemme og undertekster kommer øverst.",
+      "emptyTitle": "Videoen er ikke uploadet endnu",
+      "emptySub": "vælg fra galleriet"
     },
     "subtitles": {
       "title": "Undertekster",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hvor længe den spiller",
       "playFull": "Hele videoen",
       "playFirst": "Første N sekunder",
-      "durationHint": "sekunder fra starten, derefter en jævn fade-out"
+      "durationHint": "sekunder fra starten, derefter en jævn fade-out",
+      "emptyTitle": "Musikken er ikke valgt endnu",
+      "emptySub": "spiller stille under stemmen"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- og outro-bumpere — valgfrit",
       "introEmpty": "Introduktion — ingen",
       "outroEmpty": "Outro — ingen",
-      "hint": "En færdiglavet video fra galleriet er vedhæftet som den er, ingen behandling: en logointro (2-10 sek.), en \"abonner\"-outro."
+      "hint": "En færdiglavet video fra galleriet er vedhæftet som den er, ingen behandling: en logointro (2-10 sek.), en \"abonner\"-outro.",
+      "introTitle": "Introduktion",
+      "outroTitle": "Slut",
+      "addSub": "tilføj en video"
     },
     "layer": {
       "title": "Øverste lag",
@@ -1425,7 +1435,8 @@
       "hint": "En PNG-fil i rammens størrelse: et logo hvor som helst, en ramme, en billedtekst. Den ligger over hele videoen; underteksterne forbliver over laget.",
       "progressTitle": "Statuslinje",
       "progressSub": "en tynd timerstribe øverst – seerne ser, at videoen er kort, og ser den til slutningen",
-      "pngOnly": "Laget skal være en transparent PNG eller WebP — en fil uden gennemsigtighed ville dække hele rammen."
+      "pngOnly": "Laget skal være en transparent PNG eller WebP — en fil uden gennemsigtighed ville dække hele rammen.",
+      "emptySub": "gennemsigtig PNG"
     },
     "brand": {
       "button": "Mærkesæt",

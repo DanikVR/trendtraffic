@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Hãy luôn mở tab HeyGen studio với gói đăng ký đang hoạt động.",
       "apiNote": "Thông qua API của HeyGen — nhập vào Cài đặt → Tạo, thanh toán theo lượt sử dụng (~3 đô la/phút Avatar IV).",
       "delTitle": "Xóa ảnh đại diện?",
-      "delMessage": "Ảnh đại diện '{{name}}' sẽ bị xóa khỏi bộ sưu tập ảnh đại diện của bạn. Tệp gốc vẫn còn trong Thư viện."
+      "delMessage": "Ảnh đại diện '{{name}}' sẽ bị xóa khỏi bộ sưu tập ảnh đại diện của bạn. Tệp gốc vẫn còn trong Thư viện.",
+      "photoEmptyTitle": "Ảnh chưa được tải lên"
     },
     "voice": {
       "title": "Giọng nói & kịch bản",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Một loạt video: mỗi video riêng biệt bằng một trong số {{count}} ngôn ngữ. Với hình đại diện, HeyGen sẽ tạo khuôn mặt cho từng ngôn ngữ — giá thành cao hơn.",
       "diarizeHintVoiceover": "Âm thanh được phát đồng bộ với video. Chức năng \"Chuyển đổi giọng nói thành văn bản\" là tùy chọn: cần thiết cho phụ đề và chèn nội dung từng dòng.",
       "loudnormTitle": "Cân bằng âm lượng giọng nói",
-      "loudnormSub": "Những đoạn yên tĩnh được làm nổi bật, những đoạn ồn ào được làm mượt mà hơn — âm thanh chuyên nghiệp"
+      "loudnormSub": "Những đoạn yên tĩnh được làm nổi bật, những đoạn ồn ào được làm mượt mà hơn — âm thanh chuyên nghiệp",
+      "recordingEmptyTitle": "Bản ghi chưa được tải lên.",
+      "recordingEmptySub": "âm thanh hoặc video từ Thư viện"
     },
     "lines": {
       "count_one": "{{count}} dòng · ~{{sec}} giây",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Thay đổi",
       "seriesAdd": "Thêm video vào chuỗi — mỗi video một đoạn clip.",
       "seriesBilling": "Hình đại diện chỉ được tính phí một lần cho toàn bộ loạt phim.",
-      "voiceoverBase": "Ở chế độ này, video là phần nền của khung hình: giọng nói và phụ đề nằm phía trên."
+      "voiceoverBase": "Ở chế độ này, video là phần nền của khung hình: giọng nói và phụ đề nằm phía trên.",
+      "emptyTitle": "Video chưa được tải lên",
+      "emptySub": "Chọn từ thư viện"
     },
     "subtitles": {
       "title": "Phụ đề",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Thời lượng phát",
       "playFull": "Toàn bộ video",
       "playFirst": "N giây đầu tiên",
-      "durationHint": "vài giây sau khi bắt đầu, sau đó là hiệu ứng mờ dần mượt mà."
+      "durationHint": "vài giây sau khi bắt đầu, sau đó là hiệu ứng mờ dần mượt mà.",
+      "emptyTitle": "Chưa chọn nhạc.",
+      "emptySub": "chơi nhạc nhẹ nhàng dưới giọng nói"
     },
     "format": {
       "label": "Định dạng",
@@ -1416,7 +1423,10 @@
       "heading": "Các đoạn chuyển tiếp mở đầu và kết thúc — tùy chọn",
       "introEmpty": "Lời giới thiệu — không có",
       "outroEmpty": "Phần kết — không có",
-      "hint": "Video mẫu có sẵn từ Thư viện được đính kèm nguyên trạng, không qua chỉnh sửa: phần mở đầu có logo (2-10 giây), phần kết thúc có thông báo \"đăng ký\"."
+      "hint": "Video mẫu có sẵn từ Thư viện được đính kèm nguyên trạng, không qua chỉnh sửa: phần mở đầu có logo (2-10 giây), phần kết thúc có thông báo \"đăng ký\".",
+      "introTitle": "Giới thiệu",
+      "outroTitle": "Phần kết",
+      "addSub": "thêm video"
     },
     "layer": {
       "title": "Lớp trên cùng",
@@ -1425,7 +1435,8 @@
       "hint": "Một file PNG có kích thước phù hợp với khung hình: logo ở bất kỳ vị trí nào, khung hình, chú thích. Nó nằm phủ toàn bộ video; phụ đề vẫn nằm phía trên lớp hình ảnh.",
       "progressTitle": "thanh tiến độ",
       "progressSub": "Một dải hẹn giờ mỏng ở phía trên — người xem thấy video ngắn và xem đến hết.",
-      "pngOnly": "Lớp ảnh phải là định dạng PNG hoặc WebP trong suốt — tệp không có độ trong suốt sẽ che phủ toàn bộ khung hình."
+      "pngOnly": "Lớp ảnh phải là định dạng PNG hoặc WebP trong suốt — tệp không có độ trong suốt sẽ che phủ toàn bộ khung hình.",
+      "emptySub": "PNG trong suốt"
     },
     "brand": {
       "button": "Bộ dụng cụ thương hiệu",

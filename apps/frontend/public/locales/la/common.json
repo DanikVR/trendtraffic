@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Tabulam studii HeyGen apertam cum subscriptione activa tene.",
       "apiNote": "Per API HeyGen — in \"Optiones\" → \"Generatio\" inscribe, pretia secundum usum (~$3/min Avatar IV).",
       "delTitle": "Visne imaginem removere?",
-      "delMessage": "'{{name}}' e collectione avatarum tuorum removebitur. Fasciculus originalis in Pinacotheca manet."
+      "delMessage": "'{{name}}' e collectione avatarum tuorum removebitur. Fasciculus originalis in Pinacotheca manet.",
+      "photoEmptyTitle": "Imago nondum immissa"
     },
     "voice": {
       "title": "Vox et scriptum",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "A series: a separate clip in each of {{count}} languages. With an avatar, HeyGen renders the face for every language — pricier.",
       "diarizeHintVoiceover": "Audio super video prout est progreditur. \"Transcribere orationem\" est facultativum: necessarium pro subtitulis et insertionibus per lineam.",
       "loudnormTitle": "Volumen vocis aequale",
-      "loudnormSub": "Partes quietae elevantur, partes sonorae mitigantur — sonus professionalis"
+      "loudnormSub": "Partes quietae elevantur, partes sonorae mitigantur — sonus professionalis",
+      "recordingEmptyTitle": "Inscriptio nondum immissa est",
+      "recordingEmptySub": "audio vel video ex Pinacotheca"
     },
     "lines": {
       "count_one": "Linea {{count}} · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Mutatio",
       "seriesAdd": "Adde videos seriei — unum fragmentum per video",
       "seriesBilling": "Avatar semel pro tota serie pecuniam solvit.",
-      "voiceoverBase": "In hoc modo video basis imaginis est: vox et subtituli supra ponuntur."
+      "voiceoverBase": "In hoc modo video basis imaginis est: vox et subtituli supra ponuntur.",
+      "emptyTitle": "Video nondum immissum",
+      "emptySub": "elige ex Pinacotheca"
     },
     "subtitles": {
       "title": "Subtituli",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Quamdiu luditur",
       "playFull": "Totum video",
       "playFirst": "Prima N secunda",
-      "durationHint": "secundis ab initio, deinde leniter evanescit"
+      "durationHint": "secundis ab initio, deinde leniter evanescit",
+      "emptyTitle": "Musica nondum electa",
+      "emptySub": "sub voce tacite ludit"
     },
     "format": {
       "label": "Forma",
@@ -1416,7 +1423,10 @@
       "heading": "Propagandae initiales et finales — facultativae",
       "introEmpty": "Introductio — nulla",
       "outroEmpty": "Finis — nullus",
-      "hint": "Pellicula iam parata ex Pinacotheca adiuncta est sicut est, nulla elaboratione: introductio logo (2-10 secunda), finis \"subscribe\"."
+      "hint": "Pellicula iam parata ex Pinacotheca adiuncta est sicut est, nulla elaboratione: introductio logo (2-10 secunda), finis \"subscribe\".",
+      "introTitle": "Introductio",
+      "outroTitle": "Finis",
+      "addSub": "adde video"
     },
     "layer": {
       "title": "Stratum superius",
@@ -1425,7 +1435,8 @@
       "hint": "Imago PNG ad magnitudinem imaginis aptata: logo ubicumque, imagine, inscriptione. Super totum video sedet; subtituli supra stratum manent.",
       "progressTitle": "Vectis progressus",
       "progressSub": "tenuis fascia temporis in summo — spectatores vident breve esse video et usque ad finem spectant",
-      "pngOnly": "Stratum debet esse PNG vel WebP pellucidum — fasciculus sine pelluciditate totum quadrum tegeret."
+      "pngOnly": "Stratum debet esse PNG vel WebP pellucidum — fasciculus sine pelluciditate totum quadrum tegeret.",
+      "emptySub": "PNG pellucida"
     },
     "brand": {
       "button": "Instrumentum notae",

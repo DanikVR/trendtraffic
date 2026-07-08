@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantingueu la pestanya de HeyGen studio oberta amb una subscripció activa.",
       "apiNote": "Via l'API de HeyGen: introduïu Configuració → Generació, facturació de pagament per ús (~3 $/min Avatar IV).",
       "delTitle": "Voleu eliminar l'avatar?",
-      "delMessage": "'{{name}}' s'eliminarà de la teva col·lecció d'avatars. El fitxer original es queda a la Galeria."
+      "delMessage": "'{{name}}' s'eliminarà de la teva col·lecció d'avatars. El fitxer original es queda a la Galeria.",
+      "photoEmptyTitle": "Foto encara no s'ha carregat"
     },
     "voice": {
       "title": "Veu i guió",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Una sèrie: un clip separat en cadascun dels idiomes {{count}}. Amb un avatar, HeyGen renderitza la cara per a cada idioma, cosa que és més cara.",
       "diarizeHintVoiceover": "L'àudio s'afegeix al vídeo tal com està. L'opció \"Transcripció de la veu\" és opcional: necessària per als subtítols i les insercions per línia.",
       "loudnormTitle": "Volum de veu uniforme",
-      "loudnormSub": "les parts tranquil·les s'eleven, les parts fortes es suavitzen: àudio amb un so professional"
+      "loudnormSub": "les parts tranquil·les s'eleven, les parts fortes es suavitzen: àudio amb un so professional",
+      "recordingEmptyTitle": "Encara no s'ha carregat la gravació",
+      "recordingEmptySub": "àudio o vídeo de la Galeria"
     },
     "lines": {
       "count_one": "línia {{count}} · ~{{sec}} seg",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Canvi",
       "seriesAdd": "Afegir vídeos a la sèrie: un clip per vídeo",
       "seriesBilling": "L'avatar es factura una vegada per a tota la sèrie.",
-      "voiceoverBase": "En aquest mode, el vídeo és la base del quadre: la veu i els subtítols van a sobre."
+      "voiceoverBase": "En aquest mode, el vídeo és la base del quadre: la veu i els subtítols van a sobre.",
+      "emptyTitle": "Vídeo encara no s'ha penjat",
+      "emptySub": "triar de la galeria"
     },
     "subtitles": {
       "title": "Subtítols",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Quant de temps es reprodueix",
       "playFull": "Vídeo complet",
       "playFirst": "Primers N segons",
-      "durationHint": "segons des del principi, i després una suau esvaïment"
+      "durationHint": "segons des del principi, i després una suau esvaïment",
+      "emptyTitle": "Música encara no escollida",
+      "emptySub": "sona tranquil·lament sota la veu"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bumpers d'introducció i final: opcionals",
       "introEmpty": "Introducció — cap",
       "outroEmpty": "Outro — cap",
-      "hint": "S'adjunta un vídeo ja fet de la Galeria tal com està, sense processament: una introducció del logotip (2–10 segons) i un final de \"subscripció\"."
+      "hint": "S'adjunta un vídeo ja fet de la Galeria tal com està, sense processament: una introducció del logotip (2–10 segons) i un final de \"subscripció\".",
+      "introTitle": "Introducció",
+      "outroTitle": "Final",
+      "addSub": "afegir un vídeo"
     },
     "layer": {
       "title": "capa superior",
@@ -1425,7 +1435,8 @@
       "hint": "Un fitxer PNG amb la mida adequada al fotograma: un logotip a qualsevol lloc, un fotograma, un peu de foto. Es col·loca sobre tot el vídeo; els subtítols es mantenen a sobre de la capa.",
       "progressTitle": "Barra de progrés",
       "progressSub": "una tira fina de temporitzador a la part superior: els espectadors veuen que el vídeo és curt i el miren fins al final",
-      "pngOnly": "La capa ha de ser un fitxer PNG o WebP transparent; un fitxer sense transparència cobriria tot el marc."
+      "pngOnly": "La capa ha de ser un fitxer PNG o WebP transparent; un fitxer sense transparència cobriria tot el marc.",
+      "emptySub": "PNG transparent"
     },
     "brand": {
       "button": "Kit de marca",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Păstrează fila HeyGen studio deschisă cu un abonament activ.",
       "apiNote": "Prin intermediul API-ului HeyGen — introduceți Setări → Generare, facturare cu plată pe măsură ce utilizați (~$3/min Avatar IV).",
       "delTitle": "Eliminați avatarul?",
-      "delMessage": "„{{name}}” va fi eliminat din colecția ta de avatare. Fișierul original rămâne în Galerie."
+      "delMessage": "„{{name}}” va fi eliminat din colecția ta de avatare. Fișierul original rămâne în Galerie.",
+      "photoEmptyTitle": "Fotografia nu a fost încă încărcată"
     },
     "voice": {
       "title": "Voce și scenariu",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "O serie: câte un clip separat în fiecare dintre limbile {{count}}. Cu un avatar, HeyGen redă fața pentru fiecare limbă — mai scump.",
       "diarizeHintVoiceover": "Sunetul este peste videoclipul așa cum este. „Transcrierea vorbirii” este opțională: necesară pentru subtitrări și inserții pe rând.",
       "loudnormTitle": "Volumul vocii este uniform",
-      "loudnormSub": "părțile liniștite sunt accentuate, părțile zgomotoase sunt netezite — sunet profesional"
+      "loudnormSub": "părțile liniștite sunt accentuate, părțile zgomotoase sunt netezite — sunet profesional",
+      "recordingEmptyTitle": "Înregistrarea nu a fost încă încărcată",
+      "recordingEmptySub": "audio sau video din Galerie"
     },
     "lines": {
       "count_one": "{{count}} linie · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Schimba",
       "seriesAdd": "Adăugați videoclipuri la serie — câte un clip per videoclip",
       "seriesBilling": "Avatarul se facturează o singură dată pentru întreaga serie.",
-      "voiceoverBase": "În acest mod, videoclipul este baza cadrului: vocea și subtitrările merg deasupra."
+      "voiceoverBase": "În acest mod, videoclipul este baza cadrului: vocea și subtitrările merg deasupra.",
+      "emptyTitle": "Videoclipul nu a fost încă încărcat",
+      "emptySub": "alege din Galerie"
     },
     "subtitles": {
       "title": "Subtitrări",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Cât timp se joacă",
       "playFull": "Întregul videoclip",
       "playFirst": "Primele N secunde",
-      "durationHint": "secunde de la început, apoi o dispariție lină"
+      "durationHint": "secunde de la început, apoi o dispariție lină",
+      "emptyTitle": "Muzica nu a fost încă aleasă",
+      "emptySub": "se aude încet sub voce"
     },
     "format": {
       "label": "Format",
@@ -1416,7 +1423,10 @@
       "heading": "Bumper-uri de introducere și finalizare — opționale",
       "introEmpty": "Introducere — niciuna",
       "outroEmpty": "Final — niciunul",
-      "hint": "Un videoclip gata făcut din Galerie este atașat așa cum este, fără procesare: o introducere cu logo-ul (2–10 secunde), un final de tip „abonare”."
+      "hint": "Un videoclip gata făcut din Galerie este atașat așa cum este, fără procesare: o introducere cu logo-ul (2–10 secunde), un final de tip „abonare”.",
+      "introTitle": "Introducere",
+      "outroTitle": "Final",
+      "addSub": "adăugați un videoclip"
     },
     "layer": {
       "title": "Stratul superior",
@@ -1425,7 +1435,8 @@
       "hint": "Un fișier PNG dimensionat pentru cadru: un logo oriunde, un cadru, o legendă. Se așază peste întregul videoclip; subtitrările rămân deasupra stratului.",
       "progressTitle": "Bara de progres",
       "progressSub": "o bandă subțire de cronometru în partea de sus — spectatorii văd că videoclipul este scurt și îl urmăresc până la sfârșit",
-      "pngOnly": "Stratul trebuie să fie un fișier PNG sau WebP transparent — un fișier fără transparență ar acoperi întregul cadru."
+      "pngOnly": "Stratul trebuie să fie un fișier PNG sau WebP transparent — un fișier fără transparență ar acoperi întregul cadru.",
+      "emptySub": "PNG transparent"
     },
     "brand": {
       "button": "Kit de marcă",

@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Palikite „HeyGen“ studijos skirtuką atidarytą su aktyvia prenumerata.",
       "apiNote": "Per „HeyGen“ API – įveskite Nustatymai → Generacija, mokėjimas pagal poreikį (apie 3 USD/min. „Avatar IV“).",
       "delTitle": "Pašalinti avatarą?",
-      "delMessage": "„{{name}}“ bus pašalintas iš jūsų avatarų kolekcijos. Originalus failas liks galerijoje."
+      "delMessage": "„{{name}}“ bus pašalintas iš jūsų avatarų kolekcijos. Originalus failas liks galerijoje.",
+      "photoEmptyTitle": "Nuotrauka dar neįkelta"
     },
     "voice": {
       "title": "Balsas ir scenarijus",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Serija: atskiras klipas kiekviena iš {{count}} kalbų. Su avataru „HeyGen“ kiekviena kalba atvaizduoja veidą – brangiau.",
       "diarizeHintVoiceover": "Garsas vaizdo įraše transliuojamas toks, koks yra. „Transkribuoti kalbą“ yra neprivaloma: reikalinga subtitrams ir eilutėse esantiems intarpams.",
       "loudnormTitle": "Išlyginkite balso garsumą",
-      "loudnormSub": "Tylios dalys išryškinamos, garsios išlyginamos – profesionaliai skambantis garsas"
+      "loudnormSub": "Tylios dalys išryškinamos, garsios išlyginamos – profesionaliai skambantis garsas",
+      "recordingEmptyTitle": "Įrašas dar neįkeltas",
+      "recordingEmptySub": "garso arba vaizdo įrašai iš galerijos"
     },
     "lines": {
       "count_one": "{{count}} eilutė · ~{{sec}} sek.",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Pakeisti",
       "seriesAdd": "Pridėkite vaizdo įrašų prie serijos – po vieną klipą vienam vaizdo įrašui",
       "seriesBilling": "Avataras apmokestinamas vieną kartą už visą seriją.",
-      "voiceoverBase": "Šiuo režimu vaizdo įrašas yra kadro pagrindas: balsas ir subtitrai rodomi viršuje."
+      "voiceoverBase": "Šiuo režimu vaizdo įrašas yra kadro pagrindas: balsas ir subtitrai rodomi viršuje.",
+      "emptyTitle": "Vaizdo įrašas dar neįkeltas",
+      "emptySub": "pasirinkti iš galerijos"
     },
     "subtitles": {
       "title": "Subtitrai",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kiek laiko groja",
       "playFull": "Visas vaizdo įrašas",
       "playFirst": "Pirmosios N sekundžių",
-      "durationHint": "sekundžių nuo pradžios, tada sklandžiai išnyksta"
+      "durationHint": "sekundžių nuo pradžios, tada sklandžiai išnyksta",
+      "emptyTitle": "Muzika dar nepasirinkta",
+      "emptySub": "tyliai groja po balsu"
     },
     "format": {
       "label": "Formatas",
@@ -1416,7 +1423,10 @@
       "heading": "Įžanginiai ir išeinantys buferiai – neprivaloma",
       "introEmpty": "Įžanga – nėra",
       "outroEmpty": "Užbaigos – nėra",
-      "hint": "Pridedamas paruoštas vaizdo įrašas iš galerijos be jokio apdorojimo: logotipo įžanga (2–10 sek.), prenumeratos pabaiga."
+      "hint": "Pridedamas paruoštas vaizdo įrašas iš galerijos be jokio apdorojimo: logotipo įžanga (2–10 sek.), prenumeratos pabaiga.",
+      "introTitle": "Įžanga",
+      "outroTitle": "Baigiamasis",
+      "addSub": "pridėti vaizdo įrašą"
     },
     "layer": {
       "title": "Viršutinis sluoksnis",
@@ -1425,7 +1435,8 @@
       "hint": "PNG dydis pritaikytas rėmeliui: logotipas bet kur, rėmelis, antraštė. Uždengia visą vaizdo įrašą; subtitrai lieka virš sluoksnio.",
       "progressTitle": "Progreso juosta",
       "progressSub": "plona laikmačio juostelė viršuje – žiūrovai mato, kad vaizdo įrašas trumpas, ir žiūri iki galo",
-      "pngOnly": "Sluoksnis turi būti skaidrus PNG arba WebP – failas be skaidrumo uždengtų visą kadrą."
+      "pngOnly": "Sluoksnis turi būti skaidrus PNG arba WebP – failas be skaidrumo uždengtų visą kadrą.",
+      "emptySub": "skaidrus PNG"
     },
     "brand": {
       "button": "Prekės ženklo rinkinys",

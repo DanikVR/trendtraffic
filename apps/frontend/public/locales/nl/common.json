@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Houd het tabblad HeyGen Studio open met een actief abonnement.",
       "apiNote": "Via de HeyGen API — ga naar Instellingen → Generatie, betaling per gebruik (~$3/min Avatar IV).",
       "delTitle": "Avatar verwijderen?",
-      "delMessage": "'{{name}}' wordt verwijderd uit je avatarcollectie. Het originele bestand blijft in de galerij staan."
+      "delMessage": "'{{name}}' wordt verwijderd uit je avatarcollectie. Het originele bestand blijft in de galerij staan.",
+      "photoEmptyTitle": "Foto nog niet geüpload"
     },
     "voice": {
       "title": "Stem en script",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Een serie: een aparte clip in elk van de {{count}} talen. Met een avatar rendert HeyGen het gezicht voor elke taal — duurder.",
       "diarizeHintVoiceover": "De audio wordt ongewijzigd over de video heen geplakt. \"Spraak transcriberen\" is optioneel: nodig voor ondertitels en tekstinvoegingen per regel.",
       "loudnormTitle": "Zorg voor een gelijkmatig stemvolume",
-      "loudnormSub": "Stille gedeelten worden versterkt, luide gedeelten worden afgevlakt — professioneel klinkende audio"
+      "loudnormSub": "Stille gedeelten worden versterkt, luide gedeelten worden afgevlakt — professioneel klinkende audio",
+      "recordingEmptyTitle": "Opname nog niet geüpload",
+      "recordingEmptySub": "audio of video uit de galerij"
     },
     "lines": {
       "count_one": "{{count}} lijn · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Wijziging",
       "seriesAdd": "Voeg video's toe aan de serie - één clip per video.",
       "seriesBilling": "De avatar wordt eenmalig gefactureerd voor de gehele serie.",
-      "voiceoverBase": "In deze modus vormt de video de basis van het beeld: spraak en ondertitels komen erbovenop."
+      "voiceoverBase": "In deze modus vormt de video de basis van het beeld: spraak en ondertitels komen erbovenop.",
+      "emptyTitle": "Video nog niet geüpload",
+      "emptySub": "kies uit de galerij"
     },
     "subtitles": {
       "title": "Ondertitels",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hoe lang het duurt",
       "playFull": "De hele video",
       "playFirst": "Eerste N seconden",
-      "durationHint": "seconden vanaf het begin, dan een vloeiende fade-out."
+      "durationHint": "seconden vanaf het begin, dan een vloeiende fade-out.",
+      "emptyTitle": "Muziek nog niet gekozen",
+      "emptySub": "speelt zachtjes op de achtergrond."
     },
     "format": {
       "label": "Formaat",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- en outro-bumpers — optioneel",
       "introEmpty": "Intro — geen",
       "outroEmpty": "Outro — geen",
-      "hint": "Een kant-en-klaar filmpje uit de galerij is bijgevoegd, zonder enige bewerking: een logo-intro (2-10 sec) en een \"abonneer\"-outro."
+      "hint": "Een kant-en-klaar filmpje uit de galerij is bijgevoegd, zonder enige bewerking: een logo-intro (2-10 sec) en een \"abonneer\"-outro.",
+      "introTitle": "Intro",
+      "outroTitle": "Outro",
+      "addSub": "voeg een video toe"
     },
     "layer": {
       "title": "Bovenste laag",
@@ -1425,7 +1435,8 @@
       "hint": "Een PNG-bestand op de juiste afmetingen voor het frame: een logo, een frame of een onderschrift. Het bestand wordt over de hele video geplaatst; ondertitels blijven boven de laag.",
       "progressTitle": "Voortgangsbalk",
       "progressSub": "een dunne timerstrip bovenaan — kijkers zien dat de video kort is en kijken hem tot het einde.",
-      "pngOnly": "De laag moet een transparante PNG of WebP zijn; een bestand zonder transparantie zou het hele frame bedekken."
+      "pngOnly": "De laag moet een transparante PNG of WebP zijn; een bestand zonder transparantie zou het hele frame bedekken.",
+      "emptySub": "transparante PNG"
     },
     "brand": {
       "button": "Merkkit",

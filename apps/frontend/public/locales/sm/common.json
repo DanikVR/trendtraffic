@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Ia tatala pea le tab o le HeyGen studio i se saofaga o lo'o galue.",
       "apiNote": "E ala i le HeyGen API — ki i totonu o Fa'atulagaga → Fausiaina, totogi-a-o-e-fa'aaoga pili (~$3/min Avatar IV).",
       "delTitle": "Aveese le avatar?",
-      "delMessage": "O le a aveeseina le '{{name}}' mai lau aoina o avatar. O le faila muamua o loʻo tumau pea i le Gallery."
+      "delMessage": "O le a aveeseina le '{{name}}' mai lau aoina o avatar. O le faila muamua o loʻo tumau pea i le Gallery.",
+      "photoEmptyTitle": "E le'i lafoina le ata"
     },
     "voice": {
       "title": "Leo ma tusitusiga",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "O se faasologa: o se vaega eseese i gagana taʻitasi {{count}}. Faatasi ai ma se avatar, e faʻaalia e HeyGen le foliga mo gagana taʻitasi — e sili atu ona taugata.",
       "diarizeHintVoiceover": "E fa'asalalau le leo i luga o le vitio e pei ona i ai. E lē mana'omia le \"Transcribe speech\": e mana'omia mo subtitles ma fa'aopoopoga i laina ta'itasi.",
       "loudnormTitle": "Fa'alelei le leo",
-      "loudnormSub": "vaega filemu e si'itia, vaega leotele e fa'alelei — leo fa'alelei"
+      "loudnormSub": "vaega filemu e si'itia, vaega leotele e fa'alelei — leo fa'alelei",
+      "recordingEmptyTitle": "E le'i la'uina i luga le fa'amaumauga",
+      "recordingEmptySub": "leo po'o le vitio mai le Gallery"
     },
     "lines": {
       "count_one": "{{count}} laina · ~{{sec}} sekone",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Suiga",
       "seriesAdd": "Fa'aopoopo vitio i le fa'asologa — tasi le vaega pu'upu'u i le vitio ta'itasi",
       "seriesBilling": "E faatasi ona totogi le avatar mo le faasologa atoa.",
-      "voiceoverBase": "I lenei faiga, o le vitio o le faavae lea o le faavaa: o le leo ma faamatalaga i luga e alu i ai."
+      "voiceoverBase": "I lenei faiga, o le vitio o le faavae lea o le faavaa: o le leo ma faamatalaga i luga e alu i ai.",
+      "emptyTitle": "E le'i lafoina le vitio",
+      "emptySub": "filifili mai le Gallery"
     },
     "subtitles": {
       "title": "Ulutala Fa'aopoopo",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Le umi e ta'alo ai",
       "playFull": "Vitio atoa",
       "playFirst": "Muamua N sekone",
-      "durationHint": "sekone mai le amataga, ona sosoo ai lea ma se mou atu malie"
+      "durationHint": "sekone mai le amataga, ona sosoo ai lea ma se mou atu malie",
+      "emptyTitle": "E le'i filifilia lava musika",
+      "emptySub": "e ta'alo filemu i lalo o le leo"
     },
     "format": {
       "label": "Faatulagaga",
@@ -1416,7 +1423,10 @@
       "heading": "Fa'atomuaga ma fa'atomuaga — filifiliga",
       "introEmpty": "Fa'atomuaga — leai se tasi",
       "outroEmpty": "Fa'aopoopoga — leai se tasi",
-      "hint": "O lo'o fa'apipi'i atu se vitio ua uma ona saunia mai le Gallery e pei ona i ai, e leai se fa'agasologa: o se fa'atomuaga o le logo (2–10 sekone), o se fa'ai'uga \"lesitala\"."
+      "hint": "O lo'o fa'apipi'i atu se vitio ua uma ona saunia mai le Gallery e pei ona i ai, e leai se fa'agasologa: o se fa'atomuaga o le logo (2–10 sekone), o se fa'ai'uga \"lesitala\".",
+      "introTitle": "Fa'atomuaga",
+      "outroTitle": "Fa'aopoopoga",
+      "addSub": "fa'aopoopo se vitio"
     },
     "layer": {
       "title": "Vaega pito i luga",
@@ -1425,7 +1435,8 @@
       "hint": "O se PNG mo le fa'avaa: o se logo i soo se mea, o se fa'avaa, o se fa'amatalaga. E tu i luga o le vitio atoa; o fa'amatalaga laiti e tumau i luga a'e o le vaega.",
       "progressTitle": "Pa fa'asolo i luma",
       "progressSub": "o se fasi taimi manifinifi i le pito i luga — e vaʻai tagata matamata i le puʻupuʻu o le vitio ma matamata seʻia oʻo i le iʻuga",
-      "pngOnly": "E tatau ona avea le vaega (layer) ma se PNG manino po'o se WebP — o se faila e aunoa ma se manino o le a ufiufi ai le fa'avaa atoa."
+      "pngOnly": "E tatau ona avea le vaega (layer) ma se PNG manino po'o se WebP — o se faila e aunoa ma se manino o le a ufiufi ai le fa'avaa atoa.",
+      "emptySub": "PNG manino"
     },
     "brand": {
       "button": "Meafaigaluega fa'ailoga",

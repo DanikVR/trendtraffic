@@ -1216,7 +1216,8 @@
       "extKeepOpen": "HeyGen studiyasi yorlig'ini faol obuna bilan ochiq qoldiring.",
       "apiNote": "HeyGen API orqali — Sozlamalar → Generatsiya, to'lov asosida to'lov (~$3/min Avatar IV) ni kiriting.",
       "delTitle": "Avatar olib tashlansinmi?",
-      "delMessage": "'{{name}}' avatar to'plamingizdan olib tashlanadi. Asl fayl Galereyada qoladi."
+      "delMessage": "'{{name}}' avatar to'plamingizdan olib tashlanadi. Asl fayl Galereyada qoladi.",
+      "photoEmptyTitle": "Surat hali yuklanmagan"
     },
     "voice": {
       "title": "Ovoz va skript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Seriya: {{count}} tillarining har birida alohida klip. Avatar yordamida HeyGen har bir til uchun yuzni renderlaydi — qimmatroq.",
       "diarizeHintVoiceover": "Audio videoni qanday bo'lsa, shundayligicha uzatadi. “Nutqni transkripsiya qilish” ixtiyoriy: subtitrlar va har bir qator qo'shimchalari uchun kerak.",
       "loudnormTitle": "Ovoz balandligini tenglashtirish",
-      "loudnormSub": "jim qismlar ko'tariladi, baland qismlar tekislanadi — professional ovoz"
+      "loudnormSub": "jim qismlar ko'tariladi, baland qismlar tekislanadi — professional ovoz",
+      "recordingEmptyTitle": "Yozuv hali yuklanmagan",
+      "recordingEmptySub": "Galereyadan audio yoki video"
     },
     "lines": {
       "count_one": "{{count}} qator · ~{{sec}} soniya",
@@ -1281,7 +1284,9 @@
       "seriesChange": "O'zgarish",
       "seriesAdd": "Seriyaga videolar qo'shing — har bir video uchun bitta klip",
       "seriesBilling": "Avatar butun serial uchun bir marta taqdim etiladi.",
-      "voiceoverBase": "Bu rejimda video kadrning asosi hisoblanadi: ovoz va subtitrlar tepada joylashgan."
+      "voiceoverBase": "Bu rejimda video kadrning asosi hisoblanadi: ovoz va subtitrlar tepada joylashgan.",
+      "emptyTitle": "Video hali yuklanmagan",
+      "emptySub": "Galereyadan tanlang"
     },
     "subtitles": {
       "title": "Subtitrlar",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Qancha vaqt o'ynaydi",
       "playFull": "Butun video",
       "playFirst": "Birinchi N soniya",
-      "durationHint": "boshidan bir necha soniya o'tgach, keyin silliq pasayish"
+      "durationHint": "boshidan bir necha soniya o'tgach, keyin silliq pasayish",
+      "emptyTitle": "Musiqa hali tanlanmagan",
+      "emptySub": "ovoz ostida jimgina o'ynaydi"
     },
     "format": {
       "label": "Formatlash",
@@ -1416,7 +1423,10 @@
       "heading": "Kirish va tashqi bamperlar — ixtiyoriy",
       "introEmpty": "Kirish — yo'q",
       "outroEmpty": "Chiqish — yo'q",
-      "hint": "Galereyadan tayyor video ilova qilingan, ishlov berilmaydi: logotipga kirish (2–10 soniya), \"obuna bo'lish\" xulosasi."
+      "hint": "Galereyadan tayyor video ilova qilingan, ishlov berilmaydi: logotipga kirish (2–10 soniya), \"obuna bo'lish\" xulosasi.",
+      "introTitle": "Kirish",
+      "outroTitle": "Tashqi ko'rinish",
+      "addSub": "video qo'shish"
     },
     "layer": {
       "title": "Yuqori qatlam",
@@ -1425,7 +1435,8 @@
       "hint": "Kadr uchun PNG o'lchami: istalgan joyda logotip, kadr, sarlavha. Butun video ustida joylashgan; subtitrlar qatlam ustida qoladi.",
       "progressTitle": "Jarayon paneli",
       "progressSub": "yuqori qismida yupqa taymer tasmasi — tomoshabinlar videoning qisqa ekanligini ko'rishadi va oxirigacha tomosha qilishadi",
-      "pngOnly": "Qatlam shaffof PNG yoki WebP bo'lishi kerak — shaffofligi bo'lmagan fayl butun kadrni qoplaydi."
+      "pngOnly": "Qatlam shaffof PNG yoki WebP bo'lishi kerak — shaffofligi bo'lmagan fayl butun kadrni qoplaydi.",
+      "emptySub": "shaffof PNG"
     },
     "brand": {
       "button": "Brend to'plami",

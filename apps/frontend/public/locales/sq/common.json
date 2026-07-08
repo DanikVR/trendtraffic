@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mbajeni të hapur skedën e studios HeyGen me një abonim aktiv.",
       "apiNote": "Nëpërmjet HeyGen API — kyçni te Cilësimet → Gjenerimi, faturimi me pagesë sipas përdorimit (~$3/min Avatar IV).",
       "delTitle": "Të hiqet avatari?",
-      "delMessage": "'{{name}}' do të hiqet nga koleksioni juaj i avatarëve. Skedari origjinal mbetet në Galeri."
+      "delMessage": "'{{name}}' do të hiqet nga koleksioni juaj i avatarëve. Skedari origjinal mbetet në Galeri.",
+      "photoEmptyTitle": "Fotografia nuk është ngarkuar ende"
     },
     "voice": {
       "title": "Zëri dhe skenari",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Një seri: një klip i veçantë në secilën prej gjuhëve {{count}}. Me një avatar, HeyGen paraqet pamjen për çdo gjuhë — më e kushtueshme.",
       "diarizeHintVoiceover": "Audioja kalon mbi video ashtu siç është. \"Transkribimi i të folurit\" është opsional: i nevojshëm për titrat dhe futjet për çdo rresht.",
       "loudnormTitle": "Ekuilibroni volumin e zërit",
-      "loudnormSub": "pjesët e qeta ngrihen, pjesët e zhurmshme zbuten — audio me tingull profesional"
+      "loudnormSub": "pjesët e qeta ngrihen, pjesët e zhurmshme zbuten — audio me tingull profesional",
+      "recordingEmptyTitle": "Regjistrimi nuk është ngarkuar ende",
+      "recordingEmptySub": "audio ose video nga Galeria"
     },
     "lines": {
       "count_one": "{{count}} linjë · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Ndrysho",
       "seriesAdd": "Shto video në seri — një klip për video",
       "seriesBilling": "Avatari paraqitet një herë për të gjithë serialin.",
-      "voiceoverBase": "Në këtë modalitet, videoja është baza e kuadrit: zëri dhe titrat shkojnë sipër."
+      "voiceoverBase": "Në këtë modalitet, videoja është baza e kuadrit: zëri dhe titrat shkojnë sipër.",
+      "emptyTitle": "Videoja nuk është ngarkuar ende",
+      "emptySub": "zgjidh nga Galeria"
     },
     "subtitles": {
       "title": "Titra",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Sa kohë luan",
       "playFull": "Videoja e plotë",
       "playFirst": "Sekondat e para N",
-      "durationHint": "sekonda nga fillimi, pastaj një zbehje e lehtë"
+      "durationHint": "sekonda nga fillimi, pastaj një zbehje e lehtë",
+      "emptyTitle": "Muzika nuk është zgjedhur ende",
+      "emptySub": "luan në heshtje nën zë"
     },
     "format": {
       "label": "Formati",
@@ -1416,7 +1423,10 @@
       "heading": "Parakolpët hyrës dhe dalës — opsionalë",
       "introEmpty": "Hyrje — asnjë",
       "outroEmpty": "Outro — asnjë",
-      "hint": "Një video e gatshme nga Galeria është bashkëngjitur siç është, pa përpunim: një hyrje e logos (2–10 sekonda), një mbyllje e \"abonohu\"."
+      "hint": "Një video e gatshme nga Galeria është bashkëngjitur siç është, pa përpunim: një hyrje e logos (2–10 sekonda), një mbyllje e \"abonohu\".",
+      "introTitle": "Hyrje",
+      "outroTitle": "Outro",
+      "addSub": "shto një video"
     },
     "layer": {
       "title": "Shtresa e sipërme",
@@ -1425,7 +1435,8 @@
       "hint": "Një PNG me madhësinë e kornizës: një logo kudo, një kornizë, një mbishkrim. Vendoset mbi të gjithë videon; titrat qëndrojnë mbi shtresën.",
       "progressTitle": "Shiriti i progresit",
       "progressSub": "një shirit i hollë kohëmatësi në krye — shikuesit e shohin videon që është e shkurtër dhe e shikojnë deri në fund",
-      "pngOnly": "Shtresa duhet të jetë një PNG ose WebP transparente — një skedar pa transparencë do të mbulonte të gjithë kornizën."
+      "pngOnly": "Shtresa duhet të jetë një PNG ose WebP transparente — një skedar pa transparencë do të mbulonte të gjithë kornizën.",
+      "emptySub": "PNG transparente"
     },
     "brand": {
       "button": "Kit marke",

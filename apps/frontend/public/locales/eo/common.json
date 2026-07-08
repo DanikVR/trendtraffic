@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Lasu la langeton HeyGen studio malfermita kun aktiva abono.",
       "apiNote": "Per la HeyGen API — entajpu Agordojn → Generacion, fakturado laŭuze (~$3/min Avatar IV).",
       "delTitle": "Ĉu forigi avataron?",
-      "delMessage": "'{{name}}' estos forigita el via avatara kolekto. La originala dosiero restas en la Galerio."
+      "delMessage": "'{{name}}' estos forigita el via avatara kolekto. La originala dosiero restas en la Galerio.",
+      "photoEmptyTitle": "Foto ankoraŭ ne alŝutita"
     },
     "voice": {
       "title": "Voĉo kaj manuskripto",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Serio: aparta filmeto en ĉiu el la lingvoj de {{count}}. Kun avataro, HeyGen bildigas la vizaĝon por ĉiu lingvo — pli multekosta.",
       "diarizeHintVoiceover": "La aŭdio iras super la filmeton tia, kia ĝi estas. \"Transskribi paroladon\" estas laŭvola: necesa por subtekstoj kaj poliniaj enmetaĵoj.",
       "loudnormTitle": "Egaligu voĉvolumenon",
-      "loudnormSub": "kvietaj partoj leviĝas, laŭtaj partoj glatiĝas — profesia sona aŭdio"
+      "loudnormSub": "kvietaj partoj leviĝas, laŭtaj partoj glatiĝas — profesia sona aŭdio",
+      "recordingEmptyTitle": "Registraĵo ankoraŭ ne alŝutita",
+      "recordingEmptySub": "aŭdio aŭ video el la Galerio"
     },
     "lines": {
       "count_one": "{{count}} linio · ~{{sec}} sekundo",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Ŝanĝo",
       "seriesAdd": "Aldonu filmetojn al la serio — unu filmeto por filmeto",
       "seriesBilling": "La avataro estas fakturita unufoje por la tuta serio.",
-      "voiceoverBase": "En ĉi tiu reĝimo la video estas la bazo de la kadro: voĉo kaj subtekstoj iras supre."
+      "voiceoverBase": "En ĉi tiu reĝimo la video estas la bazo de la kadro: voĉo kaj subtekstoj iras supre.",
+      "emptyTitle": "Filmeto ankoraŭ ne alŝutita",
+      "emptySub": "elekti el la galerio"
     },
     "subtitles": {
       "title": "Subtekstoj",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Kiom longe ĝi ludas",
       "playFull": "Tuta filmeto",
       "playFirst": "Unuaj N sekundoj",
-      "durationHint": "sekundojn de la komenco, poste glata fadforiĝo"
+      "durationHint": "sekundojn de la komenco, poste glata fadforiĝo",
+      "emptyTitle": "Muziko ankoraŭ ne elektita",
+      "emptySub": "ludas kviete sub la voĉo"
     },
     "format": {
       "label": "Formato",
@@ -1416,7 +1423,10 @@
       "heading": "Enkondukaj kaj finaj bufroj — laŭvolaj",
       "introEmpty": "Enkonduko — neniu",
       "outroEmpty": "Fino — neniu",
-      "hint": "Preta filmeto el la Galerio estas alligita tia, kia ĝi estas, sen prilaborado: enkonduko kun la emblemo (2–10 sekundoj), fino por \"aboni\"."
+      "hint": "Preta filmeto el la Galerio estas alligita tia, kia ĝi estas, sen prilaborado: enkonduko kun la emblemo (2–10 sekundoj), fino por \"aboni\".",
+      "introTitle": "Enkonduko",
+      "outroTitle": "Fino",
+      "addSub": "aldoni filmeton"
     },
     "layer": {
       "title": "Supra tavolo",
@@ -1425,7 +1435,8 @@
       "hint": "PNG-dosiero laŭ la grandeco de la kadro: emblemo ie ajn, kadro, apudskribo. Sidas super la tuta filmeto; subtekstoj restas super la tavolo.",
       "progressTitle": "Progresbreto",
       "progressSub": "maldika tempmezurilo supre — spektantoj vidas, ke la filmeto estas mallonga kaj rigardas ĝis la fino",
-      "pngOnly": "La tavolo devas esti travidebla PNG aŭ WebP — dosiero sen travidebleco kovrus la tutan kadron."
+      "pngOnly": "La tavolo devas esti travidebla PNG aŭ WebP — dosiero sen travidebleco kovrus la tutan kadron.",
+      "emptySub": "travidebla PNG"
     },
     "brand": {
       "button": "Marka ilaro",

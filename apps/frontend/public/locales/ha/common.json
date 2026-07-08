@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Ci gaba da buɗe shafin HeyGen studio tare da biyan kuɗi mai aiki.",
       "apiNote": "Ta hanyar HeyGen API — maɓalli a cikin Saituna → Samarwa, biyan kuɗi na biyan kuɗi (~$3/min Avatar IV).",
       "delTitle": "Cire hoton avatar?",
-      "delMessage": "Za a cire '{{name}}' daga tarin avatar ɗinka. Fayil ɗin asali yana nan a cikin Gallery."
+      "delMessage": "Za a cire '{{name}}' daga tarin avatar ɗinka. Fayil ɗin asali yana nan a cikin Gallery.",
+      "photoEmptyTitle": "Ba a ɗora hoto ba tukuna"
     },
     "voice": {
       "title": "Murya & rubutu",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Jerin shirye-shirye: wani faifan bidiyo daban a cikin kowace harshe {{count}}. Tare da hoton hoto, HeyGen yana nuna fuskar kowace harshe - mafi tsada.",
       "diarizeHintVoiceover": "Sautin ya yi bayani game da bidiyon kamar yadda yake. \"Rubuta magana\" zaɓi ne: ana buƙatar shi don ƙananan kalmomi da kuma kowane layi da aka saka.",
       "loudnormTitle": "Daidaita ingancin sauti",
-      "loudnormSub": "Ana ɗaga sassa masu natsuwa, ana sassa masu ƙarfi suna lanƙwasa — sauti mai kyau"
+      "loudnormSub": "Ana ɗaga sassa masu natsuwa, ana sassa masu ƙarfi suna lanƙwasa — sauti mai kyau",
+      "recordingEmptyTitle": "Ba a ɗora rikodin ba tukuna",
+      "recordingEmptySub": "sauti ko bidiyo daga Gallery"
     },
     "lines": {
       "count_one": "Layi na {{count}} · ~{{sec}} daƙiƙa",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Sauyi",
       "seriesAdd": "Ƙara bidiyo zuwa jerin — bidiyo ɗaya ga kowane bidiyo",
       "seriesBilling": "Ana lissafin avatar sau ɗaya ga dukkan jerin.",
-      "voiceoverBase": "A cikin wannan yanayin bidiyon shine tushen firam ɗin: murya da taken rubutu suna kan gaba."
+      "voiceoverBase": "A cikin wannan yanayin bidiyon shine tushen firam ɗin: murya da taken rubutu suna kan gaba.",
+      "emptyTitle": "Ba a ɗora bidiyo ba tukuna",
+      "emptySub": "zaɓi daga Gallery"
     },
     "subtitles": {
       "title": "Takaitattun kalmomi",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Tsawon lokacin da zai ɗauka yana wasa",
       "playFull": "Cikakken bidiyo",
       "playFirst": "Daƙiƙa N na farko",
-      "durationHint": "Daƙiƙa kaɗan daga farko, sannan a yi shiru"
+      "durationHint": "Daƙiƙa kaɗan daga farko, sannan a yi shiru",
+      "emptyTitle": "Ba a zaɓi kiɗa ba tukuna",
+      "emptySub": "yana takawa a hankali a ƙarƙashin muryar"
     },
     "format": {
       "label": "Tsarin",
@@ -1416,7 +1423,10 @@
       "heading": "Bumpers na Gabatarwa da na waje - zaɓi ne",
       "introEmpty": "Gabatarwa - babu",
       "outroEmpty": "Babu - babu",
-      "hint": "An haɗa bidiyo da aka shirya daga Gallery kamar yadda yake, babu sarrafawa: gabatarwar tambari (daƙiƙa 2-10), fitowar \"subscribe\"."
+      "hint": "An haɗa bidiyo da aka shirya daga Gallery kamar yadda yake, babu sarrafawa: gabatarwar tambari (daƙiƙa 2-10), fitowar \"subscribe\".",
+      "introTitle": "Gabatarwa",
+      "outroTitle": "Outro",
+      "addSub": "ƙara bidiyo"
     },
     "layer": {
       "title": "Babban Layer",
@@ -1425,7 +1435,8 @@
       "hint": "Girman PNG na firam ɗin: tambari a ko'ina, firam, taken kai tsaye. Yana zaune akan bidiyon gaba ɗaya; ƙananan taken suna kan saman layin.",
       "progressTitle": "Sandar ci gaba",
       "progressSub": "siririn tsiri na agogo a saman — masu kallo suna ganin bidiyon gajere ne kuma suna kallo har ƙarshe",
-      "pngOnly": "Dole ne Layer ɗin ya zama PNG ko WebP mai haske - fayil ɗin da ba shi da haske zai rufe dukkan firam ɗin."
+      "pngOnly": "Dole ne Layer ɗin ya zama PNG ko WebP mai haske - fayil ɗin da ba shi da haske zai rufe dukkan firam ɗin.",
+      "emptySub": "PNG mai haske"
     },
     "brand": {
       "button": "Kayan alama",

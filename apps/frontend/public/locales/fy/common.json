@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Hâld it ljepblêd HeyGen studio iepen mei in aktyf abonnemint.",
       "apiNote": "Fia de HeyGen API — ynfiere yn Ynstellings → Generaasje, betelje-as-jo-geane fakturearring (~$3/min Avatar IV).",
       "delTitle": "Avatar fuortsmite?",
-      "delMessage": "'{{name}}' sil út dyn avatarkolleksje fuortsmiten wurde. It orizjinele bestân bliuwt yn 'e Galery."
+      "delMessage": "'{{name}}' sil út dyn avatarkolleksje fuortsmiten wurde. It orizjinele bestân bliuwt yn 'e Galery.",
+      "photoEmptyTitle": "Foto noch net uploaden"
     },
     "voice": {
       "title": "Stim & skript",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "In searje: in aparte klip yn elk fan 'e {{count}} talen. Mei in avatar rendert HeyGen it gesicht foar elke taal - djoerder.",
       "diarizeHintVoiceover": "De audio giet oer de fideo sa't er is. \"Spraak transkribearje\" is opsjoneel: nedich foar ûndertiteling en ynfoegings per rigel.",
       "loudnormTitle": "Even út stimvolume",
-      "loudnormSub": "stille dielen wurde ferhege, lûde dielen glêdder - profesjoneel klinkende audio"
+      "loudnormSub": "stille dielen wurde ferhege, lûde dielen glêdder - profesjoneel klinkende audio",
+      "recordingEmptyTitle": "Opname noch net uploaden",
+      "recordingEmptySub": "audio of fideo út 'e Galery"
     },
     "lines": {
       "count_one": "{{count}} rigel · ~{{sec}} sek",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Feroaring",
       "seriesAdd": "Fideo's tafoegje oan 'e searje - ien klip per fideo",
       "seriesBilling": "De avatar wurdt ien kear foar de hiele searje yn rekken brocht.",
-      "voiceoverBase": "Yn dizze modus is de fideo de basis fan it frame: stim en ûndertiteling komme boppe-op."
+      "voiceoverBase": "Yn dizze modus is de fideo de basis fan it frame: stim en ûndertiteling komme boppe-op.",
+      "emptyTitle": "Fideo noch net uploaden",
+      "emptySub": "kieze út Galery"
     },
     "subtitles": {
       "title": "Undertitels",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Hoe lang it spilet",
       "playFull": "Hiele fideo",
       "playFirst": "Earste N sekonden",
-      "durationHint": "sekonden fan it begjin ôf, dan in glêde fade-out"
+      "durationHint": "sekonden fan it begjin ôf, dan in glêde fade-out",
+      "emptyTitle": "Muzyk noch net keazen",
+      "emptySub": "spilet stil ûnder de stim"
     },
     "format": {
       "label": "Formaat",
@@ -1416,7 +1423,10 @@
       "heading": "Intro- en outro-bumpers - opsjoneel",
       "introEmpty": "Ynlieding - gjin",
       "outroEmpty": "Outro - gjin",
-      "hint": "In klearmakke fideo út 'e Galery is taheakke sa't it is, gjin ferwurking: in logo-yntro (2–10 sek), in \"abonnearje\"-outro."
+      "hint": "In klearmakke fideo út 'e Galery is taheakke sa't it is, gjin ferwurking: in logo-yntro (2–10 sek), in \"abonnearje\"-outro.",
+      "introTitle": "Ynlieding",
+      "outroTitle": "Outro",
+      "addSub": "in fideo tafoegje"
     },
     "layer": {
       "title": "Boppeste laach",
@@ -1425,7 +1435,8 @@
       "hint": "In PNG-grutte foar it frame: in logo earne oars, in frame, in ûnderskrift. Sit oer de hiele fideo; ûndertitels bliuwe boppe de laach.",
       "progressTitle": "Foarútgongsbalke",
       "progressSub": "in tinne timerstrip oan 'e boppekant - sjoggers sjogge dat de fideo koart is en sjogge oant it ein",
-      "pngOnly": "De laach moat in transparante PNG of WebP wêze - in bestân sûnder transparânsje soe it hiele frame dekke."
+      "pngOnly": "De laach moat in transparante PNG of WebP wêze - in bestân sûnder transparânsje soe it hiele frame dekke.",
+      "emptySub": "transparante PNG"
     },
     "brand": {
       "button": "Merkkit",

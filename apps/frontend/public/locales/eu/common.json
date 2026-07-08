@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantendu HeyGen estudioko fitxa irekita harpidetza aktibo batekin.",
       "apiNote": "HeyGen APIaren bidez — Ezarpenak → Sorkuntza atalean idatzi, erabili ahala fakturazioa (~$3/min Avatar IV).",
       "delTitle": "Avatarra kendu?",
-      "delMessage": "'{{name}}' zure avatar bildumatik kenduko da. Jatorrizko fitxategia Galerian geratuko da."
+      "delMessage": "'{{name}}' zure avatar bildumatik kenduko da. Jatorrizko fitxategia Galerian geratuko da.",
+      "photoEmptyTitle": "Argazkia oraindik ez da igo"
     },
     "voice": {
       "title": "Ahotsa eta gidoia",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Serie bat: {{count}} hizkuntza bakoitzean klip bereizi bat. Avatar batekin, HeyGenek hizkuntza guztietako aurpegia irudikatzen du — garestiagoa.",
       "diarizeHintVoiceover": "Audioa bideoaren gainean doa dagoen bezala. \"Ahotsa transkribatu\" aukerakoa da: beharrezkoa da azpitituluetarako eta lerro bakoitzeko txertaketetarako.",
       "loudnormTitle": "Ahots-bolumena berdindu",
-      "loudnormSub": "zati isilak altxatu egiten dira, zati ozenak leundu — audio profesionala"
+      "loudnormSub": "zati isilak altxatu egiten dira, zati ozenak leundu — audio profesionala",
+      "recordingEmptyTitle": "Grabaketa oraindik ez da igo",
+      "recordingEmptySub": "Galeriako audioa edo bideoa"
     },
     "lines": {
       "count_one": "{{count}} lerroa · ~{{sec}} seg",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Aldaketa",
       "seriesAdd": "Gehitu bideoak serieari — bideo bakoitzeko klip bat",
       "seriesBilling": "Avatarra behin fakturatzen da serie osoan.",
-      "voiceoverBase": "Modu honetan bideoa da fotogramaren oinarria: ahotsa eta azpitituluak gainean doaz."
+      "voiceoverBase": "Modu honetan bideoa da fotogramaren oinarria: ahotsa eta azpitituluak gainean doaz.",
+      "emptyTitle": "Bideoa oraindik ez da igo",
+      "emptySub": "aukeratu Galeriatik"
     },
     "subtitles": {
       "title": "Azpitituluak",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Zenbat denbora jokatzen duen",
       "playFull": "Bideo osoa",
       "playFirst": "Lehenengo N segundoak",
-      "durationHint": "hasieratik segundo batzuk, eta gero itzaltze leun bat"
+      "durationHint": "hasieratik segundo batzuk, eta gero itzaltze leun bat",
+      "emptyTitle": "Musika oraindik ez da aukeratu",
+      "emptySub": "ahotsaren azpian isilik jotzen du"
     },
     "format": {
       "label": "Formatua",
@@ -1416,7 +1423,10 @@
       "heading": "Sarrerako eta amaierako bumperrak — aukerakoak",
       "introEmpty": "Sarrera — bat ere ez",
       "outroEmpty": "Amaiera — bat ere ez",
-      "hint": "Galeriatik prest egindako bideo bat erantsita dago, prozesatu gabe: logotipoaren aurkezpena (2-10 segundu), \"harpidetu\" amaiera."
+      "hint": "Galeriatik prest egindako bideo bat erantsita dago, prozesatu gabe: logotipoaren aurkezpena (2-10 segundu), \"harpidetu\" amaiera.",
+      "introTitle": "Sarrera",
+      "outroTitle": "Amaiera",
+      "addSub": "bideo bat gehitu"
     },
     "layer": {
       "title": "Goiko geruza",
@@ -1425,7 +1435,8 @@
       "hint": "PNG bat markorako neurrira: logotipo bat edozein lekutan, marko bat, azpititulu bat. Bideo osoaren gainean kokatzen da; azpitituluak geruzaren gainean geratzen dira.",
       "progressTitle": "Aurrerapen-barra",
       "progressSub": "goialdean tenporizadore-zerrenda mehe bat — ikusleek bideoa laburra dela ikusten dute eta amaierara arte ikusten dute",
-      "pngOnly": "Geruza PNG edo WebP gardena izan behar da — gardentasunik gabeko fitxategi batek marko osoa estaliko luke."
+      "pngOnly": "Geruza PNG edo WebP gardena izan behar da — gardentasunik gabeko fitxategi batek marko osoa estaliko luke.",
+      "emptySub": "PNG gardena"
     },
     "brand": {
       "button": "Marka-kit-a",

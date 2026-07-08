@@ -1216,7 +1216,8 @@
       "extKeepOpen": "Mantene a tabulazione di u studio HeyGen aperta cù un abbonamentu attivu.",
       "apiNote": "Via l'API HeyGen — inserisci Impostazioni → Generazione, fatturazione pay-as-you-go (~$3/min Avatar IV).",
       "delTitle": "Eliminà l'avatar?",
-      "delMessage": "'{{name}}' serà eliminatu da a vostra cullezzione d'avatar. U schedariu originale ferma in a Galleria."
+      "delMessage": "'{{name}}' serà eliminatu da a vostra cullezzione d'avatar. U schedariu originale ferma in a Galleria.",
+      "photoEmptyTitle": "Foto micca ancu caricata"
     },
     "voice": {
       "title": "Voce è sceneggiatura",
@@ -1245,7 +1246,9 @@
       "langsHintSolo": "Una seria: un clip separatu in ognuna di e lingue {{count}}. Cù un avatar, HeyGen rende a faccia per ogni lingua - più caru.",
       "diarizeHintVoiceover": "L'audio và sopra à u video cusì com'è. \"Trascrive u discorsu\" hè facultativu: necessariu per i sottotitoli è l'inserzioni per linea.",
       "loudnormTitle": "Ancu u vulume di a voce",
-      "loudnormSub": "e parte tranquille sò elevate, e parte forti sò smussate - audio prufessiunale"
+      "loudnormSub": "e parte tranquille sò elevate, e parte forti sò smussate - audio prufessiunale",
+      "recordingEmptyTitle": "Registrazione micca ancu caricata",
+      "recordingEmptySub": "audio o video da a Galleria"
     },
     "lines": {
       "count_one": "linea {{count}} · ~{{sec}} sec",
@@ -1281,7 +1284,9 @@
       "seriesChange": "Cambiamentu",
       "seriesAdd": "Aghjunghje video à a serie - un clip per video",
       "seriesBilling": "L'avatar hè fatturatu una volta per tutta a serie.",
-      "voiceoverBase": "In questu modu, u video hè a basa di u quadru: a voce è i sottotitoli vanu in cima."
+      "voiceoverBase": "In questu modu, u video hè a basa di u quadru: a voce è i sottotitoli vanu in cima.",
+      "emptyTitle": "Video micca ancu caricatu",
+      "emptySub": "sceglite da a Galleria"
     },
     "subtitles": {
       "title": "Sottotitoli",
@@ -1307,7 +1312,9 @@
       "durationLabel": "Quantu tempu si ghjoca",
       "playFull": "Tuttu u video",
       "playFirst": "Primi N secondi",
-      "durationHint": "seconde da l'iniziu, dopu una fade-out liscia"
+      "durationHint": "seconde da l'iniziu, dopu una fade-out liscia",
+      "emptyTitle": "Musica micca ancu scelta",
+      "emptySub": "ghjoca pianu pianu sottu à voce"
     },
     "format": {
       "label": "Formatu",
@@ -1416,7 +1423,10 @@
       "heading": "Bumpers d'introduzione è di chiusura - opzionali",
       "introEmpty": "Introduzione — nisuna",
       "outroEmpty": "Outro — nimu",
-      "hint": "Un video prontu à aduprà da a Galleria hè allegatu cusì com'è, senza trasfurmazione: una introduzione di u logò (2-10 sec), un finale di \"abbonamentu\"."
+      "hint": "Un video prontu à aduprà da a Galleria hè allegatu cusì com'è, senza trasfurmazione: una introduzione di u logò (2-10 sec), un finale di \"abbonamentu\".",
+      "introTitle": "Introduzione",
+      "outroTitle": "Finu",
+      "addSub": "aghjunghje un video"
     },
     "layer": {
       "title": "Stratu superiore",
@@ -1425,7 +1435,8 @@
       "hint": "Un PNG di a dimensione di a cornice: un logò in ogni locu, una cornice, una didascalia. Si trova sopra à tuttu u video; i sottotitoli stanu sopra à u stratu.",
       "progressTitle": "Barra di prugressu",
       "progressSub": "una striscia di timer fina in cima - i telespettatori vedenu chì u video hè cortu è guardanu finu à a fine",
-      "pngOnly": "U stratu deve esse un PNG trasparente o WebP - un schedariu senza trasparenza cuprirebbe tuttu u quadru."
+      "pngOnly": "U stratu deve esse un PNG trasparente o WebP - un schedariu senza trasparenza cuprirebbe tuttu u quadru.",
+      "emptySub": "PNG trasparente"
     },
     "brand": {
       "button": "Kit di marca",
