@@ -153,8 +153,10 @@ export default function GalleryPage() {
   const [trendQueries, setTrendQueries] = useState<TrendQueryItem[]>([]);
   // «UGC»: макеты (бренд-киты студии).
   const [kits, setKits] = useState<BrandKit[]>([]);
-  // «UGC» → Авто: шаблоны конвейера (ключевик-бейдж) + автоматические ролики (folder='auto-ugc').
-  const [ugcTpls, setUgcTpls] = useState<{ id: string; name: string; trendKeyword?: string; autopublish?: any }[]>([]);
+  // «UGC» → карточки сохранённых роликов (спека = превью + __flowId для «продолжить») + авто-ролики.
+  const [ugcTpls, setUgcTpls] = useState<{ id: string; name: string; trendKeyword?: string; autopublish?: any; spec?: any }[]>([]);
+  // Подфильтр вкладки UGC: «Ролики» (созданные нами) · «Авто» (конвейер) · «Макеты» (бренд-киты).
+  const [ugcSub, setUgcSub] = useState<'rolls' | 'auto' | 'kits'>('rolls');
   const [autoUgc, setAutoUgc] = useState<GalleryItem[]>([]);
   // «Hotebook»: активные генерации (плейсхолдер-карточки со спиннером до готовности артефакта).
   const [hbJobs, setHbJobs] = useState<HbJob[]>([]);
@@ -554,6 +556,15 @@ export default function GalleryPage() {
     title: `Удалить выбранные (${selected.size})?`, message: 'Все выбранные файлы будут удалены с диска безвозвратно.',
     onConfirm: () => { setConfirm(null); doDeleteSelected(); },
   });
+  // Удалить сохранённый UGC-ролик (шаблон) из Галереи. Готовое видео (если собрано) не трогаем.
+  const askDeleteTpl = (k: { id: string; name: string }) => setConfirm({
+    title: 'Удалить ролик?', message: `«${k.name}» уберётся из Галереи. Собранное видео (если есть) останется.`,
+    onConfirm: async () => {
+      setConfirm(null);
+      try { await fetch(`/api/render/ugc/templates/${k.id}`, { method: 'DELETE', headers: jsonHeaders() }); } catch { /* мягко */ }
+      setUgcTpls((p) => p.filter((x) => x.id !== k.id));
+    },
+  });
 
   // Скачать один файл на устройство (статика /uploads — same-origin, без авторизации).
   const downloadOne = (v: GalleryItem) => {
@@ -749,74 +760,94 @@ export default function GalleryPage() {
           </div>
           )}
 
-          {/* «UGC»: макеты (бренд-киты студии) — рядом с рендерами */}
-          {tab === 'ugc' && kits.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-[13px] font-700" style={{ color: 'var(--text-secondary)' }}>
-                <LayoutTemplate size={15} /> Макеты:
-              </span>
-              {kits.map((k) => (
-                <span key={k.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  <button type="button" onClick={() => navigate('/flow?open=ugc')} title="Открыть UGC-студию — макет применяется в шаге «Оформление»"
-                    className="text-[13px] font-600" style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    {k.name || 'Макет'}
+          {/* «UGC»: подфильтр-сортировка — «Ролики» (созданные нами, карточками) · «Авто» (конвейер)
+              · «Макеты» (бренд-киты). Содержимое сетки ниже зависит от выбранного фильтра. */}
+          {tab === 'ugc' && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {([['rolls', 'Ролики', ugcTpls.length], ['auto', 'Авто', autoUgc.length], ['kits', 'Макеты', kits.length]] as const).map(([key, label, count]) => {
+                const on = ugcSub === key;
+                return (
+                  <button key={key} type="button" onClick={() => setUgcSub(key)}
+                    className="text-[12px] font-600 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-colors"
+                    style={{ background: on ? 'var(--brand)' : 'var(--bg-secondary)', color: on ? '#fff' : 'var(--text-secondary)', border: `1px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    {label}
+                    {count > 0 && <span className="text-[10px] font-700 px-1.5 rounded-full" style={{ background: on ? 'rgba(255,255,255,.25)' : 'var(--bg-tertiary)', color: on ? '#fff' : 'var(--text-muted)' }}>{count}</span>}
                   </button>
-                  <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет"
-                    className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                    <X size={13} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* «UGC» → АВТО: шаблоны конвейера тренд→UGC (ключевик — бейджем СВЕРХУ карточки)
-              и автоматические ролики (папка 'auto-ugc'), собранные автопилотом. */}
-          {tab === 'ugc' && (ugcTpls.length > 0 || autoUgc.length > 0) && (
-            <div className="rounded-2xl p-3 space-y-2.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-              <div className="flex items-center gap-2 text-[12px] font-700" style={{ color: 'var(--text-secondary)' }}>
-                ⚡ Авто <span className="text-[10.5px] font-500" style={{ color: 'var(--text-muted)' }}>— шаблоны и ролики конвейера «тренд → анализ → UGC»</span>
-              </div>
-              {ugcTpls.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {ugcTpls.map((k) => (
-                    <button key={k.id} type="button" onClick={() => setBlockReq({ cloud: 'ugc' })}
-                      title="Открыть UGC-студию (шаблоны — кнопка «Шаблон» в шапке)"
-                      className="flex flex-col items-start gap-0.5 pl-3 pr-3 py-1.5 rounded-xl text-left"
-                      style={{ background: 'var(--bg-tertiary)', border: `1px solid ${k.autopublish?.enabled ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                      {k.trendKeyword && (
-                        <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full"
-                          style={{ background: 'color-mix(in srgb, var(--brand) 14%, transparent)', color: 'var(--brand)', border: '1px solid var(--brand)' }}>#{k.trendKeyword}</span>
-                      )}
-                      <span className="text-[12px] font-600" style={{ color: 'var(--text-primary)' }}>
-                        {k.name}{k.autopublish?.enabled ? ' · автопубликация' : ''}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {autoUgc.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                  {autoUgc.map((v) => (
-                    <button key={v.id} type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })}
-                      className="rounded-xl overflow-hidden text-left" style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)', cursor: 'pointer' }}>
-                      <div className="relative w-full" style={{ aspectRatio: '9 / 16' }}>
-                        {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
-                        <span className="absolute top-1.5 left-1.5 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,.6)', color: '#fff' }}>авто</span>
-                      </div>
-                      <span className="block text-[10.5px] p-1.5 truncate" style={{ color: 'var(--text-secondary)' }}>{v.title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
 
           {/* Сетка карточек: первой — плитка «+ Добавить» (открывает блок раздела) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {renderAddTile(tab)}
+            {/* UGC · «Ролики»: сохранённые ролики карточками с превью; клик → продолжить в студии (тот же сценарий). */}
+            {tab === 'ugc' && ugcSub === 'rolls' && ugcTpls.map((k) => {
+              const spec = k.spec || {};
+              const preview: string | null = spec.result?.url || spec.photoUrl || spec.avatarUrl
+                || (Array.isArray(spec.clipImages) && spec.clipImages[0]?.url) || spec.clip?.url || null;
+              const isVid = !!preview && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(preview);
+              const openTpl = () => setBlockReq({ cloud: 'ugc', ...(spec.__flowId ? { flowId: String(spec.__flowId) } : {}) });
+              return (
+                <AuroraCard key={`tpl-${k.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                  <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии"
+                    className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', padding: 0 }}>
+                    {preview ? (
+                      isVid
+                        ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
+                        : <img src={preview} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                        <LayoutTemplate size={28} /><span className="text-[11px] font-600">UGC-ролик</span>
+                      </span>
+                    )}
+                    <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'var(--brand)', color: '#fff' }}>Шаблон</span>
+                    {k.autopublish?.enabled && <span className="absolute top-2 right-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>}
+                  </button>
+                  <div className="p-3 flex flex-col gap-2 flex-1">
+                    <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={k.name}>{k.name}</div>
+                    {k.trendKeyword && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full self-start" style={{ background: 'color-mix(in srgb, var(--brand) 14%, transparent)', color: 'var(--brand)', border: '1px solid var(--brand)' }}>#{k.trendKeyword}</span>}
+                    <div className="flex items-center gap-1 pt-1 mt-auto">
+                      <button type="button" onClick={openTpl} title="Открыть в UGC-студии"
+                        className="flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-600 transition-colors hover:opacity-80"
+                        style={{ background: 'rgba(168,85,247,0.12)', color: 'var(--brand)' }}>
+                        <Play size={13} /> Открыть
+                      </button>
+                      <button type="button" onClick={() => askDeleteTpl(k)} title="Удалить ролик из Галереи"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                        style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </AuroraCard>
+              );
+            })}
+            {/* UGC · «Авто»: ролики конвейера «тренд → анализ → UGC» (папка auto-ugc), карточками. */}
+            {tab === 'ugc' && ugcSub === 'auto' && autoUgc.map((v) => (
+              <AuroraCard key={`auto-${v.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                <button type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })}
+                  className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', padding: 0 }}>
+                  {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                  <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>
+                </button>
+                <div className="p-3"><div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div></div>
+              </AuroraCard>
+            ))}
+            {/* UGC · «Макеты»: бренд-киты студии (оформление: слой/заставки/музыка/субтитры/голос). */}
+            {tab === 'ugc' && ugcSub === 'kits' && kits.map((k) => (
+              <AuroraCard key={`kit-${k.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title="Открыть UGC-студию — макет применяется в «Оформлении»"
+                  className="relative w-full flex flex-col items-center justify-center gap-2" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', color: 'var(--text-muted)' }}>
+                  <LayoutTemplate size={30} /><span className="text-[11px] font-600">Бренд-кит</span>
+                </button>
+                <div className="p-3 flex items-center gap-1">
+                  <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={k.name}>{k.name || 'Макет'}</div>
+                  <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}><X size={13} /></button>
+                </div>
+              </AuroraCard>
+            ))}
             {/* Hotebook: активные генерации — карточка-плейсхолдер со спиннером до готовности */}
             {tab === 'hotebook' && hbJobs.map((j) => (
               <AuroraCard key={`job-${j.id}`} className="group p-0 overflow-hidden flex flex-col">
@@ -837,7 +868,8 @@ export default function GalleryPage() {
                 </div>
               </AuroraCard>
             ))}
-            {filtered.map((v) => {
+            {/* UGC: готовые рендеры (папка ugc) — только в «Ролики»; в «Авто»/«Макеты» сетку не мешаем. */}
+            {(tab !== 'ugc' || ugcSub === 'rolls') && filtered.map((v) => {
               const isSel = selected.has(v.id);
               return (
                 <AuroraCard key={v.id}
@@ -925,11 +957,15 @@ export default function GalleryPage() {
           </div>
 
           {/* Пусто: подсказка под плиткой «+» (не показываем, если идёт генерация Hotebook) */}
-          {filtered.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0) && (
+          {(tab === 'ugc'
+            ? (ugcSub === 'rolls' ? (ugcTpls.length + filtered.length === 0) : ugcSub === 'auto' ? autoUgc.length === 0 : kits.length === 0)
+            : (filtered.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0))) && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
               {tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
                 : tab === 'flow' ? 'Пока пусто. Нажмите «+» — откроется блок «Google Flow» (Veo): готовые клипы попадут сюда.'
-                : tab === 'ugc' ? 'Пока пусто. Нажмите «+» — откроется UGC-студия: собранные ролики и макеты появятся здесь.'
+                : tab === 'ugc' ? (ugcSub === 'auto' ? 'Пока нет авто-роликов. Их собирает конвейер «тренд → анализ → UGC» (автопилот в Трендах).'
+                    : ugcSub === 'kits' ? 'Макетов пока нет. Сохраните бренд-кит в UGC-студии (кнопка «Бренд-кит» в шапке).'
+                    : 'Пока пусто. Нажмите «+» — откроется UGC-студия; сохранённые ролики появятся здесь карточками.')
                 : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио кнопкой «Медиа» или плиткой «+» — аудиофайлы лягут сюда.'
                 : 'Пока пусто. Загрузите фото/видео кнопкой «Медиа» или плиткой «+»; здесь же появляется всё, что производят блоки.'}
             </p>

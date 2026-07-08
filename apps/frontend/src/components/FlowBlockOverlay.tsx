@@ -27,6 +27,8 @@ export interface FlowBlockRequest {
   src?: string;
   srcName?: string;
   srcAssetId?: string;
+  /** Открыть КОНКРЕТНЫЙ сценарий (карточка ролика из Галереи) — вместо «последнего/нового». */
+  flowId?: string;
 }
 
 export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onClose: () => void }) {
@@ -47,7 +49,10 @@ export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onCl
     (async () => {
       try {
         let id: string | null = null;
-        if (req.src) {
+        if (req.flowId) {
+          // Карточка ролика из Галереи — открываем именно этот сценарий.
+          id = req.flowId;
+        } else if (req.src) {
           const flowName = (req.srcName ? `${req.cloud === 'omni' ? 'Omni Flash' : 'Сценарий'} — ${req.srcName}` : 'Новый сценарий').slice(0, 120);
           const cr = await fetch('/api/flows', { method: 'POST', headers, body: JSON.stringify({ name: flowName }) });
           const cd = await cr.json();

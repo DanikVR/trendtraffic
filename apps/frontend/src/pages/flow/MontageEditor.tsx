@@ -428,7 +428,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const ugcExitWithTemplate = async () => {
     try {
       await save();   // сначала сам сценарий (авто-сейв гарантирован)
-      const tplSpec = { ...ugc, buildJobId: null, result: null, results: [] };
+      // __flowId — карточка шаблона в Галерее открывает ИМЕННО этот сценарий (продолжить ролик).
+      const tplSpec = { ...ugc, buildJobId: null, result: null, results: [], __flowId: flowId };
       const tplName = (name || '').trim() || 'UGC-ролик';
       // Пустой ролик в шаблоны не пишем (чтобы «зашёл-вышел» не плодил мусор); существующий — обновляем всегда.
       const hasContent = !!(ugc.avatarUrl || ugc.photoUrl || ugc.script.length || ugc.clip || ugc.clipImages.length || (ugc.brief || '').trim());

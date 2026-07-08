@@ -2148,7 +2148,16 @@
  *         Ручка ↕ на левом крае бокса → object-position Y (oy 0..1 в avatarRect, per-format);
  *         превью применяет objectPosition, рендер — вертикальный сдвиг cover-кропа
  *         (composeUgc crop=(iw-bw)/2:(ih-bh)*oy). Отдельно от перемещения бокса по кадру. */
-export const APP_VERSION = '2.1.9';
+/* 2.2.0 — Галерея = хаб UGC-роликов (по фидбеку): (1) сохранённые ролики (шаблоны) теперь
+ *         КАРТОЧКАМИ в сетке вкладки UGC с превью контента (аватар/результат), клик «Открыть» →
+ *         продолжить ТОТ ЖЕ сценарий (template.spec.__flowId → FlowBlockOverlay(flowId) оверлеем).
+ *         (2) «Макеты» и «Авто» — больше не громоздкие секции сверху, а подфильтр-сортировка
+ *         [Ролики · Авто · Макеты] с counts; сетка показывает карточки выбранного фильтра
+ *         (Ролики=шаблоны+рендеры, Авто=конвейер auto-ugc, Макеты=бренд-киты). (3) Легаси-страница
+ *         /flow (список сценариев) СКРЫТА — голый /flow редиректит на /gallery?tab=ugc; студия
+ *         открывается только оверлеем из Галереи («+»/карточка). Файлы: GalleryPage, FlowPage
+ *         (Navigate), FlowBlockOverlay (flowId), MontageEditor (__flowId в шаблон). */
+export const APP_VERSION = '2.2.0';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

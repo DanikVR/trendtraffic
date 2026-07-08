@@ -15,7 +15,7 @@
  * сценариев они не нужны.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Navigate } from 'react-router-dom';
 import { Plus, Pencil, Check, X, Copy, Trash2, Power, Loader2, Cloud } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -281,6 +281,10 @@ export default function FlowPage() {
   }
 
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  // Легаси-список сценариев больше НЕ показываем: единый вход — Галерея (карточки роликов + «+»).
+  // При открытии студии по deep-link (?open=…) редиректа нет — редактор монтируется выше по editingId.
+  if (!editingId && !searchParams.get('open')) return <Navigate to="/gallery?tab=ugc" replace />;
 
   return (
     <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
