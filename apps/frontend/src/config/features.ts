@@ -42,9 +42,8 @@ export function isFeatureEnabled(name: FeatureName): boolean {
 }
 
 /**
- * Куда вести «/» и логотип, если видеозвонки выключены. Домашняя = «Тренды»
- * (=/social-extension для Enterprise: поиск горячих видео + аналитика-расширение).
- * Не-Enterprise попадает на /trends (RequireEnterprise-редирект) — поэтому роут
- * /trends ОСТАВЛЕН как fallback (он связан программно), хотя в меню его нет.
+ * Куда вести «/» и логотип. Домашняя = ГАЛЕРЕЯ (главный экран-хаб, 2026-07-08):
+ * всё открывается внутри неё вкладками (Тренды/UGC/Google Flow/Hotebook/Видео/Публикатор),
+ * блоки — оверлеем поверх. Сайдбар = быстрый переход по вкладкам Галереи.
  */
-export const HOME_ROUTE_WHEN_NO_VIDEO = '/social-extension';
+export const HOME_ROUTE_WHEN_NO_VIDEO = '/gallery';

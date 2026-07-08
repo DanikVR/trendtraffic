@@ -19,8 +19,9 @@ import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import TrendAnalyticsPanel from './TrendAnalyticsPanel';
+import ChannelsPage from './ChannelsPage';
 
-type Tab = 'search' | 'analytics';
+type Tab = 'search' | 'analytics' | 'channels';
 
 function fmt(n?: number): string {
   if (n == null) return '';
@@ -285,8 +286,8 @@ export default function SocialExtensionPage() {
   // он встроен в TrendSearch (под карточкой фильтров, перед лентой видео), в режиме
   // «Аналитика» — сверху, над строкой URL. Так строка вкладок ушла из самого верха страницы.
   const renderTabs = () => (
-    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-      {([['search', '🔥 Поиск горячих видео'], ['analytics', '📊 Аналитика']] as [Tab, string][]).map(([v, lbl]) => (
+    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
+      {([['search', '🔥 Поиск'], ['analytics', '📊 Аналитика'], ['channels', '📺 Каналы']] as [Tab, string][]).map(([v, lbl]) => (
         <button key={v} onClick={() => setTab(v)}
           className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
           style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
@@ -436,6 +437,15 @@ export default function SocialExtensionPage() {
             )}
           </div>
           )}
+        </div>
+
+        {/* Каналы — перенесены из левого меню в раздел «Тренды» (2026-07-08). Своя шапка
+            «Каналы» внутри вкладки. Смонтирована лениво: рендерим только когда вкладка активна. */}
+        <div className={tab === 'channels' ? 'h-full flex flex-col gap-2' : 'hidden'}>
+          {renderTabs()}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
+            {tab === 'channels' && <ChannelsPage />}
+          </div>
         </div>
       </div>
     </div>
