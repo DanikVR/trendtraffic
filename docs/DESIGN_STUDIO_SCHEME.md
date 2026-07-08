@@ -122,6 +122,10 @@
   токены темы, свои модалки.
 - **Панель аналитики** — источник дизайн-токенов (Geist + индиго, v1.5.7
   «1:1 with analytics panel»), с неё начался единый стиль.
+- **Галерея-хаб, поп-апы Flow/Hotebook, Настройки, Enterprise** — интерактивный
+  макет `/design/service-design.html` (2026-07-08): схема перенесена на главные
+  экраны; см. `docs/DESIGN_SERVICE_HUB.md` (там же канон карточки Галереи —
+  небольшая, информативная, все кнопки видны).
 
 **Правило:** каждый новый рабочий раздел строится по этой схеме и этим принципам —
 не «похоже», а по списку из §2–§3. Отклонение от схемы — осознанное решение
@@ -133,6 +137,9 @@
 
 - Интерактивный макет-эталон (живой): `https://app.trendtraffic.pro/design/ugc-studio-design.html`
 - Исходник макета: `apps/frontend/public/design/ugc-studio-design.html`
+- Макет единого дизайна сервиса (хаб + поп-апы + настройки):
+  `https://app.trendtraffic.pro/design/service-design.html` →
+  `apps/frontend/public/design/service-design.html`, энциклопедия — `docs/DESIGN_SERVICE_HUB.md`
 - Энциклопедия UGC-блока: `docs/UGC_AVATARS.md` (§13 — поля spec v2.0.6, §14 — макет)
 - Эталонный код: `apps/frontend/src/pages/flow/UgcStudio.tsx`,
   `UgcPreview.tsx`, `UgcLinesPanel.tsx`, `ugcTypes.ts`

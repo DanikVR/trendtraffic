@@ -1,0 +1,1339 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrendTraffic — единый дизайн сервиса (макет)</title>
+<style>
+  [hidden]{display:none !important}
+  /* ══ Токены (1:1 с index.css прода: светлая по умолчанию, тёмная через media/data-theme) ══
+     Бренд-акцент сервиса — индиго (#6366F1 light / #818CF8 dark), как панель аналитики.
+     Цвета блоков: Тренды=индиго, UGC=#A855F7, Google Flow=#6366F1, Hotebook=#22D3EE. */
+  :root{
+    --bg:#F9FAFB; --surface:#FFFFFF; --field:#F1F5F9; --line:#E2E8F0; --line2:#CBD5E1; --line0:#EEF1F4;
+    --tx:#1A1A1A; --tx2:#4B5563; --mut:#6B7280; --dis:#9CA3AF;
+    --acc:#6366F1; --acc2:#818CF8; --accSoft:rgba(99,102,241,.09); --accLine:rgba(99,102,241,.35);
+    --ugc:#9333EA; --ugcSoft:rgba(147,51,234,.10);
+    --hb:#0891B2; --hbSoft:rgba(8,145,178,.10);
+    --ok:#15803D; --okSoft:rgba(21,128,61,.10); --warn:#B45309; --warnSoft:rgba(180,83,9,.10); --err:#DC2626; --errSoft:rgba(220,38,38,.08);
+    --dot:#E2E5EA; --shadow:0 10px 30px rgba(15,23,42,.08); --pop:0 24px 60px rgba(15,23,42,.22);
+    --chip-b:#FFFFFF; --btn-bg:#1A1A1A; --btn-tx:#FAFAF9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0E0E0D; --surface:#1A1A18; --field:#22221F; --line:#2A2A27; --line2:#3A3A35; --line0:#222220;
+      --tx:#FAFAF9; --tx2:#C9CBD1; --mut:#9CA3AF; --dis:#5A5A55;
+      --acc:#818CF8; --acc2:#A5B4FC; --accSoft:rgba(129,140,248,.14); --accLine:rgba(129,140,248,.45);
+      --ugc:#A855F7; --ugcSoft:rgba(168,85,247,.14);
+      --hb:#22D3EE; --hbSoft:rgba(34,211,238,.12);
+      --ok:#10B981; --okSoft:rgba(16,185,129,.12); --warn:#F59E0B; --warnSoft:rgba(245,158,11,.12); --err:#EF4444; --errSoft:rgba(239,68,68,.12);
+      --dot:#232320; --shadow:0 14px 34px rgba(0,0,0,.45); --pop:0 28px 70px rgba(0,0,0,.6);
+      --chip-b:#22221F; --btn-bg:#FAFAF9; --btn-tx:#1A1A1A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E0E0D; --surface:#1A1A18; --field:#22221F; --line:#2A2A27; --line2:#3A3A35; --line0:#222220;
+    --tx:#FAFAF9; --tx2:#C9CBD1; --mut:#9CA3AF; --dis:#5A5A55;
+    --acc:#818CF8; --acc2:#A5B4FC; --accSoft:rgba(129,140,248,.14); --accLine:rgba(129,140,248,.45);
+    --ugc:#A855F7; --ugcSoft:rgba(168,85,247,.14);
+    --hb:#22D3EE; --hbSoft:rgba(34,211,238,.12);
+    --ok:#10B981; --okSoft:rgba(16,185,129,.12); --warn:#F59E0B; --warnSoft:rgba(245,158,11,.12); --err:#EF4444; --errSoft:rgba(239,68,68,.12);
+    --dot:#232320; --shadow:0 14px 34px rgba(0,0,0,.45); --pop:0 28px 70px rgba(0,0,0,.6);
+    --chip-b:#22221F; --btn-bg:#FAFAF9; --btn-tx:#1A1A1A;
+  }
+  :root[data-theme="light"]{
+    --bg:#F9FAFB; --surface:#FFFFFF; --field:#F1F5F9; --line:#E2E8F0; --line2:#CBD5E1; --line0:#EEF1F4;
+    --tx:#1A1A1A; --tx2:#4B5563; --mut:#6B7280; --dis:#9CA3AF;
+    --acc:#6366F1; --acc2:#818CF8; --accSoft:rgba(99,102,241,.09); --accLine:rgba(99,102,241,.35);
+    --ugc:#9333EA; --ugcSoft:rgba(147,51,234,.10);
+    --hb:#0891B2; --hbSoft:rgba(8,145,178,.10);
+    --ok:#15803D; --okSoft:rgba(21,128,61,.10); --warn:#B45309; --warnSoft:rgba(180,83,9,.10); --err:#DC2626; --errSoft:rgba(220,38,38,.08);
+    --dot:#E2E5EA; --shadow:0 10px 30px rgba(15,23,42,.08); --pop:0 24px 60px rgba(15,23,42,.22);
+    --chip-b:#FFFFFF; --btn-bg:#1A1A1A; --btn-tx:#FAFAF9;
+  }
+
+  /* Geist с прод-домена (public/social-ext/fonts) — при локальном открытии тихо падаем на системный. */
+  @font-face{font-family:'Geist Sans';src:url('/social-ext/fonts/GeistVF-BfrrXRGr.woff') format('woff');font-weight:100 900;font-display:swap}
+  *{box-sizing:border-box; margin:0}
+  html,body{background:var(--bg); color:var(--tx);
+    font-family:'Geist Sans',"Geist",-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased}
+  button{font:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--acc); outline-offset:2px; border-radius:8px}
+  input,textarea{font:inherit; color:var(--tx)}
+  ::placeholder{color:var(--dis)}
+  svg{flex:none}
+
+  /* ══ Обёртка страницы-спецификации ══ */
+  .wrap{max-width:1500px; margin:0 auto; padding:26px 22px 90px}
+  .intro{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px}
+  .intro h1{font-size:21px; font-weight:750; letter-spacing:-.01em}
+  .intro h1 em{font-style:normal; color:var(--acc)}
+  .intro p{color:var(--mut); font-size:12.5px; max-width:700px; margin-top:4px}
+  .legend{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+  .legend span,.legend button{font-size:11px; color:var(--tx2); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px 10px}
+  .legend button{font-weight:650; color:var(--acc); border-color:var(--accLine)}
+  .scene-h{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:34px 0 4px}
+  .scene-h h2{font-size:16px; font-weight:750; letter-spacing:-.01em}
+  .scene-h h2 i{font-style:normal; color:var(--acc); font-weight:800; margin-right:6px}
+  .scene-h .qk{display:flex; gap:6px; flex-wrap:wrap}
+  .scene-h .qk button{font-size:10.5px; font-weight:650; color:var(--acc); background:var(--accSoft); border:1px solid var(--accLine); border-radius:999px; padding:3px 10px}
+  .scene-sub{color:var(--mut); font-size:12px; max-width:860px; margin-bottom:12px}
+  .stage{overflow-x:auto; border-radius:18px}
+
+  /* ══ Каркас приложения ══ */
+  .app{position:relative; min-width:1220px; height:840px; display:grid; grid-template-columns:68px 1fr;
+    background:var(--bg); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); overflow:hidden}
+
+  /* — Сайдбар (всегда свёрнут: иконки + tooltip) — */
+  .sb{display:flex; flex-direction:column; align-items:center; background:var(--surface); border-right:1px solid var(--line0); padding:14px 0 14px}
+  .sb .logo{width:34px; height:34px; border-radius:11px; background:linear-gradient(135deg,var(--acc),#22d3ee); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:15px; letter-spacing:-.03em; box-shadow:0 4px 12px var(--accSoft)}
+  .sb .top{display:flex; flex-direction:column; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--line0); width:100%}
+  .sb .mini{width:30px; height:30px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--mut); background:var(--field); border:1px solid var(--line0); font-size:10px; font-weight:700}
+  .sb nav{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 0; width:100%}
+  .sb .nv{position:relative; width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:var(--mut); border:1px solid transparent; transition:all .13s}
+  .sb .nv:hover{color:var(--tx2); background:var(--field)}
+  .sb .nv.on{background:var(--accSoft); color:var(--acc); border-color:var(--accLine)}
+  .sb .nv .tip{position:absolute; left:52px; top:50%; transform:translateY(-50%); background:var(--tx); color:var(--bg); font-size:10.5px; font-weight:650; padding:4px 9px; border-radius:8px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; z-index:40}
+  .sb .nv:hover .tip{opacity:1}
+  .sb .nv .cnt{position:absolute; top:5px; right:5px; min-width:15px; height:15px; border-radius:8px; background:var(--acc); color:#fff; font-size:8.5px; font-weight:750; display:flex; align-items:center; justify-content:center; padding:0 3px}
+  .sb .gap{margin-top:auto}
+  .sb .bot{display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:12px; border-top:1px solid var(--line0); width:100%}
+  .sb .ava{width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#22d3ee,var(--acc)); color:#fff; font-size:11px; font-weight:750; display:flex; align-items:center; justify-content:center; position:relative}
+  .sb .ava i{position:absolute; right:-1px; bottom:-1px; width:9px; height:9px; border-radius:50%; background:var(--ok); border:2px solid var(--surface)}
+
+  /* — Главная область — */
+  .main{display:flex; flex-direction:column; min-width:0; overflow:hidden}
+  .m-scroll{flex:1; overflow-y:auto; padding:16px 20px 90px}
+  .m-scroll::-webkit-scrollbar{width:8px} .m-scroll::-webkit-scrollbar-thumb{background:var(--line2); border-radius:4px}
+
+  /* Верхняя строка: заголовок + поиск + глобальные действия */
+  .hub-top{display:flex; align-items:center; gap:12px; margin-bottom:12px}
+  .hub-top .ttl{display:flex; align-items:center; gap:9px; font-size:15px; font-weight:750; letter-spacing:-.01em}
+  .hub-top .ttl .ic{width:30px; height:30px; border-radius:10px; background:var(--accSoft); color:var(--acc); display:flex; align-items:center; justify-content:center}
+  .search{flex:1; max-width:520px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px 12px; color:var(--mut)}
+  .search input{flex:1; background:none; border:none; outline:none; font-size:12.5px; min-width:0}
+  .search kbd{font-size:9.5px; font-weight:700; color:var(--dis); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font-family:inherit}
+  .hub-top .sp{flex:1}
+  .gbtn{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:650; color:var(--tx2); background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:8px 12px; transition:border-color .12s}
+  .gbtn:hover{border-color:var(--line2)}
+
+  /* Вкладки-сегменты с счётчиками */
+  .tabs{display:inline-flex; gap:4px; padding:4px; background:var(--field); border-radius:13px; margin-bottom:14px; flex-wrap:wrap}
+  .tabs button{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:650; color:var(--mut); padding:7px 13px; border-radius:10px; transition:all .13s}
+  .tabs button:hover{color:var(--tx2)}
+  .tabs button.on{background:var(--acc); color:#fff; box-shadow:0 2px 8px var(--accLine)}
+  .tabs button .n{font-size:10px; font-weight:750; background:rgba(255,255,255,.22); border-radius:7px; padding:1px 6px}
+  .tabs button:not(.on) .n{background:var(--surface); color:var(--mut); border:1px solid var(--line)}
+
+  /* Герой активного раздела */
+  .hero{display:flex; align-items:center; gap:13px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:13px 16px; margin-bottom:12px}
+  .hero .hic{width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; flex:none; box-shadow:0 6px 16px rgba(0,0,0,.14)}
+  .hero .ht{min-width:0; flex:1}
+  .hero .ht b{display:flex; align-items:center; gap:8px; font-size:14.5px; font-weight:750; letter-spacing:-.01em}
+  .hero .ht b .soon{font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--warn); background:var(--warnSoft); border-radius:999px; padding:2px 7px}
+  .hero .ht span{display:block; font-size:11.5px; color:var(--mut); margin-top:2px}
+  .hero .meta{display:flex; align-items:center; gap:6px; flex:none}
+  .hero .meta .mchip{font-size:10.5px; font-weight:650; color:var(--tx2); background:var(--field); border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-variant-numeric:tabular-nums}
+  .cta{display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:720; color:#fff; background:linear-gradient(135deg,var(--acc),var(--acc2)); padding:9px 16px; border-radius:12px; flex:none; transition:transform .1s, opacity .15s}
+  .cta:not(:disabled):hover{transform:translateY(-1px)}
+  .cta:disabled{opacity:.45; cursor:not-allowed}
+
+  /* Плашка расширения (Flow / Hotebook) */
+  .extbar{border:1px solid var(--line); border-radius:14px; background:var(--surface); margin-bottom:12px; overflow:hidden}
+  .extbar .row{display:flex; align-items:center; gap:11px; padding:10px 13px; width:100%; text-align:left}
+  .extbar .pz{width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; flex:none}
+  .extbar .tt{flex:1; min-width:0}
+  .extbar .tt b{font-size:12.3px; font-weight:700}
+  .extbar .tt .v{font-size:9.5px; font-weight:750; color:var(--acc); background:var(--accSoft); border-radius:999px; padding:1px 7px; margin-left:6px}
+  .extbar .tt span{display:block; font-size:10.8px; color:var(--mut); margin-top:1px}
+  .st-chip{display:inline-flex; align-items:center; gap:6px; font-size:10.6px; font-weight:680; border-radius:999px; padding:4px 11px; flex:none}
+  .st-chip i{width:6px; height:6px; border-radius:50%; background:currentColor}
+  .st-chip.ok{color:var(--ok); background:var(--okSoft)}
+  .st-chip.err{color:var(--err); background:var(--errSoft)}
+  .st-chip.wr{color:var(--warn); background:var(--warnSoft)}
+  .extbar .act{display:flex; gap:6px; flex:none; align-items:center}
+  .xbtn{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:680; border-radius:9px; padding:6px 11px; color:var(--tx2); background:var(--field); border:1px solid var(--line)}
+  .xbtn.acc{color:#fff; background:var(--acc); border-color:var(--acc)}
+  .extbar .fold{border-top:1px dashed var(--line); padding:11px 14px; background:var(--field)}
+  .extbar .fold ol{margin:0 0 0 17px; font-size:11.3px; color:var(--tx2); line-height:1.75}
+  .extbar .fold code{font-family:ui-monospace,Menlo,monospace; font-size:10.3px; background:var(--surface); border:1px solid var(--line); border-radius:5px; padding:0 5px}
+  .extbar .fold .upd{margin-top:8px; padding-top:8px; border-top:1px solid var(--line); font-size:10.6px; color:var(--mut)}
+
+  /* Строки-инструменты раздела (чипы запросов, фильтры, макеты) */
+  .rowlbl{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:750; letter-spacing:.04em; text-transform:uppercase; color:var(--mut); margin:14px 0 8px}
+  .rowlbl .cnt{font-weight:600; text-transform:none; letter-spacing:0; color:var(--mut); font-size:10.8px}
+  .chips{display:flex; gap:6px; flex-wrap:wrap}
+  .chip{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:640; color:var(--tx); background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:6px 6px 6px 11px; transition:border-color .12s}
+  .chip:hover{border-color:var(--accLine)}
+  .chip .mt{color:var(--mut); font-size:10.3px; font-weight:550}
+  .chip .del{width:19px; height:19px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dis)}
+  .chip .del:hover{color:var(--err); background:var(--errSoft)}
+  .chip.add{border-style:dashed; border-color:var(--line2); color:var(--tx2); padding:6px 12px; background:var(--field)}
+  .chip.add:hover{color:var(--acc); border-color:var(--accLine); background:var(--accSoft)}
+  .filters{display:inline-flex; gap:4px; padding:4px; background:var(--field); border-radius:11px}
+  .filters button{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:650; color:var(--mut); padding:5px 12px; border-radius:8px}
+  .filters button.on{background:var(--surface); color:var(--acc); box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+  /* ══ Сетка карточек ══
+     Канон (фидбэк юзера 08.07.2026): карточка НЕБОЛЬШАЯ (сетка от ~150px), но информативная
+     (бейдж, просмотры, длительность, имя+мета) и ВСЕ кнопки-действия видны сразу в подвале. */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px}
+  .tile-add{border:1.5px dashed var(--line2); border-radius:14px; background:var(--field); min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:14px; text-align:center; transition:all .13s; color:var(--tx2)}
+  .tile-add:hover{border-color:var(--accLine); background:var(--accSoft); color:var(--acc)}
+  .tile-add .pl{width:42px; height:42px; border-radius:50%; border:1.5px solid currentColor; display:flex; align-items:center; justify-content:center; opacity:.9}
+  .tile-add b{font-size:12.3px; font-weight:700}
+  .tile-add span{font-size:10.3px; color:var(--mut); line-height:1.5}
+
+  .card{position:relative; border:1px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden; transition:transform .13s, box-shadow .13s, border-color .13s}
+  .card:hover{transform:translateY(-2px); box-shadow:var(--shadow); border-color:var(--line2)}
+  .card.sel{border-color:var(--acc); box-shadow:0 0 0 2px var(--accLine)}
+  .card .prev{position:relative; aspect-ratio:9/16; background:var(--field); overflow:hidden; display:block; width:100%; padding:0; text-align:left}
+  .card .art{position:absolute; inset:0}
+  .card .playc{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:.92; transition:opacity .12s, transform .15s}
+  .card:hover .playc{opacity:1; transform:scale(1.05)}
+  .card .playc i{width:42px; height:42px; border-radius:50%; background:rgba(10,10,14,.55); backdrop-filter:blur(4px); color:#fff; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.25)}
+  .card .ck{position:absolute; top:8px; left:8px; z-index:5; width:24px; height:24px; border-radius:8px; border:1.5px solid rgba(255,255,255,.8); background:rgba(10,10,14,.38); color:#fff; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .12s}
+  .card:hover .ck, .card.sel .ck, .app.selmode .card .ck{opacity:1}
+  .card.sel .ck{background:var(--acc); border-color:var(--acc)}
+  .badge{position:absolute; top:8px; right:8px; z-index:5; display:inline-flex; align-items:center; gap:4px; font-size:9.5px; font-weight:750; border-radius:8px; padding:3px 8px; box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .badge.an{background:#22d3ee; color:#083344}
+  .badge.auto{background:rgba(10,10,14,.6); color:#fff; backdrop-filter:blur(3px)}
+  .badge.ft{background:rgba(10,10,14,.6); color:#fff}
+  .card .durn{position:absolute; right:8px; bottom:8px; z-index:4; font-size:10px; font-weight:700; color:#fff; background:rgba(10,10,14,.6); border-radius:6px; padding:2px 6px; font-variant-numeric:tabular-nums}
+  .card .views{position:absolute; left:8px; bottom:8px; z-index:4; display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.7)}
+  .card .cap{padding:8px 9px 6px}
+  .card .cap b{display:block; font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .card .cap span{display:block; font-size:9.8px; color:var(--mut); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  /* Все действия видимы всегда: ряд маленьких кнопок в подвале карточки */
+  .card .btm{display:flex; gap:4px; padding:0 8px 8px}
+  .card .btm button{width:25px; height:25px; border-radius:8px; background:var(--field); border:1px solid var(--line); color:var(--tx2); display:flex; align-items:center; justify-content:center; transition:all .12s}
+  .card .btm button:hover{color:var(--acc); border-color:var(--accLine)}
+  .card .btm button.fl{color:var(--acc); background:var(--accSoft); border-color:transparent}
+  .card .btm button.rm{color:var(--err); background:var(--errSoft); border-color:transparent}
+  .card .btm button.rm:hover{border-color:var(--err)}
+  .card .btm button.dl{margin-left:auto; background:var(--acc); border-color:var(--acc); color:#fff}
+  .card .btm button.dl:hover{opacity:.88}
+  .card .genov{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:radial-gradient(circle at 50% 40%, var(--accSoft), transparent 70%)}
+  .card .genov b{font-size:11.3px; font-weight:720; color:var(--tx2)}
+  .card .genov span{font-size:10px; color:var(--mut)}
+  .filecard .prev{aspect-ratio:9/16; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px}
+  .filecard .fic{width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center}
+  .filecard .fext{font-size:9.5px; font-weight:800; letter-spacing:.06em; color:var(--tx2); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px 7px}
+  .audrow .prev{aspect-ratio:9/16; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:14px}
+  .wave{display:flex; align-items:center; gap:2.5px; height:30px}
+  .wave i{width:3px; border-radius:2px; background:var(--acc); opacity:.75}
+
+  /* Пустое состояние */
+  .empty{padding:60px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px}
+  .empty .eic{width:62px; height:62px; border-radius:20px; display:flex; align-items:center; justify-content:center; color:#fff}
+  .empty b{font-size:15px; font-weight:750}
+  .empty p{font-size:12px; color:var(--mut); max-width:420px; line-height:1.6}
+  .ghosts{display:flex; gap:6px; flex-wrap:wrap; justify-content:center}
+  .ghosts span{font-size:10.5px; font-weight:650; color:var(--dis); border:1px dashed var(--line2); border-radius:999px; padding:4px 11px}
+
+  /* Плавающая панель выбора */
+  .selbar{position:absolute; left:50%; bottom:18px; transform:translateX(-50%) translateY(8px); z-index:30; display:flex; align-items:center; gap:6px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--pop); padding:8px 10px; opacity:0; pointer-events:none; transition:all .18s}
+  .selbar.show{opacity:1; pointer-events:auto; transform:translateX(-50%)}
+  .selbar b{font-size:12px; font-weight:720; padding:0 8px; font-variant-numeric:tabular-nums}
+  .selbar .sbtn{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:680; border-radius:10px; padding:7px 12px}
+  .selbar .sbtn.dl{color:#fff; background:var(--acc)}
+  .selbar .sbtn.rm{color:var(--err); background:var(--errSoft)}
+  .selbar .sbtn.cl{color:var(--mut); background:var(--field)}
+
+  /* ══ Поп-ап блока (Flow / Hotebook) ══ */
+  .pop-back{position:absolute; inset:0; z-index:50; background:rgba(8,8,14,.52); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:22px}
+  .pop{width:100%; max-height:100%; overflow-y:auto; background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:var(--pop); animation:popin .16s ease-out}
+  .pop::-webkit-scrollbar{width:8px} .pop::-webkit-scrollbar-thumb{background:var(--line2); border-radius:4px}
+  @keyframes popin{from{transform:translateY(10px) scale(.985); opacity:0} to{transform:none; opacity:1}}
+  .pop-h{position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:11px; padding:14px 16px; background:var(--surface); border-bottom:1px solid var(--line0)}
+  .pop-h .pic{width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; flex:none}
+  .pop-h .pt{flex:1; min-width:0}
+  .pop-h .pt b{font-size:14px; font-weight:750; letter-spacing:-.01em}
+  .pop-h .pt span{display:block; font-size:10.8px; color:var(--mut); margin-top:1px}
+  .pop-h .x{width:30px; height:30px; border-radius:10px; background:var(--field); color:var(--mut); display:flex; align-items:center; justify-content:center; flex:none}
+  .pop-h .x:hover{color:var(--tx)}
+  .pop-b{padding:14px 16px 16px; display:flex; flex-direction:column; gap:10px}
+
+  /* Секция-шаг внутри поп-апа (схема студии: нумерованные карточки) */
+  .psec{border:1px solid var(--line); border-radius:14px; background:var(--bg); padding:11px 12px}
+  .psec-h{display:flex; align-items:center; gap:9px; margin-bottom:9px}
+  .pstep{width:20px; height:20px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:750; color:var(--mut); background:var(--field); border:1px solid var(--line2)}
+  .pstep.done{background:var(--ok); border-color:var(--ok); color:#fff}
+  .psec-h b{font-size:12.4px; font-weight:720}
+  .psec-h small{color:var(--mut); font-size:10.4px; margin-left:auto; font-weight:550}
+  .psec .hint{font-size:10.8px; color:var(--mut); line-height:1.55}
+  textarea.inp,input.inp{width:100%; background:var(--field); border:1px solid var(--line); border-radius:11px; padding:8px 11px; font-size:12px; outline:none; resize:vertical}
+  textarea.inp:focus,input.inp:focus{border-color:var(--accLine)}
+  .lnk{font-size:11px; font-weight:680; color:var(--acc)}
+  .pop .cta.wide{width:100%; justify-content:center; padding:11px}
+  .seg2{display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--field); border-radius:12px}
+  .seg2 button{padding:7px 4px; border-radius:9px; font-size:11.7px; font-weight:660; color:var(--mut); transition:all .12s}
+  .seg2 button.on{background:var(--surface); color:var(--acc); box-shadow:0 1px 4px rgba(0,0,0,.14)}
+
+  /* Очередь / списки строк */
+  .qrow{display:flex; align-items:center; gap:9px; background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:8px 11px}
+  .qrow .qi{flex:none; display:flex}
+  .qrow .qt{flex:1; min-width:0; font-size:11.6px; color:var(--tx2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .qrow .qa{font-size:10.5px; font-weight:700; color:var(--acc)}
+  .qrow .qa.mut{color:var(--mut); font-weight:600}
+  .spin{animation:rot 1s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  /* Hotebook: студия артефактов */
+  .hb-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px}
+  .hb-tile{position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 6px 9px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:var(--tx2); transition:all .12s}
+  .hb-tile:hover{border-color:var(--hb); background:var(--hbSoft)}
+  .hb-tile svg{color:var(--hb)}
+  .hb-tile span{font-size:10.4px; font-weight:660; text-align:center; line-height:1.25}
+  .hb-tile .n{position:absolute; top:5px; right:6px; font-size:8.5px; font-weight:800; color:var(--hb); background:var(--hbSoft); border-radius:6px; padding:1px 5px}
+  .bubble-q{font-size:11.7px; background:var(--hbSoft); color:var(--tx); border-radius:12px 12px 4px 12px; padding:8px 11px; margin-left:34px}
+  .bubble-a{font-size:11.7px; background:var(--surface); border:1px solid var(--line); color:var(--tx2); border-radius:12px 12px 12px 4px; padding:8px 11px; margin-right:14px; line-height:1.6}
+  .bubble-a .cit{display:block; font-size:9.6px; font-weight:750; color:var(--hb); margin-top:6px}
+  .srcrow{display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:7px 10px}
+  .srcrow .si{color:var(--mut); display:flex}
+  .srcrow span{flex:1; min-width:0; font-size:11.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .srcrow .del{width:20px; height:20px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dis)}
+  .srcrow .del:hover{color:var(--err); background:var(--errSoft)}
+  .addrow{display:flex; gap:6px}
+  .addrow .inp{flex:1}
+  .sqbtn{width:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; background:var(--hb); flex:none}
+  .dashed2{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+  .dashed2 button{display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:11px; font-weight:650; color:var(--tx2); background:var(--surface); border:1.5px dashed var(--line2); border-radius:11px; padding:8px}
+  .dashed2 button:hover{color:var(--hb); border-color:var(--hb)}
+
+  /* ══ Настройки ══ */
+  .set-col{max-width:660px; margin:0 auto; display:flex; flex-direction:column; gap:14px}
+  .scard{background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .scard .pad{padding:18px}
+  .prof{display:flex; align-items:center; gap:14px}
+  .prof .pava{width:58px; height:58px; border-radius:50%; background:linear-gradient(135deg,#22d3ee,var(--acc)); color:#fff; font-size:19px; font-weight:750; display:flex; align-items:center; justify-content:center; position:relative; flex:none}
+  .prof .pava i{position:absolute; right:1px; bottom:1px; width:12px; height:12px; border-radius:50%; background:var(--ok); border:2.5px solid var(--surface)}
+  .prof .pt b{display:inline-flex; align-items:center; gap:7px; font-size:15.5px; font-weight:750}
+  .prof .pt b button{color:var(--dis)} .prof .pt b button:hover{color:var(--tx2)}
+  .prof .pt span{display:block; font-size:11.8px; color:var(--mut); margin-top:1px}
+  .tier{display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:750; letter-spacing:.03em; color:var(--acc); background:var(--accSoft); border:1px solid var(--accLine); border-radius:999px; padding:3px 10px; margin-top:7px}
+  .flbl{font-size:10px; font-weight:750; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); margin:14px 0 6px}
+  .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:12px; font-weight:700; border-radius:11px; padding:9px 14px; transition:opacity .12s}
+  .btn.prim{color:var(--btn-tx); background:var(--btn-bg); box-shadow:0 1px 2px rgba(16,24,40,.15)}
+  .btn.sec{color:var(--tx2); background:var(--field); border:1px solid var(--line)}
+  .btn.danger{color:var(--err); background:var(--errSoft); border:1px solid transparent}
+  .btn.wide{width:100%}
+  .setrow{display:flex; align-items:center; gap:12px; padding:14px 18px}
+  .setrow + .setrow{border-top:1px solid var(--line0)}
+  .setrow .ric{width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex:none}
+  .setrow .rt{flex:1; min-width:0}
+  .setrow .rt b{font-size:12.6px; font-weight:680}
+  .setrow .rt span{display:block; font-size:10.8px; color:var(--mut); margin-top:1px}
+  .seg3{display:inline-flex; gap:4px; padding:4px; background:var(--field); border-radius:11px}
+  .seg3 button{font-size:11px; font-weight:660; color:var(--mut); padding:5px 11px; border-radius:8px; display:inline-flex; align-items:center; gap:5px}
+  .seg3 button.on{background:var(--surface); color:var(--acc); box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  .stat3{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px}
+  .stat3 .st{border-radius:12px; padding:11px 8px; text-align:center; border:1px solid}
+  .stat3 .st b{display:block; font-size:19px; font-weight:750; font-variant-numeric:tabular-nums}
+  .stat3 .st span{display:block; font-size:9.3px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin-top:2px}
+  .linkline{display:flex; gap:8px; margin-top:6px}
+  .linkline input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:11.3px; background:var(--field); border:1px solid var(--line); border-radius:11px; padding:9px 12px; color:var(--tx2); outline:none; min-width:0}
+  .cpy{width:40px; border-radius:11px; background:var(--field); border:1px solid var(--line); color:var(--tx2); display:flex; align-items:center; justify-content:center; flex:none}
+
+  /* ══ Enterprise ══ */
+  .ent{display:grid; grid-template-columns:236px 1fr; gap:16px; align-items:start}
+  .ent-rail{position:sticky; top:0; display:flex; flex-direction:column; gap:4px}
+  .ent-rail button{display:flex; align-items:center; gap:10px; text-align:left; padding:9px 11px; border-radius:12px; border:1px solid transparent; transition:all .12s}
+  .ent-rail button:hover{background:var(--field)}
+  .ent-rail button.on{background:var(--surface); border-color:var(--line); box-shadow:0 1px 4px rgba(16,24,40,.06)}
+  .ent-rail .eic{width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex:none}
+  .ent-rail .et{flex:1; min-width:0}
+  .ent-rail .et b{display:block; font-size:12.2px; font-weight:700}
+  .ent-rail .et span{display:block; font-size:9.8px; color:var(--mut); margin-top:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ent-rail .st-mini{font-size:9px; font-weight:750; border-radius:7px; padding:2px 6px; flex:none}
+  .ent-body{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .ecard{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:15px 16px}
+  .ecard-h{display:flex; align-items:flex-start; gap:11px}
+  .ecard-h .kic{width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; flex:none}
+  .ecard-h .kt{flex:1; min-width:0}
+  .ecard-h .kt b{font-size:13.2px; font-weight:730}
+  .ecard-h .kt p{font-size:11.2px; color:var(--mut); margin-top:2px; line-height:1.55}
+  .pill-st{display:inline-flex; align-items:center; gap:5px; font-size:10.3px; font-weight:700; border-radius:8px; padding:3px 9px; flex:none}
+  .pill-st.ok{color:var(--ok); background:var(--okSoft)}
+  .pill-st.err{color:var(--err); background:var(--errSoft)}
+  .pill-st.wr{color:var(--warn); background:var(--warnSoft)}
+  .pill-st.mut{color:var(--mut); background:var(--field)}
+  .keyline{display:flex; gap:7px; margin-top:11px}
+  .keyline input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:11.4px; background:var(--field); border:1px solid var(--line); border-radius:10px; padding:8px 11px; color:var(--tx2); outline:none; min-width:0}
+  .keyline input:focus{border-color:var(--accLine)}
+  .kbtn{font-size:11px; font-weight:700; border-radius:10px; padding:7px 12px; flex:none}
+  .kbtn.save{color:#fff; background:var(--acc)}
+  .kbtn.chk{color:var(--tx2); background:var(--field); border:1px solid var(--line)}
+  .kbtn.del{color:var(--err); background:var(--errSoft)}
+  .kmeta{font-size:10.3px; color:var(--mut); margin-top:7px}
+  .egrid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .egroup{font-size:10.5px; font-weight:750; text-transform:uppercase; letter-spacing:.07em; color:var(--mut); margin:6px 0 -2px}
+  .egroup small{display:block; text-transform:none; letter-spacing:0; font-weight:550; font-size:10.8px; margin-top:3px; line-height:1.5}
+  .cgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:11px}
+  .cgrid .c{border:1px solid var(--line); border-radius:11px; background:var(--field); padding:9px 8px; text-align:center}
+  .cgrid .c b{display:block; font-size:16px; font-weight:750; color:var(--hb); font-variant-numeric:tabular-nums}
+  .cgrid .c span{display:block; font-size:9.4px; color:var(--mut); font-weight:650; margin-top:2px}
+
+  /* ══ Спец-разделы ══ */
+  .spec{margin-top:44px}
+  .spec h2{font-size:16.5px; font-weight:750; letter-spacing:-.01em; margin-bottom:6px}
+  .spec h2 i{font-style:normal; color:var(--acc); margin-right:8px; font-weight:800}
+  .spec > p{color:var(--mut); font-size:12.3px; max-width:880px; margin-bottom:14px}
+  .spec pre{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.4px; line-height:1.65; color:var(--tx2); overflow-x:auto}
+  .cards3{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px}
+  .cards3 .card-i{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:13px 14px}
+  .cards3 .card-i b{display:block; font-size:12.6px; font-weight:720; margin-bottom:5px}
+  .cards3 .card-i p{font-size:11.4px; color:var(--mut); line-height:1.6}
+  .cards3 .card-i code{font-family:ui-monospace,Menlo,monospace; font-size:10.4px; background:var(--field); border:1px solid var(--line); border-radius:5px; padding:0 5px}
+  table.cmp{width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; font-size:11.8px}
+  .tbl-wrap{overflow-x:auto; border-radius:14px; border:1px solid var(--line)}
+  .tbl-wrap table.cmp{border:none; min-width:820px}
+  table.cmp th{background:var(--field); text-align:left; font-size:10.6px; font-weight:750; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); padding:9px 13px; border-bottom:1px solid var(--line)}
+  table.cmp td{padding:10px 13px; border-bottom:1px solid var(--line0); vertical-align:top; color:var(--tx2); line-height:1.55}
+  table.cmp tr:last-child td{border-bottom:none}
+  table.cmp td:first-child{font-weight:720; color:var(--tx); white-space:nowrap}
+  table.cmp td em{font-style:normal; color:var(--ok); font-weight:650}
+  .phase{display:flex; gap:12px; padding:11px 0; border-bottom:1px dashed var(--line)}
+  .phase:last-child{border-bottom:none}
+  .phase .n{width:24px; height:24px; border-radius:50%; flex:none; background:var(--accSoft); color:var(--acc); border:1px solid var(--accLine); font-size:11.5px; font-weight:800; display:flex; align-items:center; justify-content:center}
+  .phase b{display:block; font-size:12.6px; font-weight:720; margin-bottom:3px}
+  .phase p{font-size:11.5px; color:var(--mut); line-height:1.6}
+  .phase code{font-family:ui-monospace,Menlo,monospace; font-size:10.4px; background:var(--field); border:1px solid var(--line); border-radius:5px; padding:0 5px}
+  .links li{font-size:12px; color:var(--tx2); margin:5px 0}
+  .links code{font-family:ui-monospace,Menlo,monospace; font-size:10.8px; background:var(--surface); border:1px solid var(--line); border-radius:5px; padding:1px 6px}
+</style>
+
+<div class="wrap">
+  <div class="intro">
+    <div>
+      <h1>TrendTraffic — <em>единый дизайн сервиса</em> · макет</h1>
+      <p>Интерактивный эталон редизайна главных экранов: Галерея-хаб (6 вкладок), поп-апы блоков «Google Flow» и «Hotebook», Настройки и Настройки Enterprise (все складки развёрнуты). Токены = index.css прода (Geist + индиго), схема — по <b>docs/DESIGN_STUDIO_SCHEME.md</b> (CapCut/Canva/Descript → зоны + принципы), эталон компоновки — UGC-студия.</p>
+    </div>
+    <div class="legend">
+      <span>Токены 1:1 с прод index.css</span>
+      <span>Интерактивно: вкладки · выбор · поп-апы</span>
+      <button type="button" id="themeBtn">Тема: авто</button>
+    </div>
+  </div>
+  <!-- ═══════════ СЦЕНА 1: ГАЛЕРЕЯ-ХАБ ═══════════ -->
+  <div class="scene-h">
+    <h2><i>1</i>Галерея — главный экран-хаб</h2>
+    <div class="qk">
+      <button type="button" data-open="flow">Открыть поп-ап «Google Flow»</button>
+      <button type="button" data-open="hotebook">Открыть поп-ап «Hotebook»</button>
+    </div>
+  </div>
+  <p class="scene-sub">Всё живёт в одной Галерее: сайдбар-иконки = вкладки хаба, у каждой вкладки — «герой» раздела (цвет + описание + одна CTA), первой плиткой сетки — «+ Добавить». Клик по чекбоксу карточки включает режим выбора (плавающая панель снизу). На вкладках Google Flow и Hotebook — плашка расширения одной строкой.</p>
+  <div class="stage">
+    <div class="app" id="hub">
+      <aside class="sb">
+        <div class="top">
+          <div class="logo">T</div>
+          <div class="mini" title="Язык интерфейса">RU</div>
+          <button class="mini" type="button" id="sbTheme" title="Переключить тему">◐</button>
+        </div>
+        <nav id="sbNav"><!-- пункты рендерит JS --></nav>
+        <div class="bot">
+          <button class="mini" type="button" title="Тарифы и оплата" data-ic="credit"></button>
+          <div class="ava" title="plua7610482@gmail.com — Настройки">VD<i></i></div>
+        </div>
+      </aside>
+      <div class="main">
+        <div class="m-scroll">
+          <div class="hub-top">
+            <span class="ttl"><span class="ic" data-ic="gallery"></span> Галерея</span>
+            <label class="search" data-ic-lead="search">
+              <input placeholder="Поиск по имени / автору / описанию…">
+              <kbd>/</kbd>
+            </label>
+            <span class="sp"></span>
+            <button class="gbtn" type="button" data-ic="upload">Медиа</button>
+            <button class="gbtn" type="button" data-ic="refresh">Обновить</button>
+          </div>
+          <div class="tabs" id="hubTabs"><!-- вкладки рендерит JS --></div>
+          <div id="hubHero"><!-- герой раздела --></div>
+          <div id="hubExt"><!-- плашка расширения (flow/hotebook) --></div>
+          <div id="hubBody"><!-- содержимое вкладки --></div>
+        </div>
+        <div class="selbar" id="selBar">
+          <b id="selCnt">Выбрано 0</b>
+          <button class="sbtn dl" type="button" data-ic="download">Скачать</button>
+          <button class="sbtn rm" type="button" data-ic="trash">Удалить</button>
+          <button class="sbtn cl" type="button" id="selClear" data-ic="x">Снять</button>
+        </div>
+      </div>
+
+      <!-- ── Поп-ап «Google Flow» ── -->
+      <div class="pop-back" id="popFlow" hidden>
+        <div class="pop" style="max-width:560px">
+          <div class="pop-h">
+            <span class="pic" style="background:linear-gradient(135deg,#6366f1,#4f46e5)" data-ic="clapper"></span>
+            <span class="pt">
+              <b>Google Flow</b>
+              <span>Veo-клипы через ваше расширение: очередь промптов → готовое в Галерею</span>
+            </span>
+            <span class="st-chip ok"><i></i> расширение подключено</span>
+            <button class="x" type="button" data-close data-ic="x"></button>
+          </div>
+          <div class="pop-b">
+            <div class="seg2" id="flowSeg">
+              <button type="button" class="on" data-fm="clips">Клипы</button>
+              <button type="button" data-fm="comm">Комментатор</button>
+            </div>
+            <div id="flowClips">
+              <div class="psec" style="margin-bottom:10px">
+                <div class="psec-h"><span class="pstep">1</span><b>Промпты</b><small>по строке — один клип</small></div>
+                <textarea class="inp" rows="4" id="flowTa">киношный закат над городом, медленный пролёт камеры
+крупный план капель дождя на стекле</textarea>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+                  <span class="hint">Человек работает в своём Google Flow сам — расширение подставляет промпты из очереди и возвращает клипы во вкладку «Google Flow».</span>
+                  <button class="lnk" type="button" style="flex:none; margin-left:10px">Взять из Omni</button>
+                </div>
+              </div>
+              <button class="cta wide" type="button" data-ic="send" id="flowSend">Отправить в Flow · 2 клипа</button>
+              <div class="psec" style="margin-top:10px">
+                <div class="psec-h"><span class="pstep done" data-ic="check"></span><b>Очередь</b><small>в работе 1 · <button class="lnk" type="button" style="font-size:10.4px">очистить готовые</button></small></div>
+                <div style="display:flex; flex-direction:column; gap:6px" id="flowQueue">
+                  <div class="qrow"><span class="qi" style="color:var(--acc)"><span class="spin" data-ic="loader"></span></span><span class="qt">киношный закат над городом, медленный пролёт камеры</span><span class="qa mut">генерируется…</span></div>
+                  <div class="qrow"><span class="qi" style="color:var(--ok)" data-ic="checkc"></span><span class="qt">неоновый город под дождём, отражения в лужах</span><button class="qa" type="button">открыть</button></div>
+                  <div class="qrow"><span class="qi" style="color:var(--ok)" data-ic="checkc"></span><span class="qt">дрон над горным серпантином на рассвете</span><button class="qa" type="button">открыть</button></div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px; margin-top:10px">
+                <button class="xbtn" type="button" data-ic="ext" style="flex:1; justify-content:center">Открыть Flow</button>
+                <button class="xbtn" type="button" data-ic="image" style="flex:1; justify-content:center">Открыть галерею</button>
+              </div>
+            </div>
+            <div id="flowComm" hidden>
+              <div class="psec" style="margin-bottom:10px">
+                <div class="psec-h"><span class="pstep">1</span><b>Запись комментатора</b><small>своя дорожка поверх клипа</small></div>
+                <p class="hint" style="margin-bottom:9px">Загрузите аудио или запишите голос — реплики распознаются и лягут поверх выбранного клипа с титрами. Клип — из Галереи или из очереди Flow выше.</p>
+                <div class="dashed2" style="grid-template-columns:1fr 1fr">
+                  <button type="button" data-ic="mic">Записать голос</button>
+                  <button type="button" data-ic="paperclip">Аудио из Галереи</button>
+                </div>
+              </div>
+              <button class="cta wide" type="button" data-ic="wand" disabled>Собрать комментатора</button>
+              <p class="hint" style="margin-top:8px; text-align:center">Кнопка станет активной после записи и выбора клипа.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Поп-ап «Hotebook» ── -->
+      <div class="pop-back" id="popHb" hidden>
+        <div class="pop" style="max-width:640px">
+          <div class="pop-h">
+            <span class="pic" style="background:linear-gradient(135deg,#22d3ee,#0891b2)" data-ic="book"></span>
+            <span class="pt">
+              <b>Hotebook</b>
+              <span>Google NotebookLM: источники → чат → артефакты, готовое падает в Галерею</span>
+            </span>
+            <span class="st-chip ok"><i></i> NotebookLM на связи</span>
+            <button class="x" type="button" data-close data-ic="x"></button>
+          </div>
+          <div class="pop-b">
+            <div class="psec">
+              <div class="psec-h"><span class="pstep done" data-ic="check"></span><b>Название</b><small>им подписываются готовые файлы</small></div>
+              <input class="inp" value="Обзор про WordPress">
+              <p class="hint" style="margin-top:6px">Файлы появятся как «Обзор про WordPress — Аудиопересказ», «… — Презентация» и т.д.</p>
+            </div>
+            <div class="psec">
+              <div class="psec-h"><span class="pstep done" data-ic="check"></span><b>Источники</b><small>3 подключено</small></div>
+              <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:8px">
+                <div class="srcrow"><span class="si" data-ic="globe"></span><span>wordpress.org/documentation — официальная документация</span><button class="del" type="button" data-ic="x"></button></div>
+                <div class="srcrow"><span class="si" data-ic="video"></span><span>YouTube · «WordPress за 40 минут — полный курс»</span><button class="del" type="button" data-ic="x"></button></div>
+                <div class="srcrow"><span class="si" data-ic="file"></span><span>Из Галереи · конспект-лекция.pdf</span><button class="del" type="button" data-ic="x"></button></div>
+              </div>
+              <div class="addrow" style="margin-bottom:6px">
+                <input class="inp" placeholder="Ссылка: статья, сайт или YouTube…">
+                <button class="sqbtn" type="button" data-ic="plus"></button>
+              </div>
+              <div class="dashed2">
+                <button type="button" data-ic="type">Вставить текст</button>
+                <button type="button" data-ic="paperclip">Файл из Галереи</button>
+              </div>
+            </div>
+            <div class="psec">
+              <div class="psec-h"><span class="pstep">3</span><b>Чат по источникам</b><small><button class="lnk" type="button" style="font-size:10.4px">очистить</button></small></div>
+              <div style="display:flex; flex-direction:column; gap:7px; margin-bottom:9px">
+                <div class="bubble-q">Какие 3 главные ошибки новичков при старте на WordPress?</div>
+                <div class="bubble-a">1) Перегруз плагинами — сайт замедляется и ломается на обновлениях. 2) Дешёвый хостинг без бэкапов. 3) Темы с «нулёвых» маркетплейсов со зловредами. Безопасный минимум: 5–7 проверенных плагинов, авто-бэкапы, тема из официального каталога.<span class="cit">⌘ 4 цитаты из источников</span></div>
+              </div>
+              <div class="addrow">
+                <textarea class="inp" rows="2" placeholder="Спросите о ваших источниках… (Enter — отправить)"></textarea>
+                <button class="sqbtn" type="button" data-ic="send" style="height:auto"></button>
+              </div>
+            </div>
+            <div class="psec">
+              <div class="psec-h"><span class="pstep">4</span><b>Студия</b><small>Сегодня: 2 генерации</small></div>
+              <div class="hb-grid">
+                <button class="hb-tile" type="button" data-ic-top="mic"><span>Аудиопересказ</span><i class="n">1</i></button>
+                <button class="hb-tile" type="button" data-ic-top="film"><span>Видеообзор</span></button>
+                <button class="hb-tile" type="button" data-ic-top="file"><span>Отчёт</span><i class="n">1</i></button>
+                <button class="hb-tile" type="button" data-ic-top="listchecks"><span>Тест</span></button>
+                <button class="hb-tile" type="button" data-ic-top="table"><span>Таблица</span></button>
+                <button class="hb-tile" type="button" data-ic-top="image"><span>Инфографика</span></button>
+                <button class="hb-tile" type="button" data-ic-top="layers"><span>Карточки</span></button>
+                <button class="hb-tile" type="button" data-ic-top="share"><span>Ментальная карта</span></button>
+                <button class="hb-tile" type="button" data-ic-top="present"><span>Презентация</span></button>
+              </div>
+              <p class="hint" style="margin-top:8px">Клик по типу открывает настройки 1:1 как в NotebookLM (формат, длина, язык, «на чём сделать акцент») — и генерация уходит в фон, панель можно закрыть.</p>
+            </div>
+            <div class="psec">
+              <div class="psec-h"><span class="pstep done" data-ic="check"></span><b>Артефакты</b><small>также лежат в Галерее → «Hotebook»</small></div>
+              <div style="display:flex; flex-direction:column; gap:6px">
+                <div class="qrow"><span class="qi" style="color:var(--hb)" data-ic="mic"></span><span class="qt"><b style="font-weight:700; color:var(--tx)">Аудиопересказ</b> · готово · 07.07, 09:41</span><button class="qa" type="button" style="color:var(--hb)">Слушать</button><button class="qa mut" type="button" data-ic="download"></button></div>
+                <div class="qrow"><span class="qi" style="color:var(--hb)"><span class="spin" data-ic="loader"></span></span><span class="qt"><b style="font-weight:700; color:var(--tx)">Отчёт</b> · генерируется… (можно закрыть панель)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ═══════════ СЦЕНА 2: НАСТРОЙКИ ═══════════ -->
+  <div class="scene-h"><h2><i>2</i>Настройки профиля</h2></div>
+  <p class="scene-sub">Один столбец карточек: профиль-герой (имя правится карандашиком на месте), тема — сегмент «Авто · Светлая · Тёмная» (в макете реально переключает тему страницы), партнёрская программа со статистикой, переход в тарифы, выход. Никаких вложенных страниц ради двух полей.</p>
+  <div class="stage">
+    <div class="app" style="height:auto; min-height:0">
+      <aside class="sb">
+        <div class="top">
+          <div class="logo">T</div>
+          <div class="mini">RU</div>
+          <button class="mini" type="button" id="sbTheme2" title="Переключить тему">◐</button>
+        </div>
+        <nav id="sbNav2"></nav>
+        <div class="bot">
+          <button class="mini" type="button" data-ic="credit"></button>
+          <div class="ava" style="box-shadow:0 0 0 2px var(--acc)">VD<i></i></div>
+        </div>
+      </aside>
+      <div class="main"><div class="m-scroll" style="padding-bottom:26px">
+        <div class="hub-top" style="margin-bottom:16px">
+          <span class="ttl"><span class="ic" data-ic="settings"></span> Настройки</span>
+          <span class="sp"></span>
+          <span class="st-chip ok"><i></i> изменения сохраняются сразу</span>
+        </div>
+        <div class="set-col">
+          <div class="scard"><div class="pad">
+            <div class="prof">
+              <div class="pava">VD<i></i></div>
+              <div class="pt" style="flex:1; min-width:0">
+                <b>Valeriy Danyuk <button type="button" title="Изменить имя" data-ic="pencil"></button></b>
+                <span>plua7610482@gmail.com</span>
+                <span class="tier" data-ic-lead="zap">ENTERPRISE</span>
+              </div>
+            </div>
+            <div class="flbl">Email</div>
+            <input class="inp" value="plua7610482@gmail.com" style="max-width:380px">
+            <div class="btnrow">
+              <button class="btn prim" type="button">Сохранить профиль</button>
+              <button class="btn sec" type="button" data-ic="key">Сменить пароль</button>
+            </div>
+          </div></div>
+
+          <div class="scard">
+            <div class="setrow">
+              <span class="ric" id="themeRowIc" style="background:var(--warnSoft); color:var(--warn)" data-ic="sun"></span>
+              <span class="rt"><b>Тема интерфейса</b><span>Авто следует за системной; выбор запоминается на устройстве</span></span>
+              <span class="seg3" id="setThemeSeg">
+                <button type="button" class="on" data-th="auto">Авто</button>
+                <button type="button" data-th="light" data-ic="sun"></button>
+                <button type="button" data-th="dark" data-ic="moon"></button>
+              </span>
+            </div>
+            <div class="setrow">
+              <span class="ric" style="background:var(--warnSoft); color:var(--warn)" data-ic="zap"></span>
+              <span class="rt"><b>Тарифы и оплата</b><span>Enterprise · продление 02.08.2026 · Stripe</span></span>
+              <span style="color:var(--dis)" data-ic="chevr"></span>
+            </div>
+          </div>
+
+          <div class="scard"><div class="pad">
+            <div class="ecard-h" style="margin-bottom:4px">
+              <span class="kic" style="background:linear-gradient(135deg,#f59e0b,#f97316)" data-ic="heart"></span>
+              <span class="kt"><b>Партнёрская программа</b><p>Делитесь ссылкой — получайте процент с оплат приглашённых.</p></span>
+            </div>
+            <div class="flbl">Ваша ссылка</div>
+            <div class="linkline">
+              <input readonly value="https://app.trendtraffic.pro/?ref=VD7XK2">
+              <button class="cpy" type="button" title="Скопировать" data-ic="copy"></button>
+            </div>
+            <div class="stat3">
+              <div class="st" style="border-color:rgba(59,130,246,.25); background:rgba(59,130,246,.07)"><b style="color:#3b82f6">128</b><span>Переходы</span></div>
+              <div class="st" style="border-color:rgba(139,92,246,.25); background:rgba(139,92,246,.07)"><b style="color:#8b5cf6">17</b><span>Регистрации</span></div>
+              <div class="st" style="border-color:rgba(16,185,129,.25); background:rgba(16,185,129,.07)"><b style="color:#10b981">4</b><span>Оплатили</span></div>
+            </div>
+            <div class="btnrow">
+              <button class="btn sec" type="button" data-ic="file" style="flex:1">Условия программы</button>
+              <button class="btn sec" type="button" data-ic="chat" style="flex:1; color:#25D366; border-color:rgba(37,211,102,.3); background:rgba(37,211,102,.08)">Связаться в WhatsApp</button>
+            </div>
+          </div></div>
+
+          <button class="btn danger wide" type="button" data-ic="logout">Выйти из аккаунта</button>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ СЦЕНА 3: НАСТРОЙКИ ENTERPRISE ═══════════ -->
+  <div class="scene-h"><h2><i>3</i>Настройки Enterprise — все разделы, все складки</h2></div>
+  <p class="scene-sub">Вместо горизонтальных вкладок — вертикальная навигация слева (иконка + название + статус «сколько настроено»), справа — раздел целиком, все инструкции и группы ключей развёрнуты. В макете кликабельны все 6 разделов: API · AI · MCP · Trend · Генерация · Hotebook.</p>
+  <div class="stage">
+    <div class="app" style="height:880px">
+      <aside class="sb">
+        <div class="top">
+          <div class="logo">T</div>
+          <div class="mini">RU</div>
+          <button class="mini" type="button" id="sbTheme3" title="Переключить тему">◐</button>
+        </div>
+        <nav id="sbNav3"></nav>
+        <div class="bot">
+          <button class="mini" type="button" data-ic="credit"></button>
+          <div class="ava">VD<i></i></div>
+        </div>
+      </aside>
+      <div class="main"><div class="m-scroll">
+        <div class="hub-top" style="margin-bottom:16px">
+          <span class="ttl"><span class="ic" data-ic="settings"></span> Настройки Enterprise</span>
+          <span class="sp"></span>
+          <span class="st-chip ok"><i></i> ключи шифруются на сервере</span>
+        </div>
+        <div class="ent">
+          <div class="ent-rail" id="entRail"><!-- рендерит JS --></div>
+          <div class="ent-body" id="entBody"><!-- рендерит JS --></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <!-- ═══════════ СПЕЦИФИКАЦИЯ ═══════════ -->
+  <section class="spec">
+    <h2><i>§1</i>Анатомия хаба (перенос схемы студии на главный экран)</h2>
+    <p>Схема из docs/DESIGN_STUDIO_SCHEME.md («5 зон» профессионального редактора) адаптирована под экран-хаб. Зоны те же, роли те же — меняется только наполнение.</p>
+    <pre>
+┌────┬───────────────────────────────────────────────────────────────┐
+│ ①  │ ② Верхняя строка: Галерея · Поиск (/) · Медиа · Обновить      │
+│ С  ├───────────────────────────────────────────────────────────────┤
+│ а  │ ③ Вкладки-сегменты со счётчиками: Тренды · UGC · Google Flow  │
+│ й  │    · Hotebook · Видео · Публикатор                            │
+│ д  ├───────────────────────────────────────────────────────────────┤
+│ б  │ ④ «Герой» раздела: цветная иконка + имя + 1 строка смысла     │
+│ а  │    + счётчики + ОДНА главная CTA справа                       │
+│ р  │    (Flow/Hotebook: под героем — плашка расширения в 1 строку) │
+│    ├───────────────────────────────────────────────────────────────┤
+│ и  │ ⑤ Сетка: плитка «+ Добавить» первой → карточки 9:16           │
+│ к  │    (чекбокс по ховеру, бейджи, действия по ховеру снизу)      │
+│ о  │                                                               │
+│ н  │    Выбор → плавающая панель снизу по центру                   │
+│ к  │    «Выбрано N · Скачать · Удалить · Снять»                    │
+│ и  │                                                               │
+└────┴───────────────────────────────────────────────────────────────┘
+   Поп-апы блоков (Flow, Hotebook, UGC-студия) открываются ПОВЕРХ хаба
+   и возвращают ровно в тот же раздел; внутри — нумерованные шаги ①②③
+   в порядке принятия решений и одна главная CTA (схема студии).</pre>
+    <div class="cards3" style="margin-top:12px">
+      <div class="card-i"><b>① Сайдбар-иконки = вкладки</b><p>Пункт сайдбара и вкладка хаба — одна сущность (<code>/gallery?tab=…</code>). Активный пункт подсвечен индиго-заливкой, бейдж на иконке = живые процессы (генерации). Тултип — единственная подпись: сайдбар всегда свёрнут.</p></div>
+      <div class="card-i"><b>④ Герой раздела</b><p>Каждая вкладка получает идентичность: фирменный цвет блока (Тренды/Flow — индиго, UGC — фиолетовый, Hotebook — циан), одна строка «что это», счётчики и одна CTA. Пользователь всегда знает, где он и какой следующий шаг.</p></div>
+      <div class="card-i"><b>⑤ Карточка — один канон</b><p>Небольшая (сетка от ~150px), но информативная: превью 9:16, смысловой бейдж, просмотры и длительность на превью, имя + мета. ВСЕ действия видны сразу — ряд компактных кнопок в подвале (открыть · → Flow · разбор · удалить · скачать); чекбокс выбора — по ховеру. Один канон для трендов, клипов, артефактов и загрузок.</p></div>
+    </div>
+  </section>
+
+  <section class="spec">
+    <h2><i>§2</i>Принципы (из DESIGN_STUDIO_SCHEME.md → применение к хабу)</h2>
+    <div class="cards3">
+      <div class="card-i"><b>Одна главная кнопка на раздел</b><p>CTA героя = плитка «+ Добавить» = одно действие. Всё остальное — вторичные ghost-кнопки. Поп-апы блоков тоже несут одну CTA («Отправить в Flow», генерация артефакта).</p></div>
+      <div class="card-i"><b>Пустой слот учит</b><p>Пустая вкладка — не тоска, а инструкция: цветная иконка раздела, «что здесь появится», CTA. Плитка «+» с подписью-хинтом стоит первой даже в заполненной сетке.</p></div>
+      <div class="card-i"><b>Статус — всегда виден, одной строкой</b><p>Плашка расширения сжата до строки со статус-точкой (● подключено / ● не установлено) и раскрывается инструкцией по клику. Тот же статус-чип — в шапке поп-апов Flow и Hotebook.</p></div>
+      <div class="card-i"><b>Прогрессивное раскрытие</b><p>Хаб показывает карточки; глубина (промпты, источники, чат, настройки генерации) выезжает поп-апом поверх и закрывается Esc — назад ровно в тот же раздел.</p></div>
+      <div class="card-i"><b>Темы из токенов</b><p>Только <code>var(--…)</code> из index.css: индиго-бренд, Geist, тёмная тема через класс. Этот макет использует те же значения — сверяйте пипеткой.</p></div>
+      <div class="card-i"><b>Живые процессы видны на месте</b><p>Генерация Hotebook — карточка-плейсхолдер со спиннером прямо в сетке + пульс-бейдж на вкладке и в сайдбаре. Ничего не «уезжает в фон» молча.</p></div>
+    </div>
+  </section>
+
+  <section class="spec">
+    <h2><i>§3</i>Было → стало (v2.1.2 → макет)</h2>
+    <p>Что именно меняется на каждом экране и зачем. «Было» — прод v2.1.2 (скрины юзера 08.07.2026), «стало» — этот макет.</p>
+    <div class="tbl-wrap"><table class="cmp">
+      <tr><th style="width:150px">Экран / элемент</th><th>Было (v2.1.2)</th><th>Стало (макет)</th><th style="width:230px">Зачем</th></tr>
+      <tr><td>Шапка хаба</td><td>PNG-иконка + «Галерея», кнопки «Медиа» и «Обновить» справа, ниже вкладки и отдельное большое поле поиска.</td><td>Компактная строка: имя экрана · поиск-пилюля с хоткеем «/» · глобальные действия. Ниже — вкладки со счётчиками и «герой» активного раздела с одной CTA.</td><td><em>Идентичность раздела и следующий шаг видны сразу;</em> поиск не съедает вертикаль.</td></tr>
+      <tr><td>Вкладки</td><td>Сегменты без счётчиков; активная — индиго.</td><td>Те же сегменты + счётчик файлов на каждой вкладке; бейдж-пульс при живой генерации.</td><td>Видно, где что лежит и где сейчас идёт работа, не переключаясь.</td></tr>
+      <tr><td>Карточки</td><td>Карточка крупная (сетка от ~168px), чекбокс всегда видим, кнопки-действия крупные (32px), мета разрозненна.</td><td>Карточка меньше (сетка от ~150px), но информативнее: бейджи «Анализ»/«авто»/тип файла, просмотры и длительность на превью, имя + мета. Все кнопки видны сразу — компактный ряд 25px-иконок в подвале (открыть · → Flow · разбор · удалить · скачать); чекбокс — по ховеру.</td><td><em>Больше файлов на экране без потери действий</em> — ничего не спрятано за ховером (фидбэк юзера).</td></tr>
+      <tr><td>Выбор и массовые действия</td><td>Статичный тулбар над сеткой («Найдено · Выбрать всё · Удалить · Скачать выбранные») — виден всегда, даже без выбора.</td><td>Плавающая панель снизу по центру появляется при первом выборе: «Выбрано N · Скачать · Удалить · Снять». «Выбрать всё» — в ней же.</td><td>Паттерн Google Photos: массовые действия не шумят, пока не нужны.</td></tr>
+      <tr><td>Плашка расширения</td><td>Крупный баннер «Установите расширение TrendTraffic» с градиент-иконкой; статус подключения не показан.</td><td>Строка со статус-точкой: ● подключено (зелёный) / ● не установлено (красный + «Скачать»); «Как установить» раскрывается на месте. Цвет иконки — цвет блока.</td><td>Статус — главный вопрос пользователя; баннер не давит, когда всё работает.</td></tr>
+      <tr><td>Поп-ап Google Flow</td><td>Плоская форма: 2 таба, абзац-инструкция, блок «Расширение», кнопка «Открыть галерею», textarea, CTA.</td><td>Схема студии: статус-чип в шапке, шаг ① «Промпты» (+«Взять из Omni»), CTA с числом клипов, шаг-очередь со статусами строк, сервисные ссылки внизу. Комментатор — второй таб с теми же шагами.</td><td>Порядок принятия решений сверху вниз; CTA одна и говорит, что произойдёт.</td></tr>
+      <tr><td>Поп-ап Hotebook</td><td>Секции без порядка чтения: Название, жёлтый баннер ошибки, Источники, Чат, Студия; артефакты внизу списком.</td><td>Нумерованные шаги ①Название ②Источники ③Чат ④Студия + «Артефакты» с инлайн-плеером; статус NotebookLM — чипом в шапке (баннер — только при ошибке); счётчики генераций на плитках студии.</td><td>Новичок проходит блок как чек-лист; статус не маскируется под ошибку.</td></tr>
+      <tr><td>Публикатор</td><td>Пустая вкладка-заглушка с текстом.</td><td>Empty-state с иконкой, «скоро», и ghost-чипами будущих площадок (TikTok · Instagram · YouTube · X).</td><td>Заглушка продаёт роадмап, а не выглядит дырой.</td></tr>
+      <tr><td>Настройки</td><td>Карточки: профиль + email, тумблер темы (2 состояния), партнёрка, «Биллинг», выход.</td><td>То же наполнение, но: тариф-чип в профиле, тема — сегмент «Авто · Светлая · Тёмная», строки-разделы с иконками в цветных подложках, партнёрка с 3 стат-плитками.</td><td>«Авто» — самый частый запрос по теме; визуальный ритм карточек единый с хабом.</td></tr>
+      <tr><td>Enterprise</td><td>Горизонтальные вкладки-подчёркивания (API · AI · MCP · Trend · Генерация · Hotebook), секции грузятся по клику.</td><td>Вертикальная навигация: иконка + имя + подпись + статус («3 ключа», «ошибка»); справа раздел целиком, инструкции и группы ключей развёрнуты («все складки»). Канон карточки ключа: имя + статус-пилюля + маскированный ключ + Сохранить/Проверить/Удалить.</td><td>6 разделов уже не влезают в строку; статус виден до захода в раздел.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="spec">
+    <h2><i>§4</i>Фазовый план внедрения</h2>
+    <p>Каждая фаза — самостоятельный PR, сервис остаётся рабочим между фазами. Строки — в i18n-словарь (<code>gallery.*</code>, <code>settings.*</code>, <code>enterprise.*</code>), канон RU.</p>
+    <div class="phase"><span class="n">1</span><div><b>Хаб: шапка + вкладки со счётчиками + герой раздела</b><p>GalleryPage: верхняя строка (поиск-пилюля «/», глобальные действия), счётчики на вкладках (длины уже загруженных списков), компонент героя (цвет/иконка/описание/CTA из конфига вкладки). Плитка «+» остаётся.</p></div></div>
+    <div class="phase"><span class="n">2</span><div><b>Карточки и выбор</b><p>Канон карточки: компактный размер (сетка от ~150px), ховер-чекбокс, ВСЕ действия видимым рядом маленьких кнопок в подвале, бейджи; плавающая панель выбора вместо статичного тулбара (компонент <code>SelectionBar</code>). Пустые состояния по вкладкам.</p></div></div>
+    <div class="phase"><span class="n">3</span><div><b>Плашка расширения одной строкой</b><p>Статус (present/connected из postMessage-моста) → точка-чип; «Как установить» — инлайн-раскрытие (контент уже есть). Единый компонент для вкладок Flow/Hotebook и карточки в Enterprise → Генерация.</p></div></div>
+    <div class="phase"><span class="n">4</span><div><b>Поп-апы Flow и Hotebook по схеме шагов</b><p>FlowExtPanel и hotebook-панель MontageEditor: шапка с иконкой блока + статус-чип, секции-шаги <code>.psec</code>, одна CTA. Логика/эндпоинты не меняются — только компоновка.</p></div></div>
+    <div class="phase"><span class="n">5</span><div><b>Настройки: тема-сегмент и ритм карточек</b><p>SettingsPage: сегмент Авто/Светлая/Тёмная (localStorage <code>vibevox_theme</code> + 'auto'), тариф-чип, строки-разделы. Партнёрка — как есть, с плитками.</p></div></div>
+    <div class="phase"><span class="n">6</span><div><b>Enterprise: вертикальная навигация + статусы разделов</b><p>EnterpriseSettingsPage: рельса слева (иконка/имя/подпись/статус из лёгкого сводного эндпоинта или локально после загрузки секции), правая колонка — секция с развёрнутыми группами. Lazy-загрузка секций сохраняется.</p></div></div>
+  </section>
+
+  <section class="spec">
+    <h2><i>§5</i>Ссылки</h2>
+    <ul class="links">
+      <li>Этот макет: <code>apps/frontend/public/design/service-design.html</code> · живой URL <code>https://app.trendtraffic.pro/design/service-design.html</code></li>
+      <li>Эталон схемы: <code>docs/DESIGN_STUDIO_SCHEME.md</code> (5 зон + 10 принципов) и макет студии <code>/design/ugc-studio-design.html</code></li>
+      <li>Энциклопедия этого макета: <code>docs/DESIGN_SERVICE_HUB.md</code></li>
+      <li>Код экранов: <code>GalleryPage.tsx</code> · <code>MainLayout.tsx</code> · <code>FlowExtPanel.tsx</code> · <code>MontageEditor.tsx</code> (hotebook-панель) · <code>SettingsPage.tsx</code> · <code>EnterpriseSettingsPage.tsx</code> + <code>pages/enterprise/*</code></li>
+      <li>Токены: <code>apps/frontend/src/index.css</code> (Abyss Aurora → Geist-панель, индиго)</li>
+    </ul>
+  </section>
+</div>
+<script>
+(function(){
+  'use strict';
+  /* ══ Иконки (lucide-подмножество) ══ */
+  var I = {
+    gallery:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+    image:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+    search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    upload:'<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/>',
+    refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    credit:'<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+    settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    trend:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+    users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    clapper:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+    book:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    video:'<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>',
+    send:'<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+    checkc:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    loader:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+    ext:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    mic:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>',
+    film:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/>',
+    file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+    listchecks:'<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+    table:'<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
+    layers:'<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+    present:'<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
+    wand:'<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>',
+    globe:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+    type:'<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/>',
+    paperclip:'<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+    download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+    trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+    play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+    sparkles:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+    eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+    pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+    key:'<path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>',
+    zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    chevr:'<path d="m9 18 6-6-6-6"/>',
+    chevd:'<path d="m6 9 6 6 6-6"/>',
+    chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    copy:'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+    workflow:'<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
+    plug:'<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
+    music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
+  };
+  function ic(n, s){ s = s || 16; return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(I[n]||'')+'</svg>'; }
+  function hydrate(root){
+    (root||document).querySelectorAll('[data-ic],[data-ic-lead],[data-ic-top]').forEach(function(el){
+      if (el.dataset.icDone) return; el.dataset.icDone = '1';
+      var n = el.dataset.ic || el.dataset.icLead || el.dataset.icTop;
+      var s = el.dataset.icSize || (el.classList.contains('hb-tile') ? 17 : 16);
+      el.insertAdjacentHTML('afterbegin', ic(n, s));
+    });
+  }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  var $ = function(sel, root){ return (root||document).querySelector(sel); };
+
+  /* ══ Общие данные ══ */
+  var ART = [
+    'radial-gradient(120% 60% at 50% 8%, rgba(251,146,60,.85), transparent 55%), linear-gradient(165deg,#7c2d12,#1e1b4b 75%)',
+    'radial-gradient(90% 50% at 70% 20%, rgba(34,211,238,.5), transparent 60%), linear-gradient(200deg,#312e81,#0f172a)',
+    'radial-gradient(100% 55% at 30% 15%, rgba(16,185,129,.45), transparent 60%), linear-gradient(180deg,#064e3b,#022c22)',
+    'radial-gradient(80% 45% at 50% 90%, rgba(99,102,241,.55), transparent 65%), linear-gradient(180deg,#1e293b,#0b1120)',
+    'radial-gradient(110% 60% at 50% 0%, rgba(245,158,11,.55), transparent 55%), linear-gradient(180deg,#78350f,#1c1917)',
+    'radial-gradient(90% 50% at 30% 20%, rgba(236,72,153,.5), transparent 60%), linear-gradient(200deg,#831843,#1e1b4b)',
+    'radial-gradient(100% 55% at 60% 10%, rgba(56,189,248,.5), transparent 60%), linear-gradient(180deg,#0c4a6e,#082f49)',
+    'radial-gradient(100% 50% at 50% 15%, rgba(168,85,247,.5), transparent 60%), linear-gradient(190deg,#581c87,#1e1b4b)'
+  ];
+  var NAV = [
+    { k:'trendhub', icn:'trend', lb:'Тренды' },
+    { k:'ugc', icn:'users', lb:'UGC' },
+    { k:'flow', icn:'clapper', lb:'Google Flow' },
+    { k:'hotebook', icn:'book', lb:'Hotebook', cnt:1 },
+    { k:'reference', icn:'video', lb:'Видео' },
+    { k:'publisher', icn:'send', lb:'Публикатор' },
+    { k:'enterprise', icn:'settings', lb:'Настройки Enterprise' }
+  ];
+  var TABS = [
+    { k:'trendhub', lb:'Тренды', icn:'trend', n:12 },
+    { k:'ugc', lb:'UGC', icn:'users', n:6 },
+    { k:'flow', lb:'Google Flow', icn:'clapper', n:5 },
+    { k:'hotebook', lb:'Hotebook', icn:'book', n:7, gen:1 },
+    { k:'reference', lb:'Видео', icn:'video', n:9 },
+    { k:'publisher', lb:'Публикатор', icn:'send', n:0 }
+  ];
+  var HERO = {
+    trendhub:{ icn:'trend', g:'linear-gradient(135deg,#6366f1,#4f46e5)', t:'Тренды', s:'Запросы сканов и разборы виральности — всё, что вы анализировали, с обложками и данными разбора.', m:['8 разборов','4 запроса'], cta:{ icn:'plus', lb:'Добавить тренд' } },
+    ugc:{ icn:'users', g:'linear-gradient(135deg,#a855f7,#7c3aed)', t:'UGC', s:'Ролики студии, макеты оформления и авто-конвейер «тренд → анализ → UGC».', m:['6 роликов','2 макета'], cta:{ icn:'plus', lb:'Собрать ролик' } },
+    flow:{ icn:'clapper', g:'linear-gradient(135deg,#6366f1,#4f46e5)', t:'Google Flow', s:'Клипы Veo из вашего Google Flow: очередь промптов и двусторонний обмен с Галереей.', m:['5 клипов','в очереди 1'], cta:{ icn:'plus', lb:'Добавить клипы' } },
+    hotebook:{ icn:'book', g:'linear-gradient(135deg,#22d3ee,#0891b2)', t:'Hotebook', s:'Артефакты Google NotebookLM по вашим источникам: аудио, видео, отчёты, тесты, презентации.', m:['7 артефактов','генерируется 1'], cta:{ icn:'plus', lb:'Новый проект' } },
+    reference:{ icn:'video', g:'linear-gradient(135deg,#64748b,#475569)', t:'Видео', s:'Все загрузки и продукция сервиса: видео, фото и аудио в одном месте.', m:['6 видео','3 аудио'], cta:{ icn:'upload', lb:'Загрузить медиа' } },
+    publisher:{ icn:'send', g:'linear-gradient(135deg,#8b5cf6,#6d28d9)', t:'Публикатор', s:'Автопубликация готовых роликов по площадкам — прямо из Галереи.', soon:true, m:[], cta:{ icn:'send', lb:'Скоро', dis:true } }
+  };
+
+  var S = { tab:'trendhub', kind:'video', extOpen:false, theme:'auto' };
+
+  /* ══ Сайдбары ══ */
+  function navHtml(activeKey, opts){
+    opts = opts || {};
+    return NAV.map(function(n){
+      var on = activeKey === n.k;
+      var cnt = n.cnt ? '<span class="cnt">'+n.cnt+'</span>' : '';
+      var st = n.k === 'enterprise' ? ' style="margin-top:10px"' : '';
+      return '<button type="button" class="nv'+(on?' on':'')+'" data-nav="'+n.k+'"'+st+'>'+ic(n.icn,20)+cnt+'<span class="tip">'+n.lb+'</span></button>';
+    }).join('');
+  }
+  function renderSidebars(){
+    $('#sbNav').innerHTML = navHtml(S.tab);
+    var n2 = $('#sbNav2'); if (n2) n2.innerHTML = navHtml(null);
+    var n3 = $('#sbNav3'); if (n3) n3.innerHTML = navHtml('enterprise');
+    $('#sbNav').querySelectorAll('[data-nav]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var k = b.dataset.nav;
+        if (k === 'enterprise') return;
+        S.tab = k; renderHub();
+      });
+    });
+  }
+
+  /* ══ Хаб: вкладки, герой, плашка, содержимое ══ */
+  function renderTabs(){
+    $('#hubTabs').innerHTML = TABS.map(function(t){
+      var on = S.tab === t.k;
+      var n = t.n ? '<span class="n">'+t.n+'</span>' : '';
+      var gen = t.gen ? '<span class="n" style="background:var(--okSoft); color:var(--ok); border:none" title="Идёт генерация">⚙ '+t.gen+'</span>' : '';
+      return '<button type="button" data-tab="'+t.k+'" class="'+(on?'on':'')+'">'+ic(t.icn,14)+' '+t.lb+n+gen+'</button>';
+    }).join('');
+    $('#hubTabs').querySelectorAll('[data-tab]').forEach(function(b){
+      b.addEventListener('click', function(){ S.tab = b.dataset.tab; renderHub(); });
+    });
+  }
+  function renderHero(){
+    var h = HERO[S.tab];
+    var meta = h.m.map(function(m){ return '<span class="mchip">'+m+'</span>'; }).join('');
+    $('#hubHero').innerHTML =
+      '<div class="hero">' +
+        '<span class="hic" style="background:'+h.g+'">'+ic(h.icn,21)+'</span>' +
+        '<span class="ht"><b>'+h.t+(h.soon?'<span class="soon">скоро</span>':'')+'</b><span>'+h.s+'</span></span>' +
+        '<span class="meta">'+meta+'</span>' +
+        '<button type="button" class="cta" id="heroCta"'+(h.cta.dis?' disabled':'')+' style="background:'+h.g+'">'+ic(h.cta.icn,15)+' '+h.cta.lb+'</button>' +
+      '</div>';
+    var cta = $('#heroCta');
+    if (cta && !h.cta.dis) cta.addEventListener('click', function(){
+      if (S.tab === 'flow') openPop('flow');
+      else if (S.tab === 'hotebook') openPop('hotebook');
+      else if (S.tab === 'ugc') { try { window.open('/design/ugc-studio-design.html', '_blank'); } catch(e){} }
+    });
+  }
+  function renderExt(){
+    var host = $('#hubExt');
+    if (S.tab !== 'flow' && S.tab !== 'hotebook') { host.innerHTML = ''; return; }
+    var isHb = S.tab === 'hotebook';
+    host.innerHTML =
+      '<div class="extbar">' +
+        '<div class="row">' +
+          '<span class="pz" style="background:'+(isHb?'linear-gradient(135deg,#22d3ee,#0891b2)':'linear-gradient(135deg,#6366f1,#22d3ee)')+'">'+ic('plug',16)+'</span>' +
+          '<span class="tt"><b>Расширение TrendTraffic<span class="v">v1.1.0</span></b>' +
+          '<span>Одно расширение для Google Flow (Veo) и NotebookLM — подключается само, пока вы залогинены здесь.</span></span>' +
+          '<span class="st-chip ok"><i></i> '+(isHb?'NotebookLM на связи':'подключено')+'</span>' +
+          '<span class="act">' +
+            '<button class="xbtn" type="button">'+ic('ext',13)+' '+(isHb?'Открыть NotebookLM':'Открыть Flow')+'</button>' +
+            '<button class="xbtn" type="button" id="extFoldBtn">'+ic('chevd',13)+' Как установить</button>' +
+          '</span>' +
+        '</div>' +
+        '<div class="fold" id="extFold"'+(S.extOpen?'':' hidden')+'>' +
+          '<ol><li>Скачайте <b>.zip</b> и распакуйте в отдельную папку.</li>' +
+          '<li>Откройте <code>chrome://extensions</code> → включите «Режим разработчика».</li>' +
+          '<li>«Загрузить распакованное» → выберите папку с расширением.</li>' +
+          '<li>Старое отдельное расширение «Google Flow» — удалите, чтобы не конфликтовали.</li>' +
+          '<li>Откройте <b>labs.google/flow</b> или <b>notebooklm.google.com</b> и войдите в свой Google.</li>' +
+          '<li>Готово: подключение автоматическое, пока вы залогинены в TrendTraffic.</li></ol>' +
+          '<div class="upd"><b>Обновление:</b> новый .zip → замените папку → «Обновить» в chrome://extensions → F5 на app.trendtraffic.pro.</div>' +
+        '</div>' +
+      '</div>';
+    $('#extFoldBtn').addEventListener('click', function(){ S.extOpen = !S.extOpen; renderExt(); });
+  }
+
+  function cardHtml(o){
+    var badge = o.badge ? '<span class="badge '+o.badge.cls+'">'+(o.badge.icn?ic(o.badge.icn,10):'')+o.badge.lb+'</span>' : '';
+    var ck = '<button type="button" class="ck" title="Выбрать">'+ic('check',13)+'</button>';
+    // Все действия видны сразу (фидбэк юзера): открыть · →Flow · удалить · скачать
+    var btm =
+      '<div class="btm">' +
+        '<button type="button" title="'+(o.kind==='file'?'Открыть файл':'Открыть')+'">'+ic(o.kind==='file'?'ext':'play',12)+'</button>' +
+        (o.toFlow ? '<button type="button" class="fl" title="Отправить в Google Flow">'+ic('clapper',12)+'</button>' : '') +
+        (o.an ? '<button type="button" class="fl" style="color:#0e7490; background:var(--hbSoft)" title="Открыть разбор">'+ic('sparkles',12)+'</button>' : '') +
+        '<button type="button" class="rm" title="Удалить">'+ic('trash',12)+'</button>' +
+        '<button type="button" class="dl" title="Скачать на устройство">'+ic('download',12)+'</button>' +
+      '</div>';
+    var inner = '';
+    if (o.kind === 'gen') {
+      inner = '<span class="genov">'+ic('loader',26).replace('<svg','<svg class="spin" style="color:var(--hb)"')+'<b>'+esc(o.genLb)+'</b><span>генерируется…</span></span>';
+      btm = ''; ck = '';
+    } else if (o.kind === 'file') {
+      inner = '<span style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px">' +
+        '<span class="fic" style="background:'+(o.ficBg||'var(--hbSoft)')+'; color:'+(o.ficC||'var(--hb)')+'">'+ic(o.ficn||'file',24)+'</span>' +
+        '<span class="fext">'+o.fext+'</span></span>';
+    } else if (o.kind === 'audio') {
+      var bars = ''; for (var i=0;i<16;i++){ bars += '<i style="height:'+(6+Math.round(22*Math.abs(Math.sin(i*1.7+(o.seed||0)))))+'px"></i>'; }
+      inner = '<span style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px">' +
+        '<span class="fic" style="background:var(--accSoft); color:var(--acc)">'+ic('music',24)+'</span>' +
+        '<span class="wave">'+bars+'</span></span>';
+    } else {
+      inner = '<span class="art" style="background:'+ART[o.art % ART.length]+'"></span>' +
+        '<span class="playc"><i>'+ic('play',18)+'</i></span>' +
+        (o.views ? '<span class="views">'+ic('eye',11)+' '+o.views+'</span>' : '') +
+        (o.dur ? '<span class="durn">'+o.dur+'</span>' : '');
+    }
+    return '<div class="card'+(o.kind==='file'?' filecard':'')+'">' +
+      '<div class="prev">'+inner+badge+ck+'</div>' +
+      '<div class="cap"><b>'+esc(o.t)+'</b>'+(o.s?'<span>'+esc(o.s)+'</span>':'')+'</div>' +
+      btm +
+    '</div>';
+  }
+  function addTile(o){
+    return '<button type="button" class="tile-add" id="'+(o.id||'')+'"><span class="pl">'+ic('plus',20)+'</span><b>'+o.t+'</b><span>'+o.s+'</span></button>';
+  }
+  function chipHtml(t, m, opts){
+    opts = opts || {};
+    return '<span class="chip">'+(opts.icn?ic(opts.icn,12):'')+' <b style="font-weight:660">'+esc(t)+'</b>'+(m?'<span class="mt">'+esc(m)+'</span>':'')+'<button type="button" class="del" title="Убрать">'+ic('x',11)+'</button></span>';
+  }
+
+  var BODIES = {
+    trendhub: function(){
+      var chips = '<button type="button" class="chip add">'+ic('plus',12)+' Добавить тренд</button>' +
+        chipHtml('ai avatar', 'TikTok · 120', {icn:'trend'}) +
+        chipHtml('корейская косметика', 'TikTok · 80', {icn:'trend'}) +
+        chipHtml('cat asmr', 'YouTube · 64', {icn:'trend'}) +
+        chipHtml('уличная еда', 'Instagram · 24', {icn:'trend'});
+      var cards = [
+        { art:0, t:'@moto.diary', s:'Хук: неожиданный POV-переход', views:'2.1M', dur:'0:34', badge:{cls:'an', icn:'sparkles', lb:'Анализ'}, toFlow:true, an:true },
+        { art:5, t:'@beauty.seoul', s:'Хук: до/после за 3 секунды', views:'890K', dur:'0:21', badge:{cls:'an', icn:'sparkles', lb:'Анализ'}, toFlow:true, an:true },
+        { art:2, t:'@wild.nature', s:'Хук: вопрос в первом кадре', views:'1.4M', dur:'0:48', badge:{cls:'an', icn:'sparkles', lb:'Анализ'}, toFlow:true, an:true },
+        { art:6, t:'@sea.drone', s:'Хук: масштаб + музыкальный дроп', views:'640K', dur:'0:19', badge:{cls:'an', icn:'sparkles', lb:'Анализ'}, toFlow:true, an:true },
+        { art:3, t:'@city.nights', s:'Хук: текст-провокация на экране', views:'3.2M', dur:'0:27', badge:{cls:'an', icn:'sparkles', lb:'Анализ'}, toFlow:true, an:true }
+      ].map(cardHtml).join('');
+      return '<div class="rowlbl">'+ic('search',13)+' Запросы трендов <span class="cnt">· 4 — клик: «Тренды» откроются с готовой выдачей</span></div>' +
+        '<div class="chips">'+chips+'</div>' +
+        '<div class="rowlbl" style="margin-top:18px">'+ic('sparkles',13)+' Анализ <span class="cnt">· 8 — разобранные видео: обложка + данные разбора</span></div>' +
+        '<div class="grid">'+addTile({t:'Добавить', s:'Разобрать видео в «Тренды → Аналитика» — разбор появится здесь'})+cards+'</div>';
+    },
+    ugc: function(){
+      var kits = '<button type="button" class="chip add">'+ic('plus',12)+' Новый макет</button>' +
+        chipHtml('Neon Hook', 'слой + караоке-титры', {icn:'layers'}) +
+        chipHtml('Минимал белый', 'титры по словам', {icn:'layers'});
+      var auto = '<button type="button" class="chip add">'+ic('plus',12)+' Шаблон конвейера</button>' +
+        chipHtml('#ai avatar', 'шаблон · автопубликация', {icn:'zap'}) +
+        chipHtml('#cat asmr', 'шаблон', {icn:'zap'});
+      var cards = [
+        { art:7, t:'UGC — Little Tommy.mp4', s:'вчера · 9:16 · диалог', dur:'0:52', toFlow:true },
+        { art:1, t:'UGC — обзор гаджета.mp4', s:'вчера · 9:16 · удержание', dur:'1:24', toFlow:true },
+        { art:5, t:'UGC — озвучка без аватара.mp4', s:'2 дня назад · 1:1', dur:'0:38', toFlow:true },
+        { art:4, t:'авто — ai avatar №3.mp4', s:'автопилот · 07 июл.', dur:'0:31', badge:{cls:'auto', lb:'авто'}, toFlow:true },
+        { art:2, t:'авто — ai avatar №2.mp4', s:'автопилот · 07 июл.', dur:'0:29', badge:{cls:'auto', lb:'авто'}, toFlow:true }
+      ].map(cardHtml).join('');
+      return '<div class="rowlbl">'+ic('layers',13)+' Макеты <span class="cnt">· пресеты оформления студии</span></div>' +
+        '<div class="chips">'+kits+'</div>' +
+        '<div class="rowlbl" style="margin-top:14px">'+ic('zap',13)+' Авто <span class="cnt">· конвейер «тренд → анализ → UGC», ролики помечены бейджем</span></div>' +
+        '<div class="chips">'+auto+'</div>' +
+        '<div class="rowlbl" style="margin-top:18px">'+ic('users',13)+' Ролики студии <span class="cnt">· 6</span></div>' +
+        '<div class="grid">'+addTile({t:'Собрать ролик', s:'Открыть UGC-студию: аватар, озвучка, титры, форматы'})+cards+'</div>';
+    },
+    flow: function(){
+      var cards = [
+        { art:0, t:'Google Flow — 07 июл., 08:23.mp4', s:'закат над городом', dur:'0:08', toFlow:false },
+        { art:1, t:'Google Flow — 07 июл., 08:21.mp4', s:'капли дождя на стекле', dur:'0:08' },
+        { art:3, t:'Google Flow — 07 июл., 08:19.mp4', s:'ночной город, неон', dur:'0:06' },
+        { art:6, t:'Google Flow — 06 июл., 22:03.mp4', s:'дрон над серпантином', dur:'0:08' },
+        { art:2, t:'Google Flow — 06 июл., 21:47.mp4', s:'лес в тумане', dur:'0:06' }
+      ].map(cardHtml).join('');
+      return '<div class="grid">'+addTile({id:'addFlow', t:'Добавить клипы', s:'Очередь промптов в ваш Google Flow (Veo) через расширение'})+cards+'</div>';
+    },
+    hotebook: function(){
+      var cards = [
+        cardHtml({ kind:'gen', genLb:'Отчёт', t:'Обзор про WordPress — Отчёт', s:'генерируется…' }),
+        cardHtml({ kind:'audio', seed:2, t:'Обзор про WordPress — Аудиопересказ.m4a', s:'07 июл. · 12:40 мин' }),
+        cardHtml({ art:3, t:'Обзор про WordPress — Видеообзор.mp4', s:'07 июл. · объясняющий', dur:'3:12' }),
+        cardHtml({ kind:'file', fext:'PPTX', ficn:'present', t:'Обзор про WordPress — Презентация.pptx', s:'06 июл. · 14 слайдов' }),
+        cardHtml({ kind:'file', fext:'PDF', ficn:'file', t:'SEO-чеклист — Брифинг.pdf', s:'05 июл.' }),
+        cardHtml({ kind:'file', fext:'JSON', ficn:'listchecks', t:'SEO-чеклист — Тест.json', s:'05 июл. · 12 вопросов' }),
+        cardHtml({ kind:'file', fext:'PNG', ficn:'image', ficBg:'var(--accSoft)', ficC:'var(--acc)', t:'SEO-чеклист — Инфографика.png', s:'05 июл. · вертикальная' })
+      ].join('');
+      return '<div class="grid">'+addTile({id:'addHb', t:'Новый проект', s:'Источники, чат и генерация артефактов NotebookLM'})+cards+'</div>';
+    },
+    reference: function(){
+      var f = '<div class="filters" style="margin-bottom:12px">' +
+        '<button type="button" '+(S.kind==='video'?'class="on"':'')+' data-kind="video">'+ic('video',13)+' Видео · 6</button>' +
+        '<button type="button" '+(S.kind==='audio'?'class="on"':'')+' data-kind="audio">'+ic('music',13)+' Аудио · 3</button></div>';
+      var cards;
+      if (S.kind === 'audio') {
+        cards = [
+          cardHtml({ kind:'audio', seed:1, t:'реплики — озвучка EN.mp3', s:'вчера · 0:41' }),
+          cardHtml({ kind:'audio', seed:5, t:'подкаст-запись.m4a', s:'03 июл. · 12:18' }),
+          cardHtml({ kind:'audio', seed:9, t:'фон-музыка лоу-фай.mp3', s:'01 июл. · 2:30' })
+        ].join('');
+      } else {
+        cards = [
+          { art:4, t:'исходник — обзор квартиры.mp4', s:'сегодня · загрузка', dur:'1:02', toFlow:true },
+          { art:1, t:'референс — конкурент.mp4', s:'вчера · загрузка', dur:'0:37', toFlow:true },
+          { art:6, t:'b-roll — море с дрона.mp4', s:'05 июл.', dur:'0:22', toFlow:true },
+          { art:7, t:'фото — продукт.jpg', s:'04 июл. · изображение', badge:{cls:'ft', lb:'JPG'}, toFlow:true },
+          { art:2, t:'монтаж — итог недели.mp4', s:'03 июл. · редактор', dur:'2:14', toFlow:true }
+        ].map(cardHtml).join('');
+      }
+      return f + '<div class="grid">'+addTile({t:'Загрузить медиа', s:'Фото и видео лягут в «Видео», аудио — в «Аудио», по типу файла'})+cards+'</div>';
+    },
+    publisher: function(){
+      return '<div class="empty">' +
+        '<span class="eic" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">'+ic('send',28)+'</span>' +
+        '<b>Публикатор скоро</b>' +
+        '<p>Автопубликация готовых роликов по площадкам — расписание, подписи, первый комментарий. Прямо из Галереи, без выгрузки на диск.</p>' +
+        '<span class="ghosts"><span>TikTok</span><span>Instagram Reels</span><span>YouTube Shorts</span><span>X</span><span>VK</span></span>' +
+      '</div>';
+    }
+  };
+
+  function renderBody(){
+    $('#hubBody').innerHTML = BODIES[S.tab]();
+    var af = $('#addFlow'); if (af) af.addEventListener('click', function(){ openPop('flow'); });
+    var ah = $('#addHb'); if (ah) ah.addEventListener('click', function(){ openPop('hotebook'); });
+    $('#hubBody').querySelectorAll('[data-kind]').forEach(function(b){
+      b.addEventListener('click', function(){ S.kind = b.dataset.kind; renderBody(); updateSel(); });
+    });
+    $('#hubBody').querySelectorAll('.card .ck').forEach(function(ckb){
+      ckb.addEventListener('click', function(e){
+        e.stopPropagation();
+        ckb.closest('.card').classList.toggle('sel');
+        updateSel();
+      });
+    });
+  }
+  function updateSel(){
+    var n = document.querySelectorAll('#hubBody .card.sel').length;
+    var bar = $('#selBar');
+    $('#selCnt').textContent = 'Выбрано ' + n;
+    bar.classList.toggle('show', n > 0);
+    $('#hub').classList.toggle('selmode', n > 0);
+  }
+  function renderHub(){
+    renderSidebars(); renderTabs(); renderHero(); renderExt(); renderBody(); updateSel();
+  }
+
+  /* ══ Поп-апы ══ */
+  function openPop(which){
+    $('#popFlow').hidden = which !== 'flow';
+    $('#popHb').hidden = which !== 'hotebook';
+    if (which === 'flow' && S.tab !== 'flow') { S.tab = 'flow'; renderHub(); $('#popFlow').hidden = false; }
+    if (which === 'hotebook' && S.tab !== 'hotebook') { S.tab = 'hotebook'; renderHub(); $('#popHb').hidden = false; }
+    $('#hub').scrollIntoView({ block:'nearest' });
+  }
+  function closePops(){ $('#popFlow').hidden = true; $('#popHb').hidden = true; }
+  document.querySelectorAll('[data-open]').forEach(function(b){
+    b.addEventListener('click', function(){ openPop(b.dataset.open); });
+  });
+  document.querySelectorAll('.pop-back').forEach(function(back){
+    back.addEventListener('click', function(e){ if (e.target === back) closePops(); });
+  });
+  document.querySelectorAll('[data-close]').forEach(function(b){ b.addEventListener('click', closePops); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePops(); });
+  $('#flowSeg').querySelectorAll('[data-fm]').forEach(function(b){
+    b.addEventListener('click', function(){
+      $('#flowSeg').querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      $('#flowClips').hidden = b.dataset.fm !== 'clips';
+      $('#flowComm').hidden = b.dataset.fm !== 'comm';
+    });
+  });
+  $('#selClear').addEventListener('click', function(){
+    document.querySelectorAll('#hubBody .card.sel').forEach(function(c){ c.classList.remove('sel'); });
+    updateSel();
+  });
+
+  /* ══ Enterprise ══ */
+  var ENT = [
+    { k:'gemini', lb:'API', sub:'Gemini-ключ · Telegram', icn:'sparkles', c:'#8B5CF6', st:{ cls:'ok', lb:'активен' } },
+    { k:'questflow', lb:'AI', sub:'Quest Flow — AI-агент', icn:'workflow', c:'#0891B2', st:{ cls:'mut', lb:'база · 3' } },
+    { k:'mcp', lb:'MCP', sub:'CRM и внешние сервисы', icn:'plug', c:'#f59e0b', st:{ cls:'mut', lb:'1 подкл.' } },
+    { k:'tikhub', lb:'Trend', sub:'свой ключ сканера', icn:'trend', c:'#f59e0b', st:{ cls:'ok', lb:'активен' } },
+    { k:'generation', lb:'Генерация', sub:'расширение + ключи провайдеров', icn:'wand', c:'#ec4899', st:{ cls:'ok', lb:'6 ключей' } },
+    { k:'hotebook', lb:'Hotebook', sub:'NotebookLM-подключение', icn:'book', c:'#22d3ee', st:{ cls:'ok', lb:'на связи' } }
+  ];
+  var entTab = 'generation';
+  function pillSt(cls, lb, icn){ return '<span class="pill-st '+cls+'">'+(icn?ic(icn,11):'')+lb+'</span>'; }
+  function keyCard(o){
+    var right = o.st ? pillSt(o.st.cls, o.st.lb, o.st.icn) : '';
+    var val = o.masked ? 'value="'+o.masked+'" readonly' : 'placeholder="вставьте ключ…"';
+    var btns = o.masked
+      ? '<button class="kbtn chk" type="button">Проверить</button><button class="kbtn del" type="button">Удалить</button>'
+      : '<button class="kbtn save" type="button">Сохранить</button>';
+    return '<div class="ecard"><div class="ecard-h" style="align-items:center">' +
+      '<span class="kt"><b>'+o.t+'</b>'+(o.p?'<p>'+o.p+'</p>':'')+'</span>'+right+'</div>' +
+      '<div class="keyline"><input '+val+'>'+btns+'</div>' +
+      (o.meta?'<div class="kmeta">'+o.meta+'</div>':'') +
+    '</div>';
+  }
+  var ENT_BODY = {
+    gemini: function(){
+      return '<div class="ecard"><div class="ecard-h">' +
+          '<span class="kic" style="background:linear-gradient(135deg,#8B5CF6,#6d28d9)">'+ic('sparkles',18)+'</span>' +
+          '<span class="kt"><b>Google Gemini API ключ</b><p>Ключ вашей компании для «умных» шагов: анализ видео по кадрам, изображения, Quest Flow. Расход — на вашей стороне, лимиты ваши.</p></span>' +
+          pillSt('ok','Активен','checkc') + '</div>' +
+          '<div class="keyline"><input readonly value="AIzaSy••••••••••••••••K2"><button class="kbtn chk" type="button">Проверить</button><button class="kbtn del" type="button">Удалить</button></div>' +
+          '<div class="kmeta">Проверка: 07.07.2026, 22:40 · модель по умолчанию gemini-3-pro</div></div>' +
+        '<div class="ecard"><div class="ecard-h" style="align-items:center">' +
+          '<span class="kt"><b>Модель изображений</b><p>Для обложек, вырезки студии и слайдов.</p></span></div>' +
+          '<div class="filters" style="margin-top:10px"><button type="button" class="on">gemini-3-pro-image</button><button type="button">gemini-3.1-flash-lite-image</button></div></div>' +
+        '<div class="ecard"><div class="ecard-h" style="align-items:center">' +
+          '<span class="kic" style="background:linear-gradient(135deg,#38bdf8,#2563eb)">'+ic('send',17)+'</span>' +
+          '<span class="kt"><b>Telegram-бот</b><p>Уведомления о готовых рендерах, автопилоте трендов и ошибках ключей.</p></span>' +
+          pillSt('ok','@vd_trend_bot','checkc') + '</div>' +
+          '<div class="btnrow" style="margin-top:10px"><button class="kbtn chk" type="button">Тест-сообщение</button><button class="kbtn del" type="button">Отвязать</button></div></div>';
+    },
+    questflow: function(){
+      return '<div class="ecard"><div class="ecard-h">' +
+          '<span class="kic" style="background:linear-gradient(135deg,#22d3ee,#0891b2)">'+ic('workflow',18)+'</span>' +
+          '<span class="kt"><b>Quest Flow — AI-агент</b><p>Отвечает клиентам через Telegram-бота и Inbound API по вашей базе знаний: сценарии, цены, статусы заказов.</p></span>' +
+          pillSt('ok','Включён','checkc') + '</div></div>' +
+        '<div class="ecard"><div class="ecard-h" style="align-items:center"><span class="kt"><b>База знаний</b><p>Файлы и тексты, на которые агент опирается в ответах.</p></span></div>' +
+          '<div style="display:flex; flex-direction:column; gap:5px; margin-top:10px">' +
+            '<div class="srcrow"><span class="si">'+ic('file',13)+'</span><span>прайс-2026.pdf · 214 КБ</span><button class="del" type="button">'+ic('x',11)+'</button></div>' +
+            '<div class="srcrow"><span class="si">'+ic('file',13)+'</span><span>скрипты-продаж.md · 48 КБ</span><button class="del" type="button">'+ic('x',11)+'</button></div>' +
+            '<div class="srcrow"><span class="si">'+ic('type',13)+'</span><span>Текст · «условия возврата»</span><button class="del" type="button">'+ic('x',11)+'</button></div>' +
+          '</div>' +
+          '<div class="dashed2" style="margin-top:8px"><button type="button">'+ic('paperclip',13)+' Добавить файл</button><button type="button">'+ic('type',13)+' Вставить текст</button></div></div>';
+    },
+    mcp: function(){
+      return '<div class="ecard"><div class="ecard-h">' +
+          '<span class="kic" style="background:linear-gradient(135deg,#f59e0b,#ea580c)">'+ic('plug',18)+'</span>' +
+          '<span class="kt"><b>MCP — интеграции CRM и внешних сервисов</b><p>Подключение внешних систем (CRM, АТС-провайдеры) по протоколу MCP: агент видит их инструменты.</p></span></div>' +
+          '<div style="display:flex; flex-direction:column; gap:6px; margin-top:11px">' +
+            '<div class="qrow"><span class="qi" style="color:var(--ok)">'+ic('checkc',15)+'</span><span class="qt"><b style="color:var(--tx); font-weight:700">Chatwoot CRM</b> · https://crm.example.com · 6 инструментов</span><button class="qa mut" type="button">Проверить</button><button class="qa" type="button" style="color:var(--err)">Удалить</button></div>' +
+          '</div>' +
+          '<div class="dashed2" style="margin-top:8px; grid-template-columns:1fr"><button type="button">'+ic('plus',13)+' Добавить подключение</button></div></div>';
+    },
+    tikhub: function(){
+      return keyCard({ t:'Свой ключ Trend', p:'Сканер трендов и каналов (TikTok / YouTube / Instagram) от имени компании: лимиты ваши, история запросов ваша.', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'th_••••••••••••9fA2', meta:'Проверка: 07.07.2026, 18:02 · остаток лимита ~82%' });
+    },
+    generation: function(){
+      var ext = '<div class="ecard"><div class="ecard-h">' +
+        '<span class="kic" style="background:linear-gradient(135deg,#6366f1,#22d3ee)">'+ic('clapper',18)+'</span>' +
+        '<span class="kt"><b>Расширение TrendTraffic для Google (Flow + NotebookLM) <span class="v" style="font-size:9.5px; font-weight:750; color:var(--acc); background:var(--accSoft); border-radius:999px; padding:1px 7px; margin-left:4px">v1.1.0</span></b>' +
+        '<p>Одно расширение: Google Flow (Veo — очередь промптов, обмен видео/картинками с Галереей) и NotebookLM (блок «Hotebook»). Ставится один раз, подключается автоматически.</p></span>' +
+        pillSt('ok','подключено','checkc') + '</div>' +
+        '<div class="btnrow" style="margin-top:11px"><button class="btn prim" type="button" style="background:var(--acc); color:#fff">'+ic('download',14)+' Скачать расширение</button><button class="btn sec" type="button">'+ic('chevd',13)+' Как установить</button></div>' +
+        '<div style="border-top:1px dashed var(--line); margin-top:12px; padding-top:11px">' +
+          '<ol style="margin-left:17px; font-size:11.3px; color:var(--tx2); line-height:1.75">' +
+          '<li>Скачайте <b>.zip</b> и распакуйте в отдельную папку.</li>' +
+          '<li><code style="font-family:ui-monospace,monospace; font-size:10.3px; background:var(--field); border:1px solid var(--line); border-radius:5px; padding:0 5px">chrome://extensions</code> → «Режим разработчика» → «Загрузить распакованное».</li>' +
+          '<li>Старое отдельное расширение «Google Flow» удалите — иначе задачи задвоятся.</li>' +
+          '<li>Откройте <b>labs.google/flow</b> или <b>notebooklm.google.com</b> и войдите в Google: справа снизу появится панель.</li>' +
+          '<li>Подключение автоматическое, пока вы залогинены в TrendTraffic.</li></ol></div></div>';
+      var g1 = '<div class="egroup">ИИ-режиссёр (ЛЛМ)<small>«Мозг» умных шагов сценария — ресёрч, выбор момента, сценарии, новости. Базовый монтаж ключа не требует.</small></div>' +
+        '<div class="egrid">' +
+        keyCard({ t:'Anthropic (Claude)', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'sk-ant-••••••••Qb7', meta:'Проверка: 07.07.2026 · Claude Opus 4.8 по умолчанию' }) +
+        keyCard({ t:'OpenAI', st:{cls:'mut', lb:'Не задан'} }) + '</div>';
+      var g2 = '<div class="egroup">Платные провайдеры<small>ИИ-видео, аватары, озвучка, музыка — рендер идёт от имени вашей компании.</small></div>' +
+        '<div class="egrid">' +
+        keyCard({ t:'FAL (Hedra, Kling…)', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'fal_••••••••31c' }) +
+        keyCard({ t:'ElevenLabs (озвучка)', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'el_•••••••••f90' }) +
+        keyCard({ t:'HeyGen (аватары)', st:{cls:'wr', lb:'Нет баланса', icn:'alert'}, masked:'hg_•••••••••2ab', meta:'Пополните кредиты HeyGen — рендеры «Своё фото» остановлены' }) +
+        keyCard({ t:'Runway (V2V)', st:{cls:'mut', lb:'Не задан'} }) +
+        keyCard({ t:'Suno (музыка)', st:{cls:'mut', lb:'Не задан'} }) +
+        keyCard({ t:'Google (Veo/Gemini media)', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'AIza••••••••K2' }) + '</div>';
+      var g3 = '<div class="egroup">Бесплатные сток-источники<small>Видеоряд и фото для «Иллюстратора» и B-roll.</small></div>' +
+        '<div class="egrid">' +
+        keyCard({ t:'Pexels', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'px_••••••••7dd' }) +
+        keyCard({ t:'Pixabay', st:{cls:'mut', lb:'Не задан'} }) +
+        keyCard({ t:'Unsplash', st:{cls:'mut', lb:'Не задан'} }) +
+        keyCard({ t:'Hugging Face', st:{cls:'ok', lb:'Активен', icn:'checkc'}, masked:'hf_••••••••Xw1' }) + '</div>';
+      return ext + g1 + g2 + g3;
+    },
+    hotebook: function(){
+      var cs = [['Аудио',1],['Видео',0],['Отчёт',1],['Тест',0],['Таблица',0],['Инфографика',0],['Карточки',0],['Менталка',0],['Презентация',0]]
+        .map(function(c){ return '<div class="c"><b>'+c[1]+'</b><span>'+c[0]+'</span></div>'; }).join('');
+      return '<div class="ecard"><div class="ecard-h">' +
+          '<span class="kic" style="background:linear-gradient(135deg,#22d3ee,#0891b2)">'+ic('book',18)+'</span>' +
+          '<span class="kt"><b>Подключение NotebookLM</b><p>Пер-тенантно, через единое расширение: автоматизация идёт в вашем браузере под вашим живым входом в Google.</p></span>' +
+          pillSt('ok','на связи','checkc') + '</div>' +
+          '<div class="qrow" style="margin-top:11px"><span class="qi" style="color:var(--hb)">'+ic('globe',15)+'</span><span class="qt">Google-аккаунт: plua••••@gmail.com · вкладка notebooklm.google.com открыта</span><button class="qa mut" type="button">Проверить</button><button class="qa" type="button" style="color:var(--hb)">Открыть NotebookLM</button></div></div>' +
+        '<div class="ecard"><div class="ecard-h" style="align-items:center"><span class="kt"><b>Генерации сегодня</b><p>Суточные счётчики по типам артефактов (лимиты NotebookLM — на вашем аккаунте).</p></span></div>' +
+          '<div class="cgrid">'+cs+'</div></div>';
+    }
+  };
+  function renderEnt(){
+    $('#entRail').innerHTML = ENT.map(function(e){
+      var on = entTab === e.k;
+      return '<button type="button" data-ent="'+e.k+'" class="'+(on?'on':'')+'">' +
+        '<span class="eic" style="background:'+e.c+'1f; color:'+e.c+'">'+ic(e.icn,15)+'</span>' +
+        '<span class="et"><b>'+e.lb+'</b><span>'+e.sub+'</span></span>' +
+        '<span class="st-mini pill-st '+e.st.cls+'">'+e.st.lb+'</span></button>';
+    }).join('');
+    $('#entBody').innerHTML = ENT_BODY[entTab]();
+    $('#entRail').querySelectorAll('[data-ent]').forEach(function(b){
+      b.addEventListener('click', function(){ entTab = b.dataset.ent; renderEnt(); });
+    });
+  }
+
+  /* ══ Тема ══ */
+  var THEMES = ['auto','light','dark'];
+  var THEME_LB = { auto:'авто', light:'светлая', dark:'тёмная' };
+  function setTheme(t){
+    S.theme = t;
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    $('#themeBtn').textContent = 'Тема: ' + THEME_LB[t];
+    var seg = $('#setThemeSeg');
+    if (seg) seg.querySelectorAll('[data-th]').forEach(function(b){ b.classList.toggle('on', b.dataset.th === t); });
+    var ricon = $('#themeRowIc');
+    if (ricon) {
+      var dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      ricon.innerHTML = ic(dark ? 'moon' : 'sun', 16);
+      ricon.style.background = dark ? 'rgba(99,102,241,.12)' : 'var(--warnSoft)';
+      ricon.style.color = dark ? 'var(--acc)' : 'var(--warn)';
+    }
+  }
+  function cycleTheme(){ setTheme(THEMES[(THEMES.indexOf(S.theme)+1) % THEMES.length]); }
+  $('#themeBtn').addEventListener('click', cycleTheme);
+  ['sbTheme','sbTheme2','sbTheme3'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) b.addEventListener('click', cycleTheme);
+  });
+  var seg = $('#setThemeSeg');
+  if (seg) seg.querySelectorAll('[data-th]').forEach(function(b){
+    b.addEventListener('click', function(){ setTheme(b.dataset.th); });
+  });
+
+  /* ══ Старт ══ */
+  hydrate(document);
+  renderHub();
+  renderEnt();
+  setTheme('auto');
+})();
+</script>
