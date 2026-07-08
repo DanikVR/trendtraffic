@@ -900,6 +900,57 @@ const MIGRATIONS: Migration[] = [
   },
   { name: 'publisher_posts.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_posts_tenant ON publisher_posts (tenant_id, created_at DESC)` },
   { name: 'publisher_posts.pending_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_posts_pending ON publisher_posts (tenant_id, status, updated_at)` },
+
+  // Публикатор Ф2–Ф5: слоты «Моё расписание» (СВОИ, не Blotato — их slots гейтятся тарифом),
+  // цепочки (ручные = серия готовых роликов по слотам; авто = ролики автопилота auto-ugc),
+  // шаблоны текстов, авторетраи и связь пост↔цепочка.
+  { name: 'publisher_posts.chain_id', sql: `ALTER TABLE publisher_posts ADD COLUMN IF NOT EXISTS chain_id UUID` },
+  { name: 'publisher_posts.retries', sql: `ALTER TABLE publisher_posts ADD COLUMN IF NOT EXISTS retries INT NOT NULL DEFAULT 0` },
+  { name: 'publisher_posts.next_retry_at', sql: `ALTER TABLE publisher_posts ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMPTZ` },
+  {
+    name: 'publisher_slots.table',
+    sql: `CREATE TABLE IF NOT EXISTS publisher_slots (
+      id BIGSERIAL PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      dow SMALLINT NOT NULL,
+      hh SMALLINT NOT NULL,
+      mm SMALLINT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'publisher_slots.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_slots_tenant ON publisher_slots (tenant_id, dow, hh, mm)` },
+  {
+    name: 'publisher_chains.table',
+    sql: `CREATE TABLE IF NOT EXISTS publisher_chains (
+      id UUID PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      name VARCHAR(160) NOT NULL,
+      kind VARCHAR(12) NOT NULL DEFAULT 'manual',
+      items JSONB NOT NULL DEFAULT '[]',
+      targets JSONB NOT NULL DEFAULT '[]',
+      caption JSONB NOT NULL DEFAULT '{}',
+      daily_cap INT NOT NULL DEFAULT 3,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      cursor INT NOT NULL DEFAULT 0,
+      fail_streak INT NOT NULL DEFAULT 0,
+      last_error TEXT,
+      last_run_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'publisher_chains.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_chains_tenant ON publisher_chains (tenant_id, created_at DESC)` },
+  {
+    name: 'publisher_templates.table',
+    sql: `CREATE TABLE IF NOT EXISTS publisher_templates (
+      id BIGSERIAL PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      name VARCHAR(120) NOT NULL,
+      text TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'publisher_templates.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_templates_tenant ON publisher_templates (tenant_id, created_at DESC)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

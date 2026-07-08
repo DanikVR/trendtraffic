@@ -1,0 +1,648 @@
+/**
+ * Публикатор — сервисный слой Ф2–Ф5. Используется роутером И планировщиком (scheduler.ts).
+ *
+ * Слоты «Моё расписание» — СВОИ (таблица publisher_slots, dow/hh/mm в UTC): слоты Blotato
+ * гейтятся его тарифом (живой зонд юзера получил 401), свои же работают у всех и нужны
+ * цепочкам. Режим «Следующий слот» = наш расчёт → в Blotato уходит обычный scheduledTime.
+ *
+ * Пост-движок (Ф3): Claude (ключ тенанта «ИИ-режиссёр», как ДНК трендов) пишет подпись
+ * per-платформа + хэштеги (бренд/ниша — из TrendDNA ролика, если есть разбор) с A/B-вариантами.
+ * Хэштеги «актуальные из TikHub-скана» — TODO следующего витка (дорогой вызов в каптионе).
+ *
+ * Цепочки (Ф2/Ф4): manual — серия готовых роликов раскладывается по свободным слотам СРАЗУ
+ * при создании; auto — тик подхватывает свежие НЕопубликованные ролики автопилота
+ * (папка auto-ugc), пишет подпись и ставит в ближайший свободный слот (dailyCap + автопауза
+ * после 3 фейлов подряд).
+ *
+ * Ретраи (Ф5): транзиентные фейлы сабмита получают next_retry_at (2→4→8 мин, до 3 попыток);
+ * тик пере-отправляет. Статус-синк — тот же ленивый Get Post Status, но и ВНЕ открытой ленты.
+ */
+
+import { randomUUID } from 'crypto';
+import pool from '../../db/index.js';
+import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
+import { resolveAnthropicKey, DEFAULT_DIRECTOR_MODEL } from '../render/director.js';
+import { getTrendDNAByAsset } from '../trends/dna.js';
+import { AUTO_UGC_FOLDER } from '../media/assets.js';
+import {
+  createPost, getPostStatus, cancelScheduled, BlotatoError,
+  BLOTATO_PLATFORMS, type BlotatoPlatform,
+} from './blotato.js';
+
+// ── Общее ────────────────────────────────────────────────────────────────────
+export async function tenantBlotatoKey(tenantId: string): Promise<string | null> {
+  return getEffectiveProviderKey(tenantId, 'blotato');
+}
+
+/** Абсолютная база для медиа-URL, когда нет req (планировщик): env обязателен на проде. */
+export function publicBase(): string {
+  return String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
+}
+export const absUrl = (base: string, u?: string | null): string =>
+  (u && !/^https?:\/\//i.test(u) ? base + (u.startsWith('/') ? u : '/' + u) : (u || ''));
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// ── Платформенные target'ы (обязательные поля — с безопасными дефолтами) ─────
+export function buildTarget(platform: BlotatoPlatform, o: Record<string, any>, fallbackTitle: string): Record<string, unknown> {
+  switch (platform) {
+    case 'tiktok': return {
+      targetType: 'tiktok',
+      privacyLevel: o.privacyLevel || 'PUBLIC_TO_EVERYONE',
+      disabledComments: !!o.disabledComments,
+      disabledDuet: !!o.disabledDuet,
+      disabledStitch: !!o.disabledStitch,
+      isBrandedContent: !!o.isBrandedContent,
+      isYourBrand: !!o.isYourBrand,
+      isAiGenerated: o.isAiGenerated !== false,
+      ...(o.isDraft ? { isDraft: true } : {}),
+      ...(o.title ? { title: String(o.title).slice(0, 90) } : {}),
+    };
+    case 'youtube': return {
+      targetType: 'youtube',
+      title: String(o.title || fallbackTitle || 'Video').slice(0, 100),
+      privacyStatus: o.privacyStatus || 'public',
+      shouldNotifySubscribers: o.shouldNotifySubscribers !== false,
+      ...(o.isMadeForKids != null ? { isMadeForKids: !!o.isMadeForKids } : {}),
+      ...(o.containsSyntheticMedia != null ? { containsSyntheticMedia: !!o.containsSyntheticMedia } : {}),
+    };
+    case 'instagram': return {
+      targetType: 'instagram',
+      ...(o.mediaType && o.mediaType !== 'post' ? { mediaType: o.mediaType } : {}),
+    };
+    case 'facebook': return {
+      targetType: 'facebook',
+      pageId: String(o.pageId || ''),
+      ...(o.mediaType ? { mediaType: o.mediaType } : {}),
+      ...(o.link ? { link: o.link } : {}),
+    };
+    case 'linkedin': return { targetType: 'linkedin', ...(o.pageId ? { pageId: String(o.pageId) } : {}) };
+    case 'pinterest': return {
+      targetType: 'pinterest',
+      boardId: String(o.boardId || ''),
+      ...(o.title ? { title: o.title } : {}),
+      ...(o.link ? { link: o.link } : {}),
+      ...(o.altText ? { altText: o.altText } : {}),
+    };
+    case 'threads': return { targetType: 'threads', ...(o.replyControl ? { replyControl: o.replyControl } : {}) };
+    default: return { targetType: platform }; // twitter | bluesky
+  }
+}
+
+/** Ошибки, которые Blotato вернёт гарантированно, — ловим ДО сабмита (НЕ ретраятся). */
+export function targetPrecheck(platform: BlotatoPlatform, o: Record<string, any>): string | null {
+  if (platform === 'facebook' && !o.pageId) return 'Facebook: не выбрана страница (pageId)';
+  if (platform === 'pinterest' && !o.boardId) return 'Pinterest: не выбрана доска (boardId)';
+  return null;
+}
+
+// ── Медиа из Галереи ─────────────────────────────────────────────────────────
+export async function resolveMedia(tenantId: string, args: { assetId?: string; mediaUrl?: string; title?: string })
+  : Promise<{ fileUrl: string; title: string }> {
+  if (args.assetId) {
+    const r = await pool.query(
+      `SELECT file_url, original_name FROM media_assets WHERE id = $1 AND tenant_id = $2`,
+      [args.assetId, tenantId]
+    );
+    if (!r.rows[0]) throw new Error('Файл не найден в Галерее');
+    return { fileUrl: r.rows[0].file_url, title: args.title || r.rows[0].original_name || '' };
+  }
+  return { fileUrl: String(args.mediaUrl || ''), title: args.title || '' };
+}
+
+// ── Слоты «Моё расписание» (наши; dow/hh/mm в UTC, dow: 0=Вс … 6=Сб как JS getUTCDay) ──
+export interface SlotRow { id: number; dow: number; hh: number; mm: number }
+
+export async function listSlots(tenantId: string): Promise<SlotRow[]> {
+  const r = await pool.query(
+    `SELECT id, dow, hh, mm FROM publisher_slots WHERE tenant_id = $1 ORDER BY dow, hh, mm`, [tenantId]);
+  return r.rows.map((x: any) => ({ id: Number(x.id), dow: x.dow, hh: x.hh, mm: x.mm }));
+}
+
+export async function addSlots(tenantId: string, slots: { dow: number; hh: number; mm: number }[]): Promise<void> {
+  for (const s of slots) {
+    const dow = Math.max(0, Math.min(6, Math.trunc(Number(s.dow))));
+    const hh = Math.max(0, Math.min(23, Math.trunc(Number(s.hh))));
+    const mm = Math.max(0, Math.min(59, Math.trunc(Number(s.mm))));
+    // без дублей (мягко): проверка на существование
+    const ex = await pool.query(
+      `SELECT 1 FROM publisher_slots WHERE tenant_id=$1 AND dow=$2 AND hh=$3 AND mm=$4`, [tenantId, dow, hh, mm]);
+    if (!ex.rows.length) {
+      await pool.query(`INSERT INTO publisher_slots (tenant_id, dow, hh, mm) VALUES ($1,$2,$3,$4)`, [tenantId, dow, hh, mm]);
+    }
+  }
+}
+
+export async function removeSlot(tenantId: string, id: number): Promise<void> {
+  await pool.query(`DELETE FROM publisher_slots WHERE tenant_id = $1 AND id = $2`, [tenantId, id]);
+}
+
+/** Кандидаты времени по слотам на N дней вперёд (UTC), отсортированы. */
+function slotCandidates(slots: SlotRow[], afterMs: number, days = 21): number[] {
+  const out: number[] = [];
+  const start = new Date(afterMs);
+  for (let d = 0; d < days; d++) {
+    const day = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + d));
+    const dow = day.getUTCDay();
+    for (const s of slots) {
+      if (s.dow !== dow) continue;
+      const t = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), s.hh, s.mm, 0);
+      if (t > afterMs) out.push(t);
+    }
+  }
+  return out.sort((a, b) => a - b);
+}
+
+/** Ближайшие СВОБОДНЫЕ слоты тенанта (свободен = нет нашего запланированного поста ±60с). */
+export async function nextFreeSlotTimes(tenantId: string, count: number, afterMs = Date.now()): Promise<Date[]> {
+  const slots = await listSlots(tenantId);
+  if (!slots.length) return [];
+  const candidates = slotCandidates(slots, afterMs);
+  if (!candidates.length) return [];
+  const r = await pool.query(
+    `SELECT scheduled_at FROM publisher_posts
+     WHERE tenant_id = $1 AND scheduled_at IS NOT NULL AND status IN ('scheduled','submitted')
+       AND scheduled_at > NOW() - INTERVAL '1 minute'`,
+    [tenantId]
+  );
+  const occupied = new Set<number>(
+    r.rows.map((x: any) => Math.round(new Date(x.scheduled_at).getTime() / 60000))
+  );
+  const picked: Date[] = [];
+  for (const t of candidates) {
+    if (occupied.has(Math.round(t / 60000))) continue;
+    picked.push(new Date(t));
+    occupied.add(Math.round(t / 60000));
+    if (picked.length >= count) break;
+  }
+  return picked;
+}
+
+// ── Единый сабмит поста (роутер, цепочки, ретраи) ────────────────────────────
+export interface TargetInput {
+  accountId: string;
+  platform: string;
+  options?: Record<string, any>;
+  textOverride?: string;
+  /** Тред (X/Threads/Bluesky): дополнительные посты после первого. */
+  thread?: string[];
+}
+
+export interface SubmitArgs {
+  tenantId: string;
+  baseUrl?: string;               // absBase(req); планировщик берёт publicBase()
+  assetId?: string;
+  mediaUrl?: string;
+  title?: string;
+  text: string;
+  mode: 'now' | 'time' | 'slot';
+  scheduledAt?: string;           // ISO (mode=time)
+  targets: TargetInput[];
+  chainId?: string | null;
+}
+
+export interface SubmitResult {
+  groupId: string;
+  scheduledAtIso?: string;
+  results: { id: string; platform: string; accountId: string; ok: boolean; error?: string }[];
+}
+
+/** Транзиентная ошибка → имеет смысл авторетраить (сеть/лимит/5xx), валидационная — нет. */
+function isRetriable(e: any): boolean {
+  if (e instanceof BlotatoError) return e.status === 0 || e.status === 429 || e.status >= 500;
+  return true; // сетевые/неизвестные — пробуем
+}
+
+export async function submitPost(args: SubmitArgs): Promise<SubmitResult> {
+  const { tenantId } = args;
+  const key = await tenantBlotatoKey(tenantId);
+  if (!key) throw new Error('Ключ Blotato не задан (Настройки → Ключи → Blotato)');
+  const targets = args.targets || [];
+  if (!targets.length) throw new Error('Не выбраны аккаунты (targets)');
+  if (targets.length > 12) throw new Error('Слишком много целей за раз (максимум 12)');
+
+  const media = await resolveMedia(tenantId, args);
+  const base = (args.baseUrl || publicBase());
+  const publicUrl = absUrl(base, media.fileUrl);
+  const mediaUrls = publicUrl ? [publicUrl] : [];
+  const fallbackTitle = (media.title || args.text || 'Video').split('\n')[0].trim().slice(0, 100);
+
+  let scheduledTime: string | undefined;
+  if (args.mode === 'time') {
+    if (!args.scheduledAt || Number.isNaN(Date.parse(args.scheduledAt))) throw new Error('Некорректное время публикации');
+    scheduledTime = new Date(args.scheduledAt).toISOString();
+  } else if (args.mode === 'slot') {
+    const [slot] = await nextFreeSlotTimes(tenantId, 1, Date.now() + 60_000);
+    if (!slot) throw new Error('Нет свободных слотов — добавьте времена в «Моё расписание»');
+    scheduledTime = slot.toISOString();
+  }
+
+  const groupId = randomUUID();
+  const results: SubmitResult['results'] = [];
+
+  for (let i = 0; i < targets.length; i++) {
+    const t = targets[i];
+    const platform = String(t.platform || '').toLowerCase() as BlotatoPlatform;
+    const rowId = randomUUID();
+    const opts = t.options || {};
+    const rowText = (t.textOverride ?? args.text) || '';
+    let submissionId: string | null = null;
+    let status = scheduledTime ? 'scheduled' : 'submitted';
+    let error: string | null = null;
+    let retriable = false;
+
+    if (!(BLOTATO_PLATFORMS as readonly string[]).includes(platform)) {
+      status = 'failed'; error = `Платформа не поддерживается: ${t.platform}`;
+    } else {
+      const pre = targetPrecheck(platform, opts);
+      if (pre) { status = 'failed'; error = pre; }
+      else {
+        try {
+          const thread = Array.isArray(t.thread) ? t.thread.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 24) : [];
+          const r = await createPost(key, {
+            accountId: String(t.accountId), platform, text: rowText, mediaUrls,
+            target: buildTarget(platform, opts, fallbackTitle),
+            scheduledTime,
+            additionalPosts: thread.length && ['twitter', 'threads', 'bluesky'].includes(platform)
+              ? thread.map((x) => ({ text: x })) : undefined,
+          });
+          submissionId = r.submissionId;
+        } catch (e: any) {
+          status = 'failed';
+          error = e instanceof BlotatoError ? e.message : (e?.message || 'Ошибка Blotato');
+          retriable = isRetriable(e);
+        }
+      }
+    }
+
+    await pool.query(
+      `INSERT INTO publisher_posts
+         (id, tenant_id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
+          target, mode, scheduled_at, submission_id, status, error, retries, next_retry_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,0,$17)`,
+      [rowId, tenantId, groupId, args.chainId || null, args.assetId || null, media.fileUrl || null, rowText,
+       platform, String(t.accountId), opts.accountName || null, JSON.stringify({ ...opts, ...(t.thread?.length ? { thread: t.thread } : {}) }),
+       args.mode, scheduledTime || null, submissionId, status, error,
+       status === 'failed' && retriable ? new Date(Date.now() + 2 * 60_000) : null]
+    );
+    results.push({ id: rowId, platform, accountId: String(t.accountId), ok: status !== 'failed', error: error || undefined });
+    if (i < targets.length - 1) await sleep(350); // лимит Blotato 30 постов/мин
+  }
+  return { groupId, scheduledAtIso: scheduledTime, results };
+}
+
+// ── Ретраи (Ф5): бэкофф 2 → 4 → 8 минут, максимум 3 автопопытки ──────────────
+const RETRY_STEPS_MIN = [2, 4, 8];
+
+export async function resubmitRow(tenantId: string, rowId: string, baseUrl?: string): Promise<{ ok: boolean; error?: string }> {
+  const key = await tenantBlotatoKey(tenantId);
+  if (!key) return { ok: false, error: 'Ключ Blotato не задан' };
+  const r = await pool.query(`SELECT * FROM publisher_posts WHERE id = $1 AND tenant_id = $2`, [rowId, tenantId]);
+  const row = r.rows[0];
+  if (!row) return { ok: false, error: 'Пост не найден' };
+  if (row.status !== 'failed') return { ok: false, error: 'Повторить можно только упавший пост' };
+
+  const platform = String(row.platform) as BlotatoPlatform;
+  const opts = (typeof row.target === 'object' && row.target) ? row.target : {};
+  const pre = targetPrecheck(platform, opts);
+  if (pre) {
+    await pool.query(`UPDATE publisher_posts SET next_retry_at=NULL, updated_at=NOW() WHERE id=$1`, [row.id]);
+    return { ok: false, error: pre };
+  }
+  const base = baseUrl || publicBase();
+  const mediaUrls = row.media_url ? [absUrl(base, row.media_url)] : [];
+  const sched = row.scheduled_at && new Date(row.scheduled_at).getTime() > Date.now()
+    ? new Date(row.scheduled_at).toISOString() : undefined;
+  try {
+    const thread: string[] = Array.isArray((opts as any).thread) ? (opts as any).thread : [];
+    const out = await createPost(key, {
+      accountId: String(row.account_id), platform, text: row.text || '', mediaUrls,
+      target: buildTarget(platform, opts, (row.text || 'Video').split('\n')[0].slice(0, 100)),
+      scheduledTime: sched,
+      additionalPosts: thread.length && ['twitter', 'threads', 'bluesky'].includes(platform)
+        ? thread.map((x: string) => ({ text: x })) : undefined,
+    });
+    await pool.query(
+      `UPDATE publisher_posts SET submission_id=$2, status=$3, error=NULL, next_retry_at=NULL, updated_at=NOW() WHERE id=$1`,
+      [row.id, out.submissionId, sched ? 'scheduled' : 'submitted']
+    );
+    return { ok: true };
+  } catch (e: any) {
+    const msg = e instanceof BlotatoError ? e.message : (e?.message || 'Ошибка Blotato');
+    const retries = Number(row.retries || 0) + 1;
+    const next = isRetriable(e) && retries < RETRY_STEPS_MIN.length
+      ? new Date(Date.now() + RETRY_STEPS_MIN[retries] * 60_000) : null;
+    await pool.query(
+      `UPDATE publisher_posts SET error=$2, retries=$3, next_retry_at=$4, updated_at=NOW() WHERE id=$1`,
+      [row.id, msg, retries, next]
+    );
+    return { ok: false, error: msg };
+  }
+}
+
+/** Автоповтор из тика: упавшие с подошедшим next_retry_at (по всем тенантам, до 5 за тик). */
+export async function tickRetries(): Promise<number> {
+  const r = await pool.query(
+    `SELECT id, tenant_id FROM publisher_posts
+     WHERE status = 'failed' AND next_retry_at IS NOT NULL AND next_retry_at <= NOW()
+     ORDER BY next_retry_at ASC LIMIT 5`);
+  let done = 0;
+  for (const row of r.rows) {
+    try { await resubmitRow(row.tenant_id, row.id); done++; } catch { /* учтено в строке */ }
+    await sleep(400);
+  }
+  return done;
+}
+
+// ── Статус-синк (ленивый + фоновый) ──────────────────────────────────────────
+export async function syncPendingTenant(tenantId: string, key?: string | null, limit = 8): Promise<void> {
+  const k = key || await tenantBlotatoKey(tenantId);
+  if (!k) return;
+  const r = await pool.query(
+    `SELECT id, submission_id FROM publisher_posts
+     WHERE tenant_id = $1 AND submission_id IS NOT NULL AND status IN ('submitted','scheduled')
+       AND updated_at < NOW() - INTERVAL '20 seconds'
+       AND (scheduled_at IS NULL OR scheduled_at < NOW() + INTERVAL '2 minutes')
+     ORDER BY updated_at ASC LIMIT $2`,
+    [tenantId, limit]
+  );
+  if (!r.rows.length) return;
+  await Promise.allSettled(r.rows.map(async (row: any) => {
+    const st = await getPostStatus(k, row.submission_id);
+    if (st.type === 'published') {
+      await pool.query(`UPDATE publisher_posts SET status='published', post_url=$2, error=NULL, updated_at=NOW() WHERE id=$1`, [row.id, st.postUrl]);
+    } else if (st.type === 'failed') {
+      await pool.query(`UPDATE publisher_posts SET status='failed', error=$2, updated_at=NOW() WHERE id=$1`, [row.id, st.errorMessage || 'Ошибка публикации']);
+    } else {
+      await pool.query(`UPDATE publisher_posts SET updated_at=NOW() WHERE id=$1`, [row.id]);
+    }
+  }));
+}
+
+/** Фоновый проход по тенантам с «в полёте» (для тика — лента может быть закрыта). */
+export async function tickStatusSync(): Promise<void> {
+  const r = await pool.query(
+    `SELECT DISTINCT tenant_id FROM publisher_posts
+     WHERE submission_id IS NOT NULL AND status IN ('submitted','scheduled')
+       AND updated_at < NOW() - INTERVAL '3 minutes'
+       AND (scheduled_at IS NULL OR scheduled_at < NOW() + INTERVAL '2 minutes')
+     LIMIT 10`);
+  for (const row of r.rows) {
+    try { await syncPendingTenant(row.tenant_id); } catch { /* best-effort */ }
+    await sleep(300);
+  }
+}
+
+// ── Пост-движок (Ф3): подписи per-платформа + хэштеги, A/B ───────────────────
+export interface CaptionVariant {
+  base: string;
+  hashtags: string[];
+  platforms: Record<string, string>;
+  youtubeTitle?: string;
+}
+
+function parseJsonLoose(txt: string): any | null {
+  let s = String(txt || '').trim();
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) s = fence[1].trim();
+  const a = s.indexOf('{'); const b = s.lastIndexOf('}');
+  if (a < 0 || b <= a) return null;
+  try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; }
+}
+
+const TONES: Record<string, string> = {
+  engaging: 'вовлекающий (живой, с хуком и лёгким интригующим CTA)',
+  expert: 'экспертный (уверенно, по делу, без воды и кликбейта)',
+  selling: 'продающий (выгода, оффер, чёткий призыв к действию)',
+};
+
+export async function generateCaptions(args: {
+  tenantId: string; title?: string; assetId?: string; platforms: string[];
+  tone?: string; language?: string; count?: number; brief?: string;
+}): Promise<{ variants: CaptionVariant[]; model: string; usedDna: boolean }> {
+  const apiKey = await resolveAnthropicKey(args.tenantId);
+  if (!apiKey) throw new Error('Ключ Claude не задан (Настройки → Генерация → ИИ-режиссёр)');
+
+  let dna: any = null;
+  if (args.assetId) {
+    try { const stored: any = await getTrendDNAByAsset(args.tenantId, args.assetId); dna = stored?.dna || stored || null; }
+    catch { dna = null; }
+  }
+  const platforms = (args.platforms || []).map((p) => String(p).toLowerCase())
+    .filter((p) => (BLOTATO_PLATFORMS as readonly string[]).includes(p));
+  const lang = args.language || 'ru';
+  const tone = TONES[args.tone || 'engaging'] || TONES.engaging;
+  const count = Math.max(1, Math.min(Number(args.count) || 2, 3));
+
+  const ctx: string[] = [];
+  if (args.title) ctx.push(`Название ролика: ${args.title}`);
+  if (args.brief) ctx.push(`Бриф от автора: ${String(args.brief).slice(0, 500)}`);
+  if (dna?.hookType) ctx.push(`Тип хука: ${dna.hookType}`);
+  if (dna?.whyItWorks) ctx.push(`Почему тренд работает: ${String(dna.whyItWorks).slice(0, 400)}`);
+  if (dna?.targetAudience) ctx.push(`Аудитория: ${String(dna.targetAudience).slice(0, 200)}`);
+  if (Array.isArray(dna?.keywords) && dna.keywords.length) ctx.push(`Ключевые слова тренда: ${dna.keywords.slice(0, 12).join(', ')}`);
+  if (dna?.copyReadyScript) ctx.push(`Сценарий ролика (фрагмент): ${String(dna.copyReadyScript).slice(0, 600)}`);
+
+  const system =
+    'Ты — SMM-редактор коротких видео. Пишешь подписи, которые дочитывают и по которым кликают. ' +
+    'Отвечай СТРОГО одним JSON-объектом без пояснений и markdown.';
+  const user =
+    `Напиши ${count} варианта подписи к посту с видео. Язык: ${lang}. Тон: ${tone}.\n` +
+    `Платформы: ${platforms.join(', ') || 'tiktok, instagram'}.\n` +
+    (ctx.length ? `Контекст:\n${ctx.join('\n')}\n` : '') +
+    'Правила: первая строка — хук; без кавычек-ёлочек вокруг всего текста; эмодзи умеренно; ' +
+    'хэштеги НЕ вставляй в base — отдай отдельным массивом (5–8: смесь широких и нишевых, с #). ' +
+    'Для twitter/threads/bluesky — короткая версия в лимит (280/500/300); для linkedin — без хэштегов, деловой тон; ' +
+    'для youtube — заголовок до 90 символов в поле youtubeTitle.\n' +
+    'Формат ответа: {"variants":[{"base":"…","hashtags":["#…"],"platforms":{"twitter":"…","linkedin":"…"},"youtubeTitle":"…"}]} ' +
+    `— в platforms клади ТОЛЬКО платформы, где текст отличается от base, из списка: ${platforms.join(', ')}.`;
+
+  const mod: any = await import('@anthropic-ai/sdk');
+  const Anthropic = mod.default || mod.Anthropic || mod;
+  const client = new Anthropic({ apiKey });
+  const res = await client.messages.create({
+    model: DEFAULT_DIRECTOR_MODEL, max_tokens: 2000,
+    system, messages: [{ role: 'user', content: user }],
+  });
+  const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
+  const j = parseJsonLoose(txt);
+  const rawVars = Array.isArray(j?.variants) ? j.variants : [];
+  const variants: CaptionVariant[] = rawVars.slice(0, 3).map((v: any): CaptionVariant => ({
+    base: String(v?.base || '').trim(),
+    hashtags: (Array.isArray(v?.hashtags) ? v.hashtags : [])
+      .map((h: any) => String(h || '').trim()).filter(Boolean)
+      .map((h: string) => (h.startsWith('#') ? h : `#${h.replace(/^#+/, '')}`)).slice(0, 10),
+    platforms: (v?.platforms && typeof v.platforms === 'object')
+      ? Object.fromEntries(Object.entries(v.platforms)
+          .filter(([k, val]) => typeof val === 'string' && (BLOTATO_PLATFORMS as readonly string[]).includes(k))
+          .map(([k, val]) => [k, String(val).trim()]))
+      : {},
+    youtubeTitle: v?.youtubeTitle ? String(v.youtubeTitle).trim().slice(0, 100) : undefined,
+  })).filter((v: CaptionVariant) => v.base);
+  if (!variants.length) throw new Error('ИИ вернул неразборчивый ответ — повторите.');
+  return { variants, model: DEFAULT_DIRECTOR_MODEL, usedDna: !!dna };
+}
+
+/** Фолбэк-подпись без ИИ (авто-цепочки не должны стоять из-за отсутствия ключа Claude). */
+export function fallbackCaption(title: string, dna?: any): string {
+  const tags = (Array.isArray(dna?.keywords) ? dna.keywords : [])
+    .slice(0, 5).map((k: string) => `#${String(k).replace(/\s+/g, '').replace(/^#+/, '')}`).filter((t: string) => t.length > 1);
+  return [title || 'Новое видео', tags.join(' ')].filter(Boolean).join('\n\n');
+}
+
+// ── Цепочки (Ф2 ручные / Ф4 авто) ────────────────────────────────────────────
+export interface ChainRow {
+  id: string; tenant_id: string; name: string; kind: 'manual' | 'auto';
+  items: any[]; targets: TargetInput[]; caption: { mode?: 'fixed' | 'ai'; text?: string; tone?: string; language?: string };
+  daily_cap: number; enabled: boolean; cursor: number; fail_streak: number;
+  last_error: string | null; last_run_at: string | null; created_at: string;
+}
+
+export async function listChains(tenantId: string): Promise<any[]> {
+  const r = await pool.query(`SELECT * FROM publisher_chains WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`, [tenantId]);
+  const chains = r.rows;
+  if (!chains.length) return [];
+  const stats = await pool.query(
+    `SELECT chain_id, status, COUNT(*)::int AS n FROM publisher_posts
+     WHERE tenant_id = $1 AND chain_id IS NOT NULL GROUP BY chain_id, status`, [tenantId]);
+  const byChain = new Map<string, Record<string, number>>();
+  for (const s of stats.rows) {
+    const m = byChain.get(s.chain_id) || {};
+    m[s.status] = s.n; byChain.set(s.chain_id, m);
+  }
+  return chains.map((c: any) => ({ ...c, stats: byChain.get(c.id) || {} }));
+}
+
+async function captionForItem(tenantId: string, chainCaption: ChainRow['caption'], item: { assetId?: string; title?: string }, platforms: string[]): Promise<{ text: string; ytTitle?: string }> {
+  const title = item.title || 'Новое видео';
+  if (chainCaption?.mode === 'ai') {
+    try {
+      const g = await generateCaptions({
+        tenantId, title, assetId: item.assetId, platforms,
+        tone: chainCaption.tone, language: chainCaption.language, count: 1,
+      });
+      const v = g.variants[0];
+      return { text: [v.base, v.hashtags.join(' ')].filter(Boolean).join('\n\n'), ytTitle: v.youtubeTitle };
+    } catch { /* падаем в фолбэк — цепочка не должна стоять */ }
+  }
+  if (chainCaption?.text) return { text: chainCaption.text };
+  let dna: any = null;
+  if (item.assetId) { try { const s: any = await getTrendDNAByAsset(tenantId, item.assetId); dna = s?.dna || s; } catch { /* без ДНК */ } }
+  return { text: fallbackCaption(title, dna) };
+}
+
+/** Ручная цепочка: серия готовых роликов раскладывается по свободным слотам СРАЗУ. */
+export async function createManualChain(args: {
+  tenantId: string; baseUrl?: string; name: string;
+  items: { assetId?: string; mediaUrl?: string; title?: string }[];
+  targets: TargetInput[]; caption: ChainRow['caption'];
+}): Promise<{ chainId: string; scheduled: number; failed: number; firstAt?: string; lastAt?: string }> {
+  const items = (args.items || []).slice(0, 30);
+  if (!items.length) throw new Error('Пустая серия — выберите ролики');
+  if (!args.targets?.length) throw new Error('Не выбраны аккаунты');
+  const slots = await nextFreeSlotTimes(args.tenantId, items.length, Date.now() + 60_000);
+  if (slots.length < items.length) {
+    throw new Error(`Свободных слотов не хватает: нужно ${items.length}, найдено ${slots.length}. Добавьте времена в «Моё расписание».`);
+  }
+  const chainId = randomUUID();
+  await pool.query(
+    `INSERT INTO publisher_chains (id, tenant_id, name, kind, items, targets, caption, daily_cap, enabled, cursor)
+     VALUES ($1,$2,$3,'manual',$4,$5,$6,99,TRUE,0)`,
+    [chainId, args.tenantId, args.name.slice(0, 160), JSON.stringify(items), JSON.stringify(args.targets), JSON.stringify(args.caption || {})]
+  );
+  const platforms = Array.from(new Set(args.targets.map((t) => String(t.platform).toLowerCase())));
+  let scheduled = 0, failed = 0;
+  for (let i = 0; i < items.length; i++) {
+    const cap = await captionForItem(args.tenantId, args.caption || {}, items[i], platforms);
+    const targets = cap.ytTitle
+      ? args.targets.map((t) => t.platform === 'youtube' ? { ...t, options: { title: cap.ytTitle, ...(t.options || {}) } } : t)
+      : args.targets;
+    try {
+      const out = await submitPost({
+        tenantId: args.tenantId, baseUrl: args.baseUrl, chainId,
+        assetId: items[i].assetId, mediaUrl: items[i].mediaUrl, title: items[i].title,
+        text: cap.text, mode: 'time', scheduledAt: slots[i].toISOString(), targets,
+      });
+      scheduled += out.results.filter((x) => x.ok).length;
+      failed += out.results.filter((x) => !x.ok).length;
+    } catch (e: any) { failed += args.targets.length; }
+  }
+  await pool.query(`UPDATE publisher_chains SET cursor=$2, last_run_at=NOW(), updated_at=NOW() WHERE id=$1`, [chainId, items.length]);
+  return { chainId, scheduled, failed, firstAt: slots[0]?.toISOString(), lastAt: slots[items.length - 1]?.toISOString() };
+}
+
+/** Авто-цепочка (Ф4): свежий НЕопубликованный ролик автопилота (auto-ugc) → подпись → слот. */
+async function tickAutoChain(chain: any): Promise<'posted' | 'skip'> {
+  const tenantId = chain.tenant_id as string;
+  // дневной кап
+  const capR = await pool.query(
+    `SELECT COUNT(DISTINCT group_id)::int AS n FROM publisher_posts
+     WHERE chain_id = $1 AND created_at > date_trunc('day', NOW())`, [chain.id]);
+  if ((capR.rows[0]?.n || 0) >= Number(chain.daily_cap || 3)) return 'skip';
+  // кандидат: свежий ролик auto-ugc, который ЕЩЁ НЕ публиковался
+  const cand = await pool.query(
+    `SELECT id, file_url, original_name FROM media_assets m
+     WHERE tenant_id = $1 AND folder = $2 AND media_type = 'video'
+       AND NOT EXISTS (SELECT 1 FROM publisher_posts pp WHERE pp.tenant_id = $1 AND pp.asset_id = m.id)
+     ORDER BY created_at DESC LIMIT 1`, [tenantId, AUTO_UGC_FOLDER]);
+  const a = cand.rows[0];
+  if (!a) return 'skip';
+  const targets: TargetInput[] = Array.isArray(chain.targets) ? chain.targets : [];
+  if (!targets.length) throw new Error('У цепочки не выбраны аккаунты');
+  const platforms = Array.from(new Set(targets.map((t) => String(t.platform).toLowerCase())));
+  const cap = await captionForItem(tenantId, chain.caption || {}, { assetId: a.id, title: a.original_name || 'Новое видео' }, platforms);
+  const finalTargets = cap.ytTitle
+    ? targets.map((t) => t.platform === 'youtube' ? { ...t, options: { title: cap.ytTitle, ...(t.options || {}) } } : t)
+    : targets;
+  const out = await submitPost({
+    tenantId, chainId: chain.id, assetId: a.id, title: a.original_name || undefined,
+    text: cap.text, mode: 'slot', targets: finalTargets,
+  });
+  const ok = out.results.filter((x) => x.ok).length;
+  if (!ok) throw new Error(out.results[0]?.error || 'Все таргеты упали');
+  await pool.query(
+    `UPDATE publisher_chains SET cursor = cursor + 1, fail_streak = 0, last_error = NULL, last_run_at = NOW(), updated_at = NOW() WHERE id = $1`,
+    [chain.id]);
+  return 'posted';
+}
+
+/** Тик авто-цепочек: по всем тенантам; автопауза после 3 фейлов подряд. */
+export async function tickAutoChains(): Promise<void> {
+  const r = await pool.query(`SELECT * FROM publisher_chains WHERE kind = 'auto' AND enabled = TRUE ORDER BY last_run_at NULLS FIRST LIMIT 20`);
+  for (const chain of r.rows) {
+    try {
+      await tickAutoChain(chain);
+    } catch (e: any) {
+      const streak = Number(chain.fail_streak || 0) + 1;
+      const off = streak >= 3;
+      await pool.query(
+        `UPDATE publisher_chains SET fail_streak=$2, last_error=$3, enabled=$4, last_run_at=NOW(), updated_at=NOW() WHERE id=$1`,
+        [chain.id, streak, String(e?.message || e).slice(0, 500), !off]);
+      if (off) console.warn(`[publisher] авто-цепочка "${chain.name}" поставлена на паузу после 3 фейлов: ${e?.message || e}`);
+    }
+    await sleep(500);
+  }
+}
+
+/** Отмена остатка цепочки: снимаем её запланированные посты; саму цепочку выключаем/удаляем. */
+export async function cancelChain(tenantId: string, chainId: string, removeRow: boolean): Promise<{ canceled: number }> {
+  const key = await tenantBlotatoKey(tenantId);
+  const r = await pool.query(
+    `SELECT id, submission_id FROM publisher_posts
+     WHERE tenant_id = $1 AND chain_id = $2 AND status = 'scheduled'`, [tenantId, chainId]);
+  let canceled = 0;
+  for (const row of r.rows) {
+    if (key && row.submission_id) {
+      try { await cancelScheduled(key, row.submission_id); }
+      catch (e: any) {
+        if (!(e instanceof BlotatoError && (e.status === 404 || e.status === 400))) continue; // не смогли снять — оставляем как есть
+      }
+    }
+    await pool.query(`UPDATE publisher_posts SET status='canceled', updated_at=NOW() WHERE id=$1`, [row.id]);
+    canceled++;
+    await sleep(250);
+  }
+  if (removeRow) await pool.query(`DELETE FROM publisher_chains WHERE tenant_id=$1 AND id=$2`, [tenantId, chainId]);
+  else await pool.query(`UPDATE publisher_chains SET enabled=FALSE, updated_at=NOW() WHERE tenant_id=$1 AND id=$2`, [tenantId, chainId]);
+  return { canceled };
+}

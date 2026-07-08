@@ -1,21 +1,16 @@
 /**
- * PublisherStudio — полноэкранная студия «Новый пост» (Публикатор, Ф1).
+ * PublisherStudio — полноэкранная студия «Новый пост» (Публикатор, Ф1+Ф3).
  *
- * Решение В4 (08.07.2026): не модалка, а фулскрин-оверлей в духе UGC-студии.
- * Слева — медиа из Галереи (GalleryPicker) с превью 9:16; в центре — текст поста
- * со счётчиками лимитов по выбранным сетям; справа — аккаунты Blotato (тумблеры)
- * + платформенные опции (обязательные поля TikTok/YouTube всегда на виду,
- * Facebook требует страницу, Pinterest — доску) + «Когда»: Сейчас / Дата и время /
- * Следующий слот расписания Blotato.
- *
- * Сабмит: POST /api/publisher/posts — по вызову на каждый включённый аккаунт
- * (лимит Blotato 30 постов/мин бэкенд бережёт паузами). Частичные ошибки
- * показываются по-платформенно, успех закрывает студию в ленту Публикатора.
+ * Ф1: медиа из Галереи (GalleryPicker), текст со счётчиками лимитов, аккаунты-тумблеры,
+ * платформенные опции Blotato, «Когда»: Сейчас / Дата-время / Следующий слот (наш расчёт).
+ * Ф3: Пост-движок — ✦ ИИ-подпись (Claude: тона, A/B, per-платформенные версии, хэштеги;
+ * контекст = TrendDNA ролика, если есть разбор), вкладки текста «Все + per-платформа ✎»,
+ * тред для X/Threads/Bluesky (пустая строка = новый пост треда), шаблоны текстов.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft, Loader2, Send, ImagePlus, X, Clock, CalendarClock, Zap, Check,
-  AlertTriangle, ChevronDown, RefreshCw, ExternalLink,
+  AlertTriangle, ChevronDown, RefreshCw, ExternalLink, Sparkles, Save, ListPlus,
 } from 'lucide-react';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { PLATFORM_META, PlatformMark, BLOTATO_SETTINGS_URL, type PubAccount } from './PublisherTab';
@@ -27,10 +22,13 @@ const TEXT_LIMITS: Record<string, number> = {
 };
 /** Этим сетям нужен файл — текстовый пост туда не уйдёт. */
 const MEDIA_REQUIRED = new Set(['tiktok', 'instagram', 'youtube', 'pinterest']);
+/** Треды поддерживают эти сети (additionalPosts). */
+const THREAD_PLATFORMS = ['twitter', 'threads', 'bluesky'];
 
 interface StudioInitial { assetId?: string; mediaUrl?: string; title?: string }
-
 interface TargetResult { platform: string; ok: boolean; error?: string }
+interface CaptionVariant { base: string; hashtags: string[]; platforms: Record<string, string>; youtubeTitle?: string }
+interface TemplateRow { id: number; name: string; text: string }
 
 export function PublisherStudio({ token, initial, onClose, onPublished }: {
   token: string | null;
@@ -44,24 +42,39 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [mediaNote, setMediaNote] = useState<string | null>(null);
   const [text, setText] = useState('');
+  // Ф3: per-платформенные версии текста + тред
+  const [textTab, setTextTab] = useState<string>('all');
+  const [pOverrides, setPOverrides] = useState<Record<string, string>>({});
+  const [threadText, setThreadText] = useState('');
 
   const [accounts, setAccounts] = useState<PubAccount[]>([]);
   const [accLoading, setAccLoading] = useState(true);
   const [accErr, setAccErr] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set()); // accountId
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  // Опции: per-платформа (общие) + per-аккаунт (страница FB / доска Pinterest / страница LinkedIn).
   const [pOpts, setPOpts] = useState<Record<string, Record<string, any>>>({
     tiktok: { privacyLevel: 'PUBLIC_TO_EVERYONE', isAiGenerated: true },
     youtube: { privacyStatus: 'public', shouldNotifySubscribers: true },
     instagram: { mediaType: 'reel' },
   });
   const [aOpts, setAOpts] = useState<Record<string, Record<string, any>>>({});
-  const [subs, setSubs] = useState<Record<string, { id: string; name: string }[]>>({}); // accountId → страницы/плейлисты
-  const [boards, setBoards] = useState<Record<string, { id: string; name: string }[]>>({}); // accountId → доски Pinterest
+  const [subs, setSubs] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [boards, setBoards] = useState<Record<string, { id: string; name: string }[]>>({});
 
   const [mode, setMode] = useState<'now' | 'time' | 'slot'>('now');
   const [when, setWhen] = useState<string>('');
+  const [slotNext, setSlotNext] = useState<string | null | 'none'>(null);
+
+  // Ф3: Пост-движок
+  const [aiTone, setAiTone] = useState('engaging');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const [aiVars, setAiVars] = useState<CaptionVariant[] | null>(null);
+  // Ф3: шаблоны
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tpls, setTpls] = useState<TemplateRow[] | null>(null);
+  const [tplName, setTplName] = useState('');
+  const [tplSaving, setTplSaving] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<TargetResult[] | null>(null);
@@ -81,15 +94,30 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Esc закрывает студию (как в остальных оверлеях).
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
 
+  // «Следующий слот» — наш расчёт по «Моему расписанию»
+  useEffect(() => {
+    if (mode !== 'slot') return;
+    (async () => {
+      try {
+        const r = await fetch('/api/publisher/slots/next?count=1', { headers: jsonHeaders() });
+        const d = r.ok ? await r.json() : { next: [] };
+        setSlotNext(d.next?.[0] || 'none');
+      } catch { setSlotNext('none'); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   const selAccounts = useMemo(() => accounts.filter((a) => selected.has(a.id)), [accounts, selected]);
   const selPlatforms = useMemo(() => Array.from(new Set(selAccounts.map((a) => a.platform))), [selAccounts]);
+  const threadOn = useMemo(() => selPlatforms.some((p) => THREAD_PLATFORMS.includes(p)), [selPlatforms]);
+
+  useEffect(() => { if (textTab !== 'all' && !selPlatforms.includes(textTab)) setTextTab('all'); }, [selPlatforms, textTab]);
 
   const setPlatformOpt = (platform: string, key: string, value: any) =>
     setPOpts((prev) => ({ ...prev, [platform]: { ...(prev[platform] || {}), [key]: value } }));
@@ -102,7 +130,6 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       const r = await fetch(`/api/publisher/accounts/${encodeURIComponent(accountId)}/subaccounts`, { headers: jsonHeaders() });
       const items = r.ok ? ((await r.json()).items || []) : [];
       setSubs((p) => ({ ...p, [accountId]: items }));
-      // Единственная страница — подставляем сразу (меньше кликов).
       if (items.length === 1) setAccountOpt(accountId, 'pageId', items[0].id);
     } catch { setSubs((p) => ({ ...p, [accountId]: [] })); }
   };
@@ -125,7 +152,6 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
         next.add(a.id);
         if (a.platform === 'facebook') void loadSubs(a.id);
         if (a.platform === 'pinterest') void loadBoards(a.id);
-        // Заголовок YouTube — из имени файла/первой строки текста, если пусто.
         if (a.platform === 'youtube' && !pOpts.youtube?.title) {
           const t = (media?.title || text.split('\n')[0] || '').trim().slice(0, 100);
           if (t) setPlatformOpt('youtube', 'title', t);
@@ -142,7 +168,57 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
     setPickerOpen(false);
   };
 
-  // ── Валидация перед сабмитом ────────────────────────────────────────────────
+  // ── Пост-движок ────────────────────────────────────────────────────────────
+  const runAi = async () => {
+    setAiBusy(true); setAiErr(null); setAiVars(null);
+    try {
+      const r = await fetch('/api/publisher/ai-caption', {
+        method: 'POST', headers: jsonHeaders(),
+        body: JSON.stringify({
+          title: media?.title || text.split('\n')[0] || undefined,
+          assetId: media?.assetId || undefined,
+          platforms: selPlatforms.length ? selPlatforms : ['tiktok', 'instagram'],
+          tone: aiTone, count: 2, brief: text.trim() ? text.slice(0, 400) : undefined,
+        }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      setAiVars((d.variants || []) as CaptionVariant[]);
+    } catch (e: any) { setAiErr(e?.message || 'Не удалось сгенерировать'); }
+    finally { setAiBusy(false); }
+  };
+  const applyVariant = (v: CaptionVariant) => {
+    setText([v.base, v.hashtags.join(' ')].filter(Boolean).join('\n\n'));
+    const ov: Record<string, string> = {};
+    for (const [p, t] of Object.entries(v.platforms || {})) if (selPlatforms.includes(p) && t) ov[p] = t;
+    setPOverrides(ov);
+    if (v.youtubeTitle && selPlatforms.includes('youtube')) setPlatformOpt('youtube', 'title', v.youtubeTitle);
+    setAiVars(null); setTextTab('all');
+  };
+
+  // ── Шаблоны ────────────────────────────────────────────────────────────────
+  const loadTpls = async () => {
+    try {
+      const r = await fetch('/api/publisher/templates', { headers: jsonHeaders() });
+      setTpls(r.ok ? (((await r.json()).templates || []) as TemplateRow[]) : []);
+    } catch { setTpls([]); }
+  };
+  const saveTpl = async () => {
+    const name = tplName.trim() || (text.split('\n')[0] || 'Шаблон').slice(0, 60);
+    if (!text.trim()) return;
+    setTplSaving(true);
+    try {
+      await fetch('/api/publisher/templates', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name, text }) });
+      setTplName(''); await loadTpls();
+    } finally { setTplSaving(false); }
+  };
+  const delTpl = async (id: number) => {
+    await fetch(`/api/publisher/templates/${id}`, { method: 'DELETE', headers: jsonHeaders() });
+    await loadTpls();
+  };
+
+  // ── Валидация ──────────────────────────────────────────────────────────────
+  const effText = (p: string) => (pOverrides[p] ?? text);
   const problems = useMemo(() => {
     const list: string[] = [];
     if (selAccounts.length === 0) list.push('Выберите хотя бы один аккаунт.');
@@ -156,17 +232,20 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       if (a.platform === 'pinterest' && !aOpts[a.id]?.boardId) list.push(`Pinterest (${a.name || a.username || a.id}): выберите доску.`);
     }
     if (mode === 'time' && !when) list.push('Укажите дату и время публикации.');
+    if (mode === 'slot' && slotNext === 'none') list.push('Нет свободных слотов — добавьте времена в «Моё расписание» (вкладка Публикатора).');
     for (const p of selPlatforms) {
       const lim = TEXT_LIMITS[p];
-      if (lim && text.length > lim) list.push(`${PLATFORM_META[p]?.label || p}: текст длиннее лимита ${lim}.`);
+      if (lim && effText(p).length > lim) list.push(`${PLATFORM_META[p]?.label || p}: текст длиннее лимита ${lim}.`);
     }
     return list;
-  }, [selAccounts, selPlatforms, media, text, pOpts, aOpts, mode, when]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selAccounts, selPlatforms, media, text, pOverrides, pOpts, aOpts, mode, when, slotNext]);
 
   const submit = async () => {
     if (problems.length > 0 || submitting) return;
     setSubmitting(true); setSubmitErr(null); setResults(null);
     try {
+      const thread = threadText.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
       const targets = selAccounts.map((a) => ({
         accountId: a.id,
         platform: a.platform,
@@ -175,10 +254,13 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
           ...(aOpts[a.id] || {}),
           accountName: a.username ? `@${a.username}` : (a.name || a.platform),
         },
+        ...(pOverrides[a.platform] != null ? { textOverride: pOverrides[a.platform] } : {}),
+        ...(thread.length && THREAD_PLATFORMS.includes(a.platform) ? { thread } : {}),
       }));
       const body: Record<string, any> = {
         assetId: media?.assetId || undefined,
         mediaUrl: media?.assetId ? undefined : media?.mediaUrl,
+        title: media?.title || undefined,
         text, mode, targets,
       };
       if (mode === 'time') body.scheduledAt = new Date(when).toISOString();
@@ -192,7 +274,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
     finally { setSubmitting(false); }
   };
 
-  // ── Мелкие UI-примитивы студии ─────────────────────────────────────────────
+  // ── Мелкие UI-примитивы ────────────────────────────────────────────────────
   const Tgl = ({ on, onClick, label, hint }: { on: boolean; onClick: () => void; label: React.ReactNode; hint?: string }) => (
     <button type="button" onClick={onClick} title={hint}
       className="w-full flex items-center justify-between gap-2 py-1.5 text-[12.5px]"
@@ -222,7 +304,8 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
     </div>
   );
 
-  const overLimit = (p: string) => TEXT_LIMITS[p] && text.length > TEXT_LIMITS[p];
+  const overLimit = (p: string) => TEXT_LIMITS[p] && effText(p).length > TEXT_LIMITS[p];
+  const fmtDT = (iso: string) => new Date(iso).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="fixed inset-0 z-[95] flex flex-col" style={{ background: 'var(--bg-primary)' }}>
@@ -268,7 +351,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
 
       {/* Контент */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[1280px] mx-auto p-4 grid gap-4 items-start" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
+        <div className="max-w-[1280px] mx-auto p-4">
           <div className="grid gap-4 items-start lg:grid-cols-[230px_minmax(0,1fr)_330px]">
 
             {/* ── Медиа ── */}
@@ -304,26 +387,144 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
 
             {/* ── Текст ── */}
             <div className="space-y-2 min-w-0">
-              <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Текст поста</div>
-              <textarea value={text} onChange={(e) => { setText(e.target.value); setResults(null); }}
-                placeholder={'Подпись к посту: хук в первой строке, дальше суть и призыв…\n\n#хэштеги'}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Текст поста</div>
+                {/* Вкладки версий текста: Все + per-платформа (✎ = есть своя версия) */}
+                {selPlatforms.length > 0 && (
+                  <div className="inline-flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    <button type="button" onClick={() => setTextTab('all')}
+                      className="text-[11.5px] font-600 px-2 py-0.5 rounded-md"
+                      style={{ background: textTab === 'all' ? 'var(--brand)' : 'transparent', color: textTab === 'all' ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>Все</button>
+                    {selPlatforms.map((p) => (
+                      <button key={p} type="button" onClick={() => setTextTab(p)}
+                        className="text-[11.5px] font-600 px-2 py-0.5 rounded-md"
+                        style={{ background: textTab === p ? 'var(--brand)' : 'transparent', color: textTab === p ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                        {PLATFORM_META[p]?.mark || p}{pOverrides[p] != null ? ' ✎' : ''}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Шаблоны */}
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button type="button" onClick={() => { setTplOpen(!tplOpen); if (!tpls) void loadTpls(); }}
+                    className="inline-flex items-center gap-1 text-[11.5px] font-600 px-2 py-1 rounded-lg"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    <ListPlus size={11} /> Шаблоны
+                  </button>
+                </div>
+              </div>
+
+              {tplOpen && (
+                <div className="rounded-xl p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                  {(tpls || []).map((t) => (
+                    <div key={t.id} className="flex items-center gap-2">
+                      <button type="button" onClick={() => { setTextTab('all'); setText(t.text); setTplOpen(false); }}
+                        className="flex-1 text-left text-[12px] font-600 px-2 py-1 rounded-md truncate"
+                        title={t.text}
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }}>{t.name}</button>
+                      <button type="button" onClick={() => void delTpl(t.id)} className="w-6 h-6 rounded-md" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={11} className="mx-auto" /></button>
+                    </div>
+                  ))}
+                  {tpls && tpls.length === 0 && <p className="text-[11.5px] px-1" style={{ color: 'var(--text-muted)' }}>Шаблонов пока нет.</p>}
+                  <div className="flex items-center gap-1.5 pt-1" style={{ borderTop: '1px dashed var(--border-subtle)' }}>
+                    <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Имя шаблона"
+                      className="flex-1 text-[12px] rounded-md px-2 py-1" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                    <button type="button" onClick={() => void saveTpl()} disabled={tplSaving || !text.trim()}
+                      className="inline-flex items-center gap-1 text-[11.5px] font-700 px-2 py-1 rounded-md disabled:opacity-40"
+                      style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                      {tplSaving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Сохранить текущий
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                value={textTab === 'all' ? text : (pOverrides[textTab] ?? '')}
+                onChange={(e) => {
+                  setResults(null);
+                  if (textTab === 'all') setText(e.target.value);
+                  else setPOverrides((prev) => ({ ...prev, [textTab]: e.target.value }));
+                }}
+                placeholder={textTab === 'all'
+                  ? 'Подпись к посту: хук в первой строке, дальше суть и призыв…\n\n#хэштеги'
+                  : `Своя версия для ${PLATFORM_META[textTab]?.label || textTab} (пусто = используется общий текст)`}
                 className="w-full rounded-xl p-3 text-[13.5px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minHeight: 220, resize: 'vertical' }} />
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minHeight: 190, resize: 'vertical' }} />
+              {textTab !== 'all' && pOverrides[textTab] != null && (
+                <button type="button" onClick={() => setPOverrides((prev) => { const n = { ...prev }; delete n[textTab]; return n; })}
+                  className="text-[11.5px] font-600" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}>
+                  ← вернуть общий текст для {PLATFORM_META[textTab]?.label || textTab}
+                </button>
+              )}
               {selPlatforms.length > 0 && (
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {selPlatforms.map((p) => (
                     <span key={p} className="text-[11px] tabular-nums font-600" style={{ color: overLimit(p) ? '#ef4444' : 'var(--text-muted)' }}>
-                      {PLATFORM_META[p]?.mark || p} {text.length}/{TEXT_LIMITS[p] || '∞'}{overLimit(p) ? ' ✕' : ''}
+                      {PLATFORM_META[p]?.mark || p} {effText(p).length}/{TEXT_LIMITS[p] || '∞'}{overLimit(p) ? ' ✕' : ''}{pOverrides[p] != null ? ' ✎' : ''}
                     </span>
                   ))}
                 </div>
               )}
-              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                Один текст на все сети (Ф1). Персональные версии под каждый аккаунт и ИИ-подписи с хэштегами — следующий этап.
-              </p>
+
+              {/* ✦ Пост-движок */}
+              <div className="rounded-xl p-3 space-y-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--brand)' }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[12.5px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                    <Sparkles size={13} style={{ color: 'var(--brand)' }} /> ИИ-подпись
+                  </span>
+                  <div className="inline-flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    {([['engaging', 'Вовлекающий'], ['expert', 'Экспертный'], ['selling', 'Продающий']] as [string, string][]).map(([k, l]) => (
+                      <button key={k} type="button" onClick={() => setAiTone(k)}
+                        className="text-[11.5px] font-600 px-2 py-1 rounded-md"
+                        style={{ background: aiTone === k ? 'var(--brand)' : 'transparent', color: aiTone === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>{l}</button>
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => void runAi()} disabled={aiBusy}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-700 px-3 py-1.5 rounded-lg ml-auto"
+                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                    {aiBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Сгенерировать A/B
+                  </button>
+                </div>
+                {aiErr && <p className="text-[11.5px]" style={{ color: '#ef4444' }}>{aiErr}</p>}
+                {aiVars && aiVars.map((v, i) => (
+                  <div key={i} className="rounded-lg p-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[10px] font-700 px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>{i === 0 ? 'A' : 'B'}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12.5px] whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>{v.base}</p>
+                        {v.hashtags.length > 0 && <p className="text-[11.5px] mt-1" style={{ color: 'var(--brand)' }}>{v.hashtags.join(' ')}</p>}
+                        {Object.keys(v.platforms || {}).length > 0 && (
+                          <p className="text-[10.5px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                            свои версии: {Object.keys(v.platforms).map((p) => PLATFORM_META[p]?.label || p).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => applyVariant(v)}
+                        className="text-[11.5px] font-700 px-2.5 py-1 rounded-lg flex-shrink-0"
+                        style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: 'none', cursor: 'pointer' }}>Применить</button>
+                    </div>
+                  </div>
+                ))}
+                <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                  Контекст: название ролика{media?.assetId ? ' + его разбор тренда (TrendDNA), если есть' : ''}. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.
+                </p>
+              </div>
+
+              {/* Тред */}
+              {threadOn && (
+                <div className="space-y-1">
+                  <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>
+                    Тред · X / Threads / Bluesky <span className="font-500 normal-case">(пустая строка = следующий пост треда)</span>
+                  </div>
+                  <textarea value={threadText} onChange={(e) => setThreadText(e.target.value)}
+                    placeholder={'Второй пост треда…\n\nТретий пост треда…'}
+                    className="w-full rounded-xl p-3 text-[13px] leading-relaxed"
+                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minHeight: 80, resize: 'vertical' }} />
+                </div>
+              )}
 
               {/* Когда публикуем */}
-              <div className="pt-2 space-y-2">
+              <div className="pt-1 space-y-2">
                 <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Когда</div>
                 <div className="inline-flex gap-1 p-1 rounded-xl flex-wrap" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                   {([['now', 'Сейчас', <Zap key="z" size={13} />], ['time', 'Дата и время', <CalendarClock key="c" size={13} />], ['slot', 'Следующий слот', <Clock key="s" size={13} />]] as ['now' | 'time' | 'slot', string, React.ReactNode][]).map(([k, l, ic]) => (
@@ -340,8 +541,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                 )}
                 {mode === 'slot' && (
-                  <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                    Пост займёт ближайший свободный слот вашего расписания в Blotato (настраивается в их кабинете; на части тарифов Blotato слоты недоступны — тогда придёт ошибка).
+                  <p className="text-[11.5px]" style={{ color: slotNext === 'none' ? '#f59e0b' : 'var(--text-muted)' }}>
+                    {slotNext === null ? 'Считаю ближайший слот…'
+                      : slotNext === 'none' ? 'Свободных слотов нет — добавьте времена в «Моё расписание» (вкладка Публикатора).'
+                      : <>Пост займёт ближайший свободный слот вашего расписания: <b style={{ color: 'var(--text-primary)' }}>{fmtDT(slotNext)}</b></>}
                   </p>
                 )}
               </div>
@@ -374,7 +577,6 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                 </div>
               )}
 
-              {/* Платформенные опции — только для выбранных сетей */}
               {selPlatforms.includes('tiktok') && (
                 <OptCard platform="tiktok">
                   <Sel value={pOpts.tiktok?.privacyLevel || 'PUBLIC_TO_EVERYONE'} onChange={(v) => setPlatformOpt('tiktok', 'privacyLevel', v)}
