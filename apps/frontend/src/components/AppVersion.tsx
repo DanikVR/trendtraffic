@@ -2140,7 +2140,11 @@
  *         клоны. (4) Языки серии: 8 → 29 (весь eleven_multilingual_v2), родные названия из i18n,
  *         скролл-список. Файлы: UgcPreview, UgcStudio, ugcTypes, MontageEditor; бэк: podcast_compose,
  *         render/router. i18n ru+en. */
-export const APP_VERSION = '2.1.7';
+/* 2.1.8 — UGC: перетаскивание аватара сделано НАДЁЖНЫМ по вертикали (и на тач): драг теперь
+ *         берёт setPointerCapture и слушает pointermove/up на самом элементе, а не на window —
+ *         скролл-контейнер студии больше не перехватывает вертикальный жест (аватар «залипал»
+ *         при движении вверх-вниз). Логика позиции не менялась (x и y двигались и раньше). */
+export const APP_VERSION = '2.1.8';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

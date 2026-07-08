@@ -123,9 +123,14 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const clamp01 = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
   const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, kind: 'move' | 'size') => {
     if (!onAvatarRect || e.button !== 0) return;
-    const frameEl = (e.currentTarget as HTMLElement).closest('[data-ugc-frame]') as HTMLElement | null;
+    const el = e.currentTarget as HTMLElement;
+    const frameEl = el.closest('[data-ugc-frame]') as HTMLElement | null;
     if (!frameEl) return;
     e.preventDefault(); e.stopPropagation();
+    // Захват указателя: ВСЕ последующие pointermove/up идут в этот элемент, даже когда палец/
+    // курсор уходит за границы кадра или над скролл-контейнером студии. Без этого быстрый
+    // ВЕРТИКАЛЬНЫЙ жест мог «залипать»: скролл-область перехватывала его, и аватар не двигался.
+    try { el.setPointerCapture(e.pointerId); } catch { /* не критично */ }
     const fr = frameEl.getBoundingClientRect();
     const r0 = rectFor(fmt);
     const sx = e.clientX, sy = e.clientY;
@@ -139,12 +144,17 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       setLiveRect({ fmt, rect: last });
     };
     const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
       if (moved) onAvatarRect(fmt, { x: +last.x.toFixed(4), y: +last.y.toFixed(4), w: +last.w.toFixed(4), h: +last.h.toFixed(4) });
       setLiveRect(null);
     };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp, { once: true });
+    // Слушаем на самом элементе (получает события благодаря захвату) — надёжнее, чем window.
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
   };
 
   /* полоса плана: активный сегмент; сбрасывается при смене режима/пресета */
