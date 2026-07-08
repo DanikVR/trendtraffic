@@ -3217,3 +3217,5 @@ ssh root@web 'cd /var/www/trendtraffic && bash deploy/vps-redeploy.sh'
 **Гочи для потомков:** тема приложения = класс `.dark` на `<html>` (НЕ data-theme); React рендерит асинхронно — в preview_eval проверять DOM только после setTimeout-тика; `concatBumpers.mainPath` принимает и локальный путь, и URL `/uploads/renders/…`; в tsx-режиме UPLOADS_ROOT = `apps/uploads` (не корень).
 
 **Эталон дизайна (для вики):** интерактивный макет студии заморожен в `apps/frontend/public/design/ugc-studio-design.html` (живой URL `https://app.trendtraffic.pro/design/ugc-studio-design.html`) — самодостаточная страница с превью, словарём строк «было→стало» (RU+EN), принципами i18n и планом. Подробнее — docs/UGC_AVATARS.md §14.
+
+**Дизайн-стандарт (для вики):** отдельная заметка `docs/DESIGN_STUDIO_SCHEME.md` — схема профессионального редактора (CapCut/Canva/Descript): анатомия 5 зон + 10 принципов, применённых в UGC-студии; эта же схема — правило для ВСЕХ разделов сервиса (один стиль).
