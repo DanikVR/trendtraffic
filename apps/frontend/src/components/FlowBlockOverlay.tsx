@@ -82,30 +82,35 @@ export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onCl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const spinner = (
-    <div className="py-24 text-center">
-      <Loader2 size={26} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} />
+  // Пока грузим/ошибка — свой затемняющий скрим (панель блока даст своё затемнение позже).
+  const scrim = (children: React.ReactNode) => (
+    <div className="fixed inset-0 z-[140] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      {children}
     </div>
   );
+  const spinner = <Loader2 size={26} className="animate-spin" style={{ color: '#fff' }} />;
 
-  return (
-    <div className="fixed inset-0 z-[140] overflow-y-auto" style={{ background: 'var(--bg-primary)' }}>
-      <div className="max-w-[1760px] mx-auto px-3 sm:px-6 py-2">
-        {err ? (
-          <div className="py-20 text-center space-y-4">
-            <p className="text-sm" style={{ color: '#ef4444' }}>{err}</p>
-            <button type="button" onClick={onClose}
-              className="text-sm font-600 px-4 py-2 rounded-xl"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-              Назад
-            </button>
-          </div>
-        ) : !flowId ? spinner : (
-          <React.Suspense fallback={spinner}>
-            <MontageEditor key={flowId} flowId={flowId} initialCloud={req.cloud} onBack={onClose} />
-          </React.Suspense>
-        )}
+  if (err) {
+    return scrim(
+      <div className="text-center space-y-4">
+        <p className="text-sm" style={{ color: '#fca5a5' }}>{err}</p>
+        <button type="button" onClick={onClose}
+          className="text-sm font-600 px-4 py-2 rounded-xl"
+          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+          Назад
+        </button>
       </div>
+    );
+  }
+  if (!flowId) return scrim(spinner);
+
+  // Блок открыт: панель рендерится ПОВЕРХ текущего экрана (Галереи/просмотрщика) — прозрачный
+  // контейнер, панель блока сама затемняет фон. soloBlock прячет холст-паутину и топбар.
+  return (
+    <div className="fixed inset-0 z-[140]" style={{ background: 'transparent' }}>
+      <React.Suspense fallback={scrim(spinner)}>
+        <MontageEditor key={flowId} flowId={flowId} initialCloud={req.cloud} soloBlock onBack={onClose} />
+      </React.Suspense>
     </div>
   );
 }

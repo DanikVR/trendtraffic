@@ -287,4 +287,20 @@ router.get('/counters', async (req: AuthedRequest, res: Response) => {
   res.json({ counters: await todayCounters(req.tenantId!) });
 });
 
+/**
+ * GET /jobs?active=1 — джобы тенанта (не привязано к flow) для индикатора «генерится»
+ * в Галерее → Hotebook. active=1 → только queued/running (плейсхолдер-карточки со спиннером).
+ */
+router.get('/jobs', async (req: AuthedRequest, res: Response) => {
+  try {
+    const activeOnly = req.query.active === '1' || req.query.active === 'true';
+    const where = activeOnly ? `AND status IN ('queued','running')` : '';
+    const r = await pool.query(
+      `SELECT * FROM notebooklm_jobs WHERE tenant_id=$1 ${where} ORDER BY created_at DESC LIMIT 60`,
+      [req.tenantId!]
+    );
+    res.json({ jobs: r.rows.map((row: any) => ({ ...mapJob(row), title: row.title || null })) });
+  } catch (e: any) { res.status(500).json(errPayload(e)); }
+});
+
 export default router;

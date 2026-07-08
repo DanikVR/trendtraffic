@@ -13,7 +13,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
@@ -54,10 +54,14 @@ export default function SocialExtensionPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [tab, setTab] = useState<Tab>('search');
   // Deep-link из Галереи: ?q=слово → секция «Поиск» (авто-скан делает TrendSearch);
-  // ?tab=analytics → секция «Аналитика» (плитка «+» раздела «Из анализа»).
+  // ?tab=analytics → секция «Аналитика»; ?from=gallery → показать «Закрыть» (возврат в Галерею).
   const location = useLocation();
+  const navigate = useNavigate();
+  // Залипающий флаг: TrendSearch чистит query после автоскана — «Закрыть» не должна исчезать.
+  const [fromGallery, setFromGallery] = useState(() => new URLSearchParams(location.search).get('from') === 'gallery');
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
+    if (sp.get('from') === 'gallery') setFromGallery(true);
     if (sp.has('q')) setTab('search');
     else if (sp.get('tab') === 'analytics') setTab('analytics');
   }, [location.search]);
@@ -302,6 +306,14 @@ export default function SocialExtensionPage() {
           <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
           <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Поиск вирусных видео в TikTok, Instagram, YouTube и X — и аналитика трендов.</p>
         </div>
+        {/* Пришли из Галереи («+ Добавить тренд») — даём «Закрыть» для возврата в Галерею */}
+        {fromGallery && (
+          <button type="button" onClick={() => navigate('/gallery')} title="Закрыть и вернуться в Галерею"
+            className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl flex-shrink-0 transition-colors"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
+            <X size={16} /> Закрыть
+          </button>
+        )}
       </div>
 
       {/* Контент: обе секции смонтированы, скрытая прячется (iframe не перезагружается).

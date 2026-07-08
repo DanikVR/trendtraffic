@@ -319,7 +319,7 @@ const newSeg = (start: number, end: number): OmniSeg =>
 const OMNI_DEFAULT: OmniSpec = { segments: [newSeg(0, 0.2)] };
 const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
-export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: { flowId: string; onBack: () => void; isNew?: boolean; initialCloud?: string | null }) {
+export default function MontageEditor({ flowId, onBack, isNew, initialCloud, soloBlock }: { flowId: string; onBack: () => void; isNew?: boolean; initialCloud?: string | null; soloBlock?: boolean }) {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
 
@@ -719,6 +719,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
     setCloudPanel(initialCloud as CloudId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, initialCloud]);
+
+  // СОЛО-РЕЖИМ (блок открыт оверлеем из Галереи/просмотрщика): показываем ТОЛЬКО панель
+  // блока — без верхней панели и холста-паутины. Закрытие панели (× / клик по фону /
+  // «Выход» студии) закрывает весь оверлей и возвращает туда, откуда пришли.
+  const soloOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!soloBlock || loading) return;
+    if (cloudPanel) { soloOpenedRef.current = true; return; }
+    if (soloOpenedRef.current) onBack(); // панель была открыта и закрылась → выходим
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [soloBlock, cloudPanel, loading]);
 
   useEffect(() => {
     (async () => {
@@ -1756,7 +1767,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
         .me-fan-item:hover{border-color:var(--brand)!important;transform:scale(1.1);}
       `}</style>
 
-      {/* Верхняя панель */}
+      {/* Верхняя панель (в соло-режиме скрыта — виден только блок) */}
+      {!soloBlock && (
       <div className="flex items-center gap-2 px-4 py-3 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
         <button onClick={async () => { if (dirty) { try { await save(); } catch { /* */ } } onBack(); }} title="Назад" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
         {nameEdit ? (
@@ -1782,11 +1794,13 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canRedo ? 'pointer' : 'not-allowed' }}><Redo2 size={15} /></button>
         {/* Кнопка «Сохранить» убрана из шапки: автосохранение пишет правки само ~1.6с (+ сейв при «Назад»). */}
       </div>
+      )}
 
-      {/* Холст-паутина (верхние чипы убраны — добавление через плавающую «+» слева сверху) */}
+      {/* Холст-паутина (в соло-режиме скрыт — блок открывается чистой панелью над Галереей) */}
       <div ref={canvasRef} className="flex-1" style={{ position: 'relative', overflow: 'hidden',
-        background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.05), transparent 60%), var(--bg-primary)',
-        backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }}>
+        ...(soloBlock ? { display: 'none' } : {
+          background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.05), transparent 60%), var(--bg-primary)',
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }) }}>
 
         {/* Центральная кнопка «Сценарий ролика» убрана: фича brief не читалась бэком
             (ИИ-режиссёр вырезан в v2.0.0). Центр холста оставлен пустым. */}
@@ -1990,10 +2004,18 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
                   </button>
                 ) : (
                   <>
-                    {/* Превью исходника */}
-                    <video ref={srcVideoRef} src={sourceUrl} controls preload="metadata"
-                      onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
-                      style={{ width: '100%', maxHeight: 190, borderRadius: 10, background: '#000' }} />
+                    {/* Превью исходника + иконка «работает» поверх видео во время генерации */}
+                    <div style={{ position: 'relative' }}>
+                      <video ref={srcVideoRef} src={sourceUrl} controls preload="metadata"
+                        onLoadedMetadata={(e) => setSrcDuration(e.currentTarget.duration || 0)}
+                        style={{ width: '100%', maxHeight: 190, borderRadius: 10, background: '#000', display: 'block' }} />
+                      {omniBusy && (
+                        <div style={{ position: 'absolute', inset: 0, borderRadius: 10, background: 'rgba(0,0,0,0.42)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, pointerEvents: 'none' }}>
+                          <Loader2 size={30} className="animate-spin" style={{ color: '#fff' }} />
+                          <span className="text-[11px] font-700" style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>Преобразование…</span>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Интерактивная лента: перетаскивай окно (тело=сдвиг, края=длина). Omni — макс 10с. Живой предпросмотр. */}
                     <div>
