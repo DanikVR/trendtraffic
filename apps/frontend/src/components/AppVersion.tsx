@@ -2144,7 +2144,11 @@
  *         берёт setPointerCapture и слушает pointermove/up на самом элементе, а не на window —
  *         скролл-контейнер студии больше не перехватывает вертикальный жест (аватар «залипал»
  *         при движении вверх-вниз). Логика позиции не менялась (x и y двигались и раньше). */
-export const APP_VERSION = '2.1.8';
+/* 2.1.9 — UGC: сдвиг КАРТИНКИ аватара ВНУТРИ бокса вверх-вниз (выбор кадра: лицо/плечи).
+ *         Ручка ↕ на левом крае бокса → object-position Y (oy 0..1 в avatarRect, per-format);
+ *         превью применяет objectPosition, рендер — вертикальный сдвиг cover-кропа
+ *         (composeUgc crop=(iw-bw)/2:(ih-bh)*oy). Отдельно от перемещения бокса по кадру. */
+export const APP_VERSION = '2.1.9';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

@@ -17,7 +17,9 @@ export type UgcAvatarSource = 'collection' | 'photo';
 export interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
 // Кастомная позиция/размер аватара на кадре (все раскладки solo): доли кадра 0..1,
 // своя на каждый формат. Пусто = дефолт раскладки. Выставляется драгом на превью.
-export interface UgcAvatarRect { x: number; y: number; w: number; h: number }
+// oy — вертикальный сдвиг КАРТИНКИ внутри бокса (object-position Y, 0..1, деф. 0.5):
+// аватар обрезается по cover, oy выбирает видимую часть (лицо/плечи). Драг-ручкой ↕.
+export interface UgcAvatarRect { x: number; y: number; w: number; h: number; oy?: number }
 /** Дефолтный прямоугольник аватара по раскладке (доли кадра). Раскладка = стартовая позиция,
  *  дальше двигается/масштабируется драгом. ТА ЖЕ логика зашита в бэкенде (render/router).
  *  «сверху»/«снизу» — крупный бокс в верхней/нижней половине (аватар cover-кроп ≈ сплит,

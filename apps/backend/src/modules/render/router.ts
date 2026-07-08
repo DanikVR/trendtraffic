@@ -424,7 +424,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const script: any[] = Array.isArray(spec.script) ? spec.script : [];
     const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
     // Кастомные позиции аватара (драг на превью студии): per-format доли кадра 0..1.
-    const avatarRects: Partial<Record<UgcFormatKey, { x: number; y: number; w: number; h: number }>> = {};
+    // oy — вертикальный сдвиг КАРТИНКИ внутри бокса (object-position Y, 0..1, деф. 0.5).
+    const avatarRects: Partial<Record<UgcFormatKey, { x: number; y: number; w: number; h: number; oy: number }>> = {};
     if (spec.avatarRects && typeof spec.avatarRects === 'object') {
       const cl = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
       for (const k of Object.keys(spec.avatarRects)) {
@@ -433,16 +434,17 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         const x = Number(r?.x), y = Number(r?.y), w = Number(r?.w), h = Number(r?.h);
         if (![x, y, w, h].every(Number.isFinite)) continue;
         const cw = cl(w, 0.05, 1), chh = cl(h, 0.05, 1);
-        avatarRects[k as UgcFormatKey] = { x: cl(x, 0, 1 - cw), y: cl(y, 0, 1 - chh), w: cw, h: chh };
+        const oy = Number.isFinite(Number(r?.oy)) ? cl(Number(r.oy), 0, 1) : 0.5;
+        avatarRects[k as UgcFormatKey] = { x: cl(x, 0, 1 - cw), y: cl(y, 0, 1 - chh), w: cw, h: chh, oy };
       }
     }
     // Дефолт по раскладке (ТА ЖЕ логика, что во фронте ugcTypes.avatarDefaultRect): раскладка =
     // стартовая позиция бокса. Соло всегда рендерится оверлеем по этому rect — превью == рендер.
-    const defaultAvatarRect = (pl: string): { x: number; y: number; w: number; h: number } => {
-      if (pl === 'top') return { x: 0.06, y: 0.04, w: 0.88, h: 0.46 };
-      if (pl === 'bottom') return { x: 0.06, y: 0.50, w: 0.88, h: 0.46 };
-      if (pl === 'overlay-right') return { x: 0.52, y: 0.58, w: 0.44, h: 0.40 };
-      return { x: 0.04, y: 0.58, w: 0.44, h: 0.40 };   // overlay-left и дефолт
+    const defaultAvatarRect = (pl: string): { x: number; y: number; w: number; h: number; oy: number } => {
+      if (pl === 'top') return { x: 0.06, y: 0.04, w: 0.88, h: 0.46, oy: 0.5 };
+      if (pl === 'bottom') return { x: 0.06, y: 0.50, w: 0.88, h: 0.46, oy: 0.5 };
+      if (pl === 'overlay-right') return { x: 0.52, y: 0.58, w: 0.44, h: 0.40, oy: 0.5 };
+      return { x: 0.04, y: 0.58, w: 0.44, h: 0.40, oy: 0.5 };   // overlay-left и дефолт
     };
     const avatarRectFor = (k: UgcFormatKey) => avatarRects[k] || defaultAvatarRect(placement);
     const isPhoto = spec.avatarSource === 'photo';

@@ -538,9 +538,9 @@ export async function composeUgc(opts: {
   inserts?: UgcInsert[] | null; // врезки медиа реплик во весь кадр (по таймкодам разбора)
   layerPath?: string | null;    // верхний PNG-слой (лого/рамка), под субтитрами
   progressBar?: boolean;        // полоса прогресса сверху кадра
-  // Кастомная позиция аватара-оверлея (драг на превью студии): доли кадра 0..1.
-  // Только для placement overlay-*; null = прежние фиксированные координаты.
-  avatarRect?: { x: number; y: number; w: number; h: number } | null;
+  // Кастомная позиция аватара (драг на превью студии): доли кадра 0..1.
+  // oy — вертикальный сдвиг картинки внутри бокса (object-position Y, 0..1, деф. 0.5).
+  avatarRect?: { x: number; y: number; w: number; h: number; oy?: number } | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
@@ -586,8 +586,11 @@ export async function composeUgc(opts: {
       const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
       const bw = even(W * rect.w), bh = even(H * rect.h);
       const bx = Math.round(W * rect.x), by = Math.round(H * rect.y);
+      // oy — вертикальный object-position картинки внутри бокса (как в превью): при cover-кропе
+      // сдвигает видимую часть. 0.5 = центр (по умолчанию), 0 = верх, 1 = низ.
+      const oy = Math.min(1, Math.max(0, Number.isFinite(Number(rect.oy)) ? Number(rect.oy) : 0.5));
       if (opaque) {
-        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
+        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30[av]`);
         parts.push(`[bg][av]overlay=${bx}:${by}:eof_action=pass[vmain]`);
       } else {
         // Силуэт: вписываем по высоте бокса, центр по X, прижат к низу бокса.

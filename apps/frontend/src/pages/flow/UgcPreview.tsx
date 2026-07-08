@@ -9,7 +9,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Plus, UserRound, Move, Maximize2 } from 'lucide-react';
+import { Play, Plus, UserRound, Move, Maximize2, MoveVertical } from 'lucide-react';
 import { avatarDefaultRect, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
@@ -121,7 +121,9 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const rectFor = (fmt: UgcFormat): UgcAvatarRect =>
     (liveRect?.fmt === fmt ? liveRect.rect : null) || ugc.avatarRects?.[fmt] || avatarDefaultRect(ugc.placement);
   const clamp01 = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, kind: 'move' | 'size') => {
+  // kind: 'move' — двигать бокс по кадру; 'size' — размер за уголок; 'pan' — двигать КАРТИНКУ
+  // вверх-вниз ВНУТРИ бокса (object-position Y): выбрать видимую часть аватара (лицо/плечи).
+  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, kind: 'move' | 'size' | 'pan') => {
     if (!onAvatarRect || e.button !== 0) return;
     const el = e.currentTarget as HTMLElement;
     const frameEl = el.closest('[data-ugc-frame]') as HTMLElement | null;
@@ -140,7 +142,10 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 3) moved = true;
       last = kind === 'move'
         ? { ...r0, x: clamp01(r0.x + dx, 0, 1 - r0.w), y: clamp01(r0.y + dy, 0, 1 - r0.h) }
-        : { x: r0.x, y: r0.y, w: clamp01(r0.w + dx, 0.12, 1 - r0.x), h: clamp01(r0.h + dy, 0.12, 1 - r0.y) };
+        : kind === 'size'
+          ? { ...r0, w: clamp01(r0.w + dx, 0.12, 1 - r0.x), h: clamp01(r0.h + dy, 0.12, 1 - r0.y) }
+          // pan: сдвиг картинки внутри бокса; чувствительность — по высоте бокса (протащил бокс = полный диапазон)
+          : { ...r0, oy: clamp01((r0.oy ?? 0.5) + dy / Math.max(0.12, r0.h), 0, 1) };
       setLiveRect({ fmt, rect: last });
     };
     const onUp = () => {
@@ -148,7 +153,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       el.removeEventListener('pointerup', onUp);
       el.removeEventListener('pointercancel', onUp);
       try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
-      if (moved) onAvatarRect(fmt, { x: +last.x.toFixed(4), y: +last.y.toFixed(4), w: +last.w.toFixed(4), h: +last.h.toFixed(4) });
+      if (moved) onAvatarRect(fmt, { x: +last.x.toFixed(4), y: +last.y.toFixed(4), w: +last.w.toFixed(4), h: +last.h.toFixed(4), oy: +(last.oy ?? 0.5).toFixed(4) });
       setLiveRect(null);
     };
     // Слушаем на самом элементе (получает события благодаря захвату) — надёжнее, чем window.
@@ -271,11 +276,11 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       {url ? (
         cutout ? (
           <div className="w-full h-full" style={{ ...CHECKER, borderRadius: '12px 12px 0 0', padding: 4 }} title={t('ugc.preview.cutoutTooltip')}>
-            <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: '9px 9px 0 0' }} />
+            <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: '9px 9px 0 0', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` }} />
             <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 750, letterSpacing: '.04em', textTransform: 'uppercase', color: '#fff', background: ACC, borderRadius: 999, padding: '1.5px 7px', whiteSpace: 'nowrap' }}>{t('ugc.preview.cutoutBadge')}</span>
           </div>
         ) : (
-          <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,.25)' }} />
+          <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,.25)', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` }} />
         )
       ) : (
         <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
@@ -298,6 +303,14 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
             className="flex items-center justify-center"
             style={{ position: 'absolute', right: 3, bottom: 3, width: handle, height: handle, borderRadius: 6, background: ACC, border: '2px solid #fff', color: '#fff', cursor: 'nwse-resize', touchAction: 'none', boxShadow: '0 1px 5px rgba(0,0,0,.5)' }}>
             <Maximize2 size={mini ? 8 : 10} style={{ pointerEvents: 'none' }} />
+          </span>
+          {/* ручка ВНУТРИ бокса: тащи ↕ — картинка аватара двигается вверх-вниз (выбор кадра: лицо/плечи) */}
+          <span
+            onPointerDown={(e) => dragAvatar(e, fmt, 'pan')}
+            title={t('ugc.preview.avatarPanTip')}
+            className="flex items-center justify-center"
+            style={{ position: 'absolute', left: 3, top: '50%', transform: 'translateY(-50%)', width: handle, height: mini ? 26 : 34, borderRadius: 8, background: 'rgba(168,85,247,.9)', border: '2px solid #fff', color: '#fff', cursor: 'ns-resize', touchAction: 'none', boxShadow: '0 1px 5px rgba(0,0,0,.5)' }}>
+            <MoveVertical size={mini ? 9 : 12} style={{ pointerEvents: 'none' }} />
           </span>
         </>
       )}
