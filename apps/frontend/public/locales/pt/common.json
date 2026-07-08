@@ -1286,7 +1286,13 @@
       "seriesBilling": "O avatar é creditado apenas uma vez para toda a série.",
       "voiceoverBase": "Nesse modo, o vídeo é a base da imagem: o áudio e as legendas ficam sobrepostos.",
       "emptyTitle": "Vídeo ainda não carregado",
-      "emptySub": "Escolha na Galeria"
+      "emptySub": "Escolha na Galeria",
+      "photosTitle": "Apresentação de slides de fotos",
+      "photosSub": "uma foto — um fotograma, várias — ciclo com transições suaves",
+      "photosOne": "1 foto — fotograma",
+      "photosCount_one": "{{count}} foto — ciclos com transições suaves",
+      "photosCount_other": "Fotos {{count}} — ciclo com transições suaves",
+      "photosVsVideo": "Foram selecionados tanto vídeos quanto fotos — o vídeo vence (as fotos são ignoradas)."
     },
     "subtitles": {
       "title": "Legendas",
@@ -1403,7 +1409,9 @@
       "outro": "Outro bumper",
       "layer": "Camada superior (PNG)",
       "layerNote": "Um PNG transparente preparado para o formato de quadro — ele ficará sobreposto a todo o vídeo.",
-      "bumperNote": "Anexado ao vídeo tal como está, sem qualquer processamento."
+      "bumperNote": "Anexado ao vídeo tal como está, sem qualquer processamento.",
+      "clipImagesTitle": "Fotos para a apresentação de slides",
+      "clipImagesNote": "Clique para selecionar até 12 imagens — a ordem de seleção define a ordem de reprodução. Uma única foto se torna um quadro estático."
     },
     "progress": {
       "title": "Criando seu vídeo…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Música",
       "chipSubtitles": "Legendas",
       "chipVoice": "Voz"
+    },
+    "analysis": {
+      "title": "Análise de tendências",
+      "sub": "Fórmula do sucesso → em blocos",
+      "empty": "Nenhuma análise de tendência selecionada",
+      "emptySub": "escolha a partir de suas análises",
+      "pickTitle": "Selecione uma análise de tendência.",
+      "pickSub": "Análises salvas da página Tendências. A segmentação escolhida alimenta os blocos do estúdio — as caixas de seleção definem exatamente onde.",
+      "none": "Ainda não há análises — analise um vídeo na página Tendências (aba Análises).",
+      "framesBadge": "nível de quadro",
+      "useScript": "Roteiro da análise",
+      "useScriptSub": "A geração de roteiros segue a fórmula de tendência e seu rascunho pronto.",
+      "useVideo": "Vídeos de tendência como filmagens",
+      "useVideoSub": "O vídeo de tendência baixado se torna a filmagem.",
+      "useSubtitles": "Estilo de legenda a partir da análise",
+      "useSubtitlesSub": "estilo visual da tendência → desejos de legenda",
+      "useRetention": "Direção de montagem a partir da análise",
+      "useRetentionSub": "Os elementos gancho/ação/CTA são marcados levando em consideração a estrutura do anúncio."
+    },
+    "tpl": {
+      "button": "Modelo",
+      "tooltip": "Modelos: salve toda a configuração do estúdio e ative a publicação automática de tendências.",
+      "title": "Modelos UGC",
+      "sub": "Um modelo armazena TODAS as configurações do estúdio (modo, legendas, música, caixas de seleção de análise). A publicação automática o vincula a uma análise automática de tendências — os vídeos são criados sozinhos.",
+      "empty": "Ainda não há modelos disponíveis — salve a configuração atual abaixo.",
+      "apply": "Aplicar",
+      "autopubOn": "Ativar publicação automática",
+      "source": "Fonte",
+      "sourceNone": "— escolha uma fonte —",
+      "sourceTrends": "Tendências",
+      "sourcePaused": "pausado",
+      "lang": "Idioma do vídeo",
+      "langHint": "O roteiro é escrito nesse idioma imediatamente.",
+      "autopubHint": "A análise automática encontra um novo vídeo de tendência → detalhamento → um vídeo é criado a partir desse modelo (a seção \"Automático\" na Galeria). Mais fontes além de Tendências serão adicionadas posteriormente.",
+      "noWatches": "Ainda não há análises automáticas — habilite uma na página Tendências (bloco Análise automática).",
+      "saveCurrent": "Salvar as configurações atuais como um modelo",
+      "namePlaceholder": "Nome do modelo",
+      "keywordPlaceholder": "Palavra-chave em alta (emblema no cartão)",
+      "save": "Salvar modelo",
+      "note": "Os modelos ficam disponíveis em Galeria → UGC → “Automático”, ao lado dos vídeos automáticos.",
+      "defaultName": "Meu modelo"
     }
   }
 }

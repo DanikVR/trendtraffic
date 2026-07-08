@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar se zaračuna enkrat za celotno serijo.",
       "voiceoverBase": "V tem načinu je video osnova kadra: glas in podnapisi so na vrhu.",
       "emptyTitle": "Videoposnetek še ni naložen",
-      "emptySub": "izberite iz galerije"
+      "emptySub": "izberite iz galerije",
+      "photosTitle": "Diaprojekcija fotografij",
+      "photosSub": "ena fotografija – mirujoč kader, več – ciklično s prelivanji",
+      "photosOne": "1 fotografija – posnetek",
+      "photosCount_one": "{{count}} fotografija – cikli s prelivanji",
+      "photosCount_other": "fotografije {{count}} – ciklično spreminjanje s prelivanji",
+      "photosVsVideo": "Izbrani so tako video kot fotografije – video zmaga (fotografije se prezrejo)."
     },
     "subtitles": {
       "title": "Podnapisi",
@@ -1403,7 +1409,9 @@
       "outro": "Odbijač za konec",
       "layer": "Zgornja plast (PNG)",
       "layerNote": "Prozorna datoteka PNG, pripravljena za format okvirja – prikazala se bo čez celoten videoposnetek.",
-      "bumperNote": "Priloženo videoposnetku takšno, kot je, brez obdelave."
+      "bumperNote": "Priloženo videoposnetku takšno, kot je, brez obdelave.",
+      "clipImagesTitle": "Fotografije za diaprojekcijo",
+      "clipImagesNote": "Kliknite za izbiro do 12 slik – vrstni red izbire = vrstni red predvajanja. Posamezna fotografija postane fotografija v mirujočem kadru."
     },
     "progress": {
       "title": "Ustvarjanje videoposnetka …",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Glasba",
       "chipSubtitles": "Podnapisi",
       "chipVoice": "Glas"
+    },
+    "analysis": {
+      "title": "Analiza trendov",
+      "sub": "formula uspeha → v bloke",
+      "empty": "Ni izbrane razčlenitve trendov",
+      "emptySub": "izberite med svojimi analizami",
+      "pickTitle": "Izberite razčlenitev trendov",
+      "pickSub": "Shranjene analize s strani Trendi. Izbrana razčlenitev se napaja v studijske bloke – potrditvena polja določajo, kam točno.",
+      "none": "Še ni analiz – analizirajte videoposnetek na strani Trendi (zavihek Analitika).",
+      "framesBadge": "na ravni okvirja",
+      "useScript": "Scenarij iz analize",
+      "useScriptSub": "generiranje skripta sledi trendni formuli in njenemu pripravljenemu osnutku",
+      "useVideo": "Trend video kot posnetek",
+      "useVideoSub": "Preneseni videoposnetek trenda postane posnetek",
+      "useSubtitles": "Slog podnapisov iz razčlenitve",
+      "useSubtitlesSub": "trendovski vizualni slog → podnaslov želje",
+      "useRetention": "Montažna režija iz analize",
+      "useRetentionSub": "Kavelj/dejanje/poziv k dejanju so označeni z mislijo na razčlenitev"
+    },
+    "tpl": {
+      "button": "Predloga",
+      "tooltip": "Predloge: shranite celotno nastavitev studia in omogočite samodejno objavljanje trendov",
+      "title": "Predloge uporabniške vsebine",
+      "sub": "Predloga shrani VSE nastavitve studia (način, podnapise, glasbo, potrditvena polja za analizo). Samodejno objavljanje jo poveže s samodejno analizo trendov – videoposnetki se gradijo sami.",
+      "empty": "Še ni predlog – shranite trenutne nastavitve spodaj.",
+      "apply": "Uporabi",
+      "autopubOn": "Omogoči samodejno objavljanje",
+      "source": "Vir",
+      "sourceNone": "— izberite vir —",
+      "sourceTrends": "Trendi",
+      "sourcePaused": "zaustavljeno",
+      "lang": "Jezik videoposnetka",
+      "langHint": "scenarij je takoj napisan v tem jeziku",
+      "autopubHint": "Samodejna analiza najde nov videoposnetek trenda → razčlenitev → videoposnetek se ustvari iz te predloge (razdelek »Samodejno« v Galeriji). Več virov poleg Trendov bo na voljo kasneje.",
+      "noWatches": "Samodejnih analiz še ni – omogočite jih na strani Trendi (blok Samodejna analiza).",
+      "saveCurrent": "Shrani trenutne nastavitve kot predlogo",
+      "namePlaceholder": "Ime predloge",
+      "keywordPlaceholder": "Trendna ključna beseda (značka na kartici)",
+      "save": "Shrani predlogo",
+      "note": "Predloge so na voljo v Galeriji → UGC → »Samodejno« poleg samodejnih videoposnetkov.",
+      "defaultName": "Moja predloga"
     }
   }
 }

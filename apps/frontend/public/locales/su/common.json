@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar éta ditagihkeun sakali pikeun sakabéh séri.",
       "voiceoverBase": "Dina modeu ieu, pidéo mangrupikeun dasar pigura: sora sareng subtitle aya di luhur.",
       "emptyTitle": "Videona tacan diunggah",
-      "emptySub": "pilih ti Galeri"
+      "emptySub": "pilih ti Galeri",
+      "photosTitle": "Slideshow poto",
+      "photosSub": "hiji poto — pigura diam, sababaraha — muter jeung crossfade",
+      "photosOne": "1 poto — pigura diam",
+      "photosCount_one": "poto {{count}} — siklus nganggo crossfade",
+      "photosCount_other": "poto {{count}} — sapédah nganggo crossfade",
+      "photosVsVideo": "Boh pidéo sareng poto anu dipilih — pidéo anu meunang (poto teu dipaliré)."
     },
     "subtitles": {
       "title": "Subjudul",
@@ -1403,7 +1409,9 @@
       "outro": "Bemper outro",
       "layer": "Lapisan luhur (PNG)",
       "layerNote": "PNG transparan anu disiapkeun pikeun format pigura — éta bakal nempel dina sakabéh pidéo.",
-      "bumperNote": "Dipasangkeun kana pidéo sapertos kitu, teu aya pamrosésan."
+      "bumperNote": "Dipasangkeun kana pidéo sapertos kitu, teu aya pamrosésan.",
+      "clipImagesTitle": "Poto pikeun slideshow",
+      "clipImagesNote": "Klik pikeun nyokot nepi ka 12 gambar — pilih urutan = urutan puter balik. Hiji poto jadi pigura diam."
     },
     "progress": {
       "title": "Nyieun pidéo anjeun…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musik",
       "chipSubtitles": "Subjudul",
       "chipVoice": "Sora"
+    },
+    "analysis": {
+      "title": "Analisis tren",
+      "sub": "rumus kasuksésan → kana blok",
+      "empty": "Teu aya rincian tren anu dipilih",
+      "emptySub": "pilih tina analisis anjeun",
+      "pickTitle": "Pilih rincian tren",
+      "pickSub": "Analisis anu disimpen tina halaman Tren. Rincian anu dipilih bakal ngeusian blok studio — kotak centang nangtukeun dimana persisna.",
+      "none": "Tacan aya analisis — analisis pidéo dina halaman Tren (tab Analisis).",
+      "framesBadge": "tingkat pigura",
+      "useScript": "Skrip tina analisis",
+      "useScriptSub": "Nyieun skrip nuturkeun rumus tren sareng draf anu parantos siap",
+      "useVideo": "Video anu keur trending salaku cuplikan",
+      "useVideoSub": "video tren anu diunduh janten rekamanna",
+      "useSubtitles": "Gaya subjudul tina rincianana",
+      "useSubtitlesSub": "gaya visual tren → subjudul kahayang",
+      "useRetention": "Sutradara montase tina analisis",
+      "useRetentionSub": "hook/action/CTA ditandaan kalayan rincianana dina pikiran"
+    },
+    "tpl": {
+      "button": "Citakan",
+      "tooltip": "Citakan: simpen sadaya setelan studio sareng aktipkeun publikasi otomatis tren",
+      "title": "Citakan UGC",
+      "sub": "Citakan nyimpen SADAYA setélan studio (mode, subjudul, musik, kotak centang analisis). Publikasi otomatis ngaitkeunana kana analisis otomatis tren — pidéo ngawangun sorangan.",
+      "empty": "Teu acan aya témplat — simpen setélan ayeuna di handap.",
+      "apply": "Larapkeun",
+      "autopubOn": "Aktipkeun penerbitan otomatis",
+      "source": "Sumber",
+      "sourceNone": "— pilih sumber —",
+      "sourceTrends": "Tren",
+      "sourcePaused": "dieureunkeun",
+      "lang": "Basa pidéo",
+      "langHint": "naskahna langsung ditulis dina basa ieu",
+      "autopubHint": "Analisis otomatis mendakan pidéo tren anyar → rincian → pidéo diwangun tina témplat ieu (bagian \"Otomatis\" dina Galeri). Sumber sanésna saluareun Tren bakal datang engké.",
+      "noWatches": "Tacan aya analisis otomatis — aktipkeun hiji dina halaman Tren (blok analisis otomatis).",
+      "saveCurrent": "Simpen setélan ayeuna salaku citakan",
+      "namePlaceholder": "Ngaran citakan",
+      "keywordPlaceholder": "Kecap konci tren (lencana dina kartu)",
+      "save": "Simpen citakan",
+      "note": "Témplat aya di Galeri → UGC → “Otomatis” gigireun pidéo otomatis.",
+      "defaultName": "Citakan kuring"
     }
   }
 }

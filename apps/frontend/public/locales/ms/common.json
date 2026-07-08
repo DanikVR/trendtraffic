@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar dibilkan sekali untuk keseluruhan siri.",
       "voiceoverBase": "Dalam mod ini, video adalah bahagian bawah bingkai: suara dan sari kata diletakkan di bahagian atas.",
       "emptyTitle": "Video belum dimuat naik lagi",
-      "emptySub": "pilih daripada Galeri"
+      "emptySub": "pilih daripada Galeri",
+      "photosTitle": "Tayangan slaid foto",
+      "photosSub": "satu foto — bingkai pegun, beberapa — berkitar dengan pudar silang",
+      "photosOne": "1 foto — bingkai pegun",
+      "photosCount_one": "foto {{count}} — kitaran dengan pudar silang",
+      "photosCount_other": "foto {{count}} — berbasikal dengan pudar silang",
+      "photosVsVideo": "Kedua-dua video dan foto yang dipilih — video menang (foto diabaikan)."
     },
     "subtitles": {
       "title": "Sari kata",
@@ -1403,7 +1409,9 @@
       "outro": "Bampar outro",
       "layer": "Lapisan atas (PNG)",
       "layerNote": "PNG lutsinar yang disediakan untuk format bingkai — ia akan meliputi keseluruhan video.",
-      "bumperNote": "Dilampirkan pada video seperti sedia ada, tiada pemprosesan."
+      "bumperNote": "Dilampirkan pada video seperti sedia ada, tiada pemprosesan.",
+      "clipImagesTitle": "Foto untuk tayangan slaid",
+      "clipImagesNote": "Klik untuk mengambil sehingga 12 imej — pilih susunan = susunan main balik. Satu foto menjadi bingkai pegun."
     },
     "progress": {
       "title": "Mencipta video anda…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzik",
       "chipSubtitles": "Sari kata",
       "chipVoice": "Suara"
+    },
+    "analysis": {
+      "title": "Analisis trend",
+      "sub": "formula kejayaan → ke dalam blok",
+      "empty": "Tiada pecahan trend dipilih",
+      "emptySub": "pilih daripada analisis anda",
+      "pickTitle": "Pilih pecahan trend",
+      "pickSub": "Analisis disimpan daripada halaman Trend. Pecahan yang dipilih memberi suapan kepada blok studio — kotak pilihan menentukan dengan tepat di mana.",
+      "none": "Tiada analisis lagi — analisis video pada halaman Trend (tab Analisis).",
+      "framesBadge": "aras bingkai",
+      "useScript": "Skrip daripada analisis",
+      "useScriptSub": "Penjanaan skrip mengikuti formula trend dan draf sedia ada",
+      "useVideo": "Video trend sebagai rakaman",
+      "useVideoSub": "video trend yang dimuat turun menjadi rakaman",
+      "useSubtitles": "Gaya sari kata daripada pecahan",
+      "useSubtitlesSub": "gaya visual trend → sari kata hasrat",
+      "useRetention": "Montaj mengarah daripada analisis",
+      "useRetentionSub": "cangkuk/tindakan/CTA ditag dengan mengambil kira pecahan"
+    },
+    "tpl": {
+      "button": "Templat",
+      "tooltip": "Templat: simpan keseluruhan persediaan studio dan dayakan penerbitan automatik trend",
+      "title": "Templat UGC",
+      "sub": "Templat menyimpan SEMUA tetapan studio (mod, sari kata, muzik, kotak pilihan analisis). Penerbitan automatik memautkannya kepada analisis automatik trend — video dibina sendiri.",
+      "empty": "Tiada templat lagi — simpan persediaan semasa di bawah.",
+      "apply": "Mohon",
+      "autopubOn": "Dayakan penerbitan automatik",
+      "source": "Sumber",
+      "sourceNone": "— pilih sumber —",
+      "sourceTrends": "Trend",
+      "sourcePaused": "dijeda",
+      "lang": "Bahasa video",
+      "langHint": "Skrip ditulis dalam bahasa ini serta-merta",
+      "autopubHint": "Analisis automatik menemui video trend baharu → pecahan → video dibina daripada templat ini (bahagian “Auto” dalam Galeri). Lebih banyak sumber selain Trend akan datang kemudian.",
+      "noWatches": "Tiada analisis automatik lagi — dayakan satu pada halaman Trend (blok analisis automatik).",
+      "saveCurrent": "Simpan tetapan semasa sebagai templat",
+      "namePlaceholder": "Nama templat",
+      "keywordPlaceholder": "Kata kunci trend (lencana pada kad)",
+      "save": "Simpan templat",
+      "note": "Templat tersedia dalam Galeri → UGC → “Auto” di sebelah video automatik.",
+      "defaultName": "Templat saya"
     }
   }
 }

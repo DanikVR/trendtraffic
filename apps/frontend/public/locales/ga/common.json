@@ -1286,7 +1286,13 @@
       "seriesBilling": "Gearrtar an bille don avatar uair amháin don tsraith iomlán.",
       "voiceoverBase": "Sa mhodh seo is é an físeán bunús an fhráma: téann an guth agus na fotheidil ar a bharr.",
       "emptyTitle": "Níl an físeán uaslódáilte fós",
-      "emptySub": "roghnaigh ón nGailearaí"
+      "emptySub": "roghnaigh ón nGailearaí",
+      "photosTitle": "Sleamhnán grianghraf",
+      "photosSub": "grianghraf amháin — fráma neamhghluaiste, roinnt — timthriall le traschéimnithe",
+      "photosOne": "1 grianghraf — fráma fós",
+      "photosCount_one": "grianghraf {{count}} — timthriallta le traschéimnithe",
+      "photosCount_other": "grianghraif {{count}} — timthriall le traschéimnithe",
+      "photosVsVideo": "Roghnaítear físeán agus grianghraif araon — buaitear an físeán (ní thugtar aird ar na grianghraif)."
     },
     "subtitles": {
       "title": "Fotheidil",
@@ -1403,7 +1409,9 @@
       "outro": "Buamadóir seachtrach",
       "layer": "An ciseal barr (PNG)",
       "layerNote": "PNG trédhearcach ullmhaithe don fhormáid fráma — suífidh sé thar an bhfíseán ar fad.",
-      "bumperNote": "Ceangailte leis an bhfíseán mar atá, gan aon phróiseáil."
+      "bumperNote": "Ceangailte leis an bhfíseán mar atá, gan aon phróiseáil.",
+      "clipImagesTitle": "Grianghraif don taispeántas sleamhnán",
+      "clipImagesNote": "Cliceáil chun suas le 12 íomhá a roghnú — ord roghnaithe = ord athsheinm. Bíonn fráma neamhghluaiste de ghrianghraf amháin."
     },
     "progress": {
       "title": "Ag cruthú do fhíseáin…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Ceol",
       "chipSubtitles": "Fotheidil",
       "chipVoice": "Guth"
+    },
+    "analysis": {
+      "title": "Anailís treochta",
+      "sub": "foirmle rathúlachta → i mbloic",
+      "empty": "Níor roghnaíodh aon mhiondealú treochta",
+      "emptySub": "roghnaigh ó d'anailísí",
+      "pickTitle": "Roghnaigh miondealú treochta",
+      "pickSub": "Anailísí sábháilte ón leathanach Treochtaí. Fothaíonn an miondealú roghnaithe bloic stiúideo — cinneann boscaí seiceála go díreach cá háit.",
+      "none": "Gan aon anailísí fós — déan anailís ar fhíseán ar an leathanach Treochtaí (an cluaisín Anailísíochta).",
+      "framesBadge": "leibhéal fráma",
+      "useScript": "Script ó anailís",
+      "useScriptSub": "Leanann giniúint scripte an fhoirmle treochta agus a dhréacht réidh",
+      "useVideo": "Físeán treochta mar phíosa scannáin",
+      "useVideoSub": "is é an físeán treochta íoslódáilte an scannán",
+      "useSubtitles": "Stíl fotheideal ón miondealú",
+      "useSubtitlesSub": "an stíl amhairc treochta → mianta fotheideal",
+      "useRetention": "Montáis stiúrtha ó anailís",
+      "useRetentionSub": "Tá clibeanna idir crúca/gníomh/CTA agus an miondealú san áireamh"
+    },
+    "tpl": {
+      "button": "Teimpléad",
+      "tooltip": "Teimpléid: sábháil an socrú stiúideo ar fad agus cumasaigh uathfhoilsiú treochtaí",
+      "title": "Teimpléid UGC",
+      "sub": "Stórálann teimpléad gach socrú stiúideo (mód, fotheidil, ceol, boscaí seiceála anailíse). Ceanglaíonn uathfhoilsiú é le huathanailís treochta — tógann físeáin iad féin.",
+      "empty": "Gan aon teimpléid fós — sábháil an socrú reatha thíos.",
+      "apply": "Cuir isteach",
+      "autopubOn": "Cumasaigh uathfhoilsiú",
+      "source": "Foinse",
+      "sourceNone": "— roghnaigh foinse —",
+      "sourceTrends": "Treochtaí",
+      "sourcePaused": "curtha ar sos",
+      "lang": "Teanga an fhíseáin",
+      "langHint": "Tá an script scríofa sa teanga seo láithreach",
+      "autopubHint": "Aimsíonn anailís uathoibríoch físeán treochta úr → miondealú → tógtar físeán ón teimpléad seo (an chuid “Uathoibríoch” sa Ghailearaí). Tuilleadh foinsí seachas Treochtaí ag teacht níos déanaí.",
+      "noWatches": "Gan aon anailísí uathoibríocha go fóill — cumasaigh ceann ar an leathanach Treochtaí (bloc anailíse uathoibríoch).",
+      "saveCurrent": "Sábháil na socruithe reatha mar theimpléad",
+      "namePlaceholder": "Ainm an teimpléid",
+      "keywordPlaceholder": "Eochairfhocal treochta (suaitheantas ar an gcárta)",
+      "save": "Sábháil teimpléad",
+      "note": "Tá teimpléid le fáil sa Ghailearaí → UGC → “Uathoibríoch” in aice le físeáin uathoibríocha.",
+      "defaultName": "Mo theimpléad"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar yishyuzwa rimwe kuri uru rutonde rwose.",
       "voiceoverBase": "Muri ubu buryo, videwo ni yo shingiro ry'ishusho: ijwi n'amagambo yo hejuru ni byo biba hejuru.",
       "emptyTitle": "Videwo ntirashyirwa ku rubuga kugeza ubu",
-      "emptySub": "guhitamo muri Gallery"
+      "emptySub": "guhitamo muri Gallery",
+      "photosTitle": "Ifoto y'ifoto",
+      "photosSub": "ifoto imwe — ifoto idafite aho ihuriye, nyinshi — uruziga rufite aho runyura",
+      "photosOne": "Ifoto 1 — ishusho itarahinduka",
+      "photosCount_one": "{{count}} ifoto — imizunguruko ifite crossfade",
+      "photosCount_other": "{{count}} amafoto — uruziga rufite crossfade",
+      "photosVsVideo": "Videwo n'amafoto byatoranijwe — videwo iratsinda (amafoto yirengagijwe)."
     },
     "subtitles": {
       "title": "Imitwe ihinnye",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper yo hanze",
       "layer": "Icyiciro cyo hejuru (PNG)",
       "layerNote": "PNG ibonerana yateguwe kuri fomati ya frame — izaguma kuri videwo yose.",
-      "bumperNote": "Ifatanye na videwo uko iri, nta gutunganya."
+      "bumperNote": "Ifatanye na videwo uko iri, nta gutunganya.",
+      "clipImagesTitle": "Amafoto y'urumuri rw'amashusho",
+      "clipImagesNote": "Kanda kugira ngo utore amashusho agera kuri 12 — hitamo uburyo bwo gutondeka = uburyo bwo gukiniraho. Ifoto imwe iba imeze nk'ifoto idakinguye."
     },
     "progress": {
       "title": "Gukora videwo yawe…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Umuziki",
       "chipSubtitles": "Imitwe ihinnye",
       "chipVoice": "Ijwi"
+    },
+    "analysis": {
+      "title": "Isesengura ry'imigendekere",
+      "sub": "formula y'intsinzi → mu bice",
+      "empty": "Nta sesengura ry'ibigezweho ryatoranyijwe",
+      "emptySub": "hitamo mu isesengura ryawe",
+      "pickTitle": "Hitamo isesengura ry'ibigezweho",
+      "pickSub": "Isesengura ryabitswe rivuye ku ipaji ya Trends. Isesengura ryatoranyijwe rigaburira uduce twa studio - utundi dusanduku tw'igenzura ni two duhitamo aho duherereye.",
+      "none": "Nta sesengura riraboneka — sesengura videwo ku ipaji ya Trends (agasanduku k'isesengura).",
+      "framesBadge": "urwego rw'ishusho",
+      "useScript": "Inyandiko yavuye mu isesengura",
+      "useScriptSub": "gukora inyandiko bikurikiza formula y'icyerekezo n'umushinga wayo witeguye",
+      "useVideo": "Videwo igezweho nk'amashusho",
+      "useVideoSub": "Videwo igezweho yakuwe kuri interineti iba amashusho",
+      "useSubtitles": "Imiterere y'imitwe mito ivuye mu isesengura",
+      "useSubtitlesSub": "imiterere y'amashusho igezweho → ibyifuzo byo mu mutwe",
+      "useRetention": "Gutunganya ibintu bivuye mu isesengura",
+      "useRetentionSub": "hook/action/CTA byashyizwemo ikimenyetso cyo kugabanya ibintu mu mutwe"
+    },
+    "tpl": {
+      "button": "Icyitegererezo",
+      "tooltip": "Imbonerahamwe: bika imiterere yose ya studio kandi ushyireho uburyo bwo gutangaza amakuru agezweho mu buryo bwikora",
+      "title": "Imbonerahamwe za UGC",
+      "sub": "Icyitegererezo kibika igenamiterere RYOSE rya studio (uburyo, amagambo ahinnye, umuziki, agasanduku ko gusuzuma). Gusohora byikora bihuza n'isesengura ryikora ry'igihe — amashusho ariyubaka ubwayo.",
+      "empty": "Nta mbonerahamwe zirahari — bika imiterere iriho hepfo.",
+      "apply": "Shyiraho umukono",
+      "autopubOn": "Koresha uburyo bwo gutangaza amakuru mu buryo bwikora",
+      "source": "Isoko",
+      "sourceNone": "— hitamo isoko —",
+      "sourceTrends": "Inzira",
+      "sourcePaused": "yahagaze",
+      "lang": "Ururimi rwa videwo",
+      "langHint": "inyandiko yanditswe muri uru rurimi ako kanya",
+      "autopubHint": "Isesengura ryikora ryagaragaje videwo nshya igezweho → isesengura → videwo yubatswe muri iyi template (igice cya \"Auto\" muri Gallery). Andi masoko arenze Trends azaza nyuma.",
+      "noWatches": "Nta bushakashatsi bwikora kugeza ubu — koresha bumwe ku ipaji ya Trends (Auto-analysis block).",
+      "saveCurrent": "Bika igenamiterere rigezweho nk'icyitegererezo",
+      "namePlaceholder": "Izina ry'imbonerahamwe",
+      "keywordPlaceholder": "Ijambo ry'ingenzi rigezweho (ikimenyetso kiri ku ikarita)",
+      "save": "Bika icyitegererezo",
+      "note": "Imbonerahamwe ziba muri Gallery → UGC → \"Auto\" iruhande rwa videwo zikora.",
+      "defaultName": "Icyitegererezo cyanjye"
     }
   }
 }

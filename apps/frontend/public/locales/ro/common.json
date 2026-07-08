@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatarul se facturează o singură dată pentru întreaga serie.",
       "voiceoverBase": "În acest mod, videoclipul este baza cadrului: vocea și subtitrările merg deasupra.",
       "emptyTitle": "Videoclipul nu a fost încă încărcat",
-      "emptySub": "alege din Galerie"
+      "emptySub": "alege din Galerie",
+      "photosTitle": "Prezentare de diapozitive foto",
+      "photosSub": "o fotografie — un cadru static, mai multe — ciclu cu estompare încrucișată",
+      "photosOne": "1 fotografie — cadru static",
+      "photosCount_one": "Fotografie {{count}} — cicluri cu crossfade-uri",
+      "photosCount_other": "Fotografii {{count}} — ciclu cu crossfade-uri",
+      "photosVsVideo": "Atât videoclipul, cât și fotografiile sunt selectate — videoclipul câștigă (fotografiile sunt ignorate)."
     },
     "subtitles": {
       "title": "Subtitrări",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper final",
       "layer": "Stratul superior (PNG)",
       "layerNote": "Un fișier PNG transparent pregătit pentru formatul de cadru — va fi amplasat peste întregul videoclip.",
-      "bumperNote": "Atașat videoclipului așa cum este, fără procesare."
+      "bumperNote": "Atașat videoclipului așa cum este, fără procesare.",
+      "clipImagesTitle": "Fotografii pentru prezentare de diapozitive",
+      "clipImagesNote": "Faceți clic pentru a selecta până la 12 imagini — ordinea de selectare = ordinea de redare. O singură fotografie devine un cadru static."
     },
     "progress": {
       "title": "Se creează videoclipul…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzică",
       "chipSubtitles": "Subtitrări",
       "chipVoice": "Voce"
+    },
+    "analysis": {
+      "title": "Analiza tendințelor",
+      "sub": "formula succesului → în blocuri",
+      "empty": "Nu a fost selectată nicio defalcare a tendințelor",
+      "emptySub": "alegeți din analizele dvs.",
+      "pickTitle": "Alegeți o defalcare a tendințelor",
+      "pickSub": "Analize salvate din pagina Tendințe. Defalcarea aleasă alimentează blocurile studio — casetele de selectare decid exact unde.",
+      "none": "Nicio analiză încă — analizați un videoclip pe pagina Tendințe (fila Analiză).",
+      "framesBadge": "la nivel de cadru",
+      "useScript": "Script din analiză",
+      "useScriptSub": "generarea de scripturi urmează formula de tendință și schița sa gata făcută",
+      "useVideo": "Videoclip de tendințe ca filmare",
+      "useVideoSub": "videoclipul descărcat despre tendințe devine materialul filmat",
+      "useSubtitles": "Stilul subtitrării din defalcare",
+      "useSubtitlesSub": "stilul vizual de tendință → dorințe pentru subtitrări",
+      "useRetention": "Montaj regie din analiză",
+      "useRetentionSub": "acțiunea/capătul/îndemnul la acțiune sunt etichetate având în vedere detalierea"
+    },
+    "tpl": {
+      "button": "Șablon",
+      "tooltip": "Șabloane: salvați întreaga configurație a studioului și activați publicarea automată a tendințelor",
+      "title": "Șabloane UGC",
+      "sub": "Un șablon stochează TOATE setările studioului (mod, subtitrări, muzică, casete de selectare pentru analiză). Publicarea automată îl leagă de o analiză automată a tendințelor — videoclipurile se construiesc singure.",
+      "empty": "Încă nu există șabloane — salvați configurația curentă mai jos.",
+      "apply": "Aplică",
+      "autopubOn": "Activează publicarea automată",
+      "source": "Sursă",
+      "sourceNone": "— alege o sursă —",
+      "sourceTrends": "Tendințe",
+      "sourcePaused": "întrerupt",
+      "lang": "Limbajul videoclipului",
+      "langHint": "Scriptul este scris imediat în această limbă",
+      "autopubHint": "Analiza automată găsește un videoclip nou despre tendințe → defalcare → se creează un videoclip pe baza acestui șablon (secțiunea „Auto” din Galerie). Mai multe surse, în afară de Tendințe, vor fi disponibile ulterior.",
+      "noWatches": "Încă nu există analize automate — activați una pe pagina Tendințe (blocul Analiză automată).",
+      "saveCurrent": "Salvați setările curente ca șablon",
+      "namePlaceholder": "Numele șablonului",
+      "keywordPlaceholder": "Cuvânt cheie de tendință (insigna de pe card)",
+      "save": "Salvați șablonul",
+      "note": "Șabloanele se află în Galerie → UGC → „Automat” lângă videoclipurile automate.",
+      "defaultName": "Șablonul meu"
     }
   }
 }

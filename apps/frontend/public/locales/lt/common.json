@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avataras apmokestinamas vieną kartą už visą seriją.",
       "voiceoverBase": "Šiuo režimu vaizdo įrašas yra kadro pagrindas: balsas ir subtitrai rodomi viršuje.",
       "emptyTitle": "Vaizdo įrašas dar neįkeltas",
-      "emptySub": "pasirinkti iš galerijos"
+      "emptySub": "pasirinkti iš galerijos",
+      "photosTitle": "Nuotraukų skaidrių demonstracija",
+      "photosSub": "viena nuotrauka – statinis kadras, kelios – ciklas su perėjimu iš viršaus į apačią",
+      "photosOne": "1 nuotrauka — kadras",
+      "photosCount_one": "{{count}} nuotrauka — ciklai su perėjimu iš viršaus",
+      "photosCount_other": "{{count}} nuotraukos — ciklas su perėjimu iš viršaus",
+      "photosVsVideo": "Pasirinktas ir vaizdo įrašas, ir nuotraukos – laimi vaizdo įrašas (nuotraukos ignoruojamos)."
     },
     "subtitles": {
       "title": "Subtitrai",
@@ -1403,7 +1409,9 @@
       "outro": "Išorinis bamperis",
       "layer": "Viršutinis sluoksnis (PNG)",
       "layerNote": "Skaidrus PNG, paruoštas kadro formatui – jis bus per visą vaizdo įrašą.",
-      "bumperNote": "Pridėtas prie vaizdo įrašo toks, koks yra, be apdorojimo."
+      "bumperNote": "Pridėtas prie vaizdo įrašo toks, koks yra, be apdorojimo.",
+      "clipImagesTitle": "Nuotraukos skaidrių demonstravimui",
+      "clipImagesNote": "Spustelėkite, jei norite pasirinkti iki 12 vaizdų – pasirinkimo tvarka = atkūrimo tvarka. Viena nuotrauka tampa kadru."
     },
     "progress": {
       "title": "Kuriamas jūsų vaizdo įrašas…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzika",
       "chipSubtitles": "Subtitrai",
       "chipVoice": "Balsas"
+    },
+    "analysis": {
+      "title": "Tendencijų analizė",
+      "sub": "sėkmės formulė → į blokus",
+      "empty": "Tendencijų suskirstymas nepasirinktas",
+      "emptySub": "rinkitės iš savo analizių",
+      "pickTitle": "Pasirinkite tendencijų suskirstymą",
+      "pickSub": "Išsaugotos analizės iš „Tendencijų“ puslapio. Pasirinktas suskirstymas pateikiamas studijos blokuose – žymimieji langeliai nurodo, kur tiksliai.",
+      "none": "Kol kas analizių nėra – analizuokite vaizdo įrašą puslapyje „Tendencijos“ (skirtuke „Analitika“).",
+      "framesBadge": "kadro lygio",
+      "useScript": "Scenarijus iš analizės",
+      "useScriptSub": "scenarijų generavimas pagal tendencijos formulę ir jos paruoštą juodraštį",
+      "useVideo": "Vaizdo įrašo tendencijos kaip filmuota medžiaga",
+      "useVideoSub": "Atsisiųstas tendencijų vaizdo įrašas tampa filmuota medžiaga",
+      "useSubtitles": "Subtitrų stilius iš suskirstymo",
+      "useSubtitlesSub": "vizualinio stiliaus tendencija → paantraštės norai",
+      "useRetention": "Montažo režisūra iš analizės",
+      "useRetentionSub": "kabliukas / veiksmas / raginimas veikti yra pažymėti atsižvelgiant į suskirstymą"
+    },
+    "tpl": {
+      "button": "Šablonas",
+      "tooltip": "Šablonai: išsaugokite visą studijos sąranką ir įjunkite automatinį tendencijų publikavimą",
+      "title": "NST šablonai",
+      "sub": "Šablone saugomi VISI studijos nustatymai (režimas, subtitrai, muzika, analizės žymimieji langeliai). Automatinis publikavimas susieja jį su automatine tendencijų analize – vaizdo įrašai sukuriami patys.",
+      "empty": "Šablonų dar nėra – išsaugokite dabartinę sąranką žemiau.",
+      "apply": "Taikyti",
+      "autopubOn": "Įgalinti automatinį publikavimą",
+      "source": "Šaltinis",
+      "sourceNone": "– pasirinkite šaltinį –",
+      "sourceTrends": "Tendencijos",
+      "sourcePaused": "pristabdyta",
+      "lang": "Vaizdo įrašo kalba",
+      "langHint": "scenarijus šia kalba parašytas iš karto",
+      "autopubHint": "Automatinė analizė randa naują tendencijų vaizdo įrašą → analizė → vaizdo įrašas sukuriamas pagal šį šabloną („Automatinis“ skyrius galerijoje). Vėliau bus pateikta daugiau šaltinių, be tendencijų.",
+      "noWatches": "Kol kas nėra automatinių analizių – įjunkite vieną puslapyje „Tendencijos“ (automatinės analizės blokas).",
+      "saveCurrent": "Išsaugoti dabartinius nustatymus kaip šabloną",
+      "namePlaceholder": "Šablono pavadinimas",
+      "keywordPlaceholder": "Tendencijos raktinis žodis (ženklelis ant kortelės)",
+      "save": "Išsaugoti šabloną",
+      "note": "Šablonai yra Galerijoje → NST → „Automatinis“, šalia automatinių vaizdo įrašų.",
+      "defaultName": "Mano šablonas"
     }
   }
 }

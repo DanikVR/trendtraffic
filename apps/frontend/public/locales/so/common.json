@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar-ka waxaa hal mar lagu dallacaa taxanaha oo dhan.",
       "voiceoverBase": "Qaabkan muuqaalku waa saldhigga qaab-dhismeedka: codka iyo cinwaan-hoosaadyadu way sarreeyaan.",
       "emptyTitle": "Fiidiyowga weli lama soo gelin",
-      "emptySub": "ka soo qaado Gallery"
+      "emptySub": "ka soo qaado Gallery",
+      "photosTitle": "Baraha sawir-qaadista",
+      "photosSub": "hal sawir — qaab-dhismeed wali ah, dhowr — wareeg oo leh isgoysyo iskutallaab ah",
+      "photosOne": "1 sawir — qaab-dhismeed wali ah",
+      "photosCount_one": "{{count}} sawir — wareegyo leh isgoysyo",
+      "photosCount_other": "{{count}} sawirro — baaskiil oo leh isgoysyo",
+      "photosVsVideo": "Labada muuqaal iyo sawirroba waa la doortay — muuqaalku wuu guuleystaa (sawirrada waa la iska indho tiraa)."
     },
     "subtitles": {
       "title": "Cinwaan-hoosaadyo",
@@ -1403,7 +1409,9 @@
       "outro": "Bamper-ka Dibadda",
       "layer": "Lakabka sare (PNG)",
       "layerNote": "PNG hufan oo loo diyaariyey qaabka qaab-dhismeedka - waxay dul fadhiisan doontaa muuqaalka oo dhan.",
-      "bumperNote": "Ku lifaaqan muuqaalka sida uu yahay, ma jiro habayn."
+      "bumperNote": "Ku lifaaqan muuqaalka sida uu yahay, ma jiro habayn.",
+      "clipImagesTitle": "Sawirro loogu talagalay bandhigga slideshow-ka",
+      "clipImagesNote": "Guji si aad u soo qaadato ilaa 12 sawir — kala sooc dalabka = dib u ciyaarista. Hal sawir wuxuu noqonayaa qaab aan degganayn."
     },
     "progress": {
       "title": "Sameynta fiidiyowgaaga…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muusig",
       "chipSubtitles": "Cinwaan-hoosaadyo",
       "chipVoice": "Cod"
+    },
+    "analysis": {
+      "title": "Falanqaynta isbeddellada",
+      "sub": "qaacidada guusha → qaybo ka mid ah",
+      "empty": "Ma jirin kala-soocid isbeddel oo la doortay",
+      "emptySub": "ka soo xul falanqayntaada",
+      "pickTitle": "Dooro kala-soocidda isbeddellada",
+      "pickSub": "Falanqaynta laga keydiyay bogga Isbeddellada. Kala-goynta la doortay waxay quudisaa baloogyada istuudiyaha - sanduuqyada hubinta ayaa go'aamiya meesha saxda ah.",
+      "none": "Wali ma jiraan falanqayn — falanqee muuqaal ku yaal bogga Isbeddellada (Tabka Falanqaynta).",
+      "framesBadge": "heerka-qaabka",
+      "useScript": "Qoraal laga soo qaatay falanqaynta",
+      "useScriptSub": "Soo saarista qoraalka waxay raacdaa qaacidada isbeddelka iyo qabyo-qoraalkeeda diyaarka ah",
+      "useVideo": "Fiidiyowga isbeddelka sida muuqaalada",
+      "useVideoSub": "Muuqaalka isbeddelka la soo dejiyay ayaa noqda muuqaalka",
+      "useSubtitles": "Qaabka Cinwaan-hoosaadka laga soo bilaabo kala-goynta",
+      "useSubtitlesSub": "qaabka muuqaalka ee isbeddelka → rabitaanka cinwaan hoosaadka",
+      "useRetention": "Isku-dubaridka isku-dubaridka falanqaynta",
+      "useRetentionSub": "jillaab/ficil/CTA waxaa lagu calaamadeeyay burburka maskaxda lagu hayo"
+    },
+    "tpl": {
+      "button": "Qaab-dhismeed",
+      "tooltip": "Qaabab: keydi dejinta istuudiyaha oo dhan oo awood u yeelo daabacaadda otomaatiga ah ee isbeddelka",
+      "title": "Qaababka UGC",
+      "sub": "Qaab-dhismeedku wuxuu kaydiyaa DHAMMAAN dejimaha istuudiyaha (qaabka, cinwaan-hoosaadyada, muusigga, sanduuqyada falanqaynta). Daabacaadda otomaatiga ah waxay ku xidhaa falanqayn otomaatig ah oo isbeddel ah - fiidiyowyadu way is dhisaan.",
+      "empty": "Wali ma jiraan qaabab - keydi dejinta hadda ee hoose.",
+      "apply": "Codso",
+      "autopubOn": "Daar daabacaadda otomaatiga ah",
+      "source": "Isha",
+      "sourceNone": "— dooro ilo —",
+      "sourceTrends": "Isbeddellada",
+      "sourcePaused": "la hakiyay",
+      "lang": "Luqadda fiidiyowga",
+      "langHint": "Qoraalka waxaa lagu qoray luqaddan isla markiiba",
+      "autopubHint": "Falanqaynta otomaatiga ah waxay heshaa muuqaal cusub oo isbeddel ah → kala-goyn → muuqaal ayaa laga sameeyay qaab-dhismeedkan (qaybta \"Otomaatiga ah\" ee Gallery). Ilo badan oo ka baxsan Isbeddellada ayaa soo socda.",
+      "noWatches": "Wali ma jiraan falanqayn otomaatig ah — mid ka fur bogga Isbeddellada (Auto-analysis block).",
+      "saveCurrent": "Kaydi dejimaha hadda jira qaab ahaan",
+      "namePlaceholder": "Magaca tusaalaha",
+      "keywordPlaceholder": "Ereyga muhiimka ah ee isbeddelka (calaamadda kaadhka ku taal)",
+      "save": "Keydi qaab-dhismeedka",
+      "note": "Qaababku waxay ku nool yihiin Gallery → UGC → \"Otomaatik\" oo ku xiga fiidiyowyada otomaatiga ah.",
+      "defaultName": "Qaab-dhismeedkayga"
     }
   }
 }

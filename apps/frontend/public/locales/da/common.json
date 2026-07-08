@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avataren faktureres én gang for hele serien.",
       "voiceoverBase": "I denne tilstand er videoen grundlaget for billedet: stemme og undertekster kommer øverst.",
       "emptyTitle": "Videoen er ikke uploadet endnu",
-      "emptySub": "vælg fra galleriet"
+      "emptySub": "vælg fra galleriet",
+      "photosTitle": "Fotoslideshow",
+      "photosSub": "ét foto — et stillbillede, flere — cyklusser med crossfades",
+      "photosOne": "1 foto — stillbillede",
+      "photosCount_one": "{{count}} foto — cyklusser med crossfades",
+      "photosCount_other": "{{count}} fotos — cyklus med crossfades",
+      "photosVsVideo": "Både video og fotos er valgt — videoen vinder (fotos ignoreres)."
     },
     "subtitles": {
       "title": "Undertekster",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-bumper",
       "layer": "Øverste lag (PNG)",
       "layerNote": "En gennemsigtig PNG-fil forberedt til frame-formatet — den vil hænge over hele videoen.",
-      "bumperNote": "Vedhæftet videoen som den er, ingen bearbejdning."
+      "bumperNote": "Vedhæftet videoen som den er, ingen bearbejdning.",
+      "clipImagesTitle": "Billeder til slideshowet",
+      "clipImagesNote": "Klik for at vælge op til 12 billeder — vælg rækkefølge = afspilningsrækkefølge. Et enkelt billede bliver til et stillbillede."
     },
     "progress": {
       "title": "Opretter din video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musik",
       "chipSubtitles": "Undertekster",
       "chipVoice": "Stemme"
+    },
+    "analysis": {
+      "title": "Trendanalyse",
+      "sub": "succesformel → i blokke",
+      "empty": "Ingen trendfordeling valgt",
+      "emptySub": "vælg fra dine analyser",
+      "pickTitle": "Vælg en trendoversigt",
+      "pickSub": "Gemte analyser fra siden Trends. Den valgte opdeling føder studieblokke — afkrydsningsfelter bestemmer præcis hvor.",
+      "none": "Ingen analyser endnu — analyser en video på siden Tendenser (fanen Analyse).",
+      "framesBadge": "rammeniveau",
+      "useScript": "Script fra analyse",
+      "useScriptSub": "scriptgenerering følger trendformlen og dens færdige udkast",
+      "useVideo": "Trendvideo som optagelse",
+      "useVideoSub": "Den downloadede trendvideo bliver til optagelserne",
+      "useSubtitles": "Undertekststil fra opdeling",
+      "useSubtitlesSub": "trenden visuel stil → ønsker til undertekster",
+      "useRetention": "Montage af instruktion fra analyse",
+      "useRetentionSub": "hook/action/CTA er tagget med opdelingen i tankerne"
+    },
+    "tpl": {
+      "button": "Skabelon",
+      "tooltip": "Skabeloner: Gem hele studieopsætningen og aktiver automatisk trendpublicering",
+      "title": "UGC-skabeloner",
+      "sub": "En skabelon gemmer ALLE studieindstillinger (tilstand, undertekster, musik, analysefelter). Automatisk publicering forbinder den med en automatisk trendanalyse — videoer bygger sig selv.",
+      "empty": "Ingen skabeloner endnu — gem den aktuelle opsætning nedenfor.",
+      "apply": "Anvende",
+      "autopubOn": "Aktivér automatisk publicering",
+      "source": "Kilde",
+      "sourceNone": "— vælg en kilde —",
+      "sourceTrends": "Tendenser",
+      "sourcePaused": "sat på pause",
+      "lang": "Videosprog",
+      "langHint": "manuskriptet er skrevet på dette sprog med det samme",
+      "autopubHint": "Autoanalyse finder en ny trendvideo → opdeling → en video er bygget ud fra denne skabelon (sektionen \"Auto\" i Galleri). Flere kilder ud over Trends kommer senere.",
+      "noWatches": "Ingen automatiske analyser endnu – aktiver en på siden Tendenser (blok for automatisk analyse).",
+      "saveCurrent": "Gem aktuelle indstillinger som en skabelon",
+      "namePlaceholder": "Skabelonnavn",
+      "keywordPlaceholder": "Trend-søgeord (mærke på kortet)",
+      "save": "Gem skabelon",
+      "note": "Skabeloner findes i Galleri → UGC → “Auto” ud for automatiske videoer.",
+      "defaultName": "Min skabelon"
     }
   }
 }

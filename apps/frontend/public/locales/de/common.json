@@ -1286,7 +1286,13 @@
       "seriesBilling": "Der Avatar wird nur einmal für die gesamte Serie abgerechnet.",
       "voiceoverBase": "In diesem Modus bildet das Video die Basis des Bildes: Ton und Untertitel werden darübergelegt.",
       "emptyTitle": "Video noch nicht hochgeladen",
-      "emptySub": "Aus der Galerie auswählen"
+      "emptySub": "Aus der Galerie auswählen",
+      "photosTitle": "Foto-Diashow",
+      "photosSub": "Ein Foto – ein Standbild, mehrere – wechseln sich mit Überblendungen ab.",
+      "photosOne": "1 Foto – Standbild",
+      "photosCount_one": "{{count}} Foto — Zyklen mit Überblendungen",
+      "photosCount_other": "{{count}} Fotos — Zyklus mit Überblendungen",
+      "photosVsVideo": "Es wurden sowohl Videos als auch Fotos ausgewählt – das Video gewinnt (Fotos werden ignoriert)."
     },
     "subtitles": {
       "title": "Untertitel",
@@ -1403,7 +1409,9 @@
       "outro": "Abspann",
       "layer": "oberste Ebene (PNG)",
       "layerNote": "Eine transparente PNG-Datei, die für das Frame-Format vorbereitet ist – sie wird über das gesamte Video gelegt.",
-      "bumperNote": "Dem Video unverändert beigefügt."
+      "bumperNote": "Dem Video unverändert beigefügt.",
+      "clipImagesTitle": "Fotos für die Diashow",
+      "clipImagesNote": "Klicken Sie, um bis zu 12 Bilder auszuwählen – die Auswahlreihenfolge entspricht der Wiedergabereihenfolge. Ein einzelnes Foto wird zu einem Standbild."
     },
     "progress": {
       "title": "Erstellen Sie Ihr Video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musik",
       "chipSubtitles": "Untertitel",
       "chipVoice": "Stimme"
+    },
+    "analysis": {
+      "title": "Trendanalyse",
+      "sub": "Erfolgsformel → in Blöcke",
+      "empty": "Keine Trendanalyse ausgewählt",
+      "emptySub": "Wählen Sie aus Ihren Analysen aus",
+      "pickTitle": "Wählen Sie eine Trendanalyse",
+      "pickSub": "Gespeicherte Analysen von der Trendseite. Die ausgewählte Aufschlüsselung wird in Studioblöcke eingespeist – Kontrollkästchen legen genau fest, wo.",
+      "none": "Noch keine Analysen verfügbar – analysieren Sie ein Video auf der Seite „Trends“ (Registerkarte „Analysen“).",
+      "framesBadge": "Frame-Ebene",
+      "useScript": "Skript aus der Analyse",
+      "useScriptSub": "Die Skriptgenerierung folgt der gängigen Formel und liefert einen fertigen Entwurf.",
+      "useVideo": "Trendvideo als Filmmaterial",
+      "useVideoSub": "Das heruntergeladene Trendvideo wird zum Filmmaterial",
+      "useSubtitles": "Untertitelstil aus der Aufschlüsselung",
+      "useSubtitlesSub": "Trend visueller Stil → Untertitelwünsche",
+      "useRetention": "Montage, die auf der Analyse basiert",
+      "useRetentionSub": "Hook/Action/CTA werden unter Berücksichtigung der Aufschlüsselung getaggt."
+    },
+    "tpl": {
+      "button": "Vorlage",
+      "tooltip": "Vorlagen: Speichern Sie das gesamte Studio-Setup und aktivieren Sie die automatische Trendveröffentlichung.",
+      "title": "UGC-Vorlagen",
+      "sub": "Eine Vorlage speichert ALLE Studioeinstellungen (Modus, Untertitel, Musik, Analyse-Kontrollkästchen). Die automatische Veröffentlichung verknüpft sie mit einer automatischen Trendanalyse – Videos werden quasi von selbst erstellt.",
+      "empty": "Noch keine Vorlagen vorhanden – speichern Sie die aktuelle Konfiguration unten.",
+      "apply": "Anwenden",
+      "autopubOn": "Automatische Veröffentlichung aktivieren",
+      "source": "Quelle",
+      "sourceNone": "— Quelle auswählen —",
+      "sourceTrends": "Trends",
+      "sourcePaused": "pausiert",
+      "lang": "Videosprache",
+      "langHint": "Das Drehbuch ist sofort in dieser Sprache verfasst.",
+      "autopubHint": "Die automatische Videoanalyse findet ein neues Trendvideo → Analyse → daraus wird ein Video erstellt (im Bereich „Auto“ der Galerie). Weitere Quellen jenseits der Trends folgen später.",
+      "noWatches": "Noch keine automatischen Analysen – aktivieren Sie eine auf der Seite „Trends“ (Block „Automatische Analysen“).",
+      "saveCurrent": "Aktuelle Einstellungen als Vorlage speichern",
+      "namePlaceholder": "Vorlagenname",
+      "keywordPlaceholder": "Trend-Schlüsselwort (Abzeichen auf der Karte)",
+      "save": "Vorlage speichern",
+      "note": "Vorlagen befinden sich in der Galerie → UGC → „Auto“ neben automatischen Videos.",
+      "defaultName": "Meine Vorlage"
     }
   }
 }

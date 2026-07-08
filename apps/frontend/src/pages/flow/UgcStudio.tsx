@@ -14,7 +14,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
-  Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound,
+  Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound, ImagePlus,
 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import UgcPreview from './UgcPreview';
@@ -207,7 +207,8 @@ export default function UgcStudio(p: UgcStudioProps) {
   const voiceOk = mode === 'dialogue'
     ? ugc.script.length > 0
     : (ugc.script.length > 0 || (ugc.source === 'diarize' && !!ugc.recordingUrl));
-  const videoOk = mode === 'retention' ? (!!ugc.clip || ugc.retentionBrolls.length > 0) : (mode === 'voiceover' ? !!ugc.clip : true);
+  const hasFootage = !!ugc.clip || ugc.clipImages.length > 0;   // видео ИЛИ фото-слайдшоу
+  const videoOk = mode === 'retention' ? (hasFootage || ugc.retentionBrolls.length > 0) : (mode === 'voiceover' ? hasFootage : true);
   const checks: { label: string; ok: boolean; hint: string; miss: string }[] = [
     ...(mode !== 'voiceover' ? [{ label: ugc.avatarSource === 'collection' ? t('ugc.checklist.avatarChosen') : t('ugc.checklist.photoChosen'), ok: avatarOk, hint: t('ugc.checklist.step', { n: 2 }), miss: ugc.avatarSource === 'collection' ? t('ugc.checklist.missAvatar') : t('ugc.checklist.missPhoto') }] : []),
     ...(mode === 'dialogue' ? [{ label: t('ugc.checklist.secondSpeaker'), ok: !!ugc.photoBUrl, hint: t('ugc.checklist.step', { n: 2 }), miss: t('ugc.checklist.missPhotoB') }] : []),
@@ -303,10 +304,119 @@ export default function UgcStudio(p: UgcStudioProps) {
     } catch { /* мягко */ }
   };
 
-  /* Esc: закрывает бренд-модалку → иначе студию (если не открыт пикер/подтверждение) */
+  /* ── «Использовать анализ»: выбор разбора тренда (video_analyses) + галочки по блокам ── */
+  const [anaOpen, setAnaOpen] = useState(false);
+  const [anaList, setAnaList] = useState<any[] | null>(null);
+  const openAnalysisPick = async () => {
+    setAnaOpen(true);
+    if (anaList !== null) return;
+    try {
+      const r = await fetch('/api/trends/analyses?limit=100', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } });
+      const d = await r.json().catch(() => ({}));
+      setAnaList(Array.isArray(d?.analyses) ? d.analyses : []);
+    } catch { setAnaList([]); }
+  };
+  const applyAnalysis = (a: any) => {
+    const dna = a?.dna || {};
+    ugcMutate((u) => {
+      const title = String(a.title || dna.meta?.author || dna.hookType || 'разбор');
+      const next: UgcSpec = {
+        ...u,
+        analysis: {
+          id: String(a.id),
+          title,
+          brief: String(dna.brief || ''),
+          copyReadyScript: String(dna.copyReadyScript || ''),
+          visualStyle: String(dna.visualStyle || ''),
+          hookAnalysis: String(dna.hookAnalysis || ''),
+          fileUrl: a.fileUrl || null,
+        },
+      };
+      // Галочки применяются сразу: видео тренда → Видеоряд, стиль титров → пожелания.
+      if (u.analysisUse.video && a.fileUrl) next.clip = { url: a.fileUrl, name: title };
+      if (u.analysisUse.subtitles && dna.visualStyle && !u.subtitles.wishes.trim()) {
+        next.subtitles = { ...u.subtitles, wishes: String(dna.visualStyle).slice(0, 180) };
+      }
+      return next;
+    });
+    setAnaOpen(false);
+  };
+  /* Галочки СИММЕТРИЧНЫ: включение применяет эффект, снятие — откатывает его,
+     но только если поле всё ещё держит значение ИЗ анализа (ручные правки не трогаем). */
+  const toggleAnaUse = (k: keyof UgcSpec['analysisUse']) => ugcMutate((u) => {
+    const on = !u.analysisUse[k];
+    const next: UgcSpec = { ...u, analysisUse: { ...u.analysisUse, [k]: on } };
+    if (k === 'video') {
+      if (on && u.analysis?.fileUrl) next.clip = { url: u.analysis.fileUrl, name: u.analysis.title || 'тренд' };
+      if (!on && u.analysis?.fileUrl && u.clip?.url === u.analysis.fileUrl) next.clip = null;
+    }
+    if (k === 'subtitles') {
+      const styleWish = (u.analysis?.visualStyle || '').slice(0, 180);
+      if (on && styleWish && !u.subtitles.wishes.trim()) next.subtitles = { ...u.subtitles, wishes: styleWish };
+      if (!on && styleWish && u.subtitles.wishes === styleWish) next.subtitles = { ...u.subtitles, wishes: '' };
+    }
+    return next;
+  });
+
+  /* ── Шаблоны UGC: полный снимок спеки + ключевик (бейдж) + автопубликация ── */
+  interface UgcTemplate { id: string; name: string; trendKeyword: string; spec: Record<string, any>; autopublish: Record<string, any> }
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tpls, setTpls] = useState<UgcTemplate[] | null>(null);
+  const [tplNote, setTplNote] = useState<string | null>(null);
+  const [tplName, setTplName] = useState('');
+  const [tplKeyword, setTplKeyword] = useState('');
+  const [watches, setWatches] = useState<{ id: string; keyword: string; platform: string; enabled: boolean }[] | null>(null);
+  const loadTpls = async () => {
+    try {
+      const r = await fetch('/api/render/ugc/templates', { headers: authHeaders() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+      setTpls(Array.isArray(d?.templates) ? d.templates : []);
+    } catch (e: any) { setTpls([]); setTplNote(String(e?.message || e)); }
+    // Источники автопубликации: пока Тренды (автоанализ ключевиков); другие — позже.
+    try {
+      const r2 = await fetch('/api/trends/watches', { headers: authHeaders() });
+      const d2 = await r2.json().catch(() => ({}));
+      setWatches(r2.ok && Array.isArray(d2?.watches) ? d2.watches : []);
+    } catch { setWatches([]); }
+  };
+  const openTpl = () => { setTplOpen(true); setTplNote(null); void loadTpls(); };
+  const saveTpl = async () => {
+    try {
+      const name = tplName.trim() || `${t('ugc.tpl.defaultName')} ${new Date().toLocaleDateString()}`;
+      const spec = { ...ugc, buildJobId: null, result: null, results: [] };
+      const r = await fetch('/api/render/ugc/templates', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name, trendKeyword: tplKeyword.trim(), spec }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+      setTplName(''); setTplKeyword('');
+      await loadTpls();
+    } catch (e: any) { setTplNote(String(e?.message || e)); }
+  };
+  const applyTpl = (k: UgcTemplate) => {
+    ugcMutate((u) => ({ ...u, ...(k.spec as Partial<UgcSpec>), buildJobId: null, result: null, results: [] }));
+    setTplOpen(false);
+  };
+  const patchTplAutopub = async (k: UgcTemplate, ap: Record<string, any>) => {
+    try {
+      const r = await fetch(`/api/render/ugc/templates/${k.id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ autopublish: ap }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+      setTpls((prev) => (prev || []).map((x) => (x.id === k.id ? { ...x, autopublish: ap } : x)));
+    } catch (e: any) { setTplNote(String(e?.message || e)); }
+  };
+  const deleteTpl = async (id: string) => {
+    try {
+      await fetch(`/api/render/ugc/templates/${id}`, { method: 'DELETE', headers: authHeaders() });
+      await loadTpls();
+    } catch { /* мягко */ }
+  };
+
+  /* Esc: закрывает модалки (шаблоны → анализ → бренд) → иначе студию */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      if (tplOpen) { setTplOpen(false); return; }
+      if (anaOpen) { setAnaOpen(false); return; }
       if (brandOpen) { setBrandOpen(false); return; }
       if (!p.ugcPick && !p.ugcDelAvatar) p.onClose();
     };
@@ -338,6 +448,11 @@ export default function UgcStudio(p: UgcStudioProps) {
           title={t('ugc.topbar.saveTooltip')}>
           {p.saving ? <Loader2 size={13} className="animate-spin" /> : p.ugcSavedFlash ? <Check size={13} /> : <Save size={13} />}
           {p.saving ? t('ugc.topbar.saving') : p.ugcSavedFlash ? t('ugc.topbar.saved') : t('ugc.topbar.save')}
+        </button>
+        <button onClick={openTpl} title={t('ugc.tpl.tooltip')}
+          className="text-[11px] px-2.5 py-1.5 rounded-full font-600"
+          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+          ▦ {t('ugc.tpl.button')}
         </button>
         <button onClick={openBrand} title={t('ugc.brand.tooltip')}
           className="text-[11px] px-2.5 py-1.5 rounded-full font-600"
@@ -409,6 +524,52 @@ export default function UgcStudio(p: UgcStudioProps) {
               </>
             )}
           </Sec>
+
+          {/* ✨ Анализ тренда: формула успеха разбора → в блоки студии (гибко, галочками).
+              Без номера шага — он ОПЦИОНАЛЬНЫЙ и влияет сразу на несколько блоков. */}
+          <div className="rounded-xl p-3 space-y-2" style={{ border: `1px solid ${ugc.analysis ? 'rgba(168,85,247,.45)' : 'var(--border-medium)'}`, background: 'var(--bg-primary)' }}>
+            <div className="flex items-center gap-2">
+              <Sparkles size={13} style={{ color: ACC, flexShrink: 0 }} />
+              <b className="text-[12.5px]" style={{ color: 'var(--text-primary)' }}>{t('ugc.analysis.title')}</b>
+              <span className="text-[10.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>{t('ugc.analysis.sub')}</span>
+            </div>
+            {ugc.analysis ? (
+              <>
+                <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(168,85,247,.08)', border: '1px solid rgba(168,85,247,.35)' }}>
+                  <span className="text-[11px] flex-1 min-w-0 font-650" style={{ color: ACC, ...NAME_CLAMP }} title={ugc.analysis.title}>{ugc.analysis.title}</span>
+                  <button onClick={openAnalysisPick} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                  <button onClick={() => ugcMutate((u) => {
+                    // Убрали разбор — откатываем и его следы (если поля не правились руками).
+                    const styleWish = (u.analysis?.visualStyle || '').slice(0, 180);
+                    return {
+                      ...u, analysis: null,
+                      clip: u.analysis?.fileUrl && u.clip?.url === u.analysis.fileUrl ? null : u.clip,
+                      subtitles: styleWish && u.subtitles.wishes === styleWish ? { ...u.subtitles, wishes: '' } : u.subtitles,
+                    };
+                  })} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                </div>
+                {/* Галочки: что именно подмешивать. Каждая включается/выключается независимо. */}
+                <div className="space-y-1">
+                  {([
+                    ['script', t('ugc.analysis.useScript'), t('ugc.analysis.useScriptSub')],
+                    ['video', t('ugc.analysis.useVideo'), t('ugc.analysis.useVideoSub')],
+                    ['subtitles', t('ugc.analysis.useSubtitles'), t('ugc.analysis.useSubtitlesSub')],
+                    ['retention', t('ugc.analysis.useRetention'), t('ugc.analysis.useRetentionSub')],
+                  ] as [keyof UgcSpec['analysisUse'], string, string][]).map(([k, lbl, sub]) => (
+                    <label key={k} className="flex items-start gap-2 p-1.5 rounded-lg" style={{ cursor: 'pointer', background: ugc.analysisUse[k] ? 'rgba(168,85,247,.06)' : 'transparent' }}>
+                      <input type="checkbox" checked={ugc.analysisUse[k]} onChange={() => toggleAnaUse(k)} style={{ marginTop: 2, accentColor: ACC }} />
+                      <span className="text-[11px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
+                        <b className="font-650">{lbl}</b><br />
+                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{sub}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <EmptySlot icon={<Sparkles size={14} />} title={t('ugc.analysis.empty')} sub={t('ugc.analysis.emptySub')} onClick={() => void openAnalysisPick()} />
+            )}
+          </div>
 
           {/* 2. Аватар */}
           {mode !== 'voiceover' && (
@@ -646,7 +807,7 @@ export default function UgcStudio(p: UgcStudioProps) {
           </Sec>
 
           {/* 4. Видеоряд */}
-          <Sec n={4} title={t('ugc.video.title')} sub={t('ugc.video.sub')} done={!!ugc.clip || (mode === 'retention' && ugc.retentionBrolls.length > 0)}>
+          <Sec n={4} title={t('ugc.video.title')} sub={t('ugc.video.sub')} done={hasFootage || (mode === 'retention' && ugc.retentionBrolls.length > 0)}>
             {ugc.clip ? (
               <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
                 <video src={`${ugc.clip.url}#t=0.1`} muted className="rounded-lg flex-shrink-0" style={{ width: 44, height: 78, objectFit: 'cover', background: 'var(--bg-tertiary)' }} />
@@ -657,6 +818,23 @@ export default function UgcStudio(p: UgcStudioProps) {
             ) : (
               <EmptySlot icon={<Video size={14} />} title={t('ugc.video.emptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('clip')} />
             )}
+            {/* Фото-слайдшоу: 1 фото = статичный кадр, несколько = перелистываются по кругу.
+                Собирается бэкендом в клип пре-шагом сборки; при выбранном видео игнорируется. */}
+            {ugc.clipImages.length ? (
+              <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                <img src={ugc.clipImages[0].url} alt="" className="rounded-md object-cover flex-shrink-0" style={{ width: 40, height: 40 }} />
+                <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }}>
+                  {ugc.clipImages.length === 1 ? t('ugc.video.photosOne') : t('ugc.video.photosCount', { count: ugc.clipImages.length })}
+                </span>
+                <button onClick={() => p.openUgcPick('clipImages')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                <button onClick={() => ugcMutate((u) => ({ ...u, clipImages: [] }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+              </div>
+            ) : (
+              <EmptySlot icon={<ImagePlus size={14} />} title={t('ugc.video.photosTitle')} sub={t('ugc.video.photosSub')} pad={8} onClick={() => p.openUgcPick('clipImages')} />
+            )}
+            {ugc.clip && ugc.clipImages.length > 0 && (
+              <p className="text-[10px]" style={{ color: '#f59e0b' }}>{t('ugc.video.photosVsVideo')}</p>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
                 {([['cover', t('ugc.video.fitCover')], ['contain', t('ugc.video.fitContain')]] as ['cover' | 'contain', string][]).map(([f, lbl]) => (
@@ -664,9 +842,12 @@ export default function UgcStudio(p: UgcStudioProps) {
                     style={{ background: ugc.clipFit === f ? ACC : 'var(--bg-secondary)', color: ugc.clipFit === f ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.clipFit === f ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
                 ))}
               </div>
-              <label className="text-[11px] inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <input type="checkbox" checked={!ugc.clipMuted} onChange={(e) => ugcMutate((u) => ({ ...u, clipMuted: !e.target.checked }))} /> {t('ugc.video.keepSound')}
-              </label>
+              {/* «звук из видео» неуместен, когда видеоряд — беззвучное фото-слайдшоу */}
+              {(ugc.clip || !ugc.clipImages.length) && (
+                <label className="text-[11px] inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!ugc.clipMuted} onChange={(e) => ugcMutate((u) => ({ ...u, clipMuted: !e.target.checked }))} /> {t('ugc.video.keepSound')}
+                </label>
+              )}
             </div>
             {mode === 'solo' && !ugc.clip && (
               <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.video.soloOptional')}</p>
@@ -972,7 +1153,7 @@ export default function UgcStudio(p: UgcStudioProps) {
       </div>
 
       {/* ── Пикеры Галереи (единый GalleryPicker сервиса) ── */}
-      {p.ugcPick && p.ugcPick !== 'retBrolls' && (() => {
+      {p.ugcPick && p.ugcPick !== 'retBrolls' && p.ugcPick !== 'clipImages' && (() => {
         const pick = p.ugcPick!;
         const isLayer = pick.startsWith('layer_');
         const isImg = pick === 'photo' || pick === 'photoB' || pick === 'avatarAdd' || isLayer;
@@ -1005,6 +1186,25 @@ export default function UgcStudio(p: UgcStudioProps) {
           />
         );
       })()}
+      {/* Фото-слайдшоу: мультивыбор изображений (клик добавляет/убирает, порядок = порядок выбора) */}
+      {p.ugcPick === 'clipImages' && (
+        <GalleryPicker
+          open multi token={p.token}
+          title={t('ugc.picker.clipImagesTitle')}
+          note={t('ugc.picker.clipImagesNote')}
+          defaultTab="reference"
+          onlyType="image"
+          uploadAccept="image/*"
+          pickedKeys={new Set(ugc.clipImages.map((b) => b.url))}
+          onClose={() => p.setUgcPick(null)}
+          onUpload={(files) => p.uploadToGallery(files, 'reference')}
+          onPick={(it) => ugcMutate((u) => (
+            u.clipImages.some((b) => b.url === it.fileUrl)
+              ? { ...u, clipImages: u.clipImages.filter((b) => b.url !== it.fileUrl) }
+              : { ...u, clipImages: [...u.clipImages, { url: it.fileUrl, name: it.title }].slice(0, 12) }
+          ))}
+        />
+      )}
       {p.ugcPick === 'retBrolls' && (
         <GalleryPicker
           open multi token={p.token}
@@ -1067,6 +1267,135 @@ export default function UgcStudio(p: UgcStudioProps) {
             </button>
             {brandNote && <p className="text-[10.5px] mt-2" style={{ color: '#f59e0b' }}>{brandNote}</p>}
             <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.brand.note')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Выбор разбора тренда: список сохранённых анализов (video_analyses) ── */}
+      {anaOpen && (
+        <div onClick={() => setAnaOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl p-4" style={{ width: 'min(520px, 94vw)', maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', boxShadow: '0 14px 34px rgba(0,0,0,.4)' }}>
+            <div className="flex items-center justify-between mb-1">
+              <b className="text-[13.5px] inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Sparkles size={14} style={{ color: ACC }} /> {t('ugc.analysis.pickTitle')}</b>
+              <button onClick={() => setAnaOpen(false)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
+            </div>
+            <p className="text-[11px] mb-3" style={{ color: 'var(--text-muted)' }}>{t('ugc.analysis.pickSub')}</p>
+            {anaList === null ? (
+              <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> {t('ugc.brand.loading')}</p>
+            ) : anaList.length === 0 ? (
+              <p className="text-[11px] py-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.analysis.none')}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {anaList.map((a) => {
+                  const dna = a?.dna || {};
+                  return (
+                    <button key={a.id} onClick={() => applyAnalysis(a)} className="w-full text-left rounded-xl p-2.5 space-y-0.5"
+                      style={{ background: 'var(--bg-primary)', border: `1px solid ${ugc.analysis?.id === String(a.id) ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                      <span className="flex items-center gap-2">
+                        <b className="text-[11.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{a.title || dna.hookType || a.platform || 'разбор'}</b>
+                        {dna.visual?.framesAnalyzed && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,.14)', color: '#10b981' }}>{t('ugc.analysis.framesBadge')}</span>}
+                        <span className="text-[9.5px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''}</span>
+                      </span>
+                      <span className="block text-[10px]" style={{ color: 'var(--text-muted)', ...NAME_CLAMP }}>{dna.hookType ? `${dna.hookType} · ` : ''}{dna.summary || dna.whyItWorks || ''}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Шаблоны UGC: применить/сохранить + автопубликация (источник: Тренды) ── */}
+      {tplOpen && (
+        <div onClick={() => setTplOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl p-4" style={{ width: 'min(560px, 94vw)', maxHeight: '84vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', boxShadow: '0 14px 34px rgba(0,0,0,.4)' }}>
+            <div className="flex items-center justify-between mb-1">
+              <b className="text-[13.5px]" style={{ color: 'var(--text-primary)' }}>▦ {t('ugc.tpl.title')}</b>
+              <button onClick={() => setTplOpen(false)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
+            </div>
+            <p className="text-[11px] mb-3" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.sub')}</p>
+
+            {tpls === null ? (
+              <p className="text-[11px] py-3 text-center" style={{ color: 'var(--text-muted)' }}><Loader2 size={14} className="animate-spin inline" /> {t('ugc.brand.loading')}</p>
+            ) : tpls.length === 0 ? (
+              <p className="text-[11px] py-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.empty')}</p>
+            ) : (
+              <div className="space-y-2 mb-3">
+                {tpls.map((k) => {
+                  const ap = k.autopublish || {};
+                  const apOn = ap.enabled === true;
+                  const srcId = ap.source?.type === 'trend_watch' ? String(ap.source.id || '') : '';
+                  return (
+                    <div key={k.id} className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-primary)', border: `1px solid ${apOn ? 'rgba(168,85,247,.45)' : 'var(--border-medium)'}` }}>
+                      <div className="flex items-center gap-2">
+                        {/* Ключевик тренда — бейдж СВЕРХУ карточки шаблона (как просили) */}
+                        <span className="flex-1 min-w-0">
+                          {k.trendKeyword && (
+                            <span className="inline-block text-[9px] font-700 px-2 py-0.5 rounded-full mb-0.5" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: '1px solid rgba(168,85,247,.4)' }}>#{k.trendKeyword}</span>
+                          )}
+                          <b className="block text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>{k.name}</b>
+                        </span>
+                        <button onClick={() => applyTpl(k)} className="text-[11px] font-700 px-2.5 py-1 rounded-lg flex-shrink-0"
+                          style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, cursor: 'pointer' }}>{t('ugc.tpl.apply')}</button>
+                        <button onClick={() => void deleteTpl(k.id)} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={13} /></button>
+                      </div>
+                      {/* «Включить автопубликацию» — в середине шаблона: источник = ваши автоанализы Трендов */}
+                      <div className="rounded-lg p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)' }}>
+                        <label className="flex items-center gap-2 text-[11px] font-650" style={{ color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={apOn} style={{ accentColor: ACC }}
+                            onChange={(e) => void patchTplAutopub(k, { ...ap, enabled: e.target.checked, language: ap.language || 'en', source: ap.source || { type: 'trend_watch', id: '' } })} />
+                          {t('ugc.tpl.autopubOn')}
+                        </label>
+                        {apOn && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.source')}</span>
+                              <select value={srcId}
+                                onChange={(e) => void patchTplAutopub(k, { ...ap, source: { type: 'trend_watch', id: e.target.value } })}
+                                className="flex-1 px-2 py-1 rounded-md text-[11px] outline-none"
+                                style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }}>
+                                <option value="">{t('ugc.tpl.sourceNone')}</option>
+                                {(watches || []).map((w) => (
+                                  <option key={w.id} value={w.id}>{t('ugc.tpl.sourceTrends')}: {w.keyword} ({w.platform}{w.enabled ? '' : ` · ${t('ugc.tpl.sourcePaused')}`})</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.lang')}</span>
+                              <select value={String(ap.language || 'en')}
+                                onChange={(e) => void patchTplAutopub(k, { ...ap, language: e.target.value })}
+                                className="px-2 py-1 rounded-md text-[11px] outline-none"
+                                style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }}>
+                                {['en', 'ru', 'es', 'de', 'fr', 'pt', 'it', 'tr', 'uk'].map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+                              </select>
+                              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.langHint')}</span>
+                            </div>
+                            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.autopubHint')}</p>
+                            {(watches || []).length === 0 && <p className="text-[10px]" style={{ color: '#f59e0b' }}>{t('ugc.tpl.noWatches')}</p>}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Сохранить текущие настройки студии как новый шаблон */}
+            <div className="rounded-xl p-2.5 space-y-1.5" style={{ background: 'var(--bg-primary)', border: '1.5px dashed var(--border-strong)' }}>
+              <b className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>＋ {t('ugc.tpl.saveCurrent')}</b>
+              <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder={t('ugc.tpl.namePlaceholder')}
+                className="w-full px-2.5 py-1.5 rounded-lg text-[11px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+              <input value={tplKeyword} onChange={(e) => setTplKeyword(e.target.value)} placeholder={t('ugc.tpl.keywordPlaceholder')}
+                className="w-full px-2.5 py-1.5 rounded-lg text-[11px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+              <button onClick={() => void saveTpl()} className="w-full py-2 rounded-xl text-[11.5px] font-700"
+                style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: '1px solid rgba(168,85,247,.4)', cursor: 'pointer' }}>
+                {t('ugc.tpl.save')}
+              </button>
+            </div>
+            {tplNote && <p className="text-[10.5px] mt-2" style={{ color: '#f59e0b' }}>{tplNote}</p>}
+            <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.note')}</p>
           </div>
         </div>
       )}

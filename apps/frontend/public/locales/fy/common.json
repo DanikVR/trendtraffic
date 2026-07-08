@@ -1286,7 +1286,13 @@
       "seriesBilling": "De avatar wurdt ien kear foar de hiele searje yn rekken brocht.",
       "voiceoverBase": "Yn dizze modus is de fideo de basis fan it frame: stim en ûndertiteling komme boppe-op.",
       "emptyTitle": "Fideo noch net uploaden",
-      "emptySub": "kieze út Galery"
+      "emptySub": "kieze út Galery",
+      "photosTitle": "Foto-slideshow",
+      "photosSub": "ien foto - in stil frame, ferskate - syklus mei crossfades",
+      "photosOne": "1 foto - stil frame",
+      "photosCount_one": "{{count}} foto — syklusen mei crossfades",
+      "photosCount_other": "{{count}} foto's — syklus mei crossfades",
+      "photosVsVideo": "Sawol fideo as foto's keazen - de fideo wint (foto's wurde negearre)."
     },
     "subtitles": {
       "title": "Undertitels",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-bumper",
       "layer": "Boppeste laach (PNG)",
       "layerNote": "In transparante PNG taret foar it frameformaat - it sil oer de hiele fideo sitte.",
-      "bumperNote": "Oan 'e fideo taheakke sa't it is, gjin ferwurking."
+      "bumperNote": "Oan 'e fideo taheakke sa't it is, gjin ferwurking.",
+      "clipImagesTitle": "Foto's foar de diashow",
+      "clipImagesNote": "Klik om maksimaal 12 ôfbyldings te kiezen - kiesfolchoarder = ôfspielfolchoarder. Ien foto wurdt in stil byld."
     },
     "progress": {
       "title": "Dyn fideo oanmeitsje…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzyk",
       "chipSubtitles": "Undertitels",
       "chipVoice": "Lûd"
+    },
+    "analysis": {
+      "title": "Trendanalyse",
+      "sub": "suksesformule → yn blokken",
+      "empty": "Gjin trendûnderferdieling selektearre",
+      "emptySub": "kies út jo analyses",
+      "pickTitle": "Kies in trendanalyse",
+      "pickSub": "Bewarre analyses fan 'e Trends-side. De keazen analyze fiedet studioblokken - seleksjefakjes bepale krekt wêr.",
+      "none": "Noch gjin analyses - analysearje in fideo op 'e side Trends (tabblêd Analyses).",
+      "framesBadge": "frame-nivo",
+      "useScript": "Skript út analyze",
+      "useScriptSub": "skriptgeneraasje folget de trendformule en syn klear konsept",
+      "useVideo": "Trendfideo as byldmateriaal",
+      "useVideoSub": "de ynladen trendfideo wurdt it byldmateriaal",
+      "useSubtitles": "Undertitelstyl fan útsplitsing",
+      "useSubtitlesSub": "de trend fisuele styl → ûndertitelwinsken",
+      "useRetention": "Montage regissearje út analyze",
+      "useRetentionSub": "hook/aksje/CTA binne markearre mei de analyze yn gedachten"
+    },
+    "tpl": {
+      "button": "Sjabloan",
+      "tooltip": "Sjabloanen: bewarje de hiele studio-opset en aktivearje automatyske publisearjen fan trends",
+      "title": "UGC-sjabloanen",
+      "sub": "In sjabloan bewarret ALLE studio-ynstellingen (modus, ûndertiteling, muzyk, seleksjefakjes foar analyse). Automatysk publisearjen keppelet it oan in automatyske trendanalyse - fideo's bouwe harsels op.",
+      "empty": "Noch gjin sjabloanen - bewarje de hjoeddeiske ynstelling hjirûnder.",
+      "apply": "Tapasse",
+      "autopubOn": "Automatysk publisearjen ynskeakelje",
+      "source": "Boarne",
+      "sourceNone": "— kies in boarne —",
+      "sourceTrends": "Trends",
+      "sourcePaused": "pauzearre",
+      "lang": "Fideotaal",
+      "langHint": "it skript wurdt direkt yn dizze taal skreaun",
+      "autopubHint": "Auto-analyze fynt in nije trendfideo → analyze → in fideo wurdt makke fanút dizze sjabloan (de \"Auto\" seksje yn Galery). Mear boarnen neist Trends komme letter.",
+      "noWatches": "Noch gjin automatyske analyses - skeakelje ien yn op 'e Trends-side (Auto-analyseblok).",
+      "saveCurrent": "Bewarje aktuele ynstellings as in sjabloan",
+      "namePlaceholder": "Sjabloannamme",
+      "keywordPlaceholder": "Trend-kaaiwurd (badge op 'e kaart)",
+      "save": "Sjabloan bewarje",
+      "note": "Sjabloanen steane yn Galery → UGC → \"Auto\" neist automatyske fideo's.",
+      "defaultName": "Myn sjabloan"
     }
   }
 }

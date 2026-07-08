@@ -1286,7 +1286,13 @@
       "seriesBilling": "De avatar wordt eenmalig gefactureerd voor de gehele serie.",
       "voiceoverBase": "In deze modus vormt de video de basis van het beeld: spraak en ondertitels komen erbovenop.",
       "emptyTitle": "Video nog niet geüpload",
-      "emptySub": "kies uit de galerij"
+      "emptySub": "kies uit de galerij",
+      "photosTitle": "Fotoslideshow",
+      "photosSub": "één foto — een stilstaand beeld, meerdere — wisselen elkaar af met overgangen",
+      "photosOne": "1 foto — stilstaand beeld",
+      "photosCount_one": "{{count}} foto — cycli met crossfades",
+      "photosCount_other": "{{count}} foto's — cyclus met crossfades",
+      "photosVsVideo": "Zowel video's als foto's zijn geselecteerd — de video wint (foto's worden buiten beschouwing gelaten)."
     },
     "subtitles": {
       "title": "Ondertitels",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-bumper",
       "layer": "Bovenste laag (PNG)",
       "layerNote": "Een transparante PNG-afbeelding, voorbereid voor het frameformaat, wordt over de hele video geplaatst.",
-      "bumperNote": "Onbewerkt aan de video toegevoegd."
+      "bumperNote": "Onbewerkt aan de video toegevoegd.",
+      "clipImagesTitle": "Foto's voor de diavoorstelling",
+      "clipImagesNote": "Klik om maximaal 12 afbeeldingen te selecteren — de selectievolgorde bepaalt de afspeelvolgorde. Een enkele foto wordt een stilstaand beeld."
     },
     "progress": {
       "title": "Je video maken…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muziek",
       "chipSubtitles": "Ondertitels",
       "chipVoice": "Stem"
+    },
+    "analysis": {
+      "title": "Trendanalyse",
+      "sub": "succesformule → in blokken",
+      "empty": "Geen trendanalyse geselecteerd",
+      "emptySub": "kies uit uw analyses",
+      "pickTitle": "Kies een trendanalyse",
+      "pickSub": "Opgeslagen analyses van de Trends-pagina. De gekozen uitsplitsing levert input voor studioblokken; selectievakjes bepalen precies waar.",
+      "none": "Nog geen analyses beschikbaar — analyseer een video op de Trends-pagina (tabblad Analyse).",
+      "framesBadge": "frameniveau",
+      "useScript": "Script uit analyse",
+      "useScriptSub": "Het genereren van scripts volgt de trendformule en is een kant-en-klaar concept.",
+      "useVideo": "Trendvideo als beeldmateriaal",
+      "useVideoSub": "De gedownloade trendvideo wordt het beeldmateriaal.",
+      "useSubtitles": "Ondertitelstijl uit de analyse",
+      "useSubtitlesSub": "de trend visuele stijl → ondertitelwensen",
+      "useRetention": "Montage regie op basis van analyse",
+      "useRetentionSub": "De tags hook/action/CTA zijn aangepast met deze indeling in gedachten."
+    },
+    "tpl": {
+      "button": "Sjabloon",
+      "tooltip": "Sjablonen: sla de volledige studio-instellingen op en schakel automatisch publiceren van trends in.",
+      "title": "UGC-sjablonen",
+      "sub": "Een sjabloon slaat ALLE studio-instellingen op (modus, ondertitels, muziek, analyse-selectievakjes). Automatisch publiceren koppelt het aan een automatische trendanalyse — video's worden als het ware zelf gegenereerd.",
+      "empty": "Nog geen sjablonen beschikbaar — sla de huidige instellingen hieronder op.",
+      "apply": "Toepassen",
+      "autopubOn": "Automatisch publiceren inschakelen",
+      "source": "Bron",
+      "sourceNone": "— kies een bron —",
+      "sourceTrends": "Trends",
+      "sourcePaused": "pauzeerde",
+      "lang": "Videotaal",
+      "langHint": "Het script is direct in deze taal geschreven.",
+      "autopubHint": "Automatische analyse vindt een nieuwe trendvideo → analyse → er wordt een video gemaakt op basis van dit sjabloon (de sectie \"Auto\" in de Galerij). Meer bronnen naast Trends volgen later.",
+      "noWatches": "Er zijn nog geen automatische analyses beschikbaar. Schakel deze in op de pagina Trends (blok Automatische analyse).",
+      "saveCurrent": "Sla de huidige instellingen op als sjabloon.",
+      "namePlaceholder": "Sjabloonnaam",
+      "keywordPlaceholder": "Trendtrefwoord (badge op de kaart)",
+      "save": "Sjabloon opslaan",
+      "note": "Sjablonen vind je in Galerij → UGC → “Automatisch” naast de automatisch gegenereerde video's.",
+      "defaultName": "Mijn sjabloon"
     }
   }
 }

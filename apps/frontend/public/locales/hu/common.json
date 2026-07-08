@@ -1286,7 +1286,13 @@
       "seriesBilling": "Az avatárt egyszer számlázzák a teljes sorozatra.",
       "voiceoverBase": "Ebben a módban a videó a képkocka alapja: a hang és a feliratok felül jelennek meg.",
       "emptyTitle": "A videó még nincs feltöltve",
-      "emptySub": "válassz a Galériából"
+      "emptySub": "válassz a Galériából",
+      "photosTitle": "Fotó diavetítés",
+      "photosSub": "egy fotó – egy állókép, több – ciklus átmenetekkel",
+      "photosOne": "1 fotó — állókép",
+      "photosCount_one": "{{count}} fotó — áttűnésekkel történő ciklusok",
+      "photosCount_other": "{{count}} fotók — ciklus áttűnésekkel",
+      "photosVsVideo": "Mind a videót, mind a fotókat kiválasztották — a videó nyer (a fotókat figyelmen kívül hagyjuk)."
     },
     "subtitles": {
       "title": "Feliratok",
@@ -1403,7 +1409,9 @@
       "outro": "Outro lökhárító",
       "layer": "Felső réteg (PNG)",
       "layerNote": "Egy átlátszó PNG, amelyet a képkockaformátumhoz készítettek elő — ez fogja átfedni az egész videót.",
-      "bumperNote": "A videóhoz csatolva jelenlegi állapotában, feldolgozás nélkül."
+      "bumperNote": "A videóhoz csatolva jelenlegi állapotában, feldolgozás nélkül.",
+      "clipImagesTitle": "Fotók a diavetítéshez",
+      "clipImagesNote": "Kattintással akár 12 képet is kiválaszthatsz – kiválasztási sorrend = lejátszási sorrend. Egyetlen fényképből állókép lesz."
     },
     "progress": {
       "title": "Videó létrehozása…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Zene",
       "chipSubtitles": "Feliratok",
       "chipVoice": "Hang"
+    },
+    "analysis": {
+      "title": "Trendelemzés",
+      "sub": "sikerképlet → blokkokba",
+      "empty": "Nincs kiválasztva trendbontás",
+      "emptySub": "válassz az elemzéseidből",
+      "pickTitle": "Válasszon trendbontást",
+      "pickSub": "Mentett elemzések a Trendek oldalról. A kiválasztott lebontás a stúdióblokkokat táplálja – a jelölőnégyzetek határozzák meg pontosan, hogy hol.",
+      "none": "Még nincsenek elemzések — elemezzen egy videót a Trendek oldalon (Elemzések fül).",
+      "framesBadge": "képkocka szintű",
+      "useScript": "Szkript elemzésből",
+      "useScriptSub": "A szkriptgenerálás a trendképletet és annak kész vázlatát követi",
+      "useVideo": "Trendvideó felvételként",
+      "useVideoSub": "a letöltött trendvideóból lesz a felvétel",
+      "useSubtitles": "Alcím stílusa a bontásból",
+      "useSubtitlesSub": "a trendi vizuális stílus → alcímes kívánságok",
+      "useRetention": "Montázsirányítás az elemzésből",
+      "useRetentionSub": "a hook/action/CTA címkéket a bontás figyelembevételével címkézték"
+    },
+    "tpl": {
+      "button": "Sablon",
+      "tooltip": "Sablonok: mentse el a teljes stúdióbeállítást, és engedélyezze a trendek automatikus közzétételét",
+      "title": "UGC-sablonok",
+      "sub": "Egy sablon tárolja az ÖSSZES stúdióbeállítást (mód, feliratok, zene, elemzési jelölőnégyzetek). Az automatikus közzététel egy automatikus trendelemzéshez kapcsolja – a videók maguktól épülnek fel.",
+      "empty": "Még nincsenek sablonok — mentse el az aktuális beállítást alább.",
+      "apply": "Jelentkezés",
+      "autopubOn": "Automatikus közzététel engedélyezése",
+      "source": "Forrás",
+      "sourceNone": "— válassz egy forrást —",
+      "sourceTrends": "Trendek",
+      "sourcePaused": "szüneteltetett",
+      "lang": "Videó nyelve",
+      "langHint": "a forgatókönyv azonnal ezen a nyelven íródott",
+      "autopubHint": "Az automatikus elemzés friss trendvideót talál → lebontást → egy videó készül ebből a sablonból (a Galéria „Automatikus” része). A Trendeken túl további források is érkeznek később.",
+      "noWatches": "Még nincsenek automatikus elemzések – engedélyezzen egyet a Trendek oldalon (Automatikus elemzés blokk).",
+      "saveCurrent": "Aktuális beállítások mentése sablonként",
+      "namePlaceholder": "Sablon neve",
+      "keywordPlaceholder": "Trendkulcsszó (jelvény a kártyán)",
+      "save": "Sablon mentése",
+      "note": "A sablonok a Galéria → UGC → „Automatikus” menüpontban találhatók az automatikus videók mellett.",
+      "defaultName": "Saját sablon"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar se účtuje jednou za celou sérii.",
       "voiceoverBase": "V tomto režimu je video základem snímku: hlas a titulky jdou nahoře.",
       "emptyTitle": "Video ještě nebylo nahráno",
-      "emptySub": "vybrat z Galerie"
+      "emptySub": "vybrat z Galerie",
+      "photosTitle": "Prezentace fotografií",
+      "photosSub": "jedna fotografie – jeden statický záběr, několik dalších – střídavě s prolnutím",
+      "photosOne": "1 fotografie – statický záběr",
+      "photosCount_one": "{{count}} fotka — cykly s prolínáním",
+      "photosCount_other": "{{count}} fotky — cyklus s prolínáním",
+      "photosVsVideo": "Vybráno je video i fotografie – video vítězí (fotografie se ignorují)."
     },
     "subtitles": {
       "title": "Titulky",
@@ -1403,7 +1409,9 @@
       "outro": "Zadní nárazník",
       "layer": "Horní vrstva (PNG)",
       "layerNote": "Průhledný PNG soubor připravený pro formát snímku – bude se zobrazovat přes celé video.",
-      "bumperNote": "Připojeno k videu tak, jak je, bez úprav."
+      "bumperNote": "Připojeno k videu tak, jak je, bez úprav.",
+      "clipImagesTitle": "Fotografie pro prezentaci",
+      "clipImagesNote": "Kliknutím vyberete až 12 snímků – pořadí výběru = pořadí přehrávání. Z jedné fotografie se stane statický snímek."
     },
     "progress": {
       "title": "Vytváření videa…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Hudba",
       "chipSubtitles": "Titulky",
       "chipVoice": "Hlas"
+    },
+    "analysis": {
+      "title": "Analýza trendů",
+      "sub": "vzorec úspěchu → do bloků",
+      "empty": "Nebylo vybráno žádné rozdělení trendů",
+      "emptySub": "vyberte si z vašich analýz",
+      "pickTitle": "Vyberte si rozpis trendů",
+      "pickSub": "Uložené analýzy ze stránky Trendy. Zvolené rozdělení se odesílá do bloků studia – zaškrtávací políčka určují, kam přesně.",
+      "none": "Zatím žádné analýzy – analyzujte video na stránce Trendy (karta Analytika).",
+      "framesBadge": "úroveň rámce",
+      "useScript": "Skript z analýzy",
+      "useScriptSub": "generování skriptů sleduje trendový vzorec a jeho připravený návrh",
+      "useVideo": "Trendové video jako záběry",
+      "useVideoSub": "stažené trendové video se stane záznamem",
+      "useSubtitles": "Styl titulků z rozpisu",
+      "useSubtitlesSub": "trendový vizuální styl → podtitul přání",
+      "useRetention": "Montážní režie z analýzy",
+      "useRetentionSub": "hook/action/cta jsou označeny s ohledem na rozbor"
+    },
+    "tpl": {
+      "button": "Šablona",
+      "tooltip": "Šablony: uložte celé nastavení studia a povolte automatické publikování trendů",
+      "title": "Šablony UGC",
+      "sub": "Šablona ukládá VŠECHNA nastavení studia (režim, titulky, hudbu, zaškrtávací políčka analýzy). Automatické publikování ji propojuje s automatickou analýzou trendů – videa se vytvářejí sama.",
+      "empty": "Zatím žádné šablony – uložte aktuální nastavení níže.",
+      "apply": "Použít",
+      "autopubOn": "Povolit automatické publikování",
+      "source": "Zdroj",
+      "sourceNone": "— vyberte zdroj —",
+      "sourceTrends": "Trendy",
+      "sourcePaused": "pozastaveno",
+      "lang": "Jazyk videa",
+      "langHint": "Scénář je napsán v tomto jazyce hned",
+      "autopubHint": "Automatická analýza najde nové video s trendy → rozbor → video je vytvořeno z této šablony (sekce „Automaticky“ v Galerii). Další zdroje nad rámec Trendů budou k dispozici později.",
+      "noWatches": "Zatím žádné automatické analýzy – povolte je na stránce Trendy (blok Automatická analýza).",
+      "saveCurrent": "Uložit aktuální nastavení jako šablonu",
+      "namePlaceholder": "Název šablony",
+      "keywordPlaceholder": "Trendové klíčové slovo (odznak na kartě)",
+      "save": "Uložit šablonu",
+      "note": "Šablony se nacházejí v Galerii → UGC → „Automaticky“ vedle automatických videí.",
+      "defaultName": "Moje šablona"
     }
   }
 }

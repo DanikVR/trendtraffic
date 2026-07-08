@@ -1286,7 +1286,13 @@
       "seriesBilling": "Ang avatar ay sinisingil nang isang beses para sa buong serye.",
       "voiceoverBase": "Sa mode na ito, ang video ang nasa base ng frame: ang boses at mga subtitle ang nangunguna.",
       "emptyTitle": "Hindi pa na-upload ang video",
-      "emptySub": "pumili mula sa Gallery"
+      "emptySub": "pumili mula sa Gallery",
+      "photosTitle": "Slideshow ng larawan",
+      "photosSub": "isang larawan — isang still frame, ilan — paulit-ulit na may crossfades",
+      "photosOne": "1 larawan — hindi gumagalaw na frame",
+      "photosCount_one": "Larawan ng {{count}} — mga siklo na may mga crossfade",
+      "photosCount_other": "mga larawan ng {{count}} — umikot gamit ang mga crossfade",
+      "photosVsVideo": "Parehong napili ang video at mga larawan — ang video ang panalo (hindi papansinin ang mga larawan)."
     },
     "subtitles": {
       "title": "Mga Subtitle",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper sa labas",
       "layer": "Pang-itaas na patong (PNG)",
       "layerNote": "Isang transparent na PNG na inihanda para sa format ng frame — ito ang tatakpan ng buong video.",
-      "bumperNote": "Nakalakip sa video nang walang anumang pagbabago, walang pagproseso."
+      "bumperNote": "Nakalakip sa video nang walang anumang pagbabago, walang pagproseso.",
+      "clipImagesTitle": "Mga larawan para sa slideshow",
+      "clipImagesNote": "I-click para pumili ng hanggang 12 larawan — piliin ang pagkakasunod-sunod = pagkakasunod-sunod ng pag-playback. Ang isang larawan ay nagiging isang hindi gumagalaw na frame."
     },
     "progress": {
       "title": "Ginagawa ang iyong video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musika",
       "chipSubtitles": "Mga Subtitle",
       "chipVoice": "Boses"
+    },
+    "analysis": {
+      "title": "Pagsusuri ng trend",
+      "sub": "pormula ng tagumpay → sa mga bloke",
+      "empty": "Walang napiling breakdown ng trend",
+      "emptySub": "pumili mula sa iyong mga pagsusuri",
+      "pickTitle": "Pumili ng breakdown ng trend",
+      "pickSub": "Mga na-save na pagsusuri mula sa pahina ng Trends. Ang napiling breakdown ay nagpapakain sa mga bloke ng studio — ang mga checkbox ang nagpapasiya kung saan eksakto.",
+      "none": "Wala pang pagsusuri — suriin ang isang video sa pahina ng Trends (tab na Analytics).",
+      "framesBadge": "antas ng frame",
+      "useScript": "Iskrip mula sa pagsusuri",
+      "useScriptSub": "Ang pagbuo ng script ay sumusunod sa trend formula at sa handa nitong draft",
+      "useVideo": "Nagte-trend na video bilang footage",
+      "useVideoSub": "ang na-download na trend video ay nagiging footage",
+      "useSubtitles": "Estilo ng subtitle mula sa breakdown",
+      "useSubtitlesSub": "ang usong biswal na istilo → mga kagustuhan ng subtitle",
+      "useRetention": "Montage na nagdidirek mula sa pagsusuri",
+      "useRetentionSub": "Ang hook/action/CTA ay may tag na isinasaalang-alang ang breakdown"
+    },
+    "tpl": {
+      "button": "Template",
+      "tooltip": "Mga Template: i-save ang buong setup ng studio at paganahin ang trend auto-publishing",
+      "title": "Mga template ng UGC",
+      "sub": "Iniimbak ng isang template ang LAHAT ng mga setting ng studio (mode, subtitle, musika, mga checkbox ng pagsusuri). Iniuugnay ito ng auto-publishing sa isang auto-analysis ng trend — ang mga video mismo ang bubuo.",
+      "empty": "Wala pang mga template — i-save ang kasalukuyang setup sa ibaba.",
+      "apply": "Mag-apply",
+      "autopubOn": "Paganahin ang awtomatikong pag-publish",
+      "source": "Pinagmulan",
+      "sourceNone": "— pumili ng pinagmulan —",
+      "sourceTrends": "Mga Uso",
+      "sourcePaused": "nakahinto",
+      "lang": "Wika ng bidyo",
+      "langHint": "Ang iskrip ay nakasulat agad sa wikang ito",
+      "autopubHint": "Nakakahanap ang awtomatikong pagsusuri ng isang bagong trend video → breakdown → isang video ang nabuo mula sa template na ito (ang seksyong \"Auto\" sa Gallery). Mas marami pang mapagkukunan bukod sa Trends ang paparating mamaya.",
+      "noWatches": "Wala pang awtomatikong pagsusuri — paganahin ang isa sa pahina ng Mga Trend (Auto-analysis block).",
+      "saveCurrent": "I-save ang mga kasalukuyang setting bilang template",
+      "namePlaceholder": "Pangalan ng template",
+      "keywordPlaceholder": "Trend keyword (badge sa card)",
+      "save": "I-save ang template",
+      "note": "Makikita ang mga template sa Gallery → UGC → “Auto” sa tabi ng mga awtomatikong video.",
+      "defaultName": "Ang aking template"
     }
   }
 }

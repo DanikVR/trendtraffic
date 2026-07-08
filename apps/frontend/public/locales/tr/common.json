@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar karakteri tüm dizi için yalnızca bir kez ücretlendirilir.",
       "voiceoverBase": "Bu modda video çerçevenin tabanını oluşturur: ses ve altyazılar üstüne yerleştirilir.",
       "emptyTitle": "Video henüz yüklenmedi.",
-      "emptySub": "Galeriden seçin"
+      "emptySub": "Galeriden seçin",
+      "photosTitle": "Fotoğraf slayt gösterisi",
+      "photosSub": "tek bir fotoğraf — durağan bir kare, birkaç kare — geçiş efektleriyle döngü halinde",
+      "photosOne": "1 fotoğraf — hareketsiz kare",
+      "photosCount_one": "{{count}} fotoğrafı — çapraz geçişli döngüler",
+      "photosCount_other": "{{count}} fotoğraflar — çapraz geçişli döngü",
+      "photosVsVideo": "Hem video hem de fotoğraflar seçildi; video kazandı (fotoğraflar dikkate alınmadı)."
     },
     "subtitles": {
       "title": "Altyazılar",
@@ -1403,7 +1409,9 @@
       "outro": "Çıkış müziği",
       "layer": "Üst katman (PNG)",
       "layerNote": "Çerçeve formatı için hazırlanmış şeffaf bir PNG dosyası; videonun tamamını kaplayacak şekilde yerleştirilecektir.",
-      "bumperNote": "Video ile birlikte eklenmiştir, herhangi bir işlem uygulanmamıştır."
+      "bumperNote": "Video ile birlikte eklenmiştir, herhangi bir işlem uygulanmamıştır.",
+      "clipImagesTitle": "Slayt gösterisi için fotoğraflar",
+      "clipImagesNote": "12 adede kadar görsel seçmek için tıklayın — seçim sırası = oynatma sırası. Tek bir fotoğraf, hareketsiz bir kare haline gelir."
     },
     "progress": {
       "title": "Videonuzu oluşturma…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Müzik",
       "chipSubtitles": "Altyazılar",
       "chipVoice": "Ses"
+    },
+    "analysis": {
+      "title": "Trend analizi",
+      "sub": "başarı formülü → bloklara",
+      "empty": "Trend analizi seçilmedi.",
+      "emptySub": "Analizlerinizden birini seçin.",
+      "pickTitle": "Bir trend analizi seçin.",
+      "pickSub": "Trendler sayfasından kaydedilen analizler. Seçilen alt bölüm, stüdyo bloklarını besler; onay kutuları tam olarak nereye aktarılacağına karar verir.",
+      "none": "Henüz analiz yapılmadı — Trendler sayfasındaki (Analizler sekmesi) bir videoyu analiz edin.",
+      "framesBadge": "çerçeve düzeyinde",
+      "useScript": "Analizden elde edilen senaryo",
+      "useScriptSub": "Senaryo oluşturma, trend formülünü takip eder ve hazır taslağı oluşturur.",
+      "useVideo": "Trend videosu, görüntü olarak",
+      "useVideoSub": "İndirilen trend videosu, görüntü haline geliyor.",
+      "useSubtitles": "Altyazı stili (ayrıştırmadan)",
+      "useSubtitlesSub": "trend görsel stil → alt başlık istekleri",
+      "useRetention": "Analizden yola çıkarak kurgu yönetimi",
+      "useRetentionSub": "Kanca/hareket/CTA etiketleri, analiz süreci göz önünde bulundurularak etiketlenmiştir."
+    },
+    "tpl": {
+      "button": "Şablon",
+      "tooltip": "Şablonlar: Tüm stüdyo kurulumunu kaydedin ve trendlerin otomatik olarak yayınlanmasını etkinleştirin.",
+      "title": "UGC şablonları",
+      "sub": "Şablon, tüm stüdyo ayarlarını (mod, altyazılar, müzik, analiz onay kutuları) saklar. Otomatik yayınlama, bunu trend otomatik analizine bağlar; videolar kendiliğinden oluşturulur.",
+      "empty": "Henüz şablon yok — lütfen aşağıdaki mevcut ayarları kaydedin.",
+      "apply": "Uygula",
+      "autopubOn": "Otomatik yayınlamayı etkinleştir",
+      "source": "Kaynak",
+      "sourceNone": "— bir kaynak seçin —",
+      "sourceTrends": "Trendler",
+      "sourcePaused": "duraklatıldı",
+      "lang": "Video dili",
+      "langHint": "Senaryo hemen bu dilde yazılıyor.",
+      "autopubHint": "Otomatik analiz yeni bir trend videosu buluyor → ayrıntılı inceleme → bu şablondan bir video oluşturuluyor (Galeri'deki \"Otomatik\" bölümü). Trendlerin ötesinde daha fazla kaynak daha sonra eklenecektir.",
+      "noWatches": "Henüz otomatik analiz yok — Trendler sayfasından (Otomatik analiz bloğu) bir tane etkinleştirin.",
+      "saveCurrent": "Mevcut ayarları şablon olarak kaydet",
+      "namePlaceholder": "Şablon adı",
+      "keywordPlaceholder": "Trend anahtar kelimesi (kart üzerindeki rozet)",
+      "save": "Şablonu kaydet",
+      "note": "Şablonlar Galeri → UGC → Otomatik videoların yanındaki \"Otomatik\" bölümünde yer almaktadır.",
+      "defaultName": "Şablonum"
     }
   }
 }

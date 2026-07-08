@@ -1286,7 +1286,13 @@
       "seriesBilling": "Hình đại diện chỉ được tính phí một lần cho toàn bộ loạt phim.",
       "voiceoverBase": "Ở chế độ này, video là phần nền của khung hình: giọng nói và phụ đề nằm phía trên.",
       "emptyTitle": "Video chưa được tải lên",
-      "emptySub": "Chọn từ thư viện"
+      "emptySub": "Chọn từ thư viện",
+      "photosTitle": "Trình chiếu ảnh",
+      "photosSub": "Một bức ảnh — một khung hình tĩnh, hoặc nhiều khung hình — được trình chiếu với hiệu ứng chuyển cảnh mượt mà.",
+      "photosOne": "1 ảnh — khung hình tĩnh",
+      "photosCount_one": "Ảnh {{count}} — các chu kỳ với hiệu ứng chuyển cảnh",
+      "photosCount_other": "Ảnh {{count}} — chu kỳ với hiệu ứng chuyển cảnh",
+      "photosVsVideo": "Cả video và ảnh đều được chọn — video thắng (ảnh bị loại)."
     },
     "subtitles": {
       "title": "Phụ đề",
@@ -1403,7 +1409,9 @@
       "outro": "Đoạn nhạc kết thúc",
       "layer": "Lớp trên cùng (PNG)",
       "layerNote": "Một file PNG trong suốt được chuẩn bị cho định dạng khung hình — nó sẽ nằm phủ lên toàn bộ video.",
-      "bumperNote": "Ảnh được đính kèm nguyên trạng vào video, không qua xử lý."
+      "bumperNote": "Ảnh được đính kèm nguyên trạng vào video, không qua xử lý.",
+      "clipImagesTitle": "Ảnh cho bản trình chiếu",
+      "clipImagesNote": "Nhấp chuột để chọn tối đa 12 hình ảnh — thứ tự chọn sẽ quyết định thứ tự hiển thị. Mỗi ảnh sẽ trở thành một khung hình tĩnh."
     },
     "progress": {
       "title": "Tạo video của bạn…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Âm nhạc",
       "chipSubtitles": "Phụ đề",
       "chipVoice": "Tiếng nói"
+    },
+    "analysis": {
+      "title": "Phân tích xu hướng",
+      "sub": "Công thức thành công → chia thành các khối",
+      "empty": "Không có phân tích xu hướng nào được chọn",
+      "emptySub": "Hãy chọn từ các phân tích của bạn.",
+      "pickTitle": "Chọn một phân tích xu hướng",
+      "pickSub": "Các phân tích đã lưu từ trang Xu hướng. Phân tích đã chọn sẽ cung cấp dữ liệu cho các khối studio — các ô chọn sẽ quyết định chính xác vị trí phân tích.",
+      "none": "Chưa có phân tích nào — hãy phân tích video trên trang Xu hướng (tab Phân tích).",
+      "framesBadge": "mức khung",
+      "useScript": "Kịch bản từ phân tích",
+      "useScriptSub": "Việc tạo kịch bản tuân theo công thức xu hướng và bản nháp sẵn có của nó.",
+      "useVideo": "Video xu hướng dưới dạng cảnh quay",
+      "useVideoSub": "Video xu hướng được tải xuống trở thành đoạn phim.",
+      "useSubtitles": "Kiểu phụ đề từ phần phân tích",
+      "useSubtitlesSub": "xu hướng phong cách hình ảnh → mong muốn phụ đề",
+      "useRetention": "Dựng phim theo hướng phân tích",
+      "useRetentionSub": "Các thẻ hook/action/CTA được gắn kèm với cấu trúc phân tích chi tiết."
+    },
+    "tpl": {
+      "button": "Bản mẫu",
+      "tooltip": "Mẫu: lưu toàn bộ thiết lập studio và bật tính năng tự động xuất bản theo xu hướng.",
+      "title": "Mẫu UGC",
+      "sub": "Một mẫu lưu trữ TẤT CẢ các cài đặt phòng thu (chế độ, phụ đề, nhạc, hộp kiểm phân tích). Chức năng tự động xuất bản liên kết mẫu này với tính năng tự động phân tích xu hướng — video tự động được tạo ra.",
+      "empty": "Chưa có mẫu nào — hãy lưu thiết lập hiện tại bên dưới.",
+      "apply": "Áp dụng",
+      "autopubOn": "Bật tính năng tự động xuất bản",
+      "source": "Nguồn",
+      "sourceNone": "— Chọn một nguồn —",
+      "sourceTrends": "Xu hướng",
+      "sourcePaused": "tạm dừng",
+      "lang": "Ngôn ngữ video",
+      "langHint": "Kịch bản được viết ngay bằng ngôn ngữ này.",
+      "autopubHint": "Phân tích tự động tìm ra video xu hướng mới → phân tích chi tiết → một video được tạo từ mẫu này (phần “Tự động” trong Thư viện). Sẽ có thêm nhiều nguồn khác ngoài Xu hướng sau.",
+      "noWatches": "Hiện chưa có phân tích tự động nào — hãy bật tính năng này trên trang Xu hướng (khối Phân tích tự động).",
+      "saveCurrent": "Lưu cài đặt hiện tại dưới dạng mẫu",
+      "namePlaceholder": "Tên mẫu",
+      "keywordPlaceholder": "Từ khóa xu hướng (huy hiệu trên thẻ)",
+      "save": "Lưu mẫu",
+      "note": "Các mẫu nằm trong Thư viện → Nội dung do người dùng tạo → “Tự động” bên cạnh các video tự động.",
+      "defaultName": "Mẫu của tôi"
     }
   }
 }

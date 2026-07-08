@@ -1286,7 +1286,13 @@
       "seriesBilling": "Tus avatar raug them ib zaug rau tag nrho cov koob.",
       "voiceoverBase": "Hauv hom no daim vis dis aus yog lub hauv paus ntawm tus ncej: lub suab thiab cov lus piav qhia mus rau sab saum toj.",
       "emptyTitle": "Tsis tau upload video dua li",
-      "emptySub": "xaiv los ntawm Gallery"
+      "emptySub": "xaiv los ntawm Gallery",
+      "photosTitle": "Duab slideshow",
+      "photosSub": "ib daim duab - ib daim duab tseem, ntau daim - voj voog nrog crossfades",
+      "photosOne": "1 daim duab — tus ncej tseem",
+      "photosCount_one": "{{count}} duab — voj voog nrog crossfades",
+      "photosCount_other": "{{count}} cov duab — voj voog nrog crossfades",
+      "photosVsVideo": "Ob qho tib si video thiab cov duab raug xaiv - cov video yeej (cov duab raug tsis quav ntsej)."
     },
     "subtitles": {
       "title": "Cov lus piav qhia",
@@ -1403,7 +1409,9 @@
       "outro": "Lub bumper kawg",
       "layer": "Txheej sab saud (PNG)",
       "layerNote": "Ib daim PNG pob tshab uas tau npaj rau hom ntawv thav duab - nws yuav zaum thoob plaws tag nrho cov yeeb yaj kiab.",
-      "bumperNote": "Txuas nrog cov yeeb yaj kiab li qub, tsis muaj kev ua tiav."
+      "bumperNote": "Txuas nrog cov yeeb yaj kiab li qub, tsis muaj kev ua tiav.",
+      "clipImagesTitle": "Cov duab rau cov slideshow",
+      "clipImagesNote": "Nyem kom xaiv tau txog li 12 daim duab — xaiv qhov kev txiav txim = kev txiav txim rov ua dua. Ib daim duab xwb yuav dhau los ua ib daim duab thaij."
     },
     "progress": {
       "title": "Tsim koj cov yeeb yaj kiab…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Suab paj nruag",
       "chipSubtitles": "Cov lus piav qhia",
       "chipVoice": "Lub suab"
+    },
+    "analysis": {
+      "title": "Kev tshuaj xyuas qhov sib txawv",
+      "sub": "cov qauv ua tiav → rau hauv cov blocks",
+      "empty": "Tsis tau xaiv qhov kev faib tawm ntawm cov qauv",
+      "emptySub": "xaiv los ntawm koj cov kev tshuaj xyuas",
+      "pickTitle": "Xaiv ib qho kev faib tawm ntawm cov qauv",
+      "pickSub": "Cov kev tshuaj xyuas tau khaws cia los ntawm nplooj ntawv Trends. Cov kev faib tawm xaiv tau pub rau cov blocks studio - cov checkboxes txiav txim siab qhov twg.",
+      "none": "Tsis tau muaj kev tshuaj xyuas - tshuaj xyuas cov yeeb yaj kiab ntawm nplooj ntawv Trends (Analytics tab).",
+      "framesBadge": "theem thav duab",
+      "useScript": "Tsab ntawv los ntawm kev tshuaj xyuas",
+      "useScriptSub": "kev tsim cov ntawv sau ua raws li cov qauv qauv thiab nws cov ntawv qauv npaj txhij",
+      "useVideo": "Cov yeeb yaj kiab sib txawv raws li cov duab",
+      "useVideoSub": "cov yeeb yaj kiab uas rub tawm los ua qauv dhau los ua cov duab",
+      "useSubtitles": "Cov qauv ntawm subtitle los ntawm kev tawg",
+      "useSubtitlesSub": "cov qauv pom kev zoo → cov lus xav tau ntawm cov ntawv sau",
+      "useRetention": "Kev coj ua Montage los ntawm kev tshuaj xyuas",
+      "useRetentionSub": "hook/action/CTA raug cim nrog lub ntsiab lus ntawm kev tawg"
+    },
+    "tpl": {
+      "button": "Qauv",
+      "tooltip": "Cov Qauv: txuag tag nrho cov kev teeb tsa studio thiab ua kom muaj kev tshaj tawm tsis siv neeg",
+      "title": "Cov qauv UGC",
+      "sub": "Ib daim template khaws cia TXHUA qhov chaw teeb tsa hauv studio (hom, subtitles, suab paj nruag, cov checkboxes tsom xam). Kev tshaj tawm tsis siv neeg txuas nws mus rau qhov kev tsom xam tsis siv neeg - cov yeeb yaj kiab tsim lawv tus kheej.",
+      "empty": "Tsis tau muaj cov qauv tseem - txuag qhov kev teeb tsa tam sim no hauv qab no.",
+      "apply": "Thov",
+      "autopubOn": "Qhib kev tshaj tawm tsis siv neeg",
+      "source": "Qhov chaw",
+      "sourceNone": "— xaiv ib qho chaw —",
+      "sourceTrends": "Cov Qauv",
+      "sourcePaused": "nres ib pliag",
+      "lang": "Cov lus hais txog video",
+      "langHint": "cov ntawv sau ua hom lus no tam sim ntawd",
+      "autopubHint": "Kev tshuaj xyuas tsis siv neeg nrhiav tau cov yeeb yaj kiab tshiab → kev rhuav tshem → ib daim vis dis aus tau tsim los ntawm cov qauv no (seem \"Tsis Siv Neeg\" hauv Gallery). Ntau qhov chaw ntxiv dhau ntawm Cov Qauv yuav los tom qab.",
+      "noWatches": "Tsis tau muaj kev tshuaj xyuas tus kheej - qhib ib qho ntawm nplooj ntawv Trends (Block Auto-analysis).",
+      "saveCurrent": "Txuag cov chaw tam sim no ua ib daim qauv",
+      "namePlaceholder": "Lub npe ntawm tus qauv",
+      "keywordPlaceholder": "Lo lus tseem ceeb ntawm qhov sib txawv (lub cim ntawm daim npav)",
+      "save": "Txuag cov qauv",
+      "note": "Cov qauv nyob hauv Gallery → UGC → \"Auto\" ib sab ntawm cov yeeb yaj kiab tsis siv neeg.",
+      "defaultName": "Kuv tus qauv"
     }
   }
 }

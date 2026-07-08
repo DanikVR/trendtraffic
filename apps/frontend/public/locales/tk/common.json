@@ -1286,7 +1286,13 @@
       "seriesBilling": "Awatar tutuş seriýa üçin bir gezek görkezilýär.",
       "voiceoverBase": "Bu režimde wideo kadryň esasyny düzýär: ses we subtitrler ýokarky orunda durýar.",
       "emptyTitle": "Wideo heniz ýüklenmedi",
-      "emptySub": "Galereýadan saýlaň"
+      "emptySub": "Galereýadan saýlaň",
+      "photosTitle": "Surat slaýdlary",
+      "photosSub": "bir surat — hereketsiz kadr, birnäçe — çarpaz reňkler bilen sikl",
+      "photosOne": "1 surat — surat üçin kadr",
+      "photosCount_one": "{{count}} surat — krossfeýdli sikller",
+      "photosCount_other": "{{count}} suratlar — krossfeýdler bilen sikl ediň",
+      "photosVsVideo": "Wideo we suratlar saýlanýar — wideo ýeňýär (suratlar gözardy edilýär)."
     },
     "subtitles": {
       "title": "Subtitrler",
@@ -1403,7 +1409,9 @@
       "outro": "Daşky bamper",
       "layer": "Üstki gatlak (PNG)",
       "layerNote": "Kadr formaty üçin taýýarlanan açyk PNG — ol tutuş wideonyň üstünde ýerleşer.",
-      "bumperNote": "Wideonyň öz görnüşine goşuldy, işlenilmeýär."
+      "bumperNote": "Wideonyň öz görnüşine goşuldy, işlenilmeýär.",
+      "clipImagesTitle": "Slaýdşou üçin suratlar",
+      "clipImagesNote": "12 surata çenli saýlamak üçin basyň — tertibi saýlaň = oýnatma tertibi. Bir surat hereketsiz kadr bolýar."
     },
     "progress": {
       "title": "Wideonyňyz döredilýär…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Saz",
       "chipSubtitles": "Subtitrler",
       "chipVoice": "Ses"
+    },
+    "analysis": {
+      "title": "Trend analizi",
+      "sub": "üstünlik formulasy → bloklara bölünýär",
+      "empty": "Trendiň bölünişi saýlanylmady",
+      "emptySub": "seljermeleriňizden saýlaň",
+      "pickTitle": "Trendiň bölünişini saýlaň",
+      "pickSub": "Trendler sahypasyndan saklanan analizler. Saýlanan bölekler studiýa bloklaryny öz içine alýar — bellik gutulary nirededigini anyk kesgitleýär.",
+      "none": "Heniz analiz ýok — Trendler sahypasynda (Analitika goýmasynda) wideony analizläň.",
+      "framesBadge": "çarçuwa derejesi",
+      "useScript": "Analizden alnan skript",
+      "useScriptSub": "skript döretmek trend formulasyna we onuň taýýar taslamasyna eýerýär",
+      "useVideo": "Trend wideosy wideo hökmünde",
+      "useVideoSub": "göçürilip alnan trend wideosy wideoýazgylara öwrülýär",
+      "useSubtitles": "Bölümlerden subtitr stili",
+      "useSubtitlesSub": "moda wizual stil → subtitr arzuwlary",
+      "useRetention": "Analizden montaž režissýorlygy",
+      "useRetentionSub": "ilmek/hereket/CTA bölünişi göz öňünde tutup etiketlenýär"
+    },
+    "tpl": {
+      "button": "Şablon",
+      "tooltip": "Şablonlar: studiýanyň tutuş gurluşyny saklaň we trendleriň awtomatiki neşirini işjeňleşdiriň",
+      "title": "UGC şablonlary",
+      "sub": "Şablon ÄHLI studiýa sazlamalaryny (režim, subtitrler, aýdym-saz, seljeriş gutulary) saklaýar. Awtomatiki neşir etmek ony trend awtomatiki seljermesine baglaýar — wideolar öz-özünden döreýär.",
+      "empty": "Heniz şablon ýok — häzirki gurluşy aşakdaky saklaň.",
+      "apply": "Ýüz tut",
+      "autopubOn": "Awtomatiki neşir etmegi işjeňleşdir",
+      "source": "Çeşme",
+      "sourceNone": "— çeşme saýlaň —",
+      "sourceTrends": "Trendler",
+      "sourcePaused": "duraklady",
+      "lang": "Wideo dili",
+      "langHint": "ssenari derrew şu dilde ýazylýar",
+      "autopubHint": "Awto-analiz täze trend wideosyny tapýar → düşündiriş → wideo şu şablondan gurulýar (Galereýadaky \"Awto\" bölümi). Trendlerden başga-da başga çeşmeler soňrak peýda bolar.",
+      "noWatches": "Awtomatiki analiz heniz ýok — Trendler sahypasynda (Awtomatiki analiz bloky) birini işjeňleşdiriň.",
+      "saveCurrent": "Häzirki sazlamalary şablon hökmünde saklaň",
+      "namePlaceholder": "Şablon ady",
+      "keywordPlaceholder": "Trend açar sözi (kartdaky nyşan)",
+      "save": "Şablony saklaň",
+      "note": "Şablonlar Galereýa → UGC → awtomatik wideolaryň ýanynda “Awtomatik” bölüminde ýerleşýär.",
+      "defaultName": "Meniň şablonym"
     }
   }
 }

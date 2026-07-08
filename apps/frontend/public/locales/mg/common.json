@@ -1286,7 +1286,13 @@
       "seriesBilling": "Indray mandeha monja no faktioran'ny avatar mandritra ny andiany iray manontolo.",
       "voiceoverBase": "Amin'ity fomba ity, ny lahatsary no fototry ny frame: ny feo sy ny dikanteny no eo an-tampony.",
       "emptyTitle": "Mbola tsy nampidirina ny lahatsary",
-      "emptySub": "mifidiana avy amin'ny Galeria"
+      "emptySub": "mifidiana avy amin'ny Galeria",
+      "photosTitle": "Sary mihetsika",
+      "photosSub": "sary iray — sary tsy mihetsika, maromaro — mihodinkodina miaraka amin'ny crossfades",
+      "photosOne": "Sary 1 — sary tsy mihetsika",
+      "photosCount_one": "Sary {{count}} — tsingerina misy crossfades",
+      "photosCount_other": "Sary {{count}} — tsingerina miaraka amin'ny crossfades",
+      "photosVsVideo": "Na ny lahatsary na ny sary nofidiana — no mandresy (tsy raharahiana ny sary)."
     },
     "subtitles": {
       "title": "dikan'teny",
@@ -1403,7 +1409,9 @@
       "outro": "Fiarovana ivelany",
       "layer": "Sosona ambony (PNG)",
       "layerNote": "PNG mangarahara nomanina ho an'ny endrika frame — hipetraka eo ambonin'ny lahatsary iray manontolo izy io.",
-      "bumperNote": "Miraikitra amin'ny lahatsary araka ny maha-izy azy, tsy misy fanodinana."
+      "bumperNote": "Miraikitra amin'ny lahatsary araka ny maha-izy azy, tsy misy fanodinana.",
+      "clipImagesTitle": "Sary ho an'ny slideshow",
+      "clipImagesNote": "Tsindrio raha haka sary hatramin'ny 12 — fidio ny filaharana = filaharan'ny famerenana. Sary tokana no lasa sary tsy mihetsika."
     },
     "progress": {
       "title": "Mamorona ny horonan-tsarinao…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "MOZIKA",
       "chipSubtitles": "dikan'teny",
       "chipVoice": "FEO"
+    },
+    "analysis": {
+      "title": "Famakafakana fironana",
+      "sub": "raikipohy fahombiazana → ho lasa sakana",
+      "empty": "Tsy misy fizarana fironana voafantina",
+      "emptySub": "mifidiana avy amin'ny famakafakana nataonao",
+      "pickTitle": "Misafidiana fizarana fironana",
+      "pickSub": "Voatahiry avy amin'ny pejy Trends ny fanadihadiana. Ny fizarana voafantina dia mamahana ireo sakana ao amin'ny studio — ny boaty fanamarinana no mamaritra tsara ny toerana misy azy.",
+      "none": "Mbola tsy misy fanadihadiana — famakafakana lahatsary ao amin'ny pejy Trends (kiheba Analytics).",
+      "framesBadge": "ambaratongan'ny frame",
+      "useScript": "Soratra avy amin'ny fanadihadiana",
+      "useScriptSub": "Ny famoronana script dia manaraka ny raikipohy fironana sy ny drafitra efa vonona",
+      "useVideo": "Lahatsary malaza ho toy ny horonan-tsary",
+      "useVideoSub": "ilay lahatsary malaza alaina no lasa lahatsary",
+      "useSubtitles": "Endrika misy dikanteny avy amin'ny fizarana",
+      "useSubtitlesSub": "ny fironana fomba fijery → faniriana dikanteny",
+      "useRetention": "Montage mitarika avy amin'ny fanadihadiana",
+      "useRetentionSub": "Ny hook/action/CTA dia asiana marika miaraka amin'ny famaritana ao an-tsaina"
+    },
+    "tpl": {
+      "button": "Endrika",
+      "tooltip": "Endrika: tehirizo ny fametrahana studio manontolo ary avelao ny famoahana mandeha ho azy ny fironana",
+      "title": "Modely UGC",
+      "sub": "Ny môdely dia mitahiry ny fikirana rehetra ao amin'ny studio (mode, dikanteny, mozika, boaty fanamarinana famakafakana). Ny famoahana mandeha ho azy dia mampifandray azy amin'ny famakafakana fironana mandeha ho azy — ny horonan-tsary dia mamorona ho azy.",
+      "empty": "Mbola tsy misy môdely — tehirizo eto ambany ny fametrahana ankehitriny.",
+      "apply": "AMPIHARO",
+      "autopubOn": "Alefaso ny famoahana mandeha ho azy",
+      "source": "Source",
+      "sourceNone": "— mifidiana loharano —",
+      "sourceTrends": "Fironana",
+      "sourcePaused": "Nijanona kely",
+      "lang": "Fiteny amin'ny lahatsary",
+      "langHint": "Voasoratra amin'ity fiteny ity avy hatrany ny script",
+      "autopubHint": "Ny fanadihadiana mandeha ho azy dia mahita lahatsary fironana vaovao → famaritana → lahatsary namboarina avy amin'ity môdely ity (ny fizarana \"Auto\" ao amin'ny Gallery). Loharano bebe kokoa ankoatra ny Trends ho avy any aoriana.",
+      "noWatches": "Mbola tsy misy famakafakana mandeha ho azy — alefaso ao amin'ny pejy Trends (bloc famakafakana mandeha ho azy).",
+      "saveCurrent": "Tehirizo ho toy ny môdely ireo fikirana ankehitriny",
+      "namePlaceholder": "Anaran'ny môdely",
+      "keywordPlaceholder": "Teny fanalahidy fironana (badge eo amin'ny karatra)",
+      "save": "Tehirizo ny môdely",
+      "note": "Ao amin'ny Gallery → UGC → \"Auto\" eo akaikin'ny horonan-tsary mandeha ho azy ireo môdely.",
+      "defaultName": "Ny môdely-ko"
     }
   }
 }

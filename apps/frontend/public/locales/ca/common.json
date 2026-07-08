@@ -1286,7 +1286,13 @@
       "seriesBilling": "L'avatar es factura una vegada per a tota la sèrie.",
       "voiceoverBase": "En aquest mode, el vídeo és la base del quadre: la veu i els subtítols van a sobre.",
       "emptyTitle": "Vídeo encara no s'ha penjat",
-      "emptySub": "triar de la galeria"
+      "emptySub": "triar de la galeria",
+      "photosTitle": "Presentació de diapositives de fotos",
+      "photosSub": "una foto — un fotograma fix, diversos — cicla amb crossfades",
+      "photosOne": "1 foto — fotograma fix",
+      "photosCount_one": "Foto {{count}} — cicles amb crossfades",
+      "photosCount_other": "Fotos de {{count}} — cicle amb crossfades",
+      "photosVsVideo": "Tant el vídeo com les fotos escollides: el vídeo guanya (les fotos s'ignoren)."
     },
     "subtitles": {
       "title": "Subtítols",
@@ -1403,7 +1409,9 @@
       "outro": "Para-xocs final",
       "layer": "Capa superior (PNG)",
       "layerNote": "Un PNG transparent preparat per al format de fotograma: cobrirà tot el vídeo.",
-      "bumperNote": "Adjuntat al vídeo tal com està, sense processament."
+      "bumperNote": "Adjuntat al vídeo tal com està, sense processament.",
+      "clipImagesTitle": "Fotos per a la presentació de diapositives",
+      "clipImagesNote": "Feu clic per triar fins a 12 imatges: ordre de selecció = ordre de reproducció. Una sola foto es converteix en un fotograma fix."
     },
     "progress": {
       "title": "Creant el teu vídeo…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Música",
       "chipSubtitles": "Subtítols",
       "chipVoice": "Veu"
+    },
+    "analysis": {
+      "title": "Anàlisi de tendències",
+      "sub": "fórmula d'èxit → en blocs",
+      "empty": "No s'ha seleccionat cap desglossament de tendències",
+      "emptySub": "triar entre les vostres anàlisis",
+      "pickTitle": "Trieu un desglossament de tendències",
+      "pickSub": "Anàlisis desades de la pàgina Tendències. El desglossament escollit alimenta els blocs d'estudi: les caselles de selecció decideixen exactament on.",
+      "none": "Encara no hi ha anàlisis: analitza un vídeo a la pàgina Tendències (pestanya Analítica).",
+      "framesBadge": "nivell de fotograma",
+      "useScript": "Script de l'anàlisi",
+      "useScriptSub": "la generació de scripts segueix la fórmula de tendència i el seu esborrany llest",
+      "useVideo": "Vídeo de tendència com a metratge",
+      "useVideoSub": "El vídeo de tendència descarregat es converteix en el metratge",
+      "useSubtitles": "Estil de subtítols a partir del desglossament",
+      "useSubtitlesSub": "l'estil visual de tendència → desitjos de subtítols",
+      "useRetention": "Direcció de muntatge a partir de l'anàlisi",
+      "useRetentionSub": "ganxo/acció/CTA estan etiquetats tenint en compte el desglossament"
+    },
+    "tpl": {
+      "button": "Plantilla",
+      "tooltip": "Plantilles: desa tota la configuració de l'estudi i activa la publicació automàtica de tendències",
+      "title": "Plantilles UGC",
+      "sub": "Una plantilla emmagatzema TOTA la configuració de l'estudi (mode, subtítols, música, caselles de selecció d'anàlisi). La publicació automàtica la vincula a una anàlisi automàtica de tendències: els vídeos es creen sols.",
+      "empty": "Encara no hi ha plantilles; desa la configuració actual a continuació.",
+      "apply": "Aplica",
+      "autopubOn": "Activa la publicació automàtica",
+      "source": "Font",
+      "sourceNone": "— triar una font —",
+      "sourceTrends": "Tendències",
+      "sourcePaused": "en pausa",
+      "lang": "Idioma del vídeo",
+      "langHint": "l'escriptura està escrita en aquest idioma immediatament",
+      "autopubHint": "L'anàlisi automàtica troba un vídeo de tendència recent → desglossament → es crea un vídeo a partir d'aquesta plantilla (la secció \"Auto\" de la Galeria). Més endavant, més enllà de Tendències.",
+      "noWatches": "Encara no hi ha anàlisis automàtiques: activeu-ne una a la pàgina Tendències (bloc d'anàlisi automàtica).",
+      "saveCurrent": "Desa la configuració actual com a plantilla",
+      "namePlaceholder": "Nom de la plantilla",
+      "keywordPlaceholder": "Paraula clau de tendència (insígnia a la targeta)",
+      "save": "Desa la plantilla",
+      "note": "Les plantilles es troben a Galeria → UGC → \"Auto\" al costat dels vídeos automàtics.",
+      "defaultName": "La meva plantilla"
     }
   }
 }

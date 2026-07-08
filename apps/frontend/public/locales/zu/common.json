@@ -1286,7 +1286,13 @@
       "seriesBilling": "I-avatar ikhokhiswa kanye kulo lonke uchungechunge.",
       "voiceoverBase": "Kule modi ividiyo iyisisekelo sohlaka: izwi kanye nemibhalo engezansi iya phezulu.",
       "emptyTitle": "Ividiyo ayikalayishwa okwamanje",
-      "emptySub": "khetha kugalari"
+      "emptySub": "khetha kugalari",
+      "photosTitle": "Umbukiso wesilayidi wesithombe",
+      "photosSub": "isithombe esisodwa — uhlaka olunganyakazi, eziningana — umjikelezo oneziphambano",
+      "photosOne": "Isithombe esingu-1 — uhlaka olunganyakazi",
+      "photosCount_one": "{{count}} isithombe — imijikelezo ene-crossfade",
+      "photosCount_other": "{{count}} izithombe — umjikelezo oneziphambano",
+      "photosVsVideo": "Kokubili ividiyo nezithombe ezikhethiwe — ividiyo iyawina (izithombe azinakwa)."
     },
     "subtitles": {
       "title": "Imibhalo engezansi",
@@ -1403,7 +1409,9 @@
       "outro": "Ibhampa yangaphandle",
       "layer": "Isendlalelo esiphezulu (i-PNG)",
       "layerNote": "I-PNG ecacile elungiselelwe ifomethi yohlaka — izohlala phezu kwevidiyo yonke.",
-      "bumperNote": "Kunamathiselwe kuvidiyo njengoba injalo, akukho ukucutshungulwa."
+      "bumperNote": "Kunamathiselwe kuvidiyo njengoba injalo, akukho ukucutshungulwa.",
+      "clipImagesTitle": "Izithombe zesilayidi",
+      "clipImagesNote": "Chofoza ukuze ukhethe izithombe ezifika kwezingu-12 — khetha i-oda = i-oda lokudlala. Isithombe esisodwa siba uhlaka olunganyakazi."
     },
     "progress": {
       "title": "Ukudala ividiyo yakho…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Umculo",
       "chipSubtitles": "Imibhalo engezansi",
       "chipVoice": "Izwi"
+    },
+    "analysis": {
+      "title": "Ukuhlaziywa kwethrendi",
+      "sub": "ifomula yempumelelo → ibe amabhlogo",
+      "empty": "Akukho ukuhlukaniswa kwezitayela okukhethiwe",
+      "emptySub": "khetha ekuhlaziyeni kwakho",
+      "pickTitle": "Khetha ukuhlukaniswa kwezitayela",
+      "pickSub": "Ukuhlaziywa okulondoloziwe ekhasini le-Trends. Ukuhlaziywa okukhethiwe kunikeza amabhlogo esitudiyo ukudla — amabhokisi okuhlola anquma ukuthi kuphi ngqo.",
+      "none": "Akukho ukuhlaziya okwamanje — hlaziya ividiyo ekhasini le-Trends (ithebhu ye-Analytics).",
+      "framesBadge": "izinga lohlaka",
+      "useScript": "Iskripthi esivela ekuhlaziyweni",
+      "useScriptSub": "ukwenziwa kwesikripthi kulandela ifomula yesitayela kanye nohlaka lwayo olulungele ukwenziwa",
+      "useVideo": "Ividiyo ethrendayo njengevidiyo",
+      "useVideoSub": "ividiyo yethrendi elandiwe iba yividiyo",
+      "useSubtitles": "Isitayela semibhalo engezansi kusukela ekuhlukanisweni",
+      "useSubtitlesSub": "isitayela esibonakalayo sesitayela → izifiso zemibhalo engezansi",
+      "useRetention": "Ukuqondisa kwe-Montage kusuka ekuhlaziyweni",
+      "useRetentionSub": "i-hook/isenzo/i-CTA iphawulwe ngokucabangela ukuhlukaniswa"
+    },
+    "tpl": {
+      "button": "Isifanekiso",
+      "tooltip": "Amathempulethi: londoloza konke ukusethwa kwesitudiyo bese uvumela ukushicilelwa okuzenzakalelayo kwesitayela",
+      "title": "Amathempulethi e-UGC",
+      "sub": "Ithempulethi igcina ZONKE izilungiselelo zesitudiyo (imodi, imibhalo engezansi, umculo, amabhokisi okuhlola okuhlaziya). Ukuyishicilela ngokuzenzakalela kuyixhumanisa nokuhlaziywa okuzenzakalelayo kwethrendi — amavidiyo ayakha wona.",
+      "empty": "Azikho izifanekiso okwamanje — londoloza ukusethwa kwamanje ngezansi.",
+      "apply": "Faka isicelo",
+      "autopubOn": "Nika amandla ukushicilela okuzenzakalelayo",
+      "source": "Umthombo",
+      "sourceNone": "— khetha umthombo —",
+      "sourceTrends": "Amathrendi",
+      "sourcePaused": "kumiswe okwesikhashana",
+      "lang": "Ulimi lwevidiyo",
+      "langHint": "umbhalo ubhalwe ngalolu limi ngokushesha",
+      "autopubHint": "Ukuhlaziywa okuzenzakalelayo kuthola ividiyo entsha yethrendi → ukuhlukaniswa → ividiyo yakhiwe kusukela kulesi sifanekiso (isigaba \"Esizenzakalelayo\" kuGalari). Imithombo eminingi ngale kwethrendi iza kamuva.",
+      "noWatches": "Akukho ukuhlaziya okuzenzakalelayo okwamanje — vumela okukodwa ekhasini le-Trends (ibhulokhi yokuhlaziya okuzenzakalelayo).",
+      "saveCurrent": "Londoloza izilungiselelo zamanje njengesifanekiso",
+      "namePlaceholder": "Igama lesifanekiso",
+      "keywordPlaceholder": "Igama elingukhiye lethrendi (ibheji ekhadini)",
+      "save": "Londoloza ithempulethi",
+      "note": "Amathempulethi abukhoma kugalari → UGC → “Okuzenzakalelayo” eduze kwamavidiyo azenzakalelayo.",
+      "defaultName": "Isifanekiso sami"
     }
   }
 }

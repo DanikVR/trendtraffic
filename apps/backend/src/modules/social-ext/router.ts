@@ -26,11 +26,9 @@ import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
-import { analyzeUrl, detectUrl } from '../trends/analytics.js';
-import { generateTrendDNA, saveTrendDNA } from '../trends/dna.js';
-import { extractDownloadUrls, fetchOneVideo, tikhubGet, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
-import { downloadVideoToDisk } from '../media/store_video.js';
-import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
+import { detectUrl } from '../trends/analytics.js';
+import { ingestTrendVideo, REFERER_BY_PLATFORM } from '../trends/ingest.js';
+import { extractDownloadUrls, fetchOneVideo, tikhubGet } from '../tikhub/tikhub_client.js';
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
 const UA = 'TrendTraffic/1.0';
@@ -302,14 +300,10 @@ export { aiRouter };
 // ============================================================================
 // «Добавить в галерею»  →  POST /api/social-ext/to-gallery { url }
 // ----------------------------------------------------------------------------
-// Разбирает ссылку (TikHub нашим ключом), качает видео на диск и заводит запись
-// в Галерее (media_assets, kind=reference). JWT + rate-limit + Enterprise.
+// Тонкая обёртка над trends/ingest.ingestTrendVideo (скачивание + ДНК + покадровый
+// Gemini-видеоанализ, fire-and-forget) — тот же сервис использует автопилот трендов.
+// JWT + rate-limit + Enterprise.
 // ============================================================================
-
-const REFERER_BY_PLATFORM: Record<string, string> = {
-  tiktok: 'https://www.tiktok.com/', douyin: 'https://www.douyin.com/',
-  instagram: 'https://www.instagram.com/', twitter: 'https://x.com/', bilibili: 'https://www.bilibili.com/',
-};
 
 const galleryRouter = Router();
 galleryRouter.use(requireAuth);
@@ -320,57 +314,8 @@ galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
   try {
-    const det = detectUrl(url);
-    let stored: any;
-    let platform = det?.platform || 'tiktok';
-    let vid = det?.videoId || 'video';
-    let analysis: any = null;
-
-    if (det?.platform === 'youtube') {
-      // YouTube-скачивание отключено (подпись потоков TikHub ненадёжна).
-      return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
-    } else {
-      const result: any = await analyzeUrl(req.tenantId!, url);
-      analysis = result;
-      let dlUrls = extractDownloadUrls(result?.blocks?.video?.data);
-      // X/Twitter: иная структура — лучший mp4-вариант твита.
-      if (!dlUrls.length && (result?.detected?.platform || det?.platform) === 'twitter') {
-        dlUrls = extractTwitterVideoUrls(result?.blocks?.video?.data);
-      }
-      if (!dlUrls.length) {
-        return res.status(422).json({ error: 'Не удалось получить прямую ссылку на видео для этой платформы.' });
-      }
-      platform = result?.detected?.platform || det?.platform || 'tiktok';
-      vid = result?.detected?.videoId || det?.videoId || 'video';
-      stored = await downloadVideoToDisk(dlUrls, { referer: REFERER_BY_PLATFORM[platform] || REFERER_BY_PLATFORM.tiktok });
-    }
-
-    const asset = await createAsset(req.tenantId!, {
-      kind: 'reference', mediaType: 'video',
-      originalName: `${platform}-${vid}.mp4`,
-      fileUrl: stored.mediaUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
-      folder: ANALYZED_FOLDER, // из аналитики → папка «Из анализа»
-    });
-
-    // Анализ едет ВМЕСТЕ с видео: в фоне собираем разбор (TrendDNA) и кладём в
-    // video_analyses, привязав к ассету. Best-effort — скачивание уже успешно.
-    // (Раньше этот путь сохранял только видео — анализ терялся; бейдж в Галерее и
-    //  «видео + анализ» в Hotebook опираются на эту запись.)
-    if (asset && analysis) {
-      const tId = req.tenantId!, assetId = asset.id, dPlatform = platform, dVideoId = String(vid), srcUrl = url;
-      void (async () => {
-        try {
-          const dna = await generateTrendDNA(tId, {
-            summary: analysis.summary, comments: analysis.normalized?.comments, keywords: analysis.normalized?.keywords,
-            platform: analysis.detected?.platform || dPlatform, sourceUrl: srcUrl,
-          });
-          await saveTrendDNA(tId, { mediaAssetId: assetId, platform: dPlatform, externalId: dVideoId, sourceUrl: srcUrl, dna });
-        } catch (e) {
-          console.warn('[social-ext] save→DNA:', (e as Error).message);
-        }
-      })();
-    }
-    res.json({ ok: true, fileUrl: stored.mediaUrl, asset, analyzing: !!analysis });
+    const r = await ingestTrendVideo(req.tenantId!, url);
+    res.json({ ok: true, fileUrl: r.fileUrl, asset: r.asset, analyzing: true });
   } catch (err: any) {
     res.status(err?.status || 502).json({ error: err?.message || 'Не удалось добавить в галерею' });
   }

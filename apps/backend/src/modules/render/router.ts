@@ -23,7 +23,7 @@ import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
@@ -203,6 +203,59 @@ router.delete('/ugc/brandkits/:id', async (req: AuthedRequest, res: Response) =>
     await pool.query('DELETE FROM brand_kits WHERE tenant_id = $1 AND id = $2', [req.tenantId, Number(req.params.id) || 0]);
     res.json({ ok: true });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить бренд-кит' }); }
+});
+
+// ── Шаблоны UGC (автоматические): ПОЛНЫЙ снимок спеки + ключевик тренда + автопубликация ──
+// В отличие от бренд-китов (только оформление), шаблон хранит всю настройку ролика:
+// режим, форматы, титры, музыку, галочки «Использовать анализ» (spec.analysisUse) и
+// autopublish { enabled, source:{type:'trend_watch',id}, language, dailyCap } — конвейер
+// autopilot.ts собирает по нему ролики автоматически (папка Галереи 'auto-ugc').
+
+/** GET /ugc/templates — шаблоны тенанта. */
+router.get('/ugc/templates', async (req: AuthedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT id, name, trend_keyword, spec, autopublish, created_at FROM ugc_templates WHERE tenant_id = $1 ORDER BY id DESC LIMIT 50', [req.tenantId]);
+    res.json({ templates: r.rows.map((x: any) => ({ id: String(x.id), name: x.name, trendKeyword: x.trend_keyword || '', spec: x.spec || {}, autopublish: x.autopublish || {}, createdAt: x.created_at })) });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Шаблоны недоступны' }); }
+});
+/** POST /ugc/templates — сохранить шаблон. body: { name, trendKeyword?, spec, autopublish? }. */
+router.post('/ugc/templates', async (req: AuthedRequest, res: Response) => {
+  try {
+    const name = String(req.body?.name || '').trim().slice(0, 120) || 'Мой шаблон';
+    const trendKeyword = String(req.body?.trendKeyword || '').trim().slice(0, 120) || null;
+    const specIn = req.body?.spec && typeof req.body.spec === 'object' ? { ...req.body.spec } : {};
+    // Одноразовые поля прогона в шаблоне не живут.
+    delete specIn.buildJobId; delete specIn.result; delete specIn.results; delete specIn.recordingUrl; delete specIn.recordingName;
+    const autopublish = req.body?.autopublish && typeof req.body.autopublish === 'object' ? req.body.autopublish : {};
+    const r = await pool.query(
+      'INSERT INTO ugc_templates (tenant_id, name, trend_keyword, spec, autopublish) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+      [req.tenantId, name, trendKeyword, JSON.stringify(specIn), JSON.stringify(autopublish)]
+    );
+    if (!r.rows?.[0]?.id) return res.status(500).json({ error: 'Шаблоны требуют базу данных (Postgres) — сохранение недоступно.' });
+    res.json({ id: String(r.rows[0].id), name });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить шаблон' }); }
+});
+/** PATCH /ugc/templates/:id — правка имени/ключевика/автопубликации (spec целиком — POST-ом заново). */
+router.patch('/ugc/templates/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const sets: string[] = []; const vals: any[] = [req.tenantId, Number(req.params.id) || 0];
+    if (typeof req.body?.name === 'string') sets.push(`name = $${vals.push(req.body.name.trim().slice(0, 120) || 'Мой шаблон')}`);
+    if (typeof req.body?.trendKeyword === 'string') sets.push(`trend_keyword = $${vals.push(req.body.trendKeyword.trim().slice(0, 120) || null)}`);
+    if (req.body?.autopublish && typeof req.body.autopublish === 'object') sets.push(`autopublish = $${vals.push(JSON.stringify(req.body.autopublish))}`);
+    if (req.body?.spec && typeof req.body.spec === 'object') sets.push(`spec = $${vals.push(JSON.stringify(req.body.spec))}`);
+    if (!sets.length) return res.status(400).json({ error: 'Нечего обновлять.' });
+    sets.push(`updated_at = CURRENT_TIMESTAMP`);
+    const r = await pool.query(`UPDATE ugc_templates SET ${sets.join(', ')} WHERE tenant_id = $1 AND id = $2 RETURNING id`, vals);
+    if (!r.rows?.[0]?.id) return res.status(404).json({ error: 'Шаблон не найден.' });
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось обновить шаблон' }); }
+});
+/** DELETE /ugc/templates/:id — убрать шаблон. */
+router.delete('/ugc/templates/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    await pool.query('DELETE FROM ugc_templates WHERE tenant_id = $1 AND id = $2', [req.tenantId, Number(req.params.id) || 0]);
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить шаблон' }); }
 });
 
 router.get('/ugc/avatars', async (req: AuthedRequest, res: Response) => {
@@ -400,6 +453,19 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     // Верхний PNG-слой (свой на каждый формат) + полоса прогресса + заставки до/после.
     const layerUrlFor = (key: UgcFormatKey): string => String(spec.layers?.[key]?.url || '');
     const progressBar = !!spec.progressBar;
+    // Автопилот/шаблоны: папка результата ('auto-ugc' у автоматических) + своё имя ролика.
+    const outFolder: string = spec.outFolder === 'auto-ugc' ? 'auto-ugc' : 'ugc';
+    const titlePrefix: string = String(spec.title || '').trim().slice(0, 90);
+    const nameFor = (fallback: string): string => titlePrefix || fallback;
+    // «Использовать анализ»: ДНК тренда для режиссуры (retention/диалог) — передаётся
+    // готовым объектом (brief/sceneBeats/hookAnalysis), БД в сборке не дёргаем.
+    const analysisSpec: { brief?: string; hookAnalysis?: string } | null =
+      spec.analysis && typeof spec.analysis === 'object'
+        ? { brief: String(spec.analysis.brief || '').slice(0, 2200), hookAnalysis: String(spec.analysis.hookAnalysis || '').slice(0, 600) }
+        : null;
+    const trendBriefForDirector = analysisSpec
+      ? [analysisSpec.brief, analysisSpec.hookAnalysis && `Разбор первых секунд оригинала: ${analysisSpec.hookAnalysis}`].filter(Boolean).join('\n')
+      : undefined;
     const introUrl = String(spec.intro?.url || '');
     const outroUrl = String(spec.outro?.url || '');
     // Врезки медиа реплик (для соло и «Без аватара»): нужны валидные таймкоды разбора.
@@ -407,6 +473,30 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       .filter((l) => l?.image && Number.isFinite(Number(l?.start)) && Number.isFinite(Number(l?.end)) && Number(l.end) > Number(l.start))
       .slice(0, 12)
       .map((l) => ({ url: String(l.image), isVideo: /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(String(l.image)), t0: Number(l.start), t1: Number(l.end) }));
+    // «Видеоряд из фото»: изображения → слайдшоу-клип (1 фото = статичный кадр,
+    // несколько = перелистывание по кругу с кроссфейдом), дальше ВЕСЬ конвейер
+    // (все 4 ветки) видит обычный spec.clip — ветки не трогаем. Видео приоритетнее фото.
+    // Битые картинки пропускаем (слайдшоу из остальных); совсем пусто → честный 400.
+    const clipImages: string[] = Array.isArray(spec.clipImages)
+      ? (spec.clipImages as any[]).map((x) => String(x?.url || '')).filter(Boolean).slice(0, 12)
+      : [];
+    if (!spec.clip?.url && clipImages.length) {
+      const imgPaths: string[] = [];
+      for (const u of clipImages) {
+        try { imgPaths.push((await downloadToRenders(abs(u), 'ugcimg')).filePath); }
+        catch { /* одна битая картинка не должна ронять весь запуск */ }
+      }
+      if (!imgPaths.length) return res.status(400).json({ error: 'Ни одно фото слайдшоу не удалось загрузить — проверьте файлы в Галерее.' });
+      // Размер кадра — КРУПНЕЙШИЙ из выбранных форматов: остальные получают cover-кроп
+      // из максимума пикселей (а не апскейл узкой полосы).
+      const bigDims = outFormats.reduce((a, b) => (b.dims.W * b.dims.H > a.dims.W * a.dims.H ? b : a)).dims;
+      try {
+        const slide = await composeSlideshow({ imagePaths: imgPaths, dims: bigDims });
+        spec.clip = { url: slide.fileUrl, name: `слайдшоу · ${imgPaths.length} фото` };
+      } catch (e: any) {
+        return res.status(400).json({ error: `Не удалось собрать слайдшоу из фото: ${String(e?.message || e).slice(0, 200)}` });
+      }
+    }
     // Общие загрузчики: слои per-format, заставки, врезки (кэш по url) — используются ветками ниже.
     const dlLayers = async (): Promise<Partial<Record<UgcFormatKey, string>>> => {
       const out: Partial<Record<UgcFormatKey, string>> = {};
@@ -517,8 +607,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               }
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
-                originalName: `UGC — озвучка без аватара${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`,
-                fileUrl, mime: 'video/mp4', folder: 'ugc',
+                originalName: `${nameFor('UGC — озвучка без аватара')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`,
+                fileUrl, mime: 'video/mp4', folder: outFolder,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -655,7 +745,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
             }
             const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `UGC-диалог (${engagement})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: 'ugc',
+              kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC-диалог (${engagement})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder,
             });
             j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
             if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -708,7 +798,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           j.status = 'план удержания (LLM)';
           const lines = linesForRetention(script, D);
           const windows = planWindows(lines, preset, D);
-          const tag = await tagUgcRetention({ tenantId: j.tenantId!, segments: windows.map((w) => w.text), ivMax: preset.ivMax });
+          const tag = await tagUgcRetention({ tenantId: j.tenantId!, segments: windows.map((w) => w.text), ivMax: preset.ivMax, trendBrief: trendBriefForDirector });
           let segsPlan: RetSegment[] = windows;
           if (tag.scores.length) applyIvBudget(segsPlan, tag.scores, preset.ivMax);
           else segsPlan = planRetention(lines, preset, D); // фолбэк-эвристика
@@ -760,8 +850,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               }
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
-                originalName: `UGC-удержание ${preset.name}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
-                fileUrl, mime: 'video/mp4', folder: 'ugc',
+                originalName: `${nameFor(`UGC-удержание ${preset.name}`)}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
+                fileUrl, mime: 'video/mp4', folder: outFolder,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (b === 0 && f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -849,7 +939,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
               }
               const asset = await createAsset(j.tenantId!, {
-                kind: 'reference', mediaType: 'video', originalName: `UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: 'ugc',
+                kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: outFolder,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }

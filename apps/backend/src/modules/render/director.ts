@@ -166,21 +166,27 @@ export async function translateUgcScript(opts: {
  */
 export async function tagUgcRetention(opts: {
   tenantId: string; segments: string[]; ivMax: number; model?: string;
+  /** ДНК тренда (галочка «Использовать анализ» в Монтаже): режиссёр размечает
+   *  крючок/действие/призыв с оглядкой на разбор вирусного оригинала. */
+  trendBrief?: string;
 }): Promise<{ scores: SegScore[]; note: string }> {
   const segs = (opts.segments || []).map((t) => String(t || '').replace(/\s+/g, ' ').trim());
   if (!segs.length) return { scores: [], note: 'сегментов нет' };
   const apiKey = await resolveAnthropicKey(opts.tenantId);
   if (!apiKey) return { scores: [], note: 'LLM-разметка: ключ Claude не задан — эвристика' };
   const list = segs.map((t, i) => `${i}: ${t.slice(0, 180) || '(без текста)'}`).join('\n');
+  const trendCtx = String(opts.trendBrief || '').trim().slice(0, 1600);
   const system =
     'Ты — режиссёр коротких вертикальных UGC-роликов. На вход — сегменты ОДНОГО скрипта по порядку. ' +
     'Оцени, какие сегменты важнее всего показать крупным планом на ПРЕМИУМ-аватаре (максимум доверия и качества): ' +
     'крючок в самом начале, момент реального ДЕЙСТВИЯ/демонстрации («показываю», «смотрите», «вот как»), и призыв в конце — высокий балл; ' +
     'связки, факты и общие фразы — низкий, их и так покажем на дешёвом аватаре или видео. ' +
+    (trendCtx ? 'Ролик делается по разбору вирусного тренда (ниже) — приоритет отдай моментам, повторяющим его формулу успеха. ' : '') +
     `Верни СТРОГО JSON-массив, максимум ${Math.max(1, opts.ivMax)} объектов (только реально важные), и ничего больше: ` +
     '[{"i":<индекс сегмента>,"role":"hook|action|cta","score":<0..100>}].';
   try {
-    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user: `Сегменты:\n${list}`, maxTokens: 700 });
+    const user = (trendCtx ? `Разбор тренда:\n${trendCtx}\n\n` : '') + `Сегменты:\n${list}`;
+    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user, maxTokens: 700 });
     const arr = extractJsonArray(raw);
     if (!arr) return { scores: [], note: 'LLM-разметка: не JSON — эвристика' };
     const why = (r: string) => (r === 'hook' ? 'крючок → IV' : r === 'cta' ? 'призыв → IV' : 'ключевое действие → IV');

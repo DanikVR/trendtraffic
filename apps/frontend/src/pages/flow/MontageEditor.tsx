@@ -585,7 +585,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
     const useVoiceover = !!ugc.noAvatar;
     const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     if (useVoiceover) {
-      if (!ugc.clip) { setUgcNote('Выберите базовое видео (шаг «Видеоряд») — в этом режиме оно основа кадра.'); return; }
+      if (!ugc.clip && !ugc.clipImages.length) { setUgcNote('Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.'); return; }
     } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
       if (!ugc.photoUrl || !ugc.photoBUrl) { setUgcNote('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
@@ -601,12 +601,18 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
       if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
     }
     const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
+    // «Использовать анализ»: снимок ДНК тренда для серверной режиссуры (Монтаж).
+    // Скрипт/видео/титры анализ влияет ещё НА ЭТАПЕ настройки (генерация текста,
+    // подстановка видео, wishes) — сюда едет только то, что решает сервер.
+    const analysisForBuild = ugc.analysis && ugc.analysisUse.retention
+      ? { use: ugc.analysisUse, brief: ugc.analysis.brief, hookAnalysis: ugc.analysis.hookAnalysis }
+      : undefined;
     // Диалог → spec.dialogue; удержание → spec.retention (+ B-roll для батча); иначе обычная сборка.
     const spec = useDialogue
-      ? { ...ugc, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, cutout: ugc.dialogueCutout, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }
+      ? { ...ugc, analysis: analysisForBuild, dialogue: { enabled: true, engagement: ugc.dialogueEngagement, cutout: ugc.dialogueCutout, photoA: ugc.photoUrl, photoB: ugc.photoBUrl } }
       : useRetention
-        ? { ...ugc, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
-        : ugc;
+        ? { ...ugc, analysis: analysisForBuild, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
+        : { ...ugc, analysis: analysisForBuild };
     setUgcBusy('render'); setUgcNote(useDialogue ? 'Запускаю диалог (два аватара)…' : useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
     try {
       const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec }) });
@@ -623,11 +629,21 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
   }, [loading, cloudPanel, ugc.buildJobId]);
   useEffect(() => () => { if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); }, []);
   // Скрипт аватара: генерация текста (переиспользуем /podcast/dialogue) → реплики одного спикера.
+  // Галочка «Использовать анализ» (блок «Голос и текст»): в бриф подмешивается ДНК тренда —
+  // формула успеха + готовый черновик озвучки из разбора, Claude пишет «по мотивам».
   const ugcGenScript = async () => {
     if (ugcBusy) return;
     setUgcBusy('dialogue'); setUgcNote(null);
+    const dnaBrief = ugc.analysis && ugc.analysisUse.script
+      ? [
+        ugc.brief.trim(),
+        '— Разбор вирусного тренда (следуй его формуле успеха): —',
+        ugc.analysis.brief || '',
+        ugc.analysis.copyReadyScript ? `Возьми за основу готовый скрипт тренда (перепиши под нас, не копируй дословно): «${ugc.analysis.copyReadyScript}»` : '',
+      ].filter(Boolean).join('\n')
+      : ugc.brief;
     try {
-      const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(), body: JSON.stringify({ brief: ugc.brief, turns: 6 }) });
+      const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(), body: JSON.stringify({ brief: dnaBrief, turns: 6 }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
       const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: 'A' as const, text: String(l.text || '') })).filter((l: PodLine) => l.text.trim()) : [];
@@ -763,6 +779,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: {
               avatarProvider: 'gallery',
               script: Array.isArray(uu.script) ? uu.script : [],
               subtitles: { ...UGC_DEFAULT.subtitles, ...(uu.subtitles || {}) },
+              clipImages: Array.isArray(uu.clipImages) ? uu.clipImages.filter((x: any) => x && typeof x.url === 'string') : [],
+              analysisUse: { ...UGC_DEFAULT.analysisUse, ...(uu.analysisUse || {}) },
             });
           }
           if (d.flow.graph?.hotebook && typeof d.flow.graph.hotebook === 'object') {

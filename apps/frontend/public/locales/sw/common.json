@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar hutozwa mara moja kwa mfululizo mzima.",
       "voiceoverBase": "Katika hali hii, video ndiyo msingi wa fremu: sauti na manukuu huwekwa juu.",
       "emptyTitle": "Video bado haijapakiwa",
-      "emptySub": "chagua kutoka kwenye Ghala"
+      "emptySub": "chagua kutoka kwenye Ghala",
+      "photosTitle": "Onyesho la picha",
+      "photosSub": "picha moja — fremu tuli, kadhaa — mzunguko wenye alama za msalaba",
+      "photosOne": "Picha 1 — fremu tulivu",
+      "photosCount_one": "{{count}} picha — mizunguko yenye ufifishaji msalaba",
+      "photosCount_other": "{{count}} picha — mzunguko wenye ufifishaji msalaba",
+      "photosVsVideo": "Video na picha zilizochaguliwa — video inashinda (picha zinapuuzwa)."
     },
     "subtitles": {
       "title": "Manukuu",
@@ -1403,7 +1409,9 @@
       "outro": "Bamba la nje",
       "layer": "Safu ya juu (PNG)",
       "layerNote": "PNG inayoonekana wazi iliyoandaliwa kwa ajili ya umbizo la fremu — itawekwa juu ya video nzima.",
-      "bumperNote": "Imeambatishwa kwenye video kama ilivyo, hakuna usindikaji."
+      "bumperNote": "Imeambatishwa kwenye video kama ilivyo, hakuna usindikaji.",
+      "clipImagesTitle": "Picha za onyesho la slaidi",
+      "clipImagesNote": "Bofya ili kuchukua hadi picha 12 — chagua mpangilio = mpangilio wa uchezaji. Picha moja inakuwa fremu tulivu."
     },
     "progress": {
       "title": "Kuunda video yako…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muziki",
       "chipSubtitles": "Manukuu",
       "chipVoice": "Sauti"
+    },
+    "analysis": {
+      "title": "Uchambuzi wa mitindo",
+      "sub": "fomula ya mafanikio → katika vitalu",
+      "empty": "Hakuna uchanganuzi wa mitindo uliochaguliwa",
+      "emptySub": "chagua kutoka kwa uchambuzi wako",
+      "pickTitle": "Chagua uchanganuzi wa mitindo",
+      "pickSub": "Uchambuzi uliohifadhiwa kutoka ukurasa wa Mitindo. Uchanganuzi uliochaguliwa hulisha vizuizi vya studio — visanduku vya kuteua huamua mahali haswa.",
+      "none": "Hakuna uchanganuzi bado — chambua video kwenye ukurasa wa Mitindo (kichupo cha Uchanganuzi).",
+      "framesBadge": "kiwango cha fremu",
+      "useScript": "Hati kutoka kwa uchambuzi",
+      "useScriptSub": "Uundaji wa hati hufuata fomula ya mwelekeo na rasimu yake tayari",
+      "useVideo": "Video ya mtindo kama picha",
+      "useVideoSub": "Video ya mtindo iliyopakuliwa inakuwa video",
+      "useSubtitles": "Mtindo wa kichwa kidogo kutoka kwa uchanganuzi",
+      "useSubtitlesSub": "mtindo wa kuona wa mitindo → manukuu ya matakwa",
+      "useRetention": "Montage inayoongoza kutoka kwa uchambuzi",
+      "useRetentionSub": "ndoano/kitendo/CTA vimetambulishwa kwa kuzingatia uchanganuzi"
+    },
+    "tpl": {
+      "button": "Kiolezo",
+      "tooltip": "Violezo: hifadhi usanidi mzima wa studio na uwashe uchapishaji otomatiki wa mitindo",
+      "title": "Violezo vya UGC",
+      "sub": "Kiolezo huhifadhi mipangilio YOTE ya studio (hali, manukuu, muziki, visanduku vya kuteua vya uchambuzi). Kuchapisha kiotomatiki huiunganisha na uchanganuzi kiotomatiki wa mtindo — video hujijenga zenyewe.",
+      "empty": "Hakuna templeti bado — hifadhi usanidi wa sasa hapa chini.",
+      "apply": "Tuma maombi",
+      "autopubOn": "Washa uchapishaji kiotomatiki",
+      "source": "Chanzo",
+      "sourceNone": "— chagua chanzo —",
+      "sourceTrends": "Mitindo",
+      "sourcePaused": "imesitishwa",
+      "lang": "Lugha ya video",
+      "langHint": "hati imeandikwa katika lugha hii mara moja",
+      "autopubHint": "Uchambuzi otomatiki hupata video mpya ya mitindo → uchanganuzi → video imejengwa kutoka kwa kiolezo hiki (sehemu ya \"Otomatiki\" katika Ghala). Vyanzo zaidi zaidi ya Mitindo vinakuja baadaye.",
+      "noWatches": "Hakuna uchanganuzi otomatiki bado — wezesha moja kwenye ukurasa wa Mitindo (Kizuizi cha uchanganuzi otomatiki).",
+      "saveCurrent": "Hifadhi mipangilio ya sasa kama kiolezo",
+      "namePlaceholder": "Jina la kiolezo",
+      "keywordPlaceholder": "Neno muhimu la mtindo (beji kwenye kadi)",
+      "save": "Hifadhi kiolezo",
+      "note": "Violezo vinapatikana moja kwa moja kwenye Ghala → UGC → “Otomatiki” karibu na video otomatiki.",
+      "defaultName": "Kiolezo changu"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar bütün seriya üçün bir dəfə göstərilir.",
       "voiceoverBase": "Bu rejimdə video kadrın əsasını təşkil edir: səs və altyazılar yuxarıda göstərilir.",
       "emptyTitle": "Video hələ yüklənməyib",
-      "emptySub": "Qalereyadan seçin"
+      "emptySub": "Qalereyadan seçin",
+      "photosTitle": "Foto slaydşou",
+      "photosSub": "bir foto — hərəkətsiz çərçivə, bir neçə — çarpaz fade ilə dövrə vurun",
+      "photosOne": "1 şəkil — foto çərçivə",
+      "photosCount_one": "{{count}} foto — çarpaz fadelərlə dövrələr",
+      "photosCount_other": "{{count}} şəkillər — çarpaz fades ilə dövrə vurun",
+      "photosVsVideo": "Həm video, həm də fotolar seçilir — video qalib gəlir (fotolar nəzərə alınmır)."
     },
     "subtitles": {
       "title": "Altyazılar",
@@ -1403,7 +1409,9 @@
       "outro": "Xarici bamper",
       "layer": "Üst təbəqə (PNG)",
       "layerNote": "Kadr formatı üçün hazırlanmış şəffaf PNG — bütün videonun üzərində yerləşəcək.",
-      "bumperNote": "Videoya olduğu kimi əlavə olunub, emal olunmur."
+      "bumperNote": "Videoya olduğu kimi əlavə olunub, emal olunmur.",
+      "clipImagesTitle": "Slayd şousu üçün şəkillər",
+      "clipImagesNote": "12-yə qədər şəkil götürmək üçün klikləyin — sıranı seçin = oxutma sırası. Tək bir şəkil sabit bir çərçivəyə çevrilir."
     },
     "progress": {
       "title": "Videonuz yaradılır...",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musiqi",
       "chipSubtitles": "Altyazılar",
       "chipVoice": "Səs"
+    },
+    "analysis": {
+      "title": "Trend təhlili",
+      "sub": "uğur düsturu → bloklara",
+      "empty": "Trend bölgüsü seçilməyib",
+      "emptySub": "təhlillərinizdən seçin",
+      "pickTitle": "Trend bölgüsünü seçin",
+      "pickSub": "Trendlər səhifəsindən saxlanılan təhlillər. Seçilmiş bölmə studiya bloklarını qidalandırır — onay qutuları dəqiq harada olduğunu müəyyən edir.",
+      "none": "Hələ təhlil yoxdur — Trendlər səhifəsində (Analitika sekmesi) videonu təhlil edin.",
+      "framesBadge": "çərçivə səviyyəsində",
+      "useScript": "Analizdən ssenari",
+      "useScriptSub": "Skript generasiyası trend formulunu və hazır layihəsini izləyir",
+      "useVideo": "Trend video görüntü kimi",
+      "useVideoSub": "Yüklənmiş trend videosu görüntülərə çevrilir",
+      "useSubtitles": "Altyazı üslubu",
+      "useSubtitlesSub": "trend vizual stil → altyazı istəkləri",
+      "useRetention": "Analizdən montaj rejissorluğu",
+      "useRetentionSub": "Qarmaq/hərəkət/CTA bölmələri nəzərə alınmaqla etiketlənir"
+    },
+    "tpl": {
+      "button": "Şablon",
+      "tooltip": "Şablonlar: bütün studiya quruluşunu yadda saxlayın və trendlərin avtomatik nəşrini aktivləşdirin",
+      "title": "UGC şablonları",
+      "sub": "Şablon BÜTÜN studiya parametrlərini (rejim, altyazılar, musiqi, təhlil qutuları) saxlayır. Avtomatik dərc etmə onu trend avtomatik təhlili ilə əlaqələndirir — videolar öz-özünə qurulur.",
+      "empty": "Hələ şablon yoxdur — cari quraşdırmanı aşağıda yadda saxlayın.",
+      "apply": "Tətbiq edin",
+      "autopubOn": "Avtomatik nəşri aktivləşdirin",
+      "source": "Mənbə",
+      "sourceNone": "— mənbə seçin —",
+      "sourceTrends": "Trendlər",
+      "sourcePaused": "fasilə verildi",
+      "lang": "Video dili",
+      "langHint": "ssenari dərhal bu dildə yazılıb",
+      "autopubHint": "Avtomatik analiz yeni trend videosu tapır → təhlil → bu şablondan (Qalereyadakı \"Avtomatik\" bölməsi) video qurulur. Trendlərdən başqa daha çox mənbə daha sonra təqdim olunacaq.",
+      "noWatches": "Hələlik avtomatik təhlil yoxdur — Trendlər səhifəsində (Avtomatik təhlil bloku) birini aktivləşdirin.",
+      "saveCurrent": "Mövcud parametrləri şablon kimi yadda saxla",
+      "namePlaceholder": "Şablon adı",
+      "keywordPlaceholder": "Trend açar sözü (kartdakı nişan)",
+      "save": "Şablonu yadda saxla",
+      "note": "Şablonlar Qalereya → İstifadəçi Ugc → Avtomatik videoların yanında \"Avtomatik\" bölməsində yerləşir.",
+      "defaultName": "Şablonum"
     }
   }
 }

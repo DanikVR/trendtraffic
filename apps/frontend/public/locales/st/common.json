@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar e lefisoa hanngoe bakeng sa letoto lohle.",
       "voiceoverBase": "Mokgweng ona video ke motheo wa foreimi: lentswe le di-subtitle di ya hodimo.",
       "emptyTitle": "Video ha e so kenngoe",
-      "emptySub": "khetha ho tsoa ho Gallery"
+      "emptySub": "khetha ho tsoa ho Gallery",
+      "photosTitle": "Setaele sa foto",
+      "photosSub": "foto e le 'ngoe — foreimi e sa sisinyeheng, tse 'maloa — potoloho e nang le ho fifala ha matheba",
+      "photosOne": "Foto e le 1 — foreimi e sa sisinyeheng",
+      "photosCount_one": "{{count}} foto — lipotoloho tse nang le ho fifala ha sefapano",
+      "photosCount_other": "{{count}} linepe — potoloho e nang le ho fifala ha sefapano",
+      "photosVsVideo": "Video le linepe tse khethiloeng ka bobeli — video e ea hlola (linepe lia hlokomolohuoa)."
     },
     "subtitles": {
       "title": "Lihlooho tse ka tlase",
@@ -1403,7 +1409,9 @@
       "outro": "Bampara ea kantle",
       "layer": "Lera le ka hodimo (PNG)",
       "layerNote": "PNG e bonaletsang e lokiseditsweng sebopeho sa foreimi — e tla dula hodima video yohle.",
-      "bumperNote": "E hoketsoe videong kamoo e leng kateng, ha ho na ts'ebetso."
+      "bumperNote": "E hoketsoe videong kamoo e leng kateng, ha ho na ts'ebetso.",
+      "clipImagesTitle": "Lifoto tsa slideshow",
+      "clipImagesNote": "Tobetsa ho nka ditshwantsho tse fihlang ho tse 12 — kgetha odara = odara ya ho bapala. Foto e le nngwe e fetoha foreimi e sa sisinyeheng."
     },
     "progress": {
       "title": "Ho theha video ea hau…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "'Mino",
       "chipSubtitles": "Lihlooho tse ka tlase",
       "chipVoice": "Lentsoe"
+    },
+    "analysis": {
+      "title": "Tlhahlobo ea mekhoa",
+      "sub": "mokhoa oa katleho → ka har'a liboloko",
+      "empty": "Ha ho khethoe tlhaloso ea mekhoa",
+      "emptySub": "khetha ho tsoa ho litlhahlobo tsa hau",
+      "pickTitle": "Khetha tlhaloso ea mokhoa",
+      "pickSub": "Litlhahlobo tse bolokiloeng ho tsoa leqepheng la Mekhoa. Tlhaloso e khethiloeng e fepa li-block tsa studio - mabokose a ho hlahloba a etsa qeto ea hore na ke hokae hantle.",
+      "none": "Ha ho na tlhahlobo hajwale — sekaseka video leqepheng la Mekhoa (tab ea Analytics).",
+      "framesBadge": "boemo ba foreimi",
+      "useScript": "Sengoloa ho tsoa tlhahlobong",
+      "useScriptSub": "tlhahiso ea sengoloa e latela mokhoa oa mokhoa le moralo oa eona o seng o loketse",
+      "useVideo": "Video e tummeng e le filimi",
+      "useVideoSub": "Video ea mokhoa o jarollotsoeng e fetoha filimi",
+      "useSubtitles": "Setaele sa sehloohoana ho tsoa tlhalosong e qaqileng",
+      "useSubtitlesSub": "setaele sa pono sa mokhoa → litakatso tsa sehloohoana",
+      "useRetention": "Montage e tataisang ho tsoa tlhahlobong",
+      "useRetentionSub": "hook/action/CTA li tšoailoe ka ho nahana ka karohano"
+    },
+    "tpl": {
+      "button": "Template",
+      "tooltip": "Litempele: boloka setaele sohle sa studio 'me u nolofalletse ho phatlalatsa mokhoa o iketsang",
+      "title": "Litempele tsa UGC",
+      "sub": "Template e boloka litlhophiso TSOHLE tsa studio (mokhoa, lingoloa tse ka tlase, 'mino, mabokose a tlhahlobo ea tlhahlobo). Ho phatlalatsa ka bohona ho e hokahanya le tlhahlobo ea bohona ea mokhoa - livideo lia iketsetsa.",
+      "empty": "Ha ho na dithempleite hajwale — boloka setaele sa hajwale ka tlase.",
+      "apply": "Etsa kopo",
+      "autopubOn": "Nolofatsa ho phatlalatsa ka bohona",
+      "source": "Mohloli",
+      "sourceNone": "— khetha mohloli —",
+      "sourceTrends": "Mekhoa",
+      "sourcePaused": "e emisitsoe",
+      "lang": "Puo ea video",
+      "langHint": "sengoloa se ngotsoe ka puo ena hang-hang",
+      "autopubHint": "Tlhahlobo e iketsang e fumana video e ncha ea mokhoa → tlhaloso → video e hahiloe ho tsoa ho template ena (karolo ea \"Otomatiki\" ho Gallery). Mehloli e meng e fetang Mekhoa e tla tla hamorao.",
+      "noWatches": "Ha ho na tlhahlobo e iketsang hajwale — e nolofalletse leqepheng la Mekhoa (boloko ea tlhahlobo e iketsang).",
+      "saveCurrent": "Boloka litlhophiso tsa hajoale e le template",
+      "namePlaceholder": "Lebitso la template",
+      "keywordPlaceholder": "Lentsoe la bohlokoa la mokhoa (beche kareteng)",
+      "save": "Boloka thempleite",
+      "note": "Dithempleite di phela ho Gallery → UGC → “Auto” pela divideo tse iketsang.",
+      "defaultName": "Setšoantšo sa ka"
     }
   }
 }

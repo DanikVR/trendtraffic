@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatars tiek apmaksāts vienu reizi par visu sēriju.",
       "voiceoverBase": "Šajā režīmā video ir kadra pamatā: balss un subtitri atrodas augšpusē.",
       "emptyTitle": "Video vēl nav augšupielādēts",
-      "emptySub": "izvēlēties no galerijas"
+      "emptySub": "izvēlēties no galerijas",
+      "photosTitle": "Fotoattēlu slaidrāde",
+      "photosSub": "viens fotoattēls — statisks kadrs, vairāki — cikls ar pārejām",
+      "photosOne": "1 fotoattēls — statisks kadrs",
+      "photosCount_one": "{{count}} fotoattēls — cikli ar pārejām",
+      "photosCount_other": "{{count}} fotoattēli — cikls ar pārejām",
+      "photosVsVideo": "Izvēlēts gan video, gan fotoattēli — uzvar video (fotoattēli tiek ignorēti)."
     },
     "subtitles": {
       "title": "Subtitri",
@@ -1403,7 +1409,9 @@
       "outro": "Ārējais bamperis",
       "layer": "Augšējais slānis (PNG)",
       "layerNote": "Caurspīdīgs PNG fails, kas sagatavots kadra formātam — tas pārklās visu video.",
-      "bumperNote": "Pievienots video tādā veidā, kā ir, bez apstrādes."
+      "bumperNote": "Pievienots video tādā veidā, kā ir, bez apstrādes.",
+      "clipImagesTitle": "Slaidrādes fotoattēli",
+      "clipImagesNote": "Noklikšķiniet, lai izvēlētos līdz 12 attēliem — izvēles secība = atskaņošanas secība. Viens fotoattēls kļūst par statisku kadru."
     },
     "progress": {
       "title": "Notiek videoklipa izveide…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Mūzika",
       "chipSubtitles": "Subtitri",
       "chipVoice": "Balss"
+    },
+    "analysis": {
+      "title": "Tendenču analīze",
+      "sub": "veiksmes formula → blokos",
+      "empty": "Nav atlasīts tendenču sadalījums",
+      "emptySub": "izvēlieties no savām analīzēm",
+      "pickTitle": "Izvēlieties tendences sadalījumu",
+      "pickSub": "Saglabātās analīzes no lapas “Tendences”. Izvēlētais sadalījums tiek izmantots studijas blokos — izvēles rūtiņas nosaka precīzu vietu.",
+      "none": "Vēl nav analīžu — analizējiet videoklipu lapā Tendences (cilnē Analītika).",
+      "framesBadge": "kadra līmenī",
+      "useScript": "Skripts no analīzes",
+      "useScriptSub": "skriptu ģenerēšana seko tendences formulai un tās gatavajam melnrakstam",
+      "useVideo": "Trend video kā kadrs",
+      "useVideoSub": "Lejupielādētais tendenču video kļūst par videoierakstu",
+      "useSubtitles": "Subtitru stils no sadalījuma",
+      "useSubtitlesSub": "Vizuālā stila tendences → apakšvirsraksta vēlmes",
+      "useRetention": "Montāžas režija no analīzes",
+      "useRetentionSub": "āķis/darbība/CTA ir atzīmēti, ņemot vērā sadalījumu"
+    },
+    "tpl": {
+      "button": "Veidne",
+      "tooltip": "Veidnes: saglabājiet visu studijas iestatījumu un iespējojiet tendenču automātisko publicēšanu",
+      "title": "Lietotāju veidotas veidnes",
+      "sub": "Veidnē tiek glabāti VISI studijas iestatījumi (režīms, subtitri, mūzika, analīzes izvēles rūtiņas). Automātiskā publicēšana to saista ar tendences automātisko analīzi — video tiek veidoti paši.",
+      "empty": "Vēl nav veidņu — saglabājiet pašreizējo iestatījumu zemāk.",
+      "apply": "Pieteikties",
+      "autopubOn": "Iespējot automātisko publicēšanu",
+      "source": "Avots",
+      "sourceNone": "— izvēlieties avotu —",
+      "sourceTrends": "Tendences",
+      "sourcePaused": "apturēts",
+      "lang": "Video valoda",
+      "langHint": "skripts ir uzrakstīts šajā valodā uzreiz",
+      "autopubHint": "Automātiskā analīze atrod jaunu tendenču video → sadalījums → video tiek izveidots no šīs veidnes (sadaļa “Automātiski” galerijā). Vēlāk būs pieejami vēl citi avoti, kas nav tikai tendences.",
+      "noWatches": "Vēl nav automātisko analīžu — iespējojiet vienu tendenču lapā (automātiskās analīzes bloks).",
+      "saveCurrent": "Saglabāt pašreizējos iestatījumus kā veidni",
+      "namePlaceholder": "Veidnes nosaukums",
+      "keywordPlaceholder": "Tendences atslēgvārds (emblēma uz kartītes)",
+      "save": "Saglabāt veidni",
+      "note": "Veidnes atrodas sadaļā Galerija → Lietotāju veidots saturs → “Automātiski” blakus automātiskajiem videoklipiem.",
+      "defaultName": "Mana veidne"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar inobhadhariswa kamwe chete panhevedzano yese.",
       "voiceoverBase": "Mumuitiro uyu vhidhiyo ndiyo hwaro hwefuremu: izwi nezvinyorwa zvinoiswa pamusoro.",
       "emptyTitle": "Vhidhiyo haisati yaiswa",
-      "emptySub": "sarudza kubva kuGallery"
+      "emptySub": "sarudza kubva kuGallery",
+      "photosTitle": "Mufananidzo weslideshow",
+      "photosSub": "mufananidzo mumwe chete — furemu isina kusimba, akati wandei — denderedzwa rine crossfades",
+      "photosOne": "Mufananidzo 1 — furemu isina kusimba",
+      "photosCount_one": "{{count}} mufananidzo — madenderedzwa ane ma crossfade",
+      "photosCount_other": "{{count}} mapikicha — tenderera ne crossfades",
+      "photosVsVideo": "Vhidhiyo nemifananidzo zvakasarudzwa — vhidhiyo yacho inokunda (mifananidzo haicherechedzwi)."
     },
     "subtitles": {
       "title": "Manyoro enyaya",
@@ -1403,7 +1409,9 @@
       "outro": "Bhampa rekunze",
       "layer": "Rutivi rwepamusoro (PNG)",
       "layerNote": "PNG inoonekera yakagadzirirwa fomati yefuremu — ichagara pamusoro pevhidhiyo yese.",
-      "bumperNote": "Yakabatanidzwa pavhidhiyo sezvairi, hapana kugadziriswa."
+      "bumperNote": "Yakabatanidzwa pavhidhiyo sezvairi, hapana kugadziriswa.",
+      "clipImagesTitle": "Mifananidzo yeslideshow",
+      "clipImagesNote": "Dzvanya kuti utore mifananidzo inosvika gumi nemiviri — sarudza odha = rodha rekutamba. Mufananidzo mumwe chete unova furemu isina kusimba."
     },
     "progress": {
       "title": "Kugadzira vhidhiyo yako…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Mimhanzi",
       "chipSubtitles": "Manyoro enyaya",
       "chipVoice": "Inzwi"
+    },
+    "analysis": {
+      "title": "Kuongorora maitiro",
+      "sub": "fomura yekubudirira → muzvikamu",
+      "empty": "Hapana kupatsanurwa kwemafashoni kwakasarudzwa",
+      "emptySub": "sarudza kubva muongororo dzako",
+      "pickTitle": "Sarudza kupatsanurwa kwemafambiro",
+      "pickSub": "Ongororo dzakachengetwa kubva papeji reTrends. Kupatsanurwa kwakasarudzwa kunopa mabhuroko estudio - mabhokisi ekutarisa anosarudza kuti ndekupi chaizvo.",
+      "none": "Hapana ongororo parizvino — ongorora vhidhiyo papeji reTrends (tab yeAnalytics).",
+      "framesBadge": "nhanho yefuremu",
+      "useScript": "Chinyorwa kubva pakuongorora",
+      "useScriptSub": "Kugadzirwa kwescript kunotevera fomura yemaitiro uye dhizaini yayo yakagadzirira",
+      "useVideo": "Vhidhiyo yefashoni semafirimu",
+      "useVideoSub": "Vhidhiyo yefashoni yakatorwa inova vhidhiyo",
+      "useSubtitles": "Manyorerwo emusoro wenyaya kubva pakupatsanurwa",
+      "useSubtitlesSub": "maitiro ekuona ari mufashoni → zvishuwo zvemuchidimbu",
+      "useRetention": "Kutungamira kubva pakuongorora kweMontage",
+      "useRetentionSub": "hook/action/CTA dzakatarwa nepfungwa yekupatsanurwa kwemazwi"
+    },
+    "tpl": {
+      "button": "Template",
+      "tooltip": "Matemplate: chengetedza zvese zviri mustudio uye bvumira kuburitswa kwezvinoitika otomatiki",
+      "title": "Matemplate eUGC",
+      "sub": "Template inochengetedza marongero ese estudio (mode, subtitles, music, analysis checkboxs). Kuburitsa otomatiki kunobatanidza ne trend auto-analysis — mavhidhiyo anozvivaka ega.",
+      "empty": "Hapana matemplate parizvino — chengetedza gadziriro iripo pazasi.",
+      "apply": "Isa chikumbiro",
+      "autopubOn": "Bvumira kuburitswa kwega kwega",
+      "source": "Manyuko",
+      "sourceNone": "— sarudza kwaunobva —",
+      "sourceTrends": "Mafambiro",
+      "sourcePaused": "yambomiswa",
+      "lang": "Mutauro wevhidhiyo",
+      "langHint": "chinyorwa chacho chakanyorwa nemutauro uyu ipapo ipapo",
+      "autopubHint": "Kuongorora otomatiki kunowana vhidhiyo itsva yemaitiro → kupatsanurwa → vhidhiyo yakavakwa kubva patemplate iyi (chikamu che \"Auto\" muGallery). Mamwe masosi anopfuura Maitiro anouya gare gare.",
+      "noWatches": "Hapana kuongororwa otomatiki parizvino — shandisa imwe pane peji reTrends (Auto-analysis block).",
+      "saveCurrent": "Chengetedza marongero aripo se template",
+      "namePlaceholder": "Zita retemplate",
+      "keywordPlaceholder": "Izwi guru reTrend (bheji riri pakadhi)",
+      "save": "Chengetedza template",
+      "note": "Matemplate aripo muGallery → UGC → \"Auto\" padivi pemavhidhiyo ega ega.",
+      "defaultName": "Template yangu"
     }
   }
 }

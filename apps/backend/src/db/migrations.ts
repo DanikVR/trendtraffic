@@ -802,6 +802,75 @@ const MIGRATIONS: Migration[] = [
   { name: 'cull_v2.drop_render_jobs', sql: `DROP TABLE IF EXISTS render_jobs` },
   { name: 'cull_v2.drop_gpu_studio_jobs', sql: `DROP TABLE IF EXISTS gpu_studio_jobs` },
   { name: 'cull_v2.drop_asset_captions', sql: `DROP TABLE IF EXISTS asset_captions` },
+
+  // ── Конвейер «тренд → автоанализ → UGC» (автопилот трендов) ──────────────────
+  // trend_watches — «автоанализ ключевика»: по расписанию сканируем тренды и
+  // анализируем ОДНО новое (ещё не анализированное) видео. Enterprise-only.
+  {
+    name: 'trend_watches.table',
+    sql: `CREATE TABLE IF NOT EXISTS trend_watches (
+      id UUID PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      keyword VARCHAR(255) NOT NULL,
+      platform VARCHAR(32) NOT NULL DEFAULT 'tiktok',
+      scan_params JSONB NOT NULL DEFAULT '{}',
+      interval_minutes INT NOT NULL DEFAULT 1440,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      daily_cap INT NOT NULL DEFAULT 5,
+      last_run_at TIMESTAMPTZ,
+      next_run_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      last_error TEXT,
+      fail_streak INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'trend_watches.due_idx', sql: `CREATE INDEX IF NOT EXISTS idx_trend_watches_due ON trend_watches (enabled, next_run_at)` },
+  { name: 'trend_watches.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_trend_watches_tenant ON trend_watches (tenant_id, created_at DESC)` },
+
+  // ugc_templates — «автоматический шаблон UGC»: полный UgcSpec-снимок + ключевик
+  // тренда (бейдж на карточке) + настройки автопубликации (источник расширяемый:
+  // сейчас trend_watch, в будущем — другие). НЕ путать с brand_kits (те — только оформление).
+  {
+    name: 'ugc_templates.table',
+    sql: `CREATE TABLE IF NOT EXISTS ugc_templates (
+      id BIGSERIAL PRIMARY KEY,
+      tenant_id VARCHAR(255) NOT NULL,
+      name VARCHAR(120) NOT NULL,
+      trend_keyword VARCHAR(120),
+      spec JSONB NOT NULL DEFAULT '{}',
+      autopublish JSONB NOT NULL DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'ugc_templates.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_ugc_templates_tenant ON ugc_templates (tenant_id, created_at DESC)` },
+
+  // auto_runs — журнал прогонов конвейера (статус-машина; переживает рестарт бэкенда).
+  // Один прогон = один цикл watch: скан → выбор нового видео → скачивание+анализ →
+  // (опц.) сборка UGC по шаблону. picked_external_id участвует в анти-повторе.
+  {
+    name: 'auto_runs.table',
+    sql: `CREATE TABLE IF NOT EXISTS auto_runs (
+      id UUID PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      watch_id UUID REFERENCES trend_watches(id) ON DELETE CASCADE,
+      status VARCHAR(24) NOT NULL DEFAULT 'scanning',
+      picked_platform VARCHAR(32),
+      picked_external_id VARCHAR(128),
+      picked_url TEXT,
+      asset_id UUID,
+      analysis_id UUID,
+      template_id BIGINT,
+      result_asset_id UUID,
+      result_urls JSONB,
+      note TEXT,
+      error TEXT,
+      started_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      finished_at TIMESTAMPTZ
+    )`,
+  },
+  { name: 'auto_runs.watch_idx', sql: `CREATE INDEX IF NOT EXISTS idx_auto_runs_watch ON auto_runs (watch_id, started_at DESC)` },
+  { name: 'auto_runs.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_auto_runs_tenant ON auto_runs (tenant_id, started_at DESC)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

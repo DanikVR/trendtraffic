@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatari paraqitet një herë për të gjithë serialin.",
       "voiceoverBase": "Në këtë modalitet, videoja është baza e kuadrit: zëri dhe titrat shkojnë sipër.",
       "emptyTitle": "Videoja nuk është ngarkuar ende",
-      "emptySub": "zgjidh nga Galeria"
+      "emptySub": "zgjidh nga Galeria",
+      "photosTitle": "Slideshow me foto nga njëra anë, nga ana tjetër. Prezantim me diapozitivë fotografish. Prezantim me diapozit",
+      "photosSub": "një foto — një kornizë statike, disa — cikël me zbehje të kryqëzuara",
+      "photosOne": "1 foto — kornizë statike",
+      "photosCount_one": "Fotografia {{count}} — cikle me zbehje të kryqëzuara",
+      "photosCount_other": "Fotot e {{count}} — cikli me zbehje të kryqëzuara",
+      "photosVsVideo": "Si videoja ashtu edhe fotot zgjidhen — videoja fiton (fotot injorohen)."
     },
     "subtitles": {
       "title": "Titra",
@@ -1403,7 +1409,9 @@
       "outro": "Parakolpi Outro",
       "layer": "Shtresa e sipërme (PNG)",
       "layerNote": "Një PNG transparent i përgatitur për formatin e kornizës — do të vendoset mbi të gjithë videon.",
-      "bumperNote": "Bashkëngjitur videos siç është, pa përpunim."
+      "bumperNote": "Bashkëngjitur videos siç është, pa përpunim.",
+      "clipImagesTitle": "Foto për shfaqjen e diapozitivave",
+      "clipImagesNote": "Klikoni për të zgjedhur deri në 12 imazhe — zgjidhni rendin = rendin e riprodhimit. Një foto e vetme bëhet një kuadër statik."
     },
     "progress": {
       "title": "Duke krijuar videon tënde…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzikë",
       "chipSubtitles": "Titra",
       "chipVoice": "Zëri"
+    },
+    "analysis": {
+      "title": "Analiza e trendit",
+      "sub": "formula e suksesit → në blloqe",
+      "empty": "Nuk është zgjedhur asnjë ndarje e trendit",
+      "emptySub": "zgjidhni nga analizat tuaja",
+      "pickTitle": "Zgjidhni një ndarje të trendit",
+      "pickSub": "Analizat e ruajtura nga faqja e Trendeve. Blloqet e studios së zgjedhura të burimeve të ndarjes — kutitë e kontrollit përcaktojnë saktësisht se ku.",
+      "none": "Ende nuk ka analiza — analizoni një video në faqen Trendet (skeda Analitika).",
+      "framesBadge": "niveli i kornizës",
+      "useScript": "Skript nga analiza",
+      "useScriptSub": "Gjenerimi i skriptit ndjek formulën e trendit dhe draftin e tij të gatshëm",
+      "useVideo": "Video trendi si pamje filmike",
+      "useVideoSub": "Videoja e shkarkuar e trendit bëhet pamjet filmike",
+      "useSubtitles": "Stili i titrave nga ndarja",
+      "useSubtitlesSub": "stili vizual i trendit → dëshirat e titrave",
+      "useRetention": "Regjia e montazhit nga analiza",
+      "useRetentionSub": "hook/action/CTA janë etiketuar duke pasur parasysh ndarjen"
+    },
+    "tpl": {
+      "button": "Shabllon",
+      "tooltip": "Shabllone: ruani të gjithë konfigurimin e studios dhe aktivizoni publikimin automatik të trendeve",
+      "title": "Shabllone UGC",
+      "sub": "Një shabllon ruan TË GJITHA cilësimet e studios (modalitetin, titrat, muzikën, kutitë e kontrollit të analizës). Publikimi automatik e lidh atë me një analizë automatike të trendit — videot ndërtohen vetë.",
+      "empty": "Ende nuk ka shabllone — ruaj konfigurimin aktual më poshtë.",
+      "apply": "Zbato",
+      "autopubOn": "Aktivizo publikimin automatik",
+      "source": "Burimi",
+      "sourceNone": "— zgjidhni një burim —",
+      "sourceTrends": "Trendet",
+      "sourcePaused": "i ndaluar",
+      "lang": "Gjuha e videos",
+      "langHint": "skripti është shkruar menjëherë në këtë gjuhë",
+      "autopubHint": "Analiza automatike gjen një video të re trendi → ndarje → një video ndërtohet nga ky shabllon (seksioni \"Auto\" në Galeri). Më shumë burime përtej Trendeve do të vijnë më vonë.",
+      "noWatches": "Ende nuk ka analiza automatike — aktivizoni një në faqen Trendet (blloku i analizës automatike).",
+      "saveCurrent": "Ruaj cilësimet aktuale si shabllon",
+      "namePlaceholder": "Emri i shabllonit",
+      "keywordPlaceholder": "Fjalë kyçe trendi (distinktiv në kartë)",
+      "save": "Ruaj shabllonin",
+      "note": "Shabllonet ndodhen te Galeria → Përmbledhje e Përdoruar nga Përdoruesi → “Automatikisht” pranë videove automatike.",
+      "defaultName": "Shablloni im"
     }
   }
 }

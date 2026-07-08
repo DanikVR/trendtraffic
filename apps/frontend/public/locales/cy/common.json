@@ -1286,7 +1286,13 @@
       "seriesBilling": "Caiff yr avatar ei bilio unwaith am y gyfres gyfan.",
       "voiceoverBase": "Yn y modd hwn y fideo yw sylfaen y ffrâm: mae llais ac isdeitlau yn mynd ar ei ben.",
       "emptyTitle": "Fideo heb ei uwchlwytho eto",
-      "emptySub": "dewis o'r Oriel"
+      "emptySub": "dewis o'r Oriel",
+      "photosTitle": "Sleidiau sleidiau lluniau",
+      "photosSub": "un llun — ffrâm llonydd, sawl — cylch gyda chroes-bylu",
+      "photosOne": "1 llun — ffrâm llonydd",
+      "photosCount_one": "llun {{count}} — cylchoedd gyda chroes-bylu",
+      "photosCount_other": "lluniau {{count}} — cylchdroi gyda chroes-bylu",
+      "photosVsVideo": "Dewisir fideo a lluniau — y fideo sy'n ennill (anwybyddir lluniau)."
     },
     "subtitles": {
       "title": "Isdeitlau",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper Outro",
       "layer": "Haen uchaf (PNG)",
       "layerNote": "PNG tryloyw wedi'i baratoi ar gyfer y fformat ffrâm — bydd yn eistedd dros y fideo cyfan.",
-      "bumperNote": "Wedi'i atodi i'r fideo fel y mae, dim prosesu."
+      "bumperNote": "Wedi'i atodi i'r fideo fel y mae, dim prosesu.",
+      "clipImagesTitle": "Lluniau ar gyfer y sioe sleidiau",
+      "clipImagesNote": "Cliciwch i ddewis hyd at 12 delwedd — trefn dewis = trefn chwarae. Daw un llun yn ffrâm llonydd."
     },
     "progress": {
       "title": "Wrthi'n creu eich fideo…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Cerddoriaeth",
       "chipSubtitles": "Isdeitlau",
       "chipVoice": "Llais"
+    },
+    "analysis": {
+      "title": "Dadansoddiad tueddiadau",
+      "sub": "fformiwla llwyddiant → yn flociau",
+      "empty": "Dim dadansoddiad tuedd wedi'i ddewis",
+      "emptySub": "dewiswch o'ch dadansoddiadau",
+      "pickTitle": "Dewiswch ddadansoddiad o dueddiadau",
+      "pickSub": "Dadansoddiadau wedi'u cadw o'r dudalen Tueddiadau. Mae'r dadansoddiad a ddewiswyd yn bwydo blociau stiwdio — mae blychau ticio yn penderfynu'n union ble.",
+      "none": "Dim dadansoddiadau eto — dadansoddwch fideo ar y dudalen Tueddiadau (tab Dadansoddeg).",
+      "framesBadge": "lefel ffrâm",
+      "useScript": "Sgript o ddadansoddiad",
+      "useScriptSub": "mae cynhyrchu sgript yn dilyn fformiwla'r duedd a'i drafft parod",
+      "useVideo": "Fideo tuedd fel lluniau",
+      "useVideoSub": "y fideo tuedd wedi'i lawrlwytho yn dod yn ffilm",
+      "useSubtitles": "Arddull isdeitl o ddadansoddiad",
+      "useSubtitlesSub": "yr arddull weledol duedd → dymuniadau isdeitl",
+      "useRetention": "Montage yn cyfarwyddo o ddadansoddiad",
+      "useRetentionSub": "mae bachyn/gweithred/CTA wedi'u tagio gyda'r dadansoddiad mewn golwg"
+    },
+    "tpl": {
+      "button": "Templed",
+      "tooltip": "Templedi: arbedwch y drefniant stiwdio cyfan a galluogi cyhoeddi tueddiadau'n awtomatig",
+      "title": "Templedi Defnyddwyr Cynnyrch",
+      "sub": "Mae templed yn storio POB gosodiad stiwdio (modd, isdeitlau, cerddoriaeth, blychau ticio dadansoddi). Mae cyhoeddi awtomatig yn ei gysylltu ag awto-ddadansoddiad tueddiadau — mae fideos yn eu hadeiladu eu hunain.",
+      "empty": "Dim templedi eto — cadwch y gosodiad cyfredol isod.",
+      "apply": "Gwneud cais",
+      "autopubOn": "Galluogi cyhoeddi awtomatig",
+      "source": "Ffynhonnell",
+      "sourceNone": "— dewis ffynhonnell —",
+      "sourceTrends": "Tueddiadau",
+      "sourcePaused": "wedi'i oedi",
+      "lang": "Iaith fideo",
+      "langHint": "mae'r sgript wedi'i hysgrifennu yn yr iaith hon ar unwaith",
+      "autopubHint": "Mae dadansoddiad awtomatig yn dod o hyd i fideo tuedd ffres → dadansoddiad → mae fideo wedi'i adeiladu o'r templed hwn (yr adran \"Auto\" yn yr Oriel). Mwy o ffynonellau y tu hwnt i Dueddiadau yn dod yn ddiweddarach.",
+      "noWatches": "Dim dadansoddiadau awtomatig eto — galluogwch un ar y dudalen Tueddiadau (bloc dadansoddi awtomatig).",
+      "saveCurrent": "Cadw gosodiadau cyfredol fel templed",
+      "namePlaceholder": "Enw'r templed",
+      "keywordPlaceholder": "Allweddair tuedd (bathodyn ar y cerdyn)",
+      "save": "Cadw templed",
+      "note": "Mae templedi yn fyw yn Oriel → UGC → “Auto” wrth ymyl fideos awtomatig.",
+      "defaultName": "Fy nhempled"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar se naplaćuje jednom za cijelu seriju.",
       "voiceoverBase": "U ovom načinu rada, video je osnova kadra: glas i titlovi idu preko.",
       "emptyTitle": "Video još nije otpremljen",
-      "emptySub": "odaberite iz Galerije"
+      "emptySub": "odaberite iz Galerije",
+      "photosTitle": "Slajd-šou fotografija",
+      "photosSub": "jedna fotografija — jedan nepomični kadar, nekoliko — ciklično s prelaznim efektima",
+      "photosOne": "1 fotografija — nepomični kadar",
+      "photosCount_one": "{{count}} fotografija — ciklusi s prelaznim efektima",
+      "photosCount_other": "{{count}} fotografije — ciklus s prelaznim efektima",
+      "photosVsVideo": "Odabrani su i video i fotografije — video pobjeđuje (fotografije se zanemaruju)."
     },
     "subtitles": {
       "title": "Titlovi",
@@ -1403,7 +1409,9 @@
       "outro": "Završni branik",
       "layer": "Gornji sloj (PNG)",
       "layerNote": "Prozirni PNG pripremljen za format okvira — prikazivat će se preko cijelog videa.",
-      "bumperNote": "Priloženo uz video kakvo jeste, bez obrade."
+      "bumperNote": "Priloženo uz video kakvo jeste, bez obrade.",
+      "clipImagesTitle": "Fotografije za slajdšou",
+      "clipImagesNote": "Kliknite da biste odabrali do 12 slika — redoslijed odabira = redoslijed reprodukcije. Jedna fotografija postaje statičan kadar."
     },
     "progress": {
       "title": "Kreiranje vašeg videa…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzika",
       "chipSubtitles": "Titlovi",
       "chipVoice": "Glas"
+    },
+    "analysis": {
+      "title": "Analiza trendova",
+      "sub": "formula uspjeha → u blokove",
+      "empty": "Nije odabrana analiza trenda",
+      "emptySub": "birajte iz svojih analiza",
+      "pickTitle": "Odaberite analizu trenda",
+      "pickSub": "Sačuvane analize sa stranice Trendovi. Odabrana analiza se prenosi u studijske blokove — polja za potvrdu određuju tačno gdje.",
+      "none": "Još nema analiza — analizirajte video na stranici Trendovi (kartica Analitika).",
+      "framesBadge": "na nivou okvira",
+      "useScript": "Skripta iz analize",
+      "useScriptSub": "Generisanje skripte prati formulu trenda i njen gotov nacrt",
+      "useVideo": "Trend video kao snimak",
+      "useVideoSub": "Preuzeti video trenda postaje snimak",
+      "useSubtitles": "Stil titlova iz detaljnog prikaza",
+      "useSubtitlesSub": "trend vizualni stil → podnaslov želje",
+      "useRetention": "Montaža režija iz analize",
+      "useRetentionSub": "udica/akcija/poziv na akciju su označeni imajući na umu detaljnu analizu"
+    },
+    "tpl": {
+      "button": "Predložak",
+      "tooltip": "Predlošci: sačuvajte cijelu postavku studija i omogućite automatsko objavljivanje trendova",
+      "title": "UGC predlošci",
+      "sub": "Predložak pohranjuje SVE postavke studija (režim, titlove, muziku, polja za potvrdu analize). Automatsko objavljivanje ga povezuje s automatskom analizom trenda — videozapisi se sami grade.",
+      "empty": "Još nema predložaka — sačuvajte trenutna podešavanja ispod.",
+      "apply": "Primijeni",
+      "autopubOn": "Omogući automatsko objavljivanje",
+      "source": "Izvor",
+      "sourceNone": "— odaberite izvor —",
+      "sourceTrends": "Trendovi",
+      "sourcePaused": "pauzirano",
+      "lang": "Jezik videa",
+      "langHint": "Scenarij je odmah napisan na ovom jeziku",
+      "autopubHint": "Automatska analiza pronalazi novi video trenda → analiza → video se kreira na osnovu ovog predloška (odjeljak „Automatski“ u Galeriji). Više izvora pored Trendova biće dostupno kasnije.",
+      "noWatches": "Još nema automatskih analiza — omogućite jednu na stranici Trendovi (blok Automatska analiza).",
+      "saveCurrent": "Sačuvaj trenutne postavke kao predložak",
+      "namePlaceholder": "Naziv predloška",
+      "keywordPlaceholder": "Trend ključna riječ (značka na kartici)",
+      "save": "Sačuvaj predložak",
+      "note": "Predlošci se nalaze u Galeriji → UGC → „Automatski“ pored automatskih videozapisa.",
+      "defaultName": "Moj predložak"
     }
   }
 }

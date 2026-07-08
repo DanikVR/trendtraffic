@@ -1286,7 +1286,13 @@
       "seriesBilling": "Awatar jest rozliczany raz za cały serial.",
       "voiceoverBase": "W tym trybie wideo stanowi podstawę klatki, a głos i napisy są umieszczane na górze.",
       "emptyTitle": "Film nie został jeszcze przesłany",
-      "emptySub": "wybierz z Galerii"
+      "emptySub": "wybierz z Galerii",
+      "photosTitle": "Pokaz slajdów ze zdjęciami",
+      "photosSub": "jedno zdjęcie — klatka statyczna, kilka — cykl z przejściami",
+      "photosOne": "1 zdjęcie — klatka statyczna",
+      "photosCount_one": "Zdjęcie {{count}} — cykle z przejściami",
+      "photosCount_other": "Zdjęcia {{count}} — cykl z przejściami",
+      "photosVsVideo": "Wybierane są zarówno filmy, jak i zdjęcia — wygrywa film (zdjęcia są ignorowane)."
     },
     "subtitles": {
       "title": "Napisy na filmie obcojęzycznym",
@@ -1403,7 +1409,9 @@
       "outro": "Zderzak końcowy",
       "layer": "Warstwa górna (PNG)",
       "layerNote": "Przezroczysty plik PNG przygotowany do formatu ramki — będzie wyświetlany na całym filmie.",
-      "bumperNote": "Dołączono do filmu w obecnej formie, bez przetwarzania."
+      "bumperNote": "Dołączono do filmu w obecnej formie, bez przetwarzania.",
+      "clipImagesTitle": "Zdjęcia do pokazu slajdów",
+      "clipImagesNote": "Kliknij, aby wybrać maksymalnie 12 zdjęć — wybierz kolejność = kolejność odtwarzania. Pojedyncze zdjęcie stanie się nieruchomą klatką."
     },
     "progress": {
       "title": "Tworzenie filmu…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muzyka",
       "chipSubtitles": "Napisy na filmie obcojęzycznym",
       "chipVoice": "Głos"
+    },
+    "analysis": {
+      "title": "Analiza trendów",
+      "sub": "formuła sukcesu → w bloki",
+      "empty": "Nie wybrano podziału trendów",
+      "emptySub": "wybierz ze swoich analiz",
+      "pickTitle": "Wybierz podział trendów",
+      "pickSub": "Zapisane analizy ze strony Trendy. Wybrane zestawienie jest wykorzystywane w blokach studyjnych — pola wyboru decydują, gdzie dokładnie.",
+      "none": "Brak analiz — przeanalizuj wideo na stronie Trendy (karta Analityka).",
+      "framesBadge": "na poziomie ramki",
+      "useScript": "Skrypt z analizy",
+      "useScriptSub": "generowanie skryptu odbywa się zgodnie z formułą trendu i gotowym projektem",
+      "useVideo": "Wideo trendowe jako materiał filmowy",
+      "useVideoSub": "pobrany film trendowy staje się materiałem filmowym",
+      "useSubtitles": "Styl napisów z podziału",
+      "useSubtitlesSub": "trend w stylu wizualnym → życzenia dotyczące napisów",
+      "useRetention": "Montaż reżyserowany z analizy",
+      "useRetentionSub": "haczyk/akcja/wezwanie do działania są oznaczane z uwzględnieniem awarii"
+    },
+    "tpl": {
+      "button": "Szablon",
+      "tooltip": "Szablony: zapisz całą konfigurację studia i włącz automatyczne publikowanie trendów",
+      "title": "Szablony UGC",
+      "sub": "Szablon przechowuje WSZYSTKIE ustawienia studia (tryb, napisy, muzykę, pola wyboru analizy). Automatyczne publikowanie łączy je z automatyczną analizą trendów — filmy tworzą się same.",
+      "empty": "Na razie nie ma szablonów — zapisz bieżącą konfigurację poniżej.",
+      "apply": "Stosować",
+      "autopubOn": "Włącz automatyczne publikowanie",
+      "source": "Źródło",
+      "sourceNone": "— wybierz źródło —",
+      "sourceTrends": "Trendy",
+      "sourcePaused": "wstrzymany",
+      "lang": "Język wideo",
+      "langHint": "scenariusz jest od razu napisany w tym języku",
+      "autopubHint": "Automatyczna analiza znajduje nowy, modny film → analiza → film jest tworzony na podstawie tego szablonu (sekcja „Auto” w Galerii). Więcej źródeł poza Trendami pojawi się później.",
+      "noWatches": "Na razie brak automatycznych analiz — włącz je na stronie Trendy (blokada automatycznej analizy).",
+      "saveCurrent": "Zapisz bieżące ustawienia jako szablon",
+      "namePlaceholder": "Nazwa szablonu",
+      "keywordPlaceholder": "Słowo kluczowe trendu (znaczek na karcie)",
+      "save": "Zapisz szablon",
+      "note": "Szablony znajdują się w Galeria → UGC → „Auto” obok automatycznych filmów.",
+      "defaultName": "Mój szablon"
     }
   }
 }

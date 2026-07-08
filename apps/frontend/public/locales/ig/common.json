@@ -1286,7 +1286,13 @@
       "seriesBilling": "A na-akwụ ụgwọ avatar ahụ otu ugboro maka usoro ahụ dum.",
       "voiceoverBase": "N'ụdị a, vidiyo ahụ bụ isi ihe dị na etiti ahụ: olu na ndepụta okwu na-aga n'elu.",
       "emptyTitle": "Ebugobeghị vidiyo e tinyere",
-      "emptySub": "họrọ site na Gallery"
+      "emptySub": "họrọ site na Gallery",
+      "photosTitle": "Ihe ngosi mmịfe foto",
+      "photosSub": "otu foto — etiti kwụ ọtọ, ọtụtụ — okirikiri nwere crossfades",
+      "photosOne": "1 foto — fremu kwụ ọtọ",
+      "photosCount_one": "Foto {{count}} — okirikiri nwere mgbagọ agbagọ",
+      "photosCount_other": "Foto {{count}} — okirikiri nwere mgbagọ agbagọ",
+      "photosVsVideo": "Ma vidiyo ma foto ahọpụtara — vidiyo ahụ meriri (a naghị eleghara foto anya)."
     },
     "subtitles": {
       "title": "Ndepụta Okwu",
@@ -1403,7 +1409,9 @@
       "outro": "bọmpa mpụga",
       "layer": "Akwa elu (PNG)",
       "layerNote": "PNG doro anya nke akwadoro maka usoro etiti - ọ ga-anọ n'elu vidiyo ahụ dum.",
-      "bumperNote": "E tinyere ya na vidiyo ahụ dịka ọ dị, enweghị nhazi."
+      "bumperNote": "E tinyere ya na vidiyo ahụ dịka ọ dị, enweghị nhazi.",
+      "clipImagesTitle": "Foto maka ihe ngosi mmịfe ahụ",
+      "clipImagesNote": "Pịa iji họrọ ihe onyonyo iri na abụọ — họrọ ihe onyonyo = usoro ọkpụkpọ. Otu foto na-aghọ fremu kwụ ọtọ."
     },
     "progress": {
       "title": "Ịmepụta vidiyo gị…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Egwu",
       "chipSubtitles": "Ndepụta Okwu",
       "chipVoice": "Olu"
+    },
+    "analysis": {
+      "title": "Nyocha usoro",
+      "sub": "usoro ihe ịga nke ọma → n'ime ngọngọ",
+      "empty": "Ahọpụtaghị nchịkọta usoro ọ bụla",
+      "emptySub": "họrọ site na nyocha gị",
+      "pickTitle": "Họrọ nhazi usoro",
+      "pickSub": "Nyocha echekwara site na ibe Trends. Ndekọ ahọpụtara na-enye ihe mgbochi studio - igbe nlele na-ekpebi kpọmkwem ebe.",
+      "none": "Enwebeghị nyocha ọ bụla — nyochaa vidiyo na ibe Trends (taabụ Nyocha).",
+      "framesBadge": "ọkwa etiti",
+      "useScript": "Ederede sitere na nyocha",
+      "useScriptSub": "Nhazi edemede na-agbaso usoro usoro na edemede dị njikere ya",
+      "useVideo": "Vidiyo na-ewu ewu dị ka ihe nkiri",
+      "useVideoSub": "vidiyo nke usoro ebudatara na-aghọ ihe nkiri ahụ",
+      "useSubtitles": "Ụdị ndepụta okwu sitere na nhazi",
+      "useSubtitlesSub": "ụdị ihe osise na-ewu ewu → Ihe ndị dị na ndepụta okwu chọrọ",
+      "useRetention": "Nhazi site na nyocha",
+      "useRetentionSub": "A na-eji nko/ihe omume/CTA mara ọdịiche dị n'uche."
+    },
+    "tpl": {
+      "button": "Nlereanya",
+      "tooltip": "Ndebiri: chekwaa ntọala studio dum ma mee ka mbipụta akpaaka na-emekarị",
+      "title": "Ndebiri UGC",
+      "sub": "Ndebiri na-echekwa ntọala studio niile (ụdị, ndepụta okwu, egwu, igbe nyocha). Mbipụta akpaghị aka na-ejikọ ya na nyocha akpaaka na-ewulite - vidiyo na-ewulite onwe ha.",
+      "empty": "Enwebeghị ndebiri — chekwaa ntọala dị ugbu a n'okpuru.",
+      "apply": "Tinye akwụkwọ",
+      "autopubOn": "Gbanye mbipụta akpaaka",
+      "source": "Isi mmalite",
+      "sourceNone": "— họrọ isi mmalite —",
+      "sourceTrends": "Usoro",
+      "sourcePaused": "kwụsịtụrụ",
+      "lang": "Asụsụ vidiyo",
+      "langHint": "a na-ede edemede ahụ n'asụsụ a ozugbo",
+      "autopubHint": "Nyocha akpaaka na-achọpụta vidiyo ọhụrụ na-ewu ewu → nhazi → E wuru vidiyo site na ndebiri a (ngalaba \"Auto\" na Gallery). Isi mmalite ndị ọzọ gafere Usoro na-abịa ma emechaa.",
+      "noWatches": "Enwebeghị nyocha akpaaka — mee ka otu rụọ ọrụ na ibe Trends (Nchebe nyocha akpaaka).",
+      "saveCurrent": "Chekwaa ntọala dị ugbu a dị ka ndebiri",
+      "namePlaceholder": "Aha ndebiri aha",
+      "keywordPlaceholder": "Isi okwu na-ewu ewu (akara dị na kaadị ahụ)",
+      "save": "Chekwaa ndebiri",
+      "note": "Ndebiri dị na Gallery → UGC → \"Auto\" n'akụkụ vidiyo akpaka.",
+      "defaultName": "Ndebiri m"
     }
   }
 }

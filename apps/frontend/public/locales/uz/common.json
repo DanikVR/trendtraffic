@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar butun serial uchun bir marta taqdim etiladi.",
       "voiceoverBase": "Bu rejimda video kadrning asosi hisoblanadi: ovoz va subtitrlar tepada joylashgan.",
       "emptyTitle": "Video hali yuklanmagan",
-      "emptySub": "Galereyadan tanlang"
+      "emptySub": "Galereyadan tanlang",
+      "photosTitle": "Surat slaydshou",
+      "photosSub": "bitta fotosurat — harakatsiz ramka, bir nechta — krossfeydlar bilan aylanish",
+      "photosOne": "1 ta fotosurat — fotoramka",
+      "photosCount_one": "{{count}} fotosurati — krossfeydlar bilan sikllar",
+      "photosCount_other": "{{count}} fotosuratlar — krossfeydlar bilan aylanib o'ting",
+      "photosVsVideo": "Video ham, fotosuratlar ham tanlandi — video g'alaba qozonadi (rasmlar e'tiborga olinmaydi)."
     },
     "subtitles": {
       "title": "Subtitrlar",
@@ -1403,7 +1409,9 @@
       "outro": "Tashqi bamper",
       "layer": "Yuqori qatlam (PNG)",
       "layerNote": "Kadr formati uchun tayyorlangan shaffof PNG — u butun video ustida joylashadi.",
-      "bumperNote": "Videoga avvalgidek biriktirilgan, qayta ishlanmagan."
+      "bumperNote": "Videoga avvalgidek biriktirilgan, qayta ishlanmagan.",
+      "clipImagesTitle": "Slayd-shou uchun fotosuratlar",
+      "clipImagesNote": "12 tagacha rasmni tanlash uchun bosing — tartibni tanlang = ijro etish tartibi. Bitta fotosurat harakatsiz kadrga aylanadi."
     },
     "progress": {
       "title": "Videongiz yaratilmoqda…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musiqa",
       "chipSubtitles": "Subtitrlar",
       "chipVoice": "Ovoz"
+    },
+    "analysis": {
+      "title": "Trend tahlili",
+      "sub": "muvaffaqiyat formulasi → bloklarga",
+      "empty": "Trendlar bo'yicha taqsimot tanlanmagan",
+      "emptySub": "tahlillaringizdan tanlang",
+      "pickTitle": "Trendlar bo'yicha tahlilni tanlang",
+      "pickSub": "Trendlar sahifasidan saqlangan tahlillar. Tanlangan tahlillar studiya bloklarini uzatadi — katakchalar aniq qayerda ekanligini belgilaydi.",
+      "none": "Hali tahlillar yo'q — Trendlar sahifasida (Tahlillar yorlig'i) videoni tahlil qiling.",
+      "framesBadge": "ramka darajasida",
+      "useScript": "Tahlildan olingan skript",
+      "useScriptSub": "Skript yaratish trend formulasi va uning tayyor qoralamasiga amal qiladi",
+      "useVideo": "Trend videosi kadrlar sifatida",
+      "useVideoSub": "Yuklab olingan trend videosi kadrlarga aylanadi",
+      "useSubtitles": "Taqdimot uslubi",
+      "useSubtitlesSub": "trend vizual uslubi → subtitr istaklari",
+      "useRetention": "Tahlildan montaj rejissyori",
+      "useRetentionSub": "kanca/harakat/CTA buzilishlarni yodda tutgan holda yorliqlangan"
+    },
+    "tpl": {
+      "button": "Andoza",
+      "tooltip": "Shablonlar: butun studiya sozlamalarini saqlang va trendlarni avtomatik nashr qilishni yoqing",
+      "title": "UGC shablonlari",
+      "sub": "Shablon BARCHA studiya sozlamalarini (rejim, subtitrlar, musiqa, tahlil katakchalari) saqlaydi. Avtomatik nashr qilish uni trend avtomatik tahliliga bog'laydi — videolar o'z-o'zidan shakllanadi.",
+      "empty": "Hali shablonlar yo'q — joriy sozlamani quyida saqlang.",
+      "apply": "Qo'llash",
+      "autopubOn": "Avtomatik nashr qilishni yoqish",
+      "source": "Manba",
+      "sourceNone": "— manbani tanlang —",
+      "sourceTrends": "Trendlar",
+      "sourcePaused": "to'xtatildi",
+      "lang": "Video tili",
+      "langHint": "skript darhol shu tilda yozilgan",
+      "autopubHint": "Avtomatik tahlil yangi trend videosini topadi → tahlil → ushbu shablondan video yaratiladi (Galereyadagi \"Avtomatik\" bo'limi). Trendlardan tashqari boshqa manbalar keyinroq keladi.",
+      "noWatches": "Hali avtomatik tahlillar yo'q — Trendlar sahifasida (Avtomatik tahlil bloki) birini yoqing.",
+      "saveCurrent": "Joriy sozlamalarni shablon sifatida saqlang",
+      "namePlaceholder": "Andoza nomi",
+      "keywordPlaceholder": "Trend kalit so'zi (kartadagi nishon)",
+      "save": "Shablonni saqlash",
+      "note": "Shablonlar Galereya → Foydalanuvchi tomonidan yaratilgan grafika → Avtomatik videolar yonidagi “Avtomatik” bo‘limida joylashgan.",
+      "defaultName": "Mening shablonim"
     }
   }
 }

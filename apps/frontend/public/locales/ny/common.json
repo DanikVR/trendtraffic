@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar imalipidwa kamodzi pa mndandanda wonse.",
       "voiceoverBase": "Mu mawonekedwe awa, kanema ndiye maziko a chimango: mawu ndi mawu ang'onoang'ono amaikidwa pamwamba.",
       "emptyTitle": "Kanema sanakwezedwebe",
-      "emptySub": "sankhani kuchokera ku Gallery"
+      "emptySub": "sankhani kuchokera ku Gallery",
+      "photosTitle": "Chithunzi chowonetsa zithunzi",
+      "photosSub": "chithunzi chimodzi — chimango chosagwedezeka, zingapo — kuzungulira ndi ma crossfades",
+      "photosOne": "Chithunzi chimodzi — chimango chosagwedezeka",
+      "photosCount_one": "{{count}} chithunzi — ma cycle okhala ndi ma crossfade",
+      "photosCount_other": "{{count}} zithunzi — zungulirani ndi ma crossfade",
+      "photosVsVideo": "Kanema ndi zithunzi zonse zomwe zasankhidwa — kanemayo wapambana (zithunzi sizinyalanyazidwa)."
     },
     "subtitles": {
       "title": "Ma subtitles",
@@ -1403,7 +1409,9 @@
       "outro": "Bampala yakunja",
       "layer": "Gawo lapamwamba (PNG)",
       "layerNote": "PNG yowonekera bwino yokonzedwa kuti igwiritsidwe ntchito pa chimango — idzakhala pamwamba pa kanemayo yonse.",
-      "bumperNote": "Yalumikizidwa ku kanemayo momwe ilili, palibe kukonza."
+      "bumperNote": "Yalumikizidwa ku kanemayo momwe ilili, palibe kukonza.",
+      "clipImagesTitle": "Zithunzi za chiwonetsero chazithunzi",
+      "clipImagesNote": "Dinani kuti mutenge zithunzi 12 — sankhani dongosolo = dongosolo losewerera. Chithunzi chimodzi chimakhala chimango chosagwedezeka."
     },
     "progress": {
       "title": "Kupanga kanema wanu…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Nyimbo",
       "chipSubtitles": "Ma subtitles",
       "chipVoice": "Mawu"
+    },
+    "analysis": {
+      "title": "Kusanthula kwa zochitika",
+      "sub": "njira yopambana → mu mabuloko",
+      "empty": "Palibe kusanthula kwa zomwe zikuchitika komwe kwasankhidwa",
+      "emptySub": "sankhani kuchokera ku kusanthula kwanu",
+      "pickTitle": "Sankhani kusanthula kwa zomwe zikuchitika",
+      "pickSub": "Kusanthula komwe kwasungidwa kuchokera patsamba la Trends. Kusanthula komwe kwasankhidwa kumadyetsa mabuloko a studio - mabokosi owunikira amasankha komwe kuli.",
+      "none": "Palibe kusanthula panobe — fufuzani kanema patsamba la Trends (tabu ya Analytics).",
+      "framesBadge": "mulingo wa chimango",
+      "useScript": "Zolemba kuchokera ku kusanthula",
+      "useScriptSub": "Kupanga zolemba kumatsatira njira yotsatirira ndi kukonzekera kwake koyambirira",
+      "useVideo": "Kanema wamakono ngati kanema",
+      "useVideoSub": "Kanema wamakono wotsitsidwayo umakhala kanema",
+      "useSubtitles": "Kalembedwe ka mutu wapansi kuchokera ku kusanthula",
+      "useSubtitlesSub": "kalembedwe kowoneka bwino → zolemba zazing'ono",
+      "useRetention": "Kuwongolera kuchokera ku kusanthula kwa Montage",
+      "useRetentionSub": "hook/action/CTA imayikidwa ndi malingaliro okhudza kusweka kwa mawu"
+    },
+    "tpl": {
+      "button": "Chifaniziro",
+      "tooltip": "Ma tempuleti: sungani dongosolo lonse la studio ndikuyatsa kufalitsa kwa mafashoni okha",
+      "title": "Ma tempuleti a UGC",
+      "sub": "Chikhomo chimasunga makonda ONSE a studio (mawonekedwe, mawu ang'onoang'ono, nyimbo, mabokosi owunikira). Kusindikiza kokha kumalumikiza ku kusanthula kokha kwa chizolowezi - makanema amadzipanga okha.",
+      "empty": "Palibe ma tempuleti pano — sungani zomwe zili pansipa.",
+      "apply": "Ikani",
+      "autopubOn": "Yambitsani kufalitsa kokha",
+      "source": "Chitsime",
+      "sourceNone": "— sankhani gwero —",
+      "sourceTrends": "Zochitika",
+      "sourcePaused": "yayimitsidwa",
+      "lang": "Chilankhulo cha kanema",
+      "langHint": "script yalembedwa m'chinenerochi nthawi yomweyo",
+      "autopubHint": "Kusanthula kokha kwapeza kanema watsopano wa mafashoni → kusanthula → kanema wapangidwa kuchokera ku template iyi (gawo la \"Okha\" mu Gallery). Magwero ena opitilira mafashoni akubwera mtsogolo.",
+      "noWatches": "Palibe kusanthula kodziyimira pawokha pakadali pano — yatsani imodzi patsamba la Trends (Auto-analysis block).",
+      "saveCurrent": "Sungani makonda apano ngati template",
+      "namePlaceholder": "Dzina la template",
+      "keywordPlaceholder": "Mawu ofunikira a Trend (baji pa khadi)",
+      "save": "Sungani chitsanzo",
+      "note": "Ma tempuleti amakhala mu Gallery → UGC → \"Auto\" pafupi ndi makanema odziyimira pawokha.",
+      "defaultName": "Chifaniziro changa"
     }
   }
 }

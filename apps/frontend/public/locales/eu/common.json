@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatarra behin fakturatzen da serie osoan.",
       "voiceoverBase": "Modu honetan bideoa da fotogramaren oinarria: ahotsa eta azpitituluak gainean doaz.",
       "emptyTitle": "Bideoa oraindik ez da igo",
-      "emptySub": "aukeratu Galeriatik"
+      "emptySub": "aukeratu Galeriatik",
+      "photosTitle": "Argazki aurkezpena",
+      "photosSub": "argazki bat — fotograma finko bat, hainbat — zikloa gurutzadura-desagertzeekin",
+      "photosOne": "Argazki 1 — fotograma finkoa",
+      "photosCount_one": "{{count}} argazkia — zikloak gurutzadura-desagertzeekin",
+      "photosCount_other": "{{count}} argazkiak — zikloa gurutzadura gurutzatuekin",
+      "photosVsVideo": "Bideoa eta argazkiak biak aukeratuta — bideoak irabazten du (argazkiak baztertzen dira)."
     },
     "subtitles": {
       "title": "Azpitituluak",
@@ -1403,7 +1409,9 @@
       "outro": "Amaierako bumper-a",
       "layer": "Goiko geruza (PNG)",
       "layerNote": "Fotograma formaturako prestatutako PNG garden bat — bideo osoaren gainean egongo da.",
-      "bumperNote": "Bideoari erantsita dago dagoen bezala, prozesatu gabe."
+      "bumperNote": "Bideoari erantsita dago dagoen bezala, prozesatu gabe.",
+      "clipImagesTitle": "Diapositiba-aurkezpenerako argazkiak",
+      "clipImagesNote": "Egin klik gehienez 12 irudi hautatzeko — hautatzeko ordena = erreprodukzio ordena. Argazki bakarra fotograma bihurtzen da."
     },
     "progress": {
       "title": "Bideoa sortzen…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musika",
       "chipSubtitles": "Azpitituluak",
       "chipVoice": "Ahotsa"
+    },
+    "analysis": {
+      "title": "Joeren analisia",
+      "sub": "arrakasta formula → blokeetan",
+      "empty": "Ez da joera-banaketarik hautatu",
+      "emptySub": "aukeratu zure analisietatik",
+      "pickTitle": "Aukeratu joera-banaketa bat",
+      "pickSub": "Joeren orrialdeko analisiak gordeta. Aukeratutako banaketak estudioko blokeak elikatzen ditu — kontrol-laukiak zehazten du non dauden zehazki.",
+      "none": "Oraindik ez dago analisirik — aztertu bideo bat Joerak orrialdean (Analitika fitxa).",
+      "framesBadge": "fotograma-maila",
+      "useScript": "Analisiaren gidoia",
+      "useScriptSub": "Gidoien sorkuntzak joera-formula eta bere zirriborro prest jarraitzen ditu",
+      "useVideo": "Joera bideoa irudi gisa",
+      "useVideoSub": "deskargatutako joera bideoa irudi bihurtzen da",
+      "useSubtitles": "Azpitituluen estiloa banaketatik abiatuta",
+      "useSubtitlesSub": "joera estilo bisuala → azpitituluen nahiak",
+      "useRetention": "Muntaketa zuzendaritza analisitik abiatuta",
+      "useRetentionSub": "amua/ekintza/CTA etiketatuta daude matxura kontuan hartuta"
+    },
+    "tpl": {
+      "button": "Txantiloia",
+      "tooltip": "Txantiloiak: gorde estudioko konfigurazio osoa eta gaitu joeren argitalpen automatikoa",
+      "title": "UGC txantiloiak",
+      "sub": "Txantiloi batek estudioko ezarpen GUZTIAK gordetzen ditu (modua, azpitituluak, musika, analisi-laukiak). Argitalpen automatikoak joeren analisi automatiko batekin lotzen du — bideoak bere kabuz eraikitzen dira.",
+      "empty": "Txantiloirik ez oraindik — gorde beheko konfigurazioa.",
+      "apply": "Aplikatu",
+      "autopubOn": "Gaitu argitalpen automatikoa",
+      "source": "Iturria",
+      "sourceNone": "— iturri bat aukeratu —",
+      "sourceTrends": "Joerak",
+      "sourcePaused": "pausatuta",
+      "lang": "Bideoaren hizkuntza",
+      "langHint": "gidoia hizkuntza honetan idatzita dago berehala",
+      "autopubHint": "Autoanalisiak joera berri baten bideoa aurkitzen du → banaketa → txantiloi honetatik bideo bat sortzen da (Galeriako \"Auto\" atala). Joerez gain beste iturri batzuk geroago etorriko dira.",
+      "noWatches": "Ez dago autoanalisirik oraindik — gaitu bat Joerak orrialdean (Autoanalisi blokea).",
+      "saveCurrent": "Gorde uneko ezarpenak txantiloi gisa",
+      "namePlaceholder": "Txantiloiaren izena",
+      "keywordPlaceholder": "Joera gako-hitza (txarteleko txapa)",
+      "save": "Txantiloia gorde",
+      "note": "Txantiloiak Galeria → UGC → “Automatikoa” atalean daude, bideo automatikoen ondoan.",
+      "defaultName": "Nire txantiloia"
     }
   }
 }

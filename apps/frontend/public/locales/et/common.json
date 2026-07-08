@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatari eest võetakse kogu sarja eest üks kord arve.",
       "voiceoverBase": "Selles režiimis on video kaadri alus: hääl ja subtiitrid on peal.",
       "emptyTitle": "Videot pole veel üles laaditud",
-      "emptySub": "vali galeriist"
+      "emptySub": "vali galeriist",
+      "photosTitle": "Fotode slaidiseanss",
+      "photosSub": "üks foto – staatiline kaader, mitu – tsükkel ristsidumise abil",
+      "photosOne": "1 foto — stoppkaader",
+      "photosCount_one": "{{count}} foto — tsüklid ristsujutustega",
+      "photosCount_other": "{{count}} fotod — tsükliline üleminek",
+      "photosVsVideo": "Valitud on nii video kui ka fotod – video võidab (fotosid ignoreeritakse)."
     },
     "subtitles": {
       "title": "Subtiitrid",
@@ -1403,7 +1409,9 @@
       "outro": "Outro kaitseraud",
       "layer": "Ülemine kiht (PNG)",
       "layerNote": "Läbipaistev PNG, mis on ette valmistatud kaadriformaadi jaoks – see katab kogu video.",
-      "bumperNote": "Videole lisatud olemasoleval kujul, töötlemata kujul."
+      "bumperNote": "Videole lisatud olemasoleval kujul, töötlemata kujul.",
+      "clipImagesTitle": "Slaidiseansi fotod",
+      "clipImagesNote": "Klõpsa kuni 12 pildi valimiseks – valiku järjekord = taasesituse järjekord. Ühest fotost saab stoppkaader."
     },
     "progress": {
       "title": "Video loomine…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muusika",
       "chipSubtitles": "Subtiitrid",
       "chipVoice": "Hääl"
+    },
+    "analysis": {
+      "title": "Trendianalüüs",
+      "sub": "edu valem → plokkideks",
+      "empty": "Trendi jaotust pole valitud",
+      "emptySub": "vali oma analüüside hulgast",
+      "pickTitle": "Valige trendi jaotus",
+      "pickSub": "Salvestatud analüüsid trendide lehelt. Valitud jaotus edastab stuudioplokke – märkeruudud määravad täpselt, kus.",
+      "none": "Analüüse veel pole – analüüsi videot trendide lehel (Analüütika vahekaart).",
+      "framesBadge": "kaadri tasemel",
+      "useScript": "Analüüsist saadud skript",
+      "useScriptSub": "skriptide genereerimine järgib trendivalemit ja selle valmis mustandit",
+      "useVideo": "Trendivideo kaadrina",
+      "useVideoSub": "allalaaditud trendivideost saab filmimaterjal",
+      "useSubtitles": "Subtiitrite stiil jaotusest",
+      "useSubtitlesSub": "trendikas visuaalne stiil → alapealkiri soovid",
+      "useRetention": "Montaaž, mis suunab analüüsi",
+      "useRetentionSub": "konks/toiming/CTA on märgistatud jaotust silmas pidades"
+    },
+    "tpl": {
+      "button": "Mall",
+      "tooltip": "Mallid: salvestage kogu stuudio seadistus ja lubage trendide automaatne avaldamine",
+      "title": "Kasutaja loodud sisu mallid",
+      "sub": "Mall salvestab KÕIK stuudio seaded (režiim, subtiitrid, muusika, analüüsi märkeruudud). Automaatne avaldamine seob selle trendi automaatse analüüsiga – videod ehitavad end ise üles.",
+      "empty": "Malle veel pole — salvesta praegune seadistus allpool.",
+      "apply": "Kandideeri",
+      "autopubOn": "Luba automaatne avaldamine",
+      "source": "Allikas",
+      "sourceNone": "— vali allikas —",
+      "sourceTrends": "Trendid",
+      "sourcePaused": "peatatud",
+      "lang": "Video keel",
+      "langHint": "skript on kohe selles keeles kirjutatud",
+      "autopubHint": "Automaatanalüüs leiab värske trendivideo → jaotuse → selle malli põhjal luuakse video (galerii jaotis „Automaatne“). Lisaks trendidele on hiljem saadaval rohkem allikaid.",
+      "noWatches": "Automaatanalüüse veel pole – lubage üks trendide lehel (automaatanalüüsi plokk).",
+      "saveCurrent": "Salvesta praegused sätted mallina",
+      "namePlaceholder": "Malli nimi",
+      "keywordPlaceholder": "Trendi märksõna (kaardil olev märk)",
+      "save": "Salvesta mall",
+      "note": "Mallid asuvad Galerii → UGC → automaatsete videote kõrval jaotises „Automaatne”.",
+      "defaultName": "Minu mall"
     }
   }
 }

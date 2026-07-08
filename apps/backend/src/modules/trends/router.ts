@@ -18,7 +18,9 @@ import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
-import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA } from './dna.js';
+import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight } from './dna.js';
+import { analyzeVideoVisual } from './video_insight.js';
+import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -210,14 +212,18 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
 
     // ДНК тренда едет ВМЕСТЕ с видео: в фоне собираем рецепт и кладём в video_analyses,
     // привязав к этому ассету. Best-effort — скачивание уже успешно, анализ не должен его ронять.
-    const tId = req.tenantId!, assetId = asset.id, dPlatform = d.platform, dVideoId = String(d.videoId);
+    const tId = req.tenantId!, assetId = asset.id, dPlatform = d.platform, dVideoId = String(d.videoId), fPath = file.filePath;
     void (async () => {
       try {
         const a = await analyzeUrl(tId, url);
-        const dna = await generateTrendDNA(tId, {
+        let dna = await generateTrendDNA(tId, {
           summary: a.summary, comments: a.normalized.comments, keywords: a.normalized.keywords,
           platform: a.detected.platform, sourceUrl: url,
         });
+        // Покадровый Gemini-видеоанализ по скачанному файлу: sceneBeats становятся
+        // реальными (не LLM-реконструкцией). Мягкая деградация — null не ломает ДНК.
+        const visual = await analyzeVideoVisual(tId, fPath);
+        if (visual) dna = applyVisualInsight(dna, visual);
         await saveTrendDNA(tId, { mediaAssetId: assetId, platform: dPlatform, externalId: dVideoId, sourceUrl: url, dna });
       } catch (e) {
         console.warn('[trends] save→DNA:', (e as Error).message);
@@ -281,6 +287,86 @@ router.post('/history/delete', async (req: AuthedRequest, res: Response) => {
     res.json({ ok: true, deleted });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+// ── Автопилот трендов («Автоанализ» ключевика) — строго Enterprise ───────────
+// Расходы цепочки (TikHub/Claude/Gemini/ElevenLabs/HeyGen) идут с ключей клиента.
+
+async function requireAutopilot(req: AuthedRequest, res: Response, next: NextFunction) {
+  try {
+    if (req.userRole === 'superadmin' || await tenantAllowsAutopilot(req.tenantId!)) return next();
+  } catch { /* ниже 403 */ }
+  return res.status(403).json({ error: 'Автоанализ доступен только на тарифе Enterprise.' });
+}
+
+/** GET /watches — список автоанализов тенанта (+ последние прогоны сводно). */
+router.get('/watches', requireAutopilot, async (req: AuthedRequest, res: Response) => {
+  try {
+    const watches = await listWatches(req.tenantId!);
+    res.json({ watches, minIntervalMinutes: MIN_INTERVAL_MINUTES });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/** POST /watches — включить автоанализ ключевика.
+ *  body: { keyword, platform?, intervalMinutes?, dailyCap?, scanParams? } */
+router.post('/watches', requireAutopilot, async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = req.body || {};
+    const watch = await createWatch(req.tenantId!, {
+      keyword: b.keyword, platform: b.platform,
+      intervalMinutes: b.intervalMinutes, dailyCap: b.dailyCap,
+      scanParams: b.scanParams,
+    });
+    res.json({ watch });
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || 'Не удалось создать автоанализ' });
+  }
+});
+
+/** PATCH /watches/:id — пауза/включение, интервал, дневной лимит. */
+router.patch('/watches/:id', requireAutopilot, async (req: AuthedRequest, res: Response) => {
+  try {
+    const w = await updateWatch(req.tenantId!, String(req.params.id), req.body || {});
+    if (!w) return res.status(404).json({ error: 'Автоанализ не найден.' });
+    res.json({ watch: w });
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || 'Не удалось обновить' });
+  }
+});
+
+/** DELETE /watches/:id — убрать автоанализ (журнал прогонов удаляется каскадом). */
+router.delete('/watches/:id', requireAutopilot, async (req: AuthedRequest, res: Response) => {
+  try {
+    const ok = await deleteWatch(req.tenantId!, String(req.params.id));
+    res.json({ ok });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+/** POST /watches/:id/run — «Прогнать сейчас» (не ждёт: смотрите журнал прогонов). */
+router.post('/watches/:id/run', requireAutopilot, async (req: AuthedRequest, res: Response) => {
+  try {
+    const r = await runWatchNow(req.tenantId!, String(req.params.id));
+    if (!r.started && r.busy) return res.status(409).json({ error: 'Прогон этого автоанализа уже идёт — дождитесь завершения (см. журнал).' });
+    if (!r.started) return res.status(404).json({ error: 'Автоанализ не найден.' });
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Не удалось запустить' });
+  }
+});
+
+/** GET /watches/:id/runs — журнал прогонов watch (или все: GET /watches/runs/all). */
+router.get('/watches/:id/runs', requireAutopilot, async (req: AuthedRequest, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const runs = await listRuns(req.tenantId!, id === 'all' ? undefined : id, Number(req.query.limit) || 30);
+    res.json({ runs });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
   }
 });
 
