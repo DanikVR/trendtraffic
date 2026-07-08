@@ -423,6 +423,37 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     window.setTimeout(() => setUgcSavedFlash(false), 1800);
   };
   const ugcMutate = (fn: (u: UgcSpec) => UgcSpec) => { setUgc((u) => fn(u)); setDirty(true); };
+  /** «Выход» из студии: сохранить сценарий + апсертить шаблон (появляется в Галерее → UGC),
+   *  один шаблон на ролик (templateId в спеке) — повторный выход обновляет его, а не плодит дубли. */
+  const ugcExitWithTemplate = async () => {
+    try {
+      await save();   // сначала сам сценарий (авто-сейв гарантирован)
+      const tplSpec = { ...ugc, buildJobId: null, result: null, results: [] };
+      const tplName = (name || '').trim() || 'UGC-ролик';
+      // Пустой ролик в шаблоны не пишем (чтобы «зашёл-вышел» не плодил мусор); существующий — обновляем всегда.
+      const hasContent = !!(ugc.avatarUrl || ugc.photoUrl || ugc.script.length || ugc.clip || ugc.clipImages.length || (ugc.brief || '').trim());
+      if (!ugc.templateId && !hasContent) { setCloudPanel(null); return; }
+      if (ugc.templateId) {
+        // Обновляем существующий шаблон ролика (имя + спека).
+        const r = await fetch(`/api/render/ugc/templates/${ugc.templateId}`, { method: 'PATCH', headers: headers(), body: JSON.stringify({ name: tplName, spec: tplSpec }) });
+        if (r.status === 404) {  // шаблон удалили из Галереи — создаём заново
+          const c = await fetch('/api/render/ugc/templates', { method: 'POST', headers: headers(), body: JSON.stringify({ name: tplName, spec: tplSpec }) });
+          const cd = await c.json().catch(() => ({}));
+          if (c.ok && cd?.id) { setUgc((u) => ({ ...u, templateId: String(cd.id) })); await save(); }
+        }
+      } else {
+        const c = await fetch('/api/render/ugc/templates', { method: 'POST', headers: headers(), body: JSON.stringify({ name: tplName, spec: tplSpec }) });
+        const cd = await c.json().catch(() => ({}));
+        if (c.ok && cd?.id) {
+          // Пишем templateId в спеку и сохраняем сценарий сразу (иначе id потеряется при закрытии).
+          const withId = { ...ugc, templateId: String(cd.id) };
+          setUgc(withId);
+          await fetch(`/api/flows/${flowId}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ name, graph: { nodes: [], edges: [], source: sourceUrl ? { url: sourceUrl, name: sourceName || undefined, assetId: sourceAssetId || undefined } : null, cloud, cloudEdges, omni: omniSpec, editor: { clips: editorClips, result: editorResult }, ugc: withId, hotebook: hb, flow: { commentator: flowComm }, brief } }) });
+        }
+      }
+    } catch { /* мягко: выход не блокируем ошибкой шаблона */ }
+    finally { setCloudPanel(null); }
+  };
   const ugcScriptSec = () => ugc.script.reduce((s, l) => {
     const st = Number(l.start); const en = Number(l.end);
     return s + (Number.isFinite(st) && Number.isFinite(en) && en > st ? en - st : Math.max(1.5, Math.min(12, (l.text || '').length * 0.06)));
@@ -848,8 +879,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     name, brief,
     // volatile gen-поля (genJobId/genUrl/genInteractionId) НЕ в undo-историю: их пишет фоновый поллинг, а не юзер.
     omniSpec: { segments: omniSpec.segments.map(({ genJobId, genUrl, genInteractionId, ...s }) => s) },
+    // UGC-спека в истории БЕЗ одноразовых полей прогона (их пишет поллинг сборки, не юзер).
+    ugc: { ...ugc, buildJobId: null, result: null, results: [] },
     cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId,
-  }), [name, brief, omniSpec, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId]);
+  }), [name, brief, omniSpec, ugc, cloud, cloudEdges, sourceUrl, sourceName, sourceAssetId]);
   const applyDoc = (s: string) => {
     let d: any; try { d = JSON.parse(s); } catch { return; }
     restoringRef.current = true;
@@ -862,6 +895,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         : cur.segments;
       return { segments: segs };
     });
+    // UGC: возвращаем спеку из истории, но volatile-поля прогона берём из ТЕКУЩЕГО состояния
+    // (не теряем идущую сборку/готовый результат при undo/redo).
+    if (d.ugc && typeof d.ugc === 'object') {
+      setUgc((cur) => ({ ...cur, ...d.ugc, buildJobId: cur.buildJobId, result: cur.result, results: cur.results }));
+    }
     setCloud(d.cloud); setCloudEdges(d.cloudEdges);
     setSourceUrl(d.sourceUrl); setSourceName(d.sourceName); setSourceAssetId(d.sourceAssetId);
     setDirty(true);
@@ -1974,6 +2012,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           uploadToGallery={uploadToGallery}
           ugcResultAR={ugcResultAR} setUgcResultAR={setUgcResultAR}
           onClose={() => setCloudPanel(null)}
+          flowName={name} onRenameFlow={(v) => { setName(v); setDirty(true); }}
+          undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo}
+          onExitSave={ugcExitWithTemplate}
         />
       )}
 

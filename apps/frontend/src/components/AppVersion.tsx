@@ -2127,7 +2127,20 @@
  *         cap_wishes.ts (бэк) — синхронизировать. Файлы: UgcPreview, UgcStudio, ugcTypes,
  *         MontageEditor (гидрация), locales ru/en; бэк: podcast_compose (buildUgcAss wish,
  *         composeUgc avatarRect), render/router (парс spec.avatarRects + capWish). */
-export const APP_VERSION = '2.1.6';
+/* 2.1.7 — UGC-СТУДИЯ по фидбеку: (1) аватар «Один ведущий» перетаскивается/масштабируется
+ *         на превью в ЛЮБОЙ раскладке (не только «поверх видео»): раскладка = стартовая позиция
+ *         бокса, дальше двигаешь мышкой; рендер строит кадр тем же способом (composeUgc: rect
+ *         задан → оверлей-путь для всех раскладок; router: соло всегда шлёт avatarRect = кастом
+ *         ИЛИ дефолт раскладки; avatarDefaultRect в ugcTypes + зеркало в бэке). (2) Топбар:
+ *         вместо «UGC-студия/Сценарий» — ИМЯ РОЛИКА с карандашом (инлайн-переименование), кнопки
+ *         НАЗАД/ВПЕРЁД (undo/redo — история теперь включает ugc-спеку), «Выход» = сохранить
+ *         сценарий + апсертить шаблон (templateId в спеке, один на ролик; появляется в Галерее →
+ *         UGC). (3) Голоса ElevenLabs: кнопка «Обновить» (?fresh=1 сбрасывает кэш), бейдж «ваш» +
+ *         локализованная категория (клонированный/встроенный) — все голоса аккаунта, включая
+ *         клоны. (4) Языки серии: 8 → 29 (весь eleven_multilingual_v2), родные названия из i18n,
+ *         скролл-список. Файлы: UgcPreview, UgcStudio, ugcTypes, MontageEditor; бэк: podcast_compose,
+ *         render/router. i18n ru+en. */
+export const APP_VERSION = '2.1.7';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

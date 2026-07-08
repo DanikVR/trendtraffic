@@ -15,9 +15,22 @@ export type UgcFormat = '9x16' | '16x9' | '1x1' | '4x5';   // форматы в�
 // записи. Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
 export type UgcAvatarSource = 'collection' | 'photo';
 export interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
-// Кастомная позиция/размер аватара-оверлея (раскладки overlay-*): доли кадра 0..1,
-// своя на каждый формат. Пусто = дефолт раскладки (как было). Выставляется драгом на превью.
+// Кастомная позиция/размер аватара на кадре (все раскладки solo): доли кадра 0..1,
+// своя на каждый формат. Пусто = дефолт раскладки. Выставляется драгом на превью.
 export interface UgcAvatarRect { x: number; y: number; w: number; h: number }
+/** Дефолтный прямоугольник аватара по раскладке (доли кадра). Раскладка = стартовая позиция,
+ *  дальше двигается/масштабируется драгом. ТА ЖЕ логика зашита в бэкенде (render/router).
+ *  «сверху»/«снизу» — крупный бокс в верхней/нижней половине (аватар cover-кроп ≈ сплит,
+ *  но перетаскиваемый); overlay-* — маленький бокс в углу поверх видео. */
+export function avatarDefaultRect(placement: UgcSpec['placement']): UgcAvatarRect {
+  switch (placement) {
+    case 'top': return { x: 0.06, y: 0.04, w: 0.88, h: 0.46 };
+    case 'bottom': return { x: 0.06, y: 0.50, w: 0.88, h: 0.46 };
+    case 'overlay-right': return { x: 0.52, y: 0.58, w: 0.44, h: 0.40 };
+    case 'overlay-left':
+    default: return { x: 0.04, y: 0.58, w: 0.44, h: 0.40 };
+  }
+}
 export interface UgcSpec {
   avatarSource: UgcAvatarSource;
   avatarId: string | null;                                  // выбранный из коллекции
@@ -62,8 +75,11 @@ export interface UgcSpec {
   intro: { url: string; name: string } | null;
   outro: { url: string; name: string } | null;
   layers: Partial<Record<UgcFormat, { url: string; name: string }>>;
-  // Позиция аватара-оверлея per-format (драг на превью); {} = пресеты раскладки.
+  // Позиция аватара per-format (драг на превью); {} = дефолт раскладки.
   avatarRects: Partial<Record<UgcFormat, UgcAvatarRect>>;
+  // Шаблон, привязанный к этому ролику (апсертится при «Выходе»): один шаблон на ролик,
+  // повторный выход обновляет его (а не плодит дубли). null = шаблона ещё нет.
+  templateId: string | null;
   progressBar: boolean;                                     // полоса прогресса сверху кадра
   // «Использовать анализ» (ДНК тренда) — гибко по блокам: что именно подмешивать.
   // analysis = выбранный разбор (id из video_analyses + снимок нужных полей ДНК);
@@ -110,6 +126,7 @@ export const UGC_DEFAULT: UgcSpec = {
   outro: null,
   layers: {},
   avatarRects: {},
+  templateId: null,
   progressBar: false,
   analysis: null,
   analysisUse: { script: true, video: true, subtitles: true, retention: true },

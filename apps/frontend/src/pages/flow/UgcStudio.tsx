@@ -15,6 +15,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
   Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound, ImagePlus,
+  Pencil, Undo2, Redo2,
 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import UgcPreview from './UgcPreview';
@@ -23,6 +24,7 @@ import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPic
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
+import { SUPPORTED_LANGUAGES } from '../../config/i18n';
 import { useTranslation } from 'react-i18next';
 
 const ACC = '#a855f7';       // фирменный цвет блока UGC
@@ -63,6 +65,13 @@ export interface UgcStudioProps {
   ugcResultAR: number;
   setUgcResultAR: (n: number) => void;
   onClose: () => void;
+  // Имя ролика в топбаре (вместо статичного «UGC-студия») + инлайн-переименование.
+  flowName: string;
+  onRenameFlow: (v: string) => void;
+  // Назад/вперёд (undo/redo истории редактора — включает правки UGC).
+  undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean;
+  // «Выход»: сохранить сценарий + апсертить шаблон (появится в Галерее) → закрыть.
+  onExitSave: () => void | Promise<void>;
 }
 
 /* ── мелкие строительные блоки студии ── */
@@ -251,25 +260,49 @@ export default function UgcStudio(p: UgcStudioProps) {
   /* Пожелания к стилю титров: распознанные цвет/обводка/размер — чипы под полем + живой пример */
   const capWish = useMemo(() => parseCapWishes(ugc.subtitles.wishes), [ugc.subtitles.wishes]);
   const hasAvatarRects = Object.keys(ugc.avatarRects || {}).length > 0;
+  /* Инлайн-переименование ролика в топбаре (карандаш → поле). */
+  const [nameEdit, setNameEdit] = useState(false);
 
-  /* ── голоса ElevenLabs аккаунта (включая клоны) для озвучки ИИ-текста ── */
+  /* ── голоса ElevenLabs аккаунта (включая ВАШИ загруженные/клонированные) для озвучки ИИ-текста ── */
   const [elVoices, setElVoices] = useState<{ id: string; name: string; preview: string | null; category: string | null }[] | null>(null);
   const [elNote, setElNote] = useState<string | null>(null);
+  const [elLoading, setElLoading] = useState(false);
+  const loadVoices = (fresh = false) => {
+    setElLoading(true);
+    void fetch(`/api/render/ugc/voices${fresh ? '?fresh=1' : ''}`, { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } })
+      .then((r) => r.json())
+      .then((d) => { setElVoices(Array.isArray(d?.voices) ? d.voices : []); setElNote(d?.note ? String(d.note) : null); })
+      .catch(() => setElVoices([]))
+      .finally(() => setElLoading(false));
+  };
   useEffect(() => {
     if (ugc.source !== 'gen' || elVoices !== null) return;
-    void fetch('/api/render/ugc/voices', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } })
-      .then((r) => r.json())
-      .then((d) => { setElVoices(Array.isArray(d?.voices) ? d.voices : []); if (d?.note) setElNote(String(d.note)); })
-      .catch(() => setElVoices([]));
+    loadVoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ugc.source, elVoices, p.token]);
+  /* Категория голоса ElevenLabs → человекочитаемо (клонированный/встроенный/…). */
+  const voiceCatLabel = (cat: string | null): string => {
+    const key = (cat || '').toLowerCase();
+    if (key === 'cloned' || key === 'professional') return t('ugc.voice.catCloned');
+    if (key === 'generated') return t('ugc.voice.catGenerated');
+    if (key === 'premade') return t('ugc.voice.catPremade');
+    return cat || '';
+  };
+  const isMyVoice = (cat: string | null): boolean => ['cloned', 'professional', 'generated'].includes((cat || '').toLowerCase());
   const prevAudioRef = useRef<HTMLAudioElement | null>(null);
   const playPreview = (url: string) => {
     try { prevAudioRef.current?.pause(); const a = new Audio(url); prevAudioRef.current = a; void a.play(); } catch { /* превью не критично */ }
   };
   useEffect(() => () => { try { prevAudioRef.current?.pause(); } catch { /* */ } }, []);
 
-  /* фиксированный набор языков серии (перевод Claude + ElevenLabs multilingual) */
-  const LANG_CHOICES: [string, string][] = [['en', 'English'], ['es', 'Español'], ['de', 'Deutsch'], ['fr', 'Français'], ['pt', 'Português'], ['it', 'Italiano'], ['tr', 'Türkçe'], ['uk', 'Українська']];
+  /* Языки серии = ВСЕ, что реально озвучивает наш конвейер: перевод Claude → ElevenLabs
+     eleven_multilingual_v2 (29 языков). Родные названия берём из i18n (fallback — код).
+     'ru' закреплён отдельно как основной, поэтому здесь его нет. */
+  const TTS_LANG_CODES = ['en', 'es', 'de', 'fr', 'pt', 'it', 'nl', 'pl', 'sv', 'da', 'fi', 'cs', 'sk', 'hr', 'ro', 'bg', 'el', 'uk', 'tr', 'ar', 'hi', 'ta', 'ja', 'ko', 'zh', 'id', 'ms', 'tl'];
+  const LANG_CHOICES: [string, string][] = TTS_LANG_CODES.map((code) => {
+    const meta = SUPPORTED_LANGUAGES.find((l) => l.code === code);
+    return [code, meta?.nativeName || code.toUpperCase()] as [string, string];
+  });
 
   /* слой принимает только прозрачный PNG/WebP — заметка при попытке выбрать иное */
   const [layerNote, setLayerNote] = useState<string | null>(null);
@@ -430,10 +463,11 @@ export default function UgcStudio(p: UgcStudioProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      if (nameEdit) return;   // Esc в поле имени обрабатывает само поле
       if (tplOpen) { setTplOpen(false); return; }
       if (anaOpen) { setAnaOpen(false); return; }
       if (brandOpen) { setBrandOpen(false); return; }
-      if (!p.ugcPick && !p.ugcDelAvatar) p.onClose();
+      if (!p.ugcPick && !p.ugcDelAvatar) void p.onExitSave();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -448,14 +482,37 @@ export default function UgcStudio(p: UgcStudioProps) {
         .dark .ugc-studio{--ugcf-bg:#101013;--ugcf-cell:#101013;--ugcf-title:#a3a3ad;--ugcf-sub:#77777f;--ugcf-dash:#5c5c66;--ugcf-veil:rgba(0,0,0,.35);--ugcf-chk1:#3a3a42;--ugcf-chk2:#2a2a30;--ugcf-shadow:0 14px 34px rgba(0,0,0,.35)}
       `}</style>
       {/* ── Топбар ── */}
-      <div className="flex items-center gap-3 px-3.5 flex-shrink-0" style={{ height: 54, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-medium)' }}>
-        <button onClick={p.onClose} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-600"
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+      <div className="flex items-center gap-2.5 px-3.5 flex-shrink-0" style={{ height: 54, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-medium)' }}>
+        {/* Выход = сохранить сценарий + шаблон (появится в Галерее) → закрыть */}
+        <button onClick={() => void p.onExitSave()} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-600"
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+          title={t('ugc.topbar.exitTooltip')}>
           <ArrowLeft size={15} /> {t('ugc.topbar.back')}
         </button>
-        <div className="leading-tight">
-          <div className="text-[13.5px] font-700" style={{ color: 'var(--text-primary)' }}>{t('ugc.topbar.title')}</div>
-          <div className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.topbar.subtitle')}</div>
+        {/* Название ролика + карандаш (инлайн-переименование) вместо статичного «UGC-студия» */}
+        {nameEdit ? (
+          <input autoFocus value={p.flowName}
+            onChange={(e) => p.onRenameFlow(e.target.value)}
+            onBlur={() => setNameEdit(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setNameEdit(false); }}
+            className="text-[14px] font-700 px-2 py-1 rounded-lg outline-none"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: `1px solid ${ACC}`, maxWidth: 300 }} />
+        ) : (
+          <button onClick={() => setNameEdit(true)} title={t('ugc.topbar.renameTooltip')}
+            className="inline-flex items-center gap-1.5 text-[14px] font-700 min-w-0"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+            <span className="truncate" style={{ maxWidth: 260 }}>{p.flowName || t('ugc.topbar.untitled')}</span>
+            <Pencil size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          </button>
+        )}
+        {/* Назад/вперёд (undo/redo) */}
+        <div className="flex items-center gap-1 ml-1">
+          <button onClick={p.undo} disabled={!p.canUndo} title={t('ugc.topbar.undo')}
+            className="w-7 h-7 rounded-lg flex items-center justify-center disabled:opacity-40"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: p.canUndo ? 'pointer' : 'not-allowed' }}><Undo2 size={14} /></button>
+          <button onClick={p.redo} disabled={!p.canRedo} title={t('ugc.topbar.redo')}
+            className="w-7 h-7 rounded-lg flex items-center justify-center disabled:opacity-40"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: p.canRedo ? 'pointer' : 'not-allowed' }}><Redo2 size={14} /></button>
         </div>
         <div className="flex-1" />
         <button onClick={() => void p.ugcSaveNow()} disabled={p.saving} className="inline-flex items-center gap-1.5 text-[11.5px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
@@ -728,10 +785,17 @@ export default function UgcStudio(p: UgcStudioProps) {
                       style={{ background: ugc.voice === v ? ACC : 'var(--bg-secondary)', color: ugc.voice === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.voice === v ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}><Mic size={11} /> {lbl}</button>
                   ))}
                 </div>
-                {/* Голоса ElevenLabs из аккаунта клиента (включая клоны); ▶ — послушать образец */}
+                {/* Голоса ElevenLabs аккаунта (включая ВАШИ клонированные/загруженные); ▶ — образец */}
                 {elVoices && elVoices.length > 0 && (
                   <div className="space-y-1">
-                    <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.voice.elevenLabel')}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.voice.elevenLabel')}</div>
+                      <button onClick={() => loadVoices(true)} disabled={elLoading} title={t('ugc.voice.reloadTooltip')}
+                        className="inline-flex items-center gap-1 text-[9.5px] font-650 px-1.5 py-0.5 rounded-md"
+                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: elLoading ? 'default' : 'pointer' }}>
+                        {elLoading ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />} {t('ugc.voice.reload')}
+                      </button>
+                    </div>
                     <div className="space-y-1" style={{ maxHeight: 168, overflowY: 'auto' }}>
                       <button onClick={() => ugcMutate((u) => ({ ...u, voiceId: null }))}
                         className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left"
@@ -749,8 +813,11 @@ export default function UgcStudio(p: UgcStudioProps) {
                                 style={{ width: 22, height: 22, background: 'var(--bg-tertiary)', border: '1px solid var(--border-strong)', color: ACC, cursor: 'pointer', fontSize: 9 }}>▶</button>
                             ) : <span style={{ width: 22 }} />}
                             <button onClick={() => ugcMutate((u) => ({ ...u, voiceId: v.id }))} className="flex-1 min-w-0 text-left" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                              <span className="text-[11px] font-650 block truncate" style={{ color: on ? ACC : 'var(--text-secondary)' }}>{v.name}</span>
-                              {v.category && <span className="text-[9.5px]" style={{ color: 'var(--text-muted)' }}>{v.category}</span>}
+                              <span className="text-[11px] font-650 truncate inline-flex items-center gap-1" style={{ color: on ? ACC : 'var(--text-secondary)', maxWidth: '100%' }}>
+                                <span className="truncate">{v.name}</span>
+                                {isMyVoice(v.category) && <span className="flex-shrink-0 text-[8px] font-750 px-1 py-px rounded" style={{ background: 'rgba(168,85,247,.16)', color: ACC, letterSpacing: '.02em' }}>{t('ugc.voice.yourBadge')}</span>}
+                              </span>
+                              {v.category && <span className="text-[9.5px] block" style={{ color: 'var(--text-muted)' }}>{voiceCatLabel(v.category)}</span>}
                             </button>
                             {on && <Check size={12} style={{ color: ACC, flexShrink: 0 }} />}
                           </div>
@@ -796,7 +863,7 @@ export default function UgcStudio(p: UgcStudioProps) {
             {langsActive && (
               <div className="space-y-1">
                 <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.voice.langsLabel')}</div>
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-1 flex-wrap" style={{ maxHeight: 132, overflowY: 'auto' }}>
                   <span className="text-[10px] font-650 px-2.5 py-1 rounded-full" style={{ background: ACC, color: '#fff', border: `1px solid ${ACC}` }}>{t('ugc.voice.langRuPinned')}</span>
                   {LANG_CHOICES.map(([code, label]) => {
                     const on = ugc.langs.includes(code);
@@ -807,6 +874,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                     );
                   })}
                 </div>
+                <p className="text-[9.5px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.voice.langsAllHint')}</p>
                 {extraLangsCount > 0 && (
                   <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                     {mode === 'voiceover' ? t('ugc.voice.langsHintVoiceover', { count: extraLangsCount + 1 }) : t('ugc.voice.langsHintSolo', { count: extraLangsCount + 1 })}

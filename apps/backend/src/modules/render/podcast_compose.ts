@@ -549,7 +549,10 @@ export async function composeUgc(opts: {
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
   const Ds = (D + 0.2).toFixed(2);
 
-  const overlayMode = opts.placement === 'overlay-left' || opts.placement === 'overlay-right';
+  // Кастомная позиция аватара (драг на превью) задана → рендерим оверлеем в ЛЮБОЙ раскладке
+  // (видео во весь кадр + аватар боксом): раскладка «сверху»/«снизу» = лишь стартовая позиция,
+  // но кадр строится тем же способом, что и превью — иначе рендер разъезжался бы с превью.
+  const overlayMode = !!opts.avatarRect || opts.placement === 'overlay-left' || opts.placement === 'overlay-right';
   const clipAudio = !!opts.clipPath && !opts.clipMuted && await hasAudioStream(opts.clipPath);
 
   // Входы. Для альфа-webm: -c:v libvpx-vp9 ДО -i (нативный vp9-декодер роняет альфу).

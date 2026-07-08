@@ -10,7 +10,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound, Move, Maximize2 } from 'lucide-react';
-import type { UgcAvatarRect, UgcFormat, UgcMode, UgcSpec } from './ugcTypes';
+import { avatarDefaultRect, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
 const ACC = '#a855f7';
@@ -110,23 +110,24 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl : ugc.photoUrl;
   const firstLineMedia = ugc.script.find((l) => !!l.image)?.image || null;
-  // «Один ведущий» + раскладка «поверх видео» = аватар маленьким, его МОЖНО двигать/масштабировать на превью.
-  const isOverlaySolo = mode === 'solo' && (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right');
+  // «Один ведущий» — аватар всегда перетаскивается/масштабируется на превью (в ЛЮБОЙ раскладке;
+  // раскладка = стартовая позиция). В «Монтаже»/«Диалоге» — свои фиксированные планы.
+  const isSolo = mode === 'solo';
 
-  /* ── аватар-оверлей: перетаскивание и размер прямо на кадре превью ──
-     Позиция per-format в долях кадра (ugc.avatarRects); во время жеста — локальный rect,
-     коммит в спеку одним ugcMutate на pointerup (не спамим автосейв). */
+  /* ── аватар на кадре: перетаскивание и размер прямо на превью ──
+     Позиция per-format в долях кадра (ugc.avatarRects); дефолт — по раскладке. Во время жеста —
+     локальный rect, коммит в спеку одним ugcMutate на pointerup (не спамим автосейв). */
   const [liveRect, setLiveRect] = useState<{ fmt: UgcFormat; rect: UgcAvatarRect } | null>(null);
-  const rectFor = (fmt: UgcFormat, side: 'left' | 'right'): UgcAvatarRect =>
-    (liveRect?.fmt === fmt ? liveRect.rect : null) || ugc.avatarRects?.[fmt] || AV_DEF[side];
+  const rectFor = (fmt: UgcFormat): UgcAvatarRect =>
+    (liveRect?.fmt === fmt ? liveRect.rect : null) || ugc.avatarRects?.[fmt] || avatarDefaultRect(ugc.placement);
   const clamp01 = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, side: 'left' | 'right', kind: 'move' | 'size') => {
+  const dragAvatar = (e: React.PointerEvent, fmt: UgcFormat, kind: 'move' | 'size') => {
     if (!onAvatarRect || e.button !== 0) return;
     const frameEl = (e.currentTarget as HTMLElement).closest('[data-ugc-frame]') as HTMLElement | null;
     if (!frameEl) return;
     e.preventDefault(); e.stopPropagation();
     const fr = frameEl.getBoundingClientRect();
-    const r0 = rectFor(fmt, side);
+    const r0 = rectFor(fmt);
     const sx = e.clientX, sy = e.clientY;
     let last = r0; let moved = false;
     const onMove = (ev: PointerEvent) => {
@@ -246,13 +247,12 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   /* аватар маленьким поверх видео; cutout → шахматная кайма и без «карточки» (иллюстрация прозрачного фона).
      draggable (соло-оверлей) + есть аватар: тащим за сам аватар, размер — за уголок; позиция per-format
      уезжает в рендер. Пусто → обычная кнопка выбора (двигать нечего). mini → компактная фурнитура. */
-  const overlayAvatar = (side: 'left' | 'right', cutout: boolean, url: string | null, onEmpty: () => void, fmt: UgcFormat, draggable = false, mini = false) => {
-    const rc = rectFor(fmt, side);
+  const overlayAvatar = (rc: UgcAvatarRect, cutout: boolean, url: string | null, onEmpty: () => void, fmt: UgcFormat, draggable = false, mini = false) => {
     const canDrag = draggable && !!onAvatarRect && !!url;   // двигать можно только реальный аватар
     const handle = mini ? 16 : 20;
     return (
     <div
-      onPointerDown={canDrag ? (e) => dragAvatar(e, fmt, side, 'move') : undefined}
+      onPointerDown={canDrag ? (e) => dragAvatar(e, fmt, 'move') : undefined}
       style={{
         position: 'absolute', zIndex: 4,
         left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`,
@@ -283,7 +283,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
           </span>
           {/* уголок-ручка размера: крупная, с иконкой, внутри бокса (не режется overflow кадра) */}
           <span
-            onPointerDown={(e) => dragAvatar(e, fmt, side, 'size')}
+            onPointerDown={(e) => dragAvatar(e, fmt, 'size')}
             title={t('ugc.preview.avatarResizeTip')}
             className="flex items-center justify-center"
             style={{ position: 'absolute', right: 3, bottom: 3, width: handle, height: handle, borderRadius: 6, background: ACC, border: '2px solid #fff', color: '#fff', cursor: 'nwse-resize', touchAction: 'none', boxShadow: '0 1px 5px rgba(0,0,0,.5)' }}>
@@ -318,7 +318,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
           {lineMediaCell(t('ugc.preview.tagLineMediaBg'))}
-          {overlayAvatar('left', ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar, fmt)}
+          {overlayAvatar(AV_DEF.left, ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar, fmt)}
         </div>
       );
       return full(lineMediaCell(t('ugc.preview.tagCutawayNoFace')));
@@ -333,22 +333,20 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
           {clipCell(t('ugc.common.footage'))}
-          {overlayAvatar('left', false, avatarImg, onEmptyAvatar, fmt)}
+          {overlayAvatar(AV_DEF.left, false, avatarImg, onEmptyAvatar, fmt)}
         </div>
       );
       return full(clipCell(t('ugc.preview.tagCutawayNoFace')));
     }
 
-    /* solo: раскладка спеки; в оверлее аватар — перетаскиваемый (позиция per-format в спеку) */
-    if (ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') return (
+    /* solo: видео во весь кадр + перетаскиваемый аватар в ЛЮБОЙ раскладке (раскладка =
+       стартовая позиция бокса; дальше двигаешь/масштабируешь мышкой). Рендер строит так же. */
+    return (
       <div className="absolute inset-0 flex">
-        {clipCell(t('ugc.common.footage'))}
-        {overlayAvatar(ugc.placement === 'overlay-right' ? 'right' : 'left', false, avatarImg, onEmptyAvatar, fmt, true, mini)}
+        {clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'))}
+        {overlayAvatar(rectFor(fmt), false, avatarImg, onEmptyAvatar, fmt, true, mini)}
       </div>
     );
-    const av = faceCell(avatarImg, t('ugc.common.avatar'), onEmptyAvatar);
-    const vid = clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'));
-    return ugc.placement === 'bottom' ? stack(vid, av) : stack(av, vid);
   };
 
   /* кадры всех форматов: первый выбранный — крупно, остальные миниатюрами */
@@ -386,8 +384,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
         {ugc.formats.map((f, i) => frame(f, i > 0))}
       </div>
 
-      {/* подсказка под кадрами: в раскладке «поверх видео» аватар двигается/масштабируется мышкой */}
-      {isOverlaySolo && onAvatarRect && (
+      {/* подсказка под кадрами: в «Один ведущий» аватар двигается/масштабируется мышкой */}
+      {isSolo && onAvatarRect && (
         <div className="flex items-center justify-center gap-1.5 px-4 pb-1 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
           <span className="inline-flex items-center justify-center rounded-md" style={{ width: 18, height: 18, background: 'rgba(168,85,247,.16)', color: ACC }}><Move size={11} /></span>
           {t('ugc.preview.avatarDragHint')}

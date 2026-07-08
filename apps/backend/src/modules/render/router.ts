@@ -159,9 +159,11 @@ router.get('/ugc/voices', async (req: AuthedRequest, res: Response) => {
     const key = await getEffectiveProviderKey(req.tenantId!, 'elevenlabs');
     if (!key) return res.json({ voices: [], note: 'Ключ ElevenLabs не задан (Настройки → Генерация) — используются голоса по умолчанию.' });
     // Кэш-ключ включает хвост API-ключа: смена ключа тенантом сразу сбрасывает кэш.
+    // ?fresh=1 (кнопка «Обновить») пропускает чтение кэша — новый клон подтянется сразу.
     const cacheKey = `${req.tenantId}:${key.slice(-8)}`;
+    const fresh = String(req.query.fresh || '') === '1';
     const cached = elevenVoicesCache.get(cacheKey);
-    if (cached && Date.now() - cached.ts < 3600_000) return res.json({ voices: cached.items });
+    if (!fresh && cached && Date.now() - cached.ts < 3600_000) return res.json({ voices: cached.items });
     const r = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': key } });
     if (!r.ok) return res.status(502).json({ error: `ElevenLabs: HTTP ${r.status}` });
     const d: any = await r.json().catch(() => ({}));
@@ -421,7 +423,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     const spec = req.body?.spec && typeof req.body.spec === 'object' ? req.body.spec : {};
     const script: any[] = Array.isArray(spec.script) ? spec.script : [];
     const placement: string = ['top', 'bottom', 'overlay-left', 'overlay-right'].includes(spec.placement) ? spec.placement : 'top';
-    // Кастомные позиции аватара-оверлея (драг на превью студии): per-format доли кадра 0..1.
+    // Кастомные позиции аватара (драг на превью студии): per-format доли кадра 0..1.
     const avatarRects: Partial<Record<UgcFormatKey, { x: number; y: number; w: number; h: number }>> = {};
     if (spec.avatarRects && typeof spec.avatarRects === 'object') {
       const cl = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
@@ -434,6 +436,15 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         avatarRects[k as UgcFormatKey] = { x: cl(x, 0, 1 - cw), y: cl(y, 0, 1 - chh), w: cw, h: chh };
       }
     }
+    // Дефолт по раскладке (ТА ЖЕ логика, что во фронте ugcTypes.avatarDefaultRect): раскладка =
+    // стартовая позиция бокса. Соло всегда рендерится оверлеем по этому rect — превью == рендер.
+    const defaultAvatarRect = (pl: string): { x: number; y: number; w: number; h: number } => {
+      if (pl === 'top') return { x: 0.06, y: 0.04, w: 0.88, h: 0.46 };
+      if (pl === 'bottom') return { x: 0.06, y: 0.50, w: 0.88, h: 0.46 };
+      if (pl === 'overlay-right') return { x: 0.52, y: 0.58, w: 0.44, h: 0.40 };
+      return { x: 0.04, y: 0.58, w: 0.44, h: 0.40 };   // overlay-left и дефолт
+    };
+    const avatarRectFor = (k: UgcFormatKey) => avatarRects[k] || defaultAvatarRect(placement);
     const isPhoto = spec.avatarSource === 'photo';
     // Провайдер рендера лица: 'ext' = HeyGen по ПОДПИСКЕ через расширение браузера (втрое дешевле,
     // но нужна открытая вкладка студии HeyGen у клиента); иначе 'api' — HeyGen API (x-api-key).
@@ -944,7 +955,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
                 clipMuted: spec.clipMuted !== false,
                 placement: placement as any,
-                avatarRect: avatarRects[fmt.key] || null,   // кастомная позиция с превью (только overlay-*)
+                avatarRect: avatarRectFor(fmt.key),   // соло всегда оверлеем: кастом ИЛИ дефолт раскладки (== превью)
                 musicPath: music?.filePath || null,
                 musicVolumePct: Number(spec.music?.volumePct) || 20,
                 musicDurationSec: musicDurSec,
