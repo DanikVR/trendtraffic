@@ -2054,7 +2054,20 @@
  *         артефакт подменяет плейсхолдер; Omni — иконка «Преобразование…» поверх видео во время
  *         генерации (omniBusy). Файлы: MontageEditor, FlowBlockOverlay, GalleryPage,
  *         SocialExtensionPage; бэк: notebooklm/router (/jobs). */
-export const APP_VERSION = '2.1.1';
+/* 2.1.2 — ГАЛЕРЕЯ = ДОМАШНЯЯ + СВЁРНУТЫЙ САЙДБАР-ХАБ (раунд 4 по фидбэку):
+ *         (1) «/» → Галерея (HOME_ROUTE_WHEN_NO_VIDEO='/gallery'); Галерея — первый экран.
+ *         (2) Левый сайдбар ВСЕГДА свёрнут (только иконки + tooltip): быстрые переходы во
+ *         вкладки Галереи — Тренды/UGC/Google Flow/Hotebook/Видео/Публикатор (→ /gallery?tab=…),
+ *         в конце шестерёнка «Настройки». Тумблер разворота убран; лого/язык/тема/тариф/аватар —
+ *         компактными иконками. Активная иконка = текущая ?tab=. (3) «Каналы» переехали из
+ *         сайдбара в раздел «Тренды» третьей вкладкой (Поиск/Аналитика/Каналы; ChannelsPage
+ *         встроен). (4) Галерея: вкладка синхронизирована с ?tab= (deeplink + подсветка сайдбара);
+ *         после «Видео» — вкладка «Публикатор» (заглушка «скоро», сервис позже). (5) Страница
+ *         /publisher УДАЛЕНА (PublisherPage.tsx + роут). (6) В Google Flow и Hotebook — плашка
+ *         «Установите расширение TrendTraffic» (инлайн-раскрытие Скачать + Как установить, копия
+ *         карточки из Настройки Enterprise → Генерация). Файлы: features.ts, router.tsx,
+ *         MainLayout, BottomTabBar, GalleryPage, SocialExtensionPage. */
+export const APP_VERSION = '2.1.2';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

@@ -52,17 +52,15 @@ export function BottomTabBar() {
   // tier === 'enterprise' и для superadmin.
   const isEnterprise = useIsEnterprise();
 
-  // Локализованные пункты More-sheet — i18n заново резолвится при смене языка.
+  // More-sheet (мобильный) — быстрые переходы во вкладки ГАЛЕРЕИ (2026-07-08): всё открывается
+  // внутри Галереи. «Каналы» переехали внутрь «Тренды», страница /publisher удалена.
   const moreItems = [
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
-    // Пункт «TrendFlow» убран (2026-07-08): Галерея = главный экран, блоки открываются из неё.
-    // «Тренды» → расширение (/social-extension). Не-Enterprise редиректит на Тарифы. /trends удалён.
-    ...(FEATURES.socialMediaExt
-      ? [{ path: '/social-extension', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('moreSheet.trends.sub', 'Поиск горячих видео + аналитика'), accent: '#f59e0b' }]
-      : []),
-    ...(FEATURES.gallery ? [{ path: '/gallery', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Галерея'), sublabel: t('moreSheet.gallery.sub', 'Скачанные видео'), accent: '#10b981' }] : []),
-    ...(FEATURES.publisher ? [{ path: '/publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('moreSheet.publisher.sub', 'Публикация в соцсети'), accent: '#7c5cff' }] : []),
-    ...(FEATURES.channels ? [{ path: '/channels', icon: <Users size={20} strokeWidth={1.5} />, label: t('nav.channels', 'Каналы'), sublabel: t('moreSheet.channels.sub', 'Аналитика каналов'), accent: '#6366f1' }] : []),
+    { path: '/gallery?tab=trendhub', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: 'Разборы и запросы', accent: '#f59e0b' },
+    { path: '/gallery?tab=ugc', icon: <Users size={20} strokeWidth={1.5} />, label: 'UGC', sublabel: 'Ролики с аватаром', accent: '#a855f7' },
+    { path: '/gallery?tab=flow', icon: <Image size={20} strokeWidth={1.5} />, label: 'Google Flow', sublabel: 'Клипы Veo', accent: '#4285F4' },
+    { path: '/gallery?tab=reference', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Видео'), sublabel: 'Медиа и аудио', accent: '#10b981' },
+    { path: '/gallery?tab=publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: 'Скоро', accent: '#7c5cff' },
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
 

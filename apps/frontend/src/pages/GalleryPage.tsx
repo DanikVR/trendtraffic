@@ -18,11 +18,12 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
-  Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X,
+  Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
+  ChevronDown, ChevronUp, HelpCircle,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -34,9 +35,10 @@ import { TT_EXT_VERSION } from '../components/AppVersion';
 import { coverSrc } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
 
-type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference';
+type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference' | 'publisher';
 /** Фильтр внутри вкладки «Видео»: медиа (изображения+видео, kind=reference) или аудио. */
 type MediaKind = 'reference' | 'audio';
+const ALL_TABS: Tab[] = ['trendhub', 'ugc', 'flow', 'hotebook', 'reference', 'publisher'];
 
 interface GalleryItem {
   id: string;
@@ -61,6 +63,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'flow', label: 'Google Flow' },
   { key: 'hotebook', label: 'Hotebook' },
   { key: 'reference', label: 'Видео' },
+  { key: 'publisher', label: 'Публикатор' },
 ];
 
 function tabIcon(key: Tab, size = 15) {
@@ -69,6 +72,7 @@ function tabIcon(key: Tab, size = 15) {
   if (key === 'flow') return <Clapperboard size={size} />;
   if (key === 'ugc') return <Users size={size} />;
   if (key === 'trendhub') return <TrendingUp size={size} />;
+  if (key === 'publisher') return <Send size={size} />;
   return <Sparkles size={size} />;
 }
 
@@ -117,7 +121,13 @@ const HB_JOB_LABEL: Record<string, string> = {
 export default function GalleryPage() {
   const { token } = useAppStore();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('trendhub');
+  // Вкладка синхронизирована с ?tab= — сайдбар/ссылки открывают нужный раздел; смена вкладки
+  // пишет ?tab= (deeplink + подсветка пункта сайдбара).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = (() => { const t = searchParams.get('tab') as Tab | null; return t && ALL_TABS.includes(t) ? t : 'trendhub'; })();
+  const [tab, setTabState] = useState<Tab>(urlTab);
+  const setTab = (t: Tab) => { setTabState(t); setSearchParams((prev) => { prev.set('tab', t); return prev; }, { replace: true }); };
+  useEffect(() => { if (urlTab !== tab) setTabState(urlTab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlTab]);
   const [mediaKind, setMediaKind] = useState<MediaKind>('reference'); // фильтр «Видео | Аудио» внутри вкладки «Видео»
   const [blockReq, setBlockReq] = useState<FlowBlockRequest | null>(null); // блок TrendFlow поверх Галереи
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -146,6 +156,7 @@ export default function GalleryPage() {
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
   const [flowMsg, setFlowMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [extPopup, setExtPopup] = useState(false);
+  const [extOpen, setExtOpen] = useState(false); // раскрытие инлайн-инструкции «Как установить» в плашке расширения
   const [videoPopup, setVideoPopup] = useState<GalleryItem | null>(null); // видео → скачать + инструкция
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
@@ -190,6 +201,8 @@ export default function GalleryPage() {
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...authHeader() });
 
   const load = async (which: Tab = tab, kindOverride?: MediaKind) => {
+    // «Публикатор» — вкладка-заглушка (сервис ещё не подключён), данных не грузим.
+    if (which === 'publisher') { setItems([]); setLoading(false); setError(null); setSelected(new Set()); return; }
     setLoading(true); setError(null); setSelected(new Set());
     try {
       if (which === 'trendhub') {
@@ -288,6 +301,58 @@ export default function GalleryPage() {
       </button>
     );
   };
+
+  // Плашка «Установите расширение TrendTraffic» (Google Flow / Hotebook) — раскрывает инлайн
+  // раздел «Скачать + Как установить» (копия карточки из Настройки Enterprise → Генерация).
+  const renderExtBanner = () => (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+      <button type="button" onClick={() => setExtOpen((v) => !v)}
+        className="w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-[var(--bg-tertiary)]"
+        style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#22d3ee)' }}>
+          <Clapperboard size={18} color="#fff" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Установите расширение TrendTraffic</span>
+            <span className="text-[11px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>v{TT_EXT_VERSION}</span>
+          </span>
+          <span className="block text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Единое расширение для Google Flow (Veo) и NotebookLM — нажмите, чтобы скачать и посмотреть, как установить.
+          </span>
+        </span>
+        {extOpen ? <ChevronUp size={18} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={18} style={{ color: 'var(--text-muted)' }} />}
+      </button>
+      {extOpen && (
+        <div className="px-3 pb-3 space-y-3">
+          <div className="flex gap-2 flex-wrap">
+            <a href="/trendtraffic-extension.zip" download
+              className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2 rounded-xl"
+              style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
+              <Download size={15} /> Скачать расширение
+            </a>
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
+              <HelpCircle size={15} /> Как установить
+            </span>
+          </div>
+          <div className="text-[12.5px] leading-relaxed rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
+            <ol className="list-decimal ml-4 space-y-1.5">
+              <li>Скачайте <b>.zip</b> и <b>распакуйте</b> в отдельную папку.</li>
+              <li>Откройте <code>chrome://extensions</code> → включите <b>«Режим разработчика»</b> (тумблер справа сверху).</li>
+              <li>Нажмите <b>«Загрузить распакованное»</b> и выберите эту папку.</li>
+              <li>Если раньше стояло <b>отдельное</b> расширение «Google Flow» — <b>удалите его</b>, чтобы не конфликтовали.</li>
+              <li>Откройте нужный сайт и войдите в свой Google: <b>labs.google/flow</b> (Veo) или <b>notebooklm.google.com</b> (Hotebook).</li>
+              <li>Готово. <b>Подключение автоматическое</b> — пока вы залогинены в приложении.</li>
+            </ol>
+            <p className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+              <b>Обновление версии:</b> скачайте новый .zip, замените папку и нажмите «Обновить» в chrome://extensions, затем обновите вкладку app.trendtraffic.pro (F5).
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   // «UGC»: удалить макет (бренд-кит студии).
   const deleteKit = async (k: BrandKit) => {
@@ -610,10 +675,27 @@ export default function GalleryPage() {
 
       {loading ? (
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
+      ) : tab === 'publisher' ? (
+        /* «Публикатор» — вкладка-заглушка: сервис публикации ещё не подключён */
+        <div className="py-20 sm:py-28 text-center flex flex-col items-center gap-4">
+          <span className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            <Send size={30} color="#fff" />
+          </span>
+          <div className="space-y-1.5 max-w-md">
+            <p className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Публикатор скоро</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              Автопубликация готовых роликов в TikTok, Instagram, YouTube и другие соцсети —
+              прямо из Галереи. Раздел в разработке.
+            </p>
+          </div>
+        </div>
       ) : tab === 'trendhub' ? (
         renderTrendHub()
       ) : (
         <>
+          {/* Google Flow / Hotebook: плашка «Установите расширение TrendTraffic» (инлайн-раскрытие) */}
+          {(tab === 'flow' || tab === 'hotebook') && renderExtBanner()}
+
           {/* «Видео»: кнопки-фильтры Видео | Аудио (аудио объединено с медиафайлами) */}
           {tab === 'reference' && (
             <div className="inline-flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>

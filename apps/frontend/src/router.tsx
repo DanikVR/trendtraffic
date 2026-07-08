@@ -70,7 +70,7 @@ function lazyWithRetry<T extends React.ComponentType<any>>(factory: () => Promis
 // OMNICHANNEL Фаза 2: конструктор цепочек — lazy (React Flow тяжёлый, грузим по входу).
 const FlowPage = lazyWithRetry(() => import('./pages/FlowPage'));
 const GalleryPage = lazyWithRetry(() => import('./pages/GalleryPage'));
-const PublisherPage = lazyWithRetry(() => import('./pages/PublisherPage'));
+// PublisherPage удалён (2026-07-08) — Публикатор теперь вкладка внутри Галереи.
 // TRENDTRAFFIC: вкладка «Social Media Extension» (рехостинг TikHub-расширения) — lazy.
 const SocialExtensionPage = lazyWithRetry(() => import('./pages/SocialExtensionPage'));
 // TRENDTRAFFIC: «Каналы» — анализ всех видео канала по ссылке — lazy.
@@ -295,14 +295,8 @@ export const router = createBrowserRouter([
               </React.Suspense>
             ),
           }] : []),
-          ...(FEATURES.publisher ? [{
-            path: 'publisher',
-            element: (
-              <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
-                <PublisherPage />
-              </React.Suspense>
-            ),
-          }] : []),
+          // Страница /publisher УДАЛЕНА (2026-07-08): Публикатор теперь вкладка внутри Галереи
+          // (пока заглушка «скоро»). Роут снят, PublisherPage удалён.
           ...(FEATURES.socialMediaExt ? [{
             // Только Enterprise (+superadmin). Гейт — RequireEnterprise.
             element: <RequireEnterprise />,
