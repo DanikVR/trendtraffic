@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar ji bo tevahiya rêzefîlmê carekê tê nîşandan.",
       "voiceoverBase": "Di vê modê de vîdyo bingeha çarçoveyê ye: deng û jêrnivîs li jor diçin.",
       "emptyTitle": "Vîdyo hîn nehatiye barkirin",
-      "emptySub": "ji Galeriyê hilbijêre"
+      "emptySub": "ji Galeriyê hilbijêre",
+      "photosTitle": "Slaydshowkirina wêneyan",
+      "photosSub": "yek wêne - çarçoveyek bêliv, çend - bi çerxên xaçerêyî ve dorveger",
+      "photosOne": "1 wêne — çarçove",
+      "photosCount_one": "Wêneya {{count}} — bi çerxên xaçerêyî diguhere",
+      "photosCount_other": "wêneyên {{count}} — bi xaçerêyan ve bizivirin",
+      "photosVsVideo": "Hem vîdyo û hem jî wêne tên hilbijartin - vîdyo bi ser dikeve (wêne nayên hesibandin)."
     },
     "subtitles": {
       "title": "Jêrnivîs",
@@ -1403,7 +1409,9 @@
       "outro": "Bumpera Outro",
       "layer": "Qata jorîn (PNG)",
       "layerNote": "PNG-yeke zelal ji bo formata çarçoveyê hatiye amadekirin — ew ê li ser tevahiya vîdyoyê rûne.",
-      "bumperNote": "Wekî ku heye, bi vîdyoyê ve girêdayî ye, pêvajo nehatiye kirin."
+      "bumperNote": "Wekî ku heye, bi vîdyoyê ve girêdayî ye, pêvajo nehatiye kirin.",
+      "clipImagesTitle": "Wêneyên ji bo pêşandana slaytê",
+      "clipImagesNote": "Ji bo hilgirtina heta 12 wêneyan bikirtînin — rêza hilbijînin = rêza lêxistinê. Wêneyek yekane dibe çarçoveyek bêliv."
     },
     "progress": {
       "title": "Vîdyoya te tê çêkirin…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Mûzîk",
       "chipSubtitles": "Jêrnivîs",
       "chipVoice": "Deng"
+    },
+    "analysis": {
+      "title": "Analîza trendê",
+      "sub": "formula serkeftinê → nav blokan",
+      "empty": "Şirovekirina trendê nehatiye hilbijartin",
+      "emptySub": "ji analîzên xwe hilbijêre",
+      "pickTitle": "Dabeşkirinek trendê hilbijêre",
+      "pickSub": "Analîzên tomarkirî ji rûpela Trends. Blokên studyoyê yên ku hatine hilbijartin - qutiyên kontrolê tam li ku derê ne.",
+      "none": "Hîn analîz tune ne - vîdyoyek li ser rûpela Trends (taba Analîtîk) analîz bikin.",
+      "framesBadge": "asta çarçovê",
+      "useScript": "Senaryoya ji analîzê",
+      "useScriptSub": "çêkirina skrîptê li gorî formula trendê û pêşnûmeya wê ya amade dimeşe",
+      "useVideo": "Vîdyoya trendê wekî dîmen",
+      "useVideoSub": "vîdyoya trendê ya dakêşandî dibe dîmen",
+      "useSubtitles": "Şêwaza jêrnivîsê ji analîzkirinê",
+      "useSubtitlesSub": "şêwaza dîtbarî ya trendê → daxwazên jêrnivîsê",
+      "useRetention": "Derhêneriya Montajê ji analîzê",
+      "useRetentionSub": "hook/action/CTA bi berçavgirtina têkçûnê ve têne nîşankirin"
+    },
+    "tpl": {
+      "button": "Şablon",
+      "tooltip": "Şablon: tevahiya sazkirina studyoyê hilînin û weşana otomatîkî ya trendê çalak bikin",
+      "title": "Şablonên UGC",
+      "sub": "Şablon HEMÛ mîhengên studyoyê (mod, jêrnivîs, muzîk, qutiyên kontrolê yên analîzê) hildigire. Weşandina otomatîkî wê bi analîzek otomatîkî ya trendê ve girêdide - vîdyo bixwe çêdibin.",
+      "empty": "Hîn şablon tune ne - sazkirina heyî li jêr tomar bike.",
+      "apply": "Bikaranîn",
+      "autopubOn": "Weşana otomatîk çalak bike",
+      "source": "Kanî",
+      "sourceNone": "— çavkaniyek hilbijêre —",
+      "sourceTrends": "Trend",
+      "sourcePaused": "rawestiyayî",
+      "lang": "Zimanê vîdyoyê",
+      "langHint": "nivîs tavilê bi vî zimanî tê nivîsandin",
+      "autopubHint": "Analîza otomatîk vîdyoyek trendê ya nû dibîne → dabeşkirin → vîdyoyek ji vê şablonê tê çêkirin (beşa \"Otomatîk\" di Galeriyê de). Çavkaniyên din ji bilî Trendan paşê tên.",
+      "noWatches": "Hîn analîzên otomatîk tune ne - li ser rûpela Trends (bloka analîza otomatîk) yekê çalak bike.",
+      "saveCurrent": "Mîhengên heyî wekî şablonekê hilîne",
+      "namePlaceholder": "Navê şablonê",
+      "keywordPlaceholder": "Peyva sereke ya trendê (nîşana li ser kartê)",
+      "save": "Şablonê tomar bike",
+      "note": "Şablon di Galeriyê → UGC → \"Otomatîk\" de li kêleka vîdyoyên otomatîk hene.",
+      "defaultName": "Şablona min"
     }
   }
 }

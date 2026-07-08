@@ -1286,7 +1286,13 @@
       "seriesBilling": "L'avatar est facturé une seule fois pour toute la série.",
       "voiceoverBase": "Dans ce mode, la vidéo constitue la base du cadre : la voix et les sous-titres apparaissent par-dessus.",
       "emptyTitle": "Vidéo non encore téléchargée",
-      "emptySub": "choisir dans la galerie"
+      "emptySub": "choisir dans la galerie",
+      "photosTitle": "Diaporama photo",
+      "photosSub": "une photo — une image fixe, plusieurs — défile avec des fondus enchaînés",
+      "photosOne": "1 photo — image fixe",
+      "photosCount_one": "{{count}} photo — cycles avec fondus enchaînés",
+      "photosCount_other": "{{count}} photos — cycle avec fondus enchaînés",
+      "photosVsVideo": "La vidéo et les photos sont toutes deux sélectionnées — la vidéo l'emporte (les photos sont ignorées)."
     },
     "subtitles": {
       "title": "Sous-titres",
@@ -1403,7 +1409,9 @@
       "outro": "Pare-chocs de fin",
       "layer": "Couche supérieure (PNG)",
       "layerNote": "Un fichier PNG transparent préparé pour le format d'image — il se superposera à toute la vidéo.",
-      "bumperNote": "Intégré tel quel à la vidéo, sans aucun traitement."
+      "bumperNote": "Intégré tel quel à la vidéo, sans aucun traitement.",
+      "clipImagesTitle": "Photos pour le diaporama",
+      "clipImagesNote": "Cliquez pour sélectionner jusqu'à 12 images ; l'ordre de sélection détermine l'ordre de lecture. Chaque photo devient une image fixe."
     },
     "progress": {
       "title": "Créer votre vidéo…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musique",
       "chipSubtitles": "Sous-titres",
       "chipVoice": "Voix"
+    },
+    "analysis": {
+      "title": "Analyse des tendances",
+      "sub": "Formule du succès → en blocs",
+      "empty": "Aucune analyse de tendance sélectionnée",
+      "emptySub": "choisissez parmi vos analyses",
+      "pickTitle": "Choisissez une analyse de tendance",
+      "pickSub": "Analyses enregistrées depuis la page Tendances. La répartition choisie alimente les blocs du studio ; les cases à cocher permettent de déterminer précisément où.",
+      "none": "Aucune analyse pour le moment — analysez une vidéo sur la page Tendances (onglet Analyses).",
+      "framesBadge": "niveau de cadre",
+      "useScript": "Script issu de l'analyse",
+      "useScriptSub": "La génération de scripts suit la formule tendance et son brouillon prêt à l'emploi",
+      "useVideo": "Vidéo tendance sous forme de séquences",
+      "useVideoSub": "La vidéo tendance téléchargée devient la séquence",
+      "useSubtitles": "Style de sous-titre issu de la décomposition",
+      "useSubtitlesSub": "style visuel tendance → souhaits de sous-titres",
+      "useRetention": "Montage réalisé à partir de l'analyse",
+      "useRetentionSub": "Les éléments « accroche », « action » et « CTA » sont étiquetés en tenant compte de la décomposition."
+    },
+    "tpl": {
+      "button": "Modèle",
+      "tooltip": "Modèles : enregistrez la configuration complète du studio et activez la publication automatique des tendances.",
+      "title": "Modèles UGC",
+      "sub": "Un modèle enregistre tous les paramètres du studio (mode, sous-titres, musique, cases à cocher d'analyse). La publication automatique le relie à une analyse automatique des tendances : les vidéos se créent automatiquement.",
+      "empty": "Aucun modèle pour le moment — enregistrez la configuration actuelle ci-dessous.",
+      "apply": "Appliquer",
+      "autopubOn": "Activer la publication automatique",
+      "source": "Source",
+      "sourceNone": "— choisir une source —",
+      "sourceTrends": "Tendances",
+      "sourcePaused": "pause",
+      "lang": "Langue vidéo",
+      "langHint": "le script est écrit immédiatement dans cette langue",
+      "autopubHint": "L'analyse automatique détecte une nouvelle tendance vidéo → analyse → une vidéo est créée à partir de ce modèle (section « Auto » de la galerie). D'autres sources, outre les tendances, seront ajoutées ultérieurement.",
+      "noWatches": "Aucune analyse automatique pour le moment — activez-en une sur la page Tendances (bloc Analyse automatique).",
+      "saveCurrent": "Enregistrer les paramètres actuels en tant que modèle",
+      "namePlaceholder": "Nom du modèle",
+      "keywordPlaceholder": "Mot-clé tendance (badge sur la carte)",
+      "save": "Enregistrer le modèle",
+      "note": "Les modèles se trouvent dans Galerie → UGC → « Auto », à côté des vidéos automatiques.",
+      "defaultName": "Mon modèle"
     }
   }
 }

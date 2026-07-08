@@ -1286,7 +1286,13 @@
       "seriesBilling": "Ana lissafin avatar sau ɗaya ga dukkan jerin.",
       "voiceoverBase": "A cikin wannan yanayin bidiyon shine tushen firam ɗin: murya da taken rubutu suna kan gaba.",
       "emptyTitle": "Ba a ɗora bidiyo ba tukuna",
-      "emptySub": "zaɓi daga Gallery"
+      "emptySub": "zaɓi daga Gallery",
+      "photosTitle": "Nunin faifai na hoto",
+      "photosSub": "hoto ɗaya — firam ɗin da ba shi da motsi, da yawa — zagayawa tare da giciye",
+      "photosOne": "Hoto 1 — firam ɗin da ke tsaye",
+      "photosCount_one": "Hoto na {{count}} — zagayawa tare da fade-fade",
+      "photosCount_other": "{{count}} hotuna — zagayawa tare da fades",
+      "photosVsVideo": "Bidiyo da hotuna duka an zaɓi — bidiyon ya yi nasara (an yi watsi da hotuna)."
     },
     "subtitles": {
       "title": "Takaitattun kalmomi",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper na Outro",
       "layer": "Babban Layer (PNG)",
       "layerNote": "An shirya PNG mai haske don tsarin firam - zai zauna akan bidiyon gaba ɗaya.",
-      "bumperNote": "An haɗa shi da bidiyon kamar yadda yake, babu sarrafawa."
+      "bumperNote": "An haɗa shi da bidiyon kamar yadda yake, babu sarrafawa.",
+      "clipImagesTitle": "Hotuna don nunin faifai",
+      "clipImagesNote": "Danna don ɗaukar hotuna har zuwa 12 — zaɓi oda = sake kunnawa. Hoto ɗaya ya zama firam ɗin da ba shi da motsi."
     },
     "progress": {
       "title": "Ƙirƙirar bidiyonku…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Kiɗa",
       "chipSubtitles": "Takaitattun kalmomi",
       "chipVoice": "Murya"
+    },
+    "analysis": {
+      "title": "Binciken Yanayi",
+      "sub": "dabarar nasara → cikin tubalan",
+      "empty": "Ba a zaɓi wani tsarin da aka tsara ba",
+      "emptySub": "zaɓi daga nazarin ku",
+      "pickTitle": "Zaɓi tsarin da ya dace",
+      "pickSub": "An adana nazarin da aka adana daga shafin Trends. Bayanin da aka zaɓa yana ciyar da tubalan studio - akwatunan akwati suna yanke shawara a inda suke.",
+      "none": "Babu wani bincike tukuna — bincika bidiyo a shafin Trends (shafin nazari).",
+      "framesBadge": "matakin firam",
+      "useScript": "Rubutu daga bincike",
+      "useScriptSub": "Samar da rubutun yana bin tsarin da aka saba da shi da kuma daftarin da aka shirya",
+      "useVideo": "Bidiyon zamani kamar bidiyo",
+      "useVideoSub": "Bidiyon da aka sauke yana zama bidiyon da ya shahara",
+      "useSubtitles": "Salon taken rubutu daga bayanin",
+      "useSubtitlesSub": "salon gani na zamani → Bukatun subtitle",
+      "useRetention": "Gudanar da tsarin daga bincike",
+      "useRetentionSub": "An yiwa ƙugiya/aikin/CTA alama da la'akari da lalacewar da ke tattare da ita"
+    },
+    "tpl": {
+      "button": "Samfuri",
+      "tooltip": "Samfura: adana dukkan saitin studio kuma kunna yanayin bugawa ta atomatik",
+      "title": "Samfuran UGC",
+      "sub": "Samfuri yana adana DUK saitunan studio (yanayi, ƙananan kalmomi, kiɗa, akwatunan bincike). Bugawa ta atomatik yana haɗa shi da wani bincike na atomatik - bidiyo suna gina kansu.",
+      "empty": "Babu samfura tukuna — ajiye saitin yanzu a ƙasa.",
+      "apply": "Aiwatar",
+      "autopubOn": "Kunna bugawa ta atomatik",
+      "source": "Tushe",
+      "sourceNone": "— zaɓi tushe —",
+      "sourceTrends": "Yanayin Yanayi",
+      "sourcePaused": "an dakatar",
+      "lang": "Harshen bidiyo",
+      "langHint": "an rubuta rubutun da wannan yaren nan take",
+      "autopubHint": "Binciken atomatik yana gano sabon bidiyo mai salo → rarrabuwa → an gina bidiyo daga wannan samfurin (sashen \"Auto\" a cikin Gallery). Ƙarin majiyoyi bayan Trends suna zuwa daga baya.",
+      "noWatches": "Babu nazarin atomatik tukuna — kunna ɗaya akan shafin Trends (Toshe na nazarin atomatik).",
+      "saveCurrent": "Ajiye saitunan yanzu azaman samfuri",
+      "namePlaceholder": "Sunan samfuri",
+      "keywordPlaceholder": "Kalmomin shiga na zamani (alama a kan katin)",
+      "save": "Ajiye samfuri",
+      "note": "Samfura suna nan a cikin Gallery → UGC → \"Atomatik\" kusa da bidiyo na atomatik.",
+      "defaultName": "Samfuri na"
     }
   }
 }

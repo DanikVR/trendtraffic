@@ -1286,7 +1286,13 @@
       "seriesBilling": "Ang avatar gipaningil kausa ra alang sa tibuok serye.",
       "voiceoverBase": "Niini nga mode, ang video mao ang base sa frame: ang tingog ug mga subtitle ang naa sa ibabaw.",
       "emptyTitle": "Wala pa gi-upload ang video",
-      "emptySub": "pilia gikan sa Galeriya"
+      "emptySub": "pilia gikan sa Galeriya",
+      "photosTitle": "Slideshow sa litrato",
+      "photosSub": "usa ka litrato — usa ka still frame, daghan — nagbalik-balik uban ang crossfades",
+      "photosOne": "1 ka litrato — wala’y lihok nga frame",
+      "photosCount_one": "{{count}} nga litrato — mga siklo nga adunay mga crossfade",
+      "photosCount_other": "mga litrato sa {{count}} — pagbisikleta nga adunay mga crossfade",
+      "photosVsVideo": "Ang video ug mga litrato nga napili — ang video ang modaog (ang mga litrato dili tagdon)."
     },
     "subtitles": {
       "title": "Mga Subtitle",
@@ -1403,7 +1409,9 @@
       "outro": "Outro bumper",
       "layer": "Ibabaw nga lut-od (PNG)",
       "layerNote": "Usa ka transparent nga PNG nga giandam para sa frame format — kini motabon sa tibuok video.",
-      "bumperNote": "Naka-attach sa video kung unsa kini, walay pagproseso."
+      "bumperNote": "Naka-attach sa video kung unsa kini, walay pagproseso.",
+      "clipImagesTitle": "Mga litrato para sa slideshow",
+      "clipImagesNote": "I-klik aron mokuha hangtod sa 12 ka mga imahe — pilia ang han-ay = han-ay sa pagpatugtog. Ang usa ka litrato mahimong usa ka still frame."
     },
     "progress": {
       "title": "Naghimo sa imong video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musika",
       "chipSubtitles": "Mga Subtitle",
       "chipVoice": "Tingog"
+    },
+    "analysis": {
+      "title": "Pag-analisar sa uso",
+      "sub": "pormula sa kalampusan → ngadto sa mga bloke",
+      "empty": "Walay gipili nga pagbahinbahin sa uso",
+      "emptySub": "pagpili gikan sa imong mga pag-analisar",
+      "pickTitle": "Pagpili og usa ka pagbahinbahin sa uso",
+      "pickSub": "Gi-save nga mga pag-analisa gikan sa panid sa Trends. Ang napili nga breakdown mopakaon sa mga bloke sa studio — ang mga checkbox ang modesisyon kung asa gyud.",
+      "none": "Wala pa'y mga pagtuki — pag-analisar og video sa panid sa Trends (tab nga Analytics).",
+      "framesBadge": "lebel sa frame",
+      "useScript": "Iskrip gikan sa pagtuki",
+      "useScriptSub": "Ang pagmugna og script nagsunod sa pormula sa uso ug sa andam na nga draft niini",
+      "useVideo": "Nag-trend nga video isip footage",
+      "useVideoSub": "ang na-download nga trend video nahimong footage",
+      "useSubtitles": "Estilo sa subtitle gikan sa breakdown",
+      "useSubtitlesSub": "ang uso nga biswal nga estilo → mga pangandoy sa subtitle",
+      "useRetention": "Montage nga nagdumala gikan sa pagtuki",
+      "useRetentionSub": "ang hook/action/CTA gi-tag nga gikonsiderar ang breakdown"
+    },
+    "tpl": {
+      "button": "Template",
+      "tooltip": "Mga Template: i-save ang tibuok setup sa studio ug i-enable ang trend auto-publishing",
+      "title": "Mga template sa UGC",
+      "sub": "Ang template nagtipig sa TANANG mga setting sa studio (mode, subtitles, musika, mga checkbox sa pag-analisa). Ang auto-publishing nag-link niini sa usa ka trend auto-analysis — ang mga video mismo ang mohimo.",
+      "empty": "Wala pa'y mga template — i-save ang kasamtangang setup sa ubos.",
+      "apply": "Pag-aplay",
+      "autopubOn": "I-enable ang awtomatikong pagmantala",
+      "source": "Tinubdan",
+      "sourceNone": "— pagpili og tinubdan —",
+      "sourceTrends": "Mga Uso",
+      "sourcePaused": "mihunong",
+      "lang": "Pinulongan sa video",
+      "langHint": "ang script gisulat dayon niini nga pinulongan",
+      "autopubHint": "Ang auto-analysis makakita og bag-ong trend video → breakdown → usa ka video ang gihimo gikan niini nga template (ang seksyon nga \"Auto\" sa Gallery). Dugang mga tinubdan gawas sa Trends ang moabut sa ulahi.",
+      "noWatches": "Wala pa'y awtomatikong pag-analisa — i-enable ang usa sa panid sa Trends (Auto-analysis block).",
+      "saveCurrent": "I-save ang kasamtangang mga setting isip template",
+      "namePlaceholder": "Ngalan sa template",
+      "keywordPlaceholder": "Trend keyword (badge sa card)",
+      "save": "I-save ang template",
+      "note": "Ang mga template makita sa Gallery → UGC → “Auto” tupad sa awtomatikong mga video.",
+      "defaultName": "Akong template"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "L'avatar hè fatturatu una volta per tutta a serie.",
       "voiceoverBase": "In questu modu, u video hè a basa di u quadru: a voce è i sottotitoli vanu in cima.",
       "emptyTitle": "Video micca ancu caricatu",
-      "emptySub": "sceglite da a Galleria"
+      "emptySub": "sceglite da a Galleria",
+      "photosTitle": "Presentazione di foto",
+      "photosSub": "una foto - un quadru fissu, parechji - ciclu cù dissolvenze incruciate",
+      "photosOne": "1 foto — quadru fissu",
+      "photosCount_one": "foto {{count}} — cicli cù dissolvenze incruciate",
+      "photosCount_other": "Foto {{count}} — ciclu cù dissolvenze incruciate",
+      "photosVsVideo": "Tramindui i video è e foto scelte - u video vince (e foto sò ignorate)."
     },
     "subtitles": {
       "title": "Sottotitoli",
@@ -1403,7 +1409,9 @@
       "outro": "Paraurti finale",
       "layer": "Stratu superiore (PNG)",
       "layerNote": "Un PNG trasparente preparatu per u furmatu di quadru - si metterà sopra tuttu u video.",
-      "bumperNote": "Attaccatu à u video cusì com'è, senza trasfurmazione."
+      "bumperNote": "Attaccatu à u video cusì com'è, senza trasfurmazione.",
+      "clipImagesTitle": "Foto per a presentazione di diapositive",
+      "clipImagesNote": "Cliccate per sceglie finu à 12 imagine - ordine di scelta = ordine di riproduzione. Una sola foto diventa un quadru fissu."
     },
     "progress": {
       "title": "Creendu u vostru video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musica",
       "chipSubtitles": "Sottotitoli",
       "chipVoice": "Voce"
+    },
+    "analysis": {
+      "title": "Analisi di e tendenze",
+      "sub": "formula di successu → in blocchi",
+      "empty": "Nisuna ripartizione di tendenza hè stata selezziunata",
+      "emptySub": "sceglite trà e vostre analisi",
+      "pickTitle": "Sceglite una ripartizione di tendenza",
+      "pickSub": "Analisi salvate da a pagina Tendenze. A ripartizione scelta alimenta i blocchi di studio - e caselle di cuntrollu decidenu esattamente induve.",
+      "none": "Nisuna analisi ancu - analizate un video in a pagina Tendenze (scheda Analisi).",
+      "framesBadge": "livellu di quadru",
+      "useScript": "Script da l'analisi",
+      "useScriptSub": "a generazione di script seguita a formula di tendenza è a so bozza pronta",
+      "useVideo": "Video di tendenza cum'è filmatu",
+      "useVideoSub": "U video di tendenza telecaricatu diventa u filmatu",
+      "useSubtitles": "Stile di sottutìtuli da a ripartizione",
+      "useSubtitlesSub": "u stile visuale di tendenza → desideri di sottotitoli",
+      "useRetention": "Direzzione di u montaggio da l'analisi",
+      "useRetentionSub": "ganciu/azione/CTA sò etichettati cù a ripartizione in mente"
+    },
+    "tpl": {
+      "button": "mudellu",
+      "tooltip": "Modelli: salvate tutta a cunfigurazione di u studio è attivate a publicazione automatica di e tendenze",
+      "title": "Modelli UGC",
+      "sub": "Un mudellu cuntene TUTTI i paràmetri di u studio (modu, sottotitoli, musica, caselle di cuntrollu d'analisi). A publicazione automatica u cullega à una analisi automatica di e tendenze - i video si custruiscenu da soli.",
+      "empty": "Nisun mudellu ancu - salvate a cunfigurazione attuale quì sottu.",
+      "apply": "Applicà",
+      "autopubOn": "Attivà a publicazione automatica",
+      "source": "Fonte",
+      "sourceNone": "— sceglite una fonte —",
+      "sourceTrends": "Tendenze",
+      "sourcePaused": "in pausa",
+      "lang": "Lingua di u video",
+      "langHint": "u script hè scrittu subitu in questa lingua",
+      "autopubHint": "L'autoanalisi trova un novu video di tendenza → ripartizione → un video hè custruitu da stu mudellu (a sezzione \"Auto\" in a Galleria). Più fonti oltre à e Tendenze ghjunghjenu più tardi.",
+      "noWatches": "Nisuna analisi automatica ancu - attivatene una in a pagina Tendenze (bloccu Autoanalisi).",
+      "saveCurrent": "Salvà i paràmetri attuali cum'è mudellu",
+      "namePlaceholder": "Nome di u mudellu",
+      "keywordPlaceholder": "Parolla chjave di tendenza (badge nantu à a carta)",
+      "save": "Salvà u mudellu",
+      "note": "I mudelli sò dispunibili in Galleria → UGC → \"Auto\" accantu à i video automatichi.",
+      "defaultName": "U mo mudellu"
     }
   }
 }

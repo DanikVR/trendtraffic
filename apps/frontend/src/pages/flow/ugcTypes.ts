@@ -29,6 +29,9 @@ export interface UgcSpec {
   script: PodLine[];                                        // реплики (один аватар)
   recordingUrl: string | null; recordingName: string | null;
   clip: { url: string; name: string } | null;              // вторая половина — видео
+  // Видеоряд из ФОТО: одно = статичный кадр, несколько = перелистывание по кругу
+  // (бэкенд собирает слайдшоу-клип пре-шагом /ugc/build; при заданном clip игнорируется).
+  clipImages: { url: string; name: string }[];
   clipFit: 'cover' | 'contain'; clipMuted: boolean;
   subtitles: UgcSubtitles;                                  // титры (переиспользуем блок субтитров)
   music: { url: string; name: string; volumePct: number; durationSec?: number | null } | null;   // durationSec: играть первые N сек (null = весь ролик)
@@ -57,6 +60,20 @@ export interface UgcSpec {
   outro: { url: string; name: string } | null;
   layers: Partial<Record<UgcFormat, { url: string; name: string }>>;
   progressBar: boolean;                                     // полоса прогресса сверху кадра
+  // «Использовать анализ» (ДНК тренда) — гибко по блокам: что именно подмешивать.
+  // analysis = выбранный разбор (id из video_analyses + снимок нужных полей ДНК);
+  // analysisUse — галочки: script (генерация текста), video (видео тренда в Видеоряд),
+  // subtitles (стиль титров из visualStyle), retention (sceneBeats → режиссура Монтажа).
+  analysis: {
+    id: string;
+    title?: string;             // подпись выбранного разбора (имя видео/ключевик)
+    brief?: string;             // компилированный бриф ДНК
+    copyReadyScript?: string;   // готовый черновик озвучки
+    visualStyle?: string;
+    hookAnalysis?: string;
+    fileUrl?: string | null;    // видео тренда в Галерее (для галочки «видео»)
+  } | null;
+  analysisUse: { script: boolean; video: boolean; subtitles: boolean; retention: boolean };
 }
 export const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
@@ -66,7 +83,7 @@ export const UGC_DEFAULT: UgcSpec = {
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],
   recordingUrl: null, recordingName: null,
-  clip: null, clipFit: 'cover', clipMuted: true,
+  clip: null, clipImages: [], clipFit: 'cover', clipMuted: true,
   subtitles: { style: 'word', pos: 'bottom', wishes: '' },
   music: null,
   platforms: ['tiktok', 'reels', 'shorts'],
@@ -88,12 +105,14 @@ export const UGC_DEFAULT: UgcSpec = {
   outro: null,
   layers: {},
   progressBar: false,
+  analysis: null,
+  analysisUse: { script: true, video: true, subtitles: true, retention: true },
 };
 
 /** Цель пикера Галереи в UGC-студии (какое поле заполняем выбранным файлом). */
 export type UgcPickTarget =
   | 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'
-  | 'intro' | 'outro'
+  | 'intro' | 'outro' | 'clipImages'
   | `layer_${UgcFormat}`;
 
 /** Производный режим ролика (четыре взаимоисключающие ветки /ugc/build). */

@@ -12,7 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X,
+  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X, RefreshCw,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
@@ -183,6 +183,75 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
+
+  // ── Автоанализ (конвейер тренд → анализ → UGC): watches тенанта. null = недоступен
+  // (не Enterprise / 403) — панель не показываем вовсе. Enterprise-only: расходы
+  // цепочки идут с ключей клиента.
+  interface WatchRow { id: string; keyword: string; platform: string; intervalMinutes: number; enabled: boolean; dailyCap: number; nextRunAt?: string | null; lastError?: string | null }
+  const [watches, setWatches] = useState<WatchRow[] | null>(null);
+  const [watchInterval, setWatchInterval] = useState(1440);
+  const [watchBusy, setWatchBusy] = useState(false);
+  const [watchErr, setWatchErr] = useState<string | null>(null);
+  const [watchRunsFor, setWatchRunsFor] = useState<string | null>(null);
+  const [watchRuns, setWatchRuns] = useState<any[] | null>(null);
+  const loadWatches = async () => {
+    try {
+      const r = await fetch('/api/trends/watches', { headers: headers() });
+      if (r.status === 403) { setWatches(null); return; }
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) setWatches(Array.isArray(d?.watches) ? d.watches : []);
+    } catch { /* тихо */ }
+  };
+  useEffect(() => { void loadWatches(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  const createWatch = async () => {
+    if (!query.trim() || watchBusy) return;
+    setWatchBusy(true); setWatchErr(null);
+    try {
+      const r = await fetch('/api/trends/watches', {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({
+          keyword: query.trim(), platform, intervalMinutes: watchInterval,
+          scanParams: { mode, sortType, publishTime, filters },
+        }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      await loadWatches();
+    } catch (e: any) { setWatchErr(e?.message || 'Не удалось включить автоанализ.'); }
+    finally { setWatchBusy(false); }
+  };
+  const patchWatch = async (id: string, patch: Record<string, any>) => {
+    try {
+      const r = await fetch(`/api/trends/watches/${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify(patch) });
+      if (r.ok) await loadWatches();
+    } catch { /* тихо */ }
+  };
+  const deleteWatch = async (id: string) => {
+    try {
+      await fetch(`/api/trends/watches/${id}`, { method: 'DELETE', headers: headers() });
+      if (watchRunsFor === id) { setWatchRunsFor(null); setWatchRuns(null); }
+      await loadWatches();
+    } catch { /* тихо */ }
+  };
+  const runWatchNow = async (id: string) => {
+    setWatchErr(null);
+    try {
+      const r = await fetch(`/api/trends/watches/${id}/run`, { method: 'POST', headers: headers() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (watchRunsFor === id) await toggleWatchRuns(id, true);
+      await loadWatches();
+    } catch (e: any) { setWatchErr(e?.message || 'Не удалось запустить.'); }
+  };
+  const toggleWatchRuns = async (id: string, force = false) => {
+    if (watchRunsFor === id && !force) { setWatchRunsFor(null); setWatchRuns(null); return; }
+    setWatchRunsFor(id); setWatchRuns(null);
+    try {
+      const r = await fetch(`/api/trends/watches/${id}/runs?limit=6`, { headers: headers() });
+      const d = await r.json().catch(() => ({}));
+      setWatchRuns(r.ok && Array.isArray(d?.runs) ? d.runs : []);
+    } catch { setWatchRuns([]); }
+  };
 
   // Загрузка/обновление списка с сервера (источник истины). После удаления и при
   // фоновом скачивании UI приводим в соответствие с БД — без оптимистичных фантомов.
@@ -527,6 +596,101 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             <p className="text-[11px] flex items-end pb-2.5" style={{ color: 'var(--text-muted)' }}>Instagram: фильтров нет — только поиск по ключевику.</p>
           )}
         </div>
+
+        {/* ── АВТОАНАЛИЗ (конвейер тренд → анализ → UGC), Enterprise-only ─────────────
+            По расписанию сканирует этот ключевик и анализирует ОДНО новое видео
+            (уже разобранные пропускаются; нет новых — период расширяется сам).
+            Панель видна только если /api/trends/watches отвечает (не 403). ── */}
+        {watches !== null && kind === 'keyword' && ['tiktok', 'instagram', 'twitter'].includes(platform) && (
+          <div className="rounded-xl p-3 space-y-2" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${watches.length ? 'var(--brand)' : 'var(--border-medium)'}` }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <b className="text-[12px] inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                <RefreshCw size={13} style={{ color: 'var(--brand)' }} /> Автоанализ
+              </b>
+              <span className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                по расписанию: скан → одно НОВОЕ видео → анализ в Галерею (+ролик по шаблону UGC)
+              </span>
+              <span className="flex items-center gap-1.5 ml-auto">
+                <select value={watchInterval} onChange={(e) => setWatchInterval(Number(e.target.value))}
+                  className="h-8 px-2 rounded-lg text-[12px] focus:outline-none"
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                  <option value={60}>каждый час</option>
+                  <option value={180}>каждые 3 часа</option>
+                  <option value={360}>каждые 6 часов</option>
+                  <option value={720}>каждые 12 часов</option>
+                  <option value={1440}>раз в сутки</option>
+                  <option value={4320}>раз в 3 дня</option>
+                  <option value={10080}>раз в неделю</option>
+                </select>
+                <button type="button" onClick={() => void createWatch()} disabled={watchBusy || !query.trim()}
+                  title={query.trim() ? 'Включить автоанализ этого ключевика' : 'Сначала введите ключевик'}
+                  className="h-8 px-3 rounded-lg text-[12px] font-700 disabled:opacity-50"
+                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                  {watchBusy ? '…' : '+ Включить'}
+                </button>
+              </span>
+            </div>
+            {watchErr && <p className="text-[11px]" style={{ color: '#ef4444' }}>{watchErr}</p>}
+            {watches.length > 0 && (
+              <div className="space-y-1.5">
+                {watches.map((w) => (
+                  <div key={w.id} className="rounded-lg p-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => void patchWatch(w.id, { enabled: !w.enabled })}
+                        title={w.enabled ? 'Пауза' : 'Включить'}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: w.enabled ? 'rgba(16,185,129,.14)' : 'var(--bg-tertiary)', color: w.enabled ? '#10b981' : 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                        {w.enabled ? '⏸' : '▶'}
+                      </button>
+                      <span className="flex-1 min-w-0">
+                        <b className="text-[12px]" style={{ color: 'var(--text-primary)' }}>#{w.keyword}</b>
+                        <span className="text-[10.5px] ml-1.5" style={{ color: 'var(--text-muted)' }}>
+                          {w.platform} · кажд. {w.intervalMinutes >= 1440 ? `${Math.round(w.intervalMinutes / 1440)} дн.` : `${Math.round(w.intervalMinutes / 60)} ч`} · до {w.dailyCap}/день
+                          {w.enabled && w.nextRunAt ? ` · следующий ~${new Date(w.nextRunAt).toLocaleTimeString().slice(0, 5)}` : !w.enabled ? ' · ПАУЗА' : ''}
+                        </span>
+                        {w.lastError && <span className="block text-[10px]" style={{ color: '#ef4444' }}>{w.lastError}</span>}
+                      </span>
+                      <button type="button" onClick={() => void runWatchNow(w.id)} title="Прогнать сейчас"
+                        className="h-7 px-2 rounded-lg text-[11px] font-600 flex-shrink-0"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                        Сейчас
+                      </button>
+                      <button type="button" onClick={() => void toggleWatchRuns(w.id)} title="Журнал прогонов"
+                        className="h-7 px-2 rounded-lg text-[11px] flex-shrink-0"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                        {watchRunsFor === w.id ? '▾' : '▸'} журнал
+                      </button>
+                      <button type="button" onClick={() => setConfirm({ title: `Убрать автоанализ «${w.keyword}»?`, message: 'Журнал его прогонов тоже удалится.', onConfirm: () => { setConfirm(null); void deleteWatch(w.id); } })}
+                        title="Удалить" className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
+                        <XCircle size={14} />
+                      </button>
+                    </div>
+                    {watchRunsFor === w.id && (
+                      <div className="mt-1.5 space-y-1">
+                        {watchRuns === null ? (
+                          <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>Загружаю…</p>
+                        ) : watchRuns.length === 0 ? (
+                          <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>Прогонов ещё не было.</p>
+                        ) : watchRuns.map((r) => (
+                          <p key={r.id} className="text-[10.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                            {new Date(r.startedAt).toLocaleString().slice(0, 17)} ·{' '}
+                            <b style={{ color: r.status === 'done' ? '#10b981' : r.status === 'failed' ? '#ef4444' : 'var(--text-secondary)' }}>
+                              {r.status === 'done' ? 'готово' : r.status === 'failed' ? 'ошибка' : r.status}
+                            </b>
+                            {r.pickedUrl ? <> · <a href={r.pickedUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--brand)' }}>видео</a></> : null}
+                            {Array.isArray(r.resultUrls) && r.resultUrls.length ? ` · роликов: ${r.resultUrls.length}` : ''}
+                            {r.error ? ` · ${r.error}` : r.note ? ` · ${r.note}` : ''}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {kind === 'keyword' && platform === 'tiktok' && (
           <details className="group/help text-[12px]">

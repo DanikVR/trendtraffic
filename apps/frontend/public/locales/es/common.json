@@ -1286,7 +1286,13 @@
       "seriesBilling": "El avatar se factura una sola vez por toda la serie.",
       "voiceoverBase": "En este modo, el vídeo es la base del encuadre: la voz y los subtítulos se colocan encima.",
       "emptyTitle": "El vídeo aún no se ha subido.",
-      "emptySub": "Seleccione de la galería"
+      "emptySub": "Seleccione de la galería",
+      "photosTitle": "Presentación de diapositivas fotográficas",
+      "photosSub": "una foto —un fotograma fijo, varias— se repiten con fundidos cruzados",
+      "photosOne": "1 foto — fotograma fijo",
+      "photosCount_one": "Foto {{count}} — ciclos con fundidos cruzados",
+      "photosCount_other": "Fotos {{count}} — ciclo con fundidos cruzados",
+      "photosVsVideo": "Se seleccionaron tanto vídeos como fotos; el vídeo es el que gana (las fotos se ignoran)."
     },
     "subtitles": {
       "title": "Subtítulos",
@@ -1403,7 +1409,9 @@
       "outro": "Parachoques final",
       "layer": "Capa superior (PNG)",
       "layerNote": "Una imagen PNG transparente preparada para el formato de fotograma; se superpondrá a todo el vídeo.",
-      "bumperNote": "Adjunto al vídeo tal cual, sin ningún procesamiento."
+      "bumperNote": "Adjunto al vídeo tal cual, sin ningún procesamiento.",
+      "clipImagesTitle": "Fotos para la presentación de diapositivas",
+      "clipImagesNote": "Haz clic para seleccionar hasta 12 imágenes; el orden de selección coincide con el orden de reproducción. Cada foto se convierte en una imagen fija."
     },
     "progress": {
       "title": "Creando tu vídeo…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Música",
       "chipSubtitles": "Subtítulos",
       "chipVoice": "Voz"
+    },
+    "analysis": {
+      "title": "Análisis de tendencias",
+      "sub": "fórmula del éxito → en bloques",
+      "empty": "No se ha seleccionado ningún desglose de tendencias.",
+      "emptySub": "elige de tus análisis",
+      "pickTitle": "Seleccione un desglose de tendencias",
+      "pickSub": "Análisis guardados desde la página Tendencias. El desglose elegido alimenta los bloques de estudio; las casillas de verificación deciden exactamente dónde.",
+      "none": "Aún no hay análisis disponibles; analice un video en la página de Tendencias (pestaña Análisis).",
+      "framesBadge": "nivel de fotograma",
+      "useScript": "Guion del análisis",
+      "useScriptSub": "La generación de scripts sigue la fórmula de tendencias y su borrador listo.",
+      "useVideo": "Vídeo de tendencia como metraje",
+      "useVideoSub": "El vídeo de tendencia descargado se convierte en el metraje",
+      "useSubtitles": "Estilo de subtítulos del desglose",
+      "useSubtitlesSub": "la tendencia estilo visual → deseos de subtítulos",
+      "useRetention": "Montaje dirigido a partir del análisis",
+      "useRetentionSub": "gancho/acción/CTA están etiquetados teniendo en cuenta el desglose."
+    },
+    "tpl": {
+      "button": "Plantilla",
+      "tooltip": "Plantillas: guarda toda la configuración del estudio y habilita la publicación automática de tendencias.",
+      "title": "plantillas UGC",
+      "sub": "Una plantilla almacena todos los ajustes del estudio (modo, subtítulos, música, casillas de verificación de análisis). La publicación automática la vincula a un análisis automático de tendencias: los vídeos se generan solos.",
+      "empty": "Aún no hay plantillas; guarda la configuración actual a continuación.",
+      "apply": "Aplicar",
+      "autopubOn": "Habilitar la publicación automática",
+      "source": "Fuente",
+      "sourceNone": "— elige una fuente —",
+      "sourceTrends": "Tendencias",
+      "sourcePaused": "pausado",
+      "lang": "Idioma del vídeo",
+      "langHint": "El guion está escrito en este idioma de inmediato.",
+      "autopubHint": "El análisis automático detecta un nuevo vídeo de tendencia → desglose → se crea un vídeo a partir de esta plantilla (la sección «Auto» en la galería). Próximamente se añadirán más fuentes además de Tendencias.",
+      "noWatches": "Aún no hay análisis automáticos; habilítelos en la página de Tendencias (bloque de Análisis automático).",
+      "saveCurrent": "Guarda la configuración actual como plantilla.",
+      "namePlaceholder": "Nombre de la plantilla",
+      "keywordPlaceholder": "Palabra clave de tendencia (insignia en la tarjeta)",
+      "save": "Guardar plantilla",
+      "note": "Las plantillas se encuentran en Galería → UGC → “Automático” junto a los vídeos automáticos.",
+      "defaultName": "Mi plantilla"
     }
   }
 }

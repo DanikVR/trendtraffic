@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar kasebut ditagih sapisan kanggo kabeh seri.",
       "voiceoverBase": "Ing mode iki, video minangka dhasar pigura: swara lan subtitle ana ing ndhuwur.",
       "emptyTitle": "Videone durung diunggah",
-      "emptySub": "pilih saka Galeri"
+      "emptySub": "pilih saka Galeri",
+      "photosTitle": "Slideshow foto",
+      "photosSub": "siji foto — pigura diam, sawetara — siklus karo crossfade",
+      "photosOne": "1 foto — pigura foto",
+      "photosCount_one": "foto {{count}} — siklus nganggo crossfade",
+      "photosCount_other": "foto {{count}} — muter nganggo crossfade",
+      "photosVsVideo": "Video lan foto sing dipilih — video sing menang (foto dilirwakake)."
     },
     "subtitles": {
       "title": "Subjudul",
@@ -1403,7 +1409,9 @@
       "outro": "Bemper outro",
       "layer": "Lapisan ndhuwur (PNG)",
       "layerNote": "PNG transparan sing disiapake kanggo format pigura — bakal nutupi kabeh video.",
-      "bumperNote": "Dipasang ing video apa anane, ora ana pangolahan."
+      "bumperNote": "Dipasang ing video apa anane, ora ana pangolahan.",
+      "clipImagesTitle": "Foto kanggo slideshow",
+      "clipImagesNote": "Klik kanggo njupuk nganti 12 gambar — pilih urutan = urutan puter maneh. Siji foto dadi pigura diam."
     },
     "progress": {
       "title": "Nggawe video sampeyan…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musik",
       "chipSubtitles": "Subjudul",
       "chipVoice": "Swara"
+    },
+    "analysis": {
+      "title": "Analisis tren",
+      "sub": "rumus sukses → dadi blok",
+      "empty": "Ora ana rincian tren sing dipilih",
+      "emptySub": "pilih saka analisismu",
+      "pickTitle": "Pilih rincian tren",
+      "pickSub": "Analisis sing disimpen saka kaca Tren. Rincian sing dipilih bakal menehi feed blok studio — kothak centhang nemtokake persis ing endi.",
+      "none": "Durung ana analisis — analisis video ing kaca Tren (tab Analisis).",
+      "framesBadge": "tingkat pigura",
+      "useScript": "Skrip saka analisis",
+      "useScriptSub": "Pembuatan skrip ngetutake formula tren lan draf sing wis siap",
+      "useVideo": "Video tren minangka rekaman",
+      "useVideoSub": "video tren sing diundhuh dadi rekaman",
+      "useSubtitles": "Gaya subjudul saka rincian",
+      "useSubtitlesSub": "gaya visual tren → subtitle kepinginan",
+      "useRetention": "Montase nyutradarai saka analisis",
+      "useRetentionSub": "hook/action/CTA ditandai karo rinciane ing pikiran"
+    },
+    "tpl": {
+      "button": "Cithakan",
+      "tooltip": "Cithakan: simpen kabeh persiyapan studio lan aktifake publikasi otomatis tren",
+      "title": "Cithakan UGC",
+      "sub": "Cithakan nyimpen KABEH setelan studio (mode, subtitle, musik, kothak centhang analisis). Publikasi otomatis nggandhengake karo analisis otomatis tren — video digawe dhewe.",
+      "empty": "Durung ana cithakan — simpen persiyapan saiki ing ngisor iki.",
+      "apply": "Aplikasi",
+      "autopubOn": "Aktifake publikasi otomatis",
+      "source": "Sumber",
+      "sourceNone": "— pilih sumber —",
+      "sourceTrends": "Tren",
+      "sourcePaused": "mandheg",
+      "lang": "Basa video",
+      "langHint": "Naskah iki langsung ditulis nganggo basa iki",
+      "autopubHint": "Analisis otomatis nemokake video tren anyar → rincian → video digawe saka cithakan iki (bagean \"Otomatis\" ing Galeri). Sumber liyane ngluwihi Tren bakal teka mengko.",
+      "noWatches": "Durung ana analisis otomatis — aktifake siji ing kaca Tren (blok analisis otomatis).",
+      "saveCurrent": "Simpen setelan saiki minangka cithakan",
+      "namePlaceholder": "Jeneng cithakan",
+      "keywordPlaceholder": "Kata kunci tren (lencana ing kertu)",
+      "save": "Simpen cithakan",
+      "note": "Cithakan ana ing Galeri → UGC → \"Otomatis\" ing jejere video otomatis.",
+      "defaultName": "Cithakanku"
     }
   }
 }

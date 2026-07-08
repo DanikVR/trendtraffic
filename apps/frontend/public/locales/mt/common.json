@@ -1286,7 +1286,13 @@
       "seriesBilling": "L-avatar jiġi ċċarġjat darba waħda għas-sensiela kollha.",
       "voiceoverBase": "F'dan il-mod il-vidjow huwa l-bażi tal-frejm: il-vuċi u s-sottotitli jmorru fuq nett.",
       "emptyTitle": "Il-vidjo għadu ma ġiex imtella'",
-      "emptySub": "agħżel mill-Gallerija"
+      "emptySub": "agħżel mill-Gallerija",
+      "photosTitle": "Slajds tar-ritratti",
+      "photosSub": "ritratt wieħed — qafas wieħed, diversi — ċiklu b'crossfades",
+      "photosOne": "Ritratt wieħed — qafas fiss",
+      "photosCount_one": "Ritratt {{count}} — ċikli b'crossfades",
+      "photosCount_other": "Ritratti {{count}} — ċiklu b'crossfades",
+      "photosVsVideo": "Kemm il-vidjow kif ukoll ir-ritratti magħżula — il-vidjow jirbaħ (ir-ritratti jiġu injorati)."
     },
     "subtitles": {
       "title": "Sottotitoli",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper tal-aħħar",
       "layer": "Saff ta' fuq (PNG)",
       "layerNote": "PNG trasparenti ppreparat għall-format tal-frejm — se joqgħod fuq il-vidjow kollu.",
-      "bumperNote": "Mehmuż mal-vidjo kif inhu, mingħajr ipproċessar."
+      "bumperNote": "Mehmuż mal-vidjo kif inhu, mingħajr ipproċessar.",
+      "clipImagesTitle": "Ritratti għall-islajdshow",
+      "clipImagesNote": "Ikklikkja biex tagħżel sa 12-il immaġni — ordni tal-għażla = ordni tal-plejbek. Ritratt wieħed isir frejm fiss."
     },
     "progress": {
       "title": "Qed toħloq il-vidjo tiegħek…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Mużika",
       "chipSubtitles": "Sottotitoli",
       "chipVoice": "Vuċi"
+    },
+    "analysis": {
+      "title": "Analiżi tax-xejriet",
+      "sub": "formula ta' suċċess → fi blokki",
+      "empty": "Ma ntgħażel l-ebda tqassim tax-xejra",
+      "emptySub": "agħżel mill-analiżi tiegħek",
+      "pickTitle": "Agħżel tqassim tax-xejra",
+      "pickSub": "Analiżijiet salvati mill-paġna tax-Xejriet. It-tqassim magħżul jitma' l-blokki tal-istudjo — il-kaxxi tal-kontroll jiddeċiedu eżattament fejn.",
+      "none": "Għad m'hemm l-ebda analiżi — analizza vidjo fuq il-paġna tax-Xejriet (tab Analitika).",
+      "framesBadge": "livell ta' qafas",
+      "useScript": "Skript mill-analiżi",
+      "useScriptSub": "Il-ġenerazzjoni tal-iskript issegwi l-formula tax-xejra u l-abbozz lest tagħha",
+      "useVideo": "Vidjow tax-xejra bħala filmati",
+      "useVideoSub": "Il-vidjow tax-xejra mniżżel isir il-filmat",
+      "useSubtitles": "Stil tas-sottotitli mit-tqassim",
+      "useSubtitlesSub": "l-istil viżwali tax-xejra → xewqat tas-sottotitli",
+      "useRetention": "Direzzjoni tal-muntaġġ mill-analiżi",
+      "useRetentionSub": "ganċ/azzjoni/CTA huma ttikkettjati bil-ħsieb tat-tqassim"
+    },
+    "tpl": {
+      "button": "Mudell",
+      "tooltip": "Mudelli: salva s-setup kollu tal-istudjo u attiva l-pubblikazzjoni awtomatika tax-xejriet",
+      "title": "Mudelli tal-UGC",
+      "sub": "Template jaħżen is-settings KOLLHA tal-istudjo (modalità, sottotitli, mużika, kaxxi tal-kontroll tal-analiżi). Il-pubblikazzjoni awtomatika torbtu ma' analiżi awtomatika tax-xejriet — il-vidjows jibnu lilhom infushom.",
+      "empty": "Għad m'hemm l-ebda mudell — salva s-setup attwali hawn taħt.",
+      "apply": "Applika",
+      "autopubOn": "Ippermetti l-pubblikazzjoni awtomatika",
+      "source": "Sors",
+      "sourceNone": "— agħżel sors —",
+      "sourceTrends": "Xejriet",
+      "sourcePaused": "waqfa",
+      "lang": "Lingwa tal-vidjo",
+      "langHint": "l-iskritt huwa miktub f'din il-lingwa mill-ewwel",
+      "autopubHint": "L-analiżi awtomatika ssib vidjo ta’ xejra ġdida → tqassim → vidjo jinbena minn dan it-template (it-taqsima “Awto” fil-Gallerija). Aktar sorsi lil hinn mix-Xejriet aktar tard.",
+      "noWatches": "Għad m'hemm l-ebda awtoanaliżi — attiva waħda fil-paġna tax-Xejriet (blokka tal-Awtoanaliżi).",
+      "saveCurrent": "Issejvja s-settings attwali bħala mudell",
+      "namePlaceholder": "Isem tal-mudell",
+      "keywordPlaceholder": "Kelma ewlenija tax-xejra (badge fuq il-karta)",
+      "save": "Issejvja l-mudell",
+      "note": "Il-mudelli jinsabu fil-Gallerija → UGC → “Awtomatiku” ħdejn il-vidjows awtomatiċi.",
+      "defaultName": "Il-mudell tiegħi"
     }
   }
 }

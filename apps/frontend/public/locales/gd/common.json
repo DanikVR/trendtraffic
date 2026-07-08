@@ -1286,7 +1286,13 @@
       "seriesBilling": "Thèid cunntas a thoirt don avatar aon uair airson an t-sreath gu lèir.",
       "voiceoverBase": "Anns a’ mhodh seo, ’s e a’ bhidio bunait a’ fhrèam: bidh guth agus fo-thiotalan air a’ mhullach.",
       "emptyTitle": "Cha deach a’ bhidio a luchdachadh suas fhathast",
-      "emptySub": "tagh bhon Ghailearaidh"
+      "emptySub": "tagh bhon Ghailearaidh",
+      "photosTitle": "Sleamhnagan-shleamhnagan dhealbhan",
+      "photosSub": "aon dealbh — frèam fhathast, grunn — cearcall le seargadh-tarsainn",
+      "photosOne": "1 dealbh — frèam fhathast",
+      "photosCount_one": "dealbh {{count}} — cuairtean le seargadh-tarsainn",
+      "photosCount_other": "dealbhan {{count}} — rothaireachd le seargadh-tarsainn",
+      "photosVsVideo": "Thèid bhidio is dealbh a thaghadh — bidh am bhidio a’ buannachadh (thèid dearmad a dhèanamh air dealbhan)."
     },
     "subtitles": {
       "title": "Fo-thiotalan",
@@ -1403,7 +1409,9 @@
       "outro": "Bampair a-muigh",
       "layer": "An ìre as àirde (PNG)",
       "layerNote": "PNG follaiseach air ullachadh airson cruth frèam — bidh e na shuidhe thairis air a’ bhidio gu lèir.",
-      "bumperNote": "Ceangailte ris a’ bhidio mar a tha e, gun phròiseasadh sam bith."
+      "bumperNote": "Ceangailte ris a’ bhidio mar a tha e, gun phròiseasadh sam bith.",
+      "clipImagesTitle": "Dealbhan airson an taisbeanaidh-shleamhnagan",
+      "clipImagesNote": "Briog gus suas ri 12 ìomhaigh a thaghadh — òrdugh tagh = òrdugh ath-chluich. Bidh aon dealbh na fhrèam fhathast."
     },
     "progress": {
       "title": "A’ cruthachadh do bhidio…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Ceòl",
       "chipSubtitles": "Fo-thiotalan",
       "chipVoice": "Guth"
+    },
+    "analysis": {
+      "title": "Mion-sgrùdadh treand",
+      "sub": "foirmle soirbheachais → ann am blocaichean",
+      "empty": "Cha deach mion-sgrùdadh treand a thaghadh",
+      "emptySub": "tagh bho na mion-sgrùdaidhean agad",
+      "pickTitle": "Tagh mion-sgrùdadh air gluasadan",
+      "pickSub": "Mion-sgrùdaidhean a chaidh a shàbhaladh bhon duilleag Gluasadan. Bidh am mion-sgrùdadh a chaidh a thaghadh a’ biathadh blocaichean stiùidio — bidh bogsaichean-seic a’ co-dhùnadh càite dìreach.",
+      "none": "Gun anailis fhathast — dèan anailis air bhidio air an duilleag Gluasadan (taba Anailis).",
+      "framesBadge": "ìre-frèam",
+      "useScript": "Sgriobt bho mhion-sgrùdadh",
+      "useScriptSub": "Tha gineadh sgriobt a’ leantainn foirmle an gluasaid agus an dreachd deiseil aige",
+      "useVideo": "Bhidio fasain mar fhilm",
+      "useVideoSub": "Bidh am bhidio fasain a chaidh a luchdachadh sìos a’ fàs na fhilm",
+      "useSubtitles": "Stoidhle fo-thiotalan bho bhriseadh sìos",
+      "useSubtitlesSub": "an stoidhle lèirsinneach fasanta → miannan fo-thiotalan",
+      "useRetention": "Stiùireadh montage bho mhion-sgrùdadh",
+      "useRetentionSub": "Tha dubhan/gnìomh/CTA air an tagadh leis a’ bhriseadh sìos san amharc"
+    },
+    "tpl": {
+      "button": "Teamplaid",
+      "tooltip": "Teamplaidean: sàbhail an rèiteachadh stiùidio gu lèir agus cuir an comas foillseachadh fèin-ghluasadach gluasadan",
+      "title": "Teamplaidean UGC",
+      "sub": "Bidh teamplaid a’ stòradh a h-UILE roghainnean stiùidio (modh, fo-thiotalan, ceòl, bogsaichean-seic anailis). Bidh foillseachadh fèin-ghluasadach ga cheangal ri fèin-anailis gluasadan — bidh bhideothan gan togail fhèin.",
+      "empty": "Gun teamplaidean fhathast — sàbhail an rèiteachadh làithreach gu h-ìosal.",
+      "apply": "Cuir a-steach",
+      "autopubOn": "Cuir foillseachadh fèin-ghluasadach an comas",
+      "source": "Stòr",
+      "sourceNone": "— tagh stòr —",
+      "sourceTrends": "Gluasadan",
+      "sourcePaused": "air stad",
+      "lang": "Cànan a’ bhidio",
+      "langHint": "tha an sgriobt sgrìobhte sa chànan seo sa bhad",
+      "autopubHint": "Lorgaidh fèin-anailis bhidio ùr mu threands → briseadh sìos → thèid bhidio a thogail bhon teamplaid seo (an earrann “Fèin-ghluasadach” sa Ghailearaidh). Barrachd stòran a bharrachd air Treands ri thighinn nas fhaide air adhart.",
+      "noWatches": "Gun mhion-sgrùdaidhean fèin-ghluasadach fhathast — cuir fear an comas air duilleag nan Gluasadan (bloc mion-sgrùdaidh fèin-ghluasadach).",
+      "saveCurrent": "Sàbhail na roghainnean làithreach mar theamplaid",
+      "namePlaceholder": "Ainm an teamplaid",
+      "keywordPlaceholder": "Prìomh fhacal treand (bràiste air a’ chairt)",
+      "save": "Sàbhail an teamplaid",
+      "note": "Bidh teamplaidean a’ fuireach ann an Gailearaidh → UGC → “Fèin-ghluasadach” ri taobh bhideothan fèin-ghluasadach.",
+      "defaultName": "An teamplaid agam"
     }
   }
 }

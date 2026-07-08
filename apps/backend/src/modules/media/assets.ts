@@ -14,6 +14,7 @@ export type MediaKind = 'reference' | 'audio';
 
 /** Папка «Из анализа» — ассеты, сохранённые со страницы аналитики. */
 export const ANALYZED_FOLDER = 'analyzed';
+export const AUTO_UGC_FOLDER = 'auto-ugc';   // автоматические ролики конвейера трендов
 
 export interface MediaAsset {
   id: string;
@@ -41,15 +42,16 @@ function mapRow(r: any): MediaAsset {
   };
 }
 
-/** Список обычных ассетов по kind (Референс/Аудио) — БЕЗ папки «Из анализа». */
+/** Список обычных ассетов по kind (Референс/Аудио) — БЕЗ папок «Из анализа» и «Авто-UGC»
+ *  (авто-ролики конвейера живут своей секцией и не должны дублироваться в общем списке). */
 export async function listAssets(tenantId: string, kind: MediaKind): Promise<MediaAsset[]> {
   try {
     const r = await pool.query(
       `SELECT id, kind, media_type, original_name, file_url, mime, size, folder
        FROM media_assets
-       WHERE tenant_id = $1 AND kind = $2 AND (folder IS NULL OR folder <> $3)
+       WHERE tenant_id = $1 AND kind = $2 AND (folder IS NULL OR folder NOT IN ($3, $4))
        ORDER BY created_at DESC LIMIT 500`,
-      [tenantId, kind, ANALYZED_FOLDER]
+      [tenantId, kind, ANALYZED_FOLDER, AUTO_UGC_FOLDER]
     );
     return (r.rows as any[]).map(mapRow);
   } catch {

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatarinn er rukkaður einu sinni fyrir alla seríuna.",
       "voiceoverBase": "Í þessum ham er myndbandið grunnur rammans: rödd og textar fara ofan á.",
       "emptyTitle": "Myndbandið hefur ekki enn verið hlaðið upp",
-      "emptySub": "velja úr myndasafni"
+      "emptySub": "velja úr myndasafni",
+      "photosTitle": "Myndasýning",
+      "photosSub": "ein ljósmynd — kyrrstæð mynd, nokkrar — hringrás með krossfléttun",
+      "photosOne": "1 ljósmynd — kyrrmynd",
+      "photosCount_one": "{{count}} ljósmynd — hringrásir með krosslitun",
+      "photosCount_other": "{{count}} myndir — hringrás með krosslitun",
+      "photosVsVideo": "Bæði myndband og myndir eru valin — myndbandið vinnur (myndir eru hunsaðar)."
     },
     "subtitles": {
       "title": "Textar",
@@ -1403,7 +1409,9 @@
       "outro": "Outro stuðari",
       "layer": "Efsta lag (PNG)",
       "layerNote": "Gagnsætt PNG-skrá, útbúið fyrir rammaform — hún mun liggja yfir öllu myndbandinu.",
-      "bumperNote": "Hengið við myndbandið eins og það er, án vinnslu."
+      "bumperNote": "Hengið við myndbandið eins og það er, án vinnslu.",
+      "clipImagesTitle": "Myndir fyrir myndasýningu",
+      "clipImagesNote": "Smelltu til að velja allt að 12 myndir — veldu röð = spilunarröð. Ein ljósmynd verður að kyrrstöðu."
     },
     "progress": {
       "title": "Að búa til myndbandið þitt…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Tónlist",
       "chipSubtitles": "Textar",
       "chipVoice": "Rödd"
+    },
+    "analysis": {
+      "title": "Þróunargreining",
+      "sub": "velgengnisformúla → í blokkir",
+      "empty": "Engin sundurliðun á þróun valin",
+      "emptySub": "veldu úr greiningum þínum",
+      "pickTitle": "Veldu sundurliðun á þróun",
+      "pickSub": "Vistaðar greiningar af síðunni Trends. Valin sundurliðun nærir vinnustofublokkir — gátreitir ákvarða nákvæmlega hvar.",
+      "none": "Engar greiningar ennþá — greinið myndband á síðunni „Trends“ (flipinn „Greiningar“).",
+      "framesBadge": "rammastig",
+      "useScript": "Handrit úr greiningu",
+      "useScriptSub": "handritsframleiðsla fylgir þróunarformúlunni og tilbúnum drögum að henni",
+      "useVideo": "Trendmyndband sem myndefni",
+      "useVideoSub": "niðurhalaða tískumyndbandið verður að myndefni",
+      "useSubtitles": "Stíll undirtexta úr sundurliðun",
+      "useSubtitlesSub": "sjónrænn stíll → óskir um undirtitla",
+      "useRetention": "Klippa leikstýrt út frá greiningu",
+      "useRetentionSub": "Hook/Action/CTA eru merkt með sundurliðunina í huga"
+    },
+    "tpl": {
+      "button": "Sniðmát",
+      "tooltip": "Sniðmát: vistaðu alla uppsetningu vinnustofunnar og virkjaðu sjálfvirka birtingu þróunar.",
+      "title": "Sniðmát fyrir notendur sem eru með efni",
+      "sub": "Sniðmát geymir ALLAR stillingar stúdíósins (stilling, textar, tónlist, greiningargákreiti). Sjálfvirk birting tengir það við sjálfvirka þróunargreiningu — myndböndin búa sig sjálf til.",
+      "empty": "Engin sniðmát ennþá — vistaðu núverandi uppsetningu hér að neðan.",
+      "apply": "Sækja um",
+      "autopubOn": "Virkja sjálfvirka birtingu",
+      "source": "Heimild",
+      "sourceNone": "— veldu heimild —",
+      "sourceTrends": "Þróun",
+      "sourcePaused": "gert hlé",
+      "lang": "Tungumál myndbands",
+      "langHint": "handritið er skrifað á þessu tungumáli strax",
+      "autopubHint": "Sjálfvirk greining finnur nýtt myndband með þróun → sundurliðun → myndband er búið til út frá þessu sniðmáti („Sjálfvirkt“ hlutinn í myndasafninu). Fleiri heimildir umfram Trend koma síðar.",
+      "noWatches": "Engar sjálfvirkar greiningar ennþá — virkjaðu eina á síðunni Þróun (sjálfvirk greiningarblokk).",
+      "saveCurrent": "Vista núverandi stillingar sem sniðmát",
+      "namePlaceholder": "Nafn sniðmáts",
+      "keywordPlaceholder": "Leitarorð „Trend“ (merki á kortinu)",
+      "save": "Vista sniðmát",
+      "note": "Sniðmát eru í Gallerí → Notað efni → „Sjálfvirkt“ við hliðina á sjálfvirkum myndböndum.",
+      "defaultName": "Sniðmátið mitt"
     }
   }
 }

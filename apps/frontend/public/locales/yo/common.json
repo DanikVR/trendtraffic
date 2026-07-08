@@ -1286,7 +1286,13 @@
       "seriesBilling": "A gba owo fun avatar naa lẹẹkan fun gbogbo jara naa.",
       "voiceoverBase": "Nínú ipò yìí, fídíò náà ni ìpìlẹ̀ férémù náà: ohùn àti àkọlé ọ̀rọ̀ ló wà ní orí rẹ̀.",
       "emptyTitle": "A ko tii gbe fidio sori ayelujara sibẹsibẹ",
-      "emptySub": "yan lati inu Gallery"
+      "emptySub": "yan lati inu Gallery",
+      "photosTitle": "Àwòrán ìgbékalẹ̀ fọ́tò",
+      "photosSub": "Fọ́tò kan — férémù dídákẹ́, ọ̀pọ̀lọpọ̀ — yíyípo pẹ̀lú àwọn ìkọjá",
+      "photosOne": "Fọ́tò 1 — férémù tó dúró síbẹ̀",
+      "photosCount_one": "Fọ́tò {{count}} — àwọn kẹ̀kẹ́ pẹ̀lú àwọn ìfàsẹ́yìn",
+      "photosCount_other": "Àwọn fọ́tò {{count}} — kẹ̀kẹ́ pẹ̀lú àwọn ìfàsẹ́yìn",
+      "photosVsVideo": "Àti fídíò àti fọ́tò ni a yàn — fídíò náà ló borí (a kò fojú fo àwọn fọ́tò)."
     },
     "subtitles": {
       "title": "Àwọn àkọlé",
@@ -1403,7 +1409,9 @@
       "outro": "Bọ́ǹpù Ìta",
       "layer": "Ipele oke (PNG)",
       "layerNote": "PNG tí ó ṣe kedere tí a pèsè fún ìrísí férémù náà — yóò dúró lórí gbogbo fídíò náà.",
-      "bumperNote": "A so mọ́ fídíò náà gẹ́gẹ́ bí ó ti wà, kò sí ìṣiṣẹ́ kankan."
+      "bumperNote": "A so mọ́ fídíò náà gẹ́gẹ́ bí ó ti wà, kò sí ìṣiṣẹ́ kankan.",
+      "clipImagesTitle": "Àwọn fọ́tò fún àfihàn ìfihàn",
+      "clipImagesNote": "Tẹ lati gbe to awọn aworan 12 — yan aṣẹ = aṣẹ ṣiṣiṣẹ. Fọto kan ṣoṣo di fireemu iduro."
     },
     "progress": {
       "title": "Ṣíṣẹ̀dá fídíò rẹ…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Orin",
       "chipSubtitles": "Àwọn àkọlé",
       "chipVoice": "Ohùn"
+    },
+    "analysis": {
+      "title": "Ìṣàyẹ̀wò àṣà",
+      "sub": "agbekalẹ aṣeyọri → sinu awọn bulọọki",
+      "empty": "A ko yan ipinya aṣa kankan",
+      "emptySub": "yan lati inu awọn itupalẹ rẹ",
+      "pickTitle": "Yan ìṣàfihàn àṣà kan",
+      "pickSub": "Àwọn àtúpalẹ̀ tí a fipamọ́ láti ojú ìwé Trends. Ìtúpalẹ̀ tí a yàn ń fún àwọn bulọ́ọ̀kù sítudio — àwọn àpótí ìṣàyẹ̀wò yóò pinnu ibi tí ó yẹ kí ó wà.",
+      "none": "Kò sí àtúpalẹ̀ kankan síbẹ̀ — ṣe àtúpalẹ̀ fídíò kan lórí ojú ìwé Trends (àtẹ Onímọ̀-ẹ̀rọ).",
+      "framesBadge": "ipele-fireemu",
+      "useScript": "Àkọsílẹ̀ láti inú àtúpalẹ̀",
+      "useScriptSub": "Ìṣẹ̀dá ìwé àfọwọ́kọ tẹ̀lé ìlànà àṣà àti àkọsílẹ̀ rẹ̀ tí ó ti ṣetán",
+      "useVideo": "Fidio aṣa bi aworan",
+      "useVideoSub": "Fídíò àṣà tí a gbà láti ìgbà náà di fídíò náà",
+      "useSubtitles": "Àṣà àkọlé láti inú ìtúpalẹ̀",
+      "useSubtitlesSub": "aṣa aṣa wiwo aṣa → Awọn ifẹ atunkọ",
+      "useRetention": "Ìdarí ìṣàtúnṣe láti inú àtúpalẹ̀",
+      "useRetentionSub": "A fi àmì sí ìkọ̀/ìgbésẹ̀/CTA pẹ̀lú ìfọ́mọ́lẹ̀ ní ọkàn"
+    },
+    "tpl": {
+      "button": "Àwòṣe",
+      "tooltip": "Awọn awoṣe: fipamọ gbogbo eto ile-iṣẹ naa ki o mu ki aṣa tẹjade laifọwọyi ṣiṣẹ",
+      "title": "Àwọn àpẹẹrẹ UGC",
+      "sub": "Àwòrán kan máa ń tọ́jú gbogbo ètò ìṣiṣẹ́ sítóòdù (ipò, àkọlé, orin, àwọn àpótí ìṣàyẹ̀wò). Ìtẹ̀jáde aládàáni máa ń so ó pọ̀ mọ́ ìṣàyẹ̀wò aládàáni — àwọn fídíò ló ń kọ́ ara wọn.",
+      "empty": "Kò sí àwọn àpẹẹrẹ kankan síbẹ̀ — fi ìṣètò lọ́wọ́lọ́wọ́ pamọ́ ní ìsàlẹ̀.",
+      "apply": "Lo",
+      "autopubOn": "Mu ìtẹ̀jáde aládàáṣe ṣiṣẹ́",
+      "source": "Orísun",
+      "sourceNone": "— yan orisun kan —",
+      "sourceTrends": "Àwọn àṣà ìṣẹ̀dálẹ̀",
+      "sourcePaused": "dákẹ́",
+      "lang": "Èdè fídíò",
+      "langHint": "A kọ ìwé àfọwọ́kọ náà ní èdè yìí lẹ́sẹ̀kẹsẹ̀",
+      "autopubHint": "Àgbéyẹ̀wò aláfọwọ́ṣe rí fídíò tuntun kan tí ó jẹ́ àṣà tuntun → ìfọ́ → fídíò kan ni a kọ́ láti inú àwòṣe yìí (apá “Àfọwọ́ṣe” nínú Àwòrán). Àwọn orísun míràn yàtọ̀ sí àwọn àṣà tí ń bọ̀ lẹ́yìn náà.",
+      "noWatches": "Kò sí àtúnyẹ̀wò aládàáṣe kankan síbẹ̀ — mú kí ọ̀kan ṣiṣẹ́ lórí ojú ìwé Trends (Àdàáṣe àtúpalẹ̀).",
+      "saveCurrent": "Fipamọ́ àwọn ètò ìsinsìnyí gẹ́gẹ́ bí àwòṣe",
+      "namePlaceholder": "Orukọ awoṣe",
+      "keywordPlaceholder": "Ọ̀rọ̀ pàtàkì àṣà (àmì lórí káàdì)",
+      "save": "Fipamọ awoṣe",
+      "note": "Àwọn àpẹẹrẹ wà ní Gallery → UGC → “Aifọwọ́sowọ́pọ̀” lẹ́gbẹ̀ẹ́ àwọn fídíò aládàáṣe.",
+      "defaultName": "Àwòṣe mi"
     }
   }
 }

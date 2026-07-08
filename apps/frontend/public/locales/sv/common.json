@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avataren debiteras en gång för hela serien.",
       "voiceoverBase": "I det här läget är videon basen i bilden: röst och undertexter visas överst.",
       "emptyTitle": "Videon har inte laddats upp än",
-      "emptySub": "välj från galleriet"
+      "emptySub": "välj från galleriet",
+      "photosTitle": "Bildspel",
+      "photosSub": "ett foto — en stillbild, flera — cykler med övertoning",
+      "photosOne": "1 foto — stillbild",
+      "photosCount_one": "{{count}} foto — cykler med övertoningar",
+      "photosCount_other": "{{count}} foton — cykla med övertoning",
+      "photosVsVideo": "Både video och foton väljs – videon vinner (foton ignoreras)."
     },
     "subtitles": {
       "title": "Undertexter",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-stötfångare",
       "layer": "Översta lagret (PNG)",
       "layerNote": "En transparent PNG förberedd för bildformatet — den kommer att ligga över hela videon.",
-      "bumperNote": "Bifogad till videon som den är, ingen bearbetning."
+      "bumperNote": "Bifogad till videon som den är, ingen bearbetning.",
+      "clipImagesTitle": "Foton till bildspelet",
+      "clipImagesNote": "Klicka för att välja upp till 12 bilder — välj ordning = uppspelningsordning. Ett enskilt foto blir en stillbild."
     },
     "progress": {
       "title": "Skapar din video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musik",
       "chipSubtitles": "Undertexter",
       "chipVoice": "Röst"
+    },
+    "analysis": {
+      "title": "Trendanalys",
+      "sub": "framgångsformel → i block",
+      "empty": "Ingen trenduppdelning vald",
+      "emptySub": "välj från dina analyser",
+      "pickTitle": "Välj en trendanalys",
+      "pickSub": "Sparade analyser från sidan Trender. Den valda uppdelningen matar studioblock – kryssrutor avgör exakt var.",
+      "none": "Inga analyser ännu — analysera en video på sidan Trender (fliken Analys).",
+      "framesBadge": "ramnivå",
+      "useScript": "Manus från analys",
+      "useScriptSub": "skriptgenereringen följer trendformeln och dess färdiga utkast",
+      "useVideo": "Trendvideo som filmmaterial",
+      "useVideoSub": "den nedladdade trendvideon blir filmmaterialet",
+      "useSubtitles": "Undertextstil från uppdelning",
+      "useSubtitlesSub": "trenden visuell stil → undertextens önskemål",
+      "useRetention": "Montageregi från analys",
+      "useRetentionSub": "hook/action/CTA är taggade med uppdelningen i åtanke"
+    },
+    "tpl": {
+      "button": "Mall",
+      "tooltip": "Mallar: spara hela studioinställningarna och aktivera automatisk trendpublicering",
+      "title": "UGC-mallar",
+      "sub": "En mall lagrar ALLA studioinställningar (läge, undertexter, musik, kryssrutor för analys). Automatisk publicering länkar den till en automatisk trendanalys – videor bygger sig själva.",
+      "empty": "Inga mallar ännu — spara den aktuella konfigurationen nedan.",
+      "apply": "Tillämpas",
+      "autopubOn": "Aktivera automatisk publicering",
+      "source": "Källa",
+      "sourceNone": "— välj en källa —",
+      "sourceTrends": "Trender",
+      "sourcePaused": "pausad",
+      "lang": "Videospråk",
+      "langHint": "manuset är skrivet direkt på det här språket",
+      "autopubHint": "Autoanalys hittar en ny trendvideo → uppdelning → en video skapas från den här mallen (avsnittet \"Auto\" i Galleriet). Fler källor utöver Trender kommer senare.",
+      "noWatches": "Inga autoanalyser ännu – aktivera en på sidan Trender (block för autoanalys).",
+      "saveCurrent": "Spara aktuella inställningar som en mall",
+      "namePlaceholder": "Mallnamn",
+      "keywordPlaceholder": "Trendnyckelord (märke på kortet)",
+      "save": "Spara mall",
+      "note": "Mallar finns i Galleri → UGC → ”Auto” bredvid automatiska videor.",
+      "defaultName": "Min mall"
     }
   }
 }

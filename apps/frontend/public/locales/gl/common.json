@@ -1286,7 +1286,13 @@
       "seriesBilling": "O avatar cóbrase unha vez por toda a serie.",
       "voiceoverBase": "Neste modo, o vídeo é a base do cadro: a voz e os subtítulos van enriba.",
       "emptyTitle": "Vídeo aínda non cargado",
-      "emptySub": "escoller da Galería"
+      "emptySub": "escoller da Galería",
+      "photosTitle": "Presentación de fotos",
+      "photosSub": "unha foto — un fotograma fixo, varios — cíclico con transicións cruzadas",
+      "photosOne": "1 foto — fotograma fixo",
+      "photosCount_one": "Foto {{count}} — ciclos con transicións cruzadas",
+      "photosCount_other": "Fotos de {{count}} — ciclo con transicións cruzadas",
+      "photosVsVideo": "Tanto o vídeo como as fotos escollidas: o vídeo gaña (as fotos ignóranse)."
     },
     "subtitles": {
       "title": "Subtítulos",
@@ -1403,7 +1409,9 @@
       "outro": "Parachoques final",
       "layer": "Capa superior (PNG)",
       "layerNote": "Un PNG transparente preparado para o formato de fotograma: cubrirá todo o vídeo.",
-      "bumperNote": "Adxunto ao vídeo tal cal, sen procesamento."
+      "bumperNote": "Adxunto ao vídeo tal cal, sen procesamento.",
+      "clipImagesTitle": "Fotos para a presentación de diapositivas",
+      "clipImagesNote": "Fai clic para escoller ata 12 imaxes: orde de selección = orde de reprodución. Unha soa foto convértese nun fotograma fixo."
     },
     "progress": {
       "title": "Creando o teu vídeo…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Música",
       "chipSubtitles": "Subtítulos",
       "chipVoice": "Voz"
+    },
+    "analysis": {
+      "title": "Análise de tendencias",
+      "sub": "fórmula do éxito → en bloques",
+      "empty": "Non se seleccionou ningunha análise de tendencias",
+      "emptySub": "escolle entre as túas análises",
+      "pickTitle": "Escolle un desglose de tendencias",
+      "pickSub": "Análises gardadas da páxina Tendencias. O desglose escollido alimenta os bloques do estudio: as caixas de verificación deciden exactamente onde.",
+      "none": "Aínda non hai análises: analiza un vídeo na páxina Tendencias (pestana Análises).",
+      "framesBadge": "nivel de fotograma",
+      "useScript": "Guión da análise",
+      "useScriptSub": "a xeración de scripts segue a fórmula da tendencia e o seu borrador listo",
+      "useVideo": "Vídeo de tendencia como metraxe",
+      "useVideoSub": "o vídeo de tendencia descargado convértese na gravación",
+      "useSubtitles": "Estilo de subtítulos a partir de desglose",
+      "useSubtitlesSub": "o estilo visual de tendencia → desexos de subtítulos",
+      "useRetention": "Montaxe dirixida a partir da análise",
+      "useRetentionSub": "o gancho/acción/acción á acción están etiquetados tendo en conta o desglose"
+    },
+    "tpl": {
+      "button": "Modelo",
+      "tooltip": "Modelos: garda toda a configuración do estudio e activa a publicación automática de tendencias",
+      "title": "Modelos de UGC",
+      "sub": "Un modelo almacena TODAS a configuración do estudio (modo, subtítulos, música, caixas de verificación de análise). A publicación automática vínculao a unha análise automática de tendencias: os vídeos constrúense sós.",
+      "empty": "Aínda non hai modelos. Garda a configuración actual a continuación.",
+      "apply": "Aplicar",
+      "autopubOn": "Activar a publicación automática",
+      "source": "Orixe",
+      "sourceNone": "— escolle unha fonte —",
+      "sourceTrends": "Tendencias",
+      "sourcePaused": "pausado",
+      "lang": "Idioma do vídeo",
+      "langHint": "o script está escrito nesta linguaxe de inmediato",
+      "autopubHint": "A análise automática atopa un vídeo de tendencias recentes → desglose → créase un vídeo a partir deste modelo (a sección \"Automático\" na Galería). Máis adiante, haberá máis fontes ademais de Tendencias.",
+      "noWatches": "Aínda non hai análises automáticas: active unha na páxina Tendencias (bloque de análise automática).",
+      "saveCurrent": "Gardar a configuración actual como modelo",
+      "namePlaceholder": "Nome do modelo",
+      "keywordPlaceholder": "Palabra clave de tendencia (insignia na tarxeta)",
+      "save": "Gardar modelo",
+      "note": "Os modelos están en Galería → UGC → \"Automático\" xunto aos vídeos automáticos.",
+      "defaultName": "O meu modelo"
     }
   }
 }

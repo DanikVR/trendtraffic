@@ -204,9 +204,24 @@ function subFilterPath(p: string): string {
   return p.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/,/g, '\\,').replace(/'/g, "\\'");
 }
 
-/** Скачать видео по URL в uploads/renders (для сохранения головы HeyGen в Галерею). → fileUrl. */
+/** Скачать видео по URL в uploads/renders (для сохранения головы HeyGen в Галерею). → fileUrl.
+ *  Локальный /uploads/…-URL (наш же файл) не гоняем через HTTP — КОПИРУЕМ на диске
+ *  (работает и без PUBLIC_BASE_URL). Именно копия, не ссылка на оригинал: удаление
+ *  ассета из Галереи мид-джоб стирает файл с диска — снимок переживает это, как и
+ *  прежняя HTTP-загрузка. */
 export async function downloadToRenders(url: string, prefix = 'podhead'): Promise<{ fileUrl: string; filePath: string; size: number }> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const localRel = url.replace(/^https?:\/\/[^/]+/i, '');
+  if (localRel.startsWith('/uploads/')) {
+    const localPath = path.resolve(UPLOADS_ROOT, localRel.slice('/uploads/'.length).split('?')[0].split('#')[0]);
+    // против ../-обхода: путь обязан остаться внутри uploads (с разделителем)
+    if (localPath.startsWith(UPLOADS_ROOT + path.sep) && fs.existsSync(localPath)) {
+      const name = `${prefix}-${randomUUID().slice(0, 8)}${path.extname(localPath) || '.mp4'}`;
+      const filePath = path.join(RENDERS_DIR, name);
+      fs.copyFileSync(localPath, filePath);
+      return { fileUrl: `/uploads/renders/${name}`, filePath, size: fs.statSync(filePath).size };
+    }
+  }
   const r = await fetch(url);
   if (!r.ok) throw new Error(`видео не скачалось (HTTP ${r.status})`);
   const buf = Buffer.from(await r.arrayBuffer());
@@ -218,6 +233,57 @@ export async function downloadToRenders(url: string, prefix = 'podhead'): Promis
 
 /** Длительность медиа (сек) — публичная обёртка probeDuration. */
 export function mediaDuration(input: string): Promise<number> { return probeDuration(input); }
+
+/**
+ * Слайдшоу из изображений → mp4-клип для «Видеоряда» UGC: одно фото = статичный кадр
+ * (6с), несколько = перелистывание с кроссфейдом по кругу (дальше конвейер зациклит/
+ * обрежет клип под длину голоса, как обычное видео). Кадры вписываются cover-ом
+ * (масштаб до заполнения + кроп по центру), без звука.
+ *
+ * Тайминг xfade-цепочки: каждый вход длиной per+fade; переход k стартует на
+ * (k+1)*per выходного потока → итог = N*per + fade.
+ */
+export async function composeSlideshow(opts: {
+  imagePaths: string[];
+  dims: FrameDims;
+  perImageSec?: number;   // сколько держится каждое фото (дефолт 3)
+  fadeSec?: number;       // длительность кроссфейда (дефолт 0.5)
+}): Promise<{ fileUrl: string; filePath: string; durationSec: number }> {
+  const imgs = (opts.imagePaths || []).filter((p) => p && fs.existsSync(p)).slice(0, 12);
+  if (!imgs.length) throw new Error('слайдшоу: нет изображений');
+  const { W, H } = opts.dims;
+  const per = Math.min(10, Math.max(1.5, Number(opts.perImageSec) || 3));
+  const fade = Math.min(1.2, Math.max(0.2, Number(opts.fadeSec) || 0.5));
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const name = `slide-${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(RENDERS_DIR, name);
+
+  const fit = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30,format=yuv420p`;
+
+  if (imgs.length === 1) {
+    const dur = 6;
+    await ffmpeg(['-y', '-loop', '1', '-t', String(dur), '-i', imgs[0],
+      '-vf', fit, '-an', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-movflags', '+faststart', outPath], 180_000);
+    return { fileUrl: `/uploads/renders/${name}`, filePath: outPath, durationSec: dur };
+  }
+
+  const inputs: string[] = [];
+  const parts: string[] = [];
+  const inLen = per + fade;
+  imgs.forEach((p, i) => {
+    inputs.push('-loop', '1', '-t', inLen.toFixed(2), '-i', p);
+    parts.push(`[${i}:v]${fit}[v${i}]`);
+  });
+  let cur = '[v0]';
+  for (let k = 1; k < imgs.length; k++) {
+    const out = k === imgs.length - 1 ? '[vo]' : `[x${k}]`;
+    parts.push(`${cur}[v${k}]xfade=transition=fade:duration=${fade.toFixed(2)}:offset=${(k * per).toFixed(2)}${out}`);
+    cur = out;
+  }
+  await ffmpeg(['-y', ...inputs, '-filter_complex', parts.join(';'), '-map', '[vo]',
+    '-an', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-movflags', '+faststart', outPath], 300_000);
+  return { fileUrl: `/uploads/renders/${name}`, filePath: outPath, durationSec: imgs.length * per + fade };
+}
 
 /** Нарезать кусок аудио [t0,t1] в WAV в uploads/renders (публичный URL для HeyGen). */
 export async function sliceAudioToRenders(inputPath: string, t0: number, t1: number, prefix = 'ugcseg'): Promise<{ fileUrl: string; filePath: string }> {

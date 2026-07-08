@@ -1286,7 +1286,13 @@
       "seriesBilling": "Den Avatar gëtt eemol fir déi ganz Serie berechent.",
       "voiceoverBase": "An dësem Modus ass d'Video d'Basis vum Bild: Stëmm an Ënnertitelen kommen uewen.",
       "emptyTitle": "Video nach net eropgelueden",
-      "emptySub": "aus der Galerie auswielen"
+      "emptySub": "aus der Galerie auswielen",
+      "photosTitle": "Foto-Diashow",
+      "photosSub": "eng Foto - e Stillbild, e puer - Zyklus mat Crossfades",
+      "photosOne": "1 Foto — Stillbild",
+      "photosCount_one": "{{count}} Foto — Zyklen mat Crossfades",
+      "photosCount_other": "{{count}} Fotoen — Zyklus mat Crossfades",
+      "photosVsVideo": "Souwuel Video wéi och Fotoen ausgewielt — de Video gewënnt (Fotoe ginn ignoréiert)."
     },
     "subtitles": {
       "title": "Ënnertitelen",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-Stoossstang",
       "layer": "Iewescht Schicht (PNG)",
       "layerNote": "Eng transparent PNG-Datei, déi fir de Frame-Format virbereet ass – si wäert iwwer dat ganzt Video leien.",
-      "bumperNote": "Un de Video ugehaangen, sou wéi en ass, ouni Veraarbechtung."
+      "bumperNote": "Un de Video ugehaangen, sou wéi en ass, ouni Veraarbechtung.",
+      "clipImagesTitle": "Fotoe fir d'Diashow",
+      "clipImagesNote": "Klickt fir bis zu 12 Biller ze wielen — Reiefolleg wielen = Wiedergabereichefolleg. Eng eenzeg Foto gëtt zu engem Stillbild."
     },
     "progress": {
       "title": "Äre Video erstellen…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musek",
       "chipSubtitles": "Ënnertitelen",
       "chipVoice": "Stëmm"
+    },
+    "analysis": {
+      "title": "Trendanalyse",
+      "sub": "Erfollegsformel → a Blöcken",
+      "empty": "Keng Trendopdeelung ausgewielt",
+      "emptySub": "wielt aus Ären Analysen",
+      "pickTitle": "Wielt eng Trendanalyse",
+      "pickSub": "Gespäichert Analysen vun der Trends-Säit. Déi gewielten Opdeelung fiddert Studioblöcken - Checkboxen entscheeden genee wou.",
+      "none": "Nach keng Analysen - analyséiert e Video op der Trends-Säit (Tab \"Analytics\").",
+      "framesBadge": "Frame-Niveau",
+      "useScript": "Skript aus der Analyse",
+      "useScriptSub": "Skriptgeneratioun folgt der Trendformel an hirem fäerdegen Entworf",
+      "useVideo": "Trendvideo als Opname",
+      "useVideoSub": "dat erofgeluede Trendvideo gëtt zum Opnamematerial",
+      "useSubtitles": "Ënnertitelstil aus der Opdeelung",
+      "useSubtitlesSub": "den Trend visuelle Stil → Ënnertitel Wënsch",
+      "useRetention": "Montage Regie aus Analyse",
+      "useRetentionSub": "Hook/Action/CTA sinn mat der Opdeelung am Kapp markéiert"
+    },
+    "tpl": {
+      "button": "Schabloun",
+      "tooltip": "Templates: Späichert de ganze Studio-Setup an aktivéiert d'Autopublikatioun vun Trends",
+      "title": "UGC-Virlagen",
+      "sub": "Eng Schabloun späichert ALL Studioastellungen (Modus, Ënnertitelen, Musek, Analyse-Checkboxen). Automatesch Verëffentlechung verbënnt se mat enger Trend-Autoanalyse - Videoe bauen sech selwer op.",
+      "empty": "Nach keng Schablounen — späichert déi aktuell Konfiguratioun hei ënnendrënner.",
+      "apply": "Uwenden",
+      "autopubOn": "Automatesch Verëffentlechung aktivéieren",
+      "source": "Quell",
+      "sourceNone": "— eng Quell auswielen —",
+      "sourceTrends": "Trends",
+      "sourcePaused": "pauséiert",
+      "lang": "Videosprooch",
+      "langHint": "D'Skript gëtt direkt an dëser Sprooch geschriwwen",
+      "autopubHint": "D'Autoanalyse fënnt e frëschen Trendvideo → Opdeelung → e Video gëtt aus dëser Schabloun erstallt (d'Sektioun \"Auto\" an der Galerie). Méi Quellen iwwer Trends eraus kommen spéider.",
+      "noWatches": "Nach keng automatesch Analysen - aktivéiert eng op der Trends-Säit (Block vun der automatescher Analyse).",
+      "saveCurrent": "Aktuell Astellungen als Schabloun späicheren",
+      "namePlaceholder": "Numm vun der Schabloun",
+      "keywordPlaceholder": "Schlësselwuert Trend (Badge op der Kaart)",
+      "save": "Schabloun späicheren",
+      "note": "D'Virlagen sinn an der Galerie → UGC → \"Auto\" nieft automatesche Videoen ze fannen.",
+      "defaultName": "Meng Schabloun"
     }
   }
 }

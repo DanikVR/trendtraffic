@@ -1286,7 +1286,13 @@
       "seriesBilling": "Kotahi te pire mō te avatar mō te raupapa katoa.",
       "voiceoverBase": "I tēnei aratau, ko te ataata te pūtake o te anga: ko te reo me ngā hauraro kei runga.",
       "emptyTitle": "Kāore anō kia tukuna ake te ataata",
-      "emptySub": "tīpako mai i te Taiwhanga"
+      "emptySub": "tīpako mai i te Taiwhanga",
+      "photosTitle": "Whakaaturanga whakaahua",
+      "photosSub": "kotahi te whakaahua — he anga whakaahua, he maha — ka huri haere me te memeha whakawhiti",
+      "photosOne": "1 whakaahua — anga whakaahua",
+      "photosCount_one": "whakaahua {{count}} — ngā huringa me ngā whakawhiti-mutunga",
+      "photosCount_other": "whakaahua {{count}} — hurihuri me ngā whakawhiti-mutunga",
+      "photosVsVideo": "Ko te ataata me ngā whakaahua i whiriwhiria — ko te ataata te toa (ka kore e arohia ngā whakaahua)."
     },
     "subtitles": {
       "title": "Ngā Taitararoto",
@@ -1403,7 +1409,9 @@
       "outro": "Pūpare Whakamutunga",
       "layer": "Paparanga o runga (PNG)",
       "layerNote": "He PNG mārama kua whakaritea mō te hōputu anga — ka noho ki runga i te ataata katoa.",
-      "bumperNote": "Kua tāpirihia ki te ataata i tōna āhua o nāianei, kāore he tukatuka."
+      "bumperNote": "Kua tāpirihia ki te ataata i tōna āhua o nāianei, kāore he tukatuka.",
+      "clipImagesTitle": "Ngā whakaahua mō te whakaaturanga whakaata",
+      "clipImagesNote": "Pāwhiritia hei tiki i te 12 whakaahua — whiriwhiria te raupapa = te raupapa purei. Ka huri te whakaahua kotahi hei anga kore e neke."
     },
     "progress": {
       "title": "Kei te hanga i tō ataata…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Puoro",
       "chipSubtitles": "Ngā Taitararoto",
       "chipVoice": "Reo"
+    },
+    "analysis": {
+      "title": "Tātaritanga ia au",
+      "sub": "tātai angitu → ki roto i ngā poraka",
+      "empty": "Kāore i tīpakohia he wehewehenga iahiko",
+      "emptySub": "whiriwhiria mai i ō tātaritanga",
+      "pickTitle": "Kōwhiria he wehewehenga o te ia",
+      "pickSub": "Ngā tātaritanga kua tiakina mai i te whārangi Auaha. Ka whāngaihia ngā poraka whare mahi e te wehewehenga kua whiriwhiria — ka whakatauhia e ngā pouaka taki te wāhi tika.",
+      "none": "Kāore anō kia puta he tātaritanga — tātarihia he ataata i te whārangi Auaha (ripa Tātaritanga).",
+      "framesBadge": "taumata-anga",
+      "useScript": "He tuhinga mai i te tātaritanga",
+      "useScriptSub": "ka whai te whakaputa tuhinga i te tauira ia me tōna tauira kua oti te whakarite",
+      "useVideo": "Ataata rongonui hei kiriata",
+      "useVideoSub": "ka huri te ataata au i tangohia hei kiriata",
+      "useSubtitles": "Kāhua taitararoto mai i te wehewehenga",
+      "useSubtitlesSub": "te momo tirohanga auaha → ngā hiahia taitararoto",
+      "useRetention": "Te whakahaere i ngā whakaaturanga mai i te tātaritanga",
+      "useRetentionSub": "kua tohua te matau/mahi/CTA me te whakaaro ki te wehewehenga"
+    },
+    "tpl": {
+      "button": "Tauira",
+      "tooltip": "Ngā Tauira: tiakina te tatūnga katoa o te whare pikitia, ā, whakahohea te whakaputa-aunoa o te ia",
+      "title": "Ngā tauira UGC",
+      "sub": "Ka rongoatia e te tauira ngā tautuhinga katoa o te whare pikitia (aratau, hauraro, puoro, pouaka taki tātari). Mā te whakaputa-aunoa ka honoa ki te tātari-aunoa o ngā ia — ka hangaia e ngā ataata ā rātou ake.",
+      "empty": "Kāore anō kia puta he tauira — tiakina te tatūnga o nāianei i raro nei.",
+      "apply": "Tono",
+      "autopubOn": "Whakahohehia te whakaputa-aunoa",
+      "source": "Pūtake",
+      "sourceNone": "— whiriwhiria he pūtake —",
+      "sourceTrends": "Ngā Auahatanga",
+      "sourcePaused": "kua mutu",
+      "lang": "Reo ataata",
+      "langHint": "ka tuhia te tuhinga ki tēnei reo tonu",
+      "autopubHint": "Ka kitea e te tātari-aunoa he ataata auaha hou → wehewehenga → ka hangaia he ataata mai i tēnei tauira (te wāhanga \"Aunoa\" i roto i te Taiwhanga Whakaahua). He maha atu ngā puna i tua atu i ngā Auaha e haere mai ana i muri mai.",
+      "noWatches": "Kāore anō kia puta he tātaritanga aunoa — whakahohea tētahi i te whārangi Auaha (Poraka tātaritanga aunoa).",
+      "saveCurrent": "Tiakina ngā tautuhinga o nāianei hei tauira",
+      "namePlaceholder": "Ingoa tauira",
+      "keywordPlaceholder": "Kupumatua auaha (tohu kei runga i te kāri)",
+      "save": "Tiakina te tauira",
+      "note": "Kei roto i te Taiwhanga Whakaahua → UGC → “Aunoa” i te taha o ngā ataata aunoa ngā tauira.",
+      "defaultName": "Taku tauira"
     }
   }
 }

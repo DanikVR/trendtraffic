@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar semel pro tota serie pecuniam solvit.",
       "voiceoverBase": "In hoc modo video basis imaginis est: vox et subtituli supra ponuntur.",
       "emptyTitle": "Video nondum immissum",
-      "emptySub": "elige ex Pinacotheca"
+      "emptySub": "elige ex Pinacotheca",
+      "photosTitle": "Imago iacta",
+      "photosSub": "una imago — imago fixa, plures — cyclus cum transitionibus inter se evanescentibus",
+      "photosOne": "1 photographia — imago fixa",
+      "photosCount_one": "Photographia {{count}} — cycli cum transitionibus transitionalibus",
+      "photosCount_other": "Imagines {{count}} — cyclus cum transitionibus transitionalibus",
+      "photosVsVideo": "Et video et imagines selectae — video vincit (imagines negleguntur)."
     },
     "subtitles": {
       "title": "Subtituli",
@@ -1403,7 +1409,9 @@
       "outro": "Bumper finalis",
       "layer": "Stratum superius (PNG)",
       "layerNote": "PNG pellucida ad formam imaginis praeparata — totum video superponet.",
-      "bumperNote": "Video adiunctum sicut est, nulla elaboratione."
+      "bumperNote": "Video adiunctum sicut est, nulla elaboratione.",
+      "clipImagesTitle": "Imagines pro spectaculo imaginum",
+      "clipImagesNote": "Preme ut usque ad duodecim imagines eligas — ordo selectionis = ordo reproductionis. Una photographia fit imago fixa."
     },
     "progress": {
       "title": "Video tuum creans…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musica",
       "chipSubtitles": "Subtituli",
       "chipVoice": "Vox"
+    },
+    "analysis": {
+      "title": "Analysis inclinationum",
+      "sub": "formula successus → in partes",
+      "empty": "Nulla analysis tendentiae selecta est",
+      "emptySub": "ex tuis analysibus elige",
+      "pickTitle": "Elige analysin trendi",
+      "pickSub": "Analyses servatae ex pagina Trends. Distributio electa partes studiorum nutrit — capsulae quadratae ubi exacte decernunt.",
+      "none": "Nullae adhuc analyses — pelliculam in pagina \"Trends\" (tab \"Analytics\") analysate.",
+      "framesBadge": "gradus imaginis",
+      "useScript": "Scriptum ex analysi",
+      "useScriptSub": "Generatio scriptorum formulam trendi et exemplar paratum sequitur.",
+      "useVideo": "Video popularis ut pellicula",
+      "useVideoSub": "Video depromptum de moda fit pellicula",
+      "useSubtitles": "Modus subtitulorum ex descriptione",
+      "useSubtitlesSub": "Modus visualis popularis → subtituli vota",
+      "useRetention": "Montage dirigens ex analysi",
+      "useRetentionSub": "Hamus/actio/CTA cum mente ad explicationem designantur."
+    },
+    "tpl": {
+      "button": "Formula",
+      "tooltip": "Formulae: totam structuram studii serva et publicationem automaticam inclinationum permitte.",
+      "title": "Formulae UGC",
+      "sub": "Formula OMNES optiones studii (modum, subtitulos, musicam, capsulas analysis) continet. Publicatio automatica eam cum analysi automatica inclinationum coniungit — pelliculae se ipsae construunt.",
+      "empty": "Nullae adhuc formae — serva configurationem praesentem infra.",
+      "apply": "Applica",
+      "autopubOn": "Publicationem automaticam permitte",
+      "source": "Fons",
+      "sourceNone": "— fontem elige —",
+      "sourceTrends": "Tendentiae",
+      "sourcePaused": "pausam positam",
+      "lang": "Lingua video",
+      "langHint": "scriptum statim hac lingua scriptum est",
+      "autopubHint": "Auto-analysis invenit novum video de tendenciis → explicatio → video ex hoc exemplo construitur (sectio \"Auto\" in Pinacotheca). Plures fontes praeter Tendencias postea venient.",
+      "noWatches": "Nullae adhuc analyses automaticae — unam in pagina Trends (sectio Auto-analysis) activa.",
+      "saveCurrent": "Servare configurationes praesentes ut exemplar",
+      "namePlaceholder": "Nomen exemplaris",
+      "keywordPlaceholder": "Verbum clavis \"trend\" (insigne in charta)",
+      "save": "Formulam serva",
+      "note": "Formulae in Pinacotheca → UGC → \"Auto\" iuxta videos automaticos inveniuntur.",
+      "defaultName": "Formula mea"
     }
   }
 }

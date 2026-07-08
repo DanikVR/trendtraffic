@@ -1286,7 +1286,13 @@
       "seriesBilling": "该角色在整个系列中只收取一次费用。",
       "voiceoverBase": "在这种模式下，视频是画面的基础：声音和字幕位于其上。",
       "emptyTitle": "视频尚未上传",
-      "emptySub": "从图库中选择"
+      "emptySub": "从图库中选择",
+      "photosTitle": "照片幻灯片",
+      "photosSub": "一张照片——一张静止照片，或几张照片——循环播放并带有淡入淡出效果",
+      "photosOne": "1 张照片 — 静止画面",
+      "photosCount_one": "{{count}} 照片 — 循环淡入淡出",
+      "photosCount_other": "{{count}} 照片 — 循环淡入淡出",
+      "photosVsVideo": "视频和照片都被选中——视频胜出（照片被忽略）。"
     },
     "subtitles": {
       "title": "字幕",
@@ -1403,7 +1409,9 @@
       "outro": "片尾",
       "layer": "顶层（PNG）",
       "layerNote": "为帧格式准备的透明 PNG 图片——它将覆盖整个视频。",
-      "bumperNote": "视频已直接添加此文件，未经任何处理。"
+      "bumperNote": "视频已直接添加此文件，未经任何处理。",
+      "clipImagesTitle": "幻灯片照片",
+      "clipImagesNote": "点击即可选择最多 12 张图片——选择顺序即为播放顺序。单张图片将作为静态帧播放。"
     },
     "progress": {
       "title": "正在制作视频……",
@@ -1454,6 +1462,47 @@
       "chipMusic": "音乐",
       "chipSubtitles": "字幕",
       "chipVoice": "嗓音"
+    },
+    "analysis": {
+      "title": "趋势分析",
+      "sub": "成功公式 → 分解成模块",
+      "empty": "未选择趋势细分",
+      "emptySub": "从你的分析中选择。",
+      "pickTitle": "选择一种趋势分析方法",
+      "pickSub": "从“趋势”页面保存的分析结果。所选细分数据将用于工作室模块——复选框决定具体位置。",
+      "none": "暂无分析 - 在“趋势”页面（“分析”选项卡）上分析视频。",
+      "framesBadge": "帧级",
+      "useScript": "分析脚本",
+      "useScriptSub": "脚本生成遵循趋势公式，并已准备好草稿。",
+      "useVideo": "趋势视频素材",
+      "useVideoSub": "下载的热门视频就变成了素材。",
+      "useSubtitles": "字幕样式分解",
+      "useSubtitlesSub": "潮流视觉风格 → 字幕愿望",
+      "useRetention": "蒙太奇导演分析",
+      "useRetentionSub": "钩子/行动/CTA 的标签都考虑到了分解过程。"
+    },
+    "tpl": {
+      "button": "模板",
+      "tooltip": "模板：保存整个工作室设置并启用趋势自动发布",
+      "title": "UGC模板",
+      "sub": "模板存储所有工作室设置（模式、字幕、音乐、分析复选框）。自动发布功能将其与趋势自动分析关联——视频会自动生成。",
+      "empty": "暂无模板 - 请保存以下当前设置。",
+      "apply": "申请",
+      "autopubOn": "启用自动发布",
+      "source": "来源",
+      "sourceNone": "— 选择一个来源 —",
+      "sourceTrends": "趋势",
+      "sourcePaused": "暂停",
+      "lang": "视频语言",
+      "langHint": "剧本直接用这种语言编写。",
+      "autopubHint": "自动分析发现最新趋势视频 → 进行分析 → 基于此模板生成视频（图库中的“自动”部分）。更多趋势以外的资源稍后推出。",
+      "noWatches": "目前还没有自动分析功能——请在“趋势”页面（“自动分析”模块）启用此功能。",
+      "saveCurrent": "将当前设置保存为模板",
+      "namePlaceholder": "模板名称",
+      "keywordPlaceholder": "趋势关键词（卡片上的徽章）",
+      "save": "保存模板",
+      "note": "模板位于“图库”→“用户生成内容”→“自动”旁边，就在自动视频旁边。",
+      "defaultName": "我的模板"
     }
   }
 }

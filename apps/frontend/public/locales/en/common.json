@@ -1278,7 +1278,13 @@
       "seriesBilling": "The avatar is billed once for the whole series.",
       "voiceoverBase": "In this mode the video is the base of the frame: voice and subtitles go on top.",
       "emptyTitle": "Video not uploaded yet",
-      "emptySub": "pick from Gallery"
+      "emptySub": "pick from Gallery",
+      "photosTitle": "Photo slideshow",
+      "photosSub": "one photo — a still frame, several — cycle with crossfades",
+      "photosOne": "1 photo — still frame",
+      "photosCount_one": "{{count}} photo — cycles with crossfades",
+      "photosCount_other": "{{count}} photos — cycle with crossfades",
+      "photosVsVideo": "Both video and photos picked — the video wins (photos are ignored)."
     },
     "subtitles": {
       "title": "Subtitles",
@@ -1395,7 +1401,9 @@
       "outro": "Outro bumper",
       "layer": "Top layer (PNG)",
       "layerNote": "A transparent PNG prepared for the frame format — it will sit over the whole video.",
-      "bumperNote": "Attached to the video as is, no processing."
+      "bumperNote": "Attached to the video as is, no processing.",
+      "clipImagesTitle": "Photos for the slideshow",
+      "clipImagesNote": "Click to pick up to 12 images — pick order = playback order. A single photo becomes a still frame."
     },
     "progress": {
       "title": "Creating your video…",
@@ -1446,6 +1454,47 @@
       "chipMusic": "Music",
       "chipSubtitles": "Subtitles",
       "chipVoice": "Voice"
+    },
+    "analysis": {
+      "title": "Trend analysis",
+      "sub": "success formula → into blocks",
+      "empty": "No trend breakdown selected",
+      "emptySub": "pick from your analyses",
+      "pickTitle": "Pick a trend breakdown",
+      "pickSub": "Saved analyses from the Trends page. The chosen breakdown feeds studio blocks — checkboxes decide exactly where.",
+      "none": "No analyses yet — analyze a video on the Trends page (Analytics tab).",
+      "framesBadge": "frame-level",
+      "useScript": "Script from analysis",
+      "useScriptSub": "script generation follows the trend formula and its ready draft",
+      "useVideo": "Trend video as footage",
+      "useVideoSub": "the downloaded trend video becomes the footage",
+      "useSubtitles": "Subtitle style from breakdown",
+      "useSubtitlesSub": "the trend visual style → subtitle wishes",
+      "useRetention": "Montage directing from analysis",
+      "useRetentionSub": "hook/action/CTA are tagged with the breakdown in mind"
+    },
+    "tpl": {
+      "button": "Template",
+      "tooltip": "Templates: save the whole studio setup and enable trend auto-publishing",
+      "title": "UGC templates",
+      "sub": "A template stores ALL studio settings (mode, subtitles, music, analysis checkboxes). Auto-publishing links it to a trend auto-analysis — videos build themselves.",
+      "empty": "No templates yet — save the current setup below.",
+      "apply": "Apply",
+      "autopubOn": "Enable auto-publishing",
+      "source": "Source",
+      "sourceNone": "— pick a source —",
+      "sourceTrends": "Trends",
+      "sourcePaused": "paused",
+      "lang": "Video language",
+      "langHint": "the script is written in this language right away",
+      "autopubHint": "Auto-analysis finds a fresh trend video → breakdown → a video is built from this template (the “Auto” section in Gallery). More sources beyond Trends coming later.",
+      "noWatches": "No auto-analyses yet — enable one on the Trends page (Auto-analysis block).",
+      "saveCurrent": "Save current settings as a template",
+      "namePlaceholder": "Template name",
+      "keywordPlaceholder": "Trend keyword (badge on the card)",
+      "save": "Save template",
+      "note": "Templates live in Gallery → UGC → “Auto” next to automatic videos.",
+      "defaultName": "My template"
     }
   }
 }

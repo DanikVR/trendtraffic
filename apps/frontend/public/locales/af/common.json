@@ -1286,7 +1286,13 @@
       "seriesBilling": "Die avatar word een keer vir die hele reeks gefaktureer.",
       "voiceoverBase": "In hierdie modus is die video die basis van die raam: stem en onderskrifte gaan bo-op.",
       "emptyTitle": "Video nog nie opgelaai nie",
-      "emptySub": "kies uit Galery"
+      "emptySub": "kies uit Galery",
+      "photosTitle": "Foto-skyfievertoning",
+      "photosSub": "een foto — 'n stilstaande raam, verskeie — siklusse met kruisvervaagings",
+      "photosOne": "1 foto — stilstaande raam",
+      "photosCount_one": "{{count}} foto — siklusse met kruisvervagings",
+      "photosCount_other": "{{count}} foto's — siklus met kruisvervaagings",
+      "photosVsVideo": "Beide video en foto's gekies — die video wen (foto's word geïgnoreer)."
     },
     "subtitles": {
       "title": "Ondertitels",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-buffer",
       "layer": "Boonste laag (PNG)",
       "layerNote": "'n Deursigtige PNG wat voorberei is vir die raamformaat — dit sal oor die hele video sit.",
-      "bumperNote": "Aangeheg aan die video soos dit is, geen verwerking nie."
+      "bumperNote": "Aangeheg aan die video soos dit is, geen verwerking nie.",
+      "clipImagesTitle": "Foto's vir die skyfievertoning",
+      "clipImagesNote": "Klik om tot 12 beelde te kies — kiesvolgorde = terugspeelvolgorde. 'n Enkele foto word 'n stilstaande raam."
     },
     "progress": {
       "title": "Skep jou video…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musiek",
       "chipSubtitles": "Ondertitels",
       "chipVoice": "Stem"
+    },
+    "analysis": {
+      "title": "Tendensanalise",
+      "sub": "suksesformule → in blokke",
+      "empty": "Geen tendensontleding gekies nie",
+      "emptySub": "kies uit jou ontledings",
+      "pickTitle": "Kies 'n tendensontleding",
+      "pickSub": "Gestoorde ontledings vanaf die Tendense-bladsy. Die gekose uiteensetting voer ateljeeblokke — merkblokkies besluit presies waar.",
+      "none": "Geen ontledings nog nie — ontleed 'n video op die Tendense-bladsy (Analise-oortjie).",
+      "framesBadge": "raamvlak",
+      "useScript": "Skrip uit analise",
+      "useScriptSub": "skripgenerering volg die tendensformule en die gereedgemaakte konsep daarvan",
+      "useVideo": "Tendensvideo as beeldmateriaal",
+      "useVideoSub": "die afgelaaide tendensvideo word die beeldmateriaal",
+      "useSubtitles": "Ondertitelstyl van uiteensetting",
+      "useSubtitlesSub": "die tendens visuele styl → subtitel wense",
+      "useRetention": "Montage regie vanaf analise",
+      "useRetentionSub": "haak/aksie/oproep tot aksie word gemerk met die uiteensetting in gedagte"
+    },
+    "tpl": {
+      "button": "Sjabloon",
+      "tooltip": "Sjablone: stoor die hele ateljee-opstelling en aktiveer outomatiese publisering van tendense",
+      "title": "UGC-sjablone",
+      "sub": "'n Sjabloon stoor ALLE ateljee-instellings (modus, onderskrifte, musiek, ontledingsblokkies). Outomatiese publisering koppel dit aan 'n tendens-outo-analise — video's bou hulself.",
+      "empty": "Geen sjablone nog nie — stoor die huidige opstelling hieronder.",
+      "apply": "Dien toe",
+      "autopubOn": "Aktiveer outomatiese publisering",
+      "source": "Bron",
+      "sourceNone": "— kies 'n bron —",
+      "sourceTrends": "Tendense",
+      "sourcePaused": "gepouseer",
+      "lang": "Videotaal",
+      "langHint": "die draaiboek word dadelik in hierdie taal geskryf",
+      "autopubHint": "Outomatiese analise vind 'n vars tendensvideo → uiteensetting → 'n video word uit hierdie sjabloon gebou (die \"Outomaties\"-afdeling in die Galery). Meer bronne benewens Tendense kom later.",
+      "noWatches": "Geen outomatiese ontledings nog nie – aktiveer een op die Tendense-bladsy (Outomatiese ontledingsblok).",
+      "saveCurrent": "Stoor huidige instellings as 'n sjabloon",
+      "namePlaceholder": "Sjabloonnaam",
+      "keywordPlaceholder": "Tendens-sleutelwoord (kenteken op die kaart)",
+      "save": "Stoor sjabloon",
+      "note": "Sjablone is beskikbaar in Galery → UGC → “Outomaties” langs outomatiese video's.",
+      "defaultName": "My sjabloon"
     }
   }
 }

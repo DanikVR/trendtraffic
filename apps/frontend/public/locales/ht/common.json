@@ -1286,7 +1286,13 @@
       "seriesBilling": "Yo faktire avatar la yon sèl fwa pou tout seri a.",
       "voiceoverBase": "Nan mòd sa a, videyo a se baz kad la: vwa ak soutit yo ale anlè.",
       "emptyTitle": "Videyo a poko telechaje",
-      "emptySub": "chwazi nan Galeri a"
+      "emptySub": "chwazi nan Galeri a",
+      "photosTitle": "Diaporama foto",
+      "photosSub": "yon foto — yon imaj fiks, plizyè — sik ak fondu kwaze",
+      "photosOne": "1 foto — imaj fiks",
+      "photosCount_one": "Foto {{count}} — sik ak fondu kwaze",
+      "photosCount_other": "Foto {{count}} — sik ak fondu kwaze",
+      "photosVsVideo": "Tou de videyo ak foto yo chwazi — videyo a genyen (foto yo inyore)."
     },
     "subtitles": {
       "title": "Sous-titres",
@@ -1403,7 +1409,9 @@
       "outro": "Pare-chòk final la",
       "layer": "Kouch anwo (PNG)",
       "layerNote": "Yon PNG transparan prepare pou fòma ankadreman an — li pral chita sou tout videyo a.",
-      "bumperNote": "Li atache ak videyo a jan li ye a, pa gen okenn pwosesis."
+      "bumperNote": "Li atache ak videyo a jan li ye a, pa gen okenn pwosesis.",
+      "clipImagesTitle": "Foto pou diaporama a",
+      "clipImagesNote": "Klike pou chwazi jiska 12 imaj — lòd chwa = lòd lekti. Yon sèl foto vin tounen yon imaj fiks."
     },
     "progress": {
       "title": "Ap kreye videyo w la…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Mizik",
       "chipSubtitles": "Sous-titres",
       "chipVoice": "Vwa"
+    },
+    "analysis": {
+      "title": "Analiz tandans",
+      "sub": "fòmil siksè → an blòk",
+      "empty": "Pa gen okenn analiz tandans chwazi",
+      "emptySub": "chwazi nan analiz ou yo",
+      "pickTitle": "Chwazi yon analiz tandans",
+      "pickSub": "Analiz ki anrejistre nan paj Tandans yo. Detay yo chwazi a ap bay blòk estidyo yo enfòmasyon — kaz pou tcheke yo deside egzakteman ki kote.",
+      "none": "Pa gen analiz ankò — analize yon videyo sou paj Tandans lan (onglet Analiz).",
+      "framesBadge": "nivo ankadreman",
+      "useScript": "Senaryo ki soti nan analiz la",
+      "useScriptSub": "jenerasyon script la swiv fòmil tandans lan ak bouyon pare li a",
+      "useVideo": "Videyo tandans kòm fim",
+      "useVideoSub": "Videyo tandans telechaje a vin tounen fim nan",
+      "useSubtitles": "Stil soutit ki soti nan dekonpozisyon",
+      "useSubtitlesSub": "tandans stil vizyèl la → volonte soutit",
+      "useRetention": "Direksyon montaj apati analiz",
+      "useRetentionSub": "Yo make ak detay sou zen/aksyon/aksyon pou aksyon an (CTA) ak detay sou detay la nan tèt ou."
+    },
+    "tpl": {
+      "button": "Modèl",
+      "tooltip": "Modèl: sove tout konfigirasyon estidyo a epi aktive piblikasyon otomatik tandans yo",
+      "title": "Modèl UGC yo",
+      "sub": "Yon modèl estoke TOUT paramèt estidyo a (mòd, soutit, mizik, kaz analiz). Piblikasyon otomatik lye li ak yon analiz otomatik tandans — videyo yo bati tèt yo.",
+      "empty": "Pa gen modèl pou kounye a — sove konfigirasyon aktyèl la anba a.",
+      "apply": "Aplike",
+      "autopubOn": "Aktive piblikasyon otomatik la",
+      "source": "Sous",
+      "sourceNone": "— chwazi yon sous —",
+      "sourceTrends": "Tandans",
+      "sourcePaused": "pran yon poz",
+      "lang": "Lang videyo",
+      "langHint": "script la ekri nan lang sa a touswit",
+      "autopubHint": "Oto-analiz la jwenn yon nouvo videyo tandans → detay → yon videyo bati apati modèl sa a (seksyon \"Oto\" nan Galeri a). Plis sous apa de Tandans ap vini pita.",
+      "noWatches": "Pa gen okenn analiz otomatik ankò — aktive youn sou paj Tandans lan (blòk analiz otomatik).",
+      "saveCurrent": "Sove paramèt aktyèl yo kòm yon modèl",
+      "namePlaceholder": "Non modèl la",
+      "keywordPlaceholder": "Mo kle tandans (badj sou kat la)",
+      "save": "Sove modèl la",
+      "note": "Modèl yo disponib nan Galeri → UGC → \"Oto\" akote videyo otomatik yo.",
+      "defaultName": "Modèl mwen an"
     }
   }
 }

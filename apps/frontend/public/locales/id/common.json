@@ -1286,7 +1286,13 @@
       "seriesBilling": "Nama karakter utama hanya tercantum sekali untuk keseluruhan seri.",
       "voiceoverBase": "Dalam mode ini, video menjadi dasar bingkai: suara dan teks terjemahan ditempatkan di atasnya.",
       "emptyTitle": "Video belum diunggah",
-      "emptySub": "pilih dari Galeri"
+      "emptySub": "pilih dari Galeri",
+      "photosTitle": "Tayangan slide foto",
+      "photosSub": "satu foto — satu bingkai diam, beberapa — berputar dengan transisi silang",
+      "photosOne": "1 foto — bingkai diam",
+      "photosCount_one": "Foto {{count}} — siklus dengan transisi silang",
+      "photosCount_other": "Foto {{count}} — siklus dengan transisi silang",
+      "photosVsVideo": "Baik video maupun foto dipilih — video yang menang (foto diabaikan)."
     },
     "subtitles": {
       "title": "Teks terjemahan",
@@ -1403,7 +1409,9 @@
       "outro": "Penutup",
       "layer": "Lapisan atas (PNG)",
       "layerNote": "Gambar PNG transparan yang disiapkan untuk format bingkai — gambar ini akan menutupi seluruh video.",
-      "bumperNote": "Dilampirkan pada video apa adanya, tanpa pengolahan apa pun."
+      "bumperNote": "Dilampirkan pada video apa adanya, tanpa pengolahan apa pun.",
+      "clipImagesTitle": "Foto untuk tayangan slide",
+      "clipImagesNote": "Klik untuk memilih hingga 12 gambar — urutan pemilihan = urutan pemutaran. Satu foto menjadi bingkai gambar diam."
     },
     "progress": {
       "title": "Membuat video Anda…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musik",
       "chipSubtitles": "Teks terjemahan",
       "chipVoice": "Suara"
+    },
+    "analysis": {
+      "title": "Analisis tren",
+      "sub": "rumus sukses → menjadi blok",
+      "empty": "Tidak ada rincian tren yang dipilih.",
+      "emptySub": "pilih dari analisis Anda",
+      "pickTitle": "Pilih rincian tren",
+      "pickSub": "Analisis yang tersimpan dari halaman Tren. Rincian yang dipilih akan menjadi masukan untuk blok studio — kotak centang menentukan tepatnya di mana.",
+      "none": "Belum ada analisis — analisis video di halaman Tren (tab Analisis).",
+      "framesBadge": "tingkat bingkai",
+      "useScript": "Naskah dari analisis",
+      "useScriptSub": "Pembuatan skrip mengikuti formula tren dan drafnya sudah siap.",
+      "useVideo": "Video tren sebagai cuplikan",
+      "useVideoSub": "Video tren yang diunduh menjadi cuplikan",
+      "useSubtitles": "Gaya subtitle dari uraian",
+      "useSubtitlesSub": "tren gaya visual → harapan subjudul",
+      "useRetention": "Pengarahan montase dari analisis",
+      "useRetentionSub": "Kata kunci/aksi/CTA diberi tag dengan mempertimbangkan uraiannya."
+    },
+    "tpl": {
+      "button": "Templat",
+      "tooltip": "Templat: simpan seluruh pengaturan studio dan aktifkan penerbitan otomatis tren.",
+      "title": "Templat UGC",
+      "sub": "Templat menyimpan SEMUA pengaturan studio (mode, subtitle, musik, kotak centang analisis). Penerbitan otomatis menghubungkannya ke analisis tren otomatis — video dibuat dengan sendirinya.",
+      "empty": "Belum ada templat — simpan pengaturan saat ini di bawah ini.",
+      "apply": "Menerapkan",
+      "autopubOn": "Aktifkan penerbitan otomatis",
+      "source": "Sumber",
+      "sourceNone": "— pilih sumber —",
+      "sourceTrends": "Tren",
+      "sourcePaused": "berhenti sejenak",
+      "lang": "Bahasa video",
+      "langHint": "Naskahnya langsung ditulis dalam bahasa ini.",
+      "autopubHint": "Analisis otomatis menemukan video tren baru → uraian → sebuah video dibuat dari templat ini (bagian “Otomatis” di Galeri). Sumber lainnya selain Tren akan hadir kemudian.",
+      "noWatches": "Belum ada analisis otomatis — aktifkan di halaman Tren (blok Analisis otomatis).",
+      "saveCurrent": "Simpan pengaturan saat ini sebagai templat.",
+      "namePlaceholder": "Nama templat",
+      "keywordPlaceholder": "Kata kunci tren (lencana pada kartu)",
+      "save": "Simpan templat",
+      "note": "Template dapat diakses di Galeri → UGC → “Otomatis” di samping video otomatis.",
+      "defaultName": "Templat saya"
     }
   }
 }

@@ -1286,7 +1286,13 @@
       "seriesBilling": "La avataro estas fakturita unufoje por la tuta serio.",
       "voiceoverBase": "En ĉi tiu reĝimo la video estas la bazo de la kadro: voĉo kaj subtekstoj iras supre.",
       "emptyTitle": "Filmeto ankoraŭ ne alŝutita",
-      "emptySub": "elekti el la galerio"
+      "emptySub": "elekti el la galerio",
+      "photosTitle": "Foto-lumbildoj",
+      "photosSub": "unu foto — senmova kadro, pluraj — ciklo kun krucfadiĝoj",
+      "photosOne": "1 foto — senmova kadro",
+      "photosCount_one": "{{count}} foto — cikloj kun krucfadoj",
+      "photosCount_other": "{{count}} fotoj — ciklo kun krucfadoj",
+      "photosVsVideo": "Kaj filmeto kaj fotoj elektitaj — la filmeto venkas (fotoj estas ignorataj)."
     },
     "subtitles": {
       "title": "Subtekstoj",
@@ -1403,7 +1409,9 @@
       "outro": "Fina bufro",
       "layer": "Supra tavolo (PNG)",
       "layerNote": "Travidebla PNG-dosiero preparita por la kadra formato — ĝi sidos super la tuta filmeto.",
-      "bumperNote": "Alkroĉita al la filmeto tia, kia ĝi estas, sen prilaborado."
+      "bumperNote": "Alkroĉita al la filmeto tia, kia ĝi estas, sen prilaborado.",
+      "clipImagesTitle": "Fotoj por la lumbilda prezento",
+      "clipImagesNote": "Alklaku por elekti ĝis 12 bildojn — elektordo = reludigordo. Unuopa foto fariĝas senmova kadro."
     },
     "progress": {
       "title": "Kreante vian filmeton…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Muziko",
       "chipSubtitles": "Subtekstoj",
       "chipVoice": "Voĉo"
+    },
+    "analysis": {
+      "title": "Analizo de tendencoj",
+      "sub": "sukcesformulo → en blokojn",
+      "empty": "Neniu tendencanalizo elektita",
+      "emptySub": "elektu el viaj analizoj",
+      "pickTitle": "Elektu tendencan analizon",
+      "pickSub": "Konservitaj analizoj el la paĝo Tendencoj. La elektita divido nutras studio-blokojn — markobutonoj decidas precize kie.",
+      "none": "Ankoraŭ neniuj analizoj — analizu filmeton sur la paĝo Tendencoj (langeto Analizoj).",
+      "framesBadge": "kadro-nivela",
+      "useScript": "Skripto el analizo",
+      "useScriptSub": "skripta generado sekvas la tendencan formulon kaj ĝian pretan skizon",
+      "useVideo": "Tendenca filmeto kiel filmaĵo",
+      "useVideoSub": "la elŝutita tendenco-video fariĝas la filmaĵo",
+      "useSubtitles": "Subtekstostilo laŭ divido",
+      "useSubtitlesSub": "la tendenco vida stilo → subtekstoj deziras",
+      "useRetention": "Muntado reĝisorante el analizo",
+      "useRetentionSub": "hoko/ago/agoalvoko estas etikeditaj konsiderante la disiĝon"
+    },
+    "tpl": {
+      "button": "Ŝablono",
+      "tooltip": "Ŝablonoj: konservu la tutan studio-aranĝon kaj ebligu aŭtomatan publikigon de tendencoj",
+      "title": "UGC-ŝablonoj",
+      "sub": "Ŝablono konservas ĈIUJN studiajn agordojn (reĝimon, subtekstojn, muzikon, analizajn markobutonojn). Aŭtomata publikigo ligas ĝin al tendenc-aŭtomata analizo — filmetoj konstruas sin mem.",
+      "empty": "Ankoraŭ ne estas ŝablonoj — konservu la nunan agordon sube.",
+      "apply": "Apliki",
+      "autopubOn": "Ebligi aŭtomatan publikigon",
+      "source": "Fonto",
+      "sourceNone": "— elektu fonton —",
+      "sourceTrends": "Tendencoj",
+      "sourcePaused": "paŭzita",
+      "lang": "Videolingvo",
+      "langHint": "la manuskripto estas skribita en ĉi tiu lingvo tuj",
+      "autopubHint": "Aŭtomata analizo trovas freŝan tendencan filmeton → analizo → filmeto estas konstruita el ĉi tiu ŝablono (la sekcio \"Aŭtomata\" en la Galerio). Pliaj fontoj krom Tendencoj venos poste.",
+      "noWatches": "Ankoraŭ ne estas aŭtomataj analizoj — ebligu unu en la paĝo Tendencoj (bloko Aŭtomata analizo).",
+      "saveCurrent": "Konservi nunajn agordojn kiel ŝablonon",
+      "namePlaceholder": "Ŝablonnomo",
+      "keywordPlaceholder": "Ŝlosilvorto pri tendenco (insigno sur la karto)",
+      "save": "Konservi ŝablonon",
+      "note": "Ŝablonoj troviĝas en Galerio → UGC → “Aŭtomata” apud aŭtomataj filmetoj.",
+      "defaultName": "Mia ŝablono"
     }
   }
 }

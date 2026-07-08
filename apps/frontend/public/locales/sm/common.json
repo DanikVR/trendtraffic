@@ -1286,7 +1286,13 @@
       "seriesBilling": "E faatasi ona totogi le avatar mo le faasologa atoa.",
       "voiceoverBase": "I lenei faiga, o le vitio o le faavae lea o le faavaa: o le leo ma faamatalaga i luga e alu i ai.",
       "emptyTitle": "E le'i lafoina le vitio",
-      "emptySub": "filifili mai le Gallery"
+      "emptySub": "filifili mai le Gallery",
+      "photosTitle": "Fa'aaliga ata",
+      "photosSub": "tasi le ata — o se fa'avaa e le minoi, o ni nai — e fa'asolosolo fa'atasi ma le fa'alava o le ata",
+      "photosOne": "1 ata — fa'avaa e le minoi",
+      "photosCount_one": "Ata {{count}} — taamilosaga ma fa'alava fa'asolosolo",
+      "photosCount_other": "ata {{count}} — fa'ata'amilosaga ma fa'alava fa'asolosolo",
+      "photosVsVideo": "O le vitio ma ata ua filifilia — e manumalo le vitio (e le amana'iaina ata)."
     },
     "subtitles": {
       "title": "Ulutala Fa'aopoopo",
@@ -1403,7 +1409,9 @@
       "outro": "Fa'aopoopoga o le bumper",
       "layer": "Vaega pito i luga (PNG)",
       "layerNote": "O se PNG manino ua saunia mo le faatulagaga o le fa'avaa — o le a ufitia ai le vitio atoa.",
-      "bumperNote": "O lo'o fa'apipi'i i le vitio e pei ona i ai, e leai se fa'agasologaina."
+      "bumperNote": "O lo'o fa'apipi'i i le vitio e pei ona i ai, e leai se fa'agasologaina.",
+      "clipImagesTitle": "Ata mo le slideshow",
+      "clipImagesNote": "Kiliki e piki mai ai ni ata e oo atu i le 12 — filifili le faasologa = faasologa o le toe ta'alo. E avea se ata e tasi ma se faavaa e le minoi."
     },
     "progress": {
       "title": "O lo'o fatuina lau vitio…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musika",
       "chipSubtitles": "Ulutala Fa'aopoopo",
       "chipVoice": "Leo"
+    },
+    "analysis": {
+      "title": "Su'esu'ega o aga masani",
+      "sub": "fua fa'atatau manuia → i poloka",
+      "empty": "Leai se fa'avasegaga o aga ua filifilia",
+      "emptySub": "filifili mai au suʻesuʻega",
+      "pickTitle": "Filifili se fa'amatalaga o aga masani",
+      "pickSub": "O au'ili'iliga ua sefe mai le itulau o Aga Masani. O le fa'asologa ua filifilia e fafaga ai poloka o le potu su'esu'e — o pusa siaki e filifili tonu po'o fea.",
+      "none": "Leai ni au'ili'iliga — au'ili'ili se vitio i le itulau o Aga Masani (tab Analytics).",
+      "framesBadge": "tulaga fa'avaa",
+      "useScript": "Tusitusiga mai le su'esu'ega",
+      "useScriptSub": "O le fatuina o tusitusiga e mulimuli i le fua fa'atatau o aga masani ma lana ata ua uma ona saunia",
+      "useVideo": "Vitio lauiloa o ni ata pu'e",
+      "useVideoSub": "o le vitio lauiloa ua sii mai ua avea ma ata pue",
+      "useSubtitles": "Faiga o ulutala laiti mai le fa'amatalaga auiliili",
+      "useSubtitlesSub": "le aga masani o le sitaili vaaia → mana'oga o ulutala",
+      "useRetention": "Fa'atonuga o le Montage mai le au'ili'iliga",
+      "useRetentionSub": "ua fa'ailogaina le matau/gaioiga/CTA ma le fa'amatalaga auiliili i le mafaufau"
+    },
+    "tpl": {
+      "button": "Fa'ata'ita'iga",
+      "tooltip": "Fa'ata'ita'iga: sefe le fa'atulagaga atoa o le potu ma fa'agaoioia le lolomiina otometi o aga masani",
+      "title": "Fa'ata'ita'iga UGC",
+      "sub": "O se template e teu ai uma faatulagaga o le potu fai ata (faiga, ulutala, musika, pusa siaki o su'esu'ega). O le lolomiina otometi e feso'ota'i atu i se su'esu'ega otometi o aga masani — e fausia lava e vitio.",
+      "empty": "Leai ni fa'ata'ita'iga i le taimi nei — sefe le fa'atulagaga o lo'o iai nei i lalo.",
+      "apply": "Talosaga",
+      "autopubOn": "Fa'agaoioia le lolomiina otometi",
+      "source": "Punaoa",
+      "sourceNone": "— filifili se punaoa —",
+      "sourceTrends": "Aga masani",
+      "sourcePaused": "taofi",
+      "lang": "Gagana vitio",
+      "langHint": "ua tusia loa le tusitusiga i lenei gagana",
+      "autopubHint": "O le su'esu'ega otometi e maua ai se vitio fou o aga masani → fa'amatalaga auiliili → o se vitio ua fausia mai lenei fa'ata'ita'iga (le vaega \"Otometi\" i le Gallery). O le a fa'aalia nisi punaoa e sili atu nai lo Aga Masani mulimuli ane.",
+      "noWatches": "Leai ni su'esu'ega otometi — fa'agaoioia se tasi i le itulau o Aga Masani (poloka su'esu'ega otometi).",
+      "saveCurrent": "Sefe tulaga o loʻo iai nei e fai ma faʻataʻitaʻiga",
+      "namePlaceholder": "Igoa o le mamanu",
+      "keywordPlaceholder": "Upu autu o aga masani (faailoga i luga o le kata)",
+      "save": "Seivi le fa'ata'ita'iga",
+      "note": "O fa'ata'ita'iga o lo'o iai i le Gallery → UGC → “Otometi” i tafatafa o vitio otometi.",
+      "defaultName": "La'u fa'ata'ita'iga"
     }
   }
 }

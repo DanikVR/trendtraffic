@@ -1286,7 +1286,13 @@
       "seriesBilling": "Avatar laskutetaan kerran koko sarjan ajan.",
       "voiceoverBase": "Tässä tilassa video on ruudun perusta: ääni ja tekstitys tulevat päällimmäiseksi.",
       "emptyTitle": "Videota ei ole vielä ladattu",
-      "emptySub": "valitse galleriasta"
+      "emptySub": "valitse galleriasta",
+      "photosTitle": "Valokuvadiaesitys",
+      "photosSub": "yksi valokuva — still-kuva, useita — sykli ristihäivytyksillä",
+      "photosOne": "1 valokuva — still-kuva",
+      "photosCount_one": "{{count}} kuva — syklit ristihäivytyksillä",
+      "photosCount_other": "{{count}} kuvat — sykli ristihäivytyksillä",
+      "photosVsVideo": "Sekä video että valokuvat valittu — video voittaa (valokuvia ei oteta huomioon)."
     },
     "subtitles": {
       "title": "Tekstitykset",
@@ -1403,7 +1409,9 @@
       "outro": "Outro-puskuri",
       "layer": "Ylin kerros (PNG)",
       "layerNote": "Läpinäkyvä PNG-kuva, joka on valmisteltu kehysmuotoa varten – se peittää koko videon.",
-      "bumperNote": "Liitetty videoon sellaisenaan, ilman käsittelyä."
+      "bumperNote": "Liitetty videoon sellaisenaan, ilman käsittelyä.",
+      "clipImagesTitle": "Kuvat diaesitystä varten",
+      "clipImagesNote": "Napsauta valitaksesi jopa 12 kuvaa — valintajärjestys = toistojärjestys. Yhdestä valokuvasta tulee still-kuva."
     },
     "progress": {
       "title": "Videon luominen…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Musiikki",
       "chipSubtitles": "Tekstitykset",
       "chipVoice": "Ääni"
+    },
+    "analysis": {
+      "title": "Trendianalyysi",
+      "sub": "menestyskaava → lohkoihin",
+      "empty": "Trendin erittelyä ei ole valittu",
+      "emptySub": "valitse analyyseistäsi",
+      "pickTitle": "Valitse trendianalyysi",
+      "pickSub": "Tallennetut analyysit Trendit-sivulta. Valittu erittely syöttää tietoa studiolohkoille – valintaruudut määrittävät tarkalleen missä.",
+      "none": "Ei vielä analyysejä — analysoi video Trendit-sivulla (Analytiikka-välilehti).",
+      "framesBadge": "kehystaso",
+      "useScript": "Analyysistä saatu skripti",
+      "useScriptSub": "skriptien generointi seuraa trendikaavaa ja sen valmista luonnosta",
+      "useVideo": "Trend-video materiaalina",
+      "useVideoSub": "ladatusta trendivideosta tulee materiaalia",
+      "useSubtitles": "Alaotsikon tyyli erittelystä",
+      "useSubtitlesSub": "trendikäs visuaalinen tyyli → alaotsikon toiveet",
+      "useRetention": "Analyysistä ohjaava montaasi",
+      "useRetentionSub": "koukku/toiminto/kehotus on merkitty erittely mielessä pitäen"
+    },
+    "tpl": {
+      "button": "Mallipohja",
+      "tooltip": "Mallit: tallenna koko studion asetukset ja ota käyttöön trendien automaattinen julkaiseminen",
+      "title": "UGC-mallit",
+      "sub": "Mallipohja tallentaa KAIKKI studioasetukset (tila, tekstitykset, musiikki, analyysin valintaruudut). Automaattinen julkaisu linkittää sen trendien automaattiseen analyysiin – videot rakentuvat itsestään.",
+      "empty": "Ei vielä malleja — tallenna nykyinen määritys alla.",
+      "apply": "Käytä",
+      "autopubOn": "Ota automaattinen julkaisu käyttöön",
+      "source": "Lähde",
+      "sourceNone": "— valitse lähde —",
+      "sourceTrends": "Trendit",
+      "sourcePaused": "keskeytetty",
+      "lang": "Videon kieli",
+      "langHint": "käsikirjoitus on kirjoitettu tällä kielellä heti",
+      "autopubHint": "Automaattinen analyysi löytää uuden trendivideon → erittelyn → video luodaan tästä mallista (Galleria-osiossa \"Auto\"). Lisää lähteitä trendien lisäksi tulossa myöhemmin.",
+      "noWatches": "Ei vielä automaattisia analyysejä — ota yksi käyttöön Trendit-sivulla (Automaattinen analyysi -lohko).",
+      "saveCurrent": "Tallenna nykyiset asetukset mallina",
+      "namePlaceholder": "Mallin nimi",
+      "keywordPlaceholder": "Trendihakusana (kortin merkki)",
+      "save": "Tallenna mallipohja",
+      "note": "Mallit löytyvät kohdasta Galleria → UGC → ”Automaattinen” automaattisten videoiden vieressä.",
+      "defaultName": "Oma mallipohja"
     }
   }
 }

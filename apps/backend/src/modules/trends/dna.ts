@@ -86,6 +86,14 @@ export interface TrendDNA {
   // — Технические таргеты и бенчмарк (Фаза 3) —
   quality?: TrendQuality;
   benchmark?: TrendBenchmark;
+  // — Покадровый видеоанализ (video_insight.ts): если есть — sceneBeats РЕАЛЬНЫЕ —
+  visual?: {
+    framesAnalyzed: true;
+    hookVisual?: string;      // что визуально происходит в первые 3 сек
+    textOverlays?: string[];  // надписи в кадре по порядку
+    cutsCount?: number;       // число монтажных склеек
+    model?: string;
+  };
   // — Происхождение —
   model: string;
   generatedAt: string;       // ISO
@@ -280,6 +288,33 @@ export async function generateTrendDNA(tenantId: string, input: GenerateDNAInput
     sourceUrl: input.sourceUrl,
   };
   return { ...core, brief: compileBrief(core), model: DEFAULT_DIRECTOR_MODEL, generatedAt: new Date().toISOString() };
+}
+
+/**
+ * Вливает покадровый видеоанализ (video_insight.ts) в текстовую ДНК: sceneBeats
+ * заменяются РЕАЛЬНЫМИ (по кадрам), visualStyle/hookAnalysis уточняются, бриф
+ * перекомпилируется. Возвращает НОВЫЙ объект (исходный не мутируется).
+ */
+export function applyVisualInsight(dna: TrendDNA, v: {
+  sceneBeats: SceneBeat[]; visualStyle: string; hookVisual: string;
+  textOverlays: string[]; cutsCount?: number; model: string;
+}): TrendDNA {
+  const merged: TrendDNA = {
+    ...dna,
+    sceneBeats: v.sceneBeats.length ? v.sceneBeats : dna.sceneBeats,
+    visualStyle: v.visualStyle || dna.visualStyle,
+    hookAnalysis: v.hookVisual
+      ? `${dna.hookAnalysis ? dna.hookAnalysis + ' ' : ''}Визуально (по кадрам): ${v.hookVisual}`.slice(0, 800)
+      : dna.hookAnalysis,
+    visual: {
+      framesAnalyzed: true,
+      hookVisual: v.hookVisual || undefined,
+      textOverlays: v.textOverlays?.length ? v.textOverlays : undefined,
+      cutsCount: v.cutsCount,
+      model: v.model,
+    },
+  };
+  return { ...merged, brief: compileBrief(merged) };
 }
 
 // ── Persistence (video_analyses) ────────────────────────────────────────────

@@ -1286,7 +1286,13 @@
       "seriesBilling": "Hoʻokahi wale nō uku no ka avatar no ka moʻo holoʻokoʻa.",
       "voiceoverBase": "Ma kēia ʻano, ʻo ke wikiō ke kumu o ka mōlina: ma luna ka leo a me nā unuhi i lalo.",
       "emptyTitle": "ʻAʻole i hoʻouka ʻia ke wikiō",
-      "emptySub": "koho mai ka Hale Hōʻikeʻike Kiʻi"
+      "emptySub": "koho mai ka Hale Hōʻikeʻike Kiʻi",
+      "photosTitle": "Hōʻike kiʻi",
+      "photosSub": "hoʻokahi kiʻi - he kiʻi paʻa, he nui - e kaʻapuni me nā crossfades",
+      "photosOne": "1 kiʻi - kiʻi paʻa",
+      "photosCount_one": "kiʻi {{count}} — nā pōʻaiapuni me nā crossfades",
+      "photosCount_other": "nā kiʻi {{count}} — e holo paikikala me nā crossfades",
+      "photosVsVideo": "ʻO ke wikiō a me nā kiʻi i koho ʻia - lanakila ke wikiō (hoʻowahāwahā ʻia nā kiʻi)."
     },
     "subtitles": {
       "title": "Nā Lepe Inoa",
@@ -1403,7 +1409,9 @@
       "outro": "ʻO ka bumper Outro",
       "layer": "Papa luna (PNG)",
       "layerNote": "ʻO kahi PNG moakaka i hoʻomākaukau ʻia no ke ʻano mōlina - e kau ia ma luna o ke wikiō holoʻokoʻa.",
-      "bumperNote": "Hoʻopili ʻia i ke wikiō e like me ia, ʻaʻohe hana."
+      "bumperNote": "Hoʻopili ʻia i ke wikiō e like me ia, ʻaʻohe hana.",
+      "clipImagesTitle": "Nā kiʻi no ka slideshow",
+      "clipImagesNote": "Kaomi e kiʻi a hiki i 12 mau kiʻi — koho i ke kaʻina = ke kaʻina pāʻani. Lilo ke kiʻi hoʻokahi i kiʻi paʻa."
     },
     "progress": {
       "title": "Ke hana nei i kāu wikiō…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Mele",
       "chipSubtitles": "Nā Lepe Inoa",
       "chipVoice": "Leo"
+    },
+    "analysis": {
+      "title": "Ka nānā ʻana i ke au",
+      "sub": "ke ʻano holomua → i loko o nā poloka",
+      "empty": "ʻAʻohe hoʻokaʻawale ʻana o ke au i koho ʻia",
+      "emptySub": "koho mai kāu mau loiloi",
+      "pickTitle": "E koho i kahi wehewehe ʻana o ke au",
+      "pickSub": "Ua mālama ʻia nā loiloi mai ka ʻaoʻao Trends. Hānai ka wehewehe i koho ʻia i nā poloka studio - hoʻoholo nā pahu pahu i kahi pololei.",
+      "none": "ʻAʻohe loiloi i kēia manawa - kālailai i kahi wikiō ma ka ʻaoʻao Trends (ʻaoʻao Analytics).",
+      "framesBadge": "pae mōlina",
+      "useScript": "Palapala mai ka loiloi",
+      "useScriptSub": "hahai ka hana ʻana o ka palapala i ke ʻano hana a me kāna palapala i mākaukau",
+      "useVideo": "Wikiō kaulana ma ke ʻano he kiʻiʻoniʻoni",
+      "useVideoSub": "lilo ke wikiō au i hoʻoiho ʻia i kiʻi",
+      "useSubtitles": "Kaila inoa lalo mai ka wehewehe ʻana",
+      "useSubtitlesSub": "ke ʻano ʻike maka o ke au → nā makemake o ka subtitle",
+      "useRetention": "Ke kuhikuhi ʻana o Montage mai ka nānā ʻana",
+      "useRetentionSub": "ua hōʻailona ʻia ka makau/hana/CTA me ka wehewehe ʻana i ka noʻonoʻo"
+    },
+    "tpl": {
+      "button": "Kumu hoʻohālike",
+      "tooltip": "Nā Kumu Hoʻohālike: e mālama i ka hoʻonohonoho studio holoʻokoʻa a hiki i ka hoʻopuka ponoʻī ʻana o ke au",
+      "title": "Nā kumu hoʻohālike UGC",
+      "sub": "Mālama kahi template i nā hoʻonohonoho studio āpau (ʻano, nā subtitles, mele, nā pahu nānā). Hoʻopili ka paʻi-aunoa iā ia i kahi loiloi-aunoa o ke au - kūkulu nā wikiō iā lākou iho.",
+      "empty": "ʻAʻohe kumu hoʻohālike i kēia manawa — e mālama i ka hoʻonohonoho o kēia manawa ma lalo.",
+      "apply": "E noi",
+      "autopubOn": "E hoʻā i ka hoʻopuka ponoʻī",
+      "source": "Puna",
+      "sourceNone": "— koho i kahi kumu —",
+      "sourceTrends": "Nā ʻano hou",
+      "sourcePaused": "ua hoʻomaha ʻia",
+      "lang": "ʻŌlelo wikiō",
+      "langHint": "ua kākau ʻia ka palapala ma kēia ʻōlelo i kēia manawa",
+      "autopubHint": "Loaʻa i ka loiloi ponoʻī kahi wikiō hou o ke au → haki → ua kūkulu ʻia kahi wikiō mai kēia kumu hoʻohālike (ka ʻāpana \"Auto\" ma ka Hale Hōʻikeʻike). ʻOi aku nā kumu ma mua o nā ʻano hou e hiki mai ana ma hope.",
+      "noWatches": "ʻAʻohe loiloi ponoʻī i kēia manawa - e hoʻā i hoʻokahi ma ka ʻaoʻao Trends (poloka loiloi ponoʻī).",
+      "saveCurrent": "E mālama i nā hoʻonohonoho o kēia manawa ma ke ʻano he template",
+      "namePlaceholder": "Inoa kumu hoʻohālike",
+      "keywordPlaceholder": "Huaʻōlelo au (hōʻailona ma ke kāleka)",
+      "save": "E mālama i ka template",
+      "note": "Noho nā Templates ma ka Hale Hōʻikeʻike → UGC → \"Auto\" ma ka ʻaoʻao o nā wikiō aunoa.",
+      "defaultName": "Kaʻu kumu hoʻohālike"
     }
   }
 }

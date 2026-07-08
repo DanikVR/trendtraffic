@@ -127,6 +127,9 @@ export default function GalleryPage() {
   const [trendQueries, setTrendQueries] = useState<TrendQueryItem[]>([]);
   // «UGC»: макеты (бренд-киты студии).
   const [kits, setKits] = useState<BrandKit[]>([]);
+  // «UGC» → Авто: шаблоны конвейера (ключевик-бейдж) + автоматические ролики (folder='auto-ugc').
+  const [ugcTpls, setUgcTpls] = useState<{ id: string; name: string; trendKeyword?: string; autopublish?: any }[]>([]);
+  const [autoUgc, setAutoUgc] = useState<GalleryItem[]>([]);
 
   // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
@@ -199,12 +202,25 @@ export default function GalleryPage() {
             title: a.originalName || 'файл', isTrend: false, hasAnalysis: !!a.hasAnalysis,
           })));
         }
-        // «UGC»: рядом с рендерами — макеты (бренд-киты студии).
+        // «UGC»: рядом с рендерами — макеты (бренд-киты студии) + АВТО: шаблоны конвейера
+        // (бейдж-ключевик сверху) и автоматические ролики (папка 'auto-ugc').
         if (which === 'ugc') {
           try {
             const kr = await fetch('/api/render/ugc/brandkits', { headers: jsonHeaders() });
             setKits(kr.ok ? ((await kr.json()).kits || []) : []);
           } catch { setKits([]); }
+          try {
+            const tr = await fetch('/api/render/ugc/templates', { headers: jsonHeaders() });
+            setUgcTpls(tr.ok ? ((await tr.json()).templates || []) : []);
+          } catch { setUgcTpls([]); }
+          try {
+            const ar2 = await fetch('/api/trends/media?folder=auto-ugc', { headers: jsonHeaders() });
+            const da = ar2.ok ? await ar2.json() : { assets: [] };
+            setAutoUgc((da.assets || []).map((a: any): GalleryItem => ({
+              id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
+              title: a.originalName || 'авто-ролик', isTrend: false,
+            })));
+          } catch { setAutoUgc([]); }
         }
       }
     } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
@@ -624,6 +640,48 @@ export default function GalleryPage() {
                   </button>
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* «UGC» → АВТО: шаблоны конвейера тренд→UGC (ключевик — бейджем СВЕРХУ карточки)
+              и автоматические ролики (папка 'auto-ugc'), собранные автопилотом. */}
+          {tab === 'ugc' && (ugcTpls.length > 0 || autoUgc.length > 0) && (
+            <div className="rounded-2xl p-3 space-y-2.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+              <div className="flex items-center gap-2 text-[12px] font-700" style={{ color: 'var(--text-secondary)' }}>
+                ⚡ Авто <span className="text-[10.5px] font-500" style={{ color: 'var(--text-muted)' }}>— шаблоны и ролики конвейера «тренд → анализ → UGC»</span>
+              </div>
+              {ugcTpls.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {ugcTpls.map((k) => (
+                    <button key={k.id} type="button" onClick={() => setBlockReq({ cloud: 'ugc' })}
+                      title="Открыть UGC-студию (шаблоны — кнопка «Шаблон» в шапке)"
+                      className="flex flex-col items-start gap-0.5 pl-3 pr-3 py-1.5 rounded-xl text-left"
+                      style={{ background: 'var(--bg-tertiary)', border: `1px solid ${k.autopublish?.enabled ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                      {k.trendKeyword && (
+                        <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'color-mix(in srgb, var(--brand) 14%, transparent)', color: 'var(--brand)', border: '1px solid var(--brand)' }}>#{k.trendKeyword}</span>
+                      )}
+                      <span className="text-[12px] font-600" style={{ color: 'var(--text-primary)' }}>
+                        {k.name}{k.autopublish?.enabled ? ' · автопубликация' : ''}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {autoUgc.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                  {autoUgc.map((v) => (
+                    <button key={v.id} type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })}
+                      className="rounded-xl overflow-hidden text-left" style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)', cursor: 'pointer' }}>
+                      <div className="relative w-full" style={{ aspectRatio: '9 / 16' }}>
+                        {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                        <span className="absolute top-1.5 left-1.5 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,.6)', color: '#fff' }}>авто</span>
+                      </div>
+                      <span className="block text-[10.5px] p-1.5 truncate" style={{ color: 'var(--text-secondary)' }}>{v.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

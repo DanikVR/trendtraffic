@@ -1286,7 +1286,13 @@
       "seriesBilling": "I-avatar ihlawuliswa kube kanye kulo lonke uthotho.",
       "voiceoverBase": "Kule ndlela ividiyo isisiseko sefreyimu: ilizwi kunye nemibhalo engezantsi iya phezulu.",
       "emptyTitle": "Ividiyo ayikalayishwa okwangoku",
-      "emptySub": "khetha kwiGalari"
+      "emptySub": "khetha kwiGalari",
+      "photosTitle": "Islayidi yefoto",
+      "photosSub": "ifoto enye — isakhelo esingashukumiyo, ezininzi — umjikelo one-crossfades",
+      "photosOne": "Ifoto e-1 — ifreyimu enganyakaziyo",
+      "photosCount_one": "{{count}} ifoto — imijikelo ene-crossfades",
+      "photosCount_other": "{{count}} iifoto — jikeleza nge-crossfades",
+      "photosVsVideo": "Iividiyo kunye neefoto ezikhethiweyo — ividiyo iyaphumelela (iifoto azinakwa)."
     },
     "subtitles": {
       "title": "Imibhalo engezantsi",
@@ -1403,7 +1409,9 @@
       "outro": "Ibhampa yangaphandle",
       "layer": "Umaleko ophezulu (PNG)",
       "layerNote": "I-PNG ecacileyo elungiselelwe ifomathi yesakhelo — iya kuhlala phezu kwevidiyo yonke.",
-      "bumperNote": "Iqhotyoshelwe kwividiyo njengoko injalo, akukho kucubungula."
+      "bumperNote": "Iqhotyoshelwe kwividiyo njengoko injalo, akukho kucubungula.",
+      "clipImagesTitle": "Iifoto zesilayidi",
+      "clipImagesNote": "Cofa ukuze ukhethe imifanekiso ukuya kuthi ga kwi-12 — khetha iodolo = iodolo yokudlala. Ifoto enye iba yifreyimu enganyakaziyo."
     },
     "progress": {
       "title": "Ukudala ividiyo yakho…",
@@ -1454,6 +1462,47 @@
       "chipMusic": "Umculo",
       "chipSubtitles": "Imibhalo engezantsi",
       "chipVoice": "Ilizwi"
+    },
+    "analysis": {
+      "title": "Uhlalutyo lweendlela",
+      "sub": "ifomula yempumelelo → kwiibhloko",
+      "empty": "Akukho luhlu lweendlela ezisetyenzisiweyo olukhethiweyo",
+      "emptySub": "khetha kwiingxelo zakho",
+      "pickTitle": "Khetha uhlalutyo lwendlela yokucinga",
+      "pickSub": "Uhlalutyo olugciniweyo oluvela kwiphepha leeTrends. Uhlalutyo olukhethiweyo lubonelela ngeebhloko zesitudiyo — iibhokisi zokujonga zigqiba ngendawo kanye apho zikhoyo.",
+      "none": "Akukho hlalutyo okwangoku — hlalutya ividiyo kwiphepha leeTrends (ithebhu yeAnalytics).",
+      "framesBadge": "inqanaba lesakhelo",
+      "useScript": "Iskripthi esivela kuhlalutyo",
+      "useScriptSub": "ukuveliswa kwesikripthi kulandela ifomula yendlela kunye noyilo lwayo olulungele ukwenziwa",
+      "useVideo": "Ividiyo ethandwayo njengevidiyo",
+      "useVideoSub": "ividiyo ekhutshelweyo yendlela ethandwayo iba yividiyo",
+      "useSubtitles": "Isitayile semibhalo engezantsi ukusuka ekuhlalutyweni",
+      "useSubtitlesSub": "isitayile esibonakalayo sendlela yokubonakala → iminqweno engezantsi",
+      "useRetention": "I-Montage eqondisa ukusuka kuhlalutyo",
+      "useRetentionSub": "i-hook/isenzo/i-CTA ziphawulwe ngenkcazelo ecacileyo engqondweni"
+    },
+    "tpl": {
+      "button": "Itemplate",
+      "tooltip": "Iitemplate: gcina yonke isetingi yesitudiyo kwaye uvule ukupapasha ngokuzenzekelayo kwendlela",
+      "title": "Iitemplate ze-UGC",
+      "sub": "Itemplate igcina ZONKE izicwangciso zesitudiyo (imo, imibhalo engezantsi, umculo, iibhokisi zokujonga uhlalutyo). Ukupapasha ngokuzenzekelayo kuyidibanisa nohlalutyo oluzenzekelayo lwendlela yokucinga — iividiyo ziyazakha zona.",
+      "empty": "Akukho templates okwangoku — gcina useto lwangoku olungezantsi.",
+      "apply": "Faka isicelo",
+      "autopubOn": "Vumela ukupapasha ngokuzenzekelayo",
+      "source": "Umthombo",
+      "sourceNone": "— khetha umthombo —",
+      "sourceTrends": "Iindlela Ezithandwayo",
+      "sourcePaused": "imisiwe",
+      "lang": "Ulwimi lwevidiyo",
+      "langHint": "iskripthi sibhalwe ngolu lwimi ngoko nangoko",
+      "autopubHint": "Uhlalutyo oluzenzekelayo lufumana ividiyo entsha yefashoni → uhlalutyo → ividiyo yakhiwe kule template (icandelo elithi \"Auto\" kwiGalari). Imithombo engaphezulu kweTrends iza kamva.",
+      "noWatches": "Akukho hlaziyo oluzenzekelayo okwangoku — vumela olunye kwiphepha leTrends (ibhloko yohlalutyo oluzenzekelayo).",
+      "saveCurrent": "Gcina useto lwangoku njengetemplate",
+      "namePlaceholder": "Igama letemplate",
+      "keywordPlaceholder": "Igama elingundoqo lendlela (ibheji ekwikhadi)",
+      "save": "Gcina itemplate",
+      "note": "Iitemplate zikho kwiGalari → UGC → “Auto” ecaleni kweevidiyo ezizenzekelayo.",
+      "defaultName": "Itemplate yam"
     }
   }
 }

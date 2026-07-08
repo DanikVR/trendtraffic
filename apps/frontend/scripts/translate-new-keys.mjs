@@ -30,10 +30,20 @@ const SOURCE_LANG = 'en';
 // уже переведены во всех локалях — их повторно гонять не нужно.
 // Перед новым прогоном замени список на свежие ключи.
 const KEY_PATHS = [
-  // Перегон после правки en-источников: «add a bumper» Google переводил как
-  // автомобильный бампер, «sits quietly…» — буквально. Заменены на однозначные.
-  'ugc.music.emptySub',
-  'ugc.bumpers.addSub',
+  // Батч v2.1.0 — конвейер «тренд → анализ → UGC»: секция «Анализ тренда» (галочки),
+  // фото-слайдшоу в Видеоряде, шаблоны с автопубликацией.
+  'ugc.analysis.title', 'ugc.analysis.sub', 'ugc.analysis.empty', 'ugc.analysis.emptySub',
+  'ugc.analysis.pickTitle', 'ugc.analysis.pickSub', 'ugc.analysis.none', 'ugc.analysis.framesBadge',
+  'ugc.analysis.useScript', 'ugc.analysis.useScriptSub', 'ugc.analysis.useVideo', 'ugc.analysis.useVideoSub',
+  'ugc.analysis.useSubtitles', 'ugc.analysis.useSubtitlesSub', 'ugc.analysis.useRetention', 'ugc.analysis.useRetentionSub',
+  'ugc.video.photosTitle', 'ugc.video.photosSub', 'ugc.video.photosOne',
+  'ugc.video.photosCount_one', 'ugc.video.photosCount_other', 'ugc.video.photosVsVideo',
+  'ugc.picker.clipImagesTitle', 'ugc.picker.clipImagesNote',
+  'ugc.tpl.button', 'ugc.tpl.tooltip', 'ugc.tpl.title', 'ugc.tpl.sub', 'ugc.tpl.empty', 'ugc.tpl.apply',
+  'ugc.tpl.autopubOn', 'ugc.tpl.source', 'ugc.tpl.sourceNone', 'ugc.tpl.sourceTrends', 'ugc.tpl.sourcePaused',
+  'ugc.tpl.lang', 'ugc.tpl.langHint', 'ugc.tpl.autopubHint', 'ugc.tpl.noWatches',
+  'ugc.tpl.saveCurrent', 'ugc.tpl.namePlaceholder', 'ugc.tpl.keywordPlaceholder', 'ugc.tpl.save',
+  'ugc.tpl.note', 'ugc.tpl.defaultName',
 ];
 
 // Наши коды → коды Google Translate (некоторые отличаются).

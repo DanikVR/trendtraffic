@@ -42,6 +42,7 @@ import trendsRouter from './modules/trends/router.js';
 import channelsRouter from './modules/channels/router.js';
 import channelsCoverRouter from './modules/channels/cover_proxy.js';
 import { startChannelSnapshotScheduler } from './modules/channels/scheduler.js';
+import { startTrendAutopilot } from './modules/trends/autopilot.js';
 import socialExtProxyRouter, { mediaRouter as socialExtMediaRouter, aiRouter as socialExtAiRouter, galleryRouter as socialExtGalleryRouter, musicRouter as socialExtMusicRouter, videoRouter as socialExtVideoRouter, manifestRouter as socialExtManifestRouter } from './modules/social-ext/router.js';
 import renderRouter from './modules/render/router.js';
 import notebooklmRouter from './modules/notebooklm/router.js';
@@ -276,6 +277,8 @@ const server = app.listen(PORT, () => {
   startCrmTaskScheduler();
   // 6.4 «Каналы»: авто-обновление отслеживаемых каналов (тик/час, снимок раз в сутки)
   startChannelSnapshotScheduler();
+  // 6.5 Автопилот трендов: конвейер «тренд → автоанализ → UGC» (Enterprise-only)
+  startTrendAutopilot();
 });
 
 export { app, server };
