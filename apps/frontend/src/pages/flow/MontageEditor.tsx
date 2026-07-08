@@ -319,7 +319,7 @@ const newSeg = (start: number, end: number): OmniSeg =>
 const OMNI_DEFAULT: OmniSpec = { segments: [newSeg(0, 0.2)] };
 const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
-export default function MontageEditor({ flowId, onBack, isNew }: { flowId: string; onBack: () => void; isNew?: boolean }) {
+export default function MontageEditor({ flowId, onBack, isNew, initialCloud }: { flowId: string; onBack: () => void; isNew?: boolean; initialCloud?: string | null }) {
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
 
@@ -691,6 +691,18 @@ export default function MontageEditor({ flowId, onBack, isNew }: { flowId: strin
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<CloudId | null>(null);
   const movedRef = useRef(false);
+
+  // Deep-link из Галереи (/flow?open=…): авто-открыть облако-блок после загрузки графа.
+  const initialCloudDone = useRef(false);
+  useEffect(() => {
+    if (loading || !initialCloud || initialCloudDone.current) return;
+    if (!(['omni', 'plan', 'editor', 'ugc', 'hotebook', 'flow'] as string[]).includes(initialCloud)) return;
+    initialCloudDone.current = true;
+    if (initialCloud === 'hotebook') setHbFreshDone(false);
+    if (initialCloud === 'flow') setCommFreshDone(false);
+    setCloudPanel(initialCloud as CloudId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, initialCloud]);
 
   useEffect(() => {
     (async () => {

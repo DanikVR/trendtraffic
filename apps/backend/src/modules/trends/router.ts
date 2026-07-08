@@ -16,9 +16,9 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, type TrendKind } from './service.js';
+import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
-import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset } from './dna.js';
+import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA } from './dna.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
@@ -258,6 +258,40 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
     // Нет ключа / ошибка TikHub — клиентская (400), прочее — 502.
     const code = /ключ|query|Укажите/i.test(msg) ? 400 : 502;
     res.status(code).json({ error: msg });
+  }
+});
+
+/** GET /history?limit=40 — история запросов сканирования («Запросы трендов» в Галерее). */
+router.get('/history', async (req: AuthedRequest, res: Response) => {
+  try {
+    const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 40;
+    const queries = await listScanQueries(req.tenantId!, limit);
+    res.json({ queries });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/** POST /history/delete { query } — убрать запрос из истории (все сканы с этим словом). */
+router.post('/history/delete', async (req: AuthedRequest, res: Response) => {
+  try {
+    const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
+    if (!query) return res.status(400).json({ error: 'Передайте query.' });
+    const deleted = await deleteScanQueries(req.tenantId!, query);
+    res.json({ ok: true, deleted });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+/** GET /analyses — все сохранённые анализы тенанта («Тренды → Анализ» в Галерее). */
+router.get('/analyses', async (req: AuthedRequest, res: Response) => {
+  try {
+    const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 100;
+    const analyses = await listTrendDNA(req.tenantId!, limit);
+    res.json({ analyses });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения' });
   }
 });
 

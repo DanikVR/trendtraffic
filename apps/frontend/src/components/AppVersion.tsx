@@ -1978,7 +1978,23 @@
  *         + модалка Применить/Сохранить). (4) i18n: все ~280 строк студии в ns common (ugc.*) —
  *         ru+en готовы, остальные языки через translate:locales. Синтетика ffmpeg PASS
  *         (voiceover/заставки/экстры/4:5); живые HeyGen/ElevenLabs прогоны — на ключах клиента. */
-export const APP_VERSION = '2.0.6';
+/* 2.0.7 — ГАЛЕРЕЯ = ГЛАВНЫЙ ЭКРАН (хаб «всё через Галерею»). (1) Единый стиль разделов: первой
+ *         в сетке каждой вкладки — плитка «+ Добавить», открывающая блок раздела; рядом —
+ *         сохранённые файлы. Новые вкладки: «Google Flow» (folder=flow), «UGC» (folder=ugc — рендеры
+ *         /ugc/build теперь помечаются папкой + строка «Макеты» из бренд-китов), «Тренды».
+ *         (2) Вкладка «Тренды»: раздел «Анализ» — ВСЕ сохранённые разборы (GET /api/trends/analyses,
+ *         video_analyses ⋈ media_assets: обложка/видео + модалка разбора) и раздел «Запросы
+ *         трендов» — история сканов (GET /api/trends/history из журнала trends; POST
+ *         /history/delete). Клик по запросу → /social-extension?q=слово&platform=… — TrendSearch
+ *         префиллит ключевик и авто-сканирует (окно трендов открывается готовым, набирать дважды
+ *         не нужно; guard от двойного скана — StrictMode). (3) Deep-link в блоки: /flow?open=
+ *         omni|hotebook|flow|ugc|editor[&src=url&srcName=] — FlowPage открывает последний сценарий
+ *         (или создаёт с graph.source из src), MontageEditor авто-открывает облако (prop
+ *         initialCloud). (4) Редактор видео (VideoViewer): кнопка «Omni Flash» в строке транспорта
+ *         (у «Итог:») — текущее видео уезжает в новый сценарий с открытым облаком Omni Flash.
+ *         Файлы: GalleryPage, FlowPage, MontageEditor, VideoViewer, TrendSearch,
+ *         SocialExtensionPage; бэк: trends/router+service+dna, render/router (folder='ugc'). */
+export const APP_VERSION = '2.0.7';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

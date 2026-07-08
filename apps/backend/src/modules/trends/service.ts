@@ -345,6 +345,52 @@ export async function listRecentVideos(tenantId: string, limit = 60, downloadedO
   }
 }
 
+export interface ScanQueryRow {
+  id: string;
+  query: string;
+  platform: string;
+  resultCount: number;
+  createdAt: string;
+}
+
+/**
+ * История запросов сканирования — «Запросы трендов» в Галерее.
+ * Уникальные ключевые слова (последний скан по каждому), свежие сверху.
+ */
+export async function listScanQueries(tenantId: string, limit = 40): Promise<ScanQueryRow[]> {
+  const lim = Math.min(Math.max(limit, 1), 200);
+  try {
+    const r = await pool.query(
+      `SELECT DISTINCT ON (lower(query_value)) id, query_value, platform, result_count, created_at
+       FROM trends
+       WHERE tenant_id = $1 AND query_kind = 'keyword' AND query_value IS NOT NULL AND query_value <> ''
+       ORDER BY lower(query_value), created_at DESC`,
+      [tenantId]
+    );
+    return (r.rows as any[])
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, lim)
+      .map((x) => ({
+        id: x.id,
+        query: x.query_value,
+        platform: x.platform || 'tiktok',
+        resultCount: Number(x.result_count) || 0,
+        createdAt: new Date(x.created_at).toISOString(),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/** Убрать запрос из истории: все сканы с этим словом (source_videos не трогаем — FK SET NULL). */
+export async function deleteScanQueries(tenantId: string, query: string): Promise<number> {
+  const r = await pool.query(
+    `DELETE FROM trends WHERE tenant_id = $1 AND lower(query_value) = lower($2)`,
+    [tenantId, query]
+  );
+  return r.rowCount || 0;
+}
+
 /** Удаляет видео: строку из БД, затем файлы с диска. */
 export async function deleteVideo(tenantId: string, id: string): Promise<boolean> {
   // 1. Пути читаем ДО удаления строки (после DELETE их уже не спросить), best-effort и
