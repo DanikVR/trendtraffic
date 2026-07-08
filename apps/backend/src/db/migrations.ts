@@ -871,6 +871,35 @@ const MIGRATIONS: Migration[] = [
   },
   { name: 'auto_runs.watch_idx', sql: `CREATE INDEX IF NOT EXISTS idx_auto_runs_watch ON auto_runs (watch_id, started_at DESC)` },
   { name: 'auto_runs.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_auto_runs_tenant ON auto_runs (tenant_id, started_at DESC)` },
+
+  // publisher_posts — история Публикатора (Ф1): одна строка = один таргет (аккаунт×платформа)
+  // одного поста; group_id связывает таргеты одной публикации в карточку. Blotato отдаёт
+  // список постов только за ~7 дней — постоянная история живёт у нас.
+  {
+    name: 'publisher_posts.table',
+    sql: `CREATE TABLE IF NOT EXISTS publisher_posts (
+      id UUID PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      group_id UUID NOT NULL,
+      asset_id UUID,
+      media_url TEXT,
+      text TEXT,
+      platform VARCHAR(32) NOT NULL,
+      account_id VARCHAR(128) NOT NULL,
+      account_name VARCHAR(255),
+      target JSONB NOT NULL DEFAULT '{}',
+      mode VARCHAR(12) NOT NULL DEFAULT 'now',
+      scheduled_at TIMESTAMPTZ,
+      submission_id VARCHAR(128),
+      status VARCHAR(24) NOT NULL DEFAULT 'submitted',
+      post_url TEXT,
+      error TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'publisher_posts.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_posts_tenant ON publisher_posts (tenant_id, created_at DESC)` },
+  { name: 'publisher_posts.pending_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_posts_pending ON publisher_posts (tenant_id, status, updated_at)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

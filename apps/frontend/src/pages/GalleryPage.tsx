@@ -34,6 +34,8 @@ import { useAppStore } from '../store/useAppStore';
 import { TT_EXT_VERSION } from '../components/AppVersion';
 import { coverSrc } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
+import { PublisherTab } from './publisher/PublisherTab';
+import { PublisherStudio } from './publisher/PublisherStudio';
 
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference' | 'publisher';
 /** Фильтр внутри вкладки «Видео»: медиа (изображения+видео, kind=reference) или аудио. */
@@ -130,6 +132,9 @@ export default function GalleryPage() {
   useEffect(() => { if (urlTab !== tab) setTabState(urlTab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlTab]);
   const [mediaKind, setMediaKind] = useState<MediaKind>('reference'); // фильтр «Видео | Аудио» внутри вкладки «Видео»
   const [blockReq, setBlockReq] = useState<FlowBlockRequest | null>(null); // блок TrendFlow поверх Галереи
+  // Публикатор: полноэкранная студия поста (initial = медиа с карточки) + счётчик перезагрузки ленты.
+  const [pubStudio, setPubStudio] = useState<{ assetId?: string; mediaUrl?: string; title?: string } | null>(null);
+  const [pubReload, setPubReload] = useState(0);
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -201,7 +206,7 @@ export default function GalleryPage() {
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...authHeader() });
 
   const load = async (which: Tab = tab, kindOverride?: MediaKind) => {
-    // «Публикатор» — вкладка-заглушка (сервис ещё не подключён), данных не грузим.
+    // «Публикатор» — данные (ключ/аккаунты/лента) грузит сам компонент PublisherTab.
     if (which === 'publisher') { setItems([]); setLoading(false); setError(null); setSelected(new Set()); return; }
     setLoading(true); setError(null); setSelected(new Set());
     try {
@@ -676,19 +681,8 @@ export default function GalleryPage() {
       {loading ? (
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
       ) : tab === 'publisher' ? (
-        /* «Публикатор» — вкладка-заглушка: сервис публикации ещё не подключён */
-        <div className="py-20 sm:py-28 text-center flex flex-col items-center gap-4">
-          <span className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-            <Send size={30} color="#fff" />
-          </span>
-          <div className="space-y-1.5 max-w-md">
-            <p className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Публикатор скоро</p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Автопубликация готовых роликов в TikTok, Instagram, YouTube и другие соцсети —
-              прямо из Галереи. Раздел в разработке.
-            </p>
-          </div>
-        </div>
+        /* «Публикатор» (Ф1): постинг через Blotato (BYO-ключ) — плитки сетей, лента, студия поста */
+        <PublisherTab token={token} reloadKey={pubReload} onNewPost={() => setPubStudio({})} />
       ) : tab === 'trendhub' ? (
         renderTrendHub()
       ) : (
@@ -882,6 +876,15 @@ export default function GalleryPage() {
                           <Clapperboard size={14} />
                         </button>
                       )}
+                      {/* → Публикатор: опубликовать этот файл в соцсети (кнопка всегда видна — канон карточек) */}
+                      {(v.mediaType === 'video' || v.mediaType === 'image') && (
+                        <button type="button" onClick={() => setPubStudio({ assetId: v.id, mediaUrl: v.fileUrl, title: v.title })}
+                          title="Опубликовать в соцсети (Публикатор)"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                          style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                          <Send size={14} />
+                        </button>
+                      )}
                       {/* Удалить */}
                       <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл"
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
@@ -935,6 +938,17 @@ export default function GalleryPage() {
 
       {/* Блок TrendFlow ПОВЕРХ Галереи: закрыл — вернулся в этот же раздел (+ обновляем его) */}
       {blockReq && <FlowBlockOverlay req={blockReq} onClose={() => { setBlockReq(null); void load(); }} />}
+
+      {/* Публикатор: полноэкранная студия поста (из «Новый пост» или кнопки на карточке).
+          После успешной отправки — во вкладку «Публикатор» со свежей лентой. */}
+      {pubStudio && (
+        <PublisherStudio
+          token={token}
+          initial={pubStudio}
+          onClose={() => setPubStudio(null)}
+          onPublished={() => { setPubStudio(null); setPubReload((x) => x + 1); if (tab !== 'publisher') setTab('publisher'); }}
+        />
+      )}
 
       {/* Просмотр сохранённого анализа видео (тот же разбор, что на вкладке «Аналитика») */}
       {analysis && (

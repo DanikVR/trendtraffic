@@ -75,6 +75,12 @@ export const PROVIDERS: ProviderDef[] = [
     verify: (k) => tryVerify('ElevenLabs', () => ping('https://api.elevenlabs.io/v1/user', { headers: { 'xi-api-key': k } })) },
   { id: 'heygen', label: 'HeyGen (аватары, видео-шлюз)', group: 'paid', help: 'https://app.heygen.com/settings/api',
     verify: (k) => tryVerify('HeyGen', () => ping('https://api.heygen.com/v2/user/remaining_quota', { headers: { 'X-Api-Key': k } })) },
+
+  // Публикатор (вкладка Галереи): BYO-аккаунт Blotato у каждого тенанта — свой ключ,
+  // свои подключённые соцсети (подключаются в кабинете my.blotato.com, API для этого нет).
+  // Проверка реальная: GET /users/me/accounts → 200 = ключ активен (даже с пустым списком).
+  { id: 'blotato', label: 'Blotato (Публикатор — постинг в соцсети)', group: 'paid', help: 'https://my.blotato.com/settings',
+    verify: (k) => tryVerify('Blotato', () => ping('https://backend.blotato.com/v2/users/me/accounts', { headers: { 'blotato-api-key': k } })) },
 ];
 
 const PROVIDER_IDS = new Set(PROVIDERS.map((p) => p.id));

@@ -2067,7 +2067,29 @@
  *         «Установите расширение TrendTraffic» (инлайн-раскрытие Скачать + Как установить, копия
  *         карточки из Настройки Enterprise → Генерация). Файлы: features.ts, router.tsx,
  *         MainLayout, BottomTabBar, GalleryPage, SocialExtensionPage. */
-export const APP_VERSION = '2.1.3';
+/* 2.1.3 — Сайдбар: язык/тема перенесены вниз, версия приложения показывается в Настройках
+ *         (PR #12, ui/sidebar-bottom-version — запись восстановлена при ребейзе Публикатора). */
+/* 2.1.4 — ПУБЛИКАТОР Ф1 (вместо заглушки): постинг из Галереи в 9 соцсетей через Blotato,
+ *         BYO-ключ у КАЖДОГО пользователя (Настройки → Генерация → Blotato, реальная «Проверить»
+ *         = GET /users/me/accounts; подключение соцсетей — только кабинет my.blotato.com, плитки
+ *         сетей ведут сразу на нужную страницу). Вкладка: онбординг без ключа → плитки 9 сетей
+ *         со статусами (✓ @handle / «Подключить →») → стат-карточки → лента постов (группировка
+ *         по group_id, статусы ⏳/✓ссылка/✗причина/отменён, «Повторить» + отмена запланированного,
+ *         поллинг 8с пока есть «в полёте»). Студия «Новый пост» — ПОЛНОЭКРАННАЯ (решение В4):
+ *         медиа из Галереи (единый GalleryPicker), текст со счётчиками лимитов по сетям,
+ *         аккаунты-тумблеры, платформенные опции (TikTok: privacy/дуэты/ститчи/бренд/ИИ-метка/
+ *         черновик; YouTube: title обяз./privacy/уведомить; IG: Reel|Пост|Story; FB: страница
+ *         обяз.; Pinterest: доска обяз.+ссылка; LinkedIn: от имени страницы; Threads: кто
+ *         отвечает), «Когда»: Сейчас | Дата-время | Следующий слот Blotato. Кнопка «Опубликовать»
+ *         (Send, зелёная) в подвале карточек видео/фото — всегда видна (канон). Бэк:
+ *         modules/publisher (blotato.ts клиент: ретрай 429/5xx, пауза 350мс между таргетами —
+ *         лимит 30/мин; router: /status /accounts /posts CRUD+retry, ленивый синк статусов до
+ *         8 строк за запрос), таблица publisher_posts (1 строка = 1 таргет, постоянная история —
+ *         Blotato отдаёт только ~7 дней), ключ 'blotato' в PROVIDERS (шифрование готово),
+ *         гейт «все платные» (hasEnterpriseAccess). /settings/enterprise понимает ?section=.
+ *         Файлы: publisher/PublisherTab+PublisherStudio, GalleryPage, BottomTabBar, BillingPage,
+ *         EnterpriseSettingsPage; бэк: modules/publisher/*, provider_keys, migrations, server. */
+export const APP_VERSION = '2.1.4';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
