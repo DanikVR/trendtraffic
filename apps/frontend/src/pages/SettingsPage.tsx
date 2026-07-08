@@ -18,6 +18,7 @@ import { AuroraButton } from '../components/AuroraButton';
 import { AuroraInput } from '../components/AuroraInput';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { StatusPill } from '../components/StatusPill';
+import { APP_VERSION } from '../components/AppVersion';
 import { useAppStore } from '../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -267,6 +268,12 @@ export function SettingsPage() {
               />
             </div>
           </div>
+          {/* Версия приложения — видимая (по слову юзера 2026-07-08: «не вижу версию») */}
+          <span className="self-start flex-shrink-0 text-[11px] font-700 px-2 py-1 rounded-lg"
+            title={t('settings.appVersion', 'Версия приложения')}
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', fontVariantNumeric: 'tabular-nums' }}>
+            v{APP_VERSION}
+          </span>
         </div>
 
         <div className="aurora-divider mb-4" />
