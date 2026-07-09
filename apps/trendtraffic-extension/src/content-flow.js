@@ -617,6 +617,46 @@
   // «проектором» (клик по карточке → новая вкладка на /project/<id>). Flow — SPA +
   // web-components, поэтому ищем ссылки на проекты сквозь shadow DOM.
   const cleanText = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  // Обложка карточки: <img> (в т.ч. lazy data-src/srcset) → <video> poster/src → CSS background-image.
+  function thumbOf(a, card) {
+    const pickImg = (root) => {
+      const im = root && root.querySelector && root.querySelector('img');
+      if (im) return im.currentSrc || im.src || im.getAttribute('data-src') || (im.getAttribute('srcset') || '').split(' ')[0] || '';
+      return '';
+    };
+    let t = pickImg(a) || pickImg(card);
+    if (!t) {
+      const v = (a && a.querySelector && a.querySelector('video')) || (card && card.querySelector && card.querySelector('video'));
+      if (v) t = v.poster || v.currentSrc || v.src || '';
+    }
+    if (!t) {
+      // background-image на ссылке/карточке/её потомках (Flow часто рисует превью фоном div-а).
+      const roots = [a, card].filter(Boolean);
+      for (const root of roots) {
+        const els = [root, ...Array.from(root.querySelectorAll ? root.querySelectorAll('*') : []).slice(0, 60)];
+        for (const el of els) {
+          let bg = '';
+          try { bg = getComputedStyle(el).backgroundImage || ''; } catch { /* */ }
+          const m = /url\(["']?(.*?)["']?\)/.exec(bg);
+          if (m && m[1] && !/^data:image\/svg/i.test(m[1])) { t = m[1]; break; }
+        }
+        if (t) break;
+      }
+    }
+    try { return t ? new URL(t, location.href).href : ''; } catch { return t || ''; }
+  }
+  // Обложка → data URL (контент-скрипт на labs.google имеет Google-сессию → обходит 401/CORS,
+  // картинка гарантированно покажется в приложении). Мелкие обложки инлайним, крупные оставляем ссылкой.
+  async function thumbDataUrl(url, cap) {
+    if (!url || url.startsWith('data:')) return url || '';
+    const tryF = async (opts) => { try { const r = await fetch(url, opts); return r.ok ? r : null; } catch { return null; } };
+    const res = (await tryF({})) || (await tryF({ credentials: 'include' }));
+    if (!res) return '';
+    const blob = await res.blob();
+    if (!blob.size || blob.size > (cap || 500 * 1024)) return '';
+    if (blob.type && !/^image\//i.test(blob.type)) return '';
+    try { return await blobToDataUrl(blob); } catch { return ''; }
+  }
   async function listProjects() {
     // Flow — тяжёлый SPA: карточки проектов появляются НЕ сразу после загрузки страницы.
     // Ждём, пока в DOM (сквозь shadow) появятся ссылки на проекты — до ~18с, иначе вернём пусто.
@@ -642,18 +682,23 @@
       try { url = new URL(raw, location.href).href; } catch { /* оставим как есть */ }
       // Карточка = ссылка или ближайший контейнер-плитка (обложка/подпись живут там).
       const card = a.closest('[class*="project" i], li, article') || a.parentElement || a;
-      // Обложка: img/video внутри карточки.
-      let thumb = '';
-      const img = a.querySelector('img') || (card && card.querySelector && card.querySelector('img'));
-      if (img) thumb = img.currentSrc || img.src || '';
-      if (!thumb) { const v = a.querySelector('video') || (card && card.querySelector && card.querySelector('video')); if (v) thumb = v.poster || v.currentSrc || v.src || ''; }
-      // Название: aria-label ссылки → видимый текст плитки (дата) → «Проект Flow».
+      const thumb = thumbOf(a, card);
+      // Название: aria-label ссылки → видимый текст плитки (дата). Обрезаем подписи кнопок карточки
+      // Flow (иконки-лигатуры edit/delete + тултипы «Изменить проект»/«Удалить»), приклеенные к дате.
       let title = cleanText(a.getAttribute('aria-label') || a.getAttribute('title') || '');
-      if (!title && card && card !== a) title = cleanText(card.textContent);
+      if (!title && card && card !== a) {
+        title = cleanText(card.textContent).split(/\s*(?:edit|delete|more_vert|content_copy|Изменить|Удалить|Открыть|Дублировать|Переименовать)/i)[0].trim();
+      }
       if (!title) title = 'Проект Flow';
-      out.push({ id, url, title: title.slice(0, 80), thumb: (thumb || '').slice(0, 500) });
+      out.push({ id, url, title: title.slice(0, 80), thumb: (thumb || '').slice(0, 800) });
       if (out.length > 120) break;
     }
+    // Дотягиваем обложки как data URL (сессия labs.google) — иначе кросс-доменная картинка
+    // на app.trendtraffic.pro часто не грузится (401/приватный CDN Flow). Мелкие инлайним.
+    await Promise.all(out.map(async (p) => {
+      if (!p.thumb || p.thumb.startsWith('data:')) return;
+      try { const d = await thumbDataUrl(p.thumb, 450 * 1024); if (d) p.thumb = d; } catch { /* оставим ссылку */ }
+    }));
     // Признак входа: если ссылок нет, но мы на странице входа/аккаунтов — залогиниться надо.
     const loggedOut = out.length === 0 && /accounts\.google\.com|\/signin|ServiceLogin/i.test(location.href);
     return { ok: true, projects: out, loggedIn: !loggedOut };

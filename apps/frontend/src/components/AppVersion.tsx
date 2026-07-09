@@ -2223,12 +2223,18 @@
  *         (poll до ~18с). (3) Кнопка «Открыть TrendTraffic» в панели расширения на Flow ведёт на вкладку
  *         «Google Flow» Галереи (gallery?tab=flow), а не на легаси /flow. Расширение → v1.3.2. Файлы:
  *         GalleryPage, trendtraffic-extension (content-flow/content-bridge/manifest). */
-export const APP_VERSION = '2.2.8';
+/* 2.2.9 — Google Flow: карточки проектов показывают РЕАЛЬНУЮ обложку (раньше — плейсхолдер-иконка).
+ *         Расширение снимает превью надёжнее (img/lazy-srcset → video poster → CSS background-image)
+ *         и ДОТЯГИВАЕТ её как data URL из сессии labs.google (обход 401/приватного CDN Flow — иначе
+ *         кросс-доменная картинка на app.trendtraffic.pro не грузилась). Имя карточки очищено от
+ *         подписей кнопок Flow («edit»/«Изменить проект»/«Удалить»). Расширение → v1.3.3. Файлы:
+ *         trendtraffic-extension/content-flow.js (listProjects: thumbOf/thumbDataUrl + чистка имени). */
+export const APP_VERSION = '2.2.9';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.2';
+export const TT_EXT_VERSION = '1.3.3';
 
 export function AppVersion() {
   return (
