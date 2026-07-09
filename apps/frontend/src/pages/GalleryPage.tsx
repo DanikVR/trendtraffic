@@ -23,7 +23,7 @@ import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
-  ChevronDown, ChevronUp, HelpCircle, Copy,
+  ChevronDown, ChevronUp, HelpCircle, Copy, Languages,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -1299,7 +1299,7 @@ export default function GalleryPage() {
             ) : analysis.dna?.__error ? (
               <p className="text-sm py-6 text-center" style={{ color: '#ef4444' }}>{analysis.dna.__error}</p>
             ) : (
-              <AnalysisView dna={analysis.dna} />
+              <AnalysisView dna={analysis.dna} token={token} />
             )}
           </div>
         </div>
@@ -1380,8 +1380,32 @@ export default function GalleryPage() {
   );
 }
 
-/** Форматированный разбор из сохранённой TrendDNA (Viral Breakdown + Video Content Analysis). */
-function AnalysisView({ dna }: { dna: any }) {
+/** Форматированный разбор из сохранённой TrendDNA (Viral Breakdown + Video Content Analysis).
+ *  Разбор сохранён на английском; «Перевести» переводит показ на язык браузера (пока ru/en). */
+function AnalysisView({ dna, token }: { dna: any; token: string | null }) {
+  const [translated, setTranslated] = useState<any>(null);
+  const [showLang, setShowLang] = useState<'en' | 'ru'>('en');
+  const [translating, setTranslating] = useState(false);
+  const [tErr, setTErr] = useState<string | null>(null);
+  const target = galLang(); // 'en' | 'ru' — язык кнопки «Перевести»
+  const d = showLang === 'en' ? dna : (translated || dna);
+  const L = (ru: string, en: string) => (showLang === 'en' ? en : ru);
+  const doTranslate = async () => {
+    if (showLang !== 'en') { setShowLang('en'); return; }
+    if (translated) { setShowLang(target); return; }
+    setTranslating(true); setTErr(null);
+    try {
+      const res = await fetch('/api/trends/analyze/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ dna, lang: target }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setTranslated(data.dna); setShowLang(target);
+    } catch (e: any) { setTErr(e?.message || 'Не удалось перевести'); }
+    finally { setTranslating(false); }
+  };
   const Sec = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="mb-3">
       <div className="text-[10px] font-700 tracking-wide mb-1" style={{ color: '#22d3ee' }}>{title}</div>
@@ -1391,28 +1415,37 @@ function AnalysisView({ dna }: { dna: any }) {
   const Bul = ({ items }: { items: any }) => Array.isArray(items) && items.length ? (
     <ul className="space-y-0.5">{items.map((x: any, i: number) => <li key={i}>• {String(x)}</li>)}</ul>
   ) : <span style={{ color: 'var(--text-muted)' }}>—</span>;
-  const beats = Array.isArray(dna?.sceneBeats) ? dna.sceneBeats : [];
+  const beats = Array.isArray(d?.sceneBeats) ? d.sceneBeats : [];
   const fmtT = (t: any) => (typeof t === 'number' ? `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}` : '');
-  // Лейблы — на языке интерфейса/браузера (пока ru/en); текст разбора берётся как сохранён.
-  const L = (ru: string, en: string) => (galLang() === 'en' ? en : ru);
   return (
     <div>
+      {target !== 'en' && (
+        <div className="flex justify-end mb-2">
+          <button type="button" onClick={doTranslate} disabled={translating} title="Перевести разбор на язык браузера"
+            className="inline-flex items-center gap-1 text-[11px] font-600 px-2.5 py-1 rounded-lg disabled:opacity-50"
+            style={{ background: showLang === 'en' ? 'rgba(99,102,241,0.12)' : 'var(--bg-tertiary)', color: showLang === 'en' ? 'var(--brand)' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+            {translating ? <Loader2 size={12} className="animate-spin" /> : <Languages size={12} />}
+            {showLang === 'en' ? 'Перевести' : 'Оригинал (EN)'}
+          </button>
+        </div>
+      )}
+      {tErr && <p className="text-[11px] mb-2" style={{ color: '#ef4444' }}>{tErr}</p>}
       <div className="text-[11px] font-700 mb-2" style={{ color: 'var(--text-muted)' }}>{L('ВИРАЛЬНЫЙ РАЗБОР', 'VIRALITY BREAKDOWN')}</div>
-      {dna?.hookType && <Sec title={L('ТИП ХУКА', 'HOOK TYPE')}>{dna.hookType}</Sec>}
-      {dna?.whyItWorks && <Sec title={L('ПОЧЕМУ РАБОТАЕТ', 'WHY IT WORKS')}>{dna.whyItWorks}</Sec>}
-      {dna?.targetAudience && <Sec title={L('ЦЕЛЕВАЯ АУДИТОРИЯ', 'TARGET AUDIENCE')}>{dna.targetAudience}</Sec>}
-      {dna?.viralFactors && <Sec title={L('ФАКТОРЫ ВИРАЛЬНОСТИ', 'VIRALITY FACTORS')}><Bul items={dna.viralFactors} /></Sec>}
-      {dna?.copyReadyScript && <Sec title={L('ГОТОВЫЙ СЦЕНАРИЙ', 'READY SCRIPT')}><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{dna.copyReadyScript}</div></Sec>}
-      {dna?.howToAdapt && <Sec title={L('КАК АДАПТИРОВАТЬ', 'HOW TO ADAPT')}><Bul items={dna.howToAdapt} /></Sec>}
+      {d?.hookType && <Sec title={L('ТИП ХУКА', 'HOOK TYPE')}>{d.hookType}</Sec>}
+      {d?.whyItWorks && <Sec title={L('ПОЧЕМУ РАБОТАЕТ', 'WHY IT WORKS')}>{d.whyItWorks}</Sec>}
+      {d?.targetAudience && <Sec title={L('ЦЕЛЕВАЯ АУДИТОРИЯ', 'TARGET AUDIENCE')}>{d.targetAudience}</Sec>}
+      {d?.viralFactors && <Sec title={L('ФАКТОРЫ ВИРАЛЬНОСТИ', 'VIRALITY FACTORS')}><Bul items={d.viralFactors} /></Sec>}
+      {d?.copyReadyScript && <Sec title={L('ГОТОВЫЙ СЦЕНАРИЙ', 'READY SCRIPT')}><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{d.copyReadyScript}</div></Sec>}
+      {d?.howToAdapt && <Sec title={L('КАК АДАПТИРОВАТЬ', 'HOW TO ADAPT')}><Bul items={d.howToAdapt} /></Sec>}
       <div className="text-[11px] font-700 mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>{L('АНАЛИЗ СОДЕРЖАНИЯ', 'CONTENT ANALYSIS')}</div>
-      {dna?.summary && <Sec title={L('КРАТКОЕ ОПИСАНИЕ', 'SUMMARY')}>{dna.summary}</Sec>}
+      {d?.summary && <Sec title={L('КРАТКОЕ ОПИСАНИЕ', 'SUMMARY')}>{d.summary}</Sec>}
       {beats.length > 0 && <Sec title={L('СЦЕНЫ (ТАЙМИНГ)', 'SCENES (TIMING)')}><ul className="space-y-0.5">{beats.map((b: any, i: number) => <li key={i}><span style={{ color: '#22d3ee' }}>{fmtT(b?.t)}</span> {b?.desc}{b?.intensity ? ` [${b.intensity}]` : ''}</li>)}</ul></Sec>}
-      {dna?.hookAnalysis && <Sec title={L('РАЗБОР ХУКА', 'HOOK BREAKDOWN')}>{dna.hookAnalysis}</Sec>}
-      {dna?.visualStyle && <Sec title={L('ВИЗУАЛЬНЫЙ СТИЛЬ', 'VISUAL STYLE')}>{dna.visualStyle}</Sec>}
-      {dna?.audioDialogue && <Sec title={L('АУДИО / ДИАЛОГ', 'AUDIO / DIALOGUE')}>{dna.audioDialogue}</Sec>}
-      {dna?.whyResonates && <Sec title={L('ПОЧЕМУ ЗАХОДИТ', 'WHY IT RESONATES')}><Bul items={dna.whyResonates} /></Sec>}
-      {dna?.howToReplicate && <Sec title={L('КАК ПОВТОРИТЬ', 'HOW TO REPLICATE')}><Bul items={dna.howToReplicate} /></Sec>}
-      {Array.isArray(dna?.keywords) && dna.keywords.length > 0 && <Sec title={L('КЛЮЧЕВЫЕ СЛОВА', 'KEYWORDS')}>{dna.keywords.join(', ')}</Sec>}
+      {d?.hookAnalysis && <Sec title={L('РАЗБОР ХУКА', 'HOOK BREAKDOWN')}>{d.hookAnalysis}</Sec>}
+      {d?.visualStyle && <Sec title={L('ВИЗУАЛЬНЫЙ СТИЛЬ', 'VISUAL STYLE')}>{d.visualStyle}</Sec>}
+      {d?.audioDialogue && <Sec title={L('АУДИО / ДИАЛОГ', 'AUDIO / DIALOGUE')}>{d.audioDialogue}</Sec>}
+      {d?.whyResonates && <Sec title={L('ПОЧЕМУ ЗАХОДИТ', 'WHY IT RESONATES')}><Bul items={d.whyResonates} /></Sec>}
+      {d?.howToReplicate && <Sec title={L('КАК ПОВТОРИТЬ', 'HOW TO REPLICATE')}><Bul items={d.howToReplicate} /></Sec>}
+      {Array.isArray(d?.keywords) && d.keywords.length > 0 && <Sec title={L('КЛЮЧЕВЫЕ СЛОВА', 'KEYWORDS')}>{d.keywords.join(', ')}</Sec>}
     </div>
   );
 }

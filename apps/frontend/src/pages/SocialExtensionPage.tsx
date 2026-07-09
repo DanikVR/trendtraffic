@@ -41,14 +41,6 @@ function isNativePanelUrl(u?: string | null): boolean {
     || /(?:reddit\.com|redd\.it)\b/i.test(s);
 }
 
-/** Язык отчёта анализа = язык интерфейса/браузера (пока ru/en; задел под 108 языков). */
-function analysisLang(): 'en' | 'ru' {
-  try {
-    const l = (localStorage.getItem('i18nextLng') || navigator.language || 'ru').toLowerCase();
-    return l.startsWith('en') ? 'en' : 'ru';
-  } catch { return 'ru'; }
-}
-
 /** Ссылка, которую можно анализировать (URL, а не ключевое слово). Если это НЕ ссылка —
  *  НЕ отдаём её iframe-расширению, иначе оно показывает свой экран «Open a supported platform»
  *  (его пользователь видеть не должен — вместо него наша подсказка/плитка недавних видео). */
@@ -116,7 +108,7 @@ export default function SocialExtensionPage() {
       const res = await fetch('/api/social-ext/to-gallery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: target, lang: analysisLang() }),
+        body: JSON.stringify({ url: target }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
@@ -256,14 +248,29 @@ export default function SocialExtensionPage() {
     postToIframe('social-ext:set-url', value);
   }, [postToIframe]);
 
+  // Авто-каталог разборов: как только пользователь смотрит видео в «Аналитике» (iframe-площадки
+  // TikTok/IG/…), в фоне собираем НАШ разбор и сохраняем — карточка появляется в «Тренды → Анализ».
+  // Для X/YouTube/Reddit это делает сама нативная панель (runBreakdown save). Дедуп — один раз на ссылку.
+  const autoSavedRef = useRef<string>('');
+  const autoSaveAnalysis = useCallback((webUrl: string) => {
+    const u = (webUrl || '').trim();
+    if (!u || !isAnalyzableUrl(u) || isNativePanelUrl(u) || autoSavedRef.current === u) return;
+    autoSavedRef.current = u;
+    fetch('/api/trends/analyze/breakdown', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ url: u, save: true }),
+    }).catch(() => { /* фоново, тихо */ });
+  }, [token]);
+
   const analyzeOne = useCallback((webUrl: string) => {
-    setQueue([]); setUrl(webUrl); setTab('analytics'); apply(webUrl);
-  }, [apply]);
+    setQueue([]); setUrl(webUrl); setTab('analytics'); apply(webUrl); autoSaveAnalysis(webUrl);
+  }, [apply, autoSaveAnalysis]);
 
   const analyzeBulk = useCallback((items: { url: string; cover?: string }[]) => {
     if (!items.length) return;
-    setQueue(items); setUrl(items[0].url); setTab('analytics'); apply(items[0].url);
-  }, [apply]);
+    setQueue(items); setUrl(items[0].url); setTab('analytics'); apply(items[0].url); autoSaveAnalysis(items[0].url);
+  }, [apply, autoSaveAnalysis]);
 
   const handleAnalyzeInput = useCallback(() => {
     const v = url.trim(); if (!v) return;
@@ -274,8 +281,8 @@ export default function SocialExtensionPage() {
       setTimeout(() => setGalleryNote(null), 6000);
       return;
     }
-    setQueue([]); apply(v);
-  }, [url, apply]);
+    setQueue([]); apply(v); autoSaveAnalysis(v);
+  }, [url, apply, autoSaveAnalysis]);
 
   const handleClear = useCallback(() => {
     setUrl(''); setQueue([]); appliedRef.current = ''; setAppliedUrl('');
@@ -396,7 +403,7 @@ export default function SocialExtensionPage() {
                   {queue.map((q, i) => {
                     const active = q.url === appliedRef.current;
                     return (
-                      <button key={q.url + i} onClick={() => { setUrl(q.url); apply(q.url); }}
+                      <button key={q.url + i} onClick={() => { setUrl(q.url); apply(q.url); autoSaveAnalysis(q.url); }}
                         className="text-[11px] px-2 py-1.5 rounded-lg font-600 transition-colors truncate text-left"
                         title={q.url}
                         style={{ background: active ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: active ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${active ? 'rgba(99,102,241,1)' : 'var(--border-medium)'}` }}>

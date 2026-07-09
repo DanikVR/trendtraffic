@@ -2189,7 +2189,16 @@
  *         composeUgc). Секция «Голос и текст» и выбор HeyGen-провайдера скрыты для этого источника.
  *         Файлы: ugcTypes.ts, render/podcast_compose.ts (avatarChroma), render/router.ts (ветка
  *         avatarSource='video'), UgcStudio, UgcPreview, MontageEditor, locales ru/en. */
-export const APP_VERSION = '2.2.4';
+/* 2.2.5 — Аналитика по фидбэку (замена подхода v2.2.3): (1) разбор ВСЕГДА собирается на английском
+ *         (и дальше в работу идёт на EN) — дефолт generateTrendDNA сменён ru→en; рядом кнопка
+ *         «Перевести» (translateTrendDNA, новый /analyze/translate) переводит ПОКАЗ на язык браузера
+ *         по клику (тумблер «Перевести»↔«Оригинал (EN)») в панели X/YT/Reddit и Галерея→AnalysisView.
+ *         (2) Проанализированные видео САМИ появляются карточками в «Тренды → Анализ»: /analyze/breakdown
+ *         принял save=1 → saveTrendDNAAuto (без скачивания, дедуп по external_id); нативная панель шлёт
+ *         save=1, а для iframe-площадок (TikTok/IG) SocialExtensionPage делает фоновый разбор+сохранение
+ *         при открытии видео; «Добавить в галерею» подчищает лёгкий дубль. Файлы: trends/dna.ts,
+ *         trends/router.ts, TrendAnalyticsPanel, GalleryPage, SocialExtensionPage. */
+export const APP_VERSION = '2.2.5';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

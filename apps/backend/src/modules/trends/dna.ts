@@ -228,7 +228,9 @@ export async function generateTrendDNA(tenantId: string, input: GenerateDNAInput
     `Ключи комментариев: ${ckw}`,
   ].filter(Boolean).join('\n');
 
-  const langCode = (input.lang || 'ru').toLowerCase().slice(0, 2);
+  // По умолчанию отчёт СОБИРАЕТСЯ на английском (и дальше в работу идёт на английском);
+  // перевод — по кнопке «Перевести» через translateTrendDNA.
+  const langCode = (input.lang || 'en').toLowerCase().slice(0, 2);
   const langName = DNA_LANG_NAMES[langCode] || langCode;
   const system =
     'Ты — аналитик вирусного короткого видео (TikTok/Reels/Shorts). По метаданным, описанию ' +
@@ -374,7 +376,13 @@ export async function saveTrendDNA(
       [id, tenantId, rec.mediaAssetId || null, rec.sourceVideoId || null, rec.platform || null,
        rec.externalId || null, rec.sourceUrl || null, JSON.stringify(rec.dna), rec.dna.model || null]
     );
-    return mapRow(r.rows[0]);
+    const saved = mapRow(r.rows[0]);
+    // Сохранили с медиа-ассетом (напр. «Добавить в галерею») — убираем «лёгкий» авто-разбор
+    // того же видео (без media_asset_id), чтобы карточка «Анализ» не задваивалась.
+    if (rec.mediaAssetId && rec.externalId) {
+      try { await pool.query('DELETE FROM video_analyses WHERE tenant_id = $1 AND external_id = $2 AND media_asset_id IS NULL', [tenantId, rec.externalId]); } catch { /* мягко */ }
+    }
+    return saved;
   } catch (e) {
     console.warn('[trends] saveTrendDNA failed:', (e as Error).message);
     return null;
@@ -443,5 +451,87 @@ export async function deleteTrendDNABulk(tenantId: string, ids: string[]): Promi
   } catch (e) {
     console.warn('[trends] deleteTrendDNABulk failed:', (e as Error).message);
     return 0;
+  }
+}
+
+/**
+ * Переводит текстовые поля готовой ДНК на язык `lang` (кнопка «Перевести»). Сам разбор
+ * НЕ пересобирается — только перевод значений; keywords/meta/quality/тайминги не трогаем.
+ */
+export async function translateTrendDNA(tenantId: string, dna: any, lang: string): Promise<any> {
+  const apiKey = await resolveAnthropicKey(tenantId);
+  if (!apiKey) throw new Error('Ключ Claude не задан (Enterprise → Генерация → ИИ-режиссёр).');
+  const langCode = (lang || 'ru').toLowerCase().slice(0, 2);
+  const langName = DNA_LANG_NAMES[langCode] || langCode;
+  const payload = {
+    hookType: dna?.hookType || '', whyItWorks: dna?.whyItWorks || '', targetAudience: dna?.targetAudience || '',
+    viralFactors: Array.isArray(dna?.viralFactors) ? dna.viralFactors : [], copyReadyScript: dna?.copyReadyScript || '',
+    howToAdapt: Array.isArray(dna?.howToAdapt) ? dna.howToAdapt : [], summary: dna?.summary || '',
+    hookAnalysis: dna?.hookAnalysis || '', visualStyle: dna?.visualStyle || '', audioDialogue: dna?.audioDialogue || '',
+    whyResonates: Array.isArray(dna?.whyResonates) ? dna.whyResonates : [], howToReplicate: Array.isArray(dna?.howToReplicate) ? dna.howToReplicate : [],
+    sceneBeats: Array.isArray(dna?.sceneBeats) ? dna.sceneBeats.map((b: any) => ({ desc: String(b?.desc || '') })) : [],
+  };
+  const system = `You are a professional translator. Translate ALL string values of the given JSON into ${langName}. Keep the JSON structure, array lengths and keys EXACTLY. Do NOT translate keys. Return STRICTLY one JSON object, no markdown, no explanations.`;
+  const mod: any = await import('@anthropic-ai/sdk');
+  const Anthropic = mod.default || mod.Anthropic || mod;
+  const client = new Anthropic({ apiKey });
+  const res = await client.messages.create({
+    model: DEFAULT_DIRECTOR_MODEL, max_tokens: 4000,
+    system, messages: [{ role: 'user', content: JSON.stringify(payload) }],
+  });
+  const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
+  const j = parseJsonLoose(txt);
+  if (!j) throw new Error('Не удалось перевести — повторите.');
+  const out: any = { ...dna };
+  for (const k of ['hookType', 'whyItWorks', 'targetAudience', 'copyReadyScript', 'summary', 'hookAnalysis', 'visualStyle', 'audioDialogue']) {
+    if (typeof j[k] === 'string' && j[k]) out[k] = j[k];
+  }
+  for (const k of ['viralFactors', 'howToAdapt', 'whyResonates', 'howToReplicate']) {
+    if (Array.isArray(j[k])) out[k] = j[k].map((x: any) => String(x));
+  }
+  if (Array.isArray(j.sceneBeats) && Array.isArray(dna?.sceneBeats)) {
+    out.sceneBeats = dna.sceneBeats.map((b: any, i: number) => ({ ...b, desc: typeof j.sceneBeats[i]?.desc === 'string' ? j.sceneBeats[i].desc : b.desc }));
+  }
+  return out;
+}
+
+/**
+ * Авто-сохранение разбора БЕЗ скачивания видео (карточка сразу в «Тренды → Анализ»).
+ * Дедуп по (tenant, external_id) среди записей без media_asset_id — повторный анализ
+ * того же видео обновляет, а не плодит. «Добавить в галерею» (с media_asset_id) отдельно
+ * подчищает такие «лёгкие» записи (см. saveTrendDNA cleanup).
+ */
+export async function saveTrendDNAAuto(
+  tenantId: string,
+  rec: { platform?: string; externalId?: string; sourceUrl?: string; dna: TrendDNA }
+): Promise<StoredTrendDNA | null> {
+  try {
+    const ext = rec.externalId || null;
+    if (ext) {
+      const ex = await pool.query(
+        'SELECT id FROM video_analyses WHERE tenant_id = $1 AND external_id = $2 AND media_asset_id IS NULL LIMIT 1',
+        [tenantId, ext]
+      );
+      if (ex.rows[0]) {
+        const r = await pool.query(
+          `UPDATE video_analyses SET dna = $3, model = $4, source_url = $5, platform = $6, updated_at = CURRENT_TIMESTAMP
+           WHERE tenant_id = $1 AND id = $2
+           RETURNING id, media_asset_id, source_video_id, platform, external_id, source_url, dna, model, created_at`,
+          [tenantId, ex.rows[0].id, JSON.stringify(rec.dna), rec.dna.model || null, rec.sourceUrl || null, rec.platform || null]
+        );
+        return mapRow(r.rows[0]);
+      }
+    }
+    const id = randomUUID();
+    const r = await pool.query(
+      `INSERT INTO video_analyses (id, tenant_id, platform, external_id, source_url, dna, model)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING id, media_asset_id, source_video_id, platform, external_id, source_url, dna, model, created_at`,
+      [id, tenantId, rec.platform || null, ext, rec.sourceUrl || null, JSON.stringify(rec.dna), rec.dna.model || null]
+    );
+    return mapRow(r.rows[0]);
+  } catch (e) {
+    console.warn('[trends] saveTrendDNAAuto failed:', (e as Error).message);
+    return null;
   }
 }

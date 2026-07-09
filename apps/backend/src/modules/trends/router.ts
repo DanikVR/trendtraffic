@@ -18,7 +18,7 @@ import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
-import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk } from './dna.js';
+import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, saveTrendDNAAuto } from './dna.js';
 import { analyzeVideoVisual } from './video_insight.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
@@ -135,7 +135,9 @@ router.post('/analyze/breakdown', async (req: AuthedRequest, res: Response) => {
     let comments = Array.isArray(body.comments) ? body.comments : undefined;
     let keywords = Array.isArray(body.keywords) ? body.keywords : undefined;
     let platform: string | undefined = typeof body.platform === 'string' ? body.platform : undefined;
+    let externalId: string | undefined = typeof body.externalId === 'string' ? body.externalId : undefined;
     const url = typeof body.url === 'string' ? body.url : '';
+    const save = body.save === true || body.save === 1 || body.save === '1';
     if (!summary) {
       if (!url.trim()) return res.status(400).json({ error: 'Передайте url или summary.' });
       const a = await analyzeUrl(req.tenantId!, url);
@@ -143,13 +145,32 @@ router.post('/analyze/breakdown', async (req: AuthedRequest, res: Response) => {
       comments = a.normalized.comments;
       keywords = a.normalized.keywords;
       platform = a.detected.platform;
+      externalId = externalId || (a.detected.videoId ? String(a.detected.videoId) : undefined);
     }
     const lang = typeof body.lang === 'string' ? body.lang : undefined;
     const dna = await generateTrendDNA(req.tenantId!, { summary, comments, keywords, platform, sourceUrl: url || undefined, lang });
+    // save=1 → сразу карточка в «Тренды → Анализ» (без скачивания видео), дедуп по external_id.
+    if (save) { try { await saveTrendDNAAuto(req.tenantId!, { platform, externalId, sourceUrl: url || undefined, dna }); } catch { /* мягко */ } }
     res.json({ dna });
   } catch (err: any) {
     const msg = err?.message || 'Ошибка разбора';
     const code = /ключ|распозн|Передайте|Укажите|неразборч/i.test(msg) ? 400 : 502;
+    res.status(code).json({ error: msg });
+  }
+});
+
+/** POST /analyze/translate — { dna, lang } → перевод текстов готового разбора (кнопка «Перевести»). */
+router.post('/analyze/translate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const dna = req.body?.dna;
+    const lang = typeof req.body?.lang === 'string' ? req.body.lang : '';
+    if (!dna || typeof dna !== 'object') return res.status(400).json({ error: 'Передайте dna.' });
+    if (!lang) return res.status(400).json({ error: 'Укажите lang.' });
+    const translated = await translateTrendDNA(req.tenantId!, dna, lang);
+    res.json({ dna: translated });
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка перевода';
+    const code = /ключ|Передайте|Укажите|перевести/i.test(msg) ? 400 : 502;
     res.status(code).json({ error: msg });
   }
 });
