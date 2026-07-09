@@ -64,6 +64,10 @@
       // Из Галереи TrendTraffic: открыть Flow и залить туда медиа по URL.
       const r = await toBg({ type: 'push-to-flow', url: d.url, title: d.title, kind: d.kind });
       toPage({ type: 'push-to-flow-result', ok: !!(r && r.ok), error: r && (r.error || r.reason) });
+    } else if (d.type === 'list-flow-projects') {
+      // Вкладка «Google Flow» Галереи: снять готовые проекты Flow (карточки главной).
+      const r = await toBg({ type: 'list-flow-projects' });
+      toPage({ type: 'flow-projects', ok: !!(r && r.ok), projects: (r && r.projects) || [], loggedIn: !(r && r.loggedIn === false), error: r && (r.error || r.reason) });
     }
   });
 

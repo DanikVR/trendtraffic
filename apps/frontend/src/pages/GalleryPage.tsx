@@ -9,7 +9,9 @@
  *  - Тренды      — сверху «Запросы трендов» (история сканов; клик → «Тренды» с готовой
  *                  выдачей), ниже «Анализ» (все сохранённые разборы video_analyses).
  *  - Hotebook    — артефакты NotebookLM; «+» открывает блок Hotebook.
- *  - Google Flow — клипы Google Flow (folder=flow); «+» открывает блок Flow.
+ *  - Google Flow — готовые ПРОЕКТЫ Flow (снимает расширение с labs.google/…/tools/flow);
+ *                  клик по карточке открывает проект «проектором». Сохранённые клипы → «Видео».
+ *                  «+» открывает блок Flow (генерация клипов).
  *  - UGC         — рендеры студии (folder=ugc) + «Макеты» (бренд-киты); «+» открывает студию.
  *  - Видео       — все загрузки и продукция (kind=reference|audio) с фильтром «Видео | Аудио»;
  *                  кнопка «Медиа» принимает фото/видео/аудио и раскладывает по типу файла.
@@ -23,7 +25,7 @@ import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
-  ChevronDown, ChevronUp, HelpCircle, Copy,
+  HelpCircle, Copy, Info,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -89,6 +91,21 @@ function dur(s?: number): string {
   const m = Math.floor(s / 60), sec = s % 60;
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
+
+/** Строгое сравнение версий «a < b» (semver-подобно: 1.2.0 < 1.3.0). Для плашки «Обновите». */
+function verLess(a?: string, b?: string): boolean {
+  const pa = String(a || '').split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b || '').split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x < y) return true;
+    if (x > y) return false;
+  }
+  return false;
+}
+
+/** Готовый проект Google Flow (снят расширением с главной labs.google/…/tools/flow). */
+interface FlowProject { id: string; url: string; title: string; thumb?: string }
 
 // Язык отчёта анализа = язык интерфейса/браузера (пока ru/en; задел под 108 языков).
 function galLang(): 'en' | 'ru' {
@@ -186,19 +203,35 @@ export default function GalleryPage() {
 
   // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
+  const [extVersion, setExtVersion] = useState<string | null>(null); // версия установленного расширения (из present)
   const [flowMsg, setFlowMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [extPopup, setExtPopup] = useState(false);
   const [extOpen, setExtOpen] = useState(false); // раскрытие инлайн-инструкции «Как установить» в плашке расширения
+  const [copied, setCopied] = useState<string | null>(null); // подсветка «скопировано» для chrome://extensions
   const [videoPopup, setVideoPopup] = useState<GalleryItem | null>(null); // видео → скачать + инструкция
+  // «Google Flow» → живые готовые проекты (снимает расширение с главной Flow).
+  const [flowProjects, setFlowProjects] = useState<FlowProject[]>([]);
+  const [flowProjLoading, setFlowProjLoading] = useState(false);
+  const [flowProjError, setFlowProjError] = useState<string | null>(null);
+  const flowProjTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
       if (ev.source !== window) return;
       const d = ev.data;
       if (!d || d.source !== 'tt-flow-ext') return;
-      if (d.type === 'present' || d.type === 'status' || d.type === 'connected') setExtStatus('present');
+      if (d.type === 'present' || d.type === 'status' || d.type === 'connected') {
+        setExtStatus('present');
+        if (d.version) setExtVersion(String(d.version));
+      }
       if (d.type === 'push-to-flow-result') {
         setFlowMsg(d.ok ? { ok: true, text: 'Отправлено в Google Flow — переключитесь на вкладку Flow.' } : { ok: false, text: 'Не удалось: ' + (d.error || 'ошибка') });
         setTimeout(() => setFlowMsg(null), 6000);
+      }
+      if (d.type === 'flow-projects') {
+        if (flowProjTimer.current) { clearTimeout(flowProjTimer.current); flowProjTimer.current = null; }
+        setFlowProjLoading(false);
+        if (d.ok) { setFlowProjects(Array.isArray(d.projects) ? d.projects : []); setFlowProjError(null); }
+        else setFlowProjError(d.error || (d.loggedIn === false ? 'Войдите в Google на labs.google/flow — тогда покажутся ваши проекты.' : 'Не удалось получить проекты Flow.'));
       }
     };
     window.addEventListener('message', onMsg);
@@ -206,6 +239,30 @@ export default function GalleryPage() {
     const t = setTimeout(() => setExtStatus((s) => (s === 'checking' ? 'absent' : s)), 1400);
     return () => { window.removeEventListener('message', onMsg); clearTimeout(t); };
   }, []);
+
+  // Запросить у расширения список готовых проектов Flow (ответ прилетит сообщением 'flow-projects').
+  const loadFlowProjects = () => {
+    if (extStatus === 'absent') { setFlowProjects([]); setFlowProjError('Расширение не найдено — установите его (кнопка «Скачать» в плашке выше).'); return; }
+    setFlowProjLoading(true); setFlowProjError(null);
+    window.postMessage({ source: 'trendtraffic', type: 'list-flow-projects' }, window.location.origin);
+    if (flowProjTimer.current) clearTimeout(flowProjTimer.current);
+    flowProjTimer.current = setTimeout(() => {
+      setFlowProjLoading(false);
+      setFlowProjError((e) => e || 'Проекты не пришли. Откройте labs.google/flow, войдите в Google и нажмите «Обновить».');
+    }, 40_000);
+  };
+  // Автозагрузка проектов при заходе на вкладку «Google Flow» (как только известен статус расширения).
+  useEffect(() => {
+    if (tab === 'flow' && extStatus !== 'checking') loadFlowProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, extStatus]);
+
+  // Скопировать текст (chrome://extensions — навигацию на chrome:// браузер блокирует, поэтому «скопировать и вставить в адрес»).
+  const copyText = (t: string) => {
+    try { navigator.clipboard?.writeText(t); } catch { /* clipboard best-effort */ }
+    setCopied(t);
+    setTimeout(() => setCopied((c) => (c === t ? null : c)), 1600);
+  };
   const sendToFlow = (v: GalleryItem) => {
     // Видео: Flow НЕ принимает авто-вставкой (у Flow поле только image/*). Скачиваем файл + инструкция «залей вручную».
     if (v.mediaType === 'video') { downloadOne(v); setVideoPopup(v); return; }
@@ -246,9 +303,13 @@ export default function GalleryPage() {
         ]);
         setAnalyses(ar.ok ? ((await ar.json()).analyses || []) : []);
         setTrendQueries(qr.ok ? ((await qr.json()).queries || []) : []);
+      } else if (which === 'flow') {
+        // «Google Flow» = готовые ПРОЕКТЫ Flow (снимает расширение, loadFlowProjects). Клипы,
+        // сохранённые в Галерею, живут во вкладке «Видео» — здесь медиа не грузим.
+        setItems([]);
       } else {
         // «Видео» → по kind (фильтр Видео|Аудио); блоки → по folder.
-        const FOLDER_TABS: Partial<Record<Tab, string>> = { hotebook: 'hotebook', flow: 'flow', ugc: 'ugc' };
+        const FOLDER_TABS: Partial<Record<Tab, string>> = { hotebook: 'hotebook', ugc: 'ugc' };
         const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${kindOverride ?? mediaKind}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
@@ -364,57 +425,92 @@ export default function GalleryPage() {
     );
   };
 
-  // Плашка «Установите расширение TrendTraffic» (Google Flow / Hotebook) — раскрывает инлайн
-  // раздел «Скачать + Как установить» (копия карточки из Настройки Enterprise → Генерация).
-  const renderExtBanner = () => (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-      <button type="button" onClick={() => setExtOpen((v) => !v)}
-        className="w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-[var(--bg-tertiary)]"
-        style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#22d3ee)' }}>
-          <Clapperboard size={18} color="#fff" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Установите расширение TrendTraffic</span>
-            <span className="text-[11px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>v{TT_EXT_VERSION}</span>
-          </span>
-          <span className="block text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Единое расширение для Google Flow (Veo) и NotebookLM — нажмите, чтобы скачать и посмотреть, как установить.
-          </span>
-        </span>
-        {extOpen ? <ChevronUp size={18} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={18} style={{ color: 'var(--text-muted)' }} />}
+  // Плашка расширения TrendTraffic (Google Flow / Hotebook):
+  //  • «Google Flow» и «NotebookLM» в тексте — кликабельны (первая страница сервиса);
+  //  • кнопка «Скачать» прямо на плашке + иконка (i) «Как установить» → раскрывает инструкцию
+  //    с кликабельными chrome://extensions (копирование), labs.google/flow, notebooklm.google.com;
+  //  • если установлена старая версия расширения — бейдж «Обновите».
+  const renderExtBanner = () => {
+    const installed = extStatus === 'present';
+    const outdated = installed && !!extVersion && verLess(extVersion, TT_EXT_VERSION);
+    // Кликабельный chrome://extensions: браузер не даёт открыть chrome:// из веб-страницы,
+    // поэтому по клику копируем в буфер и подсказываем вставить в адресную строку.
+    const ChromeLink = () => (
+      <button type="button" onClick={() => copyText('chrome://extensions')} title="Скопировать и вставить в адресную строку"
+        className="font-mono" style={{ background: 'none', border: 'none', padding: 0, color: '#6366f1', cursor: 'pointer', textDecoration: 'underline' }}>
+        chrome://extensions{copied === 'chrome://extensions' ? ' ✓ скопировано' : ''}
       </button>
-      {extOpen && (
-        <div className="px-3 pb-3 space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            <a href="/trendtraffic-extension.zip" download
-              className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2 rounded-xl"
-              style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
-              <Download size={15} /> Скачать расширение
-            </a>
-            <span className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-              <HelpCircle size={15} /> Как установить
-            </span>
+    );
+    const flowA = <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>labs.google/flow</a>;
+    const nlmA = <a href="https://notebooklm.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>notebooklm.google.com</a>;
+    return (
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: `1px solid ${outdated ? 'rgba(245,158,11,0.5)' : 'var(--border-medium)'}` }}>
+        <div className="flex items-center gap-3 p-3">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#22d3ee)' }}>
+            <Clapperboard size={18} color="#fff" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+                {installed ? 'Расширение TrendTraffic' : 'Установите расширение TrendTraffic'}
+              </span>
+              <span className="text-[11px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>v{TT_EXT_VERSION}</span>
+              {installed && !outdated && (
+                <span className="text-[11px] font-700 px-2 py-0.5 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                  <Check size={12} /> установлено{extVersion ? ` v${extVersion}` : ''}
+                </span>
+              )}
+              {outdated && (
+                <span className="text-[11px] font-700 px-2 py-0.5 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(245,158,11,0.16)', color: '#f59e0b' }}>
+                  Обновите{extVersion ? ` · у вас v${extVersion}` : ''}
+                </span>
+              )}
+            </div>
+            {/* Текст НЕ трогаем — только делаем «Google Flow» и «NotebookLM» кликабельными (первая страница). */}
+            <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Единое расширение для{' '}
+              <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>Google Flow</a>
+              {' '}(Veo) и{' '}
+              <a href="https://notebooklm.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>NotebookLM</a>
+              {' '}— {outdated ? 'скачайте новую версию и обновите в chrome://extensions.' : 'скачайте, установите и посмотрите, как это сделать.'}
+            </div>
           </div>
-          <div className="text-[12.5px] leading-relaxed rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
-            <ol className="list-decimal ml-4 space-y-1.5">
-              <li>Скачайте <b>.zip</b> и <b>распакуйте</b> в отдельную папку.</li>
-              <li>Откройте <code>chrome://extensions</code> → включите <b>«Режим разработчика»</b> (тумблер справа сверху).</li>
-              <li>Нажмите <b>«Загрузить распакованное»</b> и выберите эту папку.</li>
-              <li>Если раньше стояло <b>отдельное</b> расширение «Google Flow» — <b>удалите его</b>, чтобы не конфликтовали.</li>
-              <li>Откройте нужный сайт и войдите в свой Google: <b>labs.google/flow</b> (Veo) или <b>notebooklm.google.com</b> (Hotebook).</li>
-              <li>Готово. <b>Подключение автоматическое</b> — пока вы залогинены в приложении.</li>
-            </ol>
-            <p className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-              <b>Обновление версии:</b> скачайте новый .zip, замените папку и нажмите «Обновить» в chrome://extensions, затем обновите вкладку app.trendtraffic.pro (F5).
-            </p>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <a href="/trendtraffic-extension.zip" download title={outdated ? 'Скачать новую версию' : 'Скачать расширение'}
+              className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3.5 py-2 rounded-xl"
+              style={{ background: outdated ? '#f59e0b' : '#6366f1', color: '#fff', textDecoration: 'none' }}>
+              <Download size={15} /> {outdated ? 'Обновить' : 'Скачать'}
+            </a>
+            <button type="button" onClick={() => setExtOpen((v) => !v)} title="Как установить" aria-label="Как установить"
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-90"
+              style={{ background: extOpen ? 'var(--brand)' : 'var(--bg-tertiary)', color: extOpen ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+              <Info size={17} />
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
+        {extOpen && (
+          <div className="px-3 pb-3">
+            <div className="text-[12.5px] leading-relaxed rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
+              <div className="flex items-center gap-1.5 font-700 mb-2" style={{ color: 'var(--text-primary)' }}>
+                <HelpCircle size={15} style={{ color: 'var(--brand)' }} /> Как установить
+              </div>
+              <ol className="list-decimal ml-4 space-y-1.5">
+                <li>Скачайте <b>.zip</b> (кнопка «Скачать») и <b>распакуйте</b> в отдельную папку.</li>
+                <li>Откройте <ChromeLink /> → включите <b>«Режим разработчика»</b> (тумблер справа сверху).</li>
+                <li>Нажмите <b>«Загрузить распакованное»</b> и выберите эту папку.</li>
+                <li>Если раньше стояло <b>отдельное</b> расширение «Google Flow» — <b>удалите его</b>, чтобы не конфликтовали.</li>
+                <li>Откройте нужный сайт и войдите в свой Google: {flowA} (Veo) или {nlmA} (Hotebook).</li>
+                <li>Готово. <b>Подключение автоматическое</b> — пока вы залогинены в приложении.</li>
+              </ol>
+              <p className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+                <b>Обновление версии:</b> скачайте новый .zip, замените папку и нажмите «Обновить» в <ChromeLink />, затем обновите вкладку app.trendtraffic.pro (F5).
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // «UGC»: удалить макет (бренд-кит студии).
   const deleteKit = async (k: BrandKit) => {
@@ -899,6 +995,21 @@ export default function GalleryPage() {
             </div>
           )}
 
+          {/* «Google Flow»: строка статуса проектов — грузим / ошибка / N проектов + «Обновить». */}
+          {tab === 'flow' && (
+            <div className="flex items-center gap-2 text-[12px] mb-1" style={{ color: 'var(--text-muted)' }}>
+              {flowProjLoading ? (
+                <><Loader2 size={13} className="animate-spin" /> Загружаю проекты Google Flow…</>
+              ) : flowProjError ? (
+                <span style={{ color: '#f59e0b' }}>{flowProjError} <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button></span>
+              ) : (
+                <><span>Проектов Google Flow: {flowProjects.length}</span>
+                  <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button>
+                  <span>· клик по проекту откроет его в Flow</span></>
+              )}
+            </div>
+          )}
+
           {/* «Видео»: кнопки-фильтры Видео | Аудио (аудио объединено с медиафайлами) */}
           {tab === 'reference' && (
             <div className="inline-flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
@@ -996,6 +1107,33 @@ export default function GalleryPage() {
           {/* Сетка карточек: первой — плитка «+ Добавить» (открывает блок раздела) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {renderAddTile(tab)}
+            {/* «Google Flow»: готовые проекты Flow карточками — клик открывает проект «проектором» (новая вкладка). */}
+            {tab === 'flow' && flowProjects.map((p) => (
+              <AuroraCard key={`proj-${p.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                <a href={p.url} target="_blank" rel="noreferrer" title="Открыть проект в Google Flow (проектор)"
+                  className="relative w-full block" style={{ aspectRatio: '16 / 10', background: 'var(--bg-tertiary)' }}>
+                  {/* Плейсхолдер под обложкой — если thumb не загрузился (CDN Google за авторизацией). */}
+                  <span className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><Clapperboard size={30} /></span>
+                  {p.thumb && (
+                    <img src={p.thumb} alt="" loading="lazy" referrerPolicy="no-referrer"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                  <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: '#6366f1', color: '#fff' }}>Google Flow</span>
+                  <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10" style={{ background: 'rgba(0,0,0,0.35)' }}>
+                    <span className="inline-flex items-center gap-1.5 text-[12px] font-700 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.95)', color: '#111' }}><ExternalLink size={13} /> Открыть проект</span>
+                  </span>
+                </a>
+                <div className="p-3 flex items-center gap-1">
+                  <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={p.title}>{p.title}</div>
+                  <a href={p.url} target="_blank" rel="noreferrer" title="Открыть в Google Flow"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+              </AuroraCard>
+            ))}
             {/* UGC · «Ролики»: сохранённые ролики карточками с превью; клик → продолжить в студии (тот же сценарий). */}
             {tab === 'ugc' && ugcSub === 'rolls' && ugcTpls.map((k) => {
               const spec = k.spec || {};
@@ -1145,8 +1283,9 @@ export default function GalleryPage() {
                 </div>
               </AuroraCard>
             ))}
-            {/* UGC: готовые рендеры (папка ugc) — только в «Ролики»; в «Авто»/«Макеты» сетку не мешаем. */}
-            {(tab !== 'ugc' || ugcSub === 'rolls') && filtered.map((v) => {
+            {/* UGC: готовые рендеры (папка ugc) — только в «Ролики»; в «Авто»/«Макеты» сетку не мешаем.
+                «Google Flow» медиа не показывает (там — проекты; клипы живут во «Видео»). */}
+            {tab !== 'flow' && (tab !== 'ugc' || ugcSub === 'rolls') && filtered.map((v) => {
               const selK = tab === 'ugc' ? `media:${v.id}` : v.id;
               const isSel = selected.has(selK);
               return (
@@ -1234,18 +1373,25 @@ export default function GalleryPage() {
             })}
           </div>
 
-          {/* Пусто: подсказка под плиткой «+» (не показываем, если идёт генерация Hotebook) */}
-          {(tab === 'ugc'
+          {/* Пусто: подсказка под плиткой «+» (не показываем для «Google Flow» — там свой статус проектов,
+              и не показываем, если идёт генерация Hotebook) */}
+          {tab !== 'flow' && (tab === 'ugc'
             ? (ugcSub === 'rolls' ? (ugcTpls.length + filtered.length === 0) : ugcSub === 'auto' ? autoUgc.length === 0 : kits.length === 0)
             : (filtered.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0))) && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
               {tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
-                : tab === 'flow' ? 'Пока пусто. Нажмите «+» — откроется блок «Google Flow» (Veo): готовые клипы попадут сюда.'
                 : tab === 'ugc' ? (ugcSub === 'auto' ? 'Пока нет авто-роликов. Их собирает конвейер «тренд → анализ → UGC» (автопилот в Трендах).'
                     : ugcSub === 'kits' ? 'Макетов пока нет. Сохраните бренд-кит в UGC-студии (кнопка «Бренд-кит» в шапке).'
                     : 'Пока пусто. Нажмите «+» — откроется UGC-студия; сохранённые ролики появятся здесь карточками.')
                 : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио кнопкой «Медиа» или плиткой «+» — аудиофайлы лягут сюда.'
                 : 'Пока пусто. Загрузите фото/видео кнопкой «Медиа» или плиткой «+»; здесь же появляется всё, что производят блоки.'}
+            </p>
+          )}
+
+          {/* «Google Flow»: нет проектов (и не грузим/без ошибки) — подсказка. Готовые клипы → вкладка «Видео». */}
+          {tab === 'flow' && !flowProjLoading && !flowProjError && flowProjects.length === 0 && (
+            <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              Проектов пока нет. Откройте <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="underline" style={{ color: '#6366f1' }}>labs.google/flow</a>, войдите в Google — ваши проекты появятся здесь. Нажмите «+», чтобы создать клип. Сохранённые видео — во вкладке «Видео».
             </p>
           )}
         </>

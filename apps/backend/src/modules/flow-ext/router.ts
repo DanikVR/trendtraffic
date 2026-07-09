@@ -13,7 +13,7 @@
  *   узел TrendFlow → POST /enqueue (кладём сегменты в очередь)
  *   расширение     → GET  /tasks   (атомарно захватывает queued → running)
  *                  → POST /status  (running/retry/failed + заметка)
- *                  → POST /ingest  (готовое видео → Галерея folder='flow')
+ *                  → POST /ingest  (готовое видео → Галерея, раздел «Видео»)
  *   узел TrendFlow → GET  /list    (показать статусы задач)
  *
  * Таблица flow_ext_tasks (Postgres, inline-init как notebooklm_jobs).
@@ -32,7 +32,8 @@ import pool from '../../db/index.js';
 import { createAsset, listAssets } from '../media/assets.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 
-/** Папка Галереи для готовых клипов Flow (вкладка «Google Flow»). */
+/** Легаси-папка старых клипов Flow. Новые клипы сохраняются в «Видео» (без папки);
+ *  константа оставлена для совместимости — listAssets('reference') всё равно включает эти клипы. */
 export const FLOW_FOLDER = 'flow';
 
 /** Referer для скачивания результата (Google-CDN капризен к источнику). */
@@ -273,7 +274,9 @@ router.post('/status', async (req: AuthedRequest, res: Response) => {
   res.json({ ok: true });
 });
 
-/** Расширение присылает готовый клип → Галерея folder='flow', задача → done. */
+/** Расширение присылает готовый клип → Галерея, раздел «Видео» (kind=reference, без папки),
+ *  задача → done. Раньше клип падал в folder='flow'; теперь вкладка «Google Flow» показывает
+ *  ПРОЕКТЫ Flow, а сохранённые клипы живут в «Видео» — так понятнее. */
 router.post('/ingest', async (req: AuthedRequest, res: Response) => {
   const taskId = String(req.body?.taskId || '');
   const sourceUrl = req.body?.sourceUrl ? String(req.body.sourceUrl) : '';
@@ -291,7 +294,7 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
       kind: 'reference', mediaType: 'video',
       originalName: (task.title || task.prompt || 'flow').slice(0, 120) + '.mp4',
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
-      folder: FLOW_FOLDER,
+      // Без папки → раздел «Видео» Галереи (не folder='flow', там теперь проекты Flow).
     });
 
     await pool.query(
@@ -341,7 +344,7 @@ router.get('/gallery', async (req: AuthedRequest, res: Response) => {
 
 /**
  * Расширение (кнопка «В галерею» в живом Flow): произвольный клип, собранный человеком прямо
- * в Flow (не из очереди), → Галерея folder='flow'. Без taskId. body: { sourceUrl?|dataUrl?, title? }.
+ * в Flow (не из очереди), → Галерея, раздел «Видео» (без папки). Без taskId. body: { sourceUrl?|dataUrl?, title? }.
  */
 router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
   const sourceUrl = req.body?.sourceUrl ? String(req.body.sourceUrl) : '';
@@ -360,7 +363,7 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
       kind: 'reference', mediaType: isImage ? 'image' : 'video',
       originalName: (title || 'Flow').slice(0, 112) + (isImage ? '.' + imgExt : '.mp4'),
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
-      folder: FLOW_FOLDER,
+      // Без папки → раздел «Видео» Галереи (вкладка «Google Flow» теперь показывает проекты).
     });
     res.json({ ok: true, assetId: asset?.id || null, fileUrl: stored.fileUrl, mediaType: isImage ? 'image' : 'video' });
   } catch (e: any) {

@@ -2181,12 +2181,21 @@
  *         (Галерея) и панель X/YouTube/Reddit — на языке браузера. (2) Аналитика: поле ввода ссылки
  *         выровнено (короткий плейсхолдер под узкую колонку). Файлы: trends/dna.ts, trends/router.ts,
  *         trends/ingest.ts, social-ext/router.ts, TrendAnalyticsPanel, GalleryPage, SocialExtensionPage. */
-export const APP_VERSION = '2.2.3';
+/* 2.2.4 — Google Flow: (1) вкладка «Google Flow» Галереи показывает ГОТОВЫЕ ПРОЕКТЫ Flow —
+ *         расширение снимает карточки с labs.google/…/tools/flow (live-мост page↔ext↔вкладка Flow,
+ *         action `list-projects`), клик по карточке открывает проект «проектором» (новая вкладка).
+ *         (2) Клипы, сохранённые из Flow, теперь падают в раздел «Видео» (без папки), а не в
+ *         folder='flow'. (3) Плашка расширения переработана: «Google Flow»/«NotebookLM» в тексте
+ *         кликабельны, видимая кнопка «Скачать» + иконка (i) «Как установить» с кликабельными
+ *         chrome://extensions (копирование)/labs.google/flow/notebooklm.google.com, бейдж «Обновите»
+ *         при устаревшей версии расширения. Расширение → v1.3.0 (list-projects). Файлы: GalleryPage,
+ *         flow-ext/router.ts, trendtraffic-extension (content-flow/background/content-bridge/manifest). */
+export const APP_VERSION = '2.2.4';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.2.0';
+export const TT_EXT_VERSION = '1.3.0';
 
 export function AppVersion() {
   return (

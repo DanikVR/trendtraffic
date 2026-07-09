@@ -611,6 +611,42 @@
     if (!silent) ui.line(r && r.ok ? '✓ разведка вёрстки отправлена' : ('⚠ разведка: ' + ((r && r.error) || 'нет подключения')));
   }
 
+  // ── список ГОТОВЫХ ПРОЕКТОВ Flow (карточки главной labs.google/fx/…/tools/flow) ──
+  // Для вкладки «Google Flow» в Галерее: снимаем плитки проектов, чтобы открывать их
+  // «проектором» (клик по карточке → новая вкладка на /project/<id>). Flow — SPA +
+  // web-components, поэтому ищем ссылки на проекты сквозь shadow DOM.
+  const cleanText = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  function listProjects() {
+    const links = queryAllDeep('a[href*="/tools/flow/project/"]').filter(visible);
+    const out = [];
+    const seen = new Set();
+    for (const a of links) {
+      const raw = a.getAttribute('href') || a.href || '';
+      const m = /\/project\/([a-z0-9-]+)/i.exec(raw);
+      const id = m ? m[1] : null;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      let url = raw;
+      try { url = new URL(raw, location.href).href; } catch { /* оставим как есть */ }
+      // Карточка = ссылка или ближайший контейнер-плитка (обложка/подпись живут там).
+      const card = a.closest('[class*="project" i], li, article') || a.parentElement || a;
+      // Обложка: img/video внутри карточки.
+      let thumb = '';
+      const img = a.querySelector('img') || (card && card.querySelector && card.querySelector('img'));
+      if (img) thumb = img.currentSrc || img.src || '';
+      if (!thumb) { const v = a.querySelector('video') || (card && card.querySelector && card.querySelector('video')); if (v) thumb = v.poster || v.currentSrc || v.src || ''; }
+      // Название: aria-label ссылки → видимый текст плитки (дата) → «Проект Flow».
+      let title = cleanText(a.getAttribute('aria-label') || a.getAttribute('title') || '');
+      if (!title && card && card !== a) title = cleanText(card.textContent);
+      if (!title) title = 'Проект Flow';
+      out.push({ id, url, title: title.slice(0, 80), thumb: (thumb || '').slice(0, 500) });
+      if (out.length > 120) break;
+    }
+    // Признак входа: если ссылок нет, но мы на странице входа/аккаунтов — залогиниться надо.
+    const loggedOut = out.length === 0 && /accounts\.google\.com|\/signin|ServiceLogin/i.test(location.href);
+    return { ok: true, projects: out, loggedIn: !loggedOut };
+  }
+
   // Скачать медиа Галереи (background) → File → залить в Flow. isRetry — повтор после открытия проекта.
   // Пока НЕ в проекте, сохраняем «отложенную вставку» в storage: если Flow перезагрузит страницу при
   // открытии проекта, при следующей загрузке (уже в /project/) вставка доведётся сама.
@@ -645,6 +681,11 @@
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg) return;
     if (msg.type === 'ping') { sendResponse({ ready: true }); return; }
+    if (msg.type === 'list-projects') {
+      // Список готовых проектов Flow (для вкладки «Google Flow» Галереи). Синхронно.
+      try { sendResponse(listProjects()); } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
+      return;
+    }
     if (msg.type === 'run-task') {
       runTask(msg.task).then(sendResponse).catch((e) => sendResponse({ ok: false, reason: String(e && e.message || e) }));
       return true; // async

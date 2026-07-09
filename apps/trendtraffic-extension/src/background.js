@@ -230,6 +230,42 @@ async function pushToFlow(url, title, kind) {
   } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 
+/**
+ * Живой список ГОТОВЫХ ПРОЕКТОВ Flow — для вкладки «Google Flow» в Галерее.
+ * НЕ трогает очередь генераций (tickFlow/runFlowTask). Логика:
+ *   1) если уже открыта вкладка на ГЛАВНОЙ Flow (без /project/) — снимаем с неё
+ *      (не мешаем юзеру, если он внутри проекта);
+ *   2) иначе — временная фоновая вкладка на главную: снять карточки и закрыть.
+ * Клик по карточке в Галерее открывает проект «проектором» сам (window.open) — тут только список.
+ */
+async function listFlowProjects() {
+  // 1) Существующая вкладка на главной Flow (URL без /project/).
+  let grid = null;
+  try {
+    const tabs = await chrome.tabs.query({ url: ['https://labs.google/fx/tools/flow*', 'https://labs.google/fx/*/tools/flow*'] });
+    grid = tabs.find((t) => t.url && !/\/project\//.test(t.url)) || null;
+  } catch { /* query best-effort */ }
+  if (grid && grid.id != null) {
+    try {
+      const r = await withTimeout(chrome.tabs.sendMessage(grid.id, { type: 'list-projects' }), 45_000);
+      if (r && r.ok) return r;
+    } catch { /* упадём во временную вкладку ниже */ }
+  }
+  // 2) Временная фоновая вкладка на главную Flow → снять и закрыть.
+  let tab;
+  try { tab = await chrome.tabs.create({ url: 'https://labs.google/fx/tools/flow', active: false }); }
+  catch (e) { return { ok: false, error: 'не удалось открыть Flow: ' + (e && e.message || e) }; }
+  const ready = await waitForTabReady(tab.id, 45_000);
+  let r;
+  if (!ready) r = { ok: false, error: 'Flow не загрузился — войдите в labs.google/flow' };
+  else {
+    try { r = await withTimeout(chrome.tabs.sendMessage(tab.id, { type: 'list-projects' }), 45_000); }
+    catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+  }
+  try { await chrome.tabs.remove(tab.id); } catch { /* закрытие best-effort */ }
+  return r || { ok: false, error: 'нет ответа от Flow' };
+}
+
 /** Скачать байты медиа в КОНТЕКСТЕ РАСШИРЕНИЯ (обход CORS страницы) → dataURL.
  *  Общий помощник для Flow (референсы) и NotebookLM (файл-источник из Галереи). */
 async function fetchBytes(url) {
@@ -550,6 +586,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'gallery-list': sendResponse(await galleryList()); break;
       case 'send-recon': sendResponse(await sendReconFlow(msg.payload || {})); break;
       case 'push-to-flow': sendResponse(await pushToFlow(msg.url, msg.title, msg.kind)); break;
+      case 'list-flow-projects': sendResponse(await listFlowProjects()); break;
 
       // — NotebookLM —
       case 'nlm-status':

@@ -90,3 +90,13 @@ zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md 
 
 Версию (`manifest.json` → `version`) бампать вместе с `TT_EXT_VERSION` в
 `apps/frontend/src/components/AppVersion.tsx` — она показывается на карточке «Скачать».
+
+## v1.3.0 — список проектов Flow
+
+Вкладка «Google Flow» в Галерее показывает ГОТОВЫЕ ПРОЕКТЫ Flow. Приложение шлёт
+`window.postMessage({source:'trendtraffic', type:'list-flow-projects'})`; `content-bridge`
+пробрасывает в `background.listFlowProjects()`, тот находит/открывает вкладку главной Flow
+и вызывает в `content-flow` действие `list-projects` (скрейп `a[href*="/tools/flow/project/"]`).
+Ответ уходит на страницу как `{source:'tt-flow-ext', type:'flow-projects', projects:[…]}`.
+Клик по карточке открывает проект «проектором» сам (обычный `window.open`) — расширение тут
+только отдаёт список. Очередь генераций (`tickFlow`) не затронута.
