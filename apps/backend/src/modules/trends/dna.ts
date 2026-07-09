@@ -20,6 +20,9 @@
 import { randomUUID } from 'crypto';
 import pool from '../../db/index.js';
 import { resolveAnthropicKey, DEFAULT_DIRECTOR_MODEL } from '../render/director.js';
+import { cacheCoverToDisk, isExpiringCover } from '../media/store_cover.js';
+import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import { fetchOneVideo, extractOneVideoCover, fetchInstagramPostInfo, extractInstagramCover } from '../tikhub/tikhub_client.js';
 import type { NormComment } from './analytics.js';
 
 export type BeatIntensity = 'low' | 'mid' | 'high';
@@ -358,6 +361,24 @@ function mapRow(r: any): StoredTrendDNA {
 }
 
 /**
+ * Кэширует протухающую обложку разбора (dna.meta.cover) на диск ПЕРЕД сохранением.
+ * TikTok/IG отдают подписанные CDN-ссылки (…-sign.tiktokcdn-eu.com/…?x-expires=…), подпись
+ * которых истекает за часы-сутки: тогда /api/channels/cover получает 403 → <img> в «Тренды →
+ * Анализ» становится битым (обложка «пропадает после анализа»). Скачиваем её к себе в
+ * uploads/covers и подменяем dna.meta.cover на стабильный локальный URL — тот же приём, что у
+ * source_videos (см. media/store_cover.ts + trends/service.ts). Best-effort: при сбое/мёртвой
+ * ссылке оставляем исходную (лучше протухающая, чем никакой). ytimg/уже-локальные не трогаем.
+ */
+async function persistDnaCover(dna: TrendDNA): Promise<void> {
+  const cover = dna?.meta?.cover;
+  if (!isExpiringCover(cover)) return;
+  try {
+    const saved = await cacheCoverToDisk(cover!);
+    dna.meta.cover = saved.mediaUrl;
+  } catch { /* ссылка мертва/недоступна — оставляем исходную */ }
+}
+
+/**
  * Сохраняет ДНК (upsert по media_asset_id — одна актуальная аналитика на видео).
  * Деградирует в null при недоступной БД — основной сценарий (скачивание) не падает.
  */
@@ -366,6 +387,7 @@ export async function saveTrendDNA(
   rec: { mediaAssetId?: string; sourceVideoId?: string; platform?: string; externalId?: string; sourceUrl?: string; dna: TrendDNA }
 ): Promise<StoredTrendDNA | null> {
   try {
+    await persistDnaCover(rec.dna); // обложку — на диск, чтобы не протухла (см. persistDnaCover)
     const id = randomUUID();
     const r = await pool.query(
       `INSERT INTO video_analyses (id, tenant_id, media_asset_id, source_video_id, platform, external_id, source_url, dna, model)
@@ -389,6 +411,84 @@ export async function saveTrendDNA(
   }
 }
 
+// Разборы, чьи обложки уже кэшируются прямо сейчас — чтобы параллельные открытия Галереи
+// не дублировали скачивание одной и той же ссылки; nextTry — пауза после неудачного воскрешения.
+const analysisCoverInFlight = new Set<string>();
+const analysisCoverNextTry = new Map<string, number>();
+const ANALYSIS_COVER_DEAD_MS = 6 * 60 * 60 * 1000; // мёртвую обложку не дёргаем чаще раза в 6 ч
+const ANALYSIS_RESURRECT_MAX = 12;                 // потолок TikHub-запросов за один проход
+
+/**
+ * Свежая обложка мёртвого разбора через TikHub (по platform + external_id / shortcode из
+ * source_url). Только TikTok и Instagram — ровно те площадки, чьи CDN-подписи истекают
+ * (см. isExpiringCover); YouTube/X стабильны. Тот же приём, что service.fetchFreshCoverUrl.
+ */
+async function fetchFreshAnalysisCover(apiKey: string, a: StoredTrendDNA): Promise<string | undefined> {
+  if (a.platform === 'tiktok' && a.externalId) {
+    const r = await fetchOneVideo(apiKey, a.externalId);
+    return r.ok ? extractOneVideoCover(r.data) : undefined;
+  }
+  if (a.platform === 'instagram') {
+    const m = /\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/.exec(a.sourceUrl || '');
+    const code = m?.[1] || (a.externalId && !/^\d+$/.test(a.externalId) ? a.externalId : null);
+    if (!code) return undefined;
+    const r = await fetchInstagramPostInfo(apiKey, code);
+    return r.ok ? extractInstagramCover(r.data) : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Фоновое лечение обложек уже сохранённых разборов (самолечение, как у source_videos —
+ * см. trends/service.ts). Разборы держат в dna.meta.cover подписанный CDN-URL:
+ *   • ссылка ещё жива → скачиваем к себе в uploads/covers, переписываем dna в БД;
+ *   • ссылка мертва (403 — подпись истекла) → воскрешаем через TikHub (по external_id/shortcode)
+ *     и кэшируем свежую. После неудачи — пауза ANALYSIS_COVER_DEAD_MS, чтобы не долбить TikHub.
+ * Так чинятся и старые битые карточки (напр. PxPhone/Autopak). Best-effort, ответ не блокирует.
+ */
+async function healAnalysisCovers(tenantId: string, rows: StoredTrendDNA[]): Promise<void> {
+  const now = Date.now();
+  const targets = rows.filter((a) =>
+    a.id && isExpiringCover(a.dna?.meta?.cover)
+    && !analysisCoverInFlight.has(a.id) && now >= (analysisCoverNextTry.get(a.id) || 0)
+  );
+  if (!targets.length) return;
+  if (analysisCoverNextTry.size > 5000) analysisCoverNextTry.clear(); // не даём карте расти вечно
+  for (const a of targets) analysisCoverInFlight.add(a.id!);
+
+  // Ключ TikHub — один на проход (нужен только для воскрешения мёртвых ссылок).
+  const tikhubKey = await getEffectiveTikHubKey(tenantId).catch(() => null);
+  let tikhubBudget = tikhubKey ? ANALYSIS_RESURRECT_MAX : 0;
+
+  const persist = async (a: StoredTrendDNA, url: string): Promise<void> => {
+    const saved = await cacheCoverToDisk(url);
+    a.dna!.meta!.cover = saved.mediaUrl;
+    await pool.query('UPDATE video_analyses SET dna = $3 WHERE tenant_id = $1 AND id = $2', [tenantId, a.id, JSON.stringify(a.dna)]);
+  };
+
+  const CONC = 4;
+  try {
+    for (let i = 0; i < targets.length; i += CONC) {
+      // eslint-disable-next-line no-await-in-loop
+      await Promise.all(targets.slice(i, i + CONC).map(async (a) => {
+        try {
+          await persist(a, a.dna!.meta!.cover!); // живая ссылка — просто кэшируем
+          return;
+        } catch { /* ссылка мертва (подпись истекла) — пробуем воскресить через TikHub */ }
+        if (tikhubBudget <= 0) { analysisCoverNextTry.set(a.id!, now + ANALYSIS_COVER_DEAD_MS); return; }
+        tikhubBudget--;
+        try {
+          const fresh = await fetchFreshAnalysisCover(tikhubKey!, a);
+          if (!fresh) { analysisCoverNextTry.set(a.id!, now + ANALYSIS_COVER_DEAD_MS); return; }
+          await persist(a, fresh);
+        } catch { analysisCoverNextTry.set(a.id!, now + ANALYSIS_COVER_DEAD_MS); }
+      }));
+    }
+  } finally {
+    for (const a of targets) analysisCoverInFlight.delete(a.id!);
+  }
+}
+
 /**
  * Все сохранённые анализы тенанта — раздел «Тренды → Анализ» в Галерее.
  * Джойним media_assets: если видео сохранено в Галерею, отдаём его файл (превью/плеер).
@@ -405,11 +505,14 @@ export async function listTrendDNA(tenantId: string, limit = 100): Promise<Array
        LIMIT $2`,
       [tenantId, Math.max(1, Math.min(300, limit))]
     );
-    return r.rows.map((row: any) => ({
+    const rows = r.rows.map((row: any) => ({
       ...mapRow(row),
       fileUrl: row.ma_file_url || undefined,
       title: row.ma_name || undefined,
     }));
+    // В фоне закэшировать ещё живые обложки старых разборов — чтобы не протухли назавтра.
+    void healAnalysisCovers(tenantId, rows);
+    return rows;
   } catch (e) {
     console.warn('[trends] listTrendDNA failed:', (e as Error).message);
     return [];
@@ -506,6 +609,7 @@ export async function saveTrendDNAAuto(
   rec: { platform?: string; externalId?: string; sourceUrl?: string; dna: TrendDNA }
 ): Promise<StoredTrendDNA | null> {
   try {
+    await persistDnaCover(rec.dna); // обложку — на диск, чтобы не протухла (см. persistDnaCover)
     const ext = rec.externalId || null;
     if (ext) {
       const ex = await pool.query(
