@@ -12,7 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X, RefreshCw,
+  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X, RefreshCw, Globe,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
@@ -78,6 +78,64 @@ const defaultFilters = (id: Source): Record<string, string> => {
   (PLATFORM_FILTERS[id] || []).forEach((f) => { if (f.def) out[f.key] = f.def; });
   return out;
 };
+
+// Регион выдачи (ISO-3166 alpha-2). '' = глобально (без гео-подсказки алгоритму).
+// Подмешивается в поиск там, где API это поддерживает: TikTok «Умный поиск» и YouTube
+// (там же под гео подтягивается язык региона). Сгруппировано; СНГ первыми — под аудиторию.
+export interface Region { code: string; name: string; flag: string; group?: string }
+export const REGIONS: Region[] = [
+  { code: '', name: 'Глобально (без региона)', flag: '🌐' },
+  // СНГ и соседи
+  { code: 'RU', name: 'Россия', flag: '🇷🇺', group: 'СНГ и соседи' },
+  { code: 'UA', name: 'Украина', flag: '🇺🇦', group: 'СНГ и соседи' },
+  { code: 'KZ', name: 'Казахстан', flag: '🇰🇿', group: 'СНГ и соседи' },
+  { code: 'UZ', name: 'Узбекистан', flag: '🇺🇿', group: 'СНГ и соседи' },
+  { code: 'BY', name: 'Беларусь', flag: '🇧🇾', group: 'СНГ и соседи' },
+  { code: 'AZ', name: 'Азербайджан', flag: '🇦🇿', group: 'СНГ и соседи' },
+  { code: 'GE', name: 'Грузия', flag: '🇬🇪', group: 'СНГ и соседи' },
+  { code: 'AM', name: 'Армения', flag: '🇦🇲', group: 'СНГ и соседи' },
+  { code: 'KG', name: 'Кыргызстан', flag: '🇰🇬', group: 'СНГ и соседи' },
+  { code: 'TJ', name: 'Таджикистан', flag: '🇹🇯', group: 'СНГ и соседи' },
+  { code: 'MD', name: 'Молдова', flag: '🇲🇩', group: 'СНГ и соседи' },
+  // Европа
+  { code: 'GB', name: 'Великобритания', flag: '🇬🇧', group: 'Европа' },
+  { code: 'DE', name: 'Германия', flag: '🇩🇪', group: 'Европа' },
+  { code: 'FR', name: 'Франция', flag: '🇫🇷', group: 'Европа' },
+  { code: 'IT', name: 'Италия', flag: '🇮🇹', group: 'Европа' },
+  { code: 'ES', name: 'Испания', flag: '🇪🇸', group: 'Европа' },
+  { code: 'PL', name: 'Польша', flag: '🇵🇱', group: 'Европа' },
+  { code: 'NL', name: 'Нидерланды', flag: '🇳🇱', group: 'Европа' },
+  // Ближний Восток
+  { code: 'TR', name: 'Турция', flag: '🇹🇷', group: 'Ближний Восток' },
+  { code: 'AE', name: 'ОАЭ', flag: '🇦🇪', group: 'Ближний Восток' },
+  { code: 'SA', name: 'Саудовская Аравия', flag: '🇸🇦', group: 'Ближний Восток' },
+  { code: 'EG', name: 'Египет', flag: '🇪🇬', group: 'Ближний Восток' },
+  // Азия
+  { code: 'IN', name: 'Индия', flag: '🇮🇳', group: 'Азия' },
+  { code: 'ID', name: 'Индонезия', flag: '🇮🇩', group: 'Азия' },
+  { code: 'TH', name: 'Таиланд', flag: '🇹🇭', group: 'Азия' },
+  { code: 'VN', name: 'Вьетнам', flag: '🇻🇳', group: 'Азия' },
+  { code: 'PH', name: 'Филиппины', flag: '🇵🇭', group: 'Азия' },
+  { code: 'JP', name: 'Япония', flag: '🇯🇵', group: 'Азия' },
+  { code: 'KR', name: 'Корея', flag: '🇰🇷', group: 'Азия' },
+  // Америка
+  { code: 'US', name: 'США', flag: '🇺🇸', group: 'Америка' },
+  { code: 'CA', name: 'Канада', flag: '🇨🇦', group: 'Америка' },
+  { code: 'BR', name: 'Бразилия', flag: '🇧🇷', group: 'Америка' },
+  { code: 'MX', name: 'Мексика', flag: '🇲🇽', group: 'Америка' },
+  { code: 'AR', name: 'Аргентина', flag: '🇦🇷', group: 'Америка' },
+];
+// Порядок групп для optgroup (первым идёт «Глобально» без группы).
+export const REGION_GROUPS = ['СНГ и соседи', 'Европа', 'Ближний Восток', 'Азия', 'Америка'];
+// Где регион реально уходит в API (иначе — поиск глобальный, регион игнорируется).
+// TikTok: только «Умный поиск» (app) по ключевику. YouTube: и поиск, и «Горячее».
+function regionHonored(platform: Source, kind: Kind, mode: string): boolean {
+  if (platform === 'youtube') return true;
+  if (platform === 'tiktok') return kind === 'keyword' && mode === 'app';
+  return false;
+}
+// Поддерживает ли площадка гео в принципе (для бейджа на плитке площадки).
+const PLATFORM_HAS_GEO: Record<Source, boolean> = { tiktok: true, youtube: true, instagram: false, twitter: false };
 
 export interface StoredVideo {
   id: string | null;
@@ -153,6 +211,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
   const [mode, setMode] = useState<'video' | 'general' | 'app'>('app');
   const [sortType, setSortType] = useState<0 | 1 | 2>(0);
   const [publishTime, setPublishTime] = useState<0 | 1 | 7 | 30 | 90 | 180>(0);
+  const [region, setRegion] = useState(''); // '' = глобально; ISO alpha-2 иначе
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -316,7 +375,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
     try {
       const res = await fetch('/api/trends/scan', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ kind, query: q, count, mode, sortType, publishTime, platform, filters }),
+        body: JSON.stringify({ kind, query: q, count, mode, sortType, publishTime, platform, filters, region }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -455,6 +514,12 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
                 <span className="w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0"
                       style={{ background: p.tint, color: p.color }}>{p.icon}</span>
                 <span className="text-[12px] font-600" style={{ color: on ? 'var(--brand)' : 'var(--text-secondary)' }}>{p.name}</span>
+                {/* Гео-бейдж: показываем, что выбранный регион применяется к этой площадке. */}
+                {region && PLATFORM_HAS_GEO[p.id] && (
+                  <span title="Регион применяется к этой площадке" className="inline-flex flex-shrink-0">
+                    <Globe size={11} style={{ color: on ? 'var(--brand)' : 'var(--text-muted)' }} />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -505,6 +570,33 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
         </div>
 
         <div className="flex flex-wrap items-end gap-x-3 gap-y-3">
+          {/* Регион выдачи — гео-таргет исследования. Активный регион подсвечивается брендом. */}
+          <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            <span className="inline-flex items-center gap-1"><Globe size={12} /> Регион выдачи</span>
+            <div className="relative">
+              <select value={region} onChange={(e) => setRegion(e.target.value)}
+                aria-label="Регион выдачи трендов"
+                className="h-10 pl-3 pr-8 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 transition-colors"
+                style={{
+                  minWidth: 186,
+                  background: region ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)',
+                  border: `1px solid ${region ? 'var(--brand)' : 'var(--border-medium)'}`,
+                  color: 'var(--text-primary)',
+                }}>
+                <option value="">🌐 Глобально (без региона)</option>
+                {REGION_GROUPS.map((g) => (
+                  <optgroup key={g} label={g}>
+                    {REGIONS.filter((r) => r.group === g).map((r) => (
+                      <option key={r.code} value={r.code}>{r.flag} {r.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px]"
+                    style={{ color: 'var(--text-muted)' }}>▾</span>
+            </div>
+          </label>
+
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             Сколько видео
             <div className="flex items-center gap-1.5">
@@ -609,6 +701,29 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             <p className="text-[11px] flex items-end pb-2.5" style={{ color: 'var(--text-muted)' }}>Instagram: фильтров нет — только поиск по ключевику.</p>
           )}
         </div>
+
+        {/* Пояснение по региону: где он реально применяется, а где выдача глобальна. */}
+        {region && (regionHonored(platform, kind, mode) ? (
+          <div className="flex items-start gap-2 text-[12px] rounded-xl px-3 py-2"
+               style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--text-secondary)' }}>
+            <Globe size={14} className="mt-[2px] flex-shrink-0" style={{ color: 'var(--brand)' }} />
+            <span>
+              Тренды ищутся с приоритетом региона{' '}
+              <b style={{ color: 'var(--text-primary)' }}>{REGIONS.find((r) => r.code === region)?.flag} {REGIONS.find((r) => r.code === region)?.name}</b>
+              {' '}— алгоритму подсказывается, контент какого региона показывать в выдаче.
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2 text-[12px] rounded-xl px-3 py-2"
+               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+            <AlertCircle size={14} className="mt-[2px] flex-shrink-0" />
+            <span>
+              Для этого режима регион не поддерживается — поиск будет глобальным. Гео работает в{' '}
+              <b style={{ color: 'var(--text-secondary)' }}>TikTok → Умный поиск</b> и в{' '}
+              <b style={{ color: 'var(--text-secondary)' }}>YouTube</b>.
+            </span>
+          </div>
+        ))}
 
         {/* ── АВТОАНАЛИЗ (конвейер тренд → анализ → UGC), Enterprise-only ─────────────
             По расписанию сканирует этот ключевик и анализирует ОДНО новое видео

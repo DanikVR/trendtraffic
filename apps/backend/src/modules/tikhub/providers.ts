@@ -297,8 +297,11 @@ export function normalizeTwitter(raw: any): NormalizedVideo[] {
 export interface TrendProvider {
   /** Есть ли у площадки лента «горячее»/explore (иначе только поиск по ключевику). */
   hasTrending: boolean;
-  search(key: string, query: string, opts: { count: number; filters?: SearchFilters }): Promise<TikHubResult<any>>;
-  trending(key: string, opts: { count: number }): Promise<TikHubResult<any>>;
+  /** Поддерживает ли площадка гео-параметр региона (TikTok app-поиск, YouTube). */
+  hasRegion: boolean;
+  /** region — канонический ISO alpha-2 UPPER (RU/US/UZ…); провайдер сам приводит к своему формату. */
+  search(key: string, query: string, opts: { count: number; filters?: SearchFilters; region?: string }): Promise<TikHubResult<any>>;
+  trending(key: string, opts: { count: number; region?: string }): Promise<TikHubResult<any>>;
   normalize(raw: any): NormalizedVideo[];
 }
 
@@ -310,31 +313,60 @@ function qs(base: Record<string, string>, filters: SearchFilters | undefined, al
   return parts.join('&');
 }
 
+// Регион (ISO alpha-2) → язык интерфейса/выдачи YouTube (BCP-47 базовый). Нужен,
+// чтобы под гео подтягивался контент на языке региона (напр. UZ → узбекские ролики),
+// а не только по геолокации. Неизвестный код → language_code не добавляем (дефолт API).
+const REGION_LANG: Record<string, string> = {
+  RU: 'ru', UA: 'uk', KZ: 'kk', UZ: 'uz', BY: 'be', AZ: 'az', GE: 'ka', KG: 'ky',
+  TR: 'tr', AE: 'ar', SA: 'ar', EG: 'ar', US: 'en', GB: 'en', DE: 'de', FR: 'fr',
+  ES: 'es', IT: 'it', PL: 'pl', NL: 'nl', IN: 'hi', ID: 'id', TH: 'th', VN: 'vi',
+  BR: 'pt', PT: 'pt', MX: 'es', JP: 'ja', KR: 'ko', CN: 'zh', AM: 'hy', MD: 'ro',
+};
+
+// YouTube принимает country_code/language_code в нижнем регистре (us/ru/uz…). base-пары
+// строятся отдельно, чтобы добавить их только когда регион задан (иначе — дефолт эндпоинта).
+function ytBase(searchQuery: string, region?: string): Record<string, string> {
+  const b: Record<string, string> = { search_query: searchQuery };
+  if (region) {
+    b.country_code = region.toLowerCase();
+    const lang = REGION_LANG[region.toUpperCase()];
+    if (lang) b.language_code = lang;
+  }
+  return b;
+}
+
 export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
   tiktok: {
     hasTrending: true,
-    search: (k, q, o) => searchVideos(k, q, { count: o.count, mode: 'app' }),
-    trending: (k, o) => fetchTrending(k, { count: o.count }),
+    hasRegion: true, // app-поиск (fetch_video_search_result) принимает region
+    search: (k, q, o) => searchVideos(k, q, { count: o.count, mode: 'app', region: o.region }),
+    trending: (k, o) => fetchTrending(k, { count: o.count }), // explore-лента region не поддерживает
     normalize: (raw) => normalizeVideos(raw),
   },
   instagram: {
     hasTrending: true,
-    // Instagram-поиск принимает только keyword — фильтров у API нет.
+    hasRegion: false, // Instagram-поиск принимает только keyword — ни фильтров, ни региона у API нет.
     search: (k, q) => tikhubGet(k, `/api/v1/instagram/v2/search_reels?keyword=${enc(q)}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/instagram/v3/get_explore`, { timeoutMs: 30000 }),
     normalize: (raw) => genericNormalize('instagram', raw),
   },
   youtube: {
     hasTrending: true,
+    hasRegion: true, // поиск и «Горячее» принимают country_code
     // yt_kind=shorts → get_shorts_search; иначе get_general_search (sort_by/upload_time/duration).
     search: (k, q, o) => o.filters?.yt_kind === 'shorts'
-      ? tikhubGet(k, `/api/v1/youtube/web/get_shorts_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time'])}`, { timeoutMs: 30000 })
-      : tikhubGet(k, `/api/v1/youtube/web/get_general_search?${qs({ search_query: q }, o.filters, ['sort_by', 'upload_time', 'duration'])}`, { timeoutMs: 30000 }),
-    trending: (k) => tikhubGet(k, `/api/v1/youtube/web/get_trending_videos?section=Now`, { timeoutMs: 30000 }),
+      ? tikhubGet(k, `/api/v1/youtube/web/get_shorts_search?${qs(ytBase(q, o.region), o.filters, ['sort_by', 'upload_time'])}`, { timeoutMs: 30000 })
+      : tikhubGet(k, `/api/v1/youtube/web/get_general_search?${qs(ytBase(q, o.region), o.filters, ['sort_by', 'upload_time', 'duration'])}`, { timeoutMs: 30000 }),
+    trending: (k, o) => {
+      const geo: SearchFilters = {};
+      if (o.region) { geo.country_code = o.region.toLowerCase(); const l = REGION_LANG[o.region.toUpperCase()]; if (l) geo.language_code = l; }
+      return tikhubGet(k, `/api/v1/youtube/web/get_trending_videos?${qs({ section: 'Now' }, geo, ['country_code', 'language_code'])}`, { timeoutMs: 30000 });
+    },
     normalize: (raw) => normalizeYoutube(raw),
   },
   twitter: {
     hasTrending: false, // fetch_trending отдаёт ТЕМЫ, а не посты — ленту постов даём только через поиск
+    hasRegion: false, // fetch_search_timeline региона не имеет (гео есть только у trending — а его мы не отдаём)
     // search_type: Top / Latest / Media.
     search: (k, q, o) => tikhubGet(k, `/api/v1/twitter/web/fetch_search_timeline?${qs({ keyword: q, search_type: o.filters?.search_type || 'Top' }, undefined, [])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/twitter/web/fetch_trending?country=UnitedStates`, { timeoutMs: 30000 }),
@@ -342,6 +374,7 @@ export const TREND_PROVIDERS: Record<TrendPlatform, TrendProvider> = {
   },
   reddit: {
     hasTrending: true,
+    hasRegion: false, // ни dynamic_search, ни popular_feed не принимают гео
     // fetch_dynamic_search: sort / time_range. need_format=true → чистый формат поста.
     search: (k, q, o) => tikhubGet(k, `/api/v1/reddit/app/fetch_dynamic_search?${qs({ query: q, search_type: 'post', need_format: 'true' }, o.filters, ['sort', 'time_range'])}`, { timeoutMs: 30000 }),
     trending: (k) => tikhubGet(k, `/api/v1/reddit/app/fetch_popular_feed?need_format=true`, { timeoutMs: 30000 }),

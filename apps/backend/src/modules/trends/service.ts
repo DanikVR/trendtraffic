@@ -16,7 +16,7 @@ import pool from '../../db/index.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import {
   searchVideos, fetchOneVideo, extractOneVideoCover, fetchInstagramPostInfo, extractInstagramCover,
-  type NormalizedVideo,
+  normalizeRegion, type NormalizedVideo,
 } from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
 import { shapeOf } from './analytics.js';
@@ -28,6 +28,8 @@ export interface ScanParams {
   kind: TrendKind;
   query?: string;
   count?: number;
+  /** Регион выдачи (ISO-3166 alpha-2, напр. RU/US/UZ). Применяется, где API это поддерживает:
+   *  TikTok «Умный поиск» (region) и YouTube (country_code). На остальных площадках игнорируется. */
   region?: string;
   /** Источник трендов: tiktok | instagram | youtube | twitter | reddit. По умолчанию tiktok. */
   platform?: TrendPlatform;
@@ -103,6 +105,9 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   const platform: TrendPlatform = isTrendPlatform(params.platform) ? params.platform : 'tiktok';
   const provider = TREND_PROVIDERS[platform];
   const count = Math.min(Math.max(params.count ?? 20, 1), 30);
+  // Регион (ISO alpha-2) отдаём в API только на площадках/эндпоинтах, где он поддержан
+  // (TikTok app-поиск, YouTube). На остальных провайдер его просто игнорирует.
+  const region = normalizeRegion(params.region);
   let resp;
   let fellBackToApp = false;
   if (params.kind === 'keyword') {
@@ -112,21 +117,22 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
       // App-поиск всегда тянет по релевантности (опечатко-устойчивый матч). Чтобы
       // «Новее»/«Больше лайков» пересортировывались осмысленно, тянем ПОЛНЫЙ пул
       // (одна оплата за запрос — count не влияет на цену), потом режем до count.
+      // region уходит только в app-режим (единственный поисковый эндпоинт TikTok с гео).
       const fetchCount = params.mode === 'app' ? 30 : count;
-      resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime });
+      resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime, region });
       // Web-эндпоинты (Видео/Общий) периодически нестабильны — молча падаем на App V3.
       if (!resp.ok && params.mode !== 'app') {
-        const fb = await searchVideos(key, q, { count: 30, mode: 'app', publishTime: params.publishTime });
+        const fb = await searchVideos(key, q, { count: 30, mode: 'app', publishTime: params.publishTime, region });
         if (fb.ok) { resp = fb; fellBackToApp = true; }
       }
     } else {
-      resp = await provider.search(key, q, { count, filters: params.filters });
+      resp = await provider.search(key, q, { count, filters: params.filters, region });
     }
   } else {
     if (!provider.hasTrending) {
       throw new Error('У этой площадки нет ленты «Горячее» — переключитесь на «По ключевику».');
     }
-    resp = await provider.trending(key, { count });
+    resp = await provider.trending(key, { count, region });
   }
 
   if (!resp.ok) {
@@ -158,7 +164,7 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
     await pool.query(
       `INSERT INTO trends (id, tenant_id, platform, query_kind, query_value, region, result_count, payload)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [trendId, tenantId, platform, params.kind, params.query || null, params.region || null, videos.length, JSON.stringify(resp.data ?? null)]
+      [trendId, tenantId, platform, params.kind, params.query || null, region ?? null, videos.length, JSON.stringify(resp.data ?? null)]
     );
   } catch (e) {
     console.warn('[trends] не удалось записать trend (fallback?):', (e as Error).message);
