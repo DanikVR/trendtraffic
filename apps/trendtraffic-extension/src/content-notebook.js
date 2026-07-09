@@ -146,9 +146,12 @@
     } else if (d.kind === 'artifact-blob' && d.dataUrl) {
       // Перехвачены байты готового артефакта (аудио/видео) прямо на странице.
       lastArtifact = { dataUrl: d.dataUrl, mime: d.mime || '', fileName: d.fileName || '', size: d.size || 0, ts: Date.now() };
-      try { ui.line('перехвачен файл артефакта (' + Math.round((d.size || 0) / 1024) + ' КБ)'); } catch { /* */ }
+      try { ui.line('перехвачен файл артефакта (' + Math.round((d.size || 0) / 1024) + ' КБ, ' + (d.via || '') + ')'); } catch { /* */ }
     } else if (d.kind === 'artifact-blob-error') {
       try { ui.line('перехват файла не удался: ' + d.error); } catch { /* */ }
+    } else if (d.kind === 'dl-probe') {
+      // Диагностика механизма скачивания (что реально делает «Скачать») — видно в логе виджета.
+      try { ui.line('скачивание? ' + d.at + (d.mime ? ' ' + d.mime : '') + (d.size ? ' ' + Math.round(d.size / 1024) + 'КБ' : '') + (d.href ? ' ' + d.href : '')); } catch { /* */ }
     }
   });
 

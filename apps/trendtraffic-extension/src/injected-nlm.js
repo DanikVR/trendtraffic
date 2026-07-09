@@ -115,9 +115,24 @@
 
   // --- ПЕРЕХВАТ СКАЧИВАНИЯ АРТЕФАКТА (blob) ---
   // Готовый аудио/видео NotebookLM отдаёт как Blob → URL.createObjectURL → клик по <a download>.
-  // chrome.downloads в service worker такой blob: НЕ стянет (нет доступа к blob другого контекста).
-  // MAIN-мир СВОЙ blob видит → читаем байты здесь и отдаём content-скрипту base64-ом.
+  // chrome.downloads в service worker такой blob: НЕ стянет (нет доступа к blob другого контекста),
+  // а onCreated с blob: мы в фоне игнорим. Раньше ловили blob по клику <a> — но клик у NotebookLM
+  // идёт НЕ через .click() → перехват не срабатывал. РЕШЕНИЕ: ловим МЕДИА-blob прямо в момент
+  // createObjectURL (независимо от того, как потом кликают). + dl-probe диагностика в лог виджета.
   const blobByUrl = new Map();
+  const sentBlobs = new Set();
+  const looksMedia = (b) => b instanceof Blob && (/^(audio|video)\//i.test(b.type || '') || (b.size > 50_000 && !/^(image|text)\//i.test(b.type || '')));
+  async function sendBlob(blob, fileName, via) {
+    try {
+      if (!blob || blob.size < 64) return;
+      const buf = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      const mime = blob.type || 'application/octet-stream';
+      post({ kind: 'artifact-blob', via: via || '', mime, size: blob.size, fileName: fileName || '', dataUrl: 'data:' + mime + ';base64,' + btoa(bin) });
+    } catch (e) { post({ kind: 'artifact-blob-error', error: String((e && e.message) || e) }); }
+  }
   const origCreateObjURL = URL.createObjectURL.bind(URL);
   URL.createObjectURL = function (obj) {
     const u = origCreateObjURL(obj);
@@ -125,32 +140,37 @@
       if (obj instanceof Blob) {
         blobByUrl.set(u, obj);
         if (blobByUrl.size > 24) blobByUrl.delete(blobByUrl.keys().next().value);
+        if ((obj.size || 0) > 20_000) post({ kind: 'dl-probe', at: 'createObjectURL', mime: obj.type || '', size: obj.size || 0 }); // шумные мелкие blob не логируем
+        // МЕДИА-blob (аудио/видео/крупный) → отдаём СРАЗУ, не дожидаясь клика.
+        if (looksMedia(obj) && !sentBlobs.has(u)) { sentBlobs.add(u); sendBlob(obj, '', 'createObjectURL'); }
       }
     } catch { /* игнор */ }
     return u;
   };
-  async function captureDownload(href, fileName) {
+  async function captureHref(href, fileName, via) {
     try {
+      if (sentBlobs.has(href)) return; sentBlobs.add(href);
       let blob = blobByUrl.get(href);
       if (!blob) { const r = await origFetch.call(window, href, { credentials: 'include' }); blob = await r.blob(); }
-      if (!blob || blob.size < 64) return;
-      const buf = await blob.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let bin = '';
-      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-      const mime = blob.type || 'application/octet-stream';
-      post({ kind: 'artifact-blob', mime, size: blob.size, fileName: fileName || '', dataUrl: 'data:' + mime + ';base64,' + btoa(bin) });
+      await sendBlob(blob, fileName, via);
     } catch (e) { post({ kind: 'artifact-blob-error', error: String((e && e.message) || e) }); }
   }
+  const isDlHref = (h, dl) => h && (dl != null || /^blob:|googleusercontent|\.mp3|\.mp4|\.m4a|\.wav/i.test(h));
   const origAClick = HTMLAnchorElement.prototype.click;
   HTMLAnchorElement.prototype.click = function () {
-    try {
-      const href = this.href || '';
-      const dl = this.getAttribute('download');
-      // Скачивание артефакта: <a download> ИЛИ blob:/googleusercontent-ссылка.
-      if (href && (dl != null || /^blob:|googleusercontent|\.mp3|\.mp4|\.m4a|\.wav/i.test(href))) captureDownload(href, dl || '');
-    } catch { /* игнор */ }
+    try { const h = this.href || '', dl = this.getAttribute('download'); if (isDlHref(h, dl)) { post({ kind: 'dl-probe', at: 'a.click', href: String(h).slice(0, 60), download: dl }); captureHref(h, dl || '', 'a.click'); } } catch { /* */ }
     return origAClick.apply(this, arguments);
+  };
+  // Клик по ссылке часто идёт через dispatchEvent(new MouseEvent('click')) — .click() не вызывают.
+  const origDispatch = EventTarget.prototype.dispatchEvent;
+  EventTarget.prototype.dispatchEvent = function (ev) {
+    try {
+      if (this instanceof HTMLAnchorElement && ev && ev.type === 'click') {
+        const h = this.href || '', dl = this.getAttribute('download');
+        if (isDlHref(h, dl)) { post({ kind: 'dl-probe', at: 'a.dispatch', href: String(h).slice(0, 60), download: dl }); captureHref(h, dl || '', 'a.dispatch'); }
+      }
+    } catch { /* */ }
+    return origDispatch.apply(this, arguments);
   };
 
   post({ kind: 'ready' });

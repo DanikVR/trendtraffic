@@ -450,14 +450,17 @@ export default function GalleryPage() {
       const r = await fetch('/api/notebooklm/notebooks', { headers: jsonHeaders() });
       const d = r.ok ? await r.json() : { notebooks: [], status: { ok: false } };
       const list = Array.isArray(d.notebooks) ? d.notebooks : [];
-      // Во время генерации расширение занято (busy-generating) и вернёт 0 — НЕ затираем прежний
-      // список пустотой, иначе на экране «0 блокнотов». Показываем пусто только если реально пусто.
-      if (list.length === 0 && d.status?.ok && (d.error || hbNotebooks.length > 0)) {
-        // сохранить прежние карточки (обновим статусы отдельным лёгким опросом)
+      // Пустой ответ НИКОГДА не затирает уже показанный список: во время генерации расширение
+      // занято (busy-generating) и/или статус временно «не ок» (навигация вкладки) — вернётся 0,
+      // но блокноты у нас есть → держим их (иначе «потерялись» при возврате из другой вкладки).
+      if (list.length === 0 && hbNotebooks.length > 0) {
+        // сохранить прежние карточки (статусы обновит отдельный лёгкий опрос)
       } else {
         setHbNotebooks(list);
       }
-      setHbNbStatus(d.status || null);
+      // Статус-строку «Откройте notebooklm…» держим только когда блокнотов реально нет —
+      // если карточки на экране есть, ошибочный статус не показываем (счётчик важнее).
+      setHbNbStatus(list.length === 0 && hbNotebooks.length === 0 ? (d.status || null) : { ok: true });
     } catch { setHbNbStatus({ ok: false }); }
     finally { setHbNbLoading(false); }
   };

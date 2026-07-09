@@ -2366,11 +2366,21 @@
  *          (2) Заменён ОСТАВШИЙСЯ логотип: кнопка PWA-установки в сайдбаре (была VibeVoxIcon —
  *          оранжевый) → soft-glass logo.png; импорт VibeVoxIcon удалён. Файлы: SocialExtensionPage.tsx,
  *          MainLayout.tsx. */
-export const APP_VERSION = '2.2.25';
+/* 2.2.26 — Hotebook, два бага по фидбэку: (1) блокноты «терялись» при возврате из другой вкладки во
+ *          время генерации: loadNotebooks затирал список пустым ответом, если статус временно «не ок»
+ *          (расширение занято) → теперь пустой ответ НИКОГДА не затирает уже показанные карточки, а
+ *          строка «Откройте notebooklm…» показывается только когда блокнотов реально нет. (2) Захват
+ *          аудио всё ещё падал («не удалось перехватить скачивание»): NotebookLM кликает <a> НЕ через
+ *          .click() → blob не ловился. Теперь injected-nlm ловит МЕДИА-blob прямо в момент
+ *          URL.createObjectURL (независимо от клика) + hook dispatchEvent; + dl-probe диагностика
+ *          механизма скачивания в лог виджета (следующий тест покажет, что реально делает «Скачать»).
+ *          Расширение 1.3.16. Файлы: GalleryPage.tsx, ext/injected-nlm.js, ext/content-notebook.js,
+ *          manifest, content-bridge, AppVersion. */
+export const APP_VERSION = '2.2.26';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.15';
+export const TT_EXT_VERSION = '1.3.16';
 
 export function AppVersion() {
   return (
