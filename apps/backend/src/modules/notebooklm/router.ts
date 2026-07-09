@@ -93,10 +93,11 @@ async function ensureTables(): Promise<void> {
   // Бэкфилл артефактов NotebookLM (идемпотентно):
   // (1) старые артефакты сохранялись БЕЗ folder → не попадали в ленту «Hotebook» (она по folder).
   //     Ставим folder='hotebook' всем ассетам, на которые ссылаются джобы (audio/video/отчёты).
+  // media_assets.id = uuid, notebooklm_jobs.asset_id = text → сравниваем как текст (иначе uuid=text throw).
   await pool.query(
     `UPDATE media_assets SET folder='hotebook'
        WHERE (folder IS NULL OR folder='')
-         AND id IN (SELECT asset_id FROM notebooklm_jobs WHERE asset_id IS NOT NULL)`
+         AND id::text IN (SELECT asset_id FROM notebooklm_jobs WHERE asset_id IS NOT NULL AND asset_id <> '')`
   );
   // (2) раньше аудио писалось kind='reference' → не попадало в «Видео → Аудио» (фильтр по kind).
   //     Аудио-артефакты Hotebook → kind='audio' (в Hotebook остаются: лента по folder kind-независима).
