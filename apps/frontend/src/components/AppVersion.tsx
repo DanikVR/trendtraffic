@@ -2361,7 +2361,12 @@
  *          падает сразу. (3) background повторяет sendMessage 1 раз после waitForTabReady при потере
  *          связи. + бэкфилл folder каст uuid::text. Файлы: ext/injected-nlm.js, ext/content-notebook.js,
  *          ext/background.js, notebooklm/router.ts, manifest, AppVersion. */
-export const APP_VERSION = '2.2.24';
+/* 2.2.25 — Мелкие доводки айдентики по фидбэку: (1) под-меню «Тренды» (Поиск/Таргет на ЦА/Аналитика/
+ *          Каналы) — эмодзи заменены на линии-иконки lucide как везде (Flame/Target/BarChart3/Radio).
+ *          (2) Заменён ОСТАВШИЙСЯ логотип: кнопка PWA-установки в сайдбаре (была VibeVoxIcon —
+ *          оранжевый) → soft-glass logo.png; импорт VibeVoxIcon удалён. Файлы: SocialExtensionPage.tsx,
+ *          MainLayout.tsx. */
+export const APP_VERSION = '2.2.25';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

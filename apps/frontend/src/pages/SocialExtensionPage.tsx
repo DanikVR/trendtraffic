@@ -14,7 +14,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
+import { Search, X, ImagePlus, Loader2, Play, Eye, Flame, Target, BarChart3, Radio } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { coverSrc, type StoredVideo } from '../components/TrendSearch';
@@ -321,11 +321,12 @@ export default function SocialExtensionPage() {
   // вкладках (Поиск/Аналитика/Каналы), чтобы левая колонка всегда оставалась на месте.
   const renderTabs = () => (
     <div className="flex flex-col gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-      {([['search', '🔥 Поиск'], ['audience', '🎯 Таргет на ЦА'], ['analytics', '📊 Аналитика'], ['channels', '📺 Каналы']] as [Tab, string][]).map(([v, lbl]) => (
+      {/* Иконки-линии как везде в приложении (вместо эмодзи), по фидбэку. */}
+      {([['search', 'Поиск', <Flame key="s" size={16} />], ['audience', 'Таргет на ЦА', <Target key="a" size={16} />], ['analytics', 'Аналитика', <BarChart3 key="an" size={16} />], ['channels', 'Каналы', <Radio key="c" size={16} />]] as [Tab, string, React.ReactNode][]).map(([v, lbl, icon]) => (
         <button key={v} onClick={() => setTab(v)}
-          className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+          className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap inline-flex items-center gap-2"
           style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
-          {lbl}
+          {icon} {lbl}
         </button>
       ))}
     </div>

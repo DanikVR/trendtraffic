@@ -42,7 +42,6 @@ import { BottomTabBar } from '../components/BottomTabBar';
 import { AvatarCircle }  from '../components/AvatarCircle';
 import { AppVersion }    from '../components/AppVersion';
 import { VibeVoxLogo }   from '../components/VibeVoxLogo';
-import { VibeVoxIcon }   from '../components/VibeVoxIcon';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { PWAInstallPrompt, usePWAInstall } from '../components/PWAInstallPrompt';
 import { useAppStore }   from '../store/useAppStore';
@@ -233,7 +232,7 @@ export function MainLayout() {
               style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.22)' }}
               aria-label={t('pwaInstall.buttonAria')} title={t('pwaInstall.buttonLabel')}
             >
-              <VibeVoxIcon size={28} bordered />
+              <img src="/icons/logo.png?v=tt3" alt="" width={28} height={28} draggable={false} style={{ objectFit: 'contain' }} />
             </button>
           </div>
         )}
