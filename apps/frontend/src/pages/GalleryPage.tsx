@@ -23,7 +23,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
-  CheckSquare, Square, Check, Eye, Heart, Image as ImageIcon, UploadCloud, FileText, Sparkles,
+  CheckSquare, Square, Check, Eye, Heart, Image as ImageIcon, RefreshCw, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
   ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info, Link2,
 } from 'lucide-react';
