@@ -39,6 +39,7 @@ const STATE = {
   flowTabId: null, busyFlow: false, pausedUntil: 0,
   nlmLooping: false, nlmLoggedIn: false, nlmBusy: false, // nlmBusy: идёт генерация артефакта (вкладка занята)
   nlmAccount: null, // email аккаунта Google, под которым сейчас открыт NotebookLM (для плашки «переподключить»)
+  nlmTabId: null,   // id вкладки NotebookLM, где юзер РЕАЛЬНО работает (активная+залогинена) — все операции туда, чтобы не уехать в другой Google-аккаунт при мультиаккаунте
   hgBusy: false,
 };
 
@@ -302,9 +303,26 @@ async function saveReconLocal(entry) {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  GOOGLE NOTEBOOKLM  (Hotebook)
 // ═══════════════════════════════════════════════════════════════════════════════
+// authuser вкладки НЕЛЬЗЯ терять при навигации: голый https://notebooklm.google.com/ уводит
+// Chrome в аккаунт по умолчанию (authuser=0), а юзер может работать во втором Google (authuser=1).
+function nlmUrl(path, fromUrl) {
+  let au = null;
+  try { au = new URL(fromUrl || '').searchParams.get('authuser'); } catch { /* */ }
+  return 'https://notebooklm.google.com' + path + (au ? (path.includes('?') ? '&' : '?') + 'authuser=' + encodeURIComponent(au) : '');
+}
 async function findNotebookTab() {
+  // 1) Закреплённая вкладка активного юзера (где он реально залогинен и работает) — приоритет,
+  //    чтобы список блокнотов/генерация шли под ТЕМ аккаунтом, что перед глазами, а не под случайным.
+  if (STATE.nlmTabId != null) {
+    try {
+      const t = await chrome.tabs.get(STATE.nlmTabId);
+      if (t && /^https:\/\/notebooklm\.google\.com\//.test(t.url || '')) return t;
+    } catch { STATE.nlmTabId = null; }
+  }
   const tabs = await chrome.tabs.query({ url: 'https://notebooklm.google.com/*' });
-  return tabs.length ? tabs[0] : null;
+  if (!tabs.length) return null;
+  // 2) Активная вкладка NotebookLM (перед глазами) > любая фоновая.
+  return tabs.find((t) => t.active) || tabs[0];
 }
 /** Найти/открыть вкладку NotebookLM и (если задан notebookId) навести её на нужный блокнот. */
 async function ensureNotebookTab(notebookId, allowCreate = true) {
@@ -316,9 +334,9 @@ async function ensureNotebookTab(notebookId, allowCreate = true) {
     await waitForTabReady(tab.id);
     return tab.id;
   }
-  // Есть вкладка. Если нужен конкретный блокнот и мы не на нём — навести.
+  // Есть вкладка. Если нужен конкретный блокнот и мы не на нём — навести (сохраняя authuser).
   if (notebookId && !(tab.url || '').includes(`/notebook/${notebookId}`)) {
-    await chrome.tabs.update(tab.id, { url: `https://notebooklm.google.com/notebook/${notebookId}` });
+    await chrome.tabs.update(tab.id, { url: nlmUrl(`/notebook/${notebookId}`, tab.url) });
     await waitForTabReady(tab.id);
   } else {
     await waitForTabReady(tab.id, 20_000);
@@ -407,7 +425,7 @@ async function runNlmAction(action) {
     if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
     try {
       const t = await chrome.tabs.get(tabId);
-      if (/\/notebook\//.test(t.url || '')) { await chrome.tabs.update(tabId, { url: 'https://notebooklm.google.com/' }); await waitForTabReady(tabId); }
+      if (/\/notebook\//.test(t.url || '')) { await chrome.tabs.update(tabId, { url: nlmUrl('/', t.url) }); await waitForTabReady(tabId); }
     } catch { /* навигация best-effort */ }
     let result;
     try { result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), 60_000); }
@@ -649,10 +667,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       case 'nlm-presence':
         STATE.nlmLoggedIn = !!msg.loggedIn;
-        // Запоминаем, под каким Google-аккаунтом открыт NotebookLM (плашка приложения покажет его
-        // и предупредит о несовпадении с аккаунтом приложения). Пустое значение НЕ затираем —
-        // на промежуточных страницах NotebookLM email может не читаться.
-        if (msg.account && msg.account !== STATE.nlmAccount) { STATE.nlmAccount = msg.account; void saveState(); }
+        // Закрепляем рабочую вкладку: активная (перед глазами) залогиненная вкладка — источник истины.
+        // Все операции (список блокнотов, генерация) пойдут ИМЕННО на неё → не уедем в другой Google.
+        if (msg.loggedIn && sender && sender.tab && sender.tab.id != null) {
+          if (msg.active || STATE.nlmTabId == null) STATE.nlmTabId = sender.tab.id;
+          // Аккаунт активной вкладки — приоритетный (её видит юзер); фоновой — только если ещё пусто.
+          if (msg.account && (msg.active || !STATE.nlmAccount) && msg.account !== STATE.nlmAccount) { STATE.nlmAccount = msg.account; void saveState(); }
+        } else if (msg.account && msg.account !== STATE.nlmAccount) {
+          STATE.nlmAccount = msg.account; void saveState();
+        }
         if (STATE.token && !STATE.nlmLooping) void nlmLoop(); // юзер открыл NotebookLM → сразу крутим
         sendResponse({ ok: true });
         break;

@@ -145,7 +145,7 @@
 
   // ═══════════════════ 2. панель (Shadow DOM) ═══════════════════
   const ui = (() => {
-    let root, els = {}, reconCount = 0, reconSent = false, lastLoggedIn = null, lastAccount = null;
+    let root, els = {}, reconCount = 0, reconSent = false, lastLoggedIn = null, lastAccount = null, lastActive = null;
     function mount() {
       const host = document.createElement('div');
       host.id = 'tt-nlm-host';
@@ -298,10 +298,13 @@
       const acct = loggedIn ? accountEmail() : null;
       // Аккаунт на плашке расширения (NotebookLM всегда справа снизу).
       if (els.acct) { els.acct.textContent = acct || (loggedIn ? '…' : '—'); els.acct.title = acct || 'Аккаунт Google, под которым открыт NotebookLM'; }
-      // Сообщаем background о входе + аккаунте (влияет на поллинг + плашку в приложении).
-      if (loggedIn !== lastLoggedIn || (acct && acct !== lastAccount)) {
-        lastLoggedIn = loggedIn; if (acct) lastAccount = acct;
-        send({ type: 'nlm-presence', loggedIn, account: acct || undefined });
+      // Сообщаем background о входе + аккаунте + видима ли вкладка. active=true → это та вкладка,
+      // что перед глазами у юзера → background закрепляет ЕЁ как рабочую (иначе при мультиаккаунте
+      // Google операции/список блокнотов уезжали в другой аккаунт из случайной фоновой вкладки).
+      const active = !document.hidden;
+      if (loggedIn !== lastLoggedIn || (acct && acct !== lastAccount) || active !== lastActive) {
+        lastLoggedIn = loggedIn; if (acct) lastAccount = acct; lastActive = active;
+        send({ type: 'nlm-presence', loggedIn, account: acct || undefined, active });
       }
       if (!r.connected) { status('off', 'войдите в TrendTraffic'); toggleWire(false); armAutoRecon(false); return; }
       if (!loggedIn) { status('wait', 'войдите в Google'); toggleWire(false); armAutoRecon(false); return; }

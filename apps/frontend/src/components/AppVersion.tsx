@@ -2312,12 +2312,22 @@
  *          карточки как везде (~150px), а количество в ряду само подстраивается под ширину правой
  *          колонки (слева широкая панель фильтров → в ряд меньше, как просил юзер). Убран импорт
  *          Share2. Файл: TrendSearch.tsx. */
-export const APP_VERSION = '2.2.19';
+/* 2.2.20 — Hotebook, «блокноты не из того аккаунта» (мультиаккаунт Google): расширение брало
+ *          ПЕРВУЮ попавшуюся вкладку NotebookLM (findNotebookTab → tabs[0]) и голый URL
+ *          notebooklm.google.com/ (уводит в аккаунт по умолчанию authuser=0) → список блокнотов и
+ *          генерация уезжали в СТАРЫЙ Google, хотя юзер работает во втором (authuser=1). Фикс
+ *          (расширение 1.3.14): (1) content-notebook шлёт в nlm-presence флаг active (видима ли
+ *          вкладка); background закрепляет АКТИВНУЮ залогиненную вкладку как рабочую (STATE.nlmTabId)
+ *          и все операции ведёт на неё; (2) findNotebookTab: приоритет закреплённой/активной вкладке;
+ *          (3) nlmUrl() сохраняет authuser при любой навигации (список/блокнот) — больше не прыгаем в
+ *          другой Google. Только расширение (manifest+TT_EXT_VERSION+BRIDGE_VERSION 1.3.14+zip).
+ *          Файлы: ext/background.js, ext/content-notebook.js, ext/content-bridge.js, manifest, AppVersion. */
+export const APP_VERSION = '2.2.20';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.13';
+export const TT_EXT_VERSION = '1.3.14';
 
 export function AppVersion() {
   return (
