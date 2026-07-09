@@ -174,6 +174,11 @@ export async function completeAction(
     await pool.query(`UPDATE notebooklm_state SET sources=$3 WHERE tenant_id=$1 AND flow_id=$2`,
       [tenantId, row.flow_id, JSON.stringify(result.sources)]).catch(() => {});
   }
+  // История чата блокнота → кэш (чтобы открытый блокнот сразу показал прошлый диалог).
+  if (Array.isArray(result?.chat) && row.flow_id) {
+    await pool.query(`UPDATE notebooklm_state SET chat=$3 WHERE tenant_id=$1 AND flow_id=$2`,
+      [tenantId, row.flow_id, JSON.stringify(result.chat)]).catch(() => {});
+  }
 }
 
 // ── Клейм задач генерации (notebooklm_jobs) ──────────────────────────────────

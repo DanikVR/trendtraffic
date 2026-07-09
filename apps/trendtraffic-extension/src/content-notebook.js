@@ -431,7 +431,8 @@
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     // После навигации в блокнот панель источников рендерится не сразу — ждём появления строк (кап 7с).
     await waitFor(() => (queryAllDeep('.single-source-container').filter(visible).length ? true : null), 7000, 500);
-    return { ok: true, sources: listSourcesDom() };
+    // Заодно отдаём историю чата (чтобы открытый блокнот сразу показал прошлый диалог).
+    return { ok: true, sources: listSourcesDom(), chat: chatHistoryDom() };
   }
 
   // ── список ВСЕХ блокнотов (для карточек на стороне TrendTraffic) ──
@@ -496,25 +497,54 @@
       .find((e) => /arrow_forward/i.test(norm(e.textContent)) || norm(e.getAttribute('aria-label') || '') === 'отправить сообщение');
     if (sendBtn) clickEl(sendBtn);
     else inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    // Ждём новый ответ ассистента (.to-user-container) + «тихое окно» (стриминг закончился).
-    const ans = await waitFor(() => {
+    // Ждём появления нового ответа ассистента (.to-user-container).
+    const appeared = await waitFor(() => (chatAnswersDom().length > before ? true : null), 4 * 60_000, 800);
+    if (!appeared) return { ok: false, reason: 'timeout' };
+    // Стабилизация: КАЖДУЮ итерацию перезапрашиваем последний ответ и берём его АКТУАЛЬНЫЙ текст.
+    // (Баг v1.2.1: возвращали текст, пойманный в момент появления пузыря = плейсхолдер
+    // «Scanning your sources…» — стриминг ещё не начался.) Пропускаем плейсхолдер и ждём стабилизацию.
+    const LOADING = /scanning your sources|scanning sources|reading sources|analyzing sources/i;
+    let lastText = ''; let stable = 0; let finalText = '';
+    for (let i = 0; i < 110; i++) { // до ~77с ожидания стриминга
       const arr = chatAnswersDom();
-      return arr.length > before ? arr[arr.length - 1] : null;
-    }, 4 * 60_000, 800);
-    if (!ans) return { ok: false, reason: 'timeout' };
-    // Стабилизация: ждём, пока текст перестанет расти.
-    let last = ''; let stable = 0;
-    for (let i = 0; i < 40; i++) {
-      const cur = norm(ans.el ? ans.el.textContent : '');
-      if (cur === last) { stable++; if (stable >= 2) break; } else { stable = 0; last = cur; }
+      const cur = arr.length ? arr[arr.length - 1].text : '';
+      const ready = cur && cur.length > 2 && !LOADING.test(cur);
+      if (ready && cur === lastText) { stable++; if (stable >= 2) { finalText = cur; break; } } else { stable = 0; }
+      lastText = cur;
       await sleep(700);
     }
+    if (!finalText) finalText = (lastText && !LOADING.test(lastText)) ? lastText : '';
+    if (!finalText) return { ok: false, reason: 'ответ не дочитался' };
     ui.line('✓ ответ получен');
-    return { ok: true, answer: ans.text, citations: ans.citations || [] };
+    return { ok: true, answer: finalText, citations: [] };
   }
+  // Ответ ассистента = .to-user-container; текст берём из внутреннего .message-content (без кнопок keep/copy/оценки).
   function chatAnswersDom() {
     const nodes = queryAllDeep('.to-user-container, [class*="to-user-container" i]').filter(visible);
-    return nodes.map((el) => ({ el, text: clean(el.textContent), citations: [] })).filter((x) => x.text.length > 1);
+    return nodes.map((el) => {
+      const inner = el.querySelector('.message-content, [class*="message-content" i], [class*="to-user-message-inner" i]') || el;
+      return { el, text: clean(inner.textContent), citations: [] };
+    }).filter((x) => x.text.length > 1);
+  }
+  // История чата (для загрузки при открытии блокнота): пары user/assistant по порядку.
+  function chatHistoryDom() {
+    const out = [];
+    for (const cm of queryAllDeep('chat-message').filter(visible)) {
+      const u = cm.querySelector('.from-user-container, [class*="from-user-container" i]');
+      const b = cm.querySelector('.to-user-container, [class*="to-user-container" i]');
+      const inner = cm.querySelector('.message-content, .message-text-content, [class*="message-content" i]') || (u || b);
+      const text = clean(inner && inner.textContent).slice(0, 4000);
+      if (!text) continue;
+      out.push({ role: u ? 'user' : (b ? 'assistant' : '?'), text });
+      if (out.length > 60) break;
+    }
+    return out.filter((m) => m.role !== '?');
+  }
+  async function listChat() {
+    if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    // Дать чат-панели прогрузить историю после навигации.
+    await waitFor(() => (queryAllDeep('chat-message').filter(visible).length || queryAllDeep('.chat-panel-empty-state').filter(visible).length ? true : null), 8000, 500);
+    return { ok: true, chat: chatHistoryDom() };
   }
 
   // ── генерация артефакта ──
@@ -676,6 +706,7 @@
       case 'list-notebooks':  return listNotebooks();
       case 'add-source':      return addSource(a.payload || a);
       case 'list-sources':    return listSources();
+      case 'list-chat':       return listChat();
       case 'delete-source':   return deleteSource((a.payload && a.payload.sourceId) || a.sourceId);
       case 'chat':            return chat((a.payload && a.payload.question) || a.question);
       case 'generate':        return generate(a.gtype, { ...(a.params || {}), __name: (a.params && a.params.__name) || (a.payload && a.payload.name) });

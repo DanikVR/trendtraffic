@@ -1490,6 +1490,18 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const d = await r.json();
       setHbStatus(d.status || null);
       setHbSources(Array.isArray(d.sources) ? d.sources : []);
+      // История чата из NotebookLM (плоский список user/assistant) → пары {q,a}; грузим ТОЛЬКО если
+      // локальный чат сценария пуст (не затираем начатый диалог).
+      if (Array.isArray(d.chat) && d.chat.length) {
+        const paired: { q: string; a: string; ts: number; cites: number }[] = [];
+        let pendingQ: string | null = null;
+        for (const m of d.chat) {
+          if (m?.role === 'user') { if (pendingQ != null) paired.push({ q: pendingQ, a: '', ts: 0, cites: 0 }); pendingQ = String(m.text || ''); }
+          else if (m?.role === 'assistant') { paired.push({ q: pendingQ || '', a: String(m.text || ''), ts: 0, cites: 0 }); pendingQ = null; }
+        }
+        if (pendingQ != null) paired.push({ q: pendingQ, a: '', ts: 0, cites: 0 });
+        if (paired.length) hbMutate((h: any) => (Array.isArray(h.chat) && h.chat.length ? h : { ...h, chat: paired }));
+      }
       setHbJobs(Array.isArray(d.jobs) ? d.jobs : []);
       setHbCounters(d.counters && typeof d.counters === 'object' ? d.counters : {});
       if ((d.jobs || []).some((j: any) => j.status === 'queued' || j.status === 'running')) setTimeout(() => { void hbPollLoop(); }, 0);
