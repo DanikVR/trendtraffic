@@ -2231,7 +2231,14 @@
  *         Только ИИ». Грациозно деградирует на приоры Claude без ключа/при сбое. Файлы: tikhub_client
  *         (suggest/hashtag + extractSuggestions), providers (export REGION_LANG), audience.ts, router,
  *         AudienceTargetPanel. */
-export const APP_VERSION = '2.2.9';
+/* 2.2.10 — «Таргет на ЦА» — понятность формы по фидбэку: (1) «Язык ключевиков» подставляется
+ *          АВТОМАТИЧЕСКИ из выбранного региона (KZ→русский и т.п.), остаётся редактируемым;
+ *          (2) тумблер «Реальные запросы» больше НЕ стоит кнопкой вплотную к «Построить карту»
+ *          (путал: две кнопки рядом) — вынесен отдельной строкой-переключателем с пояснением
+ *          «берём реальные запросы TikTok/YouTube вместо догадок ИИ»; единственная кнопка-действие —
+ *          «Построить карту ЦА»; (3) под заголовком явные шаги «Шаг 1 — Построить карту, Шаг 2 —
+ *          Найти ролики». Только AudienceTargetPanel.tsx. */
+export const APP_VERSION = '2.2.10';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
