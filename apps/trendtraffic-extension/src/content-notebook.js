@@ -454,27 +454,55 @@
   async function listNotebooks() {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     ui.task('Читаю список блокнотов…');
-    const tiles = await waitFor(() => { const t = queryAllDeep('project-button, .project-button').filter(visible); return t.length ? t : null; }, 15_000, 600) || [];
-    const out = [];
-    const seen = new Set();
-    for (const pb of tiles) {
-      const a = pb.querySelector('a[href*="/notebook/"]');
-      const m = a ? /notebook\/([a-z0-9-]+)/i.exec(a.getAttribute('href') || '') : null;
-      const id = m ? m[1] : null;
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      const titleEl = pb.querySelector('.project-button-title') || pb.querySelector('[class*="title" i]');
-      const subEl = pb.querySelector('.project-button-subtitle');
-      const iconEl = pb.querySelector('.project-button-box-icon');
-      out.push({
-        id,
-        title: (clean(titleEl && titleEl.textContent) || 'Без названия').slice(0, 120),
-        subtitle: clean(subEl && subEl.textContent).slice(0, 60),
-        icon: clean(iconEl && iconEl.textContent).slice(0, 4),
-      });
-      if (out.length > 150) break;
+    const collected = new Map();
+    const scrapeVisible = () => {
+      for (const pb of queryAllDeep('project-button, .project-button').filter(visible)) {
+        const a = pb.querySelector('a[href*="/notebook/"]');
+        const m = a ? /notebook\/([a-z0-9-]+)/i.exec(a.getAttribute('href') || '') : null;
+        const id = m ? m[1] : null;
+        if (!id || collected.has(id)) continue;
+        const titleEl = pb.querySelector('.project-button-title') || pb.querySelector('[class*="title" i]');
+        const subEl = pb.querySelector('.project-button-subtitle');
+        const iconEl = pb.querySelector('.project-button-box-icon');
+        collected.set(id, {
+          id,
+          title: (clean(titleEl && titleEl.textContent) || 'Без названия').slice(0, 120),
+          subtitle: clean(subEl && subEl.textContent).slice(0, 60),
+          icon: clean(iconEl && iconEl.textContent).slice(0, 4),
+        });
+        if (collected.size > 250) break;
+      }
+    };
+    // Клик по вкладке-фильтру (mat-button-toggle) по точному тексту.
+    const clickFilter = async (label) => {
+      const t = queryAllDeep('mat-button-toggle, [role="tab"], button, [class*="toggle" i]').filter(visible)
+        .find((e) => norm(e.textContent) === label);
+      if (!t) return false;
+      clickEl(t);
+      await waitFor(() => (queryAllDeep('project-button, .project-button').filter(visible).length ? true : null), 6000, 400);
+      await sleep(700);
+      return true;
+    };
+    // ТОЛЬКО «Мои блокноты» + «Доступные мне» (исключаем «Рекомендуемые блокноты»).
+    const gotMine = await clickFilter('мои блокноты');
+    scrapeVisible();
+    const gotShared = await clickFilter('доступные мне');
+    if (gotShared) scrapeVisible();
+    // Фолбэк: вкладок нет / ничего не собрали → берём видимое, но выкидываем плитки из секции «Рекомендуемые».
+    if (!gotMine && !gotShared && !collected.size) {
+      for (const pb of queryAllDeep('project-button, .project-button').filter(visible)) {
+        let sec = ''; let n = pb;
+        for (let i = 0; i < 10 && n; i++) { if (/recommend|featured|рекоменд/i.test(String(n.className || ''))) { sec = 'rec'; break; } n = n.parentElement; }
+        if (sec === 'rec') continue;
+        const a = pb.querySelector('a[href*="/notebook/"]');
+        const m = a ? /notebook\/([a-z0-9-]+)/i.exec(a.getAttribute('href') || '') : null;
+        if (!m || collected.has(m[1])) continue;
+        const titleEl = pb.querySelector('.project-button-title');
+        collected.set(m[1], { id: m[1], title: (clean(titleEl && titleEl.textContent) || 'Без названия').slice(0, 120), subtitle: clean((pb.querySelector('.project-button-subtitle') || {}).textContent).slice(0, 60), icon: clean((pb.querySelector('.project-button-box-icon') || {}).textContent).slice(0, 4) });
+      }
     }
-    ui.line('✓ блокнотов найдено: ' + out.length);
+    const out = [...collected.values()].slice(0, 200);
+    ui.line('✓ блокнотов (мои+доступные): ' + out.length);
     return { ok: true, notebooks: out };
   }
   async function deleteSource(sourceId) {
@@ -493,11 +521,17 @@
 
   // Загрузочные плейсхолдеры NotebookLM в пузыре ответа («Scanning your sources…», «Assessing
   // relevance…», «Reading sources…» и т.п.) — их НЕ считаем ответом и НЕ переносим в историю.
-  const CHAT_LOADING = /scanning your sources|assessing relevance|reading (the )?sources|analyz(ing|e) (the )?sources|searching (the )?sources|generating (a )?response|^(scanning|assessing|reading|analyzing|searching|thinking)…?$/i;
+  const CHAT_LOADING = /scanning your sources|assessing relevance|reading (full )?(chapters|sources)|analyz(ing|e)|searching|generating|thinking|reviewing|processing|looking through/i;
   function isLoadingText(t) {
     const s = clean(t);
     if (!s || s.length < 2) return true;
-    return CHAT_LOADING.test(s);
+    // ВАЖНО: загрузочные фразы NotebookLM КОРОТКИЕ (<60). Длинный ответ, даже со словом
+    // «analyze»/«searching» внутри, — НЕ загрузка. Поэтому весь детект гейтим по длине.
+    if (s.length >= 60) return false;
+    if (CHAT_LOADING.test(s)) return true;
+    // Общая форма: короткая фраза, заканчивающаяся на «…»/«...» («Reading full chapters…» и пр.).
+    if (/(…|\.\.\.)\s*$/.test(s)) return true;
+    return false;
   }
   // Подсказки-продолжения (кликабельные чипы снизу чата) → массив строк.
   function chatSuggestionsDom() {

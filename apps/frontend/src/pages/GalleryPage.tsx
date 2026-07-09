@@ -738,6 +738,12 @@ export default function GalleryPage() {
     if (!q) return items;
     return items.filter((v) => v.title.toLowerCase().includes(q) || (v.subtitle || '').toLowerCase().includes(q));
   }, [items, query]);
+  // «Hotebook»: карточки блокнотов тоже фильтруются строкой поиска (по названию/подзаголовку).
+  const hbNotebooksFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return hbNotebooks;
+    return hbNotebooks.filter((nb) => (nb.title || '').toLowerCase().includes(q) || (nb.subtitle || '').toLowerCase().includes(q));
+  }, [hbNotebooks, query]);
 
   const toggleSelect = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
@@ -1284,7 +1290,7 @@ export default function GalleryPage() {
               );
             })}
             {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
-            {tab === 'hotebook' && hbNotebooks.map((nb) => (
+            {tab === 'hotebook' && hbNotebooksFiltered.map((nb) => (
               <AuroraCard key={`nb-${nb.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
                 <button type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
                   title={`Открыть блокнот: ${nb.title}`}
