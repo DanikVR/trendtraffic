@@ -41,6 +41,15 @@ function isNativePanelUrl(u?: string | null): boolean {
     || /(?:reddit\.com|redd\.it)\b/i.test(s);
 }
 
+/** Ссылка, которую можно анализировать (URL, а не ключевое слово). Если это НЕ ссылка —
+ *  НЕ отдаём её iframe-расширению, иначе оно показывает свой экран «Open a supported platform»
+ *  (его пользователь видеть не должен — вместо него наша подсказка/плитка недавних видео). */
+function isAnalyzableUrl(u?: string | null): boolean {
+  const s = (u || '').trim();
+  return /^https?:\/\//i.test(s)
+    || /\b(?:tiktok\.com|douyin\.com|instagram\.com|bilibili\.com|youtube\.com|youtu\.be|x\.com|twitter\.com|reddit\.com|redd\.it)\b/i.test(s);
+}
+
 /** Скачать blob как файл на устройство. */
 function downloadBlob(blob: Blob, filename: string) {
   const href = URL.createObjectURL(blob);
@@ -250,6 +259,13 @@ export default function SocialExtensionPage() {
 
   const handleAnalyzeInput = useCallback(() => {
     const v = url.trim(); if (!v) return;
+    // Не ссылка (ключевое слово) → не шлём расширению (иначе его экран «Open a supported
+    // platform»); подсказываем уйти на «Поиск».
+    if (!isAnalyzableUrl(v)) {
+      setGalleryNote({ ok: false, text: 'Это не ссылка. Вставьте URL видео/поста. Для поиска по слову — вкладка «Поиск».' });
+      setTimeout(() => setGalleryNote(null), 6000);
+      return;
+    }
     setQueue([]); apply(v);
   }, [url, apply]);
 
@@ -285,11 +301,13 @@ export default function SocialExtensionPage() {
   // Переключатель секций. Рендерим функцией, чтобы вставить в две точки: в режиме «Поиск»
   // он встроен в TrendSearch (под карточкой фильтров, перед лентой видео), в режиме
   // «Аналитика» — сверху, над строкой URL. Так строка вкладок ушла из самого верха страницы.
+  // Навигация разделов «Тренды» — ВЕРТИКАЛЬНАЯ колонка (слева), одинаково на всех
+  // вкладках (Поиск/Аналитика/Каналы), чтобы левая колонка всегда оставалась на месте.
   const renderTabs = () => (
-    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
+    <div className="flex flex-col gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
       {([['search', '🔥 Поиск'], ['analytics', '📊 Аналитика'], ['channels', '📺 Каналы']] as [Tab, string][]).map(([v, lbl]) => (
         <button key={v} onClick={() => setTab(v)}
-          className="px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
+          className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
           style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
           {lbl}
         </button>
@@ -326,125 +344,138 @@ export default function SocialExtensionPage() {
           <TrendSearch token={token} sectionTabs={renderTabs()} onAnalyze={(u) => analyzeOne(u)} onAnalyzeBulk={analyzeBulk} />
         </div>
 
-        {/* Аналитика (расширение) */}
-        <div className={tab === 'analytics' ? 'h-full flex flex-col gap-2' : 'hidden'}>
-          {renderTabs()}
-          {/* Очередь массового разбора */}
-          {queue.length > 1 && (
-            <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
-              <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Выбрано {queue.length}:</span>
-              {queue.map((q, i) => {
-                const active = q.url === appliedRef.current;
-                return (
-                  <button key={q.url + i} onClick={() => { setUrl(q.url); apply(q.url); }}
-                    className="text-[11px] px-2 py-1 rounded-lg font-600 transition-colors truncate max-w-[200px]"
-                    title={q.url}
-                    style={{ background: active ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: active ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${active ? 'rgba(99,102,241,1)' : 'var(--border-medium)'}` }}>
-                    {i + 1}. {shortUrl(q.url)}
+        {/* Аналитика (расширение) — слева колонка (навигация + строка URL), справа результат */}
+        <div className={tab === 'analytics' ? 'h-full overflow-y-auto pr-0.5' : 'hidden'}>
+          <div className="grid gap-4 items-start lg:grid-cols-[minmax(300px,360px)_1fr]">
+            {/* ЛЕВАЯ КОЛОНКА — навигация + ввод ссылки */}
+            <div className="space-y-2.5 lg:sticky lg:top-0">
+              {renderTabs()}
+              {/* Строка URL: эмулирует «открытый таб браузера» для расширения */}
+              <div className="relative">
+                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAnalyzeInput(); }}
+                  placeholder="https://tiktok.com/@user/video/…  ·  instagram.com/p/…  ·  x.com/…"
+                  className="w-full pl-11 pr-10 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(99,102,241,0.4)] transition-shadow"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                />
+                {url && (
+                  <button type="button" onClick={handleClear} title="Очистить"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center"
+                    style={{ color: 'var(--text-muted)' }}>
+                    <X size={15} />
                   </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Строка URL: эмулирует «открытый таб браузера» для расширения */}
-          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-            <div className="flex-1 relative">
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
-              <input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAnalyzeInput(); }}
-                placeholder="https://www.tiktok.com/@user/video/…  ·  instagram.com/p/…  ·  x.com/…"
-                className="w-full pl-11 pr-10 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(99,102,241,0.4)] transition-shadow"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
-              />
-              {url && (
-                <button type="button" onClick={handleClear} title="Очистить"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center"
-                  style={{ color: 'var(--text-muted)' }}>
-                  <X size={15} />
-                </button>
-              )}
-            </div>
-            <AuroraButton onClick={handleAnalyzeInput} disabled={!url.trim()} className="sm:!w-auto" icon={<Search size={16} />}>
-              Анализировать
-            </AuroraButton>
-            <AuroraButton variant="secondary" onClick={addToGallery} disabled={!appliedUrl || adding} className="sm:!w-auto"
-              icon={adding ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}>
-              Добавить в галерею
-            </AuroraButton>
-          </div>
-          {galleryNote && (
-            <div className="text-[12px] font-600 flex-shrink-0" style={{ color: galleryNote.ok ? '#10b981' : '#ef4444' }}>
-              {galleryNote.text}
-            </div>
-          )}
-
-          {isNativePanelUrl(appliedUrl) ? (
-            /* X / YouTube / Reddit: НАША нативная панель аналитики вместо iframe-расширения
-               (расширение их не открывает — показывает «Open a supported platform») */
-            <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl p-3 sm:p-4"
-                 style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)' }}>
-              <TrendAnalyticsPanel token={token} initialUrl={appliedUrl} hideSearch />
-            </div>
-          ) : (
-          /* Остальные площадки — рехостнутое расширение в iframe; пока ссылка не выбрана — плитка недавних видео поверх */
-          <div className="flex-1 min-h-0 rounded-2xl overflow-hidden relative"
-               style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)' }}>
-            <iframe
-              ref={iframeRef}
-              src="/social-ext/sidepanel.html"
-              title="Тренды — аналитика"
-              className="w-full h-full block"
-              style={{ border: 0 }}
-              allow="clipboard-read; clipboard-write"
-            />
-            {!appliedUrl && (
-              <div className="absolute inset-0 overflow-y-auto p-3" style={{ background: 'var(--bg-secondary)' }}>
-                {recent.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center gap-1 px-6">
-                    <Play size={26} style={{ color: 'var(--text-muted)' }} />
-                    <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Вставьте ссылку выше</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>или найдите видео во вкладке «Поиск горячих видео» — оно появится здесь.</p>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Видео из поиска — нажмите, чтобы проанализировать:</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                      {recent.map((v) => (
-                        <button key={v.id || v.externalId} type="button" onClick={() => analyzeOne(v.webUrl!)}
-                          title={v.description || v.author}
-                          className="relative rounded-lg overflow-hidden group transition-transform hover:-translate-y-0.5"
-                          style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                          {v.coverUrl ? (
-                            <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
-                              className="w-full h-full object-cover"
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center"><Play size={18} style={{ color: 'var(--text-muted)' }} /></div>
-                          )}
-                          <span className="absolute inset-x-0 bottom-0 h-8 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-                          <span className="absolute bottom-1 left-1 text-[10px] font-700 inline-flex items-center gap-0.5" style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.7)' }}>
-                            <Eye size={10} /> {fmt(v.stats?.play)}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
                 )}
               </div>
-            )}
+              <AuroraButton onClick={handleAnalyzeInput} disabled={!url.trim()} fullWidth icon={<Search size={16} />}>
+                Анализировать
+              </AuroraButton>
+              <AuroraButton variant="secondary" onClick={addToGallery} disabled={!appliedUrl || adding} fullWidth
+                icon={adding ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}>
+                Добавить в галерею
+              </AuroraButton>
+              {galleryNote && (
+                <div className="text-[12px] font-600" style={{ color: galleryNote.ok ? '#10b981' : '#ef4444' }}>
+                  {galleryNote.text}
+                </div>
+              )}
+              {/* Очередь массового разбора */}
+              {queue.length > 1 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Выбрано {queue.length}:</span>
+                  {queue.map((q, i) => {
+                    const active = q.url === appliedRef.current;
+                    return (
+                      <button key={q.url + i} onClick={() => { setUrl(q.url); apply(q.url); }}
+                        className="text-[11px] px-2 py-1.5 rounded-lg font-600 transition-colors truncate text-left"
+                        title={q.url}
+                        style={{ background: active ? 'rgba(99,102,241,0.14)' : 'var(--bg-tertiary)', color: active ? 'var(--brand)' : 'var(--text-secondary)', border: `1px solid ${active ? 'rgba(99,102,241,1)' : 'var(--border-medium)'}` }}>
+                        {i + 1}. {shortUrl(q.url)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ПРАВАЯ КОЛОНКА — результат разбора (наша панель / расширение / подсказка) */}
+            <div className="min-w-0 rounded-2xl overflow-hidden relative"
+                 style={{ border: '1px solid var(--border-medium)', background: 'var(--bg-secondary)', height: 'calc(100vh - 160px)', minHeight: 520 }}>
+              {isNativePanelUrl(appliedUrl) ? (
+                /* X / YouTube / Reddit: НАША нативная панель аналитики вместо iframe-расширения */
+                <div className="absolute inset-0 overflow-y-auto p-3 sm:p-4">
+                  <TrendAnalyticsPanel token={token} initialUrl={appliedUrl} hideSearch />
+                </div>
+              ) : (
+                <>
+                  <iframe
+                    ref={iframeRef}
+                    src="/social-ext/sidepanel.html"
+                    title="Тренды — аналитика"
+                    className="w-full h-full block"
+                    style={{ border: 0 }}
+                    allow="clipboard-read; clipboard-write"
+                  />
+                  {/* Пока НЕТ валидной ссылки — накрываем iframe своей плиткой (его экран
+                      «Open a supported platform» пользователь видеть не должен). */}
+                  {!isAnalyzableUrl(appliedUrl) && (
+                    <div className="absolute inset-0 overflow-y-auto p-3" style={{ background: 'var(--bg-secondary)' }}>
+                      {appliedUrl && (
+                        <p className="text-[12px] font-600 mb-2 rounded-lg p-2" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
+                          «{appliedUrl}» — это не ссылка на пост. Вставьте URL видео/аккаунта, либо выберите видео ниже. Для поиска по слову — вкладка «Поиск».
+                        </p>
+                      )}
+                      {recent.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center gap-1 px-6">
+                          <Play size={26} style={{ color: 'var(--text-muted)' }} />
+                          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Вставьте ссылку слева</p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>или найдите видео во вкладке «Поиск» — оно появится здесь.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Видео из поиска — нажмите, чтобы проанализировать:</p>
+                          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                            {recent.map((v) => (
+                              <button key={v.id || v.externalId} type="button" onClick={() => analyzeOne(v.webUrl!)}
+                                title={v.description || v.author}
+                                className="relative rounded-lg overflow-hidden group transition-transform hover:-translate-y-0.5"
+                                style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                                {v.coverUrl ? (
+                                  <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center"><Play size={18} style={{ color: 'var(--text-muted)' }} /></div>
+                                )}
+                                <span className="absolute inset-x-0 bottom-0 h-8 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+                                <span className="absolute bottom-1 left-1 text-[10px] font-700 inline-flex items-center gap-0.5" style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.7)' }}>
+                                  <Eye size={10} /> {fmt(v.stats?.play)}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-          )}
         </div>
 
         {/* Каналы — перенесены из левого меню в раздел «Тренды» (2026-07-08). Своя шапка
             «Каналы» внутри вкладки. Смонтирована лениво: рендерим только когда вкладка активна. */}
-        <div className={tab === 'channels' ? 'h-full flex flex-col gap-2' : 'hidden'}>
-          {renderTabs()}
-          <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
-            {tab === 'channels' && <ChannelsPage />}
+        <div className={tab === 'channels' ? 'h-full overflow-y-auto pr-0.5' : 'hidden'}>
+          <div className="grid gap-4 items-start lg:grid-cols-[minmax(300px,360px)_1fr]">
+            <div className="lg:sticky lg:top-0">
+              {renderTabs()}
+            </div>
+            <div className="min-w-0">
+              {tab === 'channels' && <ChannelsPage />}
+            </div>
           </div>
         </div>
       </div>

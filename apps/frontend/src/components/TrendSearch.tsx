@@ -429,13 +429,14 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
 
   return (
     <>
-      {sectionTabs}
-
-      {/* Раздел «Тренды» в стиле UGC-редактора: слева колонка блоков управления,
-          справа поле результатов-карточек. На мобильном — стопкой (сначала управление). */}
+      {/* Раздел «Тренды» в стиле UGC-редактора: слева колонка (навигация разделов +
+          блоки управления), справа поле результатов-карточек. На мобильном — стопкой. */}
       <div className="grid gap-4 items-start lg:grid-cols-[minmax(300px,360px)_1fr]">
-        {/* ── ЛЕВАЯ КОЛОНКА: блоки управления ── */}
+        {/* ── ЛЕВАЯ КОЛОНКА: навигация + блоки управления ── */}
         <div className="space-y-3 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto lg:pr-1">
+
+      {/* Навигация разделов (Поиск/Аналитика/Каналы) — вверху левой колонки */}
+      {sectionTabs}
 
       {/* Блок «Источник» */}
       <AuroraCard className="p-4 space-y-3">

@@ -2167,7 +2167,13 @@
  *         UGC-редактора: слева колонка блоков управления (Источник/Поиск/Автоанализ), справа —
  *         поле карточек-результатов; на мобильном стопкой. Файлы: GalleryPage, TrendSearch,
  *         FlowBlockOverlay, trends/dna.ts, trends/router.ts. */
-export const APP_VERSION = '2.2.1';
+/* 2.2.2 — Тренды по фидбэку: (1) экран расширения «Open a supported platform» больше НЕ
+ *         показывается: если в «Аналитику» ввели НЕ ссылку (ключевое слово) — не шлём в iframe,
+ *         показываем свою подсказку/плитку недавних видео (isAnalyzableUrl). (2) Навигация
+ *         Поиск/Аналитика/Каналы теперь ВЕРТИКАЛЬНОЙ колонкой СЛЕВА на всех трёх вкладках —
+ *         левая колонка остаётся на месте при переключении (Аналитика/Каналы тоже двухколоночные:
+ *         слева навигация+ввод ссылки, справа результат). Файлы: SocialExtensionPage, TrendSearch. */
+export const APP_VERSION = '2.2.2';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
