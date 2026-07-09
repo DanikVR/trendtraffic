@@ -20,6 +20,7 @@
 
   const OUT = 'tt-flow-ext';
   const IN = 'trendtraffic';
+  const EXT_VERSION = (() => { try { return chrome.runtime.getManifest().version; } catch { return null; } })();
   const TOKEN_KEY = 'vibevox_token'; // ключ JWT в localStorage SPA (см. store/useAppStore.ts)
   const toPage = (m) => window.postMessage({ source: OUT, ...m }, window.location.origin);
   const toBg = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(null); } };
@@ -59,13 +60,17 @@
       toPage({ type: 'disconnected' });
     } else if (d.type === 'status') {
       const r = await toBg({ type: 'tt-status' });
-      toPage({ type: 'status', ...(r || { connected: false }) });
+      // version в ответе — приложение видит, какая версия расширения РЕАЛЬНО установлена (плашка «Обновите»).
+      toPage({ type: 'status', version: EXT_VERSION, ...(r || { connected: false }) });
     } else if (d.type === 'push-to-flow') {
       // Из Галереи TrendTraffic: открыть Flow и залить туда медиа по URL.
       const r = await toBg({ type: 'push-to-flow', url: d.url, title: d.title, kind: d.kind });
       toPage({ type: 'push-to-flow-result', ok: !!(r && r.ok), error: r && (r.error || r.reason) });
     } else if (d.type === 'list-flow-projects') {
       // Вкладка «Google Flow» Галереи: снять готовые проекты Flow (карточки главной).
+      // Сразу шлём ACK (с версией) — приложение так БЫСТРО отличает свежее расширение (умеет проекты)
+      // от старого (нет обработчика → ACK не придёт → «Обновите»), не дожидаясь долгого скрейпа.
+      toPage({ type: 'flow-projects-ack', version: EXT_VERSION });
       const r = await toBg({ type: 'list-flow-projects' });
       toPage({ type: 'flow-projects', ok: !!(r && r.ok), projects: (r && r.projects) || [], loggedIn: !(r && r.loggedIn === false), error: r && (r.error || r.reason) });
     }

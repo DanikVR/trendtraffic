@@ -154,7 +154,8 @@
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       makeDraggable(host, els.hd, () => els.bd.classList.toggle('hide'));
-      els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro/flow', '_blank'));
+      // «Открыть TrendTraffic» → вкладка «Google Flow» Галереи (там — готовые проекты + генерация).
+      els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro/gallery?tab=flow', '_blank'));
       els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line('Пауза включена вручную')));
       sh.getElementById('toGal').addEventListener('click', () => sendToGallery());
       sh.getElementById('fromGal').addEventListener('click', () => openGalleryPicker());
@@ -239,7 +240,7 @@
         els.st.style.cursor = off ? 'pointer' : 'default';
         els.st.style.textDecoration = off ? 'underline' : 'none';
         els.st.title = off ? 'Открыть TrendTraffic и войти — подключится само' : '';
-        els.st.onclick = off ? () => window.open('https://app.trendtraffic.pro/flow', '_blank') : null;
+        els.st.onclick = off ? () => window.open('https://app.trendtraffic.pro/gallery?tab=flow', '_blank') : null;
       }
       // Бегущая лента горит, когда «работает» (подключено и не на паузе).
       if (els.wire) els.wire.classList.toggle('on', !!r.connected && !paused);
@@ -616,8 +617,19 @@
   // «проектором» (клик по карточке → новая вкладка на /project/<id>). Flow — SPA +
   // web-components, поэтому ищем ссылки на проекты сквозь shadow DOM.
   const cleanText = (s) => String(s || '').replace(/\s+/g, ' ').trim();
-  function listProjects() {
-    const links = queryAllDeep('a[href*="/tools/flow/project/"]').filter(visible);
+  async function listProjects() {
+    // Flow — тяжёлый SPA: карточки проектов появляются НЕ сразу после загрузки страницы.
+    // Ждём, пока в DOM (сквозь shadow) появятся ссылки на проекты — до ~18с, иначе вернём пусто.
+    const findLinks = () => queryAllDeep('a[href*="/tools/flow/project/"]').filter(visible);
+    let links = findLinks();
+    if (!links.length) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 18000) {
+        await sleep(700);
+        links = findLinks();
+        if (links.length) break;
+      }
+    }
     const out = [];
     const seen = new Set();
     for (const a of links) {
@@ -682,9 +694,9 @@
     if (!msg) return;
     if (msg.type === 'ping') { sendResponse({ ready: true }); return; }
     if (msg.type === 'list-projects') {
-      // Список готовых проектов Flow (для вкладки «Google Flow» Галереи). Синхронно.
-      try { sendResponse(listProjects()); } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
-      return;
+      // Список готовых проектов Flow (для вкладки «Google Flow» Галереи). Async: ждём отрисовки карточек.
+      listProjects().then(sendResponse).catch((e) => sendResponse({ ok: false, error: String(e && e.message || e) }));
+      return true; // ответ асинхронный
     }
     if (msg.type === 'run-task') {
       runTask(msg.task).then(sendResponse).catch((e) => sendResponse({ ok: false, reason: String(e && e.message || e) }));

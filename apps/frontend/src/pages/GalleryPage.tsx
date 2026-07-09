@@ -213,7 +213,11 @@ export default function GalleryPage() {
   const [flowProjects, setFlowProjects] = useState<FlowProject[]>([]);
   const [flowProjLoading, setFlowProjLoading] = useState(false);
   const [flowProjError, setFlowProjError] = useState<string | null>(null);
-  const flowProjTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Расширение установлено, но НЕ ответило ACK на list-flow-projects → оно СТАРОЕ (нет обработчика
+  // проектов) → надо обновить. Так ловим устаревшую версию, даже если она не сообщает свой номер.
+  const [extProbeStale, setExtProbeStale] = useState(false);
+  const flowProjTimer = useRef<ReturnType<typeof setTimeout> | null>(null); // таймаут ждущего результата
+  const flowAckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);   // таймаут быстрого ACK (свежее ли расширение)
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
       if (ev.source !== window) return;
@@ -227,9 +231,16 @@ export default function GalleryPage() {
         setFlowMsg(d.ok ? { ok: true, text: 'Отправлено в Google Flow — переключитесь на вкладку Flow.' } : { ok: false, text: 'Не удалось: ' + (d.error || 'ошибка') });
         setTimeout(() => setFlowMsg(null), 6000);
       }
+      // Быстрый ACK от расширения = оно СВЕЖЕЕ и умеет проекты. Снимаем «устарело», ждём результат.
+      if (d.type === 'flow-projects-ack') {
+        if (flowAckTimer.current) { clearTimeout(flowAckTimer.current); flowAckTimer.current = null; }
+        setExtProbeStale(false);
+        if (d.version) setExtVersion(String(d.version));
+      }
       if (d.type === 'flow-projects') {
+        if (flowAckTimer.current) { clearTimeout(flowAckTimer.current); flowAckTimer.current = null; }
         if (flowProjTimer.current) { clearTimeout(flowProjTimer.current); flowProjTimer.current = null; }
-        setFlowProjLoading(false);
+        setFlowProjLoading(false); setExtProbeStale(false);
         if (d.ok) { setFlowProjects(Array.isArray(d.projects) ? d.projects : []); setFlowProjError(null); }
         else setFlowProjError(d.error || (d.loggedIn === false ? 'Войдите в Google на labs.google/flow — тогда покажутся ваши проекты.' : 'Не удалось получить проекты Flow.'));
       }
@@ -241,15 +252,29 @@ export default function GalleryPage() {
   }, []);
 
   // Запросить у расширения список готовых проектов Flow (ответ прилетит сообщением 'flow-projects').
+  // Двойной таймер: (1) ACK ~6с — свежее ли расширение (умеет проекты); (2) результат ~70с — сам список.
   const loadFlowProjects = () => {
     if (extStatus === 'absent') { setFlowProjects([]); setFlowProjError('Расширение не найдено — установите его (кнопка «Скачать» в плашке выше).'); return; }
     setFlowProjLoading(true); setFlowProjError(null);
     window.postMessage({ source: 'trendtraffic', type: 'list-flow-projects' }, window.location.origin);
+    if (flowAckTimer.current) clearTimeout(flowAckTimer.current);
     if (flowProjTimer.current) clearTimeout(flowProjTimer.current);
+    // Нет ACK за 6с, а расширение «present» → оно СТАРОЕ (без обработчика проектов) → «Обновите».
+    flowAckTimer.current = setTimeout(() => {
+      setExtStatus((s) => {
+        if (s === 'present') {
+          setExtProbeStale(true);
+          setFlowProjLoading(false);
+          setFlowProjError(`Расширение устарело и не умеет загружать проекты. Обновите его до v${TT_EXT_VERSION}: нажмите «Скачать» и переустановите (chrome://extensions → удалить старое → «Загрузить распакованное»).`);
+        }
+        return s;
+      });
+    }, 6_000);
+    // Свежее расширение ответит ACK, но скрейп Flow долгий (открыть вкладку + дождаться карточек) — ждём до 70с.
     flowProjTimer.current = setTimeout(() => {
       setFlowProjLoading(false);
-      setFlowProjError((e) => e || 'Проекты не пришли. Откройте labs.google/flow, войдите в Google и нажмите «Обновить».');
-    }, 40_000);
+      setFlowProjError((e) => e || 'Flow долго отвечает. Откройте labs.google/flow, войдите в Google и нажмите «Обновить».');
+    }, 70_000);
   };
   // Автозагрузка проектов при заходе на вкладку «Google Flow» (как только известен статус расширения).
   useEffect(() => {
@@ -445,7 +470,7 @@ export default function GalleryPage() {
   //  • если установлена старая версия расширения — бейдж «Обновите».
   const renderExtBanner = () => {
     const installed = extStatus === 'present';
-    const outdated = installed && !!extVersion && verLess(extVersion, TT_EXT_VERSION);
+    const outdated = installed && ((!!extVersion && verLess(extVersion, TT_EXT_VERSION)) || extProbeStale);
     // Кликабельный chrome://extensions: браузер не даёт открыть chrome:// из веб-страницы,
     // поэтому по клику копируем в буфер и подсказываем вставить в адресную строку.
     const ChromeLink = () => (

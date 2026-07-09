@@ -2207,12 +2207,20 @@
  *         chrome://extensions (копирование)/labs.google/flow/notebooklm.google.com, бейдж «Обновите»
  *         при устаревшей версии расширения. Расширение → v1.3.0 (list-projects). Файлы: GalleryPage,
  *         flow-ext/router.ts, trendtraffic-extension (content-flow/background/content-bridge/manifest). */
-export const APP_VERSION = '2.2.6';
+/* 2.2.7 — Google Flow, доводки по фидбэку: (1) проекты не грузились у тех, кто на СТАРОМ расширении —
+ *         теперь приложение это ловит: расширение шлёт быстрый ACK на list-flow-projects; нет ACK за 6с
+ *         при «present» → показываем «Расширение устарело, обновите до vX» + бейдж «Обновите» (раньше
+ *         молча висел спиннер/таймаут). Версия расширения теперь приходит и в ответе `status`. (2) Скрейп
+ *         проектов ЖДЁТ отрисовки карточек Flow (SPA рендерит их не сразу) — listProjects стал async
+ *         (poll до ~18с). (3) Кнопка «Открыть TrendTraffic» в панели расширения на Flow ведёт на вкладку
+ *         «Google Flow» Галереи (gallery?tab=flow), а не на легаси /flow. Расширение → v1.3.2. Файлы:
+ *         GalleryPage, trendtraffic-extension (content-flow/content-bridge/manifest). */
+export const APP_VERSION = '2.2.7';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.1';
+export const TT_EXT_VERSION = '1.3.2';
 
 export function AppVersion() {
   return (
