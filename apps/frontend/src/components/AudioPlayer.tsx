@@ -82,27 +82,33 @@ export function AudioPlayer({ src, className, autoLoad = true }: { src: string; 
 
   return (
     <div className={className}
-      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 12,
+      style={{ display: 'flex', flexDirection: 'column', gap: 7, width: '100%', padding: '8px 10px', borderRadius: 12,
         background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
       <audio ref={ref} src={src} preload={autoLoad ? 'metadata' : 'none'} />
-      <button type="button" onClick={toggle} title={playing ? 'Пауза' : 'Воспроизвести'}
-        className="flex-shrink-0" style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
-        {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
-      </button>
-      <span className="text-[11px] tabular-nums flex-shrink-0" style={{ color: 'var(--text-secondary)', minWidth: 34, textAlign: 'right' }}>{fmt(cur)}</span>
-      <div ref={trackRef} onPointerDown={onTrackDown} onPointerMove={onTrackMove} onPointerUp={onTrackUp}
-        style={{ position: 'relative', flex: 1, height: 6, borderRadius: 999, background: 'var(--bg-primary)', cursor: 'pointer', touchAction: 'none' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: 'var(--brand)', borderRadius: 999 }} />
-        <div style={{ position: 'absolute', left: `${pct}%`, top: '50%', width: 12, height: 12, marginLeft: -6, marginTop: -6,
-          borderRadius: '50%', background: 'var(--brand)', border: '2px solid var(--bg-secondary)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+      {/* Ряд 1: play/pause + текущее/полное время + mute */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button type="button" onClick={toggle} title={playing ? 'Пауза' : 'Воспроизвести'}
+          className="flex-shrink-0" style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
+          {playing ? <Pause size={15} /> : <Play size={15} className="ml-0.5" />}
+        </button>
+        <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmt(cur)}</span>
+        <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>{fmt(dur)}</span>
+        <button type="button" onClick={toggleMute} title={muted ? 'Включить звук' : 'Выключить звук'}
+          className="flex-shrink-0" style={{ width: 26, height: 26, borderRadius: 8, border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: 'var(--text-muted)' }}>
+          {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        </button>
       </div>
-      <span className="text-[11px] tabular-nums flex-shrink-0" style={{ color: 'var(--text-muted)', minWidth: 34 }}>{fmt(dur)}</span>
-      <button type="button" onClick={toggleMute} title={muted ? 'Включить звук' : 'Выключить звук'}
-        className="flex-shrink-0" style={{ width: 28, height: 28, borderRadius: 8, border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: 'var(--text-muted)' }}>
-        {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-      </button>
+      {/* Ряд 2: ПОЛЗУНОК перемотки на всю ширину (крупная зона захвата — легко таскать). */}
+      <div ref={trackRef} onPointerDown={onTrackDown} onPointerMove={onTrackMove} onPointerUp={onTrackUp}
+        style={{ position: 'relative', width: '100%', height: 16, display: 'flex', alignItems: 'center', cursor: 'pointer', touchAction: 'none' }}>
+        <div style={{ position: 'relative', width: '100%', height: 6, borderRadius: 999, background: 'var(--bg-primary)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: 'var(--brand)', borderRadius: 999 }} />
+          <div style={{ position: 'absolute', left: `${pct}%`, top: '50%', width: 14, height: 14, marginLeft: -7, marginTop: -7,
+            borderRadius: '50%', background: 'var(--brand)', border: '2px solid var(--bg-secondary)', boxShadow: '0 1px 4px rgba(0,0,0,0.35)' }} />
+        </div>
+      </div>
     </div>
   );
 }

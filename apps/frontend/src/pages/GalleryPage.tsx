@@ -1095,16 +1095,12 @@ export default function GalleryPage() {
     ({ background: sel ? 'var(--brand)' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.75)', cursor: 'pointer', backdropFilter: 'blur(3px)' });
   // Наложенный бейдж (платформа/тип/статус) — верх-право.
   const ovBadge = 'absolute top-1.5 right-1.5 z-20 text-[9px] font-700 px-1.5 py-0.5 rounded-md';
-  // Заглушка-фон для карточек БЕЗ изображения (стиль референса-скрин3, но в бренд-индиго,
-  // тема-зависимо): бренд-свечение снизу поверх карточного фона. Higgsfield-арт (когда будут
-  // кредиты) ляжет вместо этого фона — разметка та же.
-  const cardGlow = (): React.CSSProperties => ({
-    background: 'radial-gradient(115% 82% at 50% 84%, color-mix(in srgb, var(--brand) 34%, transparent), transparent 60%), var(--bg-secondary)',
-  });
-  // Крупная светящаяся иконка-«фигура» в верхней части карточки-заглушки.
-  const placeholderIcon = (icon: React.ReactNode) => (
-    <span aria-hidden className="absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none z-[1]"
-      style={{ height: '60%', color: 'var(--brand)', filter: 'drop-shadow(0 0 16px color-mix(in srgb, var(--brand) 65%, transparent))' }}>{icon}</span>
+  // Арт-фон для карточек БЕЗ изображения (аудио/notebook/UGC) — сгенерён в OpenAI gpt-image-1:
+  // неон-каркас в индиго на чёрном (стиль референса-скрин3). Портрет, object-cover; фигура снизу,
+  // сверху тёмное поле → поверх кладём скрим + название, читается в обеих темах.
+  const placeholderArt = (name: 'audio' | 'notebook' | 'ugc') => (
+    <img src={`/placeholders/${name}.webp`} alt="" aria-hidden loading="lazy"
+      className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" style={{ background: '#0B0B12' }} />
   );
 
   return (
@@ -1282,10 +1278,10 @@ export default function GalleryPage() {
             {renderAddTile(tab)}
             {/* «Google Flow»: готовые проекты Flow карточками — клик открывает проект «проектором» (новая вкладка). */}
             {tab === 'flow' && flowProjectsFiltered.map((p) => (
-              <div key={`proj-${p.id}`} className={cardCls()} style={p.thumb ? CARD_STYLE : { ...CARD_STYLE, ...cardGlow() }}>
+              <div key={`proj-${p.id}`} className={cardCls()} style={CARD_STYLE}>
                 <a href={p.url} target="_blank" rel="noreferrer" title="Открыть проект в Google Flow (проектор)" className="absolute inset-0 w-full h-full block">
-                  {/* Плейсхолдер-изображение под обложкой — остаётся, если thumb не загрузился (CDN Google за авторизацией). */}
-                  {placeholderIcon(<Clapperboard size={30} />)}
+                  {/* Арт-заглушка под обложкой — остаётся, если thumb не загрузился (CDN Google за авторизацией). */}
+                  {!p.thumb && placeholderArt('ugc')}
                   {p.thumb && (
                     <img src={p.thumb} alt="" loading="lazy" referrerPolicy="no-referrer"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -1317,15 +1313,13 @@ export default function GalleryPage() {
               const selK = `tpl:${k.id}`;
               const isSel = selected.has(selK);
               return (
-                <div key={`tpl-${k.id}`} className={cardCls(isSel)} style={preview ? CARD_STYLE : { ...CARD_STYLE, ...cardGlow() }}>
-                  {!preview && placeholderIcon(<LayoutTemplate size={30} />)}
+                <div key={`tpl-${k.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
+                  {!preview && placeholderArt('ugc')}
                   <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии" className="absolute inset-0 w-full h-full">
-                    {preview ? (
+                    {preview && (
                       isVid
                         ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
                         : <img src={preview} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="absolute inset-x-0 bottom-[30%] flex items-center justify-center text-[10px] font-700" style={{ color: 'var(--brand)' }}>UGC-ролик</span>
                     )}
                   </button>
                   {/* Чекбокс выбора */}
@@ -1408,10 +1402,12 @@ export default function GalleryPage() {
             {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
             {tab === 'hotebook' && hbNotebooksFiltered.map((nb) => (
               <button key={`nb-${nb.id}`} type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
-                title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={{ ...CARD_STYLE, ...cardGlow() }}>
-                {hbNbOpening === nb.id
-                  ? <Loader2 size={30} className="animate-spin" style={{ color: 'var(--brand)' }} />
-                  : <span style={{ fontSize: 40, lineHeight: 1 }}>{nb.icon || '📔'}</span>}
+                title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
+                {placeholderArt('notebook')}
+                {/* Иконка блокнота поверх заглушки (в блокнотах нет изображений — по фидбэку). */}
+                <span className="z-[2]" style={{ fontSize: 34, lineHeight: 1, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))' }}>
+                  {hbNbOpening === nb.id ? <Loader2 size={28} className="animate-spin" style={{ color: '#fff' }} /> : (nb.icon || '📔')}
+                </span>
                 <span className={ovBadge} style={{ left: '0.375rem', right: 'auto', background: '#22d3ee', color: '#04222a' }}>NotebookLM</span>
                 {/* Бейдж: сколько готовых артефактов сделано в этом блокноте (наведение — по типам). */}
                 {(() => {
@@ -1453,14 +1449,15 @@ export default function GalleryPage() {
               // карточке, БЕЗ открытия нового экрана (по фидбэку).
               if (v.mediaType === 'audio') {
                 return (
-                  <div key={v.id} className={cardCls(isSel)} style={{ ...CARD_STYLE, ...cardGlow() }}>
-                    {placeholderIcon(<Music size={30} />)}
+                  <div key={v.id} className={cardCls(isSel)} style={CARD_STYLE}>
+                    {placeholderArt('audio')}
+                    {cardScrim()}
                     <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
                       className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                       {isSel ? <Check size={14} /> : null}
                     </button>
                     <div className="absolute inset-x-0 bottom-0 p-2 z-10 flex flex-col gap-1.5">
-                      <div className="text-[11px] font-700 leading-tight line-clamp-2" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
+                      <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
                       <AudioPlayer src={v.fileUrl} />
                       <div className="flex items-center gap-1">
                         <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл"

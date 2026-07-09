@@ -2285,7 +2285,14 @@
  *          и отдаёт в tt-status; content-notebook — скрейп email аккаунта Google + строка «Аккаунт»
  *          на виджете NotebookLM. Файлы: GalleryPage.tsx, AppVersion, ext/content-bridge.js,
  *          ext/background.js, ext/content-notebook.js, manifest.json. */
-export const APP_VERSION = '2.2.16';
+/* 2.2.17 — Галерея, доводки по фидбэку: (1) аудио-плеер на карточке — ПОЛЗУНОК перемотки вынесен
+ *          отдельной строкой на всю ширину (крупная зона захвата 16px) → минуты проигрыша можно
+ *          тащить (раньше дорожка была сплющена в узкой карточке). (2) Плейсхолдеры карточек без
+ *          изображения (Аудио / Notebook / UGC-без-превью / Flow-без-обложки) — теперь РЕАЛЬНЫЙ АРТ,
+ *          сгенерённый в OpenAI gpt-image-1 (неон-каркас в индиго на чёрном, стиль референса):
+ *          /placeholders/audio|notebook|ugc.webp, object-cover + скрим + название. Файлы:
+ *          AudioPlayer.tsx, GalleryPage.tsx, public/placeholders/*.webp. */
+export const APP_VERSION = '2.2.17';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
