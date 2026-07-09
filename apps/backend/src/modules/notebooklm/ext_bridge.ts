@@ -87,6 +87,9 @@ export async function ensureExtTables(): Promise<void> {
       notebook_open BOOLEAN DEFAULT false,
       updated_at TIMESTAMPTZ DEFAULT now()
     )`);
+  // Кэш ПОСЛЕДНЕГО удачного списка блокнотов (per-tenant). Отдаём его, когда живой скрейп занят
+  // генерацией / офлайн / пуст → лента не «пропадает» на перезагрузке и во время генерации.
+  await pool.query(`ALTER TABLE notebooklm_ext_presence ADD COLUMN IF NOT EXISTS notebooks_cache JSONB`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notebooklm_ext_recon (
       tenant_id TEXT PRIMARY KEY,
@@ -184,6 +187,20 @@ export async function completeAction(
     await pool.query(`UPDATE notebooklm_state SET suggestions=$3 WHERE tenant_id=$1 AND flow_id=$2`,
       [tenantId, row.flow_id, JSON.stringify(result.suggestions)]).catch(() => {});
   }
+  // Список ВСЕХ блокнотов (list-notebooks) → per-tenant кэш: лента переживёт офлайн/занятость/reload.
+  if (row.kind === 'list-notebooks' && Array.isArray(result?.notebooks) && result.notebooks.length > 0) {
+    await pool.query(`UPDATE notebooklm_ext_presence SET notebooks_cache=$2, updated_at=now() WHERE tenant_id=$1`,
+      [tenantId, JSON.stringify(result.notebooks)]).catch(() => {});
+  }
+}
+
+/** Последний удачный список блокнотов (кэш) — фолбэк, когда живой скрейп недоступен/пуст. */
+export async function getCachedNotebooks(tenantId: string): Promise<any[]> {
+  try {
+    const r = await pool.query(`SELECT notebooks_cache FROM notebooklm_ext_presence WHERE tenant_id=$1`, [tenantId]);
+    const c = r.rows[0]?.notebooks_cache;
+    return Array.isArray(c) ? c : [];
+  } catch { return []; }
 }
 
 // ── Клейм задач генерации (notebooklm_jobs) ──────────────────────────────────
@@ -233,7 +250,10 @@ export async function getConnectionStatus(tenantId: string): Promise<any> {
   try {
     const r = await pool.query(`SELECT last_poll_at, logged_in FROM notebooklm_ext_presence WHERE tenant_id=$1`, [tenantId]);
     const row = r.rows[0];
-    const online = !!row?.last_poll_at && (Date.now() - new Date(row.last_poll_at).getTime() < 60_000);
+    // 150с (было 60с): во время генерации основной /poll занят задачей и не пингует присутствие,
+    // но лёгкий /presence-хартбит по будильнику (~30с) держит last_poll_at свежим. Порог с запасом
+    // на несколько пропущенных хартбитов, чтобы статус не мигал в ext_offline и списки не «пропадали».
+    const online = !!row?.last_poll_at && (Date.now() - new Date(row.last_poll_at).getTime() < 150_000);
     const checkedAt = new Date().toISOString();
     if (!online) return { configured: true, ok: false, errorKind: 'ext_offline', email: null, error: null, checkedAt };
     if (!row.logged_in) return { configured: true, ok: false, errorKind: 'ext_login', email: null, error: null, checkedAt };

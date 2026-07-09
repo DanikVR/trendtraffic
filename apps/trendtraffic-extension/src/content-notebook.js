@@ -928,7 +928,15 @@
       case 'list-chat':       return listChat();
       case 'delete-source':   return deleteSource((a.payload && a.payload.sourceId) || a.sourceId);
       case 'chat':            return chat((a.payload && a.payload.question) || a.question);
-      case 'generate':        return generate(a.gtype, { ...(a.params || {}), __name: (a.params && a.params.__name) || (a.payload && a.payload.name) });
+      case 'generate': {
+        const gr = await generate(a.gtype, { ...(a.params || {}), __name: (a.params && a.params.__name) || (a.payload && a.payload.name) });
+        // Резервный ингест: если поймали байты (dataUrl) — будим SW отдельным сообщением с taskId,
+        // чтобы файл залился, даже если SW умер за время генерации и awaited-ответ пропал (idem-ingest).
+        if (gr && gr.ok && gr.dataUrl && a.taskId) {
+          try { send({ type: 'nlm-artifact-ready', taskId: a.taskId, dataUrl: gr.dataUrl, mime: gr.mime || '', fileName: gr.fileName || null }); } catch { /* */ }
+        }
+        return gr;
+      }
       default: return { ok: false, reason: 'неизвестное действие: ' + a.kind };
     }
   }

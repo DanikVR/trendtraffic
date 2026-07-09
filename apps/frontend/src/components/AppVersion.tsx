@@ -2376,11 +2376,26 @@
  *          механизма скачивания в лог виджета (следующий тест покажет, что реально делает «Скачать»).
  *          Расширение 1.3.16. Файлы: GalleryPage.tsx, ext/injected-nlm.js, ext/content-notebook.js,
  *          manifest, content-bridge, AppVersion. */
-export const APP_VERSION = '2.2.26';
+/* 2.2.27 — Hotebook/Flow, СИСТЕМНЫЙ разбор «расширение пропадает + аудио не сохраняется» (2 агента
+ *          прошли весь код). Корень: MV3 service-worker. Основной /poll блокируется на 6–12 мин
+ *          генерацией → не пингует присутствие → через 60с статус ext_offline → списки Flow И Hotebook
+ *          «пропадают»; SW ещё и убивается Chrome посреди генерации → пойманное аудио некуда вернуть.
+ *          Фиксы (ext 1.3.17 + backend): (1) ЛЁГКИЙ хартбит присутствия по будильнику каждые 30с
+ *          (POST /notebooklm-ext/presence) НЕЗАВИСИМО от занятого /poll; порог офлайна 60с→150с.
+ *          (2) СЕРВЕРНЫЙ кэш списка блокнотов (notebooklm_ext_presence.notebooks_cache): /notebooks
+ *          отдаёт последний удачный список, когда живой скрейп занят/офлайн/пуст → лента не пропадает
+ *          на reload и во время генерации. (3) Flow: пустой скрейп больше НЕ затирает показанные
+ *          проекты (keep-old, как у блокнотов). (4) Персистим guard генерации (nlmBusy+deadline+
+ *          nlmTabId+activeTaskId) → после смерти SW list-notebooks НЕ уводит вкладку с генерации.
+ *          (5) РЕЗЕРВНЫЙ ингест: контент-скрипт будит SW сообщением nlm-artifact-ready с байтами →
+ *          аудио зальётся, даже если SW умер (idem /ingest). Файлы: notebooklm/router.ts,
+ *          notebooklm/ext_bridge.ts, notebooklm-ext/router.ts, ext/background.js,
+ *          ext/content-notebook.js, GalleryPage.tsx, manifest, content-bridge, AppVersion. */
+export const APP_VERSION = '2.2.27';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.16';
+export const TT_EXT_VERSION = '1.3.17';
 
 export function AppVersion() {
   return (

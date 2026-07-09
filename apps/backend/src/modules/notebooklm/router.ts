@@ -30,7 +30,7 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import pool from '../../db/index.js';
 import {
   GEN_TYPES, type GenType,
-  enqueueAction, waitAction, getConnectionStatus,
+  enqueueAction, waitAction, getConnectionStatus, getCachedNotebooks,
 } from './ext_bridge.js';
 
 /** Папка Галереи для артефактов Hotebook (вкладка «Hotebook»). Реэкспорт для совместимости. */
@@ -210,35 +210,41 @@ router.get('/status', async (req: AuthedRequest, res: Response) => {
 router.get('/notebooks', async (req: AuthedRequest, res: Response) => {
   const tenantId = req.tenantId!;
   const st = await getConnectionStatus(tenantId);
-  if (!st.ok) return res.json({ notebooks: [], status: st });
-  try {
-    const actionId = await enqueueAction(tenantId, null, null, 'list-notebooks', {});
-    const r = await waitAction(tenantId, actionId, 60_000);
-    if (!r.ok) return res.json({ notebooks: [], status: st, error: r.error || null });
-    const notebooks = Array.isArray(r.result?.notebooks) ? r.result.notebooks : [];
-    // Обогащаем: сколько готовых артефактов сделано в КАЖДОМ блокноте (по типам) — для бейджей на карточке.
-    const counts: Record<string, Record<string, number>> = {};
+  let notebooks: any[] = [];
+  let cached = false;
+  let error: string | null = null;
+  // Живой скрейп — только если расширение на связи. Иначе сразу к кэшу.
+  if (st.ok) {
     try {
-      const cr = await pool.query(
-        `SELECT s.notebook_id AS nb, j.type AS t, count(*)::int AS n
-         FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
-         WHERE s.tenant_id=$1 AND j.status='done' GROUP BY s.notebook_id, j.type`, [tenantId]);
-      for (const row of cr.rows) { (counts[row.nb] ||= {})[row.t] = Number(row.n) || 0; }
-    } catch { /* пусто */ }
-    // Активные генерации по блокноту (для спиннера на карточке).
-    const gen: Record<string, number> = {};
-    try {
-      const gr = await pool.query(
-        `SELECT s.notebook_id AS nb, count(*)::int AS n
-         FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
-         WHERE s.tenant_id=$1 AND j.status IN ('queued','running') GROUP BY s.notebook_id`, [tenantId]);
-      for (const row of gr.rows) gen[row.nb] = Number(row.n) || 0;
-    } catch { /* пусто */ }
-    for (const nb of notebooks) { nb.artifactCounts = counts[nb.id] || {}; nb.generating = gen[nb.id] || 0; }
-    res.json({ notebooks, status: st });
-  } catch (e: any) {
-    res.json({ notebooks: [], status: st, error: String(e?.message || e) });
+      const actionId = await enqueueAction(tenantId, null, null, 'list-notebooks', {});
+      const r = await waitAction(tenantId, actionId, 60_000);
+      if (r.ok) notebooks = Array.isArray(r.result?.notebooks) ? r.result.notebooks : [];
+      else error = r.error || null;
+    } catch (e: any) { error = String(e?.message || e); }
   }
+  // Скрейп недоступен/пуст (офлайн, занят генерацией, таймаут) → ПОСЛЕДНИЙ УДАЧНЫЙ кэш (не пустой экран).
+  if (notebooks.length === 0) {
+    const c = await getCachedNotebooks(tenantId);
+    if (c.length) { notebooks = c; cached = true; }
+  }
+  // Обогащаем (для scraped И для кэша): готовые артефакты по типам + активные генерации (бейджи/спиннер).
+  const counts: Record<string, Record<string, number>> = {};
+  const gen: Record<string, number> = {};
+  try {
+    const cr = await pool.query(
+      `SELECT s.notebook_id AS nb, j.type AS t, count(*)::int AS n
+       FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
+       WHERE s.tenant_id=$1 AND j.status='done' GROUP BY s.notebook_id, j.type`, [tenantId]);
+    for (const row of cr.rows) { (counts[row.nb] ||= {})[row.t] = Number(row.n) || 0; }
+    const gr = await pool.query(
+      `SELECT s.notebook_id AS nb, count(*)::int AS n
+       FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
+       WHERE s.tenant_id=$1 AND j.status IN ('queued','running') GROUP BY s.notebook_id`, [tenantId]);
+    for (const row of gr.rows) gen[row.nb] = Number(row.n) || 0;
+  } catch { /* пусто */ }
+  for (const nb of notebooks) { nb.artifactCounts = counts[nb.id] || {}; nb.generating = gen[nb.id] || 0; }
+  // Если отдаём кэш — для UI статус «ок» (карточки есть, плашку «Откройте notebooklm…» не показываем).
+  res.json({ notebooks, status: cached ? { ...st, ok: true } : st, cached, error });
 });
 
 /**

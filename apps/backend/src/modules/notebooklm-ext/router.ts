@@ -140,6 +140,17 @@ router.get('/poll', pollLimiter, async (req: AuthedRequest, res: Response) => {
   }
 });
 
+/**
+ * Расширение: ЛЁГКИЙ пинг присутствия (не занимает /poll задачей). Основной long-poll во время
+ * генерации артефакта заблокирован на 6–12 минут (runNlmTask) и не обновляет присутствие → статус
+ * ошибочно уходит в ext_offline и списки «пропадают». Этот эндпоинт зовётся по будильнику каждые
+ * ~30с НЕЗАВИСИМО от генерации и держит last_poll_at свежим.
+ */
+router.post('/presence', async (req: AuthedRequest, res: Response) => {
+  void setPresence(req.tenantId!, req.body?.loggedIn !== false, req.body?.open === true);
+  res.json({ ok: true });
+});
+
 /** Расширение: результат синхронного действия → разблокирует long-poll публичного роутера. */
 router.post('/action-result', async (req: AuthedRequest, res: Response) => {
   const actionId = String(req.body?.actionId || '');
@@ -181,9 +192,12 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
   const payload = (req.body?.payload !== undefined && req.body?.payload !== null) ? req.body.payload : null;
   if (!taskId) return res.status(400).json({ error: 'нет taskId' });
 
-  const t = await pool.query(`SELECT id, type, title, flow_id FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2`, [taskId, req.tenantId]);
+  const t = await pool.query(`SELECT id, type, title, flow_id, status, asset_id, file_url FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2`, [taskId, req.tenantId]);
   if (!t.rowCount) return res.status(404).json({ error: 'джоба не найдена' });
   const job = t.rows[0];
+  // Идемпотентность: артефакт может прийти ДВАЖДЫ (осн. путь + резервный wake-месседж контента,
+  // если SW умер во время генерации). Уже готовую джобу повторно НЕ заливаем.
+  if (job.status === 'done' && job.asset_id) return res.json({ ok: true, assetId: job.asset_id, fileUrl: job.file_url || null, dedup: true });
   // Имя файла = «Название» джобы ИЛИ имя блокнота (по требованию юзера — как называется блокнот).
   let nameBase: string | null = job.title || null;
   if (!nameBase && job.flow_id) {

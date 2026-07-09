@@ -17,7 +17,8 @@
  */
 
 const POLL_ALARM = 'tt-poll';
-const POLL_PERIOD_MIN = 1;          // как часто будильник пере-запускает циклы
+const POLL_PERIOD_MIN = 0.5;        // будильник каждые 30с: будит SW + шлёт хартбит присутствия
+                                    // (во время долгой генерации основной /poll занят задачей и не пингует)
 
 // ── Flow (не менять — прод) ───────────────────────────────────────────────────
 const PACE_MIN_MS = 25_000;         // мин. пауза между генерациями Flow (человекоподобно)
@@ -38,6 +39,8 @@ const STATE = {
   token: null, apiBase: null,
   flowTabId: null, busyFlow: false, pausedUntil: 0,
   nlmLooping: false, nlmLoggedIn: false, nlmBusy: false, // nlmBusy: идёт генерация артефакта (вкладка занята)
+  busyUntil: 0,     // до какого времени держим nlmBusy (переживает рестарт SW; авто-истекает, чтобы не залипнуть)
+  activeTaskId: null, // id текущей джобы генерации (для резервного wake-ингеста, если SW умрёт)
   nlmAccount: null, // email аккаунта Google, под которым сейчас открыт NotebookLM (для плашки «переподключить»)
   nlmTabId: null,   // id вкладки NotebookLM, где юзер РЕАЛЬНО работает (активная+залогинена) — все операции туда, чтобы не уехать в другой Google-аккаунт при мультиаккаунте
   hgBusy: false,
@@ -49,14 +52,23 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log('[tt-ext bg]', ...a);
 
 async function loadState() {
-  const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil', 'nlmAccount']);
+  const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil', 'nlmAccount', 'nlmBusy', 'busyUntil', 'activeTaskId', 'nlmTabId']);
   STATE.token = s.token || null;
   STATE.apiBase = s.apiBase || null;
   STATE.pausedUntil = s.pausedUntil || 0;
   STATE.nlmAccount = s.nlmAccount || null;
+  // Восстанавливаем guard генерации, чтобы list-notebooks после рестарта SW НЕ увёл вкладку с
+  // идущей генерации. Протухший busy (генерация точно кончилась/зависла) — сбрасываем, чтоб не залипнуть.
+  STATE.busyUntil = s.busyUntil || 0;
+  STATE.nlmBusy = !!s.nlmBusy && Date.now() < STATE.busyUntil;
+  STATE.activeTaskId = s.activeTaskId || null;
+  STATE.nlmTabId = (typeof s.nlmTabId === 'number') ? s.nlmTabId : null;
 }
 async function saveState() {
-  await chrome.storage.local.set({ token: STATE.token, apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil, nlmAccount: STATE.nlmAccount });
+  await chrome.storage.local.set({
+    token: STATE.token, apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil, nlmAccount: STATE.nlmAccount,
+    nlmBusy: STATE.nlmBusy, busyUntil: STATE.busyUntil, activeTaskId: STATE.activeTaskId, nlmTabId: STATE.nlmTabId,
+  });
 }
 
 function api(path) {
@@ -420,7 +432,7 @@ async function runNlmAction(action) {
   if (action.kind === 'list-notebooks') {
     // ВАЖНО: во время генерации артефакта вкладка занята блокнотом. НЕ навигируем её на главную —
     // иначе прервём генерацию И вернём 0 блокнотов. Отвечаем «занят», фронт оставит прежний список.
-    if (STATE.nlmBusy) { await nlmActionResult(action.id, false, null, 'busy-generating'); return; }
+    if (STATE.nlmBusy && Date.now() < STATE.busyUntil) { await nlmActionResult(action.id, false, null, 'busy-generating'); return; }
     const tabId = await ensureNotebookTab(null, true);
     if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
     try {
@@ -483,10 +495,18 @@ function armDownloadCapture(timeoutMs) {
 }
 
 // nlmBusy на всё время генерации: пока идёт — list-notebooks не навигирует вкладку (не рвёт генерацию).
+// ПЕРСИСТИМ busy+deadline+taskId: если MV3 убьёт SW во время 6–12-мин генерации, после рестарта
+// list-notebooks НЕ уведёт вкладку (guard переживает рестарт), а deadline не даст залипнуть навсегда.
 async function runNlmTask(task) {
   STATE.nlmBusy = true;
+  STATE.busyUntil = Date.now() + NLM_TASK_TIMEOUT_MS + 60_000;
+  STATE.activeTaskId = task.id;
+  await saveState();
   try { await _runNlmTask(task); }
-  finally { STATE.nlmBusy = false; }
+  finally {
+    STATE.nlmBusy = false; STATE.busyUntil = 0; STATE.activeTaskId = null;
+    await saveState();
+  }
 }
 async function _runNlmTask(task) {
   const tabId = await ensureNotebookTab(task.notebookId || null, true);
@@ -495,7 +515,7 @@ async function _runNlmTask(task) {
   // Аудио/видео качаются через меню «Скачать» → ставим перехватчик ДО генерации.
   const isMedia = (task.type === 'audio' || task.type === 'video');
   const dl = isMedia ? armDownloadCapture(NLM_TASK_TIMEOUT_MS) : null;
-  const action = { kind: 'generate', gtype: task.type, params: task.params || {}, notebookId: task.notebookId };
+  const action = { kind: 'generate', gtype: task.type, params: task.params || {}, notebookId: task.notebookId, taskId: task.id };
   const runOnce = () => withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), NLM_TASK_TIMEOUT_MS);
   let result;
   try {
@@ -554,6 +574,17 @@ async function nlmIngest(task, result) {
     method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body),
   });
   if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+}
+
+// Резервный ингест по wake-сообщению контент-скрипта (пережил смерть SW во время генерации).
+// STATE может быть пуст на холодном старте SW — подгружаем токен перед заливкой.
+async function ingestArtifactFromContent(msg) {
+  if (!STATE.token || !STATE.apiBase) await loadState();
+  if (!STATE.token || !STATE.apiBase || !msg || !msg.taskId || !msg.dataUrl) return;
+  try {
+    await nlmIngest({ id: msg.taskId }, { dataUrl: msg.dataUrl, mime: msg.mime || '', fileName: msg.fileName || null });
+    log('wake-ингест артефакта ок', msg.taskId);
+  } catch (e) { log('wake-ингест не удался:', e && e.message); }
 }
 
 /** Снимок разведки вёрстки NotebookLM → бэкенд. */
@@ -640,9 +671,24 @@ async function sendReconHeygen(payload) {
   } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 
+// Лёгкий пинг присутствия — НЕЗАВИСИМО от основного /poll (тот на время генерации занят задачей
+// на 6–12 мин и не пингует → статус ошибочно уходил в ext_offline, списки «пропадали»). Будильник
+// каждые 30с будит SW и шлёт этот пинг, поэтому last_poll_at остаётся свежим даже во время генерации.
+async function nlmHeartbeat() {
+  if (!STATE.token || !STATE.apiBase) return;
+  try {
+    const nlmTab = await findNotebookTab();
+    await fetch(api('/api/notebooklm-ext/presence'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ loggedIn: STATE.nlmLoggedIn, open: !!nlmTab }),
+    });
+  } catch { /* best-effort */ }
+}
+
 // ---------- главный цикл ----------
 function tick() {
   if (!STATE.token || !STATE.apiBase) return;
+  void nlmHeartbeat(); // держим присутствие свежим даже когда основной цикл занят генерацией
   void tickFlow();    // Flow: одна задача за тик + пейсинг
   void nlmLoop();     // NotebookLM: свой long-poll цикл (no-op, если уже крутится)
   void tickHeygen();  // HeyGen: одна голова за тик + пейсинг
@@ -680,9 +726,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // Закрепляем рабочую вкладку: активная (перед глазами) залогиненная вкладка — источник истины.
         // Все операции (список блокнотов, генерация) пойдут ИМЕННО на неё → не уедем в другой Google.
         if (msg.loggedIn && sender && sender.tab && sender.tab.id != null) {
+          const prevTab = STATE.nlmTabId, prevAcc = STATE.nlmAccount;
           if (msg.active || STATE.nlmTabId == null) STATE.nlmTabId = sender.tab.id;
           // Аккаунт активной вкладки — приоритетный (её видит юзер); фоновой — только если ещё пусто.
-          if (msg.account && (msg.active || !STATE.nlmAccount) && msg.account !== STATE.nlmAccount) { STATE.nlmAccount = msg.account; void saveState(); }
+          if (msg.account && (msg.active || !STATE.nlmAccount) && msg.account !== STATE.nlmAccount) STATE.nlmAccount = msg.account;
+          // Персистим рабочую вкладку/аккаунт ТОЛЬКО при изменении (чтобы после смерти SW операции
+          // шли в ту же вкладку) — не на каждый пинг присутствия.
+          if (STATE.nlmTabId !== prevTab || STATE.nlmAccount !== prevAcc) void saveState();
         } else if (msg.account && msg.account !== STATE.nlmAccount) {
           STATE.nlmAccount = msg.account; void saveState();
         }
@@ -692,6 +742,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'nlm-create-done':
         resolveNlmEvent('create-done', msg.actionId, { notebookId: msg.notebookId, title: msg.title });
         sendResponse({ ok: true });
+        break;
+      case 'nlm-artifact-ready':
+        // РЕЗЕРВНЫЙ путь ингеста: контент-скрипт (живёт вместе с вкладкой) поймал байты артефакта и
+        // будит SW этим сообщением. Если SW умирал во время 6–12-мин генерации и осн. путь (awaited
+        // sendMessage) пропал — файл всё равно зальётся. /ingest идемпотентен (done → dedup).
+        sendResponse({ ok: true });
+        void ingestArtifactFromContent(msg);
         break;
       case 'nlm-send-recon': sendResponse(await sendReconNlm(msg.payload || {})); break;
 

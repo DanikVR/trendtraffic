@@ -256,7 +256,14 @@ export default function GalleryPage() {
         if (flowAckTimer.current) { clearTimeout(flowAckTimer.current); flowAckTimer.current = null; }
         if (flowProjTimer.current) { clearTimeout(flowProjTimer.current); flowProjTimer.current = null; }
         setFlowProjLoading(false); setExtProbeStale(false);
-        if (d.ok) { setFlowProjects(Array.isArray(d.projects) ? d.projects : []); setFlowProjError(null); }
+        if (d.ok) {
+          const proj = Array.isArray(d.projects) ? d.projects : [];
+          // ПУСТОЙ скрейп НЕ затирает уже показанные проекты (частый ложный 0: карточки Flow не
+          // успели отрисоваться в фоновой вкладке / расширение занято). Показываем 0 только если и
+          // раньше было пусто. Иначе — держим прежний список (как у блокнотов Hotebook).
+          setFlowProjects((prev) => (proj.length === 0 && prev.length > 0 ? prev : proj));
+          setFlowProjError(null);
+        }
         else setFlowProjError(d.error || (d.loggedIn === false ? 'Войдите в Google на labs.google/flow — тогда покажутся ваши проекты.' : 'Не удалось получить проекты Flow.'));
       }
     };
