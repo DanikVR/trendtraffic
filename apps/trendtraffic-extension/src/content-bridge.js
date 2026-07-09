@@ -21,8 +21,13 @@
   const OUT = 'tt-flow-ext';
   const IN = 'trendtraffic';
   const EXT_VERSION = (() => { try { return chrome.runtime.getManifest().version; } catch { return null; } })();
+  // ВЕРСИЯ САМОГО ЭТОГО СКРИПТА (зашита в код, НЕ из getManifest). Меняется вместе с
+  // релизом. Приложение сверяет её с версией манифеста (EXT_VERSION): если скрипт СТАРШЕ
+  // манифеста — значит после обновления расширения вкладку не перезагрузили и тут крутится
+  // УСТАРЕВШИЙ content-script (у него нет новых обработчиков, напр. reconnect) → просим F5.
+  const BRIDGE_VERSION = '1.3.13';
   const TOKEN_KEY = 'vibevox_token'; // ключ JWT в localStorage SPA (см. store/useAppStore.ts)
-  const toPage = (m) => window.postMessage({ source: OUT, ...m }, window.location.origin);
+  const toPage = (m) => window.postMessage({ source: OUT, bridgeVersion: BRIDGE_VERSION, ...m }, window.location.origin);
   const toBg = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(null); } };
   const readToken = () => { try { return localStorage.getItem(TOKEN_KEY) || null; } catch { return null; } };
 

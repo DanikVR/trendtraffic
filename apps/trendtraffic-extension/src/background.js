@@ -674,5 +674,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 chrome.alarms.onAlarm.addListener((a) => { if (a.name === POLL_ALARM) tick(); });
 chrome.runtime.onStartup.addListener(() => loadState().then(tick));
-chrome.runtime.onInstalled.addListener(() => loadState().then(tick));
+chrome.runtime.onInstalled.addListener((details) => {
+  loadState().then(tick);
+  // После УСТАНОВКИ/ОБНОВЛЕНИЯ переинжектим свежие content-scripts в уже открытые вкладки
+  // приложения: иначе там до ручного F5 крутится СТАРЫЙ content-bridge (без новых кнопок —
+  // напр. «Переподключить» молчит). NotebookLM/Flow НЕ трогаем — там reload может оборвать
+  // идущую генерацию; их скрипты обновятся при следующем открытии.
+  if (details && (details.reason === 'update' || details.reason === 'install')) {
+    const appUrls = ['https://app.trendtraffic.pro/*', 'http://localhost/*', 'http://127.0.0.1/*'];
+    try {
+      chrome.tabs.query({ url: appUrls }, (tabs) => {
+        for (const t of (tabs || [])) { try { chrome.tabs.reload(t.id, { bypassCache: false }); } catch { /* */ } }
+      });
+    } catch { /* tabs может быть недоступен — не критично */ }
+  }
+});
 loadState().then(tick);

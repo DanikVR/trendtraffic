@@ -2292,12 +2292,25 @@
  *          сгенерённый в OpenAI gpt-image-1 (неон-каркас в индиго на чёрном, стиль референса):
  *          /placeholders/audio|notebook|ugc.webp, object-cover + скрим + название. Файлы:
  *          AudioPlayer.tsx, GalleryPage.tsx, public/placeholders/*.webp. */
-export const APP_VERSION = '2.2.17';
+/* 2.2.18 — Расширение, «Переподключить не срабатывает» + смена аккаунта, доводки: (1) КОРЕНЬ —
+ *          после обновления расширения на уже открытой вкладке крутится СТАРЫЙ content-script
+ *          (без обработчика reconnect), хотя бейдж версии (getManifest) и чипы аккаунтов (их даёт
+ *          background) выглядят свежими. Теперь: content-bridge шлёт свою зашитую BRIDGE_VERSION;
+ *          приложение сверяет с версией манифеста и при расхождении показывает жёлтую плашку
+ *          «Обновите вкладку» с кнопкой reload (и прячет «Переподключить», пока скрипт старый).
+ *          (2) background на onInstalled(update/install) сам перезагружает открытые вкладки
+ *          приложения (NotebookLM/Flow не трогает — reload оборвал бы генерацию). (3) Честный текст:
+ *          Google-аккаунт NotebookLM и аккаунт приложения — РАЗНЫЕ системы, совпадать не обязаны;
+ *          «Переподключить» чинит связь с приложением, а Google меняется в самом NotebookLM (аватар).
+ *          Убрал алармистский «⚠ разные аккаунты». Расширение 1.3.13 (manifest+TT_EXT_VERSION+
+ *          BRIDGE_VERSION+zip). Файлы: GalleryPage.tsx, AppVersion, ext/content-bridge.js,
+ *          ext/background.js, manifest.json. */
+export const APP_VERSION = '2.2.18';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.12';
+export const TT_EXT_VERSION = '1.3.13';
 
 export function AppVersion() {
   return (

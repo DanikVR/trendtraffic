@@ -209,6 +209,7 @@ export default function GalleryPage() {
   const [extVersion, setExtVersion] = useState<string | null>(null); // версия установленного расширения (из present)
   const [extAccount, setExtAccount] = useState<string | null>(null); // аккаунт Google, под которым у расширения открыт NotebookLM
   const [extReconnecting, setExtReconnecting] = useState(false);     // идёт «Переподключить»
+  const [extBridgeVersion, setExtBridgeVersion] = useState<string | null>(null); // версия РАБОТАЮЩЕГО на вкладке content-script (для детекта «обнови вкладку»)
   const [flowMsg, setFlowMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [extPopup, setExtPopup] = useState(false);
   const [extOpen, setExtOpen] = useState(false); // раскрытие инлайн-инструкции «Как установить» в плашке расширения
@@ -231,6 +232,9 @@ export default function GalleryPage() {
       if (d.type === 'present' || d.type === 'status' || d.type === 'connected') {
         setExtStatus('present');
         if (d.version) setExtVersion(String(d.version));
+        // bridgeVersion шлёт ТОЛЬКО свежий content-bridge (≥1.3.13). Если его нет, а расширение
+        // «present» — на вкладке крутится старый скрипт (обновили расширение, но не нажали F5).
+        setExtBridgeVersion(d.bridgeVersion ? String(d.bridgeVersion) : null);
       }
       // Ответ tt-status несёт аккаунт NotebookLM (какой Google открыт у расширения).
       if (d.type === 'status') {
@@ -550,6 +554,9 @@ export default function GalleryPage() {
     const nlmEmail = (extAccount || '').toLowerCase();
     const mismatch = installed && !!appEmail && !!nlmEmail && appEmail !== nlmEmail;
     const outdated = installed && ((!!extVersion && verLess(extVersion, TT_EXT_VERSION)) || extProbeStale);
+    // Старый content-script на вкладке: расширение обновлено (манифест новее), но эта вкладка
+    // с прошлого сеанса держит УСТАРЕВШИЙ скрипт (нет reconnect и пр.) → нужен F5.
+    const bridgeStale = installed && !!extVersion && (!extBridgeVersion || verLess(extBridgeVersion, extVersion));
     // Кликабельный chrome://extensions: браузер не даёт открыть chrome:// из веб-страницы,
     // поэтому по клику копируем в буфер и подсказываем вставить в адресную строку.
     const ChromeLink = () => (
@@ -600,13 +607,13 @@ export default function GalleryPage() {
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md"
-                  title={extAccount ? 'Аккаунт Google, под которым у расширения открыт NotebookLM' : 'Откройте notebooklm.google.com в этом браузере и войдите в нужный Google'}
-                  style={{ background: 'var(--bg-tertiary)', color: mismatch ? '#f59e0b' : 'var(--text-secondary)', border: `1px solid ${mismatch ? 'rgba(245,158,11,0.5)' : 'var(--border-medium)'}` }}>
+                  title={extAccount ? 'Google-аккаунт, под которым у расширения открыт NotebookLM — под ним идёт генерация и тратятся его лимиты' : 'Откройте notebooklm.google.com в этом браузере и войдите в нужный Google'}
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
                   <Clapperboard size={11} style={{ color: '#22d3ee' }} /> NotebookLM: {extAccount || 'не открыт'}
                 </span>
                 {mismatch && (
-                  <span className="text-[11px] font-700" style={{ color: '#f59e0b' }}>
-                    ⚠ разные аккаунты — «Переподключить» привяжет к приложению; в NotebookLM выберите тот же Google.
+                  <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>
+                    · генерация идёт под Google-аккаунтом NotebookLM и его лимитами. Совпадать с аккаунтом приложения не обязательно; сменить Google можно в самом NotebookLM (аватар справа сверху).
                   </span>
                 )}
               </div>
@@ -618,11 +625,11 @@ export default function GalleryPage() {
               style={{ background: outdated ? '#f59e0b' : '#6366f1', color: '#fff', textDecoration: 'none' }}>
               <Download size={15} /> {outdated ? 'Обновить' : 'Скачать'}
             </a>
-            {installed && (
+            {installed && !bridgeStale && (
               <button type="button" onClick={reconnectExt} disabled={extReconnecting}
-                title="Переподключить расширение к текущему аккаунту приложения (после смены учётной записи)"
+                title="Переподключить связь расширения с текущим аккаунтом приложения (после смены учётной записи в приложении). Google-аккаунт NotebookLM это НЕ меняет."
                 className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3 py-2 rounded-xl"
-                style={{ background: mismatch ? '#f59e0b' : 'var(--bg-tertiary)', color: mismatch ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: extReconnecting ? 'default' : 'pointer', opacity: extReconnecting ? 0.7 : 1 }}>
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: extReconnecting ? 'default' : 'pointer', opacity: extReconnecting ? 0.7 : 1 }}>
                 <RefreshCw size={14} className={extReconnecting ? 'animate-spin' : ''} /> {extReconnecting ? 'Подключаю…' : 'Переподключить'}
               </button>
             )}
@@ -633,6 +640,21 @@ export default function GalleryPage() {
             </button>
           </div>
         </div>
+        {bridgeStale && (
+          <div className="px-3 pb-3">
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)' }}>
+              <RefreshCw size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
+              <span className="text-[12.5px] font-600 flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
+                Расширение обновилось до v{extVersion}, но на этой вкладке ещё работает старая версия{extBridgeVersion ? ` (v${extBridgeVersion})` : ''} — поэтому «Переподключить» не срабатывает. Обновите вкладку.
+              </span>
+              <button type="button" onClick={() => window.location.reload()}
+                className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3 py-1.5 rounded-lg flex-shrink-0"
+                style={{ background: '#f59e0b', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                <RefreshCw size={14} /> Обновить вкладку
+              </button>
+            </div>
+          </div>
+        )}
         {extOpen && (
           <div className="px-3 pb-3">
             <div className="text-[12.5px] leading-relaxed rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
