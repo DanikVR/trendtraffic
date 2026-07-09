@@ -1117,12 +1117,16 @@ export default function GalleryPage() {
     ({ background: sel ? 'var(--brand)' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.75)', cursor: 'pointer', backdropFilter: 'blur(3px)' });
   // Наложенный бейдж (платформа/тип/статус) — верх-право.
   const ovBadge = 'absolute top-1.5 right-1.5 z-20 text-[9px] font-700 px-1.5 py-0.5 rounded-md';
-  // Арт-фон для карточек БЕЗ изображения (аудио/notebook/UGC) — сгенерён в OpenAI gpt-image-1:
-  // неон-каркас в индиго на чёрном (стиль референса-скрин3). Портрет, object-cover; фигура снизу,
-  // сверху тёмное поле → поверх кладём скрим + название, читается в обеих темах.
+  // Заглушка для карточек БЕЗ изображения (аудио/notebook/UGC): тема-зависимый фон карточки
+  // (светлый в светлой теме, тёмный в тёмной — на токенах) + МИНИМАЛЬНЫЙ ПРОЗРАЧНЫЙ арт-объект
+  // поверх (один soft-glass предмет в индиго, сгенерён в OpenAI gpt-image-1 на прозрачном фоне).
+  // Прозрачность → объект читается в обеих темах, а фон берётся от темы. Аккуратно, не ляписто.
   const placeholderArt = (name: 'audio' | 'notebook' | 'ugc') => (
-    <img src={`/placeholders/${name}.webp`} alt="" aria-hidden loading="lazy"
-      className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" style={{ background: '#0B0B12' }} />
+    <>
+      <span aria-hidden className="absolute inset-0 z-0" style={{ background: 'linear-gradient(158deg, var(--bg-tertiary), var(--bg-secondary))' }} />
+      <img src={`/placeholders/${name}.webp`} alt="" aria-hidden loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover z-[1] pointer-events-none" />
+    </>
   );
 
   return (
@@ -1426,10 +1430,8 @@ export default function GalleryPage() {
               <button key={`nb-${nb.id}`} type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
                 title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
                 {placeholderArt('notebook')}
-                {/* Иконка блокнота поверх заглушки (в блокнотах нет изображений — по фидбэку). */}
-                <span className="z-[2]" style={{ fontSize: 34, lineHeight: 1, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))' }}>
-                  {hbNbOpening === nb.id ? <Loader2 size={28} className="animate-spin" style={{ color: '#fff' }} /> : (nb.icon || '📔')}
-                </span>
+                {/* Спиннер по центру, пока блокнот открывается (иконку даёт placeholderArt). */}
+                {hbNbOpening === nb.id && <Loader2 size={26} className="animate-spin z-[2]" style={{ color: 'var(--brand)' }} />}
                 <span className={ovBadge} style={{ left: '0.375rem', right: 'auto', background: '#22d3ee', color: '#04222a' }}>NotebookLM</span>
                 {/* Бейдж: сколько готовых артефактов сделано в этом блокноте (наведение — по типам). */}
                 {(() => {

@@ -2322,7 +2322,16 @@
  *          (3) nlmUrl() сохраняет authuser при любой навигации (список/блокнот) — больше не прыгаем в
  *          другой Google. Только расширение (manifest+TT_EXT_VERSION+BRIDGE_VERSION 1.3.14+zip).
  *          Файлы: ext/background.js, ext/content-notebook.js, ext/content-bridge.js, manifest, AppVersion. */
-export const APP_VERSION = '2.2.20';
+/* 2.2.21 — Заглушки карточек без изображения — МИНИМАЛЬНЫЙ АРТ + ТЕМА-ЗАВИСИМОСТЬ (по фидбэку:
+ *          прежний OpenAI-арт был ляпистый неон-каркас и не учитывал светлую/тёмную тему; юзер:
+ *          «оставь генерацию, но сделай минимально»). Перегенерил в OpenAI gpt-image-1 с
+ *          `background:transparent` — один аккуратный soft-glass предмет в индиго (наушники/книга/
+ *          телефон-на-штативе) на ПРОЗРАЧНОМ фоне, много воздуха. `placeholderArt` = тема-зависимый
+ *          фон карточки (`--bg-tertiary`→`--bg-secondary`) + прозрачный арт поверх (object-cover):
+ *          объект читается в обеих темах, фон берётся от темы. Карточка блокнота: убран эмодзи
+ *          (объект даёт арт), остался спиннер при открытии. Файлы: GalleryPage.tsx,
+ *          public/placeholders/{audio,notebook,ugc}.webp (прозрачные, ~250–380КБ). */
+export const APP_VERSION = '2.2.21';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
