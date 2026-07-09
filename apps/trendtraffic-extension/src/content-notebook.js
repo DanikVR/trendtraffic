@@ -195,7 +195,18 @@
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       els.verlbl.textContent = 'NotebookLM';
       makeDraggable(host, els.hd, () => els.bd.classList.toggle('hide'));
-      els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro/flow', '_blank'));
+      // «Открыть TrendTraffic»: с главной → вкладка Hotebook; изнутри блокнота → сразу открыть
+      // ЭТОТ блокнот в приложении (?openNotebook=<id>&title=… — фронт создаст/привяжет сценарий).
+      els.open.addEventListener('click', () => {
+        const base = 'https://app.trendtraffic.pro/gallery?tab=hotebook';
+        const nbId = notebookIdFromUrl();
+        let url = base;
+        if (nbId) {
+          const title = clean(document.title).replace(/\s*[-–—]\s*NotebookLM\s*$/i, '').slice(0, 120);
+          url = base + '&openNotebook=' + encodeURIComponent(nbId) + (title ? '&title=' + encodeURIComponent(title) : '');
+        }
+        window.open(url, '_blank');
+      });
       sh.getElementById('recBtn').addEventListener('click', () => runRecon(false));
       refreshStatus();
       setInterval(refreshStatus, 5000);
@@ -431,8 +442,9 @@
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     // После навигации в блокнот панель источников рендерится не сразу — ждём появления строк (кап 7с).
     await waitFor(() => (queryAllDeep('.single-source-container').filter(visible).length ? true : null), 7000, 500);
-    // Заодно отдаём историю чата (чтобы открытый блокнот сразу показал прошлый диалог).
-    return { ok: true, sources: listSourcesDom(), chat: chatHistoryDom() };
+    await waitLastAnswerStable(10000); // дать последнему ответу дорисоваться, чтобы не поймать плейсхолдер
+    // Заодно отдаём историю чата + подсказки (чтобы открытый блокнот сразу показал прошлый диалог).
+    return { ok: true, sources: listSourcesDom(), chat: chatHistoryDom(), suggestions: chatSuggestionsDom() };
   }
 
   // ── список ВСЕХ блокнотов (для карточек на стороне TrendTraffic) ──
@@ -479,6 +491,33 @@
     return { ok: true, sources: listSourcesDom() };
   }
 
+  // Загрузочные плейсхолдеры NotebookLM в пузыре ответа («Scanning your sources…», «Assessing
+  // relevance…», «Reading sources…» и т.п.) — их НЕ считаем ответом и НЕ переносим в историю.
+  const CHAT_LOADING = /scanning your sources|assessing relevance|reading (the )?sources|analyz(ing|e) (the )?sources|searching (the )?sources|generating (a )?response|^(scanning|assessing|reading|analyzing|searching|thinking)…?$/i;
+  function isLoadingText(t) {
+    const s = clean(t);
+    if (!s || s.length < 2) return true;
+    return CHAT_LOADING.test(s);
+  }
+  // Подсказки-продолжения (кликабельные чипы снизу чата) → массив строк.
+  function chatSuggestionsDom() {
+    return queryAllDeep('.follow-up-chip, [class*="follow-up-chip" i]').filter(visible)
+      .map((e) => clean(e.textContent)).filter((t) => t.length > 3 && t.length < 300).slice(0, 8);
+  }
+  // Дождаться, пока ПОСЛЕДНИЙ ответ перестанет быть плейсхолдером и стабилизируется (при свежем
+  // открытии блокнота ответ дорисовывается — иначе в историю попадёт «Assessing relevance…»).
+  async function waitLastAnswerStable(maxMs) {
+    if (!chatAnswersDom().length) return;
+    let prev = null; let stable = 0; const t0 = Date.now();
+    while (Date.now() - t0 < maxMs) {
+      const a = chatAnswersDom();
+      const cur = a.length ? a[a.length - 1].text : '';
+      if (cur && !isLoadingText(cur) && cur === prev) { stable++; if (stable >= 2) return; } else stable = 0;
+      prev = cur;
+      await sleep(700);
+    }
+  }
+
   // ── чат ──
   // Разведано вживую: чат живёт в <chat-panel>; ввод = textarea[placeholder="Введите текст…"]
   // (aria «Поле для запросов»); кнопка отправки чата = иконка arrow_forward (у поиска источников
@@ -503,20 +542,20 @@
     // Стабилизация: КАЖДУЮ итерацию перезапрашиваем последний ответ и берём его АКТУАЛЬНЫЙ текст.
     // (Баг v1.2.1: возвращали текст, пойманный в момент появления пузыря = плейсхолдер
     // «Scanning your sources…» — стриминг ещё не начался.) Пропускаем плейсхолдер и ждём стабилизацию.
-    const LOADING = /scanning your sources|scanning sources|reading sources|analyzing sources/i;
     let lastText = ''; let stable = 0; let finalText = '';
     for (let i = 0; i < 110; i++) { // до ~77с ожидания стриминга
       const arr = chatAnswersDom();
       const cur = arr.length ? arr[arr.length - 1].text : '';
-      const ready = cur && cur.length > 2 && !LOADING.test(cur);
+      const ready = cur && cur.length > 2 && !isLoadingText(cur);
       if (ready && cur === lastText) { stable++; if (stable >= 2) { finalText = cur; break; } } else { stable = 0; }
       lastText = cur;
       await sleep(700);
     }
-    if (!finalText) finalText = (lastText && !LOADING.test(lastText)) ? lastText : '';
+    if (!finalText) finalText = (lastText && !isLoadingText(lastText)) ? lastText : '';
     if (!finalText) return { ok: false, reason: 'ответ не дочитался' };
     ui.line('✓ ответ получен');
-    return { ok: true, answer: finalText, citations: [] };
+    // + подсказки-продолжения (чипы) — фронт покажет их кнопками.
+    return { ok: true, answer: finalText, citations: [], suggestions: chatSuggestionsDom() };
   }
   // Ответ ассистента = .to-user-container; текст берём из внутреннего .message-content (без кнопок keep/copy/оценки).
   function chatAnswersDom() {
@@ -527,24 +566,29 @@
     }).filter((x) => x.text.length > 1);
   }
   // История чата (для загрузки при открытии блокнота): пары user/assistant по порядку.
+  // Ответы-плейсхолдеры («Assessing relevance…») пропускаем — иначе в историю попадёт загрузка.
   function chatHistoryDom() {
     const out = [];
     for (const cm of queryAllDeep('chat-message').filter(visible)) {
       const u = cm.querySelector('.from-user-container, [class*="from-user-container" i]');
       const b = cm.querySelector('.to-user-container, [class*="to-user-container" i]');
+      const role = u ? 'user' : (b ? 'assistant' : '?');
+      if (role === '?') continue;
       const inner = cm.querySelector('.message-content, .message-text-content, [class*="message-content" i]') || (u || b);
       const text = clean(inner && inner.textContent).slice(0, 4000);
       if (!text) continue;
-      out.push({ role: u ? 'user' : (b ? 'assistant' : '?'), text });
+      if (role === 'assistant' && isLoadingText(text)) continue;
+      out.push({ role, text });
       if (out.length > 60) break;
     }
-    return out.filter((m) => m.role !== '?');
+    return out;
   }
   async function listChat() {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     // Дать чат-панели прогрузить историю после навигации.
     await waitFor(() => (queryAllDeep('chat-message').filter(visible).length || queryAllDeep('.chat-panel-empty-state').filter(visible).length ? true : null), 8000, 500);
-    return { ok: true, chat: chatHistoryDom() };
+    await waitLastAnswerStable(12000); // дождаться, пока последний ответ дорисуется (не плейсхолдер)
+    return { ok: true, chat: chatHistoryDom(), suggestions: chatSuggestionsDom() };
   }
 
   // ── генерация артефакта ──

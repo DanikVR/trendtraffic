@@ -179,6 +179,11 @@ export async function completeAction(
     await pool.query(`UPDATE notebooklm_state SET chat=$3 WHERE tenant_id=$1 AND flow_id=$2`,
       [tenantId, row.flow_id, JSON.stringify(result.chat)]).catch(() => {});
   }
+  // Подсказки-продолжения (чипы) → кэш (фронт покажет кнопками под чатом).
+  if (Array.isArray(result?.suggestions) && row.flow_id) {
+    await pool.query(`UPDATE notebooklm_state SET suggestions=$3 WHERE tenant_id=$1 AND flow_id=$2`,
+      [tenantId, row.flow_id, JSON.stringify(result.suggestions)]).catch(() => {});
+  }
 }
 
 // ── Клейм задач генерации (notebooklm_jobs) ──────────────────────────────────

@@ -2212,7 +2212,7 @@ export const APP_VERSION = '2.2.6';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.0';
+export const TT_EXT_VERSION = '1.3.1';
 
 export function AppVersion() {
   return (

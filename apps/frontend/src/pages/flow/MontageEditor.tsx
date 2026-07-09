@@ -730,6 +730,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const [hbPickQuery, setHbPickQuery] = useState('');               // поиск в пикере
   const [hbChatQ, setHbChatQ] = useState('');
   const [hbChatBusy, setHbChatBusy] = useState(false);
+  const [hbSuggestions, setHbSuggestions] = useState<string[]>([]); // подсказки-чипы (из NotebookLM)
   const [hbGenOpen, setHbGenOpen] = useState<HbType | null>(null);  // модалка настроек генерации
   const [hbGenSet, setHbGenSet] = useState<Record<string, string>>({});
   const [hbGenBusy, setHbGenBusy] = useState(false);
@@ -1502,6 +1503,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         if (pendingQ != null) paired.push({ q: pendingQ, a: '', ts: 0, cites: 0 });
         if (paired.length) hbMutate((h: any) => (Array.isArray(h.chat) && h.chat.length ? h : { ...h, chat: paired }));
       }
+      // Подсказки-продолжения (чипы) из блокнота — показываем кнопками под чатом.
+      if (Array.isArray(d.suggestions)) setHbSuggestions(d.suggestions.filter((x: any) => typeof x === 'string'));
       setHbJobs(Array.isArray(d.jobs) ? d.jobs : []);
       setHbCounters(d.counters && typeof d.counters === 'object' ? d.counters : {});
       if ((d.jobs || []).some((j: any) => j.status === 'queued' || j.status === 'running')) setTimeout(() => { void hbPollLoop(); }, 0);
@@ -1697,6 +1700,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const a = typeof d.answer === 'string' ? d.answer : JSON.stringify(d.answer ?? '');
       const cites = Array.isArray(d.citations) ? d.citations.length : 0;
       hbMutate((h) => ({ ...h, chat: [...h.chat, { q, a, ts: Date.now(), cites }] }));
+      setHbSuggestions(Array.isArray(d.suggestions) ? d.suggestions.filter((x: any) => typeof x === 'string') : []);
       setHbChatQ('');
     } catch (e: any) { setHbNote(e?.message || 'Чат не ответил'); }
     finally { setHbChatBusy(false); }
@@ -2473,6 +2477,18 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                             {!!m.cites && <div className="text-[10px] mt-1.5 font-700" style={{ color: '#22d3ee' }}>⌘ {m.cites} цитат из источников</div>}
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Подсказки-продолжения из NotebookLM — клик подставляет вопрос в поле. */}
+                  {hbSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {hbSuggestions.map((s, i) => (
+                        <button key={i} type="button" onClick={() => setHbChatQ(s)} title="Подставить вопрос"
+                          className="text-[11px] px-2.5 py-1.5 rounded-full text-left transition-opacity hover:opacity-80"
+                          style={{ background: 'rgba(34,211,238,0.10)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.35)', cursor: 'pointer' }}>
+                          {s}
+                        </button>
                       ))}
                     </div>
                   )}

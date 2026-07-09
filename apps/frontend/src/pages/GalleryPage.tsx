@@ -397,6 +397,19 @@ export default function GalleryPage() {
     finally { setHbNbOpening(null); }
   };
 
+  // Расширение (кнопка «Открыть TrendTraffic» изнутри блокнота NotebookLM) открывает новую вкладку
+  // ?tab=hotebook&openNotebook=<id>&title=… → сразу открыть этот блокнот в приложении.
+  const openNbHandledRef = useRef(false);
+  useEffect(() => {
+    const nbId = searchParams.get('openNotebook');
+    if (!nbId || openNbHandledRef.current) return;
+    openNbHandledRef.current = true;
+    const title = searchParams.get('title') || 'Блокнот';
+    setSearchParams((p) => { p.delete('openNotebook'); p.delete('title'); return p; }, { replace: true });
+    void openNotebook({ id: nbId, title });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── «+ Добавить» — первой плиткой каждого раздела ──
   // Блоки (Hotebook/Flow/UGC) открываются ОВЕРЛЕЕМ поверх Галереи: закрыл — вернулся
   // в этот же раздел. «Видео» — дублирует кнопку «Медиа» (файл сам решает, куда лечь).

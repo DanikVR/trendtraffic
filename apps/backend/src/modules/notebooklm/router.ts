@@ -70,6 +70,7 @@ async function ensureTables(): Promise<void> {
   // overview показывал источники без обязательного онлайна расширения.
   await pool.query(`ALTER TABLE notebooklm_state ADD COLUMN IF NOT EXISTS sources JSONB`);
   await pool.query(`ALTER TABLE notebooklm_state ADD COLUMN IF NOT EXISTS chat JSONB`); // история чата блокнота (кэш)
+  await pool.query(`ALTER TABLE notebooklm_state ADD COLUMN IF NOT EXISTS suggestions JSONB`); // подсказки-чипы (кэш)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notebooklm_jobs (
       id TEXT PRIMARY KEY,
@@ -233,18 +234,20 @@ router.get('/flow/:flowId/overview', async (req: AuthedRequest, res: Response) =
   let notebookId: string | null = null;
   let sources: any[] = [];
   let chat: any[] = [];
+  let suggestions: any[] = [];
   try {
-    const s = await pool.query(`SELECT notebook_id, sources, chat FROM notebooklm_state WHERE tenant_id=$1 AND flow_id=$2`, [tenantId, flowId]);
+    const s = await pool.query(`SELECT notebook_id, sources, chat, suggestions FROM notebooklm_state WHERE tenant_id=$1 AND flow_id=$2`, [tenantId, flowId]);
     notebookId = s.rows[0]?.notebook_id || null;
     sources = Array.isArray(s.rows[0]?.sources) ? s.rows[0].sources : [];
     chat = Array.isArray(s.rows[0]?.chat) ? s.rows[0].chat : [];
+    suggestions = Array.isArray(s.rows[0]?.suggestions) ? s.rows[0].suggestions : [];
   } catch { /* пусто */ }
   let jobs: any[] = [];
   try {
     const r = await pool.query(`SELECT * FROM notebooklm_jobs WHERE tenant_id=$1 AND flow_id=$2 ORDER BY created_at DESC LIMIT 40`, [tenantId, flowId]);
     jobs = r.rows.map(mapJob);
   } catch { /* пусто */ }
-  res.json({ notebookId, sources, chat, jobs, counters, status });
+  res.json({ notebookId, sources, chat, suggestions, jobs, counters, status });
 });
 
 /** Добавить источник: URL/YouTube или текст. */
@@ -300,7 +303,7 @@ router.post('/flow/:flowId/chat', async (req: AuthedRequest, res: Response) => {
     const actionId = await enqueueAction(req.tenantId!, req.params.flowId, nb, 'chat', { question });
     const r = await waitAction(req.tenantId!, actionId, 220_000);
     if (!r.ok) throw new ExtError(r.error || 'чат не ответил', 'error');
-    res.json({ answer: r.result?.answer ?? null, citations: r.result?.citations ?? null });
+    res.json({ answer: r.result?.answer ?? null, citations: r.result?.citations ?? null, suggestions: Array.isArray(r.result?.suggestions) ? r.result.suggestions : [] });
   } catch (e: any) { res.status(502).json(errPayload(e)); }
 });
 
