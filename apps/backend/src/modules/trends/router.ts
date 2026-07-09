@@ -19,6 +19,7 @@ import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, saveTrendDNAAuto } from './dna.js';
+import { buildAudienceMap } from './audience.js';
 import { analyzeVideoVisual } from './video_insight.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
@@ -259,6 +260,35 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
   }
 });
 
+/**
+ * POST /audience-map — «Таргет на ЦА»: { product, audience, seedKeywords?, platform?, language?, region?, maxNiches? }
+ *   → карта микро-ниш с кластерами ключевиков (Claude, без вызовов TikHub).
+ *   Фронт затем веерно сканирует кластеры через /scan. Гейт — тот же (Премиум/Энтерпрайз).
+ */
+router.post('/audience-map', async (req: AuthedRequest, res: Response) => {
+  try {
+    const body = req.body || {};
+    const product = typeof body.product === 'string' ? body.product : '';
+    const audience = typeof body.audience === 'string' ? body.audience : '';
+    // seedKeywords: массив ИЛИ строка «через запятую/перенос».
+    const rawSeeds = Array.isArray(body.seedKeywords)
+      ? body.seedKeywords
+      : (typeof body.seedKeywords === 'string' ? body.seedKeywords.split(/[,\n;]+/) : []);
+    const seedKeywords = rawSeeds.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 20);
+    const platform = ['tiktok', 'instagram', 'youtube', 'twitter', 'reddit'].includes(body.platform) ? body.platform : 'tiktok';
+    const language = typeof body.language === 'string' && body.language.trim() ? body.language.trim().slice(0, 40) : undefined;
+    const region = typeof body.region === 'string' && /^[A-Za-z]{2}$/.test(body.region.trim())
+      ? body.region.trim().toUpperCase() : undefined;
+    const maxNiches = Number.isFinite(body.maxNiches) ? Number(body.maxNiches) : undefined;
+    const map = await buildAudienceMap(req.tenantId!, { product, audience, seedKeywords, platform, language, region, maxNiches });
+    res.json({ map });
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка построения карты ЦА';
+    const code = /ключ|Заполните|Claude|неразборч|уточните/i.test(msg) ? 400 : 502;
+    res.status(code).json({ error: msg });
+  }
+});
+
 /** POST /scan — { kind: 'keyword'|'trending', query?, count? } */
 router.post('/scan', async (req: AuthedRequest, res: Response) => {
   try {
@@ -277,10 +307,13 @@ router.post('/scan', async (req: AuthedRequest, res: Response) => {
     const sortType = [0, 1, 2].includes(Number(body.sortType)) ? (Number(body.sortType) as 0 | 1 | 2) : 0;
     const publishTime = [0, 1, 7, 30, 90, 180].includes(Number(body.publishTime))
       ? (Number(body.publishTime) as 0 | 1 | 7 | 30 | 90 | 180) : 0;
+    // Регион: только ISO alpha-2 (2 буквы) → UPPER. Пустое/невалидное → undefined (глобально).
+    const region = typeof body.region === 'string' && /^[A-Za-z]{2}$/.test(body.region.trim())
+      ? body.region.trim().toUpperCase() : undefined;
     if (kind === 'keyword' && !query?.trim()) {
       return res.status(400).json({ error: 'Для поиска по ключевому слову передайте query.' });
     }
-    const result = await scanTrends(req.tenantId!, { kind, query, count, mode, sortType, publishTime, platform, filters });
+    const result = await scanTrends(req.tenantId!, { kind, query, count, mode, sortType, publishTime, platform, filters, region });
     res.json(result);
   } catch (err: any) {
     const msg = err?.message || 'Ошибка сканирования';

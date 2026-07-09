@@ -18,10 +18,11 @@ import { Search, X, ImagePlus, Loader2, Play, Eye } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { coverSrc, type StoredVideo } from '../components/TrendSearch';
+import AudienceTargetPanel from '../components/AudienceTargetPanel';
 import TrendAnalyticsPanel from './TrendAnalyticsPanel';
 import ChannelsPage from './ChannelsPage';
 
-type Tab = 'search' | 'analytics' | 'channels';
+type Tab = 'search' | 'audience' | 'analytics' | 'channels';
 
 function fmt(n?: number): string {
   if (n == null) return '';
@@ -320,7 +321,7 @@ export default function SocialExtensionPage() {
   // вкладках (Поиск/Аналитика/Каналы), чтобы левая колонка всегда оставалась на месте.
   const renderTabs = () => (
     <div className="flex flex-col gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-      {([['search', '🔥 Поиск'], ['analytics', '📊 Аналитика'], ['channels', '📺 Каналы']] as [Tab, string][]).map(([v, lbl]) => (
+      {([['search', '🔥 Поиск'], ['audience', '🎯 Таргет на ЦА'], ['analytics', '📊 Аналитика'], ['channels', '📺 Каналы']] as [Tab, string][]).map(([v, lbl]) => (
         <button key={v} onClick={() => setTab(v)}
           className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
           style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
@@ -357,6 +358,16 @@ export default function SocialExtensionPage() {
         {/* Поиск */}
         <div className={tab === 'search' ? 'h-full overflow-y-auto space-y-5 pr-0.5' : 'hidden'}>
           <TrendSearch token={token} sectionTabs={renderTabs()} onAnalyze={(u) => analyzeOne(u)} onAnalyzeBulk={analyzeBulk} />
+        </div>
+
+        {/* Таргет на ЦА — микро-таргетинг через контент-ниши (нав слева, панель справа) */}
+        <div className={tab === 'audience' ? 'h-full overflow-y-auto pr-0.5' : 'hidden'}>
+          <div className="grid gap-4 items-start lg:grid-cols-[minmax(200px,240px)_1fr]">
+            <div className="lg:sticky lg:top-0">{renderTabs()}</div>
+            <div className="space-y-5 min-w-0">
+              <AudienceTargetPanel token={token} onAnalyze={(u) => analyzeOne(u)} onAnalyzeBulk={analyzeBulk} />
+            </div>
+          </div>
         </div>
 
         {/* Аналитика (расширение) — слева колонка (навигация + строка URL), справа результат */}

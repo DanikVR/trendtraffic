@@ -2207,7 +2207,15 @@
  *         chrome://extensions (копирование)/labs.google/flow/notebooklm.google.com, бейдж «Обновите»
  *         при устаревшей версии расширения. Расширение → v1.3.0 (list-projects). Файлы: GalleryPage,
  *         flow-ext/router.ts, trendtraffic-extension (content-flow/background/content-bridge/manifest). */
-export const APP_VERSION = '2.2.6';
+/* 2.2.7 — Тренды, гео + микро-таргетинг: (1) «Регион выдачи» в поиске трендов реально
+ *         уходит в API там, где он поддержан (TikTok «Умный поиск» region, YouTube country_code
+ *         +language_code) — раньше поле region было мёртвым; селектор с флагами (СНГ первыми),
+ *         гео-бейдж на плитках площадок, живая подсказка «где регион работает». (2) Новая вкладка
+ *         «🎯 Таргет на ЦА»: Claude раскладывает продукт+аудиторию на микро-ниши с кластерами
+ *         ключевиков (POST /api/trends/audience-map), веерный скан по нишам через /scan, выдача
+ *         сгруппирована по нишам с сигналом спроса. Файлы: tikhub_client/providers/service/router,
+ *         новый audience.ts; TrendSearch, новый AudienceTargetPanel, SocialExtensionPage. */
+export const APP_VERSION = '2.2.7';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

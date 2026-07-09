@@ -181,19 +181,33 @@ export type SearchMode = 'video' | 'general' | 'app';
 export type SortType = 0 | 1 | 2;                       // 0 релевантность, 1 больше лайков, 2 новее
 export type PublishTime = 0 | 1 | 7 | 30 | 90 | 180;   // 0 всё время, 1 24ч, 7 неделя, 30 месяц, 90 3мес, 180 6мес
 
+/**
+ * Нормализует код региона к ISO-3166 alpha-2 в ВЕРХНЕМ регистре (RU, US, UZ…).
+ * Возвращает undefined для пустого/невалидного значения — тогда вызывающий не
+ * добавляет параметр вовсе (эндпоинт применит свой дефолт). Единый канонический
+ * формат в пайплайне; каждый провайдер приводит его к своему виду (TikTok — UPPER,
+ * YouTube — lower для country_code).
+ */
+export function normalizeRegion(v?: string | null): string | undefined {
+  if (!v) return undefined;
+  const s = String(v).trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(s) ? s : undefined;
+}
+
 export async function searchVideos(
   apiKey: string,
   keyword: string,
-  opts?: { count?: number; offset?: number; mode?: SearchMode; publishTime?: PublishTime }
+  opts?: { count?: number; offset?: number; mode?: SearchMode; publishTime?: PublishTime; region?: string }
 ): Promise<TikHubResult<any>> {
   const count = Math.min(Math.max(opts?.count ?? 20, 1), 30);
   const offset = Math.max(opts?.offset ?? 0, 0);
   const kw = encodeURIComponent(keyword);
   const mode: SearchMode = opts?.mode || 'app';
+  const region = normalizeRegion(opts?.region);
 
   let path: string;
   if (mode === 'general') {
-    // Общий поиск (Web API не принимает count).
+    // Общий поиск (Web API не принимает count/region).
     path = `/api/v1/tiktok/web/fetch_general_search?keyword=${kw}&offset=${offset}`;
   } else if (mode === 'app') {
     // ВАЖНО: всегда sort_type=0 (по релевантности). У TikTok только этот режим даёт
@@ -202,9 +216,13 @@ export async function searchVideos(
     // не относящийся к теме. Поэтому «Новее»/«Больше лайков» применяем как клиентскую
     // пересортировку relevance-набора (см. service.scanTrends). publish_time с sort_type=0
     // работает корректно — даёт «релевантные за период».
+    //
+    // region (default 'US' у API) — единственный поисковый эндпоинт TikTok с гео:
+    // подсказывает алгоритму, контент какого региона приоритизировать в выдаче.
     const pub = opts?.publishTime ?? 0;
-    path = `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${count}&offset=${offset}&sort_type=0&publish_time=${pub}`;
+    path = `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${count}&offset=${offset}&sort_type=0&publish_time=${pub}${region ? `&region=${region}` : ''}`;
   } else {
+    // Web «Поиск по слову» (fetch_search_video) — region не поддерживает.
     path = `/api/v1/tiktok/web/fetch_search_video?keyword=${kw}&count=${count}&offset=${offset}`;
   }
   return withTikhubRetry(() => tikhubGet(apiKey, path, { timeoutMs: 30000 }));
