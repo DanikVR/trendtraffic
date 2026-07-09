@@ -170,8 +170,13 @@ module.exports = {
         'float':         'float 6s ease-in-out infinite',
         'glow-pulse':    'glowPulse 3s ease-in-out infinite',
         'tab-bounce':    'tabBounce 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+        'attract':       'attract 1.6s ease-in-out infinite',
       },
       keyframes: {
+        attract: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(99,102,241,0.55), 0 0 12px rgba(99,102,241,0.30)', transform: 'scale(1)' },
+          '50%':      { boxShadow: '0 0 0 7px rgba(99,102,241,0), 0 0 22px rgba(99,102,241,0.55)', transform: 'scale(1.05)' },
+        },
         fadeIn: {
           '0%':   { opacity: '0' },
           '100%': { opacity: '1' },

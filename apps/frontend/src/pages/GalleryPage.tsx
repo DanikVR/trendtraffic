@@ -27,7 +27,6 @@ import {
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
   ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info,
 } from 'lucide-react';
-import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
@@ -491,13 +490,12 @@ export default function GalleryPage() {
     const a = addAction(which);
     return (
       <button type="button" onClick={a.run} title={a.hint}
-        className="rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors hover:border-[var(--border-stronger)]"
-        style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: 180 }}>
-        <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border-strong)' }}>
-          <Plus size={26} />
+        className="rounded-xl flex flex-col items-center justify-center gap-2 p-2 text-center transition-colors hover:border-[var(--border-stronger)]"
+        style={{ aspectRatio: '9 / 16', background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+        <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border-strong)' }}>
+          <Plus size={22} />
         </span>
-        <span className="text-sm font-600 px-2 text-center">{a.label}</span>
-        <span className="text-[11px] px-3 text-center leading-snug" style={{ color: 'var(--text-muted)' }}>{a.hint}</span>
+        <span className="text-[12px] font-600 leading-tight">{a.label}</span>
       </button>
     );
   };
@@ -637,8 +635,8 @@ export default function GalleryPage() {
             {/* «+ Добавить тренд» — первым, как и в остальных разделах */}
             <button type="button" onClick={() => navigate('/social-extension?from=gallery')}
               title="Открыть «Тренды»: сканировать по новому ключевому слову"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-600 transition-colors hover:border-[var(--border-stronger)]"
-              style={{ background: 'transparent', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              className="animate-attract inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[13px] font-700 transition-transform hover:scale-105"
+              style={{ background: 'var(--brand)', border: '1px solid var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
               <Plus size={14} /> Добавить тренд
             </button>
             {fQs.map((x) => (
@@ -694,7 +692,7 @@ export default function GalleryPage() {
               </button>
             </div>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className={CARD_GRID}>
             {renderAddTile('trendhub')}
             {fAn.map((a) => {
               const cover = a.dna?.meta?.cover as string | undefined;
@@ -702,63 +700,54 @@ export default function GalleryPage() {
               const openDna = () => setAnalysis({ title, dna: a.dna || {} });
               const anSel = selected.has(`an:${a.id}`);
               return (
-                <AuroraCard key={a.id} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${anSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
-                  <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                    <button type="button" onClick={() => toggleSelect(`an:${a.id}`)} title="Выбрать"
-                      className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                      style={{ background: anSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
-                      {anSel ? <Check size={15} /> : null}
+                <div key={a.id} className={cardCls(anSel)} style={CARD_STYLE}>
+                  {/* Медиа/обложка на весь размер карточки */}
+                  {a.fileUrl ? (
+                    <button type="button" onClick={() => setViewer({ url: a.fileUrl!, title })} className="group/vid absolute inset-0 w-full h-full" title="Открыть в просмотрщике (с обрезкой)">
+                      <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
+                      <span className="absolute inset-0 flex items-center justify-center opacity-80 group-hover/vid:opacity-100">
+                        <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', backdropFilter: 'blur(4px)' }}><Play size={18} className="ml-0.5" /></span>
+                      </span>
                     </button>
-                    {a.fileUrl ? (
-                      <button type="button" onClick={() => setViewer({ url: a.fileUrl!, title })} className="group/vid block w-full h-full relative" title="Открыть в просмотрщике (с обрезкой)">
-                        <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
-                        <span className="absolute inset-0 flex items-center justify-center opacity-90 group-hover/vid:opacity-100">
-                          <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', backdropFilter: 'blur(4px)' }}>
-                            <Play size={22} className="ml-0.5" />
-                          </span>
-                        </span>
-                      </button>
-                    ) : cover ? (
-                      <button type="button" onClick={openDna} className="block w-full h-full" title="Открыть разбор">
-                        <img src={coverSrc(cover)} alt={title} loading="lazy" className="w-full h-full object-cover" />
-                      </button>
-                    ) : (
-                      <button type="button" onClick={openDna} className="w-full h-full flex items-center justify-center" title="Открыть разбор"
-                        style={{ background: 'transparent', border: 'none', color: '#22d3ee', cursor: 'pointer' }}>
-                        <Sparkles size={34} />
-                      </button>
-                    )}
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openDna(); }}
-                      title="Открыть разбор виральности этого видео"
-                      className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 text-[10px] font-700 px-2 py-1 rounded-lg transition-transform hover:scale-105"
-                      style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
-                      <Sparkles size={11} /> Анализ
+                  ) : cover ? (
+                    <button type="button" onClick={openDna} className="absolute inset-0 w-full h-full" title="Открыть разбор">
+                      <img src={coverSrc(cover)} alt={title} loading="lazy" className="w-full h-full object-cover" />
                     </button>
-                  </div>
-                  <div className="p-3 flex flex-col gap-1.5 flex-1">
-                    <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={title}>{title}</div>
-                    {a.dna?.hookType && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{a.dna.hookType}</p>}
-                    <div className="flex items-center gap-1 pt-1 mt-auto">
+                  ) : (
+                    <button type="button" onClick={openDna} className="absolute inset-0 w-full h-full flex items-center justify-center" title="Открыть разбор"
+                      style={{ color: '#22d3ee', cursor: 'pointer' }}><Sparkles size={30} /></button>
+                  )}
+                  {/* Чекбокс выбора */}
+                  <button type="button" onClick={() => toggleSelect(`an:${a.id}`)} title="Выбрать"
+                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(anSel)}>
+                    {anSel ? <Check size={14} /> : null}
+                  </button>
+                  {/* Бейдж «Анализ» */}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); openDna(); }} title="Открыть разбор виральности этого видео"
+                    className={`${ovBadge} inline-flex items-center gap-1 transition-transform hover:scale-105`}
+                    style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
+                    <Sparkles size={10} /> Анализ
+                  </button>
+                  {cardScrim()}
+                  {/* Наложенные название + иконки */}
+                  <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                    <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={title}>{title}</div>
+                    <div className="flex items-center gap-1 pointer-events-auto">
                       {a.sourceUrl && (
-                        <a href={a.sourceUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                          <ExternalLink size={14} />
+                        <a href={a.sourceUrl} target="_blank" rel="noreferrer" title="Открыть оригинал" className={OV_BTN} style={ovBtnStyle()}>
+                          <ExternalLink size={13} />
                         </a>
                       )}
-                      <button type="button" onClick={() => void doDeleteAnalyses([a.id])} disabled={busy} title="Удалить разбор"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
-                        style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
-                        <Trash2 size={14} />
+                      <button type="button" onClick={openDna} title="Открыть разбор" className={OV_BTN} style={ovBtnStyle('#67e8f9')}>
+                        <Sparkles size={13} />
                       </button>
-                      <button type="button" onClick={openDna} title="Открыть разбор"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors hover:opacity-90"
-                        style={{ background: 'rgba(34,211,238,0.14)', color: '#22d3ee' }}>
-                        <Sparkles size={15} />
+                      <button type="button" onClick={() => void doDeleteAnalyses([a.id])} disabled={busy} title="Удалить разбор"
+                        className={`${OV_BTN} ml-auto disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
-                </AuroraCard>
+                </div>
               );
             })}
           </div>
@@ -783,6 +772,13 @@ export default function GalleryPage() {
     if (!q) return hbNotebooks;
     return hbNotebooks.filter((nb) => (nb.title || '').toLowerCase().includes(q) || (nb.subtitle || '').toLowerCase().includes(q));
   }, [hbNotebooks, query]);
+  // «Google Flow»: карточки проектов тоже фильтруются строкой поиска (по названию) — раньше
+  // поиск на этой вкладке был мёртвым (рендерился весь flowProjects без учёта query).
+  const flowProjectsFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return flowProjects;
+    return flowProjects.filter((p) => (p.title || '').toLowerCase().includes(q));
+  }, [flowProjects, query]);
 
   const toggleSelect = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
@@ -1000,6 +996,28 @@ export default function GalleryPage() {
     );
   };
 
+  // ── Единый вид карточек ВО ВСЕЙ Галерее (по фидбэку: как в поиске трендов) ──
+  // Карточка = само изображение (портрет 9/16); название, счётчики и ВСЕ иконки-действия
+  // НАКЛАДЫВАЮТСЯ поверх картинки (футера под карточкой нет); плотная сетка — 8 в ряд.
+  const CARD_GRID = 'grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2';
+  const cardCls = (sel = false) =>
+    `group relative rounded-xl overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg${sel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`;
+  const CARD_STYLE: React.CSSProperties = { aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' };
+  // Нижний градиент-скрим — под наложенные название/иконки (читаемость на любой картинке).
+  const cardScrim = () => (
+    <span aria-hidden className="absolute inset-x-0 bottom-0 pointer-events-none z-[5]"
+      style={{ height: '70%', background: 'linear-gradient(to top, rgba(0,0,0,0.94), rgba(0,0,0,0.5) 42%, transparent)' }} />
+  );
+  // Наложенная иконка-действие (всегда видна поверх картинки).
+  const OV_BTN = 'w-[26px] h-[26px] rounded-lg flex items-center justify-center flex-shrink-0 transition-transform hover:scale-110';
+  const ovBtnStyle = (accent?: string): React.CSSProperties =>
+    ({ background: 'rgba(0,0,0,0.55)', color: accent || '#fff', border: '1px solid rgba(255,255,255,0.22)', cursor: 'pointer', backdropFilter: 'blur(3px)' });
+  // Наложенный чекбокс выбора (верх-лево).
+  const ovCheckStyle = (sel: boolean): React.CSSProperties =>
+    ({ background: sel ? 'var(--brand)' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.75)', cursor: 'pointer', backdropFilter: 'blur(3px)' });
+  // Наложенный бейдж (платформа/тип/статус) — верх-право.
+  const ovBadge = 'absolute top-1.5 right-1.5 z-20 text-[9px] font-700 px-1.5 py-0.5 rounded-md';
+
   return (
     <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-4">
       {/* Header: иконка + заголовок + одна кнопка «Медиа» (любые файлы) + обновить */}
@@ -1082,7 +1100,7 @@ export default function GalleryPage() {
               {flowProjError ? (
                 <span style={{ color: '#f59e0b' }}>{flowProjError} <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button></span>
               ) : (
-                <><span>Проектов Google Flow: {flowProjects.length}</span>
+                <><span>Проектов Google Flow: {flowProjectsFiltered.length}{query.trim() && flowProjectsFiltered.length !== flowProjects.length ? ` из ${flowProjects.length}` : ''}</span>
                   <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button>
                   <span>· клик по проекту откроет его в Flow</span></>
               )}
@@ -1188,34 +1206,34 @@ export default function GalleryPage() {
           )}
 
           {/* Сетка карточек: первой — плитка «+ Добавить» (открывает блок раздела) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className={CARD_GRID}>
             {renderAddTile(tab)}
             {/* «Google Flow»: готовые проекты Flow карточками — клик открывает проект «проектором» (новая вкладка). */}
-            {tab === 'flow' && flowProjects.map((p) => (
-              <AuroraCard key={`proj-${p.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-                <a href={p.url} target="_blank" rel="noreferrer" title="Открыть проект в Google Flow (проектор)"
-                  className="relative w-full block" style={{ aspectRatio: '16 / 10', background: 'var(--bg-tertiary)' }}>
+            {tab === 'flow' && flowProjectsFiltered.map((p) => (
+              <div key={`proj-${p.id}`} className={cardCls()} style={CARD_STYLE}>
+                <a href={p.url} target="_blank" rel="noreferrer" title="Открыть проект в Google Flow (проектор)" className="absolute inset-0 w-full h-full block">
                   {/* Плейсхолдер под обложкой — если thumb не загрузился (CDN Google за авторизацией). */}
-                  <span className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><Clapperboard size={30} /></span>
+                  <span className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><Clapperboard size={28} /></span>
                   {p.thumb && (
                     <img src={p.thumb} alt="" loading="lazy" referrerPolicy="no-referrer"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
-                  <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: '#6366f1', color: '#fff' }}>Google Flow</span>
-                  <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10" style={{ background: 'rgba(0,0,0,0.35)' }}>
-                    <span className="inline-flex items-center gap-1.5 text-[12px] font-700 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.95)', color: '#111' }}><ExternalLink size={13} /> Открыть проект</span>
-                  </span>
                 </a>
-                <div className="p-3 flex items-center gap-1">
-                  <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={p.title}>{p.title}</div>
-                  <a href={p.url} target="_blank" rel="noreferrer" title="Открыть в Google Flow"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
-                    <ExternalLink size={14} />
-                  </a>
+                <span className={ovBadge} style={{ left: '0.375rem', right: 'auto', background: '#6366f1', color: '#fff' }}>Google Flow</span>
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[6] pointer-events-none" style={{ background: 'rgba(0,0,0,0.35)' }}>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.95)', color: '#111' }}><ExternalLink size={12} /> Открыть</span>
+                </span>
+                {cardScrim()}
+                <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                  <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={p.title}>{p.title}</div>
+                  <div className="flex items-center gap-1 pointer-events-auto">
+                    <a href={p.url} target="_blank" rel="noreferrer" title="Открыть в Google Flow" className={OV_BTN} style={ovBtnStyle('#a5b4fc')}>
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
                 </div>
-              </AuroraCard>
+              </div>
             ))}
             {/* UGC · «Ролики»: сохранённые ролики карточками с превью; клик → продолжить в студии (тот же сценарий). */}
             {tab === 'ugc' && ugcSub === 'rolls' && ugcTpls.map((k) => {
@@ -1227,51 +1245,42 @@ export default function GalleryPage() {
               const selK = `tpl:${k.id}`;
               const isSel = selected.has(selK);
               return (
-                <AuroraCard key={`tpl-${k.id}`} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
-                  <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                    <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии"
-                      className="block w-full h-full" style={{ cursor: 'pointer', border: 'none', padding: 0, background: 'transparent' }}>
-                      {preview ? (
-                        isVid
-                          ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
-                          : <img src={preview} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                          <LayoutTemplate size={28} /><span className="text-[11px] font-600">UGC-ролик</span>
-                        </span>
-                      )}
-                    </button>
-                    {/* Чекбокс выбора */}
-                    <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
-                      className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                      style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
-                      {isSel ? <Check size={15} /> : null}
-                    </button>
-                    <span className="absolute bottom-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'var(--brand)', color: '#fff' }}>Шаблон</span>
-                    {k.autopublish?.enabled && <span className="absolute top-2 right-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>}
-                  </div>
-                  <div className="p-3 flex flex-col gap-2 flex-1">
-                    <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={k.name}>{k.name}</div>
-                    {k.trendKeyword && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full self-start" style={{ background: 'color-mix(in srgb, var(--brand) 14%, transparent)', color: 'var(--brand)', border: '1px solid var(--brand)' }}>#{k.trendKeyword}</span>}
-                    <div className="flex items-center gap-1 pt-1 mt-auto">
-                      <button type="button" onClick={openTpl} title="Открыть в UGC-студии"
-                        className="flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-600 transition-colors hover:opacity-80"
-                        style={{ background: 'rgba(168,85,247,0.12)', color: 'var(--brand)' }}>
-                        <Play size={13} /> Открыть
+                <div key={`tpl-${k.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
+                  <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии" className="absolute inset-0 w-full h-full">
+                    {preview ? (
+                      isVid
+                        ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
+                        : <img src={preview} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                        <LayoutTemplate size={26} /><span className="text-[10px] font-600">UGC-ролик</span>
+                      </span>
+                    )}
+                  </button>
+                  {/* Чекбокс выбора */}
+                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
+                    {isSel ? <Check size={14} /> : null}
+                  </button>
+                  {k.autopublish?.enabled && <span className={ovBadge} style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}>авто</span>}
+                  {cardScrim()}
+                  <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                    <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={k.name}>{k.name}</div>
+                    {k.trendKeyword && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full self-start text-white" style={{ background: 'rgba(168,85,247,0.85)' }}>#{k.trendKeyword}</span>}
+                    <div className="flex items-center gap-1 pointer-events-auto">
+                      <button type="button" onClick={openTpl} title="Открыть в UGC-студии" className={OV_BTN} style={ovBtnStyle('#d8b4fe')}>
+                        <Play size={13} />
                       </button>
                       <button type="button" onClick={() => copyTpl(k)} disabled={copying === k.id} title="Скопировать ролик (создать копию)"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-50"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                        {copying === k.id ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
+                        className={`${OV_BTN} disabled:opacity-50`} style={ovBtnStyle()}>
+                        {copying === k.id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
                       </button>
-                      <button type="button" onClick={() => askDeleteTpl(k)} title="Удалить ролик из Галереи"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                        style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}>
-                        <Trash2 size={14} />
+                      <button type="button" onClick={() => askDeleteTpl(k)} title="Удалить ролик из Галереи" className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#fca5a5')}>
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
-                </AuroraCard>
+                </div>
               );
             })}
             {/* UGC · «Авто»: ролики конвейера «тренд → анализ → UGC» (папка auto-ugc), карточками. */}
@@ -1279,28 +1288,26 @@ export default function GalleryPage() {
               const selK = `media:${v.id}`;
               const isSel = selected.has(selK);
               return (
-              <AuroraCard key={`auto-${v.id}`} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
-                <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                  <button type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })}
-                    className="block w-full h-full" style={{ cursor: 'pointer', border: 'none', padding: 0, background: 'transparent' }}>
-                    {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
-                  </button>
-                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
-                    className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                    style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
-                    {isSel ? <Check size={15} /> : null}
-                  </button>
-                  <span className="absolute bottom-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>
+              <div key={`auto-${v.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
+                <button type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })} className="absolute inset-0 w-full h-full">
+                  {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                </button>
+                <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                  className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
+                  {isSel ? <Check size={14} /> : null}
+                </button>
+                <span className={ovBadge} style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}>авто</span>
+                {cardScrim()}
+                <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                  <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
+                  <div className="flex items-center gap-1 pointer-events-auto">
+                    <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить авто-ролик"
+                      className={`${OV_BTN} ml-auto disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
-                <div className="p-3 flex items-center gap-1">
-                  <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
-                  <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить авто-ролик"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
-                    style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}>
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </AuroraCard>
+              </div>
               );
             })}
             {/* UGC · «Макеты»: бренд-киты студии (оформление: слой/заставки/музыка/субтитры/голос). */}
@@ -1308,65 +1315,61 @@ export default function GalleryPage() {
               const selK = `kit:${k.id}`;
               const isSel = selected.has(selK);
               return (
-              <AuroraCard key={`kit-${k.id}`} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
-                <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                  <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title="Открыть UGC-студию — макет применяется в «Оформлении»"
-                    className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-muted)' }}>
-                    <LayoutTemplate size={30} /><span className="text-[11px] font-600">Бренд-кит</span>
-                  </button>
-                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
-                    className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                    style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
-                    {isSel ? <Check size={15} /> : null}
-                  </button>
+              <div key={`kit-${k.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
+                <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title="Открыть UGC-студию — макет применяется в «Оформлении»"
+                  className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <LayoutTemplate size={28} /><span className="text-[10px] font-600">Бренд-кит</span>
+                </button>
+                <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                  className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
+                  {isSel ? <Check size={14} /> : null}
+                </button>
+                {cardScrim()}
+                <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                  <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={k.name}>{k.name || 'Макет'}</div>
+                  <div className="flex items-center gap-1 pointer-events-auto">
+                    <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет" className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#fca5a5')}><X size={13} /></button>
+                  </div>
                 </div>
-                <div className="p-3 flex items-center gap-1">
-                  <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={k.name}>{k.name || 'Макет'}</div>
-                  <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}><X size={13} /></button>
-                </div>
-              </AuroraCard>
+              </div>
               );
             })}
             {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
             {tab === 'hotebook' && hbNotebooksFiltered.map((nb) => (
-              <AuroraCard key={`nb-${nb.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-                <button type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
-                  title={`Открыть блокнот: ${nb.title}`}
-                  className="relative w-full flex flex-col items-center justify-center gap-2"
-                  style={{ aspectRatio: '4 / 3', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', color: 'var(--text-muted)' }}>
-                  {hbNbOpening === nb.id
-                    ? <Loader2 size={28} className="animate-spin" style={{ color: 'var(--brand)' }} />
-                    : <span style={{ fontSize: 34, lineHeight: 1 }}>{nb.icon || '📔'}</span>}
-                  <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: '#22d3ee', color: '#04222a' }}>NotebookLM</span>
-                  {/* Бейдж: сколько готовых артефактов сделано в этом блокноте (наведение — по типам). */}
-                  {(() => {
-                    const total = Object.values(nb.artifactCounts || {}).reduce((s, n) => s + (Number(n) || 0), 0);
-                    return total > 0 ? (
-                      <span className="absolute top-2 right-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}
-                        title={Object.entries(nb.artifactCounts || {}).map(([t, n]) => `${HB_JOB_LABEL[t] || t}: ${n}`).join(', ')}>✨ {total}</span>
-                    ) : null;
-                  })()}
-                  {/* Идёт генерация артефакта В ЭТОМ блокноте — спиннер прямо на карточке (не отдельной). */}
-                  {(nb.generating || 0) > 0 && (
-                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 text-[9px] font-700 px-2 py-0.5 rounded-full z-10 whitespace-nowrap" style={{ background: 'rgba(34,211,238,0.92)', color: '#04222a' }}>
-                      <Loader2 size={10} className="animate-spin" /> генерится
-                    </span>
-                  )}
-                </button>
-                <div className="p-3 flex flex-col gap-1">
-                  <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={nb.title}>{nb.title}</div>
-                  {nb.subtitle && <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{nb.subtitle}</div>}
+              <button key={`nb-${nb.id}`} type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
+                title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
+                {hbNbOpening === nb.id
+                  ? <Loader2 size={30} className="animate-spin" style={{ color: 'var(--brand)' }} />
+                  : <span style={{ fontSize: 40, lineHeight: 1 }}>{nb.icon || '📔'}</span>}
+                <span className={ovBadge} style={{ left: '0.375rem', right: 'auto', background: '#22d3ee', color: '#04222a' }}>NotebookLM</span>
+                {/* Бейдж: сколько готовых артефактов сделано в этом блокноте (наведение — по типам). */}
+                {(() => {
+                  const total = Object.values(nb.artifactCounts || {}).reduce((s, n) => s + (Number(n) || 0), 0);
+                  return total > 0 ? (
+                    <span className="absolute top-1.5 right-1.5 z-20 text-[9px] font-700 px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}
+                      title={Object.entries(nb.artifactCounts || {}).map(([t, n]) => `${HB_JOB_LABEL[t] || t}: ${n}`).join(', ')}>✨ {total}</span>
+                  ) : null;
+                })()}
+                {/* Идёт генерация артефакта В ЭТОМ блокноте — спиннер-пилюля по центру карточки. */}
+                {(nb.generating || 0) > 0 && (
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1 text-[9px] font-700 px-2 py-0.5 rounded-full z-20 whitespace-nowrap" style={{ background: 'rgba(34,211,238,0.92)', color: '#04222a' }}>
+                    <Loader2 size={10} className="animate-spin" /> генерится
+                  </span>
+                )}
+                {cardScrim()}
+                <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-0.5 text-left">
+                  <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={nb.title}>{nb.title}</div>
+                  {nb.subtitle && <div className="text-[9px] leading-tight line-clamp-1" style={{ color: 'rgba(255,255,255,0.75)' }}>{nb.subtitle}</div>}
                   {/* Мини-разбивка по типам: 🎙️2 · 📄1 … */}
                   {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).length > 0 && (
-                    <div className="flex flex-wrap gap-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    <div className="flex flex-wrap gap-1 text-[10px]" style={{ color: 'rgba(255,255,255,0.85)' }}>
                       {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).map(([t, n]) => (
                         <span key={t} title={HB_JOB_LABEL[t] || t}>{HB_ARTIFACT_EMOJI[t] || '📦'}{Number(n) > 1 ? ` ${n}` : ''}</span>
                       ))}
                     </div>
                   )}
                 </div>
-              </AuroraCard>
+              </button>
             ))}
             {/* Hotebook: активная генерация показывается СПИННЕРОМ на карточке блокнота (nb.generating),
                 а не отдельной карточкой-плейсхолдером (по фидбэку). */}
@@ -1376,86 +1379,65 @@ export default function GalleryPage() {
               const selK = tab === 'ugc' ? `media:${v.id}` : v.id;
               const isSel = selected.has(selK);
               return (
-                <AuroraCard key={v.id}
-                  className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
-                  <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                    {renderPreview(v)}
-                    {/* Чекбокс выбора */}
-                    <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
-                      className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                      style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
-                      {isSel ? <Check size={15} /> : null}
+                <div key={v.id} className={cardCls(isSel)} style={CARD_STYLE}>
+                  {/* Медиа/превью на весь размер карточки */}
+                  <div className="absolute inset-0">{renderPreview(v)}</div>
+                  {/* Чекбокс выбора */}
+                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
+                    {isSel ? <Check size={14} /> : null}
+                  </button>
+                  {/* Бейдж «Анализ» — у видео «Из анализа» с сохранённым разбором; клик → открыть разбор */}
+                  {v.hasAnalysis && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); void openAnalysis(v); }}
+                      title="Открыть сохранённый анализ этого видео"
+                      className={`${ovBadge} inline-flex items-center gap-1 transition-transform hover:scale-105`}
+                      style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
+                      <Sparkles size={10} /> Анализ
                     </button>
-                    {/* Просмотры (тренды) */}
-                    {v.stats?.play != null && (
-                      <span className="absolute bottom-2 left-2 text-[11px] font-700 inline-flex items-center gap-1 z-10"
-                        style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                        <Eye size={12} /> {fmt(v.stats.play)}
-                      </span>
-                    )}
-                    {/* Длительность */}
-                    {dur(v.durationSec) && (
-                      <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10"
-                        style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>
-                    )}
-                    {/* Бейдж «Анализ» — у видео «Из анализа» с сохранённым разбором; клик → открыть разбор */}
-                    {v.hasAnalysis && (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); void openAnalysis(v); }}
-                        title="Открыть сохранённый анализ этого видео"
-                        className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 text-[10px] font-700 px-2 py-1 rounded-lg transition-transform hover:scale-105"
-                        style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
-                        <Sparkles size={11} /> Анализ
-                      </button>
-                    )}
-                  </div>
-                  <div className="p-3 flex flex-col gap-2 flex-1">
-                    <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
-                    {v.subtitle && <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.subtitle}</p>}
-                    {v.stats && (
-                      <div className="flex items-center gap-2.5 text-[11px] mt-auto" style={{ color: 'var(--text-muted)' }}>
-                        <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>
-                        <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>
+                  )}
+                  {cardScrim()}
+                  {/* Наложенные счётчики + название + все иконки-действия */}
+                  <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                    {(v.stats?.play != null || v.stats?.like != null || dur(v.durationSec)) && (
+                      <div className="flex items-center gap-2 text-[10px] font-700 text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                        {v.stats?.play != null && <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>}
+                        {v.stats?.like != null && <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>}
+                        {dur(v.durationSec) && <span className="ml-auto px-1 rounded" style={{ background: 'rgba(0,0,0,0.5)' }}>{dur(v.durationSec)}</span>}
                       </div>
                     )}
-                    <div className="flex items-center gap-1 pt-1">
+                    <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
+                    <div className="flex flex-wrap items-center gap-1 pointer-events-auto">
                       {/* Открыть оригинал (тренды) или файл */}
-                      <a href={v.webUrl || v.fileUrl} target="_blank" rel="noreferrer" title={v.webUrl ? 'Открыть оригинал' : 'Открыть файл'}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                        {v.webUrl ? <ExternalLink size={14} /> : <Play size={14} />}
+                      <a href={v.webUrl || v.fileUrl} target="_blank" rel="noreferrer" title={v.webUrl ? 'Открыть оригинал' : 'Открыть файл'} className={OV_BTN} style={ovBtnStyle()}>
+                        {v.webUrl ? <ExternalLink size={13} /> : <Play size={13} />}
                       </a>
-                      {/* → Google Flow (видео/картинки): отправить в Flow через расширение */}
+                      {/* → Google Flow (видео/картинки) */}
                       {(v.mediaType === 'video' || v.mediaType === 'image') && (
                         <button type="button" onClick={() => sendToFlow(v)} title={v.mediaType === 'video' ? 'Скачать и загрузить в Google Flow (видео — вручную через «Загрузки»)' : 'Отправить картинку в Google Flow (Veo) через расширение'}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                          style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
-                          <Clapperboard size={14} />
+                          className={OV_BTN} style={ovBtnStyle('#a5b4fc')}>
+                          <Clapperboard size={13} />
                         </button>
                       )}
-                      {/* → Публикатор: опубликовать этот файл в соцсети (кнопка всегда видна — канон карточек) */}
+                      {/* → Публикатор */}
                       {(v.mediaType === 'video' || v.mediaType === 'image') && (
                         <button type="button" onClick={() => setPubStudio({ assetId: v.id, mediaUrl: v.fileUrl, title: v.title })}
-                          title="Опубликовать в соцсети (Публикатор)"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                          style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
-                          <Send size={14} />
+                          title="Опубликовать в соцсети (Публикатор)" className={OV_BTN} style={ovBtnStyle('#6ee7b7')}>
+                          <Send size={13} />
                         </button>
                       )}
                       {/* Удалить */}
-                      <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
-                        style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
-                        <Trash2 size={14} />
+                      <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл" className={`${OV_BTN} disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
+                        <Trash2 size={13} />
                       </button>
                       {/* Скачать на устройство */}
-                      <button type="button" onClick={() => downloadOne(v)} title="Скачать на устройство"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors hover:opacity-90"
-                        style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
-                        <Download size={15} />
+                      <button type="button" onClick={() => downloadOne(v)} title="Скачать на устройство" className={`${OV_BTN} ml-auto`}
+                        style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', cursor: 'pointer' }}>
+                        <Download size={14} />
                       </button>
                     </div>
                   </div>
-                </AuroraCard>
+                </div>
               );
             })}
           </div>
