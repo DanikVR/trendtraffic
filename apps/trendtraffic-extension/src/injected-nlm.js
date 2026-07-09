@@ -113,5 +113,45 @@
     return XS.apply(this, arguments);
   };
 
+  // --- ПЕРЕХВАТ СКАЧИВАНИЯ АРТЕФАКТА (blob) ---
+  // Готовый аудио/видео NotebookLM отдаёт как Blob → URL.createObjectURL → клик по <a download>.
+  // chrome.downloads в service worker такой blob: НЕ стянет (нет доступа к blob другого контекста).
+  // MAIN-мир СВОЙ blob видит → читаем байты здесь и отдаём content-скрипту base64-ом.
+  const blobByUrl = new Map();
+  const origCreateObjURL = URL.createObjectURL.bind(URL);
+  URL.createObjectURL = function (obj) {
+    const u = origCreateObjURL(obj);
+    try {
+      if (obj instanceof Blob) {
+        blobByUrl.set(u, obj);
+        if (blobByUrl.size > 24) blobByUrl.delete(blobByUrl.keys().next().value);
+      }
+    } catch { /* игнор */ }
+    return u;
+  };
+  async function captureDownload(href, fileName) {
+    try {
+      let blob = blobByUrl.get(href);
+      if (!blob) { const r = await origFetch.call(window, href, { credentials: 'include' }); blob = await r.blob(); }
+      if (!blob || blob.size < 64) return;
+      const buf = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      const mime = blob.type || 'application/octet-stream';
+      post({ kind: 'artifact-blob', mime, size: blob.size, fileName: fileName || '', dataUrl: 'data:' + mime + ';base64,' + btoa(bin) });
+    } catch (e) { post({ kind: 'artifact-blob-error', error: String((e && e.message) || e) }); }
+  }
+  const origAClick = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function () {
+    try {
+      const href = this.href || '';
+      const dl = this.getAttribute('download');
+      // Скачивание артефакта: <a download> ИЛИ blob:/googleusercontent-ссылка.
+      if (href && (dl != null || /^blob:|googleusercontent|\.mp3|\.mp4|\.m4a|\.wav/i.test(href))) captureDownload(href, dl || '');
+    } catch { /* игнор */ }
+    return origAClick.apply(this, arguments);
+  };
+
   post({ kind: 'ready' });
 })();

@@ -495,14 +495,24 @@ async function _runNlmTask(task) {
   // Аудио/видео качаются через меню «Скачать» → ставим перехватчик ДО генерации.
   const isMedia = (task.type === 'audio' || task.type === 'video');
   const dl = isMedia ? armDownloadCapture(NLM_TASK_TIMEOUT_MS) : null;
+  const action = { kind: 'generate', gtype: task.type, params: task.params || {}, notebookId: task.notebookId };
+  const runOnce = () => withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), NLM_TASK_TIMEOUT_MS);
   let result;
   try {
-    const action = { kind: 'generate', gtype: task.type, params: task.params || {}, notebookId: task.notebookId };
-    result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), NLM_TASK_TIMEOUT_MS);
+    result = await runOnce();
   } catch (e) {
-    if (dl) dl.cancel();
-    await nlmTaskStatus(task.id, 'failed', String(e && e.message || e));
-    return;
+    const msg = String((e && e.message) || e);
+    // «Receiving end does not exist» = контент-скрипт ещё не поднялся (вкладка навигировалась).
+    // Ждём готовности вкладки и повторяем ОДИН раз — иначе генерация зря падала на гонке загрузки.
+    if (/Receiving end does not exist|Could not establish connection/i.test(msg)) {
+      await waitForTabReady(tabId, 30_000);
+      try { result = await runOnce(); }
+      catch (e2) { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'failed', String((e2 && e2.message) || e2)); return; }
+    } else {
+      if (dl) dl.cancel();
+      await nlmTaskStatus(task.id, 'failed', msg);
+      return;
+    }
   }
   if (result && result.reason === 'not-logged-in') { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'retry', 'Войдите в NotebookLM'); return; }
   if (!result || !result.ok) { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }

@@ -25,6 +25,9 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const send = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(); } };
   const reconApis = [];
+  // Последний перехваченный (в MAIN-мире, injected-nlm) файл артефакта — байты аудио/видео.
+  // Захват blob прямо на странице надёжнее chrome.downloads (blob фон не стянет).
+  let lastArtifact = null;
 
   // ── deep-query сквозь shadow DOM (NotebookLM рендерит части в web-components) ──
   function queryAllDeep(sel) {
@@ -140,6 +143,12 @@
       reconApis.push({ url: String(d.url || '').slice(0, 160), method: d.method, status: d.status });
       if (reconApis.length > 60) reconApis.shift();
       ui.recon();
+    } else if (d.kind === 'artifact-blob' && d.dataUrl) {
+      // Перехвачены байты готового артефакта (аудио/видео) прямо на странице.
+      lastArtifact = { dataUrl: d.dataUrl, mime: d.mime || '', fileName: d.fileName || '', size: d.size || 0, ts: Date.now() };
+      try { ui.line('перехвачен файл артефакта (' + Math.round((d.size || 0) / 1024) + ' КБ)'); } catch { /* */ }
+    } else if (d.kind === 'artifact-blob-error') {
+      try { ui.line('перехват файла не удался: ' + d.error); } catch { /* */ }
     }
   });
 
@@ -716,10 +725,19 @@
     ui.task('Генерирую: ' + gtype);
     await openStudio();
     // 1) Открываем ПАНЕЛЬ НАСТРОЙКИ типа («Настроить аудиопересказ» и т.п.) — там опции + «Сгенерировать».
-    const opened = await clickByText(spec.customize || []);
+    //    Студия поднимается НЕ сразу (после навигации в блокнот) → ждём плитку до ~14с, не падаем сразу
+    //    (частая ошибка selector:tile:audio была именно гонкой — плитки ещё нет на момент клика).
+    let opened = false, tileClicked = false;
+    const tileT0 = Date.now();
+    while (Date.now() - tileT0 < 14_000) {
+      if (await clickByText(spec.customize || [])) { opened = true; break; }
+      if (await clickByText(spec.tiles)) { tileClicked = true; break; }
+      await sleep(700);
+    }
     if (!opened) {
-      // Фолбэк: клик по самой плитке = генерация с дефолтами (без опций/фокуса).
-      if (!await clickByText(spec.tiles)) return { ok: false, reason: 'selector:tile:' + gtype };
+      // Плитку тоже не нашли за отведённое время → студия не отрисовалась/не тот экран.
+      if (!tileClicked) return { ok: false, reason: 'selector:tile:' + gtype };
+      // Клик по самой плитке = генерация с дефолтами (без опций/фокуса).
       ui.line('генерация запущена (' + gtype + ', дефолт), жду артефакт…');
       const cap0 = await captureArtifact(gtype, spec);
       if (!cap0) return { ok: false, reason: 'timeout' };
@@ -768,8 +786,19 @@
           if (el) { const got = await grabMediaData(el); if (got && (got.dataUrl || got.sourceUrl)) return got; }
         } else if (!stillGen()) {
           // Аудио/видео: <audio>/<video> у NotebookLM НЕ создаётся (плеер на MSE). Готовый артефакт
-          // качаем через меню карточки (⋮ → «Скачать»); background перехватит загрузку (chrome.downloads).
-          if (await triggerArtifactDownload(gtype)) { ui.line('запросил скачивание артефакта…'); return { viaDownload: true }; }
+          // качаем через меню карточки (⋮ → «Скачать»). Приоритет — перехват BLOB на самой странице
+          // (injected-nlm: надёжно для blob/data, что chrome.downloads в фоне не стянет); фолбэк —
+          // background chrome.downloads (для http-скачиваний).
+          lastArtifact = null;
+          if (await triggerArtifactDownload(gtype)) {
+            ui.line('запросил скачивание артефакта…');
+            const t0 = Date.now();
+            while (Date.now() - t0 < 15_000) {
+              if (lastArtifact && lastArtifact.dataUrl) return { dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || spec.mime };
+              await sleep(500);
+            }
+            return { viaDownload: true }; // blob не перехватили → пусть ловит background (http)
+          }
         }
       } else {
         // doc/json/csv: сперва ссылка на файл (download-якорь/CDN), иначе скрейп текста.

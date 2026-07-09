@@ -2351,11 +2351,21 @@
  *          /api/notebooklm/jobs?active=1 раз в 8с) — видно с любого экрана. Только backend+frontend,
  *          расширение не трогали (остаётся 1.3.14). Файлы: notebooklm-ext/router.ts (ingest),
  *          notebooklm/router.ts (бэкфилл), MainLayout.tsx, AppVersion. */
-export const APP_VERSION = '2.2.23';
+/* 2.2.24 — Hotebook, ЗАХВАТ артефактов NotebookLM (аудио не долетало — 5 из 6 генераций падали).
+ *          Разбор ошибок: selector:tile:audio (гонка — студия не успевала отрисоваться),
+ *          «не удалось перехватить скачивание» (chrome.downloads не тянет blob:-загрузку из фона),
+ *          «Could not establish connection» (sendMessage в момент навигации вкладки). Фиксы (ext 1.3.15):
+ *          (1) injected-nlm перехватывает BLOB артефакта в MAIN-мире (hook URL.createObjectURL +
+ *          HTMLAnchorElement.click) → отдаёт байты content-скрипту; captureArtifact возвращает dataUrl
+ *          напрямую (chrome.downloads — фолбэк для http). (2) generate ждёт плитку студии до 14с, а не
+ *          падает сразу. (3) background повторяет sendMessage 1 раз после waitForTabReady при потере
+ *          связи. + бэкфилл folder каст uuid::text. Файлы: ext/injected-nlm.js, ext/content-notebook.js,
+ *          ext/background.js, notebooklm/router.ts, manifest, AppVersion. */
+export const APP_VERSION = '2.2.24';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.14';
+export const TT_EXT_VERSION = '1.3.15';
 
 export function AppVersion() {
   return (
