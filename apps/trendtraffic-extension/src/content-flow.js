@@ -664,7 +664,7 @@
     let links = findLinks();
     if (!links.length) {
       const t0 = Date.now();
-      while (Date.now() - t0 < 18000) {
+      while (Date.now() - t0 < 22000) {
         await sleep(700);
         links = findLinks();
         if (links.length) break;

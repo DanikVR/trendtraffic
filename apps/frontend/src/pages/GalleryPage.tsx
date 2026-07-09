@@ -288,6 +288,18 @@ export default function GalleryPage() {
     setCopied(t);
     setTimeout(() => setCopied((c) => (c === t ? null : c)), 1600);
   };
+  // Крупный ЦЕНТРИРОВАННЫЙ индикатор загрузки (Google Flow / Hotebook) — бросается в глаза,
+  // с мягким пульсирующим свечением. Показывается пока тянем список проектов/блокнотов.
+  const renderCenterLoader = (text: string) => (
+    <div className="w-full flex flex-col items-center justify-center gap-3 py-20">
+      <span className="relative flex items-center justify-center" style={{ width: 76, height: 76 }}>
+        <span className="absolute inset-0 rounded-full animate-pulse" aria-hidden="true"
+          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.28), transparent 68%)' }} />
+        <Loader2 size={46} className="animate-spin" style={{ color: 'var(--brand)', zIndex: 1 }} />
+      </span>
+      <span className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>{text}</span>
+    </div>
+  );
   const sendToFlow = (v: GalleryItem) => {
     // Видео: Flow НЕ принимает авто-вставкой (у Flow поле только image/*). Скачиваем файл + инструкция «залей вручную».
     if (v.mediaType === 'video') { downloadOne(v); setVideoPopup(v); return; }
@@ -1032,12 +1044,10 @@ export default function GalleryPage() {
           {/* Google Flow / Hotebook: плашка «Установите расширение TrendTraffic» (инлайн-раскрытие) */}
           {(tab === 'flow' || tab === 'hotebook') && renderExtBanner()}
 
-          {/* Hotebook: строка статуса блокнотов — грузим/не залогинен/офлайн + «Обновить». */}
-          {tab === 'hotebook' && (
+          {/* Hotebook: строка статуса блокнотов (когда НЕ грузим) — не залогинен/офлайн + «Обновить». */}
+          {tab === 'hotebook' && !hbNbLoading && (
             <div className="flex items-center gap-2 text-[12px] mb-3" style={{ color: 'var(--text-muted)' }}>
-              {hbNbLoading ? (
-                <><Loader2 size={13} className="animate-spin" /> Загружаю блокноты NotebookLM…</>
-              ) : hbNbStatus && !hbNbStatus.ok ? (
+              {hbNbStatus && !hbNbStatus.ok ? (
                 <span style={{ color: '#f59e0b' }}>
                   {hbNbStatus.errorKind === 'ext_login'
                     ? 'Войдите в notebooklm.google.com в браузере с расширением — тогда покажутся все ваши блокноты.'
@@ -1050,12 +1060,10 @@ export default function GalleryPage() {
             </div>
           )}
 
-          {/* «Google Flow»: строка статуса проектов — грузим / ошибка / N проектов + «Обновить». */}
-          {tab === 'flow' && (
+          {/* «Google Flow»: строка статуса проектов (когда НЕ грузим) — ошибка / N проектов + «Обновить». */}
+          {tab === 'flow' && !flowProjLoading && (
             <div className="flex items-center gap-2 text-[12px] mb-1" style={{ color: 'var(--text-muted)' }}>
-              {flowProjLoading ? (
-                <><Loader2 size={13} className="animate-spin" /> Загружаю проекты Google Flow…</>
-              ) : flowProjError ? (
+              {flowProjError ? (
                 <span style={{ color: '#f59e0b' }}>{flowProjError} <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button></span>
               ) : (
                 <><span>Проектов Google Flow: {flowProjects.length}</span>
@@ -1064,6 +1072,10 @@ export default function GalleryPage() {
               )}
             </div>
           )}
+
+          {/* Крупный центрированный индикатор загрузки — Hotebook / Google Flow. */}
+          {tab === 'hotebook' && hbNbLoading && renderCenterLoader('Загружаю блокноты NotebookLM…')}
+          {tab === 'flow' && flowProjLoading && renderCenterLoader('Загружаю проекты Google Flow…')}
 
           {/* «Видео»: кнопки-фильтры Видео | Аудио (аудио объединено с медиафайлами) */}
           {tab === 'reference' && (

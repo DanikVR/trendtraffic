@@ -2252,12 +2252,19 @@
  *          заполненный темой/идеей/ключевиками/референсом (graph.brief + ugc.brief), и открывает
  *          UGC-студию через deep-link ?tab=ugc&openFlow=<id> (новый хендлер в GalleryPage). Файлы:
  *          AudienceTargetPanel.tsx, GalleryPage.tsx. */
-export const APP_VERSION = '2.2.12';
+/* 2.2.13 — Google Flow, доводки по фидбэку: (1) КРУПНЫЙ центрированный индикатор загрузки (спиннер
+ *          с пульсирующим свечением) на вкладке «Google Flow» И в «Hotebook» вместо мелкой строки
+ *          сверху (renderCenterLoader; статус-строки прячутся, пока грузим). (2) Фикс «Проектов: 0»
+ *          при заходе кнопкой «Открыть» ИЗНУТРИ проекта Flow: сетки-вкладки нет → расширение скребёт
+ *          временную фоновую вкладку, а она отрисовывает грид Flow с задержкой → теперь ретрай скрейпа
+ *          при пустом результате + окно ожидания карточек 18с→22с. Расширение → v1.3.6. Файлы:
+ *          GalleryPage.tsx, trendtraffic-extension (background.js listFlowProjects, content-flow.js). */
+export const APP_VERSION = '2.2.13';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.5';
+export const TT_EXT_VERSION = '1.3.6';
 
 export function AppVersion() {
   return (

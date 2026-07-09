@@ -251,16 +251,22 @@ async function listFlowProjects() {
       if (r && r.ok) return r;
     } catch { /* упадём во временную вкладку ниже */ }
   }
-  // 2) Временная фоновая вкладка на главную Flow → снять и закрыть.
+  // 2) Временная фоновая вкладка на главную Flow → снять и закрыть. Фоновая вкладка отрисовывает
+  //    сетку Flow с задержкой (тяжёлый SPA + троттлинг фона), поэтому при пустом результате
+  //    ждём и повторяем скрейп ещё раз (иначе «Проектов: 0», хотя проекты есть).
   let tab;
   try { tab = await chrome.tabs.create({ url: 'https://labs.google/fx/tools/flow', active: false }); }
   catch (e) { return { ok: false, error: 'не удалось открыть Flow: ' + (e && e.message || e) }; }
   const ready = await waitForTabReady(tab.id, 45_000);
-  let r;
+  let r = null;
   if (!ready) r = { ok: false, error: 'Flow не загрузился — войдите в labs.google/flow' };
   else {
-    try { r = await withTimeout(chrome.tabs.sendMessage(tab.id, { type: 'list-projects' }), 45_000); }
-    catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try { r = await withTimeout(chrome.tabs.sendMessage(tab.id, { type: 'list-projects' }), 45_000); }
+      catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+      if (r && r.ok && Array.isArray(r.projects) && r.projects.length) break; // проекты получены
+      if (attempt === 0) await sleep(4000); // сетка ещё не отрисовалась → подождём и повторим
+    }
   }
   try { await chrome.tabs.remove(tab.id); } catch { /* закрытие best-effort */ }
   return r || { ok: false, error: 'нет ответа от Flow' };
