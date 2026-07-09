@@ -199,9 +199,13 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
       ? saveDataUrl(dataUrl, job.id, extHint)
       : await saveSourceUrl(sourceUrl, job.id, extHint);
 
+    const artMediaType = EXT_MEDIA[stored.ext] || 'file';
     const asset: MediaAsset | null = await createAsset(req.tenantId!, {
-      kind: 'reference',
-      mediaType: EXT_MEDIA[stored.ext] || 'file',
+      // Аудио-артефакты пишем kind='audio' → попадают И в «Видео → Аудио» (фильтр по kind),
+      // И остаются в «Hotebook» (лента по folder='hotebook', kind-независима). По просьбе юзера
+      // готовое аудио NotebookLM должно быть в аудио-разделе, а не только в Hotebook.
+      kind: artMediaType === 'audio' ? 'audio' : 'reference',
+      mediaType: artMediaType,
       originalName: artifactFileName(nameBase, job.type, stored.ext),
       fileUrl: stored.fileUrl, filePath: stored.filePath,
       mime: EXT_MIME[stored.ext] || stored.mime, size: stored.size,

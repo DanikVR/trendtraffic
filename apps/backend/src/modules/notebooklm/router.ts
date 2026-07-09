@@ -90,6 +90,10 @@ async function ensureTables(): Promise<void> {
     )`);
   await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS title TEXT`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_nlm_jobs_tenant ON notebooklm_jobs(tenant_id, created_at DESC)`);
+  // Бэкфилл: раньше аудио-артефакты Hotebook писались kind='reference' → не попадали в «Видео → Аудио»
+  // (фильтр по kind). Переводим уже сохранённое аудио Hotebook в kind='audio' (идемпотентно — после
+  // первого прогона строк не остаётся). Лента Hotebook (по folder) их всё равно показывает.
+  await pool.query(`UPDATE media_assets SET kind='audio' WHERE folder='hotebook' AND media_type='audio' AND kind='reference'`);
 }
 ensureTables().catch((e) => console.warn('[hotebook] init таблиц:', (e as Error).message));
 

@@ -2342,8 +2342,16 @@
  *          плитке «Добавить» (конический градиент + animate-iridescent hue-rotate + animate-attract
  *          пульс). Файлы: GalleryPage.tsx, MainLayout.tsx, PublisherTab.tsx, tailwind.config.cjs,
  *          index.html, public/icons/*.png (+nav-extension, logo). */
-export const APP_VERSION = '2.2.22';
-
+/* 2.2.23 — Hotebook, два фидбэка: (1) готовое аудио NotebookLM (аудиопересказ) теперь попадает и в
+ *          «Видео → Аудио», а не только в ленту Hotebook: ingest пишет аудио-артефакты kind='audio'
+ *          (раньше 'reference' → фильтр по kind в аудио-разделе их не видел); folder='hotebook'
+ *          kind-независим, поэтому в Hotebook они тоже остаются. Идемпотентный бэкфилл уже
+ *          сохранённого аудио Hotebook → kind='audio'. (2) Индикатор генерации в ЛЕВОМ САЙДБАРЕ:
+ *          на иконке «Hotebook» крутится спиннер, пока идёт генерация артефактов (MainLayout опрашивает
+ *          /api/notebooklm/jobs?active=1 раз в 8с) — видно с любого экрана. Только backend+frontend,
+ *          расширение не трогали (остаётся 1.3.14). Файлы: notebooklm-ext/router.ts (ingest),
+ *          notebooklm/router.ts (бэкфилл), MainLayout.tsx, AppVersion. */
+export const APP_VERSION = '2.2.23';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

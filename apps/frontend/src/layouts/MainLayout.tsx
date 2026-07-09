@@ -5,7 +5,7 @@
  * Desktop (lg+): slim left sidebar с иконками + labels.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -22,6 +22,7 @@ import {
   BookOpen,
   Clapperboard,
   Video,
+  Loader2,
 } from 'lucide-react';
 
 // ── Функция переключения темы (глобальная, без re-render всего layout) ──
@@ -50,7 +51,7 @@ import { FEATURES }      from '../config/features';
 
 export function MainLayout() {
   const { t } = useTranslation('common');
-  const { user, subscriptionTier, subscriptionTierName, refreshBilling, setMoreSheetOpen } = useAppStore();
+  const { user, token, subscriptionTier, subscriptionTierName, refreshBilling, setMoreSheetOpen } = useAppStore();
   // Конструктор цепочек (/flow) — на всю ширину (холст React Flow), без центрирующего max-w.
   const { pathname } = useLocation();
   // /flow (холст React Flow) и /social-extension (iframe расширения) — на всю ширину.
@@ -61,6 +62,25 @@ export function MainLayout() {
 
   // ENTERPRISE: видимость Enterprise-пунктов — единый источник истины (хук).
   const isEnterprise = useIsEnterprise();
+
+  // Индикатор генерации NotebookLM в САЙДБАРЕ: пока в Hotebook что-то генерится (аудио/видео/…),
+  // на иконке «Hotebook» крутится спиннер — видно с любого экрана, даже уйдя из Галереи.
+  const [hbGen, setHbGen] = useState(0);
+  useEffect(() => {
+    if (!token || !isEnterprise) { setHbGen(0); return; }
+    let alive = true;
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/notebooklm/jobs?active=1', { headers: { Authorization: `Bearer ${token}` } });
+        if (!alive || !r.ok) return;
+        const d = await r.json();
+        setHbGen(Array.isArray(d.jobs) ? d.jobs.length : 0);
+      } catch { /* не критично */ }
+    };
+    poll();
+    const iv = setInterval(poll, 8000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [token, isEnterprise]);
 
   // Сайдбар = быстрый переход по вкладкам ГАЛЕРЕИ (главный экран-хаб, 2026-07-08).
   // Всё открывается ВНУТРИ Галереи: пункт ведёт на /gallery?tab=… и переключает вкладку.
@@ -149,19 +169,26 @@ export function MainLayout() {
           {galleryNav.map((item) => {
             const Icon = item.icon;
             const isActive = curGalleryTab === item.tab;
+            const generating = item.tab === 'hotebook' && hbGen > 0;
             return (
               <button
                 key={item.tab}
                 type="button"
                 onClick={() => navigate(`/gallery?tab=${item.tab}`)}
-                title={item.label}
+                title={generating ? `${item.label} — идёт генерация (${hbGen})` : item.label}
                 aria-label={item.label}
-                className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 no-select"
+                className="relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 no-select"
                 style={isActive
                   ? { background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }
                   : { color: 'var(--text-muted)', border: '1px solid transparent', background: 'transparent', cursor: 'pointer' }}
               >
                 <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                {generating && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <Loader2 size={11} className="animate-spin" style={{ color: '#22d3ee' }} />
+                  </span>
+                )}
               </button>
             );
           })}
