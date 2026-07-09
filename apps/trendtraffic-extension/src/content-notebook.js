@@ -284,17 +284,18 @@
 
   // ═══════════════════ 3. автоматизация NotebookLM ═══════════════════
 
-  // Тип артефакта → плитки студии, тип захвата, расширение, mime. Тексты уточняются разведкой.
+  // Тип артефакта → плитки студии, ПАНЕЛЬ настройки («Настроить X» → там опции + «Сгенерировать»),
+  // тип захвата, расширение, mime. Разведано вживую (RU NotebookLM).
   const GEN_UI = {
-    audio:       { tiles: ['audio overview', 'аудиообзор', 'аудиопересказ', 'deep dive', 'аудио'], kind: 'media', ext: '.mp3', mime: 'audio/mpeg' },
-    video:       { tiles: ['video overview', 'видеообзор', 'видео'],                                 kind: 'media', ext: '.mp4', mime: 'video/mp4' },
-    report:      { tiles: ['reports', 'report', 'отчёт', 'отчёты'],                                  kind: 'doc',   ext: '.md',  mime: 'text/markdown' },
-    quiz:        { tiles: ['quiz', 'тест'],                                                          kind: 'json',  ext: '.json', mime: 'application/json' },
-    table:       { tiles: ['data table', 'таблица', 'table'],                                        kind: 'csv',   ext: '.csv', mime: 'text/csv' },
-    infographic: { tiles: ['infographic', 'инфографика'],                                            kind: 'media', ext: '.png', mime: 'image/png' },
-    flashcards:  { tiles: ['flashcards', 'карточки'],                                                kind: 'json',  ext: '.json', mime: 'application/json' },
-    mindmap:     { tiles: ['mind map', 'mindmap', 'ментальная карта'],                               kind: 'json',  ext: '.json', mime: 'application/json' },
-    slides:      { tiles: ['slides', 'презентация', 'slide deck'],                                   kind: 'doc',   ext: '.pdf', mime: 'application/pdf' },
+    audio:       { tiles: ['аудиопересказ', 'audio overview', 'аудиообзор'], customize: ['настроить аудиопересказ', 'customize audio'], kind: 'media', ext: '.mp3', mime: 'audio/mpeg' },
+    video:       { tiles: ['видеопересказ', 'video overview', 'видеообзор'], customize: ['настроить видеопересказ', 'customize video'],   kind: 'media', ext: '.mp4', mime: 'video/mp4' },
+    report:      { tiles: ['отчеты', 'отчёты', 'reports', 'report'],         customize: ['настроить отчет', 'настроить отчёт'],            kind: 'doc',   ext: '.md',  mime: 'text/markdown' },
+    quiz:        { tiles: ['тест', 'quiz'],                                  customize: ['настроить тест', 'customize quiz'],              kind: 'json',  ext: '.json', mime: 'application/json' },
+    table:       { tiles: ['таблица данных', 'data table', 'таблица'],       customize: ['настроить таблицу данных', 'настроить таблицу'], kind: 'csv',   ext: '.csv', mime: 'text/csv' },
+    infographic: { tiles: ['инфографика', 'infographic'],                    customize: ['настроить инфографику'],                         kind: 'media', ext: '.png', mime: 'image/png' },
+    flashcards:  { tiles: ['карточки', 'flashcards'],                        customize: ['настроить карточки'],                            kind: 'json',  ext: '.json', mime: 'application/json' },
+    mindmap:     { tiles: ['ментальная карта', 'mind map', 'mindmap'],       customize: ['настроить ментальную карту'],                    kind: 'json',  ext: '.json', mime: 'application/json' },
+    slides:      { tiles: ['презентация', 'slides', 'slide deck'],           customize: ['настроить презентацию'],                         kind: 'doc',   ext: '.pdf', mime: 'application/pdf' },
   };
   // Значение опции UI → кандидаты текста в NotebookLM (EN + RU). Ненайденное сворачивается в инструкцию.
   const LABELS = {
@@ -321,7 +322,7 @@
     sourceTextArea: ['textarea[aria-label*="вставленн" i]', 'textarea[placeholder*="вставьте текст" i]', 'textarea[placeholder*="paste" i]', 'textarea[placeholder*="text" i]', 'textarea[placeholder*="текст" i]', 'textarea'],
     fileInput: ['input[type="file"]'],
     chatInput: ['textarea[placeholder*="введите текст" i]', 'textarea[aria-label*="поле для запрос" i]', 'textarea[placeholder*="ask" i]', 'textarea[placeholder*="спрос" i]', 'div[contenteditable="true"][role="textbox"]', 'textarea'],
-    instructions: ['textarea[placeholder*="focus" i]', 'textarea[placeholder*="акцент" i]', 'textarea[placeholder*="instruction" i]', 'textarea'],
+    instructions: ['textarea[aria-label*="акцент" i]', 'textarea[aria-label*="на чем" i]', 'textarea[aria-label*="на чём" i]', 'textarea[placeholder*="focus" i]', 'textarea[placeholder*="акцент" i]', 'textarea[placeholder*="instruction" i]', 'textarea[aria-label*="focus" i]'],
   };
   function pickDeep(cands) {
     for (const s of cands) { const list = queryAllDeep(s).filter(visible); if (list.length) return list[list.length - 1]; }
@@ -665,7 +666,9 @@
   }
 
   // ── генерация артефакта ──
-  async function openStudio() { await clickByText(['studio', 'студия', 'create', 'создать']); await sleep(500); }
+  // Панель «Студия» всегда справа — отдельно открывать НЕ нужно. РАНЬШЕ клик по 'создать' попадал в
+  // «Создать блокнот» → создавался новый пустой блокнот. Теперь no-op.
+  async function openStudio() { await sleep(150); }
   function applyOption(field, value, folded) {
     if (value == null || value === '') return;
     const cands = (LABELS[field] && LABELS[field][value]) || [String(value)];
@@ -679,12 +682,20 @@
     if (!spec) return { ok: false, reason: 'неизвестный тип: ' + gtype };
     ui.task('Генерирую: ' + gtype);
     await openStudio();
-    // 1) плитка артефакта
-    if (!await clickByText(spec.tiles)) return { ok: false, reason: 'selector:tile:' + gtype };
-    await sleep(700);
-    // 2) «Настроить» (если есть) → опции
-    await clickByText(['customize', 'настроить', 'options', 'настройки', 'more options']);
-    await sleep(400);
+    // 1) Открываем ПАНЕЛЬ НАСТРОЙКИ типа («Настроить аудиопересказ» и т.п.) — там опции + «Сгенерировать».
+    const opened = await clickByText(spec.customize || []);
+    if (!opened) {
+      // Фолбэк: клик по самой плитке = генерация с дефолтами (без опций/фокуса).
+      if (!await clickByText(spec.tiles)) return { ok: false, reason: 'selector:tile:' + gtype };
+      ui.line('генерация запущена (' + gtype + ', дефолт), жду артефакт…');
+      const cap0 = await captureArtifact(gtype, spec);
+      if (!cap0) return { ok: false, reason: 'timeout' };
+      if (cap0.reason) return { ok: false, reason: cap0.reason };
+      ui.line('✓ артефакт готов (' + gtype + ')');
+      return { ok: true, ...cap0, fileName: (baseName(params) || gtype) + spec.ext, mime: spec.mime };
+    }
+    await sleep(1000);
+    // 2) опции (format/length/…): найденное кликаем, ненайденное сворачиваем в фокус-инструкцию.
     const folded = [];
     for (const f of ['format', 'length', 'style', 'difficulty', 'count', 'orientation', 'detail']) {
       if (params && params[f] != null && params[f] !== '') applyOption(f, params[f], folded);
@@ -695,12 +706,12 @@
       if (langEl) { clickEl(langEl); await sleep(300); if (!await clickByText([String(params.language)])) folded.push('язык: ' + params.language); }
       else folded.push('язык: ' + params.language);
     }
-    // 4) фокус/инструкции + свёрнутые опции
+    // 4) фокус/инструкции (поле «На чём сделать акцент») + свёрнутые опции
     const focusText = [String((params && params.focus) || '').trim(), folded.join('. ')].filter(Boolean).join('. ');
     if (focusText) { const box = pickDeep(SEL.instructions); if (box) typeInto(box, focusText); }
-    // 5) запуск
+    // 5) ЗАПУСК — РОВНО «Сгенерировать» (НЕ «создать» → это «Создать блокнот»!).
     await sleep(300);
-    if (!await clickByText(['generate', 'create', 'сгенерировать', 'создать', 'go'])) return { ok: false, reason: 'selector:generate:' + gtype };
+    if (!await clickByText(['сгенерировать', 'generate', 'запустить генерацию'])) return { ok: false, reason: 'selector:generate:' + gtype };
     ui.line('генерация запущена (' + gtype + '), жду артефакт…');
     // 6) ждать артефакт и захватить
     const captured = await captureArtifact(gtype, spec);
@@ -715,9 +726,20 @@
   async function captureArtifact(gtype, spec) {
     const started = Date.now();
     const MAXW = { audio: 20 * 60_000, video: 30 * 60_000, infographic: 12 * 60_000 }[gtype] || 10 * 60_000;
+    let played = false;
     while (Date.now() - started < MAXW) {
       if (spec.kind === 'media') {
-        const el = pickMedia(gtype);
+        let el = pickMedia(gtype);
+        // Аудио/видео: <audio>/<video> появляется ТОЛЬКО при воспроизведении. Пока генерируется —
+        // на карточке крутится статус; когда готово — есть кнопка play. Кликаем play, чтобы
+        // NotebookLM загрузил медиа-элемент, затем берём его src.
+        if (!el && gtype !== 'infographic' && !played) {
+          const gen = queryAllDeep('*').filter(visible).some((e) => /создаём аудио|создаем аудио|вернитесь через|создаём видео|создаем видео|generating/i.test(norm(e.textContent)) && norm(e.textContent).length < 60);
+          if (!gen) {
+            const play = queryAllDeep('button,[role="button"]').filter(visible).find((b) => /play_arrow|play_circle|воспроизвести|^play$/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
+            if (play) { clickEl(play); played = true; await sleep(3000); el = pickMedia(gtype); }
+          }
+        }
         if (el) { const got = await grabMediaData(el); if (got && (got.dataUrl || got.sourceUrl)) return got; }
       } else {
         // doc/json/csv: сперва ссылка на файл (download-якорь/CDN), иначе скрейп текста.

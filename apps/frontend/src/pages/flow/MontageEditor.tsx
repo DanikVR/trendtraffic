@@ -742,6 +742,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const [hbSources, setHbSources] = useState<any[]>([]);
   const [hbJobs, setHbJobs] = useState<any[]>([]);
   const [hbCounters, setHbCounters] = useState<Record<string, number>>({});
+  const [hbArtifactCounts, setHbArtifactCounts] = useState<Record<string, number>>({}); // готово за всё время по типам
   const [hbLoading, setHbLoading] = useState(false);
   const [hbNote, setHbNote] = useState<string | null>(null);
   const [hbOk, setHbOk] = useState<string | null>(null);           // зелёный фидбэк «источник добавлен»
@@ -1535,6 +1536,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       if (Array.isArray(d.suggestions)) setHbSuggestions(d.suggestions.filter((x: any) => typeof x === 'string'));
       setHbJobs(Array.isArray(d.jobs) ? d.jobs : []);
       setHbCounters(d.counters && typeof d.counters === 'object' ? d.counters : {});
+      setHbArtifactCounts(d.artifactCounts && typeof d.artifactCounts === 'object' ? d.artifactCounts : {});
       if ((d.jobs || []).some((j: any) => j.status === 'queued' || j.status === 'running')) setTimeout(() => { void hbPollLoop(); }, 0);
     } catch { if (!silent) setHbNote('Бэкенд недоступен.'); }
     finally { if (!silent) setHbLoading(false); }
@@ -2553,17 +2555,22 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {HB_TYPES.map(({ t, label }) => (
-                      <button key={t} onClick={() => hbOpenGen(t)} title={`Настроить и сгенерировать: ${label}`}
-                        className="relative rounded-xl px-1.5 py-2.5 flex flex-col items-center gap-1"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                        <span style={{ color: '#22d3ee' }}>{HB_ICON[t]}</span>
-                        <span className="text-[10px] font-600 leading-tight text-center">{label}</span>
-                        {(hbCounters[t] || 0) > 0 && (
-                          <span className="absolute top-1 right-1 text-[9px] font-700 px-1 rounded" style={{ background: 'rgba(34,211,238,0.18)', color: '#22d3ee' }}>{hbCounters[t]}</span>
-                        )}
-                      </button>
-                    ))}
+                    {HB_TYPES.map(({ t, label }) => {
+                      const made = hbArtifactCounts[t] || 0; // готово за всё время
+                      const gen = hbJobs.some((j: any) => j.type === t && (j.status === 'queued' || j.status === 'running'));
+                      return (
+                        <button key={t} onClick={() => hbOpenGen(t)} title={`Настроить и сгенерировать: ${label}${made ? ` · сделано: ${made}` : ''}`}
+                          className="relative rounded-xl px-1.5 py-2.5 flex flex-col items-center gap-1"
+                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                          <span style={{ color: '#22d3ee' }}>{HB_ICON[t]}</span>
+                          <span className="text-[10px] font-600 leading-tight text-center">{label}</span>
+                          {/* индикатор: «генерится» (спиннер) ИЛИ счётчик готовых за всё время */}
+                          {gen
+                            ? <span className="absolute top-1 right-1"><Loader2 size={11} className="animate-spin" style={{ color: '#22d3ee' }} /></span>
+                            : made > 0 && <span className="absolute top-1 right-1 text-[9px] font-700 px-1 rounded" style={{ background: 'rgba(34,211,238,0.18)', color: '#22d3ee' }}>{made}</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

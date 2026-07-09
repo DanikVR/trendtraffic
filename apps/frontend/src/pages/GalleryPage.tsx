@@ -154,6 +154,11 @@ const HB_JOB_LABEL: Record<string, string> = {
   table: 'Таблица', infographic: 'Инфографика', flashcards: 'Карточки',
   mindmap: 'Ментальная карта', slides: 'Презентация',
 };
+// Эмодзи типов артефактов — для мини-бейджей на карточке блокнота.
+const HB_ARTIFACT_EMOJI: Record<string, string> = {
+  audio: '🎙️', video: '🎬', report: '📄', quiz: '❓',
+  table: '📊', infographic: '📈', flashcards: '🃏', mindmap: '🧠', slides: '📑',
+};
 
 export default function GalleryPage() {
   const { token } = useAppStore();
@@ -196,7 +201,7 @@ export default function GalleryPage() {
   // «Hotebook»: активные генерации (плейсхолдер-карточки со спиннером до готовности артефакта).
   const [hbJobs, setHbJobs] = useState<HbJob[]>([]);
   // «Hotebook»: ВСЕ блокноты NotebookLM (карточками) — расширение снимает плитки главной.
-  const [hbNotebooks, setHbNotebooks] = useState<{ id: string; title: string; subtitle?: string; icon?: string }[]>([]);
+  const [hbNotebooks, setHbNotebooks] = useState<{ id: string; title: string; subtitle?: string; icon?: string; artifactCounts?: Record<string, number> }[]>([]);
   const [hbNbStatus, setHbNbStatus] = useState<{ ok: boolean; errorKind?: string | null } | null>(null);
   const [hbNbLoading, setHbNbLoading] = useState(false);
   const [hbNbOpening, setHbNbOpening] = useState<string | null>(null); // id блокнота, который открываем
@@ -1323,10 +1328,26 @@ export default function GalleryPage() {
                     ? <Loader2 size={28} className="animate-spin" style={{ color: 'var(--brand)' }} />
                     : <span style={{ fontSize: 34, lineHeight: 1 }}>{nb.icon || '📔'}</span>}
                   <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: '#22d3ee', color: '#04222a' }}>NotebookLM</span>
+                  {/* Бейдж: сколько готовых артефактов сделано в этом блокноте (наведение — по типам). */}
+                  {(() => {
+                    const total = Object.values(nb.artifactCounts || {}).reduce((s, n) => s + (Number(n) || 0), 0);
+                    return total > 0 ? (
+                      <span className="absolute top-2 right-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}
+                        title={Object.entries(nb.artifactCounts || {}).map(([t, n]) => `${HB_JOB_LABEL[t] || t}: ${n}`).join(', ')}>✨ {total}</span>
+                    ) : null;
+                  })()}
                 </button>
                 <div className="p-3 flex flex-col gap-1">
                   <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={nb.title}>{nb.title}</div>
                   {nb.subtitle && <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{nb.subtitle}</div>}
+                  {/* Мини-разбивка по типам: 🎙️2 · 📄1 … */}
+                  {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).length > 0 && (
+                    <div className="flex flex-wrap gap-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).map(([t, n]) => (
+                        <span key={t} title={HB_JOB_LABEL[t] || t}>{HB_ARTIFACT_EMOJI[t] || '📦'}{Number(n) > 1 ? ` ${n}` : ''}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </AuroraCard>
             ))}

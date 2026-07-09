@@ -158,6 +158,18 @@ async function todayCounters(tenantId: string): Promise<Record<string, number>> 
   return out;
 }
 
+/** Готовые артефакты сценария ЗА ВСЁ ВРЕМЯ по типам (плашка «всегда, что именно сделано»). */
+async function flowArtifactCounts(tenantId: string, flowId: string): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  try {
+    const r = await pool.query(
+      `SELECT type, count(*)::int AS n FROM notebooklm_jobs
+       WHERE tenant_id=$1 AND flow_id=$2 AND status='done' GROUP BY type`, [tenantId, flowId]);
+    for (const row of r.rows) out[row.type] = Number(row.n) || 0;
+  } catch { /* пусто */ }
+  return out;
+}
+
 // ── Абсолютный URL (расширение качает байты файла-источника из background) ─────
 function absBase(req: AuthedRequest): string {
   const env = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
@@ -192,6 +204,16 @@ router.get('/notebooks', async (req: AuthedRequest, res: Response) => {
     const r = await waitAction(tenantId, actionId, 60_000);
     if (!r.ok) return res.json({ notebooks: [], status: st, error: r.error || null });
     const notebooks = Array.isArray(r.result?.notebooks) ? r.result.notebooks : [];
+    // Обогащаем: сколько готовых артефактов сделано в КАЖДОМ блокноте (по типам) — для бейджей на карточке.
+    const counts: Record<string, Record<string, number>> = {};
+    try {
+      const cr = await pool.query(
+        `SELECT s.notebook_id AS nb, j.type AS t, count(*)::int AS n
+         FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
+         WHERE s.tenant_id=$1 AND j.status='done' GROUP BY s.notebook_id, j.type`, [tenantId]);
+      for (const row of cr.rows) { (counts[row.nb] ||= {})[row.t] = Number(row.n) || 0; }
+    } catch { /* пусто */ }
+    for (const nb of notebooks) { nb.artifactCounts = counts[nb.id] || {}; }
     res.json({ notebooks, status: st });
   } catch (e: any) {
     res.json({ notebooks: [], status: st, error: String(e?.message || e) });
@@ -230,7 +252,7 @@ router.post('/flow/:flowId/adopt', async (req: AuthedRequest, res: Response) => 
 router.get('/flow/:flowId/overview', async (req: AuthedRequest, res: Response) => {
   const { flowId } = req.params;
   const tenantId = req.tenantId!;
-  const [status, counters] = await Promise.all([getConnectionStatus(tenantId), todayCounters(tenantId)]);
+  const [status, counters, artifactCounts] = await Promise.all([getConnectionStatus(tenantId), todayCounters(tenantId), flowArtifactCounts(tenantId, flowId)]);
   let notebookId: string | null = null;
   let sources: any[] = [];
   let chat: any[] = [];
@@ -247,7 +269,7 @@ router.get('/flow/:flowId/overview', async (req: AuthedRequest, res: Response) =
     const r = await pool.query(`SELECT * FROM notebooklm_jobs WHERE tenant_id=$1 AND flow_id=$2 ORDER BY created_at DESC LIMIT 40`, [tenantId, flowId]);
     jobs = r.rows.map(mapJob);
   } catch { /* пусто */ }
-  res.json({ notebookId, sources, chat, suggestions, jobs, counters, status });
+  res.json({ notebookId, sources, chat, suggestions, jobs, counters, artifactCounts, status });
 });
 
 /** Добавить источник: URL/YouTube или текст. */
