@@ -14,8 +14,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Target, Loader2, Search, Sparkles, Globe, Eye, Heart, Play, ExternalLink, BarChart3,
-  Download, CheckCircle2, AlertCircle, XCircle, ChevronRight, Check,
+  Download, CheckCircle2, AlertCircle, XCircle, ChevronRight, Check, Film,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
 import { REGIONS, REGION_GROUPS, type StoredVideo } from './TrendSearch';
@@ -135,16 +136,18 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   const [scans, setScans] = useState<Record<string, NicheScan>>({});
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [rankOrder, setRankOrder] = useState<string[] | null>(null); // ниши, отсортированные по спросу
+  const navigate = useNavigate();
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
 
-  // ── Шаг 1: построить карту ниш ────────────────────────────────────────────
+  // ── Один клик: построить карту → СРАЗУ найти ролики по всем нишам → ранжировать по спросу ──
   const buildMap = async () => {
     if (!product.trim() || !audience.trim()) { setError('Заполните продукт и базовую ЦА.'); return; }
-    setBuilding(true); setError(null); setNotice(null); setMap(null); setScans({});
+    setBuilding(true); setError(null); setNotice(null); setMap(null); setScans({}); setRankOrder(null);
     try {
       const res = await fetch('/api/trends/audience-map', {
         method: 'POST', headers: headers(),
@@ -153,14 +156,15 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setMap(data.map);
-      const g = data.map?.grounded ? ' Ключевики проверены по реальным запросам.' : '';
-      setNotice(`Готово: ${data.map?.niches?.length ?? 0} микро-ниш.${g} Найдите ролики по нужным (или сразу по всем).`);
+      const g = data.map?.grounded ? ' Ключевики — по реальным запросам.' : '';
+      setNotice(`Готово: ${data.map?.niches?.length ?? 0} ниш.${g} Ищу ролики и ранжирую по спросу…`);
+      void runAllAndRank(data.map.niches); // авто: сканим все ниши и сортируем по спросу
     } catch (e: any) { setError(friendlyError(e, 'Не удалось построить карту ЦА')); }
     finally { setBuilding(false); }
   };
 
-  // ── Шаг 2: скан одной ниши по ключевику ───────────────────────────────────
-  const scanNiche = async (niche: AudienceNiche, keyword?: string) => {
+  // Скан одной ниши по ключевику. Возвращает найденные видео (для ранжирования).
+  const scanNiche = async (niche: AudienceNiche, keyword?: string): Promise<StoredVideo[]> => {
     const kw = (keyword || niche.keywords[0] || niche.name).trim();
     setScans((s) => ({ ...s, [niche.id]: { videos: s[niche.id]?.videos || [], scanning: true, keyword: kw } }));
     try {
@@ -170,22 +174,64 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      setScans((s) => ({ ...s, [niche.id]: { videos: data.videos || [], scanning: false, keyword: kw } }));
+      const vids: StoredVideo[] = data.videos || [];
+      setScans((s) => ({ ...s, [niche.id]: { videos: vids, scanning: false, keyword: kw } }));
+      return vids;
     } catch (e: any) {
       setScans((s) => ({ ...s, [niche.id]: { videos: s[niche.id]?.videos || [], scanning: false, error: friendlyError(e, 'Ошибка скана'), keyword: kw } }));
+      return [];
     }
   };
 
-  // Скан всех ниш подряд (последовательно — не долбим API залпом; каждый скан платный).
+  // Сканит все ниши подряд и ранжирует по спросу (медиана просмотров) — лучшие сверху.
   const [scanningAll, setScanningAll] = useState(false);
-  const scanAll = async () => {
-    if (!map) return;
-    setScanningAll(true); setError(null);
-    for (const n of map.niches) {
+  const runAllAndRank = async (niches: AudienceNiche[]) => {
+    setScanningAll(true);
+    const demand: Record<string, number> = {};
+    for (const n of niches) {
       // eslint-disable-next-line no-await-in-loop
-      await scanNiche(n);
+      const vids = await scanNiche(n);
+      const med = median(vids.map((v) => v.stats?.play ?? 0));
+      demand[n.id] = vids.length ? (med ?? 0) : -1; // без результатов — в конец
     }
+    setRankOrder([...niches].sort((a, b) => (demand[b.id] ?? -1) - (demand[a.id] ?? -1)).map((n) => n.id));
     setScanningAll(false);
+    setNotice('Ранжировано по спросу — ниши с бóльшим спросом сверху. На нужной нажмите «В TrendFlow».');
+  };
+  const scanAll = () => { if (map) void runAllAndRank(map.niches); };
+
+  // ── Один клик «В TrendFlow»: создаём сценарий с темой/идеей/ключевиками/референсом и открываем ──
+  const [flowBusy, setFlowBusy] = useState<string | null>(null);
+  const nicheBrief = (n: AudienceNiche): string => {
+    const ref = scans[n.id]?.videos?.find((v) => v.webUrl)?.webUrl;
+    return [
+      `Продукт/оффер: ${map?.product || product}`,
+      `Ниша (тема-прокси ЦА): ${n.name}${n.branch ? ` — ${n.branch}` : ''}`,
+      n.rationale && `Почему ловит аудиторию: ${n.rationale}`,
+      n.angle && `Идея/хук: ${n.angle}`,
+      n.keywords?.length && `Ключевики: ${n.keywords.join(', ')}`,
+      ref && `Референс-ролик: ${ref}`,
+      'Задача: снять ролик на эту тему и встроить продукт под идею.',
+    ].filter(Boolean).join('\n');
+  };
+  const toTrendFlow = async (n: AudienceNiche) => {
+    setFlowBusy(n.id); setError(null);
+    try {
+      const brief = nicheBrief(n);
+      const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: `ЦА · ${n.name}`.slice(0, 120) }) });
+      const cd = await cr.json();
+      if (!cr.ok || !cd.flow?.id) throw new Error(cd?.error || `HTTP ${cr.status}`);
+      const id = cd.flow.id;
+      // Сид сценария: brief на верхнем уровне (идёт во все блоки рендера) + ugc.brief (студия мержит с дефолтом).
+      await fetch(`/api/flows/${id}`, {
+        method: 'PUT', headers: headers(),
+        body: JSON.stringify({ graph: { nodes: [], edges: [], brief, ugc: { source: 'gen', brief } } }),
+      });
+      navigate(`/gallery?tab=ugc&openFlow=${encodeURIComponent(id)}`);
+    } catch (e: any) {
+      setError(friendlyError(e, 'Не удалось создать сценарий в TrendFlow'));
+      setFlowBusy(null);
+    }
   };
 
   // ── Фоновое скачивание: статусы обновляем поллингом /videos, пока что-то качается ──
@@ -228,6 +274,8 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
   const totalScans = map ? map.niches.length : 0;
   const cardAspect = platform === 'youtube' ? '16 / 9' : '9 / 16';
+  // Ниши в порядке ранга по спросу (после авто-скана); до ранжирования — как есть.
+  const orderedNiches = map ? (rankOrder ? [...map.niches].sort((a, b) => rankOrder.indexOf(a.id) - rankOrder.indexOf(b.id)) : map.niches) : [];
 
   return (
     <>
@@ -246,7 +294,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
               а мы найдём под каждую реальные ролики. Меньше конкуренции, точнее попадание.
             </p>
             <p className="text-[11px] mt-1 font-600" style={{ color: 'var(--brand)' }}>
-              Шаг 1 — «Построить карту ЦА». Шаг 2 — на карточке ниши «Найти ролики».
+              Один клик: строим ниши → находим ролики → ранжируем по спросу. Дальше — «В TrendFlow» на нужной нише.
             </p>
           </div>
         </div>
@@ -351,7 +399,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
         </div>
 
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          Стоимость: 1 запрос ИИ на карту{ground ? ' + по 1 подсказке-запросу на нишу (дёшево, не видео-скан)' : ''} + по 1 скану на нишу при поиске (до {maxNiches} сканов).
+          В один клик: 1 запрос ИИ на карту{ground ? ' + по 1 подсказке-запросу на нишу (дёшево)' : ''} + по 1 скану на нишу (до {maxNiches} — они и ранжируют ниши по спросу).
           {' '}Регион и реальные запросы работают в TikTok и YouTube.
         </p>
 
@@ -388,15 +436,19 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                   ключевики от ИИ
                 </span>
               )}
+              {rankOrder && (
+                <span className="text-[11px] px-2 py-1 rounded-full font-600" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                  title="Ниши отсортированы: с бóльшим спросом — сверху">↓ по спросу</span>
+              )}
             </div>
-            <AuroraButton onClick={scanAll} disabled={scanningAll}
+            <AuroraButton variant="secondary" onClick={scanAll} disabled={scanningAll}
               icon={scanningAll ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
-              {scanningAll ? 'Ищу по всем…' : `Найти ролики по всем нишам (${totalScans})`}
+              {scanningAll ? `Ищу по нишам… (${totalScans})` : `Пересканировать (${totalScans})`}
             </AuroraButton>
           </div>
 
           <div className="space-y-4">
-            {map.niches.map((n) => {
+            {orderedNiches.map((n, idx) => {
               const sc = scans[n.id];
               const views = (sc?.videos || []).map((v) => v.stats?.play ?? 0);
               const med = median(views);
@@ -405,6 +457,11 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                 <AuroraCard key={n.id} className="p-4">
                   {/* Заголовок ниши */}
                   <div className="flex items-start gap-3 flex-wrap">
+                    {rankOrder && (
+                      <span className="text-[11px] font-700 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: idx < 3 ? 'rgba(16,185,129,0.15)' : 'var(--bg-tertiary)', color: idx < 3 ? '#10b981' : 'var(--text-muted)' }}
+                        title="Позиция по спросу">#{idx + 1}</span>
+                    )}
                     <div className="text-2xl leading-none mt-0.5">{n.emoji || '🎯'}</div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -444,12 +501,21 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                         })}
                       </div>
                     </div>
-                    <button type="button" onClick={() => scanNiche(n)} disabled={sc?.scanning}
-                      className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors flex-shrink-0 disabled:opacity-50"
-                      style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
-                      {sc?.scanning ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-                      Найти ролики
-                    </button>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button type="button" onClick={() => scanNiche(n)} disabled={sc?.scanning}
+                        className="inline-flex items-center justify-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
+                        style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
+                        {sc?.scanning ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                        Найти ролики
+                      </button>
+                      <button type="button" onClick={() => toTrendFlow(n)} disabled={flowBusy === n.id}
+                        title="Создать сценарий в TrendFlow, заполненный темой/идеей/ключевиками этой ниши (+ референс), и открыть его"
+                        className="inline-flex items-center justify-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
+                        style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.35)' }}>
+                        {flowBusy === n.id ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />}
+                        В TrendFlow
+                      </button>
+                    </div>
                   </div>
 
                   {/* Результаты ниши */}
@@ -537,7 +603,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
           <div className="flex items-center gap-2 text-[12px] rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
             <ChevronRight size={14} className="flex-shrink-0" style={{ color: 'var(--brand)' }} />
-            <span>Дальше: «Аналитика» разбирает выбранный ролик, «Скачать» кладёт его в Галерею — оттуда в TrendFlow, где встраиваете свой продукт под идею ниши.</span>
+            <span>«В TrendFlow» на нужной нише — создаёт сценарий с её темой/идеей/ключевиками и открывает студию. Или «Аналитика»/«Скачать» по конкретному ролику-референсу.</span>
           </div>
         </>
       )}

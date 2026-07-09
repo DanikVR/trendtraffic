@@ -2244,7 +2244,15 @@
  *         кросс-доменная картинка на app.trendtraffic.pro не грузилась). Имя карточки очищено от
  *         подписей кнопок Flow («edit»/«Изменить проект»/«Удалить»). Расширение → v1.3.4 (мой content-flow
  *         + их content-notebook-фиксы 1.3.3 в одном релизе). Файлы: content-flow.js (thumbOf/thumbDataUrl). */
-export const APP_VERSION = '2.2.11';
+/* 2.2.12 — «Таргет на ЦА» — всё в один клик + прокидка в TrendFlow: (1) «Построить карту ЦА»
+ *          теперь СРАЗУ и строит ниши, и находит ролики по всем нишам, и РАНЖИРУЕТ ниши по спросу
+ *          (медиана просмотров) — лучшие сверху, с бейджами #1/#2/#3 и «↓ по спросу»; отдельно
+ *          нажимать на каждую нишу больше не нужно (кнопка «Пересканировать» — по желанию).
+ *          (2) На каждой нише кнопка «В TrendFlow» — один клик создаёт сценарий (POST/PUT /api/flows),
+ *          заполненный темой/идеей/ключевиками/референсом (graph.brief + ugc.brief), и открывает
+ *          UGC-студию через deep-link ?tab=ugc&openFlow=<id> (новый хендлер в GalleryPage). Файлы:
+ *          AudienceTargetPanel.tsx, GalleryPage.tsx. */
+export const APP_VERSION = '2.2.12';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

@@ -435,6 +435,17 @@ export default function GalleryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // «В TrendFlow» из «Таргет на ЦА» открывает ?tab=ugc&openFlow=<id> → сразу открыть UGC-студию этого flow.
+  const openFlowHandledRef = useRef(false);
+  useEffect(() => {
+    const flowId = searchParams.get('openFlow');
+    if (!flowId || openFlowHandledRef.current) return;
+    openFlowHandledRef.current = true;
+    setSearchParams((p) => { p.delete('openFlow'); return p; }, { replace: true });
+    setBlockReq({ cloud: 'ugc', flowId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── «+ Добавить» — первой плиткой каждого раздела ──
   // Блоки (Hotebook/Flow/UGC) открываются ОВЕРЛЕЕМ поверх Галереи: закрыл — вернулся
   // в этот же раздел. «Видео» — дублирует кнопку «Медиа» (файл сам решает, куда лечь).
