@@ -425,7 +425,14 @@ export default function GalleryPage() {
     try {
       const r = await fetch('/api/notebooklm/notebooks', { headers: jsonHeaders() });
       const d = r.ok ? await r.json() : { notebooks: [], status: { ok: false } };
-      setHbNotebooks(Array.isArray(d.notebooks) ? d.notebooks : []);
+      const list = Array.isArray(d.notebooks) ? d.notebooks : [];
+      // Во время генерации расширение занято (busy-generating) и вернёт 0 — НЕ затираем прежний
+      // список пустотой, иначе на экране «0 блокнотов». Показываем пусто только если реально пусто.
+      if (list.length === 0 && d.status?.ok && (d.error || hbNotebooks.length > 0)) {
+        // сохранить прежние карточки (обновим статусы отдельным лёгким опросом)
+      } else {
+        setHbNotebooks(list);
+      }
       setHbNbStatus(d.status || null);
     } catch { setHbNbStatus({ ok: false }); }
     finally { setHbNbLoading(false); }
@@ -1046,6 +1053,8 @@ export default function GalleryPage() {
               className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
               style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: active ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
               {tabIcon(tb.key)} {tb.label}
+              {/* Идёт генерация артефакта Hotebook — спиннер прямо на вкладке. */}
+              {tb.key === 'hotebook' && hbJobs.length > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#22d3ee' }} />}
             </button>
           );
         })}

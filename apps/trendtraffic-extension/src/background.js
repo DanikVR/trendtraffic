@@ -37,7 +37,7 @@ const HG_TASK_TIMEOUT_MS = 25 * 60_000;  // генерация головы + с
 const STATE = {
   token: null, apiBase: null,
   flowTabId: null, busyFlow: false, pausedUntil: 0,
-  nlmLooping: false, nlmLoggedIn: false,
+  nlmLooping: false, nlmLoggedIn: false, nlmBusy: false, // nlmBusy: идёт генерация артефакта (вкладка занята)
   hgBusy: false,
 };
 
@@ -398,6 +398,9 @@ async function runNlmAction(action) {
 
   // «Список блокнотов» — плитки есть ТОЛЬКО на главной NotebookLM. Наводим вкладку на главную.
   if (action.kind === 'list-notebooks') {
+    // ВАЖНО: во время генерации артефакта вкладка занята блокнотом. НЕ навигируем её на главную —
+    // иначе прервём генерацию И вернём 0 блокнотов. Отвечаем «занят», фронт оставит прежний список.
+    if (STATE.nlmBusy) { await nlmActionResult(action.id, false, null, 'busy-generating'); return; }
     const tabId = await ensureNotebookTab(null, true);
     if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
     try {
@@ -445,13 +448,13 @@ function armDownloadCapture(timeoutMs) {
   const finish = (val) => { if (done) return; done = true; clearTimeout(timer); try { chrome.downloads.onCreated.removeListener(listener); } catch { /* */ } resolveFn(val); };
   const listener = (item) => {
     if (done) return;
-    const url = item.finalUrl || item.url || '';
-    if (!url || url.startsWith('blob:')) return; // blob не стянуть в фоне
-    if (/googleusercontent|googleapis|notebooklm|\.(mp3|mp4|m4a|wav|webm)(\?|$)/i.test(url) || /audio|video/i.test(item.mime || '')) {
-      try { chrome.downloads.cancel(item.id); } catch { /* */ }
-      try { chrome.downloads.erase({ id: item.id }); } catch { /* */ }
-      finish({ url, mime: item.mime || '' });
-    }
+    const url = item.url || item.finalUrl || '';
+    // Подписанный URL медиа NotebookLM без расширения/маски → берём ЛЮБУЮ http(s)-загрузку, что
+    // стартовала пока перехватчик взведён (взводим строго вокруг генерации медиа = это наш артефакт).
+    if (!url || !/^https?:/i.test(url)) return; // blob/data в фоне не стянуть
+    try { chrome.downloads.cancel(item.id); } catch { /* */ }
+    try { chrome.downloads.erase({ id: item.id }); } catch { /* */ }
+    finish({ url, mime: item.mime || '' });
   };
   chrome.downloads.onCreated.addListener(listener);
   timer = setTimeout(() => finish(null), timeoutMs);
@@ -459,7 +462,13 @@ function armDownloadCapture(timeoutMs) {
   return p;
 }
 
+// nlmBusy на всё время генерации: пока идёт — list-notebooks не навигирует вкладку (не рвёт генерацию).
 async function runNlmTask(task) {
+  STATE.nlmBusy = true;
+  try { await _runNlmTask(task); }
+  finally { STATE.nlmBusy = false; }
+}
+async function _runNlmTask(task) {
   const tabId = await ensureNotebookTab(task.notebookId || null, true);
   if (!tabId) { await nlmTaskStatus(task.id, 'retry', 'Откройте NotebookLM — генерация выполнится сама'); return; }
   await nlmTaskStatus(task.id, 'running');
