@@ -93,6 +93,46 @@ flows VARCHAR → `dba12c6` News preset → `779e9d2` button node config → `0a
   `uploads/source-videos`. Фикс 403. UI — иконка загрузки (idle/спиннер/✓/ошибка), массовый выбор+скачать.
 - `GET /api/trends/videos?downloaded=1` — для Галереи.
 - Фронт: `pages/TrendsPage.tsx` (поиск/тренды, тип поиска кнопками, сортировка/период, грид, скачивание).
+  **Устарело:** страница «Тренды» теперь `pages/SocialExtensionPage.tsx` с саб-вкладками (Поиск/
+  🎯 Таргет на ЦА/Аналитика/Каналы), сам поиск — компонент `components/TrendSearch.tsx`.
+
+### 2.2.1. Регион выдачи (гео) + «🎯 Таргет на ЦА» (микро-таргетинг) — v2.2.7→v2.2.12
+
+**Регион выдачи (гео).** Файлы: `modules/tikhub/{tikhub_client,providers}.ts`, `trends/{service,router}.ts`;
+фронт `components/TrendSearch.tsx`.
+- Было **мёртвым**: поле `region` в `ScanParams` писалось в лог-таблицу `trends`, но в TikHub НЕ уходило.
+- Теперь уходит там, где API поддерживает (сверено по `openapi.json` TikHub): **TikTok «Умный поиск»**
+  `app/v3/fetch_video_search_result` → `region` (default US); **YouTube** поиск и «Горячее» → `country_code`
+  (+`language_code`). **НЕ поддерживают:** TikTok web-поиск/explore, Instagram, X-поиск, Reddit.
+- Канонический формат в пайплайне — ISO alpha-2 UPPER (RU/US/UZ); `normalizeRegion()` в tikhub_client;
+  провайдеры приводят к своему виду (флаг `hasRegion`, карта `REGION_LANG`). Фронт: селектор «Регион
+  выдачи» с флагами (СНГ первыми, `REGIONS`/`REGION_GROUPS`), гео-бейдж на плитках площадок, живая
+  подсказка `regionHonored()` («где регион работает, где выдача глобальна»).
+- **Смысл (важно):** region влияет на то, контент какого региона мы ДОСТАЁМ из API (research), а НЕ на
+  то, в чью ленту попадёт наш опубликованный ролик — то делает сама ТЕМА ролика.
+
+**«Таргет на ЦА» — микро-таргетинг через контент-ниши.** Файлы: `trends/audience.ts` +
+`POST /api/trends/audience-map`; фронт `components/AudienceTargetPanel.tsx` (таб в SocialExtensionPage).
+- **Идея-лайфхак:** демографию (богатые / их жёны) нельзя запросить у площадки — её «ловят» ТЕМОЙ
+  контента (алгоритм раздаёт ролик по теме). Claude раскладывает продукт+ЦА на **узкие микро-ниши-прокси**
+  (гольф/падл/F1 = прокси состоятельных) с кластерами ключевиков. Фронт веерно сканирует ниши через
+  существующий `/api/trends/scan` и группирует выдачу по нишам.
+- **Заземление ключевиков реальными запросами (v2.2.9):** ключевики каждой ниши берутся не из догадок ИИ,
+  а из РЕАЛЬНЫХ подсказок запросов TikHub — `tiktok/ads/get_query_suggestions` (Creative Center, по
+  `country_code`) с фолбэком `tiktok/web/fetch_search_keyword_suggest`; для YouTube — `web_v2/get_search_suggestions`
+  (region+language). Ниши подсеваются трендовыми хэштегами `tiktok/ads/get_trends_hashtag_list`. Парсер
+  `extractSuggestions` — **оборонительный** (ответы этих эндпоинтов в openapi без примеров). Реальные
+  ключевики помечены ✓ и идут первыми; тумблер «Реальные запросы / Только ИИ»; **грациозно деградирует**
+  на приоры Claude без ключа/при сбое/на IG-X-Reddit.
+- **Всё в один клик (v2.2.12):** «Построить карту ЦА» СРАЗУ строит ниши + сканит все + **РАНЖИРУЕТ по
+  спросу** (медиана просмотров, лучшие сверху, бейджи #1/#2/#3, «↓ по спросу»); отдельный скан на нишу не
+  нужен («Пересканировать» — опц.). Кнопка **«В TrendFlow»** на нише: 1 клик → `POST /api/flows` + `PUT`
+  `graph{brief, ugc:{brief}}` (тема/идея/ключевики/референс) → открывает UGC-студию через deep-link
+  `?tab=ugc&openFlow=<id>` (новый хендлер в `GalleryPage.tsx`, зеркало `openNotebook`; MontageEditor мержит
+  `graph.ugc` с `UGC_DEFAULT` → partial безопасен).
+- **UX:** язык ключевиков автоподставляется из региона (`REGION_LANG_NAME`, KZ→русский), редактируемо.
+- **Стоимость:** 1 запрос Claude на карту + по 1 suggest-запросу на нишу (дёшево, не видео-скан) + по
+  1 скану на нишу (они же ранжируют). Гейт — Премиум/Энтерпрайз (`requireFullAccess`, как /scan).
 
 ### 2.3. Галерея — медиа-библиотека
 - `pages/GalleryPage.tsx` — **3 вкладки-папки**: **Тренды** (скачанные `source_videos`), **Референс**
@@ -263,6 +303,10 @@ kind→инструмент OpenMontage + cpu/gpu) → `store.insertJob` → `wo
   `pages/enterprise/Section6TikHub.tsx`, `public/trendflow-hero.svg`; правки в
   `pages/{FlowPage,admin/AdminConfigPage,EnterpriseSettingsPage}.tsx`, `layouts/MainLayout.tsx`,
   `components/{BottomTabBar,AppVersion}.tsx`, `config/features.ts`, `router.tsx`.
+- **Регион + «Таргет на ЦА» (v2.2.7→2.2.12, см. 2.2.1):** backend `trends/audience.ts` (декомпозиция ЦА +
+  заземление), правки `tikhub/{tikhub_client,providers}.ts` (region/normalizeRegion/suggest+hashtag-fns/
+  extractSuggestions), `trends/{service,router}.ts`; frontend `components/AudienceTargetPanel.tsx`,
+  правки `components/TrendSearch.tsx` (регион+флаги), `pages/{SocialExtensionPage,GalleryPage}.tsx`.
 - Эта энциклопедия: `docs/TRENDTRAFFIC.md`. Деплой: `docs/DEPLOY_HOSTINGER_VPS.md`.
 
 ---
