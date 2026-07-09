@@ -2305,7 +2305,14 @@
  *          Убрал алармистский «⚠ разные аккаунты». Расширение 1.3.13 (manifest+TT_EXT_VERSION+
  *          BRIDGE_VERSION+zip). Файлы: GalleryPage.tsx, AppVersion, ext/content-bridge.js,
  *          ext/background.js, manifest.json. */
-export const APP_VERSION = '2.2.18';
+/* 2.2.19 — «Тренды → Поиск» (TrendSearch): карточки результатов приведены к ЕДИНОМУ плотному
+ *          виду Галереи — карточка = само изображение, название/счётчики/ВСЕ иконки (аналитика,
+ *          оригинал, удалить, скачать) наложены поверх обложки на градиент-скрим, футер под
+ *          карточкой убран. Сетка адаптивная `repeat(auto-fill, minmax(150px,1fr))` — размер
+ *          карточки как везде (~150px), а количество в ряду само подстраивается под ширину правой
+ *          колонки (слева широкая панель фильтров → в ряд меньше, как просил юзер). Убран импорт
+ *          Share2. Файл: TrendSearch.tsx. */
+export const APP_VERSION = '2.2.19';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

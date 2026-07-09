@@ -12,7 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   TrendingUp, Search, Loader2, Download, ExternalLink, CheckCircle2, XCircle, AlertCircle,
-  Eye, Heart, MessageCircle, Share2, Play, CheckSquare, Square, Check, BarChart3, Trash2, X, RefreshCw, Globe,
+  Eye, Heart, MessageCircle, Play, CheckSquare, Square, Check, BarChart3, Trash2, X, RefreshCw, Globe,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
@@ -221,6 +221,17 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
   const PAGE_SIZE = 12;
   const videos = perPlatform[platform]?.videos ?? [];
   const cardAspect = platform === 'youtube' ? (filters.yt_kind === 'shorts' ? '9 / 16' : '16 / 9') : '9 / 16';
+  // Плотные карточки-изображения как в Галерее (текст/иконки поверх картинки, футера нет).
+  // Сетка адаптивная (auto-fill/minmax) — размер карточки фиксирован ~150px, а количество в
+  // ряду само подстраивается под ШИРИНУ правой колонки (слева широкая панель фильтров → в ряд
+  // помещается меньше, как и просил юзер). Хелперы — зеркало Галереи.
+  const cardScrimEl = (
+    <span aria-hidden className="absolute inset-x-0 bottom-0 pointer-events-none z-[5]"
+      style={{ height: '70%', background: 'linear-gradient(to top, rgba(0,0,0,0.94), rgba(0,0,0,0.5) 42%, transparent)' }} />
+  );
+  const OV_BTN = 'w-[26px] h-[26px] rounded-lg flex items-center justify-center flex-shrink-0 transition-transform hover:scale-110';
+  const ovBtnStyle = (accent?: string): React.CSSProperties =>
+    ({ background: 'rgba(0,0,0,0.55)', color: accent || '#fff', border: '1px solid rgba(255,255,255,0.22)', cursor: 'pointer', backdropFilter: 'blur(3px)' });
   const setVideos = (updater: StoredVideo[] | ((prev: StoredVideo[]) => StoredVideo[])) =>
     setPerPlatform((s) => {
       const cur = s[platform] || { query: '', videos: [] };
@@ -908,113 +919,90 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
           {videos.slice(0, page * PAGE_SIZE).map((v) => {
             const isSel = !!(keyOf(v) && selected.has(keyOf(v)));
             return (
-            <AuroraCard key={v.id || v.externalId}
-              className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
-              <div className="relative w-full" style={{ aspectRatio: cardAspect, background: 'var(--bg-tertiary)' }}>
-                {v.coverUrl ? (
-                  <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center"><Play size={28} style={{ color: 'var(--text-muted)' }} /></div>
-                )}
-                <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
-                     style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-                {v.webUrl && (
-                  <a href={v.webUrl} target="_blank" rel="noreferrer"
-                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ background: 'rgba(0,0,0,0.28)' }} title="Открыть оригинал">
-                    <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}>
-                      <Play size={24} color="#fff" fill="#fff" />
-                    </span>
-                  </a>
-                )}
-                <span className="absolute bottom-2 left-2 text-[11px] px-1.5 py-0.5 rounded-md font-700 inline-flex items-center gap-1 z-10"
-                  style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                  <Eye size={12} /> {fmt(v.stats.play)}
-                </span>
-                {dur(v.durationSec) && (
-                  <span className="absolute bottom-2 right-2 text-[11px] px-1.5 py-0.5 rounded font-600 z-10"
-                    style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{dur(v.durationSec)}</span>
-                )}
-                {keyOf(v) && (
-                  <button type="button" onClick={() => toggleSelect(keyOf(v))} title="Выбрать"
-                    className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
-                    style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
-                    {isSel ? <Check size={15} /> : null}
-                  </button>
-                )}
-                {v.status === 'downloaded' && (
-                  <span className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded font-700 inline-flex items-center gap-1 z-20"
-                    style={{ background: 'rgba(16,185,129,0.92)', color: '#fff' }}><CheckCircle2 size={11} /> скачано</span>
-                )}
-              </div>
-              <div className="p-3 flex flex-col gap-2 flex-1">
-                <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.authorName || v.author}>
-                  @{v.author}
+            <div key={v.id || v.externalId}
+              className={`group relative rounded-xl overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}
+              style={{ aspectRatio: cardAspect, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+              {/* Обложка на весь размер карточки */}
+              {v.coverUrl ? (
+                <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>
+              )}
+              {/* Ховер: открыть оригинал */}
+              {v.webUrl && (
+                <a href={v.webUrl} target="_blank" rel="noreferrer"
+                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[6]"
+                  style={{ background: 'rgba(0,0,0,0.28)' }} title="Открыть оригинал">
+                  <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}>
+                    <Play size={20} color="#fff" fill="#fff" />
+                  </span>
+                </a>
+              )}
+              {/* Чекбокс выбора */}
+              {keyOf(v) && (
+                <button type="button" onClick={() => toggleSelect(keyOf(v))} title="Выбрать"
+                  className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20"
+                  style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.75)', cursor: 'pointer', backdropFilter: 'blur(3px)' }}>
+                  {isSel ? <Check size={14} /> : null}
+                </button>
+              )}
+              {/* Бейдж «скачано» */}
+              {v.status === 'downloaded' && (
+                <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-md font-700 inline-flex items-center gap-1 z-20"
+                  style={{ background: 'rgba(16,185,129,0.92)', color: '#fff' }}><CheckCircle2 size={10} /> скачано</span>
+              )}
+              {cardScrimEl}
+              {/* Наложенные счётчики + автор + все иконки-действия */}
+              <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                <div className="flex items-center gap-1.5 text-[10px] font-700 text-white flex-wrap" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.85)' }}>
+                  <span className="inline-flex items-center gap-0.5"><Eye size={11} /> {fmt(v.stats.play)}</span>
+                  {v.stats.like != null && <span className="inline-flex items-center gap-0.5"><Heart size={10} /> {fmt(v.stats.like)}</span>}
+                  {v.stats.comment != null && <span className="inline-flex items-center gap-0.5"><MessageCircle size={10} /> {fmt(v.stats.comment)}</span>}
+                  {dur(v.durationSec) && <span className="ml-auto px-1 rounded" style={{ background: 'rgba(0,0,0,0.5)' }}>{dur(v.durationSec)}</span>}
                 </div>
-                {v.description && (
-                  <p className="text-[11px] leading-snug line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{v.description}</p>
-                )}
-                {/* Показываем только те метрики, что реально есть (YouTube не отдаёт
-                    лайки/комменты/шеры в списке поиска → иконки с «—» убираем). */}
-                {(v.stats.like != null || v.stats.comment != null || v.stats.share != null) && (
-                  <div className="flex items-center gap-2.5 text-[11px] flex-wrap mt-auto" style={{ color: 'var(--text-muted)' }}>
-                    {v.stats.like != null && <span className="inline-flex items-center gap-0.5"><Heart size={11} /> {fmt(v.stats.like)}</span>}
-                    {v.stats.comment != null && <span className="inline-flex items-center gap-0.5"><MessageCircle size={11} /> {fmt(v.stats.comment)}</span>}
-                    {v.stats.share != null && <span className="inline-flex items-center gap-0.5"><Share2 size={11} /> {fmt(v.stats.share)}</span>}
-                  </div>
-                )}
-                <div className="flex items-center gap-1 pt-1">
+                <div className="text-[11px] font-700 leading-tight truncate text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.authorName || v.author}>@{v.author}</div>
+                <div className="flex items-center gap-1 pointer-events-auto">
                   {v.webUrl && (
-                    <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Аналитика"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                      style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.3)' }}>
-                      <BarChart3 size={15} />
+                    <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Аналитика" className={OV_BTN} style={ovBtnStyle('#a5b4fc')}>
+                      <BarChart3 size={13} />
                     </button>
+                  )}
+                  {v.webUrl && (
+                    <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть оригинал" className={OV_BTN} style={ovBtnStyle()}>
+                      <ExternalLink size={13} />
+                    </a>
                   )}
                   {v.id && (
-                    <button type="button" onClick={() => deleteOne(v)} title="Удалить это видео из списка"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                      style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
-                      <Trash2 size={14} />
+                    <button type="button" onClick={() => deleteOne(v)} title="Удалить это видео из списка" className={OV_BTN} style={ovBtnStyle('#fca5a5')}>
+                      <Trash2 size={13} />
                     </button>
                   )}
-                  {v.webUrl && (
-                    <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                      <ExternalLink size={14} />
-                    </a>
-                  )}
                   {v.fileUrl ? (
-                    <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Скачано — открыть файл"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto"
-                      style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
-                      <CheckCircle2 size={15} />
+                    <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Скачано — открыть файл" className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#6ee7b7')}>
+                      <CheckCircle2 size={14} />
                     </a>
                   ) : v.status === 'downloading' ? (
-                    <button type="button" onClick={() => cancelDownload(v)} title="Скачивается в фоне — нажмите, чтобы отменить"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto group/dl transition-colors"
-                      style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
-                      <Loader2 size={14} className="animate-spin group-hover/dl:hidden" />
-                      <X size={15} className="hidden group-hover/dl:block" />
+                    <button type="button" onClick={() => cancelDownload(v)} title="Скачивается в фоне — нажмите, чтобы отменить" className={`${OV_BTN} ml-auto group/dl`} style={ovBtnStyle('#fca5a5')}>
+                      <Loader2 size={13} className="animate-spin group-hover/dl:hidden" />
+                      <X size={14} className="hidden group-hover/dl:block" />
                     </button>
                   ) : (
                     <button type="button" onClick={() => handleDownload(v)} disabled={!v.id}
                       title={!v.id ? 'Видео не сохранено в БД' : v.status === 'failed' ? 'Ошибка скачивания — нажмите, чтобы повторить' : 'Скачать (в фоне → появится в Галерее)'}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors disabled:opacity-40"
-                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--brand)', color: v.status === 'failed' ? '#ef4444' : 'var(--brand-contrast)' }}>
-                      {v.status === 'failed' ? <AlertCircle size={15} /> : <Download size={15} />}
+                      className={`${OV_BTN} ml-auto disabled:opacity-40`}
+                      style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.9)' : 'var(--brand)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)', cursor: 'pointer', backdropFilter: 'blur(3px)' }}>
+                      {v.status === 'failed' ? <AlertCircle size={13} /> : <Download size={13} />}
                     </button>
                   )}
                 </div>
               </div>
-            </AuroraCard>
+            </div>
             );
           })}
           </div>
