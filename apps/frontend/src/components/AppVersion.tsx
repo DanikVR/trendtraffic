@@ -2391,7 +2391,16 @@
  *          аудио зальётся, даже если SW умер (idem /ingest). Файлы: notebooklm/router.ts,
  *          notebooklm/ext_bridge.ts, notebooklm-ext/router.ts, ext/background.js,
  *          ext/content-notebook.js, GalleryPage.tsx, manifest, content-bridge, AppVersion. */
-export const APP_VERSION = '2.2.27';
+/* 2.2.28 — Hotebook РЕДИЗАЙН: из попапа → в ПОЛНОЭКРАННУЮ студию с раскладкой как у NotebookLM
+ *          (Источники слева · Чат по центру · Студия справа), но в дизайне сайта (токены var(--…),
+ *          фирменный циан #22d3ee). Новый презентационный компонент HotebookStudio.tsx (position:
+ *          fixed inset-0 z-70, 3 колонки) по образцу UgcStudio: всё состояние/обработчики остаются
+ *          в MontageEditor и приходят пропсами → персист graph.hotebook, solo-режим (Выход→onBack),
+ *          поллинг джоб и 4 под-модалки (настройки генерации/вставка текста/пикер/просмотр) работают
+ *          как раньше. Верхний бар: Выход + Название + статус + Проверить/Открыть NotebookLM. Точки
+ *          входа (карточка блокнота / «+ Добавить» в Галерее) не меняются — модалка просто заменена
+ *          полноэкранной студией. Файлы: HotebookStudio.tsx (new), MontageEditor.tsx, AppVersion. */
+export const APP_VERSION = '2.2.28';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

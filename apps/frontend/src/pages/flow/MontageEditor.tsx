@@ -26,6 +26,7 @@ import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPic
 import DialogueTimeline from './DialogueTimeline';
 import type { PodLine } from './dialogueTypes';
 import UgcStudio from './UgcStudio';
+import { HotebookStudio } from './HotebookStudio';
 import { UGC_DEFAULT, type UgcSpec, type UgcPickTarget } from './ugcTypes';
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
@@ -2077,8 +2078,34 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         />
       )}
 
+      {/* Hotebook — ПОЛНОЭКРАННАЯ студия (как NotebookLM: Источники · Чат · Студия), не модалка.
+          Состояние/обработчики остаются здесь, студия — представление (зеркало UgcStudio). */}
+      {cloudPanel === 'hotebook' && (
+        <HotebookStudio
+          hb={hb} hbMutate={hbMutate}
+          hbStatus={hbStatus} hbSources={hbSources} hbJobs={hbJobs}
+          hbCounters={hbCounters} hbArtifactCounts={hbArtifactCounts} hbLoading={hbLoading}
+          hbNote={hbNote} hbOk={hbOk} hbSuggestions={hbSuggestions}
+          hbSrcUrl={hbSrcUrl} setHbSrcUrl={setHbSrcUrl} hbSrcBusy={hbSrcBusy}
+          hbChatQ={hbChatQ} setHbChatQ={setHbChatQ} hbChatBusy={hbChatBusy}
+          hbPlayId={hbPlayId} setHbPlayId={setHbPlayId}
+          hbRefreshStatus={hbRefreshStatus}
+          hbAddUrl={() => void hbAddUrl()}
+          setHbTextOpen={setHbTextOpen}
+          hbOpenPick={() => void hbOpenPick()}
+          hbDelSource={(sid) => void hbDelSource(sid)}
+          hbAsk={() => void hbAsk()}
+          hbOpenGen={hbOpenGen}
+          setHbView={setHbView}
+          onClose={() => setCloudPanel(null)}
+          hbTypes={HB_TYPES}
+          hbIcon={HB_ICON}
+          hbLabel={HB_LABEL}
+        />
+      )}
+
       {/* Панель облачного узла (Omni / Контент-план) — каркас */}
-      {cloudPanel && cloudPanel !== 'ugc' && (
+      {cloudPanel && cloudPanel !== 'ugc' && cloudPanel !== 'hotebook' && (
         <div onClick={() => setCloudPanel(null)} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : cloudPanel === 'hotebook' ? 680 : 600, maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
