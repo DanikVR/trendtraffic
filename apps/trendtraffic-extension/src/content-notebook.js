@@ -103,6 +103,26 @@
   }
   const notebookIdFromUrl = () => { const m = /\/notebook\/([a-z0-9-]+)/i.exec(location.href); return m ? m[1] : null; };
 
+  // Email аккаунта Google, под которым открыт NotebookLM. Кнопка аккаунта у Google несёт
+  // aria-label вида «Аккаунт Google: Имя (mail@gmail.com)» / «Google Account: Name (mail@…)».
+  const EMAIL_RE = /([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/i;
+  function accountEmail() {
+    try {
+      // Сначала — узлы, где явно упомянут аккаунт (точнее, чем любой email на странице).
+      const acct = queryAllDeep('a[aria-label*="ccount" i],a[aria-label*="ккаунт" i],[aria-label*="ccount" i],[aria-label*="ккаунт" i]');
+      for (const n of acct) {
+        const m = EMAIL_RE.exec((n.getAttribute && n.getAttribute('aria-label')) || '');
+        if (m) return m[1].toLowerCase();
+      }
+      // Фолбэк: любой email в aria-label (аватар аккаунта Google почти всегда его несёт).
+      for (const n of queryAllDeep('[aria-label]')) {
+        const m = EMAIL_RE.exec(n.getAttribute('aria-label') || '');
+        if (m) return m[1].toLowerCase();
+      }
+    } catch { /* */ }
+    return null;
+  }
+
   // ═══════════════════ 1. инжект MAIN-world перехватчика ═══════════════════
   function injectInterceptor() {
     try {
@@ -125,7 +145,7 @@
 
   // ═══════════════════ 2. панель (Shadow DOM) ═══════════════════
   const ui = (() => {
-    let root, els = {}, reconCount = 0, reconSent = false, lastLoggedIn = null;
+    let root, els = {}, reconCount = 0, reconSent = false, lastLoggedIn = null, lastAccount = null;
     function mount() {
       const host = document.createElement('div');
       host.id = 'tt-nlm-host';
@@ -147,6 +167,8 @@
             padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.03em}
           .pill.on{background:#0E3A34;color:#3DD6C0} .pill.off{background:#3A2530;color:#F27289}
           .pill.wait{background:#12303A;color:#49C6E9}
+          .acct{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:10.5px;
+            color:#7C93A0;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:right}
           .task{font-size:11.5px;color:#B7C6CE;background:#122029;border:1px solid #1E3038;
             border-radius:8px;padding:8px;min-height:34px;line-height:1.4;word-break:break-word}
           .lg{font-family:ui-monospace,Consolas,monospace;font-size:10px;color:#7C93A0;
@@ -174,6 +196,7 @@
           </div>
           <div class="bd" id="bd">
             <div class="row"><span>Состояние</span><span class="pill off" id="st">не подключено</span></div>
+            <div class="row"><span>Аккаунт</span><span class="acct" id="acct" title="Аккаунт Google, под которым открыт NotebookLM">—</span></div>
             <div class="wire" id="wire"></div>
             <div class="task" id="task">Ожидаю задачи из TrendTraffic…</div>
             <div class="lg" id="lg"></div>
@@ -191,6 +214,7 @@
         st: sh.getElementById('st'), task: sh.getElementById('task'), lg: sh.getElementById('lg'),
         ver: sh.getElementById('ver'), open: sh.getElementById('open'), bd: sh.getElementById('bd'),
         hd: sh.getElementById('hd'), wire: sh.getElementById('wire'), verlbl: sh.getElementById('verlbl'),
+        acct: sh.getElementById('acct'),
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       els.verlbl.textContent = 'NotebookLM';
@@ -271,8 +295,14 @@
       const r = await send({ type: 'nlm-status' });
       if (!r) return;
       const loggedIn = isLoggedIn();
-      // Сообщаем background о входе (влияет на поллинг + плашку в приложении).
-      if (loggedIn !== lastLoggedIn) { lastLoggedIn = loggedIn; send({ type: 'nlm-presence', loggedIn }); }
+      const acct = loggedIn ? accountEmail() : null;
+      // Аккаунт на плашке расширения (NotebookLM всегда справа снизу).
+      if (els.acct) { els.acct.textContent = acct || (loggedIn ? '…' : '—'); els.acct.title = acct || 'Аккаунт Google, под которым открыт NotebookLM'; }
+      // Сообщаем background о входе + аккаунте (влияет на поллинг + плашку в приложении).
+      if (loggedIn !== lastLoggedIn || (acct && acct !== lastAccount)) {
+        lastLoggedIn = loggedIn; if (acct) lastAccount = acct;
+        send({ type: 'nlm-presence', loggedIn, account: acct || undefined });
+      }
       if (!r.connected) { status('off', 'войдите в TrendTraffic'); toggleWire(false); armAutoRecon(false); return; }
       if (!loggedIn) { status('wait', 'войдите в Google'); toggleWire(false); armAutoRecon(false); return; }
       status('on', 'работает'); toggleWire(true); armAutoRecon(true);

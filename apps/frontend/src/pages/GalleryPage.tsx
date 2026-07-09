@@ -25,7 +25,7 @@ import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, Image as ImageIcon, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
-  ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info,
+  ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info, Link2,
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
@@ -159,7 +159,7 @@ const HB_ARTIFACT_EMOJI: Record<string, string> = {
 };
 
 export default function GalleryPage() {
-  const { token } = useAppStore();
+  const { token, user } = useAppStore();
   const navigate = useNavigate();
   // Вкладка синхронизирована с ?tab= — сайдбар/ссылки открывают нужный раздел; смена вкладки
   // пишет ?tab= (deeplink + подсветка пункта сайдбара).
@@ -207,6 +207,8 @@ export default function GalleryPage() {
   // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
   const [extVersion, setExtVersion] = useState<string | null>(null); // версия установленного расширения (из present)
+  const [extAccount, setExtAccount] = useState<string | null>(null); // аккаунт Google, под которым у расширения открыт NotebookLM
+  const [extReconnecting, setExtReconnecting] = useState(false);     // идёт «Переподключить»
   const [flowMsg, setFlowMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [extPopup, setExtPopup] = useState(false);
   const [extOpen, setExtOpen] = useState(false); // раскрытие инлайн-инструкции «Как установить» в плашке расширения
@@ -230,6 +232,12 @@ export default function GalleryPage() {
         setExtStatus('present');
         if (d.version) setExtVersion(String(d.version));
       }
+      // Ответ tt-status несёт аккаунт NotebookLM (какой Google открыт у расширения).
+      if (d.type === 'status') {
+        setExtAccount(d.nlmAccount ? String(d.nlmAccount) : null);
+        setExtReconnecting(false);
+      }
+      if (d.type === 'connected' || d.type === 'disconnected') setExtReconnecting(false);
       if (d.type === 'push-to-flow-result') {
         setFlowMsg(d.ok ? { ok: true, text: 'Отправлено в Google Flow — переключитесь на вкладку Flow.' } : { ok: false, text: 'Не удалось: ' + (d.error || 'ошибка') });
         setTimeout(() => setFlowMsg(null), 6000);
@@ -283,6 +291,16 @@ export default function GalleryPage() {
   useEffect(() => {
     if (tab === 'flow' && extStatus !== 'checking') loadFlowProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, extStatus]);
+
+  // Пока открыт Hotebook/Flow и расширение на связи — периодически спрашиваем статус,
+  // чтобы аккаунт NotebookLM на плашке («приложение / NotebookLM») оставался живым.
+  useEffect(() => {
+    if (extStatus !== 'present' || (tab !== 'hotebook' && tab !== 'flow')) return;
+    const ping = () => window.postMessage({ source: 'trendtraffic', type: 'status' }, window.location.origin);
+    ping();
+    const iv = setInterval(ping, 8000);
+    return () => clearInterval(iv);
   }, [tab, extStatus]);
 
   // Скопировать текст (chrome://extensions — навигацию на chrome:// браузер блокирует, поэтому «скопировать и вставить в адрес»).
@@ -514,8 +532,23 @@ export default function GalleryPage() {
   //  • кнопка «Скачать» прямо на плашке + иконка (i) «Как установить» → раскрывает инструкцию
   //    с кликабельными chrome://extensions (копирование), labs.google/flow, notebooklm.google.com;
   //  • если установлена старая версия расширения — бейдж «Обновите».
+  // «Переподключить»: расширение сбрасывает привязку и заново берёт токен ТЕКУЩЕГО аккаунта
+  // приложения (из localStorage) — так после смены учётки расширение перецепляется без переустановки.
+  const reconnectExt = () => {
+    setExtReconnecting(true);
+    setExtAccount(null);
+    window.postMessage({ source: 'trendtraffic', type: 'reconnect' }, window.location.origin);
+    // Подстрахуемся: через 1.2с ещё раз спросим статус (вдруг ответ на reconnect потерялся).
+    setTimeout(() => window.postMessage({ source: 'trendtraffic', type: 'status' }, window.location.origin), 1200);
+    setTimeout(() => setExtReconnecting(false), 4000);
+  };
+
   const renderExtBanner = () => {
     const installed = extStatus === 'present';
+    // Несовпадение: приложение открыто под одним Google/почтой, а NotebookLM у расширения — под другим.
+    const appEmail = (user?.email || '').toLowerCase();
+    const nlmEmail = (extAccount || '').toLowerCase();
+    const mismatch = installed && !!appEmail && !!nlmEmail && appEmail !== nlmEmail;
     const outdated = installed && ((!!extVersion && verLess(extVersion, TT_EXT_VERSION)) || extProbeStale);
     // Кликабельный chrome://extensions: браузер не даёт открыть chrome:// из веб-страницы,
     // поэтому по клику копируем в буфер и подсказываем вставить в адресную строку.
@@ -558,6 +591,26 @@ export default function GalleryPage() {
               <a href="https://notebooklm.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>NotebookLM</a>
               {' '}— {outdated ? 'скачайте новую версию и обновите в chrome://extensions.' : 'скачайте, установите и посмотрите, как это сделать.'}
             </div>
+            {installed && (
+              <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                {appEmail && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md" title="Аккаунт приложения — к нему привязывается расширение"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <Link2 size={11} style={{ color: '#6366f1' }} /> приложение: {appEmail}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md"
+                  title={extAccount ? 'Аккаунт Google, под которым у расширения открыт NotebookLM' : 'Откройте notebooklm.google.com в этом браузере и войдите в нужный Google'}
+                  style={{ background: 'var(--bg-tertiary)', color: mismatch ? '#f59e0b' : 'var(--text-secondary)', border: `1px solid ${mismatch ? 'rgba(245,158,11,0.5)' : 'var(--border-medium)'}` }}>
+                  <Clapperboard size={11} style={{ color: '#22d3ee' }} /> NotebookLM: {extAccount || 'не открыт'}
+                </span>
+                {mismatch && (
+                  <span className="text-[11px] font-700" style={{ color: '#f59e0b' }}>
+                    ⚠ разные аккаунты — «Переподключить» привяжет к приложению; в NotebookLM выберите тот же Google.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <a href="/trendtraffic-extension.zip" download title={outdated ? 'Скачать новую версию' : 'Скачать расширение'}
@@ -565,6 +618,14 @@ export default function GalleryPage() {
               style={{ background: outdated ? '#f59e0b' : '#6366f1', color: '#fff', textDecoration: 'none' }}>
               <Download size={15} /> {outdated ? 'Обновить' : 'Скачать'}
             </a>
+            {installed && (
+              <button type="button" onClick={reconnectExt} disabled={extReconnecting}
+                title="Переподключить расширение к текущему аккаунту приложения (после смены учётной записи)"
+                className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3 py-2 rounded-xl"
+                style={{ background: mismatch ? '#f59e0b' : 'var(--bg-tertiary)', color: mismatch ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: extReconnecting ? 'default' : 'pointer', opacity: extReconnecting ? 0.7 : 1 }}>
+                <RefreshCw size={14} className={extReconnecting ? 'animate-spin' : ''} /> {extReconnecting ? 'Подключаю…' : 'Переподключить'}
+              </button>
+            )}
             <button type="button" onClick={() => setExtOpen((v) => !v)} title="Как установить" aria-label="Как установить"
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-90"
               style={{ background: extOpen ? 'var(--brand)' : 'var(--bg-tertiary)', color: extOpen ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>

@@ -38,6 +38,7 @@ const STATE = {
   token: null, apiBase: null,
   flowTabId: null, busyFlow: false, pausedUntil: 0,
   nlmLooping: false, nlmLoggedIn: false, nlmBusy: false, // nlmBusy: идёт генерация артефакта (вкладка занята)
+  nlmAccount: null, // email аккаунта Google, под которым сейчас открыт NotebookLM (для плашки «переподключить»)
   hgBusy: false,
 };
 
@@ -47,13 +48,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log('[tt-ext bg]', ...a);
 
 async function loadState() {
-  const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil']);
+  const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil', 'nlmAccount']);
   STATE.token = s.token || null;
   STATE.apiBase = s.apiBase || null;
   STATE.pausedUntil = s.pausedUntil || 0;
+  STATE.nlmAccount = s.nlmAccount || null;
 }
 async function saveState() {
-  await chrome.storage.local.set({ token: STATE.token, apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil });
+  await chrome.storage.local.set({ token: STATE.token, apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil, nlmAccount: STATE.nlmAccount });
 }
 
 function api(path) {
@@ -627,7 +629,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'tt-disconnect': await disconnect(); sendResponse({ ok: true }); break;
       case 'tt-status':
         await loadState();
-        sendResponse({ connected: !!(STATE.token && STATE.apiBase), apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil });
+        sendResponse({ connected: !!(STATE.token && STATE.apiBase), apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil, nlmAccount: STATE.nlmAccount });
         break;
       case 'fetch-bytes': sendResponse(await fetchBytes(msg.url)); break;
 
@@ -647,6 +649,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       case 'nlm-presence':
         STATE.nlmLoggedIn = !!msg.loggedIn;
+        // Запоминаем, под каким Google-аккаунтом открыт NotebookLM (плашка приложения покажет его
+        // и предупредит о несовпадении с аккаунтом приложения). Пустое значение НЕ затираем —
+        // на промежуточных страницах NotebookLM email может не читаться.
+        if (msg.account && msg.account !== STATE.nlmAccount) { STATE.nlmAccount = msg.account; void saveState(); }
         if (STATE.token && !STATE.nlmLooping) void nlmLoop(); // юзер открыл NotebookLM → сразу крутим
         sendResponse({ ok: true });
         break;

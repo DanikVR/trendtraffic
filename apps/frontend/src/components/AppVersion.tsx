@@ -2276,12 +2276,21 @@
  *          с ИНЛАЙН-плеером прямо на карточке (играет на месте, без нового экрана); Notebook/UGC-без-
  *          превью/Flow-без-обложки — светящаяся иконка на карточке-заглушке. (Higgsfield-арт отложен —
  *          в воркспейсе кончились кредиты; разметка готова под замену фона на арт.) Файл: GalleryPage.tsx. */
-export const APP_VERSION = '2.2.15';
+/* 2.2.16 — Расширение (плашка Flow/Hotebook), смена аккаунта: (1) кнопка «Переподключить» —
+ *          расширение сбрасывает привязку и заново берёт токен ТЕКУЩЕГО аккаунта приложения
+ *          (после входа под другой учёткой перецепляется без переустановки). (2) На плашке видно
+ *          ОБА аккаунта: «приложение: <email>» и «NotebookLM: <email>» (какой Google открыт у
+ *          расширения); при несовпадении — жёлтое предупреждение + кнопка «Переподключить» желтеет.
+ *          Расширение 1.3.12: content-bridge — обработчик reconnect; background кэширует nlmAccount
+ *          и отдаёт в tt-status; content-notebook — скрейп email аккаунта Google + строка «Аккаунт»
+ *          на виджете NotebookLM. Файлы: GalleryPage.tsx, AppVersion, ext/content-bridge.js,
+ *          ext/background.js, ext/content-notebook.js, manifest.json. */
+export const APP_VERSION = '2.2.16';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.11';
+export const TT_EXT_VERSION = '1.3.12';
 
 export function AppVersion() {
   return (

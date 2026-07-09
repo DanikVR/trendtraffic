@@ -58,6 +58,24 @@
       lastToken = null;
       await toBg({ type: 'tt-disconnect' });
       toPage({ type: 'disconnected' });
+    } else if (d.type === 'reconnect') {
+      // «Переподключить» из плашки приложения: сбрасываем текущую привязку и СРАЗУ
+      // пере-синкаем токен из localStorage — так расширение перецепляется на аккаунт,
+      // под которым сейчас открыто приложение (смена учётной записи).
+      lastToken = null;
+      await toBg({ type: 'tt-disconnect' });
+      const token = readToken();
+      const apiBase = window.location.origin;
+      if (token) {
+        lastToken = token;
+        const r = await toBg({ type: 'tt-connect', token, apiBase });
+        toPage({ type: 'connected', ok: !!(r && r.ok), apiBase });
+      } else {
+        toPage({ type: 'disconnected' });
+      }
+      // Сразу отдаём свежий статус (аккаунт NotebookLM, версия) — плашка обновится без ожидания.
+      const s = await toBg({ type: 'tt-status' });
+      toPage({ type: 'status', version: EXT_VERSION, ...(s || { connected: false }) });
     } else if (d.type === 'status') {
       const r = await toBg({ type: 'tt-status' });
       // version в ответе — приложение видит, какая версия расширения РЕАЛЬНО установлена (плашка «Обновите»).
