@@ -223,23 +223,29 @@ export default function UgcStudio(p: UgcStudioProps) {
   });
 
   /* ── готовность к сборке (чек-лист + причина недоступности CTA) ── */
-  const avatarOk = ugc.avatarSource === 'collection' ? !!ugc.avatarUrl : !!ugc.photoUrl;
-  const voiceOk = mode === 'dialogue'
+  // «Готовое видео-аватар» (соло): свой ролик с речью+мимикой внутри — HeyGen и озвучка не нужны.
+  const isVideoAv = mode === 'solo' && ugc.avatarSource === 'video';
+  const avatarOk = ugc.avatarSource === 'collection' ? !!ugc.avatarUrl
+    : ugc.avatarSource === 'video' ? !!ugc.avatarVideoUrl
+    : !!ugc.photoUrl;
+  const voiceOk = isVideoAv
+    ? true                                              // речь уже в готовом видео
+    : mode === 'dialogue'
     ? ugc.script.length > 0
     : (ugc.script.length > 0 || (ugc.source === 'diarize' && !!ugc.recordingUrl));
   const hasFootage = !!ugc.clip || ugc.clipImages.length > 0;   // видео ИЛИ фото-слайдшоу
   const videoOk = mode === 'retention' ? (hasFootage || ugc.retentionBrolls.length > 0) : (mode === 'voiceover' ? hasFootage : true);
   const checks: { label: string; ok: boolean; hint: string; miss: string }[] = [
-    ...(mode !== 'voiceover' ? [{ label: ugc.avatarSource === 'collection' ? t('ugc.checklist.avatarChosen') : t('ugc.checklist.photoChosen'), ok: avatarOk, hint: t('ugc.checklist.step', { n: 2 }), miss: ugc.avatarSource === 'collection' ? t('ugc.checklist.missAvatar') : t('ugc.checklist.missPhoto') }] : []),
+    ...(mode !== 'voiceover' ? [{ label: ugc.avatarSource === 'collection' ? t('ugc.checklist.avatarChosen') : ugc.avatarSource === 'video' ? t('ugc.checklist.videoAvatarChosen') : t('ugc.checklist.photoChosen'), ok: avatarOk, hint: t('ugc.checklist.step', { n: 2 }), miss: ugc.avatarSource === 'collection' ? t('ugc.checklist.missAvatar') : ugc.avatarSource === 'video' ? t('ugc.checklist.missVideoAvatar') : t('ugc.checklist.missPhoto') }] : []),
     ...(mode === 'dialogue' ? [{ label: t('ugc.checklist.secondSpeaker'), ok: !!ugc.photoBUrl, hint: t('ugc.checklist.step', { n: 2 }), miss: t('ugc.checklist.missPhotoB') }] : []),
-    { label: mode === 'dialogue' ? t('ugc.checklist.recordingDiarized') : t('ugc.checklist.scriptOrRecording'), ok: voiceOk, hint: t('ugc.checklist.step', { n: 3 }), miss: mode === 'dialogue' ? t('ugc.checklist.missDiarize') : t('ugc.checklist.missScript') },
+    ...(!isVideoAv ? [{ label: mode === 'dialogue' ? t('ugc.checklist.recordingDiarized') : t('ugc.checklist.scriptOrRecording'), ok: voiceOk, hint: t('ugc.checklist.step', { n: 3 }), miss: mode === 'dialogue' ? t('ugc.checklist.missDiarize') : t('ugc.checklist.missScript') }] : []),
     ...(mode === 'retention' || mode === 'voiceover' ? [{ label: t('ugc.checklist.videoChosen'), ok: videoOk, hint: t('ugc.checklist.step', { n: 4 }), miss: t('ugc.checklist.missVideo') }] : []),
   ];
   const allOk = checks.every((c) => c.ok) && (mode !== 'dialogue' || !!ugc.photoBUrl);
   const missing = checks.filter((c) => !c.ok).map((c) => c.miss).join(', ');
 
   /* серия языков (перевод Claude + TTS multilingual) — только ИИ-текст в соло/озвучке */
-  const langsActive = ugc.source === 'gen' && (mode === 'solo' || mode === 'voiceover');
+  const langsActive = !isVideoAv && ugc.source === 'gen' && (mode === 'solo' || mode === 'voiceover');
   const extraLangsCount = langsActive ? ugc.langs.filter((l) => l !== 'ru').length : 0;
 
   /* ── смета (ориентиры из докки UGC_AVATARS.md) ── */
@@ -249,6 +255,7 @@ export default function UgcStudio(p: UgcStudioProps) {
       ? ({ off: '', eco: t('ugc.cost.perClip1_2'), bal: t('ugc.cost.perClip2_3'), prem: t('ugc.cost.perClip3_5') }[ugc.retentionPreset])
       : mode === 'dialogue'
         ? ({ eco: t('ugc.cost.perClip2'), bal: t('ugc.cost.perClip2_3'), dyn: t('ugc.cost.perClip3_5') }[ugc.dialogueEngagement])
+        : isVideoAv ? t('ugc.cost.videoFree')
         : (ugc.faceProvider === 'heygen_ext' ? t('ugc.cost.perMin1') : t('ugc.cost.perMin3_4'));
   const costExtra = (mode === 'retention' && ugc.retentionBrolls.length > 1
     ? t('ugc.cost.seriesSuffix', { count: ugc.retentionBrolls.length })
@@ -647,13 +654,14 @@ export default function UgcStudio(p: UgcStudioProps) {
           {mode !== 'voiceover' && (
           <div id="ugc-sec-avatar">
           <Sec n={2} title={t('ugc.avatar.title')} sub={t('ugc.avatar.sub')} done={avatarOk && (mode !== 'dialogue' || !!ugc.photoBUrl)}>
-            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-              {([['collection', t('ugc.avatar.sourceCollection')], ['photo', t('ugc.avatar.sourcePhoto')]] as [UgcSpec['avatarSource'], string][]).map(([s, lbl]) => {
-                const locked = s === 'collection' && mode !== 'solo';
+            <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+              {([['collection', t('ugc.avatar.sourceCollection')], ['photo', t('ugc.avatar.sourcePhoto')], ['video', t('ugc.avatar.sourceVideo')]] as [UgcSpec['avatarSource'], string][]).map(([s, lbl]) => {
+                // «Коллекция» и «Готовое видео» — только в режиме «Один ведущий» (solo).
+                const locked = (s === 'collection' || s === 'video') && mode !== 'solo';
                 return (
                   <button key={s} disabled={locked} onClick={() => ugcMutate((u) => ({ ...u, avatarSource: s }))}
-                    title={locked ? t('ugc.avatar.collectionLocked') : undefined}
-                    className="py-2 rounded-lg text-[11.5px] font-600 disabled:opacity-40"
+                    title={locked ? (s === 'video' ? t('ugc.avatar.videoLocked') : t('ugc.avatar.collectionLocked')) : undefined}
+                    className="py-2 rounded-lg text-[11px] font-600 disabled:opacity-40"
                     style={{ background: ugc.avatarSource === s ? 'var(--bg-tertiary)' : 'transparent', color: ugc.avatarSource === s ? ACC : 'var(--text-muted)', border: 'none', cursor: locked ? 'not-allowed' : 'pointer' }}>{lbl}</button>
                 );
               })}
@@ -708,6 +716,27 @@ export default function UgcStudio(p: UgcStudioProps) {
                 </div>
                 {p.ugcAvNote && <p className="text-[11px]" style={{ color: '#f59e0b' }}>{p.ugcAvNote}</p>}
               </div>
+            ) : ugc.avatarSource === 'video' ? (
+              /* Готовое видео-аватар: свой ролик (речь+мимика внутри) → прямо в кадр, без HeyGen. */
+              <div className="space-y-2">
+                <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.videoHeading')}</div>
+                {ugc.avatarVideoUrl ? (
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <video src={`${ugc.avatarVideoUrl}#t=0.1`} muted playsInline preload="metadata" className="rounded-md object-cover flex-shrink-0" style={{ width: 52, height: 68, background: '#000' }} />
+                    <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.avatarVideoName || undefined}>{ugc.avatarVideoName || t('ugc.avatar.videoChosenName')}</span>
+                    <button onClick={() => p.openUgcPick('avatarVideo')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, avatarVideoUrl: null, avatarVideoName: null, result: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                  </div>
+                ) : (
+                  <EmptySlot icon={<Video size={14} />} title={t('ugc.avatar.videoEmptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('avatarVideo')} />
+                )}
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.videoHint')}</p>
+                <label className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                  <input type="checkbox" checked={ugc.avatarVideoCutout} onChange={(e) => ugcMutate((u) => ({ ...u, avatarVideoCutout: e.target.checked }))} style={{ accentColor: ACC, width: 15, height: 15 }} />
+                  <span className="text-[11px] font-600 flex-1" style={{ color: 'var(--text-secondary)' }}>{t('ugc.avatar.videoCutout')}</span>
+                </label>
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.videoCutoutHint')}</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{mode === 'dialogue' ? t('ugc.avatar.speakerAHeading') : t('ugc.avatar.yourPhotoHeading')}</div>
@@ -739,6 +768,8 @@ export default function UgcStudio(p: UgcStudioProps) {
                 )}
               </div>
             )}
+            {/* Оживление лица (HeyGen) — только для фото/коллекции; готовое видео уже с мимикой. */}
+            {ugc.avatarSource !== 'video' && (
             <div className="space-y-1.5">
               <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.faceProviderLabel')}</div>
               <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
@@ -761,11 +792,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.apiNote')}</p>
               )}
             </div>
+            )}
           </Sec>
           </div>
           )}
 
-          {/* 3. Голос и текст */}
+          {/* 3. Голос и текст — скрыт для «Готового видео» (речь уже внутри ролика) */}
+          {!isVideoAv && (
           <Sec n={3} title={t('ugc.voice.title')} sub={t('ugc.voice.sub')} done={voiceOk}>
             <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
               {([['gen', t('ugc.voice.sourceGen')], ['diarize', t('ugc.voice.sourceDiarize')]] as [UgcSpec['source'], string][]).map(([s, lbl]) => (
@@ -888,6 +921,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               </p>
             )}
           </Sec>
+          )}
 
           {/* 4. Видеоряд */}
           <Sec n={4} title={t('ugc.video.title')} sub={t('ugc.video.sub')} done={hasFootage || (mode === 'retention' && ugc.retentionBrolls.length > 0)}>

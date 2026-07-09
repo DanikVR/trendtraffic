@@ -2181,7 +2181,15 @@
  *         (Галерея) и панель X/YouTube/Reddit — на языке браузера. (2) Аналитика: поле ввода ссылки
  *         выровнено (короткий плейсхолдер под узкую колонку). Файлы: trends/dna.ts, trends/router.ts,
  *         trends/ingest.ts, social-ext/router.ts, TrendAnalyticsPanel, GalleryPage, SocialExtensionPage. */
-export const APP_VERSION = '2.2.3';
+/* 2.2.4 — UGC-студия: третий источник аватара «Готовое видео» (рядом с «Готовые аватары»/«Моё
+ *         фото»). Свой ролик с говорящим человеком (речь+мимика внутри) идёт ПРЯМО в кадр боксом
+ *         поверх видеоряда — HeyGen и озвучка НЕ участвуют (быстро, без затрат генерации); позиция/
+ *         размер драгом на превью, все форматы, музыка/заставки/слой/врезки как обычно. Опц.
+ *         галочка «Вырезать фон (хромакей)»: зелёный фон → силуэт поверх видеоряда (chroma-key в
+ *         composeUgc). Секция «Голос и текст» и выбор HeyGen-провайдера скрыты для этого источника.
+ *         Файлы: ugcTypes.ts, render/podcast_compose.ts (avatarChroma), render/router.ts (ветка
+ *         avatarSource='video'), UgcStudio, UgcPreview, MontageEditor, locales ru/en. */
+export const APP_VERSION = '2.2.4';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

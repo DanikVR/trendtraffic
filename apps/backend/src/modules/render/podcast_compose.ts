@@ -521,8 +521,9 @@ function placeFilter(idx: number, w: number, h: number, ratio: number, out: stri
  * Титры — buildUgcAss. Длительность = длине голосовой дорожки. → fileUrl.
  */
 export async function composeUgc(opts: {
-  avatarPath: string;           // альфа-webm (sr-capture) ИЛИ непрозрачный mp4 (HeyGen Avatar IV)
-  avatarKind?: 'alpha' | 'opaque'; // alpha=прозрачный силуэт; opaque=готовое видео с фоном (HeyGen)
+  avatarPath: string;           // альфа-webm (sr-capture) ИЛИ непрозрачный mp4 (HeyGen Avatar IV / готовое видео)
+  avatarKind?: 'alpha' | 'opaque'; // alpha=прозрачный силуэт; opaque=готовое видео с фоном (HeyGen / загруженное)
+  avatarChroma?: string | null; // opaque + однотонный (зелёный) фон → вырезать chroma-key и класть силуэтом (напр. '0x00FF00')
   voicePath: string;            // голосовая дорожка (для длины/аудио); для HeyGen = сам его mp4
   clipPath?: string | null;
   clipFit: 'cover' | 'contain';
@@ -545,6 +546,9 @@ export async function composeUgc(opts: {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
   const opaque = opts.avatarKind === 'opaque';
+  // Готовое видео на зелёном фоне: вырезаем chroma-key и кладём силуэтом (как альфа), а не боксом.
+  const chroma = opaque && opts.avatarChroma ? String(opts.avatarChroma) : null;
+  const chromaChain = chroma ? `,chromakey=${chroma}:0.16:0.06,despill=type=green:mix=0.5:expand=0` : '';
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
   const Ds = (D + 0.2).toFixed(2);
@@ -589,38 +593,38 @@ export async function composeUgc(opts: {
       // oy — вертикальный object-position картинки внутри бокса (как в превью): при cover-кропе
       // сдвигает видимую часть. 0.5 = центр (по умолчанию), 0 = верх, 1 = низ.
       const oy = Math.min(1, Math.max(0, Number.isFinite(Number(rect.oy)) ? Number(rect.oy) : 0.5));
-      if (opaque) {
+      if (opaque && !chroma) {
         parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30[av]`);
         parts.push(`[bg][av]overlay=${bx}:${by}:eof_action=pass[vmain]`);
       } else {
-        // Силуэт: вписываем по высоте бокса, центр по X, прижат к низу бокса.
-        parts.push(`[0:v]scale=-2:${bh}:flags=lanczos,format=yuva420p[av]`);
+        // Силуэт (альфа-webm ИЛИ вырезанное chroma-key видео): вписываем по высоте бокса, центр по X, прижат к низу.
+        parts.push(`[0:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p[av]`);
         parts.push(`[bg][av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass[vmain]`);
       }
     } else {
       const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
-      if (opaque) {
+      if (opaque && !chroma) {
         // HeyGen: непрозрачный PiP-бокс (со своим фоном), cover-кроп в вертикальный прямоугольник.
         const bw = 360, bh = 640;
         parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
         parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
       } else {
-        // sr-capture: прозрачный силуэт (виден только человек).
+        // sr-capture (альфа) ИЛИ вырезанное chroma-key видео: прозрачный силуэт (виден только человек).
         const aH = 720;
-        parts.push(`[0:v]scale=-2:${aH}:flags=lanczos,format=yuva420p[av]`);
+        parts.push(`[0:v]scale=-2:${aH}:flags=lanczos${chromaChain},format=yuva420p[av]`);
         parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
       }
     }
   } else {
     // Две ячейки: аватар + клип. Портрет → верх/низ (vstack), ландшафт → лево/право (hstack).
     const { cw, ch, stack } = orientCells(W, H);
-    if (opaque) {
+    if (opaque && !chroma) {
       // HeyGen: непрозрачное видео заполняет свою ячейку (cover).
       parts.push(`[0:v]${fit(cw, ch)},setsar=1,fps=30[ahalf]`);
     } else {
-      // sr-capture: прозрачный силуэт на тёмной подложке.
+      // sr-capture (альфа) ИЛИ вырезанное chroma-key видео: прозрачный силуэт на тёмной подложке.
       parts.push(`color=c=0x0d0f16:s=${cw}x${ch}:r=30:d=${Ds}[abg]`);
-      parts.push(`[0:v]scale=-2:${ch}:flags=lanczos,format=yuva420p[av]`);
+      parts.push(`[0:v]scale=-2:${ch}:flags=lanczos${chromaChain},format=yuva420p[av]`);
       parts.push(`[abg][av]overlay=(W-w)/2:0:eof_action=pass[ahalf]`);
     }
     if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(cw, ch)},setsar=1,fps=30[chalf]`);

@@ -497,6 +497,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     if (ugcPick === 'clip') ugcMutate((u) => ({ ...u, clip: { url: g.url, name: g.name } }));
     else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name }));
     else if (ugcPick === 'photoB') ugcMutate((u) => ({ ...u, photoBUrl: g.url, photoBName: g.name }));
+    else if (ugcPick === 'avatarVideo') ugcMutate((u) => ({ ...u, avatarVideoUrl: g.url, avatarVideoName: g.name, result: null }));
     else if (ugcPick === 'recording') ugcMutate((u) => (
       // Новая запись → старый разбор (реплики) и готовый ролик больше не относятся к ней: сбрасываем.
       u.recordingUrl === g.url ? { ...u, recordingUrl: g.url, recordingName: g.name }
@@ -615,9 +616,13 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     if (ugcBusy) return;
     // «Без аватара — озвучка»: аватар/фото не нужны — только базовое видео и голос (текст/запись).
     const useVoiceover = !!ugc.noAvatar;
+    // «Готовое видео-аватар»: свой ролик с говорящим человеком — HeyGen/голос не нужны (речь уже внутри).
+    const useVideo = !useVoiceover && ugc.avatarSource === 'video';
     const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     if (useVoiceover) {
       if (!ugc.clip && !ugc.clipImages.length) { setUgcNote('Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.'); return; }
+    } else if (useVideo) {
+      if (!ugc.avatarVideoUrl) { setUgcNote('Загрузите готовое видео-аватар (вкладка «Готовое видео»).'); return; }
     } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
       if (!ugc.photoUrl || !ugc.photoBUrl) { setUgcNote('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
@@ -628,7 +633,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     } else if (!ugc.avatarId) {
       setUgcNote('Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).'); return;
     }
-    if (!useDialogue) {
+    if (!useDialogue && !useVideo) {
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
       if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
     }

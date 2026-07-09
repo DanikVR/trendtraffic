@@ -13,7 +13,7 @@ export type UgcFormat = '9x16' | '16x9' | '1x1' | '4x5';   // форматы в�
 // Одна половина — говорящий аватар (из коллекции Галереи / своё фото → HeyGen), другая —
 // произвольное видео из Галереи; аватар ставится сверху или снизу. Скрипт — генерация/разбор
 // записи. Снизу — вжигание титров существующим блоком субтитров (subtitle_gen).
-export type UgcAvatarSource = 'collection' | 'photo';
+export type UgcAvatarSource = 'collection' | 'photo' | 'video';   // готовые аватары / своё фото / готовое видео-аватар
 export interface UgcSubtitles { style: 'none' | 'word' | 'karaoke' | 'plain'; pos: 'bottom' | 'center' | 'top'; wishes: string }
 // Кастомная позиция/размер аватара на кадре (все раскладки solo): доли кадра 0..1,
 // своя на каждый формат. Пусто = дефолт раскладки. Выставляется драгом на превью.
@@ -39,6 +39,10 @@ export interface UgcSpec {
   avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
   avatarProvider: 'gallery';                                // аватар из Галереи (коллекция) / своё фото → HeyGen
   photoUrl: string | null; photoName: string | null;        // своё фото
+  // Готовое видео-аватар (avatarSource='video'): уже готовый ролик с говорящим человеком
+  // (речь+мимика внутри). Идёт прямо в композит (composeUgc), HeyGen/ElevenLabs НЕ участвуют.
+  avatarVideoUrl: string | null; avatarVideoName: string | null;
+  avatarVideoCutout: boolean;                               // зелёный фон → вырезать (chroma-key), силуэт поверх видеоряда
   faceProvider: 'heygen_api' | 'heygen_ext';                // чем рендерить лицо: HeyGen API (ключ) ИЛИ подписка через расширение
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
   voice: UgcVoice;
@@ -102,6 +106,7 @@ export const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
   avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
   photoUrl: null, photoName: null,
+  avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
   faceProvider: 'heygen_api',
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],
@@ -136,7 +141,7 @@ export const UGC_DEFAULT: UgcSpec = {
 
 /** Цель пикера Галереи в UGC-студии (какое поле заполняем выбранным файлом). */
 export type UgcPickTarget =
-  | 'clip' | 'photo' | 'photoB' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'
+  | 'clip' | 'photo' | 'photoB' | 'avatarVideo' | 'recording' | 'music' | 'avatarAdd' | 'lineImage' | 'retBrolls'
   | 'intro' | 'outro' | 'clipImages'
   | `layer_${UgcFormat}`;
 

@@ -896,6 +896,71 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       return;
     }
 
+    // ── Ветка «Готовое видео-аватар» ─────────────────────────────────────────────
+    // Загруженный ролик с говорящим человеком (речь+мимика уже внутри) → сразу в композит
+    // боксом поверх видеоряда (позиция — драг на превью). HeyGen/ElevenLabs НЕ участвуют:
+    // быстро и без затрат генерации. Опц. «вырезать фон» (зелёный) → chroma-key силуэтом.
+    // Аудио и длительность ролика берём из самого видео-аватара (voicePath = он же).
+    if (spec.avatarSource === 'video') {
+      const avVideoUrl = String(spec.avatarVideoUrl || '');
+      if (!avVideoUrl) return res.status(400).json({ error: 'Загрузите готовое видео-аватар (вкладка «Готовое видео»).' });
+      const cutout = !!spec.avatarVideoCutout;
+      const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+      sweepJobs(ugcJobs);
+      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
+      res.json({ jobId });
+
+      void (async () => {
+        const j = ugcJobs.get(jobId)!;
+        try {
+          j.status = 'готовлю видео-аватар';
+          const avatar = await downloadToRenders(abs(avVideoUrl), 'ugcav');
+          const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
+          const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
+          const layers = await dlLayers();
+          const bmp = await dlBumpers();
+          const inserts = await dlInserts();   // врезки медиа реплик (только при таймкодах разбора)
+          let made = 0;
+
+          for (const fmt of outFormats) {
+            made++;
+            j.status = `склейка ${fmt.label} (${made}/${j.total})`;
+            let fileUrl = await composeUgc({
+              avatarPath: avatar.filePath, avatarKind: 'opaque',
+              avatarChroma: cutout ? '0x00FF00' : null,   // «вырезать фон» → зелёный chroma-key силуэтом
+              voicePath: avatar.filePath, // речь уже в видео — его дорожка задаёт длину и звук
+              clipPath: clip?.filePath || null,
+              clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
+              clipMuted: spec.clipMuted !== false,
+              placement: placement as any,
+              avatarRect: avatarRectFor(fmt.key),   // кастом ИЛИ дефолт раскладки (== превью)
+              musicPath: music?.filePath || null,
+              musicVolumePct: Number(spec.music?.volumePct) || 20,
+              musicDurationSec: musicDurSec,
+              inserts: inserts as UgcInsert[],
+              layerPath: layers[fmt.key] || null, progressBar,
+              captions, capStyle: captions.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
+            });
+            if (bmp.intro || bmp.outro) {
+              j.status = 'приклеиваю заставки';
+              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+            }
+            const asset = await createAsset(j.tenantId!, {
+              kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder,
+            });
+            j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
+            if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
+          }
+          if (!j.results!.length) throw new Error('нет результатов');
+          j.status = 'done';
+        } catch (e: any) {
+          j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400);
+          console.warn('[ugc/build video] FAILED:', j.error);
+        }
+      })();
+      return;
+    }
+
     // ── Ветка «Своё фото» / «Коллекция» → HeyGen Avatar IV (галерейный аватар = то же фото) ──
     // Озвучка: своя запись (diarize) ИЛИ текст → ElevenLabs (11 Labs) → HeyGen поёт наше аудио.
     if (isPhoto || galleryAvatarUrl) {
