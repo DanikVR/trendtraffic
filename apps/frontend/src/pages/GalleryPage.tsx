@@ -23,11 +23,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
-  CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
+  CheckSquare, Square, Check, Eye, Heart, Image as ImageIcon, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
   ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info,
 } from 'lucide-react';
-import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
 import { AudioPlayer } from '../components/AudioPlayer';
@@ -40,7 +39,7 @@ import { PublisherStudio } from './publisher/PublisherStudio';
 
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference' | 'publisher';
 /** Фильтр внутри вкладки «Видео»: медиа (изображения+видео, kind=reference) или аудио. */
-type MediaKind = 'reference' | 'audio';
+type MediaKind = 'reference' | 'image' | 'audio';
 const ALL_TABS: Tab[] = ['trendhub', 'ugc', 'flow', 'hotebook', 'reference', 'publisher'];
 
 interface GalleryItem {
@@ -349,9 +348,12 @@ export default function GalleryPage() {
         // сохранённые в Галерею, живут во вкладке «Видео» — здесь медиа не грузим.
         setItems([]);
       } else {
-        // «Видео» → по kind (фильтр Видео|Аудио); блоки → по folder.
+        // «Видео» → по kind (фильтр Видео|Изображение|Аудио); блоки → по folder.
+        // Видео и Изображение лежат в kind='reference' (различаем по mediaType на клиенте,
+        // см. displayItems); Аудио — kind='audio'.
+        const mk = kindOverride ?? mediaKind;
         const FOLDER_TABS: Partial<Record<Tab, string>> = { hotebook: 'hotebook', ugc: 'ugc' };
-        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${kindOverride ?? mediaKind}`;
+        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${mk === 'audio' ? 'audio' : 'reference'}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
           const d = await res.json();
@@ -786,13 +788,21 @@ export default function GalleryPage() {
     if (!q) return flowProjects;
     return flowProjects.filter((p) => (p.title || '').toLowerCase().includes(q));
   }, [flowProjects, query]);
+  // «Видео»-вкладка: фильтр по mediaType под выбранную папку (Видео/Изображение/Аудио).
+  // Видео и Изображение приезжают вместе (kind='reference'), поэтому режем на клиенте.
+  const displayItems = useMemo(() => {
+    if (tab !== 'reference') return filtered;
+    if (mediaKind === 'image') return filtered.filter((v) => v.mediaType === 'image');
+    if (mediaKind === 'audio') return filtered.filter((v) => v.mediaType === 'audio');
+    return filtered.filter((v) => v.mediaType !== 'image' && v.mediaType !== 'audio'); // Видео/файлы
+  }, [tab, mediaKind, filtered]);
 
   const toggleSelect = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
-  const visibleIds = filtered.map((v) => v.id);
+  const visibleIds = displayItems.map((v) => v.id);
   const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
   const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(visibleIds));
 
@@ -1024,40 +1034,46 @@ export default function GalleryPage() {
     ({ background: sel ? 'var(--brand)' : 'rgba(0,0,0,0.5)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.75)', cursor: 'pointer', backdropFilter: 'blur(3px)' });
   // Наложенный бейдж (платформа/тип/статус) — верх-право.
   const ovBadge = 'absolute top-1.5 right-1.5 z-20 text-[9px] font-700 px-1.5 py-0.5 rounded-md';
+  // Заглушка-фон для карточек БЕЗ изображения (стиль референса-скрин3, но в бренд-индиго,
+  // тема-зависимо): бренд-свечение снизу поверх карточного фона. Higgsfield-арт (когда будут
+  // кредиты) ляжет вместо этого фона — разметка та же.
+  const cardGlow = (): React.CSSProperties => ({
+    background: 'radial-gradient(115% 82% at 50% 84%, color-mix(in srgb, var(--brand) 34%, transparent), transparent 60%), var(--bg-secondary)',
+  });
+  // Крупная светящаяся иконка-«фигура» в верхней части карточки-заглушки.
+  const placeholderIcon = (icon: React.ReactNode) => (
+    <span aria-hidden className="absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none z-[1]"
+      style={{ height: '60%', color: 'var(--brand)', filter: 'drop-shadow(0 0 16px color-mix(in srgb, var(--brand) 65%, transparent))' }}>{icon}</span>
+  );
 
   return (
     <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-4">
-      {/* Header: иконка + заголовок + одна кнопка «Медиа» (любые файлы) + обновить */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* Header: иконка + заголовок. Кнопки «Медиа»/«Обновить» убраны (по фидбэку): загрузка —
+          через плитку «+ Добавить» в сетке «Видео»; данные обновляются при переключении вкладок. */}
+      <div className="flex items-center gap-3">
         <img src="/icons/nav-gallery.png" alt="" draggable={false}
              className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Галерея</h1>
-        </div>
-        {/* Загрузка любых файлов: фото/видео → «Видео», аудио → «Аудио» (по типу файла) */}
+        <h1 className="text-xl sm:text-2xl font-700 leading-tight min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>Галерея</h1>
+        {/* Скрытый инпут загрузки — вызывается плиткой «+ Добавить» во вкладке «Видео». */}
         <input ref={mediaInputRef} type="file" accept="image/*,video/*,audio/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
-        <button type="button" onClick={() => mediaInputRef.current?.click()} disabled={uploading} title="Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»"
-          className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl disabled:opacity-50 transition-colors"
-          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-          {uploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />} Медиа
-        </button>
-        <AuroraButton variant="secondary" onClick={() => load()} disabled={loading} icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}>Обновить</AuroraButton>
       </div>
 
-      {/* Папки — сегмент-вкладки (индиго-заливка активной), как секции в «Трендах» */}
-      <div className="flex flex-wrap gap-1 p-1 rounded-xl sm:inline-flex" style={{ background: 'var(--bg-tertiary)' }}>
-        {TABS.map((tb) => {
-          const active = tab === tb.key;
-          return (
-            <button key={tb.key} onClick={() => setTab(tb.key)}
-              className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
-              style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: active ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
-              {tabIcon(tb.key)} {tb.label}
-              {/* Идёт генерация артефакта Hotebook — спиннер прямо на вкладке. */}
-              {tb.key === 'hotebook' && hbJobs.length > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#22d3ee' }} />}
-            </button>
-          );
-        })}
+      {/* Папки — сегмент-вкладки. ЛИПКАЯ строка: всегда сверху при скролле в любой вкладке (по фидбэку). */}
+      <div className="sticky top-0 z-40 py-2" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex gap-1 p-1 rounded-xl overflow-x-auto sm:w-fit" style={{ background: 'var(--bg-tertiary)' }}>
+          {TABS.map((tb) => {
+            const active = tab === tb.key;
+            return (
+              <button key={tb.key} onClick={() => setTab(tb.key)}
+                className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap flex-shrink-0"
+                style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: active ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
+                {tabIcon(tb.key)} {tb.label}
+                {/* Идёт генерация артефакта Hotebook — спиннер прямо на вкладке (фича параллельной сессии). */}
+                {tb.key === 'hotebook' && hbJobs.length > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#22d3ee' }} />}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Поиск */}
@@ -1120,43 +1136,35 @@ export default function GalleryPage() {
           {tab === 'hotebook' && hbNbLoading && renderCenterLoader('Загружаю блокноты NotebookLM…')}
           {tab === 'flow' && flowProjLoading && renderCenterLoader('Загружаю проекты Google Flow…')}
 
-          {/* «Видео»: кнопки-фильтры Видео | Аудио (аудио объединено с медиафайлами) */}
+          {/* «Видео»: ВСЁ в одну строчку (по фидбэку) — фильтры Видео/Изображение/Аудио +
+              Найдено + Выбрать всё + Удалить + Опубликовать + Скачать (на узких — гориз. прокрутка). */}
           {tab === 'reference' && (
-            <div className="inline-flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
-              {([['reference', 'Видео', <Video key="v" size={14} />], ['audio', 'Аудио', <Music key="a" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
-                <button key={k} type="button" onClick={() => setMediaKind(k)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-600 transition-all whitespace-nowrap"
-                  style={{ background: mediaKind === k ? 'var(--brand)' : 'transparent', color: mediaKind === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
-                  {ic} {lbl}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Тулбар результатов — когда есть файлы (для UGC — свой тулбар ниже, под подфильтром) */}
-          {tab !== 'ugc' && filtered.length > 0 && (
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Найдено: {filtered.length}</span>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <div className="inline-flex gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
+                {([['reference', 'Видео', <Video key="v" size={14} />], ['image', 'Изображение', <ImageIcon key="i" size={14} />], ['audio', 'Аудио', <Music key="a" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
+                  <button key={k} type="button" onClick={() => { setMediaKind(k); setSelected(new Set()); }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-600 transition-all whitespace-nowrap"
+                    style={{ background: mediaKind === k ? 'var(--brand)' : 'transparent', color: mediaKind === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                    {ic} {lbl}
+                  </button>
+                ))}
+              </div>
+              <span className="text-sm font-700 flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>Найдено: {displayItems.length}</span>
               <button type="button" onClick={toggleSelectAll}
-                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                 {allSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
-                {allSelected ? 'Снять выделение' : 'Выбрать всё'}{selectedCount > 0 ? ` · ${selectedCount}` : ''}
+                {allSelected ? 'Снять' : 'Выбрать всё'}{selectedCount > 0 ? ` · ${selectedCount}` : ''}
               </button>
-              <button type="button" onClick={askDeleteSelected} disabled={selectedCount === 0 || busy}
-                title="Удалить выбранные файлы"
-                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
+              <button type="button" onClick={askDeleteSelected} disabled={selectedCount === 0 || busy} title="Удалить выбранные файлы"
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
                 {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
                 Удалить{selectedCount > 0 ? ` · ${selectedCount}` : ''}
               </button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Пакет в Публикатор: выбранные видео/фото → серия по слотам «Моего расписания» */}
               <button type="button" disabled={selectedCount === 0}
                 onClick={() => {
-                  const chainItems = filtered
+                  const chainItems = displayItems
                     .filter((v) => selected.has(v.id) && (v.mediaType === 'video' || v.mediaType === 'image'))
                     .map((v) => ({ assetId: v.id, mediaUrl: v.fileUrl, title: v.title }));
                   if (!chainItems.length) return;
@@ -1164,53 +1172,47 @@ export default function GalleryPage() {
                   setTab('publisher');
                 }}
                 title="Опубликовать выбранные серией: ролики займут слоты «Моего расписания» в Публикаторе"
-                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
+                className="ml-auto inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', cursor: 'pointer' }}>
                 <Send size={15} /> Опубликовать{selectedCount > 0 ? ` (${selectedCount})` : ''}
               </button>
-              <AuroraButton onClick={downloadSelected} disabled={selectedCount === 0}
-                icon={<Download size={16} />}>
-                {`Скачать выбранные${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
-              </AuroraButton>
+              <button type="button" onClick={downloadSelected} disabled={selectedCount === 0} title="Скачать выбранные на устройство"
+                className="inline-flex items-center gap-1.5 text-[13px] font-700 px-2.5 py-2 rounded-xl transition-transform hover:scale-105 disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
+                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
+                <Download size={15} /> Скачать{selectedCount > 0 ? ` (${selectedCount})` : ''}
+              </button>
             </div>
-          </div>
           )}
 
-          {/* «UGC»: подфильтр-сортировка — «Ролики» (созданные нами, карточками) · «Авто» (конвейер)
-              · «Макеты» (бренд-киты). Содержимое сетки ниже зависит от выбранного фильтра. */}
+          {/* «UGC»: ВСЁ в одну строчку — подфильтр (Ролики/Авто/Макеты) + Всего + Выбрать всё + Удалить. */}
           {tab === 'ugc' && (
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
               {([['rolls', 'Ролики', ugcTpls.length], ['auto', 'Авто', autoUgc.length], ['kits', 'Макеты', kits.length]] as const).map(([key, label, count]) => {
                 const on = ugcSub === key;
                 return (
                   <button key={key} type="button" onClick={() => { setUgcSub(key); setSelected(new Set()); }}
-                    className="text-[12px] font-600 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-colors"
+                    className="text-[12px] font-600 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-colors flex-shrink-0 whitespace-nowrap"
                     style={{ background: on ? 'var(--brand)' : 'var(--bg-secondary)', color: on ? '#fff' : 'var(--text-secondary)', border: `1px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     {label}
                     {count > 0 && <span className="text-[10px] font-700 px-1.5 rounded-full" style={{ background: on ? 'rgba(255,255,255,.25)' : 'var(--bg-tertiary)', color: on ? '#fff' : 'var(--text-muted)' }}>{count}</span>}
                   </button>
                 );
               })}
-            </div>
-          )}
-
-          {/* UGC: свой тулбар выбора — «Выбрать всё» + «Удалить (N)» для текущего подфильтра */}
-          {tab === 'ugc' && ugcSelectableKeys.length > 0 && (
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Всего: {ugcSelectableKeys.length}</span>
-              <button type="button" onClick={toggleSelectAllUGC}
-                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                {ugcAllSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
-                {ugcAllSelected ? 'Снять выделение' : 'Выбрать всё'}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
-              </button>
-              <button type="button" onClick={askDeleteUgcSelected} disabled={ugcSelCount === 0 || busy}
-                title="Удалить выбранные"
-                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
-                style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
-                {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                Удалить{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
-              </button>
+              {ugcSelectableKeys.length > 0 && <>
+                <span className="text-sm font-700 flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>Всего: {ugcSelectableKeys.length}</span>
+                <button type="button" onClick={toggleSelectAllUGC}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors flex-shrink-0 whitespace-nowrap"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                  {ugcAllSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
+                  {ugcAllSelected ? 'Снять' : 'Выбрать всё'}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
+                </button>
+                <button type="button" onClick={askDeleteUgcSelected} disabled={ugcSelCount === 0 || busy} title="Удалить выбранные"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
+                  style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                  {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                  Удалить{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
+                </button>
+              </>}
             </div>
           )}
 
@@ -1219,10 +1221,10 @@ export default function GalleryPage() {
             {renderAddTile(tab)}
             {/* «Google Flow»: готовые проекты Flow карточками — клик открывает проект «проектором» (новая вкладка). */}
             {tab === 'flow' && flowProjectsFiltered.map((p) => (
-              <div key={`proj-${p.id}`} className={cardCls()} style={CARD_STYLE}>
+              <div key={`proj-${p.id}`} className={cardCls()} style={p.thumb ? CARD_STYLE : { ...CARD_STYLE, ...cardGlow() }}>
                 <a href={p.url} target="_blank" rel="noreferrer" title="Открыть проект в Google Flow (проектор)" className="absolute inset-0 w-full h-full block">
-                  {/* Плейсхолдер под обложкой — если thumb не загрузился (CDN Google за авторизацией). */}
-                  <span className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}><Clapperboard size={28} /></span>
+                  {/* Плейсхолдер-изображение под обложкой — остаётся, если thumb не загрузился (CDN Google за авторизацией). */}
+                  {placeholderIcon(<Clapperboard size={30} />)}
                   {p.thumb && (
                     <img src={p.thumb} alt="" loading="lazy" referrerPolicy="no-referrer"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -1254,16 +1256,15 @@ export default function GalleryPage() {
               const selK = `tpl:${k.id}`;
               const isSel = selected.has(selK);
               return (
-                <div key={`tpl-${k.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
+                <div key={`tpl-${k.id}`} className={cardCls(isSel)} style={preview ? CARD_STYLE : { ...CARD_STYLE, ...cardGlow() }}>
+                  {!preview && placeholderIcon(<LayoutTemplate size={30} />)}
                   <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии" className="absolute inset-0 w-full h-full">
                     {preview ? (
                       isVid
                         ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
                         : <img src={preview} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                        <LayoutTemplate size={26} /><span className="text-[10px] font-600">UGC-ролик</span>
-                      </span>
+                      <span className="absolute inset-x-0 bottom-[30%] flex items-center justify-center text-[10px] font-700" style={{ color: 'var(--brand)' }}>UGC-ролик</span>
                     )}
                   </button>
                   {/* Чекбокс выбора */}
@@ -1346,7 +1347,7 @@ export default function GalleryPage() {
             {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
             {tab === 'hotebook' && hbNotebooksFiltered.map((nb) => (
               <button key={`nb-${nb.id}`} type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
-                title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
+                title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={{ ...CARD_STYLE, ...cardGlow() }}>
                 {hbNbOpening === nb.id
                   ? <Loader2 size={30} className="animate-spin" style={{ color: 'var(--brand)' }} />
                   : <span style={{ fontSize: 40, lineHeight: 1 }}>{nb.icon || '📔'}</span>}
@@ -1384,9 +1385,34 @@ export default function GalleryPage() {
                 а не отдельной карточкой-плейсхолдером (по фидбэку). */}
             {/* UGC: готовые рендеры (папка ugc) — только в «Ролики»; в «Авто»/«Макеты» сетку не мешаем.
                 «Google Flow» медиа не показывает (там — проекты; клипы живут во «Видео»). */}
-            {tab !== 'flow' && (tab !== 'ugc' || ugcSub === 'rolls') && filtered.map((v) => {
+            {tab !== 'flow' && (tab !== 'ugc' || ugcSub === 'rolls') && displayItems.map((v) => {
               const selK = tab === 'ugc' ? `media:${v.id}` : v.id;
               const isSel = selected.has(selK);
+              // Аудио: карточка-заглушка (нет изображения) с ИНЛАЙН-плеером — играет прямо на
+              // карточке, БЕЗ открытия нового экрана (по фидбэку).
+              if (v.mediaType === 'audio') {
+                return (
+                  <div key={v.id} className={cardCls(isSel)} style={{ ...CARD_STYLE, ...cardGlow() }}>
+                    {placeholderIcon(<Music size={30} />)}
+                    <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                      className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
+                      {isSel ? <Check size={14} /> : null}
+                    </button>
+                    <div className="absolute inset-x-0 bottom-0 p-2 z-10 flex flex-col gap-1.5">
+                      <div className="text-[11px] font-700 leading-tight line-clamp-2" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
+                      <AudioPlayer src={v.fileUrl} />
+                      <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл"
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:opacity-80 disabled:opacity-40"
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}><Trash2 size={14} /></button>
+                        <button type="button" onClick={() => downloadOne(v)} title="Скачать на устройство"
+                          className="w-7 h-7 rounded-lg flex items-center justify-center ml-auto transition-transform hover:scale-105"
+                          style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}><Download size={14} /></button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <div key={v.id} className={cardCls(isSel)} style={CARD_STYLE}>
                   {/* Медиа/превью на весь размер карточки */}
@@ -1455,14 +1481,15 @@ export default function GalleryPage() {
               и не показываем, если идёт генерация Hotebook) */}
           {tab !== 'flow' && (tab === 'ugc'
             ? (ugcSub === 'rolls' ? (ugcTpls.length + filtered.length === 0) : ugcSub === 'auto' ? autoUgc.length === 0 : kits.length === 0)
-            : (filtered.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0))) && (
+            : (displayItems.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0))) && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
               {tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
                 : tab === 'ugc' ? (ugcSub === 'auto' ? 'Пока нет авто-роликов. Их собирает конвейер «тренд → анализ → UGC» (автопилот в Трендах).'
                     : ugcSub === 'kits' ? 'Макетов пока нет. Сохраните бренд-кит в UGC-студии (кнопка «Бренд-кит» в шапке).'
                     : 'Пока пусто. Нажмите «+» — откроется UGC-студия; сохранённые ролики появятся здесь карточками.')
-                : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио кнопкой «Медиа» или плиткой «+» — аудиофайлы лягут сюда.'
-                : 'Пока пусто. Загрузите фото/видео кнопкой «Медиа» или плиткой «+»; здесь же появляется всё, что производят блоки.'}
+                : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио плиткой «+ Добавить» — аудиофайлы лягут сюда.'
+                : mediaKind === 'image' ? 'Пока пусто. Загрузите изображения плиткой «+ Добавить» — картинки лягут сюда.'
+                : 'Пока пусто. Загрузите фото/видео плиткой «+ Добавить»; здесь же появляется всё, что производят блоки.'}
             </p>
           )}
 
