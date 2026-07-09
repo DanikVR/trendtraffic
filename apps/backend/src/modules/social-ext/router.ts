@@ -313,8 +313,9 @@ galleryRouter.use(requireEnterprise);
 galleryRouter.post('/', async (req: AuthedRequest, res: Response) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+  const lang = typeof req.body?.lang === 'string' ? req.body.lang : undefined;
   try {
-    const r = await ingestTrendVideo(req.tenantId!, url);
+    const r = await ingestTrendVideo(req.tenantId!, url, { lang });
     res.json({ ok: true, fileUrl: r.fileUrl, asset: r.asset, analyzing: true });
   } catch (err: any) {
     res.status(err?.status || 502).json({ error: err?.message || 'Не удалось добавить в галерею' });

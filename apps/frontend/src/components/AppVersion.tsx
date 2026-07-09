@@ -2173,7 +2173,15 @@
  *         Поиск/Аналитика/Каналы теперь ВЕРТИКАЛЬНОЙ колонкой СЛЕВА на всех трёх вкладках —
  *         левая колонка остаётся на месте при переключении (Аналитика/Каналы тоже двухколоночные:
  *         слева навигация+ввод ссылки, справа результат). Файлы: SocialExtensionPage, TrendSearch. */
-export const APP_VERSION = '2.2.2';
+/* 2.2.3 — Аналитика: (1) отчёт-разбор (наш TrendDNA) стал МУЛЬТИЯЗЫЧНЫМ — текст генерится и
+ *         лейблы показываются на языке интерфейса/браузера (сейчас ru/en, задел под 108):
+ *         `lang` прокинут в generateTrendDNA + все точки (breakdown/analyze-save/to-gallery/ingest),
+ *         лейблы локализованы в TrendAnalyticsPanel и Галерея→AnalysisView. Live-вкладка «Analysis»
+ *         в iframe — это сторонний инструмент TikHub (остаётся EN), но НАШ сохранённый разбор
+ *         (Галерея) и панель X/YouTube/Reddit — на языке браузера. (2) Аналитика: поле ввода ссылки
+ *         выровнено (короткий плейсхолдер под узкую колонку). Файлы: trends/dna.ts, trends/router.ts,
+ *         trends/ingest.ts, social-ext/router.ts, TrendAnalyticsPanel, GalleryPage, SocialExtensionPage. */
+export const APP_VERSION = '2.2.3';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

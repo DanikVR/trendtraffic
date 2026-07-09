@@ -41,6 +41,15 @@ function fmt(n?: number): string {
   return String(n);
 }
 
+// Язык отчёта аналитики = язык интерфейса/браузера (i18next → navigator). Пока ru/en —
+// задел под 108 языков: расширяется добавлением веток и переводов в бэкенде/лейблах.
+function analysisLang(): 'en' | 'ru' {
+  try {
+    const l = (localStorage.getItem('i18nextLng') || navigator.language || 'ru').toLowerCase();
+    return l.startsWith('en') ? 'en' : 'ru';
+  } catch { return 'ru'; }
+}
+
 const BLOCK_LABEL: Record<string, string> = {
   video: 'Видео / пост', metrics: 'Метрики', comments: 'Комментарии',
   commentKeywords: 'Ключевые слова', account: 'Аккаунт', posts: 'Лента публикаций',
@@ -184,7 +193,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const res = await fetch('/api/trends/analyze/breakdown', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ summary: r.summary, comments: r.normalized.comments, keywords: r.normalized.keywords, platform: r.detected.platform, url: srcUrl || undefined }),
+        body: JSON.stringify({ summary: r.summary, comments: r.normalized.comments, keywords: r.normalized.keywords, platform: r.detected.platform, url: srcUrl || undefined, lang: analysisLang() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -240,7 +249,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const res = await fetch('/api/trends/analyze/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: url.trim(), lang: analysisLang() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -280,6 +289,9 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const s = result?.summary || {};
   const coverSrc = cardCover || s.cover;
   const isVideo = result?.detected.type === 'video';
+  // Лейблы отчёта — на языке интерфейса/браузера (пока ru/en).
+  const lng = analysisLang();
+  const L = (ru: string, en: string) => (lng === 'en' ? en : ru);
   const stat = (icon: React.ReactNode, label: string, val?: number) => (
     <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)' }}>
       <div className="flex items-center gap-1.5 text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{icon} {label}</div>
@@ -468,12 +480,12 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
             <AuroraCard className="p-4 sm:p-5 space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles size={16} style={{ color: 'var(--brand)' }} />
-                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Разбор вирусности (ИИ)</span>
+                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{L('Разбор вирусности (ИИ)', 'Virality breakdown (AI)')}</span>
                 {bdLoading && <Loader2 size={14} className="animate-spin" style={{ color: 'var(--brand)' }} />}
                 <div className="flex-1" />
                 {!bdLoading && (bdError || breakdown) && (
                   <button onClick={() => runBreakdown(result, url)} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-                    <RotateCw size={12} /> Пересобрать
+                    <RotateCw size={12} /> {L('Пересобрать', 'Regenerate')}
                   </button>
                 )}
               </div>
@@ -481,7 +493,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
               {bdLoading && !breakdown && (
                 <div className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                   <Loader2 size={14} className="animate-spin flex-shrink-0" />
-                  Собираю разбор: хук, аудитория, сценарий озвучки, сцены, как повторить…
+                  {L('Собираю разбор: хук, аудитория, сценарий озвучки, сцены, как повторить…', 'Building the breakdown: hook, audience, voiceover script, scenes, how to replicate…')}
                 </div>
               )}
 
@@ -495,29 +507,29 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Viral Breakdown */}
                   <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Flame size={14} style={{ color: 'var(--brand)' }} /> Разбор вирусности</div>
-                    {bdField(`Хук${breakdown.hookType ? ` · ${breakdown.hookType}` : ''}`, breakdown.whyItWorks)}
-                    {bdField('Целевая аудитория', breakdown.targetAudience)}
-                    {bdList('Факторы вирусности', breakdown.viralFactors)}
+                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Flame size={14} style={{ color: 'var(--brand)' }} /> {L('Разбор вирусности', 'Virality breakdown')}</div>
+                    {bdField(`${L('Хук', 'Hook')}${breakdown.hookType ? ` · ${breakdown.hookType}` : ''}`, breakdown.whyItWorks)}
+                    {bdField(L('Целевая аудитория', 'Target audience'), breakdown.targetAudience)}
+                    {bdList(L('Факторы вирусности', 'Virality factors'), breakdown.viralFactors)}
                     {breakdown.copyReadyScript && (
                       <div>
-                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>Готовый скрипт озвучки</div>
+                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L('Готовый скрипт озвучки', 'Ready voiceover script')}</div>
                         <p className="text-[13px] leading-snug rounded-lg p-2.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{breakdown.copyReadyScript}</p>
                       </div>
                     )}
-                    {bdList('Как адаптировать под нас', breakdown.howToAdapt)}
+                    {bdList(L('Как адаптировать под нас', 'How to adapt for us'), breakdown.howToAdapt)}
                   </div>
 
                   {/* Video Content Analysis */}
                   <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Film size={14} style={{ color: 'var(--brand)' }} /> Контент-анализ</div>
-                    {bdField('Кратко о видео', breakdown.summary)}
-                    {bdField('Разбор первых секунд', breakdown.hookAnalysis)}
-                    {bdField('Визуальный стиль', breakdown.visualStyle)}
-                    {bdField('Звук и подача', breakdown.audioDialogue)}
+                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Film size={14} style={{ color: 'var(--brand)' }} /> {L('Контент-анализ', 'Content analysis')}</div>
+                    {bdField(L('Кратко о видео', 'Video summary'), breakdown.summary)}
+                    {bdField(L('Разбор первых секунд', 'First seconds breakdown'), breakdown.hookAnalysis)}
+                    {bdField(L('Визуальный стиль', 'Visual style'), breakdown.visualStyle)}
+                    {bdField(L('Звук и подача', 'Audio & delivery'), breakdown.audioDialogue)}
                     {breakdown.sceneBeats && breakdown.sceneBeats.length > 0 && (
                       <div>
-                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>Сцены</div>
+                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L('Сцены', 'Scenes')}</div>
                         <div className="space-y-1">
                           {breakdown.sceneBeats.map((b, i) => (
                             <div key={i} className="flex gap-2 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
@@ -528,8 +540,8 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                         </div>
                       </div>
                     )}
-                    {bdList('Почему резонирует', breakdown.whyResonates)}
-                    {bdList('Как повторить', breakdown.howToReplicate)}
+                    {bdList(L('Почему резонирует', 'Why it resonates'), breakdown.whyResonates)}
+                    {bdList(L('Как повторить', 'How to replicate'), breakdown.howToReplicate)}
                   </div>
                 </div>
               )}

@@ -41,6 +41,14 @@ function isNativePanelUrl(u?: string | null): boolean {
     || /(?:reddit\.com|redd\.it)\b/i.test(s);
 }
 
+/** Язык отчёта анализа = язык интерфейса/браузера (пока ru/en; задел под 108 языков). */
+function analysisLang(): 'en' | 'ru' {
+  try {
+    const l = (localStorage.getItem('i18nextLng') || navigator.language || 'ru').toLowerCase();
+    return l.startsWith('en') ? 'en' : 'ru';
+  } catch { return 'ru'; }
+}
+
 /** Ссылка, которую можно анализировать (URL, а не ключевое слово). Если это НЕ ссылка —
  *  НЕ отдаём её iframe-расширению, иначе оно показывает свой экран «Open a supported platform»
  *  (его пользователь видеть не должен — вместо него наша подсказка/плитка недавних видео). */
@@ -108,7 +116,7 @@ export default function SocialExtensionPage() {
       const res = await fetch('/api/social-ext/to-gallery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: target }),
+        body: JSON.stringify({ url: target, lang: analysisLang() }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
@@ -357,7 +365,7 @@ export default function SocialExtensionPage() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAnalyzeInput(); }}
-                  placeholder="https://tiktok.com/@user/video/…  ·  instagram.com/p/…  ·  x.com/…"
+                  placeholder="Ссылка на видео / пост…"
                   className="w-full pl-11 pr-10 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(99,102,241,0.4)] transition-shadow"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
                 />

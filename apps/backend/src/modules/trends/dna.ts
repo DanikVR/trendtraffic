@@ -193,7 +193,14 @@ export interface GenerateDNAInput {
   keywords?: Array<{ word: string; count?: number }>;
   platform?: string;
   sourceUrl?: string;
+  /** Язык отчёта (значений полей). 2-буквенный код (ru/en/…); по умолчанию ru.
+   *  Пока используем ru/en, но модель понимает и другие — задел под 108 языков. */
+  lang?: string;
 }
+
+// Имя языка для инструкции модели. Известные — по-английски (надёжно); прочие — сам код
+// (Claude понимает BCP-47). Так «сейчас 2 языка» легко расширяется до 108 без правок кода.
+const DNA_LANG_NAMES: Record<string, string> = { ru: 'Russian', en: 'English' };
 
 /**
  * Генерирует TrendDNA из данных анализа. Бросает понятную ошибку при отсутствии
@@ -221,11 +228,14 @@ export async function generateTrendDNA(tenantId: string, input: GenerateDNAInput
     `Ключи комментариев: ${ckw}`,
   ].filter(Boolean).join('\n');
 
+  const langCode = (input.lang || 'ru').toLowerCase().slice(0, 2);
+  const langName = DNA_LANG_NAMES[langCode] || langCode;
   const system =
     'Ты — аналитик вирусного короткого видео (TikTok/Reels/Shorts). По метаданным, описанию ' +
     'и комментариям реконструируй «рецепт успеха» ролика: разбор вирусности и контент-анализ. ' +
     'Сцены (sceneBeats) восстанавливай как обоснованную реконструкцию по описанию/формату — ' +
-    'кратко и реалистично. Пиши на русском, конкретно, без воды. ' +
+    'кратко и реалистично. Пиши конкретно, без воды. ' +
+    `ВАЖНО: все строковые значения полей пиши на языке: ${langName}. ` +
     'Отвечай СТРОГО одним JSON-объектом без markdown и без пояснений.';
   const user =
     `Данные тренда:\n${facts}\n\nКомментарии:\n${commentBlock}\n\n` +

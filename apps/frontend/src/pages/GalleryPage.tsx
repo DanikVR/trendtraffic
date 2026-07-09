@@ -90,6 +90,14 @@ function dur(s?: number): string {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
+// Язык отчёта анализа = язык интерфейса/браузера (пока ru/en; задел под 108 языков).
+function galLang(): 'en' | 'ru' {
+  try {
+    const l = (localStorage.getItem('i18nextLng') || navigator.language || 'ru').toLowerCase();
+    return l.startsWith('en') ? 'en' : 'ru';
+  } catch { return 'ru'; }
+}
+
 // Имя нового UGC-ролика по умолчанию = дата и время создания («ДД.ММ.ГГГГ ЧЧ:ММ»).
 // Дальше пользователь переименовывает как хочет (карандаш в шапке студии).
 function newRollName(): string {
@@ -1282,7 +1290,7 @@ export default function GalleryPage() {
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                <Sparkles size={16} style={{ color: '#22d3ee' }} /> Анализ · {analysis.title}
+                <Sparkles size={16} style={{ color: '#22d3ee' }} /> {galLang() === 'en' ? 'Analysis' : 'Анализ'} · {analysis.title}
               </span>
               <button onClick={() => setAnalysis(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
             </div>
@@ -1385,24 +1393,26 @@ function AnalysisView({ dna }: { dna: any }) {
   ) : <span style={{ color: 'var(--text-muted)' }}>—</span>;
   const beats = Array.isArray(dna?.sceneBeats) ? dna.sceneBeats : [];
   const fmtT = (t: any) => (typeof t === 'number' ? `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}` : '');
+  // Лейблы — на языке интерфейса/браузера (пока ru/en); текст разбора берётся как сохранён.
+  const L = (ru: string, en: string) => (galLang() === 'en' ? en : ru);
   return (
     <div>
-      <div className="text-[11px] font-700 mb-2" style={{ color: 'var(--text-muted)' }}>ВИРАЛЬНЫЙ РАЗБОР</div>
-      {dna?.hookType && <Sec title="ТИП ХУКА">{dna.hookType}</Sec>}
-      {dna?.whyItWorks && <Sec title="ПОЧЕМУ РАБОТАЕТ">{dna.whyItWorks}</Sec>}
-      {dna?.targetAudience && <Sec title="ЦЕЛЕВАЯ АУДИТОРИЯ">{dna.targetAudience}</Sec>}
-      {dna?.viralFactors && <Sec title="ФАКТОРЫ ВИРАЛЬНОСТИ"><Bul items={dna.viralFactors} /></Sec>}
-      {dna?.copyReadyScript && <Sec title="ГОТОВЫЙ СЦЕНАРИЙ"><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{dna.copyReadyScript}</div></Sec>}
-      {dna?.howToAdapt && <Sec title="КАК АДАПТИРОВАТЬ"><Bul items={dna.howToAdapt} /></Sec>}
-      <div className="text-[11px] font-700 mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>АНАЛИЗ СОДЕРЖАНИЯ</div>
-      {dna?.summary && <Sec title="КРАТКОЕ ОПИСАНИЕ">{dna.summary}</Sec>}
-      {beats.length > 0 && <Sec title="СЦЕНЫ (ТАЙМИНГ)"><ul className="space-y-0.5">{beats.map((b: any, i: number) => <li key={i}><span style={{ color: '#22d3ee' }}>{fmtT(b?.t)}</span> {b?.desc}{b?.intensity ? ` [${b.intensity}]` : ''}</li>)}</ul></Sec>}
-      {dna?.hookAnalysis && <Sec title="РАЗБОР ХУКА">{dna.hookAnalysis}</Sec>}
-      {dna?.visualStyle && <Sec title="ВИЗУАЛЬНЫЙ СТИЛЬ">{dna.visualStyle}</Sec>}
-      {dna?.audioDialogue && <Sec title="АУДИО / ДИАЛОГ">{dna.audioDialogue}</Sec>}
-      {dna?.whyResonates && <Sec title="ПОЧЕМУ ЗАХОДИТ"><Bul items={dna.whyResonates} /></Sec>}
-      {dna?.howToReplicate && <Sec title="КАК ПОВТОРИТЬ"><Bul items={dna.howToReplicate} /></Sec>}
-      {Array.isArray(dna?.keywords) && dna.keywords.length > 0 && <Sec title="КЛЮЧЕВЫЕ СЛОВА">{dna.keywords.join(', ')}</Sec>}
+      <div className="text-[11px] font-700 mb-2" style={{ color: 'var(--text-muted)' }}>{L('ВИРАЛЬНЫЙ РАЗБОР', 'VIRALITY BREAKDOWN')}</div>
+      {dna?.hookType && <Sec title={L('ТИП ХУКА', 'HOOK TYPE')}>{dna.hookType}</Sec>}
+      {dna?.whyItWorks && <Sec title={L('ПОЧЕМУ РАБОТАЕТ', 'WHY IT WORKS')}>{dna.whyItWorks}</Sec>}
+      {dna?.targetAudience && <Sec title={L('ЦЕЛЕВАЯ АУДИТОРИЯ', 'TARGET AUDIENCE')}>{dna.targetAudience}</Sec>}
+      {dna?.viralFactors && <Sec title={L('ФАКТОРЫ ВИРАЛЬНОСТИ', 'VIRALITY FACTORS')}><Bul items={dna.viralFactors} /></Sec>}
+      {dna?.copyReadyScript && <Sec title={L('ГОТОВЫЙ СЦЕНАРИЙ', 'READY SCRIPT')}><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{dna.copyReadyScript}</div></Sec>}
+      {dna?.howToAdapt && <Sec title={L('КАК АДАПТИРОВАТЬ', 'HOW TO ADAPT')}><Bul items={dna.howToAdapt} /></Sec>}
+      <div className="text-[11px] font-700 mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>{L('АНАЛИЗ СОДЕРЖАНИЯ', 'CONTENT ANALYSIS')}</div>
+      {dna?.summary && <Sec title={L('КРАТКОЕ ОПИСАНИЕ', 'SUMMARY')}>{dna.summary}</Sec>}
+      {beats.length > 0 && <Sec title={L('СЦЕНЫ (ТАЙМИНГ)', 'SCENES (TIMING)')}><ul className="space-y-0.5">{beats.map((b: any, i: number) => <li key={i}><span style={{ color: '#22d3ee' }}>{fmtT(b?.t)}</span> {b?.desc}{b?.intensity ? ` [${b.intensity}]` : ''}</li>)}</ul></Sec>}
+      {dna?.hookAnalysis && <Sec title={L('РАЗБОР ХУКА', 'HOOK BREAKDOWN')}>{dna.hookAnalysis}</Sec>}
+      {dna?.visualStyle && <Sec title={L('ВИЗУАЛЬНЫЙ СТИЛЬ', 'VISUAL STYLE')}>{dna.visualStyle}</Sec>}
+      {dna?.audioDialogue && <Sec title={L('АУДИО / ДИАЛОГ', 'AUDIO / DIALOGUE')}>{dna.audioDialogue}</Sec>}
+      {dna?.whyResonates && <Sec title={L('ПОЧЕМУ ЗАХОДИТ', 'WHY IT RESONATES')}><Bul items={dna.whyResonates} /></Sec>}
+      {dna?.howToReplicate && <Sec title={L('КАК ПОВТОРИТЬ', 'HOW TO REPLICATE')}><Bul items={dna.howToReplicate} /></Sec>}
+      {Array.isArray(dna?.keywords) && dna.keywords.length > 0 && <Sec title={L('КЛЮЧЕВЫЕ СЛОВА', 'KEYWORDS')}>{dna.keywords.join(', ')}</Sec>}
     </div>
   );
 }

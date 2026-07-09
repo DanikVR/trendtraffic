@@ -144,7 +144,8 @@ router.post('/analyze/breakdown', async (req: AuthedRequest, res: Response) => {
       keywords = a.normalized.keywords;
       platform = a.detected.platform;
     }
-    const dna = await generateTrendDNA(req.tenantId!, { summary, comments, keywords, platform, sourceUrl: url || undefined });
+    const lang = typeof body.lang === 'string' ? body.lang : undefined;
+    const dna = await generateTrendDNA(req.tenantId!, { summary, comments, keywords, platform, sourceUrl: url || undefined, lang });
     res.json({ dna });
   } catch (err: any) {
     const msg = err?.message || 'Ошибка разбора';
@@ -213,12 +214,13 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
     // ДНК тренда едет ВМЕСТЕ с видео: в фоне собираем рецепт и кладём в video_analyses,
     // привязав к этому ассету. Best-effort — скачивание уже успешно, анализ не должен его ронять.
     const tId = req.tenantId!, assetId = asset.id, dPlatform = d.platform, dVideoId = String(d.videoId), fPath = file.filePath;
+    const sLang = typeof req.body?.lang === 'string' ? req.body.lang : undefined;
     void (async () => {
       try {
         const a = await analyzeUrl(tId, url);
         let dna = await generateTrendDNA(tId, {
           summary: a.summary, comments: a.normalized.comments, keywords: a.normalized.keywords,
-          platform: a.detected.platform, sourceUrl: url,
+          platform: a.detected.platform, sourceUrl: url, lang: sLang,
         });
         // Покадровый Gemini-видеоанализ по скачанному файлу: sceneBeats становятся
         // реальными (не LLM-реконструкцией). Мягкая деградация — null не ломает ДНК.

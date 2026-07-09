@@ -52,7 +52,7 @@ export class IngestError extends Error {
 export async function ingestTrendVideo(
   tenantId: string,
   url: string,
-  opts?: { awaitAnalysis?: boolean },
+  opts?: { awaitAnalysis?: boolean; lang?: string },
 ): Promise<IngestResult> {
   const clean = String(url || '').trim();
   if (!clean) throw new IngestError(400, 'Передайте ссылку в поле url.');
@@ -85,7 +85,7 @@ export async function ingestTrendVideo(
   const buildAnalysis = async (): Promise<{ saved: StoredTrendDNA | null; dna: TrendDNA }> => {
     let dna = await generateTrendDNA(tenantId, {
       summary: result.summary, comments: result.normalized?.comments, keywords: result.normalized?.keywords,
-      platform, sourceUrl: clean,
+      platform, sourceUrl: clean, lang: opts?.lang,
     });
     const visual = await analyzeVideoVisual(tenantId, stored.filePath);
     if (visual) dna = applyVisualInsight(dna, visual);
