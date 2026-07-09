@@ -591,14 +591,42 @@
     // + подсказки-продолжения (чипы) — фронт покажет их кнопками.
     return { ok: true, answer: finalText, citations: [], suggestions: chatSuggestionsDom() };
   }
-  // Чистый текст ответа: клонируем и УДАЛЯЕМ цитаты-маркеры (номер «1», «more_horiz»-иконку и т.п.),
-  // чтобы в чат не летел мусор вида «…Figma12.» (проверено вживую → «…Figma.»).
+  // Ответ → Markdown (сохраняем ВЁРСТКУ: **жирный**, списки, абзацы) БЕЗ цитат-маркеров.
+  // Разведано вживую: жирный = <b>/<strong>, списки = <ol>/<ul>+<li>, абзац = paragraph-element-view,
+  // цитаты = <button class="citation-marker">. Проверено: «…Figma12.» → «…Figma.», заголовки в **…**.
   function cleanAnswerText(el) {
     if (!el) return '';
     try {
-      const c = el.cloneNode(true);
-      c.querySelectorAll('sup, button, mat-icon, [role="button"], [class*="citation" i], [class*="marker" i], [class*="footnote" i], [class*="chip" i], [class*="source-ref" i], [class*="ref-" i]').forEach((e) => e.remove());
-      return clean(c.textContent);
+      const root = el.cloneNode(true);
+      root.querySelectorAll('sup, button, mat-icon, [role="button"], [class*="citation" i], [class*="marker" i], [class*="footnote" i], [class*="chip" i], [class*="source-ref" i], [class*="ref-" i]').forEach((e) => e.remove());
+      const inline = (node) => {
+        let s = '';
+        for (const c of node.childNodes) {
+          if (c.nodeType === 3) { s += c.textContent; continue; }
+          if (c.nodeType !== 1) continue;
+          const t = c.tagName.toLowerCase();
+          if (t === 'b' || t === 'strong') { const inner = inline(c).trim(); s += inner ? ('**' + inner + '**') : ''; }
+          else if (t === 'i' || t === 'em') { const inner = inline(c).trim(); s += inner ? ('_' + inner + '_') : ''; }
+          else if (t === 'br') s += '\n';
+          else s += inline(c);
+        }
+        return s;
+      };
+      const blocks = [];
+      const walk = (node) => {
+        for (const c of node.childNodes) {
+          if (c.nodeType === 3) { const tx = c.textContent.trim(); if (tx) blocks.push(tx); continue; }
+          if (c.nodeType !== 1) continue;
+          const t = c.tagName.toLowerCase();
+          if (t === 'li') { const tx = inline(c).replace(/[ \t]+/g, ' ').trim(); if (tx) blocks.push('- ' + tx); }
+          else if (t === 'p' || /paragraph-element-view/.test(t)) { const tx = inline(c).replace(/[ \t]+/g, ' ').trim(); if (tx) blocks.push(tx); }
+          else if (/^h[1-6]$/.test(t)) { const tx = inline(c).replace(/\s+/g, ' ').trim(); if (tx) blocks.push('**' + tx + '**'); }
+          else walk(c);
+        }
+      };
+      walk(root);
+      const md = blocks.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
+      return md || clean(root.textContent);
     } catch { return clean(el.textContent); }
   }
   // Ответ ассистента = .to-user-container; текст из внутреннего .message-content, БЕЗ цитат/кнопок.
