@@ -181,9 +181,17 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
   const payload = (req.body?.payload !== undefined && req.body?.payload !== null) ? req.body.payload : null;
   if (!taskId) return res.status(400).json({ error: 'нет taskId' });
 
-  const t = await pool.query(`SELECT id, type, title FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2`, [taskId, req.tenantId]);
+  const t = await pool.query(`SELECT id, type, title, flow_id FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2`, [taskId, req.tenantId]);
   if (!t.rowCount) return res.status(404).json({ error: 'джоба не найдена' });
   const job = t.rows[0];
+  // Имя файла = «Название» джобы ИЛИ имя блокнота (по требованию юзера — как называется блокнот).
+  let nameBase: string | null = job.title || null;
+  if (!nameBase && job.flow_id) {
+    try {
+      const s = await pool.query(`SELECT title FROM notebooklm_state WHERE tenant_id=$1 AND flow_id=$2`, [req.tenantId, job.flow_id]);
+      nameBase = (s.rows[0]?.title || '').trim() || null;
+    } catch { /* пусто */ }
+  }
 
   try {
     const extHint = extOf(fileName, mime);
@@ -194,7 +202,7 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
     const asset: MediaAsset | null = await createAsset(req.tenantId!, {
       kind: 'reference',
       mediaType: EXT_MEDIA[stored.ext] || 'file',
-      originalName: artifactFileName(job.title, job.type, stored.ext),
+      originalName: artifactFileName(nameBase, job.type, stored.ext),
       fileUrl: stored.fileUrl, filePath: stored.filePath,
       mime: EXT_MIME[stored.ext] || stored.mime, size: stored.size,
       folder: HOTEBOOK_FOLDER,

@@ -201,7 +201,7 @@ export default function GalleryPage() {
   // «Hotebook»: активные генерации (плейсхолдер-карточки со спиннером до готовности артефакта).
   const [hbJobs, setHbJobs] = useState<HbJob[]>([]);
   // «Hotebook»: ВСЕ блокноты NotebookLM (карточками) — расширение снимает плитки главной.
-  const [hbNotebooks, setHbNotebooks] = useState<{ id: string; title: string; subtitle?: string; icon?: string; artifactCounts?: Record<string, number> }[]>([]);
+  const [hbNotebooks, setHbNotebooks] = useState<{ id: string; title: string; subtitle?: string; icon?: string; artifactCounts?: Record<string, number>; generating?: number }[]>([]);
   const [hbNbStatus, setHbNbStatus] = useState<{ ok: boolean; errorKind?: string | null } | null>(null);
   const [hbNbLoading, setHbNbLoading] = useState(false);
   const [hbNbOpening, setHbNbOpening] = useState<string | null>(null); // id блокнота, который открываем
@@ -394,7 +394,9 @@ export default function GalleryPage() {
   };
   useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab, mediaKind]);
 
-  // Пока на Hotebook есть активные генерации — опрашиваем; при завершении перезагружаем артефакты.
+  // Пока на Hotebook есть активные генерации — опрашиваем; спиннер «генерится» на КАРТОЧКЕ блокнота
+  // (nb.generating из /notebooks), поэтому на каждом тике обновляем и список блокнотов; при завершении
+  // перезагружаем артефакты (файл упал в Галерею) и блокноты (спиннер → счётчик ✨).
   useEffect(() => {
     if (tab !== 'hotebook' || hbJobs.length === 0) return;
     const t = setInterval(async () => {
@@ -402,9 +404,18 @@ export default function GalleryPage() {
         const jr = await fetch('/api/notebooklm/jobs?active=1', { headers: jsonHeaders() });
         const next: HbJob[] = jr.ok ? ((await jr.json()).jobs || []) : [];
         setHbJobs(next);
+        // ЛЁГКИЙ статус (только БД, БЕЗ пере-скрейпа расширением — иначе навигация сломает генерацию):
+        // обновляем спиннер «генерится»/счётчик прямо на карточках блокнотов.
+        try {
+          const sr = await fetch('/api/notebooklm/notebook-status', { headers: jsonHeaders() });
+          if (sr.ok) {
+            const st = (await sr.json()).statuses || {};
+            setHbNotebooks((prev) => prev.map((nb) => ({ ...nb, generating: st[nb.id]?.generating ?? nb.generating ?? 0, artifactCounts: st[nb.id]?.artifactCounts ?? nb.artifactCounts })));
+          }
+        } catch { /* тихо */ }
         if (next.length < hbJobs.length) await load('hotebook'); // что-то завершилось → подтянуть готовые
       } catch { /* тихо */ }
-    }, 4000);
+    }, 5000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, hbJobs.length]);
@@ -1336,6 +1347,12 @@ export default function GalleryPage() {
                         title={Object.entries(nb.artifactCounts || {}).map(([t, n]) => `${HB_JOB_LABEL[t] || t}: ${n}`).join(', ')}>✨ {total}</span>
                     ) : null;
                   })()}
+                  {/* Идёт генерация артефакта В ЭТОМ блокноте — спиннер прямо на карточке (не отдельной). */}
+                  {(nb.generating || 0) > 0 && (
+                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 text-[9px] font-700 px-2 py-0.5 rounded-full z-10 whitespace-nowrap" style={{ background: 'rgba(34,211,238,0.92)', color: '#04222a' }}>
+                      <Loader2 size={10} className="animate-spin" /> генерится
+                    </span>
+                  )}
                 </button>
                 <div className="p-3 flex flex-col gap-1">
                   <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={nb.title}>{nb.title}</div>
@@ -1351,26 +1368,8 @@ export default function GalleryPage() {
                 </div>
               </AuroraCard>
             ))}
-            {/* Hotebook: активные генерации — карточка-плейсхолдер со спиннером до готовности */}
-            {tab === 'hotebook' && hbJobs.map((j) => (
-              <AuroraCard key={`job-${j.id}`} className="group p-0 overflow-hidden flex flex-col">
-                <div className="relative w-full flex flex-col items-center justify-center gap-3"
-                  style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                  <span className="absolute inset-0 animate-pulse" aria-hidden="true"
-                    style={{ background: 'radial-gradient(circle at 50% 42%, rgba(99,102,241,0.18), transparent 65%)' }} />
-                  <Loader2 size={30} className="animate-spin" style={{ color: 'var(--brand)', zIndex: 1 }} />
-                  <span className="text-[11px] font-700 px-3 text-center" style={{ color: 'var(--text-secondary)', zIndex: 1 }}>
-                    {HB_JOB_LABEL[j.type] || 'Артефакт'}
-                  </span>
-                  <span className="text-[10px] px-3 text-center" style={{ color: 'var(--text-muted)', zIndex: 1 }}>генерируется…</span>
-                </div>
-                <div className="p-3">
-                  <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={j.title || undefined}>
-                    {j.title || HB_JOB_LABEL[j.type] || 'Генерация'}
-                  </div>
-                </div>
-              </AuroraCard>
-            ))}
+            {/* Hotebook: активная генерация показывается СПИННЕРОМ на карточке блокнота (nb.generating),
+                а не отдельной карточкой-плейсхолдером (по фидбэку). */}
             {/* UGC: готовые рендеры (папка ugc) — только в «Ролики»; в «Авто»/«Макеты» сетку не мешаем.
                 «Google Flow» медиа не показывает (там — проекты; клипы живут во «Видео»). */}
             {tab !== 'flow' && (tab !== 'ugc' || ugcSub === 'rolls') && filtered.map((v) => {

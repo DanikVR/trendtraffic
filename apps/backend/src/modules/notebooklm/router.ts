@@ -213,11 +213,42 @@ router.get('/notebooks', async (req: AuthedRequest, res: Response) => {
          WHERE s.tenant_id=$1 AND j.status='done' GROUP BY s.notebook_id, j.type`, [tenantId]);
       for (const row of cr.rows) { (counts[row.nb] ||= {})[row.t] = Number(row.n) || 0; }
     } catch { /* пусто */ }
-    for (const nb of notebooks) { nb.artifactCounts = counts[nb.id] || {}; }
+    // Активные генерации по блокноту (для спиннера на карточке).
+    const gen: Record<string, number> = {};
+    try {
+      const gr = await pool.query(
+        `SELECT s.notebook_id AS nb, count(*)::int AS n
+         FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
+         WHERE s.tenant_id=$1 AND j.status IN ('queued','running') GROUP BY s.notebook_id`, [tenantId]);
+      for (const row of gr.rows) gen[row.nb] = Number(row.n) || 0;
+    } catch { /* пусто */ }
+    for (const nb of notebooks) { nb.artifactCounts = counts[nb.id] || {}; nb.generating = gen[nb.id] || 0; }
     res.json({ notebooks, status: st });
   } catch (e: any) {
     res.json({ notebooks: [], status: st, error: String(e?.message || e) });
   }
+});
+
+/**
+ * ЛЁГКИЕ статусы блокнотов из БД (генерится/готово по типам), БЕЗ снятия списка расширением —
+ * для частого опроса, чтобы обновлять спиннер/счётчик на карточках без навигации NotebookLM-вкладки.
+ */
+router.get('/notebook-status', async (req: AuthedRequest, res: Response) => {
+  const statuses: Record<string, { generating: number; artifactCounts: Record<string, number> }> = {};
+  try {
+    const cr = await pool.query(
+      `SELECT s.notebook_id AS nb, j.type AS t,
+              count(*) FILTER (WHERE j.status='done')::int AS done,
+              count(*) FILTER (WHERE j.status IN ('queued','running'))::int AS gen
+       FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
+       WHERE s.tenant_id=$1 GROUP BY s.notebook_id, j.type`, [req.tenantId]);
+    for (const row of cr.rows) {
+      const st = (statuses[row.nb] ||= { generating: 0, artifactCounts: {} });
+      if (Number(row.done) > 0) st.artifactCounts[row.t] = Number(row.done);
+      st.generating += Number(row.gen) || 0;
+    }
+  } catch { /* пусто */ }
+  res.json({ statuses });
 });
 
 /**

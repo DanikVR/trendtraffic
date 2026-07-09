@@ -91,15 +91,15 @@
   const onNotebookLM = () => location.host === 'notebooklm.google.com';
   function isLoggedIn() {
     if (!onNotebookLM()) return false;
-    if (/accounts\.google\.com/.test(location.href)) return false;
+    if (/accounts\.google\.com/.test(location.href)) return false; // редирект на вход = не залогинен
     if (/\/notebook\//.test(location.href)) return true;
-    // Есть плитки блокнотов / кнопка «создать» / аватар аккаунта → вошли.
-    if (findByText(['create', 'создать', 'new notebook', 'создать блокнот', 'новый блокнот'])) return true;
     if (queryAllDeep('a[href*="/notebook/"]').some(visible)) return true;
     if (queryAllDeep('[aria-label*="Account" i],[aria-label*="аккаунт" i],img[src*="googleusercontent"]').some(visible)) return true;
-    // Явная страница входа?
-    if (findByText(['sign in', 'войти', 'log in'])) return false;
-    return false;
+    // Явная форма входа Google → НЕ залогинен.
+    if (findByText(['sign in with google', 'войдите в аккаунт', 'sign in to notebooklm', 'войти в google'])) return false;
+    // Иначе (загрузка, /accessrequest, промежуточные страницы notebooklm БЕЗ формы входа) — считаем
+    // залогиненным. Иначе мигало «нужен вход» при навигации/загрузке во время генерации (баг «оборвалось»).
+    return true;
   }
   const notebookIdFromUrl = () => { const m = /\/notebook\/([a-z0-9-]+)/i.exec(location.href); return m ? m[1] : null; };
 
