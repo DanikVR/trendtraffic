@@ -6,13 +6,21 @@
  * «ловят» темой контента; здесь мы переводим «кого хочу» → «какие темы/ключевики
  * это ловят».
  *
- * buildAudienceMap() — ЧИСТАЯ генерация карты (без вызовов TikHub). Фронт затем
- * веерно сканирует кластеры через существующий /api/trends/scan и группирует
- * выдачу по нишам. Ключ Claude: resolveAnthropicKey (per-tenant → системный),
- * модель DEFAULT_DIRECTOR_MODEL — как в dna.ts.
+ * buildAudienceMap() — генерация карты: Claude предлагает ниши, затем (Фаза 2)
+ * ключевики каждой ниши ЗАЗЕМЛЯЮТСЯ реальными подсказками запросов TikHub
+ * (get_query_suggestions по региону / YouTube suggestions), а ниши подсеваются
+ * трендовыми хэштегами региона. Дальше фронт веерно сканирует кластеры через
+ * /api/trends/scan. Ключ Claude: resolveAnthropicKey; ключ TikHub: getEffectiveTikHubKey.
+ * Заземление грациозно деградирует: нет ключа/эндпоинт упал → работаем на приорах Claude.
  */
 
 import { resolveAnthropicKey, DEFAULT_DIRECTOR_MODEL } from '../render/director.js';
+import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
+import {
+  fetchTiktokQuerySuggestions, fetchTiktokKeywordSuggest, fetchYoutubeSuggestions,
+  fetchTiktokTrendingHashtags, extractSuggestions,
+} from '../tikhub/tikhub_client.js';
+import { REGION_LANG } from '../tikhub/providers.js';
 
 /** Одна микро-ниша: тема-прокси нужной под-аудитории + кластер ключевиков под поиск. */
 export interface AudienceNiche {
@@ -22,7 +30,9 @@ export interface AudienceNiche {
   branch?: string;       // верхнеуровневая ветка ЦА: «Кто зарабатывает» / «Их жёны»
   rationale: string;     // почему эта тема — прокси нужной аудитории
   angle: string;         // контент-угол: как встроить продукт в эту тему (готовый hook)
-  keywords: string[];    // кластер ключевиков/хэштегов для скана площадки
+  keywords: string[];    // кластер ключевиков/хэштегов для скана (реальные запросы — первыми)
+  realKeywords?: string[]; // подмножество keywords, подтверждённых реальными подсказками запросов
+  grounded?: boolean;    // нашлись ли реальные запросы для этой ниши
 }
 
 export interface AudienceMap {
@@ -31,6 +41,9 @@ export interface AudienceMap {
   language?: string;
   region?: string;
   niches: AudienceNiche[];
+  grounded?: boolean;        // заземлены ли ключевики реальными запросами (хоть одна ниша)
+  groundingSource?: string;  // 'tiktok' | 'youtube' — откуда брали реальные подсказки
+  trendingHashtags?: string[]; // трендовые хэштеги региона, подмешанные в генерацию (инфо)
   model: string;
   generatedAt: string;   // ISO
 }
@@ -43,6 +56,7 @@ export interface BuildAudienceInput {
   language?: string;     // язык ключевиков (напр. «русский», «узбекский»)
   region?: string;       // ISO alpha-2 — подсказка локальных тем/площадок
   maxNiches?: number;    // потолок ниш (каждая = отдельный ОПЛАЧИВАЕМЫЙ скан!)
+  ground?: boolean;      // заземлять ключевики реальными запросами TikHub (default true)
 }
 
 function parseJsonLoose(txt: string): any {
@@ -92,6 +106,21 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
   const seeds = strArr(input.seedKeywords, 20, 60);
   const platformHint = PLATFORM_HINT[platform] || PLATFORM_HINT.tiktok;
 
+  // Заземление (Фаза 2): реальные данные запросов TikHub. Грациозно деградирует —
+  // нет ключа / упал эндпоинт → работаем на приорах Claude (grounded=false).
+  const ground = input.ground !== false;
+  const canGroundPlatform = platform === 'tiktok' || platform === 'youtube';
+  const tikKey = (ground && canGroundPlatform) ? await getEffectiveTikHubKey(tenantId).catch(() => null) : null;
+
+  // Трендовые хэштеги региона (TikTok Creative Center) — подсев ниш актуальными темами. Best-effort.
+  let trendingHashtags: string[] = [];
+  if (tikKey && platform === 'tiktok') {
+    try {
+      const r = await fetchTiktokTrendingHashtags(tikKey, { countryCode: input.region || 'US', limit: 20 });
+      if (r.ok) trendingHashtags = extractSuggestions(r.data, 20);
+    } catch { /* не критично */ }
+  }
+
   const system =
     'Ты — стратег по микро-таргетингу контента в соцсетях. Демографию (например «богатые люди» ' +
     'или «их жёны») НЕЛЬЗЯ таргетировать напрямую — алгоритм раздаёт ролик по ТЕМЕ. Поэтому ты ' +
@@ -108,6 +137,7 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
     `Язык ключевиков и текстов: ${language}.\n` +
     (input.region ? `Регион приоритетно: ${input.region} (добавь локальные темы/площадки, где уместно).\n` : '') +
     (seeds.length ? `Затравочные ключевики пользователя (учти и расширь, не игнорируй): ${seeds.join(', ')}\n` : '') +
+    (trendingHashtags.length ? `Актуально трендовые хэштеги в регионе (используй как подсказку, если релевантны нише): ${trendingHashtags.slice(0, 15).join(', ')}\n` : '') +
     `\nСделай РОВНО ${maxNiches} микро-ниш. Для каждой — кластер из 3-6 поисковых ключевиков ` +
     `на языке «${language}», которыми реально ищут контент этой ниши (без решёток). ` +
     'Верни JSON ровно такого вида:\n' +
@@ -155,8 +185,44 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
   }
   if (niches.length === 0) throw new Error('Не удалось выделить ниши — уточните продукт и аудиторию.');
 
+  // Заземление ключевиков реальными запросами (параллельно по нишам). На нишу — 1 лёгкий
+  // suggest-запрос (это НЕ видео-скан, дёшево). Реальные подсказки встают ПЕРВЫМИ, затем
+  // добиваются ИИ-ключевиками до 8; realKeywords помечает, что реально пришло из запросов.
+  let groundingSource: string | undefined;
+  if (tikKey) {
+    const ytLang = REGION_LANG[(input.region || 'US').toUpperCase()] || 'en';
+    await Promise.all(niches.map(async (n) => {
+      const seed = (n.keywords[0] || n.name).slice(0, 60);
+      let real: string[] = [];
+      try {
+        if (platform === 'youtube') {
+          const r = await fetchYoutubeSuggestions(tikKey, seed, { region: input.region || 'US', language: ytLang });
+          if (r.ok) real = extractSuggestions(r.data, 12);
+        } else { // tiktok
+          const r = await fetchTiktokQuerySuggestions(tikKey, seed, { countryCode: input.region || 'US' });
+          if (r.ok) real = extractSuggestions(r.data, 12);
+          // Пусто/упало → автокомплит поиска TikTok как фолбэк (без региона).
+          if (!real.length) { const r2 = await fetchTiktokKeywordSuggest(tikKey, seed); if (r2.ok) real = extractSuggestions(r2.data, 12); }
+        }
+      } catch { /* деградируем на ИИ-ключевики */ }
+      if (real.length) {
+        const low = new Set(real.map((x) => x.toLowerCase()));
+        const merged = [...real];
+        for (const k of n.keywords) if (!low.has(k.toLowerCase())) merged.push(k);
+        n.keywords = merged.slice(0, 8);
+        n.realKeywords = real.filter((x) => n.keywords.some((k) => k.toLowerCase() === x.toLowerCase()));
+        n.grounded = true;
+      } else {
+        n.grounded = false;
+      }
+    }));
+    if (niches.some((n) => n.grounded)) groundingSource = platform;
+  }
+
   return {
     product, audience, language, region: input.region,
-    niches, model: DEFAULT_DIRECTOR_MODEL, generatedAt: new Date().toISOString(),
+    niches, grounded: !!groundingSource, groundingSource,
+    trendingHashtags: trendingHashtags.length ? trendingHashtags.slice(0, 15) : undefined,
+    model: DEFAULT_DIRECTOR_MODEL, generatedAt: new Date().toISOString(),
   };
 }

@@ -261,9 +261,10 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
 });
 
 /**
- * POST /audience-map — «Таргет на ЦА»: { product, audience, seedKeywords?, platform?, language?, region?, maxNiches? }
- *   → карта микро-ниш с кластерами ключевиков (Claude, без вызовов TikHub).
- *   Фронт затем веерно сканирует кластеры через /scan. Гейт — тот же (Премиум/Энтерпрайз).
+ * POST /audience-map — «Таргет на ЦА»: { product, audience, seedKeywords?, platform?, language?, region?, maxNiches?, ground? }
+ *   → карта микро-ниш; Claude предлагает ниши, ключевики заземляются реальными подсказками
+ *   запросов TikHub (ground!=false). Фронт затем веерно сканирует кластеры через /scan.
+ *   Гейт — тот же (Премиум/Энтерпрайз).
  */
 router.post('/audience-map', async (req: AuthedRequest, res: Response) => {
   try {
@@ -280,7 +281,8 @@ router.post('/audience-map', async (req: AuthedRequest, res: Response) => {
     const region = typeof body.region === 'string' && /^[A-Za-z]{2}$/.test(body.region.trim())
       ? body.region.trim().toUpperCase() : undefined;
     const maxNiches = Number.isFinite(body.maxNiches) ? Number(body.maxNiches) : undefined;
-    const map = await buildAudienceMap(req.tenantId!, { product, audience, seedKeywords, platform, language, region, maxNiches });
+    const ground = body.ground !== false; // по умолчанию заземляем реальными запросами
+    const map = await buildAudienceMap(req.tenantId!, { product, audience, seedKeywords, platform, language, region, maxNiches, ground });
     res.json({ map });
   } catch (err: any) {
     const msg = err?.message || 'Ошибка построения карты ЦА';
