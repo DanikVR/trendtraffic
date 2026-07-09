@@ -429,10 +429,18 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
 
   return (
     <>
-      {/* Search card */}
-      <AuroraCard className="p-4 sm:p-5 space-y-4">
+      {sectionTabs}
+
+      {/* Раздел «Тренды» в стиле UGC-редактора: слева колонка блоков управления,
+          справа поле результатов-карточек. На мобильном — стопкой (сначала управление). */}
+      <div className="grid gap-4 items-start lg:grid-cols-[minmax(300px,360px)_1fr]">
+        {/* ── ЛЕВАЯ КОЛОНКА: блоки управления ── */}
+        <div className="space-y-3 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto lg:pr-1">
+
+      {/* Блок «Источник» */}
+      <AuroraCard className="p-4 space-y-3">
+        <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Источник</div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-600 mr-1" style={{ color: 'var(--text-muted)' }}>Источник:</span>
           {PLATFORMS.map((p) => {
             const on = platform === p.id;
             return (
@@ -450,8 +458,13 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             );
           })}
         </div>
+      </AuroraCard>
 
-        <div className="grid grid-cols-2 sm:inline-grid sm:auto-cols-max sm:grid-flow-col gap-1 p-1 rounded-xl"
+      {/* Блок «Поиск» */}
+      <AuroraCard className="p-4 space-y-3">
+        <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Поиск</div>
+
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl"
              style={{ background: 'var(--bg-tertiary)' }}>
           {(['keyword', 'trending'] as Kind[]).map((k) => {
             const disabled = k === 'trending' && !(PLATFORMS.find((p) => p.id === platform)?.trending);
@@ -470,9 +483,9 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
           })}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2.5">
+        <div className="flex flex-col gap-2.5">
           {kind === 'keyword' && (
-            <div className="flex-1 relative">
+            <div className="relative">
               <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
               <input
                 value={query}
@@ -485,7 +498,6 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             </div>
           )}
           <AuroraButton onClick={handleScan} disabled={scanning} fullWidth
-            className="sm:!w-auto"
             icon={scanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
             {scanning ? 'Сканирую…' : 'Сканировать'}
           </AuroraButton>
@@ -729,9 +741,10 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
           </div>
         )}
       </AuroraCard>
+        </div>
 
-      {sectionTabs}
-
+        {/* ── ПРАВАЯ КОЛОНКА: карточки результатов ── */}
+        <div className="min-w-0 space-y-3">
       {/* Results */}
       {videos.length === 0 ? (
         <AuroraCard className="p-10 sm:p-14 text-center">
@@ -779,7 +792,7 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
           {videos.slice(0, page * PAGE_SIZE).map((v) => {
             const isSel = !!(keyOf(v) && selected.has(keyOf(v)));
             return (
@@ -899,6 +912,8 @@ export default function TrendSearch({ token, onAnalyze, onAnalyzeBulk, sectionTa
           )}
         </>
       )}
+        </div>
+      </div>
 
       <ConfirmModal
         open={!!confirm}

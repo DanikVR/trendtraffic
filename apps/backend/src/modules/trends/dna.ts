@@ -411,3 +411,27 @@ export async function getTrendDNAByAsset(tenantId: string, mediaAssetId: string)
     return null;
   }
 }
+
+/** Удалить один сохранённый анализ (карточка «Тренды → Анализ» в Галерее). */
+export async function deleteTrendDNA(tenantId: string, id: string): Promise<boolean> {
+  try {
+    const r = await pool.query('DELETE FROM video_analyses WHERE tenant_id = $1 AND id = $2', [tenantId, id]);
+    return (r.rowCount ?? 0) > 0;
+  } catch (e) {
+    console.warn('[trends] deleteTrendDNA failed:', (e as Error).message);
+    return false;
+  }
+}
+
+/** Массово удалить сохранённые анализы. Возвращает число удалённых строк. */
+export async function deleteTrendDNABulk(tenantId: string, ids: string[]): Promise<number> {
+  const clean = ids.filter((x) => typeof x === 'string' && x);
+  if (clean.length === 0) return 0;
+  try {
+    const r = await pool.query('DELETE FROM video_analyses WHERE tenant_id = $1 AND id = ANY($2::uuid[])', [tenantId, clean]);
+    return r.rowCount ?? 0;
+  } catch (e) {
+    console.warn('[trends] deleteTrendDNABulk failed:', (e as Error).message);
+    return 0;
+  }
+}

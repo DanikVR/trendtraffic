@@ -23,7 +23,7 @@ import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, RefreshCw, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
-  ChevronDown, ChevronUp, HelpCircle,
+  ChevronDown, ChevronUp, HelpCircle, Copy,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -88,6 +88,16 @@ function dur(s?: number): string {
   if (!s || s <= 0) return '';
   const m = Math.floor(s / 60), sec = s % 60;
   return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+// Имя нового UGC-ролика по умолчанию = дата и время создания («ДД.ММ.ГГГГ ЧЧ:ММ»).
+// Дальше пользователь переименовывает как хочет (карандаш в шапке студии).
+function newRollName(): string {
+  try {
+    return new Date().toLocaleString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    }).replace(',', '');
+  } catch { return 'UGC-ролик'; }
 }
 
 interface TrendAnalysisItem {
@@ -290,7 +300,7 @@ export default function GalleryPage() {
     switch (which) {
       case 'hotebook': return { label: 'Добавить', hint: 'Открыть блок «Hotebook»: источники, чат и генерация артефактов', run: () => setBlockReq({ cloud: 'hotebook' }) };
       case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => setBlockReq({ cloud: 'flow' }) };
-      case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: собрать ролик с аватаром/озвучкой', run: () => setBlockReq({ cloud: 'ugc' }) };
+      case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: новый ролик (имя — дата и время, потом переименуете)', run: () => setBlockReq({ cloud: 'ugc', newName: newRollName() }) };
       case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
       default: return { label: 'Добавить', hint: 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»', run: () => mediaInputRef.current?.click() };
     }
@@ -387,6 +397,16 @@ export default function GalleryPage() {
       (a.title || '').toLowerCase().includes(q) || (a.dna?.meta?.author || '').toLowerCase().includes(q) || (a.sourceUrl || '').toLowerCase().includes(q)) : analyses;
     const fQs = q ? trendQueries.filter((x) => x.query.toLowerCase().includes(q)) : trendQueries;
     const anTitle = (a: TrendAnalysisItem) => a.title || a.dna?.meta?.author || 'Видео';
+    // Массовый выбор разборов (ключи `an:<id>` в общем наборе `selected`).
+    const anKeys = fAn.map((a) => `an:${a.id}`);
+    const anAllSel = anKeys.length > 0 && anKeys.every((k) => selected.has(k));
+    const anSelCount = anKeys.filter((k) => selected.has(k)).length;
+    const toggleAnAll = () => setSelected(anAllSel ? new Set() : new Set(anKeys));
+    const askDeleteAnSelected = () => setConfirm({
+      title: `Удалить выбранные разборы (${anSelCount})?`,
+      message: 'Сохранённые анализы будут удалены. Видео в Галерее останутся.',
+      onConfirm: () => { setConfirm(null); void doDeleteAnalyses(anKeys.filter((k) => selected.has(k)).map((k) => k.slice(3))); },
+    });
     return (
       <>
         {/* Запросы трендов — СВЕРХУ (по фидбэку юзера): клик открывает готовую выдачу */}
@@ -440,15 +460,39 @@ export default function GalleryPage() {
             </span>
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fAn.length} — уже разобранные видео: обложка + данные анализа</span>
           </div>
+          {/* Массовый выбор разборов */}
+          {fAn.length > 0 && (
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button type="button" onClick={toggleAnAll}
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                {anAllSel ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
+                {anAllSel ? 'Снять выделение' : 'Выбрать всё'}{anSelCount > 0 ? ` · ${anSelCount}` : ''}
+              </button>
+              <button type="button" onClick={askDeleteAnSelected} disabled={anSelCount === 0 || busy}
+                title="Удалить выбранные разборы"
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
+                style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                Удалить{anSelCount > 0 ? ` · ${anSelCount}` : ''}
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {renderAddTile('trendhub')}
             {fAn.map((a) => {
               const cover = a.dna?.meta?.cover as string | undefined;
               const title = anTitle(a);
               const openDna = () => setAnalysis({ title, dna: a.dna || {} });
+              const anSel = selected.has(`an:${a.id}`);
               return (
-                <AuroraCard key={a.id} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                <AuroraCard key={a.id} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${anSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
                   <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                    <button type="button" onClick={() => toggleSelect(`an:${a.id}`)} title="Выбрать"
+                      className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
+                      style={{ background: anSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                      {anSel ? <Check size={15} /> : null}
+                    </button>
                     {a.fileUrl ? (
                       <button type="button" onClick={() => setViewer({ url: a.fileUrl!, title })} className="group/vid block w-full h-full relative" title="Открыть в просмотрщике (с обрезкой)">
                         <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
@@ -486,6 +530,11 @@ export default function GalleryPage() {
                           <ExternalLink size={14} />
                         </a>
                       )}
+                      <button type="button" onClick={() => void doDeleteAnalyses([a.id])} disabled={busy} title="Удалить разбор"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
+                        style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                        <Trash2 size={14} />
+                      </button>
                       <button type="button" onClick={openDna} title="Открыть разбор"
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-auto transition-colors hover:opacity-90"
                         style={{ background: 'rgba(34,211,238,0.14)', color: '#22d3ee' }}>
@@ -565,6 +614,91 @@ export default function GalleryPage() {
       setUgcTpls((p) => p.filter((x) => x.id !== k.id));
     },
   });
+
+  // ── UGC: массовый выбор/удаление и копирование ────────────────────────────
+  // Ключи выбора кодируем типом (tpl:/media:/kit:) — в одном наборе `selected`
+  // уживаются шаблоны-ролики, авто-ролики и макеты текущего подфильтра.
+  const [copying, setCopying] = useState<string | null>(null);
+  const ugcSelectableKeys = useMemo<string[]>(() => {
+    if (tab !== 'ugc') return [];
+    if (ugcSub === 'rolls') return [...ugcTpls.map((k) => `tpl:${k.id}`), ...filtered.map((v) => `media:${v.id}`)];
+    if (ugcSub === 'auto') return autoUgc.map((v) => `media:${v.id}`);
+    return kits.map((k) => `kit:${k.id}`);
+  }, [tab, ugcSub, ugcTpls, filtered, autoUgc, kits]);
+  const ugcAllSelected = ugcSelectableKeys.length > 0 && ugcSelectableKeys.every((k) => selected.has(k));
+  const toggleSelectAllUGC = () => setSelected(ugcAllSelected ? new Set() : new Set(ugcSelectableKeys));
+  const ugcSelCount = ugcSelectableKeys.filter((k) => selected.has(k)).length;
+
+  const doDeleteUgcSelected = async () => {
+    const keys = ugcSelectableKeys.filter((k) => selected.has(k));
+    if (keys.length === 0) return;
+    setBusy(true); setError(null);
+    try {
+      const mediaIds = keys.filter((k) => k.startsWith('media:')).map((k) => k.slice(6));
+      const tplIds = keys.filter((k) => k.startsWith('tpl:')).map((k) => k.slice(4));
+      const kitIds = keys.filter((k) => k.startsWith('kit:')).map((k) => k.slice(4));
+      if (mediaIds.length) {
+        const r = await fetch('/api/trends/media/delete-bulk', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ids: mediaIds }) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      }
+      for (const id of tplIds) { try { await fetch(`/api/render/ugc/templates/${id}`, { method: 'DELETE', headers: jsonHeaders() }); } catch { /* мягко */ } }
+      for (const id of kitIds) { try { await fetch(`/api/render/ugc/brandkits/${id}`, { method: 'DELETE', headers: jsonHeaders() }); } catch { /* мягко */ } }
+      const mset = new Set(mediaIds), tset = new Set(tplIds), kset = new Set(kitIds);
+      setItems((p) => p.filter((v) => !mset.has(v.id)));
+      setAutoUgc((p) => p.filter((v) => !mset.has(v.id)));
+      setUgcTpls((p) => p.filter((k) => !tset.has(k.id)));
+      setKits((p) => p.filter((k) => !kset.has(k.id)));
+      setSelected(new Set());
+    } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
+    finally { setBusy(false); }
+  };
+  const askDeleteUgcSelected = () => setConfirm({
+    title: `Удалить выбранные (${ugcSelCount})?`,
+    message: ugcSub === 'kits' ? 'Выбранные макеты будут удалены.' : 'Выбранные ролики уберутся из Галереи. Собранные видео (файлы) удаляются с диска безвозвратно.',
+    onConfirm: () => { setConfirm(null); doDeleteUgcSelected(); },
+  });
+
+  // Копия ролика: дублируем И шаблон, И его сценарий (иначе копия правила бы оригинал).
+  const copyTpl = async (k: { id: string; name: string; trendKeyword?: string; spec?: any }) => {
+    setCopying(k.id); setError(null);
+    try {
+      const srcFlowId = k.spec?.__flowId ? String(k.spec.__flowId) : null;
+      let graph: any = {};
+      if (srcFlowId) {
+        const gr = await fetch(`/api/flows/${srcFlowId}`, { headers: jsonHeaders() });
+        if (gr.ok) graph = (await gr.json())?.flow?.graph || {};
+      }
+      const newName = `${(k.name || 'UGC-ролик').trim()} (копия)`.slice(0, 120);
+      const cf = await fetch('/api/flows', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: newName }) });
+      const cfd = await cf.json().catch(() => ({}));
+      if (!cf.ok || !cfd?.flow?.id) throw new Error(cfd?.error || 'Не удалось создать сценарий');
+      const newFlowId = String(cfd.flow.id);
+      const baseSpec = { ...(k.spec || {}) }; delete baseSpec.templateId;
+      const tplSpec = { ...baseSpec, __flowId: newFlowId, buildJobId: null, result: null, results: [] };
+      const ct = await fetch('/api/render/ugc/templates', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: newName, trendKeyword: k.trendKeyword, spec: tplSpec }) });
+      const ctd = await ct.json().catch(() => ({}));
+      if (!ct.ok || !ctd?.id) throw new Error(ctd?.error || 'Не удалось создать копию');
+      const newTplId = String(ctd.id);
+      const newUgc = { ...(graph.ugc || tplSpec), __flowId: newFlowId, templateId: newTplId, buildJobId: null, result: null, results: [] };
+      await fetch(`/api/flows/${newFlowId}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ name: newName, graph: { ...graph, ugc: newUgc } }) });
+      setUgcTpls((p) => [{ id: newTplId, name: newName, trendKeyword: k.trendKeyword, autopublish: undefined, spec: tplSpec }, ...p]);
+    } catch (e: any) { setError(e?.message || 'Не удалось скопировать'); }
+    finally { setCopying(null); }
+  };
+
+  // ── Тренды → «Анализ»: массовое удаление сохранённых разборов ──────────────
+  const doDeleteAnalyses = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setBusy(true); setError(null);
+    try {
+      const r = await fetch('/api/trends/analyses/delete-bulk', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ids }) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const idset = new Set(ids);
+      setAnalyses((p) => p.filter((a) => !idset.has(a.id)));
+      setSelected(new Set());
+    } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
+    finally { setBusy(false); }
+  };
 
   // Скачать один файл на устройство (статика /uploads — same-origin, без авторизации).
   const downloadOne = (v: GalleryItem) => {
@@ -717,8 +851,8 @@ export default function GalleryPage() {
             </div>
           )}
 
-          {/* Тулбар результатов — когда есть файлы */}
-          {filtered.length > 0 && (
+          {/* Тулбар результатов — когда есть файлы (для UGC — свой тулбар ниже, под подфильтром) */}
+          {tab !== 'ugc' && filtered.length > 0 && (
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Найдено: {filtered.length}</span>
@@ -767,7 +901,7 @@ export default function GalleryPage() {
               {([['rolls', 'Ролики', ugcTpls.length], ['auto', 'Авто', autoUgc.length], ['kits', 'Макеты', kits.length]] as const).map(([key, label, count]) => {
                 const on = ugcSub === key;
                 return (
-                  <button key={key} type="button" onClick={() => setUgcSub(key)}
+                  <button key={key} type="button" onClick={() => { setUgcSub(key); setSelected(new Set()); }}
                     className="text-[12px] font-600 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-colors"
                     style={{ background: on ? 'var(--brand)' : 'var(--bg-secondary)', color: on ? '#fff' : 'var(--text-secondary)', border: `1px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     {label}
@@ -775,6 +909,26 @@ export default function GalleryPage() {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* UGC: свой тулбар выбора — «Выбрать всё» + «Удалить (N)» для текущего подфильтра */}
+          {tab === 'ugc' && ugcSelectableKeys.length > 0 && (
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Всего: {ugcSelectableKeys.length}</span>
+              <button type="button" onClick={toggleSelectAllUGC}
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                {ugcAllSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
+                {ugcAllSelected ? 'Снять выделение' : 'Выбрать всё'}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
+              </button>
+              <button type="button" onClick={askDeleteUgcSelected} disabled={ugcSelCount === 0 || busy}
+                title="Удалить выбранные"
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
+                style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                Удалить{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
+              </button>
             </div>
           )}
 
@@ -788,22 +942,32 @@ export default function GalleryPage() {
                 || (Array.isArray(spec.clipImages) && spec.clipImages[0]?.url) || spec.clip?.url || null;
               const isVid = !!preview && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(preview);
               const openTpl = () => setBlockReq({ cloud: 'ugc', ...(spec.__flowId ? { flowId: String(spec.__flowId) } : {}) });
+              const selK = `tpl:${k.id}`;
+              const isSel = selected.has(selK);
               return (
-                <AuroraCard key={`tpl-${k.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-                  <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии"
-                    className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', padding: 0 }}>
-                    {preview ? (
-                      isVid
-                        ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
-                        : <img src={preview} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                        <LayoutTemplate size={28} /><span className="text-[11px] font-600">UGC-ролик</span>
-                      </span>
-                    )}
-                    <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'var(--brand)', color: '#fff' }}>Шаблон</span>
-                    {k.autopublish?.enabled && <span className="absolute top-2 right-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>}
-                  </button>
+                <AuroraCard key={`tpl-${k.id}`} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
+                  <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                    <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии"
+                      className="block w-full h-full" style={{ cursor: 'pointer', border: 'none', padding: 0, background: 'transparent' }}>
+                      {preview ? (
+                        isVid
+                          ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
+                          : <img src={preview} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                          <LayoutTemplate size={28} /><span className="text-[11px] font-600">UGC-ролик</span>
+                        </span>
+                      )}
+                    </button>
+                    {/* Чекбокс выбора */}
+                    <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                      className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
+                      style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                      {isSel ? <Check size={15} /> : null}
+                    </button>
+                    <span className="absolute bottom-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'var(--brand)', color: '#fff' }}>Шаблон</span>
+                    {k.autopublish?.enabled && <span className="absolute top-2 right-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>}
+                  </div>
                   <div className="p-3 flex flex-col gap-2 flex-1">
                     <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={k.name}>{k.name}</div>
                     {k.trendKeyword && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full self-start" style={{ background: 'color-mix(in srgb, var(--brand) 14%, transparent)', color: 'var(--brand)', border: '1px solid var(--brand)' }}>#{k.trendKeyword}</span>}
@@ -812,6 +976,11 @@ export default function GalleryPage() {
                         className="flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-600 transition-colors hover:opacity-80"
                         style={{ background: 'rgba(168,85,247,0.12)', color: 'var(--brand)' }}>
                         <Play size={13} /> Открыть
+                      </button>
+                      <button type="button" onClick={() => copyTpl(k)} disabled={copying === k.id} title="Скопировать ролик (создать копию)"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-50"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                        {copying === k.id ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
                       </button>
                       <button type="button" onClick={() => askDeleteTpl(k)} title="Удалить ролик из Галереи"
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
@@ -824,30 +993,59 @@ export default function GalleryPage() {
               );
             })}
             {/* UGC · «Авто»: ролики конвейера «тренд → анализ → UGC» (папка auto-ugc), карточками. */}
-            {tab === 'ugc' && ugcSub === 'auto' && autoUgc.map((v) => (
-              <AuroraCard key={`auto-${v.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-                <button type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })}
-                  className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', padding: 0 }}>
-                  {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
-                  <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>
-                </button>
-                <div className="p-3"><div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div></div>
+            {tab === 'ugc' && ugcSub === 'auto' && autoUgc.map((v) => {
+              const selK = `media:${v.id}`;
+              const isSel = selected.has(selK);
+              return (
+              <AuroraCard key={`auto-${v.id}`} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
+                <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                  <button type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })}
+                    className="block w-full h-full" style={{ cursor: 'pointer', border: 'none', padding: 0, background: 'transparent' }}>
+                    {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
+                  </button>
+                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                    className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
+                    style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                    {isSel ? <Check size={15} /> : null}
+                  </button>
+                  <span className="absolute bottom-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded z-10" style={{ background: 'rgba(16,185,129,.9)', color: '#fff' }}>авто</span>
+                </div>
+                <div className="p-3 flex items-center gap-1">
+                  <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={v.title}>{v.title}</div>
+                  <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить авто-ролик"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80 disabled:opacity-40"
+                    style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}>
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </AuroraCard>
-            ))}
+              );
+            })}
             {/* UGC · «Макеты»: бренд-киты студии (оформление: слой/заставки/музыка/субтитры/голос). */}
-            {tab === 'ugc' && ugcSub === 'kits' && kits.map((k) => (
-              <AuroraCard key={`kit-${k.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
-                <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title="Открыть UGC-студию — макет применяется в «Оформлении»"
-                  className="relative w-full flex flex-col items-center justify-center gap-2" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', color: 'var(--text-muted)' }}>
-                  <LayoutTemplate size={30} /><span className="text-[11px] font-600">Бренд-кит</span>
-                </button>
+            {tab === 'ugc' && ugcSub === 'kits' && kits.map((k) => {
+              const selK = `kit:${k.id}`;
+              const isSel = selected.has(selK);
+              return (
+              <AuroraCard key={`kit-${k.id}`} className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
+                <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
+                  <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title="Открыть UGC-студию — макет применяется в «Оформлении»"
+                    className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-muted)' }}>
+                    <LayoutTemplate size={30} /><span className="text-[11px] font-600">Бренд-кит</span>
+                  </button>
+                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                    className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
+                    style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                    {isSel ? <Check size={15} /> : null}
+                  </button>
+                </div>
                 <div className="p-3 flex items-center gap-1">
                   <div className="text-xs font-700 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={k.name}>{k.name || 'Макет'}</div>
                   <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет"
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: '#ef4444' }}><X size={13} /></button>
                 </div>
               </AuroraCard>
-            ))}
+              );
+            })}
             {/* Hotebook: активные генерации — карточка-плейсхолдер со спиннером до готовности */}
             {tab === 'hotebook' && hbJobs.map((j) => (
               <AuroraCard key={`job-${j.id}`} className="group p-0 overflow-hidden flex flex-col">
@@ -870,14 +1068,15 @@ export default function GalleryPage() {
             ))}
             {/* UGC: готовые рендеры (папка ugc) — только в «Ролики»; в «Авто»/«Макеты» сетку не мешаем. */}
             {(tab !== 'ugc' || ugcSub === 'rolls') && filtered.map((v) => {
-              const isSel = selected.has(v.id);
+              const selK = tab === 'ugc' ? `media:${v.id}` : v.id;
+              const isSel = selected.has(selK);
               return (
                 <AuroraCard key={v.id}
                   className={`group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg${isSel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`}>
                   <div className="relative w-full" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
                     {renderPreview(v)}
                     {/* Чекбокс выбора */}
-                    <button type="button" onClick={() => toggleSelect(v.id)} title="Выбрать"
+                    <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
                       className="absolute top-2 left-2 w-7 h-7 rounded-md flex items-center justify-center z-20 transition-colors"
                       style={{ background: isSel ? 'var(--brand)' : 'rgba(0,0,0,0.45)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                       {isSel ? <Check size={15} /> : null}

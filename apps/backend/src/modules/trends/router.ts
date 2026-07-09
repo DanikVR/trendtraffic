@@ -18,7 +18,7 @@ import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
-import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight } from './dna.js';
+import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk } from './dna.js';
 import { analyzeVideoVisual } from './video_insight.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
@@ -378,6 +378,26 @@ router.get('/analyses', async (req: AuthedRequest, res: Response) => {
     res.json({ analyses });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/** POST /analyses/delete-bulk { ids: string[] } — массовое удаление сохранённых анализов. */
+router.post('/analyses/delete-bulk', async (req: AuthedRequest, res: Response) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((x: any) => typeof x === 'string') : [];
+    if (ids.length === 0) return res.status(400).json({ error: 'Передайте ids[]' });
+    res.json({ ok: true, deleted: await deleteTrendDNABulk(req.tenantId!, ids) });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
+  }
+});
+
+/** DELETE /analyses/:id — удалить один сохранённый анализ. */
+router.delete('/analyses/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    res.json({ ok: await deleteTrendDNA(req.tenantId!, req.params.id) });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка удаления' });
   }
 });
 
