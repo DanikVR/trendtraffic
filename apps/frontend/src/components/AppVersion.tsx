@@ -2231,18 +2231,25 @@
  *         Только ИИ». Грациозно деградирует на приоры Claude без ключа/при сбое. Файлы: tikhub_client
  *         (suggest/hashtag + extractSuggestions), providers (export REGION_LANG), audience.ts, router,
  *         AudienceTargetPanel. */
-/* 2.2.10 — Google Flow: карточки проектов показывают РЕАЛЬНУЮ обложку (раньше — плейсхолдер-иконка).
+/* 2.2.10 — «Таргет на ЦА» — понятность формы по фидбэку: (1) «Язык ключевиков» подставляется
+ *          АВТОМАТИЧЕСКИ из выбранного региона (KZ→русский и т.п.), остаётся редактируемым;
+ *          (2) тумблер «Реальные запросы» больше НЕ стоит кнопкой вплотную к «Построить карту»
+ *          (путал: две кнопки рядом) — вынесен отдельной строкой-переключателем с пояснением
+ *          «берём реальные запросы TikTok/YouTube вместо догадок ИИ»; единственная кнопка-действие —
+ *          «Построить карту ЦА»; (3) под заголовком явные шаги «Шаг 1 — Построить карту, Шаг 2 —
+ *          Найти ролики». Только AudienceTargetPanel.tsx. */
+/* 2.2.11 — Google Flow: карточки проектов показывают РЕАЛЬНУЮ обложку (раньше — плейсхолдер-иконка).
  *         Расширение снимает превью надёжнее (img/lazy-srcset → video poster → CSS background-image)
  *         и ДОТЯГИВАЕТ её как data URL из сессии labs.google (обход 401/приватного CDN Flow — иначе
  *         кросс-доменная картинка на app.trendtraffic.pro не грузилась). Имя карточки очищено от
- *         подписей кнопок Flow («edit»/«Изменить проект»/«Удалить»). Расширение → v1.3.3. Файлы:
- *         trendtraffic-extension/content-flow.js (listProjects: thumbOf/thumbDataUrl + чистка имени). */
-export const APP_VERSION = '2.2.10';
+ *         подписей кнопок Flow («edit»/«Изменить проект»/«Удалить»). Расширение → v1.3.4 (мой content-flow
+ *         + их content-notebook-фиксы 1.3.3 в одном релизе). Файлы: content-flow.js (thumbOf/thumbDataUrl). */
+export const APP_VERSION = '2.2.11';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.3';
+export const TT_EXT_VERSION = '1.3.4';
 
 export function AppVersion() {
   return (

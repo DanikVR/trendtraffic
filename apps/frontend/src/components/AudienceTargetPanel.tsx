@@ -61,6 +61,22 @@ const PLATFORMS: { id: Source; name: string }[] = [
   { id: 'twitter', name: 'X' },
 ];
 
+// Регион (ISO alpha-2) → язык ключевиков по умолчанию (название на русском). Поле
+// «Язык ключевиков» подставляется из региона при его выборе, но остаётся редактируемым.
+// В СНГ, где контент массово на русском (RU/BY/KZ/KG), — «русский»; иначе титульный язык.
+const REGION_LANG_NAME: Record<string, string> = {
+  '': 'русский',
+  RU: 'русский', BY: 'русский', KZ: 'русский', KG: 'русский',
+  UA: 'украинский', UZ: 'узбекский', AZ: 'азербайджанский', GE: 'грузинский',
+  AM: 'армянский', TJ: 'таджикский', MD: 'румынский',
+  GB: 'английский', US: 'английский', CA: 'английский',
+  DE: 'немецкий', FR: 'французский', IT: 'итальянский', ES: 'испанский',
+  PL: 'польский', NL: 'нидерландский', TR: 'турецкий',
+  AE: 'арабский', SA: 'арабский', EG: 'арабский',
+  IN: 'хинди', ID: 'индонезийский', TH: 'тайский', VN: 'вьетнамский',
+  BR: 'португальский', MX: 'испанский', AR: 'испанский', JP: 'японский', KR: 'корейский',
+};
+
 function coverSrc(url?: string | null): string | undefined {
   if (!url) return undefined;
   if (/tiktokcdn|ibyteimg|byteimg|muscdn|tiktokv|pstatp|cdninstagram|fbcdn/i.test(url)) {
@@ -229,6 +245,9 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
               Опишите продукт и аудиторию — ИИ разложит её на узкие ниши-темы и подберёт ключевики,
               а мы найдём под каждую реальные ролики. Меньше конкуренции, точнее попадание.
             </p>
+            <p className="text-[11px] mt-1 font-600" style={{ color: 'var(--brand)' }}>
+              Шаг 1 — «Построить карту ЦА». Шаг 2 — на карточке ниши «Найти ролики».
+            </p>
           </div>
         </div>
 
@@ -269,7 +288,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             <span className="inline-flex items-center gap-1"><Globe size={12} /> Регион</span>
-            <select value={region} onChange={(e) => setRegion(e.target.value)}
+            <select value={region} onChange={(e) => { const r = e.target.value; setRegion(r); setLanguage(REGION_LANG_NAME[r] || 'русский'); }}
               className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ minWidth: 170, background: region ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)', border: `1px solid ${region ? 'var(--brand)' : 'var(--border-medium)'}`, color: 'var(--text-primary)' }}>
               <option value="">🌐 Глобально</option>
@@ -282,8 +301,9 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
           </label>
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Язык ключевиков
+            <span title="Подставляется из региона автоматически — можно изменить вручную">Язык ключевиков</span>
             <input value={language} onChange={(e) => setLanguage(e.target.value)}
+              title="Подставляется из региона — можно изменить" placeholder="из региона"
               className="h-10 px-3 rounded-lg text-sm w-[130px] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </label>
@@ -306,21 +326,28 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
             </select>
           </label>
 
-          {/* Заземление: брать ключевики из РЕАЛЬНЫХ подсказок запросов TikHub (TikTok/YouTube). */}
-          <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Ключевики
-            <button type="button" onClick={() => setGround((g) => !g)}
-              title="Заземлять ключевики реальными подсказками запросов (TikTok Creative Center / YouTube) вместо чистых догадок ИИ"
-              className="h-10 px-3 rounded-lg text-sm font-600 inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
-              style={{ background: ground ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)', border: `1px solid ${ground ? 'var(--brand)' : 'var(--border-medium)'}`, color: ground ? 'var(--brand)' : 'var(--text-muted)' }}>
-              <Search size={13} /> {ground ? 'Реальные запросы' : 'Только ИИ'}
-            </button>
-          </label>
-
           <AuroraButton onClick={buildMap} disabled={building}
             icon={building ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}>
             {building ? 'Строю карту…' : 'Построить карту ЦА'}
           </AuroraButton>
+        </div>
+
+        {/* Заземление ключевиков — тумблер-НАСТРОЙКА (отдельной строкой, не путать с кнопкой действия). */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button type="button" role="switch" aria-checked={ground} onClick={() => setGround((g) => !g)}
+            title="Берём ключевики из реальных поисковых запросов TikTok/YouTube вместо чистых догадок ИИ. Дёшево (не видео-скан)."
+            className="inline-flex items-center gap-2 text-[12px] font-600 px-2.5 py-1.5 rounded-lg transition-colors"
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <span className="relative inline-block w-8 h-[18px] rounded-full transition-colors flex-shrink-0"
+                  style={{ background: ground ? 'var(--brand)' : 'var(--border-strong)' }}>
+              <span className="absolute top-[2px] w-[14px] h-[14px] rounded-full transition-all"
+                    style={{ left: ground ? 16 : 2, background: '#fff' }} />
+            </span>
+            🔎 Проверять ключевики реальными запросами
+          </button>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            {ground ? 'вкл. — берём реальные запросы TikTok/YouTube вместо догадок ИИ (дёшево)' : 'выкл. — ключевики только от ИИ (быстрее, но непроверенные)'}
+          </span>
         </div>
 
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
