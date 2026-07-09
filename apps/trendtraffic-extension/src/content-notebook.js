@@ -591,12 +591,22 @@
     // + подсказки-продолжения (чипы) — фронт покажет их кнопками.
     return { ok: true, answer: finalText, citations: [], suggestions: chatSuggestionsDom() };
   }
-  // Ответ ассистента = .to-user-container; текст берём из внутреннего .message-content (без кнопок keep/copy/оценки).
+  // Чистый текст ответа: клонируем и УДАЛЯЕМ цитаты-маркеры (номер «1», «more_horiz»-иконку и т.п.),
+  // чтобы в чат не летел мусор вида «…Figma12.» (проверено вживую → «…Figma.»).
+  function cleanAnswerText(el) {
+    if (!el) return '';
+    try {
+      const c = el.cloneNode(true);
+      c.querySelectorAll('sup, button, mat-icon, [role="button"], [class*="citation" i], [class*="marker" i], [class*="footnote" i], [class*="chip" i], [class*="source-ref" i], [class*="ref-" i]').forEach((e) => e.remove());
+      return clean(c.textContent);
+    } catch { return clean(el.textContent); }
+  }
+  // Ответ ассистента = .to-user-container; текст из внутреннего .message-content, БЕЗ цитат/кнопок.
   function chatAnswersDom() {
     const nodes = queryAllDeep('.to-user-container, [class*="to-user-container" i]').filter(visible);
     return nodes.map((el) => {
       const inner = el.querySelector('.message-content, [class*="message-content" i], [class*="to-user-message-inner" i]') || el;
-      return { el, text: clean(inner.textContent), citations: [] };
+      return { el, text: cleanAnswerText(inner), citations: [] };
     }).filter((x) => x.text.length > 1);
   }
   // История чата (для загрузки при открытии блокнота): пары user/assistant по порядку.
@@ -609,7 +619,8 @@
       const role = u ? 'user' : (b ? 'assistant' : '?');
       if (role === '?') continue;
       const inner = cm.querySelector('.message-content, .message-text-content, [class*="message-content" i]') || (u || b);
-      const text = clean(inner && inner.textContent).slice(0, 4000);
+      // Ответы чистим от цитат; вопрос юзера — как есть.
+      const text = (role === 'assistant' ? cleanAnswerText(inner) : clean(inner && inner.textContent)).slice(0, 4000);
       if (!text) continue;
       if (role === 'assistant' && isLoadingText(text)) continue;
       out.push({ role, text });

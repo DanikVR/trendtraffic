@@ -43,7 +43,7 @@ const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: stri
 // Настройки генерации повторяют модалки NotebookLM 1:1 (формат-карточки, язык,
 // длина, «на чём сделать акцент»). Ids полей = параметры бэкенда/воркера.
 type HbType = 'audio' | 'video' | 'report' | 'quiz' | 'table' | 'infographic' | 'flashcards' | 'mindmap' | 'slides';
-interface HbChatMsg { q: string; a: string; ts: number; cites?: number }
+interface HbChatMsg { q: string; a: string; ts: number; cites?: number; pending?: boolean }
 interface HbSpec { chat: HbChatMsg[]; settings: Partial<Record<HbType, Record<string, string>>>; name?: string }
 const HB_DEFAULT: HbSpec = { chat: [], settings: {}, name: '' };
 
@@ -837,7 +837,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           if (d.flow.graph?.hotebook && typeof d.flow.graph.hotebook === 'object') {
             const hh = d.flow.graph.hotebook;
             setHb({
-              chat: Array.isArray(hh.chat) ? hh.chat.filter((m: any) => m && typeof m.q === 'string') : [],
+              chat: Array.isArray(hh.chat) ? hh.chat.filter((m: any) => m && typeof m.q === 'string' && !m.pending) : [],
               settings: hh.settings && typeof hh.settings === 'object' ? hh.settings : {},
               name: typeof hh.name === 'string' ? hh.name : '',
             });
@@ -1693,16 +1693,23 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     if (!q || hbChatBusy) return;
     if (hbSources.length === 0) { setHbNote('Сначала добавьте хотя бы один источник.'); return; }
     setHbChatBusy(true); setHbNote(null);
+    setHbChatQ('');
+    // ОНЛАЙН: показываем вопрос СРАЗУ + «думает…», ответ приходит и заменяет плейсхолдер (раньше
+    // ничего не появлялось до конца запроса → казалось, что чат не работает без переоткрытия).
+    const pendingTs = Date.now();
+    hbMutate((h) => ({ ...h, chat: [...h.chat, { q, a: '', ts: pendingTs, cites: 0, pending: true }] }));
     try {
       const r = await fetch(`/api/notebooklm/flow/${flowId}/chat`, { method: 'POST', headers: headers(), body: JSON.stringify({ question: q, flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json();
       const a = typeof d.answer === 'string' ? d.answer : JSON.stringify(d.answer ?? '');
       const cites = Array.isArray(d.citations) ? d.citations.length : 0;
-      hbMutate((h) => ({ ...h, chat: [...h.chat, { q, a, ts: Date.now(), cites }] }));
+      hbMutate((h) => ({ ...h, chat: h.chat.map((m) => (m.ts === pendingTs && m.pending ? { q, a, ts: pendingTs, cites } : m)) }));
       setHbSuggestions(Array.isArray(d.suggestions) ? d.suggestions.filter((x: any) => typeof x === 'string') : []);
-      setHbChatQ('');
-    } catch (e: any) { setHbNote(e?.message || 'Чат не ответил'); }
+    } catch (e: any) {
+      setHbNote(e?.message || 'Чат не ответил');
+      hbMutate((h) => ({ ...h, chat: h.chat.map((m) => (m.ts === pendingTs && m.pending ? { ...m, a: '⚠ ответ не пришёл — попробуйте ещё раз', pending: false } : m)) }));
+    }
     finally { setHbChatBusy(false); }
   };
   const hbOpenGen = (t: HbType) => {
@@ -2473,8 +2480,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                         <div key={i} className="space-y-1">
                           <div className="text-xs px-3 py-2 rounded-xl ml-6" style={{ background: 'rgba(34,211,238,0.12)', color: 'var(--text-primary)' }}>{m.q}</div>
                           <div className="text-xs px-3 py-2 rounded-xl mr-2 leading-relaxed" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                            {m.a}
-                            {!!m.cites && <div className="text-[10px] mt-1.5 font-700" style={{ color: '#22d3ee' }}>⌘ {m.cites} цитат из источников</div>}
+                            {m.pending
+                              ? <span className="inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}><Loader2 size={12} className="animate-spin" /> думает…</span>
+                              : <>{m.a}{!!m.cites && <div className="text-[10px] mt-1.5 font-700" style={{ color: '#22d3ee' }}>⌘ {m.cites} цитат из источников</div>}</>}
                           </div>
                         </div>
                       ))}
