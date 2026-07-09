@@ -354,6 +354,25 @@ async function runNlmAction(action) {
     return;
   }
 
+  // «Список блокнотов» — плитки есть ТОЛЬКО на главной NotebookLM. Наводим вкладку на главную.
+  if (action.kind === 'list-notebooks') {
+    const tabId = await ensureNotebookTab(null, true);
+    if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
+    try {
+      const t = await chrome.tabs.get(tabId);
+      if (/\/notebook\//.test(t.url || '')) { await chrome.tabs.update(tabId, { url: 'https://notebooklm.google.com/' }); await waitForTabReady(tabId); }
+    } catch { /* навигация best-effort */ }
+    let result;
+    try { result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), 60_000); }
+    catch (e) { await nlmActionResult(action.id, false, null, String(e && e.message || e)); return; }
+    if (result && result.ok) await nlmActionResult(action.id, true, result);
+    else {
+      if (result && result.reason === 'not-logged-in') { try { await chrome.tabs.update(tabId, { active: true }); } catch { /* */ } }
+      await nlmActionResult(action.id, false, null, (result && result.reason) || 'не удалось получить список');
+    }
+    return;
+  }
+
   // Прочие действия — в контексте уже открытого нужного блокнота (навигация — в ensureNotebookTab).
   const tabId = await ensureNotebookTab(action.notebookId || null, true);
   if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }

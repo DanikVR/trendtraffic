@@ -170,6 +170,11 @@ export default function GalleryPage() {
   const [autoUgc, setAutoUgc] = useState<GalleryItem[]>([]);
   // «Hotebook»: активные генерации (плейсхолдер-карточки со спиннером до готовности артефакта).
   const [hbJobs, setHbJobs] = useState<HbJob[]>([]);
+  // «Hotebook»: ВСЕ блокноты NotebookLM (карточками) — расширение снимает плитки главной.
+  const [hbNotebooks, setHbNotebooks] = useState<{ id: string; title: string; subtitle?: string; icon?: string }[]>([]);
+  const [hbNbStatus, setHbNbStatus] = useState<{ ok: boolean; errorKind?: string | null } | null>(null);
+  const [hbNbLoading, setHbNbLoading] = useState(false);
+  const [hbNbOpening, setHbNbOpening] = useState<string | null>(null); // id блокнота, который открываем
 
   // Отправка медиа в Google Flow через Chrome-расширение (postMessage-мост, как в блоке Google Flow).
   const [extStatus, setExtStatus] = useState<'checking' | 'present' | 'absent'>('checking');
@@ -292,6 +297,36 @@ export default function GalleryPage() {
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, hbJobs.length]);
+
+  // ── «Hotebook»: список ВСЕХ блокнотов NotebookLM (карточками) ──
+  const loadNotebooks = async () => {
+    setHbNbLoading(true);
+    try {
+      const r = await fetch('/api/notebooklm/notebooks', { headers: jsonHeaders() });
+      const d = r.ok ? await r.json() : { notebooks: [], status: { ok: false } };
+      setHbNotebooks(Array.isArray(d.notebooks) ? d.notebooks : []);
+      setHbNbStatus(d.status || null);
+    } catch { setHbNbStatus({ ok: false }); }
+    finally { setHbNbLoading(false); }
+  };
+  useEffect(() => {
+    if (tab === 'hotebook') void loadNotebooks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  // Клик по карточке блокнота: создать сценарий → привязать к нему блокнот → открыть блок.
+  const openNotebook = async (nb: { id: string; title: string }) => {
+    setHbNbOpening(nb.id);
+    try {
+      const cr = await fetch('/api/flows', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: (nb.title || 'Блокнот').slice(0, 120) }) });
+      const cd = await cr.json().catch(() => ({}));
+      const flowId = cd.flow?.id;
+      if (!cr.ok || !flowId) throw new Error(cd.error || 'Не удалось создать сценарий');
+      await fetch(`/api/notebooklm/flow/${flowId}/adopt`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ notebookId: nb.id, title: nb.title }) });
+      setBlockReq({ cloud: 'hotebook', flowId });
+    } catch (e: any) { setError(e?.message || 'Не удалось открыть блокнот'); }
+    finally { setHbNbOpening(null); }
+  };
 
   // ── «+ Добавить» — первой плиткой каждого раздела ──
   // Блоки (Hotebook/Flow/UGC) открываются ОВЕРЛЕЕМ поверх Галереи: закрыл — вернулся
@@ -838,6 +873,24 @@ export default function GalleryPage() {
           {/* Google Flow / Hotebook: плашка «Установите расширение TrendTraffic» (инлайн-раскрытие) */}
           {(tab === 'flow' || tab === 'hotebook') && renderExtBanner()}
 
+          {/* Hotebook: строка статуса блокнотов — грузим/не залогинен/офлайн + «Обновить». */}
+          {tab === 'hotebook' && (
+            <div className="flex items-center gap-2 text-[12px] mb-3" style={{ color: 'var(--text-muted)' }}>
+              {hbNbLoading ? (
+                <><Loader2 size={13} className="animate-spin" /> Загружаю блокноты NotebookLM…</>
+              ) : hbNbStatus && !hbNbStatus.ok ? (
+                <span style={{ color: '#f59e0b' }}>
+                  {hbNbStatus.errorKind === 'ext_login'
+                    ? 'Войдите в notebooklm.google.com в браузере с расширением — тогда покажутся все ваши блокноты.'
+                    : 'Откройте notebooklm.google.com в браузере с расширением TrendTraffic — тогда покажутся все ваши блокноты.'}
+                </span>
+              ) : (
+                <><span>Блокнотов NotebookLM: {hbNotebooks.length}</span>
+                  <button type="button" onClick={() => void loadNotebooks()} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button></>
+              )}
+            </div>
+          )}
+
           {/* «Видео»: кнопки-фильтры Видео | Аудио (аудио объединено с медиафайлами) */}
           {tab === 'reference' && (
             <div className="inline-flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
@@ -1046,6 +1099,24 @@ export default function GalleryPage() {
               </AuroraCard>
               );
             })}
+            {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
+            {tab === 'hotebook' && hbNotebooks.map((nb) => (
+              <AuroraCard key={`nb-${nb.id}`} className="group p-0 overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-1 hover:shadow-lg">
+                <button type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
+                  title={`Открыть блокнот: ${nb.title}`}
+                  className="relative w-full flex flex-col items-center justify-center gap-2"
+                  style={{ aspectRatio: '4 / 3', background: 'var(--bg-tertiary)', cursor: 'pointer', border: 'none', color: 'var(--text-muted)' }}>
+                  {hbNbOpening === nb.id
+                    ? <Loader2 size={28} className="animate-spin" style={{ color: 'var(--brand)' }} />
+                    : <span style={{ fontSize: 34, lineHeight: 1 }}>{nb.icon || '📔'}</span>}
+                  <span className="absolute top-2 left-2 text-[9px] font-700 px-1.5 py-0.5 rounded" style={{ background: '#22d3ee', color: '#04222a' }}>NotebookLM</span>
+                </button>
+                <div className="p-3 flex flex-col gap-1">
+                  <div className="text-xs font-700 truncate" style={{ color: 'var(--text-primary)' }} title={nb.title}>{nb.title}</div>
+                  {nb.subtitle && <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{nb.subtitle}</div>}
+                </div>
+              </AuroraCard>
+            ))}
             {/* Hotebook: активные генерации — карточка-плейсхолдер со спиннером до готовности */}
             {tab === 'hotebook' && hbJobs.map((j) => (
               <AuroraCard key={`job-${j.id}`} className="group p-0 overflow-hidden flex flex-col">

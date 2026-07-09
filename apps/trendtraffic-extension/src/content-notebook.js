@@ -40,6 +40,7 @@
   }
   const visible = (el) => { try { return !!(el && el.offsetParent !== null && el.getClientRects().length); } catch { return false; } };
   const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim(); // как norm, но БЕЗ lowercase (для названий)
   const elText = (el) => norm((el && (el.getAttribute && el.getAttribute('aria-label'))) || '') + ' ' + norm((el && el.textContent) || '');
 
   /** Найти видимый кликабельный элемент, чей текст/aria содержит одно из слов (первый — лучший). */
@@ -300,12 +301,15 @@
   };
   const FIELD_RU = { format: 'формат', length: 'длина', style: 'стиль', difficulty: 'сложность', count: 'количество', orientation: 'ориентация', detail: 'детализация' };
 
-  // Кандидаты полей ввода/кнопок (уточняются разведкой).
+  // Кандидаты полей ввода/кнопок. Уточнено разведкой живой вёрстки (RU NotebookLM, 07.2026):
+  //   URL  = <textarea aria-label="Введите URL" placeholder="Вставьте ссылки">
+  //   текст = <textarea aria-label="Вставленный текст" placeholder="Вставьте текст">
+  // Поэтому первыми идут ТОЧНЫЕ aria/placeholder, потом общие фолбэки.
   const SEL = {
-    sourceUrlInput: ['input[type="url"]', 'input[placeholder*="url" i]', 'input[placeholder*="ссылк" i]', 'textarea[placeholder*="url" i]'],
-    sourceTextArea: ['textarea[placeholder*="text" i]', 'textarea[placeholder*="текст" i]', 'textarea'],
+    sourceUrlInput: ['textarea[aria-label*="url" i]', 'textarea[placeholder*="ссылк" i]', 'input[type="url"]', 'input[placeholder*="url" i]', 'input[placeholder*="ссылк" i]', 'textarea[placeholder*="url" i]'],
+    sourceTextArea: ['textarea[aria-label*="вставленн" i]', 'textarea[placeholder*="вставьте текст" i]', 'textarea[placeholder*="paste" i]', 'textarea[placeholder*="text" i]', 'textarea[placeholder*="текст" i]', 'textarea'],
     fileInput: ['input[type="file"]'],
-    chatInput: ['textarea[placeholder*="ask" i]', 'textarea[placeholder*="спрос" i]', 'div[contenteditable="true"][role="textbox"]', 'textarea'],
+    chatInput: ['textarea[placeholder*="ask" i]', 'textarea[placeholder*="спрос" i]', 'textarea[aria-label*="запрос" i]', 'div[contenteditable="true"][role="textbox"]', 'textarea'],
     instructions: ['textarea[placeholder*="focus" i]', 'textarea[placeholder*="акцент" i]', 'textarea[placeholder*="instruction" i]', 'textarea'],
   };
   function pickDeep(cands) {
@@ -317,13 +321,15 @@
   async function createNotebook(title) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     ui.task('Создаю блокнот: ' + (title || ''));
-    // На главной жмём «создать». Если уже в блокноте — считаем текущий (редко, но безопасно).
-    if (!/\/notebook\//.test(location.href)) {
-      const ok = await clickByText(['create new', 'create notebook', 'создать блокнот', 'новый блокнот', 'create', 'создать', 'new']);
-      if (!ok) return { ok: false, reason: 'selector:create-notebook' };
-    }
-    const nbId = await waitFor(() => notebookIdFromUrl(), 30_000, 700);
-    if (!nbId) return { ok: false, reason: 'selector:create-notebook (нет /notebook/<id> в URL)' };
+    // ВАЖНО: кнопка «Создать блокнот» (aria) есть И на главной, И внутри блокнота.
+    // Раньше код, будучи уже на /notebook/<id>, НЕ жал «создать», а «усыновлял» открытый
+    // блокнот (часто чужой/рекомендованный → потом запрос доступа). Теперь жмём ВСЕГДА и
+    // ждём НОВЫЙ id, отличный от текущего.
+    const before = notebookIdFromUrl();
+    const ok = await clickByText(['создать блокнот', 'create new notebook', 'create notebook', 'new notebook']);
+    if (!ok) return { ok: false, reason: 'selector:create-notebook' };
+    const nbId = await waitFor(() => { const id = notebookIdFromUrl(); return (id && id !== before) ? id : null; }, 30_000, 700);
+    if (!nbId) return { ok: false, reason: 'selector:create-notebook (нет нового /notebook/<id> в URL)' };
     // Переименовать (best-effort): найти поле заголовка и вписать имя.
     if (title) {
       try {
@@ -339,9 +345,11 @@
 
   // ── источники ──
   async function openAddSource() {
-    // Кнопка «Add source / Добавить источник / +».
-    await clickByText(['add source', 'добавить источник', 'add sources', 'источники', 'sources', 'добавить']);
-    await sleep(600);
+    // Кнопка «Добавить источники» (aria «Добавить источник»). Не открываем повторно, если
+    // диалог выбора типа уже на экране (есть «Сайты»/«Загрузить файлы»).
+    if (findByText(['сайты', 'загрузить файлы', 'скопированный текст'])) return;
+    await clickByText(['добавить источник', 'add source', 'add sources']);
+    await sleep(700);
   }
   async function addSource(a) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
@@ -349,21 +357,24 @@
     ui.task('Добавляю источник (' + kind + ')');
     await openAddSource();
     if (kind === 'url') {
-      await clickByText(['website', 'link', 'url', 'ссылк', 'сайт', 'youtube']);
-      await sleep(400);
+      // Под-вкладка «Сайты» (иконки link+youtube). Затем поле URL и кнопка «Добавить».
+      await clickByText(['сайты', 'website', 'сайт', 'link', 'url', 'youtube', 'ссылк']);
+      await sleep(500);
       const inp = pickDeep(SEL.sourceUrlInput);
       if (!inp) return { ok: false, reason: 'selector:sourceUrlInput' };
       typeInto(inp, a.url || '');
-      await sleep(200);
-      if (!await clickByText(['insert', 'add', 'вставить', 'добавить', 'submit'])) inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await sleep(500);
+      // Кнопка отправки — РОВНО «Добавить» (findByText приоритезирует точное совпадение,
+      // поэтому «Добавить источники» не перехватит). Enter в textarea даёт перенос — не жмём.
+      if (!await clickByText(['добавить', 'вставить', 'insert', 'submit'])) return { ok: false, reason: 'selector:add-source-submit' };
     } else if (kind === 'text') {
-      await clickByText(['paste text', 'copied text', 'вставить текст', 'текст', 'text']);
-      await sleep(400);
+      await clickByText(['скопированный текст', 'copied text', 'paste text', 'вставить текст', 'текст']);
+      await sleep(500);
       const ta = pickDeep(SEL.sourceTextArea);
       if (!ta) return { ok: false, reason: 'selector:sourceTextArea' };
       typeInto(ta, a.content || '');
-      await sleep(200);
-      await clickByText(['insert', 'add', 'вставить', 'добавить', 'submit']);
+      await sleep(500);
+      if (!await clickByText(['добавить', 'вставить', 'insert', 'submit'])) return { ok: false, reason: 'selector:add-source-submit' };
     } else if (kind === 'file') {
       // Файл из Галереи: скачиваем байты в background (обход CORS) → File → в input[type=file].
       const b = await send({ type: 'fetch-bytes', url: a.fileUrl });
@@ -387,23 +398,56 @@
     return { ok: true, source: { title: a.title || (a.url || 'источник'), kind }, sources };
   }
   function listSourcesDom() {
-    // Кандидаты элементов-источников в панели слева. Уточняется разведкой.
-    const items = queryAllDeep('[role="listitem"],[data-source-id],[class*="source" i] [role="button"]').filter(visible);
+    // Строки источников слева = <div class="single-source-container">; текст = «<иконка-лигатура><Название>».
+    const items = queryAllDeep('.single-source-container, single-source-container, [class*="single-source-container" i]').filter(visible);
     const out = [];
     const seen = new Set();
     for (const el of items) {
-      const id = el.getAttribute('data-source-id') || el.getAttribute('id') || '';
-      const title = norm(el.textContent).slice(0, 80);
+      // Убрать ведущий material-icon токен, приклеенный к названию (video_youtubeFable… → Fable…) и «more_vert».
+      const title = clean(el.textContent).replace(/\bmore_vert\b/g, '').replace(/^[a-z_]+(?=[A-ZА-ЯЁ0-9«"'(])/, '').trim().slice(0, 100);
       if (!title || seen.has(title)) continue;
       seen.add(title);
-      out.push({ id: id || title, title, source_id: id || undefined });
-      if (out.length > 60) break;
+      out.push({ id: title, title, source_id: undefined });
+      if (out.length > 80) break;
     }
     return out;
   }
   async function listSources() {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    // После навигации в блокнот панель источников рендерится не сразу — ждём появления строк (кап 7с).
+    await waitFor(() => (queryAllDeep('.single-source-container').filter(visible).length ? true : null), 7000, 500);
     return { ok: true, sources: listSourcesDom() };
+  }
+
+  // ── список ВСЕХ блокнотов (для карточек на стороне TrendTraffic) ──
+  // Плитка = <project-button> → <a href="/notebook/<uuid>"> + .project-button-title +
+  // .project-button-subtitle («дата · N источников») + .project-button-box-icon (эмодзи).
+  // background наводит вкладку на главную перед этим действием (плитки живут только там).
+  async function listNotebooks() {
+    if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    ui.task('Читаю список блокнотов…');
+    const tiles = await waitFor(() => { const t = queryAllDeep('project-button, .project-button').filter(visible); return t.length ? t : null; }, 15_000, 600) || [];
+    const out = [];
+    const seen = new Set();
+    for (const pb of tiles) {
+      const a = pb.querySelector('a[href*="/notebook/"]');
+      const m = a ? /notebook\/([a-z0-9-]+)/i.exec(a.getAttribute('href') || '') : null;
+      const id = m ? m[1] : null;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      const titleEl = pb.querySelector('.project-button-title') || pb.querySelector('[class*="title" i]');
+      const subEl = pb.querySelector('.project-button-subtitle');
+      const iconEl = pb.querySelector('.project-button-box-icon');
+      out.push({
+        id,
+        title: (clean(titleEl && titleEl.textContent) || 'Без названия').slice(0, 120),
+        subtitle: clean(subEl && subEl.textContent).slice(0, 60),
+        icon: clean(iconEl && iconEl.textContent).slice(0, 4),
+      });
+      if (out.length > 150) break;
+    }
+    ui.line('✓ блокнотов найдено: ' + out.length);
+    return { ok: true, notebooks: out };
   }
   async function deleteSource(sourceId) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
@@ -606,6 +650,7 @@
     currentActionId = a.id || null;
     switch (a.kind) {
       case 'create-notebook': return createNotebook(a.payload && a.payload.title);
+      case 'list-notebooks':  return listNotebooks();
       case 'add-source':      return addSource(a.payload || a);
       case 'list-sources':    return listSources();
       case 'delete-source':   return deleteSource((a.payload && a.payload.sourceId) || a.sourceId);

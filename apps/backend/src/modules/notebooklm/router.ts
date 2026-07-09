@@ -176,6 +176,54 @@ router.get('/status', async (req: AuthedRequest, res: Response) => {
   res.json({ status: st });
 });
 
+/**
+ * Список ВСЕХ блокнотов NotebookLM (для карточек на стороне TrendTraffic → Галерея → Hotebook).
+ * Расширение снимает плитки главной. Если расширение не на связи/не залогинено — отдаём пусто
+ * + статус (фронт покажет плашку), не 500.
+ */
+router.get('/notebooks', async (req: AuthedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const st = await getConnectionStatus(tenantId);
+  if (!st.ok) return res.json({ notebooks: [], status: st });
+  try {
+    const actionId = await enqueueAction(tenantId, null, null, 'list-notebooks', {});
+    const r = await waitAction(tenantId, actionId, 60_000);
+    if (!r.ok) return res.json({ notebooks: [], status: st, error: r.error || null });
+    const notebooks = Array.isArray(r.result?.notebooks) ? r.result.notebooks : [];
+    res.json({ notebooks, status: st });
+  } catch (e: any) {
+    res.json({ notebooks: [], status: st, error: String(e?.message || e) });
+  }
+});
+
+/**
+ * Привязать существующий блокнот NotebookLM к сценарию (клик по карточке блокнота).
+ * Записывает notebooklm_state(tenant, flow) = notebookId, чтобы попап работал с ним.
+ */
+router.post('/flow/:flowId/adopt', async (req: AuthedRequest, res: Response) => {
+  const notebookId = String(req.body?.notebookId || '').trim();
+  const title = String(req.body?.title || '').trim().slice(0, 120);
+  if (!/^[a-z0-9-]{8,}$/i.test(notebookId)) return res.status(400).json({ error: 'notebookId обязателен' });
+  try {
+    await pool.query(
+      `INSERT INTO notebooklm_state (tenant_id, flow_id, notebook_id, title) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (tenant_id, flow_id) DO UPDATE SET notebook_id=EXCLUDED.notebook_id, title=EXCLUDED.title`,
+      [req.tenantId!, req.params.flowId, notebookId, title || null]
+    );
+    // Подтянуть существующие источники блокнота в кэш (completeAction пишет notebooklm_state.sources),
+    // иначе попап покажет 0 источников и заблокирует чат/генерацию. Расширение наведёт вкладку на этот
+    // блокнот. Ошибки/офлайн глотаем — блок всё равно откроется.
+    const st = await getConnectionStatus(req.tenantId!);
+    if (st.ok) {
+      try {
+        const aId = await enqueueAction(req.tenantId!, req.params.flowId, notebookId, 'list-sources', {});
+        await waitAction(req.tenantId!, aId, 40_000);
+      } catch { /* best-effort */ }
+    }
+    res.json({ ok: true, notebookId });
+  } catch (e: any) { res.status(500).json(errPayload(e)); }
+});
+
 /** Сводка для панели блока: блокнот, источники (кэш), джобы, счётчики, статус. */
 router.get('/flow/:flowId/overview', async (req: AuthedRequest, res: Response) => {
   const { flowId } = req.params;
