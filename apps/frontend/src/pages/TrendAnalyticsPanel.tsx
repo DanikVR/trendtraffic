@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink, RotateCw, Flame, Film } from 'lucide-react';
+import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink, RotateCw, Flame, Film, Languages } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 
@@ -160,6 +160,10 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const [bdLoading, setBdLoading] = useState(false);
   const [bdError, setBdError] = useState<string | null>(null);
   const bdReqRef = useRef(0); // токен запроса: применяем только результат последнего анализа
+  // Перевод разбора (кнопка «Перевести»): разбор всегда собирается на английском, перевод — по клику.
+  const [bdTranslated, setBdTranslated] = useState<TrendDNA | null>(null);
+  const [bdShowLang, setBdShowLang] = useState<'en' | 'ru'>('en');
+  const [bdTranslating, setBdTranslating] = useState(false);
 
   const analyze = async (override?: string) => {
     const u = (override ?? url).trim();
@@ -189,11 +193,13 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const runBreakdown = async (r: AnalyzeResult, srcUrl: string) => {
     const myReq = ++bdReqRef.current;
     setBdLoading(true); setBdError(null); setBreakdown(null);
+    setBdTranslated(null); setBdShowLang('en'); // новый разбор — сбрасываем перевод
     try {
       const res = await fetch('/api/trends/analyze/breakdown', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ summary: r.summary, comments: r.normalized.comments, keywords: r.normalized.keywords, platform: r.detected.platform, url: srcUrl || undefined, lang: analysisLang() }),
+        // Разбор всегда на английском (идёт дальше в работу на EN); save=1 → карточка в «Тренды → Анализ».
+        body: JSON.stringify({ summary: r.summary, comments: r.normalized.comments, keywords: r.normalized.keywords, platform: r.detected.platform, url: srcUrl || undefined, externalId: r.detected.videoId, save: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -249,7 +255,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const res = await fetch('/api/trends/analyze/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: url.trim(), lang: analysisLang() }),
+        body: JSON.stringify({ url: url.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -289,9 +295,27 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const s = result?.summary || {};
   const coverSrc = cardCover || s.cover;
   const isVideo = result?.detected.type === 'video';
-  // Лейблы отчёта — на языке интерфейса/браузера (пока ru/en).
-  const lng = analysisLang();
-  const L = (ru: string, en: string) => (lng === 'en' ? en : ru);
+  // Разбор ВСЕГДА собирается на английском; «Перевести» переключает показ на язык браузера.
+  const bdTarget = analysisLang(); // 'en' | 'ru' — язык кнопки «Перевести»
+  const shownBreakdown: TrendDNA | null = bdShowLang === 'en' ? breakdown : (bdTranslated || breakdown);
+  const L = (ru: string, en: string) => (bdShowLang === 'en' ? en : ru);
+  const translateBreakdown = async () => {
+    if (!breakdown) return;
+    if (bdShowLang !== 'en') { setBdShowLang('en'); return; }         // назад к оригиналу (EN)
+    if (bdTranslated) { setBdShowLang(bdTarget); return; }             // уже переведено — просто показать
+    setBdTranslating(true); setBdError(null);
+    try {
+      const res = await fetch('/api/trends/analyze/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ dna: breakdown, lang: bdTarget }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setBdTranslated(data.dna as TrendDNA); setBdShowLang(bdTarget);
+    } catch (e: any) { setBdError(e?.message || 'Не удалось перевести'); }
+    finally { setBdTranslating(false); }
+  };
   const stat = (icon: React.ReactNode, label: string, val?: number) => (
     <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)' }}>
       <div className="flex items-center gap-1.5 text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{icon} {label}</div>
@@ -483,6 +507,15 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{L('Разбор вирусности (ИИ)', 'Virality breakdown (AI)')}</span>
                 {bdLoading && <Loader2 size={14} className="animate-spin" style={{ color: 'var(--brand)' }} />}
                 <div className="flex-1" />
+                {/* «Перевести»: разбор всегда EN → перевод на язык браузера по клику (для RU-браузера) */}
+                {!bdLoading && breakdown && bdTarget !== 'en' && (
+                  <button onClick={translateBreakdown} disabled={bdTranslating} title="Перевести разбор на язык браузера"
+                    className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-50"
+                    style={{ background: bdShowLang === 'en' ? 'rgba(99,102,241,0.12)' : 'var(--bg-tertiary)', color: bdShowLang === 'en' ? 'var(--brand)' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                    {bdTranslating ? <Loader2 size={12} className="animate-spin" /> : <Languages size={12} />}
+                    {bdShowLang === 'en' ? 'Перевести' : 'Оригинал (EN)'}
+                  </button>
+                )}
                 {!bdLoading && (bdError || breakdown) && (
                   <button onClick={() => runBreakdown(result, url)} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
                     <RotateCw size={12} /> {L('Пересобрать', 'Regenerate')}
@@ -503,35 +536,35 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 </div>
               )}
 
-              {breakdown && (
+              {shownBreakdown && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Viral Breakdown */}
                   <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
                     <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Flame size={14} style={{ color: 'var(--brand)' }} /> {L('Разбор вирусности', 'Virality breakdown')}</div>
-                    {bdField(`${L('Хук', 'Hook')}${breakdown.hookType ? ` · ${breakdown.hookType}` : ''}`, breakdown.whyItWorks)}
-                    {bdField(L('Целевая аудитория', 'Target audience'), breakdown.targetAudience)}
-                    {bdList(L('Факторы вирусности', 'Virality factors'), breakdown.viralFactors)}
-                    {breakdown.copyReadyScript && (
+                    {bdField(`${L('Хук', 'Hook')}${shownBreakdown.hookType ? ` · ${shownBreakdown.hookType}` : ''}`, shownBreakdown.whyItWorks)}
+                    {bdField(L('Целевая аудитория', 'Target audience'), shownBreakdown.targetAudience)}
+                    {bdList(L('Факторы вирусности', 'Virality factors'), shownBreakdown.viralFactors)}
+                    {shownBreakdown.copyReadyScript && (
                       <div>
                         <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L('Готовый скрипт озвучки', 'Ready voiceover script')}</div>
-                        <p className="text-[13px] leading-snug rounded-lg p-2.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{breakdown.copyReadyScript}</p>
+                        <p className="text-[13px] leading-snug rounded-lg p-2.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{shownBreakdown.copyReadyScript}</p>
                       </div>
                     )}
-                    {bdList(L('Как адаптировать под нас', 'How to adapt for us'), breakdown.howToAdapt)}
+                    {bdList(L('Как адаптировать под нас', 'How to adapt for us'), shownBreakdown.howToAdapt)}
                   </div>
 
                   {/* Video Content Analysis */}
                   <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
                     <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Film size={14} style={{ color: 'var(--brand)' }} /> {L('Контент-анализ', 'Content analysis')}</div>
-                    {bdField(L('Кратко о видео', 'Video summary'), breakdown.summary)}
-                    {bdField(L('Разбор первых секунд', 'First seconds breakdown'), breakdown.hookAnalysis)}
-                    {bdField(L('Визуальный стиль', 'Visual style'), breakdown.visualStyle)}
-                    {bdField(L('Звук и подача', 'Audio & delivery'), breakdown.audioDialogue)}
-                    {breakdown.sceneBeats && breakdown.sceneBeats.length > 0 && (
+                    {bdField(L('Кратко о видео', 'Video summary'), shownBreakdown.summary)}
+                    {bdField(L('Разбор первых секунд', 'First seconds breakdown'), shownBreakdown.hookAnalysis)}
+                    {bdField(L('Визуальный стиль', 'Visual style'), shownBreakdown.visualStyle)}
+                    {bdField(L('Звук и подача', 'Audio & delivery'), shownBreakdown.audioDialogue)}
+                    {shownBreakdown.sceneBeats && shownBreakdown.sceneBeats.length > 0 && (
                       <div>
                         <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L('Сцены', 'Scenes')}</div>
                         <div className="space-y-1">
-                          {breakdown.sceneBeats.map((b, i) => (
+                          {shownBreakdown.sceneBeats.map((b, i) => (
                             <div key={i} className="flex gap-2 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
                               <span className="font-700 tabular-nums flex-shrink-0" style={{ color: 'var(--brand)' }}>{fmtDur(b.t) || `${b.t}с`}</span>
                               <span>{b.desc}{b.intensity ? <span style={{ color: 'var(--text-muted)' }}> · {b.intensity}</span> : null}</span>
@@ -540,8 +573,8 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                         </div>
                       </div>
                     )}
-                    {bdList(L('Почему резонирует', 'Why it resonates'), breakdown.whyResonates)}
-                    {bdList(L('Как повторить', 'How to replicate'), breakdown.howToReplicate)}
+                    {bdList(L('Почему резонирует', 'Why it resonates'), shownBreakdown.whyResonates)}
+                    {bdList(L('Как повторить', 'How to replicate'), shownBreakdown.howToReplicate)}
                   </div>
                 </div>
               )}

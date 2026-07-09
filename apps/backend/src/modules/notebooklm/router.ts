@@ -69,6 +69,7 @@ async function ensureTables(): Promise<void> {
   // Кэш списка источников блокнота (пишется расширением через completeAction) — чтобы
   // overview показывал источники без обязательного онлайна расширения.
   await pool.query(`ALTER TABLE notebooklm_state ADD COLUMN IF NOT EXISTS sources JSONB`);
+  await pool.query(`ALTER TABLE notebooklm_state ADD COLUMN IF NOT EXISTS chat JSONB`); // история чата блокнота (кэш)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notebooklm_jobs (
       id TEXT PRIMARY KEY,
@@ -231,17 +232,19 @@ router.get('/flow/:flowId/overview', async (req: AuthedRequest, res: Response) =
   const [status, counters] = await Promise.all([getConnectionStatus(tenantId), todayCounters(tenantId)]);
   let notebookId: string | null = null;
   let sources: any[] = [];
+  let chat: any[] = [];
   try {
-    const s = await pool.query(`SELECT notebook_id, sources FROM notebooklm_state WHERE tenant_id=$1 AND flow_id=$2`, [tenantId, flowId]);
+    const s = await pool.query(`SELECT notebook_id, sources, chat FROM notebooklm_state WHERE tenant_id=$1 AND flow_id=$2`, [tenantId, flowId]);
     notebookId = s.rows[0]?.notebook_id || null;
     sources = Array.isArray(s.rows[0]?.sources) ? s.rows[0].sources : [];
+    chat = Array.isArray(s.rows[0]?.chat) ? s.rows[0].chat : [];
   } catch { /* пусто */ }
   let jobs: any[] = [];
   try {
     const r = await pool.query(`SELECT * FROM notebooklm_jobs WHERE tenant_id=$1 AND flow_id=$2 ORDER BY created_at DESC LIMIT 40`, [tenantId, flowId]);
     jobs = r.rows.map(mapJob);
   } catch { /* пусто */ }
-  res.json({ notebookId, sources, jobs, counters, status });
+  res.json({ notebookId, sources, chat, jobs, counters, status });
 });
 
 /** Добавить источник: URL/YouTube или текст. */

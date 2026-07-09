@@ -108,7 +108,9 @@ const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|a
 
 export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect }: UgcPreviewProps) {
   const { t } = useTranslation('common');
-  const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl : ugc.photoUrl;
+  const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl
+    : ugc.avatarSource === 'video' ? ugc.avatarVideoUrl   // готовое видео-аватар → показываем первый кадр видео
+    : ugc.photoUrl;
   const firstLineMedia = ugc.script.find((l) => !!l.image)?.image || null;
   // «Один ведущий» — аватар всегда перетаскивается/масштабируется на превью (в ЛЮБОЙ раскладке;
   // раскладка = стартовая позиция). В «Монтаже»/«Диалоге» — свои фиксированные планы.
@@ -228,9 +230,15 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       <span className="text-[9.5px]" style={{ color: F.sub }}>{sub}</span>
     </button>
   );
+  // Медиа аватара: обычно <img> (фото/готовый аватар), но для источника «Готовое видео» —
+  // <video> с первым кадром (тот же URL — драг-бокс и позиционирование работают одинаково).
+  const avatarMedia = (url: string, className: string, style?: React.CSSProperties) =>
+    isVideoUrl(url)
+      ? <video src={`${url}#t=0.1`} muted playsInline preload="metadata" draggable={false} className={className} style={style} />
+      : <img src={url} alt="" draggable={false} className={className} style={style} />;
   const faceCell = (url: string | null, tag: string, onEmpty: () => void, emptyTitle?: string) => (
     <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: F.cell }}>
-      {url ? (<>{cellTag(tag)}<img src={url} alt="" className="w-full h-full object-cover" /></>)
+      {url ? (<>{cellTag(tag)}{avatarMedia(url, 'w-full h-full object-cover')}</>)
         : emptyCell(emptyTitle || t('ugc.preview.emptyNotSelected', { tag }), t('ugc.preview.emptyClickToChoose'), onEmpty)}
     </div>
   );
@@ -276,11 +284,11 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       {url ? (
         cutout ? (
           <div className="w-full h-full" style={{ ...CHECKER, borderRadius: '12px 12px 0 0', padding: 4 }} title={t('ugc.preview.cutoutTooltip')}>
-            <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: '9px 9px 0 0', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` }} />
+            {avatarMedia(url, 'w-full h-full object-cover', { borderRadius: '9px 9px 0 0', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` })}
             <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 750, letterSpacing: '.04em', textTransform: 'uppercase', color: '#fff', background: ACC, borderRadius: 999, padding: '1.5px 7px', whiteSpace: 'nowrap' }}>{t('ugc.preview.cutoutBadge')}</span>
           </div>
         ) : (
-          <img src={url} alt="" draggable={false} className="w-full h-full object-cover" style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,.25)', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` }} />
+          avatarMedia(url, 'w-full h-full object-cover', { borderRadius: 10, border: '1px solid rgba(255,255,255,.25)', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` })
         )
       ) : (
         <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
@@ -367,7 +375,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return (
       <div className="absolute inset-0 flex">
         {clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'))}
-        {overlayAvatar(rectFor(fmt), false, avatarImg, onEmptyAvatar, fmt, true, mini)}
+        {overlayAvatar(rectFor(fmt), ugc.avatarSource === 'video' && ugc.avatarVideoCutout, avatarImg, onEmptyAvatar, fmt, true, mini)}
       </div>
     );
   };

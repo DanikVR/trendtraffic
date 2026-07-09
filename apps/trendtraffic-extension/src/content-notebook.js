@@ -309,7 +309,7 @@
     sourceUrlInput: ['textarea[aria-label*="url" i]', 'textarea[placeholder*="ссылк" i]', 'input[type="url"]', 'input[placeholder*="url" i]', 'input[placeholder*="ссылк" i]', 'textarea[placeholder*="url" i]'],
     sourceTextArea: ['textarea[aria-label*="вставленн" i]', 'textarea[placeholder*="вставьте текст" i]', 'textarea[placeholder*="paste" i]', 'textarea[placeholder*="text" i]', 'textarea[placeholder*="текст" i]', 'textarea'],
     fileInput: ['input[type="file"]'],
-    chatInput: ['textarea[placeholder*="ask" i]', 'textarea[placeholder*="спрос" i]', 'textarea[aria-label*="запрос" i]', 'div[contenteditable="true"][role="textbox"]', 'textarea'],
+    chatInput: ['textarea[placeholder*="введите текст" i]', 'textarea[aria-label*="поле для запрос" i]', 'textarea[placeholder*="ask" i]', 'textarea[placeholder*="спрос" i]', 'div[contenteditable="true"][role="textbox"]', 'textarea'],
     instructions: ['textarea[placeholder*="focus" i]', 'textarea[placeholder*="акцент" i]', 'textarea[placeholder*="instruction" i]', 'textarea'],
   };
   function pickDeep(cands) {
@@ -376,22 +376,37 @@
       await sleep(500);
       if (!await clickByText(['добавить', 'вставить', 'insert', 'submit'])) return { ok: false, reason: 'selector:add-source-submit' };
     } else if (kind === 'file') {
-      // Файл из Галереи: скачиваем байты в background (обход CORS) → File → в input[type=file].
+      // Файл из Галереи: скачиваем байты в background (обход CORS).
       const b = await send({ type: 'fetch-bytes', url: a.fileUrl });
       if (!b || !b.ok) return { ok: false, reason: 'не скачался файл из Галереи' + (b && b.error ? ': ' + b.error : '') };
-      const inp = pickDeep(SEL.fileInput);
-      if (!inp) return { ok: false, reason: 'selector:fileInput' };
-      try {
-        const file = dataUrlToFile(b.dataUrl, a.fileName || ('source' + (b.mime && b.mime.includes('video') ? '.mp4' : '')));
-        const dt = new DataTransfer(); dt.items.add(file);
-        inp.files = dt.files;
-        inp.dispatchEvent(new Event('input', { bubbles: true }));
-        inp.dispatchEvent(new Event('change', { bubbles: true }));
-      } catch (e) { return { ok: false, reason: String(e && e.message || e) }; }
+      // ВАЖНО (разведано вживую): загрузить файл в NotebookLM из расширения НАДЁЖНО НЕЛЬЗЯ:
+      // в DOM нет input[type=file] («Загрузить файлы» открывает нативное окно ОС), а синтетический
+      // drag-drop NotebookLM игнорирует (isTrusted=false — проверено, источник не добавляется).
+      // Поэтому файл-путь = короткая попытка drag-drop + БЫСТРЫЙ честный отказ с подсказкой, а не зависание.
+      const suggest = /^video\//i.test(b.mime || '')
+        ? 'NotebookLM не принимает видео-файлы. Для ролика добавьте «Анализ» текстом или ссылку (YouTube).'
+        : 'Загрузка файлов в NotebookLM недоступна из расширения (нативное окно). Используйте «Анализ»/«Вставить текст» или ссылку (сайт/YouTube).';
+      if (/^video\//i.test(b.mime || '')) return { ok: false, reason: suggest };
+      const dz = pickDeep(['.xap-uploader-dropzone.drop-zone', '.xap-uploader-dropzone', '.drop-zone-container', '[class*="drop-zone" i]', '[class*="dropzone" i]']);
+      const beforeN = listSourcesDom().length;
+      if (dz) {
+        try {
+          const file = dataUrlToFile(b.dataUrl, a.fileName || 'source');
+          const dt = new DataTransfer(); dt.items.add(file);
+          for (const evName of ['dragenter', 'dragover', 'drop']) {
+            dz.dispatchEvent(new DragEvent(evName, { bubbles: true, cancelable: true, dataTransfer: dt }));
+            await sleep(200);
+          }
+        } catch { /* синтетический drop мог не пройти — упадём в отказ ниже */ }
+      }
+      const appeared = await waitFor(() => (listSourcesDom().length > beforeN ? true : null), 8000, 1000);
+      if (!appeared) return { ok: false, reason: suggest };
+      ui.line('✓ файл-источник добавлен');
+      return { ok: true, source: { title: a.title || a.fileName || 'файл', kind }, sources: listSourcesDom() };
     } else {
       return { ok: false, reason: 'неизвестный тип источника' };
     }
-    // Дождаться, что источник появился в списке (best-effort), вернуть свежий список.
+    // URL/текст: дождаться, что источник появился (best-effort), вернуть свежий список.
     await sleep(2500);
     const sources = listSourcesDom();
     ui.line('✓ источник добавлен (' + kind + ')');
@@ -416,7 +431,8 @@
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     // После навигации в блокнот панель источников рендерится не сразу — ждём появления строк (кап 7с).
     await waitFor(() => (queryAllDeep('.single-source-container').filter(visible).length ? true : null), 7000, 500);
-    return { ok: true, sources: listSourcesDom() };
+    // Заодно отдаём историю чата (чтобы открытый блокнот сразу показал прошлый диалог).
+    return { ok: true, sources: listSourcesDom(), chat: chatHistoryDom() };
   }
 
   // ── список ВСЕХ блокнотов (для карточек на стороне TrendTraffic) ──
@@ -464,34 +480,71 @@
   }
 
   // ── чат ──
+  // Разведано вживую: чат живёт в <chat-panel>; ввод = textarea[placeholder="Введите текст…"]
+  // (aria «Поле для запросов»); кнопка отправки чата = иконка arrow_forward (у поиска источников
+  // ДРУГАЯ кнопка «Отправить» с иконкой search — раньше кликали её → чат не слался → зависание);
+  // ответ ассистента = .to-user-container (реплика юзера = .from-user-container).
   async function chat(question) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     ui.task('Спрашиваю: ' + String(question || '').slice(0, 60));
     const inp = pickDeep(SEL.chatInput);
     if (!inp) return { ok: false, reason: 'selector:chatInput' };
     typeInto(inp, question || '');
-    await sleep(200);
+    await sleep(400);
     const before = chatAnswersDom().length;
-    if (!await clickByText(['send', 'отправить', 'ask', 'спросить', 'submit'])) inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    // Ждём новый ответ + «тихое окно» (стриминг закончился).
-    const ans = await waitFor(() => {
+    // Кнопка чата — arrow_forward (НЕ «Отправить»-поиск источников с иконкой search).
+    const sendBtn = queryAllDeep('button,[role="button"]').filter(visible)
+      .find((e) => /arrow_forward/i.test(norm(e.textContent)) || norm(e.getAttribute('aria-label') || '') === 'отправить сообщение');
+    if (sendBtn) clickEl(sendBtn);
+    else inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    // Ждём появления нового ответа ассистента (.to-user-container).
+    const appeared = await waitFor(() => (chatAnswersDom().length > before ? true : null), 4 * 60_000, 800);
+    if (!appeared) return { ok: false, reason: 'timeout' };
+    // Стабилизация: КАЖДУЮ итерацию перезапрашиваем последний ответ и берём его АКТУАЛЬНЫЙ текст.
+    // (Баг v1.2.1: возвращали текст, пойманный в момент появления пузыря = плейсхолдер
+    // «Scanning your sources…» — стриминг ещё не начался.) Пропускаем плейсхолдер и ждём стабилизацию.
+    const LOADING = /scanning your sources|scanning sources|reading sources|analyzing sources/i;
+    let lastText = ''; let stable = 0; let finalText = '';
+    for (let i = 0; i < 110; i++) { // до ~77с ожидания стриминга
       const arr = chatAnswersDom();
-      return arr.length > before ? arr[arr.length - 1] : null;
-    }, 4 * 60_000, 800);
-    if (!ans) return { ok: false, reason: 'timeout' };
-    // Стабилизация: ждём, пока текст перестанет расти.
-    let last = ''; let stable = 0;
-    for (let i = 0; i < 40; i++) {
-      const cur = norm(ans.el ? ans.el.textContent : '');
-      if (cur === last) { stable++; if (stable >= 2) break; } else { stable = 0; last = cur; }
+      const cur = arr.length ? arr[arr.length - 1].text : '';
+      const ready = cur && cur.length > 2 && !LOADING.test(cur);
+      if (ready && cur === lastText) { stable++; if (stable >= 2) { finalText = cur; break; } } else { stable = 0; }
+      lastText = cur;
       await sleep(700);
     }
+    if (!finalText) finalText = (lastText && !LOADING.test(lastText)) ? lastText : '';
+    if (!finalText) return { ok: false, reason: 'ответ не дочитался' };
     ui.line('✓ ответ получен');
-    return { ok: true, answer: ans.text, citations: ans.citations || [] };
+    return { ok: true, answer: finalText, citations: [] };
   }
+  // Ответ ассистента = .to-user-container; текст берём из внутреннего .message-content (без кнопок keep/copy/оценки).
   function chatAnswersDom() {
-    const nodes = queryAllDeep('[class*="response" i],[class*="answer" i],[data-message-author="assistant"],[role="article"]').filter(visible);
-    return nodes.map((el) => ({ el, text: (el.textContent || '').trim(), citations: [] })).filter((x) => x.text.length > 1);
+    const nodes = queryAllDeep('.to-user-container, [class*="to-user-container" i]').filter(visible);
+    return nodes.map((el) => {
+      const inner = el.querySelector('.message-content, [class*="message-content" i], [class*="to-user-message-inner" i]') || el;
+      return { el, text: clean(inner.textContent), citations: [] };
+    }).filter((x) => x.text.length > 1);
+  }
+  // История чата (для загрузки при открытии блокнота): пары user/assistant по порядку.
+  function chatHistoryDom() {
+    const out = [];
+    for (const cm of queryAllDeep('chat-message').filter(visible)) {
+      const u = cm.querySelector('.from-user-container, [class*="from-user-container" i]');
+      const b = cm.querySelector('.to-user-container, [class*="to-user-container" i]');
+      const inner = cm.querySelector('.message-content, .message-text-content, [class*="message-content" i]') || (u || b);
+      const text = clean(inner && inner.textContent).slice(0, 4000);
+      if (!text) continue;
+      out.push({ role: u ? 'user' : (b ? 'assistant' : '?'), text });
+      if (out.length > 60) break;
+    }
+    return out.filter((m) => m.role !== '?');
+  }
+  async function listChat() {
+    if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    // Дать чат-панели прогрузить историю после навигации.
+    await waitFor(() => (queryAllDeep('chat-message').filter(visible).length || queryAllDeep('.chat-panel-empty-state').filter(visible).length ? true : null), 8000, 500);
+    return { ok: true, chat: chatHistoryDom() };
   }
 
   // ── генерация артефакта ──
@@ -653,6 +706,7 @@
       case 'list-notebooks':  return listNotebooks();
       case 'add-source':      return addSource(a.payload || a);
       case 'list-sources':    return listSources();
+      case 'list-chat':       return listChat();
       case 'delete-source':   return deleteSource((a.payload && a.payload.sourceId) || a.sourceId);
       case 'chat':            return chat((a.payload && a.payload.question) || a.question);
       case 'generate':        return generate(a.gtype, { ...(a.params || {}), __name: (a.params && a.params.__name) || (a.payload && a.payload.name) });

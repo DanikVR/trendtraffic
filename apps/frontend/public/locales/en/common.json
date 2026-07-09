@@ -1131,6 +1131,7 @@
       "filesSuffix": " · 2 files — avatar once",
       "voiceoverAi": "≈ $0.1–0.3 per clip",
       "voiceoverFree": "$0 — your own audio and video",
+      "videoFree": "$0 — ready video, no HeyGen",
       "langsSuffix": " · languages: {{count}}"
     },
     "checklist": {
@@ -1138,8 +1139,10 @@
       "serverNote": "The build runs on the server — you can close the window and progress won't be lost.",
       "avatarChosen": "Avatar selected",
       "photoChosen": "Photo selected",
+      "videoAvatarChosen": "Ready video selected",
       "missAvatar": "avatar",
       "missPhoto": "photo",
+      "missVideoAvatar": "ready avatar video",
       "secondSpeaker": "Second speaker",
       "missPhotoB": "second speaker's photo",
       "recordingDiarized": "Recording analyzed (voices A/B)",
@@ -1214,7 +1217,15 @@
       "apiNote": "Via the HeyGen API — key in Settings → Generation, pay-as-you-go billing (~$3/min Avatar IV).",
       "delTitle": "Remove avatar?",
       "delMessage": "'{{name}}' will be removed from your avatar collection. The original file stays in the Gallery.",
-      "photoEmptyTitle": "Photo not uploaded yet"
+      "photoEmptyTitle": "Photo not uploaded yet",
+      "sourceVideo": "Ready video",
+      "videoLocked": "Ready video — only in \"Single host\" mode",
+      "videoHeading": "Ready avatar video",
+      "videoChosenName": "video selected",
+      "videoEmptyTitle": "Avatar video — not uploaded",
+      "videoHint": "A finished clip of a talking person — speech and facial motion are already inside. HeyGen and voiceover are not used: fast and with no generation cost.",
+      "videoCutout": "Cut out background (chroma key)",
+      "videoCutoutHint": "If the clip has a green background — we'll remove it and place the silhouette over the footage."
     },
     "voice": {
       "title": "Voice & script",

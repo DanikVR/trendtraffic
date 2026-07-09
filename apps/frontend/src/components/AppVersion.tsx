@@ -2181,7 +2181,24 @@
  *         (Галерея) и панель X/YouTube/Reddit — на языке браузера. (2) Аналитика: поле ввода ссылки
  *         выровнено (короткий плейсхолдер под узкую колонку). Файлы: trends/dna.ts, trends/router.ts,
  *         trends/ingest.ts, social-ext/router.ts, TrendAnalyticsPanel, GalleryPage, SocialExtensionPage. */
-/* 2.2.4 — Google Flow: (1) вкладка «Google Flow» Галереи показывает ГОТОВЫЕ ПРОЕКТЫ Flow —
+/* 2.2.4 — UGC-студия: третий источник аватара «Готовое видео» (рядом с «Готовые аватары»/«Моё
+ *         фото»). Свой ролик с говорящим человеком (речь+мимика внутри) идёт ПРЯМО в кадр боксом
+ *         поверх видеоряда — HeyGen и озвучка НЕ участвуют (быстро, без затрат генерации); позиция/
+ *         размер драгом на превью, все форматы, музыка/заставки/слой/врезки как обычно. Опц.
+ *         галочка «Вырезать фон (хромакей)»: зелёный фон → силуэт поверх видеоряда (chroma-key в
+ *         composeUgc). Секция «Голос и текст» и выбор HeyGen-провайдера скрыты для этого источника.
+ *         Файлы: ugcTypes.ts, render/podcast_compose.ts (avatarChroma), render/router.ts (ветка
+ *         avatarSource='video'), UgcStudio, UgcPreview, MontageEditor, locales ru/en. */
+/* 2.2.5 — Аналитика по фидбэку (замена подхода v2.2.3): (1) разбор ВСЕГДА собирается на английском
+ *         (и дальше в работу идёт на EN) — дефолт generateTrendDNA сменён ru→en; рядом кнопка
+ *         «Перевести» (translateTrendDNA, новый /analyze/translate) переводит ПОКАЗ на язык браузера
+ *         по клику (тумблер «Перевести»↔«Оригинал (EN)») в панели X/YT/Reddit и Галерея→AnalysisView.
+ *         (2) Проанализированные видео САМИ появляются карточками в «Тренды → Анализ»: /analyze/breakdown
+ *         принял save=1 → saveTrendDNAAuto (без скачивания, дедуп по external_id); нативная панель шлёт
+ *         save=1, а для iframe-площадок (TikTok/IG) SocialExtensionPage делает фоновый разбор+сохранение
+ *         при открытии видео; «Добавить в галерею» подчищает лёгкий дубль. Файлы: trends/dna.ts,
+ *         trends/router.ts, TrendAnalyticsPanel, GalleryPage, SocialExtensionPage. */
+/* 2.2.6 — Google Flow: (1) вкладка «Google Flow» Галереи показывает ГОТОВЫЕ ПРОЕКТЫ Flow —
  *         расширение снимает карточки с labs.google/…/tools/flow (live-мост page↔ext↔вкладка Flow,
  *         action `list-projects`), клик по карточке открывает проект «проектором» (новая вкладка).
  *         (2) Клипы, сохранённые из Flow, теперь падают в раздел «Видео» (без папки), а не в
@@ -2190,7 +2207,7 @@
  *         chrome://extensions (копирование)/labs.google/flow/notebooklm.google.com, бейдж «Обновите»
  *         при устаревшей версии расширения. Расширение → v1.3.0 (list-projects). Файлы: GalleryPage,
  *         flow-ext/router.ts, trendtraffic-extension (content-flow/background/content-bridge/manifest). */
-export const APP_VERSION = '2.2.4';
+export const APP_VERSION = '2.2.6';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
