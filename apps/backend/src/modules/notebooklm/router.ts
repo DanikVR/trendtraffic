@@ -90,9 +90,16 @@ async function ensureTables(): Promise<void> {
     )`);
   await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS title TEXT`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_nlm_jobs_tenant ON notebooklm_jobs(tenant_id, created_at DESC)`);
-  // Бэкфилл: раньше аудио-артефакты Hotebook писались kind='reference' → не попадали в «Видео → Аудио»
-  // (фильтр по kind). Переводим уже сохранённое аудио Hotebook в kind='audio' (идемпотентно — после
-  // первого прогона строк не остаётся). Лента Hotebook (по folder) их всё равно показывает.
+  // Бэкфилл артефактов NotebookLM (идемпотентно):
+  // (1) старые артефакты сохранялись БЕЗ folder → не попадали в ленту «Hotebook» (она по folder).
+  //     Ставим folder='hotebook' всем ассетам, на которые ссылаются джобы (audio/video/отчёты).
+  await pool.query(
+    `UPDATE media_assets SET folder='hotebook'
+       WHERE (folder IS NULL OR folder='')
+         AND id IN (SELECT asset_id FROM notebooklm_jobs WHERE asset_id IS NOT NULL)`
+  );
+  // (2) раньше аудио писалось kind='reference' → не попадало в «Видео → Аудио» (фильтр по kind).
+  //     Аудио-артефакты Hotebook → kind='audio' (в Hotebook остаются: лента по folder kind-независима).
   await pool.query(`UPDATE media_assets SET kind='audio' WHERE folder='hotebook' AND media_type='audio' AND kind='reference'`);
 }
 ensureTables().catch((e) => console.warn('[hotebook] init таблиц:', (e as Error).message));
