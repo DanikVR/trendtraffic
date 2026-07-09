@@ -239,6 +239,86 @@ export async function fetchTrending(
   );
 }
 
+// ============================================================================
+// Заземление ключевиков РЕАЛЬНЫМИ данными запросов (для «Таргет на ЦА», Фаза 2).
+//   TikTok:  get_query_suggestions (Creative Center — реальные запросы, ЕСТЬ country_code)
+//            + fetch_search_keyword_suggest (автокомплит, фолбэк без региона)
+//   YouTube: get_search_suggestions (автокомплит, ЕСТЬ region+language)
+//   TikTok:  get_trends_hashtag_list (трендовые хэштеги по стране — для подсева ниш)
+// Ответы TikHub слабо типизированы ({code,data:…}) и форма варьируется — парсим
+// ОБОРОНИТЕЛЬНО (собираем строки-подсказки из известных текстовых полей/массивов).
+// ============================================================================
+
+/** Достаёт строки-подсказки из ответа TikHub (форма разная у разных эндпоинтов). */
+export function extractSuggestions(payload: any, max = 20): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  // Ключи, под которыми у ads/suggest/hashtag-эндпоинтов лежит сам текст запроса/хэштега.
+  const TEXT_KEYS = ['query', 'keyword', 'suggestion', 'word', 'hashtag_name', 'hashtag', 'cid_name', 'value', 'name', 'title', 'text'];
+  const push = (s: any) => {
+    if (typeof s !== 'string') return;
+    const v = s.trim().replace(/^#/, '');
+    if (v.length < 2 || v.length > 60) return;         // отсекаем мусор/слишком длинное
+    if (/^https?:\/\//i.test(v)) return;                // не URL
+    const k = v.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k); out.push(v);
+  };
+  const walk = (o: any, depth = 0): void => {
+    if (o == null || depth > 6 || out.length >= max) return;
+    if (Array.isArray(o)) { for (const it of o) { if (typeof it === 'string') push(it); else walk(it, depth + 1); } return; }
+    if (typeof o === 'object') {
+      for (const k of TEXT_KEYS) if (typeof o[k] === 'string') push(o[k]);
+      for (const kk of Object.keys(o)) walk(o[kk], depth + 1);
+    }
+  };
+  walk(payload && typeof payload === 'object' && payload.data !== undefined ? payload.data : payload);
+  return out.slice(0, max);
+}
+
+/** TikTok Creative Center: реальные подсказки запросов по стране (country_code — ISO alpha-2). */
+export async function fetchTiktokQuerySuggestions(
+  apiKey: string, query: string, opts?: { countryCode?: string; count?: number }
+): Promise<TikHubResult<any>> {
+  const q = encodeURIComponent(query);
+  const cc = encodeURIComponent(opts?.countryCode || 'US');
+  const count = Math.min(Math.max(opts?.count ?? 50, 1), 100);
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/tiktok/ads/get_query_suggestions?query=${q}&count=${count}&scenario=1&country_code=${cc}`, { timeoutMs: 20000 })
+  );
+}
+
+/** TikTok автокомплит поиска по ключевику (фолбэк; региона нет). */
+export async function fetchTiktokKeywordSuggest(apiKey: string, keyword: string): Promise<TikHubResult<any>> {
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/tiktok/web/fetch_search_keyword_suggest?keyword=${encodeURIComponent(keyword)}`, { timeoutMs: 20000 })
+  );
+}
+
+/** YouTube автокомплит поиска (region + language — ISO alpha-2 / BCP-47). */
+export async function fetchYoutubeSuggestions(
+  apiKey: string, keyword: string, opts?: { region?: string; language?: string }
+): Promise<TikHubResult<any>> {
+  const kw = encodeURIComponent(keyword);
+  const region = encodeURIComponent(opts?.region || 'US');
+  const language = encodeURIComponent(opts?.language || 'en');
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/youtube/web_v2/get_search_suggestions?keyword=${kw}&region=${region}&language=${language}`, { timeoutMs: 20000 })
+  );
+}
+
+/** TikTok Creative Center: трендовые хэштеги по стране (для подсева ниш). */
+export async function fetchTiktokTrendingHashtags(
+  apiKey: string, opts?: { countryCode?: string; timeRange?: number; limit?: number }
+): Promise<TikHubResult<any>> {
+  const cc = encodeURIComponent(opts?.countryCode || 'US');
+  const tr = [7, 30, 120].includes(Number(opts?.timeRange)) ? Number(opts?.timeRange) : 7;
+  const limit = Math.min(Math.max(opts?.limit ?? 20, 1), 50);
+  return withTikhubRetry(() =>
+    tikhubGet(apiKey, `/api/v1/tiktok/ads/get_trends_hashtag_list?time_range=${tr}&country_code=${cc}&page=1&limit=${limit}`, { timeoutMs: 20000 })
+  );
+}
+
 // ── Нормализация ответа ──────────────────────────────────────────────────
 
 const N = (v: any): number | undefined => {

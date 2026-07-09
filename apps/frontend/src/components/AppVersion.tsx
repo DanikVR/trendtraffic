@@ -2223,13 +2223,21 @@
  *         (poll до ~18с). (3) Кнопка «Открыть TrendTraffic» в панели расширения на Flow ведёт на вкладку
  *         «Google Flow» Галереи (gallery?tab=flow), а не на легаси /flow. Расширение → v1.3.2. Файлы:
  *         GalleryPage, trendtraffic-extension (content-flow/content-bridge/manifest). */
-/* 2.2.9 — Google Flow: карточки проектов показывают РЕАЛЬНУЮ обложку (раньше — плейсхолдер-иконка).
+/* 2.2.9 — «Таргет на ЦА» Фаза 2 — заземление ключевиков РЕАЛЬНЫМИ запросами: ниши по-прежнему
+ *         предлагает Claude, но ключевики каждой ниши теперь берутся из реальных подсказок запросов
+ *         TikHub (`tiktok/ads/get_query_suggestions` по региону / YouTube `get_search_suggestions`), а
+ *         ниши подсеваются трендовыми хэштегами региона (`get_trends_hashtag_list`). Реальные ключевики
+ *         помечены ✓ и идут первыми; бейдж «Реальные запросы · TikTok · RU»; тумблер «Реальные запросы/
+ *         Только ИИ». Грациозно деградирует на приоры Claude без ключа/при сбое. Файлы: tikhub_client
+ *         (suggest/hashtag + extractSuggestions), providers (export REGION_LANG), audience.ts, router,
+ *         AudienceTargetPanel. */
+/* 2.2.10 — Google Flow: карточки проектов показывают РЕАЛЬНУЮ обложку (раньше — плейсхолдер-иконка).
  *         Расширение снимает превью надёжнее (img/lazy-srcset → video poster → CSS background-image)
  *         и ДОТЯГИВАЕТ её как data URL из сессии labs.google (обход 401/приватного CDN Flow — иначе
  *         кросс-доменная картинка на app.trendtraffic.pro не грузилась). Имя карточки очищено от
  *         подписей кнопок Flow («edit»/«Изменить проект»/«Удалить»). Расширение → v1.3.3. Файлы:
  *         trendtraffic-extension/content-flow.js (listProjects: thumbOf/thumbDataUrl + чистка имени). */
-export const APP_VERSION = '2.2.9';
+export const APP_VERSION = '2.2.10';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

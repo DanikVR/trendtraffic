@@ -316,7 +316,7 @@ function qs(base: Record<string, string>, filters: SearchFilters | undefined, al
 // Регион (ISO alpha-2) → язык интерфейса/выдачи YouTube (BCP-47 базовый). Нужен,
 // чтобы под гео подтягивался контент на языке региона (напр. UZ → узбекские ролики),
 // а не только по геолокации. Неизвестный код → language_code не добавляем (дефолт API).
-const REGION_LANG: Record<string, string> = {
+export const REGION_LANG: Record<string, string> = {
   RU: 'ru', UA: 'uk', KZ: 'kk', UZ: 'uz', BY: 'be', AZ: 'az', GE: 'ka', KG: 'ky',
   TR: 'tr', AE: 'ar', SA: 'ar', EG: 'ar', US: 'en', GB: 'en', DE: 'de', FR: 'fr',
   ES: 'es', IT: 'it', PL: 'pl', NL: 'nl', IN: 'hi', ID: 'id', TH: 'th', VN: 'vi',

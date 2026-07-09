@@ -14,7 +14,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Target, Loader2, Search, Sparkles, Globe, Eye, Heart, Play, ExternalLink, BarChart3,
-  Download, CheckCircle2, AlertCircle, XCircle, ChevronRight,
+  Download, CheckCircle2, AlertCircle, XCircle, ChevronRight, Check,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
@@ -30,6 +30,8 @@ interface AudienceNiche {
   rationale: string;
   angle: string;
   keywords: string[];
+  realKeywords?: string[]; // ключевики, подтверждённые реальными подсказками запросов
+  grounded?: boolean;
 }
 interface AudienceMap {
   product: string;
@@ -37,6 +39,9 @@ interface AudienceMap {
   language?: string;
   region?: string;
   niches: AudienceNiche[];
+  grounded?: boolean;
+  groundingSource?: string;   // 'tiktok' | 'youtube'
+  trendingHashtags?: string[];
   model: string;
   generatedAt: string;
 }
@@ -107,6 +112,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   const [language, setLanguage] = useState('русский');
   const [maxNiches, setMaxNiches] = useState(8);
   const [perNiche, setPerNiche] = useState(6); // видео на нишу при скане
+  const [ground, setGround] = useState(true); // заземлять ключевики реальными запросами TikHub
 
   const [building, setBuilding] = useState(false);
   const [map, setMap] = useState<AudienceMap | null>(null);
@@ -126,12 +132,13 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
     try {
       const res = await fetch('/api/trends/audience-map', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ product: product.trim(), audience: audience.trim(), seedKeywords: seeds, platform, region, language, maxNiches }),
+        body: JSON.stringify({ product: product.trim(), audience: audience.trim(), seedKeywords: seeds, platform, region, language, maxNiches, ground }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setMap(data.map);
-      setNotice(`Готово: ${data.map?.niches?.length ?? 0} микро-ниш. Найдите ролики по нужным (или сразу по всем).`);
+      const g = data.map?.grounded ? ' Ключевики проверены по реальным запросам.' : '';
+      setNotice(`Готово: ${data.map?.niches?.length ?? 0} микро-ниш.${g} Найдите ролики по нужным (или сразу по всем).`);
     } catch (e: any) { setError(friendlyError(e, 'Не удалось построить карту ЦА')); }
     finally { setBuilding(false); }
   };
@@ -299,6 +306,17 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
             </select>
           </label>
 
+          {/* Заземление: брать ключевики из РЕАЛЬНЫХ подсказок запросов TikHub (TikTok/YouTube). */}
+          <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            Ключевики
+            <button type="button" onClick={() => setGround((g) => !g)}
+              title="Заземлять ключевики реальными подсказками запросов (TikTok Creative Center / YouTube) вместо чистых догадок ИИ"
+              className="h-10 px-3 rounded-lg text-sm font-600 inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+              style={{ background: ground ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)', border: `1px solid ${ground ? 'var(--brand)' : 'var(--border-medium)'}`, color: ground ? 'var(--brand)' : 'var(--text-muted)' }}>
+              <Search size={13} /> {ground ? 'Реальные запросы' : 'Только ИИ'}
+            </button>
+          </label>
+
           <AuroraButton onClick={buildMap} disabled={building}
             icon={building ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}>
             {building ? 'Строю карту…' : 'Построить карту ЦА'}
@@ -306,7 +324,8 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
         </div>
 
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          Стоимость: 1 запрос ИИ на карту + по 1 скану на нишу при поиске (до {maxNiches} сканов). Регион применяется в TikTok (Умный поиск) и YouTube.
+          Стоимость: 1 запрос ИИ на карту{ground ? ' + по 1 подсказке-запросу на нишу (дёшево, не видео-скан)' : ''} + по 1 скану на нишу при поиске (до {maxNiches} сканов).
+          {' '}Регион и реальные запросы работают в TikTok и YouTube.
         </p>
 
         {notice && (
@@ -325,8 +344,23 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       {map && (
         <>
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-              Микро-ниши: {map.niches.length}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+                Микро-ниши: {map.niches.length}
+              </div>
+              {map.grounded ? (
+                <span className="text-[11px] px-2 py-1 rounded-full font-600 inline-flex items-center gap-1"
+                  style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}
+                  title="Ключевики взяты из реальных подсказок запросов, а не догадка ИИ">
+                  <Search size={11} /> Реальные запросы · {map.groundingSource === 'youtube' ? 'YouTube' : 'TikTok'}{map.region ? ` · ${map.region}` : ''}
+                </span>
+              ) : (
+                <span className="text-[11px] px-2 py-1 rounded-full font-600"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
+                  title="Ключевики сгенерированы ИИ без проверки реальными запросами (включите «Реальные запросы» или площадка их не поддерживает)">
+                  ключевики от ИИ
+                </span>
+              )}
             </div>
             <AuroraButton onClick={scanAll} disabled={scanningAll}
               icon={scanningAll ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
@@ -367,12 +401,17 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                       <div className="flex items-center gap-1.5 flex-wrap mt-2">
                         {n.keywords.map((kw) => {
                           const active = sc?.keyword === kw;
+                          const isReal = (n.realKeywords || []).some((x) => x.toLowerCase() === kw.toLowerCase());
                           return (
                             <button key={kw} type="button" onClick={() => scanNiche(n, kw)} disabled={sc?.scanning}
-                              title="Искать по этому ключевику"
-                              className="text-[11px] px-2 py-1 rounded-full font-600 transition-colors disabled:opacity-50"
-                              style={{ background: active ? 'var(--brand)' : 'var(--bg-tertiary)', color: active ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: `1px solid ${active ? 'var(--brand)' : 'var(--border-subtle)'}` }}>
-                              {kw}
+                              title={isReal ? 'Реальный запрос (из подсказок TikHub) — искать по нему' : 'Ключевик от ИИ — искать по нему'}
+                              className="text-[11px] px-2 py-1 rounded-full font-600 transition-colors disabled:opacity-50 inline-flex items-center gap-1"
+                              style={{
+                                background: active ? 'var(--brand)' : (isReal ? 'rgba(16,185,129,0.10)' : 'var(--bg-tertiary)'),
+                                color: active ? 'var(--brand-contrast)' : (isReal ? '#10b981' : 'var(--text-secondary)'),
+                                border: `1px solid ${active ? 'var(--brand)' : (isReal ? 'rgba(16,185,129,0.4)' : 'var(--border-subtle)')}`,
+                              }}>
+                              {isReal && !active && <Check size={10} strokeWidth={3} />}{kw}
                             </button>
                           );
                         })}
