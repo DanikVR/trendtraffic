@@ -726,21 +726,18 @@
   async function captureArtifact(gtype, spec) {
     const started = Date.now();
     const MAXW = { audio: 20 * 60_000, video: 30 * 60_000, infographic: 12 * 60_000 }[gtype] || 10 * 60_000;
-    let played = false;
     while (Date.now() - started < MAXW) {
+      const stillGen = () => queryAllDeep('*').filter(visible).some((e) => /создаём (аудио|видео)|создаем (аудио|видео)|вернитесь через|generating|создаётся|создается/i.test(norm(e.textContent)) && norm(e.textContent).length < 60);
       if (spec.kind === 'media') {
-        let el = pickMedia(gtype);
-        // Аудио/видео: <audio>/<video> появляется ТОЛЬКО при воспроизведении. Пока генерируется —
-        // на карточке крутится статус; когда готово — есть кнопка play. Кликаем play, чтобы
-        // NotebookLM загрузил медиа-элемент, затем берём его src.
-        if (!el && gtype !== 'infographic' && !played) {
-          const gen = queryAllDeep('*').filter(visible).some((e) => /создаём аудио|создаем аудио|вернитесь через|создаём видео|создаем видео|generating/i.test(norm(e.textContent)) && norm(e.textContent).length < 60);
-          if (!gen) {
-            const play = queryAllDeep('button,[role="button"]').filter(visible).find((b) => /play_arrow|play_circle|воспроизвести|^play$/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
-            if (play) { clickEl(play); played = true; await sleep(3000); el = pickMedia(gtype); }
-          }
+        // Инфографика — обычный <img>, читаем напрямую.
+        if (gtype === 'infographic') {
+          const el = pickMedia('infographic');
+          if (el) { const got = await grabMediaData(el); if (got && (got.dataUrl || got.sourceUrl)) return got; }
+        } else if (!stillGen()) {
+          // Аудио/видео: <audio>/<video> у NotebookLM НЕ создаётся (плеер на MSE). Готовый артефакт
+          // качаем через меню карточки (⋮ → «Скачать»); background перехватит загрузку (chrome.downloads).
+          if (await triggerArtifactDownload(gtype)) { ui.line('запросил скачивание артефакта…'); return { viaDownload: true }; }
         }
-        if (el) { const got = await grabMediaData(el); if (got && (got.dataUrl || got.sourceUrl)) return got; }
       } else {
         // doc/json/csv: сперва ссылка на файл (download-якорь/CDN), иначе скрейп текста.
         const url = findArtifactUrl();
@@ -751,6 +748,24 @@
       await sleep(4000);
     }
     return null;
+  }
+  // Готовый аудио/видео артефакт: найти его ⋮ (меню карточки) → «Скачать». Проверено вживую:
+  // у карточки («19:44 · Подробный анализ …») есть ⋮ → «save_alt Скачать» → RPC → загрузка файла.
+  async function triggerArtifactDownload(gtype) {
+    const near = (b) => { let n = b; for (let i = 0; i < 6 && n; i++) { if (/\d+:\d\d|подробный анализ|аудиопересказ|видеопересказ|краткий обзор/i.test(clean(n.textContent))) return true; n = n.parentElement; } return false; };
+    const more = queryAllDeep('button,[role="button"]').filter(visible)
+      .filter((b) => /more_vert|^ещё$/i.test(norm(b.getAttribute('aria-label') || b.textContent)))
+      .find(near);
+    if (!more) return false;
+    clickEl(more);
+    await sleep(1000);
+    // Пункт меню «Скачать» (save_alt) — НЕ «Скачать блокнот».
+    const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
+      .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+    if (!item) return false;
+    clickEl(item);
+    await sleep(1500);
+    return true;
   }
   function pickMedia(gtype) {
     if (gtype === 'infographic') return queryAllDeep('img').filter(visible).filter((i) => i.clientWidth >= 200 && i.clientHeight >= 200).sort(byArea)[0] || null;

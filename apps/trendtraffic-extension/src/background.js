@@ -434,20 +434,58 @@ async function runNlmAction(action) {
 }
 
 /** Выполнить генерацию артефакта (async-джоба) → ingest в Галерею. */
+/**
+ * Перехват загрузки, инициированной кликом «Скачать» на артефакте NotebookLM (аудио/видео —
+ * у них нет <audio> для чтения src, плеер на MSE). Ловим URL в chrome.downloads, ОТМЕНЯЕМ
+ * браузерную загрузку (чтобы не мусорить в «Загрузки») и сами стягиваем байты в фоне.
+ */
+function armDownloadCapture(timeoutMs) {
+  let resolveFn; let done = false; let timer;
+  const p = new Promise((res) => { resolveFn = res; });
+  const finish = (val) => { if (done) return; done = true; clearTimeout(timer); try { chrome.downloads.onCreated.removeListener(listener); } catch { /* */ } resolveFn(val); };
+  const listener = (item) => {
+    if (done) return;
+    const url = item.finalUrl || item.url || '';
+    if (!url || url.startsWith('blob:')) return; // blob не стянуть в фоне
+    if (/googleusercontent|googleapis|notebooklm|\.(mp3|mp4|m4a|wav|webm)(\?|$)/i.test(url) || /audio|video/i.test(item.mime || '')) {
+      try { chrome.downloads.cancel(item.id); } catch { /* */ }
+      try { chrome.downloads.erase({ id: item.id }); } catch { /* */ }
+      finish({ url, mime: item.mime || '' });
+    }
+  };
+  chrome.downloads.onCreated.addListener(listener);
+  timer = setTimeout(() => finish(null), timeoutMs);
+  p.cancel = () => finish(null);
+  return p;
+}
+
 async function runNlmTask(task) {
   const tabId = await ensureNotebookTab(task.notebookId || null, true);
   if (!tabId) { await nlmTaskStatus(task.id, 'retry', 'Откройте NotebookLM — генерация выполнится сама'); return; }
   await nlmTaskStatus(task.id, 'running');
+  // Аудио/видео качаются через меню «Скачать» → ставим перехватчик ДО генерации.
+  const isMedia = (task.type === 'audio' || task.type === 'video');
+  const dl = isMedia ? armDownloadCapture(NLM_TASK_TIMEOUT_MS) : null;
   let result;
   try {
     const action = { kind: 'generate', gtype: task.type, params: task.params || {}, notebookId: task.notebookId };
     result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), NLM_TASK_TIMEOUT_MS);
   } catch (e) {
+    if (dl) dl.cancel();
     await nlmTaskStatus(task.id, 'failed', String(e && e.message || e));
     return;
   }
-  if (result && result.reason === 'not-logged-in') { await nlmTaskStatus(task.id, 'retry', 'Войдите в NotebookLM'); return; }
-  if (!result || !result.ok) { await nlmTaskStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }
+  if (result && result.reason === 'not-logged-in') { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'retry', 'Войдите в NotebookLM'); return; }
+  if (!result || !result.ok) { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }
+  // Захват через загрузку (аудио/видео): дождаться перехваченного URL и стянуть байты в фоне.
+  if (result.viaDownload) {
+    const got = dl ? await dl : null;
+    if (!got || !got.url) { await nlmTaskStatus(task.id, 'failed', 'не удалось перехватить скачивание артефакта'); return; }
+    const b = await fetchBytes(got.url);
+    if (!b || !b.ok) { await nlmTaskStatus(task.id, 'failed', 'не скачался артефакт: ' + (b && b.error || '')); return; }
+    result.dataUrl = b.dataUrl;
+    result.mime = result.mime || b.mime || got.mime || '';
+  } else if (dl) { dl.cancel(); }
   try {
     await nlmIngest(task, result);
   } catch (e) {
