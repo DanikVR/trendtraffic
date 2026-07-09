@@ -36,12 +36,28 @@ export const PLATFORM_META: Record<string, { label: string; mark: string; bg: st
 };
 export const PLATFORM_ORDER = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'threads', 'bluesky', 'pinterest'];
 
+// Настоящие бренд-глифы соцсетей (белые, поверх фирменной плитки). viewBox 24×24.
+const PLATFORM_ICON: Record<string, React.ReactNode> = {
+  tiktok: <path d="M16.6 5.8c-.9-.6-1.5-1.6-1.7-2.8h-2.6v11.4c0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3 1-2.3 2.3-2.3c.2 0 .5 0 .7.1v-2.7c-.2 0-.5-.1-.7-.1A5 5 0 1 0 14.9 14V8.7c1 .7 2.2 1.1 3.5 1.1V7.2c-.7 0-1.3-.2-1.8-.5z" fill="currentColor" />,
+  instagram: <g fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5.2" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.4" cy="6.6" r="1.15" fill="currentColor" stroke="none" /></g>,
+  youtube: <path d="M21.6 7.2a2.5 2.5 0 0 0-1.75-1.77C18.27 5 12 5 12 5s-6.27 0-7.85.43A2.5 2.5 0 0 0 2.4 7.2 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.75 1.77C5.73 19 12 19 12 19s6.27 0 7.85-.43a2.5 2.5 0 0 0 1.75-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.4-4.8zM10 15V9l5.2 3-5.2 3z" fill="currentColor" />,
+  twitter: <path d="M18.9 2H22l-7.3 8.3L23 22h-6.8l-5.3-6.9L4.8 22H1.7l7.8-8.9L1 2h7l4.8 6.3L18.9 2zm-2.4 18h1.9L7.6 4H5.6l10.9 16z" fill="currentColor" />,
+  facebook: <path d="M15.12 5.32H17V2.14A26.1 26.1 0 0 0 14.26 2c-2.72 0-4.58 1.66-4.58 4.7v2.6H6.6v3.56h3.08V22h3.68v-9.14h3.06l.46-3.56h-3.52V7.05c0-1.03.28-1.73 1.77-1.73z" fill="currentColor" />,
+  linkedin: <path d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.77-1.95C21.4 8.75 22 11 22 14.1V21h-4v-6.1c0-1.45-.03-3.32-2.02-3.32-2.02 0-2.33 1.58-2.33 3.21V21h-4z" fill="currentColor" />,
+  threads: <path d="M12.5 22C7 22 4 18.4 4 12S7.3 2 12.4 2c3.4 0 5.9 1.4 7.1 3.9l-1.8.9C16.8 5 15 4 12.4 4 8.5 4 6 6.9 6 12s2.6 8 6.5 8c3.3 0 5.1-1.9 5.1-4.7 0-.3 0-.6-.05-.9-.5 1.4-1.9 2.3-3.75 2.3-2 0-3.5-1.1-3.5-2.9 0-1.9 1.6-3 3.7-3 1 0 1.9.2 2.5.6-.1-1.3-1-2.1-2.5-2.1-1.1 0-1.85.4-2.35 1.1l-1.6-.9c.9-1.3 2.2-2 3.95-2 2.7 0 4.4 1.8 4.4 4.9v.3C21.6 19.4 18.5 22 12.5 22zm2-8c-1 0-1.8.4-1.8 1.2 0 .7.7 1.1 1.6 1.1 1.4 0 2.4-.9 2.6-2.1-.6-.15-1.4-.2-2.4-.2z" fill="currentColor" />,
+  bluesky: <path d="M6.3 3.9C8.6 5.6 11 9 12 10.9c1-1.9 3.4-5.3 5.7-7 1.7-1.2 4.3-2.2 4.3.9 0 .6-.35 5-.55 5.7-.7 2.4-3.1 3-5.2 2.65 3.7.6 4.65 2.7 2.6 4.8-3.9 3.9-5.6-1-6-2.25l-.35-1-.35 1c-.4 1.25-2.1 6.15-6 2.25-2.05-2.1-1.1-4.2 2.6-4.8-2.1.35-4.5-.25-5.2-2.65C2 8.4 1.65 4 1.65 3.4c0-3.1 2.6-2.1 4.3-.9z" fill="currentColor" />,
+  pinterest: <path d="M12.14 2C6.9 2 4 5.5 4 9.2c0 1.7.9 3.85 2.4 4.55.2.1.35.05.4-.16.03-.13.12-.5.16-.65.05-.2.03-.27-.12-.45-.42-.5-.68-1.15-.68-2.07 0-2.66 2-5.05 5.2-5.05 2.84 0 4.4 1.74 4.4 4.06 0 3.05-1.35 5.63-3.35 5.63-1.1 0-1.93-.92-1.66-2.04.32-1.34.94-2.79.94-3.76 0-.87-.47-1.59-1.43-1.59-1.13 0-2.05 1.17-2.05 2.74 0 1 .34 1.68.34 1.68l-1.36 5.75c-.4 1.7-.06 3.79-.03 4 .02.12.17.15.24.06.1-.13 1.37-1.7 1.8-3.27.12-.44.7-2.73.7-2.73.35.66 1.36 1.24 2.44 1.24 3.21 0 5.39-2.93 5.39-6.85C20.1 5.2 17.16 2 12.14 2z" fill="currentColor" />,
+};
+
 export function PlatformMark({ platform, size = 26 }: { platform: string; size?: number }) {
   const m = PLATFORM_META[platform] || { mark: '?', bg: 'var(--border-strong)' };
+  const icon = PLATFORM_ICON[platform];
   return (
     <span className="rounded-lg flex items-center justify-center flex-shrink-0 font-700"
       style={{ width: size, height: size, background: m.bg, color: '#fff', fontSize: Math.max(8, Math.round(size * 0.34)) }}>
-      {m.mark}
+      {icon
+        ? <svg viewBox="0 0 24 24" width={Math.round(size * 0.62)} height={Math.round(size * 0.62)} aria-hidden="true">{icon}</svg>
+        : m.mark}
     </span>
   );
 }

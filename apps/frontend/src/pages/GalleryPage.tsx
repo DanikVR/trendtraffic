@@ -523,8 +523,13 @@ export default function GalleryPage() {
       <button type="button" onClick={a.run} title={a.hint}
         className="rounded-xl flex flex-col items-center justify-center gap-2 p-2 text-center transition-colors hover:border-[var(--border-stronger)]"
         style={{ aspectRatio: '9 / 16', background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-        <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border-strong)' }}>
-          <Plus size={22} />
+        {/* Переливающийся «плюс в кружке» — привлекает внимание (по фидбэку: убрали кнопку
+            «Добавить тренд», добавление теперь отсюда). Конический градиент + сдвиг оттенка
+            (animate-iridescent) + пульс-свечение (animate-attract). */}
+        <span className="relative w-11 h-11 rounded-full flex items-center justify-center animate-attract" style={{ boxShadow: '0 0 18px rgba(99,102,241,0.45)' }}>
+          <span aria-hidden className="absolute inset-0 rounded-full animate-iridescent"
+            style={{ background: 'conic-gradient(from 0deg, #6366f1, #22d3ee, #a855f7, #ec4899, #f59e0b, #6366f1)' }} />
+          <Plus size={22} className="relative z-[1]" style={{ color: '#fff' }} />
         </span>
         <span className="text-[12px] font-600 leading-tight">{a.label}</span>
       </button>
@@ -570,9 +575,7 @@ export default function GalleryPage() {
     return (
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: `1px solid ${outdated ? 'rgba(245,158,11,0.5)' : 'var(--border-medium)'}` }}>
         <div className="flex items-center gap-3 p-3">
-          <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#22d3ee)' }}>
-            <Clapperboard size={18} color="#fff" />
-          </span>
+          <img src="/icons/nav-extension.png?v=tt3" alt="" width={38} height={38} draggable={false} className="flex-shrink-0" style={{ objectFit: 'contain' }} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
@@ -724,13 +727,8 @@ export default function GalleryPage() {
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — клик: «Тренды» откроются с готовой выдачей по этому слову</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {/* «+ Добавить тренд» — первым, как и в остальных разделах */}
-            <button type="button" onClick={() => navigate('/social-extension?from=gallery')}
-              title="Открыть «Тренды»: сканировать по новому ключевому слову"
-              className="animate-attract inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[13px] font-700 transition-transform hover:scale-105"
-              style={{ background: 'var(--brand)', border: '1px solid var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
-              <Plus size={14} /> Добавить тренд
-            </button>
+            {/* Кнопка «Добавить тренд» убрана (по фидбэку) — добавление теперь через переливающийся
+                плюс-в-кружке на плитке «Добавить» ниже (renderAddTile). */}
             {fQs.map((x) => (
               <span key={x.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>

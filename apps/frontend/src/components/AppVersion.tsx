@@ -2331,7 +2331,18 @@
  *          объект читается в обеих темах, фон берётся от темы. Карточка блокнота: убран эмодзи
  *          (объект даёт арт), остался спиннер при открытии. Файлы: GalleryPage.tsx,
  *          public/placeholders/{audio,notebook,ugc}.webp (прозрачные, ~250–380КБ). */
-export const APP_VERSION = '2.2.21';
+/* 2.2.22 — Айдентика в том же soft-glass стиле + Публикатор + плюс-в-кружке (по фидбэку): (1) новые
+ *          soft-glass индиго ПРОЗРАЧНЫЕ иконки (OpenAI gpt-image-1) заменили старые: иконка Трендов
+ *          (nav-trends.png, шапка «Тренды»), Галереи (nav-gallery.png, шапка «Галерея»), Расширения
+ *          (nav-extension.png в плашке вместо градиент-clapperboard), логотип (sidebar + ФАВИКОН —
+ *          теперь прозрачный soft-glass, не на белом; ресайз через sharp во все размеры favicon/PWA,
+ *          ?v=tt3 сброс кэша). (2) Публикатор: НАСТОЯЩИЕ бренд-иконки соцсетей (PlatformMark: SVG-
+ *          глифы TikTok/IG/YouTube/X/FB/LinkedIn/Threads/Bluesky/Pinterest вместо буквенных бейджей).
+ *          (3) Убрана кнопка «Добавить тренд»; добавление теперь через ПЕРЕЛИВАЮЩИЙСЯ плюс-в-кружке на
+ *          плитке «Добавить» (конический градиент + animate-iridescent hue-rotate + animate-attract
+ *          пульс). Файлы: GalleryPage.tsx, MainLayout.tsx, PublisherTab.tsx, tailwind.config.cjs,
+ *          index.html, public/icons/*.png (+nav-extension, logo). */
+export const APP_VERSION = '2.2.22';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

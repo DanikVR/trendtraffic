@@ -140,7 +140,7 @@ export function MainLayout() {
             Язык и тема переехали ВНИЗ сайдбара — по слову юзера (2026-07-08). */}
         <div className="flex flex-col items-center px-2 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <button type="button" onClick={() => navigate('/gallery')} className="no-select" aria-label={t('sidebar.logoAria')} title="Галерея — на главный экран">
-            <VibeVoxIcon size={32} bordered />
+            <img src="/icons/logo.png?v=tt3" alt="" width={36} height={36} draggable={false} style={{ objectFit: 'contain' }} />
           </button>
         </div>
 
