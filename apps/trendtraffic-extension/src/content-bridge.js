@@ -25,7 +25,7 @@
   // релизом. Приложение сверяет её с версией манифеста (EXT_VERSION): если скрипт СТАРШЕ
   // манифеста — значит после обновления расширения вкладку не перезагрузили и тут крутится
   // УСТАРЕВШИЙ content-script (у него нет новых обработчиков, напр. reconnect) → просим F5.
-  const BRIDGE_VERSION = '1.3.18';
+  const BRIDGE_VERSION = '1.3.19';
   const TOKEN_KEY = 'vibevox_token'; // ключ JWT в localStorage SPA (см. store/useAppStore.ts)
   const toPage = (m) => window.postMessage({ source: OUT, bridgeVersion: BRIDGE_VERSION, ...m }, window.location.origin);
   const toBg = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(null); } };
@@ -84,6 +84,9 @@
     } else if (d.type === 'open-notebook') {
       // Клик по карточке блокнота в Галерее: открыть/сфокусировать вкладку NotebookLM НА ЭТОМ
       // блокноте (background сохраняет authuser рабочей вкладки — не улетаем в чужой аккаунт).
+      // МГНОВЕННЫЙ ack — открытие может занять секунды (создание вкладки + ожидание готовности),
+      // а фолбэк-window.open в приложении срабатывает через ~1.2с → без ack была бы ВТОРАЯ вкладка.
+      toPage({ type: 'open-notebook-ack', notebookId: d.notebookId || null });
       const r = await toBg({ type: 'nlm-open-notebook', notebookId: d.notebookId || null });
       toPage({ type: 'open-notebook-result', ok: !!(r && r.ok), notebookId: d.notebookId || null });
     } else if (d.type === 'status') {

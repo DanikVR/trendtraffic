@@ -245,7 +245,11 @@ export default function GalleryPage() {
         setExtReconnecting(false);
       }
       if (d.type === 'connected' || d.type === 'disconnected') setExtReconnecting(false);
-      // Расширение открыло/сфокусировало вкладку NotebookLM → фолбэк window.open не нужен.
+      // Мгновенный ack: расширение взялось открывать вкладку NotebookLM → фолбэк window.open
+      // отменяем СРАЗУ (само открытие может занять секунды — иначе была бы вторая вкладка).
+      if (d.type === 'open-notebook-ack') {
+        if (openNbFallbackTimer.current) { clearTimeout(openNbFallbackTimer.current); openNbFallbackTimer.current = null; }
+      }
       if (d.type === 'open-notebook-result') {
         if (openNbFallbackTimer.current) { clearTimeout(openNbFallbackTimer.current); openNbFallbackTimer.current = null; }
         if (!d.ok) window.open(d.notebookId ? `https://notebooklm.google.com/notebook/${d.notebookId}` : 'https://notebooklm.google.com', '_blank', 'noopener');
@@ -516,6 +520,8 @@ export default function GalleryPage() {
       window.open(`https://notebooklm.google.com/notebook/${nb.id}`, '_blank', 'noopener');
       setHbNbOpening(null);
     }, 1200);
+    // Страховка: ack отменил фолбэк, а result потерялся (SW умер) → спиннер карточки не виснет.
+    setTimeout(() => setHbNbOpening(null), 10_000);
   };
   const openNotebookHome = () => {
     window.postMessage({ source: 'trendtraffic', type: 'open-notebook' }, window.location.origin);

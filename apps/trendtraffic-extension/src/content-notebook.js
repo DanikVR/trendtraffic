@@ -604,10 +604,14 @@
   // ДРУГАЯ кнопка «Отправить» с иконкой search — раньше кликали её → чат не слался → зависание);
   // ответ ассистента = .to-user-container (реплика юзера = .from-user-container).
   // ТОЧНО поле чата (не путать с полем ПОИСКА ИСТОЧНИКОВ): placeholder «Введите текст…» /
-  // aria «Поле для запросов» / mat-mdc-autocomplete-trigger. Исключаем query-box поиска источников.
+  // aria «Поле для запросов» / mat-mdc-autocomplete-trigger. Поиск источников исключаем по
+  // aria/placeholder + классу РОВНО query-box-textarea: у САМОГО поля чата класс
+  // query-box-input (живой DOM 10.07.2026), общий токен query-box выкидывал и его →
+  // findChatInput возвращал null и chat() всегда падал с selector:chatInput.
   function findChatInput() {
-    const isSearch = (el) => /найдите нов|источник|на основе введ|query-box/i.test(
-      norm((el.getAttribute && el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute && el.getAttribute('placeholder') || '') + ' ' + (el.className || '')));
+    const isSearch = (el) => /найдите нов|источник|на основе введ/i.test(
+      norm((el.getAttribute && el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute && el.getAttribute('placeholder') || '')))
+      || /query-box-textarea/i.test(String(el.className || ''));
     const exact = queryAllDeep('textarea[placeholder*="введите текст" i],textarea[aria-label*="поле для запрос" i],textarea.mat-mdc-autocomplete-trigger,div[contenteditable="true"][role="textbox"]')
       .filter(visible).filter((e) => !isSearch(e));
     if (exact.length) return exact[exact.length - 1];
@@ -844,10 +848,19 @@
     // Пункт меню «Скачать» (save_alt) — НЕ «Скачать блокнот».
     const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
       .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
-    if (!item) return false;
+    if (!item) { closeOpenMenu(); return false; }
     clickEl(item);
     await sleep(1500);
     return true;
+  }
+  // Закрыть зависшее ⋮-меню (клик по backdrop CDK-оверлея; фолбэк — Escape), чтобы оно не
+  // оставалось поверх UI юзера и не ловилось следующим сканом.
+  function closeOpenMenu() {
+    try {
+      const bd = document.querySelector('.cdk-overlay-backdrop');
+      if (bd) { bd.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    } catch { /* */ }
   }
 
   // ── УЖЕ ГОТОВЫЕ работы студии в открытом блокноте (не наши джобы) ──
@@ -872,8 +885,9 @@
       const full = clean(card.textContent);
       if (!(DUR_RE.test(full) || ARTKIND_RE.test(full))) continue; // не карточка артефакта (напр. ⋮ источника)
       if (seen.has(card)) continue; seen.add(card);
-      // заголовок = текст ДО длительности/типа; чистим служебное
-      let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '').replace(/more_vert|play_arrow|воспроизвести|ещё/gi, '').trim();
+      // заголовок = текст ДО длительности/типа; чистим служебное (вкл. НАШУ инжект-кнопку «⬇TT» и её
+      // состояния — иначе на следующем цикле заголовок «Название ⬇TT» не совпадёт с базлайном → дубликаты)
+      let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '').replace(/more_vert|play_arrow|воспроизвести|ещё|⬇TT|…|✓|⚠/gi, '').trim();
       if (!title || title.length < 2) title = 'Артефакт NotebookLM';
       const hasPlay = [...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])]
         .some((b) => /play_arrow|воспроизвести/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
@@ -903,7 +917,7 @@
     await sleep(1000);
     const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
       .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
-    if (!item) return { ok: false, reason: 'selector:download-item' };
+    if (!item) { closeOpenMenu(); return { ok: false, reason: 'selector:download-item' }; }
     clickEl(item);
     await sleep(1500);
     // ждём перехваченные байты (injected-nlm) до ~30с
@@ -954,8 +968,12 @@
   async function markAllStudioSeen() {
     const nbId = notebookIdFromUrl();
     if (!nbId) return;
+    // МЕРЖ, не замена: пустой/частичный снимок (студия перерисовывается) не должен стереть базлайн —
+    // иначе следующий цикл вотчера сочтёт все старые работы «новыми» и массово зальёт их.
     const titles = studioArtifactCards().map((c) => norm(c.title));
-    await storageSet(seenKey(nbId), titles);
+    if (!titles.length) return;
+    const prev = await storageGet(seenKey(nbId));
+    await storageSet(seenKey(nbId), [...new Set([...(Array.isArray(prev) ? prev : []), ...titles])].slice(-500));
   }
   // Кнопка «в Галерею» рядом с готовой работой студии (инжект в саму страницу NotebookLM).
   function injectGalleryButtons(cards) {
@@ -971,10 +989,12 @@
         btn.style.cssText = 'margin:0 4px;padding:2px 7px;border:none;border-radius:8px;background:#22d3ee;color:#083344;font:700 10px ui-sans-serif,system-ui;cursor:pointer;vertical-align:middle;';
         btn.addEventListener('click', async (e) => {
           e.preventDefault(); e.stopPropagation();
-          if (btn.dataset.busy) return;
-          btn.dataset.busy = '1'; btn.textContent = '…'; btn.style.opacity = '0.7';
-          const r = await captureCardToGallery(c);
-          btn.dataset.busy = ''; btn.style.opacity = '1';
+          // мьютекс с вотчером/командами: одновременные захваты делят lastArtifact и ⋮-меню
+          if (btn.dataset.busy || watcherBusy || actionBusy) return;
+          btn.dataset.busy = '1'; watcherBusy = true; btn.textContent = '…'; btn.style.opacity = '0.7';
+          let r = null;
+          try { r = await captureCardToGallery(c); }
+          finally { watcherBusy = false; btn.dataset.busy = ''; btn.style.opacity = '1'; }
           btn.textContent = r && r.ok ? '✓' : '⚠';
           setTimeout(() => { btn.textContent = '⬇TT'; }, 4000);
         });
@@ -991,7 +1011,7 @@
     await sleep(1000);
     const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
       .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
-    if (!item) { ui.line('⚠ у «' + card.title.slice(0, 30) + '» нет пункта «Скачать»'); return { ok: false }; }
+    if (!item) { closeOpenMenu(); ui.line('⚠ у «' + card.title.slice(0, 30) + '» нет пункта «Скачать»'); return { ok: false }; }
     clickEl(item);
     const wt0 = Date.now();
     while (Date.now() - wt0 < 30_000) {
@@ -1022,8 +1042,11 @@
       const key = seenKey(nbId);
       const seen = await storageGet(key);
       if (!Array.isArray(seen)) {
-        // первый визит в блокнот: существующие работы — базлайн (их НЕ авто-качаем; для них кнопки)
-        await storageSet(key, ready.map((c) => norm(c.title)));
+        // первый визит в блокнот: существующие работы — базлайн (их НЕ авто-качаем; для них кнопки).
+        // ПУСТОЙ снимок НЕ сохраняем (студия могла ещё не отрисоваться — иначе на следующем цикле
+        // ВСЕ старые работы посчитаются «новыми» и массово зальются). Исключение: видим генерацию —
+        // значит, панель отрисована и блокнот реально пуст.
+        if (ready.length || gen.length) await storageSet(key, ready.map((c) => norm(c.title)));
         return;
       }
       const fresh = ready.filter((c) => !seen.includes(norm(c.title)));
@@ -1035,7 +1058,7 @@
         const r = await captureCardToGallery(c);
         if (r && r.ok) seen.push(norm(c.title));
       }
-      await storageSet(key, seen);
+      await storageSet(key, seen.slice(-500));
     } catch { /* не мешаем работе юзера */ }
     finally { watcherBusy = false; }
   }
@@ -1131,6 +1154,9 @@
   let actionBusy = false; // пока выполняется команда — вотчер студии не трогает DOM (не рвёт клики)
   async function runAction(a) {
     currentActionId = a.id || null;
+    // Если вотчер сейчас качает артефакт (⋮-меню открыто, ждёт blob) — дождёмся (макс ~35с),
+    // иначе команда кликнет в чужое меню / пересечётся на lastArtifact.
+    for (const t0 = Date.now(); watcherBusy && Date.now() - t0 < 35_000;) await sleep(300);
     actionBusy = true;
     try { return await runActionInner(a); }
     finally { actionBusy = false; }

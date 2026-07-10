@@ -2417,11 +2417,19 @@
  *          старые клипы при скролле НЕ тянем (базлайн). Файлы: content-notebook.js, content-flow.js,
  *          content-bridge.js, background.js, notebooklm-ext/router.ts, notebooklm/router.ts,
  *          ext_bridge.ts, flow-ext/router.ts, GalleryPage.tsx, HotebookStudio.tsx, MontageEditor.tsx. */
-export const APP_VERSION = '2.2.29';
+/* 2.2.30 — Hotebook, чат снова отвечает (расширение 1.3.19): findChatInput исключал поле поиска
+ *          источников по токену query-box, но в живом DOM NotebookLM (RU, 10.07.2026) САМО поле
+ *          чата получило класс query-box-input → матч по общему токену выкидывал и его,
+ *          findChatInput возвращал null и chat() всегда падал с selector:chatInput. Фикс: классовое
+ *          исключение сужено РОВНО до query-box-textarea (класс textarea поиска источников),
+ *          aria/placeholder-исключения («найдите нов…»/«источник»/«на основе введ…») сохранены.
+ *          Только расширение (manifest+TT_EXT_VERSION+BRIDGE_VERSION 1.3.19+zip).
+ *          Файлы: ext/content-notebook.js, ext/content-bridge.js, manifest.json, AppVersion. */
+export const APP_VERSION = '2.2.30';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.18';
+export const TT_EXT_VERSION = '1.3.19';
 
 export function AppVersion() {
   return (

@@ -178,14 +178,16 @@ router.post('/observed', async (req: AuthedRequest, res: Response) => {
       await pool.query(
         `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, notebook_id, type, params, status, title)
          VALUES ($1,$2,NULL,$3,$4,'{}','running',$5)
-         ON CONFLICT (id) DO UPDATE SET status='running', finished_at=NULL`,
+         ON CONFLICT (id) DO UPDATE SET status='running', finished_at=NULL, updated_at=now()`,
         [id, tenantId, notebookId, type, title]
       );
     }
-    // Наблюдаемые running этого блокнота, которых больше нет в студии → закрыть (файл придёт /observed-ingest).
+    // Наблюдаемые running этого блокнота, которых больше нет в студии → УДАЛИТЬ. Это чистые
+    // индикаторы («…генерируется» с временным заголовком): счётчик ✨ питает ТОЛЬКО строка
+    // /observed-ingest с готовым файлом. Оставлять их done = фантомный +1 (в т.ч. при отмене).
     await pool.query(
-      `UPDATE notebooklm_jobs SET status='done', finished_at=now()
-        WHERE tenant_id=$1 AND notebook_id=$2 AND flow_id IS NULL AND status='running'
+      `DELETE FROM notebooklm_jobs
+        WHERE tenant_id=$1 AND notebook_id=$2 AND flow_id IS NULL AND status='running' AND asset_id IS NULL
           AND id <> ALL($3::text[])`,
       [tenantId, notebookId, ids.length ? ids : ['-']]
     );
@@ -209,7 +211,9 @@ router.post('/observed-ingest', async (req: AuthedRequest, res: Response) => {
   if (!dataUrl.startsWith('data:')) return res.status(400).json({ error: 'нет dataUrl' });
   try {
     // Дедуп: этот артефакт уже импортировали (двойной клик / авто+кнопка) → не плодим копии.
-    const dupId = obsId(tenantId, notebookId || 'nb', title) + '-a';
+    // Id БЕЗ суффикса: одна строка на артефакт (двойного счёта в ✨ нет), running-индикаторы
+    // с временными заголовками удаляет /observed.
+    const dupId = obsId(tenantId, notebookId || 'nb', title);
     const dup = await pool.query(`SELECT asset_id, file_url FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2 AND asset_id IS NOT NULL`, [dupId, tenantId]);
     if (dup.rowCount) return res.json({ ok: true, assetId: dup.rows[0].asset_id, fileUrl: dup.rows[0].file_url, dedup: true });
     const asset = await ingestHotebookArtifact(tenantId, { dataUrl, fileName: title, mime, title, gtype });

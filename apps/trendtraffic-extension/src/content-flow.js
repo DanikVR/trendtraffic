@@ -764,7 +764,10 @@
   let flowTaskBusy = false;
   let flowWatcherBusy = false;
   let sawGeneratingAt = 0;
-  const FLOW_GEN_RE = /(generating|генерир|создаётся|создается)/i;
+  const flowIngestFails = new Map(); // videoKey → число неудачных заливок (3 → сдаёмся)
+  // Формы «генерируется/generating» — НЕ ловим кнопки «Сгенерировать»/«Регенерировать» (те в
+  // button) и наш собственный виджет (#tt-flow-host).
+  const FLOW_GEN_RE = /(generating|генериру(?:ется|ются)|создаётся|создается|создаём|создаем)/i;
   const flowProjectId = () => { const m = /\/project\/([a-z0-9-]+)/i.exec(location.href); return m ? m[1] : null; };
   function flowGeneratingCount() {
     let n = 0;
@@ -774,6 +777,11 @@
       if (!t || t.length > 80) continue;
       const leaf = ![...(el.children || [])].some((c) => (c.textContent || '').trim().length > 0);
       if (!leaf) continue;
+      try {
+        if (el.closest && el.closest('button,[role="button"],[role="slider"]')) continue; // подписи кнопок/слайдеров
+        const rootHost = el.getRootNode && el.getRootNode().host;
+        if (rootHost && rootHost.id === 'tt-flow-host') continue; // наш виджет
+      } catch { /* */ }
       if (FLOW_GEN_RE.test(t) || /^\d{1,3}\s?%$/.test(t)) { n++; if (n >= 20) break; }
     }
     return n;
@@ -781,8 +789,10 @@
   const videoKey = (el) => {
     const src = usableMediaSrc(el) || '';
     if (/^https?:/i.test(src)) { try { const u = new URL(src); return u.origin + u.pathname; } catch { return src.slice(0, 200); } }
+    // blob: ключ ТОЛЬКО из внутренних свойств (duration/videoWidth) — clientWidth зависит от
+    // раскладки и «плавает». Видео без метаданных отфильтровываются до вызова (см. вотчер).
     const d = Math.round((el.duration || 0) * 10);
-    return 'blob:' + d + ':' + (el.videoWidth || el.clientWidth) + 'x' + (el.videoHeight || el.clientHeight);
+    return 'blob:' + d + ':' + (el.videoWidth || 0) + 'x' + (el.videoHeight || 0);
   };
   const flowStorageGet = (k) => new Promise((res) => { try { chrome.storage.local.get(k, (d) => res(d && d[k])); } catch { res(undefined); } });
   const flowStorageSet = (k, v) => new Promise((res) => { try { chrome.storage.local.set({ [k]: v }, () => res()); } catch { res(); } });
@@ -796,23 +806,31 @@
       if (gen > 0) sawGeneratingAt = Date.now();
       // индикатор на карточке проекта в Галерее (сброс в 0 гасит спиннер)
       send({ type: 'flow-observed', projectId: pid, title: (document.title || 'Flow').slice(0, 80), generating: gen });
-      const vids = queryAllDeep('video').filter(visible).filter(usableMediaSrc);
+      // blob-видео БЕЗ метаданных пропускаем до следующего тика (ключ был бы нестабильным —
+      // NaN-duration/0-размер → старые клипы «оживали» бы как новые после перезагрузки).
+      const vids = queryAllDeep('video').filter(visible).filter(usableMediaSrc)
+        .filter((v) => !/^blob:/i.test(usableMediaSrc(v)) || (v.readyState >= 1 && Number.isFinite(v.duration) && v.videoWidth > 0));
       const key = 'flowSeen:' + pid;
       const seen = await flowStorageGet(key);
       const keys = vids.map(videoKey);
-      if (!Array.isArray(seen)) { await flowStorageSet(key, keys.slice(0, 300)); return; } // первый визит — базлайн
+      if (!Array.isArray(seen)) {
+        if (keys.length || gen > 0) await flowStorageSet(key, keys.slice(0, 300)); // пустой снимок до отрисовки не сохраняем
+        return;
+      }
       const freshIdx = keys.map((k, i) => (seen.includes(k) ? -1 : i)).filter((i) => i >= 0);
       const recentlyGenerated = Date.now() - sawGeneratingAt < 6 * 60_000;
       if (freshIdx.length && gen === 0 && recentlyGenerated) {
         // генерация только что кончилась → новые клипы в Галерею → «Видео»
         for (const i of freshIdx.slice(0, 2)) {
           const el = vids[i];
+          const fails = flowIngestFails.get(keys[i]) || 0;
+          if (fails >= 3) { seen.push(keys[i]); continue; } // 3 неудачи → сдаёмся (не качаем 500МБ каждые 25с)
           ui.line('новый клип готов — заливаю в Галерею…');
           const data = await grabMediaData(el);
-          if (!data.dataUrl && !data.sourceUrl) continue;
+          if (!data.dataUrl && !data.sourceUrl) { flowIngestFails.set(keys[i], fails + 1); continue; }
           const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
           if (r && r.ok) { seen.push(keys[i]); ui.line('✓ клип в Галерее → «Видео»'); }
-          else ui.line('⚠ клип не сохранился: ' + ((r && r.error) || 'нет подключения'));
+          else { flowIngestFails.set(keys[i], fails + 1); ui.line('⚠ клип не сохранился: ' + ((r && r.error) || 'нет подключения')); }
         }
       } else if (freshIdx.length) {
         // старые клипы (скролл/ленивая подгрузка) — просто запоминаем, НЕ заливаем

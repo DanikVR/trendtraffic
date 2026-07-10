@@ -92,6 +92,9 @@ async function ensureTables(): Promise<void> {
   // Наблюдаемые генерации (запущены юзером ПРЯМО в NotebookLM, не через приложение): flow_id NULL,
   // notebook_id — прямой. Питают индикаторы на карточках/сайдбаре и счётчики ✨.
   await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS notebook_id TEXT`);
+  // Свежесть наблюдения: вотчер шлёт каждые ~20с; если вкладку закрыли посреди генерации —
+  // running-строка протухает и через 2 мин перестаёт крутить спиннер (см. отсечки в запросах).
+  await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now()`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_nlm_jobs_tenant ON notebooklm_jobs(tenant_id, created_at DESC)`);
   // Бэкфилл артефактов NotebookLM (идемпотентно):
   // (1) старые артефакты сохранялись БЕЗ folder → не попадали в ленту «Hotebook» (она по folder).
@@ -167,6 +170,7 @@ async function todayCounters(tenantId: string): Promise<Record<string, number>> 
     const r = await pool.query(
       `SELECT type, count(*)::int AS n FROM notebooklm_jobs
        WHERE tenant_id=$1 AND created_at >= date_trunc('day', now()) AND status <> 'error'
+         AND NOT (flow_id IS NULL AND asset_id IS NULL) -- наблюдаемые без файла (running/отменённые) не считаем
        GROUP BY type`, [tenantId]);
     for (const row of r.rows) out[row.type] = Number(row.n) || 0;
   } catch { /* пусто */ }
@@ -246,6 +250,7 @@ router.get('/notebooks', async (req: AuthedRequest, res: Response) => {
       `SELECT COALESCE(s.notebook_id, j.notebook_id) AS nb, count(*)::int AS n
        FROM notebooklm_jobs j LEFT JOIN notebooklm_state s ON s.tenant_id=j.tenant_id AND s.flow_id=j.flow_id
        WHERE j.tenant_id=$1 AND j.status IN ('queued','running') AND COALESCE(s.notebook_id, j.notebook_id) IS NOT NULL
+         AND (j.flow_id IS NOT NULL OR j.updated_at > now() - interval '2 minutes') -- протухшие наблюдения не крутят спиннер
        GROUP BY COALESCE(s.notebook_id, j.notebook_id)`, [tenantId]);
     for (const row of gr.rows) gen[row.nb] = Number(row.n) || 0;
   } catch { /* пусто */ }
@@ -264,7 +269,8 @@ router.get('/notebook-status', async (req: AuthedRequest, res: Response) => {
     const cr = await pool.query(
       `SELECT COALESCE(s.notebook_id, j.notebook_id) AS nb, j.type AS t,
               count(*) FILTER (WHERE j.status='done')::int AS done,
-              count(*) FILTER (WHERE j.status IN ('queued','running'))::int AS gen
+              count(*) FILTER (WHERE j.status IN ('queued','running')
+                AND (j.flow_id IS NOT NULL OR j.updated_at > now() - interval '2 minutes'))::int AS gen
        FROM notebooklm_jobs j LEFT JOIN notebooklm_state s ON s.tenant_id=j.tenant_id AND s.flow_id=j.flow_id
        WHERE j.tenant_id=$1 AND COALESCE(s.notebook_id, j.notebook_id) IS NOT NULL
        GROUP BY COALESCE(s.notebook_id, j.notebook_id), j.type`, [req.tenantId]);
@@ -460,7 +466,10 @@ router.get('/counters', async (req: AuthedRequest, res: Response) => {
 router.get('/jobs', async (req: AuthedRequest, res: Response) => {
   try {
     const activeOnly = req.query.active === '1' || req.query.active === 'true';
-    const where = activeOnly ? `AND status IN ('queued','running')` : '';
+    // Протухшие наблюдаемые running (вкладку NotebookLM закрыли посреди генерации) активными не считаем.
+    const where = activeOnly
+      ? `AND status IN ('queued','running') AND (flow_id IS NOT NULL OR updated_at > now() - interval '2 minutes')`
+      : '';
     const r = await pool.query(
       `SELECT * FROM notebooklm_jobs WHERE tenant_id=$1 ${where} ORDER BY created_at DESC LIMIT 60`,
       [req.tenantId!]
