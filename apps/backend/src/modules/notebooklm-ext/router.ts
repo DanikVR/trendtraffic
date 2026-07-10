@@ -28,9 +28,11 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import pool from '../../db/index.js';
 import { createAsset, listAssets, type MediaAsset } from '../media/assets.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
+import { createHash } from 'crypto';
 import {
   HOTEBOOK_FOLDER, HOTEBOOK_DIR, EXT_MEDIA, EXT_MIME, artifactFileName,
-  claimAction, claimTask, completeAction, setPresence,
+  claimAction, claimTask, completeAction, setPresence, ingestHotebookArtifact,
+  GEN_TYPES, type GenType,
 } from '../notebooklm/ext_bridge.js';
 
 /** База64-заливка артефактов (audio/video/pdf приходят base64) — как во flow-ext. */
@@ -149,6 +151,77 @@ router.get('/poll', pollLimiter, async (req: AuthedRequest, res: Response) => {
 router.post('/presence', async (req: AuthedRequest, res: Response) => {
   void setPresence(req.tenantId!, req.body?.loggedIn !== false, req.body?.open === true);
   res.json({ ok: true });
+});
+
+/**
+ * НАБЛЮДАЕМЫЕ генерации: юзер запустил генерацию ПРЯМО в NotebookLM (не через приложение).
+ * Расширение каждые ~20с шлёт текущий список «генерируется…» открытого блокнота. Мы upsert-им
+ * их как джобы (flow_id NULL, notebook_id прямой) → индикаторы на карточках/вкладке/сайдбаре
+ * работают из коробки. Пропавшие из списка running-джобы закрываем (генерация кончилась —
+ * готовый файл придёт отдельно через /observed-ingest).
+ */
+const obsId = (tenantId: string, notebookId: string, title: string) =>
+  'obs-' + createHash('md5').update(`${tenantId}:${notebookId}:${String(title).trim().toLowerCase()}`).digest('hex').slice(0, 24);
+
+router.post('/observed', async (req: AuthedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const notebookId = String(req.body?.notebookId || '').trim();
+  const generating: { title?: string; gtype?: string }[] = Array.isArray(req.body?.generating) ? req.body.generating : [];
+  if (!/^[a-z0-9-]{8,}$/i.test(notebookId)) return res.status(400).json({ error: 'notebookId обязателен' });
+  try {
+    const ids: string[] = [];
+    for (const g of generating.slice(0, 12)) {
+      const title = String(g?.title || 'Генерация NotebookLM').slice(0, 120);
+      const type = GEN_TYPES.includes(String(g?.gtype) as GenType) ? String(g?.gtype) : 'audio';
+      const id = obsId(tenantId, notebookId, title);
+      ids.push(id);
+      await pool.query(
+        `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, notebook_id, type, params, status, title)
+         VALUES ($1,$2,NULL,$3,$4,'{}','running',$5)
+         ON CONFLICT (id) DO UPDATE SET status='running', finished_at=NULL`,
+        [id, tenantId, notebookId, type, title]
+      );
+    }
+    // Наблюдаемые running этого блокнота, которых больше нет в студии → закрыть (файл придёт /observed-ingest).
+    await pool.query(
+      `UPDATE notebooklm_jobs SET status='done', finished_at=now()
+        WHERE tenant_id=$1 AND notebook_id=$2 AND flow_id IS NULL AND status='running'
+          AND id <> ALL($3::text[])`,
+      [tenantId, notebookId, ids.length ? ids : ['-']]
+    );
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }); }
+});
+
+/**
+ * Готовая работа студии NotebookLM → Галерея. Зовётся расширением: (а) автоматически, когда
+ * наблюдаемая генерация завершилась; (б) по кнопке «в Галерею», которую расширение подставляет
+ * рядом с готовыми работами в самом NotebookLM. Аудио → kind='audio' («Видео → Аудио»),
+ * видео/картинки → reference («Видео»/«Изображение»); всё также в ленте «Hotebook» (folder).
+ */
+router.post('/observed-ingest', async (req: AuthedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const notebookId = String(req.body?.notebookId || '').trim();
+  const title = String(req.body?.title || 'Артефакт NotebookLM').slice(0, 120);
+  const gtype = GEN_TYPES.includes(String(req.body?.gtype) as GenType) ? String(req.body?.gtype) : 'audio';
+  const dataUrl = String(req.body?.dataUrl || '');
+  const mime = req.body?.mime ? String(req.body.mime) : null;
+  if (!dataUrl.startsWith('data:')) return res.status(400).json({ error: 'нет dataUrl' });
+  try {
+    // Дедуп: этот артефакт уже импортировали (двойной клик / авто+кнопка) → не плодим копии.
+    const dupId = obsId(tenantId, notebookId || 'nb', title) + '-a';
+    const dup = await pool.query(`SELECT asset_id, file_url FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2 AND asset_id IS NOT NULL`, [dupId, tenantId]);
+    if (dup.rowCount) return res.json({ ok: true, assetId: dup.rows[0].asset_id, fileUrl: dup.rows[0].file_url, dedup: true });
+    const asset = await ingestHotebookArtifact(tenantId, { dataUrl, fileName: title, mime, title, gtype });
+    // Запись «сделано» (питает счётчики ✨ на карточке блокнота) + закрыть наблюдаемую running-джобу.
+    await pool.query(
+      `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, notebook_id, type, params, status, title, asset_id, file_url, finished_at)
+       VALUES ($1,$2,NULL,$3,$4,'{}','done',$5,$6,$7,now())
+       ON CONFLICT (id) DO UPDATE SET status='done', asset_id=EXCLUDED.asset_id, file_url=EXCLUDED.file_url, finished_at=now()`,
+      [dupId, tenantId, notebookId || null, gtype, title, asset?.id || null, asset?.fileUrl || null]
+    );
+    res.json({ ok: true, assetId: asset?.id || null, fileUrl: asset?.fileUrl || null });
+  } catch (e: any) { res.status(502).json({ error: 'не удалось сохранить артефакт: ' + (e?.message || e) }); }
 });
 
 /** Расширение: результат синхронного действия → разблокирует long-poll публичного роутера. */

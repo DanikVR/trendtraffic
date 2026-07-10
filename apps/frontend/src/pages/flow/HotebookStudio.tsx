@@ -80,6 +80,12 @@ export interface HotebookStudioProps {
   hbTypes: { t: string; label: string }[];
   hbIcon: Record<string, React.ReactNode>;
   hbLabel: Record<string, string>;
+  hbNotebookId: string | null;
+  onReload: () => void;
+  hbStudioArts: { index: number; title: string; kind: string }[];
+  hbStudioLoading: boolean;
+  hbStudioDl: Set<number>;
+  hbDownloadStudioArt: (art: { index: number; title: string; kind: string }) => void;
 }
 
 const CYAN = '#22d3ee';
@@ -95,10 +101,12 @@ export function HotebookStudio(props: HotebookStudioProps) {
     hbSrcUrl, setHbSrcUrl, hbSrcBusy, hbChatQ, setHbChatQ, hbChatBusy, hbPlayId, setHbPlayId,
     hbRefreshStatus, hbAddUrl, setHbTextOpen, hbOpenPick, hbDelSource, hbAsk, hbOpenGen, setHbView, onClose,
     hbTypes, hbIcon, hbLabel,
+    hbNotebookId, onReload, hbStudioArts, hbStudioLoading, hbStudioDl, hbDownloadStudioArt,
   } = props;
 
   const genToday = Object.values(hbCounters).reduce((s, n) => s + (n || 0), 0);
   const noSources = hbSources.length === 0;
+  const nbUrl = hbNotebookId ? `https://notebooklm.google.com/notebook/${hbNotebookId}` : 'https://notebooklm.google.com';
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
@@ -120,8 +128,11 @@ export function HotebookStudio(props: HotebookStudioProps) {
         {hbStatus?.ok
           ? <span className="text-[11px] font-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}><Check size={12} /> на связи</span>
           : <span className="text-[11px] font-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'rgba(245,158,11,0.14)', color: '#f59e0b' }}><AlertTriangle size={12} /> не на связи</span>}
-        <button onClick={() => hbRefreshStatus(true)} title="Проверить подключение" style={iconBtn}><RefreshCw size={14} /></button>
-        <button onClick={() => window.open('https://notebooklm.google.com', '_blank', 'noopener')}
+        <button onClick={onReload} title="Обновить: статус, источники, чат и готовые работы" style={iconBtn}>
+          <RefreshCw size={14} className={hbLoading || hbStudioLoading ? 'animate-spin' : ''} />
+        </button>
+        <button onClick={() => window.open(nbUrl, '_blank', 'noopener')}
+          title={hbNotebookId ? 'Открыть ЭТОТ блокнот в NotebookLM' : 'Открыть NotebookLM'}
           className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-1.5 rounded-lg"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
           <ExternalLink size={14} /> Открыть NotebookLM
@@ -148,60 +159,58 @@ export function HotebookStudio(props: HotebookStudioProps) {
       {/* ── Тело: 3 колонки ── */}
       <div className="flex-1 min-h-0" style={{ display: 'flex', overflow: 'hidden' }}>
 
-        {/* ===== Колонка 1: ИСТОЧНИКИ ===== */}
-        <aside className="p-3.5 space-y-2.5" style={{ width: 340, flexShrink: 0, borderRight: '1px solid var(--border-subtle)', overflowY: 'auto', background: 'var(--bg-secondary)' }}>
-          <div className={colHead} style={{ color: 'var(--text-muted)' }}>
-            <Globe size={13} style={{ color: CYAN }} /> Источники {hbSources.length > 0 && `· ${hbSources.length}`}
-            {hbLoading && <Loader2 size={11} className="animate-spin" />}
+        {/* ===== Колонка 1: ИСТОЧНИКИ (шапка+ввод закреплены, СПИСОК скроллится) ===== */}
+        <aside className="flex flex-col" style={{ width: 340, flexShrink: 0, borderRight: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
+          <div className="p-3.5 space-y-2.5 flex-shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <div className={colHead} style={{ color: 'var(--text-muted)' }}>
+              <Globe size={13} style={{ color: CYAN }} /> Источники {hbSources.length > 0 && `· ${hbSources.length}`}
+              {hbLoading && <Loader2 size={11} className="animate-spin" />}
+            </div>
+            <div className="flex gap-1.5">
+              <input value={hbSrcUrl} onChange={(e) => setHbSrcUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') hbAddUrl(); }}
+                placeholder="Ссылка: статья, сайт или YouTube…" className="flex-1 min-w-0 px-2.5 py-2 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+              <button onClick={() => hbAddUrl()} disabled={hbSrcBusy || !hbSrcUrl.trim()} title="Добавить ссылку"
+                className="px-3 rounded-lg text-xs font-700 inline-flex items-center gap-1 disabled:opacity-50"
+                style={{ background: CYAN, color: '#083344', border: 'none', cursor: 'pointer' }}>
+                {hbSrcBusy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              <button onClick={() => setHbTextOpen(true)} disabled={hbSrcBusy}
+                className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <Type size={12} /> Вставить текст
+              </button>
+              <button onClick={() => hbOpenPick()} disabled={hbSrcBusy}
+                className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <Paperclip size={12} /> Файл из Галереи
+              </button>
+            </div>
+            {hbOk && <p className="text-[11px] inline-flex items-center gap-1.5" style={{ color: '#10b981' }}><Check size={12} /> {hbOk}</p>}
           </div>
 
-          {/* добавить ссылку */}
-          <div className="flex gap-1.5">
-            <input value={hbSrcUrl} onChange={(e) => setHbSrcUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') hbAddUrl(); }}
-              placeholder="Ссылка: статья, сайт или YouTube…" className="flex-1 min-w-0 px-2.5 py-2 rounded-lg text-xs outline-none"
-              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-            <button onClick={() => hbAddUrl()} disabled={hbSrcBusy || !hbSrcUrl.trim()} title="Добавить ссылку"
-              className="px-3 rounded-lg text-xs font-700 inline-flex items-center gap-1 disabled:opacity-50"
-              style={{ background: CYAN, color: '#083344', border: 'none', cursor: 'pointer' }}>
-              {hbSrcBusy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-            </button>
+          {/* СПИСОК источников — скроллится независимо (много источников: листаются вверх/вниз) */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1">
+            {hbSources.length > 0 ? hbSources.map((s: any, i: number) => {
+              const sid = s.id || s.source_id || String(i);
+              const title = s.title || s.name || s.url || 'источник';
+              return (
+                <div key={sid} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                  <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text-primary)' }} title={title}>{title}</span>
+                  <button onClick={() => hbDelSource(sid)} title="Удалить источник" className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
+                </div>
+              );
+            }) : (
+              <div className="rounded-xl p-4 text-center" style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-medium)' }}>
+                <FileText size={22} style={{ color: 'var(--text-disabled)', margin: '0 auto 6px' }} />
+                <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Пока нет источников. Добавьте ссылку, текст или файл — тогда заработают чат и студия.</p>
+              </div>
+            )}
           </div>
-          <div className="flex gap-1.5">
-            <button onClick={() => setHbTextOpen(true)} disabled={hbSrcBusy}
-              className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-              style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-              <Type size={12} /> Вставить текст
-            </button>
-            <button onClick={() => hbOpenPick()} disabled={hbSrcBusy}
-              className="flex-1 py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-              style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-              <Paperclip size={12} /> Файл из Галереи
-            </button>
-          </div>
-          {hbOk && <p className="text-[11px] inline-flex items-center gap-1.5" style={{ color: '#10b981' }}><Check size={12} /> {hbOk}</p>}
-
-          {/* список источников */}
-          {hbSources.length > 0 ? (
-            <div className="space-y-1">
-              {hbSources.map((s: any, i: number) => {
-                const sid = s.id || s.source_id || String(i);
-                const title = s.title || s.name || s.url || 'источник';
-                return (
-                  <div key={sid} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                    <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                    <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text-primary)' }} title={title}>{title}</span>
-                    <button onClick={() => hbDelSource(sid)} title="Удалить источник" className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={11} /></button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-xl p-4 text-center" style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-medium)' }}>
-              <FileText size={22} style={{ color: 'var(--text-disabled)', margin: '0 auto 6px' }} />
-              <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Пока нет источников. Добавьте ссылку, текст или файл — тогда заработают чат и студия.</p>
-            </div>
-          )}
         </aside>
 
         {/* ===== Колонка 2: ЧАТ ===== */}
@@ -295,7 +304,33 @@ export function HotebookStudio(props: HotebookStudioProps) {
             })}
           </div>
 
-          {/* артефакты */}
+          {/* Готовые работы, СДЕЛАННЫЕ В NotebookLM (не нами) — импорт в Галерею по кнопке «Загрузить» */}
+          {(hbStudioArts.length > 0 || hbStudioLoading) && (
+            <div className="pt-1">
+              <div className="text-[11px] font-700 uppercase tracking-wide mb-1.5 inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                Готовое в NotebookLM {hbStudioLoading && <Loader2 size={11} className="animate-spin" />}
+              </div>
+              <div className="space-y-1.5">
+                {hbStudioArts.map((a) => {
+                  const dl = hbStudioDl.has(a.index);
+                  return (
+                    <div key={a.index} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                      <span style={{ color: CYAN, flexShrink: 0 }}>{a.kind === 'media' ? <Play size={14} /> : <FileText size={14} />}</span>
+                      <span className="text-[11px] font-600 truncate flex-1" style={{ color: 'var(--text-primary)' }} title={a.title}>{a.title}</span>
+                      <button onClick={() => hbDownloadStudioArt(a)} disabled={dl} title="Скачать в Галерею → Hotebook"
+                        className="text-[10px] font-700 px-2 py-1 rounded-lg flex-shrink-0 inline-flex items-center gap-1 disabled:opacity-60"
+                        style={{ background: CYAN, color: '#083344', border: 'none', cursor: dl ? 'default' : 'pointer' }}>
+                        {dl ? <><Loader2 size={11} className="animate-spin" /> Гружу…</> : <><Download size={11} /> Загрузить</>}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[9px] mt-1" style={{ color: 'var(--text-muted)' }}>Работы, сделанные прямо в NotebookLM. «Загрузить» — скачает в Галерею → «Hotebook».</p>
+            </div>
+          )}
+
+          {/* артефакты (наши джобы) */}
           <div className="pt-1">
             <div className="text-[11px] font-700 uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>Артефакты</div>
             {hbJobs.length === 0 ? (

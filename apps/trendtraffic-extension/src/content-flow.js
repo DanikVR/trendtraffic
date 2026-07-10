@@ -744,7 +744,10 @@
       return true; // ответ асинхронный
     }
     if (msg.type === 'run-task') {
-      runTask(msg.task).then(sendResponse).catch((e) => sendResponse({ ok: false, reason: String(e && e.message || e) }));
+      flowTaskBusy = true; // вотчер проектов не трогает страницу, пока идёт задача очереди
+      runTask(msg.task)
+        .then((r) => { flowTaskBusy = false; sendResponse(r); })
+        .catch((e) => { flowTaskBusy = false; sendResponse({ ok: false, reason: String(e && e.message || e) }); });
       return true; // async
     }
     if (msg.type === 'inject-url') {
@@ -753,6 +756,74 @@
       return true; // async
     }
   });
+
+  // ── ВОТЧЕР ПРОЕКТА FLOW: юзер генерит ПРЯМО в Flow ─────────────────────────
+  // Каждые ~25с на странице /project/<id>: (1) идёт генерация → индикатор на карточке проекта в
+  // Галерее; (2) НОВЫЕ готовые клипы (появились после наблюдавшейся генерации) → авто-заливка в
+  // Галерею → «Видео». Старые клипы (домотал страницу) в Галерею НЕ тянем — только в базлайн.
+  let flowTaskBusy = false;
+  let flowWatcherBusy = false;
+  let sawGeneratingAt = 0;
+  const FLOW_GEN_RE = /(generating|генерир|создаётся|создается)/i;
+  const flowProjectId = () => { const m = /\/project\/([a-z0-9-]+)/i.exec(location.href); return m ? m[1] : null; };
+  function flowGeneratingCount() {
+    let n = 0;
+    for (const el of queryAllDeep('div,span,p')) {
+      if (!visible(el)) continue;
+      const t = (el.textContent || '').trim();
+      if (!t || t.length > 80) continue;
+      const leaf = ![...(el.children || [])].some((c) => (c.textContent || '').trim().length > 0);
+      if (!leaf) continue;
+      if (FLOW_GEN_RE.test(t) || /^\d{1,3}\s?%$/.test(t)) { n++; if (n >= 20) break; }
+    }
+    return n;
+  }
+  const videoKey = (el) => {
+    const src = usableMediaSrc(el) || '';
+    if (/^https?:/i.test(src)) { try { const u = new URL(src); return u.origin + u.pathname; } catch { return src.slice(0, 200); } }
+    const d = Math.round((el.duration || 0) * 10);
+    return 'blob:' + d + ':' + (el.videoWidth || el.clientWidth) + 'x' + (el.videoHeight || el.clientHeight);
+  };
+  const flowStorageGet = (k) => new Promise((res) => { try { chrome.storage.local.get(k, (d) => res(d && d[k])); } catch { res(undefined); } });
+  const flowStorageSet = (k, v) => new Promise((res) => { try { chrome.storage.local.set({ [k]: v }, () => res()); } catch { res(); } });
+  async function flowProjectWatcher() {
+    if (flowWatcherBusy || flowTaskBusy) return;
+    const pid = flowProjectId();
+    if (!pid) return;
+    flowWatcherBusy = true;
+    try {
+      const gen = flowGeneratingCount();
+      if (gen > 0) sawGeneratingAt = Date.now();
+      // индикатор на карточке проекта в Галерее (сброс в 0 гасит спиннер)
+      send({ type: 'flow-observed', projectId: pid, title: (document.title || 'Flow').slice(0, 80), generating: gen });
+      const vids = queryAllDeep('video').filter(visible).filter(usableMediaSrc);
+      const key = 'flowSeen:' + pid;
+      const seen = await flowStorageGet(key);
+      const keys = vids.map(videoKey);
+      if (!Array.isArray(seen)) { await flowStorageSet(key, keys.slice(0, 300)); return; } // первый визит — базлайн
+      const freshIdx = keys.map((k, i) => (seen.includes(k) ? -1 : i)).filter((i) => i >= 0);
+      const recentlyGenerated = Date.now() - sawGeneratingAt < 6 * 60_000;
+      if (freshIdx.length && gen === 0 && recentlyGenerated) {
+        // генерация только что кончилась → новые клипы в Галерею → «Видео»
+        for (const i of freshIdx.slice(0, 2)) {
+          const el = vids[i];
+          ui.line('новый клип готов — заливаю в Галерею…');
+          const data = await grabMediaData(el);
+          if (!data.dataUrl && !data.sourceUrl) continue;
+          const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
+          if (r && r.ok) { seen.push(keys[i]); ui.line('✓ клип в Галерее → «Видео»'); }
+          else ui.line('⚠ клип не сохранился: ' + ((r && r.error) || 'нет подключения'));
+        }
+      } else if (freshIdx.length) {
+        // старые клипы (скролл/ленивая подгрузка) — просто запоминаем, НЕ заливаем
+        for (const i of freshIdx) seen.push(keys[i]);
+      }
+      await flowStorageSet(key, seen.slice(-300));
+    } catch { /* не мешаем работе юзера */ }
+    finally { flowWatcherBusy = false; }
+  }
+  setInterval(() => { void flowProjectWatcher(); }, 25_000);
+  setTimeout(() => { void flowProjectWatcher(); }, 5000);
 
   // ---------- старт ----------
   injectInterceptor();

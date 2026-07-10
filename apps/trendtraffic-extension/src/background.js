@@ -743,6 +743,62 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         resolveNlmEvent('create-done', msg.actionId, { notebookId: msg.notebookId, title: msg.title });
         sendResponse({ ok: true });
         break;
+      case 'nlm-open-notebook': {
+        // Клик по карточке блокнота в Галерее → открыть/сфокусировать вкладку NotebookLM на этом
+        // блокноте (ensureNotebookTab сохраняет authuser рабочей вкладки).
+        try {
+          const tabId = await ensureNotebookTab(msg.notebookId || null, true);
+          if (tabId != null) {
+            const t = await chrome.tabs.update(tabId, { active: true });
+            try { if (t && t.windowId != null) await chrome.windows.update(t.windowId, { focused: true }); } catch { /* */ }
+            sendResponse({ ok: true });
+          } else sendResponse({ ok: false });
+        } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
+        break;
+      }
+      case 'nlm-observed':
+        // Наблюдаемые генерации (запущены юзером прямо в NotebookLM) → индикаторы в приложении.
+        sendResponse({ ok: true });
+        void (async () => {
+          if (!STATE.token || !STATE.apiBase) await loadState();
+          if (!STATE.token || !STATE.apiBase || !msg.notebookId) return;
+          try {
+            await fetch(api('/api/notebooklm-ext/observed'), {
+              method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ notebookId: msg.notebookId, generating: Array.isArray(msg.generating) ? msg.generating : [] }),
+            });
+          } catch { /* best-effort */ }
+        })();
+        break;
+      case 'nlm-observed-artifact':
+        // Готовая работа студии NotebookLM (авто-подхват или кнопка «в Галерею») → Галерея.
+        void (async () => {
+          if (!STATE.token || !STATE.apiBase) await loadState();
+          if (!STATE.token || !STATE.apiBase || !msg.dataUrl) { sendResponse({ ok: false, error: 'не подключено' }); return; }
+          try {
+            const res = await fetch(api('/api/notebooklm-ext/observed-ingest'), {
+              method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ notebookId: msg.notebookId || null, title: msg.title || null, gtype: msg.gtype || null, dataUrl: msg.dataUrl, mime: msg.mime || null }),
+            });
+            const d = await res.json().catch(() => ({}));
+            sendResponse({ ok: res.ok && d.ok !== false, dedup: !!d.dedup, error: d.error || null });
+          } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
+        })();
+        break;
+      case 'flow-observed':
+        // Наблюдаемые генерации Flow (юзер запустил прямо в Flow) → спиннер на карточке проекта.
+        sendResponse({ ok: true });
+        void (async () => {
+          if (!STATE.token || !STATE.apiBase) await loadState();
+          if (!STATE.token || !STATE.apiBase || !msg.projectId) return;
+          try {
+            await fetch(api('/api/flow-ext/observed'), {
+              method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ projectId: msg.projectId, title: msg.title || null, generating: msg.generating || 0 }),
+            });
+          } catch { /* best-effort */ }
+        })();
+        break;
       case 'nlm-artifact-ready':
         // РЕЗЕРВНЫЙ путь ингеста: контент-скрипт (живёт вместе с вкладкой) поймал байты артефакта и
         // будит SW этим сообщением. Если SW умирал во время 6–12-мин генерации и осн. путь (awaited

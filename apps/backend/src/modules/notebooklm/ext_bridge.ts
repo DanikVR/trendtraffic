@@ -23,6 +23,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import pool from '../../db/index.js';
+import { createAsset, type MediaAsset } from '../media/assets.js';
 
 const __dirname_b = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +53,56 @@ export const EXT_MIME: Record<string, string> = {
   '.pdf': 'application/pdf', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   '.md': 'text/markdown', '.json': 'application/json', '.csv': 'text/csv', '.html': 'text/html',
 };
+
+/** Расширение файла по имени/мим (для сохранения артефакта на диск). */
+export function extOf(fileName: string | null, mime: string | null): string {
+  const fromName = fileName ? path.extname(fileName).toLowerCase() : '';
+  if (fromName && fromName.length <= 6) return fromName;
+  const m = String(mime || '').toLowerCase();
+  if (m.includes('mpeg') || m.includes('mp3')) return '.mp3';
+  if (m.includes('mp4')) return m.includes('audio') ? '.m4a' : '.mp4';
+  if (m.includes('webm')) return '.webm';
+  if (m.includes('png')) return '.png';
+  if (m.includes('jpeg') || m.includes('jpg')) return '.jpg';
+  if (m.includes('pdf')) return '.pdf';
+  if (m.includes('csv')) return '.csv';
+  if (m.includes('markdown')) return '.md';
+  if (m.includes('json')) return '.json';
+  return '.bin';
+}
+
+/** Сохранить base64-dataUrl артефакта в uploads/hotebook. */
+export function saveHotebookDataUrl(dataUrl: string, id: string, extHint: string): { fileUrl: string; filePath: string; size: number; mime: string; ext: string } {
+  const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+  if (!m) throw new Error('неверный dataUrl');
+  const mime = m[1] || 'application/octet-stream';
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length < 16) throw new Error('пустой артефакт');
+  const ext = extHint || extOf(null, mime);
+  fs.mkdirSync(HOTEBOOK_DIR, { recursive: true });
+  const name = `${id}${ext}`;
+  const filePath = path.join(HOTEBOOK_DIR, name);
+  fs.writeFileSync(filePath, buf);
+  return { fileUrl: `/uploads/hotebook/${name}`, filePath, size: buf.length, mime, ext };
+}
+
+/**
+ * Залить готовый артефакт (base64) в Галерею (folder='hotebook'). Аудио → kind='audio' (виден и в
+ * «Видео → Аудио»). Используется и расширением (/ingest), и импортом готовых работ студии.
+ */
+export async function ingestHotebookArtifact(
+  tenantId: string, opts: { dataUrl: string; fileName?: string | null; mime?: string | null; title?: string | null; gtype?: string }
+): Promise<MediaAsset | null> {
+  const stored = saveHotebookDataUrl(opts.dataUrl, randomUUID(), extOf(opts.fileName || null, opts.mime || null));
+  const mediaType = EXT_MEDIA[stored.ext] || 'file';
+  return createAsset(tenantId, {
+    kind: mediaType === 'audio' ? 'audio' : 'reference',
+    mediaType,
+    originalName: artifactFileName(opts.title || opts.fileName || null, opts.gtype || 'artifact', stored.ext),
+    fileUrl: stored.fileUrl, filePath: stored.filePath, mime: EXT_MIME[stored.ext] || stored.mime, size: stored.size,
+    folder: HOTEBOOK_FOLDER,
+  });
+}
 
 /** Имя файла артефакта в Галерее: «<Название> — <тип>.ext» либо «Hotebook — <тип> · дата.ext». */
 export function artifactFileName(title: string | null | undefined, gtype: string, ext: string): string {
@@ -213,6 +264,7 @@ export async function claimTask(tenantId: string): Promise<ExtTask | null> {
       WHERE j.id IN (
         SELECT id FROM notebooklm_jobs
          WHERE tenant_id=$1
+           AND flow_id IS NOT NULL -- наблюдаемые (flow_id NULL) НЕ раздаём как задачи генерации
            AND (status='queued' OR (status='running' AND created_at < now() - interval '15 minutes'))
          ORDER BY created_at ASC LIMIT 1
          FOR UPDATE SKIP LOCKED

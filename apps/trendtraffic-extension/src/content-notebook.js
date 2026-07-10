@@ -603,10 +603,25 @@
   // (aria «Поле для запросов»); кнопка отправки чата = иконка arrow_forward (у поиска источников
   // ДРУГАЯ кнопка «Отправить» с иконкой search — раньше кликали её → чат не слался → зависание);
   // ответ ассистента = .to-user-container (реплика юзера = .from-user-container).
+  // ТОЧНО поле чата (не путать с полем ПОИСКА ИСТОЧНИКОВ): placeholder «Введите текст…» /
+  // aria «Поле для запросов» / mat-mdc-autocomplete-trigger. Исключаем query-box поиска источников.
+  function findChatInput() {
+    const isSearch = (el) => /найдите нов|источник|на основе введ|query-box/i.test(
+      norm((el.getAttribute && el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute && el.getAttribute('placeholder') || '') + ' ' + (el.className || '')));
+    const exact = queryAllDeep('textarea[placeholder*="введите текст" i],textarea[aria-label*="поле для запрос" i],textarea.mat-mdc-autocomplete-trigger,div[contenteditable="true"][role="textbox"]')
+      .filter(visible).filter((e) => !isSearch(e));
+    if (exact.length) return exact[exact.length - 1];
+    const any = queryAllDeep('textarea').filter(visible).filter((e) => !isSearch(e));
+    return any.length ? any[any.length - 1] : null;
+  }
   async function chat(question) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     ui.task('Спрашиваю: ' + String(question || '').slice(0, 60));
-    const inp = pickDeep(SEL.chatInput);
+    // Поле чата рендерится не мгновенно (после прошлого ответа панель перерисовывается, стриминг) —
+    // ждём его до ~15с, а не падаем сразу (частая ошибка selector:chatInput = гонка, 2-й вопрос).
+    let inp = null;
+    const inpT0 = Date.now();
+    while (Date.now() - inpT0 < 15_000) { inp = findChatInput(); if (inp) break; await sleep(600); }
     if (!inp) return { ok: false, reason: 'selector:chatInput' };
     typeInto(inp, question || '');
     await sleep(400);
@@ -746,6 +761,7 @@
       if (!cap0) return { ok: false, reason: 'timeout' };
       if (cap0.reason) return { ok: false, reason: cap0.reason };
       ui.line('✓ артефакт готов (' + gtype + ')');
+      void markAllStudioSeen(); // наша джоба сама зальёт файл — вотчер не должен дублировать
       return { ok: true, ...cap0, fileName: (baseName(params) || gtype) + spec.ext, mime: spec.mime };
     }
     await sleep(1000);
@@ -772,6 +788,7 @@
     if (!captured) return { ok: false, reason: 'timeout' };
     if (captured.reason) return { ok: false, reason: captured.reason };
     ui.line('✓ артефакт готов (' + gtype + ')');
+    void markAllStudioSeen(); // наша джоба сама зальёт файл — вотчер не должен дублировать
     return { ok: true, ...captured, fileName: (baseName(params) || gtype) + spec.ext, mime: spec.mime };
   }
   const baseName = (p) => (p && p.__name) ? String(p.__name).slice(0, 80) : '';
@@ -832,6 +849,199 @@
     await sleep(1500);
     return true;
   }
+
+  // ── УЖЕ ГОТОВЫЕ работы студии в открытом блокноте (не наши джобы) ──
+  // Разведано: карточка готовой работы = контейнер с длительностью m:ss / типом + кнопки
+  // «Воспроизвести» (▶) и «Ещё» (⋮). Собираем их, чтобы показать в приложении с кнопкой «Загрузить».
+  const DUR_RE = /\b\d{1,2}:\d\d\b/;
+  const ARTKIND_RE = /подробный анализ|краткий обзор|дебаты|рецензи|пояснительн|пояснящее|обзор|аудиопересказ|видеопересказ|отч[её]т|тест|таблиц|инфографик|карточк|ментальн|презентаци|slide|report/i;
+  function studioArtifactCards() {
+    const cards = [];
+    const seen = new Set();
+    const moreBtns = queryAllDeep('button,[role="button"]').filter(visible)
+      .filter((b) => /more_vert|^ещё$/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
+    for (const mb of moreBtns) {
+      // поднимаемся к карточке артефакта (где рядом длительность/тип)
+      let card = mb;
+      for (let i = 0; i < 7 && card; i++) {
+        const txt = clean(card.textContent);
+        if (DUR_RE.test(txt) || ARTKIND_RE.test(txt)) break;
+        card = card.parentElement;
+      }
+      if (!card) continue;
+      const full = clean(card.textContent);
+      if (!(DUR_RE.test(full) || ARTKIND_RE.test(full))) continue; // не карточка артефакта (напр. ⋮ источника)
+      if (seen.has(card)) continue; seen.add(card);
+      // заголовок = текст ДО длительности/типа; чистим служебное
+      let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '').replace(/more_vert|play_arrow|воспроизвести|ещё/gi, '').trim();
+      if (!title || title.length < 2) title = 'Артефакт NotebookLM';
+      const hasPlay = [...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])]
+        .some((b) => /play_arrow|воспроизвести/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
+      cards.push({ el: card, more: mb, title: title.slice(0, 120), kind: hasPlay ? 'media' : 'doc' });
+    }
+    return cards;
+  }
+  async function listStudioArtifacts() {
+    if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    // студия рендерится не сразу после навигации — ждём карточки до ~10с
+    let cards = [];
+    const t0 = Date.now();
+    while (Date.now() - t0 < 10_000) { cards = studioArtifactCards(); if (cards.length) break; await sleep(700); }
+    return { ok: true, artifacts: cards.map((c, i) => ({ index: i, title: c.title, kind: c.kind })) };
+  }
+  async function downloadStudioArtifact(payload) {
+    if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    let cards = [];
+    const t0 = Date.now();
+    while (Date.now() - t0 < 10_000) { cards = studioArtifactCards(); if (cards.length) break; await sleep(700); }
+    const idx = (typeof payload.index === 'number') ? payload.index : -1;
+    const card = (idx >= 0 && idx < cards.length) ? cards[idx]
+      : cards.find((c) => payload.title && norm(c.title).includes(norm(String(payload.title).slice(0, 40))));
+    if (!card) return { ok: false, reason: 'artifact-not-found' };
+    lastArtifact = null;
+    clickEl(card.more);
+    await sleep(1000);
+    const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
+      .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+    if (!item) return { ok: false, reason: 'selector:download-item' };
+    clickEl(item);
+    await sleep(1500);
+    // ждём перехваченные байты (injected-nlm) до ~30с
+    const wt0 = Date.now();
+    while (Date.now() - wt0 < 30_000) {
+      if (lastArtifact && lastArtifact.dataUrl) return { ok: true, dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || '', fileName: card.title };
+      await sleep(500);
+    }
+    return { ok: false, reason: 'не удалось перехватить скачивание артефакта' };
+  }
+
+  // ── ВОТЧЕР СТУДИИ: юзер работает ПРЯМО в NotebookLM ─────────────────────────
+  // Каждые ~20с: (1) карточки «генерируется…» → индикаторы в приложении; (2) НОВЫЕ готовые
+  // работы (нет в базлайне) → авто-скачивание в Галерею; (3) кнопка «в Галерею» у каждой готовой.
+  function detectGtype(text) {
+    const t = norm(text);
+    if (/видео|video/.test(t)) return 'video';
+    if (/презентац|slide/.test(t)) return 'slides';
+    if (/отч[её]т|report|брифинг|учебное|блог/.test(t)) return 'report';
+    if (/тест|quiz/.test(t)) return 'quiz';
+    if (/таблиц|table/.test(t)) return 'table';
+    if (/инфографик|infographic/.test(t)) return 'infographic';
+    if (/карточк|flashcard/.test(t)) return 'flashcards';
+    if (/ментальн|mind\s?map/.test(t)) return 'mindmap';
+    return 'audio'; // m:ss / подробный анализ / дебаты / краткий обзор
+  }
+  const GENERATING_RE = /генерируется|создаём|создаем|создаётся|создается|generating/i;
+  function studioGeneratingCards() {
+    // блоки с текстом «…генерируется…» — берём КОРОТКИЕ листовые контейнеры (не весь body)
+    const hits = [];
+    for (const el of queryAllDeep('div,span,section,li')) {
+      if (!visible(el)) continue;
+      const t = clean(el.textContent);
+      if (!t || t.length > 160 || !GENERATING_RE.test(t)) continue;
+      if ([...(el.children || [])].some((c) => GENERATING_RE.test(clean(c.textContent)))) continue; // не листовой
+      hits.push(t);
+      if (hits.length >= 8) break;
+    }
+    // заголовок = часть до «генерируется»; тип — по нему же
+    return [...new Set(hits)].map((t) => {
+      const title = t.split(/генерируется|создаётся|создается|generating/i)[0].trim().slice(0, 120) || 'Генерация NotebookLM';
+      return { title, gtype: detectGtype(t) };
+    });
+  }
+  const seenKey = (nbId) => 'nlmSeen:' + nbId;
+  const storageGet = (k) => new Promise((res) => { try { chrome.storage.local.get(k, (d) => res(d && d[k])); } catch { res(undefined); } });
+  const storageSet = (k, v) => new Promise((res) => { try { chrome.storage.local.set({ [k]: v }, () => res()); } catch { res(); } });
+  async function markAllStudioSeen() {
+    const nbId = notebookIdFromUrl();
+    if (!nbId) return;
+    const titles = studioArtifactCards().map((c) => norm(c.title));
+    await storageSet(seenKey(nbId), titles);
+  }
+  // Кнопка «в Галерею» рядом с готовой работой студии (инжект в саму страницу NotebookLM).
+  function injectGalleryButtons(cards) {
+    for (const c of cards) {
+      try {
+        if (!c.more || !c.more.parentElement) continue;
+        if (c.more.parentElement.querySelector('.tt-dl-btn')) continue;
+        const btn = document.createElement('button');
+        btn.className = 'tt-dl-btn';
+        btn.type = 'button';
+        btn.title = 'Скачать в Галерею TrendTraffic';
+        btn.textContent = '⬇TT';
+        btn.style.cssText = 'margin:0 4px;padding:2px 7px;border:none;border-radius:8px;background:#22d3ee;color:#083344;font:700 10px ui-sans-serif,system-ui;cursor:pointer;vertical-align:middle;';
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (btn.dataset.busy) return;
+          btn.dataset.busy = '1'; btn.textContent = '…'; btn.style.opacity = '0.7';
+          const r = await captureCardToGallery(c);
+          btn.dataset.busy = ''; btn.style.opacity = '1';
+          btn.textContent = r && r.ok ? '✓' : '⚠';
+          setTimeout(() => { btn.textContent = '⬇TT'; }, 4000);
+        });
+        c.more.insertAdjacentElement('beforebegin', btn);
+      } catch { /* карточка перерисовалась */ }
+    }
+  }
+  // Скачать конкретную карточку (⋮→Скачать→blob) и отдать в Галерею через background.
+  let watcherBusy = false;
+  async function captureCardToGallery(card) {
+    const nbId = notebookIdFromUrl();
+    lastArtifact = null;
+    clickEl(card.more);
+    await sleep(1000);
+    const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
+      .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+    if (!item) { ui.line('⚠ у «' + card.title.slice(0, 30) + '» нет пункта «Скачать»'); return { ok: false }; }
+    clickEl(item);
+    const wt0 = Date.now();
+    while (Date.now() - wt0 < 30_000) {
+      if (lastArtifact && lastArtifact.dataUrl) break;
+      await sleep(500);
+    }
+    if (!lastArtifact || !lastArtifact.dataUrl) { ui.line('⚠ не перехватил файл «' + card.title.slice(0, 30) + '»'); return { ok: false }; }
+    const r = await send({
+      type: 'nlm-observed-artifact', notebookId: nbId, title: card.title,
+      gtype: detectGtype((card.el && card.el.textContent) || card.title), dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || '',
+    });
+    if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
+    else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
+    return r || { ok: false };
+  }
+  const autoTried = new Map(); // title → попытки (не долбим бесконечно упавший авто-подхват)
+  async function studioWatcher() {
+    if (watcherBusy || actionBusy) return; // не мешаем идущей команде (generate/chat кликают в DOM)
+    const nbId = notebookIdFromUrl();
+    if (!nbId || !isLoggedIn()) return;
+    watcherBusy = true;
+    try {
+      const ready = studioArtifactCards();
+      const gen = studioGeneratingCards();
+      injectGalleryButtons(ready);
+      // индикаторы в приложении (спиннер на карточке блокнота/вкладке/сайдбаре)
+      send({ type: 'nlm-observed', notebookId: nbId, generating: gen });
+      const key = seenKey(nbId);
+      const seen = await storageGet(key);
+      if (!Array.isArray(seen)) {
+        // первый визит в блокнот: существующие работы — базлайн (их НЕ авто-качаем; для них кнопки)
+        await storageSet(key, ready.map((c) => norm(c.title)));
+        return;
+      }
+      const fresh = ready.filter((c) => !seen.includes(norm(c.title)));
+      for (const c of fresh.slice(0, 2)) { // максимум 2 за цикл — не заваливаем
+        const tries = autoTried.get(norm(c.title)) || 0;
+        if (tries >= 2) { seen.push(norm(c.title)); continue; } // 2 неудачи → сдаёмся, кнопка остаётся
+        autoTried.set(norm(c.title), tries + 1);
+        ui.line('новая работа студии: «' + c.title.slice(0, 40) + '» — качаю в Галерею…');
+        const r = await captureCardToGallery(c);
+        if (r && r.ok) seen.push(norm(c.title));
+      }
+      await storageSet(key, seen);
+    } catch { /* не мешаем работе юзера */ }
+    finally { watcherBusy = false; }
+  }
+  setInterval(() => { void studioWatcher(); }, 20_000);
+  setTimeout(() => { void studioWatcher(); }, 4000);
+
   function pickMedia(gtype) {
     if (gtype === 'infographic') return queryAllDeep('img').filter(visible).filter((i) => i.clientWidth >= 200 && i.clientHeight >= 200).sort(byArea)[0] || null;
     const tag = gtype === 'video' ? 'video' : 'audio';
@@ -918,11 +1128,19 @@
 
   // ── команды от background ──
   let currentActionId = null;
+  let actionBusy = false; // пока выполняется команда — вотчер студии не трогает DOM (не рвёт клики)
   async function runAction(a) {
     currentActionId = a.id || null;
+    actionBusy = true;
+    try { return await runActionInner(a); }
+    finally { actionBusy = false; }
+  }
+  async function runActionInner(a) {
     switch (a.kind) {
       case 'create-notebook': return createNotebook(a.payload && a.payload.title);
       case 'list-notebooks':  return listNotebooks();
+      case 'list-studio-artifacts': return listStudioArtifacts();
+      case 'download-studio-artifact': return downloadStudioArtifact(a.payload || {});
       case 'add-source':      return addSource(a.payload || a);
       case 'list-sources':    return listSources();
       case 'list-chat':       return listChat();

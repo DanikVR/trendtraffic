@@ -2400,11 +2400,28 @@
  *          как раньше. Верхний бар: Выход + Название + статус + Проверить/Открыть NotebookLM. Точки
  *          входа (карточка блокнота / «+ Добавить» в Галерее) не меняются — модалка просто заменена
  *          полноэкранной студией. Файлы: HotebookStudio.tsx (new), MontageEditor.tsx, AppVersion. */
-export const APP_VERSION = '2.2.28';
+/* 2.2.29 — Hotebook/Flow: НОВЫЙ ПРИНЦИП «работай в сервисе, готовое само падает в Галерею»
+ *          (ext 1.3.18). Hotebook: (1) клик по карточке блокнота открывает САМ NotebookLM на этом
+ *          блокноте (через расширение — сохраняет authuser рабочей вкладки; фолбэк window.open);
+ *          «+ Добавить» → notebooklm.google.com; встроенная студия TT остаётся в системе, но не
+ *          открывается по клику. (2) Расширение-ВОТЧЕР каждые ~20с: карточки «генерируется…» →
+ *          индикаторы на карточке блокнота/вкладке/сайдбаре (наблюдаемые джобы: notebook_id прямой,
+ *          flow_id NULL, POST /notebooklm-ext/observed); НОВЫЕ готовые работы студии (нет в базлайне)
+ *          АВТОМАТИЧЕСКИ скачиваются в Галерею (⋮→Скачать→blob→/observed-ingest) и сортируются:
+ *          аудио→«Аудио», видео→«Видео», картинки→«Изображение» (+лента «Hotebook»). (3) У КАЖДОЙ
+ *          готовой работы прямо в NotebookLM появляется кнопка «⬇TT» — скачать в Галерею вручную
+ *          (старые работы авто не тянем — базлайн). (4) Чат: findChatInput точно целится в поле
+ *          чата + ретрай 15с (гонка selector:chatInput). Google Flow — ТОТ ЖЕ ПРИНЦИП: вотчер на
+ *          /project/<id> шлёт «генерится N» (flow_ext_observed → спиннер на карточке проекта в
+ *          Галерее), новые готовые клипы после генерации сами заливаются в «Видео» (ingest-manual);
+ *          старые клипы при скролле НЕ тянем (базлайн). Файлы: content-notebook.js, content-flow.js,
+ *          content-bridge.js, background.js, notebooklm-ext/router.ts, notebooklm/router.ts,
+ *          ext_bridge.ts, flow-ext/router.ts, GalleryPage.tsx, HotebookStudio.tsx, MontageEditor.tsx. */
+export const APP_VERSION = '2.2.29';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.17';
+export const TT_EXT_VERSION = '1.3.18';
 
 export function AppVersion() {
   return (

@@ -224,6 +224,9 @@ export default function GalleryPage() {
   const [extProbeStale, setExtProbeStale] = useState(false);
   const flowProjTimer = useRef<ReturnType<typeof setTimeout> | null>(null); // таймаут ждущего результата
   const flowAckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);   // таймаут быстрого ACK (свежее ли расширение)
+  const openNbFallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null); // фолбэк window.open, если расширение не ответило на open-notebook
+  // Наблюдаемые генерации Flow (юзер генерит прямо в Flow) → спиннер на карточке проекта.
+  const [flowObserved, setFlowObserved] = useState<Record<string, number>>({});
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
       if (ev.source !== window) return;
@@ -242,6 +245,12 @@ export default function GalleryPage() {
         setExtReconnecting(false);
       }
       if (d.type === 'connected' || d.type === 'disconnected') setExtReconnecting(false);
+      // Расширение открыло/сфокусировало вкладку NotebookLM → фолбэк window.open не нужен.
+      if (d.type === 'open-notebook-result') {
+        if (openNbFallbackTimer.current) { clearTimeout(openNbFallbackTimer.current); openNbFallbackTimer.current = null; }
+        if (!d.ok) window.open(d.notebookId ? `https://notebooklm.google.com/notebook/${d.notebookId}` : 'https://notebooklm.google.com', '_blank', 'noopener');
+        setHbNbOpening(null);
+      }
       if (d.type === 'push-to-flow-result') {
         setFlowMsg(d.ok ? { ok: true, text: 'Отправлено в Google Flow — переключитесь на вкладку Flow.' } : { ok: false, text: 'Не удалось: ' + (d.error || 'ошибка') });
         setTimeout(() => setFlowMsg(null), 6000);
@@ -303,6 +312,25 @@ export default function GalleryPage() {
     if (tab === 'flow' && extStatus !== 'checking') loadFlowProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, extStatus]);
+
+  // Пока открыта вкладка «Google Flow» — опрашиваем наблюдаемые генерации (юзер генерит прямо
+  // в Flow): спиннер на карточке проекта, где сейчас идёт генерация.
+  useEffect(() => {
+    if (tab !== 'flow') return;
+    let alive = true;
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/flow-ext/observed', { headers: jsonHeaders() });
+        if (!alive || !r.ok) return;
+        const d = await r.json();
+        setFlowObserved(d.observed && typeof d.observed === 'object' ? d.observed : {});
+      } catch { /* не критично */ }
+    };
+    poll();
+    const iv = setInterval(poll, 10_000);
+    return () => { alive = false; clearInterval(iv); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   // Пока открыт Hotebook/Flow и расширение на связи — периодически спрашиваем статус,
   // чтобы аккаунт NotebookLM на плашке («приложение / NotebookLM») оставался живым.
@@ -476,30 +504,33 @@ export default function GalleryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // Клик по карточке блокнота: создать сценарий → привязать к нему блокнот → открыть блок.
-  const openNotebook = async (nb: { id: string; title: string }) => {
+  // Клик по карточке блокнота: открыть САМ NotebookLM на этом блокноте (юзер работает в сервисе;
+  // готовые работы студии расширение само подхватывает в «Видео»/«Hotebook»). Открываем через
+  // расширение (оно сохраняет authuser рабочей вкладки — не улетаем в чужой Google-аккаунт);
+  // если расширение молчит — обычный window.open.
+  const openNotebook = (nb: { id: string; title: string }) => {
     setHbNbOpening(nb.id);
-    try {
-      const cr = await fetch('/api/flows', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: (nb.title || 'Блокнот').slice(0, 120) }) });
-      const cd = await cr.json().catch(() => ({}));
-      const flowId = cd.flow?.id;
-      if (!cr.ok || !flowId) throw new Error(cd.error || 'Не удалось создать сценарий');
-      await fetch(`/api/notebooklm/flow/${flowId}/adopt`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ notebookId: nb.id, title: nb.title }) });
-      setBlockReq({ cloud: 'hotebook', flowId });
-    } catch (e: any) { setError(e?.message || 'Не удалось открыть блокнот'); }
-    finally { setHbNbOpening(null); }
+    window.postMessage({ source: 'trendtraffic', type: 'open-notebook', notebookId: nb.id }, window.location.origin);
+    if (openNbFallbackTimer.current) clearTimeout(openNbFallbackTimer.current);
+    openNbFallbackTimer.current = setTimeout(() => {
+      window.open(`https://notebooklm.google.com/notebook/${nb.id}`, '_blank', 'noopener');
+      setHbNbOpening(null);
+    }, 1200);
+  };
+  const openNotebookHome = () => {
+    window.postMessage({ source: 'trendtraffic', type: 'open-notebook' }, window.location.origin);
+    if (openNbFallbackTimer.current) clearTimeout(openNbFallbackTimer.current);
+    openNbFallbackTimer.current = setTimeout(() => window.open('https://notebooklm.google.com', '_blank', 'noopener'), 1200);
   };
 
-  // Расширение (кнопка «Открыть TrendTraffic» изнутри блокнота NotebookLM) открывает новую вкладку
-  // ?tab=hotebook&openNotebook=<id>&title=… → сразу открыть этот блокнот в приложении.
+  // Диплинк ?openNotebook=… (кнопка «Открыть TrendTraffic» из NotebookLM): раньше открывал
+  // встроенную студию — теперь достаточно вкладки Hotebook (юзер уже пришёл ИЗ блокнота).
   const openNbHandledRef = useRef(false);
   useEffect(() => {
     const nbId = searchParams.get('openNotebook');
     if (!nbId || openNbHandledRef.current) return;
     openNbHandledRef.current = true;
-    const title = searchParams.get('title') || 'Блокнот';
     setSearchParams((p) => { p.delete('openNotebook'); p.delete('title'); return p; }, { replace: true });
-    void openNotebook({ id: nbId, title });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -519,7 +550,7 @@ export default function GalleryPage() {
   // в этот же раздел. «Видео» — дублирует кнопку «Медиа» (файл сам решает, куда лечь).
   const addAction = (which: Tab): { label: string; hint: string; run: () => void } => {
     switch (which) {
-      case 'hotebook': return { label: 'Добавить', hint: 'Открыть блок «Hotebook»: источники, чат и генерация артефактов', run: () => setBlockReq({ cloud: 'hotebook' }) };
+      case 'hotebook': return { label: 'Добавить', hint: 'Открыть NotebookLM: создайте блокнот там — он появится здесь, а готовые работы сами попадут в «Видео»', run: openNotebookHome };
       case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => setBlockReq({ cloud: 'flow' }) };
       case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: новый ролик (имя — дата и время, потом переименуете)', run: () => setBlockReq({ cloud: 'ugc', newName: newRollName() }) };
       case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
@@ -1205,7 +1236,8 @@ export default function GalleryPage() {
                 </span>
               ) : (
                 <><span>Блокнотов NotebookLM: {hbNotebooks.length}</span>
-                  <button type="button" onClick={() => void loadNotebooks()} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button></>
+                  <button type="button" onClick={() => void loadNotebooks()} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button>
+                  <span>· клик по блокноту откроет его в NotebookLM — работайте там: пока генерится, тут крутится индикатор, а готовые работы студии сами попадают в «Видео» (видео/аудио/изображения) и в «Hotebook». Встроенная студия TT остаётся в системе.</span></>
               )}
             </div>
           )}
@@ -1323,6 +1355,13 @@ export default function GalleryPage() {
                   )}
                 </a>
                 <span className={ovBadge} style={{ left: '0.375rem', right: 'auto', background: '#6366f1', color: '#fff' }}>Google Flow</span>
+                {/* Идёт генерация ПРЯМО в Flow (наблюдает расширение): спиннер — готовый клип сам упадёт в «Видео». */}
+                {(flowObserved[p.id] || 0) > 0 && (
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[7] inline-flex items-center gap-1.5 text-[10px] font-700 px-2 py-1 rounded-full pointer-events-none"
+                    style={{ background: 'rgba(0,0,0,0.65)', color: '#a5b4fc' }}>
+                    <Loader2 size={12} className="animate-spin" /> генерится
+                  </span>
+                )}
                 <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[6] pointer-events-none" style={{ background: 'rgba(0,0,0,0.35)' }}>
                   <span className="inline-flex items-center gap-1 text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.95)', color: '#111' }}><ExternalLink size={12} /> Открыть</span>
                 </span>
@@ -1436,7 +1475,7 @@ export default function GalleryPage() {
             {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
             {tab === 'hotebook' && hbNotebooksFiltered.map((nb) => (
               <button key={`nb-${nb.id}`} type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
-                title={`Открыть блокнот: ${nb.title}`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
+                title={`Открыть в NotebookLM: ${nb.title} — работайте там, готовые работы студии сами попадут в «Видео»`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
                 {placeholderArt('notebook')}
                 {/* Спиннер по центру, пока блокнот открывается (иконку даёт placeholderArt). */}
                 {hbNbOpening === nb.id && <Loader2 size={26} className="animate-spin z-[2]" style={{ color: 'var(--brand)' }} />}

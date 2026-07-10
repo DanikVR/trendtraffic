@@ -105,6 +105,17 @@ async function ensureTables(): Promise<void> {
       url TEXT,
       updated_at TIMESTAMPTZ DEFAULT now()
     )`);
+  // НАБЛЮДАЕМЫЕ генерации Flow: юзер запустил генерацию прямо в Flow (не через очередь) —
+  // расширение шлёт «в проекте X сейчас генерится N клипов» → спиннер на карточке проекта в Галерее.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flow_ext_observed (
+      tenant_id TEXT NOT NULL,
+      project_id TEXT NOT NULL,
+      title TEXT,
+      generating INT NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (tenant_id, project_id)
+    )`);
 }
 ensureTables().catch((e) => console.warn('[flow-ext] init таблиц:', (e as Error).message));
 
@@ -346,6 +357,37 @@ router.get('/gallery', async (req: AuthedRequest, res: Response) => {
  * Расширение (кнопка «В галерею» в живом Flow): произвольный клип, собранный человеком прямо
  * в Flow (не из очереди), → Галерея, раздел «Видео» (без папки). Без taskId. body: { sourceUrl?|dataUrl?, title? }.
  */
+/** Расширение: наблюдаемые генерации проекта Flow (спиннер на карточке проекта в Галерее). */
+router.post('/observed', async (req: AuthedRequest, res: Response) => {
+  const projectId = String(req.body?.projectId || '').trim();
+  const title = req.body?.title ? String(req.body.title).slice(0, 120) : null;
+  const generating = Math.max(0, Math.min(50, Number(req.body?.generating) || 0));
+  if (!projectId) return res.status(400).json({ error: 'нет projectId' });
+  try {
+    await pool.query(
+      `INSERT INTO flow_ext_observed (tenant_id, project_id, title, generating, updated_at)
+       VALUES ($1,$2,$3,$4,now())
+       ON CONFLICT (tenant_id, project_id) DO UPDATE SET title=EXCLUDED.title, generating=EXCLUDED.generating, updated_at=now()`,
+      [req.tenantId, projectId, title, generating]
+    );
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }); }
+});
+
+/** Фронт (Галерея → Google Flow): где сейчас идёт генерация (свежие наблюдения ≤ 2 мин). */
+router.get('/observed', async (req: AuthedRequest, res: Response) => {
+  try {
+    const r = await pool.query(
+      `SELECT project_id, generating FROM flow_ext_observed
+        WHERE tenant_id=$1 AND generating > 0 AND updated_at > now() - interval '2 minutes'`,
+      [req.tenantId]
+    );
+    const observed: Record<string, number> = {};
+    for (const row of r.rows) observed[row.project_id] = Number(row.generating) || 0;
+    res.json({ observed });
+  } catch { res.json({ observed: {} }); }
+});
+
 router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
   const sourceUrl = req.body?.sourceUrl ? String(req.body.sourceUrl) : '';
   const dataUrl = req.body?.dataUrl ? String(req.body.dataUrl) : '';

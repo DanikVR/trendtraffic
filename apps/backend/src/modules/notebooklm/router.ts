@@ -30,7 +30,7 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import pool from '../../db/index.js';
 import {
   GEN_TYPES, type GenType,
-  enqueueAction, waitAction, getConnectionStatus, getCachedNotebooks,
+  enqueueAction, waitAction, getConnectionStatus, getCachedNotebooks, ingestHotebookArtifact,
 } from './ext_bridge.js';
 
 /** Папка Галереи для артефактов Hotebook (вкладка «Hotebook»). Реэкспорт для совместимости. */
@@ -89,6 +89,9 @@ async function ensureTables(): Promise<void> {
       finished_at TIMESTAMPTZ
     )`);
   await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS title TEXT`);
+  // Наблюдаемые генерации (запущены юзером ПРЯМО в NotebookLM, не через приложение): flow_id NULL,
+  // notebook_id — прямой. Питают индикаторы на карточках/сайдбаре и счётчики ✨.
+  await pool.query(`ALTER TABLE notebooklm_jobs ADD COLUMN IF NOT EXISTS notebook_id TEXT`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_nlm_jobs_tenant ON notebooklm_jobs(tenant_id, created_at DESC)`);
   // Бэкфилл артефактов NotebookLM (идемпотентно):
   // (1) старые артефакты сохранялись БЕЗ folder → не попадали в ленту «Hotebook» (она по folder).
@@ -231,15 +234,19 @@ router.get('/notebooks', async (req: AuthedRequest, res: Response) => {
   const counts: Record<string, Record<string, number>> = {};
   const gen: Record<string, number> = {};
   try {
+    // COALESCE: джобы приложения привязаны через flow_id→state; НАБЛЮДАЕМЫЕ (запущены прямо в
+    // NotebookLM) несут notebook_id сами — считаем и те и другие.
     const cr = await pool.query(
-      `SELECT s.notebook_id AS nb, j.type AS t, count(*)::int AS n
-       FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
-       WHERE s.tenant_id=$1 AND j.status='done' GROUP BY s.notebook_id, j.type`, [tenantId]);
+      `SELECT COALESCE(s.notebook_id, j.notebook_id) AS nb, j.type AS t, count(*)::int AS n
+       FROM notebooklm_jobs j LEFT JOIN notebooklm_state s ON s.tenant_id=j.tenant_id AND s.flow_id=j.flow_id
+       WHERE j.tenant_id=$1 AND j.status='done' AND COALESCE(s.notebook_id, j.notebook_id) IS NOT NULL
+       GROUP BY COALESCE(s.notebook_id, j.notebook_id), j.type`, [tenantId]);
     for (const row of cr.rows) { (counts[row.nb] ||= {})[row.t] = Number(row.n) || 0; }
     const gr = await pool.query(
-      `SELECT s.notebook_id AS nb, count(*)::int AS n
-       FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
-       WHERE s.tenant_id=$1 AND j.status IN ('queued','running') GROUP BY s.notebook_id`, [tenantId]);
+      `SELECT COALESCE(s.notebook_id, j.notebook_id) AS nb, count(*)::int AS n
+       FROM notebooklm_jobs j LEFT JOIN notebooklm_state s ON s.tenant_id=j.tenant_id AND s.flow_id=j.flow_id
+       WHERE j.tenant_id=$1 AND j.status IN ('queued','running') AND COALESCE(s.notebook_id, j.notebook_id) IS NOT NULL
+       GROUP BY COALESCE(s.notebook_id, j.notebook_id)`, [tenantId]);
     for (const row of gr.rows) gen[row.nb] = Number(row.n) || 0;
   } catch { /* пусто */ }
   for (const nb of notebooks) { nb.artifactCounts = counts[nb.id] || {}; nb.generating = gen[nb.id] || 0; }
@@ -255,11 +262,12 @@ router.get('/notebook-status', async (req: AuthedRequest, res: Response) => {
   const statuses: Record<string, { generating: number; artifactCounts: Record<string, number> }> = {};
   try {
     const cr = await pool.query(
-      `SELECT s.notebook_id AS nb, j.type AS t,
+      `SELECT COALESCE(s.notebook_id, j.notebook_id) AS nb, j.type AS t,
               count(*) FILTER (WHERE j.status='done')::int AS done,
               count(*) FILTER (WHERE j.status IN ('queued','running'))::int AS gen
-       FROM notebooklm_state s JOIN notebooklm_jobs j ON j.tenant_id=s.tenant_id AND j.flow_id=s.flow_id
-       WHERE s.tenant_id=$1 GROUP BY s.notebook_id, j.type`, [req.tenantId]);
+       FROM notebooklm_jobs j LEFT JOIN notebooklm_state s ON s.tenant_id=j.tenant_id AND s.flow_id=j.flow_id
+       WHERE j.tenant_id=$1 AND COALESCE(s.notebook_id, j.notebook_id) IS NOT NULL
+       GROUP BY COALESCE(s.notebook_id, j.notebook_id), j.type`, [req.tenantId]);
     for (const row of cr.rows) {
       const st = (statuses[row.nb] ||= { generating: 0, artifactCounts: {} });
       if (Number(row.done) > 0) st.artifactCounts[row.t] = Number(row.done);
@@ -395,6 +403,39 @@ router.post('/flow/:flowId/generate', async (req: AuthedRequest, res: Response) 
       [id, req.tenantId!, flowId, gtype, JSON.stringify(params), title || null]
     );
     res.json({ job: mapJob(r.rows[0]) });
+  } catch (e: any) { res.status(502).json(errPayload(e)); }
+});
+
+/** УЖЕ готовые работы студии в открытом блокноте NotebookLM (не наши джобы) — список для импорта. */
+router.post('/flow/:flowId/studio-artifacts', async (req: AuthedRequest, res: Response) => {
+  const { flowId } = req.params;
+  try {
+    const nb = await getNotebookId(req.tenantId!, flowId);
+    if (!nb) return res.json({ artifacts: [], error: 'блокнот ещё не привязан' });
+    const actionId = await enqueueAction(req.tenantId!, flowId, nb, 'list-studio-artifacts', {});
+    const r = await waitAction(req.tenantId!, actionId, 40_000);
+    if (!r.ok) return res.json({ artifacts: [], error: r.error || null });
+    res.json({ artifacts: Array.isArray(r.result?.artifacts) ? r.result.artifacts : [] });
+  } catch (e: any) { res.status(502).json(errPayload(e)); }
+});
+
+/** Импорт готовой работы студии → скачать её из NotebookLM и положить в Галерею (folder='hotebook'). */
+router.post('/flow/:flowId/studio-artifacts/download', async (req: AuthedRequest, res: Response) => {
+  const { flowId } = req.params;
+  const index = Number.isInteger(req.body?.index) ? req.body.index : null;
+  const title = req.body?.title ? String(req.body.title).slice(0, 120) : null;
+  const gtype = req.body?.kind === 'media' ? 'audio' : 'report';
+  if (index == null && !title) return res.status(400).json({ error: 'index или title обязателен' });
+  try {
+    const nb = await getNotebookId(req.tenantId!, flowId);
+    if (!nb) return res.status(404).json({ error: 'блокнот не привязан' });
+    const actionId = await enqueueAction(req.tenantId!, flowId, nb, 'download-studio-artifact', { index, title });
+    const r = await waitAction(req.tenantId!, actionId, 90_000); // скачивание + перехват байтов
+    if (!r.ok || !r.result?.dataUrl) throw new ExtError(r.error || 'не удалось скачать артефакт', 'error');
+    const asset = await ingestHotebookArtifact(req.tenantId!, {
+      dataUrl: r.result.dataUrl, fileName: r.result.fileName || title, mime: r.result.mime || null, title: r.result.fileName || title, gtype,
+    });
+    res.json({ ok: true, asset });
   } catch (e: any) { res.status(502).json(errPayload(e)); }
 });
 

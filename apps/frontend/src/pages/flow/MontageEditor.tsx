@@ -766,6 +766,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const [hbGenBusy, setHbGenBusy] = useState(false);
   const [hbView, setHbView] = useState<any | null>(null);           // просмотр артефакта (тест/карточки/менталка/таблица)
   const [hbPlayId, setHbPlayId] = useState<string | null>(null);    // раскрытый инлайн-плеер аудио/видео артефакта
+  const [hbNotebookId, setHbNotebookId] = useState<string | null>(null); // id блокнота NotebookLM (для «Открыть NotebookLM» → в него)
+  const [hbStudioArts, setHbStudioArts] = useState<{ index: number; title: string; kind: string }[]>([]); // готовые работы студии в блокноте
+  const [hbStudioLoading, setHbStudioLoading] = useState(false);
+  const [hbStudioDl, setHbStudioDl] = useState<Set<number>>(new Set()); // индексы, что сейчас грузятся в Галерею
   const hbPollingRef = useRef(false);
   const hbJobsRef = useRef<any[]>([]);
   useEffect(() => { hbJobsRef.current = hbJobs; }, [hbJobs]);
@@ -1520,6 +1524,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       }
       const d = await r.json();
       setHbStatus(d.status || null);
+      setHbNotebookId(d.notebookId || null);
       setHbSources(Array.isArray(d.sources) ? d.sources : []);
       // История чата из NotebookLM (плоский список user/assistant) → пары {q,a}; грузим ТОЛЬКО если
       // локальный чат сценария пуст (не затираем начатый диалог).
@@ -1547,6 +1552,34 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     if (!loading) void hbLoadOverview(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
+  // Готовые работы студии в открытом блокноте NotebookLM (не наши джобы) — список + импорт в Галерею.
+  const hbLoadStudioArts = async () => {
+    setHbStudioLoading(true);
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/studio-artifacts`, { method: 'POST', headers: headers() });
+      const d = r.ok ? await r.json() : { artifacts: [] };
+      setHbStudioArts(Array.isArray(d.artifacts) ? d.artifacts : []);
+    } catch { setHbStudioArts([]); }
+    finally { setHbStudioLoading(false); }
+  };
+  const hbDownloadStudioArt = async (art: { index: number; title: string; kind: string }) => {
+    setHbStudioDl((s) => new Set(s).add(art.index));
+    setHbNote(null);
+    try {
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/studio-artifacts/download`, {
+        method: 'POST', headers: headers(), body: JSON.stringify({ index: art.index, title: art.title, kind: art.kind }),
+      });
+      if (r.ok) { setHbOk(`«${art.title}» загружено в Галерею → Hotebook`); setTimeout(() => setHbOk(null), 6000); void hbLoadOverview(true); }
+      else setHbNote(await hbErr(r));
+    } catch { setHbNote('Не удалось загрузить артефакт.'); }
+    finally { setHbStudioDl((s) => { const n = new Set(s); n.delete(art.index); return n; }); }
+  };
+  // Подтягиваем список готовых работ студии при открытии панели Hotebook (и после «Обновить»).
+  useEffect(() => {
+    if (cloudPanel === 'hotebook' && hbStatus?.ok) void hbLoadStudioArts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cloudPanel, hbStatus?.ok]);
   const hbErr = async (res: globalThis.Response): Promise<string> => {
     const d = await res.json().catch(() => ({} as any));
     if (d?.errorKind && ['ext_offline', 'ext_login', 'error'].includes(d.errorKind)) void hbRefreshStatus(true);
@@ -2101,6 +2134,12 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           hbTypes={HB_TYPES}
           hbIcon={HB_ICON}
           hbLabel={HB_LABEL}
+          hbNotebookId={hbNotebookId}
+          onReload={() => { void hbRefreshStatus(true); void hbLoadOverview(); void hbLoadStudioArts(); }}
+          hbStudioArts={hbStudioArts}
+          hbStudioLoading={hbStudioLoading}
+          hbStudioDl={hbStudioDl}
+          hbDownloadStudioArt={(a) => void hbDownloadStudioArt(a)}
         />
       )}
 
