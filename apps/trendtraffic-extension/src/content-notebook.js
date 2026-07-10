@@ -887,7 +887,10 @@
       if (seen.has(card)) continue; seen.add(card);
       // заголовок = текст ДО длительности/типа; чистим служебное (вкл. НАШУ инжект-кнопку «⬇TT» и её
       // состояния — иначе на следующем цикле заголовок «Название ⬇TT» не совпадёт с базлайном → дубликаты)
-      let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '').replace(/more_vert|play_arrow|воспроизвести|ещё|⬇TT|…|✓|⚠/gi, '').trim();
+      // + ЛЮБЫЕ snake_case-лигатуры Material-иконок (cards_star, save_alt…) — они попадают в textContent.
+      let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '')
+        .replace(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g, '')
+        .replace(/more_vert|play_arrow|воспроизвести|ещё|⬇TT|…|✓|⚠/gi, '').trim();
       if (!title || title.length < 2) title = 'Артефакт NotebookLM';
       const hasPlay = [...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])]
         .some((b) => /play_arrow|воспроизвести/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
@@ -1011,7 +1014,13 @@
     await sleep(1000);
     const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
       .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
-    if (!item) { closeOpenMenu(); ui.line('⚠ у «' + card.title.slice(0, 30) + '» нет пункта «Скачать»'); return { ok: false }; }
+    if (!item) {
+      // У части типов (карточки/тест/ментальная карта…) в ⋮ НЕТ «Скачать» — файл не предусмотрен.
+      // Фолбэк: открываем работу кликом по карточке, снимаем видимый текст и заливаем как .md.
+      closeOpenMenu();
+      ui.line('у «' + card.title.slice(0, 30) + '» нет «Скачать» — снимаю текстом…');
+      return await captureCardAsText(card);
+    }
     clickEl(item);
     const wt0 = Date.now();
     while (Date.now() - wt0 < 30_000) {
@@ -1027,6 +1036,29 @@
     else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
     return r || { ok: false };
   }
+  // Фолбэк-захват «текстом»: открыть работу кликом → снять видимый текст → назад → залить .md.
+  // Для типов без файла (карточки/тест/ментальная карта/таблица) — лучше текст, чем ничего.
+  async function captureCardAsText(card) {
+    const nbId = notebookIdFromUrl();
+    try { clickEl(card.el); } catch { return { ok: false }; }
+    await sleep(2500);
+    const scraped = scrapeArtifactText('report'); // видимый текст открытой работы → markdown
+    // назад к студии: кнопка «Назад»/arrow_back, иначе Escape (оверлей), иначе history.back()
+    const back = queryAllDeep('button,[role="button"]').filter(visible)
+      .find((b) => /arrow_back|^назад$|^back$/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
+    if (back) clickEl(back);
+    else { closeOpenMenu(); try { history.back(); } catch { /* */ } }
+    await sleep(1200);
+    if (!scraped || !scraped.dataUrl) { ui.line('⚠ текст «' + card.title.slice(0, 30) + '» не снялся'); return { ok: false }; }
+    const r = await send({
+      type: 'nlm-observed-artifact', notebookId: nbId, title: card.title,
+      gtype: detectGtype((card.el && card.el.textContent) || card.title), dataUrl: scraped.dataUrl, mime: 'text/markdown',
+    });
+    if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея (текстом)' + (r.dedup ? ' (уже была)' : ''));
+    else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
+    return r || { ok: false };
+  }
+
   const autoTried = new Map(); // title → попытки (не долбим бесконечно упавший авто-подхват)
   async function studioWatcher() {
     if (watcherBusy || actionBusy) return; // не мешаем идущей команде (generate/chat кликают в DOM)

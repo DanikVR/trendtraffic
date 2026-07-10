@@ -803,7 +803,12 @@
     flowWatcherBusy = true;
     try {
       const gen = flowGeneratingCount();
-      if (gen > 0) sawGeneratingAt = Date.now();
+      if (gen > 0) { sawGeneratingAt = Date.now(); void flowStorageSet('flowGenAt:' + pid, sawGeneratingAt); }
+      else if (!sawGeneratingAt) {
+        // после перезагрузки страницы окно «недавно генерилось» восстанавливаем из storage
+        const saved = await flowStorageGet('flowGenAt:' + pid);
+        if (typeof saved === 'number') sawGeneratingAt = saved;
+      }
       // индикатор на карточке проекта в Галерее (сброс в 0 гасит спиннер)
       send({ type: 'flow-observed', projectId: pid, title: (document.title || 'Flow').slice(0, 80), generating: gen });
       // blob-видео БЕЗ метаданных пропускаем до следующего тика (ключ был бы нестабильным —
@@ -819,8 +824,10 @@
       }
       const freshIdx = keys.map((k, i) => (seen.includes(k) ? -1 : i)).filter((i) => i >= 0);
       const recentlyGenerated = Date.now() - sawGeneratingAt < 6 * 60_000;
-      if (freshIdx.length && gen === 0 && recentlyGenerated) {
-        // генерация только что кончилась → новые клипы в Галерею → «Видео»
+      if (freshIdx.length && recentlyGenerated) {
+        // Появились НОВЫЕ клипы в окне «недавно генерилось» → сразу в Галерею → «Видео».
+        // НЕ ждём gen===0: клип может стать готовым, пока СЛЕДУЮЩАЯ генерация ещё крутится —
+        // раньше такой клип молча уходил в базлайн и автозаливка «не срабатывала» (баг по фидбэку).
         for (const i of freshIdx.slice(0, 2)) {
           const el = vids[i];
           const fails = flowIngestFails.get(keys[i]) || 0;
@@ -833,7 +840,7 @@
           else { flowIngestFails.set(keys[i], fails + 1); ui.line('⚠ клип не сохранился: ' + ((r && r.error) || 'нет подключения')); }
         }
       } else if (freshIdx.length) {
-        // старые клипы (скролл/ленивая подгрузка) — просто запоминаем, НЕ заливаем
+        // вне окна генерации (скролл/ленивая подгрузка старых) — просто запоминаем, НЕ заливаем
         for (const i of freshIdx) seen.push(keys[i]);
       }
       await flowStorageSet(key, seen.slice(-300));

@@ -2425,11 +2425,23 @@
  *          aria/placeholder-исключения («найдите нов…»/«источник»/«на основе введ…») сохранены.
  *          Только расширение (manifest+TT_EXT_VERSION+BRIDGE_VERSION 1.3.19+zip).
  *          Файлы: ext/content-notebook.js, ext/content-bridge.js, manifest.json, AppVersion. */
-export const APP_VERSION = '2.2.30';
+/* 2.2.31 — Hotebook/Flow, доводки автопереноса по живому тесту юзера (ext 1.3.20): (1) NotebookLM:
+ *          у типов без файла (карточки/тест/ментальная карта) в ⋮ нет «Скачать» → кнопка ⬇TT падала;
+ *          теперь фолбэк «текстом»: открыть работу кликом → снять видимый текст → назад → залить .md
+ *          в Галерею (авто-подхват тоже). Из заголовков вычищаются лигатуры Material-иконок
+ *          (cards_star и пр.). (2) Flow, ГЛАВНЫЙ фикс автозаливки: клип, ставший готовым, пока
+ *          ДРУГАЯ генерация ещё крутится, молча уходил в базлайн → «пришлось нажимать В галерею
+ *          руками»; теперь новые клипы в окне «недавно генерилось» (6 мин) заливаются сразу, не
+ *          дожидаясь gen==0; окно переживает перезагрузку страницы (flowGenAt в storage).
+ *          (3) Индикаторы Flow как у Hotebook: спиннер на ВКЛАДКЕ «Google Flow» (flowObserved
+ *          опрашивается постоянно, не только на вкладке) и на ИКОНКЕ сайдбара (MainLayout опрашивает
+ *          /flow-ext/observed вместе с notebooklm jobs; индиго-спиннер). Файлы: content-flow.js,
+ *          content-notebook.js, GalleryPage.tsx, MainLayout.tsx, manifest, content-bridge, AppVersion. */
+export const APP_VERSION = '2.2.31';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.19';
+export const TT_EXT_VERSION = '1.3.20';
 
 export function AppVersion() {
   return (

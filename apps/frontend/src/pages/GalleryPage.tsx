@@ -317,10 +317,9 @@ export default function GalleryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, extStatus]);
 
-  // Пока открыта вкладка «Google Flow» — опрашиваем наблюдаемые генерации (юзер генерит прямо
-  // в Flow): спиннер на карточке проекта, где сейчас идёт генерация.
+  // Наблюдаемые генерации Flow (юзер генерит прямо в Flow) — опрашиваем ПОСТОЯННО, пока открыта
+  // Галерея: спиннер на карточке проекта + на ВКЛАДКЕ «Google Flow» (виден с любой вкладки).
   useEffect(() => {
-    if (tab !== 'flow') return;
     let alive = true;
     const poll = async () => {
       try {
@@ -334,7 +333,8 @@ export default function GalleryPage() {
     const iv = setInterval(poll, 10_000);
     return () => { alive = false; clearInterval(iv); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
+  }, []);
+  const flowGenTotal = Object.values(flowObserved).reduce((s, n) => s + (Number(n) || 0), 0);
 
   // Пока открыт Hotebook/Flow и расширение на связи — периодически спрашиваем статус,
   // чтобы аккаунт NotebookLM на плашке («приложение / NotebookLM») оставался живым.
@@ -1198,6 +1198,8 @@ export default function GalleryPage() {
                 {tabIcon(tb.key)} {tb.label}
                 {/* Идёт генерация артефакта Hotebook — спиннер прямо на вкладке (фича параллельной сессии). */}
                 {tb.key === 'hotebook' && hbJobs.length > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#22d3ee' }} />}
+                {/* Идёт генерация в Google Flow (наблюдает расширение) — спиннер на вкладке. */}
+                {tb.key === 'flow' && flowGenTotal > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#6366f1' }} />}
               </button>
             );
           })}

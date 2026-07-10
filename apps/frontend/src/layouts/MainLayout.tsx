@@ -62,18 +62,28 @@ export function MainLayout() {
   // ENTERPRISE: видимость Enterprise-пунктов — единый источник истины (хук).
   const isEnterprise = useIsEnterprise();
 
-  // Индикатор генерации NotebookLM в САЙДБАРЕ: пока в Hotebook что-то генерится (аудио/видео/…),
-  // на иконке «Hotebook» крутится спиннер — видно с любого экрана, даже уйдя из Галереи.
+  // Индикаторы генерации в САЙДБАРЕ: пока в Hotebook/Google Flow что-то генерится, на иконке
+  // раздела крутится спиннер — видно с любого экрана, даже уйдя из Галереи.
   const [hbGen, setHbGen] = useState(0);
+  const [flowGen, setFlowGen] = useState(0);
   useEffect(() => {
-    if (!token || !isEnterprise) { setHbGen(0); return; }
+    if (!token || !isEnterprise) { setHbGen(0); setFlowGen(0); return; }
     let alive = true;
     const poll = async () => {
       try {
         const r = await fetch('/api/notebooklm/jobs?active=1', { headers: { Authorization: `Bearer ${token}` } });
-        if (!alive || !r.ok) return;
-        const d = await r.json();
-        setHbGen(Array.isArray(d.jobs) ? d.jobs.length : 0);
+        if (alive && r.ok) {
+          const d = await r.json();
+          setHbGen(Array.isArray(d.jobs) ? d.jobs.length : 0);
+        }
+      } catch { /* не критично */ }
+      try {
+        const r2 = await fetch('/api/flow-ext/observed', { headers: { Authorization: `Bearer ${token}` } });
+        if (alive && r2.ok) {
+          const d2 = await r2.json();
+          const obs = d2.observed && typeof d2.observed === 'object' ? d2.observed : {};
+          setFlowGen(Object.values(obs).reduce((s: number, n: any) => s + (Number(n) || 0), 0));
+        }
       } catch { /* не критично */ }
     };
     poll();
@@ -168,13 +178,13 @@ export function MainLayout() {
           {galleryNav.map((item) => {
             const Icon = item.icon;
             const isActive = curGalleryTab === item.tab;
-            const generating = item.tab === 'hotebook' && hbGen > 0;
+            const generating = (item.tab === 'hotebook' && hbGen > 0) || (item.tab === 'flow' && flowGen > 0);
             return (
               <button
                 key={item.tab}
                 type="button"
                 onClick={() => navigate(`/gallery?tab=${item.tab}`)}
-                title={generating ? `${item.label} — идёт генерация (${hbGen})` : item.label}
+                title={generating ? `${item.label} — идёт генерация (${item.tab === 'flow' ? flowGen : hbGen})` : item.label}
                 aria-label={item.label}
                 className="relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 no-select"
                 style={isActive
@@ -185,7 +195,7 @@ export function MainLayout() {
                 {generating && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
                     style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <Loader2 size={11} className="animate-spin" style={{ color: '#22d3ee' }} />
+                    <Loader2 size={11} className="animate-spin" style={{ color: item.tab === 'flow' ? '#6366f1' : '#22d3ee' }} />
                   </span>
                 )}
               </button>
