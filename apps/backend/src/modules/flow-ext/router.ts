@@ -24,7 +24,7 @@ import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
@@ -115,6 +115,19 @@ async function ensureTables(): Promise<void> {
       generating INT NOT NULL DEFAULT 0,
       updated_at TIMESTAMPTZ DEFAULT now(),
       PRIMARY KEY (tenant_id, project_id)
+    )`);
+  // Дедуп заливки клипов по ХЕШУ содержимого. Клиентский ключ клипа (blob-видео Flow) ненадёжен:
+  // все клипы проекта одной длительности/размера → ключи совпадают/дрейфуют, из-за чего один и тот
+  // же клип заливался повторно (6 одинаковых карточек). Хеш байтов ловит это железно.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flow_ext_ingest_dedup (
+      tenant_id TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      asset_id TEXT,
+      file_url TEXT,
+      media_type TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (tenant_id, content_hash)
     )`);
 }
 ensureTables().catch((e) => console.warn('[flow-ext] init таблиц:', (e as Error).message));
@@ -400,6 +413,20 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
     || (!kind && !!sourceUrl && /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(sourceUrl));
   try {
     const stored = isImage ? await storeIncomingImage(sourceUrl, dataUrl) : await storeIncomingVideo(sourceUrl, dataUrl);
+    // Дедуп по хешу байтов: тот же клип уже заливали (клиентский ключ ненадёжен) → отдаём готовый
+    // ассет и УДАЛЯЕМ только что записанный дубль-файл (без плодяжа копий в «Видео»).
+    let contentHash = '';
+    try { contentHash = createHash('sha256').update(fs.readFileSync(stored.filePath)).digest('hex'); } catch { /* хеш best-effort */ }
+    if (contentHash) {
+      const dup = await pool.query(
+        `SELECT asset_id, file_url, media_type FROM flow_ext_ingest_dedup WHERE tenant_id=$1 AND content_hash=$2`,
+        [req.tenantId, contentHash]
+      );
+      if (dup.rowCount) {
+        try { fs.unlinkSync(stored.filePath); } catch { /* */ }
+        return res.json({ ok: true, assetId: dup.rows[0].asset_id, fileUrl: dup.rows[0].file_url, mediaType: dup.rows[0].media_type || (isImage ? 'image' : 'video'), dedup: true });
+      }
+    }
     const imgExt = stored.mime.includes('png') ? 'png' : stored.mime.includes('webp') ? 'webp' : stored.mime.includes('gif') ? 'gif' : 'jpg';
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: isImage ? 'image' : 'video',
@@ -407,6 +434,13 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
       // Без папки → раздел «Видео» Галереи (вкладка «Google Flow» теперь показывает проекты).
     });
+    if (contentHash) {
+      await pool.query(
+        `INSERT INTO flow_ext_ingest_dedup (tenant_id, content_hash, asset_id, file_url, media_type)
+         VALUES ($1,$2,$3,$4,$5) ON CONFLICT (tenant_id, content_hash) DO NOTHING`,
+        [req.tenantId, contentHash, asset?.id || null, stored.fileUrl, isImage ? 'image' : 'video']
+      );
+    }
     res.json({ ok: true, assetId: asset?.id || null, fileUrl: stored.fileUrl, mediaType: isImage ? 'image' : 'video' });
   } catch (e: any) {
     res.status(502).json({ error: 'не удалось сохранить медиа: ' + (e?.message || e) });

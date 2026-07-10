@@ -2437,11 +2437,25 @@
  *          опрашивается постоянно, не только на вкладке) и на ИКОНКЕ сайдбара (MainLayout опрашивает
  *          /flow-ext/observed вместе с notebooklm jobs; индиго-спиннер). Файлы: content-flow.js,
  *          content-notebook.js, GalleryPage.tsx, MainLayout.tsx, manifest, content-bridge, AppVersion. */
-export const APP_VERSION = '2.2.31';
+/* 2.2.32 — Hotebook/Flow, второй раунд по живому тесту (ext 1.3.21): (1) АУДИО не переносилось и
+ *          кнопка «не работала»: плейсхолдер незавершённой работы NotebookLM = «Создаю аудиопересказ,
+ *          вернитесь через…» (глагол «Создаю»), а GENERATING_RE знал лишь «создаётся» → плейсхолдер
+ *          НЕ считался генерацией и попадал в «готовые» (совпадал «аудиопересказ») → вотчер качал
+ *          пустышку → «не перехватил файл». Фикс: GENERATING_RE ловит «создаю/готовлю/обрабат/
+ *          вернитесь через/creating…», и генерящиеся карточки исключены из «готовых». Реальное аудио
+ *          теперь перехватывается (blob на createObjectURL). (2) Flow ПРОЕКТЫ не грузились (вечное
+ *          «Загружаю проекты…»): фоновая temp-вкладка скрейпа троттлится Chrome и не дорисовывает
+ *          сетку → пусто. Теперь при пустом фоне вкладку КРАТКО активируем (форс-рендер) и возвращаем
+ *          фокус юзеру; temp-вкладка открывается в окне существующей Flow-вкладки (та же сессия). (3)
+ *          6 ОДИНАКОВЫХ клипов в «Видео»: клиентский ключ blob-клипа Flow ненадёжен (все клипы одной
+ *          длит./размера → ключи совпадают) → серверный дедуп по sha256 байтов в /ingest-manual
+ *          (flow_ext_ingest_dedup) + дедуп ключей в пределах цикла вотчера. Файлы: content-notebook.js,
+ *          content-flow.js, background.js, flow-ext/router.ts, manifest, content-bridge, AppVersion. */
+export const APP_VERSION = '2.2.32';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.20';
+export const TT_EXT_VERSION = '1.3.21';
 
 export function AppVersion() {
   return (

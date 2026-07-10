@@ -254,36 +254,52 @@ async function pushToFlow(url, title, kind) {
  * Клик по карточке в Галерее открывает проект «проектором» сам (window.open) — тут только список.
  */
 async function listFlowProjects() {
-  // 1) Существующая вкладка на главной Flow (URL без /project/).
-  let grid = null;
+  const hasProjects = (r) => r && r.ok && Array.isArray(r.projects) && r.projects.length;
+  const askTab = async (tabId) => {
+    try { return await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'list-projects' }), 45_000); }
+    catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+  };
+  // 1) Существующая вкладка на главной Flow (URL без /project/) — самый быстрый путь, без мигания.
+  let anyFlowTab = null;
   try {
     const tabs = await chrome.tabs.query({ url: ['https://labs.google/fx/tools/flow*', 'https://labs.google/fx/*/tools/flow*'] });
-    grid = tabs.find((t) => t.url && !/\/project\//.test(t.url)) || null;
+    anyFlowTab = tabs[0] || null;
+    const grid = tabs.find((t) => t.url && !/\/project\//.test(t.url)) || null;
+    if (grid && grid.id != null) { const r = await askTab(grid.id); if (r && r.ok) return r; }
   } catch { /* query best-effort */ }
-  if (grid && grid.id != null) {
-    try {
-      const r = await withTimeout(chrome.tabs.sendMessage(grid.id, { type: 'list-projects' }), 45_000);
-      if (r && r.ok) return r;
-    } catch { /* упадём во временную вкладку ниже */ }
-  }
-  // 2) Временная фоновая вкладка на главную Flow → снять и закрыть. Фоновая вкладка отрисовывает
-  //    сетку Flow с задержкой (тяжёлый SPA + троттлинг фона), поэтому при пустом результате
-  //    ждём и повторяем скрейп ещё раз (иначе «Проектов: 0», хотя проекты есть).
+  // Запомним активную вкладку юзера — вернём ей фокус, если придётся кратко активировать temp-вкладку.
+  let prevActive = null;
+  try { const a = await chrome.tabs.query({ active: true, lastFocusedWindow: true }); prevActive = (a && a[0]) || null; } catch { /* */ }
+  // 2) Временная вкладка на главную Flow. Фоновая (active:false) вкладка троттлится Chrome — тяжёлый
+  //    SPA Flow часто НЕ дорисовывает сетку карточек в фоне → «Проектов: 0». Поэтому: сначала фон
+  //    (без мигания), а если пусто — КРАТКО активируем вкладку (форсим рендер) и возвращаем фокус.
+  //    Открываем в окне существующей Flow-вкладки, если она есть (тот же контекст/сессия аккаунта).
   let tab;
-  try { tab = await chrome.tabs.create({ url: 'https://labs.google/fx/tools/flow', active: false }); }
+  const createOpts = { url: 'https://labs.google/fx/tools/flow', active: false };
+  if (anyFlowTab && anyFlowTab.windowId != null) createOpts.windowId = anyFlowTab.windowId;
+  try { tab = await chrome.tabs.create(createOpts); }
   catch (e) { return { ok: false, error: 'не удалось открыть Flow: ' + (e && e.message || e) }; }
-  const ready = await waitForTabReady(tab.id, 45_000);
   let r = null;
-  if (!ready) r = { ok: false, error: 'Flow не загрузился — войдите в labs.google/flow' };
-  else {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try { r = await withTimeout(chrome.tabs.sendMessage(tab.id, { type: 'list-projects' }), 45_000); }
-      catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
-      if (r && r.ok && Array.isArray(r.projects) && r.projects.length) break; // проекты получены
-      if (attempt === 0) await sleep(4000); // сетка ещё не отрисовалась → подождём и повторим
+  try {
+    const ready = await waitForTabReady(tab.id, 45_000);
+    if (!ready) r = { ok: false, error: 'Flow не загрузился — войдите в labs.google/flow' };
+    else {
+      for (let attempt = 0; attempt < 2 && !hasProjects(r); attempt++) {
+        r = await askTab(tab.id);
+        if (!hasProjects(r) && attempt === 0) await sleep(4000); // сетка ещё не отрисовалась → подождём
+      }
+      // Фон не отрисовал сетку (пусто, но НЕ разлогин) → форсим рендер видимой вкладкой на ~4с.
+      const loggedOut = r && r.loggedIn === false;
+      if (!hasProjects(r) && !loggedOut) {
+        try { await chrome.tabs.update(tab.id, { active: true }); } catch { /* */ }
+        await sleep(4000);
+        r = await askTab(tab.id);
+        if (prevActive && prevActive.id != null) { try { await chrome.tabs.update(prevActive.id, { active: true }); } catch { /* */ } }
+      }
     }
+  } finally {
+    try { await chrome.tabs.remove(tab.id); } catch { /* закрытие best-effort */ }
   }
-  try { await chrome.tabs.remove(tab.id); } catch { /* закрытие best-effort */ }
   return r || { ok: false, error: 'нет ответа от Flow' };
 }
 

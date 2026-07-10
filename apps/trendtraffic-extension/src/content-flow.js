@@ -822,7 +822,10 @@
         if (keys.length || gen > 0) await flowStorageSet(key, keys.slice(0, 300)); // пустой снимок до отрисовки не сохраняем
         return;
       }
-      const freshIdx = keys.map((k, i) => (seen.includes(k) ? -1 : i)).filter((i) => i >= 0);
+      // fresh = нет в базлайне И ключ ещё не встречался в ЭТОМ цикле (у клипов Flow ключи часто
+      // совпадают — одинаковая длительность/размер; иначе один клип залился бы 2× за цикл).
+      const cycleSeen = new Set();
+      const freshIdx = keys.map((k, i) => ((seen.includes(k) || cycleSeen.has(k)) ? -1 : (cycleSeen.add(k), i))).filter((i) => i >= 0);
       const recentlyGenerated = Date.now() - sawGeneratingAt < 6 * 60_000;
       if (freshIdx.length && recentlyGenerated) {
         // Появились НОВЫЕ клипы в окне «недавно генерилось» → сразу в Галерею → «Видео».
