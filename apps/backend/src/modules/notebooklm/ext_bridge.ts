@@ -90,11 +90,20 @@ export function saveHotebookDataUrl(dataUrl: string, id: string, extHint: string
  * Залить готовый артефакт (base64) в Галерею (folder='hotebook'). Аудио → kind='audio' (виден и в
  * «Видео → Аудио»). Используется и расширением (/ingest), и импортом готовых работ студии.
  */
+// Тип работы студии → расширение/медиатип, когда mime/имя НЕ распознались. Подписанный
+// googleusercontent-URL аудио/видео NotebookLM отдаётся как application/octet-stream и без имени →
+// extOf вернул бы .bin и «file» (падало в «Видео» безымянным .bin). Раскладываем по gtype:
+// аудиопересказ→Аудио, видеообзор→Видео, инфографика→Изображение.
+const GTYPE_EXT: Record<string, string> = { audio: '.m4a', video: '.mp4', infographic: '.png', slides: '.pdf' };
+const GTYPE_MEDIA: Record<string, string> = { audio: 'audio', video: 'video', infographic: 'image' };
+
 export async function ingestHotebookArtifact(
   tenantId: string, opts: { dataUrl: string; fileName?: string | null; mime?: string | null; title?: string | null; gtype?: string }
 ): Promise<MediaAsset | null> {
-  const stored = saveHotebookDataUrl(opts.dataUrl, randomUUID(), extOf(opts.fileName || null, opts.mime || null));
-  const mediaType = EXT_MEDIA[stored.ext] || 'file';
+  let ext = extOf(opts.fileName || null, opts.mime || null);
+  if ((!ext || ext === '.bin') && opts.gtype && GTYPE_EXT[opts.gtype]) ext = GTYPE_EXT[opts.gtype]; // тип не распознан → по gtype
+  const stored = saveHotebookDataUrl(opts.dataUrl, randomUUID(), ext);
+  const mediaType = EXT_MEDIA[stored.ext] || (opts.gtype ? GTYPE_MEDIA[opts.gtype] : '') || 'file';
   return createAsset(tenantId, {
     kind: mediaType === 'audio' ? 'audio' : 'reference',
     mediaType,

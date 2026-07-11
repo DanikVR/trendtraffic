@@ -223,11 +223,17 @@ router.post('/observed-ingest', async (req: AuthedRequest, res: Response) => {
     if (!claim.rowCount) {
       const ex = await pool.query(`SELECT asset_id, file_url, updated_at FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2`, [dupId, tenantId]);
       const row = ex.rows[0];
-      if (row && row.asset_id) return res.json({ ok: true, assetId: row.asset_id, fileUrl: row.file_url, dedup: true });
-      // строка есть, но без файла: либо параллельная заливка идёт (свежая → «в процессе»), либо
-      // клейм крашнулся (старая → перезабираем себе и грузим).
-      const stale = !row || !row.updated_at || (Date.now() - new Date(row.updated_at).getTime() > 120_000);
-      if (!stale) return res.json({ ok: true, dedup: true, pending: true });
+      if (row && row.asset_id) {
+        // Дедуп — только если ассет ЖИВ. Если юзер удалил его (напр. чтобы исправить старую .bin-
+        // классификацию) — перезаливаем заново, а не возвращаем ссылку на удалённый.
+        const alive = await pool.query(`SELECT 1 FROM media_assets WHERE id=$1 AND tenant_id=$2`, [row.asset_id, tenantId]);
+        if (alive.rowCount) return res.json({ ok: true, assetId: row.asset_id, fileUrl: row.file_url, dedup: true });
+      } else {
+        // строка есть, но без файла: либо параллельная заливка идёт (свежая → «в процессе»), либо
+        // клейм крашнулся (старая → перезабираем себе и грузим).
+        const stale = !row || !row.updated_at || (Date.now() - new Date(row.updated_at).getTime() > 120_000);
+        if (!stale) return res.json({ ok: true, dedup: true, pending: true });
+      }
       await pool.query(`UPDATE notebooklm_jobs SET status='running', updated_at=now() WHERE id=$1 AND tenant_id=$2`, [dupId, tenantId]);
     }
     const asset = await ingestHotebookArtifact(tenantId, { dataUrl, fileName: title, mime, title, gtype });

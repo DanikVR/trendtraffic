@@ -2479,7 +2479,16 @@
  *          *.google.com/*.googleapis.com/ggpht) — откуда и приходит артефакт; теперь загрузка
  *          отменяется, байты тянутся в фоне, заливаются в «Видео → Аудио». Дедуп по (блокнот,заголовок)
  *          не даёт повторов. Файл: background.js (+manifest/bridge/AppVersion). */
-export const APP_VERSION = '2.2.35';
+/* 2.2.36 — Hotebook, РАСКЛАДКА захваченного артефакта по ТИПУ (backend-only, расширение 1.3.24): аудио
+ *          из NotebookLM легло в «Видео» безымянным .bin вместо «Аудио». Причина: подписанный
+ *          googleusercontent-URL отдаёт content-type=application/octet-stream и без имени → extOf→.bin
+ *          → mediaType «file» → «reference». Фикс ingestHotebookArtifact: если mime/имя не распознаны
+ *          (.bin), берём расширение и медиатип по gtype (аудиопересказ→.m4a/audio→«Аудио»,
+ *          видеообзор→.mp4/video→«Видео», инфографика→.png/image→«Изображение», прочее→документ).
+ *          + observed-ingest дедуплит ТОЛЬКО если ассет жив: удалил старый .bin → перезальётся заново
+ *          (иначе дедуп возвращал ссылку на удалённый). Файлы: ext_bridge.ts, notebooklm-ext/router.ts,
+ *          AppVersion. */
+export const APP_VERSION = '2.2.36';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
