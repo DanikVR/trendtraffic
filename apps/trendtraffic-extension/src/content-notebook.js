@@ -213,7 +213,8 @@
             <div class="task" id="task">Ожидаю задачи из TrendTraffic…</div>
             <div class="lg" id="lg"></div>
             <div class="btns">
-              <button class="pri" id="open">Открыть TrendTraffic</button>
+              <button class="pri" id="grab" title="Залить ВСЕ готовые работы студии этого блокнота в Галерею TrendTraffic">⬇ В галерею</button>
+              <button id="open">Открыть TrendTraffic</button>
             </div>
             <div class="foot">
               <span class="rec" id="verlbl"></span>
@@ -226,7 +227,7 @@
         st: sh.getElementById('st'), task: sh.getElementById('task'), lg: sh.getElementById('lg'),
         ver: sh.getElementById('ver'), open: sh.getElementById('open'), bd: sh.getElementById('bd'),
         hd: sh.getElementById('hd'), wire: sh.getElementById('wire'), verlbl: sh.getElementById('verlbl'),
-        acct: sh.getElementById('acct'),
+        acct: sh.getElementById('acct'), grab: sh.getElementById('grab'),
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       els.verlbl.textContent = 'NotebookLM';
@@ -242,6 +243,14 @@
           url = base + '&openNotebook=' + encodeURIComponent(nbId) + (title ? '&title=' + encodeURIComponent(title) : '');
         }
         window.open(url, '_blank');
+      });
+      // «⬇ В галерею»: залить ВСЕ готовые работы студии этого блокнота в Галерею (как во Flow —
+      // юзер жмёт кнопку в самом расширении, а не родную «Скачать» NotebookLM, которая просто качает файл).
+      els.grab.addEventListener('click', async () => {
+        if (els.grab.disabled) return;
+        els.grab.disabled = true; const orig = els.grab.textContent;
+        try { await grabAllStudioToGallery((t) => { els.grab.textContent = t; }); }
+        finally { els.grab.disabled = false; els.grab.textContent = orig || '⬇ В галерею'; }
       });
       sh.getElementById('recBtn').addEventListener('click', () => runRecon(false));
       refreshStatus();
@@ -884,7 +893,7 @@
       if (!card) continue;
       const full = clean(card.textContent);
       if (!(DUR_RE.test(full) || ARTKIND_RE.test(full))) continue; // не карточка артефакта (напр. ⋮ источника)
-      if (GENERATING_RE.test(full)) continue; // ещё ГЕНЕРИТСЯ («Создаю аудиопересказ…») — не готовая работа
+      if (isGeneratingText(full)) continue; // ещё ГЕНЕРИТСЯ («Создаю аудиопересказ, вернитесь через…») — не готовая
       if (seen.has(card)) continue; seen.add(card);
       // заголовок = текст ДО длительности/типа; чистим служебное (вкл. НАШУ инжект-кнопку «⬇TT» и её
       // состояния — иначе на следующем цикле заголовок «Название ⬇TT» не совпадёт с базлайном → дубликаты)
@@ -952,15 +961,33 @@
   // вернитесь через несколько минут» — глагол «Создаю» (1-е лицо), а НЕ «создаётся». Без него
   // плейсхолдер не считался генерацией (нет спиннера) И попадал в «готовые» (совпадал
   // «аудиопересказ») → вотчер качал пустышку → «не перехватил файл». Ловим все формы + «вернитесь».
-  const GENERATING_RE = /генерир|создаю|создаё?м|создаётся|создается|готовлю|обрабат|вернитесь через|generating|creating|preparing/i;
+  // ГЕНЕРАЦИЯ (не просто совпадение слова): либо явный плейсхолдер NotebookLM «…вернитесь через…»/
+  // «generating/preparing», либо глагол создания РЯДОМ С ТИПОМ артефакта (аудиопересказ/видео/…).
+  // Гейт !DUR_RE: у ГОТОВОЙ работы ВСЕГДА есть длительность m:ss, у плейсхолдера — нет. Так карточка
+  // с глаголом в НАЗВАНИИ («Создаю бренд 6:46») не ловится ложно, а текст чата/источников — тоже нет.
+  const isGeneratingText = (t) => !DUR_RE.test(t) && (
+    /вернитесь через|\bgenerating\b|\bpreparing\b|генериру[ею]тся/i.test(t)
+    || (/(создаю|создаё?тся|создаё?м|создается|готовлю|обрабатыва|creating)/i.test(t) && ARTKIND_RE.test(t)));
+  // Панель «Студия» справа: сканим ТОЛЬКО её (по заголовку «Студия»/Studio) — не чат, не источники.
+  function studioPanelRoot() {
+    const head = queryAllDeep('h1,h2,h3,[role="heading"],span,div').filter(visible)
+      .find((e) => /^(студия|studio)$/i.test(clean(e.textContent)));
+    if (!head) return null;
+    let n = head; for (let i = 0; i < 6 && n; i++) { if (n.parentElement && n.parentElement.querySelectorAll && n.parentElement.querySelectorAll('button,[role="button"]').length > 3) return n.parentElement; n = n.parentElement; }
+    return head.parentElement || null;
+  }
   function studioGeneratingCards() {
-    // блоки с текстом «…генерируется…» — берём КОРОТКИЕ листовые контейнеры (не весь body)
+    // блоки с текстом плейсхолдера — КОРОТКИЕ листовые контейнеры В ПАНЕЛИ СТУДИИ (если нашли её)
     const hits = [];
-    for (const el of queryAllDeep('div,span,section,li')) {
+    const scope = studioPanelRoot();
+    const pool = scope ? [...scope.querySelectorAll('div,span,section,li')] : queryAllDeep('div,span,section,li');
+    for (const el of pool) {
       if (!visible(el)) continue;
+      try { const rh = el.getRootNode && el.getRootNode().host; if (rh && rh.id === 'tt-nlm-host') continue; } catch { /* */ }
+      try { if (el.closest && el.closest('chat-panel,.chat-panel,[data-testid*="chat" i]')) continue; } catch { /* */ }
       const t = clean(el.textContent);
-      if (!t || t.length > 160 || !GENERATING_RE.test(t)) continue;
-      if ([...(el.children || [])].some((c) => GENERATING_RE.test(clean(c.textContent)))) continue; // не листовой
+      if (!t || t.length > 160 || !isGeneratingText(t)) continue;
+      if ([...(el.children || [])].some((c) => isGeneratingText(clean(c.textContent)))) continue; // не листовой
       hits.push(t);
       if (hits.length >= 8) break;
     }
@@ -1013,6 +1040,44 @@
       } catch { /* карточка перерисовалась */ }
     }
   }
+  // «⬇ В галерею» из виджета: залить ВСЕ готовые работы студии открытого блокнота. Держим
+  // watcherBusy на весь батч (вотчер/команды не лезут в DOM), сервер дедуплит повторы.
+  // onProgress(text) — обновляет надпись на кнопке (сама кнопка живёт в замыкании ui).
+  let grabBusy = false;
+  async function grabAllStudioToGallery(onProgress) {
+    if (grabBusy) return;
+    const nbId = notebookIdFromUrl();
+    if (!nbId) { ui.line('откройте блокнот — тогда залью его работы студии'); return; }
+    if (!isLoggedIn()) { ui.line('войдите в NotebookLM'); return; }
+    grabBusy = true;
+    const say = (t) => { try { if (typeof onProgress === 'function') onProgress(t); } catch { /* */ } };
+    try {
+      for (const t0 = Date.now(); (watcherBusy || actionBusy) && Date.now() - t0 < 45_000;) await sleep(300);
+      const total = studioArtifactCards().length;
+      if (!total) { ui.line('нет готовых работ студии в этом блокноте'); return; }
+      ui.line('заливаю работы студии в Галерею: ' + total + '…');
+      // ПЕРЕСКАНИРУЕМ перед каждым захватом: текст-фолбэк (карточки/тест/…) открывает работу и жмёт
+      // «Назад» → студия перерисовывается, кэш card.el/card.more протухает. Берём первую ещё-не-снятую
+      // по заголовку. guard — на случай, если что-то не заливается (не зациклиться).
+      const doneTitles = new Set();
+      let ok = 0, processed = 0;
+      for (let guard = 0; guard < total + 3; guard++) {
+        for (const t0 = Date.now(); (watcherBusy || actionBusy) && Date.now() - t0 < 45_000;) await sleep(300);
+        const card = studioArtifactCards().find((c) => !doneTitles.has(norm(c.title)));
+        if (!card) break;
+        doneTitles.add(norm(card.title));
+        processed++;
+        say('⬇ ' + processed + '/' + total);
+        watcherBusy = true;
+        let r = null;
+        try { r = await captureCardToGallery(card); } catch { /* след. карточка */ } finally { watcherBusy = false; }
+        if (r && r.ok) ok++;
+      }
+      await markAllStudioSeen(); // вотчер не задублирует то, что сейчас залили
+      ui.line('✓ готово: ' + ok + '/' + processed + ' работ → Галерея (Видео/Аудио/Изображение)');
+    } finally { grabBusy = false; }
+  }
+
   // Скачать конкретную карточку (⋮→Скачать→blob) и отдать в Галерею через background.
   let watcherBusy = false;
   async function captureCardToGallery(card) {

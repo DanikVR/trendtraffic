@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TrendTraffic — помощник (Flow · NotebookLM · HeyGen)",
-  "version": "1.3.22",
+  "version": "1.3.23",
   "description": "Единое расширение TrendTraffic: мост с Google Flow (Veo), Google NotebookLM (Hotebook) и HeyGen (говорящие головы UGC по вашей подписке). Очередь задач в реальном браузере, автоматизация генераций и обмен с Галереей. Ставится один раз — панель включается на том сервисе, где открыта вкладка.",
   "minimum_chrome_version": "116",
   "icons": {

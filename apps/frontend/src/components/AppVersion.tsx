@@ -2460,11 +2460,21 @@
  *          chrome://extensions в плашке теперь ОТКРЫВАЕТ вкладку (bg chrome.tabs.create — веб-страница
  *          сама chrome:// не может), фолбэк — копирование, если расширения нет. Файлы: background.js,
  *          content-notebook.js, content-bridge.js, GalleryPage.tsx, manifest, AppVersion. */
-export const APP_VERSION = '2.2.33';
+/* 2.2.34 — Hotebook, по фидбэку юзера (ext 1.3.23): (1) КНОПКА «⬇ В галерею» ПРЯМО В ВИДЖЕТЕ
+ *          расширения (как во Flow) — юзер жал РОДНУЮ «Скачать» NotebookLM (она просто качает файл),
+ *          а перехват был только на инжект-кнопке ⬇TT. Теперь одна кнопка в виджете заливает ВСЕ
+ *          готовые работы студии блокнота в Галерею (grabAllStudioToGallery: батч через
+ *          captureCardToGallery под watcherBusy, сервер дедуплит, прогресс i/N на кнопке). (2) Ложный
+ *          спиннер «генерится» на карточке блокнота: детектор генерации сканил ВСЮ страницу широким
+ *          regex и цеплял текст чата/источников. Теперь isGeneratingText требует плейсхолдер
+ *          («вернитесь через»/generating) ИЛИ глагол создания РЯДОМ С ТИПОМ артефакта, скан ограничен
+ *          панелью «Студия» (studioPanelRoot), исключены чат и наш виджет (#tt-nlm-host). Файлы:
+ *          content-notebook.js, manifest, content-bridge, AppVersion. */
+export const APP_VERSION = '2.2.34';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.22';
+export const TT_EXT_VERSION = '1.3.23';
 
 export function AppVersion() {
   return (
