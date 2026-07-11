@@ -210,19 +210,32 @@ router.post('/observed-ingest', async (req: AuthedRequest, res: Response) => {
   const mime = req.body?.mime ? String(req.body.mime) : null;
   if (!dataUrl.startsWith('data:')) return res.status(400).json({ error: 'нет dataUrl' });
   try {
-    // Дедуп: этот артефакт уже импортировали (двойной клик / авто+кнопка) → не плодим копии.
-    // Id БЕЗ суффикса: одна строка на артефакт (двойного счёта в ✨ нет), running-индикаторы
-    // с временными заголовками удаляет /observed.
+    // Дедуп АТОМАРНО (иначе тот же артефакт из двух вкладок/устройств оба пройдут SELECT и зальются
+    // дважды). Id БЕЗ суффикса: одна строка на артефакт. Схема: сначала КЛЕЙМ строки-плейсхолдера
+    // (INSERT ... ON CONFLICT DO NOTHING) — кто вставил, тот и грузит файл; остальные видят готовый
+    // ассет или «в процессе». Крашнувшийся клейм старше 2 мин перезабираем (иначе артефакт не зальётся).
     const dupId = obsId(tenantId, notebookId || 'nb', title);
-    const dup = await pool.query(`SELECT asset_id, file_url FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2 AND asset_id IS NOT NULL`, [dupId, tenantId]);
-    if (dup.rowCount) return res.json({ ok: true, assetId: dup.rows[0].asset_id, fileUrl: dup.rows[0].file_url, dedup: true });
+    const claim = await pool.query(
+      `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, notebook_id, type, params, status, title)
+       VALUES ($1,$2,NULL,$3,$4,'{}','running',$5) ON CONFLICT (id) DO NOTHING`,
+      [dupId, tenantId, notebookId || null, gtype, title]
+    );
+    if (!claim.rowCount) {
+      const ex = await pool.query(`SELECT asset_id, file_url, updated_at FROM notebooklm_jobs WHERE id=$1 AND tenant_id=$2`, [dupId, tenantId]);
+      const row = ex.rows[0];
+      if (row && row.asset_id) return res.json({ ok: true, assetId: row.asset_id, fileUrl: row.file_url, dedup: true });
+      // строка есть, но без файла: либо параллельная заливка идёт (свежая → «в процессе»), либо
+      // клейм крашнулся (старая → перезабираем себе и грузим).
+      const stale = !row || !row.updated_at || (Date.now() - new Date(row.updated_at).getTime() > 120_000);
+      if (!stale) return res.json({ ok: true, dedup: true, pending: true });
+      await pool.query(`UPDATE notebooklm_jobs SET status='running', updated_at=now() WHERE id=$1 AND tenant_id=$2`, [dupId, tenantId]);
+    }
     const asset = await ingestHotebookArtifact(tenantId, { dataUrl, fileName: title, mime, title, gtype });
-    // Запись «сделано» (питает счётчики ✨ на карточке блокнота) + закрыть наблюдаемую running-джобу.
+    // Заполняем клеймнутую строку (питает счётчики ✨ на карточке блокнота).
     await pool.query(
-      `INSERT INTO notebooklm_jobs (id, tenant_id, flow_id, notebook_id, type, params, status, title, asset_id, file_url, finished_at)
-       VALUES ($1,$2,NULL,$3,$4,'{}','done',$5,$6,$7,now())
-       ON CONFLICT (id) DO UPDATE SET status='done', asset_id=EXCLUDED.asset_id, file_url=EXCLUDED.file_url, finished_at=now()`,
-      [dupId, tenantId, notebookId || null, gtype, title, asset?.id || null, asset?.fileUrl || null]
+      `UPDATE notebooklm_jobs SET status='done', asset_id=$3, file_url=$4, finished_at=now(), updated_at=now()
+        WHERE id=$1 AND tenant_id=$2`,
+      [dupId, tenantId, asset?.id || null, asset?.fileUrl || null]
     );
     res.json({ ok: true, assetId: asset?.id || null, fileUrl: asset?.fileUrl || null });
   } catch (e: any) { res.status(502).json({ error: 'не удалось сохранить артефакт: ' + (e?.message || e) }); }

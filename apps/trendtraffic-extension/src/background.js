@@ -490,16 +490,22 @@ async function runNlmAction(action) {
  * у них нет <audio> для чтения src, плеер на MSE). Ловим URL в chrome.downloads, ОТМЕНЯЕМ
  * браузерную загрузку (чтобы не мусорить в «Загрузки») и сами стягиваем байты в фоне.
  */
-function armDownloadCapture(timeoutMs) {
+function armDownloadCapture(timeoutMs, mediaOnly) {
   let resolveFn; let done = false; let timer;
   const p = new Promise((res) => { resolveFn = res; });
   const finish = (val) => { if (done) return; done = true; clearTimeout(timer); try { chrome.downloads.onCreated.removeListener(listener); } catch { /* */ } resolveFn(val); };
+  // Похоже на аудио/видео? (по mime ИЛИ по расширению имени/URL). Нужен для НАБЛЮДАЕМОГО захвата:
+  // перехватчик взведён 40с, и без фильтра случайная СВОЯ загрузка юзера (pdf/zip) была бы отменена+
+  // стёрта. Для генерации из приложения фильтр НЕ включаем (там окно строго вокруг нашей задачи).
+  const looksMediaDl = (item) => {
+    const s = ((item && item.mime) || '') + ' ' + ((item && (item.filename || item.url || item.finalUrl)) || '');
+    return /^(audio|video)\//i.test((item && item.mime) || '') || /\.(m4a|mp3|mp4|wav|webm|mov|aac|ogg|opus)(\?|#|$)/i.test(s);
+  };
   const listener = (item) => {
     if (done) return;
-    const url = item.url || item.finalUrl || '';
-    // Подписанный URL медиа NotebookLM без расширения/маски → берём ЛЮБУЮ http(s)-загрузку, что
-    // стартовала пока перехватчик взведён (взводим строго вокруг генерации медиа = это наш артефакт).
+    const url = item.finalUrl || item.url || '';
     if (!url || !/^https?:/i.test(url)) return; // blob/data в фоне не стянуть
+    if (mediaOnly && !looksMediaDl(item)) return; // не наш артефакт (чужая загрузка юзера) — не трогаем
     try { chrome.downloads.cancel(item.id); } catch { /* */ }
     try { chrome.downloads.erase({ id: item.id }); } catch { /* */ }
     finish({ url, mime: item.mime || '' });
@@ -508,6 +514,32 @@ function armDownloadCapture(timeoutMs) {
   timer = setTimeout(() => finish(null), timeoutMs);
   p.cancel = () => finish(null);
   return p;
+}
+
+/**
+ * НАБЛЮДАЕМЫЙ захват готовой работы студии NotebookLM (юзер/кнопка ⬇TT кликнули «Скачать» в самом
+ * NotebookLM). Аудио/видео там часто качаются ПРЯМОЙ подписанной ссылкой (не blob) — MAIN-хук
+ * createObjectURL их не видит (отсюда «⚠ не перехватил файл»). Ловим браузерную загрузку в
+ * chrome.downloads (armDownloadCapture отменяет её и чистит «Загрузки»), тянем байты в фоне и
+ * заливаем в Галерею через /observed-ingest. content-notebook ВЗВОДИТ это ПЕРЕД кликом «Скачать».
+ */
+let nlmObsCap = null; // { id, notebookId, title, gtype, result: undefined|{done,ok,dedup,error} }
+let nlmObsCapSeq = 0;
+async function nlmObservedDownloadCapture(cap) {
+  try {
+    cap._p = armDownloadCapture(40_000, true); // mediaOnly — не трогаем чужие загрузки юзера
+    const got = await cap._p; // {url,mime}|null (или null, если content разоружил после blob/текст-фолбэка)
+    if (!got || !got.url) { cap.result = { done: true, ok: false, reason: 'no-download' }; return; }
+    const bytes = await fetchBytes(got.url); // {ok,dataUrl,mime,error}
+    if (!bytes || !bytes.ok || !bytes.dataUrl) { cap.result = { done: true, ok: false, error: (bytes && bytes.error) || 'fetch-failed' }; return; }
+    if (!STATE.token || !STATE.apiBase) await loadState();
+    const res = await fetch(api('/api/notebooklm-ext/observed-ingest'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ notebookId: cap.notebookId || null, title: cap.title || null, gtype: cap.gtype || null, dataUrl: bytes.dataUrl, mime: bytes.mime || got.mime || null }),
+    });
+    const d = await res.json().catch(() => ({}));
+    cap.result = { done: true, ok: res.ok && d.ok !== false, dedup: !!d.dedup, error: d.error || null };
+  } catch (e) { cap.result = { done: true, ok: false, error: String(e && e.message || e) }; }
 }
 
 // nlmBusy на всё время генерации: пока идёт — list-notebooks не навигирует вкладку (не рвёт генерацию).
@@ -759,6 +791,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         resolveNlmEvent('create-done', msg.actionId, { notebookId: msg.notebookId, title: msg.title });
         sendResponse({ ok: true });
         break;
+      case 'open-extensions-page': {
+        // Открыть страницу расширений вкладкой (веб-страница сама chrome:// не откроет — расширение может).
+        try {
+          const t = await chrome.tabs.create({ url: 'chrome://extensions' });
+          try { if (t && t.windowId != null) await chrome.windows.update(t.windowId, { focused: true }); } catch { /* */ }
+          sendResponse({ ok: true });
+        } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
+        break;
+      }
       case 'nlm-open-notebook': {
         // Клик по карточке блокнота в Галерее → открыть/сфокусировать вкладку NotebookLM на этом
         // блокноте (ensureNotebookTab сохраняет authuser рабочей вкладки).
@@ -785,6 +826,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             });
           } catch { /* best-effort */ }
         })();
+        break;
+      case 'nlm-arm-download': {
+        // Взвести перехват браузерной загрузки ПЕРЕД тем, как content кликнет «Скачать» на работе студии.
+        const capId = ++nlmObsCapSeq;
+        const cap = { id: capId, notebookId: msg.notebookId || null, title: msg.title || null, gtype: msg.gtype || null, result: undefined };
+        nlmObsCap = cap;
+        void nlmObservedDownloadCapture(cap);
+        sendResponse({ ok: true, capId }); // content опрашивает результат ИМЕННО этого захвата по capId
+        break;
+      }
+      case 'nlm-download-result':
+        // content опрашивает: поймал ли фон прямую загрузку и залил ли её в Галерею. Отдаём результат
+        // ТОЛЬКО запрошенного захвата (capId) — чтобы поллер не прочитал чужой (следующий) захват.
+        sendResponse((nlmObsCap && nlmObsCap.id === msg.capId && nlmObsCap.result) ? nlmObsCap.result : { done: false });
+        break;
+      case 'nlm-disarm-download':
+        // content поймал артефакт иначе (blob) ИЛИ ушёл в текст-фолбэк → снимаем перехват загрузки,
+        // иначе он ещё до 40с ловил бы загрузку СЛЕДУЮЩЕЙ карточки и заливал её под ЭТИМ заголовком.
+        try { if (nlmObsCap && nlmObsCap.id === msg.capId && nlmObsCap._p) nlmObsCap._p.cancel(); } catch { /* */ }
+        sendResponse({ ok: true });
         break;
       case 'nlm-observed-artifact':
         // Готовая работа студии NotebookLM (авто-подхват или кнопка «в Галерею») → Галерея.

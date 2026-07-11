@@ -2451,11 +2451,20 @@
  *          длит./размера → ключи совпадают) → серверный дедуп по sha256 байтов в /ingest-manual
  *          (flow_ext_ingest_dedup) + дедуп ключей в пределах цикла вотчера. Файлы: content-notebook.js,
  *          content-flow.js, background.js, flow-ext/router.ts, manifest, content-bridge, AppVersion. */
-export const APP_VERSION = '2.2.32';
+/* 2.2.33 — Hotebook, третий раунд по живому тесту (ext 1.3.22): (1) АУДИО скачивалось файлом (.m4a
+ *          в «Загрузки»), но в Галерею не попадало — «⚠ не перехватил файл»: аудиопересказ NotebookLM
+ *          качается ПРЯМОЙ подписанной ссылкой (не blob), MAIN-хук createObjectURL её не видит. Фикс:
+ *          captureCardToGallery ВЗВОДИТ фоновый перехват chrome.downloads ДО клика «Скачать» (bg
+ *          armDownloadCapture ловит URL, отменяет браузерную загрузку + чистит «Загрузки», тянет
+ *          байты, заливает через /observed-ingest); ждём blob ЛИБО результат фона. (2) Ссылка
+ *          chrome://extensions в плашке теперь ОТКРЫВАЕТ вкладку (bg chrome.tabs.create — веб-страница
+ *          сама chrome:// не может), фолбэк — копирование, если расширения нет. Файлы: background.js,
+ *          content-notebook.js, content-bridge.js, GalleryPage.tsx, manifest, AppVersion. */
+export const APP_VERSION = '2.2.33';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.21';
+export const TT_EXT_VERSION = '1.3.22';
 
 export function AppVersion() {
   return (

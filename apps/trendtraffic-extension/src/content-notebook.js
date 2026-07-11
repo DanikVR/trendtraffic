@@ -1017,32 +1017,52 @@
   let watcherBusy = false;
   async function captureCardToGallery(card) {
     const nbId = notebookIdFromUrl();
+    const gtype = detectGtype((card.el && card.el.textContent) || card.title);
     lastArtifact = null;
-    clickEl(card.more);
-    await sleep(1000);
-    const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
-      .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
-    if (!item) {
-      // У части типов (карточки/тест/ментальная карта…) в ⋮ НЕТ «Скачать» — файл не предусмотрен.
-      // Фолбэк: открываем работу кликом по карточке, снимаем видимый текст и заливаем как .md.
-      closeOpenMenu();
-      ui.line('у «' + card.title.slice(0, 30) + '» нет «Скачать» — снимаю текстом…');
-      return await captureCardAsText(card);
+    // ВЗВОДИМ фоновый перехват браузерной загрузки ДО клика «Скачать»: аудио/видео NotebookLM часто
+    // качаются прямой подписанной ссылкой (не blob) — MAIN-хук их не видит, фон ловит в chrome.downloads.
+    const arm = await send({ type: 'nlm-arm-download', notebookId: nbId, title: card.title, gtype });
+    const capId = arm && arm.capId;
+    // ВСЕГДА снимаем фоновый перехват на выходе (blob-путь / текст-фолбэк / фейл) — иначе он ещё до 40с
+    // поймал бы загрузку СЛЕДУЮЩЕЙ карточки и залил её под ЭТИМ заголовком. Если фон уже поймал — no-op.
+    try {
+      clickEl(card.more);
+      await sleep(1000);
+      const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
+        .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+      if (!item) {
+        // У части типов (карточки/тест/ментальная карта…) в ⋮ НЕТ «Скачать» — файл не предусмотрен.
+        // Фолбэк: открываем работу кликом по карточке, снимаем видимый текст и заливаем как .md.
+        closeOpenMenu();
+        ui.line('у «' + card.title.slice(0, 30) + '» нет «Скачать» — снимаю текстом…');
+        return await captureCardAsText(card);
+      }
+      clickEl(item);
+      // Ждём ЛИБО blob (MAIN-хук), ЛИБО фоновый перехват прямой загрузки (chrome.downloads → залил сам).
+      const wt0 = Date.now();
+      let bg = null;
+      while (Date.now() - wt0 < 40_000) {
+        if (lastArtifact && lastArtifact.dataUrl) break;
+        bg = await send({ type: 'nlm-download-result', capId });
+        if (bg && bg.done) break;
+        await sleep(700);
+      }
+      if (lastArtifact && lastArtifact.dataUrl) {
+        const r = await send({
+          type: 'nlm-observed-artifact', notebookId: nbId, title: card.title,
+          gtype, dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || '',
+        });
+        if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
+        else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
+        return r || { ok: false };
+      }
+      // blob не пришёл — но фон мог поймать прямую загрузку и уже залить.
+      if (bg && bg.done && bg.ok) { ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (bg.dedup ? ' (уже была)' : '')); return { ok: true, dedup: bg.dedup }; }
+      ui.line('⚠ не перехватил файл «' + card.title.slice(0, 30) + '»' + (bg && bg.error ? ': ' + bg.error : ''));
+      return { ok: false };
+    } finally {
+      try { await send({ type: 'nlm-disarm-download', capId }); } catch { /* */ }
     }
-    clickEl(item);
-    const wt0 = Date.now();
-    while (Date.now() - wt0 < 30_000) {
-      if (lastArtifact && lastArtifact.dataUrl) break;
-      await sleep(500);
-    }
-    if (!lastArtifact || !lastArtifact.dataUrl) { ui.line('⚠ не перехватил файл «' + card.title.slice(0, 30) + '»'); return { ok: false }; }
-    const r = await send({
-      type: 'nlm-observed-artifact', notebookId: nbId, title: card.title,
-      gtype: detectGtype((card.el && card.el.textContent) || card.title), dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || '',
-    });
-    if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
-    else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
-    return r || { ok: false };
   }
   // Фолбэк-захват «текстом»: открыть работу кликом → снять видимый текст → назад → залить .md.
   // Для типов без файла (карточки/тест/ментальная карта/таблица) — лучше текст, чем ничего.
@@ -1194,9 +1214,9 @@
   let actionBusy = false; // пока выполняется команда — вотчер студии не трогает DOM (не рвёт клики)
   async function runAction(a) {
     currentActionId = a.id || null;
-    // Если вотчер сейчас качает артефакт (⋮-меню открыто, ждёт blob) — дождёмся (макс ~35с),
-    // иначе команда кликнет в чужое меню / пересечётся на lastArtifact.
-    for (const t0 = Date.now(); watcherBusy && Date.now() - t0 < 35_000;) await sleep(300);
+    // Если вотчер сейчас качает артефакт (⋮-меню открыто, ждёт blob/загрузку) — дождёмся (макс ~45с,
+    // captureCardToGallery держит watcherBusy до 40с), иначе команда кликнет в чужое меню / lastArtifact.
+    for (const t0 = Date.now(); watcherBusy && Date.now() - t0 < 45_000;) await sleep(300);
     actionBusy = true;
     try { return await runActionInner(a); }
     finally { actionBusy = false; }

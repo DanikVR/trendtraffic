@@ -25,7 +25,7 @@
   // релизом. Приложение сверяет её с версией манифеста (EXT_VERSION): если скрипт СТАРШЕ
   // манифеста — значит после обновления расширения вкладку не перезагрузили и тут крутится
   // УСТАРЕВШИЙ content-script (у него нет новых обработчиков, напр. reconnect) → просим F5.
-  const BRIDGE_VERSION = '1.3.21';
+  const BRIDGE_VERSION = '1.3.22';
   const TOKEN_KEY = 'vibevox_token'; // ключ JWT в localStorage SPA (см. store/useAppStore.ts)
   const toPage = (m) => window.postMessage({ source: OUT, bridgeVersion: BRIDGE_VERSION, ...m }, window.location.origin);
   const toBg = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(null); } };
@@ -81,6 +81,10 @@
       // Сразу отдаём свежий статус (аккаунт NotebookLM, версия) — плашка обновится без ожидания.
       const s = await toBg({ type: 'tt-status' });
       toPage({ type: 'status', version: EXT_VERSION, ...(s || { connected: false }) });
+    } else if (d.type === 'open-extensions') {
+      // Открыть chrome://extensions вкладкой (веб-страница сама не может, а расширение — да).
+      const r = await toBg({ type: 'open-extensions-page' });
+      toPage({ type: 'open-extensions-result', ok: !!(r && r.ok) });
     } else if (d.type === 'open-notebook') {
       // Клик по карточке блокнота в Галерее: открыть/сфокусировать вкладку NotebookLM НА ЭТОМ
       // блокноте (background сохраняет authuser рабочей вкладки — не улетаем в чужой аккаунт).

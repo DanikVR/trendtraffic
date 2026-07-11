@@ -609,12 +609,24 @@ export default function GalleryPage() {
     // Старый content-script на вкладке: расширение обновлено (манифест новее), но эта вкладка
     // с прошлого сеанса держит УСТАРЕВШИЙ скрипт (нет reconnect и пр.) → нужен F5.
     const bridgeStale = installed && !!extVersion && (!extBridgeVersion || verLess(extBridgeVersion, extVersion));
-    // Кликабельный chrome://extensions: браузер не даёт открыть chrome:// из веб-страницы,
-    // поэтому по клику копируем в буфер и подсказываем вставить в адресную строку.
+    // Кликабельный chrome://extensions: веб-страница сама chrome:// открыть НЕ может, но установленное
+    // расширение — может (chrome.tabs.create в фоне). По клику просим расширение открыть вкладку; если
+    // расширения нет/не ответило (~600мс) — фолбэк: копируем в буфер и подсказываем вставить в адрес.
+    const openExtensions = () => {
+      let acked = false;
+      const onAck = (ev: MessageEvent) => {
+        if (ev.source !== window || !ev.data || ev.data.source !== 'tt-flow-ext' || ev.data.type !== 'open-extensions-result') return;
+        acked = true; window.removeEventListener('message', onAck);
+        if (!ev.data.ok) copyText('chrome://extensions');
+      };
+      window.addEventListener('message', onAck);
+      window.postMessage({ source: 'trendtraffic', type: 'open-extensions' }, window.location.origin);
+      setTimeout(() => { if (!acked) { window.removeEventListener('message', onAck); copyText('chrome://extensions'); } }, 600);
+    };
     const ChromeLink = () => (
-      <button type="button" onClick={() => copyText('chrome://extensions')} title="Скопировать и вставить в адресную строку"
+      <button type="button" onClick={openExtensions} title="Открыть страницу расширений (или скопировать адрес)"
         className="font-mono" style={{ background: 'none', border: 'none', padding: 0, color: '#6366f1', cursor: 'pointer', textDecoration: 'underline' }}>
-        chrome://extensions{copied === 'chrome://extensions' ? ' ✓ скопировано' : ''}
+        chrome://extensions{copied === 'chrome://extensions' ? ' ✓ скопировано — вставьте в адрес' : ''}
       </button>
     );
     const flowA = <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>labs.google/flow</a>;
