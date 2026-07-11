@@ -2470,11 +2470,20 @@
  *          («вернитесь через»/generating) ИЛИ глагол создания РЯДОМ С ТИПОМ артефакта, скан ограничен
  *          панелью «Студия» (studioPanelRoot), исключены чат и наш виджет (#tt-nlm-host). Файлы:
  *          content-notebook.js, manifest, content-bridge, AppVersion. */
-export const APP_VERSION = '2.2.34';
+/* 2.2.35 — Hotebook, КРИТ-фикс захвата аудио (ext 1.3.24): «В галерею»/⬇TT качали .m4a в «Загрузки»
+ *          браузера, но в Галерею НЕ попадало. Причина: mediaOnly-фильтр armDownloadCapture (введён
+ *          в 1.3.22) отвергал загрузку — аудио NotebookLM = подписанный googleusercontent-URL БЕЗ
+ *          расширения, а на chrome.downloads.onCreated у DownloadItem ещё НЕТ ни filename, ни mime →
+ *          фильтр по mime/расширению не срабатывал → перехват не отменял загрузку, файл уходил на диск.
+ *          Фикс: looksMediaDl принимает ещё и загрузки с доменов Google (googleusercontent/notebooklm/
+ *          *.google.com/*.googleapis.com/ggpht) — откуда и приходит артефакт; теперь загрузка
+ *          отменяется, байты тянутся в фоне, заливаются в «Видео → Аудио». Дедуп по (блокнот,заголовок)
+ *          не даёт повторов. Файл: background.js (+manifest/bridge/AppVersion). */
+export const APP_VERSION = '2.2.35';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.23';
+export const TT_EXT_VERSION = '1.3.24';
 
 export function AppVersion() {
   return (

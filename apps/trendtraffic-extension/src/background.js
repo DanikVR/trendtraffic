@@ -494,12 +494,18 @@ function armDownloadCapture(timeoutMs, mediaOnly) {
   let resolveFn; let done = false; let timer;
   const p = new Promise((res) => { resolveFn = res; });
   const finish = (val) => { if (done) return; done = true; clearTimeout(timer); try { chrome.downloads.onCreated.removeListener(listener); } catch { /* */ } resolveFn(val); };
-  // Похоже на аудио/видео? (по mime ИЛИ по расширению имени/URL). Нужен для НАБЛЮДАЕМОГО захвата:
-  // перехватчик взведён 40с, и без фильтра случайная СВОЯ загрузка юзера (pdf/zip) была бы отменена+
-  // стёрта. Для генерации из приложения фильтр НЕ включаем (там окно строго вокруг нашей задачи).
+  // Наш ли это артефакт? Фильтр нужен для НАБЛЮДАЕМОГО захвата (перехватчик взведён 40с — без него
+  // случайная СВОЯ загрузка юзера была бы отменена+стёрта). ВАЖНО: аудио/видео NotebookLM = подписанный
+  // googleusercontent-URL БЕЗ расширения, и на onCreated у него ЕЩЁ НЕТ ни filename, ни mime → фильтр
+  // «только по mime/расширению» его ОТВЕРГАЛ (баг: файл уходил в «Загрузки», в Галерею не попадал).
+  // Поэтому принимаем ещё и загрузки с ДОМЕНОВ GOOGLE (откуда и приходит артефакт). Для генерации из
+  // приложения (mediaOnly=false) фильтр не включаем — там окно строго вокруг нашей задачи.
   const looksMediaDl = (item) => {
-    const s = ((item && item.mime) || '') + ' ' + ((item && (item.filename || item.url || item.finalUrl)) || '');
-    return /^(audio|video)\//i.test((item && item.mime) || '') || /\.(m4a|mp3|mp4|wav|webm|mov|aac|ogg|opus)(\?|#|$)/i.test(s);
+    const url = (item && (item.finalUrl || item.url)) || '';
+    const s = ((item && item.mime) || '') + ' ' + ((item && item.filename) || '') + ' ' + url;
+    return /^(audio|video)\//i.test((item && item.mime) || '')
+      || /\.(m4a|mp3|mp4|wav|webm|mov|aac|ogg|opus)(\?|#|$)/i.test(s)
+      || /(googleusercontent|notebooklm|\.google\.com|\.googleapis\.com|\.ggpht\.com|usercontent\.google)/i.test(url);
   };
   const listener = (item) => {
     if (done) return;
