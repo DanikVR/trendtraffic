@@ -2488,11 +2488,20 @@
  *          + observed-ingest дедуплит ТОЛЬКО если ассет жив: удалил старый .bin → перезальётся заново
  *          (иначе дедуп возвращал ссылку на удалённый). Файлы: ext_bridge.ts, notebooklm-ext/router.ts,
  *          AppVersion. */
-export const APP_VERSION = '2.2.36';
+/* 2.2.37 — Hotebook, КОРНЕВАЯ причина «не перехватил файл» (ext 1.3.25): «Скачать» аудио NotebookLM
+ *          открывает подписанный URL через window.open — Chrome БЛОКИРУЕТ попап без юзер-жеста
+ *          (наши синтетические клики вотчера/кнопки) → загрузка НЕ СТАРТУЕТ вовсе (ни blob, ни
+ *          chrome.downloads) → весь захват падал (улика: «Всплывающее окно заблокировано» в
+ *          адресной строке + ноль dl-probe в логе). Фикс: MAIN-хук на САМ вызов window.open
+ *          (injected-nlm, dl-open) — URL виден до/независимо от блокировки; content ждёт теперь
+ *          ТРИ источника (blob / dl-open URL / chrome.downloads), по URL фон качает байты
+ *          (nlm-ingest-url → fetchBytes → /observed-ingest → раскладка по типу из 2.2.36).
+ *          Файлы: injected-nlm.js, content-notebook.js, background.js, manifest, bridge, AppVersion. */
+export const APP_VERSION = '2.2.37';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.24';
+export const TT_EXT_VERSION = '1.3.25';
 
 export function AppVersion() {
   return (

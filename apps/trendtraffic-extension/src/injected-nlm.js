@@ -173,5 +173,20 @@
     return origDispatch.apply(this, arguments);
   };
 
+  // «Скачать» аудио/видео NotebookLM часто = window.open(подписанный URL) в новую вкладку.
+  // Chrome БЛОКИРУЕТ такие попапы без пользовательского жеста (наши синтетические клики) →
+  // загрузка не стартует вовсе (ни blob, ни chrome.downloads) → захват «не перехватил файл».
+  // РЕШЕНИЕ: перехватываем сам ВЫЗОВ window.open — URL виден до/независимо от блокировки попапа.
+  const origWinOpen = window.open ? window.open.bind(window) : null;
+  if (origWinOpen) {
+    window.open = function (u) {
+      try {
+        const s = String(u || '');
+        if (/^https?:/i.test(s)) post({ kind: 'dl-open', url: s.slice(0, 2000) });
+      } catch { /* */ }
+      return origWinOpen.apply(window, arguments);
+    };
+  }
+
   post({ kind: 'ready' });
 })();

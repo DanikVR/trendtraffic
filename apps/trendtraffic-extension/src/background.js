@@ -853,6 +853,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         try { if (nlmObsCap && nlmObsCap.id === msg.capId && nlmObsCap._p) nlmObsCap._p.cancel(); } catch { /* */ }
         sendResponse({ ok: true });
         break;
+      case 'nlm-ingest-url':
+        // Захват по URL из window.open: «Скачать» NotebookLM открывал подписанный URL новой вкладкой,
+        // Chrome блокировал попап (нет юзер-жеста) → загрузки не было вовсе. MAIN-хук перехватил сам
+        // ВЫЗОВ window.open → сюда приходит URL: качаем байты в фоне и заливаем в Галерею.
+        void (async () => {
+          if (!STATE.token || !STATE.apiBase) await loadState();
+          if (!STATE.token || !STATE.apiBase || !msg.url) { sendResponse({ ok: false, error: 'не подключено' }); return; }
+          try {
+            const bytes = await fetchBytes(msg.url);
+            if (!bytes || !bytes.ok || !bytes.dataUrl) { sendResponse({ ok: false, error: (bytes && bytes.error) || 'скачивание не удалось' }); return; }
+            const res = await fetch(api('/api/notebooklm-ext/observed-ingest'), {
+              method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ notebookId: msg.notebookId || null, title: msg.title || null, gtype: msg.gtype || null, dataUrl: bytes.dataUrl, mime: bytes.mime || null }),
+            });
+            const d = await res.json().catch(() => ({}));
+            sendResponse({ ok: res.ok && d.ok !== false, dedup: !!d.dedup, error: d.error || null });
+          } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
+        })();
+        break;
       case 'nlm-observed-artifact':
         // Готовая работа студии NotebookLM (авто-подхват или кнопка «в Галерею») → Галерея.
         void (async () => {

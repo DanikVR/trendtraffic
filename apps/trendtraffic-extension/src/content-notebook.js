@@ -28,6 +28,7 @@
   // Последний перехваченный (в MAIN-мире, injected-nlm) файл артефакта — байты аудио/видео.
   // Захват blob прямо на странице надёжнее chrome.downloads (blob фон не стянет).
   let lastArtifact = null;
+  let lastOpenUrl = null; // {url,ts} — window.open с подписанным URL скачивания (см. dl-open)
 
   // ── deep-query сквозь shadow DOM (NotebookLM рендерит части в web-components) ──
   function queryAllDeep(sel) {
@@ -152,6 +153,11 @@
     } else if (d.kind === 'dl-probe') {
       // Диагностика механизма скачивания (что реально делает «Скачать») — видно в логе виджета.
       try { ui.line('скачивание? ' + d.at + (d.mime ? ' ' + d.mime : '') + (d.size ? ' ' + Math.round(d.size / 1024) + 'КБ' : '') + (d.href ? ' ' + d.href : '')); } catch { /* */ }
+    } else if (d.kind === 'dl-open' && d.url) {
+      // NotebookLM попытался открыть подписанный URL скачивания через window.open (Chrome мог
+      // ЗАБЛОКИРОВАТЬ попап — не важно: URL мы уже перехватили, фон скачает байты сам).
+      lastOpenUrl = { url: String(d.url), ts: Date.now() };
+      try { ui.line('перехвачен URL скачивания (window.open)'); } catch { /* */ }
     }
   });
 
@@ -1084,6 +1090,7 @@
     const nbId = notebookIdFromUrl();
     const gtype = detectGtype((card.el && card.el.textContent) || card.title);
     lastArtifact = null;
+    lastOpenUrl = null;
     // ВЗВОДИМ фоновый перехват браузерной загрузки ДО клика «Скачать»: аудио/видео NotebookLM часто
     // качаются прямой подписанной ссылкой (не blob) — MAIN-хук их не видит, фон ловит в chrome.downloads.
     const arm = await send({ type: 'nlm-arm-download', notebookId: nbId, title: card.title, gtype });
@@ -1103,11 +1110,14 @@
         return await captureCardAsText(card);
       }
       clickEl(item);
-      // Ждём ЛИБО blob (MAIN-хук), ЛИБО фоновый перехват прямой загрузки (chrome.downloads → залил сам).
+      // Ждём ЛЮБОЙ из трёх источников файла: (1) blob из MAIN-хука; (2) URL из window.open —
+      // «Скачать» аудио часто открывает подписанный URL новой вкладкой, Chrome блокирует попап без
+      // юзер-жеста, но URL мы перехватили ДО блокировки; (3) фоновый перехват chrome.downloads.
       const wt0 = Date.now();
       let bg = null;
       while (Date.now() - wt0 < 40_000) {
         if (lastArtifact && lastArtifact.dataUrl) break;
+        if (lastOpenUrl && lastOpenUrl.ts >= wt0 - 2000) break;
         bg = await send({ type: 'nlm-download-result', capId });
         if (bg && bg.done) break;
         await sleep(700);
@@ -1119,6 +1129,13 @@
         });
         if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
         else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
+        return r || { ok: false };
+      }
+      if (lastOpenUrl && lastOpenUrl.ts >= wt0 - 2000) {
+        // Фон скачает байты по перехваченному URL (сессия та же — host_permissions) и зальёт сам.
+        const r = await send({ type: 'nlm-ingest-url', url: lastOpenUrl.url, notebookId: nbId, title: card.title, gtype });
+        if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
+        else ui.line('⚠ не скачалось по URL: ' + ((r && r.error) || 'нет подключения'));
         return r || { ok: false };
       }
       // blob не пришёл — но фон мог поймать прямую загрузку и уже залить.
