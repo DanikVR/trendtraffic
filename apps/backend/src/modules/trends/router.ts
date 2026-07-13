@@ -21,6 +21,7 @@ import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, saveTrendDNAAuto } from './dna.js';
 import { buildAudienceMap } from './audience.js';
 import { analyzeVideoVisual } from './video_insight.js';
+import { saveAnalysisArtifacts } from './analysis_files.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
@@ -249,6 +250,8 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
         const visual = await analyzeVideoVisual(tId, fPath);
         if (visual) dna = applyVisualInsight(dna, visual);
         await saveTrendDNA(tId, { mediaAssetId: assetId, platform: dPlatform, externalId: dVideoId, sourceUrl: url, dna });
+        // Пакет отдельных файлов для «Медиафайлы → Аналитика»: разбор .md + субтитры .srt.
+        await saveAnalysisArtifacts(tId, { platform: dPlatform, videoId: dVideoId, dna, sourceUrl: url });
       } catch (e) {
         console.warn('[trends] save→DNA:', (e as Error).message);
       }

@@ -2565,7 +2565,19 @@
  *          (видео/аудио), Комментатор (аудио/видео), Публикатор (фото/видео). Файлы:
  *          GalleryPicker.tsx, UgcStudio.tsx, MontageEditor.tsx, CommentatorPanel.tsx,
  *          PublisherStudio.tsx. */
-export const APP_VERSION = '2.2.44';
+/* 2.2.45 — «Добавить в галерею» из «Тренды → Аналитика» теперь складывает ПАКЕТ в «Медиафайлы»,
+ *          новый подфильтр «Аналитика»: видео + читаемый разбор (.md из TrendDNA) + субтитры (.srt —
+ *          дословная расшифровка речи, язык оригинала). Бэк: video_insight просит у Gemini ещё и
+ *          transcript (тот же вызов), сегменты хранятся в dna.visual.transcript; новый
+ *          trends/analysis_files.ts пишет .md/.srt в uploads/analysis и регистрирует ассетами
+ *          (kind=reference, mediaType=file, folder=analyzed) — из ingest (кнопка + автопилот) и
+ *          /analyze/save. Фронт: подфильтр «Аналитика» в «Медиафайлах» (папка analyzed целиком:
+ *          видео с бейджем «Анализ» + файлы карточками), плитка «+» там ведёт в «Тренды → Аналитика»,
+ *          плашка после добавления — КЛИКАБЕЛЬНАЯ ссылка прямо в раздел (deep-link
+ *          /gallery?tab=reference&kind=analytics). Файлы: dna.ts, video_insight.ts,
+ *          analysis_files.ts (новый), ingest.ts, trends/router.ts, GalleryPage.tsx,
+ *          SocialExtensionPage.tsx, AppVersion. */
+export const APP_VERSION = '2.2.45';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

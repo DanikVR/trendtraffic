@@ -15,7 +15,7 @@
 
 import fs from 'fs';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
-import type { SceneBeat } from './dna.js';
+import type { SceneBeat, TranscriptSegment } from './dna.js';
 
 export const VIDEO_INSIGHT_MODEL = 'gemini-2.5-flash';
 
@@ -25,6 +25,7 @@ export interface VisualInsight {
   hookVisual: string;        // что происходит в первые 3 секунды (визуально)
   textOverlays: string[];    // надписи, появляющиеся в кадре (по порядку)
   cutsCount?: number;        // число монтажных склеек
+  transcript: TranscriptSegment[]; // дословная речь с таймкодами (пусто = речи нет) → .srt
   model: string;
 }
 
@@ -47,6 +48,18 @@ const INSIGHT_SCHEMA = {
     hookVisual: { type: 'string' },
     textOverlays: { type: 'array', items: { type: 'string' } },
     cutsCount: { type: 'number' },
+    transcript: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          start: { type: 'number' },
+          end: { type: 'number' },
+          text: { type: 'string' },
+        },
+        required: ['start', 'end', 'text'],
+      },
+    },
   },
   required: ['sceneBeats', 'visualStyle', 'hookVisual'],
 };
@@ -84,7 +97,10 @@ export async function analyzeVideoVisual(tenantId: string, filePath: string): Pr
         + '3) hookVisual — что ИМЕННО происходит визуально в первые 3 секунды (первый кадр, движение, надпись).\n'
         + '4) textOverlays — все надписи, появляющиеся в кадре, по порядку (если есть).\n'
         + '5) cutsCount — сколько монтажных склеек в ролике.\n'
-        + 'Пиши на русском, конкретно. Верни СТРОГО JSON по схеме.';
+        + '6) transcript — ДОСЛОВНАЯ расшифровка устной речи (голос за кадром/в кадре) сегментами '
+        + 'по фразам: start/end — секунды начала и конца фразы, text — сама фраза НА ЯЗЫКЕ ОРИГИНАЛА '
+        + '(не переводи!). Надписи в кадре и текст песни сюда НЕ включай; если речи нет — пустой массив.\n'
+        + 'Пиши на русском (кроме transcript — он на языке оригинала), конкретно. Верни СТРОГО JSON по схеме.';
 
       const GEN_TIMEOUT_MS = 240_000;
       const genPromise = ai.models.generateContent({
@@ -118,12 +134,24 @@ export async function analyzeVideoVisual(tenantId: string, filePath: string): Pr
         .filter((b: SceneBeat) => b.desc)
         .slice(0, 24);
       if (!beats.length) throw new Error('Gemini не вернул сцен');
+      // Дословная речь: сегменты с валидными таймкодами, по возрастанию (источник субтитров).
+      const transcript: TranscriptSegment[] = (Array.isArray(j?.transcript) ? j.transcript : [])
+        .map((s: any) => {
+          const start = Math.max(0, Number(s?.start) || 0);
+          const rawEnd = Number(s?.end);
+          const end = Number.isFinite(rawEnd) && rawEnd > start ? rawEnd : start + 2.5;
+          return { start, end, text: String(s?.text || '').trim().slice(0, 300) };
+        })
+        .filter((s: TranscriptSegment) => s.text)
+        .sort((a: TranscriptSegment, b: TranscriptSegment) => a.start - b.start)
+        .slice(0, 400);
       return {
         sceneBeats: beats,
         visualStyle: String(j?.visualStyle || '').slice(0, 400),
         hookVisual: String(j?.hookVisual || '').slice(0, 400),
         textOverlays: (Array.isArray(j?.textOverlays) ? j.textOverlays : []).map((s: any) => String(s || '').slice(0, 120)).filter(Boolean).slice(0, 20),
         cutsCount: Number.isFinite(Number(j?.cutsCount)) ? Math.max(0, Math.round(Number(j.cutsCount))) : undefined,
+        transcript,
         model: VIDEO_INSIGHT_MODEL,
       };
     } finally {

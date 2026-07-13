@@ -28,6 +28,9 @@ import type { NormComment } from './analytics.js';
 export type BeatIntensity = 'low' | 'mid' | 'high';
 export interface SceneBeat { t: number; desc: string; intensity?: BeatIntensity }
 
+/** Сегмент дословной расшифровки речи (video_insight) — источник субтитров .srt. */
+export interface TranscriptSegment { start: number; end: number; text: string }
+
 /** Снимок детерминированных метаданных тренда (из analyze summary) — для блоков и отбора. */
 export interface TrendMeta {
   platform?: string;
@@ -95,6 +98,7 @@ export interface TrendDNA {
     hookVisual?: string;      // что визуально происходит в первые 3 сек
     textOverlays?: string[];  // надписи в кадре по порядку
     cutsCount?: number;       // число монтажных склеек
+    transcript?: TranscriptSegment[]; // дословная речь с таймкодами → субтитры .srt
     model?: string;
   };
   // — Происхождение —
@@ -312,7 +316,7 @@ export async function generateTrendDNA(tenantId: string, input: GenerateDNAInput
  */
 export function applyVisualInsight(dna: TrendDNA, v: {
   sceneBeats: SceneBeat[]; visualStyle: string; hookVisual: string;
-  textOverlays: string[]; cutsCount?: number; model: string;
+  textOverlays: string[]; cutsCount?: number; transcript?: TranscriptSegment[]; model: string;
 }): TrendDNA {
   const merged: TrendDNA = {
     ...dna,
@@ -326,6 +330,7 @@ export function applyVisualInsight(dna: TrendDNA, v: {
       hookVisual: v.hookVisual || undefined,
       textOverlays: v.textOverlays?.length ? v.textOverlays : undefined,
       cutsCount: v.cutsCount,
+      transcript: v.transcript?.length ? v.transcript : undefined,
       model: v.model,
     },
   };

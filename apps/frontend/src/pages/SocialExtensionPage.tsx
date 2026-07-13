@@ -85,7 +85,7 @@ export default function SocialExtensionPage() {
 
   // «Добавить в галерею» — текущее анализируемое видео в Галерею (media_assets).
   const [adding, setAdding] = useState(false);
-  const [galleryNote, setGalleryNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [galleryNote, setGalleryNote] = useState<{ ok: boolean; text: string; link?: { label: string; to: string } } | null>(null);
 
   // Удаление видео из плитки «Видео из поиска» (source_videos): по одному и «Очистить всё».
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
@@ -180,12 +180,20 @@ export default function SocialExtensionPage() {
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
-      setGalleryNote({ ok: true, text: 'Добавлено в Галерею ✓' });
+      // Видео уже в «Медиафайлы → Аналитика»; разбор .md и субтитры .srt дособираются в фоне.
+      // Плашка успеха — с КЛИКАБЕЛЬНОЙ ссылкой в раздел; держим её дольше (~2 мин, пока
+      // дозреют файлы), ошибку — стандартные 6с.
+      setGalleryNote({
+        ok: true,
+        text: 'Добавлено ✓ Видео уже в Галерее; разбор (.md) и субтитры (.srt) появятся там через минуту-другую.',
+        link: { label: 'Открыть: Галерея → Медиафайлы → Аналитика', to: '/gallery?tab=reference&kind=analytics' },
+      });
+      setTimeout(() => setGalleryNote(null), 120000);
     } catch (e: any) {
       setGalleryNote({ ok: false, text: e?.message || 'Не удалось добавить в галерею' });
+      setTimeout(() => setGalleryNote(null), 6000);
     } finally {
       setAdding(false);
-      setTimeout(() => setGalleryNote(null), 6000);
     }
   }, [url, token]);
 
@@ -473,6 +481,14 @@ export default function SocialExtensionPage() {
               {galleryNote && (
                 <div className="text-[12px] font-600" style={{ color: galleryNote.ok ? '#10b981' : '#ef4444' }}>
                   {galleryNote.text}
+                  {/* Кликабельная ссылка (по фидбэку): сразу открыть раздел, куда всё легло. */}
+                  {galleryNote.link && (
+                    <button type="button" onClick={() => navigate(galleryNote.link!.to)}
+                      className="block mt-1 underline text-left"
+                      style={{ color: 'var(--brand)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>
+                      {galleryNote.link.label} →
+                    </button>
+                  )}
                 </div>
               )}
               {/* Очередь массового разбора */}

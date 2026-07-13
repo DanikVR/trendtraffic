@@ -17,6 +17,7 @@
 import { analyzeUrl, detectUrl } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, applyVisualInsight, type TrendDNA, type StoredTrendDNA } from './dna.js';
 import { analyzeVideoVisual } from './video_insight.js';
+import { saveAnalysisArtifacts } from './analysis_files.js';
 import { extractDownloadUrls, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
 import { createAsset, ANALYZED_FOLDER, type MediaAsset } from '../media/assets.js';
@@ -92,6 +93,8 @@ export async function ingestTrendVideo(
     const saved = await saveTrendDNA(tenantId, {
       mediaAssetId: asset?.id, platform, externalId: vid, sourceUrl: clean, dna,
     });
+    // Пакет отдельных файлов для «Медиафайлы → Аналитика»: разбор .md + субтитры .srt.
+    await saveAnalysisArtifacts(tenantId, { platform, videoId: vid, dna, sourceUrl: clean });
     return { saved, dna };
   };
 

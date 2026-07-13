@@ -13,7 +13,9 @@
  *                  клик по карточке открывает проект «проектором». Сохранённые клипы → «Видео».
  *                  «+» открывает блок Flow (генерация клипов).
  *  - UGC         — рендеры студии (folder=ugc) + «Макеты» (бренд-киты); «+» открывает студию.
- *  - Видео       — все загрузки и продукция (kind=reference|audio) с фильтром «Видео | Аудио»;
+ *  - Медиафайлы  — все загрузки и продукция (kind=reference|audio) с фильтром
+ *                  «Видео | Изображение | Аудио | Аналитика»; «Аналитика» = папка analyzed
+ *                  (видео из «Тренды → Аналитика → Добавить в галерею» + разбор .md + субтитры .srt);
  *                  кнопка «Медиа» принимает фото/видео/аудио и раскладывает по типу файла.
  *
  * Поиск, просмотр (VideoViewer), выбор, скачивание, удаление — как раньше.
@@ -25,7 +27,7 @@ import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, Image as ImageIcon, RefreshCw, UploadCloud, FileText, Sparkles,
   Download, Play, BookOpen, Clapperboard, ArrowRight, Plus, TrendingUp, Users, LayoutTemplate, X, Send,
-  ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info, Link2,
+  ChevronDown, ChevronUp, HelpCircle, Copy, Languages, Info, Link2, BarChart3,
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
@@ -38,8 +40,9 @@ import { PublisherTab, type ChainDraft } from './publisher/PublisherTab';
 import { PublisherStudio } from './publisher/PublisherStudio';
 
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference' | 'publisher';
-/** Фильтр внутри вкладки «Видео»: медиа (изображения+видео, kind=reference) или аудио. */
-type MediaKind = 'reference' | 'image' | 'audio';
+/** Фильтр внутри вкладки «Медиафайлы»: медиа (изображения+видео, kind=reference), аудио
+ *  или «Аналитика» (папка analyzed целиком: видео из «Добавить в галерею» + разбор .md + субтитры .srt). */
+type MediaKind = 'reference' | 'image' | 'audio' | 'analytics';
 const ALL_TABS: Tab[] = ['trendhub', 'ugc', 'flow', 'hotebook', 'reference', 'publisher'];
 
 interface GalleryItem {
@@ -168,7 +171,13 @@ export default function GalleryPage() {
   const [tab, setTabState] = useState<Tab>(urlTab);
   const setTab = (t: Tab) => { setTabState(t); setSearchParams((prev) => { prev.set('tab', t); return prev; }, { replace: true }); };
   useEffect(() => { if (urlTab !== tab) setTabState(urlTab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlTab]);
-  const [mediaKind, setMediaKind] = useState<MediaKind>('reference'); // фильтр «Видео | Аудио» внутри вкладки «Видео»
+  // Подфильтр «Медиафайлов» тоже синхронизирован с ?kind= — плашка «Добавлено…» в «Тренды →
+  // Аналитика» ведёт прямо в /gallery?tab=reference&kind=analytics.
+  const KINDS: MediaKind[] = ['reference', 'image', 'audio', 'analytics'];
+  const urlKind = (() => { const k = searchParams.get('kind') as MediaKind | null; return k && KINDS.includes(k) ? k : null; })();
+  const [mediaKind, setMediaKind] = useState<MediaKind>(urlKind || 'reference'); // фильтр внутри «Медиафайлов»
+  const setKind = (k: MediaKind) => { setMediaKind(k); setSearchParams((prev) => { prev.set('kind', k); return prev; }, { replace: true }); };
+  useEffect(() => { if (urlKind && urlKind !== mediaKind) setMediaKind(urlKind); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlKind]);
   const [blockReq, setBlockReq] = useState<FlowBlockRequest | null>(null); // блок TrendFlow поверх Галереи
   // Публикатор: полноэкранная студия поста (initial = медиа с карточки) + счётчик перезагрузки ленты.
   const [pubStudio, setPubStudio] = useState<{ assetId?: string; mediaUrl?: string; title?: string } | null>(null);
@@ -409,12 +418,15 @@ export default function GalleryPage() {
         // сохранённые в Галерею, живут во вкладке «Видео» — здесь медиа не грузим.
         setItems([]);
       } else {
-        // «Видео» → по kind (фильтр Видео|Изображение|Аудио); блоки → по folder.
+        // «Медиафайлы» → по kind (фильтр Видео|Изображение|Аудио); блоки → по folder.
         // Видео и Изображение лежат в kind='reference' (различаем по mediaType на клиенте,
-        // см. displayItems); Аудио — kind='audio'.
+        // см. displayItems); Аудио — kind='audio'; «Аналитика» — папка analyzed целиком
+        // (видео из «Добавить в галерею» + файл разбора .md + субтитры .srt).
         const mk = kindOverride ?? mediaKind;
         const FOLDER_TABS: Partial<Record<Tab, string>> = { hotebook: 'hotebook', ugc: 'ugc' };
-        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}` : `kind=${mk === 'audio' ? 'audio' : 'reference'}`;
+        const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}`
+          : (which === 'reference' && mk === 'analytics') ? 'folder=analyzed'
+          : `kind=${mk === 'audio' ? 'audio' : 'reference'}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
           const d = await res.json();
@@ -560,7 +572,12 @@ export default function GalleryPage() {
       case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => setBlockReq({ cloud: 'flow' }) };
       case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: новый ролик (имя — дата и время, потом переименуете)', run: () => setBlockReq({ cloud: 'ugc', newName: newRollName() }) };
       case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
-      default: return { label: 'Добавить', hint: 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»', run: () => mediaInputRef.current?.click() };
+      default:
+        // Подраздел «Аналитика» пополняется из «Тренды → Аналитика» («Добавить в галерею»), а не загрузкой файлов.
+        if (which === 'reference' && mediaKind === 'analytics') {
+          return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: «Добавить в галерею» сложит сюда видео + разбор + субтитры', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
+        }
+        return { label: 'Добавить', hint: 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»', run: () => mediaInputRef.current?.click() };
     }
   };
   // Рендер-функция (не компонент — чтобы не перемонтировалась на каждый рендер страницы).
@@ -928,10 +945,11 @@ export default function GalleryPage() {
     if (!q) return flowProjects;
     return flowProjects.filter((p) => (p.title || '').toLowerCase().includes(q));
   }, [flowProjects, query]);
-  // «Видео»-вкладка: фильтр по mediaType под выбранную папку (Видео/Изображение/Аудио).
+  // «Медиафайлы»-вкладка: фильтр по mediaType под выбранную папку (Видео/Изображение/Аудио).
   // Видео и Изображение приезжают вместе (kind='reference'), поэтому режем на клиенте.
   const displayItems = useMemo(() => {
     if (tab !== 'reference') return filtered;
+    if (mediaKind === 'analytics') return filtered; // папка analyzed целиком: видео + разбор + субтитры
     if (mediaKind === 'image') return filtered.filter((v) => v.mediaType === 'image');
     if (mediaKind === 'audio') return filtered.filter((v) => v.mediaType === 'audio');
     return filtered.filter((v) => v.mediaType !== 'image' && v.mediaType !== 'audio'); // Видео/файлы
@@ -1284,8 +1302,8 @@ export default function GalleryPage() {
           {tab === 'reference' && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
               <div className="inline-flex gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-                {([['reference', 'Видео', <Video key="v" size={14} />], ['image', 'Изображение', <ImageIcon key="i" size={14} />], ['audio', 'Аудио', <Music key="a" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
-                  <button key={k} type="button" onClick={() => { setMediaKind(k); setSelected(new Set()); }}
+                {([['reference', 'Видео', <Video key="v" size={14} />], ['image', 'Изображение', <ImageIcon key="i" size={14} />], ['audio', 'Аудио', <Music key="a" size={14} />], ['analytics', 'Аналитика', <BarChart3 key="an" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
+                  <button key={k} type="button" onClick={() => { setKind(k); setSelected(new Set()); }}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-600 transition-all whitespace-nowrap"
                     style={{ background: mediaKind === k ? 'var(--brand)' : 'transparent', color: mediaKind === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
                     {ic} {lbl}
@@ -1640,6 +1658,7 @@ export default function GalleryPage() {
                     : 'Пока пусто. Нажмите «+» — откроется UGC-студия; сохранённые ролики появятся здесь карточками.')
                 : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио плиткой «+ Добавить» — аудиофайлы лягут сюда.'
                 : mediaKind === 'image' ? 'Пока пусто. Загрузите изображения плиткой «+ Добавить» — картинки лягут сюда.'
+                : mediaKind === 'analytics' ? 'Пока пусто. «Тренды → Аналитика» → «Добавить в галерею»: сюда лягут видео, файл разбора (.md) и субтитры (.srt).'
                 : 'Пока пусто. Загрузите фото/видео плиткой «+ Добавить»; здесь же появляется всё, что производят блоки.'}
             </p>
           )}
