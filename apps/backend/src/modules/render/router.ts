@@ -11,6 +11,9 @@
  */
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import pool from '../../db/index.js';
 import { JWT_SECRET } from '../../config/secrets.js';
@@ -214,10 +217,69 @@ router.delete('/ugc/brandkits/:id', async (req: AuthedRequest, res: Response) =>
 // autopublish { enabled, source:{type:'trend_watch',id}, language, dailyCap } — конвейер
 // autopilot.ts собирает по нему ролики автоматически (папка Галереи 'auto-ugc').
 
-/** GET /ugc/templates — шаблоны тенанта. */
+// ── Обложки UGC-шаблонов: СВОЯ копия в uploads/covers ────────────────────────
+// Раньше превью карточки указывало на ИСХОДНЫЕ файлы (фото из чата, клип из «Медиафайлов»).
+// Юзер чистит галерею/чат → файл физически удаляется → обложка шаблона пропадает (живой
+// инцидент 13.07: карточки UGC остались без обложек). Теперь при сохранении шаблона превью
+// КОПИРУЕТСЯ в uploads/covers/ugc-tpl-<id>.* (spec.coverUrl) — чистки галереи её не трогают.
+const __dir_render = path.dirname(fileURLToPath(import.meta.url));
+const UPLOADS_ROOT_R = path.resolve(__dir_render, '../../../../uploads');
+const TPL_COVERS_DIR = path.join(UPLOADS_ROOT_R, 'covers');
+
+function tplPreviewSource(spec: any): string | null {
+  return spec?.photoUrl || spec?.avatarUrl
+    || (Array.isArray(spec?.clipImages) && spec.clipImages[0]?.url) || spec?.clip?.url || null;
+}
+async function snapshotTplCover(tplId: string | number, spec: any): Promise<string | null> {
+  try {
+    const src = tplPreviewSource(spec);
+    if (!src || typeof src !== 'string') return null;
+    let buf: Buffer | null = null;
+    let ext = '.jpg';
+    if (src.startsWith('/uploads/')) {
+      const p = path.join(UPLOADS_ROOT_R, src.replace(/^\/uploads\//, ''));
+      if (!p.startsWith(UPLOADS_ROOT_R) || !fs.existsSync(p)) return null; // traversal-guard + файл жив?
+      ext = (path.extname(p) || '.jpg').toLowerCase();
+      buf = fs.readFileSync(p);
+    } else if (/^https?:/i.test(src)) {
+      const r = await fetch(src).catch(() => null);
+      if (!r || !r.ok) return null;
+      const ct = r.headers.get('content-type') || '';
+      if (!/image|video/i.test(ct)) return null;
+      ext = ct.includes('png') ? '.png' : ct.includes('webp') ? '.webp' : ct.includes('mp4') ? '.mp4' : '.jpg';
+      buf = Buffer.from(await r.arrayBuffer());
+    } else return null;
+    if (!buf || buf.length < 128 || buf.length > 60 * 1024 * 1024) return null; // мусор/слишком жирно
+    fs.mkdirSync(TPL_COVERS_DIR, { recursive: true });
+    const name = `ugc-tpl-${tplId}${ext}`;
+    fs.writeFileSync(path.join(TPL_COVERS_DIR, name), buf);
+    return `/uploads/covers/${name}`;
+  } catch { return null; }
+}
+/** coverUrl жив? (файл мог удалить только ручной rm — галерея covers не трогает) */
+function tplCoverAlive(spec: any): boolean {
+  const c = spec?.coverUrl;
+  if (!c || typeof c !== 'string' || !c.startsWith('/uploads/covers/')) return false;
+  try { return fs.existsSync(path.join(TPL_COVERS_DIR, path.basename(c))); } catch { return false; }
+}
+
+/** GET /ugc/templates — шаблоны тенанта. Лениво ЧИНИМ обложки: у старых шаблонов coverUrl нет —
+ *  если исходник превью ещё жив локально, снапшотим сейчас (и сохраняем), иначе оставляем как есть. */
 router.get('/ugc/templates', async (req: AuthedRequest, res: Response) => {
   try {
     const r = await pool.query('SELECT id, name, trend_keyword, spec, autopublish, created_at FROM ugc_templates WHERE tenant_id = $1 ORDER BY id DESC LIMIT 50', [req.tenantId]);
+    for (const x of r.rows as any[]) {
+      const spec = x.spec || {};
+      if (tplCoverAlive(spec)) continue;
+      const cover = await snapshotTplCover(x.id, spec);
+      if (cover) {
+        spec.coverUrl = cover;
+        x.spec = spec;
+        await pool.query('UPDATE ugc_templates SET spec = $3 WHERE tenant_id = $1 AND id = $2', [req.tenantId, x.id, JSON.stringify(spec)]).catch(() => { /* best-effort */ });
+      } else if (spec.coverUrl) {
+        delete spec.coverUrl; x.spec = spec; // файл обложки пропал и восстановить нечем → фронт покажет плейсхолдер
+      }
+    }
     res.json({ templates: r.rows.map((x: any) => ({ id: String(x.id), name: x.name, trendKeyword: x.trend_keyword || '', spec: x.spec || {}, autopublish: x.autopublish || {}, createdAt: x.created_at })) });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Шаблоны недоступны' }); }
 });
@@ -235,6 +297,12 @@ router.post('/ugc/templates', async (req: AuthedRequest, res: Response) => {
       [req.tenantId, name, trendKeyword, JSON.stringify(specIn), JSON.stringify(autopublish)]
     );
     if (!r.rows?.[0]?.id) return res.status(500).json({ error: 'Шаблоны требуют базу данных (Postgres) — сохранение недоступно.' });
+    // СВОЯ копия обложки (uploads/covers) — чтобы чистка галереи/чата её не убила (см. блок выше).
+    const cover = await snapshotTplCover(r.rows[0].id, specIn);
+    if (cover) {
+      specIn.coverUrl = cover;
+      await pool.query('UPDATE ugc_templates SET spec = $3 WHERE tenant_id = $1 AND id = $2', [req.tenantId, r.rows[0].id, JSON.stringify(specIn)]).catch(() => { /* best-effort */ });
+    }
     res.json({ id: String(r.rows[0].id), name });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить шаблон' }); }
 });
@@ -250,6 +318,15 @@ router.patch('/ugc/templates/:id', async (req: AuthedRequest, res: Response) => 
     sets.push(`updated_at = CURRENT_TIMESTAMP`);
     const r = await pool.query(`UPDATE ugc_templates SET ${sets.join(', ')} WHERE tenant_id = $1 AND id = $2 RETURNING id`, vals);
     if (!r.rows?.[0]?.id) return res.status(404).json({ error: 'Шаблон не найден.' });
+    // spec обновили → пересняли обложку (источник превью мог смениться); файл перезаписывается тем же именем.
+    if (req.body?.spec && typeof req.body.spec === 'object') {
+      const spec = { ...req.body.spec };
+      const cover = await snapshotTplCover(r.rows[0].id, spec);
+      if (cover && spec.coverUrl !== cover) {
+        spec.coverUrl = cover;
+        await pool.query('UPDATE ugc_templates SET spec = $3 WHERE tenant_id = $1 AND id = $2', [req.tenantId, r.rows[0].id, JSON.stringify(spec)]).catch(() => { /* best-effort */ });
+      }
+    }
     res.json({ ok: true });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось обновить шаблон' }); }
 });

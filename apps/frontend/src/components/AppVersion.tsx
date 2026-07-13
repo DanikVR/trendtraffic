@@ -2533,7 +2533,16 @@
  *          интервал 2с, диалоги CDK в светлом DOM, значение через setNativeValue (Angular видит).
  *          Промпты правятся в массиве V916 (см. docs/HOTEBOOK_FLOW_CAPTURE.md). Файлы:
  *          content-notebook.js, docs/, manifest, bridge, AppVersion. */
-export const APP_VERSION = '2.2.41';
+/* 2.2.42 — UGC: обложки карточек БОЛЬШЕ НЕ ПРОПАДАЮТ (backend+frontend, расширение без изменений).
+ *          Превью шаблона указывало на ИСХОДНЫЕ файлы (фото из чата qf-gen-*, клип из «Медиафайлов»):
+ *          юзер чистит галерею/чат → deleteAsset/удаление сообщения стирает файл физически → обложка
+ *          карточки UGC пропадает (живой инцидент: карточки «тестовый» без обложек). Фикс: при
+ *          сохранении шаблона (POST/PATCH /render/ugc/templates) превью КОПИРУЕТСЯ в
+ *          uploads/covers/ugc-tpl-<id>.* → spec.coverUrl; GET лениво ЧИНИТ старые шаблоны (если
+ *          исходник ещё жив — снапшотит; если и обложка умерла — плейсхолдер). Фронт использует
+ *          coverUrl первым. У шаблонов, чьи исходники уже удалены, обложка появится после первого
+ *          пересохранения из студии. Файлы: render/router.ts, GalleryPage.tsx, AppVersion. */
+export const APP_VERSION = '2.2.42';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

@@ -1399,7 +1399,9 @@ export default function GalleryPage() {
             {/* UGC · «Ролики»: сохранённые ролики карточками с превью; клик → продолжить в студии (тот же сценарий). */}
             {tab === 'ugc' && ugcSub === 'rolls' && ugcTpls.map((k) => {
               const spec = k.spec || {};
-              const preview: string | null = spec.result?.url || spec.photoUrl || spec.avatarUrl
+              // coverUrl — СВОЯ копия обложки (uploads/covers, пишет бэкенд при сохранении шаблона):
+              // не умирает, когда юзер чистит галерею/чат (исходные файлы превью удаляются физически).
+              const preview: string | null = spec.coverUrl || spec.result?.url || spec.photoUrl || spec.avatarUrl
                 || (Array.isArray(spec.clipImages) && spec.clipImages[0]?.url) || spec.clip?.url || null;
               const isVid = !!preview && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(preview);
               const openTpl = () => setBlockReq({ cloud: 'ugc', ...(spec.__flowId ? { flowId: String(spec.__flowId) } : {}) });
