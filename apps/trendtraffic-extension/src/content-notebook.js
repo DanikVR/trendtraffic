@@ -205,6 +205,12 @@
           .rec{flex:0 0 auto;width:auto;font-size:10px;color:#7C93A0;background:none;
             border:none;cursor:pointer;text-decoration:underline;padding:0}
           .rec:hover{color:#B7C6CE;background:none}
+          .pick{display:flex;flex-direction:column;gap:4px;max-height:170px;overflow:auto;
+            background:#122029;border:1px solid #1E3038;border-radius:8px;padding:7px}
+          .prow{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#B7C6CE}
+          .prow .pt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .prow button{flex:0 0 auto;width:auto;padding:2px 9px;font-size:10px;border-radius:6px}
+          .pfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:2px}
           .hide{display:none}
         </style>
         <div class="card">
@@ -219,9 +225,10 @@
             <div class="task" id="task">Ожидаю задачи из TrendTraffic…</div>
             <div class="lg" id="lg"></div>
             <div class="btns">
-              <button class="pri" id="grab" title="Залить ВСЕ готовые работы студии этого блокнота в Галерею TrendTraffic">⬇ В галерею</button>
+              <button class="pri" id="grab" title="Показать готовые работы студии — клик по работе загружает её в Галерею TrendTraffic">⬇ В галерею</button>
               <button id="open">Открыть TrendTraffic</button>
             </div>
+            <div class="pick hide" id="pick"></div>
             <div class="foot">
               <span class="rec" id="verlbl"></span>
               <button class="rec" id="recBtn" title="Снять текущую вёрстку NotebookLM и прислать нам (для подстройки селекторов)">разведка вёрстки</button>
@@ -233,7 +240,7 @@
         st: sh.getElementById('st'), task: sh.getElementById('task'), lg: sh.getElementById('lg'),
         ver: sh.getElementById('ver'), open: sh.getElementById('open'), bd: sh.getElementById('bd'),
         hd: sh.getElementById('hd'), wire: sh.getElementById('wire'), verlbl: sh.getElementById('verlbl'),
-        acct: sh.getElementById('acct'), grab: sh.getElementById('grab'),
+        acct: sh.getElementById('acct'), grab: sh.getElementById('grab'), pick: sh.getElementById('pick'),
       };
       els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
       els.verlbl.textContent = 'NotebookLM';
@@ -250,13 +257,49 @@
         }
         window.open(url, '_blank');
       });
-      // «⬇ В галерею»: залить ВСЕ готовые работы студии этого блокнота в Галерею (как во Flow —
-      // юзер жмёт кнопку в самом расширении, а не родную «Скачать» NotebookLM, которая просто качает файл).
-      els.grab.addEventListener('click', async () => {
-        if (els.grab.disabled) return;
-        els.grab.disabled = true; const orig = els.grab.textContent;
-        try { await grabAllStudioToGallery((t) => { els.grab.textContent = t; }); }
-        finally { els.grab.disabled = false; els.grab.textContent = orig || '⬇ В галерею'; }
+      // «⬇ В галерею» → ПЕРЕЧЕНЬ готовых работ студии (решение юзера: не автоматом и не всё сразу,
+      // а список — клик по работе загружает именно её; сервер дедуплит уже залитое → «✓ уже»).
+      const renderPicker = () => {
+        els.pick.innerHTML = '';
+        const nbId = notebookIdFromUrl();
+        const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+        if (!nbId) { els.pick.appendChild(mk('div', 'prow', 'откройте блокнот — покажу его работы студии')); return; }
+        const cards = studioArtifactCards();
+        if (!cards.length) { els.pick.appendChild(mk('div', 'prow', 'нет готовых работ студии (или ещё генерятся)')); }
+        for (const c of cards) {
+          const row = mk('div', 'prow');
+          row.appendChild(mk('span', 'pt', (c.kind === 'media' ? '▶ ' : '📄 ') + c.title));
+          const b = mk('button', '', '⬇');
+          b.title = 'Загрузить «' + c.title.slice(0, 60) + '» в Галерею';
+          b.addEventListener('click', async () => {
+            if (b.disabled) return;
+            b.disabled = true; b.textContent = '…';
+            let r = null;
+            try {
+              for (const t0 = Date.now(); (watcherBusy || actionBusy) && Date.now() - t0 < 45_000;) await sleep(300);
+              watcherBusy = true;
+              try {
+                // пересканируем: DOM мог перерисоваться с момента открытия перечня
+                const fresh = studioArtifactCards().find((x) => norm(x.title) === norm(c.title));
+                r = fresh ? await captureCardToGallery(fresh) : { ok: false };
+              } finally { watcherBusy = false; }
+            } catch { /* */ }
+            b.disabled = false;
+            b.textContent = r && r.ok ? (r.dedup ? '✓ уже' : '✓') : '⚠';
+          });
+          row.appendChild(b);
+          els.pick.appendChild(row);
+        }
+        const foot = mk('div', 'pfoot');
+        const refresh = mk('button', 'rec', 'обновить'); refresh.addEventListener('click', renderPicker);
+        const close = mk('button', 'rec', 'закрыть'); close.addEventListener('click', () => els.pick.classList.add('hide'));
+        foot.appendChild(refresh); foot.appendChild(close);
+        els.pick.appendChild(foot);
+      };
+      els.grab.addEventListener('click', () => {
+        if (!els.pick.classList.contains('hide')) { els.pick.classList.add('hide'); return; }
+        renderPicker();
+        els.pick.classList.remove('hide');
       });
       sh.getElementById('recBtn').addEventListener('click', () => runRecon(false));
       refreshStatus();
@@ -882,7 +925,7 @@
   // Разведано: карточка готовой работы = контейнер с длительностью m:ss / типом + кнопки
   // «Воспроизвести» (▶) и «Ещё» (⋮). Собираем их, чтобы показать в приложении с кнопкой «Загрузить».
   const DUR_RE = /\b\d{1,2}:\d\d\b/;
-  const ARTKIND_RE = /подробный анализ|краткий обзор|дебаты|рецензи|пояснительн|пояснящее|обзор|аудиопересказ|видеопересказ|отч[её]т|тест|таблиц|инфографик|карточк|ментальн|презентаци|slide|report/i;
+  const ARTKIND_RE = /подробный анализ|краткий обзор|дебаты|рецензи|пояснительн|поясня|обзор|аудиопересказ|видеопересказ|отч[её]т|тест|таблиц|инфографик|карточк|ментальн|презентаци|slide|report/i;
   // el внутри root с учётом shadow DOM (Node.contains не пересекает shadow-границы).
   function withinDeep(el, root) {
     let n = el;
@@ -921,12 +964,17 @@
       if (isGeneratingText(full)) continue; // ещё ГЕНЕРИТСЯ («Создаю аудиопересказ, вернитесь через…») — не готовая
       // настоящая карточка содержит РОВНО одну ⋮ (несколько ⋮ = список/панель целиком)
       if ([...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])].filter(isMoreBtn).length > 1) continue;
+      // ОТКРЫТАЯ работа (плеер видео/аудио с ползунком) — не карточка списка: её «заголовок» =
+      // мусор из иконок share/download + чипов, нестабилен между сканами → плодил дубликаты (4 копии).
+      if (card.querySelector && (card.querySelector('[role="slider"],input[type="range"],video') || null)) continue;
       if (seen.has(card)) continue; seen.add(card);
       // заголовок = текст ДО длительности/типа; чистим служебное (вкл. НАШУ инжект-кнопку «⬇TT» и её
       // состояния — иначе на следующем цикле заголовок «Название ⬇TT» не совпадёт с базлайном → дубликаты)
       // + ЛЮБЫЕ snake_case-лигатуры Material-иконок (cards_star, save_alt…) — они попадают в textContent.
       let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '')
         .replace(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g, '')
+        // plain-лигатуры иконок Material (share/download склеиваются в «sharedownload») + чипы плеера
+        .replace(/sharedownload|share|download|subscriptions|fullscreen|pause|посмотреть запрос.*$/gi, '')
         .replace(/more_vert|play_arrow|воспроизвести|ещё|⬇TT|…|✓|⚠/gi, '').trim();
       if (!title || title.length < 2) title = 'Артефакт NotebookLM';
       const hasPlay = [...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])]
@@ -992,9 +1040,11 @@
   // «generating/preparing», либо глагол создания РЯДОМ С ТИПОМ артефакта (аудиопересказ/видео/…).
   // Гейт !DUR_RE: у ГОТОВОЙ работы ВСЕГДА есть длительность m:ss, у плейсхолдера — нет. Так карточка
   // с глаголом в НАЗВАНИИ («Создаю бренд 6:46») не ловится ложно, а текст чата/источников — тоже нет.
+  // «это может занять» — плейсхолдер ВИДЕОпересказа: «Генерация поясняющего видео. Это может занять
+  // некоторое время.» (сущ. «Генерация», а не глагол — глагольная ветка его не ловила, живой баг 10.07).
   const isGeneratingText = (t) => !DUR_RE.test(t) && (
-    /вернитесь через|\bgenerating\b|\bpreparing\b|генериру[ею]тся/i.test(t)
-    || (/(создаю|создаё?тся|создаё?м|создается|готовлю|обрабатыва|creating)/i.test(t) && ARTKIND_RE.test(t)));
+    /вернитесь через|это может занять|\bgenerating\b|\bpreparing\b|генериру[ею]тся/i.test(t)
+    || (/(генераци|создаю|создаё?тся|создаё?м|создается|готовлю|обрабатыва|creating)/i.test(t) && ARTKIND_RE.test(t)));
   // Панель «Студия» справа: сканим ТОЛЬКО её (по заголовку «Студия»/Studio) — не чат, не источники.
   function studioPanelRoot() {
     const head = queryAllDeep('h1,h2,h3,[role="heading"],span,div').filter(visible)
@@ -1067,44 +1117,8 @@
       } catch { /* карточка перерисовалась */ }
     }
   }
-  // «⬇ В галерею» из виджета: залить ВСЕ готовые работы студии открытого блокнота. Держим
-  // watcherBusy на весь батч (вотчер/команды не лезут в DOM), сервер дедуплит повторы.
-  // onProgress(text) — обновляет надпись на кнопке (сама кнопка живёт в замыкании ui).
-  let grabBusy = false;
-  async function grabAllStudioToGallery(onProgress) {
-    if (grabBusy) return;
-    const nbId = notebookIdFromUrl();
-    if (!nbId) { ui.line('откройте блокнот — тогда залью его работы студии'); return; }
-    if (!isLoggedIn()) { ui.line('войдите в NotebookLM'); return; }
-    grabBusy = true;
-    const say = (t) => { try { if (typeof onProgress === 'function') onProgress(t); } catch { /* */ } };
-    try {
-      for (const t0 = Date.now(); (watcherBusy || actionBusy) && Date.now() - t0 < 45_000;) await sleep(300);
-      const total = studioArtifactCards().length;
-      if (!total) { ui.line('нет готовых работ студии в этом блокноте'); return; }
-      ui.line('заливаю работы студии в Галерею: ' + total + '…');
-      // ПЕРЕСКАНИРУЕМ перед каждым захватом: текст-фолбэк (карточки/тест/…) открывает работу и жмёт
-      // «Назад» → студия перерисовывается, кэш card.el/card.more протухает. Берём первую ещё-не-снятую
-      // по заголовку. guard — на случай, если что-то не заливается (не зациклиться).
-      const doneTitles = new Set();
-      let ok = 0, processed = 0;
-      for (let guard = 0; guard < total + 3; guard++) {
-        for (const t0 = Date.now(); (watcherBusy || actionBusy) && Date.now() - t0 < 45_000;) await sleep(300);
-        if (notebookIdFromUrl() !== nbId) { ui.line('⚠ унесло со страницы блокнота — останавливаюсь'); break; }
-        const card = studioArtifactCards().find((c) => !doneTitles.has(norm(c.title)));
-        if (!card) break;
-        doneTitles.add(norm(card.title));
-        processed++;
-        say('⬇ ' + processed + '/' + total);
-        watcherBusy = true;
-        let r = null;
-        try { r = await captureCardToGallery(card); } catch { /* след. карточка */ } finally { watcherBusy = false; }
-        if (r && r.ok) ok++;
-      }
-      await markAllStudioSeen(); // вотчер не задублирует то, что сейчас залили
-      ui.line('✓ готово: ' + ok + '/' + processed + ' работ → Галерея (Видео/Аудио/Изображение)');
-    } finally { grabBusy = false; }
-  }
+  // (Батч-заливка «все сразу» удалена 10.07 по решению юзера: загрузка ТОЛЬКО по клику из перечня
+  // «⬇ В галерею» в виджете или кнопкой ⬇TT у карточки; сервер дедуплит уже залитое.)
 
   // Скачать конкретную карточку (⋮→Скачать→blob) и отдать в Галерею через background.
   let watcherBusy = false;
@@ -1199,7 +1213,6 @@
     return r || { ok: false };
   }
 
-  const autoTried = new Map(); // title → попытки (не долбим бесконечно упавший авто-подхват)
   async function studioWatcher() {
     if (watcherBusy || actionBusy) return; // не мешаем идущей команде (generate/chat кликают в DOM)
     const nbId = notebookIdFromUrl();
@@ -1211,26 +1224,9 @@
       injectGalleryButtons(ready);
       // индикаторы в приложении (спиннер на карточке блокнота/вкладке/сайдбаре)
       send({ type: 'nlm-observed', notebookId: nbId, generating: gen });
-      const key = seenKey(nbId);
-      const seen = await storageGet(key);
-      if (!Array.isArray(seen)) {
-        // первый визит в блокнот: существующие работы — базлайн (их НЕ авто-качаем; для них кнопки).
-        // ПУСТОЙ снимок НЕ сохраняем (студия могла ещё не отрисоваться — иначе на следующем цикле
-        // ВСЕ старые работы посчитаются «новыми» и массово зальются). Исключение: видим генерацию —
-        // значит, панель отрисована и блокнот реально пуст.
-        if (ready.length || gen.length) await storageSet(key, ready.map((c) => norm(c.title)));
-        return;
-      }
-      const fresh = ready.filter((c) => !seen.includes(norm(c.title)));
-      for (const c of fresh.slice(0, 2)) { // максимум 2 за цикл — не заваливаем
-        const tries = autoTried.get(norm(c.title)) || 0;
-        if (tries >= 2) { seen.push(norm(c.title)); continue; } // 2 неудачи → сдаёмся, кнопка остаётся
-        autoTried.set(norm(c.title), tries + 1);
-        ui.line('новая работа студии: «' + c.title.slice(0, 40) + '» — качаю в Галерею…');
-        const r = await captureCardToGallery(c);
-        if (r && r.ok) seen.push(norm(c.title));
-      }
-      await storageSet(key, seen.slice(-500));
+      // АВТОЗАГРУЗКИ БОЛЬШЕ НЕТ (решение юзера 10.07): готовые работы заливаются ТОЛЬКО вручную —
+      // кнопкой ⬇TT у карточки или через перечень «⬇ В галерею» в виджете (клик по работе = загрузка).
+      // Дедуп на сервере: то, что уже в Галерее, повторно не зальётся.
     } catch { /* не мешаем работе юзера */ }
     finally { watcherBusy = false; }
   }
