@@ -23,6 +23,9 @@ interface Props {
   onOmni?: (index: number) => void;
   showGestures?: boolean;
   dialogueMode?: boolean;   // режим «Диалоги»: на реплике с медиа — выбор раскладки + растяжка показа
+  // UGC-студия: план показа медиа (Кадр/Выезд/Плашка — подкастовые) скрыт, окно врезки
+  // редактируется на превью кадра (чипы «Врезки»); подкаст/«Комментатор» — как раньше.
+  hideMediaPlan?: boolean;
   accentA?: string;
   accentB?: string;
 }
@@ -32,7 +35,7 @@ interface Props {
 const MIN_PPS = 2;
 const MAX_PPS = 2000;
 
-export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
+export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
   const dirty = () => { onDirty?.(); };
   const mutate = (fn: (d: PodLine[]) => PodLine[]) => { setDialogue(fn); dirty(); };
   const lineMutate = (i: number, patch: Partial<PodLine>) => mutate((d) => d.map((l, j) => (j === i ? { ...l, ...patch } : l)));
@@ -392,7 +395,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                   </div>
                 </>
               )}
-              {l.image && !dialogueMode && (
+              {l.image && !dialogueMode && !hideMediaPlan && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр:</span>
                   {([['full', 'Во весь кадр'], ['card', 'Карточка']] as ['full' | 'card', string][]).map(([m, lbl]) => { const sel = (l.mode || 'card') === m; return (
@@ -400,13 +403,13 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                   ); })}
                 </div>
               )}
-              {l.image && !dialogueMode && l.mode === 'full' && (
+              {l.image && !dialogueMode && !hideMediaPlan && l.mode === 'full' && (
                 <div className="flex items-center gap-1 mt-1" style={{ paddingLeft: 34 }}>
                   <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Плашка:</span>
                   <input value={l.title || ''} onChange={(e) => lineMutate(i, { title: e.target.value.slice(0, 60) })} placeholder="заголовок 2–5 слов (необязательно)" className="flex-1 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
                 </div>
               )}
-              {l.image && !dialogueMode && (l.mode || 'card') === 'card' && (
+              {l.image && !dialogueMode && !hideMediaPlan && (l.mode || 'card') === 'card' && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
                   {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a.v; return (

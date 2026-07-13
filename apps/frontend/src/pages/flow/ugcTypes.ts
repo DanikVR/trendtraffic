@@ -43,6 +43,9 @@ export interface UgcSpec {
   // (речь+мимика внутри). Идёт прямо в композит (composeUgc), HeyGen/ElevenLabs НЕ участвуют.
   avatarVideoUrl: string | null; avatarVideoName: string | null;
   avatarVideoCutout: boolean;                               // зелёный фон → вырезать (chroma-key), силуэт поверх видеоряда
+  // ИИ-вырезка фона аватара в соло («Моё фото»/«Коллекция»): HeyGen оживляет фото на ЗЕЛЁНОМ
+  // фоне (bgColor), рендер делает chroma-key → поверх кадра остаётся только силуэт человека.
+  avatarCutout: boolean;
   faceProvider: 'heygen_api' | 'heygen_ext';                // чем рендерить лицо: HeyGen API (ключ) ИЛИ подписка через расширение
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
   voice: UgcVoice;
@@ -107,6 +110,7 @@ export const UGC_DEFAULT: UgcSpec = {
   avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
   photoUrl: null, photoName: null,
   avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
+  avatarCutout: false,
   faceProvider: 'heygen_api',
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],

@@ -1225,7 +1225,9 @@
       "videoEmptyTitle": "Avatar video — not uploaded",
       "videoHint": "A finished clip of a talking person — speech and facial motion are already inside. HeyGen and voiceover are not used: fast and with no generation cost.",
       "videoCutout": "Cut out background (chroma key)",
-      "videoCutoutHint": "If the clip has a green background — we'll remove it and place the silhouette over the footage."
+      "videoCutoutHint": "If the clip has a green background — we'll remove it and place the silhouette over the footage.",
+      "aiCutout": "Cut out avatar background (AI)",
+      "aiCutoutHint": "HeyGen animates the photo on a green screen, then we key it out — only the person's silhouette stays over the frame, no rectangle."
     },
     "voice": {
       "title": "Voice & script",
@@ -1422,7 +1424,13 @@
       "tagAvatarCloseup": "Avatar · close-up",
       "openGallery": "Open in Gallery",
       "tagYourVideo": "Your video",
-      "emptyClipSubVoiceover": "the base of the frame · tap to choose"
+      "emptyClipSubVoiceover": "the base of the frame · tap to choose",
+      "insertsLabel": "Inserts:",
+      "insertBadge": "Insert #{{n}}",
+      "insertFullTag": "full frame",
+      "insertMakeWindow": "As window",
+      "insertMakeFull": "Full frame",
+      "insertHint": "The insert shows during its line. Click a chip to show/hide; drag the window around the frame, corner — resize, \"Full frame\" — fullscreen."
     },
     "picker": {
       "photoA": "Photo · first speaker",

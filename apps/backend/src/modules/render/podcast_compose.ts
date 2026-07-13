@@ -420,8 +420,9 @@ function orientCells(W: number, H: number): { landscape: boolean; cw: number; ch
 }
 
 // ── Оверлеи поверх собранного кадра (ПОД субтитрами): врезки → верхний слой → полоса прогресса ──
-/** Врезка: медиа во весь кадр на время реплики (t0..t1). Изображение — loop, видео — со сдвигом PTS. */
-export interface UgcInsert { path: string; isVideo: boolean; t0: number; t1: number }
+/** Врезка: медиа на время реплики (t0..t1). Изображение — loop, видео — со сдвигом PTS.
+ *  rect — окно врезки в долях кадра (драг на превью студии); null/нет = во весь кадр. */
+export interface UgcInsert { path: string; isVideo: boolean; t0: number; t1: number; rect?: { x: number; y: number; w: number; h: number } | null }
 
 /** Собирает inputs+фильтры для: врезок (overlay enable=between), верхнего PNG-слоя (растянут точно
  *  в кадр — полотно готовится под формат) и полосы прогресса (drawbox, ширина растёт с t).
@@ -441,9 +442,14 @@ function overlayExtras(o: {
     if (ins.isVideo) inputs.push('-stream_loop', '-1', '-t', segDur, '-i', ins.path);
     else inputs.push('-loop', '1', '-t', segDur, '-i', ins.path);
     const tag = `ins${idx}`;
-    parts.push(`[${idx}:v]scale=${o.W}:${o.H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${o.W}:${o.H},setsar=1,fps=30,setpts=PTS-STARTPTS+${t0.toFixed(2)}/TB[${tag}]`);
+    // rect с превью → окно (пиксели, чётные под yuv420p); без rect — во весь кадр (как раньше).
+    const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
+    const r = ins.rect && [ins.rect.x, ins.rect.y, ins.rect.w, ins.rect.h].every(Number.isFinite) ? ins.rect : null;
+    const bw = r ? even(o.W * r.w) : o.W, bh = r ? even(o.H * r.h) : o.H;
+    const bx = r ? Math.round(o.W * r.x) : 0, by = r ? Math.round(o.H * r.y) : 0;
+    parts.push(`[${idx}:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30,setpts=PTS-STARTPTS+${t0.toFixed(2)}/TB[${tag}]`);
     const out = next();
-    parts.push(`${cur}[${tag}]overlay=0:0:enable='between(t,${t0.toFixed(2)},${t1.toFixed(2)})':eof_action=pass${out}`);
+    parts.push(`${cur}[${tag}]overlay=${bx}:${by}:enable='between(t,${t0.toFixed(2)},${t1.toFixed(2)})':eof_action=pass${out}`);
     cur = out; idx++;
   }
   if (o.layerPath) {
@@ -536,7 +542,7 @@ export async function composeUgc(opts: {
   capPos: 'bottom' | 'center' | 'top';
   capWish?: UgcCapWish | null;  // «Пожелания к стилю» титров (цвет/обводка/размер) — как в превью
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
-  inserts?: UgcInsert[] | null; // врезки медиа реплик во весь кадр (по таймкодам разбора)
+  inserts?: UgcInsert[] | null; // врезки медиа реплик (окно rect с превью или весь кадр)
   layerPath?: string | null;    // верхний PNG-слой (лого/рамка), под субтитрами
   progressBar?: boolean;        // полоса прогресса сверху кадра
   // Кастомная позиция аватара (драг на превью студии): доли кадра 0..1.

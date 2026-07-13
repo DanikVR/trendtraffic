@@ -525,6 +525,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     };
     const avatarRectFor = (k: UgcFormatKey) => avatarRects[k] || defaultAvatarRect(placement);
     const isPhoto = spec.avatarSource === 'photo';
+    // ИИ-вырезка фона аватара в соло (фото/коллекция): HeyGen на зелёном → chroma-key → силуэт.
+    const avatarCutoutOn = !!spec.avatarCutout;
     // Провайдер рендера лица: 'ext' = HeyGen по ПОДПИСКЕ через расширение браузера (втрое дешевле,
     // но нужна открытая вкладка студии HeyGen у клиента); иначе 'api' — HeyGen API (x-api-key).
     const faceProvider: 'api' | 'ext' = spec.faceProvider === 'heygen_ext' ? 'ext' : 'api';
@@ -575,11 +577,53 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       : undefined;
     const introUrl = String(spec.intro?.url || '');
     const outroUrl = String(spec.outro?.url || '');
-    // Врезки медиа реплик (для соло и «Без аватара»): нужны валидные таймкоды разбора.
-    const insertSpecs: { url: string; isVideo: boolean; t0: number; t1: number }[] = script
-      .filter((l) => l?.image && Number.isFinite(Number(l?.start)) && Number.isFinite(Number(l?.end)) && Number(l.end) > Number(l.start))
-      .slice(0, 12)
-      .map((l) => ({ url: String(l.image), isVideo: /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(String(l.image)), t0: Number(l.start), t1: Number(l.end) }));
+    // Врезки медиа реплик (соло / «Без аватара» / «Готовое видео»). Таймкоды: точные из разбора
+    // записи (start/end), а у ИИ-текста их НЕТ — тогда реплики раскладываются по длительности
+    // голоса пропорционально длине текста (как approxCaps у субтитров) — раньше такие медиа
+    // молча выпадали. rect — окно врезки с превью (доли кадра 0..1), null = во весь кадр.
+    const normLineRect = (r: any): { x: number; y: number; w: number; h: number } | null => {
+      if (!r || typeof r !== 'object') return null;
+      const x = Number(r.x), y = Number(r.y), w = Number(r.w), h = Number(r.h);
+      if (![x, y, w, h].every(Number.isFinite)) return null;
+      const cl = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+      const cw = cl(w, 0.08, 1), ch = cl(h, 0.08, 1);
+      return { x: cl(x, 0, 1 - cw), y: cl(y, 0, 1 - ch), w: cw, h: ch };
+    };
+    interface InsertLineSpec {
+      url: string; isVideo: boolean; rect: { x: number; y: number; w: number; h: number } | null;
+      start?: number; end?: number;   // валидные таймкоды разбора (если есть)
+      c0: number; c1: number;         // границы реплики в символах — для пропорциональной раскладки
+    }
+    const insertLines: InsertLineSpec[] = [];
+    let insertTotalChars = 1;
+    {
+      let cAcc = 0;
+      for (const l of script) {
+        const len = String(l?.text || '').trim().length + 1;
+        if (l?.image) {
+          const st = Number(l?.start), en = Number(l?.end);
+          insertLines.push({
+            url: String(l.image),
+            isVideo: /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(String(l.image)),
+            rect: normLineRect(l?.rect),
+            ...(Number.isFinite(st) && Number.isFinite(en) && en > st ? { start: st, end: en } : {}),
+            c0: cAcc, c1: cAcc + len,
+          });
+        }
+        cAcc += len;
+      }
+      insertTotalChars = cAcc || 1;
+    }
+    // t0/t1 по известной длительности голоса D (считается в ветке): таймкоды разбора как есть,
+    // иначе пропорция по символам; минимум показа ~0.8с, всё зажато в [0, D+0.2].
+    const resolveInserts = (D: number): { url: string; isVideo: boolean; rect: InsertLineSpec['rect']; t0: number; t1: number }[] =>
+      insertLines.slice(0, 12).map((ins) => {
+        let t0 = Number.isFinite(ins.start) ? (ins.start as number) : D * (ins.c0 / insertTotalChars);
+        let t1 = Number.isFinite(ins.end) ? (ins.end as number) : D * (ins.c1 / insertTotalChars);
+        t0 = Math.max(0, Math.min(t0, D));
+        t1 = Math.min(Math.max(t1, t0 + 0.8), D + 0.2);
+        return { url: ins.url, isVideo: ins.isVideo, rect: ins.rect, t0, t1 };
+      }).filter((x) => x.t1 > x.t0 + 0.15);
     // «Видеоряд из фото»: изображения → слайдшоу-клип (1 фото = статичный кадр,
     // несколько = перелистывание по кругу с кроссфейдом), дальше ВЕСЬ конвейер
     // (все 4 ветки) видит обычный spec.clip — ветки не трогаем. Видео приоритетнее фото.
@@ -617,12 +661,13 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       intro: introUrl ? (await downloadToRenders(abs(introUrl), 'ugcin')).filePath : null,
       outro: outroUrl ? (await downloadToRenders(abs(outroUrl), 'ugcout')).filePath : null,
     });
-    const dlInserts = async (): Promise<{ path: string; isVideo: boolean; t0: number; t1: number }[]> => {
-      const cache = new Map<string, string>();
-      const out: { path: string; isVideo: boolean; t0: number; t1: number }[] = [];
-      for (const ins of insertSpecs) {
-        if (!cache.has(ins.url)) cache.set(ins.url, (await downloadToRenders(abs(ins.url), ins.isVideo ? 'ugcinsv' : 'ugcinsi')).filePath);
-        out.push({ path: cache.get(ins.url)!, isVideo: ins.isVideo, t0: ins.t0, t1: ins.t1 });
+    // Скачивание врезок: кэш по url на весь запуск (языки/форматы не перекачивают файлы).
+    const insertDlCache = new Map<string, string>();
+    const dlInserts = async (resolved: ReturnType<typeof resolveInserts>): Promise<UgcInsert[]> => {
+      const out: UgcInsert[] = [];
+      for (const ins of resolved) {
+        if (!insertDlCache.has(ins.url)) insertDlCache.set(ins.url, (await downloadToRenders(abs(ins.url), ins.isVideo ? 'ugcinsv' : 'ugcinsi')).filePath);
+        out.push({ path: insertDlCache.get(ins.url)!, isVideo: ins.isVideo, t0: ins.t0, t1: ins.t1, rect: ins.rect });
       }
       return out;
     };
@@ -652,7 +697,6 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
           const bmp = await dlBumpers();
-          const inserts = await dlInserts();
           let made = 0; const skippedLangs: string[] = [];
           // У ИИ-текста нет таймкодов разбора → субтитры строим примерно: реплики (или предложения
           // перевода) раскладываются по длительности голоса пропорционально длине текста.
@@ -683,12 +727,15 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const voiceUrl = useRecording ? abs(String(spec.recordingUrl)) : abs(await elevenTTS(elevenKey!, text.slice(0, 2500), gender, voiceIdSpec));
             const voice = await downloadToRenders(voiceUrl, 'ugcvoice');
             const langSuffix = lang !== 'ru' ? ` · ${lang.toUpperCase()}` : '';
+            // Длительность голоса этого языка: раскладка врезок медиа + примерные субтитры.
+            const Dv = await mediaDuration(voice.filePath);
             // 3) субтитры: точные таймкоды разбора; иначе — примерная раскладка по голосу.
             let capsForLang = captions;
-            if (!capsForLang.length && capStyle !== 'none' && scriptText) {
-              const Dv = await mediaDuration(voice.filePath);
-              if (Dv > 1) capsForLang = approxCaps(text, lang === 'ru' ? script.map((l) => String(l?.text || '')) : [], Dv);
+            if (!capsForLang.length && capStyle !== 'none' && scriptText && Dv > 1) {
+              capsForLang = approxCaps(text, lang === 'ru' ? script.map((l) => String(l?.text || '')) : [], Dv);
             }
+            // Врезки медиа реплик: таймкоды разбора ИЛИ пропорция по тексту на длину голоса.
+            const inserts = insertLines.length && Dv > 0.5 ? await dlInserts(resolveInserts(Dv)) : [];
 
             for (let f = 0; f < outFormats.length; f++) {
               const fmt = outFormats[f];
@@ -996,7 +1043,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
           const bmp = await dlBumpers();
-          const inserts = await dlInserts();   // врезки медиа реплик (только при таймкодах разбора)
+          // Врезки медиа реплик: длительность ролика задаёт видео-аватар (его дорожка = голос).
+          const Dav = await mediaDuration(avatar.filePath);
+          const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(Dav)) : [];
           let made = 0;
 
           for (const fmt of outFormats) {
@@ -1064,7 +1113,6 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
           const bmp = await dlBumpers();
-          const inserts = await dlInserts();   // врезки медиа реплик (только при таймкодах разбора)
           let made = 0; const skippedLangs: string[] = [];
 
           for (const lang of langs) {
@@ -1082,11 +1130,16 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             j.status = faceProvider === 'ext' ? 'аватар по подписке (открой вкладку студии HeyGen)' : `генерирую аватар (Avatar IV${langSuffix})`;
             const heads = await renderTalkingHeads({
               tenantId: j.tenantId!, jobId: `${jobId}${lang !== 'ru' ? `-${lang}` : ''}`, provider: faceProvider, hgKey,
-              heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true }],
+              // Вырезка фона (ИИ): HeyGen оживляет фото на ЗЕЛЁНОМ фоне → composeUgc делает
+              // chroma-key — поверх кадра остаётся силуэт (как dialogueCutout в «Диалогах»).
+              heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true, ...(avatarCutoutOn ? { bgColor: '#00FF00' } : {}) }],
               onProgress: (d, t2) => { j.status = faceProvider === 'ext' ? `аватар по подписке (${d}/${t2})` : `генерирую аватар (Avatar IV${langSuffix})`; },
             });
             const avatarPath = heads[0];
             if (!avatarPath) throw new Error('HeyGen не отдал видео');
+            // Врезки медиа реплик: таймкоды разбора ИЛИ пропорция по тексту на длину аватара (=голоса).
+            const Dav = await mediaDuration(avatarPath);
+            const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(Dav)) : [];
 
             for (let f = 0; f < outFormats.length; f++) {
               const fmt = outFormats[f];
@@ -1094,6 +1147,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               j.status = `склейка ${fmt.label}${langSuffix} (${made}/${j.total})`;
               let fileUrl = await composeUgc({
                 avatarPath, avatarKind: 'opaque',
+                avatarChroma: avatarCutoutOn ? '0x00FF00' : null,   // ИИ-вырезка фона → силуэт
                 voicePath: avatarPath, // голос уже в mp4 HeyGen — берём его аудио
                 clipPath: clip?.filePath || null,
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',

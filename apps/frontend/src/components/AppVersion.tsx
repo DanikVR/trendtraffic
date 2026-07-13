@@ -2583,7 +2583,21 @@
  *          помнится в localStorage (tt_ugc_dock_h); во время жеста пишем maxHeight прямо в DOM
  *          (без re-render на каждый move), setPointerCapture — жест не залипает над превью.
  *          Файлы: UgcStudio.tsx, locales ru/en (ugc.timeline.dragResize), AppVersion. */
-export const APP_VERSION = '2.2.46';
+/* 2.2.47 — UGC-студия: медиа реплик ВИДНЫ и НАСТРАИВАЮТСЯ на превью до генерации + ИИ-вырезка
+ *          фона аватара в соло. (1) Врезки медиа реплик больше не выпадают у ИИ-текста: без
+ *          таймкодов разбора реплики раскладываются по длительности голоса пропорционально длине
+ *          текста (раньше — только diarize, иначе медиа молча терялись). (2) На превью соло/«Без
+ *          аватара» — чипы «Врезки» (реплики с медиа): выбранная врезка показывается на кадре,
+ *          окно тащится/масштабируется (script[i].rect, доли кадра) или «Во весь кадр»; рендер
+ *          кладёт врезку ТЕМ ЖЕ rect (overlayExtras) — превью == рендер. Подкастовые «Кадр/
+ *          Выезд/Плашка» в репликах UGC скрыты (hideMediaPlan). (3) «Вырезать фон аватара (ИИ)»
+ *          для «Моё фото»/«Коллекции» в соло: HeyGen оживляет фото на зелёном (bgColor) →
+ *          chroma-key → поверх кадра силуэт (как dialogueCutout в «Диалогах»); превью показывает
+ *          шахматку прозрачности. Файлы: dialogueTypes.ts (PodLine.rect), ugcTypes.ts
+ *          (avatarCutout), UgcPreview.tsx, UgcStudio.tsx, DialogueTimeline.tsx,
+ *          render/router.ts (insertLines/resolveInserts, bgColor+avatarChroma),
+ *          podcast_compose.ts (UgcInsert.rect), локали ru/en, AppVersion. */
+export const APP_VERSION = '2.2.47';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

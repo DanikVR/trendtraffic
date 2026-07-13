@@ -19,9 +19,14 @@ export const DLG_MEDIA_HINTS: { v: DlgMediaHint; label: string }[] = [
   { v: 'media-split', label: 'Сверху-снизу' },
 ];
 
+/** Кадр-окно медиа реплики (доли кадра 0..1) — выставляется драгом на превью UGC-студии.
+ *  Отсутствует (undefined) = медиа во весь кадр. ТА ЖЕ геометрия уходит в рендер (overlayExtras). */
+export interface LineRect { x: number; y: number; w: number; h: number }
+
 /** Реплика: спикер + текст (+ таймкоды) + опц. картинка/видео + tStart (позиция на таймлайне).
  *  mode/title/anim — план показа медиа; gesture — переопределение жеста (подкаст, GPU-студия);
- *  layoutHint/holdSec — режим «Диалоги»: как показать медиа и сколько держать (растяжка). */
+ *  layoutHint/holdSec — режим «Диалоги»: как показать медиа и сколько держать (растяжка);
+ *  rect — окно врезки в соло/озвучке UGC (пусто = во весь кадр). */
 export interface PodLine {
   speaker: 'A' | 'B';
   text: string;
@@ -34,4 +39,5 @@ export interface PodLine {
   title?: string;
   layoutHint?: DlgMediaHint;
   holdSec?: number;
+  rect?: LineRect;
 }

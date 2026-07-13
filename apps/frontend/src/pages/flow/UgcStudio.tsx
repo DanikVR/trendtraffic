@@ -817,6 +817,17 @@ export default function UgcStudio(p: UgcStudioProps) {
             {/* Оживление лица (HeyGen) — только для фото/коллекции; готовое видео уже с мимикой. */}
             {ugc.avatarSource !== 'video' && (
             <div className="space-y-1.5">
+              {/* ИИ-вырезка фона (соло, фото/коллекция): HeyGen оживляет на ЗЕЛЁНОМ фоне →
+                  рендер убирает его chroma-key — поверх кадра остаётся только силуэт человека. */}
+              {mode === 'solo' && (
+                <>
+                  <label className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                    <input type="checkbox" checked={ugc.avatarCutout} onChange={(e) => ugcMutate((u) => ({ ...u, avatarCutout: e.target.checked }))} style={{ accentColor: ACC, width: 15, height: 15 }} />
+                    <span className="text-[11px] font-600 flex-1" style={{ color: 'var(--text-secondary)' }}>{t('ugc.avatar.aiCutout')}</span>
+                  </label>
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.aiCutoutHint')}</p>
+                </>
+              )}
               <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.faceProviderLabel')}</div>
               <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                 {([['heygen_api', t('ugc.avatar.providerApi')], ['heygen_ext', t('ugc.avatar.providerExt')]] as [UgcSpec['faceProvider'], string][]).map(([pr, lbl]) => (
@@ -1240,6 +1251,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               onEmptyClip={() => p.openUgcPick('clip')}
               onOpenLines={() => setLinesOpen(true)}
               onAvatarRect={(fmt, rect) => ugcMutate((u) => ({ ...u, avatarRects: { ...u.avatarRects, [fmt]: rect } }))}
+              onLineRect={(i, rect) => ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, rect: rect || undefined } : l)) }))}
             />
           ) : (
           <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-3" style={{ minHeight: 0 }}>
@@ -1335,6 +1347,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                 recordingUrl={ugc.recordingUrl}
                 onPickImage={(i) => { p.setUgcLineIdx(i); p.setUgcPick('lineImage'); }}
                 dialogueMode={ugc.dialogueEnabled}
+                hideMediaPlan
                 accentA={ACC}
                 accentB={ACC2}
               />

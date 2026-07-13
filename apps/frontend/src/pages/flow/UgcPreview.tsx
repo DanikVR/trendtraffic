@@ -9,8 +9,9 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Plus, UserRound, Move, Maximize2, MoveVertical } from 'lucide-react';
+import { Play, Plus, UserRound, Move, Maximize2, MoveVertical, Image as ImageIcon } from 'lucide-react';
 import { avatarDefaultRect, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
+import type { LineRect } from './dialogueTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
 const ACC = '#a855f7';
@@ -96,7 +97,15 @@ export interface UgcPreviewProps {
   onEmptyClip: () => void;
   onOpenLines: () => void;   // «медиа реплики» в диалоге живёт на таймлайне — открыть панель «Реплики»
   onAvatarRect?: (fmt: UgcFormat, rect: UgcAvatarRect) => void;   // драг/резайз аватара-оверлея на превью
+  // Окно врезки медиа реплики (соло/«Без аватара»): драг/резайз на превью → script[i].rect.
+  // null = «во весь кадр» (как рендерит бэкенд без rect).
+  onLineRect?: (index: number, rect: LineRect | null) => void;
 }
+
+/* Розовый — акцент врезок (медиа реплик), чтобы не путать с фиолетовым боксом аватара. */
+const INS = '#ec4899';
+/* Стартовое окно врезки при переключении «весь кадр → окном» (доли кадра). */
+const INSERT_DEF: LineRect = { x: 0.06, y: 0.26, w: 0.88, h: 0.44 };
 
 /* Дефолтные прямоугольники аватара-оверлея (совпадают с прежним статичным CSS: 44%×42%, низ, отступ 4%). */
 const AV_DEF: Record<'left' | 'right', UgcAvatarRect> = {
@@ -106,7 +115,7 @@ const AV_DEF: Record<'left' | 'right', UgcAvatarRect> = {
 
 const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
-export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect }: UgcPreviewProps) {
+export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect, onLineRect }: UgcPreviewProps) {
   const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl
     : ugc.avatarSource === 'video' ? ugc.avatarVideoUrl   // готовое видео-аватар → показываем первый кадр видео
@@ -115,6 +124,23 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   // «Один ведущий» — аватар всегда перетаскивается/масштабируется на превью (в ЛЮБОЙ раскладке;
   // раскладка = стартовая позиция). В «Монтаже»/«Диалоге» — свои фиксированные планы.
   const isSolo = mode === 'solo';
+  // ИИ-вырезка фона в соло: «Готовое видео» — свой хромакей-чекбокс, фото/коллекция — avatarCutout.
+  const soloCutout = ugc.avatarSource === 'video' ? ugc.avatarVideoCutout : ugc.avatarCutout;
+
+  /* ── врезки медиа реплик (соло/«Без аватара»): выбор врезки чипом + драг окна на кадре ──
+     insSelRaw: null = авто (первая реплика с медиа), 'off' = скрыто юзером, число = реплика.
+     Врезка живёт t0..t1 своей реплики; на превью показываем ВЫБРАННУЮ — так видно и кадр,
+     и позицию/размер до генерации. Рендер кладёт врезку тем же rect (или во весь кадр). */
+  const insertsEditable = (mode === 'solo' || mode === 'voiceover') && !!onLineRect;
+  const mediaLines = ugc.script.map((l, i) => ({ l, i })).filter((x) => !!x.l.image);
+  const [insSelRaw, setInsSelRaw] = useState<number | 'off' | null>(null);
+  const insSel: number | null = !insertsEditable ? null
+    : insSelRaw === 'off' ? null
+    : insSelRaw != null && ugc.script[insSelRaw]?.image ? insSelRaw
+    : (mediaLines[0]?.i ?? null);
+  const [liveIns, setLiveIns] = useState<{ i: number; rect: LineRect } | null>(null);
+  const insRectFor = (i: number): LineRect | null =>
+    (liveIns?.i === i ? liveIns.rect : null) || ugc.script[i]?.rect || null;
 
   /* ── аватар на кадре: перетаскивание и размер прямо на превью ──
      Позиция per-format в долях кадра (ugc.avatarRects); дефолт — по раскладке. Во время жеста —
@@ -159,6 +185,39 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       setLiveRect(null);
     };
     // Слушаем на самом элементе (получает события благодаря захвату) — надёжнее, чем window.
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+  };
+
+  /* Драг окна врезки — та же механика, что у аватара (setPointerCapture, коммит на pointerup). */
+  const dragInsert = (e: React.PointerEvent, i: number, kind: 'move' | 'size') => {
+    if (!onLineRect || e.button !== 0) return;
+    const el = e.currentTarget as HTMLElement;
+    const frameEl = el.closest('[data-ugc-frame]') as HTMLElement | null;
+    if (!frameEl) return;
+    e.preventDefault(); e.stopPropagation();
+    try { el.setPointerCapture(e.pointerId); } catch { /* не критично */ }
+    const fr = frameEl.getBoundingClientRect();
+    const r0 = insRectFor(i) || INSERT_DEF;
+    const sx = e.clientX, sy = e.clientY;
+    let last = r0; let moved = false;
+    const onMove = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / fr.width, dy = (ev.clientY - sy) / fr.height;
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 3) moved = true;
+      last = kind === 'move'
+        ? { ...r0, x: clamp01(r0.x + dx, 0, 1 - r0.w), y: clamp01(r0.y + dy, 0, 1 - r0.h) }
+        : { ...r0, w: clamp01(r0.w + dx, 0.12, 1 - r0.x), h: clamp01(r0.h + dy, 0.12, 1 - r0.y) };
+      setLiveIns({ i, rect: last });
+    };
+    const onUp = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
+      if (moved) onLineRect(i, { x: +last.x.toFixed(4), y: +last.y.toFixed(4), w: +last.w.toFixed(4), h: +last.h.toFixed(4) });
+      setLiveIns(null);
+    };
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onUp);
@@ -326,6 +385,57 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     );
   };
 
+  /* Врезка медиа реплики на кадре (соло/«Без аватара»): выбранная чипом реплика. Без rect —
+     медиа во весь кадр (media pointer-events:none — аватар под ним остаётся перетаскиваемым);
+     с rect — окно: тащить = позиция, уголок = размер. Поверх аватара, ПОД слоем/титрами — как рендер. */
+  const insertOverlay = (fmt: UgcFormat, mini = false) => {
+    if (insSel == null) return null;
+    const l = ugc.script[insSel];
+    if (!l?.image) return null;
+    const rc = insRectFor(insSel);
+    const vid = isVideoUrl(l.image);
+    const media = (cls: string, st?: React.CSSProperties) => vid
+      ? <video src={`${l.image}#t=0.1`} muted playsInline preload="metadata" draggable={false} className={cls} style={st} />
+      : <img src={l.image} alt="" draggable={false} className={cls} style={st} />;
+    const badge = (label: string, onClick?: () => void) => (
+      <span onClick={onClick} onPointerDown={(e) => e.stopPropagation()}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: onClick ? 'rgba(0,0,0,.72)' : INS, color: '#fff', borderRadius: 999, padding: mini ? '2px 6px' : '2.5px 8px', fontSize: mini ? 8 : 9.5, fontWeight: 750, whiteSpace: 'nowrap', boxShadow: '0 1px 5px rgba(0,0,0,.45)', ...(onClick ? { cursor: 'pointer', border: `1px solid ${INS}`, pointerEvents: 'auto' } : {}) }}>{label}</span>
+    );
+    if (!rc) {
+      // «Во весь кадр» — как рендерит бэкенд без rect; кнопка переводит в режим окна.
+      return (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}>
+          {media('w-full h-full object-cover', { pointerEvents: 'none' })}
+          <span style={{ position: 'absolute', inset: 0, border: `2px dashed ${INS}`, pointerEvents: 'none' }} />
+          <span style={{ position: 'absolute', top: 5, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', gap: 4 }}>
+            {badge(t('ugc.preview.insertBadge', { n: insSel + 1 }) + ' · ' + t('ugc.preview.insertFullTag'))}
+            {badge(t('ugc.preview.insertMakeWindow'), () => onLineRect?.(insSel, INSERT_DEF))}
+          </span>
+        </div>
+      );
+    }
+    const handle = mini ? 16 : 20;
+    return (
+      <div
+        onPointerDown={(e) => dragInsert(e, insSel, 'move')}
+        style={{ position: 'absolute', zIndex: 5, left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`, cursor: 'grab', touchAction: 'none' }}>
+        {media('w-full h-full object-cover', { borderRadius: 8 })}
+        <span style={{ position: 'absolute', inset: 0, border: `2px solid ${INS}`, borderRadius: 8, pointerEvents: 'none', boxShadow: '0 0 0 1.5px rgba(255,255,255,.6)' }} />
+        <span style={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', gap: 4, pointerEvents: 'none' }}>
+          {badge(t('ugc.preview.insertBadge', { n: insSel + 1 }))}
+          {badge(t('ugc.preview.insertMakeFull'), () => onLineRect?.(insSel, null))}
+        </span>
+        <span
+          onPointerDown={(e) => dragInsert(e, insSel, 'size')}
+          title={t('ugc.preview.avatarResizeTip')}
+          className="flex items-center justify-center"
+          style={{ position: 'absolute', right: 3, bottom: 3, width: handle, height: handle, borderRadius: 6, background: INS, border: '2px solid #fff', color: '#fff', cursor: 'nwse-resize', touchAction: 'none', boxShadow: '0 1px 5px rgba(0,0,0,.5)' }}>
+          <Maximize2 size={mini ? 8 : 10} style={{ pointerEvents: 'none' }} />
+        </span>
+      </div>
+    );
+  };
+
   /* ── содержимое кадра по режиму и активному сегменту плана ── */
   const frameInner = (fmt: UgcFormat, mini = false) => {   // 16:9 → раскладка в строку; 9:16 / 1:1 / 4:5 → в столбец
     const row = fmt === '16x9';
@@ -335,8 +445,13 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     const full = (node: React.ReactNode) => <div className="absolute inset-0 flex">{node}</div>;
 
     if (mode === 'voiceover') {
-      // «Без аватара»: базовое видео во весь кадр; врезки/слой/субтитры — поверх на сборке.
-      return full(clipCell(t('ugc.preview.tagYourVideo'), t('ugc.preview.emptyClipSubVoiceover')));
+      // «Без аватара»: базовое видео во весь кадр; врезки медиа реплик — поверх (редактируются тут же).
+      return (
+        <div className="absolute inset-0 flex">
+          {clipCell(t('ugc.preview.tagYourVideo'), t('ugc.preview.emptyClipSubVoiceover'))}
+          {insertOverlay(fmt, mini)}
+        </div>
+      );
     }
     if (mode === 'dialogue') {
       const view = seg?.view || 'dlgA';
@@ -371,11 +486,13 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     }
 
     /* solo: видео во весь кадр + перетаскиваемый аватар в ЛЮБОЙ раскладке (раскладка =
-       стартовая позиция бокса; дальше двигаешь/масштабируешь мышкой). Рендер строит так же. */
+       стартовая позиция бокса; дальше двигаешь/масштабируешь мышкой). Рендер строит так же.
+       Поверх — выбранная врезка медиа реплики (в рендере она тоже кладётся поверх аватара). */
     return (
       <div className="absolute inset-0 flex">
         {clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'))}
-        {overlayAvatar(rectFor(fmt), ugc.avatarSource === 'video' && ugc.avatarVideoCutout, avatarImg, onEmptyAvatar, fmt, true, mini)}
+        {overlayAvatar(rectFor(fmt), soloCutout, avatarImg, onEmptyAvatar, fmt, true, mini)}
+        {insertOverlay(fmt, mini)}
       </div>
     );
   };
@@ -420,6 +537,35 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
         <div className="flex items-center justify-center gap-1.5 px-4 pb-1 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
           <span className="inline-flex items-center justify-center rounded-md" style={{ width: 18, height: 18, background: 'rgba(168,85,247,.16)', color: ACC }}><Move size={11} /></span>
           {t('ugc.preview.avatarDragHint')}
+        </div>
+      )}
+
+      {/* чипы врезок: реплики с медиа; клик — показать врезку на кадре (повторный — скрыть) */}
+      {insertsEditable && mediaLines.length > 0 && (
+        <div className="flex flex-col items-center gap-1 px-4 pb-1">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <span className="text-[10.5px] font-700 inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+              <ImageIcon size={11} style={{ color: INS }} /> {t('ugc.preview.insertsLabel')}
+            </span>
+            {mediaLines.map(({ l, i }) => {
+              const on = insSel === i;
+              const vid = isVideoUrl(l.image);
+              return (
+                <button key={i} onClick={() => setInsSelRaw(on ? 'off' : i)} title={l.imageName || l.text}
+                  className="inline-flex items-center gap-1.5 rounded-lg pl-1 pr-2 py-1"
+                  style={{ background: on ? 'rgba(236,72,153,.14)' : 'var(--bg-secondary)', border: `1px solid ${on ? INS : 'var(--border-medium)'}`, cursor: 'pointer', boxShadow: on ? `0 0 0 1px ${INS}` : 'none' }}>
+                  <span className="relative rounded-md overflow-hidden flex-shrink-0" style={{ width: 22, height: 22, background: '#000' }}>
+                    {vid
+                      ? <video src={`${l.image}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                      : <img src={l.image} alt="" className="w-full h-full object-cover" />}
+                    {vid && <Play size={8} fill="#fff" style={{ position: 'absolute', color: '#fff', left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }} />}
+                  </span>
+                  <span className="text-[10.5px] font-700" style={{ color: on ? INS : 'var(--text-secondary)' }}>№{i + 1}</span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>{t('ugc.preview.insertHint')}</span>
         </div>
       )}
 
