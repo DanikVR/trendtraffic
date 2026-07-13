@@ -1368,6 +1368,7 @@
     },
     "timeline": {
       "title": "Lines timeline",
+      "dragResize": "Drag up/down to resize the timeline; double-click to reset",
       "hideLines": "Hide lines ▾",
       "showLines": "Lines ▴",
       "empty": "Lines appear here after 'Generate script' or 'Analyze speech' — a timeline with voice tracks, cuts and media."

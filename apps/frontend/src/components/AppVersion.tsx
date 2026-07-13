@@ -2577,7 +2577,13 @@
  *          /gallery?tab=reference&kind=analytics). Файлы: dna.ts, video_insight.ts,
  *          analysis_files.ts (новый), ingest.ts, trends/router.ts, GalleryPage.tsx,
  *          SocialExtensionPage.tsx, AppVersion. */
-export const APP_VERSION = '2.2.45';
+/* 2.2.46 — UGC-студия: док «Таймлайн реплик» теперь тянется по высоте (просьба юзера «чтобы можно
+ *          было вверх-вниз двигать больше»). Ручка-грип над доком: потянул вверх — таймлайн выше
+ *          (до ~72% окна), вниз — компактнее (мин 110px); двойной клик — прежние 236px. Высота
+ *          помнится в localStorage (tt_ugc_dock_h); во время жеста пишем maxHeight прямо в DOM
+ *          (без re-render на каждый move), setPointerCapture — жест не залипает над превью.
+ *          Файлы: UgcStudio.tsx, locales ru/en (ugc.timeline.dragResize), AppVersion. */
+export const APP_VERSION = '2.2.46';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

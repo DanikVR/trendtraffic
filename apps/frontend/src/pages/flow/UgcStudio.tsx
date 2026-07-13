@@ -30,6 +30,12 @@ import { useTranslation } from 'react-i18next';
 const ACC = '#a855f7';       // фирменный цвет блока UGC
 const ACC2 = '#c084fc';
 
+/* док таймлайна: высота тянется за ручку, помнится между сессиями */
+const DOCK_H_KEY = 'tt_ugc_dock_h';
+const DOCK_DEF = 236;        // прежний фиксированный maxHeight — остаётся дефолтом
+const DOCK_MIN = 110;        // заголовок + верх таймлайна
+const dockMax = () => Math.max(320, Math.round(window.innerHeight * 0.72));
+
 export interface UgcStudioProps {
   token: string | null;
   ugc: UgcSpec;
@@ -208,6 +214,46 @@ export default function UgcStudio(p: UgcStudioProps) {
     if (prevLinesLen.current === 0 && ugc.script.length > 0) setLinesOpen(true);
     prevLinesLen.current = ugc.script.length;
   }, [ugc.script.length]);
+
+  /* ── высота дока таймлайна: ручка над доком, тянется вверх/вниз (просьба юзера «двигать больше»).
+     Во время жеста высоту пишем прямо в DOM (без re-render на каждый move), в стейт и localStorage —
+     на pointerup. Двойной клик по ручке — сброс к дефолту. */
+  const dockRef = useRef<HTMLDivElement | null>(null);
+  const [dockH, setDockH] = useState<number>(() => {
+    const v = Number(localStorage.getItem(DOCK_H_KEY) || '');
+    return Number.isFinite(v) ? Math.min(Math.max(v, DOCK_MIN), dockMax()) : DOCK_DEF;
+  });
+  const [dockDrag, setDockDrag] = useState(false);
+  const dragDock = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    const el = e.currentTarget as HTMLElement;
+    e.preventDefault();
+    // Захват указателя — жест не «залипает», когда курсор уходит на превью или за окно.
+    try { el.setPointerCapture(e.pointerId); } catch { /* не критично */ }
+    const h0 = dockH, sy = e.clientY;
+    let last = h0;
+    setDockDrag(true);
+    const onMove = (ev: PointerEvent) => {
+      last = Math.min(dockMax(), Math.max(DOCK_MIN, h0 + (sy - ev.clientY)));
+      if (dockRef.current) dockRef.current.style.maxHeight = `${last}px`;
+    };
+    const onUp = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
+      setDockDrag(false);
+      setDockH(last);
+      try { localStorage.setItem(DOCK_H_KEY, String(Math.round(last))); } catch { /* приватный режим */ }
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+  };
+  const dockReset = () => {
+    setDockH(DOCK_DEF);
+    try { localStorage.setItem(DOCK_H_KEY, String(DOCK_DEF)); } catch { /* */ }
+  };
 
   /* ── производный «Режим ролика» поверх существующих полей спеки ── */
   const setMode = (m: UgcMode) => ugcMutate((u) => {
@@ -1261,7 +1307,18 @@ export default function UgcStudio(p: UgcStudioProps) {
             onClose={() => setLinesOpen(false)}
           />
         )}
-        <div className="px-3.5 py-2" style={{ maxHeight: 236, overflowY: 'auto' }}>
+        {/* ручка высоты дока: тянуть вверх/вниз, двойной клик — сброс */}
+        {ugc.script.length > 0 && (
+          <div
+            onPointerDown={dragDock} onDoubleClick={dockReset}
+            title={t('ugc.timeline.dragResize', 'Потяните вверх/вниз — высота таймлайна; двойной клик — как было')}
+            className="absolute left-0 right-0 flex items-center justify-center opacity-60 hover:opacity-100"
+            style={{ top: -7, height: 14, cursor: 'ns-resize', zIndex: 31, touchAction: 'none', ...(dockDrag ? { opacity: 1 } : null) }}
+          >
+            <span style={{ width: 46, height: 5, borderRadius: 999, background: dockDrag ? ACC : 'var(--text-muted)', boxShadow: '0 1px 3px rgba(0,0,0,.3)', transition: 'background .15s' }} />
+          </div>
+        )}
+        <div ref={dockRef} className="px-3.5 py-2" style={{ maxHeight: dockH, overflowY: 'auto' }}>
           {ugc.script.length > 0 ? (
             <>
               <div className="flex items-center gap-2 mb-1">
