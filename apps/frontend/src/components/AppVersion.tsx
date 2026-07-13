@@ -2525,11 +2525,19 @@
  *          правила сбора карточек, дедуп, индикаторы, как менять/дополнять, хроника 10 багов.
  *          Frontend-only (расширение остаётся 1.3.27). Файлы: GalleryPage, MainLayout,
  *          BottomTabBar, docs/, AppVersion. */
-export const APP_VERSION = '2.2.40';
+/* 2.2.41 — Hotebook, кнопка «📱 9:16» в диалогах студии NotebookLM (ext 1.3.28): открыл «Настройку
+ *          видеообзора/инфографики/презентации/отчёта» → над полем инструкций чип «9:16 вертикально»;
+ *          клик ДОПИСЫВАЕТ англ. промпт вертикального формата (video: 9:16 TikTok-optimized;
+ *          infographic: top-to-bottom; slides: mobile 9:16; report: mobile-friendly briefing) — не
+ *          затирая введённое, повторно не дублирует («✓ уже»). Аудио — не предлагаем. inject916()
+ *          интервал 2с, диалоги CDK в светлом DOM, значение через setNativeValue (Angular видит).
+ *          Промпты правятся в массиве V916 (см. docs/HOTEBOOK_FLOW_CAPTURE.md). Файлы:
+ *          content-notebook.js, docs/, manifest, bridge, AppVersion. */
+export const APP_VERSION = '2.2.41';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.27';
+export const TT_EXT_VERSION = '1.3.28';
 
 export function AppVersion() {
   return (

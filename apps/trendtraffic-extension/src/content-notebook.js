@@ -1233,6 +1233,48 @@
   setInterval(() => { void studioWatcher(); }, 20_000);
   setTimeout(() => { void studioWatcher(); }, 4000);
 
+  // ── Кнопка «9:16» в диалогах настройки студии ────────────────────────────────
+  // Юзер открыл «Настройка видеообзора / инфографики / презентации / отчёта» → над полем
+  // инструкций появляется чип «📱 9:16»: клик ДОПИСЫВАЕТ (не затирая введённое) английский
+  // промпт вертикального формата — управляющие инструкции NotebookLM понимает лучше на англ.
+  const V916 = [
+    { re: /видеообзор|видеопересказ|video/i, prompt: 'Generate the video in a vertical 9:16 aspect ratio optimized for mobile screens and TikTok. Ensure clear text placement and dynamic visuals.' },
+    { re: /инфографик|infographic/i, prompt: 'Create a vertical infographic optimized for mobile view in 9:16 aspect ratio. Arrange the information architecture from top to bottom.' },
+    { re: /презентац|slide/i, prompt: 'Create a presentation tailored for mobile devices in 9:16 vertical format.' },
+    { re: /отч[её]т|report|брифинг/i, prompt: 'Format as a short briefing with vertical, mobile-friendly spacing and bullet points.' },
+  ];
+  function inject916() {
+    try {
+      // Диалоги Angular CDK живут в overlay-контейнере В СВЕТЛОМ DOM → обычный querySelectorAll дешёв.
+      const dialogs = [...document.querySelectorAll('[role="dialog"], mat-dialog-container')].filter(visible);
+      for (const dlg of dialogs) {
+        if (dlg.querySelector('.tt-916-btn')) continue;
+        const ta = [...dlg.querySelectorAll('textarea')].filter(visible)[0];
+        if (!ta) continue;
+        const head = clean(dlg.textContent).slice(0, 160);
+        const hit = V916.find((v) => v.re.test(head));
+        if (!hit) continue; // аудио и прочие типы без вертикальной вёрстки — не предлагаем
+        const btn = document.createElement('button');
+        btn.className = 'tt-916-btn';
+        btn.type = 'button';
+        btn.textContent = '📱 9:16 вертикально';
+        btn.title = 'Дописать промпт вертикального формата 9:16 (Shorts/Reels/TikTok). Промпт на английском — так NotebookLM понимает инструкции лучше всего.';
+        btn.style.cssText = 'display:inline-block;margin:0 0 8px;padding:4px 10px;border:none;border-radius:8px;background:#22d3ee;color:#083344;font:700 12px ui-sans-serif,system-ui;cursor:pointer;';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const cur = ta.value || '';
+          if (/9:16/.test(cur)) btn.textContent = '✓ уже добавлено';
+          else { typeInto(ta, cur.trim() ? cur.trim() + '\n' + hit.prompt : hit.prompt); btn.textContent = '✓ добавлено'; }
+          setTimeout(() => { btn.textContent = '📱 9:16 вертикально'; }, 2500);
+        });
+        // над полем инструкций (вместе с обёрткой mat-form-field, чтобы не ломать вёрстку поля)
+        const anchor = ta.closest('mat-form-field, [class*="form-field"]') || ta;
+        anchor.insertAdjacentElement('beforebegin', btn);
+      }
+    } catch { /* диалог перерисовался — вставим на следующем тике */ }
+  }
+  setInterval(inject916, 2000);
+
   function pickMedia(gtype) {
     if (gtype === 'infographic') return queryAllDeep('img').filter(visible).filter((i) => i.clientWidth >= 200 && i.clientHeight >= 200).sort(byArea)[0] || null;
     const tag = gtype === 'video' ? 'video' : 'audio';

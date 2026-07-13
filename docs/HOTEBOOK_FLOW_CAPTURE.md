@@ -108,6 +108,26 @@ NotebookLM и настроек попапов браузера). `captureCardToG
   наблюдения свежее 2 мин. Автозаливка клипов Flow ОСТАВЛЕНА (окно «недавно
   генерилось» 6 мин, переживает перезагрузку через `flowGenAt:<pid>`).
 
+## Кнопка «📱 9:16» в диалогах настройки студии (ext 1.3.28)
+
+Когда юзер открывает диалог «Настройка видеообзора / инфографики / презентации / отчёта»,
+`inject916()` (content-notebook, интервал 2с) подрисовывает над полем инструкций чип
+**«📱 9:16 вертикально»**. Клик **дописывает** (не затирая введённое) английский промпт
+вертикального формата — управляющие инструкции NotebookLM понимает лучше на английском:
+
+| Диалог (regex по заголовку) | Промпт |
+|---|---|
+| видеообзор/видеопересказ/video | `Generate the video in a vertical 9:16 aspect ratio optimized for mobile screens and TikTok. Ensure clear text placement and dynamic visuals.` |
+| инфографик/infographic | `Create a vertical infographic optimized for mobile view in 9:16 aspect ratio. Arrange the information architecture from top to bottom.` |
+| презентац/slide | `Create a presentation tailored for mobile devices in 9:16 vertical format.` |
+| отчёт/report/брифинг | `Format as a short briefing with vertical, mobile-friendly spacing and bullet points.` |
+
+Аудио и типы без вертикальной вёрстки — кнопка не показывается. Повторный клик при уже
+вставленном «9:16» ничего не дублирует («✓ уже добавлено»). **Добавить новый тип/промпт** —
+массив `V916` в content-notebook.js. Диалоги CDK живут в светлом DOM → обычный
+`querySelectorAll('[role="dialog"], mat-dialog-container')`, значение поля ставится через
+`typeInto`/`setNativeValue` (нативный сеттер + input/change — иначе Angular не увидит).
+
 ## Как менять/дополнять
 
 - **Селекторы NotebookLM поплыли** → кнопка «разведка вёрстки» в виджете шлёт снимок
