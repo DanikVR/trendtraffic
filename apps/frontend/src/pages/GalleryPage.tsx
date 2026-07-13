@@ -64,7 +64,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'ugc', label: 'UGC' },
   { key: 'flow', label: 'Google Flow' },
   { key: 'hotebook', label: 'Hotebook' },
-  { key: 'reference', label: 'Видео' },
+  { key: 'reference', label: 'Медиафайлы' },
   { key: 'publisher', label: 'Публикатор' },
 ];
 

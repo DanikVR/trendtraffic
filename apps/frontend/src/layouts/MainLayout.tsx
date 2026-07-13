@@ -99,7 +99,7 @@ export function MainLayout() {
     { tab: 'ugc',       icon: Users,       label: 'UGC' },
     { tab: 'flow',      icon: Clapperboard, label: 'Google Flow' },
     { tab: 'hotebook',  icon: BookOpen,    label: 'Hotebook' },
-    { tab: 'reference', icon: Video,       label: t('nav.gallery', 'Видео') },
+    { tab: 'reference', icon: Video,       label: t('nav.gallery', 'Медиафайлы') },
     { tab: 'publisher', icon: Send,        label: t('nav.publisher', 'Публикатор') },
   ];
   // Активная вкладка Галереи — из ?tab= (дефолт 'trendhub'); подсвечиваем пункт сайдбара.

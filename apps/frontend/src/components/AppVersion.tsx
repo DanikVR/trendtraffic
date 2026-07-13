@@ -2517,7 +2517,15 @@
  *          (ползунок/чипы) сканилась как «карточка» с нестабильным именем из иконок
  *          (sharedownload…) — плееры исключены ([role=slider]/video), plain-лигатуры чистятся из
  *          заголовков. Файлы: content-notebook.js, manifest, bridge, AppVersion. */
-export const APP_VERSION = '2.2.39';
+/* 2.2.40 — Галерея: вкладка «Видео» переименована в «МЕДИАФАЙЛЫ» (там видео+аудио+изображения;
+ *          ключ таба остался reference — URL ?tab=reference не меняется). Ярлык в 3 местах: таб
+ *          Галереи, иконка сайдбара, мобильный BottomTabBar. + docs/HOTEBOOK_FLOW_CAPTURE.md —
+ *          энциклопедия блока «Hotebook/Flow → Галерея»: принцип (работа в сервисе, загрузка по
+ *          кнопке из перечня), карта файлов, ТРИ механизма захвата (blob/window.open/downloads),
+ *          правила сбора карточек, дедуп, индикаторы, как менять/дополнять, хроника 10 багов.
+ *          Frontend-only (расширение остаётся 1.3.27). Файлы: GalleryPage, MainLayout,
+ *          BottomTabBar, docs/, AppVersion. */
+export const APP_VERSION = '2.2.40';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
