@@ -2078,6 +2078,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             onClose={() => setImgPick(null)}
             onUpload={(files) => uploadToGallery(files, 'reference')}
             uploadAccept="image/*"
+            onlyType="image"
             onPick={(it) => { updateSeg(seg, { startFrame: it.fileUrl }); setOG(seg, { seed: null, note: 'Старт-кадр из галереи.' }); }}
           />
         );
@@ -2449,6 +2450,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                     pickedKeys={new Set(editorClips.map((c) => c.url))}
                     onClose={() => setEditorPick(false)}
                     onUpload={(files) => uploadToGallery(files)}
+                    uploadAccept="video/*,audio/*"
+                    onlyType={['video', 'audio']}
                     onPick={(it) => addEditorClip({ url: it.fileUrl, name: it.title, type: it.type === 'audio' ? 'audio' : 'video' })}
                   />
                 )}

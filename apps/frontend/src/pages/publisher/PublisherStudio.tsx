@@ -671,6 +671,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
         defaultTab="reference"
         token={token}
         note="Подходят видео и фото. TikTok/Instagram/YouTube/Pinterest без медиа не публикуют."
+        onlyType={['image', 'video']}
       />
     </div>
   );

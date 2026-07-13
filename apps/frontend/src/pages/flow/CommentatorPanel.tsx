@@ -214,6 +214,7 @@ export default function CommentatorPanel({
         title="Аудио — ваш голос" defaultTab="audio"
         note="Выберите готовую дорожку из Галереи или загрузите новую — она сразу попадёт в Галерею."
         uploadAccept="audio/*,video/*" uploadHint="аудио/видео с компьютера или телефона → попадёт в Галерею"
+        onlyType={['audio', 'video']}
         onClose={() => setPickOpen(false)}
         onUpload={onAudioUpload}
         onPick={onAudioPick}

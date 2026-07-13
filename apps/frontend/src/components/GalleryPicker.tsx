@@ -10,6 +10,12 @@
  *  • onUpload задан — сверху зона «Загрузить с устройства» + drag-and-drop;
  *    загруженные файлы попадают в Галерею и сразу «выбираются» (через onPick).
  *
+ * «Умный» режим (onlyType, один тип или список): пикер показывает ТОЛЬКО файлы,
+ * которые реально можно поставить в этот слот (фото → только картинки, музыка →
+ * только аудио, реплики → фото/видео). Папки, где такого типа не бывает
+ * (Тренды = видео, Аудио = звук), прячутся; если стартовая папка пуста —
+ * пикер сам перескакивает на первую папку, где подходящие файлы есть.
+ *
  * Загружает Галерею сам (нужен только token). onPick отдаёт выбранный элемент —
  * вызывающий кладёт его в своё поле (фото ведущего, музыка, клип, источник…).
  */
@@ -18,6 +24,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Search, Loader2, X, Music, Video, FileText, Check, Play, Pause, Plus } from 'lucide-react';
 
 export type GalleryCat = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
+export type GalleryPickType = 'image' | 'video' | 'audio';
 export interface GalleryPickItem { id: string; fileUrl: string; title: string; type: string; cat: GalleryCat; cover?: string }
 
 const TABS: { key: GalleryCat; label: string }[] = [
@@ -27,6 +34,18 @@ const TABS: { key: GalleryCat; label: string }[] = [
   { key: 'trends', label: 'Тренды' },
   { key: 'hotebook', label: 'Hotebook' },
 ];
+
+/** Какие типы файлов вообще бывают в папке: Тренды — только скачанные видео, Аудио — только
+ *  звук; остальные смешанные (загрузки с устройства, рендеры, артефакты Hotebook — там есть всё). */
+const FOLDER_TYPES: Record<GalleryCat, readonly string[]> = {
+  trends: ['video'],
+  audio: ['audio'],
+  reference: ['image', 'video', 'audio', 'file'],
+  analyzed: ['image', 'video', 'audio', 'file'],
+  hotebook: ['image', 'video', 'audio', 'file'],
+};
+
+const TYPE_RU: Record<string, string> = { image: 'фото', video: 'видео', audio: 'аудио' };
 
 /** Мини-плеер аудио для карточки пикера (на CSS-переменных, тёмная/светлая тема). */
 function CardAudio({ url }: { url: string }) {
@@ -76,7 +95,9 @@ export function GalleryPicker({
   onUpload?: (files: FileList | File[]) => Promise<GalleryPickItem[]>;
   uploadAccept?: string;         // accept для input (по умолчанию любое медиа)
   uploadHint?: string;           // подпись в зоне загрузки
-  onlyType?: 'image' | 'video' | 'audio'; // показывать ТОЛЬКО этот тип (напр. аватар = только картинки)
+  /** Показывать ТОЛЬКО эти типы: один ('image') или несколько (['audio','video']).
+   *  Аватар = картинки, музыка = аудио, запись = аудио/видео, медиа реплики = фото/видео. */
+  onlyType?: GalleryPickType | GalleryPickType[];
 }) {
   const [items, setItems] = useState<GalleryPickItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,6 +108,21 @@ export function GalleryPicker({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const tabTouched = useRef(false);   // юзер сам кликал по вкладкам → автопереход выключаем
+
+  const allow = useMemo(() => {
+    const arr = !onlyType ? [] : Array.isArray(onlyType) ? onlyType : [onlyType];
+    return arr.length ? new Set<string>(arr) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Array.isArray(onlyType) ? onlyType.join(',') : onlyType]);
+  const fits = useCallback((g: GalleryPickItem) => !allow || allow.has(g.type), [allow]);
+  const allowLabel = allow ? Array.from(allow).map((k) => TYPE_RU[k] || k).join(' / ') : '';
+
+  /* Видимые папки: прячем те, где нужный тип не встречается в принципе
+     (страховка items.some — вдруг файл нужного типа всё же лежит в «несвойственной» папке). */
+  const tabs = useMemo(() => TABS.filter((tb) => !allow
+    || FOLDER_TYPES[tb.key].some((t) => allow.has(t))
+    || items.some((g) => g.cat === tb.key && fits(g))), [allow, items, fits]);
 
   const headers = (): HeadersInit => (token ? { Authorization: `Bearer ${token}` } : {});
 
@@ -120,13 +156,28 @@ export function GalleryPicker({
   useEffect(() => {
     if (!open) return;
     setTab(defaultTab); setQuery(''); setOwnPicked(new Set()); setItems([]);
+    tabTouched.current = false;
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultTab]);
 
+  /* «Умная» стартовая папка: если текущая вкладка скрыта фильтром — уходим на первую видимую;
+     если после загрузки в стартовой папке нет подходящих файлов, а в другой есть —
+     перескакиваем туда (пока юзер сам не потрогал вкладки). */
+  useEffect(() => {
+    if (!open || loading) return;
+    if (!tabs.some((tb) => tb.key === tab)) { setTab(tabs[0]?.key || defaultTab); return; }
+    if (tabTouched.current || !items.length) return;
+    const count = (cat: GalleryCat) => items.filter((g) => g.cat === cat && fits(g)).length;
+    if (count(tab) > 0) return;
+    const first = tabs.find((tb) => count(tb.key) > 0);
+    if (first) setTab(first.key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, loading, items, tabs, tab]);
+
   const filtered = useMemo(() => items.filter((g) => g.cat === tab
-    && (!onlyType || g.type === onlyType)
-    && (!query.trim() || g.title.toLowerCase().includes(query.trim().toLowerCase()))), [items, tab, query, onlyType]);
+    && fits(g)
+    && (!query.trim() || g.title.toLowerCase().includes(query.trim().toLowerCase()))), [items, tab, query, fits]);
 
   const isPicked = (g: GalleryPickItem) => (pickedKeys ? pickedKeys.has(g.fileUrl) : ownPicked.has(g.fileUrl));
 
@@ -190,13 +241,13 @@ export function GalleryPicker({
           </>
         )}
 
-        {/* Вкладки-папки */}
-        <div className="grid grid-cols-5 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
-          {TABS.map((tb) => {
-            const n = items.filter((g) => g.cat === tb.key && (!onlyType || g.type === onlyType)).length;
+        {/* Вкладки-папки (только те, где нужный тип файлов бывает) */}
+        <div className="gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)', display: 'grid', gridTemplateColumns: `repeat(${tabs.length || 1}, 1fr)` }}>
+          {tabs.map((tb) => {
+            const n = items.filter((g) => g.cat === tb.key && fits(g)).length;
             const active = tab === tb.key;
             return (
-              <button key={tb.key} onClick={() => setTab(tb.key)}
+              <button key={tb.key} onClick={() => { tabTouched.current = true; setTab(tb.key); }}
                 className="inline-flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-[11px] font-600 whitespace-nowrap"
                 style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)' }}>
                 <span className="truncate">{tb.label}</span>{n > 0 && <span style={{ opacity: 0.7 }}>{n}</span>}
@@ -216,7 +267,13 @@ export function GalleryPicker({
         {loading ? (
           <div className="py-10 text-center"><Loader2 size={20} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
         ) : filtered.length === 0 ? (
-          <p className="text-[11px] py-8 text-center" style={{ color: 'var(--text-muted)' }}>{query.trim() ? 'Ничего не найдено.' : 'В этой папке пусто.'}</p>
+          <p className="text-[11px] py-8 text-center" style={{ color: 'var(--text-muted)' }}>
+            {query.trim() ? 'Ничего не найдено.'
+              : allow && items.some((g) => g.cat === tab) ? `В этой папке нет подходящих файлов — нужно ${allowLabel}.`
+              : allow ? `Подходящих файлов (${allowLabel}) в Галерее пока нет.`
+              : 'В этой папке пусто.'}
+            {!query.trim() && onUpload ? ' Загрузите с устройства — кнопка сверху.' : ''}
+          </p>
         ) : (
           <>
             <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length}{multi ? ' · клик — добавить, можно несколько' : ' · клик — выбрать'}</div>

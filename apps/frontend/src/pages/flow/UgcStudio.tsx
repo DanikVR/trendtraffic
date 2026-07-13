@@ -1304,6 +1304,7 @@ export default function UgcStudio(p: UgcStudioProps) {
           : pick === 'lineImage' ? t('ugc.picker.lineImage')
           : pick === 'intro' ? t('ugc.picker.intro')
           : pick === 'outro' ? t('ugc.picker.outro')
+          : pick === 'avatarVideo' ? t('ugc.avatar.sourceVideo')
           : isLayer ? t('ugc.picker.layer')
           : t('ugc.common.footage');
         return (
@@ -1311,11 +1312,11 @@ export default function UgcStudio(p: UgcStudioProps) {
             open token={p.token}
             title={title}
             note={isLayer ? t('ugc.picker.layerNote') : (pick === 'intro' || pick === 'outro') ? t('ugc.picker.bumperNote') : undefined}
-            defaultTab={pick === 'music' ? 'audio' : 'reference'}
+            defaultTab={pick === 'music' || pick === 'recording' ? 'audio' : 'reference'}
             onClose={() => { p.setUgcPick(null); p.setUgcLineIdx(null); }}
-            onUpload={(files) => p.uploadToGallery(files, pick === 'music' ? 'audio' : 'reference')}
+            onUpload={(files) => p.uploadToGallery(files, pick === 'music' ? 'audio' : pick === 'recording' ? undefined : 'reference')}
             uploadAccept={pick === 'music' ? 'audio/*' : isLayer ? 'image/png,image/webp' : isImg ? 'image/*' : pick === 'lineImage' ? 'image/*,video/*' : pick === 'recording' ? 'audio/*,video/*' : 'video/*'}
-            onlyType={isImg ? 'image' : pick === 'music' ? 'audio' : (pick === 'clip' || pick === 'intro' || pick === 'outro') ? 'video' : undefined}
+            onlyType={isImg ? 'image' : pick === 'music' ? 'audio' : pick === 'recording' ? ['audio', 'video'] : pick === 'lineImage' ? ['image', 'video'] : 'video'}
             onPick={(it) => {
               // Слой обязан быть прозрачным PNG/WebP: JPEG без альфы закрыл бы весь кадр в рендере.
               if (isLayer && !/\.(png|webp)(\?|#|$)/i.test(it.fileUrl)) { setLayerNote(t('ugc.layer.pngOnly')); return; }
