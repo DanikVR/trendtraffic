@@ -2550,7 +2550,10 @@
  *          POST /videos/delete-bulk (deleteVideo стирает строку + скачанный файл + кэш обложки),
  *          поэтому видео исчезает и из ленты «Поиска», и из Галереи «Тренды» — в подтверждении
  *          об этом сказано. Карточка-кнопка анализа обёрнута в div (кнопка в кнопке невалидна).
- *          Файлы: SocialExtensionPage.tsx, AppVersion. */
+ *          + Фикс общего ConfirmModal: document-хендлер Enter вызывал onConfirm при ЛЮБОМ
+ *          фокусе — Enter на кнопке «Отмена» БЕЗВОЗВРАТНО удалял вместо отмены (и дублировал
+ *          подтверждение). Теперь Enter-шорткат срабатывает только вне кнопок; на кнопках
+ *          решает нативный click. Файлы: SocialExtensionPage.tsx, ConfirmModal.tsx, AppVersion. */
 export const APP_VERSION = '2.2.43';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

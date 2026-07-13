@@ -37,7 +37,14 @@ export function ConfirmModal({
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
-      if (e.key === 'Enter') onConfirm();
+      if (e.key === 'Enter') {
+        // Enter — только «глобальный» шорткат (фокус вне кнопок). Если фокус на кнопке —
+        // отдаём нативному click: на «Отмена» Enter должен ОТМЕНЯТЬ, а не подтверждать
+        // (раньше document-хендлер срабатывал на любой Enter → Enter на «Отмена»
+        // безвозвратно удалял; заодно дублировал onConfirm на кнопке подтверждения).
+        if (e.target instanceof HTMLElement && e.target.closest('button')) return;
+        onConfirm();
+      }
     };
     document.addEventListener('keydown', handler);
     // Lock body scroll
