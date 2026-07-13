@@ -883,23 +883,44 @@
   // «Воспроизвести» (▶) и «Ещё» (⋮). Собираем их, чтобы показать в приложении с кнопкой «Загрузить».
   const DUR_RE = /\b\d{1,2}:\d\d\b/;
   const ARTKIND_RE = /подробный анализ|краткий обзор|дебаты|рецензи|пояснительн|пояснящее|обзор|аудиопересказ|видеопересказ|отч[её]т|тест|таблиц|инфографик|карточк|ментальн|презентаци|slide|report/i;
+  // el внутри root с учётом shadow DOM (Node.contains не пересекает shadow-границы).
+  function withinDeep(el, root) {
+    let n = el;
+    while (n) { if (n === root) return true; n = n.parentElement || (n.getRootNode && n.getRootNode().host) || null; }
+    return false;
+  }
+  const isMoreBtn = (b) => /more_vert|^ещё$/i.test(norm(b.getAttribute('aria-label') || b.textContent));
   function studioArtifactCards() {
+    // ТОЛЬКО панель «Студия»: раньше сканили ВСЮ страницу, и ⋮ ИСТОЧНИКА, поднимаясь по DOM,
+    // дорастал до контейнера со всей страницей (в нём есть m:ss из студии) → «карточкой» становилась
+    // склейка источников, клик по ней уносил на главную NotebookLM (живой инцидент 10.07).
+    const scope = studioPanelRoot();
+    const scoped = collectStudioCards(scope);
+    // скоуп нашёлся, но пуст (заголовок «Студия» мог сидеть в мелком контейнере) → скан без скоупа:
+    // лимит 400 симв. + «ровно одна ⋮» сами отсекают источники и контейнеры-«гиганты».
+    return (scope && !scoped.length) ? collectStudioCards(null) : scoped;
+  }
+  function collectStudioCards(scope) {
     const cards = [];
     const seen = new Set();
-    const moreBtns = queryAllDeep('button,[role="button"]').filter(visible)
-      .filter((b) => /more_vert|^ещё$/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
+    const moreBtns = queryAllDeep('button,[role="button"]').filter(visible).filter(isMoreBtn)
+      .filter((b) => !scope || withinDeep(b, scope));
     for (const mb of moreBtns) {
-      // поднимаемся к карточке артефакта (где рядом длительность/тип)
+      // поднимаемся к карточке артефакта (где рядом длительность/тип); разрослись — значит проскочили
       let card = mb;
       for (let i = 0; i < 7 && card; i++) {
         const txt = clean(card.textContent);
+        if (txt.length > 400) { card = null; break; } // это уже панель/страница, не карточка
         if (DUR_RE.test(txt) || ARTKIND_RE.test(txt)) break;
         card = card.parentElement;
       }
       if (!card) continue;
       const full = clean(card.textContent);
+      if (full.length > 400) continue;
       if (!(DUR_RE.test(full) || ARTKIND_RE.test(full))) continue; // не карточка артефакта (напр. ⋮ источника)
       if (isGeneratingText(full)) continue; // ещё ГЕНЕРИТСЯ («Создаю аудиопересказ, вернитесь через…») — не готовая
+      // настоящая карточка содержит РОВНО одну ⋮ (несколько ⋮ = список/панель целиком)
+      if ([...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])].filter(isMoreBtn).length > 1) continue;
       if (seen.has(card)) continue; seen.add(card);
       // заголовок = текст ДО длительности/типа; чистим служебное (вкл. НАШУ инжект-кнопку «⬇TT» и её
       // состояния — иначе на следующем цикле заголовок «Название ⬇TT» не совпадёт с базлайном → дубликаты)
@@ -1069,6 +1090,7 @@
       let ok = 0, processed = 0;
       for (let guard = 0; guard < total + 3; guard++) {
         for (const t0 = Date.now(); (watcherBusy || actionBusy) && Date.now() - t0 < 45_000;) await sleep(300);
+        if (notebookIdFromUrl() !== nbId) { ui.line('⚠ унесло со страницы блокнота — останавливаюсь'); break; }
         const card = studioArtifactCards().find((c) => !doneTitles.has(norm(c.title)));
         if (!card) break;
         doneTitles.add(norm(card.title));
@@ -1152,6 +1174,14 @@
     const nbId = notebookIdFromUrl();
     try { clickEl(card.el); } catch { return { ok: false }; }
     await sleep(2500);
+    // Клик увёл СО СТРАНИЦЫ БЛОКНОТА (на главную/другой блокнот — попали в ссылку, не в карточку)?
+    // Возвращаемся и прерываемся — иначе наскрейпим главную и зальём мусор под заголовком карточки.
+    if (notebookIdFromUrl() !== nbId) {
+      ui.line('⚠ клик увёл со страницы блокнота — возвращаюсь');
+      try { history.back(); } catch { /* */ }
+      await sleep(2000);
+      return { ok: false };
+    }
     const scraped = scrapeArtifactText('report'); // видимый текст открытой работы → markdown
     // назад к студии: кнопка «Назад»/arrow_back, иначе Escape (оверлей), иначе history.back()
     const back = queryAllDeep('button,[role="button"]').filter(visible)

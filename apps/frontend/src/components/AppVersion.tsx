@@ -2497,11 +2497,21 @@
  *          ТРИ источника (blob / dl-open URL / chrome.downloads), по URL фон качает байты
  *          (nlm-ingest-url → fetchBytes → /observed-ingest → раскладка по типу из 2.2.36).
  *          Файлы: injected-nlm.js, content-notebook.js, background.js, manifest, bridge, AppVersion. */
-export const APP_VERSION = '2.2.37';
+/* 2.2.38 — Hotebook, «карточкой» становилась склейка ИСТОЧНИКОВ (ext 1.3.26): сборщик работ студии
+ *          сканил ⋮ по ВСЕЙ странице; от ⋮ источника walk-up дорастал до контейнера-«гиганта» со всей
+ *          страницей (в нём есть m:ss из студии) → кнопка «В галерею» заливала .md-склейку источников,
+ *          клик текст-фолбэка уносил на главную NotebookLM, батч обрывался «1/1», аудио не заливалось.
+ *          Фикс: (1) скан ТОЛЬКО в панели «Студия» (studioPanelRoot + withinDeep через shadow DOM;
+ *          пустой скоуп → фолбэк на весь документ, гарды отсекают мусор); (2) walk-up прерывается на
+ *          контейнерах >400 симв.; (3) карточка = РОВНО одна ⋮; (4) текст-фолбэк: клик увёл со
+ *          страницы блокнота → history.back() и abort (не скрейпим главную под чужим заголовком);
+ *          (5) батч «В галерею» останавливается, если унесло со страницы. ⬇TT-кнопки больше не
+ *          инжектятся на источники. Файлы: content-notebook.js, manifest, bridge, AppVersion. */
+export const APP_VERSION = '2.2.38';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.25';
+export const TT_EXT_VERSION = '1.3.26';
 
 export function AppVersion() {
   return (
