@@ -14,8 +14,9 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, ImagePlus, Loader2, Play, Eye, Flame, Target, BarChart3, Radio } from 'lucide-react';
+import { Search, X, ImagePlus, Loader2, Play, Eye, Flame, Target, BarChart3, Radio, Trash2 } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import AudienceTargetPanel from '../components/AudienceTargetPanel';
@@ -86,6 +87,10 @@ export default function SocialExtensionPage() {
   const [adding, setAdding] = useState(false);
   const [galleryNote, setGalleryNote] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // Удаление видео из плитки «Видео из поиска» (source_videos): по одному и «Очистить всё».
+  const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [clearingRecent, setClearingRecent] = useState(false);
+
   // Недавние видео для плитки пустого состояния аналитики.
   useEffect(() => {
     (async () => {
@@ -100,6 +105,68 @@ export default function SocialExtensionPage() {
     const win = iframeRef.current?.contentWindow;
     if (win) win.postMessage({ type, url: value ?? '' }, window.location.origin);
   }, []);
+
+  // Удалить ОДНО видео из «Видео из поиска» (строка source_videos + скачанный файл, если был).
+  // Видео исчезает и из ленты «Поиска», и из Галереи «Тренды» — это одна и та же запись.
+  const deleteRecentOne = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/trends/videos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+      setRecent((prev) => prev.filter((v) => v.id !== id));
+    } catch (e: any) {
+      setGalleryNote({ ok: false, text: e?.message || 'Не удалось удалить видео' });
+      setTimeout(() => setGalleryNote(null), 6000);
+    }
+  }, [token]);
+
+  // «Очистить всё» — массовое удаление всех видео плитки одной ручкой delete-bulk.
+  const clearRecentAll = useCallback(async () => {
+    const ids = recent.map((v) => v.id).filter((x): x is string => !!x);
+    if (ids.length === 0) return;
+    setClearingRecent(true);
+    try {
+      const res = await fetch('/api/trends/videos/delete-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ids }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+      const gone = new Set(ids);
+      setRecent((prev) => prev.filter((v) => !v.id || !gone.has(v.id)));
+      setGalleryNote({ ok: true, text: `Удалено видео: ${d.deleted ?? ids.length} ✓` });
+      setTimeout(() => setGalleryNote(null), 5000);
+    } catch (e: any) {
+      setGalleryNote({ ok: false, text: e?.message || 'Не удалось очистить список' });
+      setTimeout(() => setGalleryNote(null), 6000);
+    } finally {
+      setClearingRecent(false);
+    }
+  }, [recent, token]);
+
+  const askDeleteRecent = useCallback((v: StoredVideo) => {
+    if (!v.id) return;
+    const id = v.id;
+    setConfirm({
+      title: 'Удалить видео?',
+      message: `@${v.author || '—'} — видео исчезнет из поиска и аналитики; если оно было скачано, файл удалится с диска безвозвратно.`,
+      onConfirm: () => { setConfirm(null); void deleteRecentOne(id); },
+    });
+  }, [deleteRecentOne]);
+
+  const askClearRecent = useCallback(() => {
+    const n = recent.filter((v) => v.id).length;
+    if (n === 0) return;
+    setConfirm({
+      title: `Очистить все видео (${n})?`,
+      message: 'Все найденные видео будут удалены из поиска и аналитики; скачанные файлы — с диска безвозвратно.',
+      onConfirm: () => { setConfirm(null); void clearRecentAll(); },
+    });
+  }, [recent, clearRecentAll]);
 
   const addToGallery = useCallback(async () => {
     const target = appliedRef.current || url.trim();
@@ -462,25 +529,47 @@ export default function SocialExtensionPage() {
                         </div>
                       ) : (
                         <>
-                          <p className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Видео из поиска — нажмите, чтобы проанализировать:</p>
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <p className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Видео из поиска — нажмите, чтобы проанализировать:</p>
+                            {/* «Очистить всё» — удаляет ВСЕ видео плитки (delete-bulk), с подтверждением */}
+                            <button type="button" onClick={askClearRecent} disabled={clearingRecent}
+                              title="Удалить все найденные видео (из поиска и аналитики)"
+                              className="inline-flex items-center gap-1 text-[11px] font-600 px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors disabled:opacity-40"
+                              style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
+                              {clearingRecent ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                              Очистить всё · {recent.length}
+                            </button>
+                          </div>
                           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
                             {recent.map((v) => (
-                              <button key={v.id || v.externalId} type="button" onClick={() => analyzeOne(v.webUrl!)}
-                                title={v.description || v.author}
+                              // div-обёртка: кнопка удаления НЕ может быть вложена в кнопку анализа (невалидный HTML)
+                              <div key={v.id || v.externalId}
                                 className="relative rounded-lg overflow-hidden group transition-transform hover:-translate-y-0.5"
                                 style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)' }}>
-                                {v.coverUrl ? (
-                                  <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center"><Play size={18} style={{ color: 'var(--text-muted)' }} /></div>
+                                <button type="button" onClick={() => analyzeOne(v.webUrl!)}
+                                  title={v.description || v.author}
+                                  className="absolute inset-0 block w-full h-full">
+                                  {v.coverUrl ? (
+                                    <img src={coverSrc(v.coverUrl)} alt="" referrerPolicy="no-referrer" loading="lazy"
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center"><Play size={18} style={{ color: 'var(--text-muted)' }} /></div>
+                                  )}
+                                  <span className="absolute inset-x-0 bottom-0 h-8 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+                                  <span className="absolute bottom-1 left-1 text-[10px] font-700 inline-flex items-center gap-0.5" style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.7)' }}>
+                                    <Eye size={10} /> {fmt(v.stats?.play)}
+                                  </span>
+                                </button>
+                                {/* Удалить одно видео — кнопка ВИДИМАЯ (не за ховером), по канону карточек */}
+                                {v.id && (
+                                  <button type="button" onClick={() => askDeleteRecent(v)} title="Удалить видео (из поиска и аналитики)"
+                                    className="absolute top-1 right-1 w-6 h-6 rounded-md flex items-center justify-center z-10 transition-opacity hover:opacity-100 opacity-90"
+                                    style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
+                                    <Trash2 size={12} />
+                                  </button>
                                 )}
-                                <span className="absolute inset-x-0 bottom-0 h-8 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-                                <span className="absolute bottom-1 left-1 text-[10px] font-700 inline-flex items-center gap-0.5" style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.7)' }}>
-                                  <Eye size={10} /> {fmt(v.stats?.play)}
-                                </span>
-                              </button>
+                              </div>
                             ))}
                           </div>
                         </>
@@ -506,6 +595,17 @@ export default function SocialExtensionPage() {
           </div>
         </div>
       </div>
+
+      {/* Подтверждение удаления видео из «Видео из поиска» (одного или всех) */}
+      <ConfirmModal
+        open={!!confirm}
+        title={confirm?.title || ''}
+        message={confirm?.message}
+        confirmLabel="Удалить"
+        variant="danger"
+        onConfirm={() => confirm?.onConfirm()}
+        onCancel={() => setConfirm(null)}
+      />
     </div>
   );
 }
