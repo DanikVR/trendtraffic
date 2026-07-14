@@ -1240,6 +1240,8 @@
       "male": "Male",
       "briefPlaceholder": "What the clip is about: 'an honest app review, hook in the first 3 seconds'…",
       "genScript": "Generate script",
+      "useAsIs": "Use my text as is → lines",
+      "useAsIsHint": "Paste your finished script into the field above and click — it becomes the lines with no AI rewriting (split by lines or sentences).",
       "recordingName": "recording",
       "removeRecording": "Remove recording (also clears its analysis)",
       "recordingEmpty": "Recording — not uploaded yet · audio or video",
@@ -1430,7 +1432,9 @@
       "insertFullTag": "full frame",
       "insertMakeWindow": "As window",
       "insertMakeFull": "Full frame",
-      "insertHint": "The insert shows during its line. Click a chip to show/hide; drag the window around the frame, corner — resize, \"Full frame\" — fullscreen."
+      "insertHint": "The insert shows during its line. Click a chip to show/hide; drag the window around the frame, corner — resize, \"Full frame\" — fullscreen, \"Avatar on top\" — the insert goes under the presenter.",
+      "avatarOverInserts": "Avatar on top",
+      "avatarOverInsertsTip": "The insert goes under the avatar — the presenter stays in frame"
     },
     "picker": {
       "photoA": "Photo · first speaker",

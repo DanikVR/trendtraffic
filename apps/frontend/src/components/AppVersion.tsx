@@ -2597,7 +2597,20 @@
  *          (avatarCutout), UgcPreview.tsx, UgcStudio.tsx, DialogueTimeline.tsx,
  *          render/router.ts (insertLines/resolveInserts, bgColor+avatarChroma),
  *          podcast_compose.ts (UgcInsert.rect), локали ru/en, AppVersion. */
-export const APP_VERSION = '2.2.47';
+/* 2.2.48 — UGC-студия, 5 доводок по фидбеку (скрины): (1) бегунок «Таймлайн реплик» и ГОТОВОЕ
+ *          видео синхронизированы двусторонне: тащишь бегунок — видео мотается на ту же секунду,
+ *          мотаешь/играешь видео — бегунок едет следом (DialogueTimeline onPlayheadScrub/
+ *          externalPlayhead + ref видео в UgcStudio, эхо гасится tlDriveRef). (2) Подсказка
+ *          «Кликните по зоне превью…» скрыта, когда показан готовый результат. (3) Плашка
+ *          «Готово»: шапка (Открыть в Галерее · ✕) отделена от видео воздухом, ✕ — нормальная
+ *          кнопка. (4) «Голос и текст»: кнопка «Мой текст как есть → в реплики» — введённый
+ *          текст становится репликами БЕЗ ИИ (по строкам/предложениям, до 80). (5) Чип «Аватар
+ *          поверх» в строке «Врезки»: врезка кладётся ПОД аватара — ведущий остаётся в кадре
+ *          (spec.avatarOverInserts; превью z-order + composeUgc кладёт врезки на фон ДО аватара,
+ *          overlayExtras с tagPrefix для двух вызовов в одном графе). Файлы: UgcStudio.tsx,
+ *          UgcPreview.tsx, DialogueTimeline.tsx, ugcTypes.ts, render/router.ts,
+ *          podcast_compose.ts, локали ru/en, AppVersion. */
+export const APP_VERSION = '2.2.48';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

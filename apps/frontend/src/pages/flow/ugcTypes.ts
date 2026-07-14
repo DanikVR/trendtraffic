@@ -46,6 +46,9 @@ export interface UgcSpec {
   // ИИ-вырезка фона аватара в соло («Моё фото»/«Коллекция»): HeyGen оживляет фото на ЗЕЛЁНОМ
   // фоне (bgColor), рендер делает chroma-key → поверх кадра остаётся только силуэт человека.
   avatarCutout: boolean;
+  // Аватар ПОВЕРХ врезок медиа реплик (соло): врезка идёт под аватаром — ведущий остаётся в кадре.
+  // false (деф.) = врезка перекрывает аватара на время реплики (как раньше).
+  avatarOverInserts: boolean;
   faceProvider: 'heygen_api' | 'heygen_ext';                // чем рендерить лицо: HeyGen API (ключ) ИЛИ подписка через расширение
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right'; // блок сверху/снизу ИЛИ маленьким поверх видео (альфа)
   voice: UgcVoice;
@@ -111,6 +114,7 @@ export const UGC_DEFAULT: UgcSpec = {
   photoUrl: null, photoName: null,
   avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
   avatarCutout: false,
+  avatarOverInserts: false,
   faceProvider: 'heygen_api',
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],

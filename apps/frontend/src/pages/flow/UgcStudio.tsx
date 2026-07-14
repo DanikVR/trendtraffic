@@ -215,6 +215,37 @@ export default function UgcStudio(p: UgcStudioProps) {
     prevLinesLen.current = ugc.script.length;
   }, [ugc.script.length]);
 
+  /* ── синк «бегунок таймлайна ↔ готовое видео» (двусторонний скраб) ──
+     Тащишь бегунок — видео мотается на ту же секунду; мотаешь/играешь видео — бегунок едет следом.
+     tlDriveRef гасит эхо: сик, который мы сами задали с таймлайна, не шлём обратно в таймлайн. */
+  const resultVidRef = useRef<HTMLVideoElement | null>(null);
+  const [tlFollow, setTlFollow] = useState<{ t: number; k: number } | null>(null);
+  const tlDriveRef = useRef<{ t: number; ts: number }>({ t: -1, ts: 0 });
+  const onTimelineScrub = (tSec: number) => {
+    const v = resultVidRef.current;
+    if (!v || !Number.isFinite(v.duration) || v.duration <= 0) return;
+    tlDriveRef.current = { t: tSec, ts: Date.now() };
+    try { v.currentTime = Math.max(0, Math.min(tSec, v.duration - 0.05)); } catch { /* до метаданных */ }
+  };
+  const onResultVideoTime = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const cur = e.currentTarget.currentTime;
+    const d = tlDriveRef.current;
+    if (Date.now() - d.ts < 500 && Math.abs(cur - d.t) < 0.35) return;   // наше же эхо
+    setTlFollow((s) => ({ t: cur, k: (s?.k || 0) + 1 }));
+  };
+
+  /* «Мой текст как есть»: поле брифа → реплики БЕЗ ИИ-переработки. Абзацы/строки = реплики;
+     один сплошной абзац режем по предложениям. Замещает скрипт (как и «Сгенерировать текст»). */
+  const useBriefAsScript = () => {
+    const raw = ugc.brief.trim();
+    if (!raw) return;
+    let parts = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length <= 1) parts = raw.split(/(?<=[.!?…])\s+/).map((s) => s.trim()).filter(Boolean);
+    const lines = parts.slice(0, 80).map((text) => ({ speaker: 'A' as const, text }));
+    if (!lines.length) return;
+    ugcMutate((u) => ({ ...u, script: lines }));
+  };
+
   /* ── высота дока таймлайна: ручка над доком, тянется вверх/вниз (просьба юзера «двигать больше»).
      Во время жеста высоту пишем прямо в DOM (без re-render на каждый move), в стейт и localStorage —
      на pointerup. Двойной клик по ручке — сброс к дефолту. */
@@ -924,6 +955,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                   style={{ background: 'rgba(168,85,247,0.14)', color: ACC, border: '1px solid rgba(168,85,247,0.4)', cursor: 'pointer' }}>
                   {p.ugcBusy === 'dialogue' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} {t('ugc.voice.genScript')}
                 </button>
+                {/* готовый текст БЕЗ ИИ: поле выше → реплики как есть (по строкам/предложениям) */}
+                <button onClick={useBriefAsScript} disabled={p.ugcBusy === 'dialogue' || !ugc.brief.trim()}
+                  className="w-full py-2 rounded-xl text-[12px] font-650 inline-flex items-center justify-center gap-2 disabled:opacity-40"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+                  <Type size={13} /> {t('ugc.voice.useAsIs')}
+                </button>
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.voice.useAsIsHint')}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1252,16 +1290,19 @@ export default function UgcStudio(p: UgcStudioProps) {
               onOpenLines={() => setLinesOpen(true)}
               onAvatarRect={(fmt, rect) => ugcMutate((u) => ({ ...u, avatarRects: { ...u.avatarRects, [fmt]: rect } }))}
               onLineRect={(i, rect) => ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, rect: rect || undefined } : l)) }))}
+              onAvatarOverInserts={(v) => ugcMutate((u) => ({ ...u, avatarOverInserts: v }))}
             />
           ) : (
           <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-3" style={{ minHeight: 0 }}>
             {(ugc.results && ugc.results.length > 1) ? (
-              <div className="rounded-xl p-3 space-y-2 my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)', maxWidth: 760, width: '100%' }}>
-                <div className="flex items-center justify-between gap-3">
+              <div className="rounded-xl my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)', maxWidth: 760, width: '100%', padding: '12px 14px 14px' }}>
+                <div className="flex items-center justify-between gap-3" style={{ marginBottom: 10 }}>
                   <span className="text-[12px] font-700" style={{ color: ACC }}>{t('ugc.preview.seriesReady', { count: ugc.results.length })}</span>
-                  <span className="inline-flex items-center gap-2">
-                    <a href="/gallery" className="text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, textDecoration: 'none' }}>{t('ugc.preview.openGallery')}</a>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, result: null, results: [] }))} title={t('ugc.common.hide')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={15} /></button>
+                  <span className="inline-flex items-center gap-2.5">
+                    <a href="/gallery" className="text-[11px] font-700 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, textDecoration: 'none' }}>{t('ugc.preview.openGallery')}</a>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, result: null, results: [] }))} title={t('ugc.common.hide')}
+                      className="flex items-center justify-center rounded-lg"
+                      style={{ width: 26, height: 26, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={14} /></button>
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1274,26 +1315,36 @@ export default function UgcStudio(p: UgcStudioProps) {
                 </div>
               </div>
             ) : ugc.result ? (
-              <div className="rounded-xl p-3 space-y-2 my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)' }}>
-                <div className="flex items-center justify-between gap-4">
+              /* шапка отделена от видео воздухом (не «приклеена»); бегунок таймлайна внизу и это
+                 видео синхронизированы: скраб таймлайна мотает видео, перемотка видео двигает бегунок */
+              <div className="rounded-xl my-3" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(168,85,247,.4)', padding: '12px 14px 14px' }}>
+                <div className="flex items-center justify-between gap-4" style={{ marginBottom: 10 }}>
                   <span className="text-[12px] font-700" style={{ color: ACC }}>{t('ugc.preview.ready')}</span>
-                  <span className="inline-flex items-center gap-2">
-                    <a href="/gallery" className="text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, textDecoration: 'none' }}>{t('ugc.preview.openGallery')}</a>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title={t('ugc.common.hide')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={15} /></button>
+                  <span className="inline-flex items-center gap-2.5">
+                    <a href="/gallery" className="text-[11px] font-700 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(168,85,247,.14)', color: ACC, border: `1px solid ${ACC}`, textDecoration: 'none' }}>{t('ugc.preview.openGallery')}</a>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, result: null }))} title={t('ugc.common.hide')}
+                      className="flex items-center justify-center rounded-lg"
+                      style={{ width: 26, height: 26, background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={14} /></button>
                   </span>
                 </div>
                 <video src={ugc.result.url} controls playsInline autoPlay
+                  ref={resultVidRef}
+                  onTimeUpdate={onResultVideoTime}
+                  onSeeked={onResultVideoTime}
                   onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) p.setUgcResultAR(v.videoWidth / v.videoHeight); }}
                   className="rounded-lg block" style={{ aspectRatio: String(p.ugcResultAR), maxHeight: '64vh', maxWidth: '100%', width: 'auto', margin: '0 auto', background: '#000' }} />
               </div>
             ) : null}
           </div>
           )}
-          <p className="text-center text-[10.5px] pb-2.5 px-4" style={{ color: 'var(--text-muted)' }}>
-            {mode === 'solo'
-              ? t('ugc.preview.footerSolo')
-              : t('ugc.preview.footerPlan')}
-          </p>
+          {/* подсказка про клики по превью — только в режиме превью (под готовым видео не нужна) */}
+          {!((ugc.results && ugc.results.length > 1) || ugc.result) && (
+            <p className="text-center text-[10.5px] pb-2.5 px-4" style={{ color: 'var(--text-muted)' }}>
+              {mode === 'solo'
+                ? t('ugc.preview.footerSolo')
+                : t('ugc.preview.footerPlan')}
+            </p>
+          )}
 
           {/* прогресс сборки поверх канваса */}
           {building && (
@@ -1348,6 +1399,8 @@ export default function UgcStudio(p: UgcStudioProps) {
                 onPickImage={(i) => { p.setUgcLineIdx(i); p.setUgcPick('lineImage'); }}
                 dialogueMode={ugc.dialogueEnabled}
                 hideMediaPlan
+                onPlayheadScrub={onTimelineScrub}
+                externalPlayhead={tlFollow}
                 accentA={ACC}
                 accentB={ACC2}
               />

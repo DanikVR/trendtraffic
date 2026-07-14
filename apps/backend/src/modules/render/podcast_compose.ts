@@ -431,10 +431,11 @@ function overlayExtras(o: {
   startIdx: number; W: number; H: number; D: number; Ds: string;
   inserts?: UgcInsert[] | null; layerPath?: string | null; progressBar?: boolean;
   vIn: string;   // '[vmain]' / '[0:v]'
+  tagPrefix?: string;   // префикс промежуточных тегов (деф. 'vx'); задать при ДВУХ вызовах в одном графе
 }): { inputs: string[]; parts: string[]; vOut: string; nextIdx: number } {
   const inputs: string[] = []; const parts: string[] = [];
   let idx = o.startIdx; let cur = o.vIn; let step = 0;
-  const next = () => { step++; return `[vx${step}]`; };
+  const next = () => { step++; return `[${o.tagPrefix || 'vx'}${step}]`; };
   for (const ins of (o.inserts || []).slice(0, 12)) {
     const t0 = Math.max(0, ins.t0); const t1 = Math.min(o.D + 0.2, ins.t1);
     if (!(t1 > t0 + 0.15)) continue;
@@ -548,6 +549,9 @@ export async function composeUgc(opts: {
   // Кастомная позиция аватара (драг на превью студии): доли кадра 0..1.
   // oy — вертикальный сдвиг картинки внутри бокса (object-position Y, 0..1, деф. 0.5).
   avatarRect?: { x: number; y: number; w: number; h: number; oy?: number } | null;
+  // Аватар ПОВЕРХ врезок: врезки кладутся на фон ДО аватара (ведущий остаётся в кадре);
+  // false/нет = врезка перекрывает аватара на время реплики (как раньше). Только overlay-режим.
+  avatarOverInserts?: boolean;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
@@ -586,10 +590,18 @@ export async function composeUgc(opts: {
 
   const parts: string[] = [];
   let vTag = '[vmain]';
+  // «Аватар поверх врезок» работает только в overlay-режиме (аватар — отдельный слой над фоном).
+  const insertsUnderAvatar = overlayMode && !!opts.avatarOverInserts && !!(opts.inserts && opts.inserts.length);
   if (overlayMode) {
     // Фон: клип во весь кадр (или тёмный фон), аватар маленьким поверх снизу слева/справа.
     if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30[bg]`);
     else parts.push(`color=c=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`);
+    let bgTag = '[bg]';
+    // Врезки ПОД аватаром: кладём их на фон до наложения аватара — ведущий остаётся в кадре.
+    if (insertsUnderAvatar) {
+      const insX = overlayExtras({ startIdx: idx, W, H, D, Ds, inserts: opts.inserts, vIn: bgTag, tagPrefix: 'vi' });
+      inputs.push(...insX.inputs); parts.push(...insX.parts); bgTag = insX.vOut; idx = insX.nextIdx;
+    }
     const rect = opts.avatarRect;
     if (rect) {
       // Кастомная позиция с превью: бокс в долях кадра → пиксели (чётные — yuv420p).
@@ -601,11 +613,11 @@ export async function composeUgc(opts: {
       const oy = Math.min(1, Math.max(0, Number.isFinite(Number(rect.oy)) ? Number(rect.oy) : 0.5));
       if (opaque && !chroma) {
         parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30[av]`);
-        parts.push(`[bg][av]overlay=${bx}:${by}:eof_action=pass[vmain]`);
+        parts.push(`${bgTag}[av]overlay=${bx}:${by}:eof_action=pass[vmain]`);
       } else {
         // Силуэт (альфа-webm ИЛИ вырезанное chroma-key видео): вписываем по высоте бокса, центр по X, прижат к низу.
         parts.push(`[0:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p[av]`);
-        parts.push(`[bg][av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass[vmain]`);
+        parts.push(`${bgTag}[av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass[vmain]`);
       }
     } else {
       const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
@@ -613,12 +625,12 @@ export async function composeUgc(opts: {
         // HeyGen: непрозрачный PiP-бокс (со своим фоном), cover-кроп в вертикальный прямоугольник.
         const bw = 360, bh = 640;
         parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
-        parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+        parts.push(`${bgTag}[av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
       } else {
         // sr-capture (альфа) ИЛИ вырезанное chroma-key видео: прозрачный силуэт (виден только человек).
         const aH = 720;
         parts.push(`[0:v]scale=-2:${aH}:flags=lanczos${chromaChain},format=yuva420p[av]`);
-        parts.push(`[bg][av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+        parts.push(`${bgTag}[av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
       }
     }
   } else {
@@ -638,8 +650,8 @@ export async function composeUgc(opts: {
     parts.push(opts.placement === 'top' ? stack('ahalf', 'chalf', 'vmain') : stack('chalf', 'ahalf', 'vmain'));
   }
 
-  // Врезки медиа реплик + верхний слой + полоса прогресса — ПОД субтитрами.
-  const extras = overlayExtras({ startIdx: idx, W, H, D, Ds, inserts: opts.inserts, layerPath: opts.layerPath, progressBar: opts.progressBar, vIn: vTag });
+  // Врезки медиа реплик (если не легли ПОД аватара выше) + верхний слой + полоса прогресса — ПОД субтитрами.
+  const extras = overlayExtras({ startIdx: idx, W, H, D, Ds, inserts: insertsUnderAvatar ? null : opts.inserts, layerPath: opts.layerPath, progressBar: opts.progressBar, vIn: vTag });
   inputs.push(...extras.inputs); parts.push(...extras.parts); vTag = extras.vOut; idx = extras.nextIdx;
 
   // Титры

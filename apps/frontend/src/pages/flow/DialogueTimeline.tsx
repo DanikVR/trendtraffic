@@ -26,6 +26,10 @@ interface Props {
   // UGC-студия: план показа медиа (Кадр/Выезд/Плашка — подкастовые) скрыт, окно врезки
   // редактируется на превью кадра (чипы «Врезки»); подкаст/«Комментатор» — как раньше.
   hideMediaPlan?: boolean;
+  // Синк с внешним видео (готовый ролик в UGC-студии): скраб бегунка → колбэк (хост мотает видео);
+  // externalPlayhead — обратное направление: видео играет/мотается → бегунок едет следом.
+  onPlayheadScrub?: (t: number) => void;
+  externalPlayhead?: { t: number; k: number } | null;
   accentA?: string;
   accentB?: string;
 }
@@ -35,7 +39,7 @@ interface Props {
 const MIN_PPS = 2;
 const MAX_PPS = 2000;
 
-export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
+export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
   const dirty = () => { onDirty?.(); };
   const mutate = (fn: (d: PodLine[]) => PodLine[]) => { setDialogue(fn); dirty(); };
   const lineMutate = (i: number, patch: Partial<PodLine>) => mutate((d) => d.map((l, j) => (j === i ? { ...l, ...patch } : l)));
@@ -104,6 +108,10 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const [tlPlayhead, setTlPlayhead] = useState(0);
   const tlPlayDragRef = useRef(false);
   const tlMovedRef = useRef(false);
+  /* Скраб-колбэк через ref: pointermove-слушатель вешается один раз (deps []) — без ref он бы
+     захватил устаревший проп. Вызывается при любом ЮЗЕРСКОМ перемещении бегунка. */
+  const scrubRef = useRef(onPlayheadScrub);
+  scrubRef.current = onPlayheadScrub;
   const tlWrapRef = useRef<HTMLDivElement | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selLine, setSelLine] = useState<number | null>(null);
@@ -229,6 +237,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
         const x = e.clientX - r.left + tlWrapRef.current.scrollLeft - 32;
         const nt = Math.max(0, Math.round((x / tlPpsRef.current) * 20) / 20);
         setTlPlayhead(nt);
+        scrubRef.current?.(nt);   // синк: внешнее видео мотается вслед за бегунком
         if (tlSrcsRef.current.length || tlRafRef.current != null) tlStop();
       }
     };
@@ -246,6 +255,15 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => () => tlStop(), []);
+
+  /* Внешний сик (готовое видео играет/мотается) → бегунок едет следом. Не дёргаем, пока юзер
+     сам тащит бегунок/клип или таймлайн играет свой звук (иначе они бы дрались за позицию). */
+  useEffect(() => {
+    if (!externalPlayhead) return;
+    if (tlPlayDragRef.current || tlDragRef.current || tlPlaying) return;
+    setTlPlayhead(Math.max(0, externalPlayhead.t));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalPlayhead?.k]);
 
   /* Ctrl+колесо над таймлайном = зум к курсору (как в CapCut/Premiere).
      Нативный слушатель с passive:false — React-обёртка не даёт preventDefault для wheel.
@@ -294,7 +312,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       </div>
       <div ref={tlWrapRef} style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)' }}>
         <div style={{ position: 'relative', width: W, padding: '4px 0' }}>
-          <div onPointerDown={(e) => { tlPlayDragRef.current = true; const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect(); setTlPlayhead(Math.max(0, Math.round(((e.clientX - rect.left - 32) / tlPps) * 20) / 20)); }}
+          <div onPointerDown={(e) => { tlPlayDragRef.current = true; const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect(); const nt = Math.max(0, Math.round(((e.clientX - rect.left - 32) / tlPps) * 20) / 20); setTlPlayhead(nt); scrubRef.current?.(nt); }}
             style={{ position: 'relative', height: 16, marginLeft: 32, cursor: 'col-resize', touchAction: 'none' }}>
             {Array.from({ length: Math.floor(total / step) + 1 }).map((_, k) => { const s = k * step; return (
               <span key={k} style={{ position: 'absolute', left: s * tlPps, top: 1, fontSize: 8, color: 'var(--text-muted)' }}>{tlMmss(s)}</span>

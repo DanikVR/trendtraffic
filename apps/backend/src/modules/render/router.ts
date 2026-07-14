@@ -1054,6 +1054,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             let fileUrl = await composeUgc({
               avatarPath: avatar.filePath, avatarKind: 'opaque',
               avatarChroma: cutout ? '0x00FF00' : null,   // «вырезать фон» → зелёный chroma-key силуэтом
+              avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
               voicePath: avatar.filePath, // речь уже в видео — его дорожка задаёт длину и звук
               clipPath: clip?.filePath || null,
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
@@ -1148,6 +1149,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               let fileUrl = await composeUgc({
                 avatarPath, avatarKind: 'opaque',
                 avatarChroma: avatarCutoutOn ? '0x00FF00' : null,   // ИИ-вырезка фона → силуэт
+                avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
                 voicePath: avatarPath, // голос уже в mp4 HeyGen — берём его аудио
                 clipPath: clip?.filePath || null,
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',

@@ -100,6 +100,8 @@ export interface UgcPreviewProps {
   // Окно врезки медиа реплики (соло/«Без аватара»): драг/резайз на превью → script[i].rect.
   // null = «во весь кадр» (как рендерит бэкенд без rect).
   onLineRect?: (index: number, rect: LineRect | null) => void;
+  // Тумблер «Аватар поверх врезки» (соло): врезка под аватаром — ведущий остаётся в кадре.
+  onAvatarOverInserts?: (v: boolean) => void;
 }
 
 /* Розовый — акцент врезок (медиа реплик), чтобы не путать с фиолетовым боксом аватара. */
@@ -115,7 +117,7 @@ const AV_DEF: Record<'left' | 'right', UgcAvatarRect> = {
 
 const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
-export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect, onLineRect }: UgcPreviewProps) {
+export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect, onLineRect, onAvatarOverInserts }: UgcPreviewProps) {
   const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl
     : ugc.avatarSource === 'video' ? ugc.avatarVideoUrl   // готовое видео-аватар → показываем первый кадр видео
@@ -392,6 +394,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     if (insSel == null) return null;
     const l = ugc.script[insSel];
     if (!l?.image) return null;
+    // «Аватар поверх врезки» (только соло — в озвучке аватара нет): врезка НИЖЕ бокса аватара (z=4).
+    const insZ = mode === 'solo' && ugc.avatarOverInserts ? 3 : 5;
     const rc = insRectFor(insSel);
     const vid = isVideoUrl(l.image);
     const media = (cls: string, st?: React.CSSProperties) => vid
@@ -404,7 +408,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     if (!rc) {
       // «Во весь кадр» — как рендерит бэкенд без rect; кнопка переводит в режим окна.
       return (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: insZ, pointerEvents: 'none' }}>
           {media('w-full h-full object-cover', { pointerEvents: 'none' })}
           <span style={{ position: 'absolute', inset: 0, border: `2px dashed ${INS}`, pointerEvents: 'none' }} />
           <span style={{ position: 'absolute', top: 5, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', gap: 4 }}>
@@ -418,7 +422,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     return (
       <div
         onPointerDown={(e) => dragInsert(e, insSel, 'move')}
-        style={{ position: 'absolute', zIndex: 5, left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`, cursor: 'grab', touchAction: 'none' }}>
+        style={{ position: 'absolute', zIndex: insZ, left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`, cursor: 'grab', touchAction: 'none' }}>
         {media('w-full h-full object-cover', { borderRadius: 8 })}
         <span style={{ position: 'absolute', inset: 0, border: `2px solid ${INS}`, borderRadius: 8, pointerEvents: 'none', boxShadow: '0 0 0 1.5px rgba(255,255,255,.6)' }} />
         <span style={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', gap: 4, pointerEvents: 'none' }}>
@@ -564,6 +568,15 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
                 </button>
               );
             })}
+            {/* тумблер: аватар ПОВЕРХ врезки (врезка под ведущим) — только соло, где есть аватар */}
+            {mode === 'solo' && onAvatarOverInserts && (
+              <button onClick={() => onAvatarOverInserts(!ugc.avatarOverInserts)} title={t('ugc.preview.avatarOverInsertsTip')}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1"
+                style={{ background: ugc.avatarOverInserts ? 'rgba(168,85,247,.14)' : 'var(--bg-secondary)', border: `1px solid ${ugc.avatarOverInserts ? ACC : 'var(--border-medium)'}`, cursor: 'pointer', marginLeft: 6 }}>
+                <UserRound size={11} style={{ color: ugc.avatarOverInserts ? ACC : 'var(--text-muted)' }} />
+                <span className="text-[10.5px] font-650" style={{ color: ugc.avatarOverInserts ? ACC : 'var(--text-secondary)' }}>{t('ugc.preview.avatarOverInserts')}</span>
+              </button>
+            )}
           </div>
           <span className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>{t('ugc.preview.insertHint')}</span>
         </div>
