@@ -2610,7 +2610,15 @@
  *          overlayExtras с tagPrefix для двух вызовов в одном графе). Файлы: UgcStudio.tsx,
  *          UgcPreview.tsx, DialogueTimeline.tsx, ugcTypes.ts, render/router.ts,
  *          podcast_compose.ts, локали ru/en, AppVersion. */
-export const APP_VERSION = '2.2.48';
+/* 2.2.49 — Тренды → «Таргет на ЦА», 2 доводки формы: (1) кнопка «Подсказать» у поля «Что
+ *          продвигаем» — ИИ по описанию продукта сам заполняет «Базовая ЦА» и «Ключевые слова»
+ *          (новый POST /api/trends/audience-suggest, Claude, без TikHub); поля остаются
+ *          редактируемыми. (2) «Язык ключевиков» — вместо ручного ввода МУЛЬТИВЫБОР из списка
+ *          (29 языков + «Другой язык…»); можно выбрать несколько — бэк раскладывает кластер
+ *          каждой ниши по всем выбранным языкам (потолки ключевиков расширены, лимит language
+ *          в роутере 40→120 под список). Регион по-прежнему автоподставляет язык. Файлы:
+ *          AudienceTargetPanel.tsx, trends/audience.ts, trends/router.ts, AppVersion. */
+export const APP_VERSION = '2.2.49';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

@@ -19,7 +19,7 @@ import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, saveTrendDNAAuto } from './dna.js';
-import { buildAudienceMap } from './audience.js';
+import { buildAudienceMap, suggestAudience } from './audience.js';
 import { analyzeVideoVisual } from './video_insight.js';
 import { saveAnalysisArtifacts } from './analysis_files.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
@@ -280,7 +280,8 @@ router.post('/audience-map', async (req: AuthedRequest, res: Response) => {
       : (typeof body.seedKeywords === 'string' ? body.seedKeywords.split(/[,\n;]+/) : []);
     const seedKeywords = rawSeeds.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 20);
     const platform = ['tiktok', 'instagram', 'youtube', 'twitter', 'reddit'].includes(body.platform) ? body.platform : 'tiktok';
-    const language = typeof body.language === 'string' && body.language.trim() ? body.language.trim().slice(0, 40) : undefined;
+    // язык — уже может быть СПИСКОМ из мультиселекта («русский, английский»), поэтому 120.
+    const language = typeof body.language === 'string' && body.language.trim() ? body.language.trim().slice(0, 120) : undefined;
     const region = typeof body.region === 'string' && /^[A-Za-z]{2}$/.test(body.region.trim())
       ? body.region.trim().toUpperCase() : undefined;
     const maxNiches = Number.isFinite(body.maxNiches) ? Number(body.maxNiches) : undefined;
@@ -290,6 +291,28 @@ router.post('/audience-map', async (req: AuthedRequest, res: Response) => {
   } catch (err: any) {
     const msg = err?.message || 'Ошибка построения карты ЦА';
     const code = /ключ|Заполните|Claude|неразборч|уточните/i.test(msg) ? 400 : 502;
+    res.status(code).json({ error: msg });
+  }
+});
+
+/**
+ * POST /audience-suggest — кнопка «Подсказать»: { product, platform?, language?, region? }
+ *   → ИИ по описанию продукта формулирует базовую ЦА + затравочные ключевики; поля на
+ *   фронте остаются редактируемыми. Один запрос Claude, без TikHub. Гейт — тот же.
+ */
+router.post('/audience-suggest', async (req: AuthedRequest, res: Response) => {
+  try {
+    const body = req.body || {};
+    const product = typeof body.product === 'string' ? body.product : '';
+    const platform = ['tiktok', 'instagram', 'youtube', 'twitter', 'reddit'].includes(body.platform) ? body.platform : 'tiktok';
+    const language = typeof body.language === 'string' && body.language.trim() ? body.language.trim().slice(0, 120) : undefined;
+    const region = typeof body.region === 'string' && /^[A-Za-z]{2}$/.test(body.region.trim())
+      ? body.region.trim().toUpperCase() : undefined;
+    const suggestion = await suggestAudience(req.tenantId!, { product, platform, language, region });
+    res.json({ suggestion });
+  } catch (err: any) {
+    const msg = err?.message || 'Не удалось подсказать ЦА';
+    const code = /ключ|Заполните|Сначала|Claude|неразборч/i.test(msg) ? 400 : 502;
     res.status(code).json({ error: msg });
   }
 });

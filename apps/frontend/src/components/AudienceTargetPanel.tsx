@@ -14,7 +14,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Target, Loader2, Search, Sparkles, Globe, Eye, Heart, Play, ExternalLink, BarChart3,
-  Download, CheckCircle2, AlertCircle, XCircle, ChevronRight, Check, Film,
+  Download, CheckCircle2, AlertCircle, XCircle, ChevronRight, ChevronDown, Check, Film, Wand2, Plus,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AuroraCard } from './AuroraCard';
@@ -78,6 +78,16 @@ const REGION_LANG_NAME: Record<string, string> = {
   BR: 'португальский', MX: 'испанский', AR: 'испанский', JP: 'японский', KR: 'корейский',
 };
 
+// Список языков для мультиселекта «Язык ключевиков» (частые — первыми). Можно выбрать
+// несколько: ключевики строятся на каждом. Свой язык добавляется через «Другой язык…».
+const KEYWORD_LANGS = [
+  'русский', 'английский', 'украинский', 'узбекский', 'казахский', 'киргизский',
+  'азербайджанский', 'грузинский', 'армянский', 'таджикский', 'белорусский', 'румынский',
+  'польский', 'немецкий', 'французский', 'испанский', 'итальянский', 'португальский',
+  'нидерландский', 'турецкий', 'арабский', 'иврит', 'хинди', 'индонезийский',
+  'вьетнамский', 'тайский', 'японский', 'корейский', 'китайский',
+];
+
 function coverSrc(url?: string | null): string | undefined {
   if (!url) return undefined;
   if (/tiktokcdn|ibyteimg|byteimg|muscdn|tiktokv|pstatp|cdninstagram|fbcdn/i.test(url)) {
@@ -126,7 +136,12 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   const [seeds, setSeeds] = useState('');
   const [platform, setPlatform] = useState<Source>('tiktok');
   const [region, setRegion] = useState('');
-  const [language, setLanguage] = useState('русский');
+  // Языки ключевиков — мультиселект (не ручной ввод): один или несколько, бэку уходят строкой.
+  const [languages, setLanguages] = useState<string[]>(['русский']);
+  const [langOpen, setLangOpen] = useState(false);
+  const [customLang, setCustomLang] = useState('');
+  const langBoxRef = useRef<HTMLDivElement | null>(null);
+  const language = languages.join(', ');
   const [maxNiches, setMaxNiches] = useState(8);
   const [perNiche, setPerNiche] = useState(6); // видео на нишу при скане
   const [ground, setGround] = useState(true); // заземлять ключевики реальными запросами TikHub
@@ -144,9 +159,50 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
 
+  // Мультиселект языков: клик по языку добавляет/убирает (последний не убираем — хотя бы один нужен).
+  const toggleLang = (l: string) => {
+    setLanguages((cur) => cur.includes(l) ? (cur.length > 1 ? cur.filter((x) => x !== l) : cur) : [...cur, l]);
+  };
+  const addCustomLang = () => {
+    const l = customLang.trim().toLowerCase().slice(0, 30);
+    if (!l) return;
+    setLanguages((cur) => (cur.some((x) => x.toLowerCase() === l) ? cur : [...cur, l]));
+    setCustomLang('');
+  };
+  // Выбранные кастомные языки показываем в списке вместе со стандартными.
+  const allLangs = [...KEYWORD_LANGS, ...languages.filter((l) => !KEYWORD_LANGS.includes(l))];
+  useEffect(() => {
+    if (!langOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (langBoxRef.current && !langBoxRef.current.contains(e.target as Node)) setLangOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [langOpen]);
+
+  // ── «Подсказать»: ИИ по описанию продукта заполняет «Базовая ЦА» и «Ключевые слова» (редактируемо) ──
+  const [suggesting, setSuggesting] = useState(false);
+  const suggest = async () => {
+    if (!product.trim()) { setError('Сначала опишите, что продвигаем — ИИ подскажет ЦА и ключевики.'); return; }
+    setSuggesting(true); setError(null);
+    try {
+      const res = await fetch('/api/trends/audience-suggest', {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({ product: product.trim(), platform, region, language }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      const s = data.suggestion || {};
+      if (s.audience) setAudience(s.audience);
+      if (Array.isArray(s.keywords) && s.keywords.length) setSeeds(s.keywords.join(', '));
+      setNotice('ИИ подсказал ЦА и ключевики — поправьте под себя и жмите «Построить карту ЦА».');
+    } catch (e: any) { setError(friendlyError(e, 'Не удалось подсказать ЦА')); }
+    finally { setSuggesting(false); }
+  };
+
   // ── Один клик: построить карту → СРАЗУ найти ролики по всем нишам → ранжировать по спросу ──
   const buildMap = async () => {
-    if (!product.trim() || !audience.trim()) { setError('Заполните продукт и базовую ЦА.'); return; }
+    if (!product.trim() || !audience.trim()) { setError('Заполните продукт и базовую ЦА — или опишите продукт и нажмите «Подсказать».'); return; }
     setBuilding(true); setError(null); setNotice(null); setMap(null); setScans({}); setRankOrder(null);
     try {
       const res = await fetch('/api/trends/audience-map', {
@@ -292,6 +348,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
               Опишите продукт и аудиторию — ИИ разложит её на узкие ниши-темы и подберёт ключевики,
               а мы найдём под каждую реальные ролики. Меньше конкуренции, точнее попадание.
+              Не знаете аудиторию — опишите продукт и нажмите «Подсказать»: ИИ заполнит ЦА и ключевики сам.
             </p>
             <p className="text-[11px] mt-1 font-600" style={{ color: 'var(--brand)' }}>
               Один клик: строим ниши → находим ролики → ранжируем по спросу. Дальше — «В TrendFlow» на нужной нише.
@@ -301,7 +358,16 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Что продвигаем (продукт / оффер / смысл)
+            <span className="flex items-center justify-between gap-2">
+              <span>Что продвигаем (продукт / оффер / смысл)</span>
+              <button type="button" onClick={(e) => { e.preventDefault(); void suggest(); }} disabled={suggesting || !product.trim()}
+                title="ИИ по описанию продукта сам заполнит «Базовая ЦА» и «Ключевые слова» — потом их можно править и дополнять"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-600 transition-colors disabled:opacity-45"
+                style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.35)', cursor: 'pointer' }}>
+                {suggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                {suggesting ? 'Подсказываю…' : 'Подсказать'}
+              </button>
+            </span>
             <textarea value={product} onChange={(e) => setProduct(e.target.value)} rows={2}
               placeholder="напр.: онлайн-школа инвестиций для предпринимателей"
               className="px-3 py-2 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
@@ -336,7 +402,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             <span className="inline-flex items-center gap-1"><Globe size={12} /> Регион</span>
-            <select value={region} onChange={(e) => { const r = e.target.value; setRegion(r); setLanguage(REGION_LANG_NAME[r] || 'русский'); }}
+            <select value={region} onChange={(e) => { const r = e.target.value; setRegion(r); setLanguages([REGION_LANG_NAME[r] || 'русский']); }}
               className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ minWidth: 170, background: region ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)', border: `1px solid ${region ? 'var(--brand)' : 'var(--border-medium)'}`, color: 'var(--text-primary)' }}>
               <option value="">🌐 Глобально</option>
@@ -348,13 +414,52 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            <span title="Подставляется из региона автоматически — можно изменить вручную">Язык ключевиков</span>
-            <input value={language} onChange={(e) => setLanguage(e.target.value)}
-              title="Подставляется из региона — можно изменить" placeholder="из региона"
-              className="h-10 px-3 rounded-lg text-sm w-[130px] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
-              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-          </label>
+          <div ref={langBoxRef} className="relative flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            <span title="Подставляется из региона автоматически — можно выбрать один или несколько языков">Язык ключевиков</span>
+            <button type="button" onClick={() => setLangOpen((o) => !o)} aria-expanded={langOpen}
+              title="Выберите язык(и) из списка — ключевики будут на каждом выбранном"
+              className="h-10 px-3 rounded-lg text-sm inline-flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
+              style={{ minWidth: 150, maxWidth: 210, background: 'var(--bg-tertiary)', border: `1px solid ${langOpen ? 'var(--brand)' : 'var(--border-medium)'}`, color: 'var(--text-primary)', cursor: 'pointer' }}>
+              <span className="truncate">{languages[0]}{languages.length > 1 ? ` +${languages.length - 1}` : ''}</span>
+              <ChevronDown size={14} className="flex-shrink-0 transition-transform" style={{ transform: langOpen ? 'rotate(180deg)' : 'none', color: 'var(--text-muted)' }} />
+            </button>
+            {langOpen && (
+              <div className="absolute z-50 top-full left-0 mt-1 w-60 rounded-xl shadow-xl p-2"
+                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', boxShadow: '0 12px 32px rgba(0,0,0,0.25)' }}>
+                <div className="text-[10px] px-1 pb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Можно выбрать несколько — ключевики будут на каждом языке
+                </div>
+                <div className="max-h-60 overflow-y-auto pr-0.5">
+                  {allLangs.map((l) => {
+                    const sel = languages.includes(l);
+                    return (
+                      <button key={l} type="button" onClick={() => toggleLang(l)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12px] text-left transition-colors hover:bg-[var(--bg-tertiary)]"
+                        style={{ color: sel ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <span className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
+                          style={{ background: sel ? 'var(--brand)' : 'var(--bg-tertiary)', border: `1px solid ${sel ? 'var(--brand)' : 'var(--border-medium)'}` }}>
+                          {sel && <Check size={11} strokeWidth={3} style={{ color: 'var(--brand-contrast)' }} />}
+                        </span>
+                        {l}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-1.5 pt-1.5 mt-1" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <input value={customLang} onChange={(e) => setCustomLang(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomLang(); } }}
+                    placeholder="Другой язык…"
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
+                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                  <button type="button" onClick={addCustomLang} disabled={!customLang.trim()} title="Добавить язык"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40"
+                    style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             Ниш

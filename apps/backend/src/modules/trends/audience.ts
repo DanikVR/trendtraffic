@@ -79,6 +79,12 @@ function strArr(v: any, max: number, cap = 80): string[] {
 }
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
+/** «русский, английский» → ['русский','английский'] — язык приходит списком из мультиселекта фронта. */
+function splitLangs(language?: string): string[] {
+  const langs = String(language || '').split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
+  return langs.length ? langs.slice(0, 6) : ['русский'];
+}
+
 const PLATFORM_HINT: Record<string, string> = {
   tiktok: 'TikTok — короткие фразы и хэштеги без решётки, разговорные, как их ищут в поиске TikTok.',
   instagram: 'Instagram Reels — темы и хэштеги (без решётки), lifestyle-формулировки.',
@@ -102,7 +108,8 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
 
   const maxNiches = clamp(Math.round(input.maxNiches ?? 8), 3, 12);
   const platform = (input.platform || 'tiktok').toLowerCase();
-  const language = (input.language || 'русский').trim();
+  const langs = splitLangs(input.language); // мультиселект языков: «русский, английский» → на каждом
+  const language = langs.join(', ');
   const seeds = strArr(input.seedKeywords, 20, 60);
   const platformHint = PLATFORM_HINT[platform] || PLATFORM_HINT.tiktok;
 
@@ -134,12 +141,15 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
     `Продукт/оффер: ${product}\n` +
     `Базовая ЦА: ${audience}\n` +
     `Площадка: ${platform}. ${platformHint}\n` +
-    `Язык ключевиков и текстов: ${language}.\n` +
+    (langs.length > 1
+      ? `Языки ключевиков: ${language} — в кластере КАЖДОЙ ниши распредели ключевики по этим языкам (хотя бы по одному на каждом).\n`
+      : `Язык ключевиков и текстов: ${language}.\n`) +
     (input.region ? `Регион приоритетно: ${input.region} (добавь локальные темы/площадки, где уместно).\n` : '') +
     (seeds.length ? `Затравочные ключевики пользователя (учти и расширь, не игнорируй): ${seeds.join(', ')}\n` : '') +
     (trendingHashtags.length ? `Актуально трендовые хэштеги в регионе (используй как подсказку, если релевантны нише): ${trendingHashtags.slice(0, 15).join(', ')}\n` : '') +
-    `\nСделай РОВНО ${maxNiches} микро-ниш. Для каждой — кластер из 3-6 поисковых ключевиков ` +
-    `на языке «${language}», которыми реально ищут контент этой ниши (без решёток). ` +
+    `\nСделай РОВНО ${maxNiches} микро-ниш. Для каждой — кластер из ${langs.length > 1 ? '4-8' : '3-6'} поисковых ключевиков ` +
+    (langs.length > 1 ? `на указанных языках (${language})` : `на языке «${language}»`) +
+    ', которыми реально ищут контент этой ниши (без решёток). ' +
     'Верни JSON ровно такого вида:\n' +
     '{\n' +
     '  "niches": [\n' +
@@ -170,7 +180,7 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
   for (const n of rawNiches) {
     if (!n || typeof n !== 'object') continue;
     const name = String(n.name || '').trim().slice(0, 80);
-    const keywords = strArr(n.keywords, 6, 60);
+    const keywords = strArr(n.keywords, langs.length > 1 ? 10 : 6, 60);
     if (!name || keywords.length === 0) continue; // ниша без имени/ключевиков бесполезна
     niches.push({
       id: `niche-${niches.length + 1}`,
@@ -209,7 +219,7 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
         const low = new Set(real.map((x) => x.toLowerCase()));
         const merged = [...real];
         for (const k of n.keywords) if (!low.has(k.toLowerCase())) merged.push(k);
-        n.keywords = merged.slice(0, 8);
+        n.keywords = merged.slice(0, langs.length > 1 ? 12 : 8);
         n.realKeywords = real.filter((x) => n.keywords.some((k) => k.toLowerCase() === x.toLowerCase()));
         n.grounded = true;
       } else {
@@ -225,4 +235,66 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
     trendingHashtags: trendingHashtags.length ? trendingHashtags.slice(0, 15) : undefined,
     model: DEFAULT_DIRECTOR_MODEL, generatedAt: new Date().toISOString(),
   };
+}
+
+/** Подсказка ИИ по одному описанию продукта: базовая ЦА + затравочные ключевики (кнопка «Подсказать»). */
+export interface AudienceSuggestion {
+  audience: string;
+  keywords: string[];
+  model: string;
+}
+
+export interface SuggestAudienceInput {
+  product: string;
+  platform?: string;
+  language?: string;  // язык(и) ключевиков — может прийти списком «русский, английский»
+  region?: string;    // ISO alpha-2
+}
+
+/**
+ * suggestAudience() — по описанию продукта Claude формулирует базовую ЦА (1-2 предложения,
+ * редактируемо на фронте) и 8-12 затравочных ключевиков на выбранных языках. Один дешёвый
+ * запрос ИИ, без TikHub. Бросает понятную ошибку при пустом продукте / отсутствии ключа.
+ */
+export async function suggestAudience(tenantId: string, input: SuggestAudienceInput): Promise<AudienceSuggestion> {
+  const product = String(input.product || '').trim();
+  if (!product) throw new Error('Сначала заполните «Что продвигаем» — по нему ИИ подскажет ЦА и ключевики.');
+
+  const apiKey = await resolveAnthropicKey(tenantId);
+  if (!apiKey) throw new Error('Ключ Claude не задан (Enterprise → Генерация → ИИ-режиссёр).');
+
+  const platform = (input.platform || 'tiktok').toLowerCase();
+  const langs = splitLangs(input.language);
+  const platformHint = PLATFORM_HINT[platform] || PLATFORM_HINT.tiktok;
+
+  const system =
+    'Ты — маркетолог-стратег по продвижению в соцсетях. По описанию продукта/оффера ты определяешь, ' +
+    'кому он на самом деле нужен (базовая целевая аудитория), и какие поисковые темы/ключевики эту ' +
+    'аудиторию ловят. Отвечай СТРОГО одним JSON-объектом, без markdown и пояснений.';
+
+  const user =
+    `Продукт/оффер: ${product}\n` +
+    `Площадка: ${platform}. ${platformHint}\n` +
+    (input.region ? `Регион приоритетно: ${input.region}.\n` : '') +
+    '\nСформулируй:\n' +
+    '1) "audience" — базовая целевая аудитория: кто эти люди, их сегменты и мотивация. Кратко, 1-2 предложения ' +
+    'на русском, в стиле «предприниматели 30-50 и их жёны; боятся потерять капитал, ищут пассивный доход».\n' +
+    `2) "keywords" — 8-12 затравочных поисковых ключевиков/тем под эту аудиторию, без решёток` +
+    (langs.length > 1 ? ` (распредели по языкам: ${langs.join(', ')}).` : ` на языке «${langs[0]}».`) + '\n' +
+    '\nВерни JSON ровно такого вида:\n' +
+    '{ "audience": "<1-2 предложения>", "keywords": ["<8-12 ключевиков>"] }';
+
+  const mod: any = await import('@anthropic-ai/sdk');
+  const Anthropic = mod.default || mod.Anthropic || mod;
+  const client = new Anthropic({ apiKey });
+  const res = await client.messages.create({
+    model: DEFAULT_DIRECTOR_MODEL, max_tokens: 1500, thinking: { type: 'adaptive' },
+    system, messages: [{ role: 'user', content: user }],
+  });
+  const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
+  const j = parseJsonLoose(txt);
+  const audience = String(j?.audience || '').trim().slice(0, 500);
+  const keywords = strArr(j?.keywords, 15, 60);
+  if (!audience && !keywords.length) throw new Error('ИИ вернул неразборчивый ответ — повторите.');
+  return { audience, keywords, model: DEFAULT_DIRECTOR_MODEL };
 }
