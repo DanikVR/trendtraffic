@@ -283,9 +283,14 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const cellTag = (t: string) => (
     <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 3, fontSize: 8.5, fontWeight: 750, letterSpacing: '.05em', textTransform: 'uppercase', color: '#fff', background: 'rgba(0,0,0,.5)', borderRadius: 999, padding: '2px 7px', pointerEvents: 'none' }}>{t}</span>
   );
-  const emptyCell = (title: string, sub: string, onClick: () => void) => (
-    <button onClick={onClick} className="w-full h-full flex flex-col items-center justify-center gap-1.5"
-      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: F.sub }}>
+  // area: зона кадра, в которой центрируем пустое состояние (доли высоты). Нужна, когда поверх
+  // ячейки лежит бокс аватара (z=4): плюс, оказавшийся под боксом, «не нажимался» — клик уходил в бокс.
+  const emptyCell = (title: string, sub: string, onClick: () => void, area?: { top: number; height: number }) => (
+    <button onClick={onClick} className={`${area ? '' : 'w-full h-full '}flex flex-col items-center justify-center gap-1.5`}
+      style={{
+        background: 'transparent', border: 'none', cursor: 'pointer', color: F.sub,
+        ...(area ? { position: 'absolute' as const, left: 0, right: 0, top: `${area.top * 100}%`, height: `${area.height * 100}%` } : {}),
+      }}>
       <span className="flex items-center justify-center rounded-xl" style={{ width: 46, height: 46, border: `1.5px dashed ${F.dash}`, color: F.sub }}><Plus size={18} /></span>
       <b className="text-[10.5px] font-700" style={{ color: F.title }}>{title}</b>
       <span className="text-[9.5px]" style={{ color: F.sub }}>{sub}</span>
@@ -303,7 +308,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
         : emptyCell(emptyTitle || t('ugc.preview.emptyNotSelected', { tag }), t('ugc.preview.emptyClickToChoose'), onEmpty)}
     </div>
   );
-  const clipCell = (tag: string, emptySub?: string) => (
+  const clipCell = (tag: string, emptySub?: string, emptyArea?: { top: number; height: number }) => (
     <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: F.cell }}>
       {ugc.clip ? (
         <>
@@ -311,7 +316,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
           <video src={`${ugc.clip.url}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full" style={{ objectFit: ugc.clipFit === 'contain' ? 'contain' : 'cover' }} />
           <span className="absolute flex items-center justify-center rounded-full" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 32, height: 32, background: 'rgba(0,0,0,.45)', border: '1.5px solid rgba(255,255,255,.75)', pointerEvents: 'none' }}><Play size={14} color="#fff" fill="#fff" /></span>
         </>
-      ) : emptyCell(t('ugc.preview.emptyClipTitle'), emptySub || t('ugc.preview.emptyClipSub'), onEmptyClip)}
+      ) : emptyCell(t('ugc.preview.emptyClipTitle'), emptySub || t('ugc.preview.emptyClipSub'), onEmptyClip, emptyArea)}
     </div>
   );
   /* «медиа реплики» в диалоге: превью первого прикреплённого медиа; пусто → в панель «Реплики» */
@@ -355,6 +360,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
         <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"
           style={{ border: `1.5px dashed ${F.dash}`, borderRadius: 12, background: F.veil, color: F.title, cursor: 'pointer' }}>
           <UserRound size={16} /> {t('ugc.preview.emptyAvatarOverlay')}
+          {/* свой плюс: раньше под боксом просвечивал плюс видео-ячейки, и клик по нему уходил не туда */}
+          <span className="flex items-center justify-center rounded-lg" style={{ width: 26, height: 26, border: `1.5px dashed ${F.dash}`, marginTop: 2 }}><Plus size={13} /></span>
         </button>
       )}
       {canDrag && (
@@ -492,10 +499,15 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
     /* solo: видео во весь кадр + перетаскиваемый аватар в ЛЮБОЙ раскладке (раскладка =
        стартовая позиция бокса; дальше двигаешь/масштабируешь мышкой). Рендер строит так же.
        Поверх — выбранная врезка медиа реплики (в рендере она тоже кладётся поверх аватара). */
+    const rc = rectFor(fmt);
+    const below = 1 - rc.y - rc.h;
+    // Пустое «Видео» центрируем в свободной от бокса аватара части кадра: бокс ловит клики
+    // всей площадью (выбор/драг), и плюс видео под ним раньше просто «не нажимался».
+    const clipArea = rc.y >= below ? { top: 0, height: rc.y } : { top: rc.y + rc.h, height: below };
     return (
       <div className="absolute inset-0 flex">
-        {clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'))}
-        {overlayAvatar(rectFor(fmt), soloCutout, avatarImg, onEmptyAvatar, fmt, true, mini)}
+        {clipCell(t('ugc.common.footage'), t('ugc.preview.emptyClipSubOptional'), clipArea)}
+        {overlayAvatar(rc, soloCutout, avatarImg, onEmptyAvatar, fmt, true, mini)}
         {insertOverlay(fmt, mini)}
       </div>
     );

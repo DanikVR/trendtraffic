@@ -887,6 +887,7 @@ export default function UgcStudio(p: UgcStudioProps) {
 
           {/* 3. Голос и текст — скрыт для «Готового видео» (речь уже внутри ролика) */}
           {!isVideoAv && (
+          <div id="ugc-sec-voice">
           <Sec n={3} title={t('ugc.voice.title')} sub={t('ugc.voice.sub')} done={voiceOk}>
             <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
               {([['gen', t('ugc.voice.sourceGen')], ['diarize', t('ugc.voice.sourceDiarize')]] as [UgcSpec['source'], string][]).map(([s, lbl]) => (
@@ -1016,6 +1017,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               </p>
             )}
           </Sec>
+          </div>
           )}
 
           {/* 4. Видеоряд */}
@@ -1284,10 +1286,25 @@ export default function UgcStudio(p: UgcStudioProps) {
           {!((ugc.results && ugc.results.length > 1) || ugc.result) ? (
             <UgcPreview
               ugc={ugc} mode={mode}
-              onEmptyAvatar={() => { if (ugc.avatarSource === 'photo' || mode !== 'solo') p.openUgcPick('photo'); else scrollToSec('ugc-sec-avatar'); }}
+              onEmptyAvatar={() => {
+                // Плюс/бокс аватара на превью ВСЕГДА открывает Галерею — пикер по текущему источнику:
+                // «Готовые аватары» → добавить из Галереи (сразу станет аватаром), «Готовое видео» → видео, иначе фото.
+                if (mode === 'solo' && ugc.avatarSource === 'collection') p.openUgcPick('avatarAdd');
+                else if (mode === 'solo' && ugc.avatarSource === 'video') p.openUgcPick('avatarVideo');
+                else p.openUgcPick('photo');
+              }}
               onEmptyPhotoB={() => p.openUgcPick('photoB')}
               onEmptyClip={() => p.openUgcPick('clip')}
-              onOpenLines={() => setLinesOpen(true)}
+              onOpenLines={() => {
+                // Плюс «медиа реплики» на превью: сразу Галерея — медиа прикрепится к первой реплике
+                // без вложения. Реплик ещё нет → ведём к шагу «Голос и текст» (панель реплик пустой не рендерится).
+                if (ugc.script.length > 0) {
+                  const idx = ugc.script.findIndex((l) => !l.image);
+                  p.setUgcLineIdx(idx >= 0 ? idx : 0);
+                  p.setUgcPick('lineImage');
+                  setLinesOpen(true);
+                } else scrollToSec('ugc-sec-voice');
+              }}
               onAvatarRect={(fmt, rect) => ugcMutate((u) => ({ ...u, avatarRects: { ...u.avatarRects, [fmt]: rect } }))}
               onLineRect={(i, rect) => ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, rect: rect || undefined } : l)) }))}
               onAvatarOverInserts={(v) => ugcMutate((u) => ({ ...u, avatarOverInserts: v }))}
