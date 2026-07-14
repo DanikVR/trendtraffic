@@ -178,6 +178,16 @@ function ModeDia({ kind }: { kind: UgcMode }) {
   );
 }
 
+/* Обложка тренда: подписанные CDN-ссылки TikTok/IG не грузятся кросс-доменно → через
+   наш прокси /api/channels/cover (локальная копия хелпера из TrendSearch — не тянем его чанк). */
+function coverSrc(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (/tiktokcdn|ibyteimg|byteimg|muscdn|tiktokv|pstatp|cdninstagram|fbcdn/i.test(url)) {
+    return `/api/channels/cover?u=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 /* чип распознанного пожелания к стилю титров: подпись + образец цвета */
 function WishChip({ label, color }: { label: string; color?: string }) {
   return (
@@ -1568,15 +1578,29 @@ export default function UgcStudio(p: UgcStudioProps) {
               <div className="space-y-1.5">
                 {anaList.map((a) => {
                   const dna = a?.dna || {};
+                  const cover = dna?.meta?.cover as string | undefined;
                   return (
-                    <button key={a.id} onClick={() => applyAnalysis(a)} className="w-full text-left rounded-xl p-2.5 space-y-0.5"
+                    <button key={a.id} onClick={() => applyAnalysis(a)} className="w-full text-left rounded-xl p-2 flex items-center gap-2.5"
                       style={{ background: 'var(--bg-primary)', border: `1px solid ${ugc.analysis?.id === String(a.id) ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                      <span className="flex items-center gap-2">
-                        <b className="text-[11.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{a.title || dna.hookType || a.platform || 'разбор'}</b>
-                        {dna.visual?.framesAnalyzed && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,.14)', color: '#10b981' }}>{t('ugc.analysis.framesBadge')}</span>}
-                        <span className="text-[9.5px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''}</span>
+                      {/* Обложка видео — так проще узнать тренд, чем по имени файла tiktok-…mp4 */}
+                      <span className="rounded-lg overflow-hidden flex-shrink-0" style={{ width: 46, height: 62, background: 'var(--bg-tertiary)' }}>
+                        {a.fileUrl ? (
+                          <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                        ) : cover ? (
+                          <img src={coverSrc(cover)} alt="" loading="lazy" className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        ) : (
+                          <span className="w-full h-full flex items-center justify-center" style={{ color: ACC }}><Sparkles size={17} /></span>
+                        )}
                       </span>
-                      <span className="block text-[10px]" style={{ color: 'var(--text-muted)', ...NAME_CLAMP }}>{dna.hookType ? `${dna.hookType} · ` : ''}{dna.summary || dna.whyItWorks || ''}</span>
+                      <span className="flex-1 min-w-0 space-y-0.5">
+                        <span className="flex items-center gap-2">
+                          <b className="text-[11.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{a.title || dna.hookType || a.platform || 'разбор'}</b>
+                          {dna.visual?.framesAnalyzed && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,.14)', color: '#10b981' }}>{t('ugc.analysis.framesBadge')}</span>}
+                          <span className="text-[9.5px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''}</span>
+                        </span>
+                        <span className="block text-[10px]" style={{ color: 'var(--text-muted)', ...NAME_CLAMP }}>{dna.hookType ? `${dna.hookType} · ` : ''}{dna.summary || dna.whyItWorks || ''}</span>
+                      </span>
                     </button>
                   );
                 })}

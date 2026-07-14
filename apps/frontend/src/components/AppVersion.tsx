@@ -2628,7 +2628,12 @@
  *          реплики» (диалог) — сразу Галерея, файл прикрепляется к первой реплике без медиа;
  *          без реплик — скролл к шагу «Голос и текст». Файлы: UgcStudio.tsx, UgcPreview.tsx,
  *          AppVersion. */
-export const APP_VERSION = '2.2.50';
+/* 2.2.51 — UGC-студия: обложки видео в «Выбрать разбор тренда» (по фидбэку: по имени
+ *          tiktok-…mp4 тренд не узнать). Слева каждой строки плитка 46×62: постер из
+ *          dna.meta.cover (внешние CDN — через прокси /api/channels/cover, локальный
+ *          хелпер coverSrc) + первый кадр скачанного видео (a.fileUrl), фолбэк — иконка.
+ *          Файлы: UgcStudio.tsx, AppVersion. */
+export const APP_VERSION = '2.2.51';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
