@@ -397,6 +397,11 @@ export default function UgcStudio(p: UgcStudioProps) {
     const meta = SUPPORTED_LANGUAGES.find((l) => l.code === code);
     return [code, meta?.nativeName || code.toUpperCase()] as [string, string];
   });
+  /* Язык автопубликации = те же 29 языков конвейера; здесь ru участвует наравне. */
+  const AUTOPUB_LANG_CHOICES: [string, string][] = [
+    ['ru', SUPPORTED_LANGUAGES.find((l) => l.code === 'ru')?.nativeName || 'Русский'],
+    ...LANG_CHOICES,
+  ];
 
   /* слой принимает только прозрачный PNG/WebP — заметка при попытке выбрать иное */
   const [layerNote, setLayerNote] = useState<string | null>(null);
@@ -1671,7 +1676,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                                 onChange={(e) => void patchTplAutopub(k, { ...ap, language: e.target.value })}
                                 className="px-2 py-1 rounded-md text-[11px] outline-none"
                                 style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }}>
-                                {['en', 'ru', 'es', 'de', 'fr', 'pt', 'it', 'tr', 'uk'].map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+                                {AUTOPUB_LANG_CHOICES.map(([code, name]) => <option key={code} value={code}>{name} · {code.toUpperCase()}</option>)}
                               </select>
                               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.tpl.langHint')}</span>
                             </div>

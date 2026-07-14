@@ -2633,7 +2633,11 @@
  *          dna.meta.cover (внешние CDN — через прокси /api/channels/cover, локальный
  *          хелпер coverSrc) + первый кадр скачанного видео (a.fileUrl), фолбэк — иконка.
  *          Файлы: UgcStudio.tsx, AppVersion. */
-export const APP_VERSION = '2.2.51';
+/* 2.2.52 — UGC-шаблоны: «Язык ролика» автопубликации — полный список 29 языков конвейера
+ *          (перевод Claude → ElevenLabs multilingual_v2) с родными названиями («Русский · RU»,
+ *          «日本語 · JA»…) вместо захардкоженных 9 кодов. Список переиспользует LANG_CHOICES
+ *          «серии языков» (i18n nativeName), ru — первым. Файлы: UgcStudio.tsx, AppVersion. */
+export const APP_VERSION = '2.2.52';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
