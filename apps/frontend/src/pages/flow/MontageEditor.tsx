@@ -414,6 +414,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const [ugc, setUgc] = useState<UgcSpec>(UGC_DEFAULT);
   const [ugcBusy, setUgcBusy] = useState<null | 'dialogue' | 'diarize' | 'render' | 'compose' | 'avatars'>(null);
   const [ugcNote, setUgcNote] = useState<string | null>(null);
+  // Итог/ошибка сборки для ТОПБАРА: поп-ап прямо под кнопкой «Создать видео».
+  // ugcNote живёт в подвале левой панели и до него не доскролливают — ошибку сборки не видно.
+  const [ugcCtaNote, setUgcCtaNote] = useState<{ kind: 'error' | 'ok'; text: string } | null>(null);
   const [ugcPick, setUgcPick] = useState<UgcPickTarget | null>(null);
   const [ugcLineIdx, setUgcLineIdx] = useState<number | null>(null); // реплика, к которой прикрепляем медиа
   const [ugcGallery, setUgcGallery] = useState<{ url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[]>([]);
@@ -624,12 +627,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           setUgcBusy(null);
           const results: { url: string; name: string }[] = Array.isArray(d.results) && d.results.length ? d.results : (d.fileUrl ? [{ url: d.fileUrl, name: 'ролик' }] : []);
           ugcMutate((u) => ({ ...u, buildJobId: null, result: results[0] || null, results }));
-          setUgcNote(results.length > 1 ? `Готово! ${results.length} роликов в Галерее.` : 'Готово! Ролик сохранён в Галерею.');
+          const okMsg = results.length > 1 ? `Готово! ${results.length} роликов в Галерее.` : 'Готово! Ролик сохранён в Галерею.';
+          setUgcNote(okMsg); setUgcCtaNote({ kind: 'ok', text: okMsg });
         } else if (d.status === 'failed') {
           if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
           setUgcBusy(null);
           ugcMutate((u) => ({ ...u, buildJobId: null }));
-          setUgcNote(`Сборка не удалась: ${d.error || 'неизвестная ошибка'}`);
+          const failMsg = `Сборка не удалась: ${d.error || 'неизвестная ошибка'}`;
+          setUgcNote(failMsg); setUgcCtaNote({ kind: 'error', text: failMsg });
         } else {
           setUgcNote(`Сборка: ${d.status}…`);
         }
@@ -637,34 +642,40 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
         setUgcBusy(null);
         ugcMutate((u) => ({ ...u, buildJobId: null }));
-        setUgcNote(e?.message || 'Потеряна связь со сборкой.');
+        const lostMsg = e?.message || 'Потеряна связь со сборкой.';
+        setUgcNote(lostMsg); setUgcCtaNote({ kind: 'error', text: lostMsg });
       }
     }, 3000);
   };
   const ugcBuildStart = async () => {
-    if (ugcBusy) return;
+    // Причина не-старта обязана быть ВИДНА: дублируем её поп-апом под кнопкой «Создать видео».
+    const fail = (text: string) => { setUgcNote(text); setUgcCtaNote({ kind: 'error', text }); };
+    if (ugcBusy) {
+      if (ugcBusy !== 'render') fail('Подождите: идёт другая операция (генерация/разбор) — затем нажмите ещё раз.');
+      return;
+    }
     // «Без аватара — озвучка»: аватар/фото не нужны — только базовое видео и голос (текст/запись).
     const useVoiceover = !!ugc.noAvatar;
     // «Готовое видео-аватар»: свой ролик с говорящим человеком — HeyGen/голос не нужны (речь уже внутри).
     const useVideo = !useVoiceover && ugc.avatarSource === 'video';
     const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     if (useVoiceover) {
-      if (!ugc.clip && !ugc.clipImages.length) { setUgcNote('Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.'); return; }
+      if (!ugc.clip && !ugc.clipImages.length) { fail('Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.'); return; }
     } else if (useVideo) {
-      if (!ugc.avatarVideoUrl) { setUgcNote('Загрузите готовое видео-аватар (вкладка «Готовое видео»).'); return; }
+      if (!ugc.avatarVideoUrl) { fail('Загрузите готовое видео-аватар (вкладка «Готовое видео»).'); return; }
     } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
-      if (!ugc.photoUrl || !ugc.photoBUrl) { setUgcNote('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
-      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { setUgcNote('Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).'); return; }
-      if (!ugc.script.some((l) => l.text.trim())) { setUgcNote('Сначала разберите запись — реплик нет.'); return; }
+      if (!ugc.photoUrl || !ugc.photoBUrl) { fail('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
+      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { fail('Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).'); return; }
+      if (!ugc.script.some((l) => l.text.trim())) { fail('Сначала разберите запись — реплик нет.'); return; }
     } else if (ugc.avatarSource === 'photo') {
-      if (!ugc.photoUrl) { setUgcNote('Загрузите своё фото (портрет анфас) во вкладке «Своё фото».'); return; }
+      if (!ugc.photoUrl) { fail('Загрузите своё фото (портрет анфас) во вкладке «Своё фото».'); return; }
     } else if (!ugc.avatarId) {
-      setUgcNote('Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).'); return;
+      fail('Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).'); return;
     }
     if (!useDialogue && !useVideo) {
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
-      if (!hasVoice) { setUgcNote('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
+      if (!hasVoice) { fail('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
     }
     const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
     // «Использовать анализ»: снимок ДНК тренда для серверной режиссуры (Монтаж).
@@ -679,14 +690,15 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       : useRetention
         ? { ...ugc, analysis: analysisForBuild, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
         : { ...ugc, analysis: analysisForBuild };
-    setUgcBusy('render'); setUgcNote(useDialogue ? 'Запускаю диалог (два аватара)…' : useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
+    setUgcBusy('render'); setUgcCtaNote(null);
+    setUgcNote(useDialogue ? 'Запускаю диалог (два аватара)…' : useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
     try {
       const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.jobId) throw new Error(d?.error || `Ошибка ${r.status}`);
       ugcMutate((u) => ({ ...u, buildJobId: d.jobId, result: null }));
       pollUgcBuild(d.jobId);
-    } catch (e: any) { setUgcBusy(null); setUgcNote(e?.message || 'Не удалось запустить сборку.'); }
+    } catch (e: any) { setUgcBusy(null); fail(e?.message || 'Не удалось запустить сборку.'); }
   };
   // Возобновление поллинга после перезахода в сценарий (сборка идёт на сервере).
   useEffect(() => {
@@ -2100,6 +2112,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           ugcDelAvatar={ugcDelAvatar} setUgcDelAvatar={setUgcDelAvatar} doDelUgcAvatar={doDelUgcAvatar}
           hgExt={hgExt}
           ugcGenScript={ugcGenScript} ugcRunDiarize={ugcRunDiarize} ugcBuildStart={ugcBuildStart}
+          ugcCtaNote={ugcCtaNote} onUgcCtaNote={setUgcCtaNote}
           ugcScriptSec={ugcScriptSec}
           ugcPick={ugcPick} setUgcPick={setUgcPick} setUgcLineIdx={setUgcLineIdx}
           openUgcPick={openUgcPick} pickUgcItem={pickUgcItem}

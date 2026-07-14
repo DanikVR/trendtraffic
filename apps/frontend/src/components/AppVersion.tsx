@@ -2637,7 +2637,13 @@
  *          (перевод Claude → ElevenLabs multilingual_v2) с родными названиями («Русский · RU»,
  *          «日本語 · JA»…) вместо захардкоженных 9 кодов. Список переиспользует LANG_CHOICES
  *          «серии языков» (i18n nativeName), ru — первым. Файлы: UgcStudio.tsx, AppVersion. */
-export const APP_VERSION = '2.2.52';
+/* 2.2.53 — UGC-студия: причина «не создаётся» видна ПОД кнопкой «Создать видео» (фидбэк:
+ *          клик молчал — ошибка сборки пряталась в подвале левой панели). Поп-ап под CTA:
+ *          отказ сервера (нет ключа HeyGen/ElevenLabs, 401…), провал/потеря связи со сборкой,
+ *          «Готово!» (сам гаснет через 8с). CTA больше не disabled при неполном чек-листе —
+ *          клик показывает «Осталось: …»; занятость другой операцией тоже объясняется.
+ *          Файлы: MontageEditor.tsx (ugcCtaNote), UgcStudio.tsx, AppVersion. */
+export const APP_VERSION = '2.2.53';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

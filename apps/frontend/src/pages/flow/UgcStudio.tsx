@@ -15,7 +15,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
   Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound, ImagePlus,
-  Pencil, Undo2, Redo2,
+  Pencil, Undo2, Redo2, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import UgcPreview from './UgcPreview';
@@ -61,6 +61,9 @@ export interface UgcStudioProps {
   ugcGenScript: () => void;
   ugcRunDiarize: () => void;
   ugcBuildStart: () => Promise<void> | void;
+  /* Итог/ошибка сборки — поп-ап под кнопкой «Создать видео» (заметку в подвале панели не замечали) */
+  ugcCtaNote: { kind: 'error' | 'ok'; text: string } | null;
+  onUgcCtaNote: (n: { kind: 'error' | 'ok'; text: string } | null) => void;
   ugcScriptSec: () => number;
   ugcPick: UgcPickTarget | null;
   setUgcPick: (p: UgcPickTarget | null) => void;
@@ -572,6 +575,13 @@ export default function UgcStudio(p: UgcStudioProps) {
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  /* Поп-ап УСПЕХА под CTA гаснет сам; ошибка висит, пока не закроют или не запустят снова */
+  useEffect(() => {
+    if (p.ugcCtaNote?.kind !== 'ok') return;
+    const id = window.setTimeout(() => p.onUgcCtaNote(null), 8000);
+    return () => window.clearTimeout(id);
+  }, [p.ugcCtaNote, p.onUgcCtaNote]);
+
   return (
     <div className="ugc-studio" style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
       {/* Палитра кадра превью: на светлой теме рамки СВЕТЛЫЕ (не чёрный «телевизор»),
@@ -633,12 +643,35 @@ export default function UgcStudio(p: UgcStudioProps) {
         <span className="text-[11px] px-2.5 py-1.5 rounded-full" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
           {costBase}{costExtra}
         </span>
-        <button onClick={() => void p.ugcBuildStart()} disabled={building || !allOk}
-          title={allOk ? t('ugc.topbar.ctaTooltipReady') : t('ugc.topbar.ctaTooltipMissing', { missing })}
-          className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2 rounded-xl disabled:opacity-50"
-          style={{ background: `linear-gradient(135deg,${ACC},${ACC2})`, color: '#fff', border: 'none', cursor: allOk && !building ? 'pointer' : 'not-allowed' }}>
-          {building ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} {building ? t('ugc.topbar.creating') : t('ugc.topbar.create')}
-        </button>
+        {/* CTA намеренно НЕ disabled при неполном чек-листе: клик обязан объяснить, чего не хватает
+            (было: disabled → клик молчал, ошибка сборки пряталась в подвале панели — фидбэк 14.07) */}
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={() => {
+              if (building) return;
+              if (!allOk) { p.onUgcCtaNote({ kind: 'error', text: t('ugc.topbar.ctaTooltipMissing', { missing }) }); return; }
+              void p.ugcBuildStart();
+            }}
+            title={allOk ? t('ugc.topbar.ctaTooltipReady') : t('ugc.topbar.ctaTooltipMissing', { missing })}
+            className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2 rounded-xl"
+            style={{ background: `linear-gradient(135deg,${ACC},${ACC2})`, color: '#fff', border: 'none', opacity: building || !allOk ? .5 : 1, cursor: allOk && !building ? 'pointer' : 'not-allowed' }}>
+            {building ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} {building ? t('ugc.topbar.creating') : t('ugc.topbar.create')}
+          </button>
+          {/* Поп-ап итога/ошибки сборки — прямо под кнопкой, не потерять */}
+          {p.ugcCtaNote && !building && (
+            <div className="absolute flex items-start gap-2 p-3 rounded-xl"
+              style={{ top: 'calc(100% + 10px)', right: 0, width: 340, zIndex: 90, background: 'var(--bg-secondary)',
+                border: `1px solid ${p.ugcCtaNote.kind === 'error' ? 'rgba(239,68,68,.55)' : 'rgba(34,197,94,.55)'}`,
+                boxShadow: 'var(--ugcf-shadow)' }}>
+              {p.ugcCtaNote.kind === 'error'
+                ? <AlertTriangle size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
+                : <CheckCircle2 size={16} style={{ color: '#22c55e', flexShrink: 0, marginTop: 1 }} />}
+              <div className="flex-1 text-[12px] leading-snug" style={{ color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{p.ugcCtaNote.text}</div>
+              <button onClick={() => p.onUgcCtaNote(null)} title={t('ugc.common.remove')} className="flex-shrink-0"
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}><X size={14} /></button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Корпус: панель шагов + превью (рейл сжимается на узких экранах) ── */}
