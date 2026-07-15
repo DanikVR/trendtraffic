@@ -1243,15 +1243,26 @@
     { re: /презентац|slide/i, prompt: 'Create a presentation tailored for mobile devices in 9:16 vertical format.' },
     { re: /отч[её]т|report|брифинг/i, prompt: 'Format as a short briefing with vertical, mobile-friendly spacing and bullet points.' },
   ];
+  // Диалог «Добавить источники» — НЕ наш: его заголовок-реклама «Создавайте аудиопересказы и
+  // ВИДЕООБЗОРЫ…» матчился V916, textarea поиска источников сходила за поле инструкций → чип
+  // «9:16» вставлялся в поле поиска и ломал его (баг 15.07, «не могу добавить источники»).
+  // Узнаём его по УНИКАЛЬНЫМ контролам загрузки (в диалогах настройки студии их не бывает).
+  const SRC_DLG_RE = /перетащить файлы|загрузить файлы|скопированный текст|найдите новые источники|добавьте источник|drag (and|&) drop|upload (a )?file|copied text|discover sources/i;
   function inject916() {
     try {
       // Диалоги Angular CDK живут в overlay-контейнере В СВЕТЛОМ DOM → обычный querySelectorAll дешёв.
       const dialogs = [...document.querySelectorAll('[role="dialog"], mat-dialog-container')].filter(visible);
       for (const dlg of dialogs) {
         if (dlg.querySelector('.tt-916-btn')) continue;
+        const full = clean(dlg.textContent);
+        if (SRC_DLG_RE.test(full)) continue; // «Добавить источники» — не трогаем вовсе
         const ta = [...dlg.querySelectorAll('textarea')].filter(visible)[0];
         if (!ta) continue;
-        const head = clean(dlg.textContent).slice(0, 160);
+        // Поле должно быть про инструкции, а не ПОИСК источников (второй предохранитель;
+        // нарочно узкий — плейсхолдер поля инструкций может упоминать «источники» легально).
+        const taHint = clean((ta.getAttribute('placeholder') || '') + ' ' + (ta.getAttribute('aria-label') || ''));
+        if (/найдите|поиск|search|discover/i.test(taHint)) continue;
+        const head = full.slice(0, 160);
         const hit = V916.find((v) => v.re.test(head));
         if (!hit) continue; // аудио и прочие типы без вертикальной вёрстки — не предлагаем
         const btn = document.createElement('button');

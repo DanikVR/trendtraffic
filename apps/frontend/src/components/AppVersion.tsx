@@ -2673,11 +2673,20 @@
  *          GET /ugc/heygen-avatars (v2/avatars + avatar_group.list → луки), POST
  *          /ugc/heygen-avatar-pick. Файлы: render/router.ts, heygen-ext/router.ts,
  *          content-heygen.js, ugcTypes.ts, UgcStudio.tsx, MontageEditor.tsx, AppVersion. */
-export const APP_VERSION = '2.2.56';
+/* 2.2.57 — Hotebook, фикс расширения (ext 1.3.30): чип «📱 9:16» вставлялся в диалог
+ *          «Добавить источники» NotebookLM и ломал поле поиска (заголовок-реклама диалога
+ *          «Создавайте аудиопересказы и ВИДЕООБЗОРЫ…» матчился V916, textarea поиска
+ *          сходила за поле инструкций — юзер не мог добавить источники, пока не выключил
+ *          расширение). Два предохранителя в inject916: диалог с контролами загрузки
+ *          (перетащить/загрузить файлы/скопированный текст/найдите новые источники) не
+ *          трогаем вовсе; поле с плейсхолдером поиска — пропускаем. Проверено живьём на
+ *          NotebookLM: старая логика вставляла чип, новая исключает, диалог чист.
+ *          Файлы: content-notebook.js, manifest+bridge 1.3.30, AppVersion. */
+export const APP_VERSION = '2.2.57';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.29';
+export const TT_EXT_VERSION = '1.3.30';
 
 export function AppVersion() {
   return (
