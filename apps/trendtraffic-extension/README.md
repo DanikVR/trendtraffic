@@ -84,8 +84,11 @@ DOM обоих сервисов нестабилен, поэтому селек�
 
 ```bash
 cd apps/trendtraffic-extension
-# форвард-слэши в путях (Chrome и unzip читают одинаково):
-zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md src
+# ОБЯЗАТЕЛЬНО с icons/ — манифест ссылается на них, без папки Chrome не грузит манифест
+# («Could not load icon 'icons/icon-16.png'», грабли v1.3.29 15.07.2026).
+# Форвард-слэши в путях (Chrome и unzip читают одинаково):
+zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md icons src
+# Если бинаря zip нет (Windows): python zipfile с путями через '/' — см. deployment-state.
 ```
 
 Версию (`manifest.json` → `version`) бампать вместе с `TT_EXT_VERSION` в
