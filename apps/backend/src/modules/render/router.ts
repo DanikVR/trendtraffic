@@ -23,7 +23,8 @@ import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
 import { generatePodcastDialogue, tagUgcRetention, directDialogue, translateUgcScript } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
-import { heygenVideoStatus, submitTalkingPhotoVideo, uploadTalkingPhoto } from './avatar.js';
+import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTalkingPhotoBuf } from './avatar.js';
+import { photoSha, hgKeyFp, getCachedTp, putCachedTp, dropCachedTp } from './tp_cache.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
 import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
@@ -464,18 +465,54 @@ async function renderTalkingHeads(opts: {
     return out;
   }
 
-  // API-путь: talking_photo кэшируем по фото (одно фото = один upload), сабмит + поллинг.
+  // API-путь: talking_photo кэшируем по СОДЕРЖИМОМУ фото В БД — одно фото грузится в HeyGen
+  // один раз ЗА ВСЮ ЖИЗНЬ (а не за сборку): тарифы HeyGen ограничивают число ХРАНИМЫХ
+  // фото-аватаров (у базового — 3), раньше каждый запуск выедал слот. Озвучка/текст на кэш
+  // не влияют — они передаются на каждый рендер отдельно. Смена ключа HeyGen = другой
+  // аккаунт (hgKeyFp в ключе кэша); аватар, удалённый в кабинете, перезаливается один раз.
   if (!opts.hgKey) throw new Error('нет ключа HeyGen');
-  const tpCache = new Map<string, string>();
+  const fp = hgKeyFp(opts.hgKey);
+  const tpCache = new Map<string, { tpId: string; sha: string; fromDb: boolean }>();
   const submitted: { segIndex: number; videoId: string }[] = [];
   for (const h of opts.heads) {
-    let tpId = tpCache.get(h.photoUrl);
-    if (!tpId) { tpId = await uploadTalkingPhoto(opts.hgKey, h.photoUrl); tpCache.set(h.photoUrl, tpId); }
-    const videoId = await submitTalkingPhotoVideo(opts.hgKey, {
+    let tp = tpCache.get(h.photoUrl);
+    if (!tp) {
+      const { buf, mime } = await fetchPhotoBuffer(h.photoUrl);
+      const sha = photoSha(buf);
+      const cached = await getCachedTp(opts.tenantId, sha, fp);
+      if (cached) tp = { tpId: cached, sha, fromDb: true };
+      else {
+        const tpId = await uploadTalkingPhotoBuf(opts.hgKey, buf, mime);
+        await putCachedTp(opts.tenantId, sha, fp, tpId);
+        tp = { tpId, sha, fromDb: false };
+      }
+      tpCache.set(h.photoUrl, tp);
+    }
+    const submitArgs = (tpId: string) => ({
       talkingPhotoId: tpId, useIV: h.useIV !== false, expressive: h.expressive !== false,
       width: h.width || 1080, height: h.height || 1920, audioUrl: h.audioUrl,
       ...(h.bgColor ? { bgColor: h.bgColor } : {}),
     });
+    let videoId: string;
+    try {
+      videoId = await submitTalkingPhotoVideo(opts.hgKey, submitArgs(tp.tpId));
+    } catch (e: any) {
+      // Кэшированный аватар могли удалить в кабинете HeyGen: сообщение должно называть
+      // сам talking_photo/аватар И «не найден/невалиден» — иначе (квота, битое аудио…)
+      // перезаливка бессмысленна и лишь сожгла бы слот фото-аватара.
+      const m = String(e?.message || '');
+      const stale = tp.fromDb
+        && /talking[_\s-]?photo|photo[_\s-]?avatar/i.test(m)
+        && /not\s?found|invalid|does not exist|deleted|no longer/i.test(m);
+      if (!stale) throw e;
+      await dropCachedTp(opts.tenantId, tp.sha, fp);
+      const { buf, mime } = await fetchPhotoBuffer(h.photoUrl);
+      const tpId = await uploadTalkingPhotoBuf(opts.hgKey, buf, mime);
+      await putCachedTp(opts.tenantId, tp.sha, fp, tpId);
+      tp = { tpId, sha: tp.sha, fromDb: false };
+      tpCache.set(h.photoUrl, tp);
+      videoId = await submitTalkingPhotoVideo(opts.hgKey, submitArgs(tp.tpId));
+    }
     submitted.push({ segIndex: h.segIndex, videoId });
   }
   const deadline = Date.now() + 30 * 60_000;

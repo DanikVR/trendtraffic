@@ -53,21 +53,37 @@ export async function pickVoice(apiKey: string, gender: 'male' | 'female', wantE
   return v?.voice_id || null;
 }
 
-/** Загрузить фото как talking_photo → talking_photo_id. */
-export async function uploadTalkingPhoto(apiKey: string, imageUrl: string): Promise<string> {
+/** Скачать фото ведущего в буфер — байты нужны и для sha-ключа кэша, и для загрузки. */
+export async function fetchPhotoBuffer(imageUrl: string): Promise<{ buf: Buffer; mime: string }> {
   const ir = await fetch(imageUrl);
   if (!ir.ok) throw new Error(`фото ведущего не скачалось (HTTP ${ir.status})`);
   const ct = (ir.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
   const mime = ct.startsWith('image/') ? ct : 'image/jpeg';
   const buf = Buffer.from(await ir.arrayBuffer());
   if (buf.length < 1024) throw new Error('фото ведущего слишком маленькое/битое');
+  return { buf, mime };
+}
+
+/** Загрузить фото (буфером) как talking_photo → talking_photo_id. */
+export async function uploadTalkingPhotoBuf(apiKey: string, buf: Buffer, mime: string): Promise<string> {
   const r = await fetch(`${HG_UPLOAD}/v1/talking_photo`, {
-    method: 'POST', headers: { 'x-api-key': apiKey, 'Content-Type': mime }, body: buf,
+    method: 'POST', headers: { 'x-api-key': apiKey, 'Content-Type': mime }, body: buf as any,
   });
   const d: any = await r.json().catch(() => ({}));
   const id = d?.data?.talking_photo_id;
-  if (!id) throw new Error(`HeyGen upload: ${d?.message || `HTTP ${r.status}`}`);
-  return id;
+  if (id) return String(id);
+  const msg = String(d?.message || d?.error?.message || `HTTP ${r.status}`);
+  // Тариф HeyGen ограничивает ЧИСЛО ХРАНИМЫХ фото-аватаров — говорим, как разблокироваться.
+  if (/exceeded your limit of \d+ photo avatars/i.test(msg)) {
+    throw new Error(`В аккаунте HeyGen кончились слоты фото-аватаров: удалите старые Photo Avatars в кабинете HeyGen (app.heygen.com → Avatars) или поднимите план HeyGen. Ответ HeyGen: ${msg}`);
+  }
+  throw new Error(`HeyGen upload: ${msg}`);
+}
+
+/** Загрузить фото по URL как talking_photo → talking_photo_id. */
+export async function uploadTalkingPhoto(apiKey: string, imageUrl: string): Promise<string> {
+  const { buf, mime } = await fetchPhotoBuffer(imageUrl);
+  return uploadTalkingPhotoBuf(apiKey, buf, mime);
 }
 
 /** Поставить рендер говорящей головы → video_id.

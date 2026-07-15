@@ -2643,7 +2643,15 @@
  *          «Готово!» (сам гаснет через 8с). CTA больше не disabled при неполном чек-листе —
  *          клик показывает «Осталось: …»; занятость другой операцией тоже объясняется.
  *          Файлы: MontageEditor.tsx (ugcCtaNote), UgcStudio.tsx, AppVersion. */
-export const APP_VERSION = '2.2.53';
+/* 2.2.54 — HeyGen: кэш talking_photo_id в БД (heygen_talking_photos) — одно и то же фото
+ *          грузится в HeyGen ОДИН раз за всю жизнь, сборки переиспользуют фото-аватар
+ *          (озвучка/текст передаются на каждый рендер отдельно). Лечит «You have exceeded
+ *          your limit of 3 photo avatars»: тариф HeyGen хранит ≤3 фото-аватара, а каждый
+ *          запуск заливал фото заново. Ключ кэша: tenant + sha256 байтов фото + отпечаток
+ *          HeyGen-ключа; удалённый в кабинете аватар перезаливается 1 раз; ошибка лимита
+ *          переведена на человеческий (что удалить/где). Файлы: render/tp_cache.ts (новый),
+ *          render/avatar.ts, render/router.ts, AppVersion. */
+export const APP_VERSION = '2.2.54';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
