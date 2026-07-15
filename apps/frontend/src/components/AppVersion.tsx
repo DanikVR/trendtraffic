@@ -2662,11 +2662,22 @@
  *          slotCandidates 21 → 35 дней: серии/цепочки планируются на месяц вперёд.
  *          Файлы: db/migrations.ts, media/assets.ts, render/router.ts, publisher/service.ts,
  *          publisher/router.ts, PublisherTab.tsx, docs/PUBLISHER.md, AppVersion. */
-export const APP_VERSION = '2.2.55';
+/* 2.2.56 — UGC-студия, «Аватар»: готовые фото-аватары/луки из аккаунта HeyGen (вкл.
+ *          натренированные Personal Model) — кнопка «Выбрать готовый аватар из HeyGen» во
+ *          вкладке «Моё фото» (обычная загрузка одного фото осталась как была). Выбор лука:
+ *          превью качается к нам (uploads/covers, подписанные URL HeyGen протухают) → «Моё
+ *          фото» + spec.heygenLookId; рендер идёт ПО ID лука БЕЗ заливки фото (слоты
+ *          фото-аватаров не тратятся) на обоих провайдерах: API (renderTalkingHeads tpId)
+ *          и подписка (heygen_ext_tasks.tp_id, расширение v1.3.29 пропускает upload,
+ *          фолбэк — заливка превью, если лук не найден в сессии). Новые ручки:
+ *          GET /ugc/heygen-avatars (v2/avatars + avatar_group.list → луки), POST
+ *          /ugc/heygen-avatar-pick. Файлы: render/router.ts, heygen-ext/router.ts,
+ *          content-heygen.js, ugcTypes.ts, UgcStudio.tsx, MontageEditor.tsx, AppVersion. */
+export const APP_VERSION = '2.2.56';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.28';
+export const TT_EXT_VERSION = '1.3.29';
 
 export function AppVersion() {
   return (

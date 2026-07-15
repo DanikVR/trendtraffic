@@ -527,7 +527,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   });
   const pickUgcItem = (g: { url: string; name: string; type: 'video' | 'audio' | 'image' }) => {
     if (ugcPick === 'clip') ugcMutate((u) => ({ ...u, clip: { url: g.url, name: g.name } }));
-    else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name }));
+    else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name, heygenLookId: null }));
     else if (ugcPick === 'photoB') ugcMutate((u) => ({ ...u, photoBUrl: g.url, photoBName: g.name }));
     else if (ugcPick === 'avatarVideo') ugcMutate((u) => ({ ...u, avatarVideoUrl: g.url, avatarVideoName: g.name, result: null }));
     else if (ugcPick === 'recording') ugcMutate((u) => (

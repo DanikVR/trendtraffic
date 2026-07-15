@@ -307,14 +307,26 @@
 
   async function renderHead(task) {
     ui.task('▶ голова #' + (task.id || '').slice(0, 6) + (task.useIV !== false ? ' · Avatar IV' : ' · Avatar III'));
-    ui.line('фото → talking_photo…');
-    let tpId;
-    try { tpId = await uploadTalkingPhoto(task.photoUrl); }
-    catch (e) { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
+    // Готовый лук из аккаунта (tpId) — фото не заливаем: не тратит слоты фото-аватаров.
+    let tpId = task.tpId || null;
+    if (tpId) ui.line('готовый аватар аккаунта — загрузка фото пропущена');
+    else {
+      ui.line('фото → talking_photo…');
+      try { tpId = await uploadTalkingPhoto(task.photoUrl); }
+      catch (e) { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
+    }
     ui.line('запускаю генерацию (' + (task.useIV !== false ? 'IV' : 'III') + ')…');
     let videoId;
     try { videoId = await submitGenerate(task, tpId); }
-    catch (e) { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
+    catch (e) {
+      // Лук живёт в аккаунте API-ключа; если сессия студии — другой аккаунт, generate его
+      // не найдёт → фолбэк: заливаем фото (превью лука) как обычно и повторяем один раз.
+      if (task.tpId && tpId === task.tpId && task.photoUrl) {
+        ui.line('⚠ лук не найден в этой сессии — заливаю фото и повторяю…');
+        try { tpId = await uploadTalkingPhoto(task.photoUrl); videoId = await submitGenerate(task, tpId); }
+        catch (e2) { ui.line('⚠ ' + (e2 && e2.message)); return { ok: false, reason: String(e2 && e2.message || e2) }; }
+      } else { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
+    }
     let videoUrl;
     try { videoUrl = await pollStatus(videoId); }
     catch (e) { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }

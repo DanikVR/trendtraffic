@@ -476,6 +476,9 @@ async function renderTalkingHeads(opts: {
   const submitted: { segIndex: number; videoId: string }[] = [];
   for (const h of opts.heads) {
     let tp = tpCache.get(h.photoUrl);
+    // Готовый лук из аккаунта HeyGen (вкл. натренированные Personal Model): upload не нужен
+    // вовсе — рендерим прямо по его id (sha пустой = «нечего дропать из кэша»).
+    if (!tp && h.tpId) { tp = { tpId: h.tpId, sha: '', fromDb: true }; tpCache.set(h.photoUrl, tp); }
     if (!tp) {
       const { buf, mime } = await fetchPhotoBuffer(h.photoUrl);
       const sha = photoSha(buf);
@@ -505,11 +508,17 @@ async function renderTalkingHeads(opts: {
         && /talking[_\s-]?photo|photo[_\s-]?avatar/i.test(m)
         && /not\s?found|invalid|does not exist|deleted|no longer/i.test(m);
       if (!stale) throw e;
-      await dropCachedTp(opts.tenantId, tp.sha, fp);
+      // Протух кэш ИЛИ выбранный лук: перезаливаем фото (у лука photoUrl = его превью) —
+      // через тот же sha-кэш, чтобы повторные сборки не жгли слоты.
+      if (tp.sha) await dropCachedTp(opts.tenantId, tp.sha, fp);
       const { buf, mime } = await fetchPhotoBuffer(h.photoUrl);
-      const tpId = await uploadTalkingPhotoBuf(opts.hgKey, buf, mime);
-      await putCachedTp(opts.tenantId, tp.sha, fp, tpId);
-      tp = { tpId, sha: tp.sha, fromDb: false };
+      const sha2 = photoSha(buf);
+      let tpId = tp.sha ? null : await getCachedTp(opts.tenantId, sha2, fp);
+      if (!tpId) {
+        tpId = await uploadTalkingPhotoBuf(opts.hgKey, buf, mime);
+        await putCachedTp(opts.tenantId, sha2, fp, tpId);
+      }
+      tp = { tpId, sha: sha2, fromDb: false };
       tpCache.set(h.photoUrl, tp);
       videoId = await submitTalkingPhotoVideo(opts.hgKey, submitArgs(tp.tpId));
     }
@@ -530,6 +539,68 @@ async function renderTalkingHeads(opts: {
   if (pending.size) throw new Error('часть сегментов HeyGen не уложилась в 30 минут');
   return out;
 }
+
+/** GET /ugc/heygen-avatars — фото-аватары/луки аккаунта HeyGen тенанта (для выбора в студии).
+ *  Источники: /v2/avatars.talking_photos + avatar_group.list → луки групп (вкл. натренированные
+ *  Personal Model). Превью в ответе — подписанные URL HeyGen (протухают за часы), поэтому
+ *  фиксация выбора идёт через POST /ugc/heygen-avatar-pick (качает превью к нам). */
+router.get('/ugc/heygen-avatars', async (req: AuthedRequest, res: Response) => {
+  try {
+    const hgKey = await getEffectiveProviderKey(req.tenantId!, 'heygen');
+    if (!hgKey) return res.status(400).json({ error: 'Список аватаров HeyGen требует API-ключ (Настройки → Генерация). Без ключа загрузите фото как обычно.' });
+    const get = async (url: string): Promise<any> => {
+      const r = await fetch(url, { headers: { 'x-api-key': hgKey, accept: 'application/json' } });
+      return r.json().catch(() => ({}));
+    };
+    const looks = new Map<string, { id: string; name: string; preview: string; group?: string }>();
+    const add = (id: any, name: any, preview: any, group?: string) => {
+      const key = String(id || '').trim();
+      if (!key || looks.has(key)) return;
+      looks.set(key, { id: key, name: String(name || 'Без имени').slice(0, 80), preview: String(preview || ''), ...(group ? { group } : {}) });
+    };
+    const av = await get('https://api.heygen.com/v2/avatars');
+    for (const t of av?.data?.talking_photos || []) add(t?.talking_photo_id, t?.talking_photo_name, t?.preview_image_url);
+    // Группы фото-аватаров (Personal Model и «свои» группы) — оборонительно: формы ответов
+    // слабо типизированы, любой сбой здесь не должен прятать уже собранные talking_photos.
+    try {
+      const gl = await get('https://api.heygen.com/v2/avatar_group.list?include_public=false');
+      const groups: any[] = gl?.data?.avatar_group_list || gl?.data?.groups || [];
+      for (const g of groups.slice(0, 12)) {
+        const gid = String(g?.id || g?.group_id || '').trim();
+        if (!gid) continue;
+        const gname = String(g?.name || g?.group_name || 'Группа').slice(0, 60);
+        const ga = await get(`https://api.heygen.com/v2/avatar_group/${encodeURIComponent(gid)}/avatars`);
+        for (const a of ga?.data?.avatar_list || ga?.data?.avatars || ga?.data?.talking_photo_list || []) {
+          add(a?.id || a?.avatar_id || a?.talking_photo_id, a?.name || a?.avatar_name || a?.talking_photo_name || gname,
+            a?.image_url || a?.preview_image_url || a?.motion_preview_url, gname);
+        }
+      }
+    } catch (e) { console.warn('[ugc/heygen-avatars] группы:', (e as Error).message); }
+    return res.json({ looks: [...looks.values()].filter((l) => l.preview) });
+  } catch (e: any) {
+    return res.status(500).json({ error: `HeyGen не отдал список аватаров: ${String(e?.message || e).slice(0, 200)}` });
+  }
+});
+
+/** POST /ugc/heygen-avatar-pick — зафиксировать выбранный лук: превью качается к нам в
+ *  uploads/covers (подписанные URL HeyGen протухают) → { photoUrl, heygenLookId, name }.
+ *  Имя файла — от sha превью: повторный выбор того же лука не плодит копии. */
+router.post('/ugc/heygen-avatar-pick', async (req: AuthedRequest, res: Response) => {
+  try {
+    const id = String(req.body?.id || '').trim();
+    const preview = String(req.body?.preview || '').trim();
+    const name = String(req.body?.name || 'HeyGen-лук').slice(0, 80);
+    if (!id || !/^https?:\/\//i.test(preview)) return res.status(400).json({ error: 'Нужны id и preview выбранного лука.' });
+    const { buf, mime } = await fetchPhotoBuffer(preview);
+    const ext = mime === 'image/webp' ? '.webp' : mime === 'image/png' ? '.png' : '.jpg';
+    fs.mkdirSync(TPL_COVERS_DIR, { recursive: true });
+    const fname = `hg-look-${photoSha(buf).slice(0, 16)}${ext}`;
+    fs.writeFileSync(path.join(TPL_COVERS_DIR, fname), buf);
+    return res.json({ photoUrl: `/uploads/covers/${fname}`, heygenLookId: id, name });
+  } catch (e: any) {
+    return res.status(400).json({ error: `Не удалось сохранить превью лука: ${String(e?.message || e).slice(0, 200)}` });
+  }
+});
 
 /** POST /ugc/build — запустить сборку. body: { spec: UgcSpec-подмножество }. → { jobId }. */
 router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
@@ -562,6 +633,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     };
     const avatarRectFor = (k: UgcFormatKey) => avatarRects[k] || defaultAvatarRect(placement);
     const isPhoto = spec.avatarSource === 'photo';
+    // Готовый лук из аккаунта HeyGen (вкл. натренированные Personal Model): сопровождает
+    // photoUrl (фронт кладёт превью лука в «Моё фото») — рендер идёт по id, без upload.
+    const heygenLookId: string = isPhoto && spec.photoUrl ? String(spec.heygenLookId || '').trim() : '';
     // ИИ-вырезка фона аватара в соло (фото/коллекция): HeyGen на зелёном → chroma-key → силуэт.
     const avatarCutoutOn = !!spec.avatarCutout;
     // Провайдер рендера лица: 'ext' = HeyGen по ПОДПИСКЕ через расширение браузера (втрое дешевле,
@@ -892,6 +966,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const slice = await sliceAudioToRenders(rec.filePath, s.srcT0 as number, s.srcT1 as number, 'dlgseg');
             heads.push({
               segIndex: i, photoUrl: s.speaker === 'A' ? photoAabs : photoBabs,
+              // Лук HeyGen применим только к спикеру A (его фото = spec.photoUrl)
+              ...(s.speaker === 'A' && heygenLookId ? { tpId: heygenLookId } : {}),
               audioUrl: abs(slice.fileUrl), useIV: s.engine === 'iv', width: 1080, height: 1920, expressive: true,
               // фон+лицо сбоку + вырезка → рендерим на зелёном (HeyGen матирует фото), потом chroma-key
               ...(cutout && isBgLayout(s.layout) ? { bgColor: '#00FF00' } : {}),
@@ -1004,7 +1080,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const heads: HeadSpec[] = [];
           for (const { s, i } of faceIdx) {
             const slice = await sliceAudioToRenders(voice.filePath, s.t0, s.t1, 'retseg');
-            heads.push({ segIndex: i, photoUrl: photoAbs, audioUrl: abs(slice.fileUrl), useIV: s.engine === 'iv', width: 1080, height: 1920, expressive: true });
+            heads.push({ segIndex: i, photoUrl: photoAbs, ...(heygenLookId ? { tpId: heygenLookId } : {}), audioUrl: abs(slice.fileUrl), useIV: s.engine === 'iv', width: 1080, height: 1920, expressive: true });
           }
           const avatarPaths = await renderTalkingHeads({
             tenantId: j.tenantId!, jobId, provider: faceProvider, hgKey, heads,
@@ -1170,7 +1246,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               tenantId: j.tenantId!, jobId: `${jobId}${lang !== 'ru' ? `-${lang}` : ''}`, provider: faceProvider, hgKey,
               // Вырезка фона (ИИ): HeyGen оживляет фото на ЗЕЛЁНОМ фоне → composeUgc делает
               // chroma-key — поверх кадра остаётся силуэт (как dialogueCutout в «Диалогах»).
-              heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true, ...(avatarCutoutOn ? { bgColor: '#00FF00' } : {}) }],
+              heads: [{ segIndex: 0, photoUrl: abs(avatarPhotoUrl), ...(heygenLookId ? { tpId: heygenLookId } : {}), audioUrl: voiceUrl, useIV: true, width: 1080, height: 1920, expressive: true, ...(avatarCutoutOn ? { bgColor: '#00FF00' } : {}) }],
               onProgress: (d, t2) => { j.status = faceProvider === 'ext' ? `аватар по подписке (${d}/${t2})` : `генерирую аватар (Avatar IV${langSuffix})`; },
             });
             const avatarPath = heads[0];

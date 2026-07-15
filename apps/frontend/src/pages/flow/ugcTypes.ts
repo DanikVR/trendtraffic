@@ -39,6 +39,7 @@ export interface UgcSpec {
   avatarUrl: string | null; avatarName: string | null;      // его картинка/имя (вход рендера)
   avatarProvider: 'gallery';                                // аватар из Галереи (коллекция) / своё фото → HeyGen
   photoUrl: string | null; photoName: string | null;        // своё фото
+  heygenLookId: string | null;                               // готовый лук/фото-аватар аккаунта HeyGen (рендер по id, без upload)
   // Готовое видео-аватар (avatarSource='video'): уже готовый ролик с говорящим человеком
   // (речь+мимика внутри). Идёт прямо в композит (composeUgc), HeyGen/ElevenLabs НЕ участвуют.
   avatarVideoUrl: string | null; avatarVideoName: string | null;
@@ -112,6 +113,7 @@ export const UGC_DEFAULT: UgcSpec = {
   avatarSource: 'collection', avatarId: null,
   avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
   photoUrl: null, photoName: null,
+  heygenLookId: null,
   avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
   avatarCutout: false,
   avatarOverInserts: false,

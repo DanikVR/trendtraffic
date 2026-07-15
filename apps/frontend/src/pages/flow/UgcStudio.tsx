@@ -377,6 +377,44 @@ export default function UgcStudio(p: UgcStudioProps) {
     loadVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ugc.source, elVoices, p.token]);
+  /* ── Готовые луки/фото-аватары аккаунта HeyGen (вкл. натренированные Personal Model) ──
+     Список — по кнопке (GET heygen-avatars, нужен API-ключ HeyGen); выбор фиксируется через
+     POST heygen-avatar-pick: превью скачивается к нам (подписанные URL HeyGen протухают),
+     ложится в «Моё фото» + heygenLookId в спеку → рендер идёт по id, без заливки фото. */
+  const [hgLooks, setHgLooks] = useState<{ id: string; name: string; preview: string; group?: string }[] | null>(null);
+  const [hgLooksBusy, setHgLooksBusy] = useState<null | 'list' | 'pick'>(null);
+  const [hgLooksNote, setHgLooksNote] = useState<string | null>(null);
+  const loadHgLooks = () => {
+    if (hgLooksBusy) return;
+    setHgLooksBusy('list'); setHgLooksNote(null);
+    void fetch('/api/render/ugc/heygen-avatars', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } })
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+        const looks = Array.isArray(d?.looks) ? d.looks : [];
+        setHgLooks(looks);
+        if (!looks.length) setHgLooksNote(t('ugc.avatar.hgLooksEmpty', 'В аккаунте HeyGen пока нет фото-аватаров: создайте лук в кабинете HeyGen или загрузите фото как обычно.'));
+      })
+      .catch((e: any) => { setHgLooks([]); setHgLooksNote(String(e?.message || e)); })
+      .finally(() => setHgLooksBusy(null));
+  };
+  const pickHgLook = (l: { id: string; name: string; preview: string }) => {
+    if (hgLooksBusy === 'pick') return;
+    setHgLooksBusy('pick'); setHgLooksNote(null);
+    void fetch('/api/render/ugc/heygen-avatar-pick', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) },
+      body: JSON.stringify({ id: l.id, name: l.name, preview: l.preview }),
+    })
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+        ugcMutate((u) => ({ ...u, photoUrl: String(d.photoUrl), photoName: String(d.name || l.name), heygenLookId: String(d.heygenLookId || l.id) }));
+      })
+      .catch((e: any) => setHgLooksNote(String(e?.message || e)))
+      .finally(() => setHgLooksBusy(null));
+  };
+
   /* Категория голоса ElevenLabs → человекочитаемо (клонированный/встроенный/…). */
   const voiceCatLabel = (cat: string | null): string => {
     const key = (cat || '').toLowerCase();
@@ -870,12 +908,36 @@ export default function UgcStudio(p: UgcStudioProps) {
                     <img src={ugc.photoUrl} alt="" className="rounded-md object-cover flex-shrink-0" style={{ width: 52, height: 68 }} />
                     <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.photoName || undefined}>{ugc.photoName || t('ugc.avatar.photoChosenName')}</span>
                     <button onClick={() => p.openUgcPick('photo')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, photoUrl: null, photoName: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, photoUrl: null, photoName: null, heygenLookId: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                   </div>
                 ) : (
                   <EmptySlot icon={<UserRound size={14} />} title={t('ugc.avatar.photoEmptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('photo')} />
                 )}
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.photoHint')}</p>
+
+                {/* Готовый аватар из аккаунта HeyGen (вкл. натренированные Personal Model):
+                    рендер идёт по id лука — фото не заливается, слоты фото-аватаров не тратятся.
+                    Обычная загрузка одного фото выше остаётся как была. */}
+                {ugc.heygenLookId && (
+                  <p className="text-[10px]" style={{ color: '#0E9E77' }}>{t('ugc.avatar.hgLookActive', 'Выбран готовый аватар HeyGen — фото не заливается, слоты не тратятся. Замена фото выключает его.')}</p>
+                )}
+                <button onClick={loadHgLooks} disabled={hgLooksBusy === 'list'} className="w-full py-2 rounded-xl text-[11px] font-650 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                  style={{ background: 'var(--bg-secondary)', border: '1.5px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  {hgLooksBusy === 'list' ? <Loader2 size={12} className="animate-spin" /> : <UserRound size={12} />} {t('ugc.avatar.hgLooksBtn', 'Выбрать готовый аватар из HeyGen')}
+                </button>
+                {hgLooksNote && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{hgLooksNote}</p>}
+                {hgLooks && hgLooks.length > 0 && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {hgLooks.map((l) => (
+                      <button key={l.id} onClick={() => pickHgLook(l)} disabled={hgLooksBusy === 'pick'} title={l.group ? `${l.name} · ${l.group}` : l.name}
+                        className="relative rounded-lg overflow-hidden disabled:opacity-60"
+                        style={{ aspectRatio: '3 / 4', border: `2px solid ${ugc.heygenLookId === l.id ? ACC : 'var(--border-medium)'}`, padding: 0, background: 'var(--bg-secondary)', cursor: 'pointer' }}>
+                        <img src={l.preview} alt="" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.25'; }} />
+                        {ugc.heygenLookId === l.id && <span className="absolute flex items-center justify-center rounded-full" style={{ top: 3, right: 3, width: 16, height: 16, background: ACC, color: '#fff' }}><Check size={10} /></span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {mode === 'dialogue' && (
                   <>
                     <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.speakerBHeading')}</div>

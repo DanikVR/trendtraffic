@@ -109,6 +109,8 @@ async function ensureTables(): Promise<void> {
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       )`);
+    // v2.2.55: готовый talking_photo_id (лук из аккаунта HeyGen) — расширение пропускает upload фото.
+    await pool.query(`ALTER TABLE heygen_ext_tasks ADD COLUMN IF NOT EXISTS tp_id TEXT`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_heygen_tasks_tenant ON heygen_ext_tasks(tenant_id, status, created_at ASC)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_heygen_tasks_job ON heygen_ext_tasks(job_id)`);
     // Авто-разведка API живой студии HeyGen: расширение (injected.js) шлёт снимок виденных
@@ -132,6 +134,7 @@ function mapTask(r: any) {
   return {
     id: r.id,
     photoUrl: r.photo_url,
+    tpId: r.tp_id || null,
     audioUrl: r.audio_url || null,
     text: r.script_text || null,
     voiceId: r.voice_id || null,
@@ -308,6 +311,7 @@ router.post('/clear', async (req: AuthedRequest, res: Response) => {
 export interface HeadSpec {
   segIndex: number;      // индекс сегмента (для сопоставления в джобе)
   photoUrl: string;      // абсолютный URL фото
+  tpId?: string;         // готовый talking_photo_id (лук из аккаунта HeyGen) — upload фото пропускается
   audioUrl?: string;     // абсолютный URL аудио-сегмента (свой голос / ElevenLabs)
   text?: string;         // ИЛИ текст (HeyGen TTS) — если нет аудио
   voiceId?: string;
@@ -328,9 +332,9 @@ export async function enqueueHeygenHeads(tenantId: string, jobId: string, heads:
     ids.push(id);
     await pool.query(
       `INSERT INTO heygen_ext_tasks
-         (id, tenant_id, job_id, seg_index, photo_url, audio_url, script_text, voice_id, use_iv, width, height, bg_color, expressive, emotion)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [id, tenantId, jobId, h.segIndex, h.photoUrl, h.audioUrl || null, h.text || null, h.voiceId || null,
+         (id, tenant_id, job_id, seg_index, photo_url, tp_id, audio_url, script_text, voice_id, use_iv, width, height, bg_color, expressive, emotion)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      [id, tenantId, jobId, h.segIndex, h.photoUrl, h.tpId || null, h.audioUrl || null, h.text || null, h.voiceId || null,
         h.useIV !== false, h.width || 1080, h.height || 1920, h.bgColor || null, h.expressive !== false, h.emotion || null]
     );
   }
