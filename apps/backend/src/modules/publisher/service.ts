@@ -138,7 +138,7 @@ export async function removeSlot(tenantId: string, id: number): Promise<void> {
 }
 
 /** Кандидаты времени по слотам на N дней вперёд (UTC), отсортированы. */
-function slotCandidates(slots: SlotRow[], afterMs: number, days = 21): number[] {
+function slotCandidates(slots: SlotRow[], afterMs: number, days = 35): number[] {
   const out: number[] = [];
   const start = new Date(afterMs);
   for (let d = 0; d < days; d++) {
@@ -495,6 +495,8 @@ export interface ChainRow {
   id: string; tenant_id: string; name: string; kind: 'manual' | 'auto';
   items: any[]; targets: TargetInput[]; caption: { mode?: 'fixed' | 'ai'; text?: string; tone?: string; language?: string };
   daily_cap: number; enabled: boolean; cursor: number; fail_streak: number;
+  /** Авто: брать только ролики этого формата ('9x16' | '16x9' | '1x1' | '4x5'); NULL = любой. */
+  format_filter: string | null;
   last_error: string | null; last_run_at: string | null; created_at: string;
 }
 
@@ -579,12 +581,16 @@ async function tickAutoChain(chain: any): Promise<'posted' | 'skip'> {
     `SELECT COUNT(DISTINCT group_id)::int AS n FROM publisher_posts
      WHERE chain_id = $1 AND created_at > date_trunc('day', NOW())`, [chain.id]);
   if ((capR.rows[0]?.n || 0) >= Number(chain.daily_cap || 3)) return 'skip';
-  // кандидат: свежий ролик auto-ugc, который ЕЩЁ НЕ публиковался
+  // кандидат: свежий ролик auto-ugc, который ЕЩЁ НЕ публиковался. format_filter цепочки
+  // берёт только свой формат (9:16 → TikTok, 16:9 → YouTube): наборы двух цепочек с разными
+  // фильтрами не пересекаются, конкуренции «кто первый запостил» больше нет.
+  const fmtFilter = typeof chain.format_filter === 'string' && chain.format_filter ? chain.format_filter : null;
   const cand = await pool.query(
     `SELECT id, file_url, original_name FROM media_assets m
      WHERE tenant_id = $1 AND folder = $2 AND media_type = 'video'
+       AND ($3::text IS NULL OR m.ugc_format = $3)
        AND NOT EXISTS (SELECT 1 FROM publisher_posts pp WHERE pp.tenant_id = $1 AND pp.asset_id = m.id)
-     ORDER BY created_at DESC LIMIT 1`, [tenantId, AUTO_UGC_FOLDER]);
+     ORDER BY created_at DESC LIMIT 1`, [tenantId, AUTO_UGC_FOLDER, fmtFilter]);
   const a = cand.rows[0];
   if (!a) return 'skip';
   const targets: TargetInput[] = Array.isArray(chain.targets) ? chain.targets : [];

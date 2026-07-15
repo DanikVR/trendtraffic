@@ -2651,7 +2651,18 @@
  *          HeyGen-ключа; удалённый в кабинете аватар перезаливается 1 раз; ошибка лимита
  *          переведена на человеческий (что удалить/где). Файлы: render/tp_cache.ts (новый),
  *          render/avatar.ts, render/router.ts, AppVersion. */
-export const APP_VERSION = '2.2.54';
+/* 2.2.55 — Публикатор: формат-маршрутизация авто-цепочек + горизонт слотов 35 дней.
+ *          (1) Авто-цепочка получила фильтр «Формат»: берёт из «Авто» только ролики своего
+ *          формата — шаблон UGC собирает 9:16+16:9, цепочка «9:16 → TikTok» и цепочка
+ *          «16:9 → YouTube» больше не конкурируют за одни файлы (раньше кто первый запостил —
+ *          у второго ролик считался опубликованным). UGC-сборка теперь пишет формат каждого
+ *          ассета в media_assets.ugc_format; у publisher_chains новое поле format_filter
+ *          (миграции add-column, POST/PATCH /chains принимают formatFilter, селектор в форме
+ *          авто-цепочки + бейдж формата на карточке). (2) Горизонт раскладки по слотам
+ *          slotCandidates 21 → 35 дней: серии/цепочки планируются на месяц вперёд.
+ *          Файлы: db/migrations.ts, media/assets.ts, render/router.ts, publisher/service.ts,
+ *          publisher/router.ts, PublisherTab.tsx, docs/PUBLISHER.md, AppVersion. */
+export const APP_VERSION = '2.2.55';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

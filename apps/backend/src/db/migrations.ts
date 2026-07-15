@@ -951,6 +951,10 @@ const MIGRATIONS: Migration[] = [
     )`,
   },
   { name: 'publisher_templates.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_templates_tenant ON publisher_templates (tenant_id, created_at DESC)` },
+  // Формат-маршрутизация авто-цепочек (9:16 → TikTok, 16:9 → YouTube): ugc_format пишет
+  // UGC-сборка на каждый ассет, format_filter авто-цепочки берёт только свой формат.
+  { name: 'media_assets.ugc_format', sql: `ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS ugc_format VARCHAR(8)` },
+  { name: 'publisher_chains.format_filter', sql: `ALTER TABLE publisher_chains ADD COLUMN IF NOT EXISTS format_filter VARCHAR(8)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

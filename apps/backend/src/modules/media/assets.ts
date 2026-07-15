@@ -80,15 +80,15 @@ export async function listFolder(tenantId: string, folder: string): Promise<Medi
 
 export async function createAsset(
   tenantId: string,
-  a: { kind: MediaKind; mediaType: string; originalName?: string; fileUrl: string; filePath?: string; mime?: string; size?: number; folder?: string }
+  a: { kind: MediaKind; mediaType: string; originalName?: string; fileUrl: string; filePath?: string; mime?: string; size?: number; folder?: string; ugcFormat?: string }
 ): Promise<MediaAsset | null> {
   try {
     const id = randomUUID();
     const r = await pool.query(
-      `INSERT INTO media_assets (id, tenant_id, kind, media_type, original_name, file_url, file_path, mime, size, folder)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      `INSERT INTO media_assets (id, tenant_id, kind, media_type, original_name, file_url, file_path, mime, size, folder, ugc_format)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        RETURNING id, kind, media_type, original_name, file_url, mime, size, folder`,
-      [id, tenantId, a.kind, a.mediaType, a.originalName || null, a.fileUrl, a.filePath || null, a.mime || null, a.size ?? null, a.folder || null]
+      [id, tenantId, a.kind, a.mediaType, a.originalName || null, a.fileUrl, a.filePath || null, a.mime || null, a.size ?? null, a.folder || null, a.ugcFormat || null]
     );
     return mapRow(r.rows[0]);
   } catch (e) {
