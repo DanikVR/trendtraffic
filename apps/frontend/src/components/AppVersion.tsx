@@ -2682,7 +2682,19 @@
  *          трогаем вовсе; поле с плейсхолдером поиска — пропускаем. Проверено живьём на
  *          NotebookLM: старая логика вставляла чип, новая исключает, диалог чист.
  *          Файлы: content-notebook.js, manifest+bridge 1.3.30, AppVersion. */
-export const APP_VERSION = '2.2.57';
+/* 2.2.58 — Тренды: добавление видео ПРЯМОЙ ссылкой (TikTok / Instagram / YouTube). Поле
+ *          поиска Галереи «Тренды» принимает URL ролика → кнопка «Добавить по ссылке»
+ *          (или Enter) → POST /trends/videos/add-by-url: платформа+id из ссылки (короткие
+ *          vm/vt.tiktok.com дорезолвливаются редиректом), метаданные TikHub best-effort
+ *          (обложка/автор/описание/статы; YouTube-обложка i.ytimg без ключа), апсерт в
+ *          source_videos с trend_id NULL. Новая секция «По ссылке» на вкладке: карточки
+ *          канона с кнопками «Разобрать» (Аналитика по web_url, дип-линк &url= сразу
+ *          запускает разбор), «Скачать» (+ ВКЛЮЧЕНО скачивание YouTube — downloadYoutubeToDisk
+ *          streams+mux, раньше 400), оригинал, удалить; скачанное открывается просмотрщиком,
+ *          статус «качается…» поллится. Файлы: trends/service.ts (parseVideoUrl/addVideoByUrl),
+ *          trends/router.ts, tikhub_client.ts (extract*Meta), GalleryPage.tsx,
+ *          SocialExtensionPage.tsx (дип-линк url), AppVersion. */
+export const APP_VERSION = '2.2.58';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

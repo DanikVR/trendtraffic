@@ -501,6 +501,27 @@ export function extractOneVideoCover(payload: any): string | undefined {
     || coverUrlOf(aw.cover) || coverUrlOf(aw.thumbnail);
 }
 
+/** Метаданные одного TikTok-видео из fetch_one_video — для добавления по прямой ссылке. */
+export function extractOneVideoMeta(payload: any): {
+  author?: string; authorName?: string; description?: string; durationSec?: number;
+  play?: number; like?: number; comment?: number; share?: number;
+} {
+  const aw = pickAweme(payload);
+  if (!aw || typeof aw !== 'object') return {};
+  const num = (x: any) => (Number.isFinite(Number(x)) ? Number(x) : undefined);
+  const st = aw.statistics || aw.stats || {};
+  const durMs = num(aw.video && aw.video.duration);
+  return {
+    author: (aw.author && (aw.author.unique_id || aw.author.uniqueId)) || undefined,
+    authorName: (aw.author && (aw.author.nickname || aw.author.nick_name)) || undefined,
+    description: typeof aw.desc === 'string' ? aw.desc : undefined,
+    // duration у TikTok в миллисекундах (иногда уже в секундах — эвристика по величине)
+    durationSec: durMs !== undefined ? (durMs > 1000 ? Math.round(durMs / 1000) : durMs) : undefined,
+    play: num(st.play_count), like: num(st.digg_count ?? st.like_count),
+    comment: num(st.comment_count), share: num(st.share_count),
+  };
+}
+
 /** Инфо об одном IG-посте по shortcode (тот же эндпоинт, что в аналитике/social-ext). */
 export async function fetchInstagramPostInfo(apiKey: string, code: string): Promise<TikHubResult<any>> {
   return withTikhubRetry(() =>
@@ -527,6 +548,54 @@ export function extractInstagramCover(payload: any): string | undefined {
     return undefined;
   };
   return walk(payload, 0);
+}
+
+/** Метаданные IG-поста из get_post_info_by_code — для добавления по прямой ссылке.
+ *  Обход оборонительный (формы ответов слабо типизированы, как extractInstagramCover). */
+export function extractInstagramMeta(payload: any): {
+  author?: string; authorName?: string; description?: string; videoUrl?: string;
+  durationSec?: number; play?: number; like?: number; comment?: number;
+} {
+  const out: any = {};
+  const num = (x: any) => (Number.isFinite(Number(x)) ? Number(x) : undefined);
+  const seen = new Set<any>();
+  const walk = (node: any, depth: number): void => {
+    if (!node || typeof node !== 'object' || depth > 7 || seen.has(node)) return;
+    seen.add(node);
+    if (Array.isArray(node)) { for (const it of node) walk(it, depth + 1); return; }
+    if (!out.author && node.user && typeof node.user === 'object') {
+      out.author = node.user.username || undefined;
+      out.authorName = node.user.full_name || node.user.fullName || undefined;
+    }
+    if (!out.description && node.caption && typeof node.caption === 'object' && typeof node.caption.text === 'string') out.description = node.caption.text;
+    if (!out.videoUrl && Array.isArray(node.video_versions) && node.video_versions[0] && typeof node.video_versions[0].url === 'string') out.videoUrl = node.video_versions[0].url;
+    if (!out.videoUrl && typeof node.video_url === 'string' && node.video_url.startsWith('http')) out.videoUrl = node.video_url;
+    if (out.durationSec === undefined) out.durationSec = num(node.video_duration);
+    if (out.play === undefined) out.play = num(node.play_count ?? node.view_count);
+    if (out.like === undefined) out.like = num(node.like_count);
+    if (out.comment === undefined) out.comment = num(node.comment_count);
+    for (const k of Object.keys(node)) walk(node[k], depth + 1);
+  };
+  walk(payload, 0);
+  if (out.durationSec !== undefined) out.durationSec = Math.round(out.durationSec);
+  return out;
+}
+
+/** Метаданные YouTube-видео из ответа streams (get_video_streams): заголовок/канал/длительность.
+ *  Формы разные (videoDetails / плоские поля) — берём первое похожее. */
+export function extractYoutubeMeta(payload: any): {
+  authorName?: string; description?: string; durationSec?: number; play?: number;
+} {
+  let root = payload;
+  if (root && typeof root === 'object' && root.data !== undefined) root = root.data;
+  const vd = (root && typeof root === 'object' && (root.videoDetails || root.video_details)) || root || {};
+  const num = (x: any) => (Number.isFinite(Number(x)) ? Number(x) : undefined);
+  return {
+    authorName: (typeof vd.author === 'string' && vd.author) || (typeof vd.channel_title === 'string' && vd.channel_title) || undefined,
+    description: (typeof vd.title === 'string' && vd.title) || undefined,
+    durationSec: num(vd.lengthSeconds ?? vd.length_seconds ?? vd.duration),
+    play: num(vd.viewCount ?? vd.view_count),
+  };
 }
 
 /** Деталь твита (X) для скачивания видео — структура иная, чем у TikTok. */

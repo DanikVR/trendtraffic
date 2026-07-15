@@ -34,7 +34,7 @@ import { VideoViewer } from '../components/VideoViewer';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
 import { TT_EXT_VERSION } from '../components/AppVersion';
-import { coverSrc } from '../components/TrendSearch';
+import { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
 import { PublisherTab, type ChainDraft } from './publisher/PublisherTab';
 import { PublisherStudio } from './publisher/PublisherStudio';
@@ -198,6 +198,10 @@ export default function GalleryPage() {
   // «Тренды»: проанализированные видео + сохранённые запросы сканов.
   const [analyses, setAnalyses] = useState<TrendAnalysisItem[]>([]);
   const [trendQueries, setTrendQueries] = useState<TrendQueryItem[]>([]);
+  // «Тренды» → видео, добавленные ПРЯМОЙ ссылкой (TikTok/IG/YouTube) через поле поиска.
+  const [linkVideos, setLinkVideos] = useState<StoredVideo[]>([]);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkNote, setLinkNote] = useState<string | null>(null);
   // «UGC»: макеты (бренд-киты студии).
   const [kits, setKits] = useState<BrandKit[]>([]);
   // «UGC» → карточки сохранённых роликов (спека = превью + __flowId для «продолжить») + авто-ролики.
@@ -405,14 +409,16 @@ export default function GalleryPage() {
     setLoading(true); setError(null); setSelected(new Set());
     try {
       if (which === 'trendhub') {
-        // «Тренды»: запросы сканов + разборы (video_analyses) — двумя запросами параллельно.
+        // «Тренды»: запросы сканов + разборы (video_analyses) + видео по ссылке — параллельно.
         setItems([]);
-        const [ar, qr] = await Promise.all([
+        const [ar, qr, lr] = await Promise.all([
           fetch('/api/trends/analyses?limit=200', { headers: jsonHeaders() }),
           fetch('/api/trends/history?limit=60', { headers: jsonHeaders() }),
+          fetch('/api/trends/videos?limit=60&bylink=1', { headers: jsonHeaders() }),
         ]);
         setAnalyses(ar.ok ? ((await ar.json()).analyses || []) : []);
         setTrendQueries(qr.ok ? ((await qr.json()).queries || []) : []);
+        setLinkVideos(lr.ok ? ((await lr.json()).videos || []) : []);
       } else if (which === 'flow') {
         // «Google Flow» = готовые ПРОЕКТЫ Flow (снимает расширение, loadFlowProjects). Клипы,
         // сохранённые в Галерею, живут во вкладке «Видео» — здесь медиа не грузим.
@@ -775,6 +781,68 @@ export default function GalleryPage() {
   };
 
   // Вкладка «Тренды»: раздел «Анализ» (разобранные видео с обложкой и данными) +
+  /* ── «Тренды»: добавление видео ПРЯМОЙ ссылкой через поле поиска ──
+     Вставил URL TikTok/Instagram/YouTube → кнопка «Добавить по ссылке» (или Enter) →
+     POST /api/trends/videos/add-by-url → карточка в секции «По ссылке»: разбор
+     (Аналитика по web_url), скачивание, оригинал, удаление. */
+  const isVideoLink = (s: string): boolean => {
+    const v = s.trim();
+    if (!/^https?:\/\//i.test(v)) return false;
+    return /tiktok\.com\/(?:@[^/]+\/video|video|v|t)\/|(?:vm|vt)\.tiktok\.com\/|instagram\.com\/(?:reel|reels|p|tv)\/|youtu\.be\/|youtube\.com\/(?:watch|shorts\/|embed\/|live\/)/i.test(v);
+  };
+  const refreshLinkVideos = async () => {
+    try {
+      const r = await fetch('/api/trends/videos?limit=60&bylink=1', { headers: jsonHeaders() });
+      if (r.ok) setLinkVideos((await r.json()).videos || []);
+    } catch { /* тихо */ }
+  };
+  const addByLink = async () => {
+    const url = query.trim();
+    if (!isVideoLink(url) || linkBusy) return;
+    setLinkBusy(true); setLinkNote(null);
+    try {
+      const r = await fetch('/api/trends/videos/add-by-url', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ url }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      setQuery('');
+      setLinkNote(`✓ Добавлено: ${(d.video?.description || d.video?.author || 'видео').slice(0, 60)}`);
+      await refreshLinkVideos();
+      window.setTimeout(() => setLinkNote(null), 6000);
+    } catch (e: any) {
+      setLinkNote(`⚠ ${e?.message || 'Не удалось добавить видео.'}`);
+    } finally { setLinkBusy(false); }
+  };
+  const downloadLinkVideo = async (v: StoredVideo) => {
+    if (!v.id) return;
+    setLinkVideos((prev) => prev.map((x) => (x.id === v.id ? { ...x, status: 'downloading' } : x)));
+    try {
+      const r = await fetch(`/api/trends/videos/${v.id}/download`, { method: 'POST', headers: jsonHeaders() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+    } catch (e: any) {
+      setLinkNote(`⚠ ${e?.message || 'Скачивание не запустилось.'}`);
+      setLinkVideos((prev) => prev.map((x) => (x.id === v.id ? { ...x, status: 'discovered' } : x)));
+    }
+  };
+  const deleteLinkVideo = (v: StoredVideo) => setConfirm({
+    title: 'Удалить видео?',
+    message: 'Строка и скачанный файл будут удалены (из «Поиска» и Галереи «Тренды» тоже — это одна запись).',
+    onConfirm: () => {
+      setConfirm(null);
+      void (async () => {
+        try { await fetch(`/api/trends/videos/${v.id}`, { method: 'DELETE', headers: jsonHeaders() }); } catch { /* */ }
+        void refreshLinkVideos();
+      })();
+    },
+  });
+  // Пока что-то качается — обновляем секцию раз в 5с (статус downloading → downloaded).
+  useEffect(() => {
+    if (tab !== 'trendhub' || !linkVideos.some((v) => v.status === 'downloading')) return;
+    const t = window.setInterval(() => { void refreshLinkVideos(); }, 5000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, linkVideos.map((v) => v.status).join(',')]);
+
   // раздел «Запросы трендов» (клик — «Тренды» открываются с готовой выдачей по слову).
   const renderTrendHub = () => {
     const q = query.trim().toLowerCase();
@@ -831,6 +899,83 @@ export default function GalleryPage() {
             </p>
           )}
         </div>
+
+        {/* По ссылке — видео, добавленные прямой ссылкой через поле поиска (trend_id NULL).
+            Карточка: обложка + платформа; кнопки: разобрать (Аналитика), скачать/статус,
+            оригинал, удалить. Скачанное открывается в просмотрщике кликом по обложке. */}
+        {(() => {
+          const fLv = q ? linkVideos.filter((v) =>
+            (v.description || '').toLowerCase().includes(q) || (v.author || '').toLowerCase().includes(q) || (v.authorName || '').toLowerCase().includes(q)) : linkVideos;
+          if (!fLv.length) return null;
+          return (
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+                  <Link2 size={15} style={{ color: 'var(--brand)' }} /> По ссылке
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fLv.length} — добавлены прямой ссылкой: разобрать в Аналитике, скачать, открыть оригинал</span>
+              </div>
+              <div className={CARD_GRID}>
+                {fLv.map((v) => {
+                  const title = v.description || v.authorName || v.author || `${v.platform}-видео`;
+                  const dlBusy = v.status === 'downloading';
+                  const dlDone = v.status === 'downloaded' && !!v.fileUrl;
+                  return (
+                    <div key={v.id || v.externalId} className={cardCls(false)} style={CARD_STYLE}>
+                      {dlDone ? (
+                        <button type="button" onClick={() => setViewer({ url: v.fileUrl!, title })} className="absolute inset-0 w-full h-full" title="Открыть в просмотрщике">
+                          <video src={`${v.fileUrl}#t=0.1`} poster={coverSrc(v.coverUrl) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
+                        </button>
+                      ) : v.coverUrl ? (
+                        <img src={coverSrc(v.coverUrl)} alt={title} loading="lazy" referrerPolicy="no-referrer" className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}><Video size={22} style={{ color: 'var(--text-muted)' }} /></div>
+                      )}
+                      {/* бейдж платформы + статус */}
+                      <span className="absolute top-1.5 left-1.5 text-[10px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(0,0,0,.55)', color: '#fff' }}>
+                        {v.platform}{dlBusy ? ' · качается…' : dlDone ? ' · скачано' : ''}
+                      </span>
+                      {/* скрим-подвал: название + ряд кнопок (все видны — канон карточек) */}
+                      <div className="absolute inset-x-0 bottom-0 p-1.5 pt-6" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,0,0,.78))' }}>
+                        <div className="text-[11px] font-600 leading-tight mb-1" style={{ color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{title}</div>
+                        <div className="flex items-center gap-1">
+                          {v.webUrl && (
+                            <button type="button" title="Разобрать в Аналитике (формула успеха → блоки)"
+                              onClick={() => navigate(`/social-extension?tab=analytics&from=gallery&url=${encodeURIComponent(v.webUrl!)}`)}
+                              className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
+                              style={{ background: 'rgba(255,255,255,.92)', color: '#111', border: 'none', cursor: 'pointer' }}>
+                              <BarChart3 size={13} />
+                            </button>
+                          )}
+                          {!dlDone && (
+                            <button type="button" title={dlBusy ? 'Скачивается…' : 'Скачать исходник (файл появится и в «Медиафайлах»)'}
+                              onClick={() => { if (!dlBusy) void downloadLinkVideo(v); }}
+                              className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
+                              style={{ background: 'rgba(255,255,255,.92)', color: '#111', border: 'none', cursor: dlBusy ? 'default' : 'pointer' }}>
+                              {dlBusy ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                            </button>
+                          )}
+                          {v.webUrl && (
+                            <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
+                              className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
+                              style={{ background: 'rgba(255,255,255,.92)', color: '#111' }}>
+                              <ExternalLink size={13} />
+                            </a>
+                          )}
+                          <button type="button" title="Удалить" onClick={() => deleteLinkVideo(v)}
+                            className="w-[25px] h-[25px] rounded-md flex items-center justify-center ml-auto"
+                            style={{ background: 'rgba(239,68,68,.9)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Анализ */}
         <div className="space-y-2.5">
@@ -1236,13 +1381,26 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Поиск */}
+      {/* Поиск. На «Трендах» поле принимает и ПРЯМУЮ ссылку на видео (TikTok/IG/YouTube). */}
       <div className="relative">
         <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по имени / автору / описанию…"
+        <input value={query} onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && tab === 'trendhub' && isVideoLink(query)) void addByLink(); }}
+          placeholder={tab === 'trendhub' ? 'Поиск… или вставьте ссылку на видео TikTok / Instagram / YouTube' : 'Поиск по имени / автору / описанию…'}
           className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 transition-shadow"
           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
       </div>
+      {tab === 'trendhub' && isVideoLink(query) && (
+        <button type="button" onClick={() => void addByLink()} disabled={linkBusy}
+          className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl disabled:opacity-60"
+          style={{ background: 'var(--brand)', color: 'var(--brand-contrast, #fff)', border: 'none', cursor: 'pointer' }}>
+          {linkBusy ? <Loader2 size={15} className="animate-spin" /> : <Link2 size={15} />}
+          {linkBusy ? 'Добавляю…' : 'Добавить видео по ссылке (Enter)'}
+        </button>
+      )}
+      {tab === 'trendhub' && linkNote && (
+        <p className="text-[12.5px]" style={{ color: linkNote.startsWith('⚠') ? '#ef4444' : '#10b981' }}>{linkNote}</p>
+      )}
 
       {error && (
         <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>

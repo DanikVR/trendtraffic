@@ -16,6 +16,7 @@ import pool from '../../db/index.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import {
   searchVideos, fetchOneVideo, extractOneVideoCover, fetchInstagramPostInfo, extractInstagramCover,
+  extractOneVideoMeta, extractInstagramMeta, extractYoutubeMeta, extractDownloadUrls, fetchYoutubeStreams,
   normalizeRegion, type NormalizedVideo,
 } from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
@@ -57,6 +58,8 @@ export interface StoredVideo {
   stats: { play?: number; like?: number; comment?: number; share?: number };
   status: string;
   fileUrl?: string | null;
+  /** Добавлено прямой ссылкой (trend_id IS NULL) — секция «По ссылке» в Галерее «Тренды». */
+  byLink?: boolean;
 }
 
 export interface ScanResult {
@@ -92,6 +95,7 @@ function mapRow(r: any): StoredVideo {
     stats: { play: num(r.play_count), like: num(r.like_count), comment: num(r.comment_count), share: num(r.share_count) },
     status: r.status,
     fileUrl: r.file_url || null,
+    byLink: r.by_link === true,
   };
 }
 
@@ -331,13 +335,15 @@ async function fetchFreshCoverUrl(apiKey: string, v: StoredVideo): Promise<strin
   return undefined;
 }
 
-export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false): Promise<StoredVideo[]> {
+export async function listRecentVideos(tenantId: string, limit = 60, downloadedOnly = false, byLinkOnly = false): Promise<StoredVideo[]> {
   const lim = Math.min(Math.max(limit, 1), 500);
-  const where = downloadedOnly ? `AND status = 'downloaded' AND file_url IS NOT NULL` : '';
+  const where = (downloadedOnly ? `AND status = 'downloaded' AND file_url IS NOT NULL` : '')
+    + (byLinkOnly ? ' AND trend_id IS NULL' : '');
   try {
     const r = await pool.query(
       `SELECT id, platform, external_id, author, author_name, description, cover_url, video_url,
-              web_url, duration_sec, play_count, like_count, comment_count, share_count, status, file_url
+              web_url, duration_sec, play_count, like_count, comment_count, share_count, status, file_url,
+              (trend_id IS NULL) AS by_link
        FROM source_videos WHERE tenant_id = $1 ${where} ORDER BY created_at DESC LIMIT $2`,
       [tenantId, lim]
     );
@@ -349,6 +355,118 @@ export async function listRecentVideos(tenantId: string, limit = 60, downloadedO
   } catch {
     return [];
   }
+}
+
+/* ── Добавление видео ПРЯМОЙ ССЫЛКОЙ (TikTok / Instagram / YouTube) ─────────────
+ * Поле поиска Галереи «Тренды» принимает URL ролика: парсим платформу+id, тянем
+ * метаданные TikHub (best-effort), апсертим в source_videos с trend_id NULL —
+ * метка «добавлено по ссылке». Дальше карточка живёт как сканная: разбор в
+ * Аналитике по web_url, скачивание /videos/:id/download, удаление. */
+export interface ParsedVideoUrl { platform: 'tiktok' | 'instagram' | 'youtube'; externalId: string; webUrl: string }
+
+export async function parseVideoUrl(raw: string): Promise<ParsedVideoUrl | null> {
+  let s = String(raw || '').trim();
+  if (!/^https?:\/\//i.test(s)) return null;
+  // Короткие TikTok-ссылки (vm/vt/…/t/) — узнаём финальный URL по редиректу.
+  if (/(?:vm|vt)\.tiktok\.com\/|tiktok\.com\/t\//i.test(s)) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12_000);
+    try {
+      const r = await fetch(s, { redirect: 'follow', signal: ctrl.signal, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
+      if (r.url) s = r.url;
+      try { await r.body?.cancel(); } catch { /* тело не нужно */ }
+    } catch { /* распарсим как есть — вдруг уже полный */ }
+    finally { clearTimeout(t); }
+  }
+  let m = s.match(/tiktok\.com\/(?:@[^/]+\/video|video|v)\/(\d{6,})/i);
+  if (m) return { platform: 'tiktok', externalId: m[1], webUrl: s.split('?')[0] };
+  m = s.match(/instagram\.com\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,})/i);
+  if (m) return { platform: 'instagram', externalId: m[1], webUrl: `https://www.instagram.com/reel/${m[1]}/` };
+  m = s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?[^#]*?v=|shorts\/|embed\/|live\/))([A-Za-z0-9_-]{6,15})/i);
+  if (m) return { platform: 'youtube', externalId: m[1], webUrl: `https://www.youtube.com/watch?v=${m[1]}` };
+  return null;
+}
+
+export async function addVideoByUrl(tenantId: string, rawUrl: string): Promise<StoredVideo> {
+  const p = await parseVideoUrl(rawUrl);
+  if (!p) throw new Error('Не распознал ссылку. Поддерживаются: TikTok (…/video/<id>, vm.tiktok.com), Instagram (reel/p), YouTube (watch, shorts, youtu.be).');
+  const apiKey = await getEffectiveTikHubKey(tenantId);
+  if (!apiKey && p.platform !== 'youtube') {
+    throw new Error('Для TikTok/Instagram нужен ключ Trend (TikHub) — по нему тянутся данные и файл ролика.');
+  }
+  // Метаданные — best-effort: сбой TikHub не блокирует добавление (карточка будет скромной).
+  let author = '', authorName: string | null = null, description: string | null = null;
+  let coverUrl: string | null = null, videoUrl: string | null = null, durationSec: number | null = null;
+  let play: number | null = null, like: number | null = null, comment: number | null = null, share: number | null = null;
+  let payload: any = null;
+  try {
+    if (p.platform === 'tiktok' && apiKey) {
+      const one = await fetchOneVideo(apiKey, p.externalId);
+      if (one.ok) {
+        payload = one.data;
+        const meta = extractOneVideoMeta(one.data);
+        author = meta.author || ''; authorName = meta.authorName || null; description = meta.description || null;
+        durationSec = meta.durationSec ?? null;
+        play = meta.play ?? null; like = meta.like ?? null; comment = meta.comment ?? null; share = meta.share ?? null;
+        coverUrl = extractOneVideoCover(one.data) || null;
+        videoUrl = extractDownloadUrls(one.data)[0] || null;
+      }
+    } else if (p.platform === 'instagram' && apiKey) {
+      const info = await fetchInstagramPostInfo(apiKey, p.externalId);
+      if (info.ok) {
+        payload = info.data;
+        const meta = extractInstagramMeta(info.data);
+        author = meta.author || ''; authorName = meta.authorName || null; description = meta.description || null;
+        durationSec = meta.durationSec ?? null;
+        play = meta.play ?? null; like = meta.like ?? null; comment = meta.comment ?? null;
+        coverUrl = extractInstagramCover(info.data) || null;
+        videoUrl = meta.videoUrl || null;
+      }
+    } else if (p.platform === 'youtube') {
+      // Обложка YouTube стабильна и без ключа; заголовок/канал — из streams при наличии ключа.
+      coverUrl = `https://i.ytimg.com/vi/${p.externalId}/hqdefault.jpg`;
+      if (apiKey) {
+        const st = await fetchYoutubeStreams(apiKey, p.externalId);
+        if (st.ok) {
+          const meta = extractYoutubeMeta(st.data);
+          authorName = meta.authorName || null; description = meta.description || null;
+          durationSec = meta.durationSec ?? null; play = meta.play ?? null;
+        }
+      }
+    }
+  } catch (e) { console.warn('[trends/add-by-url] метаданные:', (e as Error).message); }
+  if (!description) description = `${p.platform} · ${p.externalId}`;
+  // trend_id = NULL и в конфликте: юзер явно добавил ссылкой — карточка должна попасть
+  // в секцию «По ссылке», даже если видео уже приезжало сканом.
+  const r = await pool.query(
+    `INSERT INTO source_videos
+       (id, tenant_id, trend_id, platform, external_id, author, author_name, description,
+        cover_url, video_url, web_url, duration_sec, play_count, like_count, comment_count, share_count, payload)
+     VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+     ON CONFLICT (tenant_id, platform, external_id) DO UPDATE SET
+       trend_id = NULL,
+       author = COALESCE(NULLIF(EXCLUDED.author, ''), source_videos.author),
+       author_name = COALESCE(EXCLUDED.author_name, source_videos.author_name),
+       description = COALESCE(EXCLUDED.description, source_videos.description),
+       cover_url = CASE WHEN source_videos.cover_url LIKE '/uploads/%'
+                        THEN source_videos.cover_url ELSE COALESCE(EXCLUDED.cover_url, source_videos.cover_url) END,
+       video_url = COALESCE(EXCLUDED.video_url, source_videos.video_url),
+       web_url = COALESCE(EXCLUDED.web_url, source_videos.web_url),
+       duration_sec = COALESCE(EXCLUDED.duration_sec, source_videos.duration_sec),
+       play_count = COALESCE(EXCLUDED.play_count, source_videos.play_count),
+       like_count = COALESCE(EXCLUDED.like_count, source_videos.like_count),
+       comment_count = COALESCE(EXCLUDED.comment_count, source_videos.comment_count),
+       share_count = COALESCE(EXCLUDED.share_count, source_videos.share_count),
+       updated_at = CURRENT_TIMESTAMP
+     RETURNING id, platform, external_id, author, author_name, description, cover_url, video_url,
+               web_url, duration_sec, play_count, like_count, comment_count, share_count, status, file_url, TRUE AS by_link`,
+    [randomUUID(), tenantId, p.platform, p.externalId, author, authorName, description,
+      coverUrl, videoUrl, p.webUrl, durationSec, play, like, comment, share, JSON.stringify(payload)]
+  );
+  const row = mapRow(r.rows[0]);
+  // Обложку с подписанного CDN кэшируем на диск фоном (как у сканов) — иначе протухнет.
+  void cacheCoversInBackground(tenantId, [row], { resurrect: false });
+  return row;
 }
 
 export interface ScanQueryRow {

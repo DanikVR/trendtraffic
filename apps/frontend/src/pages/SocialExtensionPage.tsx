@@ -348,6 +348,17 @@ export default function SocialExtensionPage() {
     setQueue(items); setUrl(items[0].url); setTab('analytics'); apply(items[0].url); autoSaveAnalysis(items[0].url);
   }, [apply, autoSaveAnalysis]);
 
+  // Deep-link «Разобрать» из Галереи «Тренды» (карточки «По ссылке»):
+  // ?tab=analytics&url=<web_url> → сразу запустить разбор этого видео.
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const u = sp.get('url');
+    if (sp.get('tab') === 'analytics' && u && /^https?:\/\//i.test(u) && appliedRef.current !== u) {
+      analyzeOne(u);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   const handleAnalyzeInput = useCallback(() => {
     const v = url.trim(); if (!v) return;
     // Не ссылка (ключевое слово) → не шлём расширению (иначе его экран «Open a supported

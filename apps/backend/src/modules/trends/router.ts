@@ -16,14 +16,14 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
-import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, type TrendKind } from './service.js';
+import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, addVideoByUrl, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
 import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, saveTrendDNAAuto } from './dna.js';
 import { buildAudienceMap, suggestAudience } from './audience.js';
 import { analyzeVideoVisual } from './video_insight.js';
 import { saveAnalysisArtifacts } from './analysis_files.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
-import { downloadVideoToDisk } from '../media/store_video.js';
+import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
@@ -490,10 +490,25 @@ router.get('/videos', async (req: AuthedRequest, res: Response) => {
   try {
     const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 60;
     const downloaded = req.query.downloaded === '1' || req.query.downloaded === 'true';
-    const videos = await listRecentVideos(req.tenantId!, limit, downloaded);
+    const byLink = req.query.bylink === '1' || req.query.bylink === 'true';
+    const videos = await listRecentVideos(req.tenantId!, limit, downloaded, byLink);
     res.json({ videos });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/** POST /videos/add-by-url — добавить видео ПРЯМОЙ ссылкой (TikTok / Instagram / YouTube):
+ *  строка в source_videos (trend_id NULL = «по ссылке») + метаданные TikHub best-effort.
+ *  Дальше карточка живёт как сканная: разбор в Аналитике, /videos/:id/download, удаление. */
+router.post('/videos/add-by-url', async (req: AuthedRequest, res: Response) => {
+  try {
+    const url = String(req.body?.url || '').trim();
+    if (!url) return res.status(400).json({ error: 'Не указана ссылка.' });
+    const video = await addVideoByUrl(req.tenantId!, url);
+    res.json({ ok: true, video });
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || 'Не удалось добавить видео по ссылке.' });
   }
 });
 
@@ -506,23 +521,29 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
     const tId = req.tenantId!, vId = req.params.id;
     const row = await getVideo(tId, vId);
     if (!row) return res.status(404).json({ error: 'Видео не найдено' });
-    if (row.platform === 'youtube') return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
 
     const key = `${tId}:${vId}`;
     if (downloadRegistry.has(key)) return res.json({ ok: true, status: 'downloading' }); // уже качается
 
+    // YouTube: свой путь — TikHub streams → подписанные URL → ffmpeg-mux (downloadYoutubeToDisk).
+    const isYt = row.platform === 'youtube';
+    const ytKey = isYt ? await getEffectiveTikHubKey(tId) : null;
+    if (isYt && !ytKey) return res.status(400).json({ error: 'Для скачивания YouTube нужен ключ Trend (TikHub).' });
+
     // Свежие ПРЯМЫЕ ссылки через App V3 (no-watermark, без cookie tt_chain_token).
     let urls: string[] = [];
-    try {
-      const apiKey = await getEffectiveTikHubKey(tId);
-      if (apiKey && row.external_id) {
-        const one = await fetchOneVideo(apiKey, String(row.external_id));
-        if (one.ok) urls = extractDownloadUrls(one.data);
+    if (!isYt) {
+      try {
+        const apiKey = await getEffectiveTikHubKey(tId);
+        if (apiKey && row.external_id) {
+          const one = await fetchOneVideo(apiKey, String(row.external_id));
+          if (one.ok) urls = extractDownloadUrls(one.data);
+        }
+      } catch { /* падаем на сохранённую ссылку ниже */ }
+      if (urls.length === 0 && row.video_url) urls = [row.video_url];
+      if (urls.length === 0) {
+        return res.status(400).json({ error: 'Не удалось получить прямую ссылку (App V3 не вернул url).' });
       }
-    } catch { /* падаем на сохранённую ссылку ниже */ }
-    if (urls.length === 0 && row.video_url) urls = [row.video_url];
-    if (urls.length === 0) {
-      return res.status(400).json({ error: 'Не удалось получить прямую ссылку (App V3 не вернул url).' });
     }
 
     await setVideoStatus(tId, vId, { status: 'downloading', error: null });
@@ -532,9 +553,12 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
 
     // Скачивание продолжается на сервере, даже если клиент ушёл со страницы.
     // По завершении — статус 'downloaded' + запись в Галерею (media_assets).
+    // ⚠ YouTube-путь (streams+mux) отмену НЕ поддерживает — «отменить» лишь вернёт статус.
     void (async () => {
       try {
-        const file = await downloadVideoToDisk(urls, { referer, signal: ctrl.signal });
+        const file = isYt
+          ? await downloadYoutubeToDisk(ytKey!, String(extId))
+          : await downloadVideoToDisk(urls, { referer, signal: ctrl.signal });
         await setVideoStatus(tId, vId, { status: 'downloaded', fileUrl: file.mediaUrl, filePath: file.filePath, error: null });
         try {
           await createAsset(tId, { kind: 'reference', mediaType: 'video', originalName: `${platform}-${extId || vId}.mp4`, fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime, size: file.size });
