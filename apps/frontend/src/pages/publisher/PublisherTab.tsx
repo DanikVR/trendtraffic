@@ -73,6 +73,7 @@ interface SlotRow { id: number; dow: number; hh: number; mm: number }
 interface ChainRow {
   id: string; name: string; kind: 'manual' | 'auto'; items: any[]; targets: any[];
   caption: any; daily_cap: number; enabled: boolean; cursor: number; fail_streak: number;
+  format_filter?: string | null;
   last_error?: string | null; last_run_at?: string | null; created_at: string;
   stats?: Record<string, number>;
 }
@@ -83,6 +84,9 @@ type KeyState = 'loading' | 'none' | 'bad' | 'ok';
 type SubTab = 'feed' | 'calendar' | 'schedule' | 'analytics';
 
 const DOW_LABEL = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+/** Форматы UGC-сборки — фильтр авто-цепочки (9:16 → TikTok, 16:9 → YouTube и т.п.). */
+const CHAIN_FMT: [string, string][] = [['9x16', '9:16 вертикальный'], ['16x9', '16:9 горизонтальный'], ['1x1', '1:1 квадрат'], ['4x5', '4:5 портрет']];
+const CHAIN_FMT_LABEL: Record<string, string> = { '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' };
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Пн..Вс (JS getDay)
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -133,6 +137,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   const [chainForm, setChainForm] = useState<null | {
     kind: 'manual' | 'auto'; name: string; items: ChainDraft['items'];
     accIds: Set<string>; captionMode: 'ai' | 'fixed'; captionText: string; tone: string; dailyCap: number;
+    format: string; // авто: '' = любой формат, иначе ключ '9x16' | '16x9' | '1x1' | '4x5'
   }>(null);
 
   // Ф2: календарь
@@ -204,7 +209,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       setSub('schedule');
       setChainForm({
         kind: 'manual', name: `Серия из Галереи (${chainDraft.items.length})`, items: chainDraft.items,
-        accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3,
+        accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3, format: '',
       });
       onChainDraftConsumed?.();
     }
@@ -314,6 +319,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         dailyCap: chainForm.dailyCap,
       };
       if (chainForm.kind === 'manual') body.items = chainForm.items;
+      if (chainForm.kind === 'auto' && chainForm.format) body.formatFilter = chainForm.format;
       const r = await fetch('/api/publisher/chains', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.error || 'Не удалось создать цепочку'); return; }
@@ -564,7 +570,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               <Link2 size={15} /> Цепочки контента
               <span className="text-[11px] font-500" style={{ color: 'var(--text-muted)' }}>— серия из Галереи по слотам или автопубликация роликов автопилота</span>
             </span>
-            <button type="button" onClick={() => setChainForm({ kind: 'auto', name: 'Авто: ролики конвейера трендов', items: [], accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3 })}
+            <button type="button" onClick={() => setChainForm({ kind: 'auto', name: 'Авто: ролики конвейера трендов', items: [], accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3, format: '' })}
               className="inline-flex items-center gap-1.5 text-[12.5px] font-700 px-3 py-1.5 rounded-lg"
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
               <Zap size={13} /> Авто-цепочка
@@ -634,6 +640,14 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       className="w-14 text-[12.5px] rounded-lg px-2 py-1" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                   </label>
                 )}
+                {chainForm.kind === 'auto' && (
+                  <select value={chainForm.format} onChange={(e) => setChainForm({ ...chainForm, format: e.target.value })}
+                    title="Брать из «Авто» только ролики этого формата — например, 9:16 в TikTok, а вторая цепочка 16:9 в YouTube. Шаблон UGC должен собирать эти форматы."
+                    className="text-[12px] font-600 rounded-lg px-2 py-1.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
+                    <option value="">Любой формат</option>
+                    {CHAIN_FMT.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                  </select>
+                )}
                 <button type="button" onClick={() => void submitChain()} disabled={chainBusy || chainForm.accIds.size === 0}
                   className="inline-flex items-center gap-1.5 text-[12.5px] font-700 px-4 py-1.5 rounded-lg ml-auto disabled:opacity-40"
                   style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
@@ -664,7 +678,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                   <span className="text-[13px] font-600 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
                   <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     ⏳{c.stats?.scheduled || 0} · ✓{c.stats?.published || 0}{(c.stats?.failed || 0) > 0 ? <span style={{ color: '#ef4444' }}> · ✗{c.stats?.failed}</span> : null}
-                    {c.kind === 'auto' ? ` · ≤${c.daily_cap}/день` : ` · ${c.cursor}/${(c.items || []).length}`}
+                    {c.kind === 'auto' ? ` · ≤${c.daily_cap}/день${c.format_filter ? ` · ${CHAIN_FMT_LABEL[c.format_filter] || c.format_filter}` : ''}` : ` · ${c.cursor}/${(c.items || []).length}`}
                   </span>
                   {c.last_error && <span className="text-[11px] truncate max-w-[260px]" title={c.last_error} style={{ color: '#ef4444' }}>{c.last_error}</span>}
                   <span className="ml-auto flex items-center gap-1.5">

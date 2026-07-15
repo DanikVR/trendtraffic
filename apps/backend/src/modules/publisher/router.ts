@@ -34,6 +34,9 @@ import {
 
 const router = Router();
 
+/** Форматы UGC-сборки — фильтр авто-цепочки берёт только ролики своего формата. */
+const UGC_FORMAT_KEYS = ['9x16', '16x9', '1x1', '4x5'];
+
 interface AuthedRequest extends Request {
   tenantId?: string;
   userRole?: string;
@@ -273,10 +276,11 @@ router.post('/chains', async (req: AuthedRequest, res: Response) => {
     // auto: только создать запись — контент подберёт тик (ролики автопилота auto-ugc)
     const id = randomUUID();
     const dailyCap = Math.max(1, Math.min(Number(b.dailyCap) || 3, 20));
+    const formatFilter = UGC_FORMAT_KEYS.includes(String(b.formatFilter)) ? String(b.formatFilter) : null;
     await pool.query(
-      `INSERT INTO publisher_chains (id, tenant_id, name, kind, items, targets, caption, daily_cap, enabled, cursor)
-       VALUES ($1,$2,$3,'auto','[]',$4,$5,$6,TRUE,0)`,
-      [id, req.tenantId!, name, JSON.stringify(targets), JSON.stringify(caption), dailyCap]
+      `INSERT INTO publisher_chains (id, tenant_id, name, kind, items, targets, caption, daily_cap, enabled, cursor, format_filter)
+       VALUES ($1,$2,$3,'auto','[]',$4,$5,$6,TRUE,0,$7)`,
+      [id, req.tenantId!, name, JSON.stringify(targets), JSON.stringify(caption), dailyCap, formatFilter]
     );
     res.status(201).json({ chainId: id });
   } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось создать цепочку' }); }
@@ -289,6 +293,10 @@ router.patch('/chains/:id', async (req: AuthedRequest, res: Response) => {
     if (typeof b.enabled === 'boolean') { vals.push(b.enabled); sets.push(`enabled=$${vals.length}, fail_streak=0, last_error=NULL`); }
     if (b.dailyCap != null) { vals.push(Math.max(1, Math.min(Number(b.dailyCap) || 3, 20))); sets.push(`daily_cap=$${vals.length}`); }
     if (typeof b.name === 'string' && b.name.trim()) { vals.push(b.name.trim().slice(0, 160)); sets.push(`name=$${vals.length}`); }
+    if (b.formatFilter !== undefined) { // '' | null = снять фильтр («любой формат»)
+      vals.push(UGC_FORMAT_KEYS.includes(String(b.formatFilter)) ? String(b.formatFilter) : null);
+      sets.push(`format_filter=$${vals.length}`);
+    }
     if (!sets.length) return res.status(400).json({ error: 'Нечего менять' });
     await pool.query(`UPDATE publisher_chains SET ${sets.join(', ')}, updated_at=NOW() WHERE tenant_id=$1 AND id=$2`, vals);
     res.json({ ok: true });

@@ -799,7 +799,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
                 originalName: `${nameFor('UGC — озвучка без аватара')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`,
-                fileUrl, mime: 'video/mp4', folder: outFolder,
+                fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -936,7 +936,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
             }
             const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC-диалог (${engagement})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder,
+              kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC-диалог (${engagement})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
             });
             j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
             if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1042,7 +1042,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
                 originalName: `${nameFor(`UGC-удержание ${preset.name}`)}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
-                fileUrl, mime: 'video/mp4', folder: outFolder,
+                fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (b === 0 && f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1110,7 +1110,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
             }
             const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder,
+              kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
             });
             j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
             if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1205,7 +1205,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
               }
               const asset = await createAsset(j.tenantId!, {
-                kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: outFolder,
+                kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
