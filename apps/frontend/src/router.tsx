@@ -212,11 +212,25 @@ function RouteErrorElement() {
 // Конфигурация маршрутов
 // ============================================================================================
 
-export const router = createBrowserRouter([
-  // На корневом домене trendtraffic.pro '/' — публичный лендинг (маркетинг).
-  // Определяется ПЕРВЫМ: при равном ранге с защищённым '/' ниже выигрывает
-  // порядок объявления. На app.* этот роут не создаётся вовсе.
-  ...(IS_MARKETING_HOST ? [{ path: '/', element: <LandingPage /> }] : []),
+/**
+ * Маршруты корневого домена trendtraffic.pro — ТОЛЬКО публичный маркетинг.
+ * Отдельный набор (а не второй роут '/'): у защищённого корня есть index-child,
+ * который в ранжировании React Router перевешивает любой одиночный '/' —
+ * поэтому на маркетинговом хосте приложение не монтируется вовсе.
+ * Вход/регистрация/приложение живут на app.trendtraffic.pro (CTA — absolute).
+ */
+const MARKETING_ROUTES = [
+  { path: '/', element: <LandingPage /> },
+  { path: '/landing', element: <LandingPage /> },
+  { path: '/privacy', element: <PrivacyPage /> },
+  { path: '/terms', element: <TermsPage /> },
+  { path: '/cookies', element: <CookiePage /> },
+  { path: '/about', element: <AboutPage /> },
+  { path: '/wiki', element: <WikiPage /> },
+  { path: '*', element: <Navigate to="/" replace /> },
+];
+
+const APP_ROUTES = [
   // Публичная заглавная страница (без авторизации). Существующий
   // дашборд на '/' не затрагивается — лендинг живёт на отдельном роуте.
   {
@@ -378,4 +392,6 @@ export const router = createBrowserRouter([
     path: '*',
     element: <Navigate to="/" replace />,
   },
-]);
+];
+
+export const router = createBrowserRouter(IS_MARKETING_HOST ? MARKETING_ROUTES : APP_ROUTES);
