@@ -1,619 +1,354 @@
 /**
- * LandingPage — заглавная публичная страница VibeVox.
+ * LandingPage — публичная первая страница TrendTraffic (trendtraffic.pro).
  *
- * НОВАЯ страница, изолирована от существующего приложения (своя обёртка,
- * свои компоненты, индиго-акцент var(--brand)). Не меняет общие токены
- * и готовые страницы. Контент пока на русском (эталон для отладки).
+ * Полный редизайн 16.07.2026 в стиле «Dala» (референс DESIGN.md):
+ * чистый чёрный void, монолитная типографика Inter 400 на огромных кеглях
+ * с отрицательным трекингом, body — ультралёгкий Inter 200, один фиолетовый
+ * pill-CTA (#8052ff), янтарные акценты (#ffb829), созвездие треугольных
+ * частиц как единственная hero-графика, lerp-скролл и line-mask ревилы.
+ *
+ * Изолирована от приложения: стили в landing/landing.css (скоуп .ttl),
+ * обвязка в landing/chrome.tsx. Тексты — новые ключи sec.ttLanding.*
+ * (русский эталон; прогон translate-pivot — после утверждения текстов).
+ * Фото-слоты пустые (.ttl-media) — изображения зальёт владелец.
  */
 
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import {
-  Zap, RefreshCw, Waves, GraduationCap, MessagesSquare, KeyRound,
-  Share2, ArrowRight, Check, X,
-} from 'lucide-react';
-import { PublicHeader } from '../../components/public/PublicHeader';
-import { PublicFooter } from '../../components/public/PublicFooter';
+  APP_URL, TTNav, TTFooter, Preloader, RevealLines, FadeUp, useSmoothScroll,
+} from './landing/chrome';
+import { Constellation } from './landing/Constellation';
+import './landing/landing.css';
 
-const NOISE =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
-
-// STATS/FEATURES/COMPARE собираются внутри LandingPage — тексты через t().
-
-// ─── 107 языков VibeVox ─── country = ISO 3166-1 alpha-2 для flagcdn.com ───
-const LANG_LIST = [
-  // ── Европа ──
-  { code:'en', country:'gb',     name:'English' },
-  { code:'de', country:'de',     name:'Deutsch' },
-  { code:'fr', country:'fr',     name:'Français' },
-  { code:'es', country:'es',     name:'Español' },
-  { code:'it', country:'it',     name:'Italiano' },
-  { code:'pt', country:'br',     name:'Português' },
-  { code:'pl', country:'pl',     name:'Polski' },
-  { code:'nl', country:'nl',     name:'Nederlands' },
-  { code:'sv', country:'se',     name:'Svenska' },
-  { code:'da', country:'dk',     name:'Dansk' },
-  { code:'no', country:'no',     name:'Norsk' },
-  { code:'fi', country:'fi',     name:'Suomi' },
-  { code:'cs', country:'cz',     name:'Čeština' },
-  { code:'sk', country:'sk',     name:'Slovenčina' },
-  { code:'hu', country:'hu',     name:'Magyar' },
-  { code:'ro', country:'ro',     name:'Română' },
-  { code:'bg', country:'bg',     name:'Български' },
-  { code:'hr', country:'hr',     name:'Hrvatski' },
-  { code:'sl', country:'si',     name:'Slovenščina' },
-  { code:'sr', country:'rs',     name:'Српски' },
-  { code:'uk', country:'ua',     name:'Українська' },
-  { code:'ru', country:'ru',     name:'Русский' },
-  { code:'be', country:'by',     name:'Беларуская' },
-  { code:'mk', country:'mk',     name:'Македонски' },
-  { code:'bs', country:'ba',     name:'Bosanski' },
-  { code:'el', country:'gr',     name:'Ελληνικά' },
-  { code:'et', country:'ee',     name:'Eesti' },
-  { code:'lv', country:'lv',     name:'Latviešu' },
-  { code:'lt', country:'lt',     name:'Lietuvių' },
-  { code:'sq', country:'al',     name:'Shqip' },
-  { code:'is', country:'is',     name:'Íslenska' },
-  { code:'ga', country:'ie',     name:'Gaeilge' },
-  { code:'cy', country:'gb-wls', name:'Cymraeg' },
-  { code:'mt', country:'mt',     name:'Malti' },
-  { code:'eu', country:'es',     name:'Euskara' },
-  { code:'ca', country:'ad',     name:'Català' },
-  { code:'gl', country:'es',     name:'Galego' },
-  { code:'lb', country:'lu',     name:'Lëtzebuergesch' },
-  { code:'co', country:'fr',     name:'Corsu' },
-  { code:'eo', country:null,     name:'Esperanto' },
-  // ── Ближний Восток / Кавказ ──
-  { code:'ar', country:'sa',     name:'العربية' },
-  { code:'he', country:'il',     name:'עברית' },
-  { code:'fa', country:'ir',     name:'فارسی' },
-  { code:'ur', country:'pk',     name:'اردو' },
-  { code:'tr', country:'tr',     name:'Türkçe' },
-  { code:'az', country:'az',     name:'Azərbaycan' },
-  { code:'ka', country:'ge',     name:'ქართული' },
-  { code:'hy', country:'am',     name:'Հայերեն' },
-  { code:'ku', country:'iq',     name:'Kurdî' },
-  { code:'yi', country:'il',     name:'ייִדיש' },
-  // ── Центральная Азия ──
-  { code:'kk', country:'kz',     name:'Қазақша' },
-  { code:'uz', country:'uz',     name:"O'zbek" },
-  { code:'tg', country:'tj',     name:'Тоҷикӣ' },
-  { code:'ky', country:'kg',     name:'Кыргызча' },
-  // ── Восточная Азия ──
-  { code:'zh', country:'cn',     name:'中文' },
-  { code:'ja', country:'jp',     name:'日本語' },
-  { code:'ko', country:'kr',     name:'한국어' },
-  { code:'mn', country:'mn',     name:'Монгол' },
-  { code:'tk', country:'tm',     name:'Türkmen' },
-  // ── Южная Азия ──
-  { code:'hi', country:'in',     name:'हिन्दी' },
-  { code:'bn', country:'bd',     name:'বাংলা' },
-  { code:'pa', country:'in',     name:'ਪੰਜਾਬੀ' },
-  { code:'gu', country:'in',     name:'ગુજરાતી' },
-  { code:'mr', country:'in',     name:'मराठी' },
-  { code:'ta', country:'in',     name:'தமிழ்' },
-  { code:'te', country:'in',     name:'తెలుగు' },
-  { code:'ml', country:'in',     name:'മലയാളം' },
-  { code:'kn', country:'in',     name:'ಕನ್ನಡ' },
-  { code:'ne', country:'np',     name:'नेपाली' },
-  { code:'si', country:'lk',     name:'සිංහල' },
-  { code:'ps', country:'af',     name:'پښتو' },
-  { code:'sd', country:'pk',     name:'سنڌي' },
-  // ── Юго-Восточная Азия ──
-  { code:'th', country:'th',     name:'ภาษาไทย' },
-  { code:'vi', country:'vn',     name:'Tiếng Việt' },
-  { code:'id', country:'id',     name:'Bahasa Indonesia' },
-  { code:'ms', country:'my',     name:'Bahasa Melayu' },
-  { code:'fil', country:'ph',    name:'Filipino' },
-  { code:'tl', country:'ph',     name:'Tagalog' },
-  { code:'km', country:'kh',     name:'ខ្មែរ' },
-  { code:'lo', country:'la',     name:'ລາວ' },
-  { code:'my', country:'mm',     name:'မြန်မာ' },
-  { code:'jv', country:'id',     name:'Basa Jawa' },
-  { code:'su', country:'id',     name:'Basa Sunda' },
-  { code:'ceb', country:'ph',    name:'Cebuano' },
-  // ── Африка ──
-  { code:'af', country:'za',     name:'Afrikaans' },
-  { code:'sw', country:'ke',     name:'Kiswahili' },
-  { code:'am', country:'et',     name:'አማርኛ' },
-  { code:'so', country:'so',     name:'Soomaali' },
-  { code:'yo', country:'ng',     name:'Yorùbá' },
-  { code:'ig', country:'ng',     name:'Igbo' },
-  { code:'ha', country:'ng',     name:'Hausa' },
-  { code:'zu', country:'za',     name:'isiZulu' },
-  { code:'xh', country:'za',     name:'isiXhosa' },
-  { code:'st', country:'ls',     name:'Sesotho' },
-  { code:'sn', country:'zw',     name:'Shona' },
-  { code:'rw', country:'rw',     name:'Kinyarwanda' },
-  { code:'mg', country:'mg',     name:'Malagasy' },
-  { code:'ny', country:'mw',     name:'Chichewa' },
-  { code:'om', country:'et',     name:'Afaan Oromoo' },
-  { code:'ln', country:'cd',     name:'Lingala' },
-  { code:'tw', country:'gh',     name:'Twi' },
-  // ── Америка / Пацифик / Прочее ──
-  { code:'ht', country:'ht',     name:'Haitian Creole' },
-  { code:'haw', country:'us',    name:'ʻŌlelo Hawaiʻi' },
-  { code:'mi', country:'nz',     name:'Māori' },
-  { code:'sm', country:'ws',     name:'Gagana Samoa' },
-  { code:'hmn', country:'la',    name:'Hmong' },
-  { code:'la', country:'va',     name:'Latina' },
-];
-// Ровно 107 языков. Делим для двух строк бегущей строки.
-const ROW1 = LANG_LIST.slice(0, 54);   // 54 — европейские + ближний восток + ЦА
-const ROW2 = LANG_LIST.slice(54);      // 53 — азиатские + африканские + прочие
-
-
-const fadeUp = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-80px' },
-  transition: { duration: 0.6, ease: 'easeOut' as const },
-};
-
-/** Флаг через flagcdn.com/w{width} — поддерживает любую ширину (не фиксированные пары). */
-function LangFlag({ country, w = 20 }: { country: string | null; w?: number }) {
-  if (!country) {
-    return <span style={{ fontSize: 14, lineHeight: 1, display: 'inline-block', width: w, textAlign: 'center' as const }}>🌐</span>;
-  }
+function Arrow() {
   return (
-    <img
-      src={`https://flagcdn.com/w${w}/${country}.png`}
-      srcSet={`https://flagcdn.com/w${w * 2}/${country}.png 2x`}
-      width={w}
-      alt=""
-      loading="lazy"
-      decoding="async"
-      style={{ borderRadius: 2, objectFit: 'cover', display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, aspectRatio: '4/3' }}
-    />
-  );
-}
-
-// ─── Динамический заголовок от языка браузера ───
-const BROWSER_LANG_MAP: Record<string, { name: string; country: string }> = {
-  ru: { name: 'русского', country: 'ru' },
-  en: { name: 'English', country: 'gb' },
-  de: { name: 'Deutsch', country: 'de' },
-  fr: { name: 'français', country: 'fr' },
-  es: { name: 'español', country: 'es' },
-  it: { name: 'italiano', country: 'it' },
-  pt: { name: 'português', country: 'br' },
-  pl: { name: 'polski', country: 'pl' },
-  uk: { name: 'українська', country: 'ua' },
-  nl: { name: 'Nederlands', country: 'nl' },
-  tr: { name: 'Türkçe', country: 'tr' },
-  ar: { name: 'العربية', country: 'sa' },
-  zh: { name: '中文', country: 'cn' },
-  ja: { name: '日本語', country: 'jp' },
-  ko: { name: '한국어', country: 'kr' },
-  hi: { name: 'हिन्दी', country: 'in' },
-  sv: { name: 'svenska', country: 'se' },
-  da: { name: 'dansk', country: 'dk' },
-  no: { name: 'norsk', country: 'no' },
-  fi: { name: 'suomi', country: 'fi' },
-  cs: { name: 'čeština', country: 'cz' },
-  el: { name: 'ελληνικά', country: 'gr' },
-  he: { name: 'עברית', country: 'il' },
-  th: { name: 'ภาษาไทย', country: 'th' },
-  vi: { name: 'tiếng Việt', country: 'vn' },
-  id: { name: 'bahasa Indonesia', country: 'id' },
-  ro: { name: 'română', country: 'ro' },
-  hu: { name: 'magyar', country: 'hu' },
-  bg: { name: 'български', country: 'bg' },
-  ka: { name: 'ქართული', country: 'ge' },
-  az: { name: 'Azərbaycan', country: 'az' },
-  kk: { name: 'қазақша', country: 'kz' },
-  uz: { name: "o'zbek", country: 'uz' },
-};
-function detectBrowserLang(): { name: string; country: string } {
-  const raw = navigator.language || (navigator as any).userLanguage || 'en';
-  const short = raw.split('-')[0].toLowerCase();
-  return BROWSER_LANG_MAP[short] || BROWSER_LANG_MAP['en'];
-}
-
-/** Полная таблица 107 языков с поиском (имеет собственный state). */
-function LanguageGrid() {
-  const { t } = useTranslation('common');
-  const [query, setQuery] = useState('');
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? LANG_LIST.filter((l) => l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q))
-    : LANG_LIST;
-  return (
-    <div className="rounded-[2rem] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)' }}>
-      {/* Поиск */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('sec.landing.langSearchPh', 'Поиск языка...')}
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
-          />
-        </div>
-        <p className="text-xs text-white/35 shrink-0">
-          {t('sec.landing.langCheckYours', 'Проверьте, есть ли ваш язык →')}
-        </p>
-      </div>
-      {/* Сетка */}
-      {filtered.length === 0 ? (
-        <p className="text-center text-white/40 text-sm py-6">{t('sec.landing.langNotFound', 'Язык не найден')}</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-          {filtered.map((l) => (
-            <div key={l.code}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all hover:-translate-y-px"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <LangFlag country={l.country} w={20} />
-              <span className="text-white/75 truncate font-500 leading-tight">{l.name}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <p className="text-center text-xs text-white/25 mt-5">
-        {t('sec.landing.langCount', '{{shown}} из {{total}} языков', { shown: filtered.length, total: LANG_LIST.length })}
-      </p>
-    </div>
-  );
-}
-
-function SectionLabel({ n, children }: { n: string; children: string }) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <span className="font-display font-700 text-sm tabular-nums" style={{ color: 'var(--brand)' }}>{n}</span>
-      <span className="h-px w-8" style={{ background: 'rgba(99,102,241,0.55)' }} />
-      <span className="text-xs font-700 uppercase tracking-[0.2em] text-white/50">{children}</span>
-    </div>
+    <svg className="ttl-btn-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+    </svg>
   );
 }
 
 export function LandingPage() {
   const { t } = useTranslation('common');
-  const [browserLang, setBrowserLang] = useState<{ name: string; country: string }>({ name: 'русского', country: 'ru' });
-  useEffect(() => { setBrowserLang(detectBrowserLang()); }, []);
+  const [started, setStarted] = useState(false);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const scrollToId = useSmoothScroll(pageRef);
 
-  const STATS = [
-    { v: '€0.17', l: t('sec.landing.statPerMin', 'за минуту') },
-    { v: '107', l: t('sec.landing.statLangs', 'языков') },
-    { v: t('sec.landing.statLatencyV', '<0.5 с'), l: t('sec.landing.statLatency', 'задержка перевода') },
-    { v: '0%', l: t('sec.landing.statBurn', 'сгорания минут') },
-  ];
+  // Лендинг живёт на чистом чёрном — красим body на время визита.
+  useEffect(() => {
+    const prev = document.body.style.background;
+    const prevX = document.body.style.overflowX;
+    document.body.style.background = '#000';
+    document.body.style.overflowX = 'hidden';
+    return () => {
+      document.body.style.background = prev;
+      document.body.style.overflowX = prevX;
+    };
+  }, []);
 
-  const FEATURES = [
+  const steps = [
     {
-      icon: Share2,
-      title: t('sec.landing.featShareTitle', 'Ссылка вместо установки'),
-      text: t('sec.landing.featShareText', 'Отправьте ссылку в WhatsApp или Telegram — собеседник подключается прямо из браузера. Никакого App Store, IT-отдела и настроек. Работает на любом устройстве.'),
+      n: '01',
+      title: t('sec.ttLanding.step1Title', 'Находим тренды'),
+      text: t('sec.ttLanding.step1Text', 'Сканер обходит TikTok, Instagram и YouTube по вашей нише, региону и языку. ИИ-таргетолог подбирает микро-ниши и ключевики и ранжирует их по реальному спросу.'),
     },
     {
-      icon: Zap,
-      title: t('sec.landing.featPriceTitle', '€0.17 за минуту — в 5–15 раз дешевле'),
-      text: t('sec.landing.featPriceText', 'Самая низкая розничная цена на рынке синхронного перевода. Оплата только за реально переведённые минуты — без подписки и годового контракта.'),
+      n: '02',
+      title: t('sec.ttLanding.step2Title', 'Разбираем по кадрам'),
+      text: t('sec.ttLanding.step2Text', 'Gemini-аналитика раскладывает вирусный ролик на хук, ритм и структуру. Вы получаете TrendDNA — рецепт, по которому студия соберёт ваше видео, плюс субтитры оригинала.'),
     },
     {
-      icon: RefreshCw,
-      title: t('sec.landing.featRolloverTitle', 'Минуты не сгорают никогда'),
-      text: t('sec.landing.featRolloverText', 'Неиспользованный остаток автоматически переходит на следующий месяц. Заплатили — минуты ваши без дедлайна.'),
+      n: '03',
+      title: t('sec.ttLanding.step3Title', 'Собираем ролик'),
+      text: t('sec.ttLanding.step3Text', 'UGC-студия делает видео с ИИ-аватаром: готовые луки или аватар по вашему фото, голоса ElevenLabs на 29 языках, врезки, субтитры, брендкит. Форматы 9:16 и 16:9.'),
     },
     {
-      icon: Waves,
-      title: t('sec.landing.featVoiceTitle', 'Живой голос, не робот'),
-      text: t('sec.landing.featVoiceText', 'HD-голоса Aoede и Charon. Gemini переводит аудио сразу в аудио — без цепочки STT→текст→TTS. Задержка менее 0.5 секунды, разговор идёт в естественном ритме.'),
-    },
-    {
-      icon: GraduationCap,
-      title: t('sec.landing.featLearnTitle', 'Понимает ваш сленг и диалекты'),
-      text: t('sec.landing.featLearnText', 'AI Learning Hub адаптируется под терминологию вашей ниши и 96 региональных диалектов — египетский арабский, латиноамериканский испанский. За 1 час использования.'),
-    },
-    {
-      icon: KeyRound,
-      title: t('sec.landing.featByokTitle', 'Свой ключ Gemini — звонки бесплатно'),
-      text: t('sec.landing.featByokText', 'Enterprise BYOK: подключите собственный API-ключ Google и проводите встречи, оплачивая только инфраструктуру по себестоимости.'),
+      n: '04',
+      title: t('sec.ttLanding.step4Title', 'Публикуем за вас'),
+      text: t('sec.ttLanding.step4Text', 'Автопилот следит за трендами и собирает ролики по шаблону, а Публикатор раскладывает их по слотам на 35 дней вперёд: 9:16 — в TikTok, 16:9 — в YouTube.'),
     },
   ];
 
-  const COMPARE = [
-    { name: 'Palabra.ai', them: t('sec.landing.cmpPalabraThem', '$0.85–1.20 / мин · минуты сгорают · только веб'), us: t('sec.landing.cmpPalabraUs', '€0.17/мин · перенос минут · SIP + веб') },
-    { name: 'Interprefy', them: t('sec.landing.cmpInterprefyThem', 'от $2.50 / мин · запуск через техподдержку'), us: t('sec.landing.cmpInterprefyUs', 'Запуск комнаты в 1 клик · BYOK · экономия до 93%') },
-    { name: 'Sanas.ai', them: t('sec.landing.cmpSanasThem', 'не переводит между языками · только Enterprise'), us: t('sec.landing.cmpSanasUs', 'Перевод между 107 языками · самообслуживание') },
+  const features = [
+    {
+      label: t('sec.ttLanding.f1Label', 'Поиск трендов'),
+      title: t('sec.ttLanding.f1Title', 'Тренды — раньше всех'),
+      text: t('sec.ttLanding.f1Text', 'Скан трёх платформ по нише и гео-региону выдачи. «Таргет на ЦА»: опишите продукт — ИИ сам заполнит аудиторию, подберёт ключевики на 29 языках и найдёт ниши с реальным спросом. Каналы конкурентов — в вотчлисте с историей метрик.'),
+      ph: t('sec.ttLanding.f1Ph', 'Скриншот: лента трендов'),
+    },
+    {
+      label: t('sec.ttLanding.f2Label', 'Аналитика · TrendDNA'),
+      title: t('sec.ttLanding.f2Title', 'Рецепт вирусности — по кадрам'),
+      text: t('sec.ttLanding.f2Text', 'Вставьте ссылку на любое видео TikTok, Instagram или YouTube — Gemini разберёт его покадрово: хук, ритм, структура, титры. Разбор и субтитры лягут в галерею, а «ДНК тренда» автоматически срежиссирует ваш будущий ролик.'),
+      ph: t('sec.ttLanding.f2Ph', 'Скриншот: разбор видео'),
+    },
+    {
+      label: t('sec.ttLanding.f3Label', 'UGC-студия'),
+      title: t('sec.ttLanding.f3Title', 'Аватар говорит за вас'),
+      text: t('sec.ttLanding.f3Text', 'Четыре режима: соло, диалог двоих, свой текст «как есть», режиссура по анализу тренда. Готовые луки HeyGen или аватар по вашему фото, все голоса ElevenLabs включая клоны, живые стили субтитров и брендкиты.'),
+      ph: t('sec.ttLanding.f3Ph', 'Скриншот: студия'),
+    },
+    {
+      label: t('sec.ttLanding.f4Label', 'Автопилот · Публикатор'),
+      title: t('sec.ttLanding.f4Title', 'Контент-план на месяц — без вас'),
+      text: t('sec.ttLanding.f4Text', 'Слежение за трендами превращает находки в готовые ролики по вашему шаблону. Цепочки автопубликации сами раскладывают форматы по площадкам и слотам — TikTok, YouTube и Instagram получают контент по расписанию.'),
+      ph: t('sec.ttLanding.f4Ph', 'Скриншот: публикатор'),
+    },
+  ];
+
+  const stats = [
+    { v: '×4', l: t('sec.ttLanding.stat1', 'дешевле рендер аватара по подписке') },
+    { v: '108', l: t('sec.ttLanding.stat2', 'языков интерфейса и переводов') },
+    { v: '29', l: t('sec.ttLanding.stat3', 'языков озвучки ElevenLabs') },
+    { v: '35', l: t('sec.ttLanding.stat4', 'дней контент-плана вперёд') },
+  ];
+
+  const priceIncludes = [
+    t('sec.ttLanding.inc1', 'Тренды, ниши и каналы — без лимита сканов'),
+    t('sec.ttLanding.inc2', 'Покадровая аналитика и TrendDNA'),
+    t('sec.ttLanding.inc3', 'UGC-студия: аватары, голоса, субтитры'),
+    t('sec.ttLanding.inc4', 'Автопилот и автопубликация в 3 платформы'),
+    t('sec.ttLanding.inc5', 'Chrome-расширение: HeyGen, Google Flow, NotebookLM по подписке'),
   ];
 
   return (
-    <div id="top" className="dark relative min-h-screen overflow-x-hidden text-white" style={{ background: '#0A0A0B' }}>
+    <div className="ttl">
       <Helmet>
-        <title>{t('sec.pub.seoTitle', 'TrendTraffic — умный видео-маркетинг')}</title>
-        <meta
-          name="description"
-          content={t('sec.landing.metaDesc', 'TrendTraffic — поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео.')}
-        />
-        <style>{`
-          @keyframes vv-mq-l { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-          @keyframes vv-mq-r { from { transform: translateX(-50%) } to { transform: translateX(0) } }
-        `}</style>
+        <title>{t('sec.ttLanding.pageTitle', 'TrendTraffic — трендовые видео на автопилоте')}</title>
+        <meta name="description"
+          content={t('sec.ttLanding.pageDescription', 'TrendTraffic находит вирусные тренды в TikTok, Instagram и YouTube, разбирает их по кадрам и собирает UGC-ролики с ИИ-аватарами — с публикацией по расписанию и экономией на ИИ до ×4.')} />
       </Helmet>
 
-      {/* Тёплые ambient-пятна */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-48 left-1/2 -translate-x-1/2 h-[40rem] w-[55rem] rounded-full blur-[150px] animate-aurora-drift"
-             style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.16), transparent 70%)' }} />
-        <div className="absolute top-1/3 -right-40 h-[34rem] w-[34rem] rounded-full blur-[150px] animate-float"
-             style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.10), transparent 70%)' }} />
-        <div className="absolute bottom-0 -left-32 h-[30rem] w-[30rem] rounded-full blur-[140px]"
-             style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.08), transparent 70%)' }} />
-      </div>
-      {/* Зерно */}
-      <div className="pointer-events-none fixed inset-0 z-[1] opacity-[0.035]" aria-hidden="true"
-           style={{ backgroundImage: NOISE, mixBlendMode: 'overlay' }} />
+      <Preloader onDone={() => setStarted(true)} />
+      <TTNav onAnchor={scrollToId} />
 
-      <div className="relative z-10">
-        <PublicHeader />
-
-        {/* ===== HERO ===== */}
-        <section className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-12 text-center">
-          <motion.div {...fadeUp} className="flex items-center justify-center gap-3 mb-7">
-            <span className="h-px w-6" style={{ background: 'rgba(99,102,241,0.6)' }} />
-            <span className="text-xs font-700 uppercase tracking-[0.22em]" style={{ color: 'var(--brand)' }}>
-              {t('sec.landing.heroKicker', 'Синхронный ИИ-перевод видеозвонков')}
-            </span>
-            <span className="h-px w-6" style={{ background: 'rgba(99,102,241,0.6)' }} />
-          </motion.div>
-
-          <motion.h1 {...fadeUp} transition={{ duration: 0.6, delay: 0.05 }}
-            className="font-display font-800 tracking-[-0.03em] text-[2.65rem] leading-[1.04] sm:text-6xl lg:text-[4.75rem] mb-6">
-            {t('sec.landing.h1a', 'Стираем языковые барьеры')}<br />
-            <span style={{ color: 'var(--brand)' }}>{t('sec.landing.h1b', 'в реальном времени')}</span>
-          </motion.h1>
-
-          <motion.p {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
-            className="max-w-2xl mx-auto text-lg sm:text-xl text-white/60 leading-relaxed mb-9">
-            {t('sec.landing.heroLead', 'Мгновенный двусторонний перевод видеовстреч и SIP-звонков на 100+ языков. HD-голоса, задержка менее 0.5 секунды, всего €0.17 за минуту.')}
-          </motion.p>
-
-          <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.15 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
-            <a href="/" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-700 text-white transition-all hover:brightness-110 w-full sm:w-auto justify-center"
-               style={{ background: 'var(--brand)', boxShadow: '0 12px 40px rgba(99,102,241,0.4)' }}>
-              {t('sec.pub.ctaOpenApp', 'Открыть приложение')} <ArrowRight size={18} />
-            </a>
-            <a href="#pricing" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-700 text-white/85 transition-all hover:bg-white/5 w-full sm:w-auto justify-center"
-               style={{ border: '1px solid rgba(255,255,255,0.16)' }}>
-              {t('sec.landing.seePricingBtn', 'Смотреть тарифы')}
-            </a>
-          </motion.div>
-
-          {/* Editorial-статистика */}
-          <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-px rounded-2xl overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            {STATS.map((s) => (
-              <div key={s.l} className="px-4 py-5" style={{ background: '#0A0A0B' }}>
-                <div className="font-display font-800 text-2xl sm:text-3xl" style={{ color: 'var(--brand)' }}>{s.v}</div>
-                <div className="text-xs text-white/45 mt-1">{s.l}</div>
+      <div ref={pageRef}>
+        <main>
+          {/* ══════════ HERO ══════════ */}
+          <section className="ttl-hero" id="top">
+            <Constellation started={started} />
+            <div className="ttl-wrap ttl-hero-grid">
+              <div className="ttl-hero-copy">
+                <FadeUp animate={started} delay={0.15}>
+                  <p className="ttl-label">{t('sec.ttLanding.heroLabel', 'ИИ-фабрика трендового видео')}</p>
+                </FadeUp>
+                <RevealLines
+                  as="h1"
+                  className="ttl-display"
+                  animate={started}
+                  delay={0.25}
+                  lines={[
+                    t('sec.ttLanding.heroTitleL1', 'Тренды — в видео.'),
+                    t('sec.ttLanding.heroTitleL2', 'На автопилоте.'),
+                  ]}
+                />
+                <FadeUp animate={started} delay={0.55}>
+                  <p className="ttl-body ttl-hero-sub">
+                    {t('sec.ttLanding.heroSub', 'TrendTraffic находит вирусные тренды в TikTok, Instagram и YouTube, разбирает их по кадрам и собирает готовые UGC-ролики с ИИ-аватарами. Публикация — по расписанию, ИИ — ')}
+                    <span className="ttl-amber">{t('sec.ttLanding.heroSubAccent', 'до ×4 дешевле')}</span>
+                    {t('sec.ttLanding.heroSubTail', ' обычных API.')}
+                  </p>
+                </FadeUp>
+                <FadeUp animate={started} delay={0.7}>
+                  <div className="ttl-hero-ctas">
+                    <a className="ttl-btn" href={`${APP_URL}/auth/register`}>
+                      {t('sec.ttLanding.heroCtaStart', 'Начать бесплатно')} <Arrow />
+                    </a>
+                    <button type="button" className="ttl-ghost" onClick={() => scrollToId('pricing')}>
+                      {t('sec.ttLanding.heroCtaPricing', 'Тариф — €49/мес')}
+                    </button>
+                  </div>
+                  <p className="ttl-caption ttl-hero-note">
+                    {t('sec.ttLanding.heroTrialNote', '7 дней бесплатно · отмена в любой момент')}
+                  </p>
+                </FadeUp>
               </div>
-            ))}
-          </motion.div>
-        </section>
+            </div>
+          </section>
 
-        {/* ===== ВОЗМОЖНОСТИ ===== */}
-        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-          <motion.div {...fadeUp} className="mb-12">
-            <SectionLabel n="01">{t('sec.landing.featuresLabel', 'Возможности')}</SectionLabel>
-            <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] max-w-3xl mb-5">
-              {t('sec.landing.featH2a', 'Без приложений. Без настроек.')}<br className="hidden sm:block" />
-              <span style={{ color: 'var(--brand)' }}>{t('sec.landing.featH2b', 'Просто поделитесь ссылкой.')}</span>
-            </h2>
-            <p className="text-white/55 max-w-2xl text-lg leading-relaxed">
-              {t('sec.landing.featIntro', 'VibeVox работает прямо в браузере. Создайте переговорную комнату за 1 клик, скопируйте ссылку и отправьте собеседнику в WhatsApp или Telegram — он подключается мгновенно, и оба слышат перевод друг друга на родном языке. Регистрация партнёру не нужна.')}
-            </p>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {FEATURES.map((f, i) => (
-              <motion.div key={f.title} {...fadeUp} transition={{ duration: 0.5, delay: (i % 3) * 0.07 }}
-                className="group relative rounded-2xl p-6 transition-all hover:-translate-y-1 overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="absolute inset-x-0 top-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--brand)' }} />
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl mb-4"
-                     style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.28)' }}>
-                  <f.icon size={20} style={{ color: 'var(--brand)' }} strokeWidth={1.9} />
-                </div>
-                <h3 className="font-700 text-lg mb-2">{f.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed">{f.text}</p>
-              </motion.div>
-            ))}
-
-            <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.1 }}
-              className="sm:col-span-2 lg:col-span-3 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5"
-              style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04))', border: '1px solid rgba(99,102,241,0.2)' }}>
-              <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                   style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.32)' }}>
-                <MessagesSquare size={20} style={{ color: 'var(--brand)' }} strokeWidth={1.9} />
-              </div>
-              <div>
-                <h3 className="font-700 text-lg mb-1.5">{t('sec.landing.hintsTitle', 'Умные подсказки прямо во время звонка')}</h3>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  {t('sec.landing.hintsText', 'В SIP-телефонии ИИ транскрибирует диалог в реальном времени и выводит менеджеру готовые ответы на экран. После звонка — боли, триггеры и теги автоматически уходят в CRM (Chatwoot, Questflow). Подключайтесь к АТС Zadarma, Twilio и любому SIP-шлюзу.')}
+          {/* ══════════ STATEMENT ══════════ */}
+          <section className="ttl-section">
+            <div className="ttl-wrap">
+              <RevealLines
+                className="ttl-h-lg"
+                lines={[
+                  t('sec.ttLanding.stTitleL1', 'Один сервис —'),
+                  <span className="ttl-amber" key="a">{t('sec.ttLanding.stTitleL2', 'вместо десяти ИИ-подписок.')}</span>,
+                ]}
+              />
+              <FadeUp delay={0.2}>
+                <p className="ttl-body" style={{ maxWidth: 560, marginTop: 34 }}>
+                  {t('sec.ttLanding.stBody', 'Поиск трендов, разбор вирусных видео, аватары, озвучка, субтитры, автосборка роликов и автопостинг — в одном окне. Подключайте свои ключи или подписки сервисов и платите так, как выгоднее вам.')}
                 </p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
+              </FadeUp>
+            </div>
+          </section>
 
-        {/* ===== 107 ЯЗЫКОВ ===== */}
-        <section id="languages" className="relative py-20 overflow-hidden">
-          {/* Фоновый акцент */}
-          <div className="pointer-events-none absolute inset-0" aria-hidden="true"
-            style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(99,102,241,0.06) 0%, transparent 70%)' }} />
-
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center">
-            <motion.div {...fadeUp}>
-              <SectionLabel n="02">{t('sec.landing.langsLabel', 'Охват языков')}</SectionLabel>
-              <h2 className="font-display font-800 tracking-[-0.03em] text-4xl sm:text-6xl lg:text-[4.2rem] mb-5">
-                {t('sec.landing.langsH2a', 'Безупречный перевод')}{' '}
-                <span className="inline-flex items-center gap-2 align-middle">
-                  <LangFlag country={browserLang.country} w={40} />
-                  <span style={{ color: 'var(--brand)' }}>{browserLang.name}</span>
-                </span>
-                <br />
-                {t('sec.landing.langsH2b', 'на 107 языков мира — и обратно.')}
-              </h2>
-              <p className="text-white/50 max-w-2xl mx-auto text-lg leading-relaxed mb-7">
-                {t('sec.landing.langsText', 'Вы говорите на своём языке — собеседник слышит перевод на своём. Он отвечает — вы мгновенно слышите его на {{lang}}. Синхронно, без задержки, без акцента.', { lang: browserLang.name })}
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2.5">
-                {[
-                  t('sec.landing.chip107', '107 языков'),
-                  t('sec.landing.chipNative', 'Оба участника — на родном'),
-                  t('sec.landing.chipLatency', '< 0.5 с задержка'),
-                  t('sec.landing.chipDialects', 'Региональные диалекты'),
-                ].map((chip) => (
-                  <span key={chip} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-600"
-                    style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: 'var(--brand)' }}>
-                    {chip}
-                  </span>
+          {/* ══════════ КАК ЭТО РАБОТАЕТ ══════════ */}
+          <section className="ttl-section-tight" id="how">
+            <div className="ttl-wrap">
+              <FadeUp>
+                <p className="ttl-label">{t('sec.ttLanding.howLabel', 'Как это работает')}</p>
+              </FadeUp>
+              <div className="ttl-steps">
+                {steps.map((s, i) => (
+                  <div className="ttl-step" key={s.n}>
+                    <div>
+                      <FadeUp delay={0.05 * i}>
+                        <span className="ttl-step-num">{s.n}</span>
+                      </FadeUp>
+                      <RevealLines className="ttl-h-lg" lines={[s.title]} />
+                    </div>
+                    <FadeUp delay={0.15}>
+                      <p className="ttl-body">{s.text}</p>
+                    </FadeUp>
+                  </div>
                 ))}
               </div>
-            </motion.div>
-          </div>
-
-          {/* ── Бегущие строки ── */}
-          {/* Маска: плавное исчезновение по краям */}
-          <div className="mb-3" style={{
-            WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)',
-            maskImage: 'linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)',
-          }}>
-            {/* Строка 1 — едет влево */}
-            <div style={{ display: 'flex', width: 'max-content', animation: 'vv-mq-l 55s linear infinite' }}>
-              {[...ROW1, ...ROW1].map((l, i) => (
-                <span key={`r1-${i}`}
-                  className="inline-flex items-center gap-2 mx-1.5 px-4 py-2.5 rounded-full text-sm font-500 whitespace-nowrap shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.82)' }}>
-                  <LangFlag country={l.country} w={20} />
-                  <span>{l.name}</span>
-                </span>
-              ))}
             </div>
-          </div>
-          <div className="mb-12" style={{
-            WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)',
-            maskImage: 'linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)',
-          }}>
-            {/* Строка 2 — едет вправо */}
-            <div style={{ display: 'flex', width: 'max-content', animation: 'vv-mq-r 48s linear infinite' }}>
-              {[...ROW2, ...ROW2].map((l, i) => (
-                <span key={`r2-${i}`}
-                  className="inline-flex items-center gap-2 mx-1.5 px-4 py-2.5 rounded-full text-sm font-500 whitespace-nowrap shrink-0"
-                  style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.22)', color: 'rgba(255,255,255,0.82)' }}>
-                  <LangFlag country={l.country} w={20} />
-                  <span>{l.name}</span>
-                </span>
-              ))}
+          </section>
+
+          {/* ══════════ ВОЗМОЖНОСТИ (zigzag + фото-слоты) ══════════ */}
+          <section className="ttl-section" id="features">
+            <div className="ttl-wrap" style={{ display: 'grid', gap: 'clamp(80px, 10vw, 140px)' }}>
+              {features.map((f, i) => {
+                const media = (
+                  <FadeUp key="m" delay={0.1}>
+                    <div className="ttl-media"><span>{f.ph}</span></div>
+                  </FadeUp>
+                );
+                const copy = (
+                  <div key="c">
+                    <FadeUp><p className="ttl-label">{f.label}</p></FadeUp>
+                    <RevealLines className="ttl-h" lines={[f.title]} />
+                    <FadeUp delay={0.15}><p className="ttl-body">{f.text}</p></FadeUp>
+                  </div>
+                );
+                return (
+                  <div className="ttl-cols" key={f.label}>
+                    {i % 2 === 0 ? [copy, media] : [media, copy]}
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          </section>
 
-          {/* ── Полная таблица 107 языков с поиском ── */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <LanguageGrid />
-          </div>
-        </section>
-
-        {/* ===== ЧЕСТНЫЙ БИЛЛИНГ ===== */}
-        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-          <motion.div {...fadeUp} className="rounded-[2rem] p-8 sm:p-12"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="grid lg:grid-cols-2 gap-10 items-center">
-              <div>
-                <SectionLabel n="03">{t('sec.landing.billingLabel', 'Честный биллинг')}</SectionLabel>
-                <h2 className="font-display font-800 text-3xl sm:text-4xl tracking-[-0.02em] mb-4">{t('sec.landing.noBurnH2', 'Минуты не сгорают')}</h2>
-                <p className="text-white/55 mb-6 leading-relaxed">
-                  {t('sec.landing.noBurnText', 'У классических SaaS неиспользованные минуты сгорают каждый месяц. VibeVox бережно переносит их на следующий — вы не теряете ни секунды оплаченного времени.')}
+          {/* ══════════ ЭКОНОМИЯ ══════════ */}
+          <section className="ttl-section" id="savings">
+            <div className="ttl-wrap">
+              <FadeUp>
+                <p className="ttl-label">{t('sec.ttLanding.savLabel', 'Экономия на ИИ')}</p>
+              </FadeUp>
+              <RevealLines
+                className="ttl-h-lg"
+                lines={[
+                  t('sec.ttLanding.savTitleL1', 'Платите за подписки,'),
+                  t('sec.ttLanding.savTitleL2', 'а не за дорогие API.'),
+                ]}
+              />
+              <FadeUp delay={0.2}>
+                <p className="ttl-body" style={{ maxWidth: 560, marginTop: 30 }}>
+                  {t('sec.ttLanding.savBody', 'Фирменное Chrome-расширение подключает ИИ-сервисы по вашим обычным подпискам вместо тарификации за API-кредиты. А свои ключи (BYOK) — Gemini, ElevenLabs, TikHub, Blotato — работают напрямую, без наценки посредника.')}
                 </p>
-                <div className="flex items-baseline gap-2 mb-6">
-                  <span className="font-display font-800 text-5xl" style={{ color: 'var(--brand)' }}>€0.17</span>
-                  <span className="text-white/45">{t('sec.landing.perMinute', '/ минута')}</span>
-                </div>
-                <a href="/" className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-700 text-white transition-all hover:brightness-110"
-                   style={{ background: 'var(--brand)', boxShadow: '0 10px 32px rgba(99,102,241,0.35)' }}>
-                  {t('sec.landing.goToPricingBtn', 'Перейти к тарифам')} <ArrowRight size={18} />
-                </a>
+              </FadeUp>
+
+              <div className="ttl-save-rows">
+                {[
+                  {
+                    name: t('sec.ttLanding.savRow1Name', 'Рендер ИИ-аватара HeyGen'),
+                    was: t('sec.ttLanding.savRow1Was', 'по API — $3–4 за минуту'),
+                    now: t('sec.ttLanding.savRow1Now', 'по подписке — около $1 за минуту'),
+                  },
+                  {
+                    name: t('sec.ttLanding.savRow2Name', 'Видеогенерация Veo 3.1'),
+                    was: t('sec.ttLanding.savRow2Was', 'дорогие API-кредиты'),
+                    now: t('sec.ttLanding.savRow2Now', 'ваша подписка Google Flow'),
+                  },
+                  {
+                    name: t('sec.ttLanding.savRow3Name', 'Разборы и озвучка NotebookLM'),
+                    was: t('sec.ttLanding.savRow3Was', 'платные токены'),
+                    now: t('sec.ttLanding.savRow3Now', 'ваша подписка Google'),
+                  },
+                ].map((r, i) => (
+                  <FadeUp key={r.name} delay={0.08 * i}>
+                    <div className="ttl-save-row">
+                      <span className="ttl-save-name">{r.name}</span>
+                      <span className="ttl-save-vals">
+                        <span className="ttl-save-was">{r.was}</span>
+                        <span className="ttl-save-now">{r.now}</span>
+                      </span>
+                    </div>
+                  </FadeUp>
+                ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div className="flex items-center gap-2 font-700 mb-3 text-white/60"><X size={18} className="text-magenta-400" /> {t('sec.landing.competitors', 'Конкуренты')}</div>
-                  <ul className="space-y-2 text-sm text-white/45">
-                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> {t('sec.landing.themBurn', 'Минуты сгорают в конце месяца')}</li>
-                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> {t('sec.landing.themContracts', 'Годовые контракты на тысячи $')}</li>
-                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> {t('sec.landing.themPrice', 'До $1.20–2.50 за минуту')}</li>
-                  </ul>
-                </div>
-                <div className="rounded-2xl p-5" style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.3)' }}>
-                  <div className="flex items-center gap-2 font-700 mb-3" style={{ color: 'var(--brand)' }}><RefreshCw size={18} /> VibeVox</div>
-                  <ul className="space-y-2 text-sm text-white/75">
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {t('sec.landing.usRollover', 'Перенос минут (roll-over)')}</li>
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {t('sec.landing.usPayAsYouGo', 'Оплата по факту, без контрактов')}</li>
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {t('sec.landing.usPrice', '€0.17 за минуту')}</li>
-                  </ul>
-                </div>
+              <div className="ttl-stats">
+                {stats.map((s, i) => (
+                  <FadeUp key={s.v} delay={0.07 * i}>
+                    <div className="ttl-stat-v">{s.v}</div>
+                    <div className="ttl-stat-l">{s.l}</div>
+                  </FadeUp>
+                ))}
               </div>
             </div>
-          </motion.div>
-        </section>
+          </section>
 
-        {/* ===== СРАВНЕНИЕ ===== */}
-        <section id="compare" className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-          <motion.div {...fadeUp} className="mb-12">
-            <SectionLabel n="04">{t('sec.landing.cmpLabel', 'Сравнение')}</SectionLabel>
-            <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] max-w-2xl">
-              {t('sec.landing.cmpH2', 'Дешевле и быстрее новой волны')}
-            </h2>
-          </motion.div>
-
-          <div className="space-y-3">
-            {COMPARE.map((c, i) => (
-              <motion.div key={c.name} {...fadeUp} transition={{ duration: 0.5, delay: i * 0.07 }}
-                className="rounded-2xl p-5 grid md:grid-cols-[160px_1fr_1fr] gap-4 items-center"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="font-700 text-white/85">{c.name}</div>
-                <div className="flex items-start gap-2 text-sm text-white/45">
-                  <X size={16} className="text-magenta-400 shrink-0 mt-0.5" /> {c.them}
+          {/* ══════════ ТАРИФ ══════════ */}
+          <section className="ttl-section" id="pricing">
+            <div className="ttl-wrap">
+              <FadeUp>
+                <p className="ttl-label">{t('sec.ttLanding.priceLabel', 'Тариф')}</p>
+              </FadeUp>
+              <RevealLines
+                className="ttl-price-amount"
+                lines={[t('sec.ttLanding.priceAmount', '€49/мес')]}
+              />
+              <FadeUp delay={0.15}>
+                <p className="ttl-body" style={{ maxWidth: 560, marginTop: 26 }}>
+                  {t('sec.ttLanding.priceBody', 'Premium — полный доступ ко всем модулям. Первые 7 дней бесплатно, списаний нет, отмена в любой момент.')}
+                </p>
+                <ul className="ttl-price-list">
+                  {priceIncludes.map((x) => <li key={x}>{x}</li>)}
+                </ul>
+              </FadeUp>
+              <FadeUp delay={0.25}>
+                <div className="ttl-hero-ctas">
+                  <a className="ttl-btn" href={`${APP_URL}/billing`}>
+                    {t('sec.ttLanding.priceCta', 'Смотреть прайс')} <Arrow />
+                  </a>
+                  <a className="ttl-ghost" href={`${APP_URL}/billing`}>
+                    {t('sec.ttLanding.priceCalc', 'Калькулятор экономии')}
+                  </a>
                 </div>
-                <div className="flex items-start gap-2 text-sm text-white/80">
-                  <Check size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {c.us}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* ===== ФИНАЛЬНЫЙ CTA ===== */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-          <motion.div {...fadeUp} className="rounded-[2rem] p-10 sm:p-16 text-center relative overflow-hidden"
-            style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.28)' }}>
-            <div className="absolute inset-0 blur-[110px] opacity-50" aria-hidden="true"
-                 style={{ background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.3), transparent 70%)' }} />
-            <div className="relative">
-              <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] mb-4">
-                {t('sec.landing.finalH2', 'Говорите на одном языке со всем миром')}
-              </h2>
-              <p className="text-white/60 max-w-xl mx-auto mb-8 text-lg">
-                {t('sec.landing.finalSub', 'Регистрация за минуту. Первые 7 дней — бесплатно.')}
-              </p>
-              <a href="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-700 text-white transition-all hover:brightness-110"
-                 style={{ background: 'var(--brand)', boxShadow: '0 12px 44px rgba(99,102,241,0.45)' }}>
-                {t('sec.pub.ctaOpenApp', 'Открыть приложение')} <ArrowRight size={20} />
-              </a>
+              </FadeUp>
             </div>
-          </motion.div>
-        </section>
+          </section>
 
-        <PublicFooter />
+          {/* ══════════ ФИНАЛЬНЫЙ CTA ══════════ */}
+          <section className="ttl-section">
+            <div className="ttl-wrap">
+              <RevealLines
+                className="ttl-display"
+                lines={[t('sec.ttLanding.finTitle', 'Пора в тренды.')]}
+              />
+              <FadeUp delay={0.2}>
+                <p className="ttl-body" style={{ maxWidth: 480, marginTop: 30 }}>
+                  {t('sec.ttLanding.finBody', 'Создайте аккаунт — первый готовый ролик уже сегодня.')}
+                </p>
+                <div className="ttl-hero-ctas">
+                  <a className="ttl-btn" href={`${APP_URL}/auth/register`}>
+                    {t('sec.ttLanding.finCta', 'Начать бесплатно')} <Arrow />
+                  </a>
+                </div>
+              </FadeUp>
+            </div>
+          </section>
+        </main>
+
+        <TTFooter />
       </div>
     </div>
   );

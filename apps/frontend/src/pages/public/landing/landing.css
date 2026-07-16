@@ -1,0 +1,450 @@
+/**
+ * landing.css — стили публичного лендинга TrendTraffic (стиль «Dala»).
+ *
+ * Всё скоупится под .ttl — глобальные токены приложения не трогаем.
+ * Референс-токены: DESIGN.md (void #000, Electric Iris #8052ff,
+ * Saffron Spark #ffb829, Inter 200/400/600, display до 113px, ls -0.04em).
+ */
+
+/* Вес 200 (ультралёгкий body — фирменный приём) — глобальный импорт даёт только 300–700 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
+
+.ttl {
+  /* ── Токены ── */
+  --ttl-void: #000000;
+  --ttl-bone: #ffffff;
+  --ttl-ash: #9a9a9a;
+  --ttl-mist: #bdbdbd;
+  --ttl-iris: #8052ff;
+  --ttl-spark: #ffb829;
+  --ttl-verdant: #15846e;
+  --ttl-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  background: var(--ttl-void);
+  color: var(--ttl-bone);
+  font-family: var(--ttl-font);
+  font-weight: 200;
+  font-size: 18px;
+  line-height: 1.5;
+  font-feature-settings: 'ss01' on;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+.ttl *, .ttl *::before, .ttl *::after { box-sizing: border-box; }
+/* Глобальный index.css назначает заголовкам Geist Sans — внутри лендинга всё строго Inter */
+.ttl h1, .ttl h2, .ttl h3, .ttl h4, .ttl p, .ttl a, .ttl li, .ttl span, .ttl button {
+  font-family: var(--ttl-font);
+}
+.ttl ::selection { background: rgba(128, 82, 255, 0.55); color: #fff; }
+.ttl a { color: inherit; text-decoration: none; }
+.ttl img { max-width: 100%; display: block; }
+
+/* ── Контейнер ── */
+.ttl-wrap {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4.5vw, 48px);
+}
+
+/* ── Типографика ── */
+.ttl-display {
+  font-size: clamp(44px, 8.6vw, 113px);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  margin: 0;
+}
+.ttl-h-lg {
+  font-size: clamp(36px, 6vw, 78px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  margin: 0;
+}
+.ttl-h {
+  font-size: clamp(30px, 3.8vw, 48px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  font-weight: 400;
+  margin: 0;
+}
+.ttl-h-sm {
+  font-size: clamp(26px, 3.3vw, 42px);
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+  font-weight: 400;
+  margin: 0;
+}
+.ttl-body {
+  font-size: 18px;
+  font-weight: 200;
+  line-height: 1.55;
+  color: var(--ttl-mist);
+  margin: 0;
+}
+.ttl-body strong, .ttl-body b { font-weight: 400; color: var(--ttl-bone); }
+.ttl-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ttl-spark);
+  margin: 0;
+}
+.ttl-caption {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ttl-ash);
+}
+.ttl-amber { color: var(--ttl-spark); }
+.ttl-ashen { color: var(--ttl-ash); }
+
+/* ── Кнопки ── */
+.ttl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ttl-iris);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  padding: 15px 26px;
+  font-family: var(--ttl-font);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.25s ease, transform 0.25s ease;
+  will-change: transform;
+}
+.ttl-btn:hover { filter: brightness(1.12); transform: translateY(-2px); }
+.ttl-btn:active { transform: translateY(0); }
+.ttl-btn .ttl-btn-arrow { transition: transform 0.25s ease; }
+.ttl-btn:hover .ttl-btn-arrow { transform: translateX(4px); }
+
+.ttl-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--ttl-font);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--ttl-ash);
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+.ttl-ghost:hover { color: var(--ttl-bone); }
+
+/* ── Навигация ── */
+.ttl-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 40;
+  transition: background 0.35s ease;
+  background: transparent;
+}
+.ttl-nav.is-scrolled { background: rgba(0, 0, 0, 0.88); }
+.ttl-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 76px;
+}
+.ttl-nav-links {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2.6vw, 36px);
+}
+.ttl-nav-link {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--ttl-ash);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--ttl-font);
+  transition: color 0.25s ease;
+}
+.ttl-nav-link:hover { color: var(--ttl-bone); }
+.ttl-nav .ttl-btn { padding: 12px 20px; }
+@media (max-width: 860px) {
+  .ttl-nav-links { display: none; }
+}
+
+/* ── Логотип ── */
+.ttl-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ttl-bone);
+}
+.ttl-logo svg { display: block; }
+.ttl-logo-word {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ── Reveal-маски ── */
+.ttl-mask { display: block; overflow: hidden; }
+.ttl-mask > * { will-change: transform; }
+
+/* ── Hero ── */
+.ttl-hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding-top: 96px;
+  padding-bottom: 60px;
+}
+.ttl-hero-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.ttl-hero-grid {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+/* Заголовок — на всю ширину (частицы уходят под него), сабтекст и CTA — слева */
+.ttl-hero-copy { max-width: 1080px; }
+.ttl-hero .ttl-label { margin-bottom: 26px; }
+.ttl-hero-sub {
+  max-width: 480px;
+  margin-top: 32px;
+}
+.ttl-hero-ctas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 26px;
+  margin-top: 40px;
+}
+.ttl-hero-note { margin-top: 16px; }
+@media (max-width: 960px) {
+  .ttl-hero-canvas { opacity: 0.5; }
+}
+
+/* Тёмный скроллбар, пока открыт лендинг (Chrome/Edge) */
+body:has(.ttl)::-webkit-scrollbar { width: 10px; background: #000; }
+body:has(.ttl)::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 5px; }
+body:has(.ttl)::-webkit-scrollbar-thumb:hover { background: #2c2c2c; }
+
+/* ── Секции ── */
+.ttl-section { padding-block: clamp(90px, 11vw, 150px); }
+.ttl-section-tight { padding-block: clamp(60px, 8vw, 110px); }
+
+/* Двухколоночная композиция (zigzag) */
+.ttl-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(36px, 6vw, 96px);
+  align-items: center;
+}
+.ttl-cols .ttl-label { margin-bottom: 22px; }
+.ttl-cols .ttl-body { margin-top: 26px; max-width: 520px; }
+@media (max-width: 960px) {
+  .ttl-cols { grid-template-columns: 1fr; }
+  .ttl-cols > .ttl-media { order: 2; }
+}
+
+/* ── Плейсхолдер под фото (юзер загрузит) ── */
+.ttl-media {
+  position: relative;
+  border-radius: 24px;
+  aspect-ratio: 4 / 3;
+  background: rgba(255, 255, 255, 0.035);
+  outline: 1px dashed rgba(255, 255, 255, 0.12);
+  outline-offset: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.ttl-media > span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+/* ── «Как это работает» ── */
+.ttl-steps { margin-top: clamp(48px, 7vw, 96px); display: grid; gap: clamp(52px, 7vw, 96px); }
+.ttl-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(24px, 5vw, 84px);
+  align-items: baseline;
+}
+.ttl-step-num {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--ttl-spark);
+  display: block;
+  margin-bottom: 14px;
+}
+.ttl-step .ttl-body { max-width: 460px; }
+@media (max-width: 860px) {
+  .ttl-step { grid-template-columns: 1fr; gap: 18px; }
+}
+
+/* ── Экономия ── */
+.ttl-save-rows { margin-top: clamp(44px, 6vw, 80px); display: grid; gap: 34px; max-width: 880px; }
+.ttl-save-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: baseline; }
+.ttl-save-name { font-size: clamp(20px, 2vw, 27px); font-weight: 400; letter-spacing: -0.02em; }
+.ttl-save-was { color: var(--ttl-ash); text-decoration: line-through; text-decoration-color: rgba(255, 255, 255, 0.35); font-weight: 200; }
+.ttl-save-now { color: var(--ttl-bone); font-weight: 400; }
+.ttl-save-vals { display: flex; flex-direction: column; gap: 4px; font-size: 18px; }
+@media (max-width: 720px) {
+  .ttl-save-row { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ── Цифры ── */
+.ttl-stats {
+  margin-top: clamp(70px, 9vw, 130px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(28px, 4vw, 48px);
+}
+.ttl-stat-v {
+  font-size: clamp(44px, 5.6vw, 78px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+}
+.ttl-stat-l {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ttl-ash);
+  max-width: 200px;
+}
+@media (max-width: 860px) {
+  .ttl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Тариф ── */
+.ttl-price-amount {
+  font-size: clamp(64px, 10vw, 140px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-weight: 400;
+}
+.ttl-price-list { margin: 34px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; max-width: 520px; }
+.ttl-price-list li { display: flex; gap: 14px; align-items: baseline; color: var(--ttl-mist); font-weight: 200; }
+.ttl-price-list li::before { content: '—'; color: var(--ttl-iris); font-weight: 400; flex-shrink: 0; }
+
+/* ── Футер ── */
+.ttl-footer { padding-top: clamp(70px, 9vw, 120px); padding-bottom: 40px; }
+.ttl-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(36px, 5vw, 72px);
+  align-items: start;
+}
+.ttl-footer-tagline { margin-top: 20px; max-width: 340px; }
+.ttl-footer-mail {
+  display: inline-block;
+  margin-top: 22px;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ttl-spark);
+  transition: color 0.25s ease;
+}
+.ttl-footer-mail:hover { color: var(--ttl-bone); }
+.ttl-footer-col-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ttl-ash);
+  margin: 0 0 22px;
+}
+.ttl-footer-links { display: grid; gap: 14px; }
+.ttl-footer-link {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ttl-mist);
+  transition: color 0.25s ease;
+  width: fit-content;
+}
+.ttl-footer-link:hover { color: var(--ttl-bone); }
+.ttl-footer-bottom {
+  margin-top: clamp(56px, 7vw, 90px);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.ttl-footer-bottom .ttl-caption { max-width: 560px; }
+@media (max-width: 860px) {
+  .ttl-footer-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Прелоадер ── */
+.ttl-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--ttl-void);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.85s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.ttl-preloader.is-done { transform: translateY(-100%); }
+.ttl-preloader-count {
+  position: absolute;
+  right: clamp(20px, 5vw, 60px);
+  bottom: clamp(16px, 4vw, 44px);
+  font-size: clamp(56px, 9vw, 113px);
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Плавный скролл (десктоп) ── */
+.ttl-smooth {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  will-change: transform;
+}
+
+/* ── Заглушки (about / wiki) ── */
+.ttl-stub-main {
+  min-height: 78svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 120px;
+}
+.ttl-stub-main .ttl-body { margin-top: 28px; max-width: 460px; }
+.ttl-stub-main .ttl-ghost { margin-top: 40px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ttl *, .ttl *::before, .ttl *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

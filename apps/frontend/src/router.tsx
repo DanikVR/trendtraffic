@@ -28,11 +28,20 @@ import { EnterpriseSettingsPage } from './pages/EnterpriseSettingsPage';
 // ENTERPRISE v0.10.7: AssistantPage была UI-демкой, удалена.
 // Backend модуль assistant/ оставлен как библиотека (deductAudioBalance, geminiProvider и др.).
 
-// Новые ПУБЛИЧНЫЕ (маркетинговые/SEO/правовые) страницы — стиль VibeVox (оранжевый)
+// Новые ПУБЛИЧНЫЕ (маркетинговые/SEO/правовые) страницы
 import { LandingPage }     from './pages/public/LandingPage';
 import { PrivacyPage }     from './pages/public/PrivacyPage';
 import { TermsPage }       from './pages/public/TermsPage';
 import { CookiePage }      from './pages/public/CookiePage';
+import { AboutPage }       from './pages/public/AboutPage';
+import { WikiPage }        from './pages/public/WikiPage';
+
+/**
+ * Корневой домен trendtraffic.pro — маркетинговый: '/' отдаёт лендинг.
+ * Приложение живёт на app.trendtraffic.pro (там '/' — защищённый дашборд).
+ */
+const IS_MARKETING_HOST =
+  typeof window !== 'undefined' && /^(www\.)?trendtraffic\.pro$/i.test(window.location.hostname);
 
 // Страницы авторизации — named exports
 import { LoginPage }       from './pages/auth/LoginPage';
@@ -204,7 +213,11 @@ function RouteErrorElement() {
 // ============================================================================================
 
 export const router = createBrowserRouter([
-  // Новая публичная заглавная страница (без авторизации). Существующий
+  // На корневом домене trendtraffic.pro '/' — публичный лендинг (маркетинг).
+  // Определяется ПЕРВЫМ: при равном ранге с защищённым '/' ниже выигрывает
+  // порядок объявления. На app.* этот роут не создаётся вовсе.
+  ...(IS_MARKETING_HOST ? [{ path: '/', element: <LandingPage /> }] : []),
+  // Публичная заглавная страница (без авторизации). Существующий
   // дашборд на '/' не затрагивается — лендинг живёт на отдельном роуте.
   {
     path: '/landing',
@@ -213,6 +226,8 @@ export const router = createBrowserRouter([
   { path: '/privacy', element: <PrivacyPage /> },
   { path: '/terms', element: <TermsPage /> },
   { path: '/cookies', element: <CookiePage /> },
+  { path: '/about', element: <AboutPage /> },
+  { path: '/wiki', element: <WikiPage /> },
   // Публичные страницы авторизации
   {
     path: '/auth/login',

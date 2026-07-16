@@ -2752,8 +2752,26 @@
  *          thinkingBudget:0; только недостающие ключи — существующие переводы не тронуты;
  *          плейсхолдеры {{…}} и глоссарий брендов под защитой скрипта). Теперь /billing
  *          говорит на всех 108 языках, EN-фолбэк больше не показывается. Файлы:
- *          public/locales/<lng>/common.json (106 шт.), AppVersion. */
-export const APP_VERSION = '2.3.3';
+ *          public/locales/<lng>/common.json (106 шт.), AppVersion.
+ * 2.3.4 — Публичный лендинг trendtraffic.pro в стиле «Dala»: чёрный void, Inter
+ *          200/400, display-типографика до 113px с отриц. трекингом, фиолетовый
+ *          pill-CTA #8052ff + янтарные акценты #ffb829, канвас-«созвездие» из
+ *          сотен контурных треугольников, собирающихся в play-знак (дрейф,
+ *          мерцание, параллакс), прелоадер-счётчик, line-mask ревилы, lerp-скролл
+ *          (времязависимый, со снапом после скрытой вкладки). Секции: герой
+ *          («Тренды — в видео. На автопилоте.»), «вместо десяти ИИ-подписок»,
+ *          как работает 01–04, 4 фичи зигзагом с пустыми фото-слотами (юзер
+ *          зальёт скрины), «Экономия на ИИ» (API vs подписка + цифры), тариф
+ *          €49 + 7 дней бесплатно, финальный CTA, футер с реквизитами
+ *          (LARYSA DANYUK, Warszawa) и ссылками Прайс-Wiki-О проекте-легалки.
+ *          Роутинг: на корневом домене trendtraffic.pro '/' отдаёт лендинг
+ *          (IS_MARKETING_HOST), на app.* всё как было; новые роуты /about и
+ *          /wiki — заглушки «в разработке» в том же стиле. i18n: новые ключи
+ *          sec.ttLanding.x с русскими дефолтами (прогон translate-pivot —
+ *          после утверждения текстов). JSON-LD price 120→49. Файлы:
+ *          pages/public/landing (css, chrome, Constellation, StubPage),
+ *          LandingPage, AboutPage, WikiPage, router, index.html, AppVersion. */
+export const APP_VERSION = '2.3.4';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
