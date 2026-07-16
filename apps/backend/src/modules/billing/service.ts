@@ -33,6 +33,55 @@ export function getStripe(): Stripe {
   return stripeInstance;
 }
 
+/**
+ * Гарантирует, что Stripe Price соответствует актуальной сумме из TIER_PRICES.
+ * Stripe Price неизменяемый, поэтому при расхождении (смена прайса, напр. €120 → €49)
+ * создаём новый Price с transfer_lookup_key (lookup_key переезжает на новый) и архивируем
+ * старый. Существующие подписки продолжают жить на старом price id — Stripe это допускает.
+ */
+export async function ensurePriceCurrent(
+  stripe: Stripe,
+  tier: string,
+  currency: 'eur' | 'usd',
+  price: Stripe.Price
+): Promise<Stripe.Price> {
+  const cfg = TIER_PRICES.find((t) => t.tier === tier);
+  if (!cfg) return price;
+  const expected = currency === 'usd' ? cfg.amountUsd : cfg.amountEur;
+  if (price.unit_amount === expected) return price;
+
+  const productId = typeof price.product === 'string' ? price.product : price.product?.id;
+  if (!productId) return price;
+  const lookupKey = price.lookup_key || `vibevox_${tier}_${currency}`;
+
+  const fresh = await stripe.prices.create({
+    product: productId,
+    currency,
+    unit_amount: expected,
+    lookup_key: lookupKey,
+    transfer_lookup_key: true,
+    ...(cfg.billingPeriod === 'monthly'
+      ? { recurring: { interval: 'month' as const } }
+      : cfg.billingPeriod === 'yearly'
+        ? { recurring: { interval: 'year' as const } }
+        : {}),
+    metadata: {
+      tier: cfg.tier,
+      billing_period: cfg.billingPeriod,
+      included_minutes: String(cfg.minutes),
+    },
+  });
+  try {
+    await stripe.prices.update(price.id, { active: false });
+  } catch (err) {
+    console.warn(`[Billing] Не удалось архивировать старый Price ${price.id}:`, err);
+  }
+  console.log(
+    `[Billing] Price ${lookupKey} обновлён: ${(price.unit_amount ?? 0) / 100} → ${expected / 100} ${currency} (${price.id} → ${fresh.id})`
+  );
+  return fresh;
+}
+
 export interface SyncedProductInfo {
   tier: string;
   productId: string;
@@ -95,6 +144,13 @@ export async function syncStripeProducts(currency: 'eur' | 'usd' = 'eur'): Promi
 
       if (price) {
         alreadyExisted = true;
+        // Сумма в TIER_PRICES могла поменяться (напр. €120 → €49): Stripe Price неизменяемый,
+        // поэтому пересоздаём с переносом lookup_key и архивируем старый.
+        const refreshed = await ensurePriceCurrent(stripe, tierCfg.tier, currency, price);
+        if (refreshed.id !== price.id) {
+          price = refreshed;
+          alreadyExisted = false;
+        }
       } else {
         const priceParams: Stripe.PriceCreateParams = {
           product: product.id,

@@ -33,9 +33,9 @@ export const TIER_PRICES: TierPriceConfig[] = [
   {
     tier: 'premium',
     name: 'TrendTraffic Premium',
-    description: 'Полный доступ ко всем функциям сервиса: безлимитный анализ трендов, аналитика, генерация видео через подключённые API, публикация в соцсети.',
-    amountEur: 12000,   // €120 / мес
-    amountUsd: 13000,   // ≈ $130 / мес
+    description: 'Оболочка-автопилот видеоконтента: тренды, аналитика, UGC-студия, Хром-расширение (Google Flow, NotebookLM, HeyGen по вашим подпискам), Публикатор.',
+    amountEur: 4900,    // €49 / мес
+    amountUsd: 5400,    // ≈ $54 / мес
     billingPeriod: 'monthly',
     minutes: 999999,    // без метрии минут (TrendTraffic минуты не тратит)
     productKey: 'premium',

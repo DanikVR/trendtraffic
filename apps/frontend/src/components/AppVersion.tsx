@@ -2727,7 +2727,27 @@
  *          бампнут. social-ext (TikHub в iframe) НЕ трогали: его UI локализует собственный i18next
  *          бандла, наши _locales там — только метаданные. Файлы: apps/trendtraffic-extension/*,
  *          scripts/translate-ext-runtime.mjs (новый), AppVersion. */
-export const APP_VERSION = '2.3.1';
+/* 2.3.2  — Биллинг: новый прайс €49/мес и страница «оболочка + подписки через расширение».
+ *          Позиционирование: сервис автоматизирует видеоконтент и минимизирует оплату ИИ —
+ *          Google Flow (Veo), NotebookLM, HeyGen работают через Хром-расширение по подпискам
+ *          клиента (в 2–10 раз дешевле API; у NotebookLM публичного API нет вовсе). На странице:
+ *          сравнительная таблица «цена секунды через API vs по подписке» (официальные прайсы
+ *          07.2026), интерактивный калькулятор экономии (ползунки: длительность × количество,
+ *          тип контента аватар/Veo/микс, Fast/Quality; автоподбор самого дешёвого плана
+ *          Google AI Pro/Ultra и HeyGen Creator/Pro/Business, честная плашка «через API дешевле»
+ *          на малых объёмах), полный перечень услуг 6 групп (Тренды/Таргет на ЦА/Аналитика/
+ *          UGC-студия/Расширение/Публикатор+автопилот) — всё по фактическому коду, FAQ про
+ *          триал/отмену/подписки. Бэк: TIER_PRICES premium 12000→4900 (€49), amountUsd 5400;
+ *          ensurePriceCurrent — Stripe Price пересоздаётся с transfer_lookup_key при смене
+ *          суммы (самолечение в /checkout и sync-products; старые подписчики остаются на
+ *          своей цене). Триал 7 дней с обязательной картой и отмена без списаний — без
+ *          изменений (проверено: trial_period_days=7, payment_method_collection='always',
+ *          missing_payment_method:'cancel'; кнопка отмены — карточка «Ваш тариф» на /billing).
+ *          Тексты страницы — t('sec.billing.*49*') с ru-фолбэком, ключи добавлены в ru+en
+ *          локали (остальные 106 языков падают на EN-фолбэк до прогона translate-pivot).
+ *          Файлы: shared/schemas/billing.ts, billing/{service,router}.ts, BillingPage.tsx,
+ *          locales/{ru,en}/common.json, AppVersion. */
+export const APP_VERSION = '2.3.2';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

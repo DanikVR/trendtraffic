@@ -7,7 +7,7 @@
 
 import { Router, type Request, type Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { syncStripeProducts, listSyncedProducts, getStripe } from './service.js';
+import { syncStripeProducts, listSyncedProducts, getStripe, ensurePriceCurrent } from './service.js';
 import pool from '../../db/index.js';
 import { TOPUP_PRICE_PER_MINUTE_EUR_CENTS, TOPUP_MIN_MINUTES, TOPUP_MAX_MINUTES, TIER_PRICES } from '@vibevox/shared';
 import { send500 } from '../../utils/http_error.js';
@@ -204,12 +204,15 @@ billingAdminRouter.post('/checkout', requireTenant, async (req: Request, res: Re
     const stripe = getStripe();
     const lookupKey = `vibevox_${tier}_${currency}`;
     const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1, expand: ['data.product'] });
-    const price = prices.data[0];
+    let price = prices.data[0];
     if (!price) {
       return res.status(404).json({
         error: `Stripe Price '${lookupKey}' не найден. Запустите синхронизацию тарифов в админ-панели.`,
       });
     }
+    // Самолечение: если сумма в Stripe разошлась с TIER_PRICES (смена прайса,
+    // напр. €120 → €49) — пересоздаём Price прямо здесь, не дожидаясь ручного синка.
+    price = await ensurePriceCurrent(stripe, tier, currency, price);
 
     // Ищем или создаём Stripe Customer для tenant — с проверкой существования в Stripe.
     const customerId = await resolveStripeCustomer(stripe, tenantId, userEmail, 'vibevox');

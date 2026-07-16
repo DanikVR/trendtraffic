@@ -1,22 +1,30 @@
 /**
  * BillingPage — тарифы TrendTraffic.
  *
+ * Позиционирование: простой сервис, который автоматизирует создание видеоконтента
+ * и сводит оплату ИИ к минимуму. Вы платите за оболочку (Premium €49/мес, Stripe),
+ * а тяжёлая генерация идёт через Хром-расширение по ВАШИМ подпискам Google Flow,
+ * NotebookLM и HeyGen — по цене подписки, а не API (альтернатива — свои API-ключи).
+ *
  * Два тарифа:
- *   • Premium (€120/мес, Stripe) — полный самостоятельный доступ ко ВСЕМ функциям.
+ *   • Premium (€49/мес, Stripe) — полный самостоятельный доступ ко ВСЕМ функциям.
  *   • Enterprise (по запросу) — то же + индивидуальная настройка и массовое ведение
  *     соцсетей «под ключ» через наш API.
- * Функции у тарифов идентичны; различие — в уровне сервиса.
  *
- * Сохранены: промокоды, Stripe Checkout, управление подпиской (отмена/возобновление).
- * Удалено легаси VibeVox: «минуты перевода», докупка, список языков, видеозвонки/SIP.
+ * На странице: сравнительная таблица «секунда через API vs по подписке» и
+ * интерактивный калькулятор экономии (ползунки: длительность × количество).
+ * Сохранены: промокоды, Stripe Checkout (триал 7 дней с обязательной картой),
+ * управление подпиской (отмена/возобновление) в карточке «Ваш тариф».
+ * Тексты — через t('sec.billing.*') с русским фолбэком (EN — базовый язык локалей).
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Check, ArrowRight, Crown, Sparkles, TrendingUp, BarChart3, Users, Image as ImageIcon,
-  Workflow, Send, Video, KeyRound, MessageSquare, Tags, Loader2, X, Ban, RotateCcw,
-  Calendar, Settings, Headphones, Gauge, Layers, Gift, Plug,
+  Check, ArrowRight, Crown, Sparkles, TrendingUp, BarChart3, Image as ImageIcon,
+  Workflow, Send, KeyRound, MessageSquare, Tags, Loader2, X, Ban, RotateCcw,
+  Calendar, Settings, Headphones, Gauge, Layers, Plug, Target, Chrome, Bot,
+  Wallet, PiggyBank, Zap, Clapperboard, Puzzle,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -25,15 +33,420 @@ import { useAppStore } from '../store/useAppStore';
 import { showToast } from '../components/Toast';
 
 // ─────────────────────────────────────────────
-// Данные тарифов (списки фич собираются внутри компонента — тексты через t())
+// Данные тарифов (списки фич собираются внутри компонентов — тексты через t())
 // ─────────────────────────────────────────────
 interface PlanFeature { icon: React.ReactNode; text: string; strong?: boolean }
 
-// Список провайдеров для блока «как работает генерация через подключённые API».
+// Список провайдеров для блока «свои API-ключи» (альтернативный путь генерации).
 const GEN_PROVIDERS = 'Google Veo / Omni · FAL / Kling · Runway · OpenAI · ElevenLabs · HeyGen · Anthropic Claude';
 
 const WHATSAPP_NUMBER = '380637610482';
 
+// ─────────────────────────────────────────────
+// Экономика: API vs подписки через расширение
+// (официальные прайсы провайдеров, июль 2026)
+// ─────────────────────────────────────────────
+const FX_USD_PER_EUR = 1.08;                 // ≈ курс $ за €1 — для перевода долларовых прайсов
+const usdToEur = (v: number) => v / FX_USD_PER_EUR;
+
+// $/сек генерации через API (Gemini API: Veo 3.1; HeyGen API: pay-as-you-go)
+const API_EUR_PER_SEC = {
+  heygenIV: usdToEur(0.05),    // Avatar IV (фото-аватар) — $3/мин
+  veoFast: usdToEur(0.10),     // Veo 3.1 Fast, 720p
+  veoQuality: usdToEur(0.40),  // Veo 3.1 Quality
+};
+
+interface SubPlan { name: string; eur: number; capSec: number }
+
+// Ёмкость подписок в СЕКУНДАХ готового видео в месяц (при полном использовании кредитов).
+// HeyGen: Avatar IV = 20 кредитов/мин → Creator 600 кр = 30 мин.
+const HEYGEN_PLANS: SubPlan[] = [
+  { name: 'HeyGen Creator', eur: usdToEur(29), capSec: 1800 },
+  { name: 'HeyGen Pro', eur: usdToEur(49), capSec: 3000 },
+  { name: 'HeyGen Business', eur: usdToEur(149), capSec: 4500 },
+];
+// Google Flow: Veo Fast 8с = 20 кр (10 кр на Ultra); Quality 8с = 100 кр.
+const VEO_PLANS_FAST: SubPlan[] = [
+  { name: 'Google AI Pro', eur: 21.99, capSec: 400 },
+  { name: 'Google AI Ultra 5×', eur: 99.99, capSec: 8000 },
+  { name: 'Google AI Ultra 20×', eur: 219.99, capSec: 20000 },
+];
+const VEO_PLANS_QUALITY: SubPlan[] = [
+  { name: 'Google AI Pro', eur: 21.99, capSec: 80 },
+  { name: 'Google AI Ultra 5×', eur: 99.99, capSec: 800 },
+  { name: 'Google AI Ultra 20×', eur: 219.99, capSec: 2000 },
+];
+
+/** Самая дешёвая подписка (или ×N подписок), покрывающая нужные секунды. */
+function cheapestPlan(plans: SubPlan[], seconds: number): { cost: number; label: string | null } {
+  if (seconds <= 0) return { cost: 0, label: null };
+  let best: { cost: number; label: string } | null = null;
+  for (const p of plans) {
+    const n = Math.ceil(seconds / p.capSec);
+    const cost = n * p.eur;
+    if (!best || cost < best.cost) best = { cost, label: n > 1 ? `${p.name} ×${n}` : p.name };
+  }
+  return best!;
+}
+
+const fmtEur = (v: number) =>
+  v >= 100 ? `€${Math.round(v).toLocaleString('ru-RU')}` : `€${v.toFixed(2)}`;
+
+// ─────────────────────────────────────────────
+// Калькулятор экономии (ползунки)
+// ─────────────────────────────────────────────
+type VideoKind = 'avatar' | 'veo' | 'mix';
+type VeoQuality = 'fast' | 'quality';
+
+function SavingsCalculator() {
+  const { t } = useTranslation('common');
+  const [durationSec, setDurationSec] = useState(60);
+  const [countPerMonth, setCountPerMonth] = useState(30);
+  const [kind, setKind] = useState<VideoKind>('avatar');
+  const [veoQuality, setVeoQuality] = useState<VeoQuality>('fast');
+
+  const calc = useMemo(() => {
+    const totalSec = durationSec * countPerMonth;
+    const avatarSec = kind === 'avatar' ? totalSec : kind === 'mix' ? totalSec / 2 : 0;
+    const veoSec = kind === 'veo' ? totalSec : kind === 'mix' ? totalSec / 2 : 0;
+
+    const veoApiRate = veoQuality === 'quality' ? API_EUR_PER_SEC.veoQuality : API_EUR_PER_SEC.veoFast;
+    const apiCost = avatarSec * API_EUR_PER_SEC.heygenIV + veoSec * veoApiRate;
+
+    const heygenSub = cheapestPlan(HEYGEN_PLANS, avatarSec);
+    const veoSub = cheapestPlan(veoQuality === 'quality' ? VEO_PLANS_QUALITY : VEO_PLANS_FAST, veoSec);
+    const subCost = heygenSub.cost + veoSub.cost;
+    const subLabels = [heygenSub.label, veoSub.label].filter(Boolean) as string[];
+
+    const savings = apiCost - subCost;                  // €49 за оболочку одинакова в обоих путях
+    const apiTotal = 49 + apiCost;
+    const subTotal = 49 + subCost;
+    const pct = apiTotal > 0 ? Math.round((savings / apiTotal) * 100) : 0;
+    return { totalSec, apiCost, subCost, subLabels, savings, apiTotal, subTotal, pct };
+  }, [durationSec, countPerMonth, kind, veoQuality]);
+
+  const maxBar = Math.max(calc.apiTotal, calc.subTotal, 1);
+  const showVeoQuality = kind !== 'avatar';
+
+  const segBtn = (active: boolean): React.CSSProperties => ({
+    background: active ? 'rgba(99,102,241,0.16)' : 'var(--bg-tertiary)',
+    border: `1px solid ${active ? 'rgba(99,102,241,0.55)' : 'var(--border-medium)'}`,
+    color: active ? 'var(--brand)' : 'var(--text-muted)',
+  });
+
+  return (
+    <AuroraCard className="p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <PiggyBank size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
+        <h3 className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+          {t('sec.billing.calc49Title', 'Калькулятор экономии: сколько вы сохраняете на подписках вместо API')}
+        </h3>
+      </div>
+      <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+        {t('sec.billing.calc49Sub', 'Задайте длительность ролика и сколько роликов в месяц вы делаете — и двигайте ползунки.')}
+      </p>
+
+      {/* Тип контента */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {([
+          ['avatar', t('sec.billing.calc49KindAvatar', 'Аватар-ролики (HeyGen)')],
+          ['veo', t('sec.billing.calc49KindVeo', 'Генерация видео (Veo)')],
+          ['mix', t('sec.billing.calc49KindMix', 'Микс 50/50')],
+        ] as [VideoKind, string][]).map(([k, label]) => (
+          <button key={k} type="button" onClick={() => setKind(k)}
+            className="text-[11px] font-600 px-2.5 py-1.5 rounded-xl transition-all" style={segBtn(kind === k)}>
+            {label}
+          </button>
+        ))}
+        {showVeoQuality && (
+          <div className="flex gap-1.5 ml-auto">
+            {([['fast', 'Veo Fast'], ['quality', 'Veo Quality']] as [VeoQuality, string][]).map(([q, label]) => (
+              <button key={q} type="button" onClick={() => setVeoQuality(q)}
+                className="text-[11px] font-600 px-2.5 py-1.5 rounded-xl transition-all" style={segBtn(veoQuality === q)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Ползунки */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-xs font-600" style={{ color: 'var(--text-secondary)' }}>{t('sec.billing.calc49Duration', 'Длительность ролика')}</span>
+            <span className="text-sm font-700 tabular-nums" style={{ color: 'var(--text-primary)' }}>{t('sec.billing.calc49Sec', '{{n}} сек', { n: durationSec })}</span>
+          </div>
+          <input type="range" min={15} max={180} step={5} value={durationSec}
+            onChange={(e) => setDurationSec(Number(e.target.value))}
+            className="w-full" style={{ accentColor: 'var(--brand)' }} />
+        </div>
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-xs font-600" style={{ color: 'var(--text-secondary)' }}>{t('sec.billing.calc49Count', 'Роликов в месяц')}</span>
+            <span className="text-sm font-700 tabular-nums" style={{ color: 'var(--text-primary)' }}>{countPerMonth}</span>
+          </div>
+          <input type="range" min={1} max={100} step={1} value={countPerMonth}
+            onChange={(e) => setCountPerMonth(Number(e.target.value))}
+            className="w-full" style={{ accentColor: 'var(--brand)' }} />
+        </div>
+      </div>
+
+      {/* Итоги: два бара */}
+      <div className="space-y-2.5 mb-4">
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-xs font-600" style={{ color: 'var(--text-secondary)' }}>
+              {t('sec.billing.calc49ApiLabel', 'Через API')}{' '}
+              <span style={{ color: 'var(--text-muted)' }}>{t('sec.billing.calc49ApiNote', '(€49 сервис + оплата API)')}</span>
+            </span>
+            <span className="text-sm font-700 tabular-nums" style={{ color: '#f87171' }}>{t('sec.billing.calc49PerMonth', '{{eur}}/мес', { eur: fmtEur(calc.apiTotal) })}</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="h-full rounded-full" style={{ width: `${(calc.apiTotal / maxBar) * 100}%`, background: 'linear-gradient(90deg,#ef4444,#f87171)' }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-xs font-600" style={{ color: 'var(--text-secondary)' }}>
+              {t('sec.billing.calc49SubLabel', 'По подпискам через расширение')}{' '}
+              {calc.subLabels.length > 0 && (
+                <span style={{ color: 'var(--text-muted)' }}>
+                  {t('sec.billing.calc49SubNote', '(€49 сервис + {{plans}})', { plans: calc.subLabels.join(' + ') })}
+                </span>
+              )}
+            </span>
+            <span className="text-sm font-700 tabular-nums" style={{ color: '#34d399' }}>{t('sec.billing.calc49PerMonth', '{{eur}}/мес', { eur: fmtEur(calc.subTotal) })}</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="h-full rounded-full" style={{ width: `${(calc.subTotal / maxBar) * 100}%`, background: 'linear-gradient(90deg,#10b981,#34d399)' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Экономия */}
+      {calc.savings > 0.5 ? (
+        <div className="rounded-2xl p-4 flex items-center gap-3 flex-wrap"
+             style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.30)' }}>
+          <PiggyBank size={22} strokeWidth={1.5} style={{ color: '#10b981', flexShrink: 0 }} />
+          <div>
+            <p className="text-lg font-800" style={{ color: '#10b981', fontFamily: 'Geist Sans, sans-serif' }}>
+              {t('sec.billing.calc49Savings', 'Экономия ≈ {{eur}} в месяц', { eur: fmtEur(calc.savings) })}{' '}
+              <span className="text-sm font-700">{t('sec.billing.calc49SavingsPct', '(−{{pct}}% расходов)', { pct: calc.pct })}</span>
+            </p>
+            <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+              {t('sec.billing.calc49Volume', '{{min}} мин контента/мес: {{api}} по ценам API против {{sub}} по подпискам.',
+                { min: Math.round(calc.totalSec / 60), api: fmtEur(calc.apiCost), sub: fmtEur(calc.subCost) })}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl p-4 flex items-start gap-3"
+             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+          <Zap size={18} strokeWidth={1.5} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 2 }} />
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {t('sec.billing.calc49ApiCheaper', 'При таком объёме дешевле работать напрямую через API — TrendTraffic поддерживает и этот путь (свои ключи в настройках). Подписки начинают выигрывать с ростом объёма — подвиньте ползунки.')}
+          </p>
+        </div>
+      )}
+
+      <p className="text-[10px] leading-relaxed mt-3" style={{ color: 'var(--text-muted)' }}>
+        {t('sec.billing.calc49Footnote', 'Официальные прайсы провайдеров, июль 2026; $ переведены в € по курсу ≈1.08 $/€. Цена секунды по подписке — при полном использовании месячных кредитов (кредиты Flow не переносятся на следующий месяц). Калькулятор — оценка, не оферта: тарифы провайдеров могут меняться.')}
+      </p>
+    </AuroraCard>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Сравнительная таблица «секунда через API vs по подписке»
+// ─────────────────────────────────────────────
+function PriceComparisonTable() {
+  const { t } = useTranslation('common');
+  const rows: { engine: string; api: string; sub: string; gain: string }[] = [
+    {
+      engine: 'Google Flow · Veo 3.1 Fast',
+      api: t('sec.billing.cmp49R1Api', '$0.10/сек'),
+      sub: t('sec.billing.cmp49R1Sub', '$0.01–0.05/сек (Ultra…Pro)'),
+      gain: t('sec.billing.cmp49R1Gain', 'до 10×'),
+    },
+    {
+      engine: 'Google Flow · Veo 3.1 Quality',
+      api: t('sec.billing.cmp49R2Api', '$0.40/сек'),
+      sub: t('sec.billing.cmp49R2Sub', '$0.10–0.25/сек'),
+      gain: t('sec.billing.cmp49R2Gain', 'до 4×'),
+    },
+    {
+      engine: t('sec.billing.cmp49R3Engine', 'HeyGen · фото-аватар (Avatar IV)'),
+      api: t('sec.billing.cmp49R3Api', '$0.05/сек · $3/мин'),
+      sub: t('sec.billing.cmp49R3Sub', '≈$0.013–0.016/сек · ≈$1/мин (Creator)'),
+      gain: t('sec.billing.cmp49R3Gain', '≈3×'),
+    },
+    {
+      engine: 'HeyGen · Avatar III',
+      api: t('sec.billing.cmp49R4Api', '$0.017/сек · $1/мин'),
+      sub: t('sec.billing.cmp49R4Sub', '≈$0.0024/сек (Creator)'),
+      gain: t('sec.billing.cmp49R4Gain', '≈7×'),
+    },
+    {
+      engine: t('sec.billing.cmp49R5Engine', 'NotebookLM · подкасты и видеообзоры'),
+      api: t('sec.billing.cmp49R5Api', 'публичного API нет'),
+      sub: t('sec.billing.cmp49R5Sub', 'входит в Google AI Pro: до 20 аудио- и 20 видеообзоров в день'),
+      gain: t('sec.billing.cmp49R5Gain', 'только по подписке'),
+    },
+  ];
+  return (
+    <AuroraCard className="p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <Wallet size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
+        <h3 className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
+          {t('sec.billing.cmp49Title', 'Сколько стоит секунда видео: API против подписки через расширение')}
+        </h3>
+      </div>
+      <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+        {t('sec.billing.cmp49Sub', 'Одни и те же ИИ-движки. Разница только в том, КАК вы за них платите.')}
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs" style={{ borderCollapse: 'collapse', minWidth: 560 }}>
+          <thead>
+            <tr style={{ color: 'var(--text-muted)' }}>
+              <th className="text-left font-600 py-2 pr-3" style={{ borderBottom: '1px solid var(--border-medium)' }}>{t('sec.billing.cmp49ColEngine', 'ИИ-движок')}</th>
+              <th className="text-left font-600 py-2 pr-3" style={{ borderBottom: '1px solid var(--border-medium)' }}>{t('sec.billing.cmp49ColApi', 'Через API')}</th>
+              <th className="text-left font-600 py-2 pr-3" style={{ borderBottom: '1px solid var(--border-medium)' }}>{t('sec.billing.cmp49ColSub', 'По подписке через расширение')}</th>
+              <th className="text-left font-600 py-2" style={{ borderBottom: '1px solid var(--border-medium)' }}>{t('sec.billing.cmp49ColGain', 'Выгода')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.engine}>
+                <td className="py-2.5 pr-3 font-600" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)' }}>{r.engine}</td>
+                <td className="py-2.5 pr-3" style={{ color: '#f87171', borderBottom: '1px solid var(--border-subtle)' }}>{r.api}</td>
+                <td className="py-2.5 pr-3" style={{ color: '#34d399', borderBottom: '1px solid var(--border-subtle)' }}>{r.sub}</td>
+                <td className="py-2.5 font-700" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)' }}>{r.gain}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] leading-relaxed mt-3" style={{ color: 'var(--text-muted)' }}>
+        {t('sec.billing.cmp49Footnote', 'Официальные прайсы, июль 2026: Gemini API (Veo 3.1, 720p, с аудио), прайс HeyGen API pay-as-you-go, подписки Google AI Pro/Ultra и HeyGen Creator. Секунда по подписке — при полном использовании месячных кредитов плана.')}
+      </p>
+    </AuroraCard>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Полный перечень возможностей (6 групп)
+// ─────────────────────────────────────────────
+function FeatureGroupsSection() {
+  const { t } = useTranslation('common');
+  const groups: { icon: React.ReactNode; title: string; items: string[] }[] = [
+    {
+      icon: <TrendingUp size={16} strokeWidth={1.5} />,
+      title: t('sec.billing.fg49G1T', 'Тренды — поиск вирусного контента'),
+      items: [
+        t('sec.billing.fg49G1I1', 'Поиск по TikTok, Instagram, YouTube, X — по ключевику и лента «Горячее»'),
+        t('sec.billing.fg49G1I2', 'Регион выдачи: ~35 стран (гео-таргет TikTok и YouTube)'),
+        t('sec.billing.fg49G1I3', 'Фильтры: формат (видео/Shorts), период, длительность, сортировка'),
+        t('sec.billing.fg49G1I4', '«По ссылке»: любой ролик TikTok/Instagram/YouTube — разбор и скачивание'),
+        t('sec.billing.fg49G1I5', '«Каналы»: ссылка на канал → все его видео + вотчлист с историей метрик и приростами'),
+        t('sec.billing.fg49G1I6', 'Скачивание находок в Галерею без водяного знака'),
+      ],
+    },
+    {
+      icon: <Target size={16} strokeWidth={1.5} />,
+      title: t('sec.billing.fg49G2T', 'Таргет на целевую аудиторию'),
+      items: [
+        t('sec.billing.fg49G2I1', 'ИИ раскладывает ваш продукт и ЦА на дерево узких микро-ниш'),
+        t('sec.billing.fg49G2I2', 'Ключевики заземляются РЕАЛЬНЫМИ подсказками поиска TikTok/YouTube'),
+        t('sec.billing.fg49G2I3', 'Один клик: построить ниши → просканировать → ранжировать по спросу (#1/#2/#3)'),
+        t('sec.billing.fg49G2I4', 'Кнопка «Подсказать»: ИИ сам заполняет ЦА и ключевики по описанию продукта'),
+        t('sec.billing.fg49G2I5', 'Ключевики сразу на 29 языках (мультиселект)'),
+        t('sec.billing.fg49G2I6', 'Кнопка «В TrendFlow» — из ниши сразу в сценарий ролика'),
+      ],
+    },
+    {
+      icon: <BarChart3 size={16} strokeWidth={1.5} />,
+      title: t('sec.billing.fg49G3T', 'Аналитика — функции разбора'),
+      items: [
+        t('sec.billing.fg49G3I1', 'Разбор по ссылке: TikTok, Instagram, X, Douyin, Bilibili, Reddit'),
+        t('sec.billing.fg49G3I2', 'Метрики: просмотры, лайки, комментарии, репосты, подписчики, ER (вовлечённость)'),
+        t('sec.billing.fg49G3I3', 'ИИ-тональность комментариев: позитив/негатив, темы, топ-комментарии'),
+        t('sec.billing.fg49G3I4', 'TrendDNA: тип хука, почему завирусилось, вирус-факторы, готовый copy-ready сценарий, «как адаптировать»'),
+        t('sec.billing.fg49G3I5', 'Покадровый ИИ-разбор видео: сцены с таймкодами, хук первых 3 секунд, надписи в кадре, склейки'),
+        t('sec.billing.fg49G3I6', 'Дословный транскрипт на языке оригинала → субтитры .srt'),
+        t('sec.billing.fg49G3I7', 'Пакет анализа в Галерею: видео + разбор .md + субтитры .srt'),
+        t('sec.billing.fg49G3I8', 'Массовый анализ пачки ссылок + экспорт HTML-отчёта, перевод разбора'),
+      ],
+    },
+    {
+      icon: <Clapperboard size={16} strokeWidth={1.5} />,
+      title: t('sec.billing.fg49G4T', 'UGC-студия — режимы и форматы'),
+      items: [
+        t('sec.billing.fg49G4I1', '4 режима ролика: «Один ведущий» · «Динамичный монтаж» · «Диалог двоих» · «Озвучка без аватара»'),
+        t('sec.billing.fg49G4I2', 'Форматы 9:16, 16:9, 1:1, 4:5 — несколько сразу за один рендер'),
+        t('sec.billing.fg49G4I3', 'Аватары: ваше фото (HeyGen Avatar IV), готовые луки/Personal Model, ИИ-генерация аватаров'),
+        t('sec.billing.fg49G4I4', 'Все голоса вашего ElevenLabs (включая клоны) + серия ролика сразу на 29 языках'),
+        t('sec.billing.fg49G4I5', 'Субтитры: по словам / караоке / строкой; стиль настраивается «пожеланиями» простым текстом'),
+        t('sec.billing.fg49G4I6', 'Врезки медиа к репликам, «аватар поверх», ИИ-вырезка фона, бренд-киты, музыка и заставки'),
+        t('sec.billing.fg49G4I7', '«Режиссура по анализу»: ДНК тренда управляет монтажом — хук, пики, ритм оригинала'),
+        t('sec.billing.fg49G4I8', 'Ролики и шаблоны — карточками в Галерее, продолжение сценария в один клик'),
+      ],
+    },
+    {
+      icon: <Chrome size={16} strokeWidth={1.5} />,
+      title: t('sec.billing.fg49G5T', 'Хром-расширение — ИИ по подписке'),
+      items: [
+        t('sec.billing.fg49G5I1', 'Одно расширение на три сервиса: Google Flow · NotebookLM · HeyGen — работает в вашем браузере с вашими аккаунтами'),
+        t('sec.billing.fg49G5I2', 'Google Flow: очередь промптов → готовые Veo-клипы сами падают в Галерею'),
+        t('sec.billing.fg49G5I3', 'Обмен файлами «⬆ В галерею / ⬇ Из галереи» прямо на странице Flow'),
+        t('sec.billing.fg49G5I4', 'NotebookLM: подкасты (аудиопересказы), видеообзоры, отчёты, тесты, таблицы, инфографика, карточки, ментальные карты, презентации'),
+        t('sec.billing.fg49G5I5', 'Чип «9:16» — вертикальные видеообзоры для Shorts/TikTok'),
+        t('sec.billing.fg49G5I6', 'HeyGen: рендер аватаров по вашей подписке вместо API-кредитов (≈в 3 раза дешевле)'),
+        t('sec.billing.fg49G5I7', 'Индикаторы генерации и загрузка готовых работ в Галерею по клику'),
+      ],
+    },
+    {
+      icon: <Send size={16} strokeWidth={1.5} />,
+      title: t('sec.billing.fg49G6T', 'Публикатор и автопилот'),
+      items: [
+        t('sec.billing.fg49G6I1', '9 соцсетей через ваш Blotato: TikTok, Instagram, YouTube, X, Facebook, LinkedIn, Threads, Bluesky, Pinterest'),
+        t('sec.billing.fg49G6I2', 'Контент-план: слоты «Моё расписание» + календарь публикаций на 35 дней вперёд, перенос постов drag-ом'),
+        t('sec.billing.fg49G6I3', 'Авто-цепочки по форматам: 9:16 → TikTok/Reels, 16:9 → YouTube — без конкуренции за файлы'),
+        t('sec.billing.fg49G6I4', 'ИИ-подписи: A/B-варианты, хэштеги, заголовок YouTube — с учётом ДНК ролика'),
+        t('sec.billing.fg49G6I5', 'Автопилот трендов: вотч ключевика → автоанализ нового видео → автосборка UGC по шаблону → публикация по слотам'),
+        t('sec.billing.fg49G6I6', 'Статусы постов, история, авто-ретраи, аналитика опубликованного'),
+      ],
+    },
+  ];
+  return (
+    <div className="space-y-3">
+      <h2 className="section-title text-lg">{t('sec.billing.fg49Title', 'Что входит в подписку — полный перечень')}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {groups.map((g) => (
+          <AuroraCard key={g.title} className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+                   style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)' }}>
+                {g.icon}
+              </div>
+              <h3 className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{g.title}</h3>
+            </div>
+            <ul className="space-y-1.5">
+              {g.items.map((it, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check size={12} strokeWidth={2.5} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} />
+                  <span className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{it}</span>
+                </li>
+              ))}
+            </ul>
+          </AuroraCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════
 export function BillingPage() {
   const { t } = useTranslation('common');
   const { subscriptionTier, subscriptionTierName, token, refreshBilling } = useAppStore();
@@ -42,15 +455,16 @@ export function BillingPage() {
   const checkoutLoading = checkoutMode !== null;
 
   const PREMIUM_FEATURES: PlanFeature[] = [
-    { icon: <TrendingUp size={14} />, text: t('sec.billing.pfTrends', 'Безлимитный поиск вирусных трендов: TikTok, Instagram, YouTube, X, Reddit, Douyin, Bilibili') },
-    { icon: <BarChart3 size={14} />, text: t('sec.billing.pfAnalytics', 'Безлимитная аналитика по ссылке: просмотры, лайки, вовлечённость, тональность (ИИ), облако слов, топ-комментарии') },
-    { icon: <Users size={14} />, text: t('sec.billing.pfChannels', '«Каналы» — анализ всех роликов канала + вотчлист с историей метрик и приростами') },
-    { icon: <ImageIcon size={14} />, text: t('sec.billing.pfGallery', 'Галерея + скачивание видео без водяного знака (TikTok, X, Instagram)') },
-    { icon: <Workflow size={14} />, text: t('sec.billing.pfTrendflow', 'TrendFlow — сборка роликов по сценам: монтаж, формат 9:16/1:1/16:9, субтитры, озвучка, цвет, экспорт') },
-    { icon: <Video size={14} />, text: t('sec.billing.pfGenApi', 'Генерация видео через ВАШИ подключённые API: видео, аватары, озвучка, рестайл (Anthropic Claude, FAL.ai, OpenAI, ElevenLabs, HeyGen и др.)') },
-    { icon: <Gift size={14} />, text: t('sec.billing.pfFreeApi', 'Подключение бесплатных API для генерации и видео: Pexels, Pixabay, Unsplash, HuggingFace') },
-    { icon: <Send size={14} />, text: t('sec.billing.pfPublisher', 'Публикатор — публикация роликов из Галереи в TikTok, Instagram, YouTube, X, Facebook, LinkedIn, Threads, Bluesky, Pinterest (через ваш Blotato)') },
-    { icon: <Tags size={14} />, text: t('sec.billing.pfPromo', 'Промокоды и реферальная система') },
+    { icon: <Chrome size={14} />, text: t('sec.billing.pf49Ext', 'Хром-расширение: Google Flow (Veo), NotebookLM, HeyGen работают по ВАШИМ подпискам — генерация в разы дешевле API'), strong: true },
+    { icon: <TrendingUp size={14} />, text: t('sec.billing.pf49Trends', 'Тренды: поиск по TikTok, Instagram, YouTube, X + лента «Горячее», регион выдачи (~35 стран)') },
+    { icon: <Target size={14} />, text: t('sec.billing.pf49Audience', '«Таргет на ЦА»: ИИ строит микро-ниши, проверяет их реальными запросами и ранжирует по спросу') },
+    { icon: <BarChart3 size={14} />, text: t('sec.billing.pf49Analytics', 'Аналитика: метрики и ER, тональность комментариев, TrendDNA-разбор, покадровый ИИ-анализ, транскрипт + .srt') },
+    { icon: <Clapperboard size={14} />, text: t('sec.billing.pf49Ugc', 'UGC-студия: 4 режима ролика, форматы 9:16 · 16:9 · 1:1 · 4:5, аватары из вашего фото, серия сразу на 29 языках') },
+    { icon: <Send size={14} />, text: t('sec.billing.pf49Publisher', 'Публикатор: 9 соцсетей через ваш Blotato, слоты и календарь на 35 дней, ИИ-подписи с хэштегами') },
+    { icon: <Bot size={14} />, text: t('sec.billing.pf49Autopilot', 'Автопилот: тренд → автоанализ → автосборка UGC → публикация по расписанию, без вашего участия') },
+    { icon: <ImageIcon size={14} />, text: t('sec.billing.pf49Gallery', 'Галерея-хаб + скачивание видео без водяного знака (TikTok, Instagram, X)') },
+    { icon: <Plug size={14} />, text: t('sec.billing.pf49Byo', 'Альтернатива подпискам — свои API-ключи: Veo, FAL/Kling, Runway, OpenAI, ElevenLabs, HeyGen, Claude') },
+    { icon: <Tags size={14} />, text: t('sec.billing.pf49Promo', 'Промокоды и реферальная система') },
   ];
 
   const ENTERPRISE_FEATURES: PlanFeature[] = [
@@ -197,7 +611,7 @@ export function BillingPage() {
     return appliedPromo.appliesToTiers.includes('premium');
   };
 
-  const PREMIUM_EUR = 120;
+  const PREMIUM_EUR = 49;
   const discounted = (() => {
     if (!appliedPromo || !promoAppliesToPremium()) return { final: PREMIUM_EUR, applied: false };
     if (appliedPromo.percentOff) return { final: PREMIUM_EUR * (1 - appliedPromo.percentOff / 100), applied: true };
@@ -207,7 +621,7 @@ export function BillingPage() {
   const fmtPrice = (eur: number) => Number.isInteger(eur) ? `€${eur}` : `€${eur.toFixed(2)}`;
 
   // ── Stripe Checkout (Premium) ──
-  // trial=true → 7 дней бесплатно с обязательным подтверждением карты; списание €120 после.
+  // trial=true → 7 дней бесплатно с обязательным подтверждением карты; списание €49 после.
   const handleCheckout = async (trial = false) => {
     setCheckoutMode(trial ? 'trial' : 'paid');
     try {
@@ -239,10 +653,12 @@ export function BillingPage() {
       {/* Заголовок */}
       <div>
         <h1 className="section-title text-2xl mb-1">{t('sec.billing.pageTitle', 'Тарифы')}</h1>
-        <p className="section-subtitle">{t('sec.billing.pageSubtitle', 'Полный доступ ко всем функциям TrendTraffic.')}</p>
+        <p className="section-subtitle max-w-3xl">
+          {t('sec.billing.hero49Sub', 'TrendTraffic — простой сервис, который автоматизирует создание видеоконтента и сводит оплату искусственного интеллекта к минимуму. Вы платите за оболочку — €49/мес, а тяжёлый ИИ (Google Flow, NotebookLM, HeyGen) работает через Хром-расширение по вашим подпискам: в разы дешевле, чем те же движки через API.')}
+        </p>
       </div>
 
-      {/* Текущий тариф + управление подпиской */}
+      {/* Текущий тариф + управление подпиской (здесь же кнопка отмены) */}
       <AuroraCard className="p-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
@@ -355,7 +771,7 @@ export function BillingPage() {
               <h3 className="text-lg font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Premium</h3>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-              {t('sec.billing.premiumDesc', 'Полный самостоятельный доступ ко всем функциям сервиса.')}
+              {t('sec.billing.premiumDesc49', 'Оболочка-автопилот видеоконтента: полный доступ ко всем функциям. ИИ-генерация — по вашим подпискам через расширение или по вашим API-ключам.')}
             </p>
           </div>
           <div className="mb-5">
@@ -442,42 +858,81 @@ export function BillingPage() {
         </div>
       </div>
 
-      {/* Как работает генерация видео через подключённые API */}
+      {/* Как устроена экономия: оболочка + подписки через расширение (или свои API) */}
       <AuroraCard className="p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <Video size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
-          <h3 className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.billing.genApiTitle', 'Генерация видео через ваши API-ключи')}</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <Puzzle size={16} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
+          <h3 className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.billing.eco49Title', 'Как устроена экономия')}</h3>
         </div>
-        <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>
-          {t('sec.billing.genApiText', 'В разделе «Настройки Enterprise» подключите свои ключи нужных сервисов — и TrendFlow будет генерировать ими видео, озвучку, аватаров и рестайл прямо в сборке роликов. Вы платите сервисам напрямую по их тарифам, а TrendTraffic оркестрирует пайплайн.')}
-        </p>
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {GEN_PROVIDERS.split(' · ').map((p) => (
-            <span key={p} className="text-[11px] px-2 py-0.5 rounded-lg font-600"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>{p}</span>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-2xl p-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Workflow size={14} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
+              <p className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.billing.eco49S1T', '1 · Оболочка — €49/мес')}</p>
+            </div>
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {t('sec.billing.eco49S1B', 'Весь конвейер: тренды → таргет на ЦА → аналитика → сценарий → сборка ролика → публикация и контент-план. Плюс Галерея, автопилот и хранение результатов.')}
+            </p>
+          </div>
+          <div className="rounded-2xl p-4" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.30)' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Chrome size={14} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
+              <p className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.billing.eco49S2T', '2 · Расширение + ваши подписки')}</p>
+            </div>
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {t('sec.billing.eco49S2B', 'Хром-расширение подключает ваши подписки Google Flow (Veo), NotebookLM и HeyGen — генерация идёт по цене подписки, а не API: в 2–10 раз дешевле (таблица ниже). Достаточно Google AI Pro (€21.99) + HeyGen Creator ($29).')}
+            </p>
+          </div>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Plug size={14} strokeWidth={1.5} style={{ color: 'var(--brand)' }} />
+              <p className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.billing.eco49S3T', '3 · Или свои API-ключи')}</p>
+            </div>
+            <p className="text-[11px] leading-relaxed mb-2" style={{ color: 'var(--text-secondary)' }}>
+              {t('sec.billing.eco49S3B', 'Классический путь для объёмов и автоматизации без браузера: подключите ключи — сервис генерирует ими напрямую. Оба пути можно совмещать.')}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {GEN_PROVIDERS.split(' · ').map((p) => (
+                <span key={p} className="text-[10px] px-1.5 py-0.5 rounded-md font-600"
+                      style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>{p}</span>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
           {t('sec.billing.genApiBaseHint', 'Базовая обработка (монтаж, формат, субтитры, озвучка Piper, экспорт) работает без внешних ключей.')}
         </p>
       </AuroraCard>
+
+      {/* Сравнительная таблица цен за секунду */}
+      <PriceComparisonTable />
+
+      {/* Калькулятор экономии */}
+      <SavingsCalculator />
+
+      {/* Полный перечень возможностей */}
+      <FeatureGroupsSection />
 
       {/* FAQ */}
       <div className="space-y-3">
         <h2 className="section-title text-lg">{t('sec.billing.faqTitle', 'Частые вопросы')}</h2>
         {[
-          { q: t('sec.billing.faq1Q', 'Как работает пробный период 7 дней?'), a: t('sec.billing.faq1A', 'При оформлении нужно подтвердить банковскую карту — это обязательно. В течение 7 дней доступ полностью открыт и деньги не списываются. По окончании пробного периода автоматически спишется €120/мес. Если отменить подписку до конца 7 дней — списания не будет.') },
-          { q: t('sec.billing.faq2Q', 'Чем Premium отличается от Enterprise?'), a: t('sec.billing.faq2A', 'Набор функций одинаковый — оба тарифа открывают полный доступ ко всему сервису. Enterprise дополнительно включает индивидуальную настройку под ваш бренд и массовое ведение соцсетей «под ключ» через наш API (мы ведём аккаунты за вас).') },
-          { q: t('sec.billing.faq3Q', 'Что значит «генерация через подключённые API»?'), a: t('sec.billing.faq3A', 'Вы подключаете свои ключи внешних сервисов (Google Veo, FAL/Kling, Runway, OpenAI, ElevenLabs, HeyGen, Claude). TrendFlow использует их для генерации видео/озвучки/аватаров. Оплата этим сервисам идёт напрямую по их ценам.') },
-          { q: t('sec.billing.faq4Q', 'Анализ трендов правда безлимитный?'), a: t('sec.billing.faq4A', 'Да — поиск и аналитика трендов на Premium и Enterprise не ограничены по количеству.') },
-          { q: t('sec.billing.faq5Q', 'Можно ли отменить подписку?'), a: t('sec.billing.faq5A', 'Да, в любой момент в карточке тарифа выше — автопродление отключится, а доступ сохранится до конца оплаченного периода.') },
-          { q: t('sec.billing.faq6Q', 'Действуют ли промокоды?'), a: t('sec.billing.faq6A', 'Да. Введите промокод выше — скидка применится при оформлении Premium через Stripe.') },
+          { q: t('sec.billing.faq49Q1', 'Как работает пробный период 7 дней?'), a: t('sec.billing.faq49A1', 'При оформлении нужно подтвердить банковскую карту через Stripe — это обязательно, но в течение 7 дней деньги не списываются, а доступ полностью открыт. По окончании пробного периода автоматически спишется €49/мес. Если отменить подписку до конца 7 дней — списаний не будет вовсе.') },
+          { q: t('sec.billing.faq49Q2', 'Что именно я оплачиваю за €49 в месяц?'), a: t('sec.billing.faq49A2', 'Оболочку-автопилот: поиск и аналитику трендов, таргет на ЦА, UGC-студию, Хром-расширение, Публикатор с контент-планом, автопилот и Галерею. Сама ИИ-генерация в стоимость не входит — она работает через ваши подписки (Google Flow, NotebookLM, HeyGen) или ваши API-ключи, и вы платите провайдерам напрямую по их ценам.') },
+          { q: t('sec.billing.faq49Q3', 'Почему через подписки дешевле, чем через API?'), a: t('sec.billing.faq49A3', 'Провайдеры продают подписочные кредиты значительно дешевле, чем те же секунды по API: Veo по подписке Google AI — в 2–10 раз дешевле, аватары HeyGen — примерно в 3 раза. А NotebookLM по публичному API вообще недоступен — только по подписке. Расширение автоматизирует работу в ваших аккаунтах, и вы получаете API-удобство по подписочной цене. Точные цифры — в таблице и калькуляторе выше.') },
+          { q: t('sec.billing.faq49Q4', 'Какие подписки мне понадобятся?'), a: t('sec.billing.faq49A4', 'Для старта достаточно двух: Google AI Pro (€21.99/мес — Flow-видео + NotebookLM с расширенными лимитами) и HeyGen Creator ($29/мес — около 30 минут аватара Avatar IV). У всех сервисов есть и бесплатные лимиты (Flow — 50 кредитов/день, NotebookLM — 3 обзора/день, HeyGen — 3 видео/мес) — конвейер можно попробовать вообще без подписок.') },
+          { q: t('sec.billing.faq49Q5', 'Можно ли работать только через API-ключи?'), a: t('sec.billing.faq49A5', 'Да. Подключите свои ключи (Google Veo, FAL/Kling, Runway, OpenAI, ElevenLabs, HeyGen, Claude) в настройках — сервис будет генерировать ими напрямую, без расширения. Оплата этим сервисам идёт по их тарифам. Пути можно совмещать: например, аватары по подписке, а озвучку по API.') },
+          { q: t('sec.billing.faq49Q6', 'Как отменить подписку? Где кнопка?'), a: t('sec.billing.faq49A6', 'Вверху этой страницы, в карточке «Ваш тариф», при активной подписке появляется кнопка «Отключить автопродление». Деньги за оплаченный период не возвращаются, но доступ сохраняется до его конца. Если отключить во время пробного периода — списаний не будет совсем. Возобновить можно в один клик до конца периода.') },
+          { q: t('sec.billing.faq49Q7', 'Действуют ли промокоды?'), a: t('sec.billing.faq49A7', 'Да. Введите промокод выше — скидка применится при оформлении Premium через Stripe.') },
         ].map((item, idx) => (
           <AuroraCard key={idx} className="p-4">
             <p className="text-sm font-600 mb-1" style={{ color: 'var(--text-primary)' }}>{item.q}</p>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.a}</p>
           </AuroraCard>
         ))}
+        <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          {t('sec.billing.disclaimer49', 'TrendTraffic не аффилирован с Google, HeyGen, ElevenLabs или Blotato. Расширение автоматизирует работу в ваших собственных аккаунтах — соблюдайте условия использования провайдеров. Цены провайдеров указаны по официальным прайсам на июль 2026 и могут меняться.')}
+        </p>
       </div>
 
       <ConfirmModal
