@@ -167,10 +167,13 @@ export function Preloader({ onDone }: { onDone: () => void }) {
 /**
  * Лёгкий lerp-скролл: контент фиксируется и «догоняет» window.scrollY.
  * Только точный указатель и без prefers-reduced-motion; на тач — натив.
- * Возвращает scrollToId для якорей (нативные якоря с transform не работают).
+ * Возвращает scrollToId для якорей (нативные якоря с transform не работают)
+ * и posRef — текущий ВИЗУАЛЬНЫЙ скролл (лерпнутый cur либо window.scrollY),
+ * к нему привязана хореография частиц (Constellation).
  */
 export function useSmoothScroll(contentRef: React.RefObject<HTMLDivElement>) {
   const curRef = useRef(0);
+  const posRef = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
   const activeRef = useRef(false);
 
   useEffect(() => {
@@ -178,7 +181,13 @@ export function useSmoothScroll(contentRef: React.RefObject<HTMLDivElement>) {
     if (!el) return;
     const fine = window.matchMedia('(pointer: fine)').matches;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!fine || reduced) return;
+    if (!fine || reduced) {
+      // Натив-скролл: posRef зеркалит window.scrollY
+      const onScroll = () => { posRef.current = window.scrollY; };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      return () => window.removeEventListener('scroll', onScroll);
+    }
 
     activeRef.current = true;
     el.classList.add('ttl-smooth');
@@ -210,6 +219,7 @@ export function useSmoothScroll(contentRef: React.RefObject<HTMLDivElement>) {
       }
       if (Math.abs(target - cur) < 0.05) cur = target;
       curRef.current = cur;
+      posRef.current = cur;
       el.style.transform = `translate3d(0, ${-cur}px, 0)`;
       raf = requestAnimationFrame(loop);
     };
@@ -238,7 +248,7 @@ export function useSmoothScroll(contentRef: React.RefObject<HTMLDivElement>) {
     window.scrollTo(0, Math.max(0, top));
   };
 
-  return scrollToId;
+  return { scrollToId, posRef };
 }
 
 /* ────────────────────────── Навигация ────────────────────────── */

@@ -35,7 +35,7 @@ export function LandingPage() {
   const { t } = useTranslation('common');
   const [started, setStarted] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
-  const scrollToId = useSmoothScroll(pageRef);
+  const { scrollToId, posRef } = useSmoothScroll(pageRef);
 
   // Лендинг живёт на чистом чёрном — красим body на время визита.
   useEffect(() => {
@@ -123,13 +123,14 @@ export function LandingPage() {
       </Helmet>
 
       <Preloader onDone={() => setStarted(true)} />
+      {/* Сквозной слой частиц: фиксирован, живёт под контентом всю страницу */}
+      <Constellation started={started} posRef={posRef} />
       <TTNav onAnchor={scrollToId} />
 
-      <div ref={pageRef}>
+      <div ref={pageRef} className="ttl-page">
         <main>
           {/* ══════════ HERO ══════════ */}
           <section className="ttl-hero" id="top">
-            <Constellation started={started} />
             <div className="ttl-wrap ttl-hero-grid">
               <div className="ttl-hero-copy">
                 <FadeUp animate={started} delay={0.15}>
@@ -328,7 +329,7 @@ export function LandingPage() {
           </section>
 
           {/* ══════════ ФИНАЛЬНЫЙ CTA ══════════ */}
-          <section className="ttl-section">
+          <section className="ttl-section" id="final">
             <div className="ttl-wrap">
               <RevealLines
                 className="ttl-display"

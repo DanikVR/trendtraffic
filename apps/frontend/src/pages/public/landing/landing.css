@@ -212,11 +212,17 @@
   padding-top: 96px;
   padding-bottom: 60px;
 }
-.ttl-hero-canvas {
-  position: absolute;
+/* Сквозной слой частиц — фиксирован на весь вьюпорт, живёт под контентом */
+.ttl-fx {
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+}
+/* Контент — поверх слоя частиц (и в smooth-режиме, и в нативном) */
+.ttl-page {
+  position: relative;
+  z-index: 1;
 }
 .ttl-hero-grid {
   position: relative;
@@ -238,9 +244,6 @@
   margin-top: 40px;
 }
 .ttl-hero-note { margin-top: 16px; }
-@media (max-width: 960px) {
-  .ttl-hero-canvas { opacity: 0.5; }
-}
 
 /* Тёмный скроллбар, пока открыт лендинг (Chrome/Edge) */
 body:has(.ttl)::-webkit-scrollbar { width: 10px; background: #000; }

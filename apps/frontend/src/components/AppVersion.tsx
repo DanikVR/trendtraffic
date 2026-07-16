@@ -2770,8 +2770,25 @@
  *          sec.ttLanding.x с русскими дефолтами (прогон translate-pivot —
  *          после утверждения текстов). JSON-LD price 120→49. Файлы:
  *          pages/public/landing (css, chrome, Constellation, StubPage),
- *          LandingPage, AboutPage, WikiPage, router, index.html, AppVersion. */
-export const APP_VERSION = '2.3.4';
+ *          LandingPage, AboutPage, WikiPage, router, index.html, AppVersion.
+ * 2.3.5 — Лендинг: сквозная скролл-хореография частиц 1:1 с референсом Dala
+ *          (по видео юзера). Канвас теперь ФИКСИРОВАННЫЙ на весь вьюпорт и живёт
+ *          под контентом всю страницу: частицы собираются в 3D-фигуры и
+ *          распадаются по скроллу — герой: play-знак (покачивание вокруг оси Y,
+ *          честная перспектива), statement/шаги/фичи: рассеянное «поле хаоса»
+ *          (большинство частиц гаснет, крупные ближние — автоматом через
+ *          перспективу), «Экономия»: стрелка роста, тариф: лёгкий хаос,
+ *          финал: снова play-знак. Морфинг: каждая частица догоняет цель
+ *          (ease-follow, FPS-независимый) — живые шлейфы при скролле и сборка
+ *          из разлёта после прелоадера; в переходах шум-турбулентность
+ *          колоколом (взрыв/сборка), твинкл, параллакс мыши. Хореография
+ *          привязана к ВИЗУАЛЬНОМУ скроллу (лерпнутый cur плавного скролла,
+ *          posRef из useSmoothScroll; на таче — window.scrollY). Опорные точки
+ *          меряются от реальных секций (how/savings/pricing/final) с ленивой
+ *          перемеркой. Файлы: landing/Constellation.tsx (переписан),
+ *          landing/chrome.tsx (posRef), landing/landing.css (.ttl-fx/.ttl-page),
+ *          LandingPage.tsx, AppVersion. */
+export const APP_VERSION = '2.3.5';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
