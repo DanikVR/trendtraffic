@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Check } from 'lucide-react';
 
@@ -159,8 +160,10 @@ export function LanguagePicker({
   onClose,
   value,
   onChange,
-  title = 'Выберите язык',
+  title,
 }: LanguagePickerProps) {
+  const { t } = useTranslation('common');
+  const heading = title ?? t('sec.misc.langPickerTitle', 'Выберите язык');
   const [search, setSearch] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -227,13 +230,13 @@ export function LanguagePicker({
                     className="text-lg font-700"
                     style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
                   >
-                    {title}
+                    {heading}
                   </h3>
                   <button
                     onClick={onClose}
                     className="w-9 h-9 rounded-full flex items-center justify-center touch-target transition-colors"
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
-                    aria-label="Закрыть"
+                    aria-label={t('sec.misc.close', 'Закрыть')}
                   >
                     <X size={18} strokeWidth={1.5} />
                   </button>
@@ -251,7 +254,7 @@ export function LanguagePicker({
                     <input
                       ref={searchRef}
                       type="text"
-                      placeholder="Поиск среди 100+ языков..."
+                      placeholder={t('sec.misc.langSearchPh', 'Поиск среди 100+ языков...')}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="aurora-input pl-10 py-2.5 text-sm"
@@ -262,7 +265,7 @@ export function LanguagePicker({
                         onClick={() => setSearch('')}
                         className="absolute right-3 flex items-center justify-center"
                         style={{ color: 'var(--text-muted)' }}
-                        aria-label="Очистить поиск"
+                        aria-label={t('sec.misc.clearSearch', 'Очистить поиск')}
                       >
                         <X size={14} strokeWidth={1.5} />
                       </button>
@@ -274,7 +277,7 @@ export function LanguagePicker({
                 {search && (
                   <div className="px-5 pb-2">
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      Найдено: {filtered.length}
+                      {t('sec.misc.foundCount', 'Найдено: {{n}}', { n: filtered.length })}
                     </p>
                   </div>
                 )}
@@ -294,7 +297,7 @@ export function LanguagePicker({
                         className="text-xs font-700 uppercase px-1 py-2"
                         style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}
                       >
-                        Популярные
+                        {t('sec.misc.popularLangs', 'Популярные')}
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
                         {popular.map((lang) => (
@@ -313,7 +316,7 @@ export function LanguagePicker({
                             className="text-xs font-700 uppercase px-1 py-2"
                             style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}
                           >
-                            Все языки ({rest.length})
+                            {t('sec.misc.allLangs', 'Все языки ({{n}})', { n: rest.length })}
                           </p>
                         </>
                       )}
@@ -334,10 +337,10 @@ export function LanguagePicker({
                   {filtered.length === 0 && (
                     <div className="py-12 text-center">
                       <p style={{ color: 'var(--text-muted)' }} className="text-sm">
-                        Язык не найден
+                        {t('sec.misc.langNotFound', 'Язык не найден')}
                       </p>
                       <p style={{ color: 'var(--text-disabled)' }} className="text-xs mt-1">
-                        Попробуйте другой запрос
+                        {t('sec.misc.tryAnotherQuery', 'Попробуйте другой запрос')}
                       </p>
                     </div>
                   )}

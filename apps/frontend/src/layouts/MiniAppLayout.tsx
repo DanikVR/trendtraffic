@@ -4,9 +4,11 @@
  */
 
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Zap } from 'lucide-react';
 
 export function MiniAppLayout() {
+  const { t } = useTranslation('common');
   const navigate  = useNavigate();
   const location  = useLocation();
   const isRoot    = location.pathname === '/';
@@ -26,7 +28,7 @@ export function MiniAppLayout() {
             onClick={() => navigate(-1)}
             className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors touch-target"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-            aria-label="Назад"
+            aria-label={t('sec.misc.back', 'Назад')}
           >
             <ArrowLeft size={18} strokeWidth={1.5} />
           </button>

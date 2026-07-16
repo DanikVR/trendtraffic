@@ -1,13 +1,16 @@
 /**
  * TrendAnalyticsPanel — «Аналитика по ссылке» (порт расширения TikHub в веб).
  *
- * Вставляешь ссылку на видео/пост или аккаунт (TikTok/Douyin/Instagram/X/Bilibili)
- * → backend (/api/trends/analyze) дёргает TikHub НАШИМ ключом → показываем сводку
- * (просмотры/лайки/комменты/шеры + ER), статусы вызовов и сырые данные с экспортом JSON.
+ * Вставляешь ссылку на видео/пост или аккаунт (TikTok/Douyin/Instagram/X/Reddit/Bilibili)
+ * → backend (/api/trends/analyze) дёргает TikHub эффективным ключом (свой ключ tenant'а,
+ * иначе платформенный) → показываем сводку (просмотры/лайки/комменты/шеры + ER),
+ * статусы вызовов и сырые данные с экспортом JSON. YouTube отключён (только поиск трендов).
  */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link2, Loader2, Search, Download, CheckCircle2, XCircle, Eye, Heart, MessageCircle, Share2, Users, BarChart3, Sparkles, FileText, FileSpreadsheet, Music2, Clock, MapPin, BadgeCheck, ExternalLink, RotateCw, Flame, Film, Languages } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../config/i18n';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 
@@ -50,10 +53,18 @@ function analysisLang(): 'en' | 'ru' {
   } catch { return 'ru'; }
 }
 
-const BLOCK_LABEL: Record<string, string> = {
-  video: 'Видео / пост', metrics: 'Метрики', comments: 'Комментарии',
-  commentKeywords: 'Ключевые слова', account: 'Аккаунт', posts: 'Лента публикаций',
-};
+// Подпись блока ответа (переводится при каждом вызове — на текущем языке интерфейса).
+function blockLabel(k: string): string {
+  switch (k) {
+    case 'video': return i18n.t('common:sec.tanalytics.videoPost', 'Видео / пост');
+    case 'metrics': return i18n.t('common:sec.tanalytics.metrics', 'Метрики');
+    case 'comments': return i18n.t('common:sec.tanalytics.comments', 'Комментарии');
+    case 'commentKeywords': return i18n.t('common:sec.tanalytics.keywords', 'Ключевые слова');
+    case 'account': return i18n.t('common:sec.tanalytics.account', 'Аккаунт');
+    case 'posts': return i18n.t('common:sec.tanalytics.posts', 'Лента публикаций');
+    default: return k;
+  }
+}
 
 // ── Облако слов: частоты по текстам комментариев (RU+EN стоп-слова) ──
 const STOPWORDS = new Set(('и в во не что он на я с со как а то все она так его но да ты к у же вы за бы по только ее мне было вот от меня еще нет о из ему теперь когда даже ну вдруг ли если уже или ни быть был него до вас нибудь опять уж вам ведь там потом себя ничего ей может они тут где есть надо ней для мы тебя их чем была сам чтоб без будто чего раз тоже себе под будет ж тогда кто этот того потому этого какой совсем ним здесь этом один почти мой тем чтобы нее сейчас были куда зачем всех никогда можно при наконец два об другой хоть после над больше тот через эти нас про всего них какая много разве три эту моя впрочем хорошо свою этой перед иногда лучше чуть том нельзя такой им более всегда конечно всю между the a an and or but is are was were be to of in on for it this that with you your i we they he she his her my me at as by from so not no yes do does did have has had will would can could just very more most all any out up off your про это эта эти').split(/\s+/));
@@ -88,7 +99,11 @@ function commentsCsv(comments: NormComment[]): string {
 }
 
 // Самодостаточный HTML-отчёт (обзор + ER + облако слов + распределение лайков + топ-комментарии + тональность).
+// Тексты — через i18n.t (язык интерфейса на момент экспорта), значения экранируются esc().
 function buildReportHtml(r: AnalyzeResult, words: { word: string; count: number }[], sentiment: Sentiment | null): string {
+  // Локальный t: тот же неймспейс common, что и в компоненте (см. конвенцию sec.*-ключей).
+  const t = (key: string, ru: string, opts?: Record<string, unknown>) => i18n.t(`common:${key}`, ru, opts) as string;
+  const lng = i18n.language || 'ru';
   const s = r.summary || {};
   const top = [...r.normalized.comments].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 10);
   const maxW = words[0]?.count || 1;
@@ -99,16 +114,19 @@ function buildReportHtml(r: AnalyzeResult, words: { word: string; count: number 
   }).join('');
   const maxLike = Math.max(1, ...top.map((c) => c.likes || 0));
   const bars = top.map((c) => `<div class="row"><div class="meter"><div class="fill" style="width:${Math.round((c.likes || 0) / maxLike * 100)}%"></div></div><div class="ct"><b>${c.likes || 0} ♥</b> ${esc((c.text || '').slice(0, 90))}${c.author ? ` <i>— ${esc(c.author)}</i>` : ''}</div></div>`).join('');
-  const stat = (l: string, v: any) => `<div class="card"><div class="lbl">${l}</div><div class="val">${v == null ? '—' : esc(typeof v === 'number' ? v.toLocaleString('ru') : v)}</div></div>`;
+  const stat = (l: string, v: any) => `<div class="card"><div class="lbl">${l}</div><div class="val">${v == null ? '—' : esc(typeof v === 'number' ? v.toLocaleString(lng) : v)}</div></div>`;
+  const themesLabel = t('sec.tanalytics.rptThemes', 'Темы:');
+  const cloudHeading = t('sec.tanalytics.rptCloud', 'Облако слов в комментариях');
+  const likesHeading = t('sec.tanalytics.rptLikesDist', 'Распределение лайков · топ-комментарии');
   const sent = sentiment ? `
-    <h2>Тональность (ИИ)</h2>
+    <h2>${t('sec.tanalytics.sentimentAi', 'Тональность (ИИ)')}</h2>
     <div class="sent"><span style="background:#10b981;width:${sentiment.positive}%">${sentiment.positive}%</span><span style="background:#94a3b8;width:${sentiment.neutral}%">${sentiment.neutral}%</span><span style="background:#ef4444;width:${sentiment.negative}%">${sentiment.negative}%</span></div>
-    <p class="muted">Позитив · Нейтрально · Негатив</p>
+    <p class="muted">${t('sec.tanalytics.sentLegend', 'Позитив · Нейтрально · Негатив')}</p>
     <p>${esc(sentiment.overall)}</p>
-    ${sentiment.themes.length ? `<p><b>Темы:</b> ${sentiment.themes.map((t) => `<span class="tag">${esc(t)}</span>`).join(' ')}</p>` : ''}
+    ${sentiment.themes.length ? `<p><b>${themesLabel}</b> ${sentiment.themes.map((th) => `<span class="tag">${esc(th)}</span>`).join(' ')}</p>` : ''}
   ` : '';
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Отчёт · ${esc(r.detected.platformLabel)} · TrendTraffic</title>
+  return `<!doctype html><html lang="${esc(lng)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${t('sec.tanalytics.rptTitle', 'Отчёт')} · ${esc(r.detected.platformLabel)} · TrendTraffic</title>
 <style>
 *{box-sizing:border-box}body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#0d0f14;color:#e7e9ee;padding:0}
 .wrap{max-width:920px;margin:0 auto;padding:28px}
@@ -128,21 +146,22 @@ h1{font-size:20px;margin:0}h2{font-size:16px;margin:26px 0 12px;color:#ff8a2b}
 footer{margin-top:28px;border-top:1px solid #232733;padding-top:14px;color:#8a90a0;font-size:11px}
 @media print{body{background:#fff;color:#111}.card,.cloud{background:#fafafa;border-color:#e5e5e5}}
 </style></head><body><div class="wrap">
-<header><div class="logo">TT</div><div><h1>Отчёт о трендах — ${esc(r.detected.platformLabel)}</h1>
-<div class="muted">${r.detected.type === 'video' ? 'Видео / пост' : 'Аккаунт'}${s.author ? ` · ${esc(s.author)}` : ''}</div></div></header>
+<header><div class="logo">TT</div><div><h1>${t('sec.tanalytics.rptHeader', 'Отчёт о трендах — {{platform}}', { platform: esc(r.detected.platformLabel) })}</h1>
+<div class="muted">${r.detected.type === 'video' ? t('sec.tanalytics.videoPost', 'Видео / пост') : t('sec.tanalytics.account', 'Аккаунт')}${s.author ? ` · ${esc(s.author)}` : ''}</div></div></header>
 ${s.desc ? `<p>${esc(s.desc)}</p>` : ''}
-<h2>Обзор</h2>
-<div class="grid">${stat('Просмотры', s.views)}${stat('Лайки', s.likes)}${stat('Комментарии', s.comments)}${stat('Репосты', s.shares)}${r.detected.type === 'account' ? stat('Подписчики', s.followers) : stat('Вовлечённость', s.engagementRate != null ? s.engagementRate + '%' : '—')}</div>
-${words.length ? `<h2>Облако слов в комментариях</h2><div class="cloud">${cloud}</div>` : ''}
-${bars ? `<h2>Распределение лайков · топ-комментарии</h2>${bars}` : ''}
+<h2>${t('sec.tanalytics.rptOverview', 'Обзор')}</h2>
+<div class="grid">${stat(t('sec.tanalytics.views', 'Просмотры'), s.views)}${stat(t('sec.tanalytics.likes', 'Лайки'), s.likes)}${stat(t('sec.tanalytics.comments', 'Комментарии'), s.comments)}${stat(t('sec.tanalytics.reposts', 'Репосты'), s.shares)}${r.detected.type === 'account' ? stat(t('sec.tanalytics.followers', 'Подписчики'), s.followers) : stat(t('sec.tanalytics.engagement', 'Вовлечённость'), s.engagementRate != null ? s.engagementRate + '%' : '—')}</div>
+${words.length ? `<h2>${cloudHeading}</h2><div class="cloud">${cloud}</div>` : ''}
+${bars ? `<h2>${likesHeading}</h2>${bars}` : ''}
 ${sent}
-<footer>Сгенерировано в TrendTraffic · данные Trend. Всего комментариев в выборке: ${r.normalized.comments.length}.</footer>
+<footer>${t('sec.tanalytics.rptFooter', 'Сгенерировано в TrendTraffic · данные Trend. Всего комментариев в выборке: {{n}}.', { n: r.normalized.comments.length })}</footer>
 </div></body></html>`;
 }
 
 interface BulkRow { url: string; cover?: string; platform?: string; type?: string; summary: Record<string, any>; error?: string }
 
 export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, bulkItems, hideSearch }: { token: string | null; initialUrl?: string | null; initialCover?: string | null; bulkItems?: { url: string; cover?: string }[] | null; hideSearch?: boolean }) {
+  const { t } = useTranslation('common');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,11 +186,11 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
 
   const analyze = async (override?: string) => {
     const u = (override ?? url).trim();
-    if (!u) { setError('Вставьте ссылку на видео/пост или аккаунт.'); return; }
+    if (!u) { setError(t('sec.tanalytics.urlRequired', 'Вставьте ссылку на видео/пост или аккаунт.')); return; }
     // YouTube: аналитика отключена — площадка доступна только для поиска трендов.
     if (/(?:youtube\.com|youtu\.be)/i.test(u)) {
       setLoading(false); setResult(null);
-      setError('Анализ YouTube недоступен — YouTube доступен только для поиска трендов.');
+      setError(t('sec.tanalytics.ytOff', 'Анализ YouTube недоступен — YouTube доступен только для поиска трендов.'));
       return;
     }
     setLoading(true); setError(null); setResult(null); setSentiment(null); setSentErr(null); setSaved(false);
@@ -185,7 +204,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setResult(data);
     } catch (e: any) {
-      setError(e instanceof TypeError ? 'Сервер недоступен. Обновите страницу.' : (e?.message || 'Ошибка анализа'));
+      setError(e instanceof TypeError ? t('sec.tanalytics.serverDown', 'Сервер недоступен. Обновите страницу.') : (e?.message || t('sec.tanalytics.analyzeErr', 'Ошибка анализа')));
     } finally { setLoading(false); }
   };
 
@@ -205,7 +224,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       if (bdReqRef.current === myReq) setBreakdown((data.dna as TrendDNA) || null);
     } catch (e: any) {
-      if (bdReqRef.current === myReq) setBdError(e instanceof TypeError ? 'Сервер недоступен.' : (e?.message || 'Не удалось собрать разбор'));
+      if (bdReqRef.current === myReq) setBdError(e instanceof TypeError ? t('sec.tanalytics.serverDownShort', 'Сервер недоступен.') : (e?.message || t('sec.tanalytics.bdFailed', 'Не удалось собрать разбор')));
     } finally {
       if (bdReqRef.current === myReq) setBdLoading(false);
     }
@@ -238,7 +257,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
         if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
         const coverByUrl = new Map(bulkItems.map((i) => [i.url, i.cover]));
         setBulkRows((data.rows || []).map((r: BulkRow) => ({ ...r, cover: r.cover || coverByUrl.get(r.url) })));
-      } catch (e: any) { setError(e?.message || 'Ошибка массового анализа'); }
+      } catch (e: any) { setError(e?.message || t('sec.tanalytics.bulkErr', 'Ошибка массового анализа')); }
       finally { setBulkLoading(false); }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,7 +279,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setSaved(true);
-    } catch (e: any) { setError(e?.message || 'Не удалось скачать в Галерею'); }
+    } catch (e: any) { setError(e?.message || t('sec.tanalytics.saveFailed', 'Не удалось скачать в Галерею')); }
     finally { setSaving(false); }
   };
 
@@ -280,7 +299,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setSentiment(data);
-    } catch (e: any) { setSentErr(e?.message || 'Ошибка анализа тональности'); }
+    } catch (e: any) { setSentErr(e?.message || t('sec.tanalytics.sentimentErr', 'Ошибка анализа тональности')); }
     finally { setSentLoading(false); }
   };
 
@@ -289,7 +308,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const exportCsv = () => comments.length && downloadFile(`comments-${baseName}.csv`, commentsCsv(comments), 'text/csv;charset=utf-8');
   const exportReport = () => result && downloadFile(`report-${baseName}.html`, buildReportHtml(result, words, sentiment), 'text/html;charset=utf-8');
 
-  const fmtDate = (ts?: number) => { if (!ts) return ''; const ms = ts > 1e12 ? ts : ts * 1000; try { return new Date(ms).toLocaleDateString('ru'); } catch { return ''; } };
+  const fmtDate = (ts?: number) => { if (!ts) return ''; const ms = ts > 1e12 ? ts : ts * 1000; try { return new Date(ms).toLocaleDateString(i18n.language || 'ru'); } catch { return ''; } };
   const fmtDur = (sec?: number) => { if (!sec) return ''; const x = sec > 1000 ? Math.round(sec / 1000) : Math.round(sec); return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; };
 
   const s = result?.summary || {};
@@ -298,6 +317,8 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   // Разбор ВСЕГДА собирается на английском; «Перевести» переключает показ на язык браузера.
   const bdTarget = analysisLang(); // 'en' | 'ru' — язык кнопки «Перевести»
   const shownBreakdown: TrendDNA | null = bdShowLang === 'en' ? breakdown : (bdTranslated || breakdown);
+  // Подписи разбора: EN — вместе с оригиналом разбора, иначе — язык интерфейса
+  // (в точках вызова ru-аргумент передаётся уже через t('sec…', 'ру-фолбэк')).
   const L = (ru: string, en: string) => (bdShowLang === 'en' ? en : ru);
   const translateBreakdown = async () => {
     if (!breakdown) return;
@@ -313,7 +334,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setBdTranslated(data.dna as TrendDNA); setBdShowLang(bdTarget);
-    } catch (e: any) { setBdError(e?.message || 'Не удалось перевести'); }
+    } catch (e: any) { setBdError(e?.message || t('sec.tanalytics.translateFailed', 'Не удалось перевести')); }
     finally { setBdTranslating(false); }
   };
   const stat = (icon: React.ReactNode, label: string, val?: number) => (
@@ -348,7 +369,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       {/* hideSearch (встроено в «Тренды» для X): поле URL ведёт родитель; тут только ошибка + результат */}
       {hideSearch && (loading || error) && (
         <div className="flex items-center gap-2 text-sm rounded-xl p-3" style={{ background: error ? 'rgba(239,68,68,0.08)' : 'var(--bg-tertiary)', color: error ? '#ef4444' : 'var(--text-muted)' }}>
-          {loading ? <><Loader2 size={16} className="animate-spin flex-shrink-0" /><span>Анализирую…</span></> : <><XCircle size={16} className="flex-shrink-0" /><span>{error}</span></>}
+          {loading ? <><Loader2 size={16} className="animate-spin flex-shrink-0" /><span>{t('sec.tanalytics.analyzing', 'Анализирую…')}</span></> : <><XCircle size={16} className="flex-shrink-0" /><span>{error}</span></>}
         </div>
       )}
       {!hideSearch && (
@@ -357,17 +378,17 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           <div className="flex-1 relative">
             <Link2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
             <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') analyze(); }}
-              placeholder="Ссылка: TikTok / Instagram / YouTube / X / Reddit / Douyin / Bilibili — видео или аккаунт"
+              placeholder={t('sec.tanalytics.urlPh', 'Ссылка: TikTok / Instagram / X / Reddit / Douyin / Bilibili — видео или аккаунт')}
               className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>
           <AuroraButton onClick={() => { setCardCover(null); analyze(); }} disabled={loading} fullWidth className="sm:!w-auto"
             icon={loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
-            {loading ? 'Анализирую…' : 'Анализировать'}
+            {loading ? t('sec.tanalytics.analyzing', 'Анализирую…') : t('sec.tanalytics.analyzeBtn', 'Анализировать')}
           </AuroraButton>
         </div>
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          Метрики видео, комментарии, профиль и история публикаций — через ваш ключ Trend. Каждый анализ тратит кредиты Trend.
+          {t('sec.tanalytics.keyHint', 'Метрики видео, комментарии, профиль и история публикаций — данные сервиса Trend. Каждый анализ тратит кредиты Trend (ваш ключ из настроек Enterprise, если задан).')}
         </p>
         {error && (
           <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
@@ -380,12 +401,12 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       {/* Массовый анализ выбранных — список */}
       {bulkLoading && (
         <div className="flex items-center justify-center gap-2 py-8" style={{ color: 'var(--text-muted)' }}>
-          <Loader2 size={18} className="animate-spin" /> Анализирую выбранные…
+          <Loader2 size={18} className="animate-spin" /> {t('sec.tanalytics.bulkAnalyzing', 'Анализирую выбранные…')}
         </div>
       )}
       {!result && bulkRows && (
         <>
-          <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Анализ выбранных: {bulkRows.length}</div>
+          <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.tanalytics.bulkTitle', 'Анализ выбранных: {{n}}', { n: bulkRows.length })}</div>
           <div className="space-y-2">
             {bulkRows.map((r, i) => {
               const s = r.summary || {};
@@ -405,7 +426,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                       {r.error && <span style={{ color: '#ef4444' }}>{r.error}</span>}
                     </div>
                   </div>
-                  <AuroraButton size="sm" variant="secondary" onClick={() => openOne(r.url, r.cover)} icon={<BarChart3 size={14} />}>Подробно</AuroraButton>
+                  <AuroraButton size="sm" variant="secondary" onClick={() => openOne(r.url, r.cover)} icon={<BarChart3 size={14} />}>{t('sec.tanalytics.moreBtn', 'Подробно')}</AuroraButton>
                 </AuroraCard>
               );
             })}
@@ -417,7 +438,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
         <>
           {bulkRows && (
             <button onClick={() => setResult(null)} className="inline-flex items-center gap-1.5 text-[12px] font-600" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-              ← К списку выбранных ({bulkRows.length})
+              {t('sec.tanalytics.backToList', '← К списку выбранных ({{n}})', { n: bulkRows.length })}
             </button>
           )}
           {/* Распознано */}
@@ -426,12 +447,12 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
               {result.detected.platformLabel}
             </span>
             <span className="text-[12px] px-2.5 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-              {result.detected.type === 'video' ? 'Видео / пост' : 'Аккаунт'}
+              {result.detected.type === 'video' ? t('sec.tanalytics.videoPost', 'Видео / пост') : t('sec.tanalytics.account', 'Аккаунт')}
             </span>
             {s.author && <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>· {String(s.author)}</span>}
             <div className="flex-1" />
             <div className="flex items-center gap-1.5 flex-wrap">
-              <AuroraButton variant="secondary" size="sm" onClick={exportReport} icon={<FileText size={14} />}>Отчёт HTML</AuroraButton>
+              <AuroraButton variant="secondary" size="sm" onClick={exportReport} icon={<FileText size={14} />}>{t('sec.tanalytics.reportBtn', 'Отчёт HTML')}</AuroraButton>
               {comments.length > 0 && <AuroraButton variant="secondary" size="sm" onClick={exportCsv} icon={<FileSpreadsheet size={14} />}>CSV</AuroraButton>}
               <AuroraButton variant="secondary" size="sm" onClick={exportJson} icon={<Download size={14} />}>JSON</AuroraButton>
             </div>
@@ -460,14 +481,14 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                   {/* Скачивание в Галерею: TikTok (no-watermark) и X (mp4-вариант твита).
                       YouTube отключён (ненадёжная подпись потоков). Для остальных — скрыто. */}
                   {isVideo && ['tiktok', 'twitter'].includes(result.detected.platform) && (
-                    <button onClick={saveToGallery} disabled={saving || saved} title="Скачать видео в Галерею"
+                    <button onClick={saveToGallery} disabled={saving || saved} title={t('sec.tanalytics.saveTitle', 'Скачать видео в Галерею')}
                       className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-60"
                       style={{ background: saved ? 'rgba(16,185,129,0.15)' : 'var(--brand)', color: saved ? '#10b981' : 'var(--brand-contrast)', border: 'none', cursor: saving || saved ? 'default' : 'pointer' }}>
                       {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Download size={12} />}
-                      {saving ? 'Скачиваю…' : saved ? 'В Галерее' : 'Скачать'}
+                      {saving ? t('sec.tanalytics.savingBtn', 'Скачиваю…') : saved ? t('sec.tanalytics.savedBtn', 'В Галерее') : t('sec.tanalytics.saveBtn', 'Скачать')}
                     </button>
                   )}
-                  <a href={url || undefined} target="_blank" rel="noreferrer" className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ExternalLink size={12} /> Открыть</a>
+                  <a href={url || undefined} target="_blank" rel="noreferrer" className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ExternalLink size={12} /> {t('sec.tanalytics.openBtn', 'Открыть')}</a>
                 </div>
                 {s.desc && <p className="text-[13px] leading-snug mb-1.5" style={{ color: 'var(--text-secondary)' }}>{String(s.desc)}</p>}
                 {Array.isArray(s.hashtags) && s.hashtags.length > 0 && (
@@ -485,15 +506,15 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
 
           {/* Метрики */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-            {stat(<Eye size={12} />, 'Просмотры', s.views)}
-            {stat(<Heart size={12} />, 'Лайки', s.likes)}
-            {stat(<MessageCircle size={12} />, 'Комменты', s.comments)}
-            {stat(<Share2 size={12} />, 'Шеры', s.shares)}
+            {stat(<Eye size={12} />, t('sec.tanalytics.views', 'Просмотры'), s.views)}
+            {stat(<Heart size={12} />, t('sec.tanalytics.likes', 'Лайки'), s.likes)}
+            {stat(<MessageCircle size={12} />, t('sec.tanalytics.commentsShort', 'Комменты'), s.comments)}
+            {stat(<Share2 size={12} />, t('sec.tanalytics.sharesShort', 'Шеры'), s.shares)}
             {result.detected.type === 'account'
-              ? stat(<Users size={12} />, 'Подписчики', s.followers)
+              ? stat(<Users size={12} />, t('sec.tanalytics.followers', 'Подписчики'), s.followers)
               : (
                 <div className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="flex items-center gap-1.5 text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}><BarChart3 size={12} /> Вовлечённость</div>
+                  <div className="flex items-center gap-1.5 text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}><BarChart3 size={12} /> {t('sec.tanalytics.engagement', 'Вовлечённость')}</div>
                   <div className="text-lg font-700" style={{ color: '#10b981' }}>{s.engagementRate != null ? `${s.engagementRate}%` : '—'}</div>
                 </div>
               )}
@@ -504,21 +525,21 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
             <AuroraCard className="p-4 sm:p-5 space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles size={16} style={{ color: 'var(--brand)' }} />
-                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{L('Разбор вирусности (ИИ)', 'Virality breakdown (AI)')}</span>
+                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{L(t('sec.tanalytics.bdTitleAi', 'Разбор вирусности (ИИ)'), 'Virality breakdown (AI)')}</span>
                 {bdLoading && <Loader2 size={14} className="animate-spin" style={{ color: 'var(--brand)' }} />}
                 <div className="flex-1" />
                 {/* «Перевести»: разбор всегда EN → перевод на язык браузера по клику (для RU-браузера) */}
                 {!bdLoading && breakdown && bdTarget !== 'en' && (
-                  <button onClick={translateBreakdown} disabled={bdTranslating} title="Перевести разбор на язык браузера"
+                  <button onClick={translateBreakdown} disabled={bdTranslating} title={t('sec.tanalytics.translateTitle', 'Перевести разбор на язык браузера')}
                     className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-50"
                     style={{ background: bdShowLang === 'en' ? 'rgba(99,102,241,0.12)' : 'var(--bg-tertiary)', color: bdShowLang === 'en' ? 'var(--brand)' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
                     {bdTranslating ? <Loader2 size={12} className="animate-spin" /> : <Languages size={12} />}
-                    {bdShowLang === 'en' ? 'Перевести' : 'Оригинал (EN)'}
+                    {bdShowLang === 'en' ? t('sec.tanalytics.translateBtn', 'Перевести') : t('sec.tanalytics.translateOrig', 'Оригинал (EN)')}
                   </button>
                 )}
                 {!bdLoading && (bdError || breakdown) && (
                   <button onClick={() => runBreakdown(result, url)} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-                    <RotateCw size={12} /> {L('Пересобрать', 'Regenerate')}
+                    <RotateCw size={12} /> {L(t('sec.tanalytics.bdRegen', 'Пересобрать'), 'Regenerate')}
                   </button>
                 )}
               </div>
@@ -526,7 +547,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
               {bdLoading && !breakdown && (
                 <div className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                   <Loader2 size={14} className="animate-spin flex-shrink-0" />
-                  {L('Собираю разбор: хук, аудитория, сценарий озвучки, сцены, как повторить…', 'Building the breakdown: hook, audience, voiceover script, scenes, how to replicate…')}
+                  {L(t('sec.tanalytics.bdBuilding', 'Собираю разбор: хук, аудитория, сценарий озвучки, сцены, как повторить…'), 'Building the breakdown: hook, audience, voiceover script, scenes, how to replicate…')}
                 </div>
               )}
 
@@ -540,41 +561,41 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Viral Breakdown */}
                   <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Flame size={14} style={{ color: 'var(--brand)' }} /> {L('Разбор вирусности', 'Virality breakdown')}</div>
-                    {bdField(`${L('Хук', 'Hook')}${shownBreakdown.hookType ? ` · ${shownBreakdown.hookType}` : ''}`, shownBreakdown.whyItWorks)}
-                    {bdField(L('Целевая аудитория', 'Target audience'), shownBreakdown.targetAudience)}
-                    {bdList(L('Факторы вирусности', 'Virality factors'), shownBreakdown.viralFactors)}
+                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Flame size={14} style={{ color: 'var(--brand)' }} /> {L(t('sec.tanalytics.bdViral', 'Разбор вирусности'), 'Virality breakdown')}</div>
+                    {bdField(L(t('sec.tanalytics.bdHook', 'Хук'), 'Hook') + (shownBreakdown.hookType ? ` · ${shownBreakdown.hookType}` : ''), shownBreakdown.whyItWorks)}
+                    {bdField(L(t('sec.tanalytics.bdAudience', 'Целевая аудитория'), 'Target audience'), shownBreakdown.targetAudience)}
+                    {bdList(L(t('sec.tanalytics.bdFactors', 'Факторы вирусности'), 'Virality factors'), shownBreakdown.viralFactors)}
                     {shownBreakdown.copyReadyScript && (
                       <div>
-                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L('Готовый скрипт озвучки', 'Ready voiceover script')}</div>
+                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L(t('sec.tanalytics.bdScript', 'Готовый скрипт озвучки'), 'Ready voiceover script')}</div>
                         <p className="text-[13px] leading-snug rounded-lg p-2.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{shownBreakdown.copyReadyScript}</p>
                       </div>
                     )}
-                    {bdList(L('Как адаптировать под нас', 'How to adapt for us'), shownBreakdown.howToAdapt)}
+                    {bdList(L(t('sec.tanalytics.bdAdapt', 'Как адаптировать под нас'), 'How to adapt for us'), shownBreakdown.howToAdapt)}
                   </div>
 
                   {/* Video Content Analysis */}
                   <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Film size={14} style={{ color: 'var(--brand)' }} /> {L('Контент-анализ', 'Content analysis')}</div>
-                    {bdField(L('Кратко о видео', 'Video summary'), shownBreakdown.summary)}
-                    {bdField(L('Разбор первых секунд', 'First seconds breakdown'), shownBreakdown.hookAnalysis)}
-                    {bdField(L('Визуальный стиль', 'Visual style'), shownBreakdown.visualStyle)}
-                    {bdField(L('Звук и подача', 'Audio & delivery'), shownBreakdown.audioDialogue)}
+                    <div className="inline-flex items-center gap-1.5 text-[12px] font-700" style={{ color: 'var(--text-primary)' }}><Film size={14} style={{ color: 'var(--brand)' }} /> {L(t('sec.tanalytics.bdContent', 'Контент-анализ'), 'Content analysis')}</div>
+                    {bdField(L(t('sec.tanalytics.bdSummary', 'Кратко о видео'), 'Video summary'), shownBreakdown.summary)}
+                    {bdField(L(t('sec.tanalytics.bdFirstSec', 'Разбор первых секунд'), 'First seconds breakdown'), shownBreakdown.hookAnalysis)}
+                    {bdField(L(t('sec.tanalytics.bdVisual', 'Визуальный стиль'), 'Visual style'), shownBreakdown.visualStyle)}
+                    {bdField(L(t('sec.tanalytics.bdAudio', 'Звук и подача'), 'Audio & delivery'), shownBreakdown.audioDialogue)}
                     {shownBreakdown.sceneBeats && shownBreakdown.sceneBeats.length > 0 && (
                       <div>
-                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L('Сцены', 'Scenes')}</div>
+                        <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--brand)' }}>{L(t('sec.tanalytics.bdScenes', 'Сцены'), 'Scenes')}</div>
                         <div className="space-y-1">
                           {shownBreakdown.sceneBeats.map((b, i) => (
                             <div key={i} className="flex gap-2 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                              <span className="font-700 tabular-nums flex-shrink-0" style={{ color: 'var(--brand)' }}>{fmtDur(b.t) || `${b.t}с`}</span>
+                              <span className="font-700 tabular-nums flex-shrink-0" style={{ color: 'var(--brand)' }}>{fmtDur(b.t) || t('sec.tanalytics.secShort', '{{s}}с', { s: b.t })}</span>
                               <span>{b.desc}{b.intensity ? <span style={{ color: 'var(--text-muted)' }}> · {b.intensity}</span> : null}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-                    {bdList(L('Почему резонирует', 'Why it resonates'), shownBreakdown.whyResonates)}
-                    {bdList(L('Как повторить', 'How to replicate'), shownBreakdown.howToReplicate)}
+                    {bdList(L(t('sec.tanalytics.bdResonates', 'Почему резонирует'), 'Why it resonates'), shownBreakdown.whyResonates)}
+                    {bdList(L(t('sec.tanalytics.bdReplicate', 'Как повторить'), 'How to replicate'), shownBreakdown.howToReplicate)}
                   </div>
                 </div>
               )}
@@ -584,7 +605,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           {/* Ключевые слова (аналитика Trend) */}
           {result.normalized.keywords.length > 0 && (
             <div>
-              <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Ключевые слова</div>
+              <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>{t('sec.tanalytics.keywords', 'Ключевые слова')}</div>
               <div className="flex flex-wrap gap-1.5">
                 {result.normalized.keywords.map((k, i) => (
                   <span key={i} className="text-[12px] px-2 py-0.5 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>{k.word}{k.count ? ` ·${k.count}` : ''}</span>
@@ -597,16 +618,16 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           {comments.length > 0 && (
             <AuroraCard className="p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Комментарии · {comments.length}</span>
+                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.tanalytics.commentsCount', 'Комментарии · {{n}}', { n: comments.length })}</span>
                 <AuroraButton size="sm" onClick={runSentiment} disabled={sentLoading}
                   icon={sentLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}>
-                  {sentLoading ? 'Анализирую…' : 'Тональность (ИИ)'}
+                  {sentLoading ? t('sec.tanalytics.analyzing', 'Анализирую…') : t('sec.tanalytics.sentimentAi', 'Тональность (ИИ)')}
                 </AuroraButton>
               </div>
 
               {words.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Облако слов</div>
+                  <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>{t('sec.tanalytics.cloud', 'Облако слов')}</div>
                   <div className="flex flex-wrap gap-x-2 gap-y-1 items-baseline">
                     {words.map((w) => {
                       const sz = 11 + Math.round((w.count / (words[0]?.count || 1)) * 16);
@@ -624,12 +645,12 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                     {sentiment.neutral > 0 && <div className="flex items-center justify-center" style={{ width: `${sentiment.neutral}%`, background: '#94a3b8' }}>{sentiment.neutral}%</div>}
                     {sentiment.negative > 0 && <div className="flex items-center justify-center" style={{ width: `${sentiment.negative}%`, background: '#ef4444' }}>{sentiment.negative}%</div>}
                   </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Позитив · Нейтрально · Негатив</div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.tanalytics.sentLegend', 'Позитив · Нейтрально · Негатив')}</div>
                   {sentiment.overall && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{sentiment.overall}</p>}
                   {sentiment.themes.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      {sentiment.themes.map((t, i) => (
-                        <span key={i} className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>{t}</span>
+                      {sentiment.themes.map((t2, i) => (
+                        <span key={i} className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>{t2}</span>
                       ))}
                     </div>
                   )}
@@ -637,7 +658,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
               )}
 
               <div>
-                <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>Топ-комментарии по лайкам</div>
+                <div className="text-[11px] font-600 mb-2" style={{ color: 'var(--text-muted)' }}>{t('sec.tanalytics.topComments', 'Топ-комментарии по лайкам')}</div>
                 <div className="space-y-1.5">
                   {topComments.map((c, i) => (
                     <div key={i} className="flex items-start gap-2 text-[12px]">
@@ -653,7 +674,9 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           {/* Если какой-то источник не ответил — компактная заметка (без сырого JSON) */}
           {Object.entries(result.blocks).some(([, b]) => !b.ok) && (
             <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Не загрузилось: {Object.entries(result.blocks).filter(([, b]) => !b.ok).map(([k]) => BLOCK_LABEL[k] || k).join(', ')}. Полные данные — кнопкой «JSON».
+              {t('sec.tanalytics.blocksFailed', 'Не загрузилось: {{list}}. Полные данные — кнопкой «JSON».', {
+                list: Object.entries(result.blocks).filter(([, b]) => !b.ok).map(([k]) => blockLabel(k)).join(', '),
+              })}
             </p>
           )}
 
@@ -661,12 +684,12 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
           {result.debug && (
             <details className="text-[11px]">
               <summary className="inline-flex items-center gap-1.5 cursor-pointer select-none font-600" style={{ color: 'var(--text-muted)' }}>
-                🔧 Структура ответа (для разработчика)
+                {t('sec.tanalytics.debugSummary', '🔧 Структура ответа (для разработчика)')}
               </summary>
               <pre className="mt-2 p-3 rounded-lg overflow-auto" style={{ maxHeight: 360, background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                 {JSON.stringify(result.debug, null, 1)}
               </pre>
-              <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Скопируйте и пришлите — точно настрою извлечение полей этой площадки.</p>
+              <p className="mt-1" style={{ color: 'var(--text-muted)' }}>{t('sec.tanalytics.debugHint', 'Скопируйте и пришлите — точно настрою извлечение полей этой площадки.')}</p>
             </details>
           )}
         </>

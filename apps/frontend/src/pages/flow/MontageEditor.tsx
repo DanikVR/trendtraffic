@@ -9,6 +9,8 @@
  * hotebook, flow.commentator, brief.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../config/i18n';
 import {
   Video, Scissors, Crop, Type, Music, Mic, Image,
   UserRound, Search, Share2,
@@ -31,14 +33,23 @@ import { UGC_DEFAULT, type UgcSpec, type UgcPickTarget } from './ugcTypes';
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
 type CloudId = 'omni' | 'plan' | 'editor' | 'ugc' | 'hotebook' | 'flow';
-const CLOUD: Record<CloudId, { label: string; icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
-  omni: { label: 'Omni Flash', icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
-  plan: { label: 'Контент-план', icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
-  editor: { label: 'Редактор', icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
-  ugc: { label: 'UGC', icon: <Video size={22} />, color: '#a855f7', glow: 'rgba(168,85,247,.35)', def: { x: 50, y: 12 } },
-  hotebook: { label: 'Hotebook', icon: <BookOpen size={22} />, color: '#22d3ee', glow: 'rgba(34,211,238,.35)', def: { x: 50, y: 88 } },
-  flow: { label: 'Google Flow', icon: <Clapperboard size={22} />, color: '#6366f1', glow: 'rgba(99,102,241,.35)', def: { x: 85, y: 50 } },
+const CLOUD: Record<CloudId, { icon: React.ReactNode; color: string; glow: string; def: { x: number; y: number } }> = {
+  omni: { icon: <Cloud size={24} />, color: '#4285F4', glow: 'rgba(66,133,244,.35)', def: { x: 85, y: 24 } },
+  plan: { icon: <CalendarDays size={22} />, color: '#10b981', glow: 'rgba(16,185,129,.35)', def: { x: 85, y: 76 } },
+  editor: { icon: <Film size={22} />, color: '#f59e0b', glow: 'rgba(245,158,11,.35)', def: { x: 15, y: 24 } },
+  ugc: { icon: <Video size={22} />, color: '#a855f7', glow: 'rgba(168,85,247,.35)', def: { x: 50, y: 12 } },
+  hotebook: { icon: <BookOpen size={22} />, color: '#22d3ee', glow: 'rgba(34,211,238,.35)', def: { x: 50, y: 88 } },
+  flow: { icon: <Clapperboard size={22} />, color: '#6366f1', glow: 'rgba(99,102,241,.35)', def: { x: 85, y: 50 } },
 };
+// Подписи узлов: бренды — как есть, русские — переводимые (функция, не константа: язык может смениться).
+const cloudLabel = (id: CloudId): string => ({
+  omni: 'Omni Flash',
+  plan: i18n.t('common:sec.montage.cloudPlan', 'Контент-план'),
+  editor: i18n.t('common:sec.montage.cloudEditor', 'Редактор'),
+  ugc: 'UGC',
+  hotebook: 'Hotebook',
+  flow: 'Google Flow',
+}[id]);
 
 // ── Блок «Hotebook» (Google NotebookLM): источники + чат + студия артефактов ──
 // Настройки генерации повторяют модалки NotebookLM 1:1 (формат-карточки, язык,
@@ -76,107 +87,108 @@ function HbMarkdown({ text }: { text: string }) {
   );
 }
 
-const HB_LANGS: { v: string; label: string }[] = [
-  { v: 'ru', label: 'русский' }, { v: 'en', label: 'английский' }, { v: 'uk', label: 'украинский' },
-  { v: 'es', label: 'испанский' }, { v: 'de', label: 'немецкий' }, { v: 'fr', label: 'французский' },
-  { v: 'it', label: 'итальянский' }, { v: 'pt', label: 'португальский' }, { v: 'pl', label: 'польский' },
-  { v: 'tr', label: 'турецкий' }, { v: 'kk', label: 'казахский' }, { v: 'zh', label: 'китайский' },
-  { v: 'ja', label: 'японский' }, { v: 'ko', label: 'корейский' }, { v: 'ar', label: 'арабский' }, { v: 'hi', label: 'хинди' },
+const getHbLangs = (): { v: string; label: string }[] => [
+  { v: 'ru', label: i18n.t('common:sec.montage.langRu', 'русский') }, { v: 'en', label: i18n.t('common:sec.montage.langEn', 'английский') }, { v: 'uk', label: i18n.t('common:sec.montage.langUk', 'украинский') },
+  { v: 'es', label: i18n.t('common:sec.montage.langEs', 'испанский') }, { v: 'de', label: i18n.t('common:sec.montage.langDe', 'немецкий') }, { v: 'fr', label: i18n.t('common:sec.montage.langFr', 'французский') },
+  { v: 'it', label: i18n.t('common:sec.montage.langIt', 'итальянский') }, { v: 'pt', label: i18n.t('common:sec.montage.langPt', 'португальский') }, { v: 'pl', label: i18n.t('common:sec.montage.langPl', 'польский') },
+  { v: 'tr', label: i18n.t('common:sec.montage.langTr', 'турецкий') }, { v: 'kk', label: i18n.t('common:sec.montage.langKk', 'казахский') }, { v: 'zh', label: i18n.t('common:sec.montage.langZh', 'китайский') },
+  { v: 'ja', label: i18n.t('common:sec.montage.langJa', 'японский') }, { v: 'ko', label: i18n.t('common:sec.montage.langKo', 'корейский') }, { v: 'ar', label: i18n.t('common:sec.montage.langAr', 'арабский') }, { v: 'hi', label: i18n.t('common:sec.montage.langHi', 'хинди') },
 ];
 
 interface HbField { id: string; label: string; kind: 'cards' | 'chips' | 'lang' | 'focus'; opts?: { v: string; label: string; hint?: string }[]; ph?: string }
-const HB_FOCUS_PH = 'Вы можете попросить: пересказать определённый источник; осветить конкретную тему; объяснить материал для определённой аудитории…';
-const HB_TYPES: { t: HbType; label: string; fields: HbField[] }[] = [
+const hbFocusPh = () => i18n.t('common:sec.montage.hbFocusPh', 'Вы можете попросить: пересказать определённый источник; осветить конкретную тему; объяснить материал для определённой аудитории…');
+// Функция (не константа): подписи переводимые, вычисляются на рендере. Ids/значения = параметры бэкенда — не переводить.
+const getHbTypes = (): { t: HbType; label: string; fields: HbField[] }[] => [
   {
-    t: 'audio', label: 'Аудиопересказ', fields: [
-      { id: 'format', label: 'Формат', kind: 'cards', opts: [
-        { v: 'deep_dive', label: 'Подробный анализ', hint: 'Активная беседа двух ведущих, раскрывающая и связывающая темы из ваших источников.' },
-        { v: 'brief', label: 'Краткий пересказ', hint: 'Небольшой обзор, который поможет быстро понять основные идеи источников.' },
-        { v: 'critique', label: 'Рецензия', hint: 'Экспертная оценка ваших источников с конструктивными замечаниями, которые помогут улучшить материал.' },
-        { v: 'debate', label: 'Дебаты', hint: 'Дискуссия между двумя ведущими, раскрывающая разные мнения о ваших источниках.' },
+    t: 'audio', label: i18n.t('common:sec.montage.hbTypeAudio', 'Аудиопересказ'), fields: [
+      { id: 'format', label: i18n.t('common:sec.montage.hbFieldFormat', 'Формат'), kind: 'cards', opts: [
+        { v: 'deep_dive', label: i18n.t('common:sec.montage.hbAudioDeep', 'Подробный анализ'), hint: i18n.t('common:sec.montage.hbAudioDeepHint', 'Активная беседа двух ведущих, раскрывающая и связывающая темы из ваших источников.') },
+        { v: 'brief', label: i18n.t('common:sec.montage.hbAudioBrief', 'Краткий пересказ'), hint: i18n.t('common:sec.montage.hbAudioBriefHint', 'Небольшой обзор, который поможет быстро понять основные идеи источников.') },
+        { v: 'critique', label: i18n.t('common:sec.montage.hbAudioCritique', 'Рецензия'), hint: i18n.t('common:sec.montage.hbAudioCritiqueHint', 'Экспертная оценка ваших источников с конструктивными замечаниями, которые помогут улучшить материал.') },
+        { v: 'debate', label: i18n.t('common:sec.montage.hbAudioDebate', 'Дебаты'), hint: i18n.t('common:sec.montage.hbAudioDebateHint', 'Дискуссия между двумя ведущими, раскрывающая разные мнения о ваших источниках.') },
       ] },
-      { id: 'length', label: 'Длина', kind: 'chips', opts: [{ v: 'short', label: 'Маленькая' }, { v: 'default', label: 'По умолчанию' }, { v: 'long', label: 'Длинная' }] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'На чём в этом выпуске должны сделать акцент ИИ-ведущие?', kind: 'focus', ph: HB_FOCUS_PH },
+      { id: 'length', label: i18n.t('common:sec.montage.hbFieldLength', 'Длина'), kind: 'chips', opts: [{ v: 'short', label: i18n.t('common:sec.montage.hbLenShort', 'Маленькая') }, { v: 'default', label: i18n.t('common:sec.montage.hbLenDefault', 'По умолчанию') }, { v: 'long', label: i18n.t('common:sec.montage.hbLenLong', 'Длинная') }] },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusAudio', 'На чём в этом выпуске должны сделать акцент ИИ-ведущие?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'video', label: 'Видеообзор', fields: [
-      { id: 'format', label: 'Формат', kind: 'cards', opts: [
-        { v: 'explainer', label: 'Объясняющий', hint: 'Подробный видеоролик с рассказчиком, слайдами и иллюстрациями по вашим источникам.' },
-        { v: 'brief', label: 'Краткий', hint: 'Короткий видеообзор — только главные идеи источников.' },
-        { v: 'cinematic', label: 'Кинематографичный', hint: 'Полностью анимированное видео (Veo). Требует план Google AI Ultra на аккаунте.' },
+    t: 'video', label: i18n.t('common:sec.montage.hbTypeVideo', 'Видеообзор'), fields: [
+      { id: 'format', label: i18n.t('common:sec.montage.hbFieldFormat', 'Формат'), kind: 'cards', opts: [
+        { v: 'explainer', label: i18n.t('common:sec.montage.hbVideoExplainer', 'Объясняющий'), hint: i18n.t('common:sec.montage.hbVideoExplainerHint', 'Подробный видеоролик с рассказчиком, слайдами и иллюстрациями по вашим источникам.') },
+        { v: 'brief', label: i18n.t('common:sec.montage.hbVideoBrief', 'Краткий'), hint: i18n.t('common:sec.montage.hbVideoBriefHint', 'Короткий видеообзор — только главные идеи источников.') },
+        { v: 'cinematic', label: i18n.t('common:sec.montage.hbVideoCinematic', 'Кинематографичный'), hint: i18n.t('common:sec.montage.hbVideoCinematicHint', 'Полностью анимированное видео (Veo). Требует план Google AI Ultra на аккаунте.') },
       ] },
-      { id: 'style', label: 'Визуальный стиль', kind: 'chips', opts: [
-        { v: 'auto_select', label: 'Авто' }, { v: 'classic', label: 'Классика' }, { v: 'whiteboard', label: 'Маркерная доска' },
-        { v: 'watercolor', label: 'Акварель' }, { v: 'paper_craft', label: 'Аппликация' }, { v: 'anime', label: 'Аниме' },
-        { v: 'kawaii', label: 'Кавай' }, { v: 'retro_print', label: 'Ретро-печать' }, { v: 'heritage', label: 'Гравюра' },
+      { id: 'style', label: i18n.t('common:sec.montage.hbFieldVisualStyle', 'Визуальный стиль'), kind: 'chips', opts: [
+        { v: 'auto_select', label: i18n.t('common:sec.montage.hbStyleAuto', 'Авто') }, { v: 'classic', label: i18n.t('common:sec.montage.hbStyleClassic', 'Классика') }, { v: 'whiteboard', label: i18n.t('common:sec.montage.hbStyleWhiteboard', 'Маркерная доска') },
+        { v: 'watercolor', label: i18n.t('common:sec.montage.hbStyleWatercolor', 'Акварель') }, { v: 'paper_craft', label: i18n.t('common:sec.montage.hbStylePaperCraft', 'Аппликация') }, { v: 'anime', label: i18n.t('common:sec.montage.hbStyleAnime', 'Аниме') },
+        { v: 'kawaii', label: i18n.t('common:sec.montage.hbStyleKawaii', 'Кавай') }, { v: 'retro_print', label: i18n.t('common:sec.montage.hbStyleRetro', 'Ретро-печать') }, { v: 'heritage', label: i18n.t('common:sec.montage.hbStyleHeritage', 'Гравюра') },
       ] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'На чём сделать акцент в этом видео?', kind: 'focus', ph: HB_FOCUS_PH },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusVideo', 'На чём сделать акцент в этом видео?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'report', label: 'Отчёт', fields: [
-      { id: 'format', label: 'Шаблон', kind: 'cards', opts: [
-        { v: 'briefing_doc', label: 'Брифинг-документ', hint: 'Сжатая сводка ключевых фактов и выводов из источников.' },
-        { v: 'study_guide', label: 'Учебное пособие', hint: 'Структурированный конспект для изучения материала.' },
-        { v: 'blog_post', label: 'Блог-пост', hint: 'Готовая статья по мотивам источников — можно публиковать.' },
-        { v: 'custom', label: 'Свой формат', hint: 'Опишите нужный формат в поле «акцент» ниже.' },
+    t: 'report', label: i18n.t('common:sec.montage.hbTypeReport', 'Отчёт'), fields: [
+      { id: 'format', label: i18n.t('common:sec.montage.hbFieldTemplate', 'Шаблон'), kind: 'cards', opts: [
+        { v: 'briefing_doc', label: i18n.t('common:sec.montage.hbRepBriefing', 'Брифинг-документ'), hint: i18n.t('common:sec.montage.hbRepBriefingHint', 'Сжатая сводка ключевых фактов и выводов из источников.') },
+        { v: 'study_guide', label: i18n.t('common:sec.montage.hbRepStudy', 'Учебное пособие'), hint: i18n.t('common:sec.montage.hbRepStudyHint', 'Структурированный конспект для изучения материала.') },
+        { v: 'blog_post', label: i18n.t('common:sec.montage.hbRepBlog', 'Блог-пост'), hint: i18n.t('common:sec.montage.hbRepBlogHint', 'Готовая статья по мотивам источников — можно публиковать.') },
+        { v: 'custom', label: i18n.t('common:sec.montage.hbRepCustom', 'Свой формат'), hint: i18n.t('common:sec.montage.hbRepCustomHint', 'Опишите нужный формат в поле «акцент» ниже.') },
       ] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'О чём должен быть отчёт?', kind: 'focus', ph: HB_FOCUS_PH },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusReport', 'О чём должен быть отчёт?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'quiz', label: 'Тест', fields: [
-      { id: 'count', label: 'Количество вопросов', kind: 'chips', opts: [{ v: 'standard', label: 'Стандартно' }, { v: 'fewer', label: 'Поменьше' }] },
-      { id: 'difficulty', label: 'Сложность', kind: 'chips', opts: [{ v: 'easy', label: 'Лёгкий' }, { v: 'medium', label: 'Средний' }, { v: 'hard', label: 'Сложный' }] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'По какому материалу составить тест?', kind: 'focus', ph: HB_FOCUS_PH },
+    t: 'quiz', label: i18n.t('common:sec.montage.hbTypeQuiz', 'Тест'), fields: [
+      { id: 'count', label: i18n.t('common:sec.montage.hbFieldQuizCount', 'Количество вопросов'), kind: 'chips', opts: [{ v: 'standard', label: i18n.t('common:sec.montage.hbStandard', 'Стандартно') }, { v: 'fewer', label: i18n.t('common:sec.montage.hbFewer', 'Поменьше') }] },
+      { id: 'difficulty', label: i18n.t('common:sec.montage.hbFieldDifficulty', 'Сложность'), kind: 'chips', opts: [{ v: 'easy', label: i18n.t('common:sec.montage.hbDiffEasy', 'Лёгкий') }, { v: 'medium', label: i18n.t('common:sec.montage.hbDiffMedium', 'Средний') }, { v: 'hard', label: i18n.t('common:sec.montage.hbDiffHard', 'Сложный') }] },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusQuiz', 'По какому материалу составить тест?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'table', label: 'Таблица', fields: [
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'Что свести в таблицу?', kind: 'focus', ph: 'Например: сравнить все упомянутые инструменты по цене и функциям…' },
+    t: 'table', label: i18n.t('common:sec.montage.hbTypeTable', 'Таблица'), fields: [
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusTable', 'Что свести в таблицу?'), kind: 'focus', ph: i18n.t('common:sec.montage.hbFocusTablePh', 'Например: сравнить все упомянутые инструменты по цене и функциям…') },
     ],
   },
   {
-    t: 'infographic', label: 'Инфографика', fields: [
-      { id: 'orientation', label: 'Ориентация', kind: 'chips', opts: [{ v: 'portrait', label: 'Вертикальная' }, { v: 'landscape', label: 'Горизонтальная' }, { v: 'square', label: 'Квадрат' }] },
-      { id: 'detail', label: 'Детализация', kind: 'chips', opts: [{ v: 'standard', label: 'Стандартно' }, { v: 'concise', label: 'Минимум' }, { v: 'detailed', label: 'Максимум' }] },
-      { id: 'style', label: 'Стиль', kind: 'chips', opts: [
-        { v: 'auto_select', label: 'Авто' }, { v: 'sketch_note', label: 'Скетч' }, { v: 'professional', label: 'Деловой' },
-        { v: 'bento_grid', label: 'Bento-сетка' }, { v: 'editorial', label: 'Журнальный' }, { v: 'instructional', label: 'Инструкция' },
-        { v: 'bricks', label: 'Кирпичики' }, { v: 'clay', label: 'Пластилин' }, { v: 'anime', label: 'Аниме' }, { v: 'scientific', label: 'Научный' },
+    t: 'infographic', label: i18n.t('common:sec.montage.hbTypeInfographic', 'Инфографика'), fields: [
+      { id: 'orientation', label: i18n.t('common:sec.montage.hbFieldOrientation', 'Ориентация'), kind: 'chips', opts: [{ v: 'portrait', label: i18n.t('common:sec.montage.hbOrientPortrait', 'Вертикальная') }, { v: 'landscape', label: i18n.t('common:sec.montage.hbOrientLandscape', 'Горизонтальная') }, { v: 'square', label: i18n.t('common:sec.montage.hbOrientSquare', 'Квадрат') }] },
+      { id: 'detail', label: i18n.t('common:sec.montage.hbFieldDetail', 'Детализация'), kind: 'chips', opts: [{ v: 'standard', label: i18n.t('common:sec.montage.hbStandard', 'Стандартно') }, { v: 'concise', label: i18n.t('common:sec.montage.hbDetailMin', 'Минимум') }, { v: 'detailed', label: i18n.t('common:sec.montage.hbDetailMax', 'Максимум') }] },
+      { id: 'style', label: i18n.t('common:sec.montage.hbFieldStyle', 'Стиль'), kind: 'chips', opts: [
+        { v: 'auto_select', label: i18n.t('common:sec.montage.hbStyleAuto', 'Авто') }, { v: 'sketch_note', label: i18n.t('common:sec.montage.hbIStyleSketch', 'Скетч') }, { v: 'professional', label: i18n.t('common:sec.montage.hbIStyleBusiness', 'Деловой') },
+        { v: 'bento_grid', label: i18n.t('common:sec.montage.hbIStyleBento', 'Bento-сетка') }, { v: 'editorial', label: i18n.t('common:sec.montage.hbIStyleEditorial', 'Журнальный') }, { v: 'instructional', label: i18n.t('common:sec.montage.hbIStyleInstruction', 'Инструкция') },
+        { v: 'bricks', label: i18n.t('common:sec.montage.hbIStyleBricks', 'Кирпичики') }, { v: 'clay', label: i18n.t('common:sec.montage.hbIStyleClay', 'Пластилин') }, { v: 'anime', label: i18n.t('common:sec.montage.hbStyleAnime', 'Аниме') }, { v: 'scientific', label: i18n.t('common:sec.montage.hbIStyleScientific', 'Научный') },
       ] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'Что показать на инфографике?', kind: 'focus', ph: HB_FOCUS_PH },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusInfographic', 'Что показать на инфографике?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'flashcards', label: 'Карточки', fields: [
-      { id: 'count', label: 'Количество карточек', kind: 'chips', opts: [{ v: 'standard', label: 'Стандартно' }, { v: 'fewer', label: 'Поменьше' }] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'Что вынести на карточки?', kind: 'focus', ph: HB_FOCUS_PH },
+    t: 'flashcards', label: i18n.t('common:sec.montage.hbTypeFlashcards', 'Карточки'), fields: [
+      { id: 'count', label: i18n.t('common:sec.montage.hbFieldCardsCount', 'Количество карточек'), kind: 'chips', opts: [{ v: 'standard', label: i18n.t('common:sec.montage.hbStandard', 'Стандартно') }, { v: 'fewer', label: i18n.t('common:sec.montage.hbFewer', 'Поменьше') }] },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusFlashcards', 'Что вынести на карточки?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'mindmap', label: 'Ментальная карта', fields: [
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'Вокруг чего строить карту?', kind: 'focus', ph: HB_FOCUS_PH },
+    t: 'mindmap', label: i18n.t('common:sec.montage.hbTypeMindmap', 'Ментальная карта'), fields: [
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusMindmap', 'Вокруг чего строить карту?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
   {
-    t: 'slides', label: 'Презентация', fields: [
-      { id: 'format', label: 'Формат', kind: 'cards', opts: [
-        { v: 'detailed_deck', label: 'Подробные слайды', hint: 'Самодостаточная презентация — можно читать без выступающего.' },
-        { v: 'presenter_slides', label: 'Для выступления', hint: 'Лаконичные слайды-опора под живой рассказ.' },
+    t: 'slides', label: i18n.t('common:sec.montage.hbTypeSlides', 'Презентация'), fields: [
+      { id: 'format', label: i18n.t('common:sec.montage.hbFieldFormat', 'Формат'), kind: 'cards', opts: [
+        { v: 'detailed_deck', label: i18n.t('common:sec.montage.hbSlidesDetailed', 'Подробные слайды'), hint: i18n.t('common:sec.montage.hbSlidesDetailedHint', 'Самодостаточная презентация — можно читать без выступающего.') },
+        { v: 'presenter_slides', label: i18n.t('common:sec.montage.hbSlidesPresenter', 'Для выступления'), hint: i18n.t('common:sec.montage.hbSlidesPresenterHint', 'Лаконичные слайды-опора под живой рассказ.') },
       ] },
-      { id: 'length', label: 'Длина', kind: 'chips', opts: [{ v: 'short', label: 'Маленькая' }, { v: 'default', label: 'По умолчанию' }] },
-      { id: 'language', label: 'Выберите язык', kind: 'lang' },
-      { id: 'focus', label: 'О чём должна быть презентация?', kind: 'focus', ph: HB_FOCUS_PH },
+      { id: 'length', label: i18n.t('common:sec.montage.hbFieldLength', 'Длина'), kind: 'chips', opts: [{ v: 'short', label: i18n.t('common:sec.montage.hbLenShort', 'Маленькая') }, { v: 'default', label: i18n.t('common:sec.montage.hbLenDefault', 'По умолчанию') }] },
+      { id: 'language', label: i18n.t('common:sec.montage.hbFieldLang', 'Выберите язык'), kind: 'lang' },
+      { id: 'focus', label: i18n.t('common:sec.montage.hbFocusSlides', 'О чём должна быть презентация?'), kind: 'focus', ph: hbFocusPh() },
     ],
   },
 ];
@@ -185,11 +197,10 @@ const HB_ICON: Record<HbType, React.ReactNode> = {
   quiz: <ListChecks size={17} />, table: <Table size={17} />, infographic: <Image size={17} />,
   flashcards: <Layers size={17} />, mindmap: <Share2 size={17} />, slides: <Presentation size={17} />,
 };
-const HB_LABEL: Record<HbType, string> = Object.fromEntries(HB_TYPES.map((x) => [x.t, x.label])) as Record<HbType, string>;
 /** Дефолтные настройки генерации типа: первый вариант каждого поля, язык — русский. */
 function hbDefaults(t: HbType): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const f of HB_TYPES.find((x) => x.t === t)!.fields) {
+  for (const f of getHbTypes().find((x) => x.t === t)!.fields) {
     if (f.kind === 'lang') out[f.id] = 'ru';
     else if (f.kind === 'focus') out[f.id] = '';
     else if (f.opts && f.opts.length) out[f.id] = f.opts[0].v;
@@ -202,6 +213,7 @@ function hbDefaults(t: HbType): Record<string, string> {
 
 /** Просмотр JSON-артефактов Hotebook прямо в панели: тест / карточки / менталка / таблица. */
 function HbPayloadView({ job }: { job: any }) {
+  const { t } = useTranslation('common');
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const raw = job?.payload;
@@ -234,7 +246,7 @@ function HbPayloadView({ job }: { job: any }) {
                   </ul>
                 )}
                 <button onClick={() => toggle(setRevealed, i)} className="text-[11px] font-600" style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: 0 }}>
-                  {revealed.has(i) ? 'Скрыть ответ' : 'Показать ответ'}
+                  {revealed.has(i) ? t('sec.montage.hideAnswer', 'Скрыть ответ') : t('sec.montage.showAnswer', 'Показать ответ')}
                 </button>
                 {revealed.has(i) && <p className="text-[11px] mt-1" style={{ color: '#10b981', whiteSpace: 'pre-wrap' }}>{ans || JSON.stringify(q?.answer ?? '—')}</p>}
               </div>
@@ -252,7 +264,7 @@ function HbPayloadView({ job }: { job: any }) {
           {cards.map((c: any, i: number) => (
             <button key={i} onClick={() => toggle(setFlipped, i)} className="rounded-xl p-3 text-left"
               style={{ background: flipped.has(i) ? 'rgba(34,211,238,0.10)' : 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', cursor: 'pointer', minHeight: 84 }}>
-              <div className="text-[10px] font-700 mb-1" style={{ color: 'var(--text-muted)' }}>{flipped.has(i) ? 'ОТВЕТ' : `КАРТОЧКА ${i + 1} · нажмите`}</div>
+              <div className="text-[10px] font-700 mb-1" style={{ color: 'var(--text-muted)' }}>{flipped.has(i) ? t('sec.montage.answerCaps', 'ОТВЕТ') : t('sec.montage.cardTap', 'КАРТОЧКА {{n}} · нажмите', { n: i + 1 })}</div>
               <div className="text-xs" style={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                 {flipped.has(i) ? (txt(c, ['back', 'answer', 'definition', 'a']) || '—') : (txt(c, ['front', 'question', 'term', 'q']) || '—')}
               </div>
@@ -312,12 +324,6 @@ function HbPayloadView({ job }: { job: any }) {
 
 // Пикер «Редактора» повторяет Галерею: те же вкладки-папки (тренды/референс/аудио/из анализа).
 type EdCat = 'trends' | 'reference' | 'audio' | 'analyzed';
-const ED_TABS: { key: EdCat; label: string; icon: React.ReactNode }[] = [
-  { key: 'trends', label: 'Тренды', icon: <Video size={13} /> },
-  { key: 'reference', label: 'Референс', icon: <Image size={13} /> },
-  { key: 'audio', label: 'Аудио', icon: <Music size={13} /> },
-  { key: 'analyzed', label: 'Из анализа', icon: <Sparkles size={13} /> },
-];
 
 
 // ── Преобразование исходного видео по таймлайну (узел Omni Flash) ──
@@ -349,10 +355,14 @@ const OMNI_DEFAULT: OmniSpec = { segments: [newSeg(0, 0.2)] };
 const V2V_LABEL: Record<V2VProvider, string> = { runway: 'Runway Gen-4', fal: 'Kling (FAL)' };
 
 export default function MontageEditor({ flowId, onBack, isNew, initialCloud, soloBlock }: { flowId: string; onBack: () => void; isNew?: boolean; initialCloud?: string | null; soloBlock?: boolean }) {
+  const { t } = useTranslation('common');
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
+  // Переводимые списки Hotebook — пересчитываются на рендере (переключение языка подхватится).
+  const hbTypesL = getHbTypes();
+  const hbLabelL = Object.fromEntries(hbTypesL.map((x) => [x.t, x.label])) as Record<HbType, string>;
 
-  const [name, setName] = useState('Сценарий');
+  const [name, setName] = useState(t('sec.montage.defaultFlowName', 'Сценарий'));
   const [brief, setBrief] = useState('');          // сохраняется в graph.brief; UI-кнопки «Сценарий» убраны — фича не читалась бэком (ИИ-режиссёр вырезан в v2.0.0)
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -462,7 +472,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       await save();   // сначала сам сценарий (авто-сейв гарантирован)
       // __flowId — карточка шаблона в Галерее открывает ИМЕННО этот сценарий (продолжить ролик).
       const tplSpec = { ...ugc, buildJobId: null, result: null, results: [], __flowId: flowId };
-      const tplName = (name || '').trim() || 'UGC-ролик';
+      const tplName = (name || '').trim() || t('sec.montage.ugcTemplateName', 'UGC-ролик');
       // Пустой ролик в шаблоны не пишем (чтобы «зашёл-вышел» не плодил мусор); существующий — обновляем всегда.
       const hasContent = !!(ugc.avatarUrl || ugc.photoUrl || ugc.script.length || ugc.clip || ugc.clipImages.length || (ugc.brief || '').trim());
       if (!ugc.templateId && !hasContent) { setCloudPanel(null); return; }
@@ -508,10 +518,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const seen = new Set<string>();
       const list: { url: string; name: string; cover?: string; type: 'video' | 'audio' | 'image' }[] = [];
       const push = (url: string, name: string, type: 'video' | 'audio' | 'image', cover?: string) => { if (url && !seen.has(url)) { seen.add(url); list.push({ url, name, cover, type }); } };
-      for (const x of vids) if (x.fileUrl) push(x.fileUrl, x.title || x.author || 'видео', 'video', x.coverUrl);
-      for (const m of analyzed) if (m.fileUrl) push(m.fileUrl, m.originalName || 'медиа', m.mediaType === 'image' ? 'image' : 'video');
-      for (const m of refs) if (m.fileUrl) push(m.fileUrl, m.originalName || 'медиа', m.mediaType === 'image' ? 'image' : 'video');
-      for (const m of audios) if (m.fileUrl) push(m.fileUrl, m.originalName || 'аудио', 'audio');
+      for (const x of vids) if (x.fileUrl) push(x.fileUrl, x.title || x.author || t('sec.montage.videoFb', 'видео'), 'video', x.coverUrl);
+      for (const m of analyzed) if (m.fileUrl) push(m.fileUrl, m.originalName || t('sec.montage.mediaFb', 'медиа'), m.mediaType === 'image' ? 'image' : 'video');
+      for (const m of refs) if (m.fileUrl) push(m.fileUrl, m.originalName || t('sec.montage.mediaFb', 'медиа'), m.mediaType === 'image' ? 'image' : 'video');
+      for (const m of audios) if (m.fileUrl) push(m.fileUrl, m.originalName || t('sec.montage.audioFb', 'аудио'), 'audio');
       setUgcGallery(list);
     } catch { setUgcGallery([]); }
     finally { setUgcGalLoading(false); }
@@ -564,9 +574,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const r = await fetch('/api/render/ugc/avatars', { headers: headers() });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (!r.ok) throw new Error(d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
       setUgcAvatars(Array.isArray(d.avatars) ? d.avatars : []);
-    } catch (e: any) { setUgcAvatars([]); setUgcAvNote(e?.message || 'Не удалось загрузить коллекцию аватаров.'); }
+    } catch (e: any) { setUgcAvatars([]); setUgcAvNote(e?.message || t('sec.montage.avLoadFail', 'Не удалось загрузить коллекцию аватаров.')); }
     finally { setUgcAvLoading(false); }
   };
   const genUgcAvatars = async () => {
@@ -575,11 +585,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const r = await fetch('/api/render/ugc/avatars/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ count: 3, brief: ugcAvBrief.trim() || undefined }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (!r.ok) throw new Error(d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
       const fresh: { id: string; url: string; name: string }[] = Array.isArray(d.avatars) ? d.avatars : [];
       setUgcAvatars((prev) => [...fresh, ...(prev || [])]);
-      setUgcAvNote(d.note || `Готово: +${fresh.length}.`);
-    } catch (e: any) { setUgcAvNote(e?.message || 'Не удалось сгенерировать аватары.'); }
+      setUgcAvNote(d.note || t('sec.montage.avGenOk', 'Готово: +{{n}}.', { n: fresh.length }));
+    } catch (e: any) { setUgcAvNote(e?.message || t('sec.montage.avGenFail', 'Не удалось сгенерировать аватары.')); }
     finally { setUgcBusy(null); }
   };
   const addUgcAvatar = async (url: string, name: string) => {
@@ -587,10 +597,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const r = await fetch('/api/render/ugc/avatars/add', { method: 'POST', headers: headers(), body: JSON.stringify({ url, name }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d?.avatar) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (!r.ok || !d?.avatar) throw new Error(d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
       setUgcAvatars((prev) => [d.avatar, ...(prev || [])]);
       ugcMutate((u) => ({ ...u, avatarId: d.avatar.id, avatarUrl: d.avatar.url, avatarName: d.avatar.name, avatarProvider: 'gallery' }));
-    } catch (e: any) { setUgcAvNote(e?.message || 'Не удалось добавить аватар в коллекцию.'); }
+    } catch (e: any) { setUgcAvNote(e?.message || t('sec.montage.avAddFail', 'Не удалось добавить аватар в коллекцию.')); }
   };
   const pickUgcAvatar = (a: { id: string; url: string; name: string }) =>
     ugcMutate((u) => ({ ...u, avatarId: a.id, avatarUrl: a.url, avatarName: a.name, avatarProvider: 'gallery' }));
@@ -605,7 +615,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       if (!r.ok) throw new Error();
       setUgcAvatars((prev) => (prev || []).filter((x) => x.id !== a.id));
       if (ugc.avatarProvider === 'gallery' && ugc.avatarId === a.id) ugcMutate((u) => ({ ...u, avatarId: null, avatarUrl: null, avatarName: null }));
-    } catch { setUgcAvNote('Не удалось удалить аватар.'); }
+    } catch { setUgcAvNote(t('sec.montage.avDelFail', 'Не удалось удалить аватар.')); }
   };
   // Открыли панель UGC на вкладке «Коллекция» — грузим коллекцию аватаров по тапу на узел.
   useEffect(() => {
@@ -621,28 +631,28 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       try {
         const r = await fetch(`/api/render/ugc/build/status?job=${encodeURIComponent(jobId)}`, { headers: headers() });
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+        if (!r.ok) throw new Error(d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
         if (d.status === 'done' && (d.fileUrl || (Array.isArray(d.results) && d.results.length))) {
           if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
           setUgcBusy(null);
-          const results: { url: string; name: string }[] = Array.isArray(d.results) && d.results.length ? d.results : (d.fileUrl ? [{ url: d.fileUrl, name: 'ролик' }] : []);
+          const results: { url: string; name: string }[] = Array.isArray(d.results) && d.results.length ? d.results : (d.fileUrl ? [{ url: d.fileUrl, name: t('sec.montage.clipFb', 'ролик') }] : []);
           ugcMutate((u) => ({ ...u, buildJobId: null, result: results[0] || null, results }));
-          const okMsg = results.length > 1 ? `Готово! ${results.length} роликов в Галерее.` : 'Готово! Ролик сохранён в Галерею.';
+          const okMsg = results.length > 1 ? t('sec.montage.buildOkMany', 'Готово! {{n}} роликов в Галерее.', { n: results.length }) : t('sec.montage.buildOkOne', 'Готово! Ролик сохранён в Галерею.');
           setUgcNote(okMsg); setUgcCtaNote({ kind: 'ok', text: okMsg });
         } else if (d.status === 'failed') {
           if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
           setUgcBusy(null);
           ugcMutate((u) => ({ ...u, buildJobId: null }));
-          const failMsg = `Сборка не удалась: ${d.error || 'неизвестная ошибка'}`;
+          const failMsg = t('sec.montage.buildFail', 'Сборка не удалась: {{err}}', { err: d.error || t('sec.montage.unknownErr', 'неизвестная ошибка') });
           setUgcNote(failMsg); setUgcCtaNote({ kind: 'error', text: failMsg });
         } else {
-          setUgcNote(`Сборка: ${d.status}…`);
+          setUgcNote(t('sec.montage.buildStatus', 'Сборка: {{status}}…', { status: d.status }));
         }
       } catch (e: any) {
         if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); ugcPollRef.current = null;
         setUgcBusy(null);
         ugcMutate((u) => ({ ...u, buildJobId: null }));
-        const lostMsg = e?.message || 'Потеряна связь со сборкой.';
+        const lostMsg = e?.message || t('sec.montage.buildLost', 'Потеряна связь со сборкой.');
         setUgcNote(lostMsg); setUgcCtaNote({ kind: 'error', text: lostMsg });
       }
     }, 3000);
@@ -651,7 +661,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     // Причина не-старта обязана быть ВИДНА: дублируем её поп-апом под кнопкой «Создать видео».
     const fail = (text: string) => { setUgcNote(text); setUgcCtaNote({ kind: 'error', text }); };
     if (ugcBusy) {
-      if (ugcBusy !== 'render') fail('Подождите: идёт другая операция (генерация/разбор) — затем нажмите ещё раз.');
+      if (ugcBusy !== 'render') fail(t('sec.montage.busyWait', 'Подождите: идёт другая операция (генерация/разбор) — затем нажмите ещё раз.'));
       return;
     }
     // «Без аватара — озвучка»: аватар/фото не нужны — только базовое видео и голос (текст/запись).
@@ -660,22 +670,22 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     const useVideo = !useVoiceover && ugc.avatarSource === 'video';
     const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     if (useVoiceover) {
-      if (!ugc.clip && !ugc.clipImages.length) { fail('Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.'); return; }
+      if (!ugc.clip && !ugc.clipImages.length) { fail(t('sec.montage.needBaseVideo', 'Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.')); return; }
     } else if (useVideo) {
-      if (!ugc.avatarVideoUrl) { fail('Загрузите готовое видео-аватар (вкладка «Готовое видео»).'); return; }
+      if (!ugc.avatarVideoUrl) { fail(t('sec.montage.needAvatarVideo', 'Загрузите готовое видео-аватар (вкладка «Готовое видео»).')); return; }
     } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
-      if (!ugc.photoUrl || !ugc.photoBUrl) { fail('Для диалога загрузите два фото: «Спикер A» и «Спикер B».'); return; }
-      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { fail('Для диалога разберите запись двух голосов (вкладка «Разобрать запись»).'); return; }
-      if (!ugc.script.some((l) => l.text.trim())) { fail('Сначала разберите запись — реплик нет.'); return; }
+      if (!ugc.photoUrl || !ugc.photoBUrl) { fail(t('sec.montage.needTwoPhotos', 'Для диалога загрузите два фото: «Собеседник A» и «Собеседник B».')); return; }
+      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { fail(t('sec.montage.needDiarize', 'Для диалога разберите запись двух голосов: вкладка «Моя запись» → «Разобрать речь».')); return; }
+      if (!ugc.script.some((l) => l.text.trim())) { fail(t('sec.montage.needLines', 'Сначала разберите запись — реплик нет.')); return; }
     } else if (ugc.avatarSource === 'photo') {
-      if (!ugc.photoUrl) { fail('Загрузите своё фото (портрет анфас) во вкладке «Своё фото».'); return; }
+      if (!ugc.photoUrl) { fail(t('sec.montage.needPhoto', 'Загрузите своё фото (портрет анфас) во вкладке «Моё фото».')); return; }
     } else if (!ugc.avatarId) {
-      fail('Выберите аватара из коллекции или загрузите своё фото (вкладка «Своё фото»).'); return;
+      fail(t('sec.montage.needAvatar', 'Выберите аватара во вкладке «Готовые аватары» или загрузите своё фото («Моё фото»).')); return;
     }
     if (!useDialogue && !useVideo) {
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
-      if (!hasVoice) { fail('Нужен голос: разберите запись или сгенерируйте текст.'); return; }
+      if (!hasVoice) { fail(t('sec.montage.needVoice', 'Нужен голос: разберите запись или сгенерируйте текст.')); return; }
     }
     const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
     // «Использовать анализ»: снимок ДНК тренда для серверной режиссуры (Монтаж).
@@ -691,14 +701,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         ? { ...ugc, analysis: analysisForBuild, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
         : { ...ugc, analysis: analysisForBuild };
     setUgcBusy('render'); setUgcCtaNote(null);
-    setUgcNote(useDialogue ? 'Запускаю диалог (два аватара)…' : useRetention && ugc.retentionBrolls.length > 1 ? `Запускаю батч (${ugc.retentionBrolls.length} роликов)…` : 'Запускаю сборку…');
+    setUgcNote(useDialogue ? t('sec.montage.startDialogue', 'Запускаю диалог (два аватара)…') : useRetention && ugc.retentionBrolls.length > 1 ? t('sec.montage.startBatch', 'Запускаю батч ({{n}} роликов)…', { n: ugc.retentionBrolls.length }) : t('sec.montage.startBuild', 'Запускаю сборку…'));
     try {
       const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.jobId) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (!r.ok || !d.jobId) throw new Error(d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
       ugcMutate((u) => ({ ...u, buildJobId: d.jobId, result: null }));
       pollUgcBuild(d.jobId);
-    } catch (e: any) { setUgcBusy(null); fail(e?.message || 'Не удалось запустить сборку.'); }
+    } catch (e: any) { setUgcBusy(null); fail(e?.message || t('sec.montage.buildStartFail', 'Не удалось запустить сборку.')); }
   };
   // Возобновление поллинга после перезахода в сценарий (сборка идёт на сервере).
   useEffect(() => {
@@ -715,19 +725,19 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     const dnaBrief = ugc.analysis && ugc.analysisUse.script
       ? [
         ugc.brief.trim(),
-        '— Разбор вирусного тренда (следуй его формуле успеха): —',
+        t('sec.montage.dnaHeader', '— Разбор вирусного тренда (следуй его формуле успеха): —'),
         ugc.analysis.brief || '',
-        ugc.analysis.copyReadyScript ? `Возьми за основу готовый скрипт тренда (перепиши под нас, не копируй дословно): «${ugc.analysis.copyReadyScript}»` : '',
+        ugc.analysis.copyReadyScript ? t('sec.montage.dnaScriptLine', 'Возьми за основу готовый скрипт тренда (перепиши под нас, не копируй дословно): «{{script}}»', { script: ugc.analysis.copyReadyScript }) : '',
       ].filter(Boolean).join('\n')
       : ugc.brief;
     try {
       const res = await fetch('/api/render/podcast/dialogue', { method: 'POST', headers: headers(), body: JSON.stringify({ brief: dnaBrief, turns: 6 }) });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
+      if (!res.ok) throw new Error(d.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: res.status }));
       const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: 'A' as const, text: String(l.text || '') })).filter((l: PodLine) => l.text.trim()) : [];
       ugcMutate((u) => ({ ...u, script: lines }));
-      setUgcNote(d.note || `Готово: ${lines.length} реплик.`);
-    } catch (e: any) { setUgcNote(e?.message || 'Не удалось сгенерировать текст.'); }
+      setUgcNote(d.note || t('sec.montage.genLinesOk', 'Готово: {{n}} реплик.', { n: lines.length }));
+    } catch (e: any) { setUgcNote(e?.message || t('sec.montage.genTextFail', 'Не удалось сгенерировать текст.')); }
     finally { setUgcBusy(null); }
   };
   // Разбор записи → реплики (переиспользуем /podcast/diarize). В режиме «Диалоги» СОХРАНЯЕМ
@@ -738,13 +748,13 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(), body: JSON.stringify({ recordingUrl: ugc.recordingUrl, hostAVoice: ugc.voice }) });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
+      if (!res.ok) throw new Error(d.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: res.status }));
       const keepAB = ugc.dialogueEnabled;
       const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: (keepAB && l.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l.text || ''), start: Number(l.start), end: Number(l.end) })).filter((l: PodLine) => l.text.trim()) : [];
       const speakers = new Set(lines.map((l) => l.speaker));
       ugcMutate((u) => ({ ...u, script: lines }));
-      setUgcNote(d.note || `Разобрано: ${lines.length} реплик${keepAB && speakers.size > 1 ? ' (два голоса A/B)' : ''}.`);
-    } catch (e: any) { setUgcNote(e?.message || 'Не удалось разобрать запись.'); }
+      setUgcNote(d.note || t('sec.montage.diarizeOk', 'Разобрано: {{n}} реплик{{ab}}.', { n: lines.length, ab: keepAB && speakers.size > 1 ? t('sec.montage.diarizeAB', ' (два голоса A/B)') : '' }));
+    } catch (e: any) { setUgcNote(e?.message || t('sec.montage.diarizeFail', 'Не удалось разобрать запись.')); }
     finally { setUgcBusy(null); }
   };
   const [nameEdit, setNameEdit] = useState(false); // инлайн-редактирование имени сценария
@@ -822,11 +832,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         const res = await fetch(`/api/flows/${flowId}`, { headers: headers() });
         const d = await res.json();
         if (res.ok && d.flow) {
-          setName(d.flow.name || 'Сценарий');
+          setName(d.flow.name || t('sec.montage.defaultFlowName', 'Сценарий'));
           if (typeof d.flow.graph?.brief === 'string') setBrief(d.flow.graph.brief);
           const src = d.flow.graph?.source;
           if (src && typeof src.url === 'string') {
-            setSourceUrl(src.url); setSourceName(src.name || 'видео');
+            setSourceUrl(src.url); setSourceName(src.name || t('sec.montage.videoFb', 'видео'));
             if (typeof src.assetId === 'string' && src.assetId) setSourceAssetId(src.assetId);
           }
           if (d.flow.graph?.cloud && typeof d.flow.graph.cloud === 'object') setCloud((c) => ({ ...c, ...d.flow.graph.cloud }));
@@ -857,14 +867,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             setOmniSpec({ segments: norm.length ? norm : [newSeg(0, 0.2)] });
             // Гидрация Omni: вернуть превью готовых клипов и ВОЗОБНОВИТЬ поллинг активных задач (фон переживает выход/вход).
             for (const sg of norm) {
-              if (sg.genUrl) setOG(sg.id, { url: sg.genUrl, interactionId: sg.genInteractionId || null, note: 'Готово · в Галерее' });
-              else if (sg.genJobId) { setOG(sg.id, { busy: true, note: 'Возобновляю…' }); pollOmni(sg.id, sg.genJobId); }
+              if (sg.genUrl) setOG(sg.id, { url: sg.genUrl, interactionId: sg.genInteractionId || null, note: t('sec.montage.omniDoneShort', 'Готово · в Галерее') });
+              else if (sg.genJobId) { setOG(sg.id, { busy: true, note: t('sec.montage.resuming', 'Возобновляю…') }); pollOmni(sg.id, sg.genJobId); }
             }
           }
           if (d.flow.graph?.editor && typeof d.flow.graph.editor === 'object') {
             const ed = d.flow.graph.editor;
-            if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || 'видео', type: c.type === 'audio' ? 'audio' : 'video' })));
-            if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || 'Результат', type: ed.result.type === 'audio' ? 'audio' : 'video' });
+            if (Array.isArray(ed.clips)) setEditorClips(ed.clips.filter((c: any) => c && typeof c.url === 'string').map((c: any) => ({ url: c.url, name: c.name || t('sec.montage.videoFb', 'видео'), type: c.type === 'audio' ? 'audio' : 'video' })));
+            if (ed.result && typeof ed.result.url === 'string') setEditorResult({ url: ed.result.url, name: ed.result.name || t('sec.montage.resultFb', 'Результат'), type: ed.result.type === 'audio' ? 'audio' : 'video' });
           }
           if (d.flow.graph?.ugc && typeof d.flow.graph.ugc === 'object') {
             const uu = d.flow.graph.ugc;
@@ -998,36 +1008,40 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   /** Раскадровка через Nano Banana 2 Lite — дешёвые кадры ДО дорогой видео-генерации. */
   const runStoryboard = async (g: OmniSeg) => {
     if (omniGen[g.id]?.sbBusy) return;
-    if (!g.prompt.trim()) { setOG(g.id, { note: 'Впишите промт для раскадровки.' }); return; }
+    if (!g.prompt.trim()) { setOG(g.id, { note: t('sec.montage.sbNeedPrompt', 'Впишите промт для раскадровки.') }); return; }
     setOG(g.id, { sbBusy: true, note: null });
     try {
       const res = await fetch('/api/render/omni/storyboard', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, count: 3 }) });
       const d = await res.json();
-      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { sbBusy: false, note: d?.error || 'Не удалось сделать раскадровку.' }); return; }
+      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { sbBusy: false, note: d?.error || t('sec.montage.sbFail', 'Не удалось сделать раскадровку.') }); return; }
       setOG(g.id, { sbBusy: false, frames: d.frames.map((f: any) => f.url), note: d.note });
-    } catch { setOG(g.id, { sbBusy: false, note: 'Ошибка сети при раскадровке.' }); }
+    } catch { setOG(g.id, { sbBusy: false, note: t('sec.montage.sbNetFail', 'Ошибка сети при раскадровке.') }); }
   };
   /** Понятное объяснение ошибок Omni/Nano — частый кейс это фильтр контента Gemini (400 Input blocked). */
   const friendlyOmniError = (raw?: string | null): string => {
     const s = (raw || '').toLowerCase();
     if (/input blocked|prohibited|could not be processed|not be processed|safety|content polic|deepfake|blocked/.test(s)) {
-      return '⚠️ Gemini заблокировал запрос (фильтр контента). Чаще всего дело в «жёстком» промте (взрыв/насилие/оружие) или запрещённой теме — реже в связке «реальный человек + такое действие». Смягчите формулировку (напр. «бутылка эффектно раскрывается брызгами»); один реальный кадр-лицо сам по себе обычно проходит.';
+      return t('sec.montage.geminiBlocked', '⚠️ Gemini заблокировал запрос (фильтр контента). Чаще всего дело в «жёстком» промте (взрыв/насилие/оружие) или запрещённой теме — реже в связке «реальный человек + такое действие». Смягчите формулировку (напр. «бутылка эффектно раскрывается брызгами»); один реальный кадр-лицо сам по себе обычно проходит.');
     }
-    return raw || 'Не удалось сгенерировать.';
+    return raw || t('sec.montage.genFail', 'Не удалось сгенерировать.');
   };
   const pollOmni = (id: string, jobId: string) => {
     const tick = async () => {
       try {
         const res = await fetch('/api/render/omni/status?jobId=' + jobId, { headers: headers() });
         if (res.status === 404) {  // задача пропала (сервер перезапустился) → мягко; готовый клип мог сохраниться в Галерею
-          setOG(id, { busy: false, note: 'Прошлая генерация не найдена (сервер мог перезапуститься). Готовый клип ищите в Галерее.' });
+          setOG(id, { busy: false, note: t('sec.montage.jobLost', 'Прошлая генерация не найдена (сервер мог перезапуститься). Готовый клип ищите в Галерее.') });
           updateSeg(id, { genJobId: null });
           return;
         }
         const d = await res.json();
         if (res.ok && d.status && d.status !== 'processing') {
           if (d.status === 'done' && d.fileUrl) {
-            setOG(id, { busy: false, url: d.fileUrl, interactionId: d.interactionId, note: `Готово${d.costUsd ? ` · ~$${d.costUsd}` : ''}${d.seconds ? ` · ${d.seconds}с` : ''} · в Галерее` });
+            const doneParts = [t('sec.montage.readyWord', 'Готово')];
+            if (d.costUsd) doneParts.push(`~$${d.costUsd}`);
+            if (d.seconds) doneParts.push(t('sec.montage.nSec', '{{n}}с', { n: d.seconds }));
+            doneParts.push(t('sec.montage.inGallery', 'в Галерее'));
+            setOG(id, { busy: false, url: d.fileUrl, interactionId: d.interactionId, note: doneParts.join(' · ') });
             updateSeg(id, { genJobId: null, genUrl: d.fileUrl, genInteractionId: d.interactionId || null });  // результат → переживёт выход/вход
           } else {
             setOG(id, { busy: false, note: friendlyOmniError(d.error) });
@@ -1042,7 +1056,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   };
   const runOmniGen = async (g: OmniSeg) => {
     if (omniGen[g.id]?.busy) return;
-    if (!g.prompt.trim()) { setOG(g.id, { note: 'Впишите промт «как сгенерировать».' }); return; }
+    if (!g.prompt.trim()) { setOG(g.id, { note: t('sec.montage.genNeedPrompt', 'Впишите промт «как сгенерировать».') }); return; }
     if (omniPollRef.current[g.id]) clearTimeout(omniPollRef.current[g.id]);
     setOG(g.id, { busy: true, note: null, url: null, interactionId: null });
     try {
@@ -1050,7 +1064,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       // КОНТЕКСТ ВИДЕО: старт-кадр не задан вручную → берём кадр из ВЫДЕЛЕННОГО фрагмента (позиция окна).
       // Omni оживит реальный кадр сцены по промту (сохранит контекст), а не сгенерит клип с нуля.
       if (!seed && g.engine === 'omni' && sourceUrl && srcDuration > 0) {
-        setOG(g.id, { note: `Беру кадр ${(g.start * srcDuration).toFixed(1)}с из выделенного фрагмента как контекст…` });
+        setOG(g.id, { note: t('sec.montage.takingCtxFrame', 'Беру кадр {{t}}с из выделенного фрагмента как контекст…', { t: (g.start * srcDuration).toFixed(1) }) });
         try {
           const fr = await fetch('/api/render/omni/frame', { method: 'POST', headers: headers(), body: JSON.stringify({ videoUrl: sourceUrl, timeSec: g.start * srcDuration }) });
           const fd = await fr.json();
@@ -1059,11 +1073,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       }
       const res = await fetch('/api/render/omni/generate', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, aspect: '9:16', imageUrl: seed }) });
       const d = await res.json();
-      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Omni Flash недоступен.' }); return; }
+      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : t('sec.montage.omniUnavailable', 'Omni Flash недоступен.') }); return; }
       setOG(g.id, { note: d.note });
       updateSeg(g.id, { genJobId: d.jobId, genUrl: null, genInteractionId: null });  // активная задача → переживёт выход/вход
       pollOmni(g.id, d.jobId);
-    } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при генерации.' }); }
+    } catch { setOG(g.id, { busy: false, note: t('sec.montage.genNetFail', 'Ошибка сети при генерации.') }); }
   };
   const runOmniEdit = async (g: OmniSeg) => {
     const st = omniGen[g.id]; if (!st?.interactionId || st.busy) return;
@@ -1073,11 +1087,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const res = await fetch('/api/render/omni/edit', { method: 'POST', headers: headers(), body: JSON.stringify({ previousInteractionId: st.interactionId, prompt: editPrompt, aspect: '9:16' }) });
       const d = await res.json();
-      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : 'Ошибка правки.' }); return; }
+      if (!res.ok || !d.jobId) { setOG(g.id, { busy: false, note: d?.error ? friendlyOmniError(d.error) : t('sec.montage.editFail', 'Ошибка правки.') }); return; }
       setOG(g.id, { note: d.note, edit: '' });
       updateSeg(g.id, { genJobId: d.jobId, genUrl: null, genInteractionId: null });  // правка = новая задача; старый результат сбрасываем, иначе гидрация не возобновит её
       pollOmni(g.id, d.jobId);
-    } catch { setOG(g.id, { busy: false, note: 'Ошибка сети при правке.' }); }
+    } catch { setOG(g.id, { busy: false, note: t('sec.montage.editNetFail', 'Ошибка сети при правке.') }); }
   };
   const updateSeg = (id: string, patch: Partial<OmniSeg>) =>
     omniMutate((s) => ({ ...s, segments: s.segments.map((g) => g.id === id ? { ...g, ...patch } : g) }));
@@ -1097,17 +1111,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   };
   // ── #3 Старт-кадр (кадр из видео / загрузка / промт+картинка) + #4 продолжение по последнему кадру ──
   const runExtractFrame = async (g: OmniSeg) => {
-    if (!sourceUrl) { setOG(g.id, { note: 'Сначала выберите исходное видео.' }); return; }
+    if (!sourceUrl) { setOG(g.id, { note: t('sec.montage.needSourceFirst', 'Сначала выберите исходное видео.') }); return; }
     if (omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy) return;
     setOG(g.id, { fbBusy: true, note: null });
     try {
       const timeSec = srcDuration > 0 ? g.start * srcDuration : 0;
       const res = await fetch('/api/render/omni/frame', { method: 'POST', headers: headers(), body: JSON.stringify({ videoUrl: sourceUrl, timeSec }) });
       const d = await res.json();
-      if (!res.ok || !d.url) { setOG(g.id, { fbBusy: false, note: d?.error || 'Не удалось взять кадр.' }); return; }
+      if (!res.ok || !d.url) { setOG(g.id, { fbBusy: false, note: d?.error || t('sec.montage.frameFail', 'Не удалось взять кадр.') }); return; }
       updateSeg(g.id, { startFrame: d.url });
-      setOG(g.id, { fbBusy: false, note: 'Старт-кадр взят из видео (в Галерее).' });
-    } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при извлечении кадра.' }); }
+      setOG(g.id, { fbBusy: false, note: t('sec.montage.frameOk', 'Старт-кадр взят из видео (в Галерее).') });
+    } catch { setOG(g.id, { fbBusy: false, note: t('sec.montage.frameNetFail', 'Ошибка сети при извлечении кадра.') }); }
   };
   // #3 «Загрузить»: открыть галерею СВОИХ картинок для этого окна — выбрать существующую ИЛИ загрузить новую.
   const openStartFramePicker = (segId: string) => { setImgPick(segId); setImgPickQ(''); void loadMedia(); };
@@ -1118,11 +1132,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const fd = new FormData(); fd.append('file', f);
       const res = await fetch('/api/trends/media/upload?kind=reference', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok || !d.asset?.fileUrl) { setOG(segId, { fbBusy: false, note: d?.error || 'Не удалось загрузить картинку.' }); return false; }
+      if (!res.ok || !d.asset?.fileUrl) { setOG(segId, { fbBusy: false, note: d?.error || t('sec.montage.imgUploadFail', 'Не удалось загрузить картинку.') }); return false; }
       updateSeg(segId, { startFrame: d.asset.fileUrl });
-      setOG(segId, { fbBusy: false, note: 'Своя картинка — старт-кадр.' });
+      setOG(segId, { fbBusy: false, note: t('sec.montage.imgIsStart', 'Своя картинка — старт-кадр.') });
       return true;
-    } catch { setOG(segId, { fbBusy: false, note: 'Ошибка загрузки картинки.' }); return false; }
+    } catch { setOG(segId, { fbBusy: false, note: t('sec.montage.imgUploadNetFail', 'Ошибка загрузки картинки.') }); return false; }
   };
   // Загрузка новой картинки из модалки галереи: грузим → ставим старт-кадром → обновляем галерею → закрываем.
   const uploadStartFrameFromPicker = async (segId: string, files: FileList | null) => {
@@ -1131,16 +1145,16 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   };
   const runPromptImage = async (g: OmniSeg) => {
     if (omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy) return;
-    if (!g.startFrame) { setOG(g.id, { note: 'Сначала возьми кадр из видео или загрузи картинку.' }); return; }
-    if (!g.prompt.trim()) { setOG(g.id, { note: 'Впиши промт — как изменить картинку.' }); return; }
+    if (!g.startFrame) { setOG(g.id, { note: t('sec.montage.needFrameFirst', 'Сначала возьмите кадр из видео или загрузите картинку.') }); return; }
+    if (!g.prompt.trim()) { setOG(g.id, { note: t('sec.montage.redrawNeedPrompt', 'Впишите промт — как изменить картинку.') }); return; }
     setOG(g.id, { fbBusy: true, note: null });
     try {
       const res = await fetch('/api/render/omni/storyboard', { method: 'POST', headers: headers(), body: JSON.stringify({ prompt: g.prompt, count: 1, imageUrl: g.startFrame }) });
       const d = await res.json();
-      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { fbBusy: false, note: d?.error ? friendlyOmniError(d.error) : 'Не удалось перерисовать кадр.' }); return; }
+      if (!res.ok || !Array.isArray(d.frames) || !d.frames.length) { setOG(g.id, { fbBusy: false, note: d?.error ? friendlyOmniError(d.error) : t('sec.montage.redrawFail', 'Не удалось перерисовать кадр.') }); return; }
       updateSeg(g.id, { startFrame: d.frames[0].url });
-      setOG(g.id, { fbBusy: false, note: 'Старт-кадр перерисован по промту (Nano).' });
-    } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при перерисовке.' }); }
+      setOG(g.id, { fbBusy: false, note: t('sec.montage.redrawOk', 'Старт-кадр перерисован по промту (Nano).') });
+    } catch { setOG(g.id, { fbBusy: false, note: t('sec.montage.redrawNetFail', 'Ошибка сети при перерисовке.') }); }
   };
   const runContinue = async (g: OmniSeg) => {
     const url = omniGen[g.id]?.url; if (!url) return;
@@ -1149,16 +1163,16 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const res = await fetch('/api/render/omni/frame', { method: 'POST', headers: headers(), body: JSON.stringify({ videoUrl: url, last: true }) });
       const d = await res.json();
-      if (!res.ok || !d.url) { setOG(g.id, { fbBusy: false, note: d?.error || 'Не удалось взять последний кадр.' }); return; }
+      if (!res.ok || !d.url) { setOG(g.id, { fbBusy: false, note: d?.error || t('sec.montage.lastFrameFail', 'Не удалось взять последний кадр.') }); return; }
       const newId = addSegment(d.url);
-      setOG(g.id, { fbBusy: false, note: newId ? 'Добавил окно-продолжение: старт = последний кадр.' : 'Нет места на ленте для нового окна.' });
-    } catch { setOG(g.id, { fbBusy: false, note: 'Ошибка сети при продолжении.' }); }
+      setOG(g.id, { fbBusy: false, note: newId ? t('sec.montage.contOk', 'Добавил окно-продолжение: старт = последний кадр.') : t('sec.montage.contNoRoom', 'Нет места на ленте для нового окна.') });
+    } catch { setOG(g.id, { fbBusy: false, note: t('sec.montage.contNetFail', 'Ошибка сети при продолжении.') }); }
   };
   const removeSeg = (id: string) => {
     if (omniPollRef.current[id]) { clearTimeout(omniPollRef.current[id]); delete omniPollRef.current[id]; } // не оставляем висящий поллинг удалённого окна
     omniMutate((s) => (s.segments.length <= 1 ? s : { ...s, segments: s.segments.filter((g) => g.id !== id) }));
   };
-  const fmtT = (frac: number) => srcDuration > 0 ? `${(frac * srcDuration).toFixed(1)}с` : `${Math.round(frac * 100)}%`;
+  const fmtT = (frac: number) => srcDuration > 0 ? t('sec.montage.nSec', '{{n}}с', { n: (frac * srcDuration).toFixed(1) }) : `${Math.round(frac * 100)}%`;
   const winSecOf = (g: OmniSeg) => srcDuration > 0 ? (g.end - g.start) * srcDuration : 0;
   const omniGenSeconds = omniSpec.segments.filter((g) => g.engine === 'omni').reduce((a, g) => a + Math.min(OMNI_MAX_SEC, winSecOf(g)), 0);
   // Идёт генерация видео или подготовка кадра хотя бы по одному окну → анимируем узел «Omni Flash» (как «Подкаст»).
@@ -1301,10 +1315,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const push = (id: string, fileUrl: string, title: string, kind: string, folder: 'trends' | 'reference' | 'audio' | 'analyzed', cover?: string) => {
         if (fileUrl && !seen.has(fileUrl)) { seen.add(fileUrl); out.push({ id: id || fileUrl, fileUrl, title, kind, folder, cover }); }
       };
-      for (const v of trends) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || 'видео', 'video', 'trends', v.coverUrl);
-      for (const m of ref) push(m.id, m.fileUrl, m.originalName || 'файл', m.mediaType, 'reference');
-      for (const m of aud) push(m.id, m.fileUrl, m.originalName || 'аудио', m.mediaType, 'audio');
-      for (const m of ana) if (m.mediaType === 'video') push(m.id, m.fileUrl, m.originalName || 'видео', 'video', 'analyzed');
+      for (const v of trends) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || t('sec.montage.videoFb', 'видео'), 'video', 'trends', v.coverUrl);
+      for (const m of ref) push(m.id, m.fileUrl, m.originalName || t('sec.montage.fileFb', 'файл'), m.mediaType, 'reference');
+      for (const m of aud) push(m.id, m.fileUrl, m.originalName || t('sec.montage.audioFb', 'аудио'), m.mediaType, 'audio');
+      for (const m of ana) if (m.mediaType === 'video') push(m.id, m.fileUrl, m.originalName || t('sec.montage.videoFb', 'видео'), 'video', 'analyzed');
       setMedia(out);
     } catch { setMedia([]); }
   };
@@ -1328,7 +1342,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       if (res.ok) {
         const d = await res.json();
         const a = d.asset;
-        if (a?.fileUrl) out.push({ id: a.id || a.fileUrl, fileUrl: a.fileUrl, title: a.originalName || 'файл', type: a.mediaType || (k === 'audio' ? 'audio' : 'file'), cat: k === 'audio' ? 'audio' : 'reference' });
+        if (a?.fileUrl) out.push({ id: a.id || a.fileUrl, fileUrl: a.fileUrl, title: a.originalName || t('sec.montage.fileFb', 'файл'), type: a.mediaType || (k === 'audio' ? 'audio' : 'file'), cat: k === 'audio' ? 'audio' : 'reference' });
       }
     }
     return out;
@@ -1348,9 +1362,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const refs = r.ok ? ((await r.json()).assets || []) : [];
       const list: { url: string; name: string; thumb?: string; type: string; assetId?: string }[] = [];
       // Проанализированные («Из анализа») первыми — у них есть ДНК для автозаполнения блоков.
-      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', thumb: m.coverUrl || m.thumbUrl || undefined, type: 'analyzed', assetId: m.id });
-      for (const x of vids) if (x.fileUrl) list.push({ url: x.fileUrl, name: String(x.description || x.authorName || x.author || 'Видео').slice(0, 40), thumb: x.coverUrl, type: 'trend' });
-      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || 'видео', thumb: m.coverUrl || m.thumbUrl || undefined, type: 'reference' });
+      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || t('sec.montage.videoFb', 'видео'), thumb: m.coverUrl || m.thumbUrl || undefined, type: 'analyzed', assetId: m.id });
+      for (const x of vids) if (x.fileUrl) list.push({ url: x.fileUrl, name: String(x.description || x.authorName || x.author || t('sec.montage.videoFbCap', 'Видео')).slice(0, 40), thumb: x.coverUrl, type: 'trend' });
+      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) list.push({ url: m.fileUrl, name: m.originalName || t('sec.montage.videoFb', 'видео'), thumb: m.coverUrl || m.thumbUrl || undefined, type: 'reference' });
       setSources(list);
     } catch { setSources([]); }
   };
@@ -1373,7 +1387,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       }
       await loadSources();
       setSrcTab('reference');   // загруженное лежит в «Референс»
-    } catch (e: any) { setSrcNote(e?.message || 'Ошибка загрузки видео'); }
+    } catch (e: any) { setSrcNote(e?.message || t('sec.montage.srcUploadErr', 'Ошибка загрузки видео')); }
     finally { setSrcUploading(false); if (srcUploadRef.current) srcUploadRef.current.value = ''; }
   };
 
@@ -1427,10 +1441,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const push = (url: string, name: string, type: 'video' | 'audio', cat: EdCat, cover?: string) => {
         if (url && !seen.has(url)) { seen.add(url); list.push({ url, name, cover, type, cat }); }
       };
-      for (const x of vids) if (x.fileUrl) push(x.fileUrl, x.title || x.author || 'видео', 'video', 'trends', x.coverUrl);
-      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) push(m.fileUrl, m.originalName || 'видео', 'video', 'analyzed');
-      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) push(m.fileUrl, m.originalName || 'видео', 'video', 'reference');
-      for (const m of audios) if (m.fileUrl) push(m.fileUrl, m.originalName || 'аудио', 'audio', 'audio');
+      for (const x of vids) if (x.fileUrl) push(x.fileUrl, x.title || x.author || t('sec.montage.videoFb', 'видео'), 'video', 'trends', x.coverUrl);
+      for (const m of analyzed) if (m.mediaType === 'video' && m.fileUrl) push(m.fileUrl, m.originalName || t('sec.montage.videoFb', 'видео'), 'video', 'analyzed');
+      for (const m of refs) if (m.mediaType === 'video' && m.fileUrl) push(m.fileUrl, m.originalName || t('sec.montage.videoFb', 'видео'), 'video', 'reference');
+      for (const m of audios) if (m.fileUrl) push(m.fileUrl, m.originalName || t('sec.montage.audioFb', 'аудио'), 'audio', 'audio');
       setEditorGallery(list);
       // Открыть первую непустую вкладку (приоритет — «Из анализа», где лежат проанализированные видео).
       const order: EdCat[] = ['analyzed', 'trends', 'reference', 'audio'];
@@ -1456,7 +1470,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       }
       await loadEditorGallery();                                 // перезагрузить (как Галерея после аплоада)
       setEditorTab(kind === 'audio' ? 'audio' : 'reference');    // открыть вкладку, куда легло
-    } catch (e: any) { setEditorNote(e?.message || 'Ошибка загрузки'); }
+    } catch (e: any) { setEditorNote(e?.message || t('sec.montage.uploadErr', 'Ошибка загрузки')); }
     finally {
       setEditorUploading(false);
       if (edMediaInputRef.current) edMediaInputRef.current.value = '';
@@ -1467,17 +1481,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const removeEditorClip = (url: string) => { setEditorClips((cs) => cs.filter((x) => x.url !== url)); setDirty(true); };
   const mergeEditorClips = async () => {
     if (editorClips.length < 2 || editorMerging) return;
-    if (editorClips.some((c) => c.type === 'audio')) { setEditorNote('Склейка — только для видео. Аудио редактируйте по одному (обрезка).'); return; }
+    if (editorClips.some((c) => c.type === 'audio')) { setEditorNote(t('sec.montage.mergeOnlyVideo', 'Склейка — только для видео. Аудио редактируйте по одному (обрезка).')); return; }
     setEditorMerging(true); setEditorNote(null);
     try {
       const res = await fetch('/api/video-edit/merge', {
         method: 'POST', headers: headers(),
-        body: JSON.stringify({ clips: editorClips.map((c) => ({ inputUrl: c.url })), name: name ? `Склейка — ${name}` : 'Склейка видео' }),
+        body: JSON.stringify({ clips: editorClips.map((c) => ({ inputUrl: c.url })), name: name ? t('sec.montage.mergeNameOf', 'Склейка — {{name}}', { name }) : t('sec.montage.mergeName', 'Склейка видео') }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
-      setEditorResult({ url: d.fileUrl, name: 'Склейка видео', type: 'video' }); setDirty(true);
-    } catch (e: any) { setEditorNote(e?.message || 'Не удалось склеить'); }
+      if (!res.ok) throw new Error(d.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: res.status }));
+      setEditorResult({ url: d.fileUrl, name: t('sec.montage.mergeName', 'Склейка видео'), type: 'video' }); setDirty(true);
+    } catch (e: any) { setEditorNote(e?.message || t('sec.montage.mergeFail', 'Не удалось склеить')); }
     finally { setEditorMerging(false); }
   };
   // Панель «Редактор» открыта → сразу показываем Галерею (пикер всегда виден снизу,
@@ -1531,7 +1545,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     try {
       const r = await fetch(`/api/notebooklm/flow/${flowId}/overview`, { headers: headers() });
       if (!r.ok) {
-        if (!silent) setHbNote(r.status === 403 ? 'Блок «Hotebook» доступен на тарифе Enterprise.' : `Ошибка ${r.status}`);
+        if (!silent) setHbNote(r.status === 403 ? t('sec.montage.hbEnterpriseOnly', 'Блок «Hotebook» доступен на тарифе Enterprise.') : t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
         return;
       }
       const d = await r.json();
@@ -1556,7 +1570,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       setHbCounters(d.counters && typeof d.counters === 'object' ? d.counters : {});
       setHbArtifactCounts(d.artifactCounts && typeof d.artifactCounts === 'object' ? d.artifactCounts : {});
       if ((d.jobs || []).some((j: any) => j.status === 'queued' || j.status === 'running')) setTimeout(() => { void hbPollLoop(); }, 0);
-    } catch { if (!silent) setHbNote('Бэкенд недоступен.'); }
+    } catch { if (!silent) setHbNote(t('sec.montage.backendDown', 'Бэкенд недоступен.')); }
     finally { if (!silent) setHbLoading(false); }
   };
   // Тихая гидрация после загрузки сценария: кольцо генерации на узле оживает без открытия панели.
@@ -1582,9 +1596,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const r = await fetch(`/api/notebooklm/flow/${flowId}/studio-artifacts/download`, {
         method: 'POST', headers: headers(), body: JSON.stringify({ index: art.index, title: art.title, kind: art.kind }),
       });
-      if (r.ok) { setHbOk(`«${art.title}» загружено в Галерею → Hotebook`); setTimeout(() => setHbOk(null), 6000); void hbLoadOverview(true); }
+      if (r.ok) { setHbOk(t('sec.montage.hbArtDl', '«{{title}}» загружено в Галерею → Hotebook', { title: art.title })); setTimeout(() => setHbOk(null), 6000); void hbLoadOverview(true); }
       else setHbNote(await hbErr(r));
-    } catch { setHbNote('Не удалось загрузить артефакт.'); }
+    } catch { setHbNote(t('sec.montage.hbArtDlFail', 'Не удалось загрузить артефакт.')); }
     finally { setHbStudioDl((s) => { const n = new Set(s); n.delete(art.index); return n; }); }
   };
   // Подтягиваем список готовых работ студии при открытии панели Hotebook (и после «Обновить»).
@@ -1595,19 +1609,19 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const hbErr = async (res: globalThis.Response): Promise<string> => {
     const d = await res.json().catch(() => ({} as any));
     if (d?.errorKind && ['ext_offline', 'ext_login', 'error'].includes(d.errorKind)) void hbRefreshStatus(true);
-    return d?.error || `Ошибка ${res.status}`;
+    return d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: res.status });
   };
   // После добавления источника: зелёный фидбэк + перечитать АВТОРИТЕТНЫЙ список из блокнота
   // (сколько бы их ни было — панель всегда показывает реальные, не «застревает» на одном).
   const hbAfterAdd = (label: string) => {
-    setHbOk(`Источник добавлен: ${label}. Можно добавлять ещё.`);
+    setHbOk(t('sec.montage.hbSrcAdded', 'Источник добавлен: {{label}}. Можно добавлять ещё.', { label }));
     setTimeout(() => setHbOk(null), 6000);
     void hbLoadOverview(true);
   };
   const hbAddUrl = async () => {
     const url = hbSrcUrl.trim();
     if (!url || hbSrcBusy) return;
-    if (!/^https?:\/\//i.test(url)) { setHbNote('Ссылка должна начинаться с http(s)://'); return; }
+    if (!/^https?:\/\//i.test(url)) { setHbNote(t('sec.montage.hbUrlInvalid', 'Ссылка должна начинаться с http(s)://')); return; }
     setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'url', url, flowName: name }) });
@@ -1616,7 +1630,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       if (d.source) setHbSources((s) => [...s, d.source]);
       setHbSrcUrl('');
       hbAfterAdd(d.source?.title || d.source?.url || url);
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить источник'); }
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbAddSrcFail', 'Не удалось добавить источник')); }
     finally { setHbSrcBusy(false); }
   };
   const hbAddText = async () => {
@@ -1624,14 +1638,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     if (!content || hbSrcBusy) return;
     setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
-      const title = content.split('\n')[0].slice(0, 60) || 'Текст';
+      const title = content.split('\n')[0].slice(0, 60) || t('sec.montage.hbTextFb', 'Текст');
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources`, { method: 'POST', headers: headers(), body: JSON.stringify({ kind: 'text', title, content, flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json();
       if (d.source) setHbSources((s) => [...s, d.source]);
       setHbSrcText(''); setHbTextOpen(false);
       hbAfterAdd(title);
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить текст'); }
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbAddTextFail', 'Не удалось добавить текст')); }
     finally { setHbSrcBusy(false); }
   };
   /** Пикер источника-файла из Галереи (media_assets: референс/аудио/из анализа). */
@@ -1652,11 +1666,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         if (id && !seen.has(k)) { seen.add(k); out.push({ id, name: nm, type, cat, url, cover }); }
       };
       const refs = r.ok ? ((await r.json()).assets || []) : [];
-      for (const m of refs) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'reference', m.fileUrl, m.coverUrl);
+      for (const m of refs) if (m.id) push(m.id, m.originalName || t('sec.montage.fileFb', 'файл'), m.mediaType || 'file', 'reference', m.fileUrl, m.coverUrl);
       const auds = au.ok ? ((await au.json()).assets || []) : [];
-      for (const m of auds) if (m.id) push(m.id, m.originalName || 'аудио', m.mediaType || 'audio', 'audio', m.fileUrl, m.coverUrl);
+      for (const m of auds) if (m.id) push(m.id, m.originalName || t('sec.montage.audioFb', 'аудио'), m.mediaType || 'audio', 'audio', m.fileUrl, m.coverUrl);
       const ana = an.ok ? ((await an.json()).assets || []) : [];
-      for (const m of ana) if (m.id) push(m.id, m.originalName || 'файл', m.mediaType || 'file', 'analyzed', m.fileUrl, m.coverUrl);
+      for (const m of ana) if (m.id) push(m.id, m.originalName || t('sec.montage.fileFb', 'файл'), m.mediaType || 'file', 'analyzed', m.fileUrl, m.coverUrl);
       setHbGallery(out);
       const order: EdCat[] = ['analyzed', 'reference', 'audio'];
       const first = order.find((c) => out.some((x) => x.cat === c));
@@ -1672,8 +1686,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json(); if (d.source) setHbSources((s) => [...s, d.source]);
       setHbPickedIds((p) => new Set(p).add(assetId)); // отметить ✓, пикер оставить открытым (можно добавить ещё)
-      hbAfterAdd(d.source?.title || 'файл');
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить файл'); }
+      hbAfterAdd(d.source?.title || t('sec.montage.fileFb', 'файл'));
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbAddFileFail', 'Не удалось добавить файл')); }
     finally { setHbSrcBusy(false); }
   };
   // Собрать ПОЛНЫЙ текст анализа из сохранённой ДНК (video_analyses.dna) — тот же
@@ -1685,31 +1699,31 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     const bullets = (label: string, arr: any) => {
       if (Array.isArray(arr) && arr.length) { L.push(`${label}:`); for (const x of arr) { const s = String(x ?? '').trim(); if (s) L.push(`• ${s}`); } }
     };
-    L.push('=== ВИРАЛЬНЫЙ РАЗБОР ===');
-    line('Тип хука', dna.hookType);
-    line('Почему работает', dna.whyItWorks);
-    line('Целевая аудитория', dna.targetAudience);
-    bullets('Факторы виральности', dna.viralFactors);
-    if (String(dna.copyReadyScript || '').trim()) { L.push('Готовый сценарий (copy-ready):'); L.push(String(dna.copyReadyScript).trim()); }
-    bullets('Как адаптировать', dna.howToAdapt);
+    L.push(t('sec.montage.anaViralHeader', '=== ВИРАЛЬНЫЙ РАЗБОР ==='));
+    line(t('sec.montage.anaHookType', 'Тип хука'), dna.hookType);
+    line(t('sec.montage.anaWhyWorks', 'Почему работает'), dna.whyItWorks);
+    line(t('sec.montage.anaAudience', 'Целевая аудитория'), dna.targetAudience);
+    bullets(t('sec.montage.anaViralFactors', 'Факторы виральности'), dna.viralFactors);
+    if (String(dna.copyReadyScript || '').trim()) { L.push(t('sec.montage.anaCopyScript', 'Готовый сценарий (copy-ready):')); L.push(String(dna.copyReadyScript).trim()); }
+    bullets(t('sec.montage.anaHowToAdapt', 'Как адаптировать'), dna.howToAdapt);
     L.push('');
-    L.push('=== АНАЛИЗ СОДЕРЖАНИЯ ===');
-    line('Краткое описание', dna.summary);
+    L.push(t('sec.montage.anaContentHeader', '=== АНАЛИЗ СОДЕРЖАНИЯ ==='));
+    line(t('sec.montage.anaSummary', 'Краткое описание'), dna.summary);
     if (Array.isArray(dna.sceneBeats) && dna.sceneBeats.length) {
-      L.push('Сцены (тайминг):');
+      L.push(t('sec.montage.anaScenes', 'Сцены (тайминг):'));
       for (const b of dna.sceneBeats) {
         const t = typeof b?.t === 'number' ? `${Math.floor(b.t / 60)}:${String(Math.floor(b.t % 60)).padStart(2, '0')}` : '';
         const desc = String(b?.desc ?? '').trim();
         if (desc) L.push(`• ${t ? t + ' — ' : ''}${desc}${b?.intensity ? ` [${b.intensity}]` : ''}`);
       }
     }
-    line('Разбор хука', dna.hookAnalysis);
-    line('Визуальный стиль', dna.visualStyle);
-    line('Аудио/диалог', dna.audioDialogue);
-    bullets('Почему заходит у зрителя', dna.whyResonates);
-    bullets('Как повторить', dna.howToReplicate);
-    if (Array.isArray(dna.keywords) && dna.keywords.length) line('Ключевые слова', dna.keywords.join(', '));
-    if (dna.sourceUrl) line('Источник', dna.sourceUrl);
+    line(t('sec.montage.anaHookAnalysis', 'Разбор хука'), dna.hookAnalysis);
+    line(t('sec.montage.anaVisualStyle', 'Визуальный стиль'), dna.visualStyle);
+    line(t('sec.montage.anaAudioDialogue', 'Аудио/диалог'), dna.audioDialogue);
+    bullets(t('sec.montage.anaWhyResonates', 'Почему заходит у зрителя'), dna.whyResonates);
+    bullets(t('sec.montage.anaHowToReplicate', 'Как повторить'), dna.howToReplicate);
+    if (Array.isArray(dna.keywords) && dna.keywords.length) line(t('sec.montage.anaKeywords', 'Ключевые слова'), dna.keywords.join(', '));
+    if (dna.sourceUrl) line(t('sec.montage.anaSource', 'Источник'), dna.sourceUrl);
     const out = L.join('\n').trim();
     return out.length > 40 ? out : (dna.brief ? String(dna.brief) : (dna.summary ? String(dna.summary) : ''));
   };
@@ -1721,7 +1735,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const hbFetchAnalysisText = async (assetId: string): Promise<string | null> => {
     const ar = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: headers() });
     if (ar.status === 404) return null;
-    if (!ar.ok) throw new Error(`Ошибка ${ar.status}`);
+    if (!ar.ok) throw new Error(t('sec.montage.errN', 'Ошибка {{n}}', { n: ar.status }));
     return hbBuildAnalysisText((await ar.json()).analysis?.dna || {}) || null;
   };
   // «＋ анализ»: добавить ПОЛНЫЙ сохранённый анализ файла отдельным текст-источником.
@@ -1730,11 +1744,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     setHbSrcBusy(true); setHbNote(null); setHbOk(null);
     try {
       const content = await hbFetchAnalysisText(assetId);
-      if (!content) { setHbNote('Для этого файла нет сохранённого анализа.'); return; }
-      await hbAddSourceText(`Анализ: ${fileName}`, content);
+      if (!content) { setHbNote(t('sec.montage.hbNoAnalysis', 'Для этого файла нет сохранённого анализа.')); return; }
+      await hbAddSourceText(t('sec.montage.hbAnalysisOf', 'Анализ: {{name}}', { name: fileName }), content);
       setHbPickedIds((p) => new Set(p).add(assetId));
-      hbAfterAdd(`Анализ: ${fileName}`);
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить анализ'); }
+      hbAfterAdd(t('sec.montage.hbAnalysisOf', 'Анализ: {{name}}', { name: fileName }));
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbAddAnalysisFail', 'Не удалось добавить анализ')); }
     finally { setHbSrcBusy(false); }
   };
   // «＋ видео + анализ»: одним кликом добавить и сам файл, и его анализ (отдельными источниками).
@@ -1748,13 +1762,13 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       let noAnalysis = false;
       try {
         const content = await hbFetchAnalysisText(assetId);
-        if (content) await hbAddSourceText(`Анализ: ${fileName}`, content);
+        if (content) await hbAddSourceText(t('sec.montage.hbAnalysisOf', 'Анализ: {{name}}', { name: fileName }), content);
         else noAnalysis = true;
       } catch { noAnalysis = true; }
       setHbPickedIds((p) => new Set(p).add(assetId));
-      hbAfterAdd(noAnalysis ? fileName : `${fileName} + анализ`);
-      if (noAnalysis) setHbNote('Видео добавлено. Сохранённого анализа у него нет — добавилось только видео.');
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось добавить'); }
+      hbAfterAdd(noAnalysis ? fileName : t('sec.montage.hbPlusAnalysis', '{{name}} + анализ', { name: fileName }));
+      if (noAnalysis) setHbNote(t('sec.montage.hbOnlyVideoAdded', 'Видео добавлено. Сохранённого анализа у него нет — добавилось только видео.'));
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbAddFail', 'Не удалось добавить')); }
     finally { setHbSrcBusy(false); }
   };
   const hbDelSource = async (sid: string) => {
@@ -1762,12 +1776,12 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const r = await fetch(`/api/notebooklm/flow/${flowId}/sources/${encodeURIComponent(sid)}`, { method: 'DELETE', headers: headers() });
       if (!r.ok) throw new Error(await hbErr(r));
       setHbSources((s) => s.filter((x) => (x.id || x.source_id) !== sid));
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось удалить источник'); }
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbDelSrcFail', 'Не удалось удалить источник')); }
   };
   const hbAsk = async () => {
     const q = hbChatQ.trim();
     if (!q || hbChatBusy) return;
-    if (hbSources.length === 0) { setHbNote('Сначала добавьте хотя бы один источник.'); return; }
+    if (hbSources.length === 0) { setHbNote(t('sec.montage.hbNeedSource', 'Сначала добавьте хотя бы один источник.')); return; }
     setHbChatBusy(true); setHbNote(null);
     setHbChatQ('');
     // ОНЛАЙН: показываем вопрос СРАЗУ + «думает…», ответ приходит и заменяет плейсхолдер (раньше
@@ -1783,8 +1797,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       hbMutate((h) => ({ ...h, chat: h.chat.map((m) => (m.ts === pendingTs && m.pending ? { q, a, ts: pendingTs, cites } : m)) }));
       setHbSuggestions(Array.isArray(d.suggestions) ? d.suggestions.filter((x: any) => typeof x === 'string') : []);
     } catch (e: any) {
-      setHbNote(e?.message || 'Чат не ответил');
-      hbMutate((h) => ({ ...h, chat: h.chat.map((m) => (m.ts === pendingTs && m.pending ? { ...m, a: '⚠ ответ не пришёл — попробуйте ещё раз', pending: false } : m)) }));
+      setHbNote(e?.message || t('sec.montage.hbChatNoAnswer', 'Чат не ответил'));
+      hbMutate((h) => ({ ...h, chat: h.chat.map((m) => (m.ts === pendingTs && m.pending ? { ...m, a: t('sec.montage.hbChatRetry', '⚠ ответ не пришёл — попробуйте ещё раз'), pending: false } : m)) }));
     }
     finally { setHbChatBusy(false); }
   };
@@ -1793,22 +1807,22 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     setHbGenOpen(t);
   };
   const hbGenerate = async () => {
-    const t = hbGenOpen;
-    if (!t || hbGenBusy) return;
-    if (hbSources.length === 0) { setHbNote('Сначала добавьте хотя бы один источник.'); setHbGenOpen(null); return; }
+    const gt = hbGenOpen; // тип генерации (не «t» — не затеняем i18n)
+    if (!gt || hbGenBusy) return;
+    if (hbSources.length === 0) { setHbNote(t('sec.montage.hbNeedSource', 'Сначала добавьте хотя бы один источник.')); setHbGenOpen(null); return; }
     setHbGenBusy(true); setHbNote(null);
     try {
-      const r = await fetch(`/api/notebooklm/flow/${flowId}/generate`, { method: 'POST', headers: headers(), body: JSON.stringify({ type: t, params: hbGenSet, name: (hb.name || '').trim(), flowName: name }) });
+      const r = await fetch(`/api/notebooklm/flow/${flowId}/generate`, { method: 'POST', headers: headers(), body: JSON.stringify({ type: gt, params: hbGenSet, name: (hb.name || '').trim(), flowName: name }) });
       if (!r.ok) throw new Error(await hbErr(r));
       const d = await r.json();
       if (d.job) {
         setHbJobs((js) => [d.job, ...js]);
-        setHbCounters((c) => ({ ...c, [t]: (c[t] || 0) + 1 }));
+        setHbCounters((c) => ({ ...c, [gt]: (c[gt] || 0) + 1 }));
         setTimeout(() => { void hbPollLoop(); }, 0);
       }
-      hbMutate((h) => ({ ...h, settings: { ...h.settings, [t]: hbGenSet } })); // запомнить настройки
+      hbMutate((h) => ({ ...h, settings: { ...h.settings, [gt]: hbGenSet } })); // запомнить настройки
       setHbGenOpen(null);
-    } catch (e: any) { setHbNote(e?.message || 'Не удалось запустить генерацию'); }
+    } catch (e: any) { setHbNote(e?.message || t('sec.montage.hbGenStartFail', 'Не удалось запустить генерацию')); }
     finally { setHbGenBusy(false); }
   };
 
@@ -1915,7 +1929,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       {/* Верхняя панель (в соло-режиме скрыта — виден только блок) */}
       {!soloBlock && (
       <div className="flex items-center gap-2 px-4 py-3 flex-wrap" style={{ borderBottom: '1px solid var(--border-medium)' }}>
-        <button onClick={async () => { if (dirty) { try { await save(); } catch { /* */ } } onBack(); }} title="Назад" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
+        <button onClick={async () => { if (dirty) { try { await save(); } catch { /* */ } } onBack(); }} title={t('sec.montage.backTitle', 'Назад')} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ArrowLeft size={16} /></button>
         {nameEdit ? (
           <input autoFocus value={name}
             onChange={(e) => { setName(e.target.value); setDirty(true); }}
@@ -1924,17 +1938,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             className="text-base font-700 px-2 py-1 rounded-lg outline-none"
             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--brand)', maxWidth: 320 }} />
         ) : (
-          <button onClick={() => setNameEdit(true)} title="Переименовать сценарий"
+          <button onClick={() => setNameEdit(true)} title={t('sec.montage.renameFlow', 'Переименовать сценарий')}
             className="inline-flex items-center gap-1.5 text-base font-700"
             style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
             {name} <Pencil size={14} style={{ color: 'var(--text-muted)' }} />
           </button>
         )}
         <div className="flex-1" />
-        <button onClick={undo} disabled={!canUndo} title="Назад (Ctrl+Z)"
+        <button onClick={undo} disabled={!canUndo} title={t('sec.montage.undoTitle', 'Назад (Ctrl+Z)')}
           className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canUndo ? 'pointer' : 'not-allowed' }}><Undo2 size={15} /></button>
-        <button onClick={redo} disabled={!canRedo} title="Вперёд (Ctrl+Shift+Z)"
+        <button onClick={redo} disabled={!canRedo} title={t('sec.montage.redoTitle', 'Вперёд (Ctrl+Shift+Z)')}
           className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: canRedo ? 'pointer' : 'not-allowed' }}><Redo2 size={15} /></button>
         {/* Кнопка «Сохранить» убрана из шапки: автосохранение пишет правки само ~1.6с (+ сейв при «Назад»). */}
@@ -1964,7 +1978,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           if (!p || !q) return null;
           const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
           return (
-            <button key={'ce' + i} onClick={() => { setCloudEdges((es) => es.filter((_, j) => j !== i)); setDirty(true); }} title="Удалить связь"
+            <button key={'ce' + i} onClick={() => { setCloudEdges((es) => es.filter((_, j) => j !== i)); setDirty(true); }} title={t('sec.montage.delEdgeTitle', 'Удалить связь')}
               style={{ position: 'absolute', left: `${mx}%`, top: `${my}%`, transform: 'translate(-50%,-50%)', zIndex: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid var(--brand)', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
               <X size={11} />
             </button>
@@ -1980,20 +1994,20 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
               {id === 'ugc' && !!ugcBusy && <span className="me-busyring" />}
               {id === 'hotebook' && hbBusyAny && <span className="me-busyring" />}
               {id === 'flow' && !!commBusy && <span className="me-busyring" />}
-              <button onClick={() => onCloudClick(id)} title={cfg.label}
+              <button onClick={() => onCloudClick(id)} title={cloudLabel(id)}
                 style={{ width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: pending?.from === id ? 'var(--btn-primary-bg)' : 'linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))',
                   border: `2px solid ${pending?.from === id ? 'var(--brand)' : cfg.color}`, color: cfg.color, boxShadow: `0 6px 22px ${cfg.glow}`, cursor: 'pointer' }}>
                 {cfg.icon}
               </button>
               {id === 'hotebook' && hbFreshDone && !hbBusyAny && (
-                <span className="me-dot" title="Артефакт готов — открыт блок и Галерея → Hotebook" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
+                <span className="me-dot" title={t('sec.montage.hbDoneDot', 'Артефакт готов — откройте блок или Галерею → Hotebook')} style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
               )}
               {id === 'flow' && commFreshDone && !commBusy && (
-                <span className="me-dot" title="Ролик собран — откройте блок и Галерею → Google Flow" style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
+                <span className="me-dot" title={t('sec.montage.flowDoneDot', 'Ролик собран — откройте блок и Галерею → Google Flow')} style={{ position: 'absolute', top: -3, left: -3, width: 15, height: 15, borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-primary)', boxShadow: '0 0 10px #10b981' }} />
               )}
-              <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{cfg.label}</span>
-              <button onPointerDown={(e) => startConnect(id, e)} title="Потяните, чтобы провести стрелку"
+              <span className="text-[11px]" style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', background: 'var(--bg-primary)', padding: '0 5px', borderRadius: 5 }}>{cloudLabel(id)}</span>
+              <button onPointerDown={(e) => startConnect(id, e)} title={t('sec.montage.connectTitle', 'Потяните, чтобы провести стрелку')}
                 style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: pending?.from === id ? 'var(--brand)' : 'var(--bg-secondary)', border: '1px solid var(--brand)', color: pending?.from === id ? '#fff' : 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', padding: 0, touchAction: 'none' }}>
                 <Link2 size={11} />
               </button>
@@ -2002,7 +2016,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         })}
         {pending && (
           <div style={{ position: 'absolute', left: '50%', top: 10, transform: 'translateX(-50%)', zIndex: 12, background: 'var(--bg-secondary)', border: '1px solid var(--brand)', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: 'var(--brand)', fontWeight: 600, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
-            Тяните к узлу и отпустите, чтобы связать
+            {t('sec.montage.connectHint', 'Тяните к узлу и отпустите, чтобы связать')}
           </div>
         )}
       </div>
@@ -2013,17 +2027,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         <div onClick={() => setShowSource(false)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Исходное видео</span>
+              <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.montage.srcModalTitle', 'Исходное видео')}</span>
               <button onClick={() => setShowSource(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             {sourceUrl && (
-              <button onClick={clearSource} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>✕ Убрать источник</button>
+              <button onClick={clearSource} className="text-xs mb-3" style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}>{t('sec.montage.srcRemove', '✕ Убрать источник')}</button>
             )}
             <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-              Выберите исходное видео — оно станет входом для облачных блоков (Omni и др.).
+              {t('sec.montage.srcModalHint', 'Выберите исходное видео — оно станет входом для облачных блоков (Omni и др.).')}
             </p>
             {(() => {
-              const SRC_TABS = ([['all', 'Все'], ['analyzed', 'Из анализа'], ['trend', 'Тренды'], ['reference', 'Референс']] as const)
+              const SRC_TABS = ([['all', t('sec.montage.tabAll', 'Все')], ['analyzed', t('sec.montage.tabAnalyzed', 'Из анализа')], ['trend', t('sec.montage.tabTrends', 'Тренды')], ['reference', t('sec.montage.tabReference', 'Референс')]] as const)
                 .filter(([k]) => k === 'all' || sources.some((s) => s.type === k));
               const q = srcQuery.trim().toLowerCase();
               const shown = sources.filter((s) => (srcTab === 'all' || s.type === srcTab) && (!q || (s.name || '').toLowerCase().includes(q)));
@@ -2038,7 +2052,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                   )}
                   <div style={{ position: 'relative', marginBottom: 8 }}>
                     <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input value={srcQuery} onChange={(e) => setSrcQuery(e.target.value)} placeholder="Поиск по названию…"
+                    <input value={srcQuery} onChange={(e) => setSrcQuery(e.target.value)} placeholder={t('sec.montage.searchByTitlePh', 'Поиск по названию…')}
                       className="w-full py-1.5 rounded-lg text-[12px] outline-none" style={{ paddingLeft: 26, paddingRight: 8, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
                   </div>
                   <input ref={srcUploadRef} type="file" accept="video/*" multiple style={{ display: 'none' }}
@@ -2046,17 +2060,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                   <button onClick={() => srcUploadRef.current?.click()} disabled={srcUploading}
                     className="w-full mb-2 py-2 rounded-lg text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: srcUploading ? 'not-allowed' : 'pointer' }}>
-                    {srcUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} {srcUploading ? 'Загружаю…' : 'Добавить видео'}
+                    {srcUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} {srcUploading ? t('sec.montage.uploading', 'Загружаю…') : t('sec.montage.addVideoBtn', 'Добавить видео')}
                   </button>
-                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {shown.length}</div>
+                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.foundN', 'Найдено: {{n}}', { n: shown.length })}</div>
                   {shown.length === 0 ? (
-              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Ничего не найдено. Нажмите «Добавить видео» выше или скачайте тренды.</p>
+              <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.srcEmpty', 'Ничего не найдено. Нажмите «Добавить видео» выше или скачайте тренды.')}</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {shown.map((s) => (
                   <button key={s.url} onClick={() => selectSource(s)} className="rounded-xl overflow-hidden text-left" style={{ position: 'relative', background: 'var(--bg-tertiary)', border: `2px solid ${sourceUrl === s.url ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                     {s.assetId && (
-                      <span title="Есть анализ" style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
+                      <span title={t('sec.montage.hasAnalysis', 'Есть анализ')} style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: 'var(--brand-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}><Sparkles size={11} /></span>
                     )}
                     <div style={{ aspectRatio: '1 / 1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {s.thumb
@@ -2083,15 +2097,15 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         return (
           <GalleryPicker
             open token={token}
-            title="Старт-кадр — своё фото"
-            note="Выберите картинку (предмет/фон) как первый кадр — Omni оживит именно её. Или загрузите новую."
+            title={t('sec.montage.sfPickTitle', 'Старт-кадр — своё фото')}
+            note={t('sec.montage.sfPickNote', 'Выберите картинку (предмет/фон) как первый кадр — Omni оживит именно её. Или загрузите новую.')}
             defaultTab="reference"
             pickedKeys={curSF ? new Set([curSF]) : undefined}
             onClose={() => setImgPick(null)}
             onUpload={(files) => uploadToGallery(files, 'reference')}
             uploadAccept="image/*"
             onlyType="image"
-            onPick={(it) => { updateSeg(seg, { startFrame: it.fileUrl }); setOG(seg, { seed: null, note: 'Старт-кадр из галереи.' }); }}
+            onPick={(it) => { updateSeg(seg, { startFrame: it.fileUrl }); setOG(seg, { seed: null, note: t('sec.montage.sfFromGallery', 'Старт-кадр из галереи.') }); }}
           />
         );
       })()}
@@ -2145,9 +2159,9 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           hbOpenGen={hbOpenGen}
           setHbView={setHbView}
           onClose={() => setCloudPanel(null)}
-          hbTypes={HB_TYPES}
+          hbTypes={hbTypesL}
           hbIcon={HB_ICON}
-          hbLabel={HB_LABEL}
+          hbLabel={hbLabelL}
           hbNotebookId={hbNotebookId}
           onReload={() => { void hbRefreshStatus(true); void hbLoadOverview(); void hbLoadStudioArts(); }}
           hbStudioArts={hbStudioArts}
@@ -2163,7 +2177,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: cloudPanel === 'plan' ? 460 : 600, maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {CLOUD[cloudPanel].label}
+                <span style={{ color: CLOUD[cloudPanel].color }}>{CLOUD[cloudPanel].icon}</span> {cloudLabel(cloudPanel)}
               </span>
               <button onClick={() => setCloudPanel(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
@@ -2173,16 +2187,15 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             ) : cloudPanel === 'omni' ? (
               <div className="space-y-3.5">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  Преобразование видео по ленте. <b style={{ color: '#4285F4' }}>Omni Flash</b> — генерирует новый клип
-                  со звуком (Gemini Omni Flash, 720p). <b style={{ color: '#a855f7' }}>V2V</b> — ре-стайл реального фрагмента (Runway/Kling).
-                  Ключи — в <b style={{ color: 'var(--text-secondary)' }}>Enterprise → Генерация</b>.
+                  {t('sec.montage.omniIntro', 'Преобразование видео по ленте.')} <b style={{ color: '#4285F4' }}>Omni Flash</b> — {t('sec.montage.omniIntroOmni', 'генерирует новый клип со звуком (Gemini Omni Flash, 720p).')} <b style={{ color: '#a855f7' }}>V2V</b> — {t('sec.montage.omniIntroV2v', 'ре-стайл реального фрагмента (Runway/Kling), пока в разработке.')}{' '}
+                  {t('sec.montage.omniIntroKeys', 'Ключи — в')} <b style={{ color: 'var(--text-secondary)' }}>{t('sec.montage.genSettingsPath', 'Настройки → Генерация')}</b>.
                 </p>
 
                 {!sourceUrl ? (
                   <button onClick={() => { setCloudPanel(null); openSourcePicker(); }}
                     className="w-full py-3 rounded-xl text-sm font-600 inline-flex items-center justify-center gap-2"
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--brand)', border: '1px dashed var(--brand)', cursor: 'pointer' }}>
-                    <Video size={16} /> Сначала выберите исходное видео →
+                    <Video size={16} /> {t('sec.montage.pickSourceFirst', 'Сначала выберите исходное видео →')}
                   </button>
                 ) : (
                   <>
@@ -2194,7 +2207,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                       {omniBusy && (
                         <div style={{ position: 'absolute', inset: 0, borderRadius: 10, background: 'rgba(0,0,0,0.42)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, pointerEvents: 'none' }}>
                           <Loader2 size={30} className="animate-spin" style={{ color: '#fff' }} />
-                          <span className="text-[11px] font-700" style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>Преобразование…</span>
+                          <span className="text-[11px] font-700" style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>{t('sec.montage.transforming', 'Преобразование…')}</span>
                         </div>
                       )}
                     </div>
@@ -2211,7 +2224,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                           return (
                             <div key={g.id}
                               onPointerDown={(e) => omniDragStart(e, g, 'move')} onPointerMove={omniDragMove} onPointerUp={omniDragEnd} onPointerCancel={omniDragEnd}
-                              title="Перетащи — сдвиг · за края — длина"
+                              title={t('sec.montage.stripDragTitle', 'Перетащи — сдвиг · за края — длина')}
                               style={{ position: 'absolute', top: 4, bottom: 4, left: `${g.start * 100}%`, width: `${Math.max(1.5, (g.end - g.start) * 100)}%`,
                                 background: over ? 'rgba(239,68,68,0.92)' : `${col}e6`, borderRadius: 7, cursor: 'grab', touchAction: 'none',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800, boxShadow: '0 1px 5px rgba(0,0,0,0.28)' }}>
@@ -2229,14 +2242,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                         })}
                       </div>
                       <div className="flex justify-between mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                        <span>0с</span>
-                        <span style={{ opacity: 0.8 }}>тяни окно · края = длина · Omni макс 10с</span>
-                        <span>{srcDuration > 0 ? `${srcDuration.toFixed(0)}с` : '—'}</span>
+                        <span>{t('sec.montage.nSec', '{{n}}с', { n: 0 })}</span>
+                        <span style={{ opacity: 0.8 }}>{t('sec.montage.stripHint', 'тяни окно · края = длина · Omni макс 10с')}</span>
+                        <span>{srcDuration > 0 ? t('sec.montage.nSec', '{{n}}с', { n: srcDuration.toFixed(0) }) : '—'}</span>
                       </div>
                       <button onClick={() => addSegment()} disabled={omniSpec.segments.length >= 6}
                         className="w-full mt-2 py-2 rounded-xl text-[12px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px dashed var(--border-medium)', cursor: 'pointer' }}>
-                        <Plus size={14} /> Добавить окно ({omniSpec.segments.length})
+                        <Plus size={14} /> {t('sec.montage.addWindow', 'Добавить окно ({{n}})', { n: omniSpec.segments.length })}
                       </button>
                     </div>
 
@@ -2247,7 +2260,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                           <div className="flex items-center justify-between">
                             <span className="text-[12px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
                               <span style={{ width: 16, height: 16, borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', background: g.engine === 'omni' ? '#4285F4' : '#a855f7' }}>{i + 1}</span>
-                              Окно {i + 1}
+                              {t('sec.montage.windowN', 'Окно {{n}}', { n: i + 1 })}
                             </span>
                             {omniSpec.segments.length > 1 && (
                               <button onClick={() => removeSeg(g.id)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><Trash2 size={13} /></button>
@@ -2256,17 +2269,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
 
                           {/* Окно на ленте (тянется на полоске сверху) */}
                           <div className="flex items-center justify-between text-[11px]">
-                            <span style={{ color: 'var(--text-muted)' }}>Окно: <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}–{fmtT(g.end)}</b></span>
+                            <span style={{ color: 'var(--text-muted)' }}>{t('sec.montage.windowLabel', 'Окно:')} <b style={{ color: 'var(--text-secondary)' }}>{fmtT(g.start)}–{fmtT(g.end)}</b></span>
                             {g.engine === 'omni' && (
                               <span style={{ color: winSecOf(g) > OMNI_MAX_SEC + 0.05 ? '#ef4444' : '#4285F4', fontWeight: 700 }}>
-                                {srcDuration > 0 ? `${winSecOf(g).toFixed(1)}с из макс 10с` : 'макс 10с'}
+                                {srcDuration > 0 ? t('sec.montage.winSecOfMax', '{{n}}с из макс 10с', { n: winSecOf(g).toFixed(1) }) : t('sec.montage.maxTenSec', 'макс 10с')}
                               </span>
                             )}
                           </div>
 
                           {/* Движок: Omni Flash / V2V */}
                           <div className="grid grid-cols-2 gap-1.5">
-                            {([['omni', 'Omni Flash', '#4285F4', <Sparkles size={13} key="s" />], ['v2v', 'Ре-стайл (V2V)', '#a855f7', <Scissors size={13} key="c" />]] as [OmniEngine, string, string, React.ReactNode][]).map(([eng, lbl, col, ic]) => (
+                            {([['omni', 'Omni Flash', '#4285F4', <Sparkles size={13} key="s" />], ['v2v', t('sec.montage.restyleV2v', 'Ре-стайл (V2V)'), '#a855f7', <Scissors size={13} key="c" />]] as [OmniEngine, string, string, React.ReactNode][]).map(([eng, lbl, col, ic]) => (
                               <button key={eng} onClick={() => updateSeg(g.id, { engine: eng })}
                                 className="py-2 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 transition-all"
                                 style={{ background: g.engine === eng ? col : 'var(--bg-secondary)', color: g.engine === eng ? '#fff' : 'var(--text-muted)', border: `1px solid ${g.engine === eng ? col : 'var(--border-medium)'}` }}>
@@ -2277,7 +2290,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
 
                           {/* Промт «как» */}
                           <textarea value={g.prompt} onChange={(e) => updateSeg(g.id, { prompt: e.target.value })}
-                            placeholder={g.engine === 'omni' ? 'Как сгенерировать: «киношный закат над городом, медленный пролёт…»' : 'Как переделать фрагмент: «в стиле аниме», «зимняя ночь», «акварель…»'}
+                            placeholder={g.engine === 'omni' ? t('sec.montage.omniPromptPh', 'Как сгенерировать: «киношный закат над городом, медленный пролёт…»') : t('sec.montage.v2vPromptPh', 'Как переделать фрагмент: «в стиле аниме», «зимняя ночь», «акварель…»')}
                             rows={2}
                             className="w-full px-2.5 py-2 rounded-lg text-[12px] focus:outline-none resize-none"
                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
@@ -2285,11 +2298,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                           {/* Параметры движка */}
                           {g.engine === 'omni' ? (
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Длина = ширина окна. Без старт-кадра Omni берёт кадр выделенного фрагмента как контекст (сцена сохранится). Полная покадровая перерисовка — «Ре-стайл (V2V)».</span>
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.omniLenHint', 'Длина = ширина окна. Без старт-кадра Omni берёт кадр выделенного фрагмента как контекст (сцена сохранится). Полная покадровая перерисовка — «Ре-стайл (V2V)».')}</span>
                             </div>
                           ) : (
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Провайдер</span>
+                              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.providerLabel', 'Провайдер')}</span>
                               {(['runway', 'fal'] as V2VProvider[]).map((p) => (
                                 <button key={p} onClick={() => updateSeg(g.id, { provider: p })}
                                   className="px-2.5 py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center gap-1.5"
@@ -2305,34 +2318,34 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                             <div className="space-y-2">
                               {/* #3 Старт-кадр: кадр из видео / загрузка / промт+картинка (Nano). Первый кадр для image_to_video. */}
                               <div className="rounded-lg p-2 space-y-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                                <div className="text-[10px] font-600" style={{ color: 'var(--text-secondary)' }}>Старт-кадр (первый кадр для оживления):</div>
+                                <div className="text-[10px] font-600" style={{ color: 'var(--text-secondary)' }}>{t('sec.montage.sfHeader', 'Старт-кадр (первый кадр для оживления):')}</div>
                                 <div className="grid grid-cols-3 gap-1.5">
                                   <button onClick={() => runExtractFrame(g)} disabled={!sourceUrl || omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
                                     className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
                                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}
-                                    title={sourceUrl ? 'Взять кадр исходника в позиции окна' : 'Сначала выберите исходное видео'}>
-                                    <Film size={12} /> Из кадра видео
+                                    title={sourceUrl ? t('sec.montage.sfFromVideoTitle', 'Взять кадр исходника в позиции окна') : t('sec.montage.needSourceFirst', 'Сначала выберите исходное видео.')}>
+                                    <Film size={12} /> {t('sec.montage.sfFromVideo', 'Из кадра видео')}
                                   </button>
                                   <button onClick={() => openStartFramePicker(g.id)} disabled={omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
                                     className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
                                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}
-                                    title="Выбрать из своих картинок или загрузить новую">
-                                    <UploadCloud size={12} /> Загрузить
+                                    title={t('sec.montage.sfUploadTitle', 'Выбрать из своих картинок или загрузить новую')}>
+                                    <UploadCloud size={12} /> {t('sec.montage.uploadBtn', 'Загрузить')}
                                   </button>
                                   <button onClick={() => runPromptImage(g)} disabled={!g.startFrame || !g.prompt.trim() || omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy}
                                     className="py-1.5 rounded-lg text-[10px] font-600 inline-flex items-center justify-center gap-1 disabled:opacity-50"
                                     style={{ background: 'var(--bg-tertiary)', color: '#4285F4', border: '1px solid rgba(66,133,244,0.4)', cursor: 'pointer' }}
-                                    title="Перерисовать текущий старт-кадр по промту (Nano img2img)">
-                                    <Sparkles size={12} /> Промт+картинка
+                                    title={t('sec.montage.promptPlusImageTitle', 'Перерисовать текущий старт-кадр по промту (Nano img2img)')}>
+                                    <Sparkles size={12} /> {t('sec.montage.promptPlusImage', 'Промт+картинка')}
                                   </button>
                                 </div>
-                                {omniGen[g.id]?.fbBusy && <div className="text-[10px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin" /> Готовлю кадр…</div>}
+                                {omniGen[g.id]?.fbBusy && <div className="text-[10px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin" /> {t('sec.montage.preparingFrame', 'Готовлю кадр…')}</div>}
                                 {g.startFrame && (
                                   <div className="flex items-center gap-2">
-                                    <img src={g.startFrame} alt="старт-кадр" style={{ width: 40, aspectRatio: '9 / 16', objectFit: 'cover', borderRadius: 6, border: '2px solid #4285F4' }} />
-                                    <span className="text-[10px]" style={{ color: '#4285F4', fontWeight: 700 }}>Старт-кадр задан</span>
+                                    <img src={g.startFrame} alt={t('sec.montage.sfAlt', 'старт-кадр')} style={{ width: 40, aspectRatio: '9 / 16', objectFit: 'cover', borderRadius: 6, border: '2px solid #4285F4' }} />
+                                    <span className="text-[10px]" style={{ color: '#4285F4', fontWeight: 700 }}>{t('sec.montage.sfSet', 'Старт-кадр задан')}</span>
                                     <button onClick={() => { updateSeg(g.id, { startFrame: null }); setOG(g.id, { seed: null }); }}
-                                      className="ml-auto w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: '#ef4444', border: 'none', cursor: 'pointer' }} title="Убрать старт-кадр"><X size={12} /></button>
+                                      className="ml-auto w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: '#ef4444', border: 'none', cursor: 'pointer' }} title={t('sec.montage.sfRemoveTitle', 'Убрать старт-кадр')}><X size={12} /></button>
                                   </div>
                                 )}
                               </div>
@@ -2340,11 +2353,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                               <button onClick={() => runStoryboard(g)} disabled={omniGen[g.id]?.sbBusy || omniGen[g.id]?.busy}
                                 className="w-full py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
                                 style={{ background: 'var(--bg-secondary)', color: '#4285F4', border: '1px solid rgba(66,133,244,0.4)', cursor: 'pointer' }}>
-                                {omniGen[g.id]?.sbBusy ? <Loader2 size={13} className="animate-spin" /> : <Image size={13} />} {omniGen[g.id]?.sbBusy ? 'Рисую кадры…' : 'Раскадровка (Nano, ~$0.10) — увидеть до видео'}
+                                {omniGen[g.id]?.sbBusy ? <Loader2 size={13} className="animate-spin" /> : <Image size={13} />} {omniGen[g.id]?.sbBusy ? t('sec.montage.sbBusy', 'Рисую кадры…') : t('sec.montage.sbBtn', 'Раскадровка (Nano, ~$0.10) — увидеть до видео')}
                               </button>
                               {!!omniGen[g.id]?.frames?.length && (
                                 <div>
-                                  <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Выберите кадр — Omni оживит именно его:</div>
+                                  <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.sbPickHint', 'Выберите кадр — Omni оживит именно его:')}</div>
                                   <div className="grid grid-cols-3 gap-1.5">
                                     {omniGen[g.id]!.frames!.map((f) => { const sel = omniGen[g.id]?.seed === f; return (
                                       <button key={f} onClick={() => { const nv = sel ? null : f; setOG(g.id, { seed: nv }); updateSeg(g.id, { startFrame: nv }); }} className="rounded-lg overflow-hidden" style={{ border: `2px solid ${sel ? '#4285F4' : 'var(--border-medium)'}`, cursor: 'pointer', padding: 0, position: 'relative' }}>
@@ -2359,7 +2372,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                               <button onClick={() => runOmniGen(g)} disabled={omniGen[g.id]?.busy}
                                 className="w-full py-2 rounded-lg text-[12px] font-700 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                                 style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? 'Генерирую… (~30–60с)' : ((g.startFrame || omniGen[g.id]?.seed) ? 'Оживить старт-кадр (Omni Flash)' : 'Сгенерировать (Omni Flash)')}
+                                {omniGen[g.id]?.busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {omniGen[g.id]?.busy ? t('sec.montage.genBusy', 'Генерирую… (~30–60с)') : ((g.startFrame || omniGen[g.id]?.seed) ? t('sec.montage.animateStartFrame', 'Оживить старт-кадр (Omni Flash)') : t('sec.montage.generateOmni', 'Сгенерировать (Omni Flash)'))}
                               </button>
                               {omniGen[g.id]?.note && <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{omniGen[g.id]?.note}</p>}
                               {omniGen[g.id]?.url && (
@@ -2368,18 +2381,18 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                                   {omniGen[g.id]?.interactionId && (
                                     <div className="flex items-center gap-1.5">
                                       <input value={omniGen[g.id]?.edit || ''} onChange={(e) => setOG(g.id, { edit: e.target.value })}
-                                        placeholder="Правка чатом: «поменяй цвет машины на красный»"
+                                        placeholder={t('sec.montage.editChatPh', 'Правка чатом: «поменяй цвет машины на красный»')}
                                         className="flex-1 px-2 py-1.5 rounded-lg text-[11px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
                                       <button onClick={() => runOmniEdit(g)} disabled={omniGen[g.id]?.busy || !(omniGen[g.id]?.edit || '').trim()}
-                                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-700 disabled:opacity-50" style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>Править</button>
+                                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-700 disabled:opacity-50" style={{ background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>{t('sec.montage.editBtn', 'Править')}</button>
                                     </div>
                                   )}
                                   {/* #4: оставить последний кадр → новое окно (сшивка-продолжение следующих 10с) */}
                                   <button onClick={() => runContinue(g)} disabled={omniGen[g.id]?.fbBusy || omniGen[g.id]?.busy || omniSpec.segments.length >= 6}
                                     className="w-full py-1.5 rounded-lg text-[11px] font-600 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                                     style={{ background: 'var(--bg-secondary)', color: '#4285F4', border: '1px solid rgba(66,133,244,0.4)', cursor: 'pointer' }}
-                                    title="Взять последний кадр клипа как старт нового окна — продолжение">
-                                    {omniGen[g.id]?.fbBusy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Последний кадр → новое окно
+                                    title={t('sec.montage.contTitle', 'Взять последний кадр клипа как старт нового окна — продолжение')}>
+                                    {omniGen[g.id]?.fbBusy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {t('sec.montage.contBtn', 'Последний кадр → новое окно')}
                                   </button>
                                 </>
                               )}
@@ -2393,18 +2406,18 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                     {/* Сводка + стоимость */}
                     <div className="rounded-xl p-3 text-[11px] space-y-1" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
                       {omniGenSeconds > 0 && (
-                        <div>Omni Flash: <b style={{ color: 'var(--text-secondary)' }}>{omniGenSeconds.toFixed(0)}с</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)} <span style={{ opacity: 0.7 }}>(Gemini Omni Flash, 720p, со звуком, ~$0.10/с)</span></div>
+                        <div>Omni Flash: <b style={{ color: 'var(--text-secondary)' }}>{t('sec.montage.nSec', '{{n}}с', { n: omniGenSeconds.toFixed(0) })}</b> ≈ ${(omniGenSeconds * 0.10).toFixed(2)} <span style={{ opacity: 0.7 }}>{t('sec.montage.omniSumNote', '(Gemini Omni Flash, 720p, со звуком, ~$0.10/с)')}</span></div>
                       )}
                       {omniSpec.segments.some((g) => g.engine === 'v2v') && (
-                        <div>V2V ре-стайл: по тарифу провайдера (Runway/Kling).</div>
+                        <div>{t('sec.montage.v2vSumNote', 'V2V ре-стайл: в разработке — окно сохранится в сценарии, генерация появится позже.')}</div>
                       )}
-                      <div style={{ opacity: 0.8 }}>Спецификация сохраняется в сценарий. Реальная генерация (вызов Veo/Runway и склейка в монтаж) — следующий деплой; нужны ключи в Enterprise → Генерация.</div>
+                      <div style={{ opacity: 0.8 }}>{t('sec.montage.omniFooter', 'Клипы Omni Flash генерируются кнопками выше и сохраняются в Галерею. Автосклейка окон в единый ролик и V2V-рестайл — в разработке; разметка окон хранится в сценарии.')}</div>
                     </div>
 
                     <button onClick={() => { save(); setCloudPanel(null); }}
                       className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
                       style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', cursor: 'pointer' }}>
-                      <Save size={15} /> Сохранить преобразование
+                      <Save size={15} /> {t('sec.montage.saveTransform', 'Сохранить преобразование')}
                     </button>
                   </>
                 )}
@@ -2412,8 +2425,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             ) : cloudPanel === 'editor' ? (
               <div className="space-y-3">
                 <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  Просмотр и обрезка видео или аудио: обрезать начало/конец, вырезать куски, повернуть (видео),
-                  склеить несколько роликов. Сохранение неразрушающее — результат уходит в Галерею.
+                  {t('sec.montage.editorIntro', 'Просмотр и обрезка видео или аудио: обрезать начало/конец, вырезать куски, повернуть (видео), склеить несколько роликов. Сохранение неразрушающее — результат уходит в Галерею.')}
                 </p>
 
                 {editorClips.length > 0 && (
@@ -2423,8 +2435,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                         <span className="text-[11px] font-700" style={{ color: 'var(--text-muted)' }}>{i + 1}</span>
                         {c.type === 'audio' ? <Music size={13} style={{ color: 'var(--brand)', flexShrink: 0 }} /> : <Video size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
                         <span className="text-xs truncate flex-1" style={{ color: 'var(--text-primary)' }} title={c.name}>{c.name}</span>
-                        <button onClick={() => setEditorView(c)} title="Открыть в редакторе" className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Scissors size={13} /></button>
-                        <button onClick={() => removeEditorClip(c.url)} title="Убрать" className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                        <button onClick={() => setEditorView(c)} title={t('sec.montage.openInEditorTitle', 'Открыть в редакторе')} className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}><Scissors size={13} /></button>
+                        <button onClick={() => removeEditorClip(c.url)} title={t('sec.montage.removeTitle', 'Убрать')} className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
                       </div>
                     ))}
                   </div>
@@ -2433,23 +2445,23 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                 {editorClips.length === 1 && (
                   <button onClick={() => setEditorView(editorClips[0])} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2"
                     style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                    <Film size={16} /> Открыть редактор
+                    <Film size={16} /> {t('sec.montage.openEditorBtn', 'Открыть редактор')}
                   </button>
                 )}
                 {editorClips.length >= 2 && (
                   <button onClick={mergeEditorClips} disabled={editorMerging} className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
                     style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                    {editorMerging ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />} Склеить {editorClips.length} видео
+                    {editorMerging ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />} {t('sec.montage.mergeN', 'Склеить {{n}} видео', { n: editorClips.length })}
                   </button>
                 )}
                 {editorNote && <p className="text-[11px]" style={{ color: '#ef4444' }}>{editorNote}</p>}
 
                 {editorResult && (
                   <div className="p-2.5 rounded-xl space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                    <div className="text-xs font-600 inline-flex items-center gap-1.5" style={{ color: '#10b981' }}><Check size={14} /> Результат в Галерее</div>
+                    <div className="text-xs font-600 inline-flex items-center gap-1.5" style={{ color: '#10b981' }}><Check size={14} /> {t('sec.montage.resultInGallery', 'Результат в Галерее')}</div>
                     <div className="flex gap-2">
-                      <button onClick={() => setEditorView(editorResult)} className="flex-1 py-2 rounded-lg text-xs font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Film size={13} /> Открыть</button>
-                      <a href={editorResult.url} target="_blank" rel="noreferrer" className="flex-1 py-2 rounded-lg text-xs font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', textDecoration: 'none' }}><Download size={13} /> Скачать</a>
+                      <button onClick={() => setEditorView(editorResult)} className="flex-1 py-2 rounded-lg text-xs font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Film size={13} /> {t('sec.montage.openBtn', 'Открыть')}</button>
+                      <a href={editorResult.url} target="_blank" rel="noreferrer" className="flex-1 py-2 rounded-lg text-xs font-600 inline-flex items-center justify-center gap-1.5" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', textDecoration: 'none' }}><Download size={13} /> {t('sec.montage.downloadBtn', 'Скачать')}</a>
                     </div>
                   </div>
                 )}
@@ -2457,8 +2469,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                 {editorPick && (
                   <GalleryPicker
                     open multi token={token}
-                    title="Из Галереи — добавить в редактор"
-                    note="Клик добавляет клип; можно выбрать несколько. Видео и аудио."
+                    title={t('sec.montage.edPickTitle', 'Из Галереи — добавить в редактор')}
+                    note={t('sec.montage.edPickNote', 'Клик добавляет клип; можно выбрать несколько. Видео и аудио.')}
                     defaultTab="reference"
                     pickedKeys={new Set(editorClips.map((c) => c.url))}
                     onClose={() => setEditorPick(false)}
@@ -2471,8 +2483,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
               </div>
             ) : (
               <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
-                <p><b>Контент-план</b> — расписание и публикация готовых роликов по соцсетям.</p>
-                <p style={{ color: 'var(--text-muted)' }}>Календарь + публикатор — этап C. Сейчас узел можно связывать: по стрелке сюда попадёт готовое видео из цепочки.</p>
+                <p><b>{t('sec.montage.cloudPlan', 'Контент-план')}</b> — {t('sec.montage.planIntro', 'расписание и публикация готовых роликов по соцсетям.')}</p>
+                <p style={{ color: 'var(--text-muted)' }}>{t('sec.montage.planStub', 'Пока это узел-заглушка внутри сценария. Публикация, расписание и авто-цепочки уже работают в разделе «Публикатор» (вкладка в Галерее).')}</p>
               </div>
             )}
           </div>
@@ -2481,15 +2493,15 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
 
       {/* Hotebook: модалка настроек генерации — 1:1 как в NotebookLM (формат-карточки, длина, язык, акцент) */}
       {hbGenOpen && (() => {
-        const cfg = HB_TYPES.find((x) => x.t === hbGenOpen)!;
+        const cfg = hbTypesL.find((x) => x.t === hbGenOpen)!;
         return (
           <div onClick={() => setHbGenOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
             <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 640, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                  <span style={{ color: '#22d3ee' }}>{HB_ICON[hbGenOpen]}</span> Настройка — {cfg.label}
+                  <span style={{ color: '#22d3ee' }}>{HB_ICON[hbGenOpen]}</span> {t('sec.montage.hbGenTitle', 'Настройка — {{label}}', { label: cfg.label })}
                 </span>
-                <button onClick={() => setHbGenOpen(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+                <button onClick={() => setHbGenOpen(null)} title={t('sec.montage.closeTitle', 'Закрыть')} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
               </div>
               <div className="space-y-3.5">
                 {cfg.fields.map((f) => (
@@ -2529,7 +2541,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                     {f.kind === 'lang' && (
                       <select value={hbGenSet[f.id] || 'ru'} onChange={(e) => setHbGenSet((s) => ({ ...s, [f.id]: e.target.value }))}
                         className="px-2.5 py-2 rounded-lg text-xs outline-none" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minWidth: 180 }}>
-                        {HB_LANGS.map((l) => <option key={l.v} value={l.v}>{l.label}</option>)}
+                        {getHbLangs().map((l) => <option key={l.v} value={l.v}>{l.label}</option>)}
                       </select>
                     )}
                     {f.kind === 'focus' && (
@@ -2542,12 +2554,12 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
               </div>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  Сегодня этого типа: {hbCounters[hbGenOpen] || 0} · лимит зависит от плана Google-аккаунта
+                  {t('sec.montage.hbTodayCount', 'Сегодня этого типа: {{n}} · лимит зависит от плана Google-аккаунта', { n: hbCounters[hbGenOpen] || 0 })}
                 </span>
                 <button onClick={() => void hbGenerate()} disabled={hbGenBusy}
                   className="inline-flex items-center gap-2 text-sm font-700 px-4 py-2.5 rounded-xl disabled:opacity-60"
                   style={{ background: 'linear-gradient(135deg,#06b6d4,#22d3ee)', color: '#083344', border: 'none', cursor: 'pointer' }}>
-                  {hbGenBusy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Сгенерировать
+                  {hbGenBusy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} {t('sec.montage.generateBtn', 'Сгенерировать')}
                 </button>
               </div>
             </div>
@@ -2560,17 +2572,17 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         <div onClick={() => setHbTextOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Текст-источник</span>
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.montage.hbTextTitle', 'Текст-источник')}</span>
               <button onClick={() => setHbTextOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
             <textarea value={hbSrcText} onChange={(e) => setHbSrcText(e.target.value)} rows={9} autoFocus
-              placeholder="Вставьте текст: заметки, сценарий, статью…"
+              placeholder={t('sec.montage.hbTextPh', 'Вставьте текст: заметки, сценарий, статью…')}
               className="w-full px-3 py-2.5 rounded-xl text-xs outline-none resize-none mb-3"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
             <button onClick={() => void hbAddText()} disabled={hbSrcBusy || !hbSrcText.trim()}
               className="w-full py-2.5 rounded-xl text-sm font-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"
               style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
-              {hbSrcBusy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />} Добавить в источники
+              {hbSrcBusy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />} {t('sec.montage.hbTextAddBtn', 'Добавить в источники')}
             </button>
           </div>
         </div>
@@ -2581,16 +2593,16 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         <div onClick={() => setHbPickOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 560, maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Файл из Галереи → источник</span>
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.montage.hbPickTitle', 'Файл из Галереи → источник')}</span>
               <button onClick={() => setHbPickOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
-            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>NotebookLM понимает PDF, текст, аудио, видео и изображения. Клик по имени — добавить сам файл. У файлов «Из анализа»: <b>видео + анализ</b> добавит и видео, и его разбор (двумя источниками), либо <b>анализ</b> — только разбор текстом.</p>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.hbPickHint1', 'NotebookLM понимает PDF, текст, аудио, видео и изображения. Клик по превью — добавить сам файл. У файлов «Из анализа»:')} <b>{t('sec.montage.hbPickHintBoth', 'видео + анализ')}</b> {t('sec.montage.hbPickHint2', 'добавит и видео, и его разбор (двумя источниками), либо')} <b>{t('sec.montage.analysisBadge', 'анализ')}</b> {t('sec.montage.hbPickHint3', '— только разбор текстом.')}</p>
             {/* Вкладки-папки как в Галерее (TrendFlow / Аудио / Из анализа) */}
             <div className="grid grid-cols-3 gap-1 p-1 rounded-lg mb-2" style={{ background: 'var(--bg-tertiary)' }}>
               {([
                 { key: 'reference' as EdCat, label: 'TrendFlow', icon: <Image size={13} /> },
-                { key: 'audio' as EdCat, label: 'Аудио', icon: <Music size={13} /> },
-                { key: 'analyzed' as EdCat, label: 'Из анализа', icon: <Sparkles size={13} /> },
+                { key: 'audio' as EdCat, label: t('sec.montage.tabAudio', 'Аудио'), icon: <Music size={13} /> },
+                { key: 'analyzed' as EdCat, label: t('sec.montage.tabAnalyzed', 'Из анализа'), icon: <Sparkles size={13} /> },
               ]).map((tb) => {
                 const n = hbGallery.filter((g) => g.cat === tb.key).length;
                 const active = hbPickTab === tb.key;
@@ -2606,7 +2618,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             {/* Поиск */}
             <div className="relative mb-2">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
-              <input value={hbPickQuery} onChange={(e) => setHbPickQuery(e.target.value)} placeholder="Поиск по имени…"
+              <input value={hbPickQuery} onChange={(e) => setHbPickQuery(e.target.value)} placeholder={t('sec.montage.searchByNamePh', 'Поиск по имени…')}
                 className="w-full pl-8 pr-2 py-2 rounded-lg text-xs outline-none"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
             </div>
@@ -2615,15 +2627,15 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             ) : (() => {
               const filtered = hbGallery.filter((g) => g.cat === hbPickTab
                 && (!hbPickQuery.trim() || g.name.toLowerCase().includes(hbPickQuery.trim().toLowerCase())));
-              if (filtered.length === 0) return <p className="text-[11px] py-6 text-center" style={{ color: 'var(--text-muted)' }}>{hbPickQuery.trim() ? 'Ничего не найдено.' : 'В этой папке пусто.'}</p>;
+              if (filtered.length === 0) return <p className="text-[11px] py-6 text-center" style={{ color: 'var(--text-muted)' }}>{hbPickQuery.trim() ? t('sec.montage.nothingFound', 'Ничего не найдено.') : t('sec.montage.folderEmpty', 'В этой папке пусто.')}</p>;
               return (
                 <>
-                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length} · клик по превью — добавить файл</div>
+                  <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('sec.montage.hbFoundN', 'Найдено: {{n}} · клик по превью — добавить файл', { n: filtered.length })}</div>
                   <div className="grid grid-cols-3 gap-2" style={{ maxHeight: 360, overflowY: 'auto' }}>
                     {filtered.map((g) => (
                       <div key={`${g.cat}:${g.id}`} className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                         {/* Превью — клик добавляет сам файл источником */}
-                        <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title={`Добавить файл: ${g.name}`}
+                        <button onClick={() => void hbAddAsset(g.id)} disabled={hbSrcBusy} title={t('sec.montage.hbAddFileTitle', 'Добавить файл: {{name}}', { name: g.name })}
                           className="block w-full text-left disabled:opacity-50" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                           <div className="relative flex items-center justify-center" style={{ aspectRatio: '1 / 1', background: '#000' }}>
                             {g.type === 'audio'
@@ -2633,8 +2645,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                                 : g.type === 'video'
                                   ? (g.cover ? <img src={g.cover} alt="" className="w-full h-full object-cover" /> : <video src={`${g.url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)
                                   : <FileText size={28} style={{ color: '#22d3ee' }} />}
-                            {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>АУДИО</span>}
-                            {g.cat === 'analyzed' && <span className="absolute top-1 left-1 text-[8px] font-700 px-1 rounded inline-flex items-center gap-0.5" style={{ background: 'rgba(34,211,238,0.92)', color: '#083344' }}><Sparkles size={9} /> анализ</span>}
+                            {g.type === 'audio' && <span className="absolute bottom-1 left-1 text-[8px] font-700 px-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>{t('sec.montage.audioBadge', 'АУДИО')}</span>}
+                            {g.cat === 'analyzed' && <span className="absolute top-1 left-1 text-[8px] font-700 px-1 rounded inline-flex items-center gap-0.5" style={{ background: 'rgba(34,211,238,0.92)', color: '#083344' }}><Sparkles size={9} /> {t('sec.montage.analysisBadge', 'анализ')}</span>}
                             {hbPickedIds.has(g.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b981', color: '#fff' }}><Check size={12} /></span>}
                           </div>
                           <div className="text-[10px] px-1.5 py-1 truncate" style={{ color: 'var(--text-secondary)' }} title={g.name}>{g.name}</div>
@@ -2642,15 +2654,15 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
                         {/* «Из анализа»: добавить видео+анализ или только анализ */}
                         {g.cat === 'analyzed' && (
                           <div className="flex gap-1 px-1.5 pb-1.5">
-                            <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title="Добавить видео + его анализ (двумя источниками)"
+                            <button onClick={() => void hbAddBoth(g.id, g.name)} disabled={hbSrcBusy} title={t('sec.montage.btnBothTitle', 'Добавить видео + его анализ (двумя источниками)')}
                               className="flex-1 text-[9px] font-700 py-1 rounded-md disabled:opacity-50 inline-flex items-center justify-center gap-0.5"
                               style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>
-                              <Sparkles size={9} /> видео+анализ
+                              <Sparkles size={9} /> {t('sec.montage.btnBoth', 'видео+анализ')}
                             </button>
-                            <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title="Добавить только анализ (текстом)"
+                            <button onClick={() => void hbAddAnalysis(g.id, g.name)} disabled={hbSrcBusy} title={t('sec.montage.btnAnaTitle', 'Добавить только анализ (текстом)')}
                               className="text-[9px] font-700 px-1.5 py-1 rounded-md disabled:opacity-50"
                               style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: 'none', cursor: 'pointer' }}>
-                              анализ
+                              {t('sec.montage.analysisBadge', 'анализ')}
                             </button>
                           </div>
                         )}
@@ -2662,8 +2674,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
             })()}
             {/* Пикер не закрывается после добавления — можно добавить несколько; ✓ на добавленных */}
             <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-medium)' }}>
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{hbPickedIds.size > 0 ? `Добавлено: ${hbPickedIds.size}` : 'Можно добавить несколько файлов'}</span>
-              <button onClick={() => setHbPickOpen(false)} className="text-xs font-700 px-4 py-2 rounded-lg" style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>Готово</button>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{hbPickedIds.size > 0 ? t('sec.montage.addedN', 'Добавлено: {{n}}', { n: hbPickedIds.size }) : t('sec.montage.canAddSeveral', 'Можно добавить несколько файлов')}</span>
+              <button onClick={() => setHbPickOpen(false)} className="text-xs font-700 px-4 py-2 rounded-lg" style={{ background: '#22d3ee', color: '#083344', border: 'none', cursor: 'pointer' }}>{t('sec.montage.doneBtn', 'Готово')}</button>
             </div>
           </div>
         </div>
@@ -2675,11 +2687,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           <div onClick={(e) => e.stopPropagation()} className="me-pop-in" style={{ width: '100%', maxWidth: 640, maxHeight: '86vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18, transform: 'none' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                <span style={{ color: '#22d3ee' }}>{HB_ICON[hbView.type as HbType]}</span> {HB_LABEL[hbView.type as HbType] || 'Артефакт'}
+                <span style={{ color: '#22d3ee' }}>{HB_ICON[hbView.type as HbType]}</span> {hbLabelL[hbView.type as HbType] || t('sec.montage.artifactFb', 'Артефакт')}
               </span>
               <div className="flex items-center gap-1.5">
                 {hbView.fileUrl && (
-                  <a href={hbView.fileUrl} download className="w-8 h-8 rounded-lg flex items-center justify-center" title="Скачать файл"
+                  <a href={hbView.fileUrl} download className="w-8 h-8 rounded-lg flex items-center justify-center" title={t('sec.montage.downloadFileTitle', 'Скачать файл')}
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><Download size={14} /></a>
                 )}
                 <button onClick={() => setHbView(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
@@ -2698,11 +2710,11 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
         kind={editorView?.type}
         onClose={() => setEditorView(null)}
         onSaved={async (r) => {
-          const t = editorView?.type === 'audio' ? 'audio' : 'video';
-          setEditorResult({ url: r.fileUrl, name: t === 'audio' ? 'Обрезанное аудио' : 'Обрезанное видео', type: t }); setDirty(true);
+          const kind = editorView?.type === 'audio' ? 'audio' : 'video'; // не «t» — не затеняем i18n
+          setEditorResult({ url: r.fileUrl, name: kind === 'audio' ? t('sec.montage.trimmedAudio', 'Обрезанное аудио') : t('sec.montage.trimmedVideo', 'Обрезанное видео'), type: kind }); setDirty(true);
           // Обновить Галерею в пикере, чтобы обрезанный файл сразу появился, и открыть его вкладку.
           await loadEditorGallery();
-          setEditorTab(t === 'audio' ? 'audio' : 'reference');
+          setEditorTab(kind === 'audio' ? 'audio' : 'reference');
         }}
       />
 

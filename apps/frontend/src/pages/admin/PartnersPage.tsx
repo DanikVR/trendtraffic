@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   HeartHandshake, Loader2, RefreshCw, AlertCircle, CheckCircle, X,
   Save, Copy, Power, Phone, Users as UsersIcon, Search, StickyNote,
@@ -45,6 +46,7 @@ function fmtDate(iso: string | null): string {
 }
 
 export default function PartnersPage() {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
 
   // Программа
@@ -87,7 +89,7 @@ export default function PartnersPage() {
       setWhatsapp(data.whatsappContact || '');
       setProgramLoaded(true);
     } catch (err: any) {
-      setError(err.message || 'Не удалось загрузить условия программы');
+      setError(err.message || t('sec.admin.partners.errLoadProgram', 'Не удалось загрузить условия программы'));
     }
   };
 
@@ -100,7 +102,7 @@ export default function PartnersPage() {
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setRows(data.partners || []);
     } catch (err: any) {
-      setError(err.message || 'Не удалось загрузить список партнёров');
+      setError(err.message || t('sec.admin.partners.errLoadList', 'Не удалось загрузить список партнёров'));
     } finally {
       setLoading(false);
     }
@@ -123,10 +125,10 @@ export default function PartnersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setSuccess('Условия программы сохранены');
+      setSuccess(t('sec.admin.partners.programSaved', 'Условия программы сохранены'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.message || 'Не удалось сохранить условия');
+      setError(err.message || t('sec.admin.partners.errSaveProgram', 'Не удалось сохранить условия'));
     } finally {
       setSavingProgram(false);
     }
@@ -144,10 +146,12 @@ export default function PartnersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setRows(prev => prev.map(r => r.id === p.id ? { ...r, status: newStatus } : r));
-      setSuccess(`Партнёр ${p.email} ${newStatus === 'active' ? 'включён' : 'отключён'}`);
+      setSuccess(newStatus === 'active'
+        ? t('sec.admin.partners.partnerEnabled', 'Партнёр {{email}} включён', { email: p.email })
+        : t('sec.admin.partners.partnerDisabled', 'Партнёр {{email}} отключён', { email: p.email }));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.message || 'Не удалось изменить статус');
+      setError(err.message || t('sec.admin.partners.errToggle', 'Не удалось изменить статус'));
     } finally {
       setToggling(null);
     }
@@ -155,7 +159,7 @@ export default function PartnersPage() {
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code).catch(() => {});
-    setSuccess(`Код ${code} скопирован`);
+    setSuccess(t('sec.admin.partners.codeCopied', 'Код {{code}} скопирован', { code }));
     setTimeout(() => setSuccess(null), 2000);
   };
 
@@ -178,10 +182,10 @@ export default function PartnersPage() {
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setRows(prev => prev.map(r => r.id === notesPartner.id ? { ...r, notes: notesText } : r));
       setNotesPartner(null);
-      setSuccess('Заметка сохранена');
+      setSuccess(t('sec.admin.partners.noteSaved', 'Заметка сохранена'));
       setTimeout(() => setSuccess(null), 2000);
     } catch (err: any) {
-      setError(err.message || 'Не удалось сохранить заметку');
+      setError(err.message || t('sec.admin.partners.errSaveNote', 'Не удалось сохранить заметку'));
     } finally {
       setSavingNotes(false);
     }
@@ -198,10 +202,10 @@ export default function PartnersPage() {
       setRows(prev => prev.map(r => r.id === p.id
         ? { ...r, clicks: 0, registrations: 0, paidUsers: 0, paidMinutes: 0 }
         : r));
-      setSuccess(`Статистика партнёра ${p.email || p.code} сброшена`);
+      setSuccess(t('sec.admin.partners.statsReset', 'Статистика партнёра {{who}} сброшена', { who: p.email || p.code }));
       setTimeout(() => setSuccess(null), 2500);
     } catch (err: any) {
-      setError(err.message || 'Не удалось сбросить статистику');
+      setError(err.message || t('sec.admin.partners.errReset', 'Не удалось сбросить статистику'));
     } finally {
       setActioning(null);
     }
@@ -215,10 +219,10 @@ export default function PartnersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setRows(prev => prev.filter(r => r.id !== p.id));
-      setSuccess(`Партнёр ${p.email || p.code} удалён`);
+      setSuccess(t('sec.admin.partners.partnerDeleted', 'Партнёр {{who}} удалён', { who: p.email || p.code }));
       setTimeout(() => setSuccess(null), 2500);
     } catch (err: any) {
-      setError(err.message || 'Не удалось удалить партнёра');
+      setError(err.message || t('sec.admin.partners.errDelete', 'Не удалось удалить партнёра'));
     } finally {
       setActioning(null);
     }
@@ -251,15 +255,15 @@ export default function PartnersPage() {
           <HeartHandshake size={20} color="#fff" />
         </div>
         <div>
-          <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Партнёры</h1>
+          <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.admin.partners.pageTitle', 'Партнёры')}</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Партнёров: <b>{rows.length}</b> · Переходы: <b>{totalClicks}</b> · Регистрации: <b>{totalRegs}</b> · Оплатили: <b>{totalPaid}</b>
+            {t('sec.admin.partners.statPartners', 'Партнёров:')} <b>{rows.length}</b> · {t('sec.admin.partners.statClicks', 'Переходы:')} <b>{totalClicks}</b> · {t('sec.admin.partners.statRegs', 'Регистрации:')} <b>{totalRegs}</b> · {t('sec.admin.partners.statPaid', 'Оплатили:')} <b>{totalPaid}</b>
           </p>
         </div>
         <div className="ml-auto">
           <AuroraButton variant="ghost" onClick={() => { loadProgram(); loadPartners(); }} disabled={loading}
                        icon={loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}>
-            Обновить
+            {t('sec.admin.partners.refreshBtn', 'Обновить')}
           </AuroraButton>
         </div>
       </div>
@@ -286,22 +290,22 @@ export default function PartnersPage() {
 
       {/* Карточка: Условия программы */}
       <AuroraCard className="p-5 sm:p-6">
-        <h2 className="text-lg font-700 mb-1" style={{ color: 'var(--text-primary)' }}>Условия партнёрской программы</h2>
+        <h2 className="text-lg font-700 mb-1" style={{ color: 'var(--text-primary)' }}>{t('sec.admin.partners.programHeading', 'Условия партнёрской программы')}</h2>
         <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-          Этот текст видят партнёры в своих настройках по кнопке «Условия сотрудничества».
+          {t('sec.admin.partners.programHint', 'Этот текст видят партнёры в своих настройках по кнопке «Условия сотрудничества».')}
         </p>
 
         <div className="space-y-4">
           <div>
             <label className="text-xs font-600 uppercase tracking-wider block mb-1.5"
                    style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-              Текст условий (plain text, переносы строк сохраняются)
+              {t('sec.admin.partners.termsLabel', 'Текст условий (plain text, переносы строк сохраняются)')}
             </label>
             <textarea
               value={termsText}
               onChange={(e) => setTermsText(e.target.value)}
               rows={10}
-              placeholder={programLoaded ? 'Опишите условия партнёрства: что получает партнёр, как происходят выплаты, сроки…' : 'Загрузка…'}
+              placeholder={programLoaded ? t('sec.admin.partners.termsPh', 'Опишите условия партнёрства: что получает партнёр, как происходят выплаты, сроки…') : t('sec.admin.partners.loading', 'Загрузка…')}
               className="w-full px-3 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)] resize-y"
               style={{
                 background: 'var(--bg-tertiary)',
@@ -315,7 +319,7 @@ export default function PartnersPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AuroraInput
-              label="WhatsApp для связи"
+              label={t('sec.admin.partners.whatsappLabel', 'WhatsApp для связи')}
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="+380637610482"
@@ -324,7 +328,7 @@ export default function PartnersPage() {
             <div className="flex items-end">
               <AuroraButton onClick={saveProgram} disabled={savingProgram}
                             icon={savingProgram ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}>
-                Сохранить условия
+                {t('sec.admin.partners.saveProgramBtn', 'Сохранить условия')}
               </AuroraButton>
             </div>
           </div>
@@ -341,12 +345,12 @@ export default function PartnersPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по email или коду партнёра…"
+              placeholder={t('sec.admin.partners.searchPh', 'Поиск по email или коду партнёра…')}
               className="w-full pl-9 pr-9 py-2 rounded-xl text-sm transition-colors focus:outline-none focus:border-[var(--brand)]"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} title="Очистить"
+              <button type="button" onClick={() => setSearch('')} title={t('sec.admin.partners.clearSearch', 'Очистить')}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
                       style={{ color: 'var(--text-muted)' }}>
                 <X size={14} />
@@ -355,7 +359,7 @@ export default function PartnersPage() {
           </div>
           {q && (
             <div className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
-              Найдено: <b>{filteredRows.length}</b> из {rows.length}
+              {t('sec.admin.partners.foundLabel', 'Найдено:')} <b>{filteredRows.length}</b> {t('sec.admin.partners.ofTotal', 'из')} {rows.length}
             </div>
           )}
         </div>
@@ -364,33 +368,33 @@ export default function PartnersPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                 <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Email</th>
-                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Код</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Переходы</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Регистрации</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Оплатили</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Куплено мин</th>
-                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Создан</th>
-                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Статус</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Действия</th>
+                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colCode', 'Код')}</th>
+                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colClicks', 'Переходы')}</th>
+                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colRegs', 'Регистрации')}</th>
+                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colPaid', 'Оплатили')}</th>
+                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colPaidMin', 'Куплено мин')}</th>
+                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colCreated', 'Создан')}</th>
+                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colStatus', 'Статус')}</th>
+                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.partners.colActions', 'Действия')}</th>
               </tr>
             </thead>
             <tbody>
               {loading && rows.length === 0 && (
                 <tr><td colSpan={9} className="px-4 py-10 text-center">
                   <Loader2 size={20} className="animate-spin inline-block mr-2" />
-                  Загрузка…
+                  {t('sec.admin.partners.loading', 'Загрузка…')}
                 </td></tr>
               )}
               {!loading && rows.length === 0 && (
                 <tr><td colSpan={9} className="px-4 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                   <UsersIcon size={32} className="inline-block mb-2 opacity-40" />
-                  <div>Партнёры появятся автоматически, как только пользователи откроют «Партнёрскую программу» в настройках.</div>
+                  <div>{t('sec.admin.partners.emptyList', 'Партнёры появятся автоматически, как только пользователи откроют «Партнёрскую программу» в настройках.')}</div>
                 </td></tr>
               )}
               {!loading && rows.length > 0 && filteredRows.length === 0 && (
                 <tr><td colSpan={9} className="px-4 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                   <Search size={28} className="inline-block mb-2 opacity-40" />
-                  <div>По запросу «{search}» ничего не найдено.</div>
+                  <div>{t('sec.admin.partners.searchEmpty', 'По запросу «{{q}}» ничего не найдено.', { q: search })}</div>
                 </td></tr>
               )}
               {filteredRows.map((p) => {
@@ -408,7 +412,7 @@ export default function PartnersPage() {
                     <td className="px-4 py-3">
                       <button type="button"
                               onClick={() => copyCode(p.code)}
-                              title="Скопировать код"
+                              title={t('sec.admin.partners.copyCodeTitle', 'Скопировать код')}
                               className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-mono transition-colors hover:bg-[var(--bg-tertiary)]"
                               style={{
                                 background: 'var(--bg-tertiary)',
@@ -435,14 +439,14 @@ export default function PartnersPage() {
                               color: isActive ? '#10b981' : '#94a3b8',
                               border: `1px solid ${isActive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(148, 163, 184, 0.25)'}`,
                             }}>
-                        {isActive ? 'Активен' : 'Отключён'}
+                        {isActive ? t('sec.admin.partners.statusActive', 'Активен') : t('sec.admin.partners.statusDisabled', 'Отключён')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button type="button"
                                 onClick={() => openNotes(p)}
-                                title={p.notes ? 'Заметка (есть) — открыть' : 'Добавить заметку'}
+                                title={p.notes ? t('sec.admin.partners.noteOpenTitle', 'Заметка (есть) — открыть') : t('sec.admin.partners.noteAddTitle', 'Добавить заметку')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
                                 style={{
                                   background: p.notes ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-tertiary)',
@@ -454,7 +458,7 @@ export default function PartnersPage() {
                         <button type="button"
                                 onClick={() => setPendingAction({ partner: p, type: 'reset' })}
                                 disabled={actioning === p.id}
-                                title="Сбросить статистику (переходы/регистрации/оплаты) — например, после выплаты"
+                                title={t('sec.admin.partners.resetTitle', 'Сбросить статистику (переходы/регистрации/оплаты) — например, после выплаты')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
                                 style={{
                                   background: 'rgba(99, 102, 241, 0.10)',
@@ -466,7 +470,7 @@ export default function PartnersPage() {
                         <button type="button"
                                 onClick={() => toggleStatus(p)}
                                 disabled={toggling === p.id}
-                                title={isActive ? 'Отключить партнёра' : 'Включить партнёра'}
+                                title={isActive ? t('sec.admin.partners.disableTitle', 'Отключить партнёра') : t('sec.admin.partners.enableTitle', 'Включить партнёра')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
                                 style={{
                                   background: isActive ? 'rgba(239, 68, 68, 0.10)' : 'rgba(16, 185, 129, 0.10)',
@@ -478,7 +482,7 @@ export default function PartnersPage() {
                         <button type="button"
                                 onClick={() => setPendingAction({ partner: p, type: 'delete' })}
                                 disabled={actioning === p.id}
-                                title="Удалить партнёра полностью"
+                                title={t('sec.admin.partners.deleteTitle', 'Удалить партнёра полностью')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
                                 style={{
                                   background: 'rgba(239, 68, 68, 0.10)',
@@ -506,24 +510,24 @@ export default function PartnersPage() {
             <AuroraCard className="p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-1">
                 <StickyNote size={18} style={{ color: '#f59e0b' }} />
-                <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Заметка о партнёре</h3>
+                <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.admin.partners.noteModalTitle', 'Заметка о партнёре')}</h3>
                 <button type="button" onClick={() => setNotesPartner(null)} disabled={savingNotes}
                         className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70 disabled:opacity-40"
-                        style={{ color: 'var(--text-muted)' }} title="Закрыть">
+                        style={{ color: 'var(--text-muted)' }} title={t('sec.admin.partners.closeTitle', 'Закрыть')}>
                   <X size={16} />
                 </button>
               </div>
               <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
                 {notesPartner.email || '—'} · <code>{notesPartner.code}</code>
                 <br />
-                Видно только суперадминам — партнёр свою заметку не видит.
+                {t('sec.admin.partners.noteVisibility', 'Видно только суперадминам — партнёр свою заметку не видит.')}
               </p>
               <textarea
                 value={notesText}
                 onChange={(e) => setNotesText(e.target.value)}
                 rows={6}
                 autoFocus
-                placeholder="Например: договорённость по выплате, контакт, контекст по этому партнёру…"
+                placeholder={t('sec.admin.partners.notePh', 'Например: договорённость по выплате, контакт, контекст по этому партнёру…')}
                 className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[var(--brand)] resize-y"
                 style={{
                   background: 'var(--bg-tertiary)',
@@ -535,11 +539,11 @@ export default function PartnersPage() {
               />
               <div className="flex items-center justify-end gap-2 mt-4">
                 <AuroraButton variant="ghost" onClick={() => setNotesPartner(null)} disabled={savingNotes}>
-                  Отмена
+                  {t('sec.admin.partners.cancelBtn', 'Отмена')}
                 </AuroraButton>
                 <AuroraButton onClick={saveNotes} disabled={savingNotes}
                               icon={savingNotes ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}>
-                  Сохранить заметку
+                  {t('sec.admin.partners.saveNoteBtn', 'Сохранить заметку')}
                 </AuroraButton>
               </div>
             </AuroraCard>
@@ -564,28 +568,28 @@ export default function PartnersPage() {
                     {isDelete ? <Trash2 size={18} style={{ color: accent }} /> : <RotateCcw size={18} style={{ color: accent }} />}
                   </div>
                   <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>
-                    {isDelete ? 'Удалить партнёра?' : 'Сбросить статистику?'}
+                    {isDelete ? t('sec.admin.partners.confirmDeleteTitle', 'Удалить партнёра?') : t('sec.admin.partners.confirmResetTitle', 'Сбросить статистику?')}
                   </h3>
                   <button type="button" onClick={() => setPendingAction(null)}
                           className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
-                          style={{ color: 'var(--text-muted)' }} title="Закрыть">
+                          style={{ color: 'var(--text-muted)' }} title={t('sec.admin.partners.closeTitle', 'Закрыть')}>
                     <X size={16} />
                   </button>
                 </div>
                 <p className="text-sm mb-1" style={{ color: 'var(--text-primary)' }}>
-                  Партнёр: <b>{p.email || '—'}</b> · <code>{p.code}</code>
+                  {t('sec.admin.partners.partnerLabel', 'Партнёр:')} <b>{p.email || '—'}</b> · <code>{p.code}</code>
                 </p>
                 <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
                   {isDelete
-                    ? 'Будут удалены его записи (переходы, регистрации, привязки) и сам профиль. Восстановить нельзя.'
-                    : 'Переходы, регистрации и оплаты обнулятся (например, после выплаты вознаграждения). Сам партнёр останется активным. Действие необратимо.'}
+                    ? t('sec.admin.partners.confirmDeleteBody', 'Будут удалены его записи (переходы, регистрации, привязки) и сам профиль. Восстановить нельзя.')
+                    : t('sec.admin.partners.confirmResetBody', 'Переходы, регистрации и оплаты обнулятся (например, после выплаты вознаграждения). Сам партнёр останется активным. Действие необратимо.')}
                 </p>
                 <div className="flex items-center justify-end gap-2">
-                  <AuroraButton variant="ghost" onClick={() => setPendingAction(null)}>Отмена</AuroraButton>
+                  <AuroraButton variant="ghost" onClick={() => setPendingAction(null)}>{t('sec.admin.partners.cancelBtn', 'Отмена')}</AuroraButton>
                   <button type="button" onClick={runPendingAction}
                           className="px-4 py-2 rounded-xl text-sm font-600 text-white transition-opacity hover:opacity-90"
                           style={{ background: accent }}>
-                    {isDelete ? 'Удалить' : 'Сбросить'}
+                    {isDelete ? t('sec.admin.partners.confirmDeleteCta', 'Удалить') : t('sec.admin.partners.confirmResetCta', 'Сбросить')}
                   </button>
                 </div>
               </AuroraCard>

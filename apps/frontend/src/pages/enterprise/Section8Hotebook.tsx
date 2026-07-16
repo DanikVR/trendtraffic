@@ -12,6 +12,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BookOpen, Loader2, RefreshCw, CheckCircle2, XCircle, AlertTriangle,
   Info, ExternalLink, Download, Puzzle,
@@ -30,19 +31,21 @@ interface HbConnStatus {
   checkedAt?: string;
 }
 
-const KIND_TITLE: Record<string, string> = {
-  ext_offline: 'Расширение Hotebook не на связи',
-  ext_login: 'Нужен вход в Google (NotebookLM)',
-  error: 'Синхронизация не работает',
-};
-const KIND_BODY: Record<string, string> = {
-  ext_offline: 'Установите единое расширение TrendTraffic (Настройки → вкладка «Генерация») и держите открытой вкладку notebooklm.google.com в том же браузере, где вы залогинены в TrendTraffic. Расширение подключается автоматически.',
-  ext_login: 'Расширение на связи, но вход в notebooklm.google.com не выполнен. Откройте сайт и войдите в свой Google-аккаунт — статус обновится сам.',
-  error: 'Проверьте, что расширение установлено и вкладка NotebookLM открыта, затем нажмите «Проверить».',
-};
-
 export function Section8Hotebook() {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
+
+  // Словари статусов синхронизации внутри компонента — тексты переводятся через t().
+  const KIND_TITLE: Record<string, string> = {
+    ext_offline: t('sec.ent.hotebook.kindOfflineTitle', 'Расширение Hotebook не на связи'),
+    ext_login: t('sec.ent.hotebook.kindLoginTitle', 'Нужен вход в Google (NotebookLM)'),
+    error: t('sec.ent.hotebook.kindErrorTitle', 'Синхронизация не работает'),
+  };
+  const KIND_BODY: Record<string, string> = {
+    ext_offline: t('sec.ent.hotebook.kindOfflineBody', 'Установите единое расширение TrendTraffic (Настройки → вкладка «Генерация») и держите открытой вкладку notebooklm.google.com в том же браузере, где вы залогинены в TrendTraffic. Расширение подключается автоматически.'),
+    ext_login: t('sec.ent.hotebook.kindLoginBody', 'Расширение на связи, но вход в notebooklm.google.com не выполнен. Откройте сайт и войдите в свой Google-аккаунт — статус обновится сам.'),
+    error: t('sec.ent.hotebook.kindErrorBody', 'Проверьте, что расширение установлено и вкладка NotebookLM открыта, затем нажмите «Проверить».'),
+  };
   const headers = (): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
 
   const [status, setStatus] = useState<HbConnStatus | null>(null);
@@ -56,8 +59,8 @@ export function Section8Hotebook() {
       const r = await fetch(`/api/notebooklm/status${force ? '?force=1' : ''}`, { headers: headers() });
       const d = await r.json().catch(() => ({}));
       if (r.ok) setStatus(d.status || null);
-      else setNote({ ok: false, text: d.error || `Ошибка ${r.status}` });
-    } catch { setNote({ ok: false, text: 'Бэкенд недоступен' }); }
+      else setNote({ ok: false, text: d.error || t('sec.ent.hotebook.errStatus', 'Ошибка {{status}}', { status: r.status }) });
+    } catch { setNote({ ok: false, text: t('sec.ent.hotebook.backendDown', 'Бэкенд недоступен') }); }
     finally { setChecking(false); }
   };
   const loadCounters = async () => {
@@ -80,25 +83,25 @@ export function Section8Hotebook() {
             <BookOpen size={20} />
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Hotebook — подключение через расширение</h3>
+            <h3 className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.ent.hotebook.heading', 'Hotebook — подключение через расширение')}</h3>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Работает через единое Chrome-расширение TrendTraffic в вашем браузере под вашим входом в Google. У каждого Enterprise-аккаунта своё подключение и свои лимиты.
+              {t('sec.ent.hotebook.lead', 'Работает через единое Chrome-расширение TrendTraffic в вашем браузере под вашим входом в Google. У каждого Enterprise-аккаунта своё подключение и свои лимиты.')}
             </p>
           </div>
           {status && (
             status.ok ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-700 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
-                <CheckCircle2 size={14} /> Подключено
+                <CheckCircle2 size={14} /> {t('sec.ent.hotebook.connectedChip', 'Подключено')}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-xs font-700 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
-                <XCircle size={14} /> {kind === 'ext_offline' ? 'Расширение офлайн' : kind === 'ext_login' ? 'Нужен вход' : 'Нет синхронизации'}
+                <XCircle size={14} /> {kind === 'ext_offline' ? t('sec.ent.hotebook.chipOffline', 'Расширение офлайн') : kind === 'ext_login' ? t('sec.ent.hotebook.chipLogin', 'Нужен вход') : t('sec.ent.hotebook.chipNoSync', 'Нет синхронизации')}
               </span>
             )
           )}
           <AuroraButton variant="secondary" onClick={() => { void loadStatus(true); void loadCounters(); }} disabled={checking}
             icon={checking ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}>
-            Проверить
+            {t('sec.ent.hotebook.checkBtn', 'Проверить')}
           </AuroraButton>
         </div>
 
@@ -107,7 +110,7 @@ export function Section8Hotebook() {
           <div className="rounded-xl p-3.5 flex items-start gap-2.5 mb-3" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.45)' }}>
             <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
             <div className="min-w-0">
-              <div className="text-sm font-700" style={{ color: '#f59e0b' }}>{KIND_TITLE[kind] || 'Синхронизация не работает'}</div>
+              <div className="text-sm font-700" style={{ color: '#f59e0b' }}>{KIND_TITLE[kind] || t('sec.ent.hotebook.kindErrorTitle', 'Синхронизация не работает')}</div>
               <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{KIND_BODY[kind] || status.error || ''}</p>
             </div>
           </div>
@@ -115,7 +118,7 @@ export function Section8Hotebook() {
 
         {status?.checkedAt && (
           <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Последняя проверка: {new Date(status.checkedAt).toLocaleString('ru-RU')} · Сегодня генераций: {totalToday}
+            {t('sec.ent.hotebook.lastCheck', 'Последняя проверка:')} {new Date(status.checkedAt).toLocaleString('ru-RU')} · {t('sec.ent.hotebook.todayGens', 'Сегодня генераций:')} {totalToday}
             {totalToday > 0 && ` (${Object.entries(counters).map(([k, v]) => `${k}: ${v}`).join(', ')})`}
           </p>
         )}
@@ -129,35 +132,33 @@ export function Section8Hotebook() {
       {/* Как подключить */}
       <AuroraCard className="p-5">
         <h4 className="text-sm font-700 mb-3 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          <Puzzle size={15} style={{ color: '#22d3ee' }} /> Как подключить (один раз)
+          <Puzzle size={15} style={{ color: '#22d3ee' }} /> {t('sec.ent.hotebook.howToHeading', 'Как подключить (один раз)')}
         </h4>
         <ol className="text-xs space-y-2 mb-4 list-decimal list-inside" style={{ color: 'var(--text-secondary)' }}>
           <li>
-            Установите единое расширение TrendTraffic (v{TT_EXT_VERSION}) — оно на вкладке
-            <b> «Генерация»</b> этих настроек, кнопка «Скачать расширение». Оно же обслуживает блок «Google Flow».
+            {t('sec.ent.hotebook.step1a', 'Установите единое расширение TrendTraffic (v{{v}}) — оно на вкладке', { v: TT_EXT_VERSION })}
+            <b> {t('sec.ent.hotebook.step1b', '«Генерация»')}</b> {t('sec.ent.hotebook.step1c', 'этих настроек, кнопка «Скачать расширение». Оно же обслуживает блок «Google Flow».')}
           </li>
-          <li>Откройте <b>notebooklm.google.com</b> и войдите в свой Google-аккаунт (как обычно в браузере).</li>
-          <li>Справа снизу появится панель <b>«TrendTraffic → Hotebook»</b>. Когда «бежит лента» — подключено и работает.</li>
-          <li>Держите эту вкладку NotebookLM открытой во время работы блока (источники/чат/генерации выполняются в ней).</li>
+          <li>{t('sec.ent.hotebook.step2a', 'Откройте')} <b>notebooklm.google.com</b> {t('sec.ent.hotebook.step2b', 'и войдите в свой Google-аккаунт (как обычно в браузере).')}</li>
+          <li>{t('sec.ent.hotebook.step3a', 'Справа снизу появится панель')} <b>«TrendTraffic → Hotebook»</b>. {t('sec.ent.hotebook.step3b', 'Когда «бежит лента» — подключено и работает.')}</li>
+          <li>{t('sec.ent.hotebook.step4', 'Держите эту вкладку NotebookLM открытой во время работы блока (источники/чат/генерации выполняются в ней).')}</li>
         </ol>
         <div className="flex items-center gap-2 flex-wrap">
           <a href="/trendtraffic-extension.zip" download
             className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2 rounded-xl"
             style={{ background: '#22d3ee', color: '#062730', textDecoration: 'none' }}>
-            <Download size={15} /> Скачать расширение
+            <Download size={15} /> {t('sec.ent.hotebook.downloadBtn', 'Скачать расширение')}
           </a>
           <button onClick={() => window.open('https://notebooklm.google.com', '_blank', 'noopener')}
             className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl"
             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-            <ExternalLink size={15} /> Открыть NotebookLM
+            <ExternalLink size={15} /> {t('sec.ent.hotebook.openNotebookLm', 'Открыть NotebookLM')}
           </button>
         </div>
         <div className="rounded-xl p-3 mt-3 flex items-start gap-2" style={{ background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.25)' }}>
           <Info size={14} style={{ color: '#22d3ee', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-            Это <b>ваш</b> Google-аккаунт с <b>вашими</b> лимитами и блокнотами — они не пересекаются с другими клиентами.
-            Рекомендуется отдельный аккаунт с планом Google AI (Plus/Pro/Ultra): суточные лимиты NotebookLM (аудио/видео/чат)
-            считаются на аккаунт. Платформа <b>не хранит</b> ваши Google-куки — вход остаётся в вашем браузере.
+            {t('sec.ent.hotebook.privacyNote', 'Это ваш Google-аккаунт с вашими лимитами и блокнотами — они не пересекаются с другими клиентами. Рекомендуется отдельный аккаунт с планом Google AI (Plus/Pro/Ultra): суточные лимиты NotebookLM (аудио/видео/чат) считаются на аккаунт. Платформа не хранит ваши Google-куки — вход остаётся в вашем браузере.')}
           </p>
         </div>
       </AuroraCard>

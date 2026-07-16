@@ -11,6 +11,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Send, RefreshCw, Loader2, ExternalLink, Plus, Check, Clock, RotateCcw, Trash2,
   Ban, KeyRound, AlertTriangle, Link2, CalendarDays, ListChecks, BarChart3, Timer,
@@ -83,9 +84,6 @@ export interface ChainDraft { items: { assetId?: string; mediaUrl?: string; titl
 type KeyState = 'loading' | 'none' | 'bad' | 'ok';
 type SubTab = 'feed' | 'calendar' | 'schedule' | 'analytics';
 
-const DOW_LABEL = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-/** Форматы UGC-сборки — фильтр авто-цепочки (9:16 → TikTok, 16:9 → YouTube и т.п.). */
-const CHAIN_FMT: [string, string][] = [['9x16', '9:16 вертикальный'], ['16x9', '16:9 горизонтальный'], ['1x1', '1:1 квадрат'], ['4x5', '4:5 портрет']];
 const CHAIN_FMT_LABEL: Record<string, string> = { '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' };
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Пн..Вс (JS getDay)
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -115,6 +113,18 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   onChainDraftConsumed?: () => void;
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
+  /** Подписи дней недели (индекс = JS getDay). */
+  const dowLabel = [
+    t('sec.publisher.dowSun', 'Вс'), t('sec.publisher.dowMon', 'Пн'), t('sec.publisher.dowTue', 'Вт'),
+    t('sec.publisher.dowWed', 'Ср'), t('sec.publisher.dowThu', 'Чт'), t('sec.publisher.dowFri', 'Пт'),
+    t('sec.publisher.dowSat', 'Сб'),
+  ];
+  /** Форматы UGC-сборки — фильтр авто-цепочки (9:16 → TikTok, 16:9 → YouTube и т.п.). */
+  const chainFmtOptions: [string, string][] = [
+    ['9x16', t('sec.publisher.fmt9x16', '9:16 вертикальный')], ['16x9', t('sec.publisher.fmt16x9', '16:9 горизонтальный')],
+    ['1x1', t('sec.publisher.fmt1x1', '1:1 квадрат')], ['4x5', t('sec.publisher.fmt4x5', '4:5 портрет')],
+  ];
   const [sub, setSub] = useState<SubTab>('feed');
   const [keyState, setKeyState] = useState<KeyState>('loading');
   const [accounts, setAccounts] = useState<PubAccount[]>([]);
@@ -165,7 +175,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       setKeyState('ok');
       setAccounts(((await r.json()).accounts || []) as PubAccount[]);
-    } catch (e: any) { setErr(e?.message || 'Не удалось загрузить аккаунты'); }
+    } catch (e: any) { setErr(e?.message || t('sec.publisher.errLoadAccounts', 'Не удалось загрузить аккаунты')); }
     finally { setAccLoading(false); }
   };
 
@@ -198,7 +208,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       const d = r.ok ? await r.json() : { hasKey: false };
       if (!d.hasKey) { setKeyState('none'); setPosts([]); return; }
       await Promise.all([loadAccounts(false), loadPosts(false), loadSlots(), loadChains()]);
-    } catch (e: any) { setErr(e?.message || 'Публикатор недоступен'); }
+    } catch (e: any) { setErr(e?.message || t('sec.publisher.errUnavailable', 'Публикатор недоступен')); }
   };
 
   useEffect(() => { void loadAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [reloadKey]);
@@ -208,7 +218,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     if (chainDraft && chainDraft.items?.length) {
       setSub('schedule');
       setChainForm({
-        kind: 'manual', name: `Серия из Галереи (${chainDraft.items.length})`, items: chainDraft.items,
+        kind: 'manual', name: t('sec.publisher.chainDraftName', 'Серия из Галереи ({{n}})', { n: chainDraft.items.length }), items: chainDraft.items,
         accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3, format: '',
       });
       onChainDraftConsumed?.();
@@ -250,22 +260,22 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     setRowBusy(row.id);
     try {
       const r = await fetch(`/api/publisher/posts/${row.id}/retry`, { method: 'POST', headers: jsonHeaders() });
-      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || 'Не удалось повторить');
+      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errRetry', 'Не удалось повторить'));
       await loadPosts(true);
     } finally { setRowBusy(null); }
   };
   const removeRow = (row: PubPostRow) => {
     const isSched = row.status === 'scheduled';
     setConfirm({
-      title: isSched ? 'Отменить публикацию?' : 'Убрать запись из истории?',
+      title: isSched ? t('sec.publisher.cancelPostTitle', 'Отменить публикацию?') : t('sec.publisher.removeRowTitle', 'Убрать запись из истории?'),
       message: isSched
-        ? `Запланированный пост в ${PLATFORM_META[row.platform]?.label || row.platform} будет снят из очереди Blotato.`
-        : 'Сам пост в соцсети (если он опубликован) не удаляется — только запись в ленте Публикатора.',
+        ? t('sec.publisher.cancelPostMsg', 'Запланированный пост в {{platform}} будет снят из очереди Blotato.', { platform: PLATFORM_META[row.platform]?.label || row.platform })
+        : t('sec.publisher.removeRowMsg', 'Сам пост в соцсети (если он опубликован) не удаляется — только запись в ленте Публикатора.'),
       onConfirm: async () => {
         setConfirm(null); setRowBusy(row.id);
         try {
           const r = await fetch(`/api/publisher/posts/${row.id}`, { method: 'DELETE', headers: jsonHeaders() });
-          if (!r.ok) setErr((await r.json().catch(() => ({}))).error || 'Не удалось удалить');
+          if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errDelete', 'Не удалось удалить'));
           await loadPosts(true);
         } finally { setRowBusy(null); }
       },
@@ -279,7 +289,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         method: 'PATCH', headers: jsonHeaders(),
         body: JSON.stringify({ scheduledAt: new Date(moveVal).toISOString() }),
       });
-      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || 'Не удалось перенести');
+      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errMove', 'Не удалось перенести'));
       setMoveId(null); setMoveVal('');
       await loadPosts(true);
     } finally { setRowBusy(null); }
@@ -293,7 +303,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     try {
       const utc = localToSlot(slotDow, hh, mm);
       const r = await fetch('/api/publisher/slots', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ slots: [utc] }) });
-      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || 'Не удалось добавить слот');
+      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errAddSlot', 'Не удалось добавить слот'));
       await loadSlots();
     } finally { setSlotBusy(false); }
   };
@@ -307,7 +317,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   const submitChain = async () => {
     if (!chainForm) return;
     const accs = accounts.filter((a) => chainForm.accIds.has(a.id));
-    if (!accs.length) { setErr('Выберите аккаунты для цепочки'); return; }
+    if (!accs.length) { setErr(t('sec.publisher.errChainAccounts', 'Выберите аккаунты для цепочки')); return; }
     setChainBusy(true); setErr(null);
     try {
       const body: any = {
@@ -322,7 +332,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       if (chainForm.kind === 'auto' && chainForm.format) body.formatFilter = chainForm.format;
       const r = await fetch('/api/publisher/chains', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.error || 'Не удалось создать цепочку'); return; }
+      if (!r.ok) { setErr(d.error || t('sec.publisher.errChainCreate', 'Не удалось создать цепочку')); return; }
       setChainForm(null);
       await Promise.all([loadChains(), loadPosts(true), loadSlots()]);
     } finally { setChainBusy(false); }
@@ -332,8 +342,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     await loadChains();
   };
   const deleteChain = (c: ChainRow) => setConfirm({
-    title: `Удалить цепочку «${c.name}»?`,
-    message: 'Её запланированные посты будут сняты из очереди. Уже опубликованное не трогаем.',
+    title: t('sec.publisher.delChainTitle', 'Удалить цепочку «{{name}}»?', { name: c.name }),
+    message: t('sec.publisher.delChainMsg', 'Её запланированные посты будут сняты из очереди. Уже опубликованное не трогаем.'),
     onConfirm: async () => {
       setConfirm(null);
       await fetch(`/api/publisher/chains/${c.id}`, { method: 'DELETE', headers: jsonHeaders() });
@@ -349,7 +359,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setAnaErr(d.error || `HTTP ${r.status}`); setAna([]); return; }
       setAna(Array.isArray(d.items) ? d.items : []);
-    } catch (e: any) { setAnaErr(e?.message || 'Не удалось загрузить'); setAna([]); }
+    } catch (e: any) { setAnaErr(e?.message || t('sec.publisher.errLoad', 'Не удалось загрузить')); setAna([]); }
     finally { setAnaLoading(false); }
   };
   useEffect(() => { if (sub === 'analytics' && ana === null && keyState === 'ok') void loadAnalytics(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [sub, keyState]);
@@ -358,22 +368,22 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     const base = 'inline-flex items-center gap-1 text-[10.5px] font-700 px-2 py-0.5 rounded-full';
     if (row.status === 'published') {
       return row.post_url
-        ? <a href={row.post_url} target="_blank" rel="noreferrer" className={base} title="Открыть пост"
+        ? <a href={row.post_url} target="_blank" rel="noreferrer" className={base} title={t('sec.publisher.openPost', 'Открыть пост')}
             style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', textDecoration: 'none' }}>
-            <Check size={11} /> опубликован <ExternalLink size={10} />
+            <Check size={11} /> {t('sec.publisher.stPublished', 'опубликован')} <ExternalLink size={10} />
           </a>
-        : <span className={base} style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}><Check size={11} /> опубликован</span>;
+        : <span className={base} style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}><Check size={11} /> {t('sec.publisher.stPublished', 'опубликован')}</span>;
     }
     if (row.status === 'failed') {
       const willRetry = row.next_retry_at && new Date(row.next_retry_at).getTime() > Date.now();
       return <span className={base} title={row.error || undefined} style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
-        <AlertTriangle size={11} /> ошибка{willRetry ? ` · повтор ${fmtDT(row.next_retry_at!)}` : ''}
+        <AlertTriangle size={11} /> {t('sec.publisher.stFailed', 'ошибка')}{willRetry ? ' · ' + t('sec.publisher.stRetryAt', 'повтор {{when}}', { when: fmtDT(row.next_retry_at!) }) : ''}
       </span>;
     }
     if (row.status === 'canceled') {
-      return <span className={base} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}><Ban size={11} /> отменён</span>;
+      return <span className={base} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}><Ban size={11} /> {t('sec.publisher.stCanceled', 'отменён')}</span>;
     }
-    const when = row.scheduled_at ? fmtDT(row.scheduled_at) : 'публикуется…';
+    const when = row.scheduled_at ? fmtDT(row.scheduled_at) : t('sec.publisher.stPublishing', 'публикуется…');
     return <span className={base} style={{ background: 'rgba(245,158,11,0.13)', color: '#f59e0b' }}><Clock size={11} /> {when}</span>;
   };
 
@@ -387,21 +397,21 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               <Send size={22} color="#fff" />
             </span>
             <div>
-              <p className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Подключите Blotato — и публикуйте из Галереи</p>
-              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>TikTok, Instagram, YouTube, X, Facebook, LinkedIn, Threads, Bluesky, Pinterest — одним ключом.</p>
+              <p className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.onbTitle', 'Подключите Blotato — и публикуйте из Галереи')}</p>
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.onbSubtitle', 'TikTok, Instagram, YouTube, X, Facebook, LinkedIn, Threads, Bluesky, Pinterest — одним ключом.')}</p>
             </div>
           </div>
           {keyState === 'bad' && (
             <div className="flex items-start gap-2 text-[13px] rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
               <AlertTriangle size={15} className="mt-[1px] flex-shrink-0" />
-              <span>Blotato отверг сохранённый ключ (401). Проверьте ключ в Настройках — возможно, он перевыпущен или на тарифе Blotato нет доступа к API.</span>
+              <span>{t('sec.publisher.onbBadKey', 'Blotato отверг сохранённый ключ (401). Проверьте ключ в Настройках — возможно, он перевыпущен или на тарифе Blotato нет доступа к API.')}</span>
             </div>
           )}
           <ol className="space-y-2.5">
             {[
-              <>Заведите <b>свой</b> аккаунт на <b>my.blotato.com</b> — у каждого пользователя TrendTraffic он свой (тариф Blotato с доступом к API).</>,
-              <>В кабинете Blotato подключите соцсети: Settings → Social Accounts (пароли вводятся только в окнах самих платформ).</>,
-              <>Создайте API-ключ (Settings → API) и вставьте его у нас: Настройки → Генерация → <b>Blotato</b> → «Проверить».</>,
+              t('sec.publisher.onbStep1', 'Заведите свой аккаунт на my.blotato.com — у каждого пользователя TrendTraffic он свой (тариф Blotato с доступом к API).'),
+              t('sec.publisher.onbStep2', 'В кабинете Blotato подключите соцсети: Settings → Social Accounts (пароли вводятся только в окнах самих платформ).'),
+              t('sec.publisher.onbStep3', 'Создайте API-ключ (Settings → API) и вставьте его у нас: Настройки → Генерация → Blotato → «Проверить».'),
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3 text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
                 <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 font-700 text-[12px]"
@@ -414,17 +424,17 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             <a href={BLOTATO_SETTINGS_URL} target="_blank" rel="noreferrer"
               className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl"
               style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', textDecoration: 'none' }}>
-              <ExternalLink size={15} /> Открыть кабинет Blotato
+              <ExternalLink size={15} /> {t('sec.publisher.onbOpenBlotato', 'Открыть кабинет Blotato')}
             </a>
             <button type="button" onClick={() => navigate('/settings/enterprise?section=openmontage')}
               className="inline-flex items-center gap-2 text-[13px] font-600 px-4 py-2.5 rounded-xl"
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-              <KeyRound size={15} /> Ввести ключ в Настройках
+              <KeyRound size={15} /> {t('sec.publisher.onbEnterKey', 'Ввести ключ в Настройках')}
             </button>
             <button type="button" onClick={() => void loadAll()}
               className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2.5 rounded-xl ml-auto"
               style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-              <RefreshCw size={14} /> Проверить снова
+              <RefreshCw size={14} /> {t('sec.publisher.onbRecheck', 'Проверить снова')}
             </button>
           </div>
         </div>
@@ -453,8 +463,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             {days[0].toLocaleDateString([], { day: '2-digit', month: '2-digit' })} — {days[6].toLocaleDateString([], { day: '2-digit', month: '2-digit' })}
           </span>
           <button type="button" onClick={() => setWeekOff(weekOff + 1)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}><ChevronRight size={15} /></button>
-          {weekOff !== 0 && <button type="button" onClick={() => setWeekOff(0)} className="text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: 'pointer' }}>Сегодня</button>}
-          <span className="text-[11.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>Запланировано на неделю: {days.reduce((n, d) => n + byDay(d).length, 0)}</span>
+          {weekOff !== 0 && <button type="button" onClick={() => setWeekOff(0)} className="text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('sec.publisher.today', 'Сегодня')}</button>}
+          <span className="text-[11.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.weekPlanned', 'Запланировано на неделю: {{n}}', { n: days.reduce((n, d) => n + byDay(d).length, 0) })}</span>
         </div>
         <div className="overflow-x-auto">
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(7, minmax(150px, 1fr))', minWidth: 1080 }}>
@@ -464,7 +474,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               return (
                 <div key={i} className="rounded-xl p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: `1px solid ${isToday ? 'var(--brand)' : 'var(--border-medium)'}`, minHeight: 140 }}>
                   <div className="text-[11px] font-700 flex items-center justify-between" style={{ color: isToday ? 'var(--brand)' : 'var(--text-muted)' }}>
-                    <span>{DOW_LABEL[d.getDay()]}</span><span>{pad2(d.getDate())}.{pad2(d.getMonth() + 1)}</span>
+                    <span>{dowLabel[d.getDay()]}</span><span>{pad2(d.getDate())}.{pad2(d.getMonth() + 1)}</span>
                   </div>
                   {items.map((p) => (
                     <div key={p.id} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
@@ -473,7 +483,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                         <span className="text-[11px] font-700 tabular-nums" style={{ color: 'var(--text-primary)' }}>
                           {pad2(new Date(p.scheduled_at!).getHours())}:{pad2(new Date(p.scheduled_at!).getMinutes())}
                         </span>
-                        {p.chain_id && <span title="Пост цепочки"><Link2 size={10} style={{ color: 'var(--brand)' }} /></span>}
+                        {p.chain_id && <span title={t('sec.publisher.chainPostTitle', 'Пост цепочки')}><Link2 size={10} style={{ color: 'var(--brand)' }} /></span>}
                       </div>
                       <div className="text-[10.5px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }} title={p.text || ''}>{(p.text || '').split('\n')[0] || '—'}</div>
                       {moveId === p.id ? (
@@ -490,12 +500,12 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                         </div>
                       ) : (
                         <div className="flex gap-1 mt-1">
-                          <button type="button" onClick={() => { setMoveId(p.id); setMoveVal(''); }} title="Перенести"
+                          <button type="button" onClick={() => { setMoveId(p.id); setMoveVal(''); }} title={t('sec.publisher.moveTitle', 'Перенести')}
                             className="flex-1 text-[10px] font-600 py-0.5 rounded-md inline-flex items-center justify-center gap-1"
                             style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}>
-                            <Timer size={10} /> перенести
+                            <Timer size={10} /> {t('sec.publisher.moveBtn', 'перенести')}
                           </button>
-                          <button type="button" onClick={() => removeRow(p)} title="Отменить публикацию"
+                          <button type="button" onClick={() => removeRow(p)} title={t('sec.publisher.cancelPub', 'Отменить публикацию')}
                             className="w-6 text-[10px] py-0.5 rounded-md" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>×</button>
                         </div>
                       )}
@@ -507,7 +517,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             })}
           </div>
         </div>
-        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Время местное. Перенос уходит в Blotato (PATCH расписания); отмена снимает пост из очереди.</p>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.calHint', 'Время местное. Перенос обновляет время публикации в очереди Blotato; отмена снимает пост из очереди.')}</p>
       </div>
     );
   };
@@ -521,19 +531,19 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
           <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
             <span className="text-[13.5px] font-700 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-              <Clock size={15} /> Слоты публикаций <span className="text-[11px] font-500" style={{ color: 'var(--text-muted)' }}>— время местное; «Следующий слот» и цепочки берут времена отсюда</span>
+              <Clock size={15} /> {t('sec.publisher.slotsTitle', 'Слоты публикаций')} <span className="text-[11px] font-500" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.slotsSub', '— время местное; «Следующий слот» и цепочки берут времена отсюда')}</span>
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
               <select value={slotDow} onChange={(e) => setSlotDow(Number(e.target.value))}
                 className="text-[12.5px] font-600 rounded-lg px-2 py-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                {DOW_ORDER.map((d) => <option key={d} value={d}>{DOW_LABEL[d]}</option>)}
+                {DOW_ORDER.map((d) => <option key={d} value={d}>{dowLabel[d]}</option>)}
               </select>
               <input type="time" value={slotTime} onChange={(e) => setSlotTime(e.target.value)}
                 className="text-[12.5px] rounded-lg px-2 py-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
               <button type="button" onClick={() => void addSlot()} disabled={slotBusy}
                 className="inline-flex items-center gap-1 text-[12.5px] font-700 px-3 py-1.5 rounded-lg"
                 style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                {slotBusy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Слот
+                {slotBusy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} {t('sec.publisher.addSlotBtn', 'Слот')}
               </button>
             </div>
           </div>
@@ -541,13 +551,13 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))', minWidth: 900 }}>
               {DOW_ORDER.map((dw) => (
                 <div key={dw} className="rounded-xl p-2" style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-medium)', minHeight: 72 }}>
-                  <div className="text-[11px] font-700 mb-1.5 text-center" style={{ color: 'var(--text-muted)' }}>{DOW_LABEL[dw]}</div>
+                  <div className="text-[11px] font-700 mb-1.5 text-center" style={{ color: 'var(--text-muted)' }}>{dowLabel[dw]}</div>
                   <div className="flex flex-col gap-1">
                     {slotsLocal.filter((s) => s.local.dow === dw).sort((a, b) => a.local.hh * 60 + a.local.mm - b.local.hh * 60 - b.local.mm).map((s) => (
                       <span key={s.id} className="inline-flex items-center justify-between gap-1 text-[11.5px] font-700 px-2 py-1 rounded-lg"
                         style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}>
                         {pad2(s.local.hh)}:{pad2(s.local.mm)}
-                        <button type="button" onClick={() => void delSlot(s.id)} title="Удалить слот"
+                        <button type="button" onClick={() => void delSlot(s.id)} title={t('sec.publisher.delSlotTitle', 'Удалить слот')}
                           style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, lineHeight: 1 }}><X size={11} /></button>
                       </span>
                     ))}
@@ -558,8 +568,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
           </div>
           <div className="text-[12px] mt-2.5" style={{ color: 'var(--text-muted)' }}>
             {slots.length === 0
-              ? 'Слотов пока нет — добавьте хотя бы один: без них не работают «Следующий слот» и цепочки.'
-              : <>Ближайшие свободные: <b style={{ color: 'var(--text-primary)' }}>{nextFree.slice(0, 3).map(fmtDT).join(' · ') || '—'}</b></>}
+              ? t('sec.publisher.noSlots', 'Слотов пока нет — добавьте хотя бы один: без них не работают «Следующий слот» и цепочки.')
+              : <>{t('sec.publisher.nextFreeLbl', 'Ближайшие свободные:')} <b style={{ color: 'var(--text-primary)' }}>{nextFree.slice(0, 3).map(fmtDT).join(' · ') || '—'}</b></>}
           </div>
         </div>
 
@@ -567,13 +577,13 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
           <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
             <span className="text-[13.5px] font-700 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-              <Link2 size={15} /> Цепочки контента
-              <span className="text-[11px] font-500" style={{ color: 'var(--text-muted)' }}>— серия из Галереи по слотам или автопубликация роликов автопилота</span>
+              <Link2 size={15} /> {t('sec.publisher.chainsTitle', 'Цепочки контента')}
+              <span className="text-[11px] font-500" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.chainsSub', '— серия из Галереи по слотам или автопубликация роликов автопилота')}</span>
             </span>
-            <button type="button" onClick={() => setChainForm({ kind: 'auto', name: 'Авто: ролики конвейера трендов', items: [], accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3, format: '' })}
+            <button type="button" onClick={() => setChainForm({ kind: 'auto', name: t('sec.publisher.autoChainDefName', 'Авто: ролики конвейера трендов'), items: [], accIds: new Set(), captionMode: 'ai', captionText: '', tone: 'engaging', dailyCap: 3, format: '' })}
               className="inline-flex items-center gap-1.5 text-[12.5px] font-700 px-3 py-1.5 rounded-lg"
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-              <Zap size={13} /> Авто-цепочка
+              <Zap size={13} /> {t('sec.publisher.autoChainBtn', 'Авто-цепочка')}
             </button>
           </div>
 
@@ -581,7 +591,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             <div className="rounded-xl p-3 mb-3 space-y-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--brand)' }}>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-700 px-2 py-0.5 rounded-full" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
-                  {chainForm.kind === 'manual' ? `Серия · ${chainForm.items.length} роликов` : 'Авто-цепочка'}
+                  {chainForm.kind === 'manual' ? t('sec.publisher.chainBadgeManual', 'Серия · {{n}} роликов', { n: chainForm.items.length }) : t('sec.publisher.autoChainBtn', 'Авто-цепочка')}
                 </span>
                 <input value={chainForm.name} onChange={(e) => setChainForm({ ...chainForm, name: e.target.value })}
                   className="flex-1 min-w-[200px] text-[13px] font-600 rounded-lg px-2.5 py-1.5"
@@ -590,11 +600,11 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               </div>
               {chainForm.kind === 'auto' && (
                 <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                  Источник: свежие ролики автопилота трендов (Галерея → UGC → «Авто»), которые ещё не публиковались. Тик раз в минуту ставит их в ближайший свободный слот; автопауза после 3 ошибок подряд.
+                  {t('sec.publisher.autoChainSrcHint', 'Источник: свежие ролики автопилота трендов (Галерея → UGC → «Авто»), которые ещё не публиковались. Планировщик раз в минуту ставит очередной ролик в ближайший свободный слот; после 3 ошибок подряд цепочка встаёт на паузу.')}
                 </p>
               )}
               <div>
-                <div className="text-[11px] font-700 mb-1" style={{ color: 'var(--text-muted)' }}>КУДА ПУБЛИКУЕМ</div>
+                <div className="text-[11px] font-700 mb-1 uppercase" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.whereTo', 'Куда публикуем')}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {accounts.map((a) => {
                     const on = chainForm.accIds.has(a.id);
@@ -610,12 +620,12 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       </button>
                     );
                   })}
-                  {accounts.length === 0 && <span className="text-[12px]" style={{ color: '#f59e0b' }}>Нет подключённых аккаунтов</span>}
+                  {accounts.length === 0 && <span className="text-[12px]" style={{ color: '#f59e0b' }}>{t('sec.publisher.noAccounts', 'Нет подключённых аккаунтов')}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="inline-flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                  {([['ai', '✦ Подпись ИИ'], ['fixed', 'Свой текст']] as ['ai' | 'fixed', string][]).map(([k, l]) => (
+                  {([['ai', t('sec.publisher.captionAi', '✦ Подпись ИИ')], ['fixed', t('sec.publisher.captionOwn', 'Свой текст')]] as ['ai' | 'fixed', string][]).map(([k, l]) => (
                     <button key={k} type="button" onClick={() => setChainForm({ ...chainForm, captionMode: k })}
                       className="text-[12px] font-600 px-2.5 py-1 rounded-md"
                       style={{ background: chainForm.captionMode === k ? 'var(--brand)' : 'transparent', color: chainForm.captionMode === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>{l}</button>
@@ -624,17 +634,17 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                 {chainForm.captionMode === 'ai' ? (
                   <select value={chainForm.tone} onChange={(e) => setChainForm({ ...chainForm, tone: e.target.value })}
                     className="text-[12px] font-600 rounded-lg px-2 py-1.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                    <option value="engaging">Вовлекающий</option><option value="expert">Экспертный</option><option value="selling">Продающий</option>
+                    <option value="engaging">{t('sec.publisher.toneEngaging', 'Вовлекающий')}</option><option value="expert">{t('sec.publisher.toneExpert', 'Экспертный')}</option><option value="selling">{t('sec.publisher.toneSelling', 'Продающий')}</option>
                   </select>
                 ) : (
                   <input value={chainForm.captionText} onChange={(e) => setChainForm({ ...chainForm, captionText: e.target.value })}
-                    placeholder="Текст для всех постов серии"
+                    placeholder={t('sec.publisher.captionPh', 'Текст для всех постов серии')}
                     className="flex-1 min-w-[220px] text-[12.5px] rounded-lg px-2.5 py-1.5"
                     style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                 )}
                 {chainForm.kind === 'auto' && (
                   <label className="text-[12px] inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                    в день ≤
+                    {t('sec.publisher.perDayLbl', 'в день ≤')}
                     <input type="number" min={1} max={20} value={chainForm.dailyCap}
                       onChange={(e) => setChainForm({ ...chainForm, dailyCap: Math.max(1, Math.min(20, Number(e.target.value) || 3)) })}
                       className="w-14 text-[12.5px] rounded-lg px-2 py-1" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
@@ -642,22 +652,22 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                 )}
                 {chainForm.kind === 'auto' && (
                   <select value={chainForm.format} onChange={(e) => setChainForm({ ...chainForm, format: e.target.value })}
-                    title="Брать из «Авто» только ролики этого формата — например, 9:16 в TikTok, а вторая цепочка 16:9 в YouTube. Шаблон UGC должен собирать эти форматы."
+                    title={t('sec.publisher.fmtFilterTitle', 'Брать из «Авто» только ролики этого формата — например, 9:16 в TikTok, а вторая цепочка 16:9 в YouTube. Шаблон UGC должен собирать эти форматы.')}
                     className="text-[12px] font-600 rounded-lg px-2 py-1.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
-                    <option value="">Любой формат</option>
-                    {CHAIN_FMT.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                    <option value="">{t('sec.publisher.anyFormat', 'Любой формат')}</option>
+                    {chainFmtOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
                 )}
                 <button type="button" onClick={() => void submitChain()} disabled={chainBusy || chainForm.accIds.size === 0}
                   className="inline-flex items-center gap-1.5 text-[12.5px] font-700 px-4 py-1.5 rounded-lg ml-auto disabled:opacity-40"
                   style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
                   {chainBusy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                  {chainForm.kind === 'manual' ? 'Распланировать по слотам' : 'Включить авто-цепочку'}
+                  {chainForm.kind === 'manual' ? t('sec.publisher.chainSubmitManual', 'Распланировать по слотам') : t('sec.publisher.chainSubmitAuto', 'Включить авто-цепочку')}
                 </button>
               </div>
               {chainForm.kind === 'manual' && (
                 <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  Каждый ролик серии займёт свой ближайший свободный слот. Если ИИ-подпись недоступна (нет ключа Claude) — подпись соберётся из названия и ключевых слов разбора.
+                  {t('sec.publisher.manualChainHint', 'Каждый ролик серии займёт свой ближайший свободный слот. Если ИИ-подпись недоступна (нет ключа Claude) — подпись соберётся из названия и ключевых слов разбора.')}
                 </p>
               )}
             </div>
@@ -665,7 +675,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
 
           {chains.length === 0 && !chainForm ? (
             <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              Цепочек пока нет. Серия вручную: выделите ролики в Галерее → «Опубликовать (N)». Автопилот: кнопка «Авто-цепочка» выше.
+              {t('sec.publisher.noChains', 'Цепочек пока нет. Серия вручную: выделите ролики в Галерее → «Опубликовать (N)». Автопилот: кнопка «Авто-цепочка» выше.')}
             </p>
           ) : (
             <div className="flex flex-col gap-2">
@@ -673,12 +683,12 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                 <div key={c.id} className="rounded-xl p-2.5 flex items-center gap-2.5 flex-wrap" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                   <span className="text-[11px] font-700 px-2 py-0.5 rounded-full flex-shrink-0"
                     style={{ background: c.kind === 'auto' ? 'rgba(99,102,241,0.15)' : 'var(--bg-secondary)', color: c.kind === 'auto' ? 'var(--brand)' : 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-                    {c.kind === 'auto' ? '⚡ авто' : 'серия'}
+                    {c.kind === 'auto' ? t('sec.publisher.chainKindAuto', '⚡ авто') : t('sec.publisher.chainKindManual', 'серия')}
                   </span>
                   <span className="text-[13px] font-600 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
                   <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     ⏳{c.stats?.scheduled || 0} · ✓{c.stats?.published || 0}{(c.stats?.failed || 0) > 0 ? <span style={{ color: '#ef4444' }}> · ✗{c.stats?.failed}</span> : null}
-                    {c.kind === 'auto' ? ` · ≤${c.daily_cap}/день${c.format_filter ? ` · ${CHAIN_FMT_LABEL[c.format_filter] || c.format_filter}` : ''}` : ` · ${c.cursor}/${(c.items || []).length}`}
+                    {c.kind === 'auto' ? ' · ' + t('sec.publisher.perDayShort', '≤{{n}}/день', { n: c.daily_cap }) + (c.format_filter ? ` · ${CHAIN_FMT_LABEL[c.format_filter] || c.format_filter}` : '') : ` · ${c.cursor}/${(c.items || []).length}`}
                   </span>
                   {c.last_error && <span className="text-[11px] truncate max-w-[260px]" title={c.last_error} style={{ color: '#ef4444' }}>{c.last_error}</span>}
                   <span className="ml-auto flex items-center gap-1.5">
@@ -686,10 +696,10 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       <button type="button" onClick={() => void toggleChain(c)}
                         className="text-[11.5px] font-700 px-2.5 py-1 rounded-lg"
                         style={{ background: c.enabled ? 'rgba(16,185,129,0.12)' : 'var(--bg-secondary)', color: c.enabled ? '#10b981' : 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                        {c.enabled ? 'активна' : 'на паузе'}
+                        {c.enabled ? t('sec.publisher.chainActive', 'активна') : t('sec.publisher.chainPaused', 'на паузе')}
                       </button>
                     )}
-                    <button type="button" onClick={() => deleteChain(c)} title="Удалить цепочку (снимет её запланированные посты)"
+                    <button type="button" onClick={() => deleteChain(c)} title={t('sec.publisher.delChainBtnTitle', 'Удалить цепочку (снимет её запланированные посты)')}
                       className="w-7 h-7 rounded-lg flex items-center justify-center"
                       style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
                       <Trash2 size={12} />
@@ -717,11 +727,11 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[11px] font-700 px-2 py-1 rounded-full" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}>X · IG · FB · Threads · Bluesky — Blotato</span>
-        <span className="text-[11px] font-700 px-2 py-1 rounded-full" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>TikTok · YouTube — раздел «Каналы» (TikHub)</span>
+        <span className="text-[11px] font-700 px-2 py-1 rounded-full" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>{t('sec.publisher.anaTikhubChip', 'TikTok · YouTube — раздел «Каналы» (TikHub)')}</span>
         <button type="button" onClick={() => void loadAnalytics()} disabled={anaLoading}
           className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg ml-auto"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-          <RefreshCw size={12} className={anaLoading ? 'animate-spin' : ''} /> Обновить
+          <RefreshCw size={12} className={anaLoading ? 'animate-spin' : ''} /> {t('sec.publisher.refresh', 'Обновить')}
         </button>
       </div>
       {anaLoading ? (
@@ -731,15 +741,15 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       ) : !ana || ana.length === 0 ? (
         <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)' }}>
           <BarChart3 size={22} className="inline-block mb-2" style={{ color: 'var(--text-muted)' }} />
-          <p className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>Метрик пока нет</p>
-          <p className="text-[12.5px] mt-1" style={{ color: 'var(--text-muted)' }}>Blotato собирает статистику по чекпоинтам после публикаций (X, Instagram, Facebook, Threads, Bluesky). Для TikTok и YouTube — «Тренды → Каналы».</p>
+          <p className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.anaEmptyTitle', 'Метрик пока нет')}</p>
+          <p className="text-[12.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.anaEmptyBody', 'Blotato снимает статистику постов через некоторое время после публикации (X, Instagram, Facebook, Threads, Bluesky). Для TikTok и YouTube — «Тренды → Каналы».')}</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--border-medium)' }}>
           <table className="w-full text-[12.5px]" style={{ minWidth: 760, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--bg-secondary)' }}>
-                {['Платформа', 'Пост', 'Просмотры', 'Лайки', 'Коммент.', 'Охват', ''].map((h, i) => (
+                {[t('sec.publisher.thPlatform', 'Платформа'), t('sec.publisher.thPost', 'Пост'), t('sec.publisher.thViews', 'Просмотры'), t('sec.publisher.thLikes', 'Лайки'), t('sec.publisher.thComments', 'Коммент.'), t('sec.publisher.thReach', 'Охват'), ''].map((h, i) => (
                   <th key={i} className="text-left px-3 py-2 text-[10.5px] font-700 uppercase tracking-wide" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-medium)' }}>{h}</th>
                 ))}
               </tr>
@@ -760,7 +770,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       <td key={j} className="px-3 py-2 tabular-nums" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>{num(pick(it, keys))}</td>
                     ))}
                     <td className="px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      {url && <a href={String(url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11.5px] font-600" style={{ color: 'var(--brand)', textDecoration: 'none' }}>пост <ExternalLink size={10} /></a>}
+                      {url && <a href={String(url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11.5px] font-600" style={{ color: 'var(--brand)', textDecoration: 'none' }}>{t('sec.publisher.postLink', 'пост')} <ExternalLink size={10} /></a>}
                     </td>
                   </tr>
                 );
@@ -778,9 +788,9 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       <div className="py-10 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
     ) : groups.length === 0 ? (
       <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)' }}>
-        <p className="text-sm font-600 mb-1" style={{ color: 'var(--text-primary)' }}>Пока ни одного поста</p>
+        <p className="text-sm font-600 mb-1" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.feedEmptyTitle', 'Пока ни одного поста')}</p>
         <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          Нажмите «Новый пост» или кнопку <Send size={11} className="inline" /> на карточке любого видео в Галерее.
+          {t('sec.publisher.feedEmptyA', 'Нажмите «Новый пост» или кнопку')} <Send size={11} className="inline" /> {t('sec.publisher.feedEmptyB', 'на карточке любого видео в Галерее.')}
         </p>
       </div>
     ) : (
@@ -797,7 +807,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               <div className="min-w-0 flex-1">
                 <div className="text-[13px] font-600 truncate" style={{ color: 'var(--text-primary)' }}>
                   {first.chain_id && <Link2 size={11} className="inline mr-1" style={{ color: 'var(--brand)' }} />}
-                  {(first.text || '').split('\n')[0] || 'Без текста'}
+                  {(first.text || '').split('\n')[0] || t('sec.publisher.noText', 'Без текста')}
                 </div>
                 <div className="text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>{fmtDT(first.created_at)}</div>
                 <div className="flex flex-wrap gap-1.5">
@@ -806,7 +816,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       <PlatformMark platform={row.platform} size={20} />
                       {statusChip(row)}
                       {row.status === 'failed' && (
-                        <button type="button" onClick={() => void retry(row)} disabled={rowBusy === row.id} title={row.error ? `Повторить · ${row.error}` : 'Повторить'}
+                        <button type="button" onClick={() => void retry(row)} disabled={rowBusy === row.id} title={row.error ? t('sec.publisher.retryTitleErr', 'Повторить · {{error}}', { error: row.error }) : t('sec.publisher.retryTitle', 'Повторить')}
                           className="w-6 h-6 rounded-md flex items-center justify-center"
                           style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}>
                           {rowBusy === row.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
@@ -814,7 +824,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       )}
                       {(row.status === 'scheduled' || row.status === 'failed' || row.status === 'published' || row.status === 'canceled') && (
                         <button type="button" onClick={() => removeRow(row)} disabled={rowBusy === row.id}
-                          title={row.status === 'scheduled' ? 'Отменить публикацию' : 'Убрать запись'}
+                          title={row.status === 'scheduled' ? t('sec.publisher.cancelPub', 'Отменить публикацию') : t('sec.publisher.removeRec', 'Убрать запись')}
                           className="w-6 h-6 rounded-md flex items-center justify-center"
                           style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
                           <Trash2 size={12} />
@@ -853,17 +863,17 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       {/* Плитки сетей */}
       <div>
         <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-          <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Соцсети</span>
+          <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.socialNets', 'Соцсети')}</span>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => void loadAccounts(true)} disabled={accLoading}
               className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-              <RefreshCw size={13} className={accLoading ? 'animate-spin' : ''} /> Обновить
+              <RefreshCw size={13} className={accLoading ? 'animate-spin' : ''} /> {t('sec.publisher.refresh', 'Обновить')}
             </button>
             <button type="button" onClick={onNewPost}
               className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3.5 py-1.5 rounded-lg"
               style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-              <Plus size={15} /> Новый пост
+              <Plus size={15} /> {t('sec.publisher.newPost', 'Новый пост')}
             </button>
           </div>
         </div>
@@ -874,7 +884,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             const connected = accs.length > 0;
             return (
               <a key={pk} href={BLOTATO_SETTINGS_URL} target="_blank" rel="noreferrer"
-                title={connected ? 'Управлять подключением — кабинет Blotato' : 'Подключить в кабинете Blotato (откроется сразу нужная страница)'}
+                title={connected ? t('sec.publisher.tileManage', 'Управлять подключением — кабинет Blotato') : t('sec.publisher.tileConnect', 'Подключить в кабинете Blotato (откроется сразу нужная страница)')}
                 className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-colors hover:opacity-90"
                 style={{ background: 'var(--bg-secondary)', border: connected ? '1px solid var(--border-medium)' : '1px dashed var(--border-strong)', textDecoration: 'none' }}>
                 <PlatformMark platform={pk} />
@@ -882,10 +892,10 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                   <span className="block text-[12.5px] font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>{meta.label}</span>
                   {connected ? (
                     <span className="block text-[11px] truncate leading-tight" style={{ color: '#10b981' }}>
-                      ✓ {accs.map((a) => a.username ? `@${a.username}` : (a.name || 'подключено')).join(', ')}
+                      ✓ {accs.map((a) => a.username ? `@${a.username}` : (a.name || t('sec.publisher.connected', 'подключено'))).join(', ')}
                     </span>
                   ) : (
-                    <span className="block text-[11px] leading-tight" style={{ color: 'var(--brand)' }}>Подключить →</span>
+                    <span className="block text-[11px] leading-tight" style={{ color: 'var(--brand)' }}>{t('sec.publisher.connectArrow', 'Подключить →')}</span>
                   )}
                 </span>
               </a>
@@ -894,7 +904,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         </div>
         {accounts.length === 0 && !accLoading && (
           <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>
-            Ключ активен, но соцсети ещё не подключены — нажмите любую плитку: откроется кабинет Blotato, после подключения вернитесь и нажмите «Обновить».
+            {t('sec.publisher.keyActiveNoNets', 'Ключ активен, но соцсети ещё не подключены — нажмите любую плитку: откроется кабинет Blotato, после подключения вернитесь и нажмите «Обновить».')}
           </p>
         )}
       </div>
@@ -902,9 +912,9 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       {/* Стат-карточки + саб-вкладки */}
       <div className="flex items-center gap-2.5 flex-wrap">
         {[
-          { v: counts.queued, l: 'в очереди', c: '#f59e0b' },
-          { v: counts.published, l: 'опубликовано', c: '#10b981' },
-          { v: counts.failed, l: 'ошибки', c: counts.failed > 0 ? '#ef4444' : 'var(--text-muted)' },
+          { v: counts.queued, l: t('sec.publisher.statQueued', 'в очереди'), c: '#f59e0b' },
+          { v: counts.published, l: t('sec.publisher.statPublished', 'опубликовано'), c: '#10b981' },
+          { v: counts.failed, l: t('sec.publisher.statFailed', 'ошибки'), c: counts.failed > 0 ? '#ef4444' : 'var(--text-muted)' },
         ].map((s, i) => (
           <div key={i} className="rounded-xl px-4 py-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
             <span className="text-base font-700 tabular-nums mr-1.5" style={{ color: s.c }}>{s.v}</span>
@@ -912,7 +922,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
           </div>
         ))}
         <div className="inline-flex gap-1 p-1 rounded-xl ml-auto" style={{ background: 'var(--bg-tertiary)' }}>
-          {([['feed', 'Лента', <ListChecks key="f" size={13} />], ['calendar', 'Календарь', <CalendarDays key="c" size={13} />], ['schedule', 'Моё расписание', <Clock key="s" size={13} />], ['analytics', 'Аналитика', <BarChart3 key="a" size={13} />]] as [SubTab, string, React.ReactNode][]).map(([k, l, ic]) => (
+          {([['feed', t('sec.publisher.tabFeed', 'Лента'), <ListChecks key="f" size={13} />], ['calendar', t('sec.publisher.tabCalendar', 'Календарь'), <CalendarDays key="c" size={13} />], ['schedule', t('sec.publisher.tabSchedule', 'Моё расписание'), <Clock key="s" size={13} />], ['analytics', t('sec.publisher.tabAnalytics', 'Аналитика'), <BarChart3 key="a" size={13} />]] as [SubTab, string, React.ReactNode][]).map(([k, l, ic]) => (
             <button key={k} type="button" onClick={() => setSub(k)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-600 whitespace-nowrap"
               style={{ background: sub === k ? 'var(--brand)' : 'transparent', color: sub === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
@@ -928,14 +938,14 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       {sub === 'analytics' && renderAnalytics()}
 
       <p className="text-[11px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-        <Sparkles size={12} /> Публикация — через ваш аккаунт Blotato (лимит их API — 30 постов/мин). История, слоты и цепочки хранятся у нас; упавшие посты автоповторяются (2→4→8 мин, до 3 раз).
+        <Sparkles size={12} /> {t('sec.publisher.footerNote', 'Публикация — через ваш аккаунт Blotato (лимит их API — 30 постов/мин). История, слоты и цепочки хранятся у нас; упавшие посты автоповторяются (2→4→8 мин, до 3 раз).')}
       </p>
 
       <ConfirmModal
         open={!!confirm}
         title={confirm?.title || ''}
         message={confirm?.message}
-        confirmLabel="Да"
+        confirmLabel={t('sec.publisher.confirmYes', 'Да')}
         variant="danger"
         onConfirm={() => confirm?.onConfirm()}
         onCancel={() => setConfirm(null)}

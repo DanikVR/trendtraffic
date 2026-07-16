@@ -58,7 +58,7 @@ export const LANGUAGES: LanguageItem[] = [
   { code: 'gu', name: 'ગુજરાતી', flagCode: 'in' },
   { code: 'ml', name: 'മലയാളം', flagCode: 'in' },
   { code: 'kn', name: 'ಕನ್ನಡ', flagCode: 'in' },
-  { code: 'am', name: 'አмаርኛ', flagCode: 'et' },
+  { code: 'am', name: 'አማርኛ', flagCode: 'et' },
   { code: 'sq', name: 'Shqip', flagCode: 'al' },
   { code: 'eu', name: 'Euskara', flagCode: 'es' },
   { code: 'be', name: 'Беларуская', flagCode: 'by' },

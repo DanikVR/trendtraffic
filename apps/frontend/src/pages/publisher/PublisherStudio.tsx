@@ -8,6 +8,7 @@
  * тред для X/Threads/Bluesky (пустая строка = новый пост треда), шаблоны текстов.
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Loader2, Send, ImagePlus, X, Clock, CalendarClock, Zap, Check,
   AlertTriangle, ChevronDown, RefreshCw, ExternalLink, Sparkles, Save, ListPlus,
@@ -36,6 +37,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   onClose: () => void;
   onPublished: () => void;
 }) {
+  const { t } = useTranslation('common');
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
 
   const [media, setMedia] = useState<StudioInitial | null>(initial.mediaUrl ? initial : null);
@@ -85,10 +87,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       setAccLoading(true);
       try {
         const r = await fetch('/api/publisher/accounts', { headers: jsonHeaders() });
-        if (r.status === 409) { setAccErr('Нет ключа Blotato — введите его в Настройки → Генерация → Blotato.'); return; }
+        if (r.status === 409) { setAccErr(t('sec.publisher.errNoKey', 'Нет ключа Blotato — введите его в Настройки → Генерация → Blotato.')); return; }
         if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
         setAccounts(((await r.json()).accounts || []) as PubAccount[]);
-      } catch (e: any) { setAccErr(e?.message || 'Не удалось загрузить аккаунты'); }
+      } catch (e: any) { setAccErr(e?.message || t('sec.publisher.errLoadAccounts', 'Не удалось загрузить аккаунты')); }
       finally { setAccLoading(false); }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,7 +164,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   };
 
   const pickFromGallery = (g: GalleryPickItem) => {
-    if (g.type !== 'video' && g.type !== 'image') { setMediaNote('Для постов подходят видео и фото.'); return; }
+    if (g.type !== 'video' && g.type !== 'image') { setMediaNote(t('sec.publisher.mediaOnlyNote', 'Для постов подходят видео и фото.')); return; }
     setMediaNote(null);
     setMedia({ mediaUrl: g.fileUrl, title: g.title });
     setPickerOpen(false);
@@ -184,7 +186,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       setAiVars((d.variants || []) as CaptionVariant[]);
-    } catch (e: any) { setAiErr(e?.message || 'Не удалось сгенерировать'); }
+    } catch (e: any) { setAiErr(e?.message || t('sec.publisher.errAiGen', 'Не удалось сгенерировать')); }
     finally { setAiBusy(false); }
   };
   const applyVariant = (v: CaptionVariant) => {
@@ -204,7 +206,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
     } catch { setTpls([]); }
   };
   const saveTpl = async () => {
-    const name = tplName.trim() || (text.split('\n')[0] || 'Шаблон').slice(0, 60);
+    const name = tplName.trim() || (text.split('\n')[0] || t('sec.publisher.tplDefaultName', 'Шаблон')).slice(0, 60);
     if (!text.trim()) return;
     setTplSaving(true);
     try {
@@ -221,21 +223,21 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const effText = (p: string) => (pOverrides[p] ?? text);
   const problems = useMemo(() => {
     const list: string[] = [];
-    if (selAccounts.length === 0) list.push('Выберите хотя бы один аккаунт.');
+    if (selAccounts.length === 0) list.push(t('sec.publisher.vSelectAccount', 'Выберите хотя бы один аккаунт.'));
     if (!media && selPlatforms.some((p) => MEDIA_REQUIRED.has(p))) {
-      list.push('TikTok / Instagram / YouTube / Pinterest требуют видео или фото — добавьте медиа.');
+      list.push(t('sec.publisher.vMediaRequired', 'TikTok / Instagram / YouTube / Pinterest требуют видео или фото — добавьте медиа.'));
     }
-    if (!media && !text.trim()) list.push('Добавьте медиа или текст поста.');
-    if (selPlatforms.includes('youtube') && !(pOpts.youtube?.title || '').trim()) list.push('YouTube: заполните название ролика.');
+    if (!media && !text.trim()) list.push(t('sec.publisher.vMediaOrText', 'Добавьте медиа или текст поста.'));
+    if (selPlatforms.includes('youtube') && !(pOpts.youtube?.title || '').trim()) list.push(t('sec.publisher.vYtTitle', 'YouTube: заполните название ролика.'));
     for (const a of selAccounts) {
-      if (a.platform === 'facebook' && !aOpts[a.id]?.pageId) list.push(`Facebook (${a.name || a.username || a.id}): выберите страницу.`);
-      if (a.platform === 'pinterest' && !aOpts[a.id]?.boardId) list.push(`Pinterest (${a.name || a.username || a.id}): выберите доску.`);
+      if (a.platform === 'facebook' && !aOpts[a.id]?.pageId) list.push(t('sec.publisher.vFbPage', 'Facebook ({{name}}): выберите страницу.', { name: a.name || a.username || a.id }));
+      if (a.platform === 'pinterest' && !aOpts[a.id]?.boardId) list.push(t('sec.publisher.vPinBoard', 'Pinterest ({{name}}): выберите доску.', { name: a.name || a.username || a.id }));
     }
-    if (mode === 'time' && !when) list.push('Укажите дату и время публикации.');
-    if (mode === 'slot' && slotNext === 'none') list.push('Нет свободных слотов — добавьте времена в «Моё расписание» (вкладка Публикатора).');
+    if (mode === 'time' && !when) list.push(t('sec.publisher.vWhen', 'Укажите дату и время публикации.'));
+    if (mode === 'slot' && slotNext === 'none') list.push(t('sec.publisher.noFreeSlots', 'Нет свободных слотов — добавьте времена в «Моё расписание» (вкладка Публикатора).'));
     for (const p of selPlatforms) {
       const lim = TEXT_LIMITS[p];
-      if (lim && effText(p).length > lim) list.push(`${PLATFORM_META[p]?.label || p}: текст длиннее лимита ${lim}.`);
+      if (lim && effText(p).length > lim) list.push(t('sec.publisher.vTooLong', '{{platform}}: текст длиннее лимита {{limit}}.', { platform: PLATFORM_META[p]?.label || p, limit: lim }));
     }
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -270,7 +272,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       const rs: TargetResult[] = (d.results || []).map((x: any) => ({ platform: x.platform, ok: !!x.ok, error: x.error }));
       setResults(rs);
       if (rs.length > 0 && rs.every((x) => x.ok)) setTimeout(() => onPublished(), 900);
-    } catch (e: any) { setSubmitErr(e?.message || 'Не удалось отправить'); }
+    } catch (e: any) { setSubmitErr(e?.message || t('sec.publisher.errSubmit', 'Не удалось отправить')); }
     finally { setSubmitting(false); }
   };
 
@@ -314,11 +316,11 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
         <button type="button" onClick={onClose}
           className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-          <ArrowLeft size={15} /> Закрыть
+          <ArrowLeft size={15} /> {t('sec.publisher.close', 'Закрыть')}
         </button>
         <span className="inline-flex items-center gap-2 text-[15px] font-700" style={{ color: 'var(--text-primary)' }}>
           <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}><Send size={14} color="#fff" /></span>
-          Новый пост
+          {t('sec.publisher.newPost', 'Новый пост')}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {problems.length > 0 && selAccounts.length > 0 && (
@@ -330,7 +332,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
             className="inline-flex items-center gap-2 text-[13.5px] font-700 px-5 py-2.5 rounded-xl disabled:opacity-40"
             style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={15} />}
-            {mode === 'now' ? 'Опубликовать' : 'Запланировать'}{selAccounts.length > 0 ? ` · ${selAccounts.length}` : ''}
+            {mode === 'now' ? t('sec.publisher.publishBtn', 'Опубликовать') : t('sec.publisher.scheduleBtn', 'Запланировать')}{selAccounts.length > 0 ? ` · ${selAccounts.length}` : ''}
           </button>
         </div>
       </div>
@@ -342,10 +344,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
           {results?.map((r, i) => (
             <span key={i} className="inline-flex items-center gap-1.5 text-[11.5px] font-600 px-2 py-1 rounded-lg"
               title={r.error} style={{ background: r.ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.10)', color: r.ok ? '#10b981' : '#ef4444' }}>
-              <PlatformMark platform={r.platform} size={16} /> {r.ok ? <Check size={12} /> : <X size={12} />} {r.ok ? 'отправлено' : (r.error || 'ошибка')}
+              <PlatformMark platform={r.platform} size={16} /> {r.ok ? <Check size={12} /> : <X size={12} />} {r.ok ? t('sec.publisher.stSent', 'отправлено') : (r.error || t('sec.publisher.stFailed', 'ошибка'))}
             </span>
           ))}
-          {results && results.every((r) => r.ok) && <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Готово — открываю ленту Публикатора…</span>}
+          {results && results.every((r) => r.ok) && <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.doneOpening', 'Готово — открываю ленту Публикатора…')}</span>}
         </div>
       )}
 
@@ -356,14 +358,14 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
 
             {/* ── Медиа ── */}
             <div className="space-y-2">
-              <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Медиа</div>
+              <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.mediaLbl', 'Медиа')}</div>
               <div className="rounded-2xl overflow-hidden relative" style={{ aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', maxWidth: 230 }}>
                 {media?.mediaUrl ? (
                   <>
                     {/\.(png|jpe?g|webp|gif)(\?|$)/i.test(media.mediaUrl)
                       ? <img src={media.mediaUrl} alt="" className="w-full h-full object-cover" />
                       : <video src={`${media.mediaUrl}#t=0.1`} muted preload="metadata" controls className="w-full h-full object-cover" />}
-                    <button type="button" onClick={() => setMedia(null)} title="Убрать медиа"
+                    <button type="button" onClick={() => setMedia(null)} title={t('sec.publisher.removeMedia', 'Убрать медиа')}
                       className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center"
                       style={{ background: 'rgba(0,0,0,0.55)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
                   </>
@@ -372,7 +374,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                     className="w-full h-full flex flex-col items-center justify-center gap-2"
                     style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                     <ImagePlus size={26} />
-                    <span className="text-[12px] font-600">Из Галереи</span>
+                    <span className="text-[12px] font-600">{t('sec.publisher.fromGallery', 'Из Галереи')}</span>
                   </button>
                 )}
               </div>
@@ -380,7 +382,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
               <button type="button" onClick={() => setPickerOpen(true)}
                 className="inline-flex items-center gap-1.5 text-[12px] font-600 px-3 py-1.5 rounded-lg"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                <ImagePlus size={13} /> {media ? 'Заменить' : 'Выбрать'}
+                <ImagePlus size={13} /> {media ? t('sec.publisher.replaceMedia', 'Заменить') : t('sec.publisher.chooseMedia', 'Выбрать')}
               </button>
               {mediaNote && <div className="text-[11.5px]" style={{ color: '#f59e0b' }}>{mediaNote}</div>}
             </div>
@@ -388,13 +390,13 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
             {/* ── Текст ── */}
             <div className="space-y-2 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Текст поста</div>
+                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.postText', 'Текст поста')}</div>
                 {/* Вкладки версий текста: Все + per-платформа (✎ = есть своя версия) */}
                 {selPlatforms.length > 0 && (
                   <div className="inline-flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                     <button type="button" onClick={() => setTextTab('all')}
                       className="text-[11.5px] font-600 px-2 py-0.5 rounded-md"
-                      style={{ background: textTab === 'all' ? 'var(--brand)' : 'transparent', color: textTab === 'all' ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>Все</button>
+                      style={{ background: textTab === 'all' ? 'var(--brand)' : 'transparent', color: textTab === 'all' ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>{t('sec.publisher.allTab', 'Все')}</button>
                     {selPlatforms.map((p) => (
                       <button key={p} type="button" onClick={() => setTextTab(p)}
                         className="text-[11.5px] font-600 px-2 py-0.5 rounded-md"
@@ -409,7 +411,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                   <button type="button" onClick={() => { setTplOpen(!tplOpen); if (!tpls) void loadTpls(); }}
                     className="inline-flex items-center gap-1 text-[11.5px] font-600 px-2 py-1 rounded-lg"
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                    <ListPlus size={11} /> Шаблоны
+                    <ListPlus size={11} /> {t('sec.publisher.templates', 'Шаблоны')}
                   </button>
                 </div>
               </div>
@@ -425,14 +427,14 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                       <button type="button" onClick={() => void delTpl(t.id)} className="w-6 h-6 rounded-md" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={11} className="mx-auto" /></button>
                     </div>
                   ))}
-                  {tpls && tpls.length === 0 && <p className="text-[11.5px] px-1" style={{ color: 'var(--text-muted)' }}>Шаблонов пока нет.</p>}
+                  {tpls && tpls.length === 0 && <p className="text-[11.5px] px-1" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.tplEmpty', 'Шаблонов пока нет.')}</p>}
                   <div className="flex items-center gap-1.5 pt-1" style={{ borderTop: '1px dashed var(--border-subtle)' }}>
-                    <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Имя шаблона"
+                    <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder={t('sec.publisher.tplNamePh', 'Имя шаблона')}
                       className="flex-1 text-[12px] rounded-md px-2 py-1" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                     <button type="button" onClick={() => void saveTpl()} disabled={tplSaving || !text.trim()}
                       className="inline-flex items-center gap-1 text-[11.5px] font-700 px-2 py-1 rounded-md disabled:opacity-40"
                       style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                      {tplSaving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Сохранить текущий
+                      {tplSaving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} {t('sec.publisher.tplSaveCurrent', 'Сохранить текущий')}
                     </button>
                   </div>
                 </div>
@@ -446,14 +448,14 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                   else setPOverrides((prev) => ({ ...prev, [textTab]: e.target.value }));
                 }}
                 placeholder={textTab === 'all'
-                  ? 'Подпись к посту: хук в первой строке, дальше суть и призыв…\n\n#хэштеги'
-                  : `Своя версия для ${PLATFORM_META[textTab]?.label || textTab} (пусто = используется общий текст)`}
+                  ? t('sec.publisher.textPh', 'Подпись к посту: хук в первой строке, дальше суть и призыв…\n\n#хэштеги')
+                  : t('sec.publisher.textPhPlatform', 'Своя версия для {{platform}} (пусто = используется общий текст)', { platform: PLATFORM_META[textTab]?.label || textTab })}
                 className="w-full rounded-xl p-3 text-[13.5px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minHeight: 190, resize: 'vertical' }} />
               {textTab !== 'all' && pOverrides[textTab] != null && (
                 <button type="button" onClick={() => setPOverrides((prev) => { const n = { ...prev }; delete n[textTab]; return n; })}
                   className="text-[11.5px] font-600" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}>
-                  ← вернуть общий текст для {PLATFORM_META[textTab]?.label || textTab}
+                  {t('sec.publisher.backToCommon', '← вернуть общий текст для {{platform}}', { platform: PLATFORM_META[textTab]?.label || textTab })}
                 </button>
               )}
               {selPlatforms.length > 0 && (
@@ -470,10 +472,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
               <div className="rounded-xl p-3 space-y-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--brand)' }}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[12.5px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                    <Sparkles size={13} style={{ color: 'var(--brand)' }} /> ИИ-подпись
+                    <Sparkles size={13} style={{ color: 'var(--brand)' }} /> {t('sec.publisher.aiCaption', 'ИИ-подпись')}
                   </span>
                   <div className="inline-flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                    {([['engaging', 'Вовлекающий'], ['expert', 'Экспертный'], ['selling', 'Продающий']] as [string, string][]).map(([k, l]) => (
+                    {([['engaging', t('sec.publisher.toneEngaging', 'Вовлекающий')], ['expert', t('sec.publisher.toneExpert', 'Экспертный')], ['selling', t('sec.publisher.toneSelling', 'Продающий')]] as [string, string][]).map(([k, l]) => (
                       <button key={k} type="button" onClick={() => setAiTone(k)}
                         className="text-[11.5px] font-600 px-2 py-1 rounded-md"
                         style={{ background: aiTone === k ? 'var(--brand)' : 'transparent', color: aiTone === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>{l}</button>
@@ -482,7 +484,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                   <button type="button" onClick={() => void runAi()} disabled={aiBusy}
                     className="inline-flex items-center gap-1.5 text-[12px] font-700 px-3 py-1.5 rounded-lg ml-auto"
                     style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                    {aiBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Сгенерировать A/B
+                    {aiBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {t('sec.publisher.genAb', 'Сгенерировать A/B')}
                   </button>
                 </div>
                 {aiErr && <p className="text-[11.5px]" style={{ color: '#ef4444' }}>{aiErr}</p>}
@@ -495,18 +497,20 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                         {v.hashtags.length > 0 && <p className="text-[11.5px] mt-1" style={{ color: 'var(--brand)' }}>{v.hashtags.join(' ')}</p>}
                         {Object.keys(v.platforms || {}).length > 0 && (
                           <p className="text-[10.5px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                            свои версии: {Object.keys(v.platforms).map((p) => PLATFORM_META[p]?.label || p).join(', ')}
+                            {t('sec.publisher.aiPerPlatform', 'свои версии: {{list}}', { list: Object.keys(v.platforms).map((p) => PLATFORM_META[p]?.label || p).join(', ') })}
                           </p>
                         )}
                       </div>
                       <button type="button" onClick={() => applyVariant(v)}
                         className="text-[11.5px] font-700 px-2.5 py-1 rounded-lg flex-shrink-0"
-                        style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: 'none', cursor: 'pointer' }}>Применить</button>
+                        style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: 'none', cursor: 'pointer' }}>{t('sec.publisher.applyBtn', 'Применить')}</button>
                     </div>
                   </div>
                 ))}
                 <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
-                  Контекст: название ролика{media?.assetId ? ' + его разбор тренда (TrendDNA), если есть' : ''}. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.
+                  {media?.assetId
+                    ? t('sec.publisher.aiCtxDna', 'Контекст: название ролика + его разбор тренда (TrendDNA), если есть. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.')
+                    : t('sec.publisher.aiCtx', 'Контекст: название ролика. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.')}
                 </p>
               </div>
 
@@ -514,10 +518,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
               {threadOn && (
                 <div className="space-y-1">
                   <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>
-                    Тред · X / Threads / Bluesky <span className="font-500 normal-case">(пустая строка = следующий пост треда)</span>
+                    {t('sec.publisher.threadLbl', 'Тред · X / Threads / Bluesky')} <span className="font-500 normal-case">{t('sec.publisher.threadHint', '(пустая строка = следующий пост треда)')}</span>
                   </div>
                   <textarea value={threadText} onChange={(e) => setThreadText(e.target.value)}
-                    placeholder={'Второй пост треда…\n\nТретий пост треда…'}
+                    placeholder={t('sec.publisher.threadPh', 'Второй пост треда…\n\nТретий пост треда…')}
                     className="w-full rounded-xl p-3 text-[13px] leading-relaxed"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minHeight: 80, resize: 'vertical' }} />
                 </div>
@@ -525,9 +529,9 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
 
               {/* Когда публикуем */}
               <div className="pt-1 space-y-2">
-                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Когда</div>
+                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.whenLbl', 'Когда')}</div>
                 <div className="inline-flex gap-1 p-1 rounded-xl flex-wrap" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-                  {([['now', 'Сейчас', <Zap key="z" size={13} />], ['time', 'Дата и время', <CalendarClock key="c" size={13} />], ['slot', 'Следующий слот', <Clock key="s" size={13} />]] as ['now' | 'time' | 'slot', string, React.ReactNode][]).map(([k, l, ic]) => (
+                  {([['now', t('sec.publisher.whenNow', 'Сейчас'), <Zap key="z" size={13} />], ['time', t('sec.publisher.whenTime', 'Дата и время'), <CalendarClock key="c" size={13} />], ['slot', t('sec.publisher.whenSlot', 'Следующий слот'), <Clock key="s" size={13} />]] as ['now' | 'time' | 'slot', string, React.ReactNode][]).map(([k, l, ic]) => (
                     <button key={k} type="button" onClick={() => setMode(k)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-600"
                       style={{ background: mode === k ? 'var(--brand)' : 'transparent', color: mode === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
@@ -542,9 +546,9 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                 )}
                 {mode === 'slot' && (
                   <p className="text-[11.5px]" style={{ color: slotNext === 'none' ? '#f59e0b' : 'var(--text-muted)' }}>
-                    {slotNext === null ? 'Считаю ближайший слот…'
-                      : slotNext === 'none' ? 'Свободных слотов нет — добавьте времена в «Моё расписание» (вкладка Публикатора).'
-                      : <>Пост займёт ближайший свободный слот вашего расписания: <b style={{ color: 'var(--text-primary)' }}>{fmtDT(slotNext)}</b></>}
+                    {slotNext === null ? t('sec.publisher.slotCalc', 'Считаю ближайший слот…')
+                      : slotNext === 'none' ? t('sec.publisher.noFreeSlots', 'Нет свободных слотов — добавьте времена в «Моё расписание» (вкладка Публикатора).')
+                      : <>{t('sec.publisher.slotWillTake', 'Пост займёт ближайший свободный слот вашего расписания:')} <b style={{ color: 'var(--text-primary)' }}>{fmtDT(slotNext)}</b></>}
                   </p>
                 )}
               </div>
@@ -553,9 +557,9 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
             {/* ── Аккаунты + опции ── */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Куда публикуем</div>
+                <div className="text-[11px] font-700 tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.whereTo', 'Куда публикуем')}</div>
                 <a href={BLOTATO_SETTINGS_URL} target="_blank" rel="noreferrer" className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: 'var(--brand)', textDecoration: 'none' }}>
-                  <ExternalLink size={11} /> подключить ещё
+                  <ExternalLink size={11} /> {t('sec.publisher.connectMore', 'подключить ещё')}
                 </a>
               </div>
 
@@ -565,7 +569,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                 <div className="text-[12.5px] rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>{accErr}</div>
               ) : accounts.length === 0 ? (
                 <div className="text-[12.5px] rounded-xl p-3" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-muted)' }}>
-                  Соцсети ещё не подключены. Откройте кабинет Blotato (ссылка выше), подключите сети и вернитесь.
+                  {t('sec.publisher.noNetsYet', 'Соцсети ещё не подключены. Откройте кабинет Blotato (ссылка выше), подключите сети и вернитесь.')}
                 </div>
               ) : (
                 <div className="rounded-xl px-3 py-1" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
@@ -580,73 +584,73 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
               {selPlatforms.includes('tiktok') && (
                 <OptCard platform="tiktok">
                   <Sel value={pOpts.tiktok?.privacyLevel || 'PUBLIC_TO_EVERYONE'} onChange={(v) => setPlatformOpt('tiktok', 'privacyLevel', v)}
-                    options={[['PUBLIC_TO_EVERYONE', 'Публичный'], ['MUTUAL_FOLLOW_FRIENDS', 'Друзья'], ['FOLLOWER_OF_CREATOR', 'Подписчики'], ['SELF_ONLY', 'Только я']]} />
-                  <Tgl on={!pOpts.tiktok?.disabledComments} onClick={() => setPlatformOpt('tiktok', 'disabledComments', !pOpts.tiktok?.disabledComments)} label="Комментарии" />
-                  <Tgl on={!pOpts.tiktok?.disabledDuet} onClick={() => setPlatformOpt('tiktok', 'disabledDuet', !pOpts.tiktok?.disabledDuet)} label="Дуэты" />
-                  <Tgl on={!pOpts.tiktok?.disabledStitch} onClick={() => setPlatformOpt('tiktok', 'disabledStitch', !pOpts.tiktok?.disabledStitch)} label="Ститчи" />
-                  <Tgl on={!!pOpts.tiktok?.isBrandedContent} onClick={() => setPlatformOpt('tiktok', 'isBrandedContent', !pOpts.tiktok?.isBrandedContent)} label="Брендированный контент" hint="Платное партнёрство" />
-                  <Tgl on={!!pOpts.tiktok?.isYourBrand} onClick={() => setPlatformOpt('tiktok', 'isYourBrand', !pOpts.tiktok?.isYourBrand)} label="Продвигаю свой бренд" />
-                  <Tgl on={pOpts.tiktok?.isAiGenerated !== false} onClick={() => setPlatformOpt('tiktok', 'isAiGenerated', pOpts.tiktok?.isAiGenerated === false)} label="Метка «ИИ-контент»" hint="Обязательная честная метка для сгенерированных роликов" />
-                  <Tgl on={!!pOpts.tiktok?.isDraft} onClick={() => setPlatformOpt('tiktok', 'isDraft', !pOpts.tiktok?.isDraft)} label="В черновики TikTok" hint="Пост попадёт в черновики приложения — опубликуете вручную после проверки" />
+                    options={[['PUBLIC_TO_EVERYONE', t('sec.publisher.privPublic', 'Публичный')], ['MUTUAL_FOLLOW_FRIENDS', t('sec.publisher.privFriends', 'Друзья')], ['FOLLOWER_OF_CREATOR', t('sec.publisher.privFollowers', 'Подписчики')], ['SELF_ONLY', t('sec.publisher.privSelf', 'Только я')]]} />
+                  <Tgl on={!pOpts.tiktok?.disabledComments} onClick={() => setPlatformOpt('tiktok', 'disabledComments', !pOpts.tiktok?.disabledComments)} label={t('sec.publisher.ttComments', 'Комментарии')} />
+                  <Tgl on={!pOpts.tiktok?.disabledDuet} onClick={() => setPlatformOpt('tiktok', 'disabledDuet', !pOpts.tiktok?.disabledDuet)} label={t('sec.publisher.ttDuets', 'Дуэты')} />
+                  <Tgl on={!pOpts.tiktok?.disabledStitch} onClick={() => setPlatformOpt('tiktok', 'disabledStitch', !pOpts.tiktok?.disabledStitch)} label={t('sec.publisher.ttStitches', 'Ститчи')} />
+                  <Tgl on={!!pOpts.tiktok?.isBrandedContent} onClick={() => setPlatformOpt('tiktok', 'isBrandedContent', !pOpts.tiktok?.isBrandedContent)} label={t('sec.publisher.ttBranded', 'Брендированный контент')} hint={t('sec.publisher.ttBrandedHint', 'Платное партнёрство')} />
+                  <Tgl on={!!pOpts.tiktok?.isYourBrand} onClick={() => setPlatformOpt('tiktok', 'isYourBrand', !pOpts.tiktok?.isYourBrand)} label={t('sec.publisher.ttYourBrand', 'Продвигаю свой бренд')} />
+                  <Tgl on={pOpts.tiktok?.isAiGenerated !== false} onClick={() => setPlatformOpt('tiktok', 'isAiGenerated', pOpts.tiktok?.isAiGenerated === false)} label={t('sec.publisher.ttAiLabel', 'Метка «ИИ-контент»')} hint={t('sec.publisher.ttAiLabelHint', 'Обязательная честная метка для сгенерированных роликов')} />
+                  <Tgl on={!!pOpts.tiktok?.isDraft} onClick={() => setPlatformOpt('tiktok', 'isDraft', !pOpts.tiktok?.isDraft)} label={t('sec.publisher.ttDraft', 'В черновики TikTok')} hint={t('sec.publisher.ttDraftHint', 'Пост попадёт в черновики приложения — опубликуете вручную после проверки')} />
                 </OptCard>
               )}
               {selPlatforms.includes('youtube') && (
                 <OptCard platform="youtube">
                   <input value={pOpts.youtube?.title || ''} onChange={(e) => setPlatformOpt('youtube', 'title', e.target.value)}
-                    placeholder="Название ролика (обязательно)" maxLength={100}
+                    placeholder={t('sec.publisher.ytTitlePh', 'Название ролика (обязательно)')} maxLength={100}
                     className="w-full rounded-lg px-2.5 py-1.5 text-[12.5px] mb-1"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                   <Sel value={pOpts.youtube?.privacyStatus || 'public'} onChange={(v) => setPlatformOpt('youtube', 'privacyStatus', v)}
-                    options={[['public', 'Публичный'], ['unlisted', 'По ссылке'], ['private', 'Приватный']]} />
-                  <Tgl on={pOpts.youtube?.shouldNotifySubscribers !== false} onClick={() => setPlatformOpt('youtube', 'shouldNotifySubscribers', pOpts.youtube?.shouldNotifySubscribers === false)} label="Уведомить подписчиков" />
-                  <Tgl on={!!pOpts.youtube?.isMadeForKids} onClick={() => setPlatformOpt('youtube', 'isMadeForKids', !pOpts.youtube?.isMadeForKids)} label="Для детей (madeForKids)" />
+                    options={[['public', t('sec.publisher.privPublic', 'Публичный')], ['unlisted', t('sec.publisher.ytUnlisted', 'По ссылке')], ['private', t('sec.publisher.ytPrivate', 'Приватный')]]} />
+                  <Tgl on={pOpts.youtube?.shouldNotifySubscribers !== false} onClick={() => setPlatformOpt('youtube', 'shouldNotifySubscribers', pOpts.youtube?.shouldNotifySubscribers === false)} label={t('sec.publisher.ytNotifySubs', 'Уведомить подписчиков')} />
+                  <Tgl on={!!pOpts.youtube?.isMadeForKids} onClick={() => setPlatformOpt('youtube', 'isMadeForKids', !pOpts.youtube?.isMadeForKids)} label={t('sec.publisher.ytMadeForKids', 'Для детей (madeForKids)')} />
                 </OptCard>
               )}
               {selPlatforms.includes('instagram') && (
                 <OptCard platform="instagram">
                   <Sel value={pOpts.instagram?.mediaType || 'reel'} onChange={(v) => setPlatformOpt('instagram', 'mediaType', v)}
-                    options={[['reel', 'Reel'], ['post', 'Пост в ленту'], ['story', 'Story']]} />
+                    options={[['reel', 'Reel'], ['post', t('sec.publisher.igFeedPost', 'Пост в ленту')], ['story', 'Story']]} />
                 </OptCard>
               )}
               {selAccounts.filter((a) => a.platform === 'facebook').map((a) => (
                 <OptCard key={a.id} platform="facebook">
-                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{a.name || a.username || a.id} · страница <span style={{ color: '#ef4444' }}>*</span></div>
+                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{a.name || a.username || a.id} · {t('sec.publisher.fbPageWord', 'страница')} <span style={{ color: '#ef4444' }}>*</span></div>
                   {subs[a.id] === undefined ? (
-                    <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin inline mr-1" />страницы…</div>
+                    <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin inline mr-1" />{t('sec.publisher.pagesLoading', 'страницы…')}</div>
                   ) : (subs[a.id] || []).length === 0 ? (
-                    <div className="text-[11.5px]" style={{ color: '#f59e0b' }}>Страницы не найдены — проверьте подключение Facebook в кабинете Blotato.</div>
+                    <div className="text-[11.5px]" style={{ color: '#f59e0b' }}>{t('sec.publisher.fbNoPages', 'Страницы не найдены — проверьте подключение Facebook в кабинете Blotato.')}</div>
                   ) : (
                     <Sel value={aOpts[a.id]?.pageId || ''} onChange={(v) => setAccountOpt(a.id, 'pageId', v)}
-                      options={[['', '— выберите страницу —'], ...(subs[a.id] || []).map((s): [string, string] => [s.id, s.name])]} />
+                      options={[['', t('sec.publisher.fbChoosePage', '— выберите страницу —')], ...(subs[a.id] || []).map((s): [string, string] => [s.id, s.name])]} />
                   )}
                 </OptCard>
               ))}
               {selAccounts.filter((a) => a.platform === 'pinterest').map((a) => (
                 <OptCard key={a.id} platform="pinterest">
-                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{a.name || a.username || a.id} · доска <span style={{ color: '#ef4444' }}>*</span></div>
+                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{a.name || a.username || a.id} · {t('sec.publisher.pinBoardWord', 'доска')} <span style={{ color: '#ef4444' }}>*</span></div>
                   {boards[a.id] === undefined ? (
-                    <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin inline mr-1" />доски…</div>
+                    <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}><Loader2 size={11} className="animate-spin inline mr-1" />{t('sec.publisher.boardsLoading', 'доски…')}</div>
                   ) : (boards[a.id] || []).length === 0 ? (
-                    <div className="text-[11.5px]" style={{ color: '#f59e0b' }}>Доски не найдены — создайте доску в Pinterest.</div>
+                    <div className="text-[11.5px]" style={{ color: '#f59e0b' }}>{t('sec.publisher.pinNoBoards', 'Доски не найдены — создайте доску в Pinterest.')}</div>
                   ) : (
                     <Sel value={aOpts[a.id]?.boardId || ''} onChange={(v) => setAccountOpt(a.id, 'boardId', v)}
-                      options={[['', '— выберите доску —'], ...(boards[a.id] || []).map((b): [string, string] => [b.id, b.name])]} />
+                      options={[['', t('sec.publisher.pinChooseBoard', '— выберите доску —')], ...(boards[a.id] || []).map((b): [string, string] => [b.id, b.name])]} />
                   )}
                   <input value={aOpts[a.id]?.link || ''} onChange={(e) => setAccountOpt(a.id, 'link', e.target.value)}
-                    placeholder="Ссылка пина (необязательно)"
+                    placeholder={t('sec.publisher.pinLinkPh', 'Ссылка пина (необязательно)')}
                     className="w-full rounded-lg px-2.5 py-1.5 text-[12px] mt-1"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                 </OptCard>
               ))}
               {selAccounts.filter((a) => a.platform === 'linkedin').map((a) => (
                 <OptCard key={a.id} platform="linkedin">
-                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>Публикация от имени</div>
+                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.liPublishAs', 'Публикация от имени')}</div>
                   <Sel value={aOpts[a.id]?.pageId || ''} onChange={(v) => { setAccountOpt(a.id, 'pageId', v); if (!subs[a.id]) void loadSubs(a.id); }}
-                    options={[['', 'Личный профиль'], ...((subs[a.id] || []).map((s): [string, string] => [s.id, s.name]))]} />
+                    options={[['', t('sec.publisher.liPersonal', 'Личный профиль')], ...((subs[a.id] || []).map((s): [string, string] => [s.id, s.name]))]} />
                   {subs[a.id] === undefined && (
                     <button type="button" onClick={() => void loadSubs(a.id)} className="text-[11px] mt-1 inline-flex items-center gap-1"
                       style={{ background: 'transparent', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: 0 }}>
-                      <RefreshCw size={10} /> загрузить страницы компаний
+                      <RefreshCw size={10} /> {t('sec.publisher.liLoadPages', 'загрузить страницы компаний')}
                     </button>
                   )}
                 </OptCard>
@@ -654,7 +658,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
               {selPlatforms.includes('threads') && (
                 <OptCard platform="threads">
                   <Sel value={pOpts.threads?.replyControl || 'everyone'} onChange={(v) => setPlatformOpt('threads', 'replyControl', v)}
-                    options={[['everyone', 'Отвечают все'], ['accounts_you_follow', 'Только кого читаю'], ['mentioned_only', 'Только упомянутые']]} />
+                    options={[['everyone', t('sec.publisher.thReplyEveryone', 'Отвечают все')], ['accounts_you_follow', t('sec.publisher.thReplyFollowing', 'Только кого читаю')], ['mentioned_only', t('sec.publisher.thReplyMentioned', 'Только упомянутые')]]} />
                 </OptCard>
               )}
             </div>
@@ -667,10 +671,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onPick={pickFromGallery}
-        title="Медиа для поста — из Галереи"
+        title={t('sec.publisher.pickerTitle', 'Медиа для поста — из Галереи')}
         defaultTab="reference"
         token={token}
-        note="Подходят видео и фото. TikTok/Instagram/YouTube/Pinterest без медиа не публикуют."
+        note={t('sec.publisher.pickerNote', 'Подходят видео и фото. TikTok/Instagram/YouTube/Pinterest без медиа не публикуют.')}
         onlyType={['image', 'video']}
       />
     </div>

@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Save, X, Loader2, AlertCircle, Tag as TagIcon } from 'lucide-react';
 import { AuroraCard } from '../AuroraCard';
 import { AuroraButton } from '../AuroraButton';
@@ -42,6 +43,7 @@ interface DraftTag {
 const emptyDraft: DraftTag = { name: '', description: '', color: COLORS[0] };
 
 export function TagsEditor() {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export function TagsEditor() {
       const data = await res.json();
       setTags(data.tags || []);
     } catch (e: any) {
-      setError(e?.message || 'Ошибка загрузки');
+      setError(e?.message || t('sec.misc.errLoad', 'Ошибка загрузки'));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ export function TagsEditor() {
       setTags((prev) => [...prev, newTag]);
       setDraft(null);
     } catch (e: any) {
-      setError(e?.message || 'Ошибка создания тега');
+      setError(e?.message || t('sec.misc.errCreateTag', 'Ошибка создания тега'));
     } finally {
       setSavingNew(false);
     }
@@ -140,7 +142,7 @@ export function TagsEditor() {
       setTags((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
       setEditingId(null);
     } catch (e: any) {
-      setError(e?.message || 'Ошибка сохранения');
+      setError(e?.message || t('sec.misc.errSave', 'Ошибка сохранения'));
     } finally {
       setSavingEdit(false);
     }
@@ -161,7 +163,7 @@ export function TagsEditor() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setTags((prev) => prev.filter((t) => t.id !== tag.id));
     } catch (e: any) {
-      setError(e?.message || 'Ошибка удаления');
+      setError(e?.message || t('sec.misc.errDelete', 'Ошибка удаления'));
     } finally {
       setDeletingId(null);
     }
@@ -189,7 +191,7 @@ export function TagsEditor() {
 
       {tags.length === 0 && !draft && (
         <div className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-          Пока нет тегов потребностей. Добавьте первый — AI будет искать его в диалогах клиентов.
+          {t('sec.misc.tagsEmpty', 'Пока нет тегов потребностей. Добавьте первый — AI будет искать его в диалогах клиентов.')}
         </div>
       )}
 
@@ -236,7 +238,7 @@ export function TagsEditor() {
       {!draft && (
         <div>
           <AuroraButton variant="secondary" onClick={handleStartAdd} icon={<Plus size={14} />}>
-            Добавить тег
+            {t('sec.misc.addTag', 'Добавить тег')}
           </AuroraButton>
         </div>
       )}
@@ -244,9 +246,9 @@ export function TagsEditor() {
       {/* In-app confirm-диалог удаления */}
       <ConfirmModal
         open={!!pendingDelete}
-        title={pendingDelete ? `Удалить тег «${pendingDelete.name}»?` : ''}
-        message="Уже присвоенные клиентам теги тоже исчезнут."
-        confirmLabel="Удалить"
+        title={pendingDelete ? t('sec.misc.deleteTagTitle', 'Удалить тег «{{name}}»?', { name: pendingDelete.name }) : ''}
+        message={t('sec.misc.deleteTagMsg', 'Уже присвоенные клиентам теги тоже исчезнут.')}
+        confirmLabel={t('sec.misc.deleteBtn', 'Удалить')}
         variant="danger"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
@@ -265,6 +267,7 @@ interface ViewTagRowProps {
 }
 
 function ViewTagRow({ tag, onEdit, onDelete, deleting }: ViewTagRowProps) {
+  const { t } = useTranslation('common');
   return (
     <div className="flex items-start gap-3">
       <div className="flex items-center gap-2 min-w-[160px]">
@@ -276,19 +279,19 @@ function ViewTagRow({ tag, onEdit, onDelete, deleting }: ViewTagRowProps) {
         </span>
       </div>
       <div className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        {tag.description || <em style={{ color: 'var(--text-muted)' }}>без описания</em>}
+        {tag.description || <em style={{ color: 'var(--text-muted)' }}>{t('sec.misc.noDescription', 'без описания')}</em>}
       </div>
       <div className="flex items-center gap-1">
         <button onClick={onEdit}
                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{ color: 'var(--text-muted)' }}
-                title="Редактировать">
+                title={t('sec.misc.editBtn', 'Редактировать')}>
           <Pencil size={13} />
         </button>
         <button onClick={onDelete} disabled={deleting}
                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[rgba(239,68,68,0.16)]"
                 style={{ color: '#ef4444' }}
-                title="Удалить">
+                title={t('sec.misc.deleteBtn', 'Удалить')}>
           {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
         </button>
       </div>
@@ -305,13 +308,14 @@ interface EditTagRowProps {
 }
 
 function EditTagRow({ draft, onChange, onSave, onCancel, saving }: EditTagRowProps) {
+  const { t } = useTranslation('common');
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <input
           type="text"
           autoFocus
-          placeholder="Название тега"
+          placeholder={t('sec.misc.tagNamePh', 'Название тега')}
           value={draft.name}
           onChange={(e) => onChange({ ...draft, name: e.target.value.slice(0, 64) })}
           maxLength={64}
@@ -340,7 +344,7 @@ function EditTagRow({ draft, onChange, onSave, onCancel, saving }: EditTagRowPro
         </div>
       </div>
       <textarea
-        placeholder="Инструкция для AI: как именно распознать упоминание этой потребности в разговоре. Например: «клиент спрашивает про юридическую помощь, договор, документы, права собственности — присваивай этот тег»."
+        placeholder={t('sec.misc.tagDescPh', 'Инструкция для AI: как именно распознать упоминание этой потребности в разговоре. Например: «клиент спрашивает про юридическую помощь, договор, документы, права собственности — присваивай этот тег».')}
         value={draft.description}
         onChange={(e) => onChange({ ...draft, description: e.target.value.slice(0, 1000) })}
         maxLength={1000}
@@ -354,11 +358,11 @@ function EditTagRow({ draft, onChange, onSave, onCancel, saving }: EditTagRowPro
       />
       <div className="flex flex-wrap gap-2 justify-end">
         <AuroraButton variant="secondary" onClick={onCancel} disabled={saving} icon={<X size={14} />}>
-          Отмена
+          {t('sec.misc.cancelBtn', 'Отмена')}
         </AuroraButton>
         <AuroraButton onClick={onSave} disabled={saving || !draft.name.trim()}
                      icon={saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}>
-          {saving ? 'Сохраняем…' : 'Сохранить'}
+          {saving ? t('sec.misc.savingBtn', 'Сохраняем…') : t('sec.misc.saveBtn', 'Сохранить')}
         </AuroraButton>
       </div>
     </div>

@@ -342,7 +342,7 @@ export function RoomPage() {
   const [searchQuery, setSearchQuery] = useState('');
   // Активная вкладка списка комнат (показывается только если подключён Quest Flow или VibeAdd)
   const [activeRoomTab, setActiveRoomTab] = useState<'video' | 'quest' | 'vibeadd'>('video');
-  // Признак "Quest Flow подключён" — есть хотя бы один активный API-ключ
+  // Признак «Quest Flow подключён» — есть хотя бы один активный API-ключ
   const [questFlowConnected, setQuestFlowConnected] = useState(false);
   // VibeAdd — будущая функция, пока всегда выключено
   const vibeAddConnected = false;
@@ -674,7 +674,7 @@ export function RoomPage() {
 
     fetch(`/api/rooms/validate/${roomId}`)
       .then((res) => {
-        if (!res.ok) throw new Error('Ссылка на комнату недействительна или срок действия (24 часа) истёк');
+        if (!res.ok) throw new Error(tc('sec.room.validateInvalid', 'Ссылка на комнату недействительна или срок действия (24 часа) истёк'));
         return res.json();
       })
       .then((data) => {
@@ -693,7 +693,7 @@ export function RoomPage() {
       })
       .catch((err) => {
         if (cancelled) return;
-        setValidationError(err.message || 'Ошибка валидации комнаты');
+        setValidationError(err.message || tc('sec.room.validateError', 'Ошибка валидации комнаты'));
         setIsValidating(false);
       });
     return () => { cancelled = true; };
@@ -1144,7 +1144,7 @@ export function RoomPage() {
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
         setInsightsData(data.insights);
       } catch (e: any) {
-        setInsightsError(e.message || 'Не удалось проанализировать разговор');
+        setInsightsError(e.message || tc('sec.room.insightsFailed', 'Не удалось проанализировать разговор'));
       } finally {
         setInsightsLoading(false);
       }
@@ -1198,7 +1198,7 @@ export function RoomPage() {
       }
     } catch (err) {
       console.warn('[Room] screen share toggle error:', err);
-      showToast((err as Error).message || 'Не удалось включить демонстрацию экрана', 'error');
+      showToast((err as Error).message || tc('sec.room.screenShareFailed', 'Не удалось включить демонстрацию экрана'), 'error');
     }
   };
 
@@ -1226,7 +1226,7 @@ export function RoomPage() {
         setLiveStatus('connected'); // комната без бота — обычный видеозвонок
       }
     } catch (err: any) {
-      showToast(err.message || 'Не удалось обновить настройки комнаты', 'error');
+      showToast(err.message || tc('sec.room.settingsUpdateFailed', 'Не удалось обновить настройки комнаты'), 'error');
     }
   };
 
@@ -1285,7 +1285,7 @@ export function RoomPage() {
       if (err.name === 'AbortError') return;
       console.error('[Coach] Ошибка:', err);
       setCoachResult((prev) => prev && prev.subtitleId === subtitle.id
-        ? { ...prev, loading: false, answer: prev.answer + `\n\n[Ошибка: ${err.message || String(err)}]` }
+        ? { ...prev, loading: false, answer: prev.answer + '\n\n' + tc('sec.room.coachStreamErr', '[Ошибка: {{msg}}]', { msg: err.message || String(err) }) }
         : prev);
     } finally {
       if (coachAbortRef.current === controller) coachAbortRef.current = null;
@@ -1311,10 +1311,10 @@ export function RoomPage() {
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
-        throw new Error('Stripe Checkout URL не получен');
+        throw new Error(tc('sec.room.topupNoUrl', 'Stripe Checkout URL не получен'));
       }
     } catch (err: any) {
-      showToast(`Не удалось открыть докупку: ${err.message || err}`, 'error');
+      showToast(tc('sec.room.topupOpenFailed', 'Не удалось открыть докупку: {{msg}}', { msg: err.message || err }), 'error');
       setTopupBusy(false);
     }
   };
@@ -1548,7 +1548,7 @@ export function RoomPage() {
             className={`relative overflow-hidden transition-all duration-300 cursor-pointer ${
               focusMode ? 'rounded-2xl shadow-2xl' : 'flex-1 rounded-3xl'
             }`}
-            title={focusMode ? 'Свернуть и вернуться к обычному виду' : 'Развернуть собеседника на весь экран'}
+            title={focusMode ? tc('sec.room.pipCollapseTitle', 'Свернуть и вернуться к обычному виду') : tc('sec.room.pipExpandTitle', 'Развернуть собеседника на весь экран')}
             style={focusMode ? {
               position: 'absolute',
               right:  `${pipPos.x}px`,
@@ -1997,13 +1997,13 @@ export function RoomPage() {
                   <p className="text-sm font-700"
                      style={{ color: billingNotice.kind === 'quota_exhausted' ? '#FCA5A5' : '#FBBF24' }}>
                     {billingNotice.kind === 'quota_exhausted'
-                      ? 'Минуты перевода закончились'
-                      : `Осталось ${billingNotice.remainingMinutes} мин перевода`}
+                      ? tc('sec.room.quotaExhaustedTitle', 'Минуты перевода закончились')
+                      : tc('sec.room.lowBalanceTitle', 'Осталось {{n}} мин перевода', { n: billingNotice.remainingMinutes })}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>
                     {billingNotice.kind === 'quota_exhausted'
-                      ? 'Бот-переводчик приостановлен. Докупите минуты, чтобы продолжить разговор.'
-                      : 'Докупите минуты, чтобы разговор не прервался.'}
+                      ? tc('sec.room.quotaExhaustedHint', 'Бот-переводчик приостановлен. Докупите минуты, чтобы продолжить разговор.')
+                      : tc('sec.room.lowBalanceHint', 'Докупите минуты, чтобы разговор не прервался.')}
                   </p>
                 </div>
                 <button
@@ -2032,7 +2032,7 @@ export function RoomPage() {
                       minWidth: 0,
                     }}
                   >
-                    {topupBusy ? '…' : `+${min} мин · €${(min * 0.17).toFixed(2)}`}
+                    {topupBusy ? '…' : tc('sec.room.topupBtn', '+{{min}} мин · €{{price}}', { min, price: (min * 0.17).toFixed(2) })}
                   </button>
                 ))}
               </div>
@@ -2265,13 +2265,13 @@ export function RoomPage() {
                             });
                             if (!res.ok) {
                               const e = await res.json().catch(() => ({}));
-                              showToast(e.error || 'Не удалось удалить комнату', 'error');
+                              showToast(e.error || tc('sec.room.deleteFailed', 'Не удалось удалить комнату'), 'error');
                               return;
                             }
                             setMoreSheetOpen(false);
                             cleanupAndExit();
                           } catch (e: any) {
-                            showToast(e.message || 'Ошибка сети', 'error');
+                            showToast(e.message || tc('sec.room.netError', 'Ошибка сети'), 'error');
                           }
                         },
                       });
@@ -2304,7 +2304,9 @@ export function RoomPage() {
               <div className="text-xs font-700 uppercase px-3 py-1 rounded-full inline-flex items-center gap-1.5"
                    style={{ background: 'rgba(59,130,246,0.16)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.32)', letterSpacing: '0.08em' }}>
                 <Monitor size={12} strokeWidth={2} />
-                {localScreenShareOn ? 'Вы демонстрируете экран' : `Демонстрирует: ${remoteScreenShareIdentity || 'участник'}`}
+                {localScreenShareOn
+                  ? tc('sec.room.youSharing', 'Вы демонстрируете экран')
+                  : tc('sec.room.peerSharing', 'Демонстрирует: {{name}}', { name: remoteScreenShareIdentity || tc('sec.room.participantFallback', 'участник') })}
               </div>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center pointer-events-auto"
@@ -2329,7 +2331,7 @@ export function RoomPage() {
                      style={{ width: 140, height: 88, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   {hasLocalVideo
                     ? <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
-                    : <div className="w-full h-full flex items-center justify-center text-[10px]" style={{ color: 'var(--text-muted)' }}>Вы</div>}
+                    : <div className="w-full h-full flex items-center justify-center text-[10px]" style={{ color: 'var(--text-muted)' }}>{t.you}</div>}
                 </div>
                 <div className="flex-shrink-0 snap-start rounded-xl overflow-hidden"
                      style={{ width: 140, height: 88, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -2351,7 +2353,7 @@ export function RoomPage() {
                  border: '1px solid rgba(148,163,184,0.32)',
                  backdropFilter: 'blur(12px)',
                }}>
-            Перевод выключен организатором — только видео
+            {tc('sec.room.translationOffByHost', 'Перевод выключен организатором — только видео')}
           </div>
         )}
         {!isCreator && joined && roomSettings.translationEnabled && !roomSettings.subtitlesEnabled && (
@@ -2499,7 +2501,7 @@ export function RoomPage() {
                 border: '1px solid var(--border-medium)',
                 color: 'var(--text-primary)',
               }}
-              aria-label="Поиск по комнатам"
+              aria-label={tc('sec.room.searchRoomsAria', 'Поиск по комнатам')}
               id="rooms-search"
             />
             {searchQuery && (
@@ -2508,7 +2510,7 @@ export function RoomPage() {
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-[var(--bg-elevated)]"
                 style={{ color: 'var(--text-muted)' }}
-                aria-label="Очистить поиск"
+                aria-label={tc('sec.room.clearSearch', 'Очистить поиск')}
               >
                 <X size={12} strokeWidth={1.5} />
               </button>
@@ -2577,12 +2579,12 @@ export function RoomPage() {
           <p className="text-sm font-500" style={{ color: 'var(--text-muted)' }}>
             {rooms.length === 0
               ? t.noRooms
-              : (searchQuery.trim() ? 'Ничего не найдено' : 'Пусто во вкладке')}
+              : (searchQuery.trim() ? tc('sec.room.searchNoResults', 'Ничего не найдено') : tc('sec.room.tabEmpty', 'Пусто во вкладке'))}
           </p>
           <p className="text-xs mt-1" style={{ color: 'var(--text-disabled)' }}>
             {rooms.length === 0
               ? t.noRoomsHint
-              : (searchQuery.trim() ? 'Попробуйте другой запрос' : 'В этой категории пока нет комнат')}
+              : (searchQuery.trim() ? tc('sec.room.searchTryAnother', 'Попробуйте другой запрос') : tc('sec.room.tabEmptyHint', 'В этой категории пока нет комнат'))}
           </p>
         </div>
         )
@@ -2755,25 +2757,25 @@ export function RoomPage() {
                 <Trash2 size={18} color="#ef4444" />
               </div>
               <div>
-                <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Удалить комнату?</h3>
+                <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{tc('sec.room.deleteRoomTitle', 'Удалить комнату?')}</h3>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{deletingRoom.name}</p>
               </div>
             </div>
             <ul className="text-xs space-y-1 mb-4" style={{ color: 'var(--text-muted)' }}>
-              <li>• Ссылка перестанет работать (всех выкинет)</li>
-              <li>• Удалятся транскрипты и Enterprise-insights</li>
-              <li>• Действие <b style={{ color: '#ef4444' }}>необратимо</b></li>
+              <li>• {tc('sec.room.delBullet1', 'Ссылка перестанет работать (всех выкинет)')}</li>
+              <li>• {tc('sec.room.delBullet2', 'Удалятся транскрипты и Enterprise-insights')}</li>
+              <li>• {tc('sec.room.delBullet3a', 'Действие')} <b style={{ color: '#ef4444' }}>{tc('sec.room.delBullet3b', 'необратимо')}</b></li>
             </ul>
             <div className="flex gap-2">
               <button type="button" onClick={() => setDeletingRoom(null)}
                       className="flex-1 px-4 py-2.5 rounded-xl text-sm font-600"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                Отмена
+                {tc('sec.room.cancelBtn', 'Отмена')}
               </button>
               <button type="button" onClick={() => submitDelete(deletingRoom.id)}
                       className="flex-1 px-4 py-2.5 rounded-xl text-sm font-700"
                       style={{ background: '#ef4444', color: '#fff' }}>
-                Удалить навсегда
+                {tc('sec.room.deleteForever', 'Удалить навсегда')}
               </button>
             </div>
           </div>
@@ -2794,8 +2796,8 @@ export function RoomPage() {
                 <Plus size={18} color="#fff" strokeWidth={2} />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Новая комната</h3>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Назовите встречу, чтобы легко её найти</p>
+                <h3 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{tc('sec.room.newRoomTitle', 'Новая комната')}</h3>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{tc('sec.room.newRoomSubtitle', 'Назовите встречу, чтобы легко её найти')}</p>
               </div>
               <button type="button" onClick={() => setCreateModalOpen(false)} disabled={creating}
                       className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]">
@@ -2808,7 +2810,9 @@ export function RoomPage() {
               <div className="mb-4 p-3 rounded-xl"
                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.24)' }}>
                 <p className="text-xs font-600 mb-2" style={{ color: '#FBBF24' }}>
-                  💡 У вас уже есть {emptyRooms.length === 1 ? 'пустая комната' : 'пустые комнаты'} — используйте её повторно, чтобы не плодить дубликаты:
+                  {tc('sec.room.reuseHint', '💡 У вас уже есть {{rooms}} — используйте её повторно, чтобы не плодить дубликаты:', {
+                    rooms: emptyRooms.length === 1 ? tc('sec.room.emptyRoomOne', 'пустая комната') : tc('sec.room.emptyRoomMany', 'пустые комнаты'),
+                  })}
                 </p>
                 <div className="space-y-1">
                   {emptyRooms.map((r) => (
@@ -2825,14 +2829,14 @@ export function RoomPage() {
 
             <label className="text-xs font-700 uppercase tracking-wider block mb-1.5"
                    style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-              Название комнаты
+              {tc('sec.room.roomNameLabel', 'Название комнаты')}
             </label>
             <input
               type="text"
               value={createName}
               onChange={(e) => setCreateName(e.target.value.slice(0, 200))}
               onKeyDown={(e) => { if (e.key === 'Enter' && createName.trim()) submitCreateRoom(); }}
-              placeholder="Например: Встреча с инвесторами"
+              placeholder={tc('sec.room.roomNamePh', 'Например: Встреча с инвесторами')}
               autoFocus
               className="w-full px-3 py-2.5 rounded-xl text-sm outline-none focus:border-violet-400"
               style={{
@@ -2842,20 +2846,20 @@ export function RoomPage() {
               }}
             />
             <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-              Можно переименовать позже карандашиком на карточке.
+              {tc('sec.room.renameLaterHint', 'Можно переименовать позже карандашиком на карточке.')}
             </p>
 
             <div className="flex gap-2 mt-5">
               <button type="button" onClick={() => setCreateModalOpen(false)} disabled={creating}
                       className="flex-1 px-4 py-2.5 rounded-xl text-sm font-600"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                Отмена
+                {tc('sec.room.cancelBtn', 'Отмена')}
               </button>
               <button type="button" onClick={submitCreateRoom} disabled={creating || !createName.trim()}
                       className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-700 transition-opacity disabled:opacity-50"
                       style={{ background: 'var(--btn-primary-bg)', color: 'var(--bg-primary)' }}>
                 {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                Создать
+                {tc('sec.room.createBtn', 'Создать')}
               </button>
             </div>
           </div>

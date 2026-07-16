@@ -150,11 +150,11 @@ export function MainLayout() {
           background: 'linear-gradient(90deg,#6366f1,#818cf8)', color: '#fff',
           boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
         }}>
-          <span>Вход от суперадмина: вы работаете как <b>{user?.email || 'пользователь'}</b></span>
+          <span>{t('sec.misc.impersonationBanner', 'Вход от суперадмина: вы работаете как')} <b>{user?.email || t('sec.misc.impersonationUser', 'пользователь')}</b></span>
           <button type="button" onClick={exitImpersonation}
                   style={{ background: '#fff', color: '#4f46e5', borderRadius: 8,
                            padding: '4px 12px', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>
-            ← Вернуться в админку
+            {t('sec.misc.backToAdmin', '← Вернуться в админку')}
           </button>
         </div>
       )}
@@ -168,7 +168,7 @@ export function MainLayout() {
         {/* Header (всегда свёрнут): только лого-иконка → домой (Галерея).
             Язык и тема переехали ВНИЗ сайдбара — по слову юзера (2026-07-08). */}
         <div className="flex flex-col items-center px-2 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button type="button" onClick={() => navigate('/gallery')} className="no-select" aria-label={t('sidebar.logoAria')} title="Галерея — на главный экран">
+          <button type="button" onClick={() => navigate('/gallery')} className="no-select" aria-label={t('sidebar.logoAria')} title={t('sec.misc.logoTitle', 'Галерея — на главный экран')}>
             <img src="/icons/logo.png?v=tt3" alt="" width={36} height={36} draggable={false} style={{ objectFit: 'contain' }} />
           </button>
         </div>
@@ -184,7 +184,7 @@ export function MainLayout() {
                 key={item.tab}
                 type="button"
                 onClick={() => navigate(`/gallery?tab=${item.tab}`)}
-                title={generating ? `${item.label} — идёт генерация (${item.tab === 'flow' ? flowGen : hbGen})` : item.label}
+                title={generating ? t('sec.misc.navGenerating', '{{label}} — идёт генерация ({{n}})', { label: item.label, n: item.tab === 'flow' ? flowGen : hbGen }) : item.label}
                 aria-label={item.label}
                 className="relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 no-select"
                 style={isActive

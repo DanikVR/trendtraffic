@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Tag, Plus, Trash2, Loader2, Check, AlertCircle, Calendar, Percent,
   RefreshCw, RotateCcw, Pencil, X,
@@ -68,6 +69,7 @@ const TIER_OPTIONS = [
 ] as const;
 
 export default function PromocodesPage() {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
   const [codes, setCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,11 +109,11 @@ export default function PromocodesPage() {
       setCodes(data.codes || []);
       setStripeNotice(
         data.stripeConfigured === false
-          ? (data.notice || 'Stripe не подключён. Подключите его в «Настройки API → Stripe», чтобы промокоды реально создавались.')
+          ? (data.notice || t('sec.admin.promo.stripeNotConfigured', 'Stripe не подключён. Подключите его в «Настройки API → Stripe», чтобы промокоды реально создавались.'))
           : null
       );
     } catch (err: any) {
-      setError(err.message || 'Не удалось загрузить промокоды');
+      setError(err.message || t('sec.admin.promo.errLoad', 'Не удалось загрузить промокоды'));
     } finally {
       setLoading(false);
     }
@@ -154,15 +156,15 @@ export default function PromocodesPage() {
     // заведомо не пройдёт серверную проверку.
     const codeTrim = form.code.trim().toUpperCase();
     if (!/^[A-Z0-9_-]{3,40}$/.test(codeTrim)) {
-      setError('Код должен быть 3–40 символов: латиница, цифры, дефис, подчёркивание.');
+      setError(t('sec.admin.promo.errCodeFormat', 'Код должен быть 3–40 символов: латиница, цифры, дефис, подчёркивание.'));
       return;
     }
     if (form.percent < 1 || form.percent > 100) {
-      setError('Скидка должна быть от 1 до 100.');
+      setError(t('sec.admin.promo.errPercentRange', 'Скидка должна быть от 1 до 100.'));
       return;
     }
     if (form.duration === 'repeating' && (!form.durationMonths || form.durationMonths < 1)) {
-      setError('Для «N месяцев подряд» укажите количество месяцев.');
+      setError(t('sec.admin.promo.errMonthsRequired', 'Для «N месяцев подряд» укажите количество месяцев.'));
       return;
     }
 
@@ -178,7 +180,7 @@ export default function PromocodesPage() {
         const dtext = await del.text();
         let ddata: any = {};
         if (dtext.trim()) { try { ddata = JSON.parse(dtext); } catch { /* */ } }
-        if (!del.ok) throw new Error(ddata.error || `Не удалось удалить старый промокод: HTTP ${del.status}`);
+        if (!del.ok) throw new Error(ddata.error || t('sec.admin.promo.errDeleteOld', 'Не удалось удалить старый промокод: HTTP {{status}}', { status: del.status }));
       }
 
       const body: any = {
@@ -205,7 +207,7 @@ export default function PromocodesPage() {
       closeEditor();
       await load();
     } catch (err: any) {
-      setError(err.message || 'Не удалось сохранить промокод');
+      setError(err.message || t('sec.admin.promo.errSave', 'Не удалось сохранить промокод'));
     } finally {
       setSubmitting(false);
     }
@@ -213,9 +215,9 @@ export default function PromocodesPage() {
 
   const handleDeactivate = (id: string) => {
     setConfirmDialog({
-      title: 'Деактивировать промокод?',
-      message: 'Использовать его клиенты больше не смогут. Можно потом возобновить.',
-      confirmLabel: 'Деактивировать',
+      title: t('sec.admin.promo.deactivateTitle', 'Деактивировать промокод?'),
+      message: t('sec.admin.promo.deactivateBody', 'Использовать его клиенты больше не смогут. Можно потом возобновить.'),
+      confirmLabel: t('sec.admin.promo.deactivateCta', 'Деактивировать'),
       onConfirm: async () => {
         try {
           const res = await fetch(`/api/admin/promocodes/${id}`, { method: 'DELETE', headers: headers() });
@@ -227,7 +229,7 @@ export default function PromocodesPage() {
           }
           await load();
         } catch (err: any) {
-          showToast(err.message || 'Не удалось деактивировать', 'error');
+          showToast(err.message || t('sec.admin.promo.errDeactivate', 'Не удалось деактивировать'), 'error');
         }
       },
     });
@@ -248,15 +250,15 @@ export default function PromocodesPage() {
       }
       await load();
     } catch (err: any) {
-      showToast(err.message || 'Не удалось возобновить', 'error');
+      showToast(err.message || t('sec.admin.promo.errReactivate', 'Не удалось возобновить'), 'error');
     }
   };
 
   const handleHardDelete = (id: string, code: string) => {
     setConfirmDialog({
-      title: `Удалить промокод ${code} навсегда?`,
-      message: 'Действие необратимо.',
-      confirmLabel: 'Удалить',
+      title: t('sec.admin.promo.hardDeleteTitle', 'Удалить промокод {{code}} навсегда?', { code }),
+      message: t('sec.admin.promo.hardDeleteBody', 'Действие необратимо.'),
+      confirmLabel: t('sec.admin.promo.hardDeleteCta', 'Удалить'),
       onConfirm: async () => {
         try {
           const res = await fetch(`/api/admin/promocodes/${id}?hard=true`, { method: 'DELETE', headers: headers() });
@@ -264,10 +266,10 @@ export default function PromocodesPage() {
           let data: any = {};
           if (text.trim()) { try { data = JSON.parse(text); } catch { /* */ } }
           if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-          if (data.status === 'partial') showToast(data.message || 'Удалось только деактивировать.', 'info');
+          if (data.status === 'partial') showToast(data.message || t('sec.admin.promo.partialDelete', 'Удалось только деактивировать.'), 'info');
           await load();
         } catch (err: any) {
-          showToast(err.message || 'Не удалось удалить', 'error');
+          showToast(err.message || t('sec.admin.promo.errDelete', 'Не удалось удалить'), 'error');
         }
       },
     });
@@ -285,15 +287,15 @@ export default function PromocodesPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="section-title text-2xl mb-1">Промокоды</h1>
-          <p className="section-subtitle">Создавайте скидочные коды для подписок. Через Stripe Coupons + Promotion Codes.</p>
+          <h1 className="section-title text-2xl mb-1">{t('sec.admin.promo.pageTitle', 'Промокоды')}</h1>
+          <p className="section-subtitle">{t('sec.admin.promo.pageSubtitle', 'Создавайте скидочные коды для подписок. Через Stripe Coupons + Promotion Codes.')}</p>
         </div>
         <div className="flex gap-2">
           <AuroraButton variant="ghost" onClick={load} icon={<RefreshCw size={16} strokeWidth={1.5} />}>
-            Обновить
+            {t('sec.admin.promo.refreshBtn', 'Обновить')}
           </AuroraButton>
           <AuroraButton onClick={openNewEditor} icon={<Plus size={16} strokeWidth={1.5} />}>
-            Создать промокод
+            {t('sec.admin.promo.createBtn', 'Создать промокод')}
           </AuroraButton>
         </div>
       </div>
@@ -321,12 +323,12 @@ export default function PromocodesPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <h2 className="section-title text-base">
-                {editingFrom ? `Редактирование: ${editingFrom.code}` : 'Новый промокод'}
+                {editingFrom ? t('sec.admin.promo.editHeading', 'Редактирование: {{code}}', { code: editingFrom.code }) : t('sec.admin.promo.newHeading', 'Новый промокод')}
               </h2>
               {editingFrom && (
                 <span className="text-[11px] px-2 py-1 rounded-full"
                       style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)', color: '#FBBF24' }}>
-                  Сохранение пересоздаст код в Stripe
+                  {t('sec.admin.promo.recreateWarn', 'Сохранение пересоздаст код в Stripe')}
                 </span>
               )}
             </div>
@@ -341,7 +343,7 @@ export default function PromocodesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <AuroraInput
-                label="Код (заглавные латиница/цифры/дефис)"
+                label={t('sec.admin.promo.codeLabel', 'Код (заглавные латиница/цифры/дефис)')}
                 value={form.code}
                 onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
                 placeholder="SUMMER25"
@@ -349,7 +351,7 @@ export default function PromocodesPage() {
               />
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-600 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                  Скидка (%)
+                  {t('sec.admin.promo.percentLabel', 'Скидка (%)')}
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -365,7 +367,7 @@ export default function PromocodesPage() {
                   </span>
                 </div>
                 {form.percent === 100 && (
-                  <p className="text-[11px]" style={{ color: '#34D399' }}>100% = бесплатная активация тарифа</p>
+                  <p className="text-[11px]" style={{ color: '#34D399' }}>{t('sec.admin.promo.percent100Hint', '100% = бесплатная активация тарифа')}</p>
                 )}
               </div>
             </div>
@@ -373,7 +375,7 @@ export default function PromocodesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-600 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                  Длительность скидки
+                  {t('sec.admin.promo.durationLabel', 'Длительность скидки')}
                 </label>
                 <select
                   className="aurora-input py-3 text-sm"
@@ -381,14 +383,14 @@ export default function PromocodesPage() {
                   value={form.duration}
                   onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value as any }))}
                 >
-                  <option value="once">Только на первый платёж</option>
-                  <option value="repeating">N месяцев подряд</option>
-                  <option value="forever">Навсегда (пока активна подписка)</option>
+                  <option value="once">{t('sec.admin.promo.durationOnce', 'Только на первый платёж')}</option>
+                  <option value="repeating">{t('sec.admin.promo.durationRepeating', 'N месяцев подряд')}</option>
+                  <option value="forever">{t('sec.admin.promo.durationForever', 'Навсегда (пока активна подписка)')}</option>
                 </select>
               </div>
               {form.duration === 'repeating' && (
                 <AuroraInput
-                  label="Месяцев применять скидку"
+                  label={t('sec.admin.promo.monthsLabel', 'Месяцев применять скидку')}
                   type="number"
                   value={String(form.durationMonths)}
                   onChange={(e) => setForm((f) => ({ ...f, durationMonths: Math.max(1, parseInt(e.target.value || '1', 10)) }))}
@@ -397,7 +399,7 @@ export default function PromocodesPage() {
                 />
               )}
               <AuroraInput
-                label="Макс. использований (пусто = без лимита)"
+                label={t('sec.admin.promo.maxUsesLabel', 'Макс. использований (пусто = без лимита)')}
                 type="number"
                 value={form.maxRedemptions}
                 onChange={(e) => setForm((f) => ({ ...f, maxRedemptions: e.target.value }))}
@@ -405,7 +407,7 @@ export default function PromocodesPage() {
                 inputId="promo-max"
               />
               <AuroraInput
-                label="Истекает (опционально)"
+                label={t('sec.admin.promo.expiresLabel', 'Истекает (опционально)')}
                 type="datetime-local"
                 value={form.expiresAt}
                 onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
@@ -416,7 +418,7 @@ export default function PromocodesPage() {
             <div>
               <label className="text-xs font-700 uppercase tracking-wider block mb-2"
                      style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                На какие тарифы действует
+                {t('sec.admin.promo.tiersLabel', 'На какие тарифы действует')}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {TIER_OPTIONS.map((opt) => {
@@ -442,22 +444,22 @@ export default function PromocodesPage() {
                           border: `1px solid ${form.tiers.length === 0 ? 'rgba(99,102,241,0.50)' : 'var(--border-medium)'}`,
                           color: form.tiers.length === 0 ? 'var(--brand)' : 'var(--text-secondary)',
                         }}>
-                  {form.tiers.length === 0 ? '✓ ' : ''}На все тарифы
+                  {form.tiers.length === 0 ? '✓ ' : ''}{t('sec.admin.promo.allTiersBtn', 'На все тарифы')}
                 </button>
               </div>
               <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
                 {form.tiers.length === 0
-                  ? 'Промокод применяется ко всем подпискам и докупкам.'
-                  : `Промокод действует только на: ${form.tiers.join(', ')}.`}
+                  ? t('sec.admin.promo.allTiersHint', 'Промокод применяется ко всем подпискам и докупкам.')
+                  : t('sec.admin.promo.limitedTiersHint', 'Промокод действует только на: {{list}}.', { list: form.tiers.join(', ') })}
               </p>
             </div>
 
             <div className="flex gap-2 pt-1">
               <AuroraButton type="submit" disabled={submitting} icon={submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} strokeWidth={2} />}>
-                {submitting ? 'Сохраняем…' : (editingFrom ? 'Сохранить изменения' : 'Создать промокод')}
+                {submitting ? t('sec.admin.promo.savingBtn', 'Сохраняем…') : (editingFrom ? t('sec.admin.promo.saveChangesBtn', 'Сохранить изменения') : t('sec.admin.promo.createBtn', 'Создать промокод'))}
               </AuroraButton>
               <AuroraButton variant="ghost" onClick={closeEditor} type="button">
-                Отмена
+                {t('sec.admin.promo.cancelBtn', 'Отмена')}
               </AuroraButton>
             </div>
           </form>
@@ -472,7 +474,7 @@ export default function PromocodesPage() {
       ) : sortedCodes.length === 0 ? (
         <AuroraCard className="p-8 text-center">
           <Tag size={32} strokeWidth={1} className="mx-auto mb-3" style={{ color: 'var(--text-disabled)' }} />
-          <p className="text-sm font-500" style={{ color: 'var(--text-muted)' }}>Промокодов пока нет</p>
+          <p className="text-sm font-500" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.promo.emptyList', 'Промокодов пока нет')}</p>
         </AuroraCard>
       ) : (
         <div className="space-y-2">
@@ -498,7 +500,7 @@ export default function PromocodesPage() {
                       {!c.active && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-700 uppercase tracking-wider"
                               style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-disabled)' }}>
-                          Неактивен
+                          {t('sec.admin.promo.inactiveChip', 'Неактивен')}
                         </span>
                       )}
                       {c.appliesToTiers && c.appliesToTiers.length > 0 && (
@@ -510,12 +512,12 @@ export default function PromocodesPage() {
                     </div>
                     <div className="flex items-center gap-3 text-xs mt-0.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
                       <span className="flex items-center gap-1"><Percent size={11} strokeWidth={1.5} /> {c.percentOff}%</span>
-                      <span>· {c.duration}{c.duration === 'repeating' && c.durationInMonths ? ` (${c.durationInMonths}м)` : ''}</span>
-                      <span>· использовано {c.timesRedeemed}{c.maxRedemptions ? ` / ${c.maxRedemptions}` : ''}</span>
+                      <span>· {c.duration}{c.duration === 'repeating' && c.durationInMonths ? t('sec.admin.promo.monthsSuffix', ' ({{n}}м)', { n: c.durationInMonths }) : ''}</span>
+                      <span>· {t('sec.admin.promo.usedLabel', 'использовано')} {c.timesRedeemed}{c.maxRedemptions ? ` / ${c.maxRedemptions}` : ''}</span>
                       {c.expiresAt && (
                         <span className="flex items-center gap-1">
                           <Calendar size={11} strokeWidth={1.5} />
-                          до {new Date(c.expiresAt).toLocaleDateString('ru-RU')}
+                          {t('sec.admin.promo.untilLabel', 'до')} {new Date(c.expiresAt).toLocaleDateString('ru-RU')}
                         </span>
                       )}
                     </div>
@@ -533,7 +535,7 @@ export default function PromocodesPage() {
                                 border: '1px solid rgba(99,102,241,0.20)',
                               }}>
                         <Pencil size={12} strokeWidth={1.5} />
-                        Редактировать
+                        {t('sec.admin.promo.editBtn', 'Редактировать')}
                       </button>
                       <button type="button" onClick={() => handleDeactivate(c.id)}
                               className="px-3 py-2 rounded-xl text-xs font-600 transition-colors flex items-center gap-1.5"
@@ -543,7 +545,7 @@ export default function PromocodesPage() {
                                 border: '1px solid rgba(245,158,11,0.20)',
                               }}>
                         <X size={12} strokeWidth={2} />
-                        Деактивировать
+                        {t('sec.admin.promo.deactivateBtn', 'Деактивировать')}
                       </button>
                     </>
                   )}
@@ -556,7 +558,7 @@ export default function PromocodesPage() {
                               border: '1px solid rgba(16,185,129,0.25)',
                             }}>
                       <RotateCcw size={12} strokeWidth={1.5} />
-                      Возобновить
+                      {t('sec.admin.promo.reactivateBtn', 'Возобновить')}
                     </button>
                   )}
                   <button type="button" onClick={() => handleHardDelete(c.id, c.code)}
@@ -567,7 +569,7 @@ export default function PromocodesPage() {
                             border: '1px solid rgba(239,68,68,0.20)',
                           }}>
                     <Trash2 size={12} strokeWidth={1.5} />
-                    Удалить
+                    {t('sec.admin.promo.deleteBtn', 'Удалить')}
                   </button>
                 </div>
               </div>

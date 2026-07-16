@@ -174,10 +174,10 @@ export function Section3QuestFlow() {
         </div>
         <div>
           <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>
-            {t('enterprise.questFlow.aiHeading', 'ИИ-ассистент')}
+            {t('sec.ent.qf.aiHeading', 'ИИ-ассистент')}
           </h2>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            {t('enterprise.questFlow.aiLead', 'Промт, база знаний, теги и обработка картинок — общие для всех каналов.')}
+            {t('sec.ent.qf.aiLead', 'Промт, база знаний, теги и обработка картинок — общие для всех каналов.')}
           </p>
         </div>
       </div>
@@ -261,10 +261,10 @@ export function Section3QuestFlow() {
         <AuroraCard className="p-5 space-y-3">
           <h3 className="text-sm font-700 uppercase tracking-wider"
               style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            {t('enterprise.questFlow.kbHeadingV2', 'База знаний')}
+            {t('sec.ent.qf.kbHeading', 'База знаний')}
           </h3>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            {t('enterprise.questFlow.kbLeadV2', 'Документы — каталог услуг, прайс, FAQ. Загружайте TXT / Word / Excel / CSV. Если пусто — ИИ отвечает только из общих знаний. Лимит: 50 МБ файл / 500 000 символов.')}
+            {t('sec.ent.qf.kbLead', 'Документы — каталог услуг, прайс, FAQ. Загружайте TXT / Word / Excel / CSV. Если пусто — ИИ отвечает только из общих знаний. Лимит: 50 МБ файл / 500 000 символов.')}
           </p>
 
           {qfKbFilename && qfKb && (

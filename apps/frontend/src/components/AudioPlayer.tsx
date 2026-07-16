@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 function fmt(t: number): string {
@@ -21,6 +22,7 @@ function fmt(t: number): string {
 }
 
 export function AudioPlayer({ src, className, autoLoad = true }: { src: string; className?: string; autoLoad?: boolean }) {
+  const { t } = useTranslation('common');
   const ref = useRef<HTMLAudioElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -87,14 +89,14 @@ export function AudioPlayer({ src, className, autoLoad = true }: { src: string; 
       <audio ref={ref} src={src} preload={autoLoad ? 'metadata' : 'none'} />
       {/* Ряд 1: play/pause + текущее/полное время + mute */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button type="button" onClick={toggle} title={playing ? 'Пауза' : 'Воспроизвести'}
+        <button type="button" onClick={toggle} title={playing ? t('sec.misc.pause', 'Пауза') : t('sec.misc.play', 'Воспроизвести')}
           className="flex-shrink-0" style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
           {playing ? <Pause size={15} /> : <Play size={15} className="ml-0.5" />}
         </button>
         <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmt(cur)}</span>
         <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>{fmt(dur)}</span>
-        <button type="button" onClick={toggleMute} title={muted ? 'Включить звук' : 'Выключить звук'}
+        <button type="button" onClick={toggleMute} title={muted ? t('sec.misc.unmute', 'Включить звук') : t('sec.misc.mute', 'Выключить звук')}
           className="flex-shrink-0" style={{ width: 26, height: 26, borderRadius: 8, border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: 'var(--text-muted)' }}>
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}

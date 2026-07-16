@@ -1,21 +1,50 @@
 /**
  * PublicFooter — футер публичных страниц VibeVox.
  * Навигация, правовые ссылки и обязательный юридический блок (в одну строку).
+ * Тексты — через t() с русским фолбэком; колонки собираются внутри компонента.
  */
 
-const COLS = [
-  { title: 'Продукт', links: ['Возможности', 'Тарифы', 'Демо-звонок', 'Интеграции'] },
-  { title: 'Решения', links: ['Видеовстречи', 'SIP-телефония', 'Телемедицина', 'Юриспруденция'] },
-  { title: 'Компания', links: ['О VibeVox', 'Сравнение', 'Контакты', 'Документация'] },
-];
-
-const LEGAL = [
-  { href: '/privacy', label: 'Политика конфиденциальности' },
-  { href: '/terms', label: 'Условия использования' },
-  { href: '/cookies', label: 'Политика использования файлов cookie' },
-];
+import { useTranslation } from 'react-i18next';
 
 export function PublicFooter() {
+  const { t } = useTranslation('common');
+
+  const COLS = [
+    {
+      title: t('sec.pub.colProduct', 'Продукт'),
+      links: [
+        { label: t('sec.pub.linkFeatures', 'Возможности'), href: '/landing#features' },
+        { label: t('sec.pub.linkPricing', 'Тарифы'), href: '/landing#pricing' },
+        { label: t('sec.pub.linkDemoCall', 'Демо-звонок'), href: '#' },
+        { label: t('sec.pub.linkIntegrations', 'Интеграции'), href: '#' },
+      ],
+    },
+    {
+      title: t('sec.pub.colSolutions', 'Решения'),
+      links: [
+        { label: t('sec.pub.linkVideoMeet', 'Видеовстречи'), href: '#' },
+        { label: t('sec.pub.linkSip', 'SIP-телефония'), href: '#' },
+        { label: t('sec.pub.linkTelemed', 'Телемедицина'), href: '#' },
+        { label: t('sec.pub.linkLaw', 'Юриспруденция'), href: '#' },
+      ],
+    },
+    {
+      title: t('sec.pub.colCompany', 'Компания'),
+      links: [
+        { label: t('sec.pub.linkAbout', 'О VibeVox'), href: '#' },
+        { label: t('sec.pub.linkCompare', 'Сравнение'), href: '/landing#compare' },
+        { label: t('sec.pub.linkContacts', 'Контакты'), href: 'mailto:SEO@vibevox.pro' },
+        { label: t('sec.pub.linkDocs', 'Документация'), href: '#' },
+      ],
+    },
+  ];
+
+  const LEGAL = [
+    { href: '/privacy', label: t('sec.pub.privacyTitle', 'Политика конфиденциальности') },
+    { href: '/terms', label: t('sec.pub.termsTitle', 'Условия использования') },
+    { href: '/cookies', label: t('sec.pub.cookiesTitle', 'Политика использования файлов cookie') },
+  ];
+
   return (
     <footer className="relative border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -23,7 +52,7 @@ export function PublicFooter() {
           <div className="col-span-2 md:col-span-1">
             <img src="/vibevox-logo.png" alt="VibeVox" className="h-6 w-auto mb-4" />
             <p className="text-sm text-white/45 leading-relaxed max-w-xs">
-              Синхронный ИИ-перевод видеовстреч и звонков на 100+ языков. €0.17/мин, без сгорания минут.
+              {t('sec.pub.footerAbout', 'Синхронный ИИ-перевод видеовстреч и звонков на 100+ языков. €0.17/мин, без сгорания минут.')}
             </p>
           </div>
 
@@ -32,8 +61,8 @@ export function PublicFooter() {
               <h4 className="font-700 text-white/85 text-sm mb-3">{col.title}</h4>
               <ul className="space-y-2.5">
                 {col.links.map((l) => (
-                  <li key={l}>
-                    <a href="#" className="text-sm text-white/45 hover:text-neon-orange transition-colors">{l}</a>
+                  <li key={l.label}>
+                    <a href={l.href} className="text-sm text-white/45 hover:text-neon-orange transition-colors">{l.label}</a>
                   </li>
                 ))}
               </ul>

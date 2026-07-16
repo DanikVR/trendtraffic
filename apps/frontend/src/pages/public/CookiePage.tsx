@@ -4,14 +4,16 @@
  * Реквизиты исполнителя сохранены, контактный e-mail — SEO@vibevox.pro.
  */
 
+import { useTranslation } from 'react-i18next';
 import { LegalLayout } from './LegalLayout';
 
 export function CookiePage() {
+  const { t } = useTranslation('common');
   return (
     <LegalLayout
-      title="Политика использования файлов cookie"
-      updated="28 апреля 2026 г."
-      metaDescription="Политика cookie VibeVox: какие файлы cookie и технологии использует платформа ИИ-перевода видеовстреч и звонков, их категории, сроки хранения и как ими управлять."
+      title={t('sec.pub.cookiesTitle', 'Политика использования файлов cookie')}
+      updated={t('sec.pub.legalUpdated', '28 апреля 2026 г.')}
+      metaDescription={t('sec.pub.cookiesMetaDesc', 'Политика cookie VibeVox: какие файлы cookie и технологии использует платформа ИИ-перевода видеовстреч и звонков, их категории, сроки хранения и как ими управлять.')}
       intro={
         <p>
           Эта Политика объясняет, как Платформа <strong>VibeVox</strong> использует файлы cookie и аналогичные

@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Users, Search, Plus, Loader2, AlertCircle, CheckCircle, X, Gift, RefreshCw,
   Trash2, ChevronDown, CreditCard, Ban, RotateCcw, LogIn,
@@ -52,18 +53,19 @@ interface UserRow {
 // Назначаемые суперадмином тарифы TrendTraffic. Только наши два полнодоступных тарифа
 // (Premium / Enterprise) + «Без тарифа» для отзыва доступа (status=inactive → гейт на /billing).
 // Легаси VibeVox (plus/standard/standard_yearly) убраны — больше не назначаются.
-const TIER_OPTIONS: { value: string; label: string; minutes: number; color: string }[] = [
-  { value: 'premium',    label: 'Premium (полный доступ)',     minutes: -1, color: '#6366f1' },
-  { value: 'enterprise', label: 'Enterprise (полный доступ)',  minutes: -1, color: '#a78bfa' },
-  { value: 'trial',      label: 'Без тарифа (нет доступа)',    minutes: 0,  color: '#94a3b8' },
+// Подписи опций переводятся в tierOptionLabel внутри компонента (литеральные t() — их видит harvest).
+const TIER_OPTIONS: { value: string; minutes: number; color: string }[] = [
+  { value: 'premium',    minutes: -1, color: '#6366f1' },
+  { value: 'enterprise', minutes: -1, color: '#a78bfa' },
+  { value: 'trial',      minutes: 0,  color: '#94a3b8' },
 ];
 
 // Подписи для отображения тарифа в таблице. Легаси-ключи оставлены, чтобы старые записи
-// (если есть) показывались осмысленно, а не сырым значением.
+// (если есть) показывались осмысленно, а не сырым значением. Здесь только латинские
+// брендовые названия; переводимый «Без тарифа» (trial) отдаёт tierLabelOf внутри компонента.
 const TIER_LABELS: Record<string, string> = {
   premium: 'Premium',
   enterprise: 'Enterprise',
-  trial: 'Без тарифа',
   plus: 'Plus',
   standard: 'Standard',
   standard_yearly: 'Standard Yearly',
@@ -99,7 +101,22 @@ function todayIso(): string {
 }
 
 export default function UsersPage() {
+  const { t } = useTranslation('common');
   const { token, refreshBilling } = useAppStore();
+
+  // Отображаемая подпись тарифа: латинские бренды из TIER_LABELS, «Без тарифа» переводится.
+  const tierLabelOf = (v: string | null | undefined): string => {
+    if (!v) return '';
+    if (v === 'trial') return t('sec.admin.users.tierNone', 'Без тарифа');
+    return TIER_LABELS[v] || v;
+  };
+
+  // Подписи опций назначения тарифа (радио в модале смены тарифа).
+  const tierOptionLabel = (v: string): string => {
+    if (v === 'premium') return t('sec.admin.users.tierOptPremium', 'Premium (полный доступ)');
+    if (v === 'enterprise') return t('sec.admin.users.tierOptEnterprise', 'Enterprise (полный доступ)');
+    return t('sec.admin.users.tierOptNone', 'Без тарифа (нет доступа)');
+  };
   const [rows, setRows] = useState<UserRow[]>([]);
   const [stats, setStats] = useState<{ totalRegistered: number; totalPaid: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -172,7 +189,7 @@ export default function UsersPage() {
       setStats(data.stats || null);
     } catch (err: any) {
       if (err?.name === 'AbortError') return; // ожидаемо при отмене — не ошибка
-      setError(err.message || 'Не удалось загрузить пользователей');
+      setError(err.message || t('sec.admin.users.errLoad', 'Не удалось загрузить пользователей'));
     } finally {
       // setLoading(false) и сброс ref — только для актуального (последнего) запроса,
       // чтобы отменённый старый не «погасил» loader нового.
@@ -204,7 +221,7 @@ export default function UsersPage() {
     if (!creditUser) return;
     const minutes = parseInt(creditMinutes, 10);
     if (!Number.isFinite(minutes) || minutes <= 0) {
-      setError('Введите положительное число минут');
+      setError(t('sec.admin.users.errMinutesPositive', 'Введите положительное число минут'));
       return;
     }
     setCreditSubmitting(true);
@@ -215,12 +232,12 @@ export default function UsersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setSuccess(`Зачислено ${minutes} мин пользователю ${creditUser.email}.`);
+      setSuccess(t('sec.admin.users.creditDone', 'Зачислено {{minutes}} мин пользователю {{email}}.', { minutes, email: creditUser.email }));
       closeCredit();
       await load();
       refreshBilling(); // обновим sidebar (если админ зачислил минуты себе)
     } catch (err: any) {
-      setError(err.message || 'Не удалось зачислить минуты');
+      setError(err.message || t('sec.admin.users.errCredit', 'Не удалось зачислить минуты'));
     } finally {
       setCreditSubmitting(false);
     }
@@ -244,12 +261,15 @@ export default function UsersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      const tierLabel = TIER_LABELS[tierValue] || tierValue;
-      setSuccess(`Тариф пользователя ${tierUser.email} изменён на ${tierLabel}${tierAddMinutes && data.minutesAdded ? ` (+${data.minutesAdded} мин)` : ''}.`);
+      const tierLabel = tierLabelOf(tierValue) || tierValue;
+      const minutesSuffix = tierAddMinutes && data.minutesAdded
+        ? t('sec.admin.users.tierMinutesSuffix', ' (+{{n}} мин)', { n: data.minutesAdded })
+        : '';
+      setSuccess(t('sec.admin.users.tierChanged', 'Тариф пользователя {{email}} изменён на {{tier}}{{suffix}}.', { email: tierUser.email, tier: tierLabel, suffix: minutesSuffix }));
       closeTier();
       await load();
     } catch (err: any) {
-      setError(err.message || 'Не удалось изменить тариф');
+      setError(err.message || t('sec.admin.users.errTierChange', 'Не удалось изменить тариф'));
     } finally {
       setTierSubmitting(false);
     }
@@ -267,11 +287,11 @@ export default function UsersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setSuccess(`Пользователь ${deleteUser.email} удалён.`);
+      setSuccess(t('sec.admin.users.deleteDone', 'Пользователь {{email}} удалён.', { email: deleteUser.email }));
       closeDelete();
       await load();
     } catch (err: any) {
-      setError(err.message || 'Не удалось удалить пользователя');
+      setError(err.message || t('sec.admin.users.errDelete', 'Не удалось удалить пользователя'));
     } finally {
       setDeleteSubmitting(false);
     }
@@ -281,11 +301,11 @@ export default function UsersPage() {
   const handleCancelSub = (user: UserRow) => {
     const dateStr = user.currentPeriodEnd
       ? new Date(user.currentPeriodEnd).toLocaleDateString('ru-RU')
-      : 'конца периода';
+      : t('sec.admin.users.periodEndFallback', 'конца периода');
     setConfirmDialog({
-      title: `Отменить подписку ${user.email}?`,
-      message: `Деньги не возвращаются. Подписка останется активной до ${dateStr}, затем Stripe её закроет автоматически.`,
-      confirmLabel: 'Отменить',
+      title: t('sec.admin.users.cancelSubTitle', 'Отменить подписку {{email}}?', { email: user.email }),
+      message: t('sec.admin.users.cancelSubBody', 'Деньги не возвращаются. Подписка останется активной до {{date}}, затем Stripe её закроет автоматически.', { date: dateStr }),
+      confirmLabel: t('sec.admin.users.cancelSubCta', 'Отменить'),
       variant: 'danger',
       onConfirm: async () => {
         setCancelingSubUserId(user.userId);
@@ -295,10 +315,10 @@ export default function UsersPage() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-          setSuccess(data.message || 'Подписка помечена на отмену');
+          setSuccess(data.message || t('sec.admin.users.subCanceled', 'Подписка помечена на отмену'));
           await load();
         } catch (err: any) {
-          setError(err.message || 'Не удалось отменить подписку');
+          setError(err.message || t('sec.admin.users.errCancelSub', 'Не удалось отменить подписку'));
         } finally {
           setCancelingSubUserId(null);
         }
@@ -308,9 +328,9 @@ export default function UsersPage() {
 
   const handleResumeSub = (user: UserRow) => {
     setConfirmDialog({
-      title: `Восстановить подписку ${user.email}?`,
-      message: 'Автопродление возобновится.',
-      confirmLabel: 'Восстановить',
+      title: t('sec.admin.users.resumeSubTitle', 'Восстановить подписку {{email}}?', { email: user.email }),
+      message: t('sec.admin.users.resumeSubBody', 'Автопродление возобновится.'),
+      confirmLabel: t('sec.admin.users.resumeSubCta', 'Восстановить'),
       variant: 'primary',
       onConfirm: async () => {
         setCancelingSubUserId(user.userId);
@@ -320,10 +340,10 @@ export default function UsersPage() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-          setSuccess(data.message || 'Подписка восстановлена');
+          setSuccess(data.message || t('sec.admin.users.subResumed', 'Подписка восстановлена'));
           await load();
         } catch (err: any) {
-          setError(err.message || 'Не удалось восстановить подписку');
+          setError(err.message || t('sec.admin.users.errResumeSub', 'Не удалось восстановить подписку'));
         } finally {
           setCancelingSubUserId(null);
         }
@@ -338,17 +358,18 @@ export default function UsersPage() {
   // Открывает КАСТОМНЫЙ поп-ап подтверждения (не браузерный confirm).
   const handleImpersonate = (u: UserRow) => {
     setConfirmDialog({
-      title: 'Войти в аккаунт пользователя?',
+      title: t('sec.admin.users.impersonateTitle', 'Войти в аккаунт пользователя?'),
       message: (
         <div className="space-y-1.5">
-          <p>Войти в аккаунт <b>{u.email || u.tenantId}</b>?</p>
+          <p>{t('sec.admin.users.impersonateAsk', 'Войти в аккаунт')} <b>{u.email || u.tenantId}</b>?</p>
           <p style={{ color: 'var(--text-muted)' }}>
-            Вы выйдете из супер-админки и продолжите работу как этот пользователь. Сверху появится
-            кнопка <b>«Вернуться в админку»</b> — она вернёт вас обратно без повторного логина.
+            {t('sec.admin.users.impersonateBody1', 'Вы выйдете из супер-админки и продолжите работу как этот пользователь. Сверху появится кнопка')}{' '}
+            <b>{t('sec.admin.users.impersonateBody2', '«Вернуться в админку»')}</b>{' '}
+            {t('sec.admin.users.impersonateBody3', '— она вернёт вас обратно без повторного логина.')}
           </p>
         </div>
       ),
-      confirmLabel: 'Войти',
+      confirmLabel: t('sec.admin.users.impersonateCta', 'Войти'),
       variant: 'primary',
       onConfirm: () => { void doImpersonate(u); },
     });
@@ -376,7 +397,7 @@ export default function UsersPage() {
       useAppStore.getState().setAuth(data.token, data.user);
       window.location.href = '/';
     } catch (err: any) {
-      setError(err.message || 'Не удалось войти в аккаунт пользователя');
+      setError(err.message || t('sec.admin.users.errImpersonate', 'Не удалось войти в аккаунт пользователя'));
     }
   };
 
@@ -398,14 +419,14 @@ export default function UsersPage() {
           <Users size={20} color="#fff" />
         </div>
         <div>
-          <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>Пользователи</h1>
+          <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.admin.users.pageTitle', 'Пользователи')}</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Зарегистрировано: <b>{totalRegistered}</b> · Платили: <b>{totalPaid}</b>
+            {t('sec.admin.users.statRegistered', 'Зарегистрировано:')} <b>{totalRegistered}</b> · {t('sec.admin.users.statPaid', 'Платили:')} <b>{totalPaid}</b>
           </p>
         </div>
         <div className="ml-auto">
           <AuroraButton variant="ghost" onClick={load} disabled={loading} icon={loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}>
-            Обновить
+            {t('sec.admin.users.refreshBtn', 'Обновить')}
           </AuroraButton>
         </div>
       </div>
@@ -439,7 +460,7 @@ export default function UsersPage() {
               <AuroraInput
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Поиск по email, организации, tenant_id, Stripe Customer ID…"
+                placeholder={t('sec.admin.users.searchPh', 'Поиск по email, организации, tenant_id, Stripe Customer ID…')}
                 icon={<Search size={14} />}
               />
             </div>
@@ -455,7 +476,7 @@ export default function UsersPage() {
                 onChange={(e) => setPaidOnly(e.target.checked)}
                 style={{ accentColor: '#10b981' }}
               />
-              <span className="whitespace-nowrap font-600">Только оплатившие</span>
+              <span className="whitespace-nowrap font-600">{t('sec.admin.users.paidOnly', 'Только оплатившие')}</span>
             </label>
           </div>
 
@@ -463,7 +484,7 @@ export default function UsersPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto] gap-3 lg:items-end">
             <div className="min-w-0">
               <label className="text-xs font-600 uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                Тариф
+                {t('sec.admin.users.tierFilterLabel', 'Тариф')}
               </label>
               <div className="relative">
                 <select
@@ -476,9 +497,9 @@ export default function UsersPage() {
                     color: 'var(--text-primary)',
                   }}
                 >
-                  <option value="">Все тарифы</option>
+                  <option value="">{t('sec.admin.users.allTiers', 'Все тарифы')}</option>
                   {TIER_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{TIER_LABELS[o.value] || o.value}</option>
+                    <option key={o.value} value={o.value}>{tierLabelOf(o.value) || o.value}</option>
                   ))}
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
@@ -486,7 +507,7 @@ export default function UsersPage() {
             </div>
             <div>
               <label className="text-xs font-600 uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                Дата с
+                {t('sec.admin.users.dateFrom', 'Дата с')}
               </label>
               <input
                 type="date"
@@ -502,7 +523,7 @@ export default function UsersPage() {
             </div>
             <div>
               <label className="text-xs font-600 uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                По
+                {t('sec.admin.users.dateTo', 'По')}
               </label>
               <input
                 type="date"
@@ -519,16 +540,16 @@ export default function UsersPage() {
             <div className="flex gap-1.5 sm:items-end">
               <button type="button" onClick={() => applyPreset(7)} className="flex-1 sm:flex-none text-xs px-3 py-2.5 rounded-xl font-600 transition-colors hover:bg-[var(--bg-secondary)]"
                       style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
-                7 дн
+                {t('sec.admin.users.preset7d', '7 дн')}
               </button>
               <button type="button" onClick={() => applyPreset(30)} className="flex-1 sm:flex-none text-xs px-3 py-2.5 rounded-xl font-600 transition-colors hover:bg-[var(--bg-secondary)]"
                       style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
-                30 дн
+                {t('sec.admin.users.preset30d', '30 дн')}
               </button>
               {(from || to) && (
                 <button type="button" onClick={clearDates} className="flex-1 sm:flex-none text-xs px-3 py-2.5 rounded-xl font-600 transition-colors hover:bg-[var(--bg-tertiary)]"
                         style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  Сброс
+                  {t('sec.admin.users.resetDates', 'Сброс')}
                 </button>
               )}
             </div>
@@ -542,22 +563,22 @@ export default function UsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Email / Организация</th>
-                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Тариф</th>
-                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Зарегистрирован</th>
-                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>Действия</th>
+                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.users.colEmail', 'Email / Организация')}</th>
+                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.users.colTier', 'Тариф')}</th>
+                <th className="text-left px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.users.colRegistered', 'Зарегистрирован')}</th>
+                <th className="text-right px-4 py-3 font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.users.colActions', 'Действия')}</th>
               </tr>
             </thead>
             <tbody>
               {loading && rows.length === 0 && (
                 <tr><td colSpan={4} className="px-4 py-10 text-center">
                   <Loader2 size={20} className="animate-spin inline-block mr-2" />
-                  Загрузка…
+                  {t('sec.admin.users.loading', 'Загрузка…')}
                 </td></tr>
               )}
               {!loading && rows.length === 0 && (
                 <tr><td colSpan={4} className="px-4 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                  Пользователи не найдены
+                  {t('sec.admin.users.noUsers', 'Пользователи не найдены')}
                 </td></tr>
               )}
               {rows.map((u) => {
@@ -581,7 +602,7 @@ export default function UsersPage() {
                                 color: tierColor,
                                 border: `1px solid ${tierColor}30`,
                               }}>
-                          {TIER_LABELS[u.tier || ''] || u.tier || 'Триал'}
+                          {tierLabelOf(u.tier) || t('sec.admin.users.tierTrialFallback', 'Триал')}
                         </span>
                         {u.cancelAtPeriodEnd && (
                           <span className="text-[10px] font-600 px-1.5 py-0.5 rounded"
@@ -590,8 +611,8 @@ export default function UsersPage() {
                                   color: '#FBBF24',
                                   border: '1px solid rgba(245, 158, 11, 0.22)',
                                 }}
-                                title={`Будет отменена ${u.currentPeriodEnd ? new Date(u.currentPeriodEnd).toLocaleString('ru-RU') : ''}`}>
-                            отмена · {u.currentPeriodEnd ? new Date(u.currentPeriodEnd).toLocaleDateString('ru-RU') : '—'}
+                                title={t('sec.admin.users.cancelAtTitle', 'Будет отменена {{date}}', { date: u.currentPeriodEnd ? new Date(u.currentPeriodEnd).toLocaleString('ru-RU') : '' })}>
+                            {t('sec.admin.users.cancelChip', 'отмена')} · {u.currentPeriodEnd ? new Date(u.currentPeriodEnd).toLocaleDateString('ru-RU') : '—'}
                           </span>
                         )}
                       </div>
@@ -601,21 +622,21 @@ export default function UsersPage() {
                       <div className="flex items-center justify-end gap-1">
                         <button type="button"
                                 onClick={() => openCredit(u)}
-                                title="Зачислить минуты"
+                                title={t('sec.admin.users.creditTitle', 'Зачислить минуты')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
                                 style={{ background: 'rgba(99, 102, 241, 0.12)', color: 'var(--brand)', border: '1px solid rgba(99, 102, 241, 0.24)' }}>
                           <Gift size={14} />
                         </button>
                         <button type="button"
                                 onClick={() => openTier(u)}
-                                title="Сменить тариф"
+                                title={t('sec.admin.users.tierBtnTitle', 'Сменить тариф')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
                                 style={{ background: 'rgba(34, 211, 238, 0.12)', color: '#22d3ee', border: '1px solid rgba(34, 211, 238, 0.24)' }}>
                           <CreditCard size={14} />
                         </button>
                         <button type="button"
                                 onClick={() => handleImpersonate(u)}
-                                title="Войти в аккаунт пользователя (работать как он)"
+                                title={t('sec.admin.users.impersonateBtnTitle', 'Войти в аккаунт пользователя (работать как он)')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
                                 style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.24)' }}>
                           <LogIn size={14} />
@@ -625,7 +646,7 @@ export default function UsersPage() {
                           <button type="button"
                                   onClick={() => handleCancelSub(u)}
                                   disabled={cancelingSubUserId === u.userId}
-                                  title="Отменить автопродление подписки (до конца периода всё работает, деньги не возвращаются)"
+                                  title={t('sec.admin.users.cancelSubBtnTitle', 'Отменить автопродление подписки (до конца периода всё работает, деньги не возвращаются)')}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
                                   style={{ background: 'transparent', color: 'var(--text-disabled)', border: '1px solid var(--border-subtle)' }}>
                             {cancelingSubUserId === u.userId
@@ -637,7 +658,7 @@ export default function UsersPage() {
                           <button type="button"
                                   onClick={() => handleResumeSub(u)}
                                   disabled={cancelingSubUserId === u.userId}
-                                  title="Восстановить автопродление подписки"
+                                  title={t('sec.admin.users.resumeSubBtnTitle', 'Восстановить автопродление подписки')}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
                                   style={{ background: 'rgba(245, 158, 11, 0.10)', color: '#FBBF24', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
                             {cancelingSubUserId === u.userId
@@ -647,7 +668,7 @@ export default function UsersPage() {
                         )}
                         <button type="button"
                                 onClick={() => openDelete(u)}
-                                title="Удалить пользователя"
+                                title={t('sec.admin.users.deleteBtnTitle', 'Удалить пользователя')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105"
                                 style={{ background: 'rgba(239, 68, 68, 0.10)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.20)' }}>
                           <Trash2 size={14} />
@@ -669,13 +690,13 @@ export default function UsersPage() {
             <ModalHeader
               icon={<Gift size={18} color="var(--brand)" />}
               iconBg="rgba(99, 102, 241, 0.15)"
-              title="Добавить минуты"
+              title={t('sec.admin.users.creditModalTitle', 'Добавить минуты')}
               subtitle={creditUser.email || creditUser.userId}
               onClose={closeCredit}
             />
             <div>
               <AuroraInput
-                label="Сколько минут зачислить"
+                label={t('sec.admin.users.creditMinutesLabel', 'Сколько минут зачислить')}
                 type="number"
                 min="1"
                 max="100000"
@@ -699,17 +720,17 @@ export default function UsersPage() {
               </div>
             </div>
             <AuroraInput
-              label="Комментарий (необязательно)"
+              label={t('sec.admin.users.creditNoteLabel', 'Комментарий (необязательно)')}
               value={creditNote}
               onChange={(e) => setCreditNote(e.target.value)}
-              placeholder="Например: компенсация за инцидент"
+              placeholder={t('sec.admin.users.creditNotePh', 'Например: компенсация за инцидент')}
             />
             <div className="flex gap-2 pt-2">
               <AuroraButton type="button" variant="ghost" onClick={closeCredit} disabled={creditSubmitting}>
-                Отмена
+                {t('sec.admin.users.cancelBtn', 'Отмена')}
               </AuroraButton>
               <AuroraButton type="submit" disabled={creditSubmitting} icon={creditSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}>
-                Зачислить
+                {t('sec.admin.users.creditSubmit', 'Зачислить')}
               </AuroraButton>
             </div>
           </form>
@@ -723,18 +744,18 @@ export default function UsersPage() {
             <ModalHeader
               icon={<CreditCard size={18} color="#22d3ee" />}
               iconBg="rgba(34, 211, 238, 0.15)"
-              title="Сменить тариф"
+              title={t('sec.admin.users.tierModalTitle', 'Сменить тариф')}
               subtitle={tierUser.email || tierUser.userId}
               onClose={closeTier}
             />
             <div className="text-xs px-3 py-2 rounded-xl"
                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
-              Текущий тариф: <b style={{ color: 'var(--text-primary)' }}>{TIER_LABELS[tierUser.tier || ''] || tierUser.tier || '—'}</b>
-              {' · '}Осталось мин: <b style={{ color: 'var(--text-primary)' }}>{tierUser.remainingMinutes}</b>
+              {t('sec.admin.users.currentTier', 'Текущий тариф:')} <b style={{ color: 'var(--text-primary)' }}>{tierLabelOf(tierUser.tier) || tierUser.tier || '—'}</b>
+              {' · '}{t('sec.admin.users.minutesLeft', 'Осталось мин:')} <b style={{ color: 'var(--text-primary)' }}>{tierUser.remainingMinutes}</b>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-600 uppercase tracking-wider block" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                Новый тариф
+                {t('sec.admin.users.newTier', 'Новый тариф')}
               </label>
               {TIER_OPTIONS.map(o => (
                 <label key={o.value}
@@ -750,7 +771,7 @@ export default function UsersPage() {
                          onChange={() => setTierValue(o.value)}
                          style={{ accentColor: o.color }} />
                   <span className="text-sm font-600 flex-1" style={{ color: tierValue === o.value ? o.color : 'var(--text-primary)' }}>
-                    {o.label}
+                    {tierOptionLabel(o.value)}
                   </span>
                 </label>
               ))}
@@ -761,14 +782,14 @@ export default function UsersPage() {
                      checked={tierAddMinutes}
                      onChange={(e) => setTierAddMinutes(e.target.checked)}
                      style={{ accentColor: '#10b981' }} />
-              <span>Начислить минуты этого тарифа сразу</span>
+              <span>{t('sec.admin.users.tierAddMinutes', 'Начислить минуты этого тарифа сразу')}</span>
             </label>
             <div className="flex gap-2 pt-2">
               <AuroraButton type="button" variant="ghost" onClick={closeTier} disabled={tierSubmitting}>
-                Отмена
+                {t('sec.admin.users.cancelBtn', 'Отмена')}
               </AuroraButton>
               <AuroraButton type="submit" disabled={tierSubmitting} icon={tierSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}>
-                Применить
+                {t('sec.admin.users.tierApply', 'Применить')}
               </AuroraButton>
             </div>
           </form>
@@ -782,22 +803,22 @@ export default function UsersPage() {
             <ModalHeader
               icon={<Trash2 size={18} color="#ef4444" />}
               iconBg="rgba(239, 68, 68, 0.15)"
-              title="Удалить пользователя?"
+              title={t('sec.admin.users.deleteModalTitle', 'Удалить пользователя?')}
               subtitle={deleteUser.email || deleteUser.userId}
               onClose={closeDelete}
             />
             <div className="text-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
-              <p>Будут удалены:</p>
+              <p>{t('sec.admin.users.deleteWillRemove', 'Будут удалены:')}</p>
               <ul className="list-disc pl-5 text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
-                <li>Учётная запись пользователя</li>
-                <li>Арендатор (tenant) <code className="text-[10px]">{deleteUser.tenantId?.slice(0, 8) || '—'}…</code></li>
-                <li>Подписка и баланс минут ({deleteUser.remainingMinutes} мин)</li>
+                <li>{t('sec.admin.users.deleteItemAccount', 'Учётная запись пользователя')}</li>
+                <li>{t('sec.admin.users.deleteItemTenant', 'Арендатор (tenant)')} <code className="text-[10px]">{deleteUser.tenantId?.slice(0, 8) || '—'}…</code></li>
+                <li>{t('sec.admin.users.deleteItemBalance', 'Подписка и баланс минут ({{n}} мин)', { n: deleteUser.remainingMinutes })}</li>
               </ul>
-              <p className="text-xs" style={{ color: '#ef4444' }}>Действие необратимо. Stripe-данные не затрагиваются.</p>
+              <p className="text-xs" style={{ color: '#ef4444' }}>{t('sec.admin.users.deleteIrreversible', 'Действие необратимо. Stripe-данные не затрагиваются.')}</p>
             </div>
             <div className="flex gap-2 pt-2">
               <AuroraButton type="button" variant="ghost" onClick={closeDelete} disabled={deleteSubmitting}>
-                Отмена
+                {t('sec.admin.users.cancelBtn', 'Отмена')}
               </AuroraButton>
               <button type="button"
                       onClick={submitDelete}
@@ -809,7 +830,7 @@ export default function UsersPage() {
                         boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
                       }}>
                 {deleteSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                <span>Удалить навсегда</span>
+                <span>{t('sec.admin.users.deleteForever', 'Удалить навсегда')}</span>
               </button>
             </div>
           </div>

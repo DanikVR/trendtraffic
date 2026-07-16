@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles } from 'lucide-react';
 import { PodLine, PodAnim, POD_ANIMS, DlgMediaHint, DLG_MEDIA_HINTS } from './dialogueTypes';
 
@@ -40,6 +41,23 @@ const MIN_PPS = 2;
 const MAX_PPS = 2000;
 
 export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
+  const { t } = useTranslation('common');
+  /* Подписи значений из dialogueTypes — локализуются здесь, у точки рендера. */
+  const POD_ANIM_LABELS: Record<PodAnim, string> = {
+    auto: t('sec.dialogue.animAuto', 'Авто'),
+    'slide-left': t('sec.dialogue.animSlideLeft', '← Слева'),
+    'slide-right': t('sec.dialogue.animSlideRight', 'Справа →'),
+    'slide-up': t('sec.dialogue.animSlideUp', '↑ Снизу'),
+    zoom: t('sec.dialogue.animZoom', 'Зум'),
+    fade: t('sec.dialogue.animFade', 'Проявление'),
+  };
+  const DLG_HINT_LABELS: Record<DlgMediaHint, string> = {
+    auto: t('sec.dialogue.hintAuto', 'Авто (Клод)'),
+    'media-full': t('sec.dialogue.hintFull', 'Во весь кадр'),
+    'media-bg-left': t('sec.dialogue.hintBgLeft', 'Фон · лицо слева'),
+    'media-bg-right': t('sec.dialogue.hintBgRight', 'Фон · лицо справа'),
+    'media-split': t('sec.dialogue.hintSplit', 'Сверху-снизу'),
+  };
   const dirty = () => { onDirty?.(); };
   const mutate = (fn: (d: PodLine[]) => PodLine[]) => { setDialogue(fn); dirty(); };
   const lineMutate = (i: number, patch: Partial<PodLine>) => mutate((d) => d.map((l, j) => (j === i ? { ...l, ...patch } : l)));
@@ -299,15 +317,15 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       {/* Таймлайн (наложение голосов) */}
       <div className="flex items-center justify-between flex-wrap gap-1.5">
         <span className="text-[11px] font-600 inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-          Таймлайн (наложение голосов)
+          {t('sec.dialogue.timelineTitle', 'Таймлайн (наложение голосов)')}
           <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{tlMmss(tlPlayhead)} / {tlMmss(total)}</span>
         </span>
         <div className="inline-flex items-center gap-1.5">
-          <button onClick={tlTogglePlay} title={tlPlaying ? 'Пауза' : 'Воспроизвести с бегунка'} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: tlPlaying ? '#10b981' : 'var(--bg-tertiary)', color: tlPlaying ? '#fff' : '#10b981', border: `1px solid ${tlPlaying ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{tlPlaying ? <Pause size={13} /> : <Play size={13} />}</button>
-          <button onClick={cutAtPlayhead} title="Разрезать по бегунку (✂)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
-          <button onClick={() => zoomAt(tlPpsRef.current / 1.4)} title="Уменьшить масштаб (Ctrl+колесо)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
-          <button onClick={() => zoomAt(tlPpsRef.current * 1.4)} title="Увеличить масштаб (Ctrl+колесо)" className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
-          <button onClick={fitTimeline} title="Вместить всё" className="text-[10px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>вместить</button>
+          <button onClick={tlTogglePlay} title={tlPlaying ? t('sec.dialogue.pause', 'Пауза') : t('sec.dialogue.playFromCursor', 'Воспроизвести с бегунка')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: tlPlaying ? '#10b981' : 'var(--bg-tertiary)', color: tlPlaying ? '#fff' : '#10b981', border: `1px solid ${tlPlaying ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{tlPlaying ? <Pause size={13} /> : <Play size={13} />}</button>
+          <button onClick={cutAtPlayhead} title={t('sec.dialogue.cutAtCursor', 'Разрезать по бегунку (✂)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
+          <button onClick={() => zoomAt(tlPpsRef.current / 1.4)} title={t('sec.dialogue.zoomOut', 'Уменьшить масштаб (Ctrl+колесо)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
+          <button onClick={() => zoomAt(tlPpsRef.current * 1.4)} title={t('sec.dialogue.zoomIn', 'Увеличить масштаб (Ctrl+колесо)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
+          <button onClick={fitTimeline} title={t('sec.dialogue.fitAll', 'Вместить всё')} className="text-[10px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('sec.dialogue.fitBtn', 'вместить')}</button>
         </div>
       </div>
       <div ref={tlWrapRef} style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border-medium)', background: 'var(--bg-tertiary)' }}>
@@ -324,7 +342,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
               <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
                 {arr.map((l, i) => {
                   if ((l.speaker === 'B' ? 'B' : 'A') !== trk) return null;
-                  const t = lineT(l, i, arr); const d = lineDur(l);
+                  const tPos = lineT(l, i, arr); const d = lineDur(l);   // tPos: не затенять i18n t()
                   const w = Math.max(6, d * tlPps - 2);
                   const sel = selLine === i;
                   const showText = w >= 40;
@@ -332,17 +350,17 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                   const vid = isVideoUrl(l.image);
                   return (
                     <div key={i}
-                      onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startY: e.clientY, startT: t, spk: trk }; }}
+                      onPointerDown={(e) => { e.preventDefault(); tlMovedRef.current = false; tlDragRef.current = { i, startX: e.clientX, startY: e.clientY, startT: tPos, spk: trk }; }}
                       onClick={() => { if (tlMovedRef.current) { tlMovedRef.current = false; return; } setSelLine(i); setDialogOpen(true); setTimeout(() => document.getElementById(`dl-${i}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60); }}
                       title={l.text}
-                      style={{ position: 'absolute', left: t * tlPps, width: w, top: 2, height: 30, borderRadius: 7,
+                      style={{ position: 'absolute', left: tPos * tlPps, width: w, top: 2, height: 30, borderRadius: 7,
                         background: trk === 'A' ? 'linear-gradient(180deg, rgba(244,114,182,0.96), rgba(219,39,119,0.96))' : 'linear-gradient(180deg, rgba(167,139,250,0.96), rgba(124,58,237,0.96))',
                         color: '#fff', fontSize: 9, lineHeight: '30px', padding: showText ? '0 6px' : '0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', userSelect: 'none', touchAction: 'none',
                         border: sel ? 'none' : '1px solid rgba(255,255,255,0.18)', boxShadow: sel ? `0 0 0 2px #fff, 0 0 0 4px ${accentA}` : '0 1px 3px rgba(0,0,0,0.28)' }}>
                       {showThumb && (vid
                         ? <span style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, borderRadius: 4, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={12} fill="#fff" style={{ color: '#fff' }} /></span>
                         : <img src={l.image} alt="" style={{ position: 'absolute', right: 2, top: 2, width: 26, height: 26, objectFit: 'cover', borderRadius: 4 }} />)}
-                      {showText ? <span style={{ pointerEvents: 'none' }}>{l.text || `реплика ${i + 1}`}</span>
+                      {showText ? <span style={{ pointerEvents: 'none' }}>{l.text || t('sec.dialogue.lineFallback', 'реплика {{n}}', { n: i + 1 })}</span>
                         : (l.image && <span style={{ position: 'absolute', left: 3, top: 3, width: 6, height: 6, borderRadius: '50%', background: '#fff', opacity: 0.9 }} />)}
                     </div>
                   );
@@ -355,41 +373,41 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
           </div>
         </div>
       </div>
-      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>▶ — играть с бегунка; тащи клипы по времени, ВВЕРХ/ВНИЗ — на дорожку другого голоса; бегунок ведёшь и ✂ режет по нему; −/+/вместить или Ctrl+колесо — масштаб (зум держит точку под бегунком/курсором). Клик по клипу открывает реплику ниже. Наложение A/B = одновременно.</p>
+      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.helpLine', '▶ — играть с бегунка; тащи клипы по времени, ВВЕРХ/ВНИЗ — на дорожку другого голоса; бегунок ведёшь и ✂ режет по нему; −/+/вместить или Ctrl+колесо — масштаб (зум держит точку под бегунком/курсором). Клик по клипу открывает реплику ниже. Наложение A/B = одновременно.')}</p>
 
       {/* Реплики */}
       <button onClick={() => setDialogOpen((o) => !o)} className="w-full flex items-center justify-between text-[11px] font-600 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-        <span>Реплики ({arr.length}) — открыть/свернуть</span><span>{dialogOpen ? '▾' : '▸'}</span>
+        <span>{t('sec.dialogue.linesToggle', 'Реплики ({{n}}) — открыть/свернуть', { n: arr.length })}</span><span>{dialogOpen ? '▾' : '▸'}</span>
       </button>
       {dialogOpen && (
         <div className="space-y-1.5" style={{ maxHeight: 300, overflowY: 'auto' }}>
           {arr.map((l, i) => (
             <div key={i} id={`dl-${i}`} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${selLine === i ? accentA : 'var(--border-medium)'}` }}>
               <div className="flex items-start gap-1.5">
-                <button onClick={() => lineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title="Сменить голос" className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5" style={{ background: l.speaker === 'A' ? accentA : accentB, color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
+                <button onClick={() => lineMutate(i, { speaker: l.speaker === 'A' ? 'B' : 'A' })} title={t('sec.dialogue.switchVoice', 'Сменить голос')} className="flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-700 flex items-center justify-center mt-0.5" style={{ background: l.speaker === 'A' ? accentA : accentB, color: '#fff', border: 'none', cursor: 'pointer' }}>{l.speaker}</button>
                 <textarea value={l.text} onChange={(e) => lineMutate(i, { text: e.target.value })} rows={1} className="flex-1 px-2 py-1.5 rounded-lg text-[12px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
                 {l.image ? (
                   <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
                     {isVideoUrl(l.image) ? (
                       <><video src={l.image} muted preload="metadata" className="w-full h-full object-cover rounded-lg" style={{ border: `1px solid ${accentA}` }} /><span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={11} fill="#fff" style={{ color: '#fff' }} /></span></>
                     ) : (<img src={l.image} alt="" className="w-full h-full object-cover rounded-lg" style={{ border: `1px solid ${accentA}` }} />)}
-                    <button onClick={() => setLineImage(i, null)} title="Убрать медиа" className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
+                    <button onClick={() => setLineImage(i, null)} title={t('sec.dialogue.removeMedia', 'Убрать медиа')} className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={9} /></button>
                   </div>
                 ) : (
-                  <button onClick={() => onPickImage?.(i)} title="Прикрепить фото/видео к фразе" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ImageIcon size={13} /></button>
+                  <button onClick={() => onPickImage?.(i)} title={t('sec.dialogue.attachMedia', 'Прикрепить фото/видео к фразе')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><ImageIcon size={13} /></button>
                 )}
                 {i < arr.length - 1 && (
-                  <button onClick={() => mergeLineDown(i)} title="Объединить со следующей" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: accentB, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Combine size={13} /></button>
+                  <button onClick={() => mergeLineDown(i)} title={t('sec.dialogue.mergeNext', 'Объединить со следующей')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: accentB, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Combine size={13} /></button>
                 )}
                 {onOmni && (
-                  <button onClick={() => onOmni(i)} title="Сгенерировать Omni-клип на эту фразу" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#6366f1', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Sparkles size={13} /></button>
+                  <button onClick={() => onOmni(i)} title={t('sec.dialogue.omniForLine', 'Сгенерировать Omni-клип на эту фразу')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#6366f1', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Sparkles size={13} /></button>
                 )}
-                <button onClick={() => lineDel(i)} title="Удалить реплику" className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+                <button onClick={() => lineDel(i)} title={t('sec.dialogue.deleteLine', 'Удалить реплику')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
               </div>
               {showGestures && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Жест:</span>
-                  {([['Авто', undefined], ['Без', 0], ['Слабо', 30], ['Средне', 60], ['Сильно', 95]] as [string, number | undefined][]).map(([lbl, val]) => {
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.gestureLabel', 'Жест:')}</span>
+                  {([[t('sec.dialogue.gestureAuto', 'Авто'), undefined], [t('sec.dialogue.gestureNone', 'Без'), 0], [t('sec.dialogue.gestureWeak', 'Слабо'), 30], [t('sec.dialogue.gestureMid', 'Средне'), 60], [t('sec.dialogue.gestureStrong', 'Сильно'), 95]] as [string, number | undefined][]).map(([lbl, val]) => {
                     const sel = val === undefined ? (l.gesture === undefined || l.gesture === null) : l.gesture === val;
                     return (<button key={lbl} onClick={() => lineMutate(i, { gesture: val })} className="text-[10px] font-600 px-1.5 py-0.5 rounded-md" style={{ background: sel ? accentB : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? accentB : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>);
                   })}
@@ -399,45 +417,45 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
               {l.image && dialogueMode && (
                 <>
                   <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Показ:</span>
-                    {DLG_MEDIA_HINTS.map((h) => { const sel = (l.layoutHint || 'auto') === h.v; return (
-                      <button key={h.v} onClick={() => lineMutate(i, { layoutHint: h.v })} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? accentA : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? accentA : 'var(--border-medium)'}`, cursor: 'pointer' }}>{h.label}</button>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.showLabel', 'Показ:')}</span>
+                    {DLG_MEDIA_HINTS.map((h) => { const sel = (l.layoutHint || 'auto') === h; return (
+                      <button key={h} onClick={() => lineMutate(i, { layoutHint: h })} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? accentA : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? accentA : 'var(--border-medium)'}`, cursor: 'pointer' }}>{DLG_HINT_LABELS[h]}</button>
                     ); })}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1" style={{ paddingLeft: 34 }}>
-                    <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Держать медиа:</span>
+                    <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.holdLabel', 'Держать медиа:')}</span>
                     <input type="number" min={0} step={0.5} value={l.holdSec ? Math.round(l.holdSec * 10) / 10 : ''}
                       onChange={(e) => { const v = parseFloat(e.target.value); lineMutate(i, { holdSec: Number.isFinite(v) && v > 0 ? v : undefined }); }}
                       placeholder={`${lineDur(l).toFixed(1)}`} className="w-16 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
-                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>сек {l.holdSec && l.holdSec > lineDur(l) ? `· +${(l.holdSec - lineDur(l)).toFixed(1)}с, реплики сдвинутся` : `· реплика ${lineDur(l).toFixed(1)}с`}</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.secUnit', 'сек')} {l.holdSec && l.holdSec > lineDur(l) ? t('sec.dialogue.holdExtra', '· +{{d}}с, реплики сдвинутся', { d: (l.holdSec - lineDur(l)).toFixed(1) }) : t('sec.dialogue.holdLineDur', '· реплика {{d}}с', { d: lineDur(l).toFixed(1) })}</span>
                   </div>
                 </>
               )}
               {l.image && !dialogueMode && !hideMediaPlan && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Кадр:</span>
-                  {([['full', 'Во весь кадр'], ['card', 'Карточка']] as ['full' | 'card', string][]).map(([m, lbl]) => { const sel = (l.mode || 'card') === m; return (
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.frameLabel', 'Кадр:')}</span>
+                  {([['full', t('sec.dialogue.hintFull', 'Во весь кадр')], ['card', t('sec.dialogue.frameCard', 'Карточка')]] as ['full' | 'card', string][]).map(([m, lbl]) => { const sel = (l.mode || 'card') === m; return (
                     <button key={m} onClick={() => lineMutate(i, { mode: m })} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? '#6366f1' : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? '#6366f1' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
                   ); })}
                 </div>
               )}
               {l.image && !dialogueMode && !hideMediaPlan && l.mode === 'full' && (
                 <div className="flex items-center gap-1 mt-1" style={{ paddingLeft: 34 }}>
-                  <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Плашка:</span>
-                  <input value={l.title || ''} onChange={(e) => lineMutate(i, { title: e.target.value.slice(0, 60) })} placeholder="заголовок 2–5 слов (необязательно)" className="flex-1 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
+                  <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.plateLabel', 'Плашка:')}</span>
+                  <input value={l.title || ''} onChange={(e) => lineMutate(i, { title: e.target.value.slice(0, 60) })} placeholder={t('sec.dialogue.titlePh', 'заголовок 2–5 слов (необязательно)')} className="flex-1 px-2 py-1 rounded-md text-[10px] outline-none" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
                 </div>
               )}
               {l.image && !dialogueMode && !hideMediaPlan && (l.mode || 'card') === 'card' && (
                 <div className="flex flex-wrap items-center gap-1 mt-1.5" style={{ paddingLeft: 34 }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Выезд:</span>
-                  {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a.v; return (
-                    <button key={a.v} onClick={() => setLineAnim(i, a.v)} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? accentA : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? accentA : 'var(--border-medium)'}`, cursor: 'pointer' }}>{a.label}</button>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.animLabel', 'Выезд:')}</span>
+                  {POD_ANIMS.map((a) => { const sel = (l.anim || 'auto') === a; return (
+                    <button key={a} onClick={() => setLineAnim(i, a)} className="text-[10px] font-600 px-2 py-1 rounded-md" style={{ background: sel ? accentA : 'var(--bg-secondary)', color: sel ? '#fff' : 'var(--text-muted)', border: `1px solid ${sel ? accentA : 'var(--border-medium)'}`, cursor: 'pointer' }}>{POD_ANIM_LABELS[a]}</button>
                   ); })}
                 </div>
               )}
             </div>
           ))}
-          <button onClick={lineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: accentA, background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> Добавить реплику</button>
+          <button onClick={lineAdd} className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: accentA, background: 'transparent', border: 'none', cursor: 'pointer' }}><Plus size={12} /> {t('sec.dialogue.addLine', 'Добавить реплику')}</button>
         </div>
       )}
     </div>

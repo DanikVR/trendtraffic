@@ -48,11 +48,13 @@ export function SeoMeta() {
   const lang = (i18n.language || DEFAULT_LANG).split('-')[0];
   const isRtl = RTL_LANGUAGES.includes(lang);
 
-  // Бренд и описание — ФИКСИРОВАННЫЕ TrendTraffic на всех языках (название тарифа/
-  // продукта не переводится). Раньше брались из i18n seo.* (легаси VibeVox-перевод).
-  const title = 'TrendTraffic — умный видео-маркетинг';
-  const description = 'Поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео.';
-  const keywords = 'тренды, вирусные видео, аналитика соцсетей, TikTok, Instagram, YouTube, генерация видео, видео маркетинг, trendtraffic';
+  // Тексты — sec.pub.* с русским фолбэком (бренд TrendTraffic в строке не переводится).
+  // НЕ использовать легаси-ключи seo.* — в локалях там старое VibeVox-описание.
+  // Prerender (scripts/prerender.mjs) React не исполняет: он подставляет HEAD из
+  // seo.*-ключей locale-JSON, поэтому t() здесь влияет только на runtime-Helmet.
+  const title = t('sec.pub.seoTitle', 'TrendTraffic — умный видео-маркетинг');
+  const description = t('sec.pub.seoDesc', 'Поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео.');
+  const keywords = t('sec.pub.seoKeywords', 'тренды, вирусные видео, аналитика соцсетей, TikTok, Instagram, YouTube, генерация видео, видео маркетинг, trendtraffic');
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vibevox.app';
   const rawPath = typeof window !== 'undefined' ? window.location.pathname : '/';

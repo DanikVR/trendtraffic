@@ -4,6 +4,7 @@
  */
 
 import { clsx } from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 type AvatarStatus = 'online' | 'offline' | 'live' | 'none';
@@ -53,6 +54,7 @@ function getAvatarColor(name?: string): string {
 }
 
 export function AvatarCircle({ name, src, size = 'md', status = 'none', className }: AvatarCircleProps) {
+  const { t } = useTranslation('common');
   const cfg = sizeConfig[size];
 
   return (
@@ -65,7 +67,7 @@ export function AvatarCircle({ name, src, size = 'md', status = 'none', classNam
         style={!src ? { background: getAvatarColor(name) } : undefined}
       >
         {src ? (
-          <img src={src} alt={name || 'Аватар'} className="w-full h-full object-cover" />
+          <img src={src} alt={name || t('sec.misc.avatarAlt', 'Аватар')} className="w-full h-full object-cover" />
         ) : (
           <span className={clsx('font-bold text-white', cfg.text)}>
             {getInitials(name)}

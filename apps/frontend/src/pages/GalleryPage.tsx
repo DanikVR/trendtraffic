@@ -23,6 +23,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../config/i18n';
 import {
   Video, Music, Search, Loader2, Trash2, ExternalLink,
   CheckSquare, Square, Check, Eye, Heart, Image as ImageIcon, RefreshCw, UploadCloud, FileText, Sparkles,
@@ -62,13 +64,15 @@ interface GalleryItem {
 // Порядок по фидбэку юзера (2026-07-08): блоки впереди, «Видео» (бывш. TrendFlow,
 // объединённый с «Аудио» фильтром) — в конце строки. «Из анализа» убрана — разборы
 // живут во вкладке «Тренды».
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'trendhub', label: 'Тренды' },
+// Русские ярлыки (Тренды/Медиафайлы/Публикатор) живут в tabLabel() внутри компонента —
+// через t() с ru-дефолтом; здесь label только у непереводимых имён блоков.
+const TABS: { key: Tab; label?: string }[] = [
+  { key: 'trendhub' },
   { key: 'ugc', label: 'UGC' },
   { key: 'flow', label: 'Google Flow' },
   { key: 'hotebook', label: 'Hotebook' },
-  { key: 'reference', label: 'Медиафайлы' },
-  { key: 'publisher', label: 'Публикатор' },
+  { key: 'reference' },
+  { key: 'publisher' },
 ];
 
 function tabIcon(key: Tab, size = 15) {
@@ -123,7 +127,7 @@ function newRollName(): string {
     return new Date().toLocaleString('ru-RU', {
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }).replace(',', '');
-  } catch { return 'UGC-ролик'; }
+  } catch { return i18n.t('common:sec.gallery.ugcRollFallback', 'UGC-ролик'); }
 }
 
 interface TrendAnalysisItem {
@@ -149,12 +153,6 @@ interface BrandKit { id: string; name: string; data?: any }
 
 interface HbJob { id: string; type: string; status: string; title?: string | null }
 
-// Тип артефакта Hotebook → человекочитаемое имя (для карточки «генерится»).
-const HB_JOB_LABEL: Record<string, string> = {
-  audio: 'Аудиопересказ', video: 'Видеообзор', report: 'Отчёт', quiz: 'Тест',
-  table: 'Таблица', infographic: 'Инфографика', flashcards: 'Карточки',
-  mindmap: 'Ментальная карта', slides: 'Презентация',
-};
 // Эмодзи типов артефактов — для мини-бейджей на карточке блокнота.
 const HB_ARTIFACT_EMOJI: Record<string, string> = {
   audio: '🎙️', video: '🎬', report: '📄', quiz: '❓',
@@ -163,7 +161,28 @@ const HB_ARTIFACT_EMOJI: Record<string, string> = {
 
 export default function GalleryPage() {
   const { token, user } = useAppStore();
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
+  // Ярлыки вкладок: русские — через t(); «UGC» / «Google Flow» / «Hotebook» — имена, не переводим.
+  const tabLabel = (key: Tab, fallback?: string): string => {
+    if (key === 'trendhub') return t('sec.gallery.tabTrends', 'Тренды');
+    if (key === 'reference') return t('sec.gallery.tabMedia', 'Медиафайлы');
+    if (key === 'publisher') return t('sec.gallery.tabPublisher', 'Публикатор');
+    return fallback || key;
+  };
+  // Тип артефакта Hotebook → человекочитаемое имя (для бейджей на карточке блокнота).
+  const hbTypeLabel = (ty: string): string => {
+    if (ty === 'audio') return t('sec.gallery.hbTypeAudio', 'Аудиопересказ');
+    if (ty === 'video') return t('sec.gallery.hbTypeVideo', 'Видеообзор');
+    if (ty === 'report') return t('sec.gallery.hbTypeReport', 'Отчёт');
+    if (ty === 'quiz') return t('sec.gallery.hbTypeQuiz', 'Тест');
+    if (ty === 'table') return t('sec.gallery.hbTypeTable', 'Таблица');
+    if (ty === 'infographic') return t('sec.gallery.hbTypeInfographic', 'Инфографика');
+    if (ty === 'flashcards') return t('sec.gallery.hbTypeFlashcards', 'Карточки');
+    if (ty === 'mindmap') return t('sec.gallery.hbTypeMindmap', 'Ментальная карта');
+    if (ty === 'slides') return t('sec.gallery.hbTypeSlides', 'Презентация');
+    return ty;
+  };
   // Вкладка синхронизирована с ?tab= — сайдбар/ссылки открывают нужный раздел; смена вкладки
   // пишет ?tab= (deeplink + подсветка пункта сайдбара).
   const [searchParams, setSearchParams] = useSearchParams();
@@ -269,7 +288,7 @@ export default function GalleryPage() {
         setHbNbOpening(null);
       }
       if (d.type === 'push-to-flow-result') {
-        setFlowMsg(d.ok ? { ok: true, text: 'Отправлено в Google Flow — переключитесь на вкладку Flow.' } : { ok: false, text: 'Не удалось: ' + (d.error || 'ошибка') });
+        setFlowMsg(d.ok ? { ok: true, text: t('sec.gallery.flowSentToast', 'Отправлено в Google Flow — переключитесь на вкладку Flow.') } : { ok: false, text: t('sec.gallery.flowFailToast', 'Не удалось: {{err}}', { err: d.error || t('sec.gallery.errWord', 'ошибка') }) });
         setTimeout(() => setFlowMsg(null), 6000);
       }
       // Быстрый ACK от расширения = оно СВЕЖЕЕ и умеет проекты. Снимаем «устарело», ждём результат.
@@ -290,19 +309,19 @@ export default function GalleryPage() {
           setFlowProjects((prev) => (proj.length === 0 && prev.length > 0 ? prev : proj));
           setFlowProjError(null);
         }
-        else setFlowProjError(d.error || (d.loggedIn === false ? 'Войдите в Google на labs.google/flow — тогда покажутся ваши проекты.' : 'Не удалось получить проекты Flow.'));
+        else setFlowProjError(d.error || (d.loggedIn === false ? t('sec.gallery.flowLoginNeeded', 'Войдите в Google на labs.google/flow — тогда покажутся ваши проекты.') : t('sec.gallery.flowProjFail', 'Не удалось получить проекты Flow.')));
       }
     };
     window.addEventListener('message', onMsg);
     window.postMessage({ source: 'trendtraffic', type: 'status' }, window.location.origin);
-    const t = setTimeout(() => setExtStatus((s) => (s === 'checking' ? 'absent' : s)), 1400);
-    return () => { window.removeEventListener('message', onMsg); clearTimeout(t); };
+    const initTimer = setTimeout(() => setExtStatus((s) => (s === 'checking' ? 'absent' : s)), 1400);
+    return () => { window.removeEventListener('message', onMsg); clearTimeout(initTimer); };
   }, []);
 
   // Запросить у расширения список готовых проектов Flow (ответ прилетит сообщением 'flow-projects').
   // Двойной таймер: (1) ACK ~6с — свежее ли расширение (умеет проекты); (2) результат ~70с — сам список.
   const loadFlowProjects = () => {
-    if (extStatus === 'absent') { setFlowProjects([]); setFlowProjError('Расширение не найдено — установите его (кнопка «Скачать» в плашке выше).'); return; }
+    if (extStatus === 'absent') { setFlowProjects([]); setFlowProjError(t('sec.gallery.extNotFound', 'Расширение не найдено — установите его (кнопка «Скачать» в плашке выше).')); return; }
     setFlowProjLoading(true); setFlowProjError(null);
     window.postMessage({ source: 'trendtraffic', type: 'list-flow-projects' }, window.location.origin);
     if (flowAckTimer.current) clearTimeout(flowAckTimer.current);
@@ -313,7 +332,7 @@ export default function GalleryPage() {
         if (s === 'present') {
           setExtProbeStale(true);
           setFlowProjLoading(false);
-          setFlowProjError(`Расширение устарело и не умеет загружать проекты. Обновите его до v${TT_EXT_VERSION}: нажмите «Скачать» и переустановите (chrome://extensions → удалить старое → «Загрузить распакованное»).`);
+          setFlowProjError(t('sec.gallery.extStaleProjects', 'Расширение устарело и не умеет загружать проекты. Обновите его до v{{v}}: нажмите «Обновить» и переустановите (chrome://extensions → удалить старое → «Загрузить распакованное»).', { v: TT_EXT_VERSION }));
         }
         return s;
       });
@@ -321,7 +340,7 @@ export default function GalleryPage() {
     // Свежее расширение ответит ACK, но скрейп Flow долгий (открыть вкладку + дождаться карточек) — ждём до 70с.
     flowProjTimer.current = setTimeout(() => {
       setFlowProjLoading(false);
-      setFlowProjError((e) => e || 'Flow долго отвечает. Откройте labs.google/flow, войдите в Google и нажмите «Обновить».');
+      setFlowProjError((e) => e || t('sec.gallery.flowSlow', 'Flow долго отвечает. Откройте labs.google/flow, войдите в Google и нажмите «Обновить».'));
     }, 70_000);
   };
   // Автозагрузка проектов при заходе на вкладку «Google Flow» (как только известен статус расширения).
@@ -384,7 +403,7 @@ export default function GalleryPage() {
     if (extStatus !== 'present') { setExtPopup(true); return; }
     const abs = /^https?:/i.test(v.fileUrl) ? v.fileUrl : window.location.origin + (v.fileUrl.startsWith('/') ? v.fileUrl : '/' + v.fileUrl);
     window.postMessage({ source: 'trendtraffic', type: 'push-to-flow', url: abs, title: v.title, kind: 'image' }, window.location.origin);
-    setFlowMsg({ ok: true, text: `Отправляю «${v.title}» в Google Flow…` });
+    setFlowMsg({ ok: true, text: t('sec.gallery.flowSending', 'Отправляю «{{title}}» в Google Flow…', { title: v.title }) });
     setTimeout(() => setFlowMsg(null), 6000);
   };
 
@@ -393,8 +412,8 @@ export default function GalleryPage() {
     try {
       const r = await fetch(`/api/trends/media/${v.id}/analysis`, { headers: jsonHeaders() });
       if (r.ok) setAnalysis({ title: v.title, dna: (await r.json()).analysis?.dna || {} });
-      else setAnalysis({ title: v.title, dna: { __error: r.status === 404 ? 'Анализ не найден.' : `Ошибка ${r.status}` } });
-    } catch { setAnalysis({ title: v.title, dna: { __error: 'Не удалось загрузить анализ.' } }); }
+      else setAnalysis({ title: v.title, dna: { __error: r.status === 404 ? t('sec.gallery.analysisNotFound', 'Анализ не найден.') : t('sec.gallery.errStatus', 'Ошибка {{status}}', { status: r.status }) } });
+    } catch { setAnalysis({ title: v.title, dna: { __error: t('sec.gallery.analysisLoadFail', 'Не удалось загрузить анализ.') } }); }
     finally { setAnalysisLoading(false); }
   };
 
@@ -438,7 +457,7 @@ export default function GalleryPage() {
           const d = await res.json();
           setItems((d.assets || []).map((a: any): GalleryItem => ({
             id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
-            title: a.originalName || 'файл', isTrend: false, hasAnalysis: !!a.hasAnalysis,
+            title: a.originalName || t('sec.gallery.fileFallback', 'файл'), isTrend: false, hasAnalysis: !!a.hasAnalysis,
           })));
         }
         // «UGC»: рядом с рендерами — макеты (бренд-киты студии) + АВТО: шаблоны конвейера
@@ -457,7 +476,7 @@ export default function GalleryPage() {
             const da = ar2.ok ? await ar2.json() : { assets: [] };
             setAutoUgc((da.assets || []).map((a: any): GalleryItem => ({
               id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
-              title: a.originalName || 'авто-ролик', isTrend: false,
+              title: a.originalName || t('sec.gallery.autoRollFallback', 'авто-ролик'), isTrend: false,
             })));
           } catch { setAutoUgc([]); }
         }
@@ -469,7 +488,7 @@ export default function GalleryPage() {
           } catch { setHbJobs([]); }
         } else setHbJobs([]);
       }
-    } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.loadError', 'Ошибка загрузки')); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab, mediaKind]);
@@ -573,17 +592,18 @@ export default function GalleryPage() {
   // Блоки (Hotebook/Flow/UGC) открываются ОВЕРЛЕЕМ поверх Галереи: закрыл — вернулся
   // в этот же раздел. «Видео» — дублирует кнопку «Медиа» (файл сам решает, куда лечь).
   const addAction = (which: Tab): { label: string; hint: string; run: () => void } => {
+    const addLabel = t('sec.gallery.addTile', 'Добавить');
     switch (which) {
-      case 'hotebook': return { label: 'Добавить', hint: 'Открыть NotebookLM: создайте блокнот там — он появится здесь, а готовые работы сами попадут в «Видео»', run: openNotebookHome };
-      case 'flow': return { label: 'Добавить', hint: 'Открыть блок «Google Flow» (Veo): генерация клипов', run: () => setBlockReq({ cloud: 'flow' }) };
-      case 'ugc': return { label: 'Добавить', hint: 'Открыть UGC-студию: новый ролик (имя — дата и время, потом переименуете)', run: () => setBlockReq({ cloud: 'ugc', newName: newRollName() }) };
-      case 'trendhub': return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
+      case 'hotebook': return { label: addLabel, hint: t('sec.gallery.addHintHotebook', 'Открыть NotebookLM: создайте блокнот там — он появится здесь, а готовые работы сами попадут в «Медиафайлы»'), run: openNotebookHome };
+      case 'flow': return { label: addLabel, hint: t('sec.gallery.addHintFlow', 'Открыть блок «Google Flow» (Veo): генерация клипов'), run: () => setBlockReq({ cloud: 'flow' }) };
+      case 'ugc': return { label: addLabel, hint: t('sec.gallery.addHintUgc', 'Открыть UGC-студию: новый ролик (имя — дата и время, потом переименуете)'), run: () => setBlockReq({ cloud: 'ugc', newName: newRollName() }) };
+      case 'trendhub': return { label: addLabel, hint: t('sec.gallery.addHintTrends', 'Открыть «Тренды → Аналитика»: разобрать видео — разбор появится здесь'), run: () => navigate('/social-extension?tab=analytics&from=gallery') };
       default:
         // Подраздел «Аналитика» пополняется из «Тренды → Аналитика» («Добавить в галерею»), а не загрузкой файлов.
         if (which === 'reference' && mediaKind === 'analytics') {
-          return { label: 'Добавить', hint: 'Открыть «Тренды → Аналитика»: «Добавить в галерею» сложит сюда видео + разбор + субтитры', run: () => navigate('/social-extension?tab=analytics&from=gallery') };
+          return { label: addLabel, hint: t('sec.gallery.addHintAnalytics', 'Открыть «Тренды → Аналитика»: «Добавить в галерею» сложит сюда видео + разбор + субтитры'), run: () => navigate('/social-extension?tab=analytics&from=gallery') };
         }
-        return { label: 'Добавить', hint: 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»', run: () => mediaInputRef.current?.click() };
+        return { label: addLabel, hint: t('sec.gallery.addHintMedia', 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»'), run: () => mediaInputRef.current?.click() };
     }
   };
   // Рендер-функция (не компонент — чтобы не перемонтировалась на каждый рендер страницы).
@@ -647,9 +667,9 @@ export default function GalleryPage() {
       setTimeout(() => { if (!acked) { window.removeEventListener('message', onAck); copyText('chrome://extensions'); } }, 600);
     };
     const ChromeLink = () => (
-      <button type="button" onClick={openExtensions} title="Открыть страницу расширений (или скопировать адрес)"
+      <button type="button" onClick={openExtensions} title={t('sec.gallery.chromeLinkTitle', 'Открыть страницу расширений (или скопировать адрес)')}
         className="font-mono" style={{ background: 'none', border: 'none', padding: 0, color: '#6366f1', cursor: 'pointer', textDecoration: 'underline' }}>
-        chrome://extensions{copied === 'chrome://extensions' ? ' ✓ скопировано — вставьте в адрес' : ''}
+        chrome://extensions{copied === 'chrome://extensions' ? ` ✓ ${t('sec.gallery.copiedPaste', 'скопировано — вставьте в адрес')}` : ''}
       </button>
     );
     const flowA = <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>labs.google/flow</a>;
@@ -661,64 +681,64 @@ export default function GalleryPage() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                {installed ? 'Расширение TrendTraffic' : 'Установите расширение TrendTraffic'}
+                {installed ? t('sec.gallery.extTitleInstalled', 'Расширение TrendTraffic') : t('sec.gallery.extTitleInstall', 'Установите расширение TrendTraffic')}
               </span>
               <span className="text-[11px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>v{TT_EXT_VERSION}</span>
               {installed && !outdated && (
                 <span className="text-[11px] font-700 px-2 py-0.5 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
-                  <Check size={12} /> установлено{extVersion ? ` v${extVersion}` : ''}
+                  <Check size={12} /> {t('sec.gallery.extInstalled', 'установлено')}{extVersion ? ` v${extVersion}` : ''}
                 </span>
               )}
               {outdated && (
                 <span className="text-[11px] font-700 px-2 py-0.5 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(245,158,11,0.16)', color: '#f59e0b' }}>
-                  Обновите{extVersion ? ` · у вас v${extVersion}` : ''}
+                  {t('sec.gallery.extUpdateBadge', 'Обновите')}{extVersion ? ' · ' + t('sec.gallery.extYourV', 'у вас v{{v}}', { v: extVersion }) : ''}
                 </span>
               )}
             </div>
-            {/* Текст НЕ трогаем — только делаем «Google Flow» и «NotebookLM» кликабельными (первая страница). */}
+            {/* «Google Flow» и «NotebookLM» кликабельны (первая страница сервиса). */}
             <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Единое расширение для{' '}
+              {t('sec.gallery.extLead', 'Единое расширение для')}{' '}
               <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>Google Flow</a>
-              {' '}(Veo) и{' '}
+              {' '}(Veo) {t('sec.gallery.andWord', 'и')}{' '}
               <a href="https://notebooklm.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>NotebookLM</a>
-              {' '}— {outdated ? 'скачайте новую версию и обновите в chrome://extensions.' : 'скачайте, установите и посмотрите, как это сделать.'}
+              {' '}— {outdated ? t('sec.gallery.extTailOutdated', 'скачайте новую версию и обновите в chrome://extensions.') : t('sec.gallery.extTail', 'скачайте, установите и посмотрите, как это сделать.')}
             </div>
             {installed && (
               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                 {appEmail && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md" title="Аккаунт приложения — к нему привязывается расширение"
+                  <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md" title={t('sec.gallery.appAccountTitle', 'Аккаунт приложения — к нему привязывается расширение')}
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <Link2 size={11} style={{ color: '#6366f1' }} /> приложение: {appEmail}
+                    <Link2 size={11} style={{ color: '#6366f1' }} /> {t('sec.gallery.appAccountLabel', 'приложение:')} {appEmail}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md"
-                  title={extAccount ? 'Google-аккаунт, под которым у расширения открыт NotebookLM — под ним идёт генерация и тратятся его лимиты' : 'Откройте notebooklm.google.com в этом браузере и войдите в нужный Google'}
+                  title={extAccount ? t('sec.gallery.nlmAccountTitle', 'Google-аккаунт, под которым у расширения открыт NotebookLM — под ним идёт генерация и тратятся его лимиты') : t('sec.gallery.nlmOpenHint', 'Откройте notebooklm.google.com в этом браузере и войдите в нужный Google')}
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-                  <Clapperboard size={11} style={{ color: '#22d3ee' }} /> NotebookLM: {extAccount || 'не открыт'}
+                  <Clapperboard size={11} style={{ color: '#22d3ee' }} /> NotebookLM: {extAccount || t('sec.gallery.nlmNotOpen', 'не открыт')}
                 </span>
                 {mismatch && (
                   <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>
-                    · генерация идёт под Google-аккаунтом NotebookLM и его лимитами. Совпадать с аккаунтом приложения не обязательно; сменить Google можно в самом NotebookLM (аватар справа сверху).
+                    · {t('sec.gallery.mismatchNote', 'генерация идёт под Google-аккаунтом NotebookLM и его лимитами. Совпадать с аккаунтом приложения не обязательно; сменить Google можно в самом NotebookLM (аватар справа сверху).')}
                   </span>
                 )}
               </div>
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <a href="/trendtraffic-extension.zip" download title={outdated ? 'Скачать новую версию' : 'Скачать расширение'}
+            <a href="/trendtraffic-extension.zip" download title={outdated ? t('sec.gallery.dlNewVersionTitle', 'Скачать новую версию') : t('sec.gallery.dlExtension', 'Скачать расширение')}
               className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3.5 py-2 rounded-xl"
               style={{ background: outdated ? '#f59e0b' : '#6366f1', color: '#fff', textDecoration: 'none' }}>
-              <Download size={15} /> {outdated ? 'Обновить' : 'Скачать'}
+              <Download size={15} /> {outdated ? t('sec.gallery.btnUpdate', 'Обновить') : t('sec.gallery.btnDownload', 'Скачать')}
             </a>
             {installed && !bridgeStale && (
               <button type="button" onClick={reconnectExt} disabled={extReconnecting}
-                title="Переподключить связь расширения с текущим аккаунтом приложения (после смены учётной записи в приложении). Google-аккаунт NotebookLM это НЕ меняет."
+                title={t('sec.gallery.reconnectTitle', 'Переподключить связь расширения с текущим аккаунтом приложения (после смены учётной записи в приложении). Google-аккаунт NotebookLM это НЕ меняет.')}
                 className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3 py-2 rounded-xl"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: extReconnecting ? 'default' : 'pointer', opacity: extReconnecting ? 0.7 : 1 }}>
-                <RefreshCw size={14} className={extReconnecting ? 'animate-spin' : ''} /> {extReconnecting ? 'Подключаю…' : 'Переподключить'}
+                <RefreshCw size={14} className={extReconnecting ? 'animate-spin' : ''} /> {extReconnecting ? t('sec.gallery.reconnecting', 'Подключаю…') : t('sec.gallery.reconnect', 'Переподключить')}
               </button>
             )}
-            <button type="button" onClick={() => setExtOpen((v) => !v)} title="Как установить" aria-label="Как установить"
+            <button type="button" onClick={() => setExtOpen((v) => !v)} title={t('sec.gallery.howToInstall', 'Как установить')} aria-label={t('sec.gallery.howToInstall', 'Как установить')}
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-90"
               style={{ background: extOpen ? 'var(--brand)' : 'var(--bg-tertiary)', color: extOpen ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
               <Info size={17} />
@@ -730,12 +750,12 @@ export default function GalleryPage() {
             <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)' }}>
               <RefreshCw size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
               <span className="text-[12.5px] font-600 flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
-                Расширение обновилось до v{extVersion}, но на этой вкладке ещё работает старая версия{extBridgeVersion ? ` (v${extBridgeVersion})` : ''} — поэтому «Переподключить» не срабатывает. Обновите вкладку.
+                {t('sec.gallery.bridgeStaleMsg', 'Расширение обновилось до v{{v}}, но на этой вкладке ещё работает старая версия{{old}} — поэтому «Переподключить» не срабатывает. Обновите вкладку.', { v: extVersion, old: extBridgeVersion ? ` (v${extBridgeVersion})` : '' })}
               </span>
               <button type="button" onClick={() => window.location.reload()}
                 className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3 py-1.5 rounded-lg flex-shrink-0"
                 style={{ background: '#f59e0b', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                <RefreshCw size={14} /> Обновить вкладку
+                <RefreshCw size={14} /> {t('sec.gallery.refreshTab', 'Обновить вкладку')}
               </button>
             </div>
           </div>
@@ -744,18 +764,18 @@ export default function GalleryPage() {
           <div className="px-3 pb-3">
             <div className="text-[12.5px] leading-relaxed rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
               <div className="flex items-center gap-1.5 font-700 mb-2" style={{ color: 'var(--text-primary)' }}>
-                <HelpCircle size={15} style={{ color: 'var(--brand)' }} /> Как установить
+                <HelpCircle size={15} style={{ color: 'var(--brand)' }} /> {t('sec.gallery.howToInstall', 'Как установить')}
               </div>
               <ol className="list-decimal ml-4 space-y-1.5">
-                <li>Скачайте <b>.zip</b> (кнопка «Скачать») и <b>распакуйте</b> в отдельную папку.</li>
-                <li>Откройте <ChromeLink /> → включите <b>«Режим разработчика»</b> (тумблер справа сверху).</li>
-                <li>Нажмите <b>«Загрузить распакованное»</b> и выберите эту папку.</li>
-                <li>Если раньше стояло <b>отдельное</b> расширение «Google Flow» — <b>удалите его</b>, чтобы не конфликтовали.</li>
-                <li>Откройте нужный сайт и войдите в свой Google: {flowA} (Veo) или {nlmA} (Hotebook).</li>
-                <li>Готово. <b>Подключение автоматическое</b> — пока вы залогинены в приложении.</li>
+                <li>{t('sec.gallery.instZipA', 'Скачайте')} <b>.zip</b> {t('sec.gallery.instZipB', '(кнопка «Скачать») и распакуйте в отдельную папку.')}</li>
+                <li>{t('sec.gallery.instExtA', 'Откройте')} <ChromeLink /> {t('sec.gallery.instExtB', '→ включите «Режим разработчика» (тумблер справа сверху).')}</li>
+                <li>{t('sec.gallery.instLoad', 'Нажмите «Загрузить распакованное» и выберите эту папку.')}</li>
+                <li>{t('sec.gallery.instOld', 'Если раньше стояло отдельное расширение «Google Flow» — удалите его, чтобы не конфликтовали.')}</li>
+                <li>{t('sec.gallery.instLogin', 'Откройте нужный сайт и войдите в свой Google:')} {flowA} (Veo) {t('sec.gallery.orWord', 'или')} {nlmA} (Hotebook).</li>
+                <li>{t('sec.gallery.instDoneA', 'Готово.')} <b>{t('sec.gallery.instDoneB', 'Подключение автоматическое')}</b> {t('sec.gallery.instDoneC', '— пока вы залогинены в приложении.')}</li>
               </ol>
               <p className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                <b>Обновление версии:</b> скачайте новый .zip, замените папку и нажмите «Обновить» в <ChromeLink />, затем обновите вкладку app.trendtraffic.pro (F5).
+                <b>{t('sec.gallery.updNoteA', 'Обновление версии:')}</b> {t('sec.gallery.updNoteB', 'скачайте новый .zip, замените папку и нажмите «Обновить» в')} <ChromeLink />. {t('sec.gallery.updNoteC', 'Затем обновите вкладку app.trendtraffic.pro (F5).')}
               </p>
             </div>
           </div>
@@ -803,13 +823,13 @@ export default function GalleryPage() {
     try {
       const r = await fetch('/api/trends/videos/add-by-url', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ url }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (!r.ok) throw new Error(d?.error || t('sec.gallery.errStatus', 'Ошибка {{status}}', { status: r.status }));
       setQuery('');
-      setLinkNote(`✓ Добавлено: ${(d.video?.description || d.video?.author || 'видео').slice(0, 60)}`);
+      setLinkNote('✓ ' + t('sec.gallery.linkAdded', 'Добавлено: {{name}}', { name: (d.video?.description || d.video?.author || t('sec.gallery.videoWord', 'видео')).slice(0, 60) }));
       await refreshLinkVideos();
       window.setTimeout(() => setLinkNote(null), 6000);
     } catch (e: any) {
-      setLinkNote(`⚠ ${e?.message || 'Не удалось добавить видео.'}`);
+      setLinkNote('⚠ ' + (e?.message || t('sec.gallery.linkAddFail', 'Не удалось добавить видео.')));
     } finally { setLinkBusy(false); }
   };
   const downloadLinkVideo = async (v: StoredVideo) => {
@@ -818,15 +838,15 @@ export default function GalleryPage() {
     try {
       const r = await fetch(`/api/trends/videos/${v.id}/download`, { method: 'POST', headers: jsonHeaders() });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+      if (!r.ok) throw new Error(d?.error || t('sec.gallery.errStatus', 'Ошибка {{status}}', { status: r.status }));
     } catch (e: any) {
-      setLinkNote(`⚠ ${e?.message || 'Скачивание не запустилось.'}`);
+      setLinkNote('⚠ ' + (e?.message || t('sec.gallery.dlNotStarted', 'Скачивание не запустилось.')));
       setLinkVideos((prev) => prev.map((x) => (x.id === v.id ? { ...x, status: 'discovered' } : x)));
     }
   };
   const deleteLinkVideo = (v: StoredVideo) => setConfirm({
-    title: 'Удалить видео?',
-    message: 'Строка и скачанный файл будут удалены (из «Поиска» и Галереи «Тренды» тоже — это одна запись).',
+    title: t('sec.gallery.delVideoTitle', 'Удалить видео?'),
+    message: t('sec.gallery.delVideoMsg', 'Строка и скачанный файл будут удалены (из «Поиска» и Галереи «Тренды» тоже — это одна запись).'),
     onConfirm: () => {
       setConfirm(null);
       void (async () => {
@@ -849,15 +869,15 @@ export default function GalleryPage() {
     const fAn = q ? analyses.filter((a) =>
       (a.title || '').toLowerCase().includes(q) || (a.dna?.meta?.author || '').toLowerCase().includes(q) || (a.sourceUrl || '').toLowerCase().includes(q)) : analyses;
     const fQs = q ? trendQueries.filter((x) => x.query.toLowerCase().includes(q)) : trendQueries;
-    const anTitle = (a: TrendAnalysisItem) => a.title || a.dna?.meta?.author || 'Видео';
+    const anTitle = (a: TrendAnalysisItem) => a.title || a.dna?.meta?.author || t('sec.gallery.videoLabel', 'Видео');
     // Массовый выбор разборов (ключи `an:<id>` в общем наборе `selected`).
     const anKeys = fAn.map((a) => `an:${a.id}`);
     const anAllSel = anKeys.length > 0 && anKeys.every((k) => selected.has(k));
     const anSelCount = anKeys.filter((k) => selected.has(k)).length;
     const toggleAnAll = () => setSelected(anAllSel ? new Set() : new Set(anKeys));
     const askDeleteAnSelected = () => setConfirm({
-      title: `Удалить выбранные разборы (${anSelCount})?`,
-      message: 'Сохранённые анализы будут удалены. Видео в Галерее останутся.',
+      title: t('sec.gallery.delAnalysesTitle', 'Удалить выбранные разборы ({{n}})?', { n: anSelCount }),
+      message: t('sec.gallery.delAnalysesMsg', 'Сохранённые анализы будут удалены. Видео в Галерее останутся.'),
       onConfirm: () => { setConfirm(null); void doDeleteAnalyses(anKeys.filter((k) => selected.has(k)).map((k) => k.slice(3))); },
     });
     return (
@@ -866,9 +886,9 @@ export default function GalleryPage() {
         <div className="space-y-2.5">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-              <Search size={15} style={{ color: 'var(--brand)' }} /> Запросы трендов
+              <Search size={15} style={{ color: 'var(--brand)' }} /> {t('sec.gallery.hubQueries', 'Запросы трендов')}
             </span>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — клик: «Тренды» откроются с готовой выдачей по этому слову</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — {t('sec.gallery.hubQueriesHint', 'клик: «Тренды» откроются с готовой выдачей по этому слову')}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {/* Кнопка «Добавить тренд» убрана (по фидбэку) — добавление теперь через переливающийся
@@ -878,14 +898,14 @@ export default function GalleryPage() {
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                 <button type="button"
                   onClick={() => navigate(`/social-extension?q=${encodeURIComponent(x.query)}&platform=${encodeURIComponent(x.platform)}`)}
-                  title={`Открыть «Тренды» с готовой выдачей: «${x.query}» (${x.platform})`}
+                  title={t('sec.gallery.openQueryTitle', 'Открыть «Тренды» с готовой выдачей: «{{q}}» ({{platform}})', { q: x.query, platform: x.platform })}
                   className="inline-flex items-center gap-1.5 text-[13px] font-600"
                   style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
                   <TrendingUp size={13} style={{ color: 'var(--brand)' }} />
                   {x.query}
                   <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>· {x.platform}{x.resultCount ? ` · ${x.resultCount}` : ''}</span>
                 </button>
-                <button type="button" onClick={() => void deleteQuery(x)} title="Убрать запрос из истории"
+                <button type="button" onClick={() => void deleteQuery(x)} title={t('sec.gallery.removeQueryTitle', 'Убрать запрос из истории')}
                   className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <X size={13} />
@@ -895,7 +915,7 @@ export default function GalleryPage() {
           </div>
           {fQs.length === 0 && (
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Пока нет запросов. Сканируйте тренды по ключевому слову — запросы сохранятся здесь, чтобы не набирать их дважды.
+              {t('sec.gallery.noQueries', 'Пока нет запросов. Сканируйте тренды по ключевому слову — запросы сохранятся здесь, чтобы не набирать их дважды.')}
             </p>
           )}
         </div>
@@ -911,19 +931,19 @@ export default function GalleryPage() {
             <div className="space-y-2.5">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                  <Link2 size={15} style={{ color: 'var(--brand)' }} /> По ссылке
+                  <Link2 size={15} style={{ color: 'var(--brand)' }} /> {t('sec.gallery.byLink', 'По ссылке')}
                 </span>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fLv.length} — добавлены прямой ссылкой: разобрать в Аналитике, скачать, открыть оригинал</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fLv.length} — {t('sec.gallery.byLinkHint', 'добавлены прямой ссылкой: разобрать в Аналитике, скачать, открыть оригинал')}</span>
               </div>
               <div className={CARD_GRID}>
                 {fLv.map((v) => {
-                  const title = v.description || v.authorName || v.author || `${v.platform}-видео`;
+                  const title = v.description || v.authorName || v.author || t('sec.gallery.platformVideo', '{{platform}}-видео', { platform: v.platform });
                   const dlBusy = v.status === 'downloading';
                   const dlDone = v.status === 'downloaded' && !!v.fileUrl;
                   return (
                     <div key={v.id || v.externalId} className={cardCls(false)} style={CARD_STYLE}>
                       {dlDone ? (
-                        <button type="button" onClick={() => setViewer({ url: v.fileUrl!, title })} className="absolute inset-0 w-full h-full" title="Открыть в просмотрщике">
+                        <button type="button" onClick={() => setViewer({ url: v.fileUrl!, title })} className="absolute inset-0 w-full h-full" title={t('sec.gallery.viewerTitle', 'Открыть в просмотрщике')}>
                           <video src={`${v.fileUrl}#t=0.1`} poster={coverSrc(v.coverUrl) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
                         </button>
                       ) : v.coverUrl ? (
@@ -933,14 +953,14 @@ export default function GalleryPage() {
                       )}
                       {/* бейдж платформы + статус */}
                       <span className="absolute top-1.5 left-1.5 text-[10px] font-700 px-2 py-0.5 rounded-md" style={{ background: 'rgba(0,0,0,.55)', color: '#fff' }}>
-                        {v.platform}{dlBusy ? ' · качается…' : dlDone ? ' · скачано' : ''}
+                        {v.platform}{dlBusy ? ' · ' + t('sec.gallery.badgeDownloading', 'качается…') : dlDone ? ' · ' + t('sec.gallery.badgeDownloaded', 'скачано') : ''}
                       </span>
                       {/* скрим-подвал: название + ряд кнопок (все видны — канон карточек) */}
                       <div className="absolute inset-x-0 bottom-0 p-1.5 pt-6" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,0,0,.78))' }}>
                         <div className="text-[11px] font-600 leading-tight mb-1" style={{ color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{title}</div>
                         <div className="flex items-center gap-1">
                           {v.webUrl && (
-                            <button type="button" title="Разобрать в Аналитике (формула успеха → блоки)"
+                            <button type="button" title={t('sec.gallery.analyzeLinkTitle', 'Разобрать в Аналитике (формула успеха → блоки)')}
                               onClick={() => navigate(`/social-extension?tab=analytics&from=gallery&url=${encodeURIComponent(v.webUrl!)}`)}
                               className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
                               style={{ background: 'rgba(255,255,255,.92)', color: '#111', border: 'none', cursor: 'pointer' }}>
@@ -948,7 +968,7 @@ export default function GalleryPage() {
                             </button>
                           )}
                           {!dlDone && (
-                            <button type="button" title={dlBusy ? 'Скачивается…' : 'Скачать исходник (файл появится и в «Медиафайлах»)'}
+                            <button type="button" title={dlBusy ? t('sec.gallery.dlBusyTitle', 'Скачивается…') : t('sec.gallery.dlSourceTitle', 'Скачать исходник (файл появится и в «Медиафайлах»)')}
                               onClick={() => { if (!dlBusy) void downloadLinkVideo(v); }}
                               className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
                               style={{ background: 'rgba(255,255,255,.92)', color: '#111', border: 'none', cursor: dlBusy ? 'default' : 'pointer' }}>
@@ -956,13 +976,13 @@ export default function GalleryPage() {
                             </button>
                           )}
                           {v.webUrl && (
-                            <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
+                            <a href={v.webUrl} target="_blank" rel="noreferrer" title={t('sec.gallery.openOriginal', 'Открыть оригинал')}
                               className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
                               style={{ background: 'rgba(255,255,255,.92)', color: '#111' }}>
                               <ExternalLink size={13} />
                             </a>
                           )}
-                          <button type="button" title="Удалить" onClick={() => deleteLinkVideo(v)}
+                          <button type="button" title={t('sec.gallery.btnDelete', 'Удалить')} onClick={() => deleteLinkVideo(v)}
                             className="w-[25px] h-[25px] rounded-md flex items-center justify-center ml-auto"
                             style={{ background: 'rgba(239,68,68,.9)', color: '#fff', border: 'none', cursor: 'pointer' }}>
                             <Trash2 size={13} />
@@ -981,9 +1001,9 @@ export default function GalleryPage() {
         <div className="space-y-2.5">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-              <Sparkles size={15} style={{ color: '#22d3ee' }} /> Анализ
+              <Sparkles size={15} style={{ color: '#22d3ee' }} /> {t('sec.gallery.analysisWord', 'Анализ')}
             </span>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fAn.length} — уже разобранные видео: обложка + данные анализа</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fAn.length} — {t('sec.gallery.analysisHint', 'уже разобранные видео: обложка + данные анализа')}</span>
           </div>
           {/* Массовый выбор разборов */}
           {fAn.length > 0 && (
@@ -992,14 +1012,14 @@ export default function GalleryPage() {
                 className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                 {anAllSel ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
-                {anAllSel ? 'Снять выделение' : 'Выбрать всё'}{anSelCount > 0 ? ` · ${anSelCount}` : ''}
+                {anAllSel ? t('sec.gallery.clearSelection', 'Снять выделение') : t('sec.gallery.selectAll', 'Выбрать всё')}{anSelCount > 0 ? ` · ${anSelCount}` : ''}
               </button>
               <button type="button" onClick={askDeleteAnSelected} disabled={anSelCount === 0 || busy}
-                title="Удалить выбранные разборы"
+                title={t('sec.gallery.delAnalysesBtnTitle', 'Удалить выбранные разборы')}
                 className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
                 style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
                 {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                Удалить{anSelCount > 0 ? ` · ${anSelCount}` : ''}
+                {t('sec.gallery.btnDelete', 'Удалить')}{anSelCount > 0 ? ` · ${anSelCount}` : ''}
               </button>
             </div>
           )}
@@ -1014,30 +1034,30 @@ export default function GalleryPage() {
                 <div key={a.id} className={cardCls(anSel)} style={CARD_STYLE}>
                   {/* Медиа/обложка на весь размер карточки */}
                   {a.fileUrl ? (
-                    <button type="button" onClick={() => setViewer({ url: a.fileUrl!, title })} className="group/vid absolute inset-0 w-full h-full" title="Открыть в просмотрщике (с обрезкой)">
+                    <button type="button" onClick={() => setViewer({ url: a.fileUrl!, title })} className="group/vid absolute inset-0 w-full h-full" title={t('sec.gallery.viewerTrimTitle', 'Открыть в просмотрщике (с обрезкой)')}>
                       <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} preload="metadata" muted className="w-full h-full object-cover pointer-events-none" />
                       <span className="absolute inset-0 flex items-center justify-center opacity-80 group-hover/vid:opacity-100">
                         <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', backdropFilter: 'blur(4px)' }}><Play size={18} className="ml-0.5" /></span>
                       </span>
                     </button>
                   ) : cover ? (
-                    <button type="button" onClick={openDna} className="absolute inset-0 w-full h-full" title="Открыть разбор">
+                    <button type="button" onClick={openDna} className="absolute inset-0 w-full h-full" title={t('sec.gallery.openDnaTitle', 'Открыть разбор')}>
                       <img src={coverSrc(cover)} alt={title} loading="lazy" className="w-full h-full object-cover" />
                     </button>
                   ) : (
-                    <button type="button" onClick={openDna} className="absolute inset-0 w-full h-full flex items-center justify-center" title="Открыть разбор"
+                    <button type="button" onClick={openDna} className="absolute inset-0 w-full h-full flex items-center justify-center" title={t('sec.gallery.openDnaTitle', 'Открыть разбор')}
                       style={{ color: '#22d3ee', cursor: 'pointer' }}><Sparkles size={30} /></button>
                   )}
                   {/* Чекбокс выбора */}
-                  <button type="button" onClick={() => toggleSelect(`an:${a.id}`)} title="Выбрать"
+                  <button type="button" onClick={() => toggleSelect(`an:${a.id}`)} title={t('sec.gallery.selectTitle', 'Выбрать')}
                     className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(anSel)}>
                     {anSel ? <Check size={14} /> : null}
                   </button>
                   {/* Бейдж «Анализ» */}
-                  <button type="button" onClick={(e) => { e.stopPropagation(); openDna(); }} title="Открыть разбор виральности этого видео"
+                  <button type="button" onClick={(e) => { e.stopPropagation(); openDna(); }} title={t('sec.gallery.openViralTitle', 'Открыть разбор виральности этого видео')}
                     className={`${ovBadge} inline-flex items-center gap-1 transition-transform hover:scale-105`}
                     style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
-                    <Sparkles size={10} /> Анализ
+                    <Sparkles size={10} /> {t('sec.gallery.analysisWord', 'Анализ')}
                   </button>
                   {cardScrim()}
                   {/* Наложенные название + иконки */}
@@ -1045,14 +1065,14 @@ export default function GalleryPage() {
                     <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={title}>{title}</div>
                     <div className="flex items-center gap-1 pointer-events-auto">
                       {a.sourceUrl && (
-                        <a href={a.sourceUrl} target="_blank" rel="noreferrer" title="Открыть оригинал" className={OV_BTN} style={ovBtnStyle()}>
+                        <a href={a.sourceUrl} target="_blank" rel="noreferrer" title={t('sec.gallery.openOriginal', 'Открыть оригинал')} className={OV_BTN} style={ovBtnStyle()}>
                           <ExternalLink size={13} />
                         </a>
                       )}
-                      <button type="button" onClick={openDna} title="Открыть разбор" className={OV_BTN} style={ovBtnStyle('#67e8f9')}>
+                      <button type="button" onClick={openDna} title={t('sec.gallery.openDnaTitle', 'Открыть разбор')} className={OV_BTN} style={ovBtnStyle('#67e8f9')}>
                         <Sparkles size={13} />
                       </button>
-                      <button type="button" onClick={() => void doDeleteAnalyses([a.id])} disabled={busy} title="Удалить разбор"
+                      <button type="button" onClick={() => void doDeleteAnalyses([a.id])} disabled={busy} title={t('sec.gallery.delAnalysisTitle', 'Удалить разбор')}
                         className={`${OV_BTN} ml-auto disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
                         <Trash2 size={13} />
                       </button>
@@ -1064,7 +1084,7 @@ export default function GalleryPage() {
           </div>
           {fAn.length === 0 && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-              Пока нет разборов. Нажмите «+» и проанализируйте видео — разобранное появится здесь с обложкой и данными анализа.
+              {t('sec.gallery.noAnalyses', 'Пока нет разборов. Нажмите «+» и проанализируйте видео — разобранное появится здесь с обложкой и данными анализа.')}
             </p>
           )}
         </div>
@@ -1118,7 +1138,7 @@ export default function GalleryPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setItems((prev) => prev.filter((v) => v.id !== id));
       setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
-    } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.deleteFail', 'Не удалось удалить')); }
     finally { setBusy(false); }
   };
   const doDeleteSelected = async () => {
@@ -1131,21 +1151,21 @@ export default function GalleryPage() {
       const idset = new Set(ids);
       setItems((prev) => prev.filter((v) => !idset.has(v.id)));
       setSelected(new Set());
-    } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.deleteFail', 'Не удалось удалить')); }
     finally { setBusy(false); }
   };
 
   const askDeleteOne = (v: GalleryItem) => setConfirm({
-    title: 'Удалить?', message: `${v.title} — файл будет удалён с диска безвозвратно.`,
+    title: t('sec.gallery.delOneTitle', 'Удалить?'), message: t('sec.gallery.delOneMsg', '{{name}} — файл будет удалён с диска безвозвратно.', { name: v.title }),
     onConfirm: () => { setConfirm(null); doDeleteOne(v.id); },
   });
   const askDeleteSelected = () => setConfirm({
-    title: `Удалить выбранные (${selected.size})?`, message: 'Все выбранные файлы будут удалены с диска безвозвратно.',
+    title: t('sec.gallery.delSelTitle', 'Удалить выбранные ({{n}})?', { n: selected.size }), message: t('sec.gallery.delSelMsg', 'Все выбранные файлы будут удалены с диска безвозвратно.'),
     onConfirm: () => { setConfirm(null); doDeleteSelected(); },
   });
   // Удалить сохранённый UGC-ролик (шаблон) из Галереи. Готовое видео (если собрано) не трогаем.
   const askDeleteTpl = (k: { id: string; name: string }) => setConfirm({
-    title: 'Удалить ролик?', message: `«${k.name}» уберётся из Галереи. Собранное видео (если есть) останется.`,
+    title: t('sec.gallery.delTplTitle', 'Удалить ролик?'), message: t('sec.gallery.delTplMsg', '«{{name}}» уберётся из Галереи. Собранное видео (если есть) останется.', { name: k.name }),
     onConfirm: async () => {
       setConfirm(null);
       try { await fetch(`/api/render/ugc/templates/${k.id}`, { method: 'DELETE', headers: jsonHeaders() }); } catch { /* мягко */ }
@@ -1187,12 +1207,12 @@ export default function GalleryPage() {
       setUgcTpls((p) => p.filter((k) => !tset.has(k.id)));
       setKits((p) => p.filter((k) => !kset.has(k.id)));
       setSelected(new Set());
-    } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.deleteFail', 'Не удалось удалить')); }
     finally { setBusy(false); }
   };
   const askDeleteUgcSelected = () => setConfirm({
-    title: `Удалить выбранные (${ugcSelCount})?`,
-    message: ugcSub === 'kits' ? 'Выбранные макеты будут удалены.' : 'Выбранные ролики уберутся из Галереи. Собранные видео (файлы) удаляются с диска безвозвратно.',
+    title: t('sec.gallery.delSelTitle', 'Удалить выбранные ({{n}})?', { n: ugcSelCount }),
+    message: ugcSub === 'kits' ? t('sec.gallery.delKitsMsg', 'Выбранные макеты будут удалены.') : t('sec.gallery.delUgcMsg', 'Выбранные ролики уберутся из Галереи. Собранные видео (файлы) удаляются с диска безвозвратно.'),
     onConfirm: () => { setConfirm(null); doDeleteUgcSelected(); },
   });
 
@@ -1206,21 +1226,21 @@ export default function GalleryPage() {
         const gr = await fetch(`/api/flows/${srcFlowId}`, { headers: jsonHeaders() });
         if (gr.ok) graph = (await gr.json())?.flow?.graph || {};
       }
-      const newName = `${(k.name || 'UGC-ролик').trim()} (копия)`.slice(0, 120);
+      const newName = t('sec.gallery.copyName', '{{name}} (копия)', { name: (k.name || t('sec.gallery.ugcRollFallback', 'UGC-ролик')).trim() }).slice(0, 120);
       const cf = await fetch('/api/flows', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: newName }) });
       const cfd = await cf.json().catch(() => ({}));
-      if (!cf.ok || !cfd?.flow?.id) throw new Error(cfd?.error || 'Не удалось создать сценарий');
+      if (!cf.ok || !cfd?.flow?.id) throw new Error(cfd?.error || t('sec.gallery.copyFailFlow', 'Не удалось создать сценарий'));
       const newFlowId = String(cfd.flow.id);
       const baseSpec = { ...(k.spec || {}) }; delete baseSpec.templateId;
       const tplSpec = { ...baseSpec, __flowId: newFlowId, buildJobId: null, result: null, results: [] };
       const ct = await fetch('/api/render/ugc/templates', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: newName, trendKeyword: k.trendKeyword, spec: tplSpec }) });
       const ctd = await ct.json().catch(() => ({}));
-      if (!ct.ok || !ctd?.id) throw new Error(ctd?.error || 'Не удалось создать копию');
+      if (!ct.ok || !ctd?.id) throw new Error(ctd?.error || t('sec.gallery.copyFailTpl', 'Не удалось создать копию'));
       const newTplId = String(ctd.id);
       const newUgc = { ...(graph.ugc || tplSpec), __flowId: newFlowId, templateId: newTplId, buildJobId: null, result: null, results: [] };
       await fetch(`/api/flows/${newFlowId}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ name: newName, graph: { ...graph, ugc: newUgc } }) });
       setUgcTpls((p) => [{ id: newTplId, name: newName, trendKeyword: k.trendKeyword, autopublish: undefined, spec: tplSpec }, ...p]);
-    } catch (e: any) { setError(e?.message || 'Не удалось скопировать'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.copyFail', 'Не удалось скопировать')); }
     finally { setCopying(null); }
   };
 
@@ -1234,7 +1254,7 @@ export default function GalleryPage() {
       const idset = new Set(ids);
       setAnalyses((p) => p.filter((a) => !idset.has(a.id)));
       setSelected(new Set());
-    } catch (e: any) { setError(e?.message || 'Не удалось удалить'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.deleteFail', 'Не удалось удалить')); }
     finally { setBusy(false); }
   };
 
@@ -1273,7 +1293,7 @@ export default function GalleryPage() {
       const changed = tab !== 'reference' || mediaKind !== nextKind;
       setTab('reference'); setMediaKind(nextKind);
       if (!changed) await load('reference', nextKind);
-    } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
+    } catch (e: any) { setError(e?.message || t('sec.gallery.loadError', 'Ошибка загрузки')); }
     finally {
       setUploading(false);
       if (mediaInputRef.current) mediaInputRef.current.value = '';
@@ -1285,7 +1305,7 @@ export default function GalleryPage() {
   const renderPreview = (v: GalleryItem) => {
     if (v.mediaType === 'video') return (
       <button type="button" onClick={() => setViewer({ url: v.fileUrl, title: v.title })}
-        className="group/vid block w-full h-full relative" title="Открыть в просмотрщике (с обрезкой)">
+        className="group/vid block w-full h-full relative" title={t('sec.gallery.viewerTrimTitle', 'Открыть в просмотрщике (с обрезкой)')}>
         <video src={`${v.fileUrl}#t=0.1`} poster={v.coverUrl || undefined} preload="metadata" muted
           className="w-full h-full object-cover pointer-events-none" />
         <span className="absolute inset-0 flex items-center justify-center transition-opacity opacity-90 group-hover/vid:opacity-100">
@@ -1306,7 +1326,7 @@ export default function GalleryPage() {
     // Файлы (pdf/pptx/md/json/csv — артефакты Hotebook и т.п.): клик открывает в новой вкладке.
     const ext = (v.fileUrl.split('.').pop() || '').toUpperCase().slice(0, 5);
     return (
-      <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Открыть файл"
+      <a href={v.fileUrl} target="_blank" rel="noreferrer" title={t('sec.gallery.openFile', 'Открыть файл')}
         className="w-full h-full flex flex-col items-center justify-center gap-2.5" style={{ background: 'var(--bg-tertiary)' }}>
         <span className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(34,211,238,0.12)', color: '#22d3ee' }}>
           <FileText size={26} />
@@ -1356,7 +1376,7 @@ export default function GalleryPage() {
       <div className="flex items-center gap-3">
         <img src="/icons/nav-gallery.png" alt="" draggable={false}
              className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
-        <h1 className="text-xl sm:text-2xl font-700 leading-tight min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>Галерея</h1>
+        <h1 className="text-xl sm:text-2xl font-700 leading-tight min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.pageTitle', 'Галерея')}</h1>
         {/* Скрытый инпут загрузки — вызывается плиткой «+ Добавить» во вкладке «Видео». */}
         <input ref={mediaInputRef} type="file" accept="image/*,video/*,audio/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
       </div>
@@ -1370,7 +1390,7 @@ export default function GalleryPage() {
               <button key={tb.key} onClick={() => setTab(tb.key)}
                 className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-600 transition-all whitespace-nowrap flex-shrink-0"
                 style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: active ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
-                {tabIcon(tb.key)} {tb.label}
+                {tabIcon(tb.key)} {tabLabel(tb.key, tb.label)}
                 {/* Идёт генерация артефакта Hotebook — спиннер прямо на вкладке (фича параллельной сессии). */}
                 {tb.key === 'hotebook' && hbJobs.length > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#22d3ee' }} />}
                 {/* Идёт генерация в Google Flow (наблюдает расширение) — спиннер на вкладке. */}
@@ -1386,7 +1406,7 @@ export default function GalleryPage() {
         <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
         <input value={query} onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && tab === 'trendhub' && isVideoLink(query)) void addByLink(); }}
-          placeholder={tab === 'trendhub' ? 'Поиск… или вставьте ссылку на видео TikTok / Instagram / YouTube' : 'Поиск по имени / автору / описанию…'}
+          placeholder={tab === 'trendhub' ? t('sec.gallery.searchPhTrends', 'Поиск… или вставьте ссылку на видео TikTok / Instagram / YouTube') : t('sec.gallery.searchPh', 'Поиск по имени / автору / описанию…')}
           className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 transition-shadow"
           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
       </div>
@@ -1395,7 +1415,7 @@ export default function GalleryPage() {
           className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl disabled:opacity-60"
           style={{ background: 'var(--brand)', color: 'var(--brand-contrast, #fff)', border: 'none', cursor: 'pointer' }}>
           {linkBusy ? <Loader2 size={15} className="animate-spin" /> : <Link2 size={15} />}
-          {linkBusy ? 'Добавляю…' : 'Добавить видео по ссылке (Enter)'}
+          {linkBusy ? t('sec.gallery.linkAdding', 'Добавляю…') : t('sec.gallery.linkAddBtn', 'Добавить видео по ссылке (Enter)')}
         </button>
       )}
       {tab === 'trendhub' && linkNote && (
@@ -1427,13 +1447,13 @@ export default function GalleryPage() {
               {hbNbStatus && !hbNbStatus.ok ? (
                 <span style={{ color: '#f59e0b' }}>
                   {hbNbStatus.errorKind === 'ext_login'
-                    ? 'Войдите в notebooklm.google.com в браузере с расширением — тогда покажутся все ваши блокноты.'
-                    : 'Откройте notebooklm.google.com в браузере с расширением TrendTraffic — тогда покажутся все ваши блокноты.'}
+                    ? t('sec.gallery.nbLoginNeeded', 'Войдите в notebooklm.google.com в браузере с расширением — тогда покажутся все ваши блокноты.')
+                    : t('sec.gallery.nbOpenNeeded', 'Откройте notebooklm.google.com в браузере с расширением TrendTraffic — тогда покажутся все ваши блокноты.')}
                 </span>
               ) : (
-                <><span>Блокнотов NotebookLM: {hbNotebooks.length}</span>
-                  <button type="button" onClick={() => void loadNotebooks()} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button>
-                  <span>· клик по блокноту откроет его в NotebookLM — работайте там: пока генерится, тут крутится индикатор, а готовые работы студии сами попадают в «Видео» (видео/аудио/изображения) и в «Hotebook». Встроенная студия TT остаётся в системе.</span></>
+                <><span>{t('sec.gallery.nbCount', 'Блокнотов NotebookLM: {{n}}', { n: hbNotebooks.length })}</span>
+                  <button type="button" onClick={() => void loadNotebooks()} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>{t('sec.gallery.linkRefresh', 'Обновить')}</button>
+                  <span>· {t('sec.gallery.nbWorkHint', 'клик по блокноту откроет его в NotebookLM — работайте там: пока генерится, тут крутится индикатор, а готовые работы студии сами попадают в «Медиафайлы» (видео/аудио/изображения) и в «Hotebook».')}</span></>
               )}
             </div>
           )}
@@ -1442,25 +1462,25 @@ export default function GalleryPage() {
           {tab === 'flow' && !flowProjLoading && (
             <div className="flex items-center gap-2 text-[12px] mb-1" style={{ color: 'var(--text-muted)' }}>
               {flowProjError ? (
-                <span style={{ color: '#f59e0b' }}>{flowProjError} <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button></span>
+                <span style={{ color: '#f59e0b' }}>{flowProjError} <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>{t('sec.gallery.linkRefresh', 'Обновить')}</button></span>
               ) : (
-                <><span>Проектов Google Flow: {flowProjectsFiltered.length}{query.trim() && flowProjectsFiltered.length !== flowProjects.length ? ` из ${flowProjects.length}` : ''}</span>
-                  <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>Обновить</button>
-                  <span>· клик по проекту откроет его в Flow</span></>
+                <><span>{t('sec.gallery.flowProjCount', 'Проектов Google Flow: {{n}}', { n: flowProjectsFiltered.length })}{query.trim() && flowProjectsFiltered.length !== flowProjects.length ? ' ' + t('sec.gallery.ofTotal', 'из {{total}}', { total: flowProjects.length }) : ''}</span>
+                  <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>{t('sec.gallery.linkRefresh', 'Обновить')}</button>
+                  <span>· {t('sec.gallery.flowClickHint', 'клик по проекту откроет его в Flow')}</span></>
               )}
             </div>
           )}
 
           {/* Крупный центрированный индикатор загрузки — Hotebook / Google Flow. */}
-          {tab === 'hotebook' && hbNbLoading && renderCenterLoader('Загружаю блокноты NotebookLM…')}
-          {tab === 'flow' && flowProjLoading && renderCenterLoader('Загружаю проекты Google Flow…')}
+          {tab === 'hotebook' && hbNbLoading && renderCenterLoader(t('sec.gallery.loadingNotebooks', 'Загружаю блокноты NotebookLM…'))}
+          {tab === 'flow' && flowProjLoading && renderCenterLoader(t('sec.gallery.loadingFlowProjects', 'Загружаю проекты Google Flow…'))}
 
           {/* «Видео»: ВСЁ в одну строчку (по фидбэку) — фильтры Видео/Изображение/Аудио +
               Найдено + Выбрать всё + Удалить + Опубликовать + Скачать (на узких — гориз. прокрутка). */}
           {tab === 'reference' && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
               <div className="inline-flex gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-                {([['reference', 'Видео', <Video key="v" size={14} />], ['image', 'Изображение', <ImageIcon key="i" size={14} />], ['audio', 'Аудио', <Music key="a" size={14} />], ['analytics', 'Аналитика', <BarChart3 key="an" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
+                {([['reference', t('sec.gallery.kindVideo', 'Видео'), <Video key="v" size={14} />], ['image', t('sec.gallery.kindImage', 'Изображение'), <ImageIcon key="i" size={14} />], ['audio', t('sec.gallery.kindAudio', 'Аудио'), <Music key="a" size={14} />], ['analytics', t('sec.gallery.kindAnalytics', 'Аналитика'), <BarChart3 key="an" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
                   <button key={k} type="button" onClick={() => { setKind(k); setSelected(new Set()); }}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-600 transition-all whitespace-nowrap"
                     style={{ background: mediaKind === k ? 'var(--brand)' : 'transparent', color: mediaKind === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
@@ -1468,18 +1488,18 @@ export default function GalleryPage() {
                   </button>
                 ))}
               </div>
-              <span className="text-sm font-700 flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>Найдено: {displayItems.length}</span>
+              <span className="text-sm font-700 flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.foundCount', 'Найдено: {{n}}', { n: displayItems.length })}</span>
               <button type="button" onClick={toggleSelectAll}
                 className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                 {allSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
-                {allSelected ? 'Снять' : 'Выбрать всё'}{selectedCount > 0 ? ` · ${selectedCount}` : ''}
+                {allSelected ? t('sec.gallery.clearShort', 'Снять') : t('sec.gallery.selectAll', 'Выбрать всё')}{selectedCount > 0 ? ` · ${selectedCount}` : ''}
               </button>
-              <button type="button" onClick={askDeleteSelected} disabled={selectedCount === 0 || busy} title="Удалить выбранные файлы"
+              <button type="button" onClick={askDeleteSelected} disabled={selectedCount === 0 || busy} title={t('sec.gallery.delFilesTitle', 'Удалить выбранные файлы')}
                 className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
                 {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                Удалить{selectedCount > 0 ? ` · ${selectedCount}` : ''}
+                {t('sec.gallery.btnDelete', 'Удалить')}{selectedCount > 0 ? ` · ${selectedCount}` : ''}
               </button>
               <button type="button" disabled={selectedCount === 0}
                 onClick={() => {
@@ -1490,15 +1510,15 @@ export default function GalleryPage() {
                   setPubChainDraft({ items: chainItems });
                   setTab('publisher');
                 }}
-                title="Опубликовать выбранные серией: ролики займут слоты «Моего расписания» в Публикаторе"
+                title={t('sec.gallery.publishSeriesTitle', 'Опубликовать выбранные серией: ролики займут слоты «Моего расписания» в Публикаторе')}
                 className="ml-auto inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', cursor: 'pointer' }}>
-                <Send size={15} /> Опубликовать{selectedCount > 0 ? ` (${selectedCount})` : ''}
+                <Send size={15} /> {t('sec.gallery.btnPublish', 'Опубликовать')}{selectedCount > 0 ? ` (${selectedCount})` : ''}
               </button>
-              <button type="button" onClick={downloadSelected} disabled={selectedCount === 0} title="Скачать выбранные на устройство"
+              <button type="button" onClick={downloadSelected} disabled={selectedCount === 0} title={t('sec.gallery.dlSelectedTitle', 'Скачать выбранные на устройство')}
                 className="inline-flex items-center gap-1.5 text-[13px] font-700 px-2.5 py-2 rounded-xl transition-transform hover:scale-105 disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
-                <Download size={15} /> Скачать{selectedCount > 0 ? ` (${selectedCount})` : ''}
+                <Download size={15} /> {t('sec.gallery.btnDownload', 'Скачать')}{selectedCount > 0 ? ` (${selectedCount})` : ''}
               </button>
             </div>
           )}
@@ -1506,7 +1526,7 @@ export default function GalleryPage() {
           {/* «UGC»: ВСЁ в одну строчку — подфильтр (Ролики/Авто/Макеты) + Всего + Выбрать всё + Удалить. */}
           {tab === 'ugc' && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {([['rolls', 'Ролики', ugcTpls.length], ['auto', 'Авто', autoUgc.length], ['kits', 'Макеты', kits.length]] as const).map(([key, label, count]) => {
+              {([['rolls', t('sec.gallery.subRolls', 'Ролики'), ugcTpls.length], ['auto', t('sec.gallery.subAuto', 'Авто'), autoUgc.length], ['kits', t('sec.gallery.subKits', 'Макеты'), kits.length]] as [('rolls' | 'auto' | 'kits'), string, number][]).map(([key, label, count]) => {
                 const on = ugcSub === key;
                 return (
                   <button key={key} type="button" onClick={() => { setUgcSub(key); setSelected(new Set()); }}
@@ -1518,18 +1538,18 @@ export default function GalleryPage() {
                 );
               })}
               {ugcSelectableKeys.length > 0 && <>
-                <span className="text-sm font-700 flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>Всего: {ugcSelectableKeys.length}</span>
+                <span className="text-sm font-700 flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.totalCount', 'Всего: {{n}}', { n: ugcSelectableKeys.length })}</span>
                 <button type="button" onClick={toggleSelectAllUGC}
                   className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors flex-shrink-0 whitespace-nowrap"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                   {ugcAllSelected ? <CheckSquare size={15} color="var(--brand)" /> : <Square size={15} />}
-                  {ugcAllSelected ? 'Снять' : 'Выбрать всё'}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
+                  {ugcAllSelected ? t('sec.gallery.clearShort', 'Снять') : t('sec.gallery.selectAll', 'Выбрать всё')}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
                 </button>
-                <button type="button" onClick={askDeleteUgcSelected} disabled={ugcSelCount === 0 || busy} title="Удалить выбранные"
+                <button type="button" onClick={askDeleteUgcSelected} disabled={ugcSelCount === 0 || busy} title={t('sec.gallery.delSelectedTitle', 'Удалить выбранные')}
                   className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                   style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
                   {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                  Удалить{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
+                  {t('sec.gallery.btnDelete', 'Удалить')}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
                 </button>
               </>}
             </div>
@@ -1541,7 +1561,7 @@ export default function GalleryPage() {
             {/* «Google Flow»: готовые проекты Flow карточками — клик открывает проект «проектором» (новая вкладка). */}
             {tab === 'flow' && flowProjectsFiltered.map((p) => (
               <div key={`proj-${p.id}`} className={cardCls()} style={CARD_STYLE}>
-                <a href={p.url} target="_blank" rel="noreferrer" title="Открыть проект в Google Flow (проектор)" className="absolute inset-0 w-full h-full block">
+                <a href={p.url} target="_blank" rel="noreferrer" title={t('sec.gallery.openProjTitle', 'Открыть проект в Google Flow (проектор)')} className="absolute inset-0 w-full h-full block">
                   {/* Арт-заглушка под обложкой — остаётся, если thumb не загрузился (CDN Google за авторизацией). */}
                   {!p.thumb && placeholderArt('ugc')}
                   {p.thumb && (
@@ -1555,17 +1575,17 @@ export default function GalleryPage() {
                 {(flowObserved[p.id] || 0) > 0 && (
                   <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[7] inline-flex items-center gap-1.5 text-[10px] font-700 px-2 py-1 rounded-full pointer-events-none"
                     style={{ background: 'rgba(0,0,0,0.65)', color: '#a5b4fc' }}>
-                    <Loader2 size={12} className="animate-spin" /> генерится
+                    <Loader2 size={12} className="animate-spin" /> {t('sec.gallery.generating', 'генерится')}
                   </span>
                 )}
                 <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[6] pointer-events-none" style={{ background: 'rgba(0,0,0,0.35)' }}>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.95)', color: '#111' }}><ExternalLink size={12} /> Открыть</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-700 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.95)', color: '#111' }}><ExternalLink size={12} /> {t('sec.gallery.btnOpen', 'Открыть')}</span>
                 </span>
                 {cardScrim()}
                 <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
                   <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={p.title}>{p.title}</div>
                   <div className="flex items-center gap-1 pointer-events-auto">
-                    <a href={p.url} target="_blank" rel="noreferrer" title="Открыть в Google Flow" className={OV_BTN} style={ovBtnStyle('#a5b4fc')}>
+                    <a href={p.url} target="_blank" rel="noreferrer" title={t('sec.gallery.openInFlow', 'Открыть в Google Flow')} className={OV_BTN} style={ovBtnStyle('#a5b4fc')}>
                       <ExternalLink size={13} />
                     </a>
                   </div>
@@ -1586,7 +1606,7 @@ export default function GalleryPage() {
               return (
                 <div key={`tpl-${k.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
                   {!preview && placeholderArt('ugc')}
-                  <button type="button" onClick={openTpl} title="Открыть ролик в UGC-студии" className="absolute inset-0 w-full h-full">
+                  <button type="button" onClick={openTpl} title={t('sec.gallery.openRollTitle', 'Открыть ролик в UGC-студии')} className="absolute inset-0 w-full h-full">
                     {preview && (
                       isVid
                         ? <video src={`${preview}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />
@@ -1594,24 +1614,24 @@ export default function GalleryPage() {
                     )}
                   </button>
                   {/* Чекбокс выбора */}
-                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                  <button type="button" onClick={() => toggleSelect(selK)} title={t('sec.gallery.selectTitle', 'Выбрать')}
                     className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                     {isSel ? <Check size={14} /> : null}
                   </button>
-                  {k.autopublish?.enabled && <span className={ovBadge} style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}>авто</span>}
+                  {k.autopublish?.enabled && <span className={ovBadge} style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}>{t('sec.gallery.autoBadge', 'авто')}</span>}
                   {cardScrim()}
                   <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
                     <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={k.name}>{k.name}</div>
                     {k.trendKeyword && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full self-start text-white" style={{ background: 'rgba(168,85,247,0.85)' }}>#{k.trendKeyword}</span>}
                     <div className="flex items-center gap-1 pointer-events-auto">
-                      <button type="button" onClick={openTpl} title="Открыть в UGC-студии" className={OV_BTN} style={ovBtnStyle('#d8b4fe')}>
+                      <button type="button" onClick={openTpl} title={t('sec.gallery.openInStudio', 'Открыть в UGC-студии')} className={OV_BTN} style={ovBtnStyle('#d8b4fe')}>
                         <Play size={13} />
                       </button>
-                      <button type="button" onClick={() => copyTpl(k)} disabled={copying === k.id} title="Скопировать ролик (создать копию)"
+                      <button type="button" onClick={() => copyTpl(k)} disabled={copying === k.id} title={t('sec.gallery.copyRollTitle', 'Скопировать ролик (создать копию)')}
                         className={`${OV_BTN} disabled:opacity-50`} style={ovBtnStyle()}>
                         {copying === k.id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
                       </button>
-                      <button type="button" onClick={() => askDeleteTpl(k)} title="Удалить ролик из Галереи" className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#fca5a5')}>
+                      <button type="button" onClick={() => askDeleteTpl(k)} title={t('sec.gallery.delRollTitle', 'Удалить ролик из Галереи')} className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#fca5a5')}>
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -1628,16 +1648,16 @@ export default function GalleryPage() {
                 <button type="button" onClick={() => v.fileUrl && setViewer({ url: v.fileUrl, title: v.title })} className="absolute inset-0 w-full h-full">
                   {v.fileUrl && <video src={`${v.fileUrl}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />}
                 </button>
-                <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                <button type="button" onClick={() => toggleSelect(selK)} title={t('sec.gallery.selectTitle', 'Выбрать')}
                   className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                   {isSel ? <Check size={14} /> : null}
                 </button>
-                <span className={ovBadge} style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}>авто</span>
+                <span className={ovBadge} style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}>{t('sec.gallery.autoBadge', 'авто')}</span>
                 {cardScrim()}
                 <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
                   <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
                   <div className="flex items-center gap-1 pointer-events-auto">
-                    <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить авто-ролик"
+                    <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title={t('sec.gallery.delAutoTitle', 'Удалить авто-ролик')}
                       className={`${OV_BTN} ml-auto disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
                       <Trash2 size={13} />
                     </button>
@@ -1652,19 +1672,19 @@ export default function GalleryPage() {
               const isSel = selected.has(selK);
               return (
               <div key={`kit-${k.id}`} className={cardCls(isSel)} style={CARD_STYLE}>
-                <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title="Открыть UGC-студию — макет применяется в «Оформлении»"
+                <button type="button" onClick={() => setBlockReq({ cloud: 'ugc' })} title={t('sec.gallery.kitOpenTitle', 'Открыть UGC-студию — макет применяется в «Оформлении»')}
                   className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                  <LayoutTemplate size={28} /><span className="text-[10px] font-600">Бренд-кит</span>
+                  <LayoutTemplate size={28} /><span className="text-[10px] font-600">{t('sec.gallery.brandKit', 'Бренд-кит')}</span>
                 </button>
-                <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                <button type="button" onClick={() => toggleSelect(selK)} title={t('sec.gallery.selectTitle', 'Выбрать')}
                   className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                   {isSel ? <Check size={14} /> : null}
                 </button>
                 {cardScrim()}
                 <div className="absolute inset-x-0 bottom-0 p-1.5 z-10 flex flex-col gap-1 pointer-events-none">
-                  <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={k.name}>{k.name || 'Макет'}</div>
+                  <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={k.name}>{k.name || t('sec.gallery.kitFallback', 'Макет')}</div>
                   <div className="flex items-center gap-1 pointer-events-auto">
-                    <button type="button" onClick={() => void deleteKit(k)} title="Удалить макет" className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#fca5a5')}><X size={13} /></button>
+                    <button type="button" onClick={() => void deleteKit(k)} title={t('sec.gallery.delKitTitle', 'Удалить макет')} className={`${OV_BTN} ml-auto`} style={ovBtnStyle('#fca5a5')}><X size={13} /></button>
                   </div>
                 </div>
               </div>
@@ -1673,7 +1693,7 @@ export default function GalleryPage() {
             {/* Hotebook: карточки ВСЕХ блокнотов NotebookLM — клик открывает блок на этом блокноте. */}
             {tab === 'hotebook' && hbNotebooksFiltered.map((nb) => (
               <button key={`nb-${nb.id}`} type="button" onClick={() => void openNotebook(nb)} disabled={hbNbOpening === nb.id}
-                title={`Открыть в NotebookLM: ${nb.title} — работайте там, готовые работы студии сами попадут в «Видео»`} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
+                title={t('sec.gallery.openNbTitle', 'Открыть в NotebookLM: {{title}} — работайте там, готовые работы студии сами попадут в «Медиафайлы»', { title: nb.title })} className={`${cardCls()} flex items-center justify-center`} style={CARD_STYLE}>
                 {placeholderArt('notebook')}
                 {/* Спиннер по центру, пока блокнот открывается (иконку даёт placeholderArt). */}
                 {hbNbOpening === nb.id && <Loader2 size={26} className="animate-spin z-[2]" style={{ color: 'var(--brand)' }} />}
@@ -1683,13 +1703,13 @@ export default function GalleryPage() {
                   const total = Object.values(nb.artifactCounts || {}).reduce((s, n) => s + (Number(n) || 0), 0);
                   return total > 0 ? (
                     <span className="absolute top-1.5 right-1.5 z-20 text-[9px] font-700 px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(16,185,129,.92)', color: '#fff' }}
-                      title={Object.entries(nb.artifactCounts || {}).map(([t, n]) => `${HB_JOB_LABEL[t] || t}: ${n}`).join(', ')}>✨ {total}</span>
+                      title={Object.entries(nb.artifactCounts || {}).map(([ty, n]) => `${hbTypeLabel(ty)}: ${n}`).join(', ')}>✨ {total}</span>
                   ) : null;
                 })()}
                 {/* Идёт генерация артефакта В ЭТОМ блокноте — спиннер-пилюля по центру карточки. */}
                 {(nb.generating || 0) > 0 && (
                   <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1 text-[9px] font-700 px-2 py-0.5 rounded-full z-20 whitespace-nowrap" style={{ background: 'rgba(34,211,238,0.92)', color: '#04222a' }}>
-                    <Loader2 size={10} className="animate-spin" /> генерится
+                    <Loader2 size={10} className="animate-spin" /> {t('sec.gallery.generating', 'генерится')}
                   </span>
                 )}
                 {cardScrim()}
@@ -1699,8 +1719,8 @@ export default function GalleryPage() {
                   {/* Мини-разбивка по типам: 🎙️2 · 📄1 … */}
                   {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).length > 0 && (
                     <div className="flex flex-wrap gap-1 text-[10px]" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                      {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).map(([t, n]) => (
-                        <span key={t} title={HB_JOB_LABEL[t] || t}>{HB_ARTIFACT_EMOJI[t] || '📦'}{Number(n) > 1 ? ` ${n}` : ''}</span>
+                      {Object.entries(nb.artifactCounts || {}).filter(([, n]) => Number(n) > 0).map(([ty, n]) => (
+                        <span key={ty} title={hbTypeLabel(ty)}>{HB_ARTIFACT_EMOJI[ty] || '📦'}{Number(n) > 1 ? ` ${n}` : ''}</span>
                       ))}
                     </div>
                   )}
@@ -1721,7 +1741,7 @@ export default function GalleryPage() {
                   <div key={v.id} className={cardCls(isSel)} style={CARD_STYLE}>
                     {placeholderArt('audio')}
                     {cardScrim()}
-                    <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                    <button type="button" onClick={() => toggleSelect(selK)} title={t('sec.gallery.selectTitle', 'Выбрать')}
                       className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                       {isSel ? <Check size={14} /> : null}
                     </button>
@@ -1729,10 +1749,10 @@ export default function GalleryPage() {
                       <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
                       <AudioPlayer src={v.fileUrl} />
                       <div className="flex items-center gap-1">
-                        <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл"
+                        <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title={t('sec.gallery.delFileTitle', 'Удалить файл')}
                           className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:opacity-80 disabled:opacity-40"
                           style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}><Trash2 size={14} /></button>
-                        <button type="button" onClick={() => downloadOne(v)} title="Скачать на устройство"
+                        <button type="button" onClick={() => downloadOne(v)} title={t('sec.gallery.dlDeviceTitle', 'Скачать на устройство')}
                           className="w-7 h-7 rounded-lg flex items-center justify-center ml-auto transition-transform hover:scale-105"
                           style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}><Download size={14} /></button>
                       </div>
@@ -1745,17 +1765,17 @@ export default function GalleryPage() {
                   {/* Медиа/превью на весь размер карточки */}
                   <div className="absolute inset-0">{renderPreview(v)}</div>
                   {/* Чекбокс выбора */}
-                  <button type="button" onClick={() => toggleSelect(selK)} title="Выбрать"
+                  <button type="button" onClick={() => toggleSelect(selK)} title={t('sec.gallery.selectTitle', 'Выбрать')}
                     className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                     {isSel ? <Check size={14} /> : null}
                   </button>
                   {/* Бейдж «Анализ» — у видео «Из анализа» с сохранённым разбором; клик → открыть разбор */}
                   {v.hasAnalysis && (
                     <button type="button" onClick={(e) => { e.stopPropagation(); void openAnalysis(v); }}
-                      title="Открыть сохранённый анализ этого видео"
+                      title={t('sec.gallery.openSavedAnalysis', 'Открыть сохранённый анализ этого видео')}
                       className={`${ovBadge} inline-flex items-center gap-1 transition-transform hover:scale-105`}
                       style={{ background: 'rgba(34,211,238,0.92)', color: '#083344', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
-                      <Sparkles size={10} /> Анализ
+                      <Sparkles size={10} /> {t('sec.gallery.analysisWord', 'Анализ')}
                     </button>
                   )}
                   {cardScrim()}
@@ -1771,12 +1791,12 @@ export default function GalleryPage() {
                     <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
                     <div className="flex flex-wrap items-center gap-1 pointer-events-auto">
                       {/* Открыть оригинал (тренды) или файл */}
-                      <a href={v.webUrl || v.fileUrl} target="_blank" rel="noreferrer" title={v.webUrl ? 'Открыть оригинал' : 'Открыть файл'} className={OV_BTN} style={ovBtnStyle()}>
+                      <a href={v.webUrl || v.fileUrl} target="_blank" rel="noreferrer" title={v.webUrl ? t('sec.gallery.openOriginal', 'Открыть оригинал') : t('sec.gallery.openFile', 'Открыть файл')} className={OV_BTN} style={ovBtnStyle()}>
                         {v.webUrl ? <ExternalLink size={13} /> : <Play size={13} />}
                       </a>
                       {/* → Google Flow (видео/картинки) */}
                       {(v.mediaType === 'video' || v.mediaType === 'image') && (
-                        <button type="button" onClick={() => sendToFlow(v)} title={v.mediaType === 'video' ? 'Скачать и загрузить в Google Flow (видео — вручную через «Загрузки»)' : 'Отправить картинку в Google Flow (Veo) через расширение'}
+                        <button type="button" onClick={() => sendToFlow(v)} title={v.mediaType === 'video' ? t('sec.gallery.sendVideoFlowTitle', 'Скачать и загрузить в Google Flow (видео — вручную через «Загрузки»)') : t('sec.gallery.sendImageFlowTitle', 'Отправить картинку в Google Flow (Veo) через расширение')}
                           className={OV_BTN} style={ovBtnStyle('#a5b4fc')}>
                           <Clapperboard size={13} />
                         </button>
@@ -1784,16 +1804,16 @@ export default function GalleryPage() {
                       {/* → Публикатор */}
                       {(v.mediaType === 'video' || v.mediaType === 'image') && (
                         <button type="button" onClick={() => setPubStudio({ assetId: v.id, mediaUrl: v.fileUrl, title: v.title })}
-                          title="Опубликовать в соцсети (Публикатор)" className={OV_BTN} style={ovBtnStyle('#6ee7b7')}>
+                          title={t('sec.gallery.publishTitle', 'Опубликовать в соцсети (Публикатор)')} className={OV_BTN} style={ovBtnStyle('#6ee7b7')}>
                           <Send size={13} />
                         </button>
                       )}
                       {/* Удалить */}
-                      <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title="Удалить файл" className={`${OV_BTN} disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
+                      <button type="button" onClick={() => askDeleteOne(v)} disabled={busy} title={t('sec.gallery.delFileTitle', 'Удалить файл')} className={`${OV_BTN} disabled:opacity-40`} style={ovBtnStyle('#fca5a5')}>
                         <Trash2 size={13} />
                       </button>
                       {/* Скачать на устройство */}
-                      <button type="button" onClick={() => downloadOne(v)} title="Скачать на устройство" className={`${OV_BTN} ml-auto`}
+                      <button type="button" onClick={() => downloadOne(v)} title={t('sec.gallery.dlDeviceTitle', 'Скачать на устройство')} className={`${OV_BTN} ml-auto`}
                         style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: '1px solid var(--brand)', cursor: 'pointer' }}>
                         <Download size={14} />
                       </button>
@@ -1810,21 +1830,21 @@ export default function GalleryPage() {
             ? (ugcSub === 'rolls' ? (ugcTpls.length + filtered.length === 0) : ugcSub === 'auto' ? autoUgc.length === 0 : kits.length === 0)
             : (displayItems.length === 0 && !(tab === 'hotebook' && hbJobs.length > 0))) && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-              {tab === 'hotebook' ? 'Пока пусто. Нажмите «+» — откроется блок «Hotebook»: аудио, видео, отчёты и другие артефакты попадут сюда.'
-                : tab === 'ugc' ? (ugcSub === 'auto' ? 'Пока нет авто-роликов. Их собирает конвейер «тренд → анализ → UGC» (автопилот в Трендах).'
-                    : ugcSub === 'kits' ? 'Макетов пока нет. Сохраните бренд-кит в UGC-студии (кнопка «Бренд-кит» в шапке).'
-                    : 'Пока пусто. Нажмите «+» — откроется UGC-студия; сохранённые ролики появятся здесь карточками.')
-                : mediaKind === 'audio' ? 'Пока пусто. Загрузите аудио плиткой «+ Добавить» — аудиофайлы лягут сюда.'
-                : mediaKind === 'image' ? 'Пока пусто. Загрузите изображения плиткой «+ Добавить» — картинки лягут сюда.'
-                : mediaKind === 'analytics' ? 'Пока пусто. «Тренды → Аналитика» → «Добавить в галерею»: сюда лягут видео, файл разбора (.md) и субтитры (.srt).'
-                : 'Пока пусто. Загрузите фото/видео плиткой «+ Добавить»; здесь же появляется всё, что производят блоки.'}
+              {tab === 'hotebook' ? t('sec.gallery.emptyHotebook', 'Пока пусто. Нажмите «+» — откроется NotebookLM: создайте блокнот, а готовые работы (аудио, видео, отчёты) сами попадут сюда и в «Медиафайлы».')
+                : tab === 'ugc' ? (ugcSub === 'auto' ? t('sec.gallery.emptyAuto', 'Пока нет авто-роликов. Их собирает конвейер «тренд → анализ → UGC» (автопилот в Трендах).')
+                    : ugcSub === 'kits' ? t('sec.gallery.emptyKits', 'Макетов пока нет. Сохраните бренд-кит в UGC-студии (кнопка «Бренд-кит» в шапке).')
+                    : t('sec.gallery.emptyUgc', 'Пока пусто. Нажмите «+» — откроется UGC-студия; сохранённые ролики появятся здесь карточками.'))
+                : mediaKind === 'audio' ? t('sec.gallery.emptyAudio', 'Пока пусто. Загрузите аудио плиткой «+ Добавить» — аудиофайлы лягут сюда.')
+                : mediaKind === 'image' ? t('sec.gallery.emptyImages', 'Пока пусто. Загрузите изображения плиткой «+ Добавить» — картинки лягут сюда.')
+                : mediaKind === 'analytics' ? t('sec.gallery.emptyAnalytics', 'Пока пусто. «Тренды → Аналитика» → «Добавить в галерею»: сюда лягут видео, файл разбора (.md) и субтитры (.srt).')
+                : t('sec.gallery.emptyMedia', 'Пока пусто. Загрузите фото/видео плиткой «+ Добавить»; здесь же появляется всё, что производят блоки.')}
             </p>
           )}
 
           {/* «Google Flow»: нет проектов (и не грузим/без ошибки) — подсказка. Готовые клипы → вкладка «Видео». */}
           {tab === 'flow' && !flowProjLoading && !flowProjError && flowProjects.length === 0 && (
             <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-              Проектов пока нет. Откройте <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="underline" style={{ color: '#6366f1' }}>labs.google/flow</a>, войдите в Google — ваши проекты появятся здесь. Нажмите «+», чтобы создать клип. Сохранённые видео — во вкладке «Видео».
+              {t('sec.gallery.flowEmptyA', 'Проектов пока нет. Откройте')} <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="underline" style={{ color: '#6366f1' }}>labs.google/flow</a>{t('sec.gallery.flowEmptyB', ', войдите в Google — ваши проекты появятся здесь. Нажмите «+», чтобы создать клип. Сохранённые видео — во вкладке «Медиафайлы».')}
             </p>
           )}
         </>
@@ -1834,7 +1854,7 @@ export default function GalleryPage() {
         open={!!confirm}
         title={confirm?.title || ''}
         message={confirm?.message}
-        confirmLabel="Удалить"
+        confirmLabel={t('sec.gallery.btnDelete', 'Удалить')}
         variant="danger"
         onConfirm={() => confirm?.onConfirm()}
         onCancel={() => setConfirm(null)}
@@ -1869,9 +1889,9 @@ export default function GalleryPage() {
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
             <div className="flex items-center justify-between mb-3">
               <span className="inline-flex items-center gap-2 text-base font-700" style={{ color: 'var(--text-primary)' }}>
-                <Sparkles size={16} style={{ color: '#22d3ee' }} /> {galLang() === 'en' ? 'Analysis' : 'Анализ'} · {analysis.title}
+                <Sparkles size={16} style={{ color: '#22d3ee' }} /> {t('sec.gallery.analysisWord', 'Анализ')} · {analysis.title}
               </span>
-              <button onClick={() => setAnalysis(null)} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+              <button onClick={() => setAnalysis(null)} title={t('sec.gallery.btnClose', 'Закрыть')} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
             </div>
             {analysisLoading ? (
               <div className="py-10 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
@@ -1897,21 +1917,21 @@ export default function GalleryPage() {
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 470, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}><Clapperboard size={18} color="#fff" /></span>
-              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Нужно расширение Google Flow</span>
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.extPopupTitle', 'Нужно расширение Google Flow')}</span>
             </div>
             <p className="text-[13px] mb-3" style={{ color: 'var(--text-secondary)' }}>
-              Чтобы отправлять медиа прямо в Google Flow, установите наше единое Chrome-расширение TrendTraffic (v{TT_EXT_VERSION}) — оно же работает и с NotebookLM. Один раз — дальше подключается автоматически.
+              {t('sec.gallery.extPopupBody', 'Чтобы отправлять медиа прямо в Google Flow, установите наше единое Chrome-расширение TrendTraffic (v{{v}}) — оно же работает и с NotebookLM. Один раз — дальше подключается автоматически.', { v: TT_EXT_VERSION })}
             </p>
             <a href="/trendtraffic-extension.zip" download className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl" style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
-              <Download size={15} /> Скачать расширение
+              <Download size={15} /> {t('sec.gallery.dlExtension', 'Скачать расширение')}
             </a>
             <ol className="list-decimal ml-4 text-[12px] space-y-1 mt-3" style={{ color: 'var(--text-muted)' }}>
-              <li>Распакуйте .zip в отдельную папку.</li>
-              <li><code>chrome://extensions</code> → «Режим разработчика» → «Загрузить распакованное» → эта папка.</li>
-              <li>Войдите в свой Google на <b>labs.google/flow</b>, вернитесь сюда и снова нажмите «→ Flow».</li>
+              <li>{t('sec.gallery.pop1', 'Распакуйте .zip в отдельную папку.')}</li>
+              <li><code>chrome://extensions</code> {t('sec.gallery.pop2', '→ «Режим разработчика» → «Загрузить распакованное» → эта папка.')}</li>
+              <li>{t('sec.gallery.pop3a', 'Войдите в свой Google на')} <b>labs.google/flow</b>{t('sec.gallery.pop3b', ', вернитесь сюда и снова нажмите кнопку отправки в Google Flow на карточке.')}</li>
             </ol>
             <div className="flex justify-end mt-3">
-              <button onClick={() => setExtPopup(false)} className="text-[13px] font-600 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Закрыть</button>
+              <button onClick={() => setExtPopup(false)} className="text-[13px] font-600 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('sec.gallery.btnClose', 'Закрыть')}</button>
             </div>
           </div>
         </div>
@@ -1923,34 +1943,34 @@ export default function GalleryPage() {
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 18 }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}><Clapperboard size={18} color="#fff" /></span>
-              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Видео → Google Flow</span>
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.vpTitle', 'Видео → Google Flow')}</span>
             </div>
-            <p className="text-[13px] mb-1" style={{ color: '#10b981', fontWeight: 600 }}>✓ Видео скачивается на устройство.</p>
+            <p className="text-[13px] mb-1" style={{ color: '#10b981', fontWeight: 600 }}>✓ {t('sec.gallery.vpDownloading', 'Видео скачивается на устройство.')}</p>
             <p className="text-[12.5px] mb-1" style={{ color: 'var(--text-secondary)' }}>
-              Google Flow принимает видео только вручную — через раздел «Загрузки». Авто-вставку видео Flow не поддерживает (только картинки).
+              {t('sec.gallery.vpManual', 'Google Flow принимает видео только вручную — через раздел «Загрузки». Авто-вставку видео Flow не поддерживает (только картинки).')}
             </p>
 
             {/* Точная стрелка: скачано → Flow «Загрузки» */}
             <div className="flex items-center justify-center gap-2 my-3 p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
-              <span className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}><Download size={14} /> Скачано</span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}><Download size={14} /> {t('sec.gallery.vpChipDownloaded', 'Скачано')}</span>
               <ArrowRight size={22} style={{ color: '#6366f1' }} />
-              <span className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}><UploadCloud size={14} /> Flow → «Загрузки»</span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}><UploadCloud size={14} /> {t('sec.gallery.vpChipUploads', 'Flow → «Загрузки»')}</span>
             </div>
 
             <ol className="list-decimal ml-4 text-[12.5px] space-y-1" style={{ color: 'var(--text-secondary)' }}>
-              <li>Открой <b>Google Flow</b> (кнопка ниже).</li>
-              <li>Слева выбери раздел <b>«Загрузки»</b>.</li>
-              <li>Нажми <b>«Загрузить»</b> → выбери скачанный файл <b>«{videoPopup.title}»</b>.</li>
+              <li>{t('sec.gallery.vp1', 'Откройте Google Flow (кнопка ниже).')}</li>
+              <li>{t('sec.gallery.vp2', 'Слева выберите раздел «Загрузки».')}</li>
+              <li>{t('sec.gallery.vp3', 'Нажмите «Загрузить» → выберите скачанный файл «{{name}}».', { name: videoPopup.title })}</li>
             </ol>
 
             <div className="flex items-center gap-2 mt-4">
               <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl" style={{ background: '#6366f1', color: '#fff', textDecoration: 'none' }}>
-                <ExternalLink size={15} /> Открыть Google Flow
+                <ExternalLink size={15} /> {t('sec.gallery.vpOpenFlow', 'Открыть Google Flow')}
               </a>
               <button onClick={() => downloadOne(videoPopup)} className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2.5 rounded-xl" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                <Download size={15} /> Скачать ещё раз
+                <Download size={15} /> {t('sec.gallery.vpAgain', 'Скачать ещё раз')}
               </button>
-              <button onClick={() => setVideoPopup(null)} className="text-[13px] font-600 px-3 py-2.5 rounded-xl ml-auto" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>Закрыть</button>
+              <button onClick={() => setVideoPopup(null)} className="text-[13px] font-600 px-3 py-2.5 rounded-xl ml-auto" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('sec.gallery.btnClose', 'Закрыть')}</button>
             </div>
           </div>
         </div>
@@ -1962,6 +1982,7 @@ export default function GalleryPage() {
 /** Форматированный разбор из сохранённой TrendDNA (Viral Breakdown + Video Content Analysis).
  *  Разбор сохранён на английском; «Перевести» переводит показ на язык браузера (пока ru/en). */
 function AnalysisView({ dna, token }: { dna: any; token: string | null }) {
+  const { t } = useTranslation('common');
   const [translated, setTranslated] = useState<any>(null);
   const [showLang, setShowLang] = useState<'en' | 'ru'>('en');
   const [translating, setTranslating] = useState(false);
@@ -1982,7 +2003,7 @@ function AnalysisView({ dna, token }: { dna: any; token: string | null }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setTranslated(data.dna); setShowLang(target);
-    } catch (e: any) { setTErr(e?.message || 'Не удалось перевести'); }
+    } catch (e: any) { setTErr(e?.message || t('sec.gallery.translateFail', 'Не удалось перевести')); }
     finally { setTranslating(false); }
   };
   const Sec = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -2000,31 +2021,31 @@ function AnalysisView({ dna, token }: { dna: any; token: string | null }) {
     <div>
       {target !== 'en' && (
         <div className="flex justify-end mb-2">
-          <button type="button" onClick={doTranslate} disabled={translating} title="Перевести разбор на язык браузера"
+          <button type="button" onClick={doTranslate} disabled={translating} title={t('sec.gallery.translateTitle', 'Перевести разбор на язык браузера')}
             className="inline-flex items-center gap-1 text-[11px] font-600 px-2.5 py-1 rounded-lg disabled:opacity-50"
             style={{ background: showLang === 'en' ? 'rgba(99,102,241,0.12)' : 'var(--bg-tertiary)', color: showLang === 'en' ? 'var(--brand)' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
             {translating ? <Loader2 size={12} className="animate-spin" /> : <Languages size={12} />}
-            {showLang === 'en' ? 'Перевести' : 'Оригинал (EN)'}
+            {showLang === 'en' ? t('sec.gallery.translateBtn', 'Перевести') : t('sec.gallery.originalEn', 'Оригинал (EN)')}
           </button>
         </div>
       )}
       {tErr && <p className="text-[11px] mb-2" style={{ color: '#ef4444' }}>{tErr}</p>}
-      <div className="text-[11px] font-700 mb-2" style={{ color: 'var(--text-muted)' }}>{L('ВИРАЛЬНЫЙ РАЗБОР', 'VIRALITY BREAKDOWN')}</div>
-      {d?.hookType && <Sec title={L('ТИП ХУКА', 'HOOK TYPE')}>{d.hookType}</Sec>}
-      {d?.whyItWorks && <Sec title={L('ПОЧЕМУ РАБОТАЕТ', 'WHY IT WORKS')}>{d.whyItWorks}</Sec>}
-      {d?.targetAudience && <Sec title={L('ЦЕЛЕВАЯ АУДИТОРИЯ', 'TARGET AUDIENCE')}>{d.targetAudience}</Sec>}
-      {d?.viralFactors && <Sec title={L('ФАКТОРЫ ВИРАЛЬНОСТИ', 'VIRALITY FACTORS')}><Bul items={d.viralFactors} /></Sec>}
-      {d?.copyReadyScript && <Sec title={L('ГОТОВЫЙ СЦЕНАРИЙ', 'READY SCRIPT')}><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{d.copyReadyScript}</div></Sec>}
-      {d?.howToAdapt && <Sec title={L('КАК АДАПТИРОВАТЬ', 'HOW TO ADAPT')}><Bul items={d.howToAdapt} /></Sec>}
-      <div className="text-[11px] font-700 mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>{L('АНАЛИЗ СОДЕРЖАНИЯ', 'CONTENT ANALYSIS')}</div>
-      {d?.summary && <Sec title={L('КРАТКОЕ ОПИСАНИЕ', 'SUMMARY')}>{d.summary}</Sec>}
-      {beats.length > 0 && <Sec title={L('СЦЕНЫ (ТАЙМИНГ)', 'SCENES (TIMING)')}><ul className="space-y-0.5">{beats.map((b: any, i: number) => <li key={i}><span style={{ color: '#22d3ee' }}>{fmtT(b?.t)}</span> {b?.desc}{b?.intensity ? ` [${b.intensity}]` : ''}</li>)}</ul></Sec>}
-      {d?.hookAnalysis && <Sec title={L('РАЗБОР ХУКА', 'HOOK BREAKDOWN')}>{d.hookAnalysis}</Sec>}
-      {d?.visualStyle && <Sec title={L('ВИЗУАЛЬНЫЙ СТИЛЬ', 'VISUAL STYLE')}>{d.visualStyle}</Sec>}
-      {d?.audioDialogue && <Sec title={L('АУДИО / ДИАЛОГ', 'AUDIO / DIALOGUE')}>{d.audioDialogue}</Sec>}
-      {d?.whyResonates && <Sec title={L('ПОЧЕМУ ЗАХОДИТ', 'WHY IT RESONATES')}><Bul items={d.whyResonates} /></Sec>}
-      {d?.howToReplicate && <Sec title={L('КАК ПОВТОРИТЬ', 'HOW TO REPLICATE')}><Bul items={d.howToReplicate} /></Sec>}
-      {Array.isArray(d?.keywords) && d.keywords.length > 0 && <Sec title={L('КЛЮЧЕВЫЕ СЛОВА', 'KEYWORDS')}>{d.keywords.join(', ')}</Sec>}
+      <div className="text-[11px] font-700 mb-2" style={{ color: 'var(--text-muted)' }}>{L(t('sec.gallery.avViral', 'ВИРАЛЬНЫЙ РАЗБОР'), 'VIRALITY BREAKDOWN')}</div>
+      {d?.hookType && <Sec title={L(t('sec.gallery.avHookType', 'ТИП ХУКА'), 'HOOK TYPE')}>{d.hookType}</Sec>}
+      {d?.whyItWorks && <Sec title={L(t('sec.gallery.avWhyWorks', 'ПОЧЕМУ РАБОТАЕТ'), 'WHY IT WORKS')}>{d.whyItWorks}</Sec>}
+      {d?.targetAudience && <Sec title={L(t('sec.gallery.avAudience', 'ЦЕЛЕВАЯ АУДИТОРИЯ'), 'TARGET AUDIENCE')}>{d.targetAudience}</Sec>}
+      {d?.viralFactors && <Sec title={L(t('sec.gallery.avFactors', 'ФАКТОРЫ ВИРАЛЬНОСТИ'), 'VIRALITY FACTORS')}><Bul items={d.viralFactors} /></Sec>}
+      {d?.copyReadyScript && <Sec title={L(t('sec.gallery.avScript', 'ГОТОВЫЙ СЦЕНАРИЙ'), 'READY SCRIPT')}><div className="p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', whiteSpace: 'pre-wrap' }}>{d.copyReadyScript}</div></Sec>}
+      {d?.howToAdapt && <Sec title={L(t('sec.gallery.avAdapt', 'КАК АДАПТИРОВАТЬ'), 'HOW TO ADAPT')}><Bul items={d.howToAdapt} /></Sec>}
+      <div className="text-[11px] font-700 mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>{L(t('sec.gallery.avContent', 'АНАЛИЗ СОДЕРЖАНИЯ'), 'CONTENT ANALYSIS')}</div>
+      {d?.summary && <Sec title={L(t('sec.gallery.avSummary', 'КРАТКОЕ ОПИСАНИЕ'), 'SUMMARY')}>{d.summary}</Sec>}
+      {beats.length > 0 && <Sec title={L(t('sec.gallery.avScenes', 'СЦЕНЫ (ТАЙМИНГ)'), 'SCENES (TIMING)')}><ul className="space-y-0.5">{beats.map((b: any, i: number) => <li key={i}><span style={{ color: '#22d3ee' }}>{fmtT(b?.t)}</span> {b?.desc}{b?.intensity ? ` [${b.intensity}]` : ''}</li>)}</ul></Sec>}
+      {d?.hookAnalysis && <Sec title={L(t('sec.gallery.avHook', 'РАЗБОР ХУКА'), 'HOOK BREAKDOWN')}>{d.hookAnalysis}</Sec>}
+      {d?.visualStyle && <Sec title={L(t('sec.gallery.avVisual', 'ВИЗУАЛЬНЫЙ СТИЛЬ'), 'VISUAL STYLE')}>{d.visualStyle}</Sec>}
+      {d?.audioDialogue && <Sec title={L(t('sec.gallery.avAudio', 'АУДИО / ДИАЛОГ'), 'AUDIO / DIALOGUE')}>{d.audioDialogue}</Sec>}
+      {d?.whyResonates && <Sec title={L(t('sec.gallery.avResonates', 'ПОЧЕМУ ЗАХОДИТ'), 'WHY IT RESONATES')}><Bul items={d.whyResonates} /></Sec>}
+      {d?.howToReplicate && <Sec title={L(t('sec.gallery.avReplicate', 'КАК ПОВТОРИТЬ'), 'HOW TO REPLICATE')}><Bul items={d.howToReplicate} /></Sec>}
+      {Array.isArray(d?.keywords) && d.keywords.length > 0 && <Sec title={L(t('sec.gallery.avKeywords', 'КЛЮЧЕВЫЕ СЛОВА'), 'KEYWORDS')}>{d.keywords.join(', ')}</Sec>}
     </div>
   );
 }

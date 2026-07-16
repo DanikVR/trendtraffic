@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, X, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { ChatMessage } from './MessageBubble';
@@ -25,6 +26,7 @@ interface ToneMenuPopoverProps {
 }
 
 export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMenuPopoverProps) {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -87,7 +89,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setExplanation({ tone: toneLabel, text: data.explanation });
     } catch (e: any) {
-      setError(e?.message || 'Ошибка генерации');
+      setError(e?.message || t('sec.misc.errGenerate', 'Ошибка генерации'));
     } finally {
       setExplaining(false);
     }
@@ -115,7 +117,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
           <Sparkles size={14} color="var(--brand)" />
           <span className="text-xs font-700 uppercase tracking-wider"
                 style={{ color: 'var(--text-muted)' }}>
-            Объяснить в тоне
+            {t('sec.misc.toneExplainTitle', 'Объяснить в тоне')}
           </span>
         </div>
         <button onClick={onClose} className="text-[var(--text-muted)]">
@@ -148,7 +150,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
         {explaining && (
           <div className="py-6 text-center">
             <Loader2 size={20} className="animate-spin inline-block" style={{ color: 'var(--brand)' }} />
-            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>AI генерирует пояснение…</p>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{t('sec.misc.toneGenerating', 'AI генерирует пояснение…')}</p>
           </div>
         )}
 
@@ -162,7 +164,7 @@ export function ToneMenuPopover({ roomId, message, anchorRect, onClose }: ToneMe
               <button onClick={() => setExplanation(null)}
                       className="text-[10px]"
                       style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
-                Другой тон
+                {t('sec.misc.toneAnother', 'Другой тон')}
               </button>
             </div>
             <div className="text-sm leading-relaxed p-2 rounded-lg"

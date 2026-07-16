@@ -4,15 +4,18 @@
  * Только для новых публичных страниц.
  */
 
+import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
-const NAV = [
-  { href: '/landing#features', label: 'Возможности' },
-  { href: '/landing#pricing', label: 'Тарифы' },
-  { href: '/landing#compare', label: 'Сравнение' },
-];
-
 export function PublicHeader() {
+  const { t } = useTranslation('common');
+
+  const NAV = [
+    { href: '/landing#features', label: t('sec.pub.linkFeatures', 'Возможности') },
+    { href: '/landing#pricing', label: t('sec.pub.linkPricing', 'Тарифы') },
+    { href: '/landing#compare', label: t('sec.pub.linkCompare', 'Сравнение') },
+  ];
+
   return (
     <header
       className="sticky top-0 z-40 backdrop-blur-xl"
@@ -38,7 +41,7 @@ export function PublicHeader() {
             className="hidden sm:inline-flex items-center px-4 py-2 rounded-full text-sm font-700 text-white transition-all hover:brightness-110"
             style={{ background: 'var(--brand)', boxShadow: '0 6px 22px rgba(99,102,241,0.35)' }}
           >
-            Создать демо-комнату
+            {t('sec.pub.ctaOpenApp', 'Открыть приложение')}
           </a>
         </div>
       </div>

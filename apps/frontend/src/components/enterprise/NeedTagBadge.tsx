@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface NeedTagBadgeProps {
   name: string;
@@ -13,6 +14,7 @@ interface NeedTagBadgeProps {
 }
 
 export function NeedTagBadge({ name, color, confidence, size = 'sm' }: NeedTagBadgeProps) {
+  const { t } = useTranslation('common');
   const bg = color ? hexToRgba(color, 0.10) : 'rgba(148,163,184,0.10)';
   const fg = color || 'var(--text-muted)';
   const border = color ? hexToRgba(color, 0.30) : 'rgba(148,163,184,0.30)';
@@ -24,7 +26,7 @@ export function NeedTagBadge({ name, color, confidence, size = 'sm' }: NeedTagBa
     <span
       className={`inline-flex items-center gap-1 rounded-full font-600 ${padding} ${fontSize}`}
       style={{ background: bg, color: fg, border: `1px solid ${border}` }}
-      title={confidence != null ? `Уверенность: ${(confidence * 100).toFixed(0)}%` : undefined}
+      title={confidence != null ? t('sec.misc.confidenceTitle', 'Уверенность: {{p}}%', { p: (confidence * 100).toFixed(0) }) : undefined}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: fg }} />
       <span>{name}</span>

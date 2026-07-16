@@ -327,7 +327,7 @@ export function ImagePresetsEditor() {
                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
               {/* Row: enabled + label + delete */}
               <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={() => toggleCollapse(idx)} title={collapsed.has(idx) ? 'Развернуть' : 'Свернуть'}
+                <button onClick={() => toggleCollapse(idx)} title={collapsed.has(idx) ? t('sec.misc.expand', 'Развернуть') : t('sec.misc.collapse', 'Свернуть')}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, flexShrink: 0 }}>
                   {collapsed.has(idx) ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                 </button>

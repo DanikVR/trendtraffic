@@ -11,7 +11,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import './config/i18n'; // Инициализация i18next (побочный эффект)
+import i18n from './config/i18n'; // Инициализация i18next (побочный эффект) + инстанс для не-компонентного t()
 import { useAppStore } from './store/useAppStore';
 import { installAuthInterceptor } from './lib/authInterceptor';
 
@@ -84,7 +84,7 @@ initTheme();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-  throw new Error('Критическая ошибка: элемент #root не найден в DOM!');
+  throw new Error(i18n.t('common:sec.misc.rootNotFound', 'Критическая ошибка: элемент #root не найден в DOM!'));
 }
 
 ReactDOM.createRoot(rootElement).render(

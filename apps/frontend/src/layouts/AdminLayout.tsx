@@ -7,6 +7,7 @@
  */
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   Sliders,
@@ -38,6 +39,7 @@ function toggleGlobalTheme(current: boolean, setCurrent: (v: boolean) => void) {
 }
 
 export function AdminLayout() {
+  const { t } = useTranslation('common');
   const { user, logout } = useAppStore();
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(
@@ -80,7 +82,7 @@ export function AdminLayout() {
               onClick={() => toggleGlobalTheme(isDark, setIsDark)}
               className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 flex-shrink-0"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-              title={isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
+              title={isDark ? t('sec.admin.layout.themeToLight', 'Переключить на светлую тему') : t('sec.admin.layout.themeToDark', 'Переключить на тёмную тему')}
             >
               {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
@@ -94,7 +96,7 @@ export function AdminLayout() {
                 border: '1px solid rgba(99, 102, 241, 0.24)',
               }}
             >
-              Суперадмин-панель
+              {t('sec.admin.layout.superadminBadge', 'Суперадмин-панель')}
             </span>
           </div>
         </div>
@@ -123,7 +125,7 @@ export function AdminLayout() {
             {({ isActive }) => (
               <>
                 <Sliders size={20} strokeWidth={isActive ? 2 : 1.5} />
-                <span>Настройки API</span>
+                <span>{t('sec.admin.layout.navConfig', 'Настройки API')}</span>
               </>
             )}
           </NavLink>
@@ -150,7 +152,7 @@ export function AdminLayout() {
             {({ isActive }) => (
               <>
                 <Tag size={20} strokeWidth={isActive ? 2 : 1.5} />
-                <span>Промокоды</span>
+                <span>{t('sec.admin.layout.navPromocodes', 'Промокоды')}</span>
               </>
             )}
           </NavLink>
@@ -177,7 +179,7 @@ export function AdminLayout() {
             {({ isActive }) => (
               <>
                 <Users size={20} strokeWidth={isActive ? 2 : 1.5} />
-                <span>Пользователи</span>
+                <span>{t('sec.admin.layout.navUsers', 'Пользователи')}</span>
               </>
             )}
           </NavLink>
@@ -204,7 +206,7 @@ export function AdminLayout() {
             {({ isActive }) => (
               <>
                 <HeartHandshake size={20} strokeWidth={isActive ? 2 : 1.5} />
-                <span>Партнёры</span>
+                <span>{t('sec.admin.layout.navPartners', 'Партнёры')}</span>
               </>
             )}
           </NavLink>
@@ -222,7 +224,7 @@ export function AdminLayout() {
             }}
           >
             <ArrowLeft size={20} strokeWidth={1.5} />
-            <span>Вернуться на сайт</span>
+            <span>{t('sec.admin.layout.backToSite', 'Вернуться на сайт')}</span>
           </NavLink>
         </nav>
 
@@ -235,7 +237,7 @@ export function AdminLayout() {
             <AvatarCircle name={user?.name || user?.email} size="sm" status="online" />
             <div className="flex-1 min-w-0 text-left">
               <p className="text-xs font-600 truncate" style={{ color: 'var(--text-primary)' }}>
-                {user?.name || 'Администратор'}
+                {user?.name || t('sec.admin.layout.adminFallbackName', 'Администратор')}
               </p>
               <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
                 {user?.email}
@@ -245,7 +247,7 @@ export function AdminLayout() {
               onClick={handleLogout}
               className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-[rgba(239,68,68,0.1)] hover:text-[#EF4444] transition-all"
               style={{ color: 'var(--text-muted)' }}
-              title="Выйти из аккаунта"
+              title={t('sec.admin.layout.logoutTitle', 'Выйти из аккаунта')}
             >
               <LogOut size={15} />
             </button>
@@ -291,7 +293,7 @@ export function AdminLayout() {
               onClick={() => navigate('/')}
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-              title="Вернуться на сайт"
+              title={t('sec.admin.layout.backToSite', 'Вернуться на сайт')}
             >
               <ArrowLeft size={16} />
             </button>
@@ -310,7 +312,7 @@ export function AdminLayout() {
               }`
             }
           >
-            ⚙️ Настройки API
+            ⚙️ {t('sec.admin.layout.navConfig', 'Настройки API')}
           </NavLink>
           <NavLink
             to="/admin/promocodes"
@@ -322,7 +324,7 @@ export function AdminLayout() {
               }`
             }
           >
-            🏷 Промокоды
+            🏷 {t('sec.admin.layout.navPromocodes', 'Промокоды')}
           </NavLink>
           <NavLink
             to="/admin/users"
@@ -334,7 +336,7 @@ export function AdminLayout() {
               }`
             }
           >
-            👥 Пользователи
+            👥 {t('sec.admin.layout.navUsers', 'Пользователи')}
           </NavLink>
           <NavLink
             to="/admin/partners"
@@ -346,7 +348,7 @@ export function AdminLayout() {
               }`
             }
           >
-            🤝 Партнёры
+            🤝 {t('sec.admin.layout.navPartners', 'Партнёры')}
           </NavLink>
         </div>
       </header>

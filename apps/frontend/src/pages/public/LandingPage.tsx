@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -19,12 +20,7 @@ import { PublicFooter } from '../../components/public/PublicFooter';
 const NOISE =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
-const STATS = [
-  { v: '€0.17', l: 'за минуту' },
-  { v: '107', l: 'языков' },
-  { v: '<0.5 с', l: 'задержка перевода' },
-  { v: '0%', l: 'сгорания минут' },
-];
+// STATS/FEATURES/COMPARE собираются внутри LandingPage — тексты через t().
 
 // ─── 107 языков VibeVox ─── country = ISO 3166-1 alpha-2 для flagcdn.com ───
 const LANG_LIST = [
@@ -148,44 +144,6 @@ const LANG_LIST = [
 const ROW1 = LANG_LIST.slice(0, 54);   // 54 — европейские + ближний восток + ЦА
 const ROW2 = LANG_LIST.slice(54);      // 53 — азиатские + африканские + прочие
 
-const FEATURES = [
-  {
-    icon: Share2,
-    title: 'Ссылка вместо установки',
-    text: 'Отправьте ссылку в WhatsApp или Telegram — собеседник подключается прямо из браузера. Никакого App Store, IT-отдела и настроек. Работает на любом устройстве.',
-  },
-  {
-    icon: Zap,
-    title: '€0.17 за минуту — в 5–15 раз дешевле',
-    text: 'Самая низкая розничная цена на рынке синхронного перевода. Оплата только за реально переведённые минуты — без подписки и годового контракта.',
-  },
-  {
-    icon: RefreshCw,
-    title: 'Минуты не сгорают никогда',
-    text: 'Неиспользованный остаток автоматически переходит на следующий месяц. Заплатили — минуты ваши без дедлайна.',
-  },
-  {
-    icon: Waves,
-    title: 'Живой голос, не робот',
-    text: 'HD-голоса Aoede и Charon. Gemini переводит аудио сразу в аудио — без цепочки STT→текст→TTS. Задержка менее 0.5 секунды, разговор идёт в естественном ритме.',
-  },
-  {
-    icon: GraduationCap,
-    title: 'Понимает ваш сленг и диалекты',
-    text: 'AI Learning Hub адаптируется под терминологию вашей ниши и 96 региональных диалектов — египетский арабский, латиноамериканский испанский. За 1 час использования.',
-  },
-  {
-    icon: KeyRound,
-    title: 'Свой ключ Gemini — звонки бесплатно',
-    text: 'Enterprise BYOK: подключите собственный API-ключ Google и проводите встречи, оплачивая только инфраструктуру по себестоимости.',
-  },
-];
-
-const COMPARE = [
-  { name: 'Palabra.ai', them: '$0.85–1.20 / мин · минуты сгорают · только веб', us: '€0.17/мин · перенос минут · SIP + веб' },
-  { name: 'Interprefy', them: 'от $2.50 / мин · запуск через техподдержку', us: 'Запуск комнаты в 1 клик · BYOK · экономия до 93%' },
-  { name: 'Sanas.ai', them: 'не переводит между языками · только Enterprise', us: 'Перевод между 107 языками · самообслуживание' },
-];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -256,6 +214,7 @@ function detectBrowserLang(): { name: string; country: string } {
 
 /** Полная таблица 107 языков с поиском (имеет собственный state). */
 function LanguageGrid() {
+  const { t } = useTranslation('common');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const filtered = q
@@ -273,18 +232,18 @@ function LanguageGrid() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск языка..."
+            placeholder={t('sec.landing.langSearchPh', 'Поиск языка...')}
             className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
           />
         </div>
         <p className="text-xs text-white/35 shrink-0">
-          Проверьте, поддерживает ли он ваш язык →
+          {t('sec.landing.langCheckYours', 'Проверьте, есть ли ваш язык →')}
         </p>
       </div>
       {/* Сетка */}
       {filtered.length === 0 ? (
-        <p className="text-center text-white/40 text-sm py-6">Язык не найден</p>
+        <p className="text-center text-white/40 text-sm py-6">{t('sec.landing.langNotFound', 'Язык не найден')}</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
           {filtered.map((l) => (
@@ -298,7 +257,7 @@ function LanguageGrid() {
         </div>
       )}
       <p className="text-center text-xs text-white/25 mt-5">
-        {filtered.length} из {LANG_LIST.length} языков
+        {t('sec.landing.langCount', '{{shown}} из {{total}} языков', { shown: filtered.length, total: LANG_LIST.length })}
       </p>
     </div>
   );
@@ -315,16 +274,63 @@ function SectionLabel({ n, children }: { n: string; children: string }) {
 }
 
 export function LandingPage() {
+  const { t } = useTranslation('common');
   const [browserLang, setBrowserLang] = useState<{ name: string; country: string }>({ name: 'русского', country: 'ru' });
   useEffect(() => { setBrowserLang(detectBrowserLang()); }, []);
+
+  const STATS = [
+    { v: '€0.17', l: t('sec.landing.statPerMin', 'за минуту') },
+    { v: '107', l: t('sec.landing.statLangs', 'языков') },
+    { v: t('sec.landing.statLatencyV', '<0.5 с'), l: t('sec.landing.statLatency', 'задержка перевода') },
+    { v: '0%', l: t('sec.landing.statBurn', 'сгорания минут') },
+  ];
+
+  const FEATURES = [
+    {
+      icon: Share2,
+      title: t('sec.landing.featShareTitle', 'Ссылка вместо установки'),
+      text: t('sec.landing.featShareText', 'Отправьте ссылку в WhatsApp или Telegram — собеседник подключается прямо из браузера. Никакого App Store, IT-отдела и настроек. Работает на любом устройстве.'),
+    },
+    {
+      icon: Zap,
+      title: t('sec.landing.featPriceTitle', '€0.17 за минуту — в 5–15 раз дешевле'),
+      text: t('sec.landing.featPriceText', 'Самая низкая розничная цена на рынке синхронного перевода. Оплата только за реально переведённые минуты — без подписки и годового контракта.'),
+    },
+    {
+      icon: RefreshCw,
+      title: t('sec.landing.featRolloverTitle', 'Минуты не сгорают никогда'),
+      text: t('sec.landing.featRolloverText', 'Неиспользованный остаток автоматически переходит на следующий месяц. Заплатили — минуты ваши без дедлайна.'),
+    },
+    {
+      icon: Waves,
+      title: t('sec.landing.featVoiceTitle', 'Живой голос, не робот'),
+      text: t('sec.landing.featVoiceText', 'HD-голоса Aoede и Charon. Gemini переводит аудио сразу в аудио — без цепочки STT→текст→TTS. Задержка менее 0.5 секунды, разговор идёт в естественном ритме.'),
+    },
+    {
+      icon: GraduationCap,
+      title: t('sec.landing.featLearnTitle', 'Понимает ваш сленг и диалекты'),
+      text: t('sec.landing.featLearnText', 'AI Learning Hub адаптируется под терминологию вашей ниши и 96 региональных диалектов — египетский арабский, латиноамериканский испанский. За 1 час использования.'),
+    },
+    {
+      icon: KeyRound,
+      title: t('sec.landing.featByokTitle', 'Свой ключ Gemini — звонки бесплатно'),
+      text: t('sec.landing.featByokText', 'Enterprise BYOK: подключите собственный API-ключ Google и проводите встречи, оплачивая только инфраструктуру по себестоимости.'),
+    },
+  ];
+
+  const COMPARE = [
+    { name: 'Palabra.ai', them: t('sec.landing.cmpPalabraThem', '$0.85–1.20 / мин · минуты сгорают · только веб'), us: t('sec.landing.cmpPalabraUs', '€0.17/мин · перенос минут · SIP + веб') },
+    { name: 'Interprefy', them: t('sec.landing.cmpInterprefyThem', 'от $2.50 / мин · запуск через техподдержку'), us: t('sec.landing.cmpInterprefyUs', 'Запуск комнаты в 1 клик · BYOK · экономия до 93%') },
+    { name: 'Sanas.ai', them: t('sec.landing.cmpSanasThem', 'не переводит между языками · только Enterprise'), us: t('sec.landing.cmpSanasUs', 'Перевод между 107 языками · самообслуживание') },
+  ];
 
   return (
     <div id="top" className="dark relative min-h-screen overflow-x-hidden text-white" style={{ background: '#0A0A0B' }}>
       <Helmet>
-        <title>TrendTraffic — умный видео-маркетинг</title>
+        <title>{t('sec.pub.seoTitle', 'TrendTraffic — умный видео-маркетинг')}</title>
         <meta
           name="description"
-          content="TrendTraffic — поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео."
+          content={t('sec.landing.metaDesc', 'TrendTraffic — поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео.')}
         />
         <style>{`
           @keyframes vv-mq-l { from { transform: translateX(0) } to { transform: translateX(-50%) } }
@@ -353,32 +359,31 @@ export function LandingPage() {
           <motion.div {...fadeUp} className="flex items-center justify-center gap-3 mb-7">
             <span className="h-px w-6" style={{ background: 'rgba(99,102,241,0.6)' }} />
             <span className="text-xs font-700 uppercase tracking-[0.22em]" style={{ color: 'var(--brand)' }}>
-              Синхронный ИИ-перевод видеозвонков
+              {t('sec.landing.heroKicker', 'Синхронный ИИ-перевод видеозвонков')}
             </span>
             <span className="h-px w-6" style={{ background: 'rgba(99,102,241,0.6)' }} />
           </motion.div>
 
           <motion.h1 {...fadeUp} transition={{ duration: 0.6, delay: 0.05 }}
             className="font-display font-800 tracking-[-0.03em] text-[2.65rem] leading-[1.04] sm:text-6xl lg:text-[4.75rem] mb-6">
-            Стираем языковые барьеры<br />
-            <span style={{ color: 'var(--brand)' }}>в реальном времени</span>
+            {t('sec.landing.h1a', 'Стираем языковые барьеры')}<br />
+            <span style={{ color: 'var(--brand)' }}>{t('sec.landing.h1b', 'в реальном времени')}</span>
           </motion.h1>
 
           <motion.p {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
             className="max-w-2xl mx-auto text-lg sm:text-xl text-white/60 leading-relaxed mb-9">
-            Мгновенный двусторонний перевод видеовстреч и SIP-звонков на 100+ языков.
-            HD-голоса, задержка менее 0.5 секунды, всего <b className="text-white">€0.17</b> за минуту.
+            {t('sec.landing.heroLead', 'Мгновенный двусторонний перевод видеовстреч и SIP-звонков на 100+ языков. HD-голоса, задержка менее 0.5 секунды, всего €0.17 за минуту.')}
           </motion.p>
 
           <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.15 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
             <a href="/" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-700 text-white transition-all hover:brightness-110 w-full sm:w-auto justify-center"
                style={{ background: 'var(--brand)', boxShadow: '0 12px 40px rgba(99,102,241,0.4)' }}>
-              Создать демо-комнату <ArrowRight size={18} />
+              {t('sec.pub.ctaOpenApp', 'Открыть приложение')} <ArrowRight size={18} />
             </a>
             <a href="#pricing" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-700 text-white/85 transition-all hover:bg-white/5 w-full sm:w-auto justify-center"
                style={{ border: '1px solid rgba(255,255,255,0.16)' }}>
-              Смотреть тарифы
+              {t('sec.landing.seePricingBtn', 'Смотреть тарифы')}
             </a>
           </motion.div>
 
@@ -398,16 +403,13 @@ export function LandingPage() {
         {/* ===== ВОЗМОЖНОСТИ ===== */}
         <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
           <motion.div {...fadeUp} className="mb-12">
-            <SectionLabel n="01">Возможности</SectionLabel>
+            <SectionLabel n="01">{t('sec.landing.featuresLabel', 'Возможности')}</SectionLabel>
             <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] max-w-3xl mb-5">
-              Без приложений. Без настроек.<br className="hidden sm:block" />
-              <span style={{ color: 'var(--brand)' }}>Просто поделитесь ссылкой.</span>
+              {t('sec.landing.featH2a', 'Без приложений. Без настроек.')}<br className="hidden sm:block" />
+              <span style={{ color: 'var(--brand)' }}>{t('sec.landing.featH2b', 'Просто поделитесь ссылкой.')}</span>
             </h2>
             <p className="text-white/55 max-w-2xl text-lg leading-relaxed">
-              VibeVox работает прямо в браузере. Создайте переговорную комнату за 1 клик,
-              скопируйте ссылку и отправьте собеседнику в WhatsApp или Telegram —
-              он подключается мгновенно, и оба слышат перевод друг друга на родном языке.
-              Регистрация партнёру не нужна.
+              {t('sec.landing.featIntro', 'VibeVox работает прямо в браузере. Создайте переговорную комнату за 1 клик, скопируйте ссылку и отправьте собеседнику в WhatsApp или Telegram — он подключается мгновенно, и оба слышат перевод друг друга на родном языке. Регистрация партнёру не нужна.')}
             </p>
           </motion.div>
 
@@ -434,11 +436,9 @@ export function LandingPage() {
                 <MessagesSquare size={20} style={{ color: 'var(--brand)' }} strokeWidth={1.9} />
               </div>
               <div>
-                <h3 className="font-700 text-lg mb-1.5">Умные подсказки прямо во время звонка</h3>
+                <h3 className="font-700 text-lg mb-1.5">{t('sec.landing.hintsTitle', 'Умные подсказки прямо во время звонка')}</h3>
                 <p className="text-sm text-white/60 leading-relaxed">
-                  В SIP-телефонии ИИ транскрибирует диалог в реальном времени и выводит менеджеру
-                  готовые ответы на экран. После звонка — боли, триггеры и теги автоматически уходят в CRM
-                  (Chatwoot, Questflow). Подключайтесь к АТС Zadarma, Twilio и любому SIP-шлюзу.
+                  {t('sec.landing.hintsText', 'В SIP-телефонии ИИ транскрибирует диалог в реальном времени и выводит менеджеру готовые ответы на экран. После звонка — боли, триггеры и теги автоматически уходят в CRM (Chatwoot, Questflow). Подключайтесь к АТС Zadarma, Twilio и любому SIP-шлюзу.')}
                 </p>
               </div>
             </motion.div>
@@ -453,30 +453,29 @@ export function LandingPage() {
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center">
             <motion.div {...fadeUp}>
-              <SectionLabel n="02">Охват языков</SectionLabel>
+              <SectionLabel n="02">{t('sec.landing.langsLabel', 'Охват языков')}</SectionLabel>
               <h2 className="font-display font-800 tracking-[-0.03em] text-4xl sm:text-6xl lg:text-[4.2rem] mb-5">
-                Безупречный перевод{' '}
+                {t('sec.landing.langsH2a', 'Безупречный перевод')}{' '}
                 <span className="inline-flex items-center gap-2 align-middle">
                   <LangFlag country={browserLang.country} w={40} />
                   <span style={{ color: 'var(--brand)' }}>{browserLang.name}</span>
                 </span>
                 <br />
-                на 107 языков мира — и обратно.
+                {t('sec.landing.langsH2b', 'на 107 языков мира — и обратно.')}
               </h2>
               <p className="text-white/50 max-w-2xl mx-auto text-lg leading-relaxed mb-7">
-                Вы говорите на своём языке — собеседник слышит перевод на своём. Он отвечает —
-                вы мгновенно слышите его на {browserLang.name}. Синхронно, без задержки, без акцента.
+                {t('sec.landing.langsText', 'Вы говорите на своём языке — собеседник слышит перевод на своём. Он отвечает — вы мгновенно слышите его на {{lang}}. Синхронно, без задержки, без акцента.', { lang: browserLang.name })}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2.5">
                 {[
-                  '107 языков',
-                  'Оба участника — на родном',
-                  '< 0.5 с задержка',
-                  'Региональные диалекты',
-                ].map((t) => (
-                  <span key={t} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-600"
+                  t('sec.landing.chip107', '107 языков'),
+                  t('sec.landing.chipNative', 'Оба участника — на родном'),
+                  t('sec.landing.chipLatency', '< 0.5 с задержка'),
+                  t('sec.landing.chipDialects', 'Региональные диалекты'),
+                ].map((chip) => (
+                  <span key={chip} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-600"
                     style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: 'var(--brand)' }}>
-                    {t}
+                    {chip}
                   </span>
                 ))}
               </div>
@@ -530,37 +529,36 @@ export function LandingPage() {
             style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="grid lg:grid-cols-2 gap-10 items-center">
               <div>
-                <SectionLabel n="03">Честный биллинг</SectionLabel>
-                <h2 className="font-display font-800 text-3xl sm:text-4xl tracking-[-0.02em] mb-4">Минуты не сгорают</h2>
+                <SectionLabel n="03">{t('sec.landing.billingLabel', 'Честный биллинг')}</SectionLabel>
+                <h2 className="font-display font-800 text-3xl sm:text-4xl tracking-[-0.02em] mb-4">{t('sec.landing.noBurnH2', 'Минуты не сгорают')}</h2>
                 <p className="text-white/55 mb-6 leading-relaxed">
-                  У классических SaaS неиспользованные минуты сгорают каждый месяц. VibeVox бережно переносит
-                  их на следующий — вы не теряете ни секунды оплаченного времени.
+                  {t('sec.landing.noBurnText', 'У классических SaaS неиспользованные минуты сгорают каждый месяц. VibeVox бережно переносит их на следующий — вы не теряете ни секунды оплаченного времени.')}
                 </p>
                 <div className="flex items-baseline gap-2 mb-6">
                   <span className="font-display font-800 text-5xl" style={{ color: 'var(--brand)' }}>€0.17</span>
-                  <span className="text-white/45">/ минута</span>
+                  <span className="text-white/45">{t('sec.landing.perMinute', '/ минута')}</span>
                 </div>
                 <a href="/" className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-700 text-white transition-all hover:brightness-110"
                    style={{ background: 'var(--brand)', boxShadow: '0 10px 32px rgba(99,102,241,0.35)' }}>
-                  Купить пакет минут <ArrowRight size={18} />
+                  {t('sec.landing.goToPricingBtn', 'Перейти к тарифам')} <ArrowRight size={18} />
                 </a>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div className="flex items-center gap-2 font-700 mb-3 text-white/60"><X size={18} className="text-magenta-400" /> Конкуренты</div>
+                  <div className="flex items-center gap-2 font-700 mb-3 text-white/60"><X size={18} className="text-magenta-400" /> {t('sec.landing.competitors', 'Конкуренты')}</div>
                   <ul className="space-y-2 text-sm text-white/45">
-                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> Минуты сгорают в конце месяца</li>
-                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> Годовые контракты на тысячи $</li>
-                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> До $1.20–2.50 за минуту</li>
+                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> {t('sec.landing.themBurn', 'Минуты сгорают в конце месяца')}</li>
+                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> {t('sec.landing.themContracts', 'Годовые контракты на тысячи $')}</li>
+                    <li className="flex gap-2"><X size={15} className="text-magenta-400 shrink-0 mt-0.5" /> {t('sec.landing.themPrice', 'До $1.20–2.50 за минуту')}</li>
                   </ul>
                 </div>
                 <div className="rounded-2xl p-5" style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.3)' }}>
                   <div className="flex items-center gap-2 font-700 mb-3" style={{ color: 'var(--brand)' }}><RefreshCw size={18} /> VibeVox</div>
                   <ul className="space-y-2 text-sm text-white/75">
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> Перенос минут (roll-over)</li>
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> Оплата по факту, без контрактов</li>
-                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> €0.17 за минуту</li>
+                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {t('sec.landing.usRollover', 'Перенос минут (roll-over)')}</li>
+                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {t('sec.landing.usPayAsYouGo', 'Оплата по факту, без контрактов')}</li>
+                    <li className="flex gap-2"><Check size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--brand)' }} /> {t('sec.landing.usPrice', '€0.17 за минуту')}</li>
                   </ul>
                 </div>
               </div>
@@ -571,9 +569,9 @@ export function LandingPage() {
         {/* ===== СРАВНЕНИЕ ===== */}
         <section id="compare" className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
           <motion.div {...fadeUp} className="mb-12">
-            <SectionLabel n="04">Сравнение</SectionLabel>
+            <SectionLabel n="04">{t('sec.landing.cmpLabel', 'Сравнение')}</SectionLabel>
             <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] max-w-2xl">
-              Дешевле и быстрее новой волны
+              {t('sec.landing.cmpH2', 'Дешевле и быстрее новой волны')}
             </h2>
           </motion.div>
 
@@ -602,14 +600,14 @@ export function LandingPage() {
                  style={{ background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.3), transparent 70%)' }} />
             <div className="relative">
               <h2 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] mb-4">
-                Говорите на одном языке со всем миром
+                {t('sec.landing.finalH2', 'Говорите на одном языке со всем миром')}
               </h2>
               <p className="text-white/60 max-w-xl mx-auto mb-8 text-lg">
-                Запуск комнаты за 1 клик. Без регистрации для демо.
+                {t('sec.landing.finalSub', 'Регистрация за минуту. Первые 7 дней — бесплатно.')}
               </p>
               <a href="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-700 text-white transition-all hover:brightness-110"
                  style={{ background: 'var(--brand)', boxShadow: '0 12px 44px rgba(99,102,241,0.45)' }}>
-                Создать демо-комнату <ArrowRight size={20} />
+                {t('sec.pub.ctaOpenApp', 'Открыть приложение')} <ArrowRight size={20} />
               </a>
             </div>
           </motion.div>

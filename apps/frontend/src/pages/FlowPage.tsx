@@ -16,6 +16,7 @@
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Check, X, Copy, Trash2, Power, Loader2, Cloud } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -70,6 +71,7 @@ const KIND_BADGE: Record<string, { icon: React.ReactNode; color: string }> = {
 };
 
 export default function FlowPage() {
+  const { t } = useTranslation('common');
   const token = useAppStore((s) => s.token);
   const headers = useCallback((): HeadersInit => ({
     'Content-Type': 'application/json',
@@ -110,7 +112,8 @@ export default function FlowPage() {
         let flowId: string | null = null;
         if (src) {
           // Видео из Галереи → новый сценарий с этим источником.
-          const flowName = (srcName ? `${open === 'omni' ? 'Omni Flash' : 'Сценарий'} — ${srcName}` : 'Новый сценарий').slice(0, 120);
+          const prefix = open === 'omni' ? 'Omni Flash' : t('sec.ugc.flowGenericName', 'Сценарий');
+          const flowName = (srcName ? `${prefix} — ${srcName}` : t('sec.ugc.newFlowName', 'Новый сценарий')).slice(0, 120);
           const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: flowName }) });
           const cd = await cr.json();
           if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
@@ -118,7 +121,7 @@ export default function FlowPage() {
           if (flowId) {
             await fetch(`/api/flows/${flowId}`, {
               method: 'PUT', headers: headers(),
-              body: JSON.stringify({ graph: { source: { url: src, name: srcName || 'Видео', ...(srcAssetId ? { assetId: srcAssetId } : {}) } } }),
+              body: JSON.stringify({ graph: { source: { url: src, name: srcName || t('sec.ugc.videoSourceName', 'Видео'), ...(srcAssetId ? { assetId: srcAssetId } : {}) } } }),
             });
           }
         } else {
@@ -127,7 +130,7 @@ export default function FlowPage() {
           const d = await r.json().catch(() => ({}));
           flowId = (d.flows || [])[0]?.id || null;
           if (!flowId) {
-            const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: 'Новый сценарий' }) });
+            const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: t('sec.ugc.newFlowName', 'Новый сценарий') }) });
             const cd = await cr.json();
             if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
             flowId = cd.flow?.id || null;
@@ -139,7 +142,7 @@ export default function FlowPage() {
           setEditingId(flowId);
         }
       } catch (e: any) {
-        setError(e?.message || 'Не удалось открыть блок');
+        setError(e?.message || t('sec.ugc.openBlockFail', 'Не удалось открыть блок.'));
       } finally {
         setSearchParams({}, { replace: true }); // чтобы F5 не создавал сценарии повторно
       }
@@ -154,9 +157,9 @@ export default function FlowPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setFlows(data.flows || []);
-    } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); }
+    } catch (e: any) { setError(e?.message || t('sec.ugc.loadError', 'Ошибка загрузки')); }
     finally { setLoading(false); }
-  }, [headers]);
+  }, [headers, t]);
   useEffect(() => { load(); }, [load]);
 
   // Подтянуть графы сценариев и вычислить иконки-бейджи содержимого (для обложек).
@@ -180,11 +183,11 @@ export default function FlowPage() {
   const createAndOpen = async () => {
     setCreating(true); setError(null);
     try {
-      const res = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: 'Новый сценарий' }) });
+      const res = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: t('sec.ugc.newFlowName', 'Новый сценарий') }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       if (data.flow?.id) { setOpenedNew(true); setEditingId(data.flow.id); } else await load();
-    } catch (e: any) { setError(e?.message || 'Ошибка'); }
+    } catch (e: any) { setError(e?.message || t('sec.ugc.errShort', 'Ошибка')); }
     finally { setCreating(false); }
   };
 
@@ -194,14 +197,14 @@ export default function FlowPage() {
       const r = await fetch(`/api/flows/${f.id}`, { headers: headers() });
       const d = await r.json();
       const graph = d.flow?.graph;
-      const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: `${f.name} (копия)`, channelType: f.channel_type }) });
+      const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: t('sec.ugc.copySuffix', '{{name}} (копия)', { name: f.name }), channelType: f.channel_type }) });
       const cd = await cr.json();
       if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
       if (cd.flow?.id && graph) {
         await fetch(`/api/flows/${cd.flow.id}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ graph }) });
       }
       await load();
-    } catch (e: any) { setError(e?.message || 'Ошибка'); }
+    } catch (e: any) { setError(e?.message || t('sec.ugc.errShort', 'Ошибка')); }
     finally { setBusyId(null); }
   };
 
@@ -212,7 +215,7 @@ export default function FlowPage() {
       const res = await fetch(`/api/flows/${f.id}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ status: next, ...(next === 'active' ? { isDefault: true } : {}) }) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
       await load();
-    } catch (e: any) { setError(e?.message || 'Ошибка'); }
+    } catch (e: any) { setError(e?.message || t('sec.ugc.errShort', 'Ошибка')); }
     finally { setBusyId(null); }
   };
 
@@ -221,10 +224,10 @@ export default function FlowPage() {
     try {
       const res = await fetch(`/api/flows/${id}`, { method: 'DELETE', headers: headers() });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok || d.ok === false) throw new Error(d.error || `Не удалось удалить (HTTP ${res.status})`);
+      if (!res.ok || d.ok === false) throw new Error(d.error || t('sec.ugc.deleteFailHttp', 'Не удалось удалить (HTTP {{status}})', { status: res.status }));
       setConfirmDelete(null);
       await load();
-    } catch (e: any) { setError(e?.message || 'Ошибка'); }
+    } catch (e: any) { setError(e?.message || t('sec.ugc.errShort', 'Ошибка')); }
     finally { setBusyId(null); }
   };
 
@@ -249,7 +252,7 @@ export default function FlowPage() {
         } catch { return false; }
       }));
       const failed = results.filter((ok) => !ok).length;
-      if (failed > 0) setError(`Не удалось удалить ${failed} из ${ids.length} сценариев`);
+      if (failed > 0) setError(t('sec.ugc.massDeleteFail', 'Не удалось удалить {{failed}} из {{total}} сценариев', { failed, total: ids.length }));
       setSelected(new Set());
       setConfirmMass(false);
       await load();
@@ -266,7 +269,7 @@ export default function FlowPage() {
       if (!res.ok) throw new Error(d.error || `HTTP ${res.status}`);
       setEditingNameId(null);
       await load();
-    } catch (e: any) { setError(e?.message || 'Ошибка'); }
+    } catch (e: any) { setError(e?.message || t('sec.ugc.errShort', 'Ошибка')); }
     finally { setBusyId(null); }
   };
 
@@ -293,7 +296,7 @@ export default function FlowPage() {
              className="w-10 h-10 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div>
           <h1 className="text-2xl font-700" style={{ color: 'var(--text-primary)' }}>TrendFlow</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Сценарии производства видео. Создайте сценарий и соберите его в редакторе.</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('sec.ugc.pageSubtitle', 'Сценарии производства видео. Создайте сценарий и соберите его в редакторе.')}</p>
         </div>
       </div>
 
@@ -303,25 +306,25 @@ export default function FlowPage() {
       {selected.size > 0 && (
         <div className="flex items-center gap-2 flex-wrap rounded-xl px-3 py-2"
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--accent-cyan)' }}>
-          <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>Выбрано: {selected.size}</span>
+          <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.ugc.selectedCount', 'Выбрано: {{n}}', { n: selected.size })}</span>
           {selected.size < flows.length && (
             <button type="button" onClick={() => setSelected(new Set(flows.map((f) => f.id)))}
               className="px-2.5 py-1 rounded-lg text-xs font-600 transition-colors hover:bg-[var(--bg-tertiary)]"
               style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-              Выбрать все ({flows.length})
+              {t('sec.ugc.selectAll', 'Выбрать все ({{n}})', { n: flows.length })}
             </button>
           )}
           <button type="button" onClick={() => setSelected(new Set())}
             className="px-2.5 py-1 rounded-lg text-xs font-600 transition-colors hover:bg-[var(--bg-tertiary)]"
             style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            Снять выделение
+            {t('sec.ugc.clearSelection', 'Снять выделение')}
           </button>
           <div className="flex-1" />
           <button type="button" onClick={() => setConfirmMass(true)} disabled={massBusy}
             className="px-3 py-1.5 rounded-lg text-xs font-700 flex items-center gap-1.5 transition-opacity hover:opacity-90"
             style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', cursor: massBusy ? 'wait' : 'pointer' }}>
             {massBusy ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-            Удалить ({selected.size})
+            {t('sec.ugc.deleteN', 'Удалить ({{n}})', { n: selected.size })}
           </button>
         </div>
       )}
@@ -337,7 +340,7 @@ export default function FlowPage() {
             <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border-strong)' }}>
               {creating ? <Loader2 size={24} className="animate-spin" /> : <Plus size={26} />}
             </div>
-            <span className="text-sm font-600">Создать сценарий</span>
+            <span className="text-sm font-600">{t('sec.ugc.createFlow', 'Создать сценарий')}</span>
           </button>
 
           {/* Карточки сценариев */}
@@ -363,13 +366,13 @@ export default function FlowPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') renameFlow(f.id); if (e.key === 'Escape') setEditingNameId(null); }}
                         className="px-2 py-1 rounded text-sm outline-none min-w-0 flex-1"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)' }} />
-                      <button onClick={() => renameFlow(f.id)} title="Сохранить" style={{ color: '#10b981', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><Check size={15} /></button>
-                      <button onClick={() => setEditingNameId(null)} title="Отмена" style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><X size={15} /></button>
+                      <button onClick={() => renameFlow(f.id)} title={t('sec.ugc.save', 'Сохранить')} style={{ color: '#10b981', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><Check size={15} /></button>
+                      <button onClick={() => setEditingNameId(null)} title={t('sec.ugc.cancel', 'Отмена')} style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><X size={15} /></button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-sm font-700 truncate" style={{ color: 'var(--text-primary)' }} title={f.name}>{f.name}</span>
-                      <button onClick={(e) => { stop(e); setEditingNameId(f.id); setEditName(f.name); }} title="Переименовать"
+                      <button onClick={(e) => { stop(e); setEditingNameId(f.id); setEditName(f.name); }} title={t('sec.ugc.rename', 'Переименовать')}
                         style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}><Pencil size={13} /></button>
                     </div>
                   )}
@@ -378,7 +381,7 @@ export default function FlowPage() {
                       style={f.status === 'active'
                         ? { background: 'rgba(16,185,129,0.12)', color: '#10b981' }
                         : { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
-                      {f.status === 'active' ? 'Активен' : 'Черновик'}
+                      {f.status === 'active' ? t('sec.ugc.statusActive', 'Активен') : t('sec.ugc.statusDraft', 'Черновик')}
                     </span>
                     <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{fmtDateTime(f.updated_at || f.created_at)}</span>
                   </div>
@@ -391,19 +394,19 @@ export default function FlowPage() {
                     </span>
                   ) : (
                     <>
-                      <button onClick={() => duplicateFlow(f)} title="Дублировать" aria-label="Дублировать"
+                      <button onClick={() => duplicateFlow(f)} title={t('sec.ugc.duplicate', 'Дублировать')} aria-label={t('sec.ugc.duplicate', 'Дублировать')}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
                         style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                         <Copy size={14} />
                       </button>
                       <button onClick={() => toggleActive(f)}
-                        title={f.status === 'active' ? 'Сделать черновиком' : 'Активировать'}
-                        aria-label={f.status === 'active' ? 'Сделать черновиком' : 'Активировать'}
+                        title={f.status === 'active' ? t('sec.ugc.makeDraft', 'Сделать черновиком') : t('sec.ugc.activate', 'Активировать')}
+                        aria-label={f.status === 'active' ? t('sec.ugc.makeDraft', 'Сделать черновиком') : t('sec.ugc.activate', 'Активировать')}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
                         style={{ background: 'transparent', border: 'none', color: f.status === 'active' ? 'var(--accent-green)' : 'var(--text-muted)', cursor: 'pointer' }}>
                         <Power size={14} />
                       </button>
-                      <button onClick={() => setConfirmDelete(f)} title="Удалить" aria-label="Удалить"
+                      <button onClick={() => setConfirmDelete(f)} title={t('sec.ugc.delete', 'Удалить')} aria-label={t('sec.ugc.delete', 'Удалить')}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-tertiary)]"
                         style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
                         <Trash2 size={14} />
@@ -417,7 +420,7 @@ export default function FlowPage() {
                 <img src={HERO} alt="" loading="lazy" className="w-full h-full object-cover"
                   onError={(e) => { const img = e.currentTarget; if (!img.src.endsWith(HERO_FALLBACK)) img.src = HERO_FALLBACK; }} />
                 <button type="button" onClick={(e) => { stop(e); toggleSelect(f.id); }}
-                  title={selected.has(f.id) ? 'Снять выделение' : 'Выбрать'} aria-label={selected.has(f.id) ? 'Снять выделение' : 'Выбрать'}
+                  title={selected.has(f.id) ? t('sec.ugc.clearSelection', 'Снять выделение') : t('sec.ugc.select', 'Выбрать')} aria-label={selected.has(f.id) ? t('sec.ugc.clearSelection', 'Снять выделение') : t('sec.ugc.select', 'Выбрать')}
                   style={{
                     position: 'absolute', top: 6, right: 6, zIndex: 3, width: 24, height: 24, borderRadius: 7,
                     background: selected.has(f.id) ? 'var(--accent-cyan)' : 'rgba(0,0,0,0.55)',
@@ -443,9 +446,9 @@ export default function FlowPage() {
 
       <ConfirmModal
         open={!!confirmDelete}
-        title="Удалить сценарий?"
-        message={confirmDelete ? `«${confirmDelete.name}» будет удалён безвозвратно.` : ''}
-        confirmLabel="Удалить"
+        title={t('sec.ugc.deleteFlowQ', 'Удалить сценарий?')}
+        message={confirmDelete ? t('sec.ugc.deleteFlowMsg', '«{{name}}» будет удалён безвозвратно.', { name: confirmDelete.name }) : ''}
+        confirmLabel={t('sec.ugc.delete', 'Удалить')}
         variant="danger"
         onConfirm={() => confirmDelete && doDelete(confirmDelete.id)}
         onCancel={() => setConfirmDelete(null)}
@@ -453,9 +456,9 @@ export default function FlowPage() {
 
       <ConfirmModal
         open={confirmMass}
-        title={`Удалить выбранные сценарии (${selected.size})?`}
-        message="Выбранные сценарии будут удалены безвозвратно."
-        confirmLabel={`Удалить (${selected.size})`}
+        title={t('sec.ugc.deleteSelectedQ', 'Удалить выбранные сценарии ({{n}})?', { n: selected.size })}
+        message={t('sec.ugc.deleteSelectedMsg', 'Выбранные сценарии будут удалены безвозвратно.')}
+        confirmLabel={t('sec.ugc.deleteN', 'Удалить ({{n}})', { n: selected.size })}
         variant="danger"
         onConfirm={massDelete}
         onCancel={() => setConfirmMass(false)}

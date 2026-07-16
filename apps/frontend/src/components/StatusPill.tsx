@@ -6,6 +6,7 @@
  */
 
 import { clsx } from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 type StatusType = 'online' | 'live' | 'trial' | 'offline' | 'enterprise';
 
@@ -25,7 +26,6 @@ function isDark() {
 }
 
 const statusConfig: Record<StatusType, {
-  defaultLabel: string;
   dot: string;
   bg: string;
   bgLight: string;
@@ -35,7 +35,6 @@ const statusConfig: Record<StatusType, {
   borderLight: string;
 }> = {
   online: {
-    defaultLabel: 'Онлайн',
     dot: '#10B981',
     bg:        'rgba(16,185,129,0.12)',
     bgLight:   'rgba(5,150,105,0.10)',
@@ -45,7 +44,6 @@ const statusConfig: Record<StatusType, {
     borderLight:   'rgba(5,150,105,0.25)',
   },
   live: {
-    defaultLabel: 'В эфире',
     dot: '#A1A1AA',
     bg:        'rgba(255,255,255,0.08)',
     bgLight:   'rgba(9,9,11,0.05)',
@@ -55,7 +53,6 @@ const statusConfig: Record<StatusType, {
     borderLight:   'rgba(9,9,11,0.12)',
   },
   trial: {
-    defaultLabel: 'Пробный',
     dot: '#F59E0B',
     bg:        'rgba(245,158,11,0.12)',
     bgLight:   'rgba(217,119,6,0.10)',
@@ -65,7 +62,6 @@ const statusConfig: Record<StatusType, {
     borderLight:   'rgba(217,119,6,0.28)',
   },
   offline: {
-    defaultLabel: 'Оффлайн',
     dot: '#6B7280',
     bg:        'rgba(107,114,128,0.10)',
     bgLight:   'rgba(75,85,99,0.08)',
@@ -75,7 +71,6 @@ const statusConfig: Record<StatusType, {
     borderLight:   'rgba(75,85,99,0.18)',
   },
   enterprise: {
-    defaultLabel: 'Enterprise',
     dot: '#E4E4E7',
     bg:        'rgba(255,255,255,0.12)',
     bgLight:   'rgba(9,9,11,0.08)',
@@ -87,8 +82,17 @@ const statusConfig: Record<StatusType, {
 };
 
 export function StatusPill({ status, label, className, pulse = false }: StatusPillProps) {
+  const { t } = useTranslation('common');
   const config = statusConfig[status];
-  const displayLabel = label ?? config.defaultLabel;
+  // Дефолтные подписи статусов — в точке рендера (модульная константа не переводится).
+  const defaultLabels: Record<StatusType, string> = {
+    online:     t('sec.misc.statusOnline', 'Онлайн'),
+    live:       t('sec.misc.statusLive', 'В эфире'),
+    trial:      t('sec.misc.statusTrial', 'Пробный'),
+    offline:    t('sec.misc.statusOffline', 'Оффлайн'),
+    enterprise: 'Enterprise',
+  };
+  const displayLabel = label ?? defaultLabels[status];
   const dark = isDark();
 
   return (

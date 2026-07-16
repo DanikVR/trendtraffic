@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation, useRouteError } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from './store/useAppStore';
 import { useIsEnterprise } from './hooks/useIsEnterprise';
 import { FEATURES, HOME_ROUTE_WHEN_NO_VIDEO } from './config/features';
@@ -116,9 +117,10 @@ function RequireEnterprise() {
 
 /** Простой полноэкранный лоадер на время, пока подгружается статус подписки. */
 function PaidGateLoader() {
+  const { t } = useTranslation('common');
   return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="animate-spin" aria-label="Загрузка"
+      <div className="animate-spin" aria-label={t('sec.misc.loading', 'Загрузка')}
            style={{ width: 28, height: 28, border: '3px solid var(--border-medium)',
                     borderTopColor: 'var(--brand)', borderRadius: '50%' }} />
     </div>
@@ -170,6 +172,7 @@ function LayoutSwitcher() {
 function RouteErrorElement() {
   // Частая причина — устаревший lazy-чанк после деплоя (хеши сменились, а вкладка старая).
   // Авто-перезагружаемся один раз (с защитой от петли), чтобы пользователь не видел белый экран.
+  const { t } = useTranslation('common');
   const err = useRouteError() as any;
   React.useEffect(() => {
     const msg = String(err?.message || err?.toString?.() || err || '');
@@ -185,12 +188,12 @@ function RouteErrorElement() {
   }, [err]);
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      <div style={{ fontSize: 18, fontWeight: 700 }}>Что-то пошло не так</div>
+      <div style={{ fontSize: 18, fontWeight: 700 }}>{t('sec.misc.routeErrTitle', 'Что-то пошло не так')}</div>
       <div style={{ fontSize: 14, color: 'var(--text-muted)', maxWidth: 380, lineHeight: 1.5 }}>
-        Возможно, вышло обновление приложения. Обновите страницу — обычно это решает проблему.
+        {t('sec.misc.routeErrHint', 'Возможно, вышло обновление приложения. Обновите страницу — обычно это решает проблему.')}
       </div>
       <button onClick={() => window.location.reload()} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: 'var(--btn-primary-bg, var(--brand))', color: 'var(--brand-contrast)', fontWeight: 700, cursor: 'pointer' }}>
-        Обновить страницу
+        {t('sec.misc.reloadPage', 'Обновить страницу')}
       </button>
     </div>
   );

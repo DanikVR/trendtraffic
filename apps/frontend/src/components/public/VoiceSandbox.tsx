@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mic, Loader2, Sparkles, RotateCcw, Play, AlertCircle } from 'lucide-react';
 
 type SandboxState = 'idle' | 'recording' | 'processing' | 'done' | 'error';
@@ -106,6 +107,7 @@ function estimateGender(buf: Float32Array, sr: number): 'male' | 'female' {
 }
 
 export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxProps) {
+  const { t } = useTranslation('common');
   const [state, setState] = useState<SandboxState>('idle');
   const [target, setTarget] = useState(TARGETS[0]);
   const [errMsg, setErrMsg] = useState('');
@@ -187,7 +189,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
       ctx = await ensureCtx();
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setErrMsg('Нужен доступ к микрофону, чтобы услышать перевод своего голоса.');
+      setErrMsg(t('sec.pub.sbMicDenied', 'Нужен доступ к микрофону, чтобы услышать перевод своего голоса.'));
       setState('error');
       return;
     }
@@ -250,7 +252,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
     const flat = concatFloat32(recordedRef.current);
     recordedRef.current = [];
     if (flat.length < inputRate * 0.3) {
-      setErrMsg('Слишком тихо или коротко. Скажите фразу вслух.');
+      setErrMsg(t('sec.pub.sbTooQuiet', 'Слишком тихо или коротко. Скажите фразу вслух.'));
       setState('error');
       return;
     }
@@ -271,18 +273,18 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
       });
       if (!resp.ok) {
         const j = await resp.json().catch(() => ({}));
-        throw new Error(j.error || 'Ошибка перевода');
+        throw new Error(j.error || t('sec.pub.sbTranslateFail', 'Ошибка перевода'));
       }
       const data = await resp.json();
       const samples = base64ToFloat32(data.audio);
       const sampleRate = Number(data.sampleRate) || 24000;
-      if (!samples.length) throw new Error('Перевод не распознан. Скажите фразу чётче.');
+      if (!samples.length) throw new Error(t('sec.pub.sbNotRecognized', 'Перевод не распознан. Скажите фразу чётче.'));
       resultRef.current = { samples, sampleRate };
       setState('done');
       void playResult();
     } catch (err) {
       const aborted = (err as any)?.name === 'AbortError' || ctrl.signal.aborted;
-      setErrMsg(aborted ? 'Перевод занял слишком долго. Попробуйте короче.' : (err as Error).message);
+      setErrMsg(aborted ? t('sec.pub.sbTimeout', 'Перевод занял слишком долго. Попробуйте короче.') : (err as Error).message);
       setState('error');
     } finally {
       window.clearTimeout(to);
@@ -361,7 +363,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
             style={{ background: 'var(--brand)', boxShadow: `0 10px 34px rgba(${ORANGE},0.4)` }}
           >
             <Mic size={20} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
-            {state === 'error' ? 'Попробовать снова' : 'Записать голос'}
+            {state === 'error' ? t('sec.pub.sbRetryBtn', 'Попробовать снова') : t('sec.pub.sbRecordBtn', 'Записать голос')}
           </button>
           {state === 'error' && (
             <div className="mt-3 flex items-center justify-center gap-2 text-sm text-white/65">
@@ -382,8 +384,8 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--brand)' }} />
             <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: 'var(--brand)' }} />
           </span>
-          Слушаю… говорите фразу
-          <span className="text-xs font-500 opacity-70">или нажмите, чтобы перевести</span>
+          {t('sec.pub.sbListening', 'Слушаю… говорите фразу')}
+          <span className="text-xs font-500 opacity-70">{t('sec.pub.sbTapToStop', 'или нажмите, чтобы перевести')}</span>
         </button>
       )}
 
@@ -394,10 +396,10 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
             style={{ background: `rgba(${ORANGE},0.1)`, border: `1px solid rgba(${ORANGE},0.35)` }}
           >
             <Loader2 size={20} className="animate-spin" />
-            ИИ переводит ваш голос…
+            {t('sec.pub.sbTranslating', 'ИИ переводит ваш голос…')}
           </div>
           <button type="button" onClick={reset} className="w-full text-center text-xs text-white/45 hover:text-white/70 transition-colors py-1">
-            Отменить
+            {t('sec.pub.sbCancelBtn', 'Отменить')}
           </button>
         </div>
       )}
@@ -409,9 +411,9 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
         >
           <div className="flex items-center justify-center gap-2 font-700 mb-1.5" style={{ color: 'var(--brand)' }}>
             <Sparkles size={18} />
-            Ваш голос переведён на {target.flag} {target.label}
+            {t('sec.pub.sbDoneTitle', 'Ваш голос переведён на {{lang}}', { lang: `${target.flag} ${target.label}` })}
           </div>
-          <p className="text-sm text-white/75 mb-4">Озвучено HD-голосом. Нажмите, чтобы прослушать снова.</p>
+          <p className="text-sm text-white/75 mb-4">{t('sec.pub.sbDoneHint', 'Озвучено HD-голосом. Нажмите, чтобы прослушать снова.')}</p>
           <div className="flex items-center justify-center gap-2.5">
             <button
               type="button"
@@ -419,7 +421,7 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-600 text-white"
               style={{ background: `rgba(${ORANGE},0.2)`, border: `1px solid rgba(${ORANGE},0.5)` }}
             >
-              <Play size={16} /> Прослушать перевод
+              <Play size={16} /> {t('sec.pub.sbPlayBtn', 'Прослушать перевод')}
             </button>
             <button
               type="button"
@@ -427,14 +429,14 @@ export function VoiceSandbox({ onActiveChange, onAnalyserChange }: VoiceSandboxP
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-600 text-white/70"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)' }}
             >
-              <RotateCcw size={16} /> Ещё раз
+              <RotateCcw size={16} /> {t('sec.pub.sbAgainBtn', 'Ещё раз')}
             </button>
           </div>
         </div>
       )}
 
       <p className="text-center text-xs text-white/40 mt-3">
-        Живое демо. Скажите короткую фразу — услышите её перевод.
+        {t('sec.pub.sbHint', 'Живое демо. Скажите короткую фразу — услышите её перевод.')}
       </p>
     </div>
   );

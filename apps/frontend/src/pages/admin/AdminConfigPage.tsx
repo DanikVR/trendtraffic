@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Key,
   Bot,
@@ -27,6 +28,7 @@ interface TestResult {
 }
 
 export default function AdminConfigPage() {
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { logout, token } = useAppStore();
 
@@ -42,7 +44,8 @@ export default function AdminConfigPage() {
   const [stripePublishableKey, setStripePublishableKey] = useState('');
   const [tikhubApiKey, setTikhubApiKey] = useState('');
   const [syncingProducts, setSyncingProducts] = useState(false);
-  const [syncResult, setSyncResult] = useState<string | null>(null);
+  // Результат синхронизации тарифов: флаг ok вместо разбора текста (текст переводится).
+  const [syncResult, setSyncResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Произвольные коды сайта (cookie-consent / аналитика / пиксели)
   const [customHeadCode, setCustomHeadCode] = useState('');
@@ -149,9 +152,9 @@ export default function AdminConfigPage() {
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       if (Array.isArray(data.chatIds)) setTgChatIds(data.chatIds);
       const kind = data.status === 'empty' ? 'info' : 'success';
-      setTgMessage({ kind, text: data.message || 'Готово' });
+      setTgMessage({ kind, text: data.message || t('sec.admin.cfg.done', 'Готово') });
     } catch (err: any) {
-      setTgMessage({ kind: 'error', text: err.message || 'Не удалось синхронизировать' });
+      setTgMessage({ kind: 'error', text: err.message || t('sec.admin.cfg.errTgSync', 'Не удалось синхронизировать') });
     } finally {
       setTgBusy(false);
     }
@@ -170,11 +173,11 @@ export default function AdminConfigPage() {
         setTgMessage({ kind: 'error', text: data.error || `HTTP ${res.status}`, botLink: data.botLink || null });
         return;
       }
-      setTgMessage({ kind: 'success', text: data.message || 'Отправлено' });
+      setTgMessage({ kind: 'success', text: data.message || t('sec.admin.cfg.sentOk', 'Отправлено') });
       // Бэк мог автоматически подтянуть chat_id перед отправкой — освежим статус.
       await loadTgStatus();
     } catch (err: any) {
-      setTgMessage({ kind: 'error', text: err.message || 'Не удалось отправить тест' });
+      setTgMessage({ kind: 'error', text: err.message || t('sec.admin.cfg.errTgTest', 'Не удалось отправить тест') });
     } finally {
       setTgBusy(false);
     }
@@ -193,10 +196,10 @@ export default function AdminConfigPage() {
         setTgMessage({ kind: 'error', text: data.error || `HTTP ${res.status}`, botLink: data.botLink || null });
         return;
       }
-      setTgMessage({ kind: 'success', text: data.message || 'Прогон выполнен.' });
+      setTgMessage({ kind: 'success', text: data.message || t('sec.admin.cfg.testAllDone', 'Прогон выполнен.') });
       await loadTgStatus();
     } catch (err: any) {
-      setTgMessage({ kind: 'error', text: err.message || 'Не удалось прогнать тесты' });
+      setTgMessage({ kind: 'error', text: err.message || t('sec.admin.cfg.errTgTestAll', 'Не удалось прогнать тесты') });
     } finally {
       setTgBusy(false);
     }
@@ -241,7 +244,7 @@ export default function AdminConfigPage() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(errData.error || `Ошибка сервера: ${res.status}`);
+        throw new Error(errData.error || t('sec.admin.cfg.serverError', 'Ошибка сервера: {{status}}', { status: res.status }));
       }
 
       // Backward compatibility: сохраняем Google OAuth отдельно
@@ -257,7 +260,7 @@ export default function AdminConfigPage() {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error('[AdminConfig] Ошибка сохранения:', err);
-      setSaveError(err.message || 'Ошибка сохранения настроек');
+      setSaveError(err.message || t('sec.admin.cfg.errSaveSettings', 'Ошибка сохранения настроек'));
     } finally {
       setLoading(false);
     }
@@ -265,26 +268,51 @@ export default function AdminConfigPage() {
 
   const runConnectionTest = (service: ServiceType) => {
     setTestingService(service);
-    setTestResults(prev => ({ ...prev, [service]: { status: 'testing', message: 'Инициализация...', steps: [] } }));
+    setTestResults(prev => ({ ...prev, [service]: { status: 'testing', message: t('sec.admin.cfg.testInit', 'Инициализация...'), steps: [] } }));
     setActiveSteps([]);
 
     let testSteps: string[] = [];
     let verifyUrl = '';
 
     if (service === 'telegram') {
-      testSteps = ['Запрос к API Telegram (api.telegram.org)...', 'Проверка валидности токена...', 'Аутентификация бота...', 'Получение информации о боте...'];
+      testSteps = [
+        t('sec.admin.cfg.tgStep1', 'Запрос к API Telegram (api.telegram.org)...'),
+        t('sec.admin.cfg.tgStep2', 'Проверка валидности токена...'),
+        t('sec.admin.cfg.tgStep3', 'Аутентификация бота...'),
+        t('sec.admin.cfg.tgStep4', 'Получение информации о боте...'),
+      ];
       verifyUrl = '/api/auth/verify-telegram';
     } else if (service === 'google') {
-      testSteps = ['Инициализация Google GenAI Client SDK...', 'Проверка формата API-ключа (AI Studio)...', 'Отправка тестового запроса к Gemini API...', 'Валидация доступа к модели gemini-2.5-flash...'];
+      testSteps = [
+        t('sec.admin.cfg.ggStep1', 'Инициализация Google GenAI Client SDK...'),
+        t('sec.admin.cfg.ggStep2', 'Проверка формата API-ключа (AI Studio)...'),
+        t('sec.admin.cfg.ggStep3', 'Отправка тестового запроса к Gemini API...'),
+        t('sec.admin.cfg.ggStep4', 'Валидация доступа к модели gemini-2.5-flash...'),
+      ];
       verifyUrl = '/api/auth/verify-google';
     } else if (service === 'googleOAuth') {
-      testSteps = ['Инициализация Google OAuth конфигурации...', 'Проверка формата Client ID...', 'Отправка запроса валидации в Google API...', 'Проверка ответа аутентификации от Google...'];
+      testSteps = [
+        t('sec.admin.cfg.oaStep1', 'Инициализация Google OAuth конфигурации...'),
+        t('sec.admin.cfg.oaStep2', 'Проверка формата Client ID...'),
+        t('sec.admin.cfg.oaStep3', 'Отправка запроса валидации в Google API...'),
+        t('sec.admin.cfg.oaStep4', 'Проверка ответа аутентификации от Google...'),
+      ];
       verifyUrl = '/api/auth/verify-google-oauth';
     } else if (service === 'stripe') {
-      testSteps = ['Инициализация Stripe SDK...', 'Проверка формата API Key (sk_test_/sk_live_)...', 'Запрос Balance из Stripe API...', 'Определение режима TEST/LIVE...'];
+      testSteps = [
+        t('sec.admin.cfg.stStep1', 'Инициализация Stripe SDK...'),
+        t('sec.admin.cfg.stStep2', 'Проверка формата API Key (sk_test_/sk_live_)...'),
+        t('sec.admin.cfg.stStep3', 'Запрос Balance из Stripe API...'),
+        t('sec.admin.cfg.stStep4', 'Определение режима TEST/LIVE...'),
+      ];
       verifyUrl = '/api/auth/verify-stripe';
     } else if (service === 'tikhub') {
-      testSteps = ['Подключение к API Trend...', 'Авторизация Bearer-токеном...', 'Запрос статуса ключа...', 'Чтение статуса ключа и баланса...'];
+      testSteps = [
+        t('sec.admin.cfg.thStep1', 'Подключение к API Trend...'),
+        t('sec.admin.cfg.thStep2', 'Авторизация Bearer-токеном...'),
+        t('sec.admin.cfg.thStep3', 'Запрос статуса ключа...'),
+        t('sec.admin.cfg.thStep4', 'Чтение статуса ключа и баланса...'),
+      ];
       verifyUrl = '/api/auth/verify-tikhub';
     }
 
@@ -323,17 +351,17 @@ export default function AdminConfigPage() {
             try {
               data = JSON.parse(rawText);
             } catch {
-              throw new Error(`Сервер вернул не JSON (HTTP ${res.status}): ${rawText.slice(0, 120)}`);
+              throw new Error(t('sec.admin.cfg.notJsonError', 'Сервер вернул не JSON (HTTP {{status}}): {{body}}', { status: res.status, body: rawText.slice(0, 120) }));
             }
           } else {
-            throw new Error(`Пустой ответ от сервера (HTTP ${res.status}). Возможно, backend перезагружался — повторите проверку через 2 секунды.`);
+            throw new Error(t('sec.admin.cfg.emptyRespError', 'Пустой ответ от сервера (HTTP {{status}}). Возможно, backend перезагружался — повторите проверку через 2 секунды.', { status: res.status }));
           }
 
           if (res.ok && data.status === 'success') {
-            setActiveSteps(prev => [...prev, '✅ ' + (data.message || 'Проверка пройдена успешно!')]);
-            setTestResults(prev => ({ ...prev, [service]: { status: 'success', message: data.message || 'Подключение успешно!', steps: [...testSteps, data.message] } }));
+            setActiveSteps(prev => [...prev, '✅ ' + (data.message || t('sec.admin.cfg.testPassed', 'Проверка пройдена успешно!'))]);
+            setTestResults(prev => ({ ...prev, [service]: { status: 'success', message: data.message || t('sec.admin.cfg.connOk', 'Подключение успешно!'), steps: [...testSteps, data.message] } }));
           } else {
-            const errorMsg = data.error || `Ошибка HTTP ${res.status}`;
+            const errorMsg = data.error || t('sec.admin.cfg.httpError', 'Ошибка HTTP {{status}}', { status: res.status });
             setActiveSteps(prev => [...prev, '❌ ' + errorMsg]);
             setTestResults(prev => ({ ...prev, [service]: { status: 'error', message: errorMsg, steps: [...testSteps, errorMsg] } }));
           }
@@ -373,9 +401,9 @@ export default function AdminConfigPage() {
       let data: any = {};
       if (text.trim()) { try { data = JSON.parse(text); } catch { /* ignore */ } }
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setSyncResult(`${data.message} Активных тарифов: ${data.products?.length ?? 0}.`);
+      setSyncResult({ ok: true, text: data.message + ' ' + t('sec.admin.cfg.syncActiveCount', 'Активных тарифов: {{count}}.', { count: data.products?.length ?? 0 }) });
     } catch (err: any) {
-      setSyncResult(`Ошибка: ${err.message || err}`);
+      setSyncResult({ ok: false, text: t('sec.admin.cfg.errorPrefix', 'Ошибка: {{msg}}', { msg: String(err.message || err) }) });
     } finally {
       setSyncingProducts(false);
     }
@@ -400,7 +428,7 @@ export default function AdminConfigPage() {
       setScriptsSaved(true);
       setTimeout(() => setScriptsSaved(false), 4000);
     } catch (err: any) {
-      setScriptsError(err.message || 'Ошибка сохранения кодов');
+      setScriptsError(err.message || t('sec.admin.cfg.errSaveScripts', 'Ошибка сохранения кодов'));
     } finally {
       setScriptsSaving(false);
     }
@@ -410,14 +438,14 @@ export default function AdminConfigPage() {
     <div className="pt-4 border-t mt-2" style={{ borderColor: 'var(--border-subtle)' }}>
       <div className="flex items-center justify-between gap-3">
         <button type="button" onClick={() => runConnectionTest(service)} disabled={testingService !== null} className="btn btn-ghost btn-sm">
-          {testingService === service ? (<><Loader2 size={12} className="animate-spin" /> Проверка...</>) : 'Проверить подключение'}
+          {testingService === service ? (<><Loader2 size={12} className="animate-spin" /> {t('sec.admin.cfg.testing', 'Проверка...')}</>) : t('sec.admin.cfg.testConnection', 'Проверить подключение')}
         </button>
-        {testResults[service].status === 'success' && (<span className="text-xs font-600 flex items-center gap-1" style={{ color: 'var(--accent-green)' }}><Check size={14} strokeWidth={2.5} /> Активен</span>)}
-        {testResults[service].status === 'error' && (<span className="text-xs font-600 flex items-center gap-1" style={{ color: 'var(--accent-magenta)' }}><AlertCircle size={14} strokeWidth={2} /> Ошибка</span>)}
+        {testResults[service].status === 'success' && (<span className="text-xs font-600 flex items-center gap-1" style={{ color: 'var(--accent-green)' }}><Check size={14} strokeWidth={2.5} /> {t('sec.admin.cfg.statusActive', 'Активен')}</span>)}
+        {testResults[service].status === 'error' && (<span className="text-xs font-600 flex items-center gap-1" style={{ color: 'var(--accent-magenta)' }}><AlertCircle size={14} strokeWidth={2} /> {t('sec.admin.cfg.statusError', 'Ошибка')}</span>)}
       </div>
       {testResults[service].status === 'testing' && (
         <div className="mt-3 p-3 rounded-xl bg-black/40 border border-dashed border-zinc-800 text-xs space-y-1 font-mono">
-          <div className="flex items-center gap-2 text-zinc-400"><Loader2 size={10} className="animate-spin" /><span>Запуск диагностики...</span></div>
+          <div className="flex items-center gap-2 text-zinc-400"><Loader2 size={10} className="animate-spin" /><span>{t('sec.admin.cfg.diagStart', 'Запуск диагностики...')}</span></div>
           {activeSteps.filter(Boolean).map((step, idx) => (
             <div key={idx} className="text-zinc-300 flex items-center gap-1.5">
               <span style={{ color: (step || '').startsWith('❌') ? 'var(--accent-magenta)' : 'var(--accent-green)' }}>{(step || '').startsWith('❌') ? '✗' : '✓'}</span>
@@ -442,10 +470,10 @@ export default function AdminConfigPage() {
         {/* Шапка */}
         <div className="pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <h1 className="text-xl font-800 text-aurora" style={{ fontFamily: 'Geist Sans, sans-serif', letterSpacing: '-0.03em' }}>
-            ⚙️ Настройки системных API
+            ⚙️ {t('sec.admin.cfg.pageTitle', 'Настройки системных API')}
           </h1>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-            Конфигурация интеграций: WebRTC, Telegram, Google Gemini и Google OAuth авторизация
+            {t('sec.admin.cfg.pageSubtitle', 'Конфигурация интеграций: Telegram, Google OAuth, Google Gemini, Stripe и Trend')}
           </p>
         </div>
 
@@ -453,7 +481,7 @@ export default function AdminConfigPage() {
           <div className="flex items-center gap-3 p-4 rounded-2xl text-sm animate-slide-up"
             style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', color: 'var(--accent-green)' }}>
             <CheckCircle size={18} strokeWidth={1.5} />
-            Системные API-ключи успешно сохранены и применены!
+            {t('sec.admin.cfg.savedOk', 'Системные API-ключи успешно сохранены и применены!')}
           </div>
         )}
 
@@ -461,7 +489,7 @@ export default function AdminConfigPage() {
           <div className="flex items-center gap-3 p-4 rounded-2xl text-sm animate-slide-up"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', color: '#F87171' }}>
             <AlertCircle size={18} strokeWidth={1.5} />
-            Ошибка сохранения: {saveError}
+            {t('sec.admin.cfg.saveErrorPrefix', 'Ошибка сохранения: {{msg}}', { msg: saveError })}
           </div>
         )}
 
@@ -479,18 +507,18 @@ export default function AdminConfigPage() {
                   <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Telegram Bot</h3>
                 </div>
                 <AuroraInput label="Bot API Token" type="password" value={telegramToken} onChange={(e) => setTelegramToken(e.target.value)} placeholder="123456789:ABC..." inputId="admin-telegram-token" />
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Используется для авторизации шлюза Telegram REST и рассылки уведомлений.</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.cfg.tgTokenHint', 'Используется для авторизации шлюза Telegram REST и рассылки уведомлений.')}</p>
 
                 {/* Получатели админских уведомлений */}
                 <div className="mt-2 pt-4 border-t space-y-3" style={{ borderColor: 'var(--border-subtle)' }}>
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <p className="text-xs font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                        Получатели уведомлений
+                        {t('sec.admin.cfg.tgRecipients', 'Получатели уведомлений')}
                       </p>
                       {tgBotUsername && (
                         <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          Бот: <a href={`https://t.me/${tgBotUsername}`} target="_blank" rel="noreferrer"
+                          {t('sec.admin.cfg.tgBotLabel', 'Бот:')} <a href={`https://t.me/${tgBotUsername}`} target="_blank" rel="noreferrer"
                                   style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>
                             @{tgBotUsername}
                           </a>
@@ -502,14 +530,14 @@ export default function AdminConfigPage() {
                             background: tgChatIds.length > 0 ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)',
                             color: tgChatIds.length > 0 ? '#10b981' : 'var(--text-muted)',
                           }}>
-                      {tgChatIds.length} {tgChatIds.length === 1 ? 'чат' : 'чатов'}
+                      {tgChatIds.length} {tgChatIds.length === 1 ? t('sec.admin.cfg.chatOne', 'чат') : t('sec.admin.cfg.chatMany', 'чатов')}
                     </span>
                   </div>
 
                   <ol className="text-[11px] list-decimal pl-4 space-y-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <li>Откройте Telegram и напишите боту <code>/start</code> (или добавьте его в группу/канал и отправьте туда сообщение).</li>
-                    <li>Нажмите «Синхронизировать получателей» — бот подтянет ваш chat_id.</li>
-                    <li>Нажмите «Отправить тест» — должно прийти сообщение.</li>
+                    <li>{t('sec.admin.cfg.tgHowto1a', 'Откройте Telegram и напишите боту')} <code>/start</code> {t('sec.admin.cfg.tgHowto1b', '(или добавьте его в группу/канал и отправьте туда сообщение).')}</li>
+                    <li>{t('sec.admin.cfg.tgHowto2', 'Нажмите «Синхронизировать получателей» — бот подтянет ваш chat_id.')}</li>
+                    <li>{t('sec.admin.cfg.tgHowto3', 'Нажмите «Отправить тест» — должно прийти сообщение.')}</li>
                   </ol>
 
                   {tgChatIds.length > 0 && (
@@ -519,7 +547,7 @@ export default function AdminConfigPage() {
                               style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                           <code className="text-[10px]">{id}</code>
                           <button type="button" onClick={() => handleTgRemove(id)} disabled={tgBusy}
-                                  style={{ color: 'var(--text-muted)' }} title="Удалить">×</button>
+                                  style={{ color: 'var(--text-muted)' }} title={t('sec.admin.cfg.tgRemoveChat', 'Удалить')}>×</button>
                         </span>
                       ))}
                     </div>
@@ -538,16 +566,16 @@ export default function AdminConfigPage() {
                         color: '#22d3ee',
                       }}
                     >
-                      📱 Открыть @{tgBotUsername} и нажать /start
+                      📱 {t('sec.admin.cfg.tgOpenBot', 'Открыть @{{bot}} и нажать /start', { bot: tgBotUsername })}
                     </a>
                   )}
 
                   <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={handleTgSync} disabled={tgBusy} className="btn btn-ghost btn-sm">
-                      {tgBusy ? (<><Loader2 size={12} className="animate-spin" /> Запрос…</>) : 'Синхронизировать получателей'}
+                      {tgBusy ? (<><Loader2 size={12} className="animate-spin" /> {t('sec.admin.cfg.tgBusy', 'Запрос…')}</>) : t('sec.admin.cfg.tgSyncBtn', 'Синхронизировать получателей')}
                     </button>
                     <button type="button" onClick={handleTgTest} disabled={tgBusy} className="btn btn-ghost btn-sm">
-                      Отправить тест
+                      {t('sec.admin.cfg.tgSendTest', 'Отправить тест')}
                     </button>
                   </div>
 
@@ -563,13 +591,13 @@ export default function AdminConfigPage() {
                       color: '#fff',
                       boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
                     }}
-                    title="Отправит 5 примеров: регистрация, оплата, докупка, админ-кредит, утренняя сводка"
+                    title={t('sec.admin.cfg.tgTestAllTitle', 'Отправит 5 примеров: регистрация, оплата, докупка, админ-кредит, утренняя сводка')}
                   >
                     {tgBusy ? <Loader2 size={16} className="animate-spin" /> : <span>🧪</span>}
-                    <span>ТЕСТ всех уведомлений</span>
+                    <span>{t('sec.admin.cfg.tgTestAllBtn', 'ТЕСТ всех уведомлений')}</span>
                   </button>
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    Прогонит 5 примеров: <b>регистрация</b>, <b>оплата подписки</b>, <b>докупка минут</b>, <b>админ-кредит</b>, <b>утренняя сводка</b>. Все придут в ваш Telegram сразу.
+                    {t('sec.admin.cfg.tgTestAllHint1', 'Прогонит 5 примеров:')} <b>{t('sec.admin.cfg.tgTestAllHint2', 'регистрация, оплата подписки, докупка минут, админ-кредит, утренняя сводка')}</b>{t('sec.admin.cfg.tgTestAllHint3', '. Все придут в ваш Telegram сразу.')}
                   </p>
 
                   {tgMessage && (
@@ -589,7 +617,7 @@ export default function AdminConfigPage() {
                              background: '#22d3ee',
                              color: '#0f172a',
                            }}>
-                          📱 Открыть бота → /start → вернуться и нажать ТЕСТ снова
+                          📱 {t('sec.admin.cfg.tgOpenBotRetry', 'Открыть бота → /start → вернуться и нажать ТЕСТ снова')}
                         </a>
                       )}
                       {/* Если ошибка про сессию — большая кнопка «Войти заново» */}
@@ -600,7 +628,7 @@ export default function AdminConfigPage() {
                           className="inline-flex items-center gap-1.5 text-xs font-700 px-3 py-1.5 rounded-xl"
                           style={{ background: '#ef4444', color: '#fff' }}
                         >
-                          🔐 Войти заново
+                          🔐 {t('sec.admin.cfg.loginAgain', 'Войти заново')}
                         </button>
                       )}
                     </div>
@@ -622,13 +650,13 @@ export default function AdminConfigPage() {
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor" style={{ color: 'var(--text-primary)' }}/>
                     </svg>
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Google OAuth Авторизация</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>{t('sec.admin.cfg.oauthHeading', 'Google OAuth Авторизация')}</h3>
                 </div>
                 <AuroraInput label="Google Client ID" value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="123456789-abc.apps.googleusercontent.com" inputId="admin-google-client-id" />
                 <AuroraInput label="Google Client Secret" type="password" value={googleClientSecret} onChange={(e) => setGoogleClientSecret(e.target.value)} placeholder="GOCSPX-..." inputId="admin-google-client-secret" />
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Используется для быстрой регистрации и авторизации пользователей через Google Accounts.</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('sec.admin.cfg.oauthHint', 'Используется для быстрой регистрации и авторизации пользователей через Google Accounts.')}</p>
                 <div className="space-y-1.5 p-3 rounded-xl border text-[11px]" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
-                  <div className="font-bold uppercase tracking-wider text-zinc-500" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Разрешенные URI перенаправления (Redirect URIs):</div>
+                  <div className="font-bold uppercase tracking-wider text-zinc-500" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{t('sec.admin.cfg.redirectUris', 'Разрешенные URI перенаправления (Redirect URIs):')}</div>
                   <div className="space-y-1 font-mono text-zinc-400" style={{ color: 'var(--text-secondary)' }}>
                     <div className="flex justify-between items-center gap-1.5 hover:text-white transition-colors"><span className="truncate select-all">{`${window.location.origin}/auth/google/callback`}</span></div>
                     <div className="flex justify-between items-center gap-1.5 hover:text-white transition-colors"><span className="truncate select-all">http://localhost:3000/api/auth/callback/google</span></div>
@@ -657,7 +685,7 @@ export default function AdminConfigPage() {
                       style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}
                       htmlFor="admin-gemini-live-model"
                     >
-                      Модель Live API (онлайн-перевод голосом)
+                      {t('sec.admin.cfg.liveModelLabel', 'Модель Live API (онлайн-перевод голосом)')}
                     </label>
                     <select
                       id="admin-gemini-live-model"
@@ -671,8 +699,8 @@ export default function AdminConfigPage() {
                         fontFamily: 'Inter, sans-serif',
                       }}
                     >
-                      <option value="gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live Preview — новейшая (рекомендуется)</option>
-                      <option value="gemini-2.5-flash-native-audio-latest">Gemini 2.5 Flash Native Audio — стабильная latest</option>
+                      <option value="gemini-3.1-flash-live-preview">{t('sec.admin.cfg.liveModelNewest', 'Gemini 3.1 Flash Live Preview — новейшая (рекомендуется)')}</option>
+                      <option value="gemini-2.5-flash-native-audio-latest">{t('sec.admin.cfg.liveModelStable', 'Gemini 2.5 Flash Native Audio — стабильная latest')}</option>
                       <option value="gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Native Audio — preview 12-2025</option>
                       <option value="gemini-2.5-flash-native-audio-preview-09-2025">Gemini 2.5 Flash Native Audio — preview 09-2025</option>
                     </select>
@@ -682,7 +710,7 @@ export default function AdminConfigPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-700 uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                        Голос (Ж)
+                        {t('sec.admin.cfg.voiceFemale', 'Голос (Ж)')}
                       </label>
                       <select
                         value={voiceFemale}
@@ -690,15 +718,15 @@ export default function AdminConfigPage() {
                         className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
                         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
                       >
-                        <option value="Aoede">Aoede — мягкий (дефолт)</option>
-                        <option value="Kore">Kore — глубокий</option>
-                        <option value="Leda">Leda — молодой</option>
-                        <option value="Zephyr">Zephyr — яркий</option>
+                        <option value="Aoede">{t('sec.admin.cfg.voiceAoede', 'Aoede — мягкий (дефолт)')}</option>
+                        <option value="Kore">{t('sec.admin.cfg.voiceKore', 'Kore — глубокий')}</option>
+                        <option value="Leda">{t('sec.admin.cfg.voiceLeda', 'Leda — молодой')}</option>
+                        <option value="Zephyr">{t('sec.admin.cfg.voiceZephyr', 'Zephyr — яркий')}</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-xs font-700 uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                        Голос (М)
+                        {t('sec.admin.cfg.voiceMale', 'Голос (М)')}
                       </label>
                       <select
                         value={voiceMale}
@@ -706,18 +734,18 @@ export default function AdminConfigPage() {
                         className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
                         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
                       >
-                        <option value="Charon">Charon — глубокий (дефолт)</option>
-                        <option value="Puck">Puck — живой</option>
-                        <option value="Fenrir">Fenrir — мощный</option>
-                        <option value="Orus">Orus — спокойный</option>
+                        <option value="Charon">{t('sec.admin.cfg.voiceCharon', 'Charon — глубокий (дефолт)')}</option>
+                        <option value="Puck">{t('sec.admin.cfg.voicePuck', 'Puck — живой')}</option>
+                        <option value="Fenrir">{t('sec.admin.cfg.voiceFenrir', 'Fenrir — мощный')}</option>
+                        <option value="Orus">{t('sec.admin.cfg.voiceOrus', 'Orus — спокойный')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
-                    <p>Ключ используется одновременно: для онлайн-перевода в комнатах (модель Live API выше), для AI-помощника по субтитрам и для пост-анализа звонков (gemini-3.5-flash).</p>
-                    <p><strong style={{ color: 'var(--text-secondary)' }}>3.1 Live Preview</strong> — новейшее поколение, лучшее понимание контекста. Если будут глюки — переключитесь на <strong style={{ color: 'var(--text-secondary)' }}>2.5 latest</strong>, она стабильнее.</p>
-                    <p>Получить ключ:{' '}<a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--brand)' }}>aistudio.google.com/api-keys</a>.</p>
+                    <p>{t('sec.admin.cfg.geminiHint1', 'Ключ используется одновременно: для онлайн-перевода в комнатах (модель Live API выше), для AI-помощника по субтитрам и для пост-анализа звонков (gemini-3.5-flash).')}</p>
+                    <p><strong style={{ color: 'var(--text-secondary)' }}>3.1 Live Preview</strong> {t('sec.admin.cfg.geminiHint2', '— новейшее поколение, лучшее понимание контекста. Если будут глюки — переключитесь на')} <strong style={{ color: 'var(--text-secondary)' }}>2.5 latest</strong>{t('sec.admin.cfg.geminiHint3', ', она стабильнее.')}</p>
+                    <p>{t('sec.admin.cfg.getKeyLabel', 'Получить ключ:')}{' '}<a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--brand)' }}>aistudio.google.com/api-keys</a>.</p>
                   </div>
                 </div>
               </div>
@@ -731,7 +759,7 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <CreditCard size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Stripe (биллинг подписок)</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>{t('sec.admin.cfg.stripeHeading', 'Stripe (биллинг подписок)')}</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <AuroraInput
@@ -739,14 +767,14 @@ export default function AdminConfigPage() {
                     type="password"
                     value={stripeSecretKey}
                     onChange={(e) => setStripeSecretKey(e.target.value)}
-                    placeholder="sk_test_... или sk_live_..."
+                    placeholder={t('sec.admin.cfg.skPlaceholder', 'sk_test_... или sk_live_...')}
                     inputId="admin-stripe-secret"
                   />
                   <AuroraInput
                     label="Stripe Publishable Key"
                     value={stripePublishableKey}
                     onChange={(e) => setStripePublishableKey(e.target.value)}
-                    placeholder="pk_test_... или pk_live_..."
+                    placeholder={t('sec.admin.cfg.pkPlaceholder', 'pk_test_... или pk_live_...')}
                     inputId="admin-stripe-publishable"
                   />
                 </div>
@@ -759,18 +787,18 @@ export default function AdminConfigPage() {
                   inputId="admin-stripe-webhook"
                 />
                 <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
-                  <p>Используется для оплаты подписок (тарифы Plus, Standard) и докупки минут пользователями.</p>
-                  <p>Ключи на странице <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--brand)' }}>Stripe Dashboard → API Keys</a>.</p>
-                  <p>Webhook URL для регистрации в Stripe: <code style={{ color: 'var(--text-secondary)' }}>https://&lt;ваш-домен&gt;/api/billing/webhook</code></p>
+                  <p>{t('sec.admin.cfg.stripeHint1', 'Используется для оплаты подписки (тариф Premium) и докупки минут пользователями.')}</p>
+                  <p>{t('sec.admin.cfg.stripeHint2', 'Ключи на странице')} <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: 'var(--brand)' }}>Stripe Dashboard → API Keys</a>.</p>
+                  <p>{t('sec.admin.cfg.stripeHint3', 'Webhook URL для регистрации в Stripe:')} <code style={{ color: 'var(--text-secondary)' }}>{t('sec.admin.cfg.webhookUrlSample', 'https://<ваш-домен>/api/billing/webhook')}</code></p>
                 </div>
 
                 {/* Синхронизация Products/Prices */}
                 <div className="pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
-                      <p className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>Синхронизация тарифов с Stripe</p>
+                      <p className="text-sm font-600" style={{ color: 'var(--text-primary)' }}>{t('sec.admin.cfg.syncHeading', 'Синхронизация тарифов с Stripe')}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Создаёт Products и Prices в вашем Stripe (Plus, Standard месячный, Standard годовой). Идемпотентно — повторный запуск не плодит дубликаты.
+                        {t('sec.admin.cfg.syncHint', 'Создаёт Product и Price продаваемого тарифа (Premium) в вашем Stripe. Идемпотентно — повторный запуск не плодит дубликаты.')}
                       </p>
                     </div>
                   </div>
@@ -781,7 +809,7 @@ export default function AdminConfigPage() {
                       disabled={syncingProducts}
                       className="btn btn-ghost btn-sm"
                     >
-                      {syncingProducts ? 'Синхронизация…' : 'Синхронизировать EUR'}
+                      {syncingProducts ? t('sec.admin.cfg.syncing', 'Синхронизация…') : t('sec.admin.cfg.syncEur', 'Синхронизировать EUR')}
                     </button>
                     <button
                       type="button"
@@ -789,15 +817,15 @@ export default function AdminConfigPage() {
                       disabled={syncingProducts}
                       className="btn btn-ghost btn-sm"
                     >
-                      {syncingProducts ? 'Синхронизация…' : 'Синхронизировать USD'}
+                      {syncingProducts ? t('sec.admin.cfg.syncing', 'Синхронизация…') : t('sec.admin.cfg.syncUsd', 'Синхронизировать USD')}
                     </button>
                   </div>
                   {syncResult && (
                     <p
                       className="mt-2 text-xs font-mono"
-                      style={{ color: syncResult.startsWith('Ошибка') ? 'var(--accent-magenta)' : 'var(--accent-green)' }}
+                      style={{ color: syncResult.ok ? 'var(--accent-green)' : 'var(--accent-magenta)' }}
                     >
-                      {syncResult}
+                      {syncResult.text}
                     </p>
                   )}
                 </div>
@@ -812,20 +840,20 @@ export default function AdminConfigPage() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                     <TrendingUp size={16} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Trend (тренды и скачивание видео)</h3>
+                  <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>{t('sec.admin.cfg.tikhubHeading', 'Trend (тренды и скачивание видео)')}</h3>
                 </div>
                 <AuroraInput
                   label="Trend API Key"
                   type="password"
                   value={tikhubApiKey}
                   onChange={(e) => setTikhubApiKey(e.target.value)}
-                  placeholder="вставьте ключ Trend..."
+                  placeholder={t('sec.admin.cfg.tikhubPlaceholder', 'вставьте ключ Trend...')}
                   inputId="admin-tikhub-key"
                 />
                 <div className="text-xs space-y-1" style={{ color: 'var(--text-muted)' }}>
-                  <p>Платформенный ключ для сканирования трендов и скачивания видео (TikTok / Douyin / Instagram / YouTube). Используется всеми тенантами, кроме Enterprise — те могут задать свой ключ в настройках Enterprise.</p>
-                  <p>Платформенный ключ поставщика данных. Тарификация — pay-as-you-go (списывается с баланса за каждый запрос).</p>
-                  <p>Нажмите «Проверить подключение» — backend реально дёрнет <code style={{ color: 'var(--text-secondary)' }}>get_user_info</code> и покажет статус ключа + баланс.</p>
+                  <p>{t('sec.admin.cfg.tikhubHint1', 'Платформенный ключ для сканирования трендов и скачивания видео (TikTok / Douyin / Instagram / YouTube). Используется всеми тенантами, кроме Enterprise — те могут задать свой ключ в настройках Enterprise.')}</p>
+                  <p>{t('sec.admin.cfg.tikhubHint2', 'Платформенный ключ поставщика данных. Тарификация — pay-as-you-go (списывается с баланса за каждый запрос).')}</p>
+                  <p>{t('sec.admin.cfg.tikhubHint3a', 'Нажмите «Проверить подключение» — сервер выполнит запрос')} <code style={{ color: 'var(--text-secondary)' }}>get_user_info</code> {t('sec.admin.cfg.tikhubHint3b', 'и покажет статус ключа и баланс.')}</p>
                 </div>
               </div>
               {renderTestBlock('tikhub')}
@@ -834,7 +862,7 @@ export default function AdminConfigPage() {
 
           <div className="flex justify-end pt-2">
             <AuroraButton type="submit" size="lg" loading={loading} icon={!loading ? <Save size={18} strokeWidth={1.5} /> : undefined} id="admin-save">
-              Сохранить изменения
+              {t('sec.admin.cfg.saveBtn', 'Сохранить изменения')}
             </AuroraButton>
           </div>
         </form>
@@ -846,9 +874,9 @@ export default function AdminConfigPage() {
               <Terminal size={16} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>Аналитика и пользовательские коды</h3>
+              <h3 className="text-base font-700" style={{ fontFamily: 'Geist Sans, sans-serif', color: 'var(--text-primary)' }}>{t('sec.admin.cfg.scriptsHeading', 'Аналитика и пользовательские коды')}</h3>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                Cookie-consent, Google Analytics, Meta Pixel, метатеги верификации, чат-виджеты
+                {t('sec.admin.cfg.scriptsSubtitle', 'Cookie-consent, Google Analytics, Meta Pixel, метатеги верификации, чат-виджеты')}
               </p>
             </div>
           </div>
@@ -856,10 +884,10 @@ export default function AdminConfigPage() {
           {/* Код в <head> */}
           <div className="space-y-1.5">
             <label className="text-xs font-700 uppercase tracking-wider block" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }} htmlFor="admin-custom-head">
-              Код в &lt;head&gt;
+              {t('sec.admin.cfg.headCodeLabel', 'Код в <head>')}
             </label>
             <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Cookie-consent (cookie-script.com / Cookiebot), Google Analytics (gtag), базовый код Meta Pixel, верификация Search Console. Вставляйте сниппеты целиком, вместе с тегами <code>&lt;script&gt;</code>.
+              {t('sec.admin.cfg.headCodeHint', 'Cookie-consent (cookie-script.com / Cookiebot), Google Analytics (gtag), базовый код Meta Pixel, верификация Search Console. Вставляйте сниппеты целиком, вместе с тегами')} <code>&lt;script&gt;</code>.
             </p>
             <textarea
               id="admin-custom-head"
@@ -867,7 +895,7 @@ export default function AdminConfigPage() {
               onChange={(e) => setCustomHeadCode(e.target.value)}
               spellCheck={false}
               rows={7}
-              placeholder={`<!-- напр. Google Analytics -->
+              placeholder={`<!-- ${t('sec.admin.cfg.headCodeEg', 'напр. Google Analytics')} -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXX');</script>`}
               className="w-full px-3.5 py-3 rounded-2xl text-xs outline-none transition-all font-mono"
@@ -878,10 +906,10 @@ export default function AdminConfigPage() {
           {/* Код в конце <body> */}
           <div className="space-y-1.5">
             <label className="text-xs font-700 uppercase tracking-wider block" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }} htmlFor="admin-custom-body">
-              Код в конце &lt;body&gt;
+              {t('sec.admin.cfg.bodyCodeLabel', 'Код в конце <body>')}
             </label>
             <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Чат-виджеты, отложенные скрипты, <code>&lt;noscript&gt;</code>-пиксели — то, что должно грузиться в конце страницы.
+              {t('sec.admin.cfg.bodyCodeHint1', 'Чат-виджеты, отложенные скрипты,')} <code>&lt;noscript&gt;</code>{t('sec.admin.cfg.bodyCodeHint2', '-пиксели — то, что должно грузиться в конце страницы.')}
             </p>
             <textarea
               id="admin-custom-body"
@@ -889,7 +917,7 @@ export default function AdminConfigPage() {
               onChange={(e) => setCustomBodyCode(e.target.value)}
               spellCheck={false}
               rows={5}
-              placeholder={`<!-- напр. чат-виджет или отложенный скрипт -->`}
+              placeholder={'<!-- ' + t('sec.admin.cfg.bodyCodeEg', 'напр. чат-виджет или отложенный скрипт') + ' -->'}
               className="w-full px-3.5 py-3 rounded-2xl text-xs outline-none transition-all font-mono"
               style={{ background: 'var(--bg-tertiary)', border: '1.5px solid var(--border-subtle)', color: 'var(--text-primary)', resize: 'vertical', minHeight: 100 }}
             />
@@ -897,12 +925,12 @@ export default function AdminConfigPage() {
 
           <div className="flex items-start gap-2 p-3 rounded-xl text-[11px]" style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)', color: 'var(--text-secondary)' }}>
             <ShieldAlert size={14} strokeWidth={1.5} style={{ color: '#eab308', flexShrink: 0, marginTop: 1 }} />
-            <span>Код исполняется у всех посетителей сайта. Вставляйте только из доверенных источников — ошибочный или вредоносный код может сломать страницу.</span>
+            <span>{t('sec.admin.cfg.scriptsWarning', 'Код исполняется у всех посетителей сайта. Вставляйте только из доверенных источников — ошибочный или вредоносный код может сломать страницу.')}</span>
           </div>
 
           {scriptsSaved && (
             <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--accent-green)' }}>
-              <CheckCircle size={14} /> Коды сохранены — применятся при следующей загрузке страницы.
+              <CheckCircle size={14} /> {t('sec.admin.cfg.scriptsSavedOk', 'Коды сохранены — применятся при следующей загрузке страницы.')}
             </p>
           )}
           {scriptsError && (
@@ -913,7 +941,7 @@ export default function AdminConfigPage() {
 
           <div className="flex justify-end">
             <AuroraButton type="button" size="lg" loading={scriptsSaving} onClick={handleSaveScripts} icon={!scriptsSaving ? <Save size={18} strokeWidth={1.5} /> : undefined} id="admin-save-scripts">
-              Сохранить коды
+              {t('sec.admin.cfg.saveScriptsBtn', 'Сохранить коды')}
             </AuroraButton>
           </div>
         </AuroraCard>

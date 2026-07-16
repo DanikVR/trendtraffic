@@ -390,7 +390,7 @@ export default function UgcStudio(p: UgcStudioProps) {
     void fetch('/api/render/ugc/heygen-avatars', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } })
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+        if (!r.ok) throw new Error(d?.error || t('sec.ugc.httpError', 'Ошибка {{status}}', { status: r.status }));
         const looks = Array.isArray(d?.looks) ? d.looks : [];
         setHgLooks(looks);
         if (!looks.length) setHgLooksNote(t('ugc.avatar.hgLooksEmpty', 'В аккаунте HeyGen пока нет фото-аватаров: создайте лук в кабинете HeyGen или загрузите фото как обычно.'));
@@ -408,7 +408,7 @@ export default function UgcStudio(p: UgcStudioProps) {
     })
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d?.error || `Ошибка ${r.status}`);
+        if (!r.ok) throw new Error(d?.error || t('sec.ugc.httpError', 'Ошибка {{status}}', { status: r.status }));
         ugcMutate((u) => ({ ...u, photoUrl: String(d.photoUrl), photoName: String(d.name || l.name), heygenLookId: String(d.heygenLookId || l.id) }));
       })
       .catch((e: any) => setHgLooksNote(String(e?.message || e)))
@@ -507,7 +507,7 @@ export default function UgcStudio(p: UgcStudioProps) {
   const applyAnalysis = (a: any) => {
     const dna = a?.dna || {};
     ugcMutate((u) => {
-      const title = String(a.title || dna.meta?.author || dna.hookType || 'разбор');
+      const title = String(a.title || dna.meta?.author || dna.hookType || t('sec.ugc.analysisFallbackName', 'разбор'));
       const next: UgcSpec = {
         ...u,
         analysis: {
@@ -535,7 +535,7 @@ export default function UgcStudio(p: UgcStudioProps) {
     const on = !u.analysisUse[k];
     const next: UgcSpec = { ...u, analysisUse: { ...u.analysisUse, [k]: on } };
     if (k === 'video') {
-      if (on && u.analysis?.fileUrl) next.clip = { url: u.analysis.fileUrl, name: u.analysis.title || 'тренд' };
+      if (on && u.analysis?.fileUrl) next.clip = { url: u.analysis.fileUrl, name: u.analysis.title || t('sec.ugc.trendFallbackName', 'тренд') };
       if (!on && u.analysis?.fileUrl && u.clip?.url === u.analysis.fileUrl) next.clip = null;
     }
     if (k === 'subtitles') {
@@ -1695,7 +1695,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                       </span>
                       <span className="flex-1 min-w-0 space-y-0.5">
                         <span className="flex items-center gap-2">
-                          <b className="text-[11.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{a.title || dna.hookType || a.platform || 'разбор'}</b>
+                          <b className="text-[11.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>{a.title || dna.hookType || a.platform || t('sec.ugc.analysisFallbackName', 'разбор')}</b>
                           {dna.visual?.framesAnalyzed && <span className="text-[9px] font-700 px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,.14)', color: '#10b981' }}>{t('ugc.analysis.framesBadge')}</span>}
                           <span className="text-[9.5px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''}</span>
                         </span>

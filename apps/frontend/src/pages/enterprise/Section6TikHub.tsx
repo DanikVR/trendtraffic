@@ -62,7 +62,7 @@ export function Section6TikHub() {
   }, []);
 
   const handleSave = async () => {
-    if (!keyInput.trim()) { setError(t('enterprise.tikhub.errEnterKey', 'Введите ключ Trend')); return; }
+    if (!keyInput.trim()) { setError(t('sec.ent.tikhub.errEnterKey', 'Введите ключ Trend')); return; }
     setSaving(true); setError(null); setSuccess(null);
     try {
       const res = await fetch('/api/tenant-settings/tikhub', {
@@ -73,7 +73,7 @@ export function Section6TikHub() {
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setInfo(data);
       setKeyInput('');
-      setSuccess(data.validation?.message || t('enterprise.tikhub.saved', 'Ключ сохранён'));
+      setSuccess(data.validation?.message || t('sec.ent.tikhub.saved', 'Ключ сохранён'));
       setTimeout(() => setSuccess(null), 6000);
     } catch (e: any) { setError(e?.message || t('enterprise.common.genericError', 'Ошибка')); }
     finally { setSaving(false); }
@@ -86,7 +86,7 @@ export function Section6TikHub() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setInfo(data);
-      setSuccess(data.validation?.message || t('enterprise.tikhub.checked', 'Проверка выполнена'));
+      setSuccess(data.validation?.message || t('sec.ent.tikhub.checked', 'Проверка выполнена'));
       setTimeout(() => setSuccess(null), 6000);
     } catch (e: any) { setError(e?.message || t('enterprise.common.genericError', 'Ошибка')); }
     finally { setValidating(false); }
@@ -100,7 +100,7 @@ export function Section6TikHub() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setInfo({ hasKey: false, status: null, lastCheckAt: null, prefix: null });
       setKeyInput('');
-      setSuccess(t('enterprise.tikhub.deleted', 'Ключ удалён'));
+      setSuccess(t('sec.ent.tikhub.deleted', 'Ключ удалён'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (e: any) { setError(e?.message || t('enterprise.common.genericError', 'Ошибка')); }
     finally { setDeleting(false); }
@@ -109,12 +109,12 @@ export function Section6TikHub() {
   const renderStatus = () => {
     if (!info?.hasKey) {
       return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600"
-                   style={{ background: 'rgba(148,163,184,0.10)', color: 'var(--text-muted)' }}>{t('enterprise.tikhub.statusNotSet', 'Ключ не задан')}</span>;
+                   style={{ background: 'rgba(148,163,184,0.10)', color: 'var(--text-muted)' }}>{t('sec.ent.tikhub.statusNotSet', 'Ключ не задан')}</span>;
     }
-    if (info.status === 'active') return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(16,185,129,0.10)', color: '#10b981' }}><CheckCircle2 size={12} /> {t('enterprise.tikhub.statusActive', 'Активен')}</span>;
-    if (info.status === 'invalid') return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}><XCircle size={12} /> {t('enterprise.tikhub.statusInvalid', 'Невалиден')}</span>;
-    if (info.status === 'quota_exceeded') return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(245,158,11,0.10)', color: '#f59e0b' }}><AlertTriangle size={12} /> {t('enterprise.tikhub.statusQuota', 'Нет баланса')}</span>;
-    return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(148,163,184,0.10)', color: 'var(--text-muted)' }}>{t('enterprise.tikhub.statusUnknown', 'Не проверен')}</span>;
+    if (info.status === 'active') return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(16,185,129,0.10)', color: '#10b981' }}><CheckCircle2 size={12} /> {t('sec.ent.tikhub.statusActive', 'Активен')}</span>;
+    if (info.status === 'invalid') return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}><XCircle size={12} /> {t('sec.ent.tikhub.statusInvalid', 'Невалиден')}</span>;
+    if (info.status === 'quota_exceeded') return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(245,158,11,0.10)', color: '#f59e0b' }}><AlertTriangle size={12} /> {t('sec.ent.tikhub.statusQuota', 'Нет баланса')}</span>;
+    return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-600" style={{ background: 'rgba(148,163,184,0.10)', color: 'var(--text-muted)' }}>{t('sec.ent.tikhub.statusUnknown', 'Не проверен')}</span>;
   };
 
   if (loading) {
@@ -129,9 +129,9 @@ export function Section6TikHub() {
           <TrendingUp size={20} color="#fff" />
         </div>
         <div>
-          <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('enterprise.tikhub.heading', 'Свой ключ Trend')}</h2>
+          <h2 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.ent.tikhub.heading', 'Свой ключ Trend')}</h2>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {t('enterprise.tikhub.lead', 'Ваш собственный ключ Trend для сканирования трендов и скачивания видео.')}
+            {t('sec.ent.tikhub.lead', 'Ваш собственный ключ Trend для сканирования трендов и скачивания видео.')}
           </p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export function Section6TikHub() {
           <div className="flex items-start gap-2">
             <AlertTriangle size={16} color="#f59e0b" className="mt-[2px]" />
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Вы суперадмин — этот раздел задаёт ключ для <b>Enterprise-тенантов</b>. Свой платформенный ключ задайте в <b>Админ-панели → «Настройки системных API»</b> (карточка Trend). У суперадмина нет tenant-аккаунта, поэтому сохранение здесь недоступно.
+              {t('sec.ent.tikhub.saNotice1', 'Вы суперадмин — этот раздел задаёт ключ для')} <b>{t('sec.ent.tikhub.saNotice2', 'Enterprise-тенантов')}</b>{t('sec.ent.tikhub.saNotice3', '. Свой платформенный ключ задайте в')} <b>{t('sec.ent.tikhub.saNotice4', 'Админ-панели → «Настройки системных API»')}</b> {t('sec.ent.tikhub.saNotice5', '(карточка Trend). У суперадмина нет tenant-аккаунта, поэтому сохранение здесь недоступно.')}
             </span>
           </div>
         </AuroraCard>
@@ -156,19 +156,19 @@ export function Section6TikHub() {
 
       <AuroraCard className="p-5 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-sm font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>{t('enterprise.tikhub.keyLabel', 'API-ключ Trend')}</h3>
+          <h3 className="text-sm font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>{t('sec.ent.tikhub.keyLabel', 'API-ключ Trend')}</h3>
           {renderStatus()}
         </div>
-        <ApiKeyField value={keyInput} onChange={setKeyInput} hasSaved={info?.hasKey} savedPrefix={info?.prefix || null} placeholder={t('enterprise.tikhub.keyPlaceholder', 'вставьте ключ Trend...')} showCopyButton={false} />
+        <ApiKeyField value={keyInput} onChange={setKeyInput} hasSaved={info?.hasKey} savedPrefix={info?.prefix || null} placeholder={t('sec.ent.tikhub.keyPlaceholder', 'вставьте ключ Trend...')} showCopyButton={false} />
         {info?.lastCheckAt && (
-          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('enterprise.tikhub.lastCheck', 'Последняя проверка')}: {new Date(info.lastCheckAt).toLocaleString()}</p>
+          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('sec.ent.tikhub.lastCheck', 'Последняя проверка')}: {new Date(info.lastCheckAt).toLocaleString()}</p>
         )}
         <div className="flex gap-2 flex-wrap">
-          <AuroraButton onClick={handleSave} disabled={saving || !keyInput.trim()} icon={saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}>{saving ? t('enterprise.tikhub.saving', 'Сохранение...') : t('enterprise.tikhub.save', 'Сохранить')}</AuroraButton>
+          <AuroraButton onClick={handleSave} disabled={saving || !keyInput.trim()} icon={saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}>{saving ? t('sec.ent.tikhub.saving', 'Сохранение...') : t('sec.ent.tikhub.save', 'Сохранить')}</AuroraButton>
           {info?.hasKey && (
             <>
-              <AuroraButton variant="secondary" onClick={handleValidate} disabled={validating} icon={validating ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}>{validating ? t('enterprise.tikhub.validating', 'Проверка...') : t('enterprise.tikhub.validate', 'Проверить')}</AuroraButton>
-              <AuroraButton variant="secondary" onClick={() => setConfirmOpen(true)} disabled={deleting} icon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}>{t('enterprise.tikhub.delete', 'Удалить')}</AuroraButton>
+              <AuroraButton variant="secondary" onClick={handleValidate} disabled={validating} icon={validating ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}>{validating ? t('sec.ent.tikhub.validating', 'Проверка...') : t('sec.ent.tikhub.validate', 'Проверить')}</AuroraButton>
+              <AuroraButton variant="secondary" onClick={() => setConfirmOpen(true)} disabled={deleting} icon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}>{t('sec.ent.tikhub.delete', 'Удалить')}</AuroraButton>
             </>
           )}
         </div>
@@ -176,9 +176,9 @@ export function Section6TikHub() {
 
       <ConfirmModal
         open={confirmOpen}
-        title={t('enterprise.tikhub.confirmDeleteTitle', 'Удалить ключ Trend?')}
-        message={t('enterprise.tikhub.confirmDeleteBody', 'Тенант вернётся на платформенный ключ (если тариф это позволяет).')}
-        confirmLabel={t('enterprise.tikhub.delete', 'Удалить')}
+        title={t('sec.ent.tikhub.confirmDeleteTitle', 'Удалить ключ Trend?')}
+        message={t('sec.ent.tikhub.confirmDeleteBody', 'Тенант вернётся на платформенный ключ (если тариф это позволяет).')}
+        confirmLabel={t('sec.ent.tikhub.delete', 'Удалить')}
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setConfirmOpen(false)}

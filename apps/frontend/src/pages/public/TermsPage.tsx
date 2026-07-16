@@ -4,14 +4,16 @@
  * Реквизиты исполнителя сохранены, контактный e-mail — SEO@vibevox.pro.
  */
 
+import { useTranslation } from 'react-i18next';
 import { LegalLayout } from './LegalLayout';
 
 export function TermsPage() {
+  const { t } = useTranslation('common');
   return (
     <LegalLayout
-      title="Условия использования"
-      updated="28 апреля 2026 г."
-      metaDescription="Условия использования VibeVox: правила работы с платформой синхронного ИИ-перевода видеовстреч и SIP-звонков, тарификация, оплата, ответственность и применимое право Республики Польша."
+      title={t('sec.pub.termsTitle', 'Условия использования')}
+      updated={t('sec.pub.legalUpdated', '28 апреля 2026 г.')}
+      metaDescription={t('sec.pub.termsMetaDesc', 'Условия использования VibeVox: правила работы с платформой синхронного ИИ-перевода видеовстреч и SIP-звонков, тарификация, оплата, ответственность и применимое право Республики Польша.')}
       intro={
         <p>
           Настоящие Условия использования определяют правила использования SaaS-платформы <strong>VibeVox</strong>{' '}

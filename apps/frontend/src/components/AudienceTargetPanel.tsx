@@ -17,6 +17,8 @@ import {
   Download, CheckCircle2, AlertCircle, XCircle, ChevronRight, ChevronDown, Check, Film, Wand2, Plus,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../config/i18n';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
 import { REGIONS, REGION_GROUPS, type StoredVideo } from './TrendSearch';
@@ -65,6 +67,9 @@ const PLATFORMS: { id: Source; name: string }[] = [
 // Регион (ISO alpha-2) → язык ключевиков по умолчанию (название на русском). Поле
 // «Язык ключевиков» подставляется из региона при его выборе, но остаётся редактируемым.
 // В СНГ, где контент массово на русском (RU/BY/KZ/KG), — «русский»; иначе титульный язык.
+// ⚠ Значения — КАНОНИЧЕСКИЕ (русские): они уходят на бэкенд как спецификация языка
+// ключевиков и сравниваются со списком KEYWORD_LANGS. В UI переводится только подпись
+// (см. LANG_LABELS в компоненте) — сами значения НЕ переводить.
 const REGION_LANG_NAME: Record<string, string> = {
   '': 'русский',
   RU: 'русский', BY: 'русский', KZ: 'русский', KG: 'русский',
@@ -80,6 +85,7 @@ const REGION_LANG_NAME: Record<string, string> = {
 
 // Список языков для мультиселекта «Язык ключевиков» (частые — первыми). Можно выбрать
 // несколько: ключевики строятся на каждом. Свой язык добавляется через «Другой язык…».
+// ⚠ Тоже канонические значения — не переводить (см. комментарий у REGION_LANG_NAME).
 const KEYWORD_LANGS = [
   'русский', 'английский', 'украинский', 'узбекский', 'казахский', 'киргизский',
   'азербайджанский', 'грузинский', 'армянский', 'таджикский', 'белорусский', 'румынский',
@@ -109,16 +115,16 @@ function median(nums: number[]): number | undefined {
 }
 // Сигнал спроса по медиане просмотров топ-выдачи ниши (честно: это спрос, не абсолютная конкуренция).
 function demandTier(med?: number): { label: string; color: string; bg: string } {
-  if (med == null) return { label: 'нет данных', color: 'var(--text-muted)', bg: 'var(--bg-tertiary)' };
-  if (med >= 100_000) return { label: '🔥 высокий спрос', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
-  if (med >= 10_000) return { label: '👍 средний спрос', color: '#10b981', bg: 'rgba(16,185,129,0.12)' };
-  return { label: '💤 низкий спрос', color: 'var(--text-muted)', bg: 'var(--bg-tertiary)' };
+  if (med == null) return { label: i18n.t('common:sec.audience.demandNone', 'нет данных'), color: 'var(--text-muted)', bg: 'var(--bg-tertiary)' };
+  if (med >= 100_000) return { label: i18n.t('common:sec.audience.demandHigh', '🔥 высокий спрос'), color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+  if (med >= 10_000) return { label: i18n.t('common:sec.audience.demandMid', '👍 средний спрос'), color: '#10b981', bg: 'rgba(16,185,129,0.12)' };
+  return { label: i18n.t('common:sec.audience.demandLow', '💤 низкий спрос'), color: 'var(--text-muted)', bg: 'var(--bg-tertiary)' };
 }
 
 function friendlyError(e: any, fallback: string): string {
   const msg = typeof e?.message === 'string' ? e.message : '';
   if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)) {
-    return 'Сервер недоступен (нет связи с API). Проверьте backend/frontend и обновите страницу.';
+    return i18n.t('common:sec.audience.netErr', 'Сервер недоступен — нет связи с API. Обновите страницу и попробуйте ещё раз.');
   }
   return msg || fallback;
 }
@@ -131,6 +137,7 @@ export interface AudienceTargetPanelProps {
 }
 
 export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: AudienceTargetPanelProps) {
+  const { t } = useTranslation('common');
   const [product, setProduct] = useState('');
   const [audience, setAudience] = useState('');
   const [seeds, setSeeds] = useState('');
@@ -153,6 +160,40 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   const [notice, setNotice] = useState<string | null>(null);
   const [rankOrder, setRankOrder] = useState<string[] | null>(null); // ниши, отсортированные по спросу
   const navigate = useNavigate();
+
+  // Подписи языков в UI (значения остаются каноническими русскими — уходят на бэкенд).
+  const LANG_LABELS: Record<string, string> = {
+    'русский': t('sec.audience.langRu', 'русский'),
+    'английский': t('sec.audience.langEn', 'английский'),
+    'украинский': t('sec.audience.langUk', 'украинский'),
+    'узбекский': t('sec.audience.langUz', 'узбекский'),
+    'казахский': t('sec.audience.langKk', 'казахский'),
+    'киргизский': t('sec.audience.langKy', 'киргизский'),
+    'азербайджанский': t('sec.audience.langAz', 'азербайджанский'),
+    'грузинский': t('sec.audience.langKa', 'грузинский'),
+    'армянский': t('sec.audience.langHy', 'армянский'),
+    'таджикский': t('sec.audience.langTg', 'таджикский'),
+    'белорусский': t('sec.audience.langBe', 'белорусский'),
+    'румынский': t('sec.audience.langRo', 'румынский'),
+    'польский': t('sec.audience.langPl', 'польский'),
+    'немецкий': t('sec.audience.langDe', 'немецкий'),
+    'французский': t('sec.audience.langFr', 'французский'),
+    'испанский': t('sec.audience.langEs', 'испанский'),
+    'итальянский': t('sec.audience.langIt', 'итальянский'),
+    'португальский': t('sec.audience.langPt', 'португальский'),
+    'нидерландский': t('sec.audience.langNl', 'нидерландский'),
+    'турецкий': t('sec.audience.langTr', 'турецкий'),
+    'арабский': t('sec.audience.langAr', 'арабский'),
+    'иврит': t('sec.audience.langHe', 'иврит'),
+    'хинди': t('sec.audience.langHi', 'хинди'),
+    'индонезийский': t('sec.audience.langId', 'индонезийский'),
+    'вьетнамский': t('sec.audience.langVi', 'вьетнамский'),
+    'тайский': t('sec.audience.langTh', 'тайский'),
+    'японский': t('sec.audience.langJa', 'японский'),
+    'корейский': t('sec.audience.langKo', 'корейский'),
+    'китайский': t('sec.audience.langZh', 'китайский'),
+  };
+  const langLabel = (l: string) => LANG_LABELS[l] || l;
 
   const headers = (): HeadersInit => ({
     'Content-Type': 'application/json',
@@ -183,7 +224,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   // ── «Подсказать»: ИИ по описанию продукта заполняет «Базовая ЦА» и «Ключевые слова» (редактируемо) ──
   const [suggesting, setSuggesting] = useState(false);
   const suggest = async () => {
-    if (!product.trim()) { setError('Сначала опишите, что продвигаем — ИИ подскажет ЦА и ключевики.'); return; }
+    if (!product.trim()) { setError(t('sec.audience.suggestNeedProduct', 'Сначала опишите, что продвигаем — ИИ подскажет ЦА и ключевики.')); return; }
     setSuggesting(true); setError(null);
     try {
       const res = await fetch('/api/trends/audience-suggest', {
@@ -195,14 +236,14 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       const s = data.suggestion || {};
       if (s.audience) setAudience(s.audience);
       if (Array.isArray(s.keywords) && s.keywords.length) setSeeds(s.keywords.join(', '));
-      setNotice('ИИ подсказал ЦА и ключевики — поправьте под себя и жмите «Построить карту ЦА».');
-    } catch (e: any) { setError(friendlyError(e, 'Не удалось подсказать ЦА')); }
+      setNotice(t('sec.audience.suggestDone', 'ИИ подсказал ЦА и ключевики — поправьте под себя и жмите «Построить карту ЦА».'));
+    } catch (e: any) { setError(friendlyError(e, t('sec.audience.suggestFailed', 'Не удалось подсказать ЦА'))); }
     finally { setSuggesting(false); }
   };
 
   // ── Один клик: построить карту → СРАЗУ найти ролики по всем нишам → ранжировать по спросу ──
   const buildMap = async () => {
-    if (!product.trim() || !audience.trim()) { setError('Заполните продукт и базовую ЦА — или опишите продукт и нажмите «Подсказать».'); return; }
+    if (!product.trim() || !audience.trim()) { setError(t('sec.audience.needProductAudience', 'Заполните продукт и базовую ЦА — или опишите продукт и нажмите «Подсказать».')); return; }
     setBuilding(true); setError(null); setNotice(null); setMap(null); setScans({}); setRankOrder(null);
     try {
       const res = await fetch('/api/trends/audience-map', {
@@ -212,10 +253,13 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setMap(data.map);
-      const g = data.map?.grounded ? ' Ключевики — по реальным запросам.' : '';
-      setNotice(`Готово: ${data.map?.niches?.length ?? 0} ниш.${g} Ищу ролики и ранжирую по спросу…`);
+      setNotice([
+        t('sec.audience.mapReady', 'Готово: {{n}} ниш.', { n: data.map?.niches?.length ?? 0 }),
+        data.map?.grounded ? t('sec.audience.groundedSuffix', 'Ключевики — по реальным запросам.') : '',
+        t('sec.audience.autoScanNote', 'Ищу ролики и ранжирую по спросу…'),
+      ].filter(Boolean).join(' '));
       void runAllAndRank(data.map.niches); // авто: сканим все ниши и сортируем по спросу
-    } catch (e: any) { setError(friendlyError(e, 'Не удалось построить карту ЦА')); }
+    } catch (e: any) { setError(friendlyError(e, t('sec.audience.mapFailed', 'Не удалось построить карту ЦА'))); }
     finally { setBuilding(false); }
   };
 
@@ -234,7 +278,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       setScans((s) => ({ ...s, [niche.id]: { videos: vids, scanning: false, keyword: kw } }));
       return vids;
     } catch (e: any) {
-      setScans((s) => ({ ...s, [niche.id]: { videos: s[niche.id]?.videos || [], scanning: false, error: friendlyError(e, 'Ошибка скана'), keyword: kw } }));
+      setScans((s) => ({ ...s, [niche.id]: { videos: s[niche.id]?.videos || [], scanning: false, error: friendlyError(e, t('sec.audience.scanFailed', 'Ошибка скана')), keyword: kw } }));
       return [];
     }
   };
@@ -252,7 +296,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
     }
     setRankOrder([...niches].sort((a, b) => (demand[b.id] ?? -1) - (demand[a.id] ?? -1)).map((n) => n.id));
     setScanningAll(false);
-    setNotice('Ранжировано по спросу — ниши с бóльшим спросом сверху. На нужной нажмите «В TrendFlow».');
+    setNotice(t('sec.audience.rankedNotice', 'Ранжировано по спросу — ниши с бóльшим спросом сверху. На нужной нажмите «В TrendFlow».'));
   };
   const scanAll = () => { if (map) void runAllAndRank(map.niches); };
 
@@ -261,20 +305,20 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   const nicheBrief = (n: AudienceNiche): string => {
     const ref = scans[n.id]?.videos?.find((v) => v.webUrl)?.webUrl;
     return [
-      `Продукт/оффер: ${map?.product || product}`,
-      `Ниша (тема-прокси ЦА): ${n.name}${n.branch ? ` — ${n.branch}` : ''}`,
-      n.rationale && `Почему ловит аудиторию: ${n.rationale}`,
-      n.angle && `Идея/хук: ${n.angle}`,
-      n.keywords?.length && `Ключевики: ${n.keywords.join(', ')}`,
-      ref && `Референс-ролик: ${ref}`,
-      'Задача: снять ролик на эту тему и встроить продукт под идею.',
+      t('sec.audience.briefProduct', 'Продукт/оффер: {{v}}', { v: map?.product || product }),
+      t('sec.audience.briefNiche', 'Ниша (тема-прокси ЦА): {{v}}', { v: `${n.name}${n.branch ? ` — ${n.branch}` : ''}` }),
+      n.rationale && t('sec.audience.briefWhy', 'Почему ловит аудиторию: {{v}}', { v: n.rationale }),
+      n.angle && t('sec.audience.briefAngle', 'Идея/хук: {{v}}', { v: n.angle }),
+      n.keywords?.length && t('sec.audience.briefKeywords', 'Ключевики: {{v}}', { v: n.keywords.join(', ') }),
+      ref && t('sec.audience.briefRef', 'Референс-ролик: {{v}}', { v: ref }),
+      t('sec.audience.briefTask', 'Задача: снять ролик на эту тему и встроить продукт под идею.'),
     ].filter(Boolean).join('\n');
   };
   const toTrendFlow = async (n: AudienceNiche) => {
     setFlowBusy(n.id); setError(null);
     try {
       const brief = nicheBrief(n);
-      const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: `ЦА · ${n.name}`.slice(0, 120) }) });
+      const cr = await fetch('/api/flows', { method: 'POST', headers: headers(), body: JSON.stringify({ name: t('sec.audience.flowName', 'ЦА · {{name}}', { name: n.name }).slice(0, 120) }) });
       const cd = await cr.json();
       if (!cr.ok || !cd.flow?.id) throw new Error(cd?.error || `HTTP ${cr.status}`);
       const id = cd.flow.id;
@@ -285,7 +329,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
       });
       navigate(`/gallery?tab=ugc&openFlow=${encodeURIComponent(id)}`);
     } catch (e: any) {
-      setError(friendlyError(e, 'Не удалось создать сценарий в TrendFlow'));
+      setError(friendlyError(e, t('sec.audience.flowFailed', 'Не удалось создать сценарий в TrendFlow')));
       setFlowBusy(null);
     }
   };
@@ -317,14 +361,14 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
   }, [anyDownloading]);
 
   const download = async (nicheId: string, v: StoredVideo) => {
-    if (!v.id) { setError('Видео не сохранено в БД — повторите скан.'); return; }
+    if (!v.id) { setError(t('sec.audience.vidNotSaved', 'Видео не сохранилось — нажмите «Найти ролики» ещё раз.')); return; }
     setScans((s) => ({ ...s, [nicheId]: { ...s[nicheId], videos: s[nicheId].videos.map((x) => x.id === v.id ? { ...x, status: 'downloading' } : x) } }));
     try {
       const res = await fetch(`/api/trends/videos/${v.id}/download`, { method: 'POST', headers: headers() });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
     } catch (e: any) {
       setScans((s) => ({ ...s, [nicheId]: { ...s[nicheId], videos: s[nicheId].videos.map((x) => x.id === v.id ? { ...x, status: 'failed' } : x) } }));
-      setError(friendlyError(e, 'Не удалось скачать'));
+      setError(friendlyError(e, t('sec.audience.dlFailed', 'Не удалось скачать')));
     }
   };
 
@@ -344,14 +388,12 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
             <Target size={18} style={{ color: 'var(--brand)' }} />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base font-700" style={{ color: 'var(--text-primary)' }}>Таргет на целевую аудиторию</h2>
+            <h2 className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.audience.title', 'Таргет на целевую аудиторию')}</h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Опишите продукт и аудиторию — ИИ разложит её на узкие ниши-темы и подберёт ключевики,
-              а мы найдём под каждую реальные ролики. Меньше конкуренции, точнее попадание.
-              Не знаете аудиторию — опишите продукт и нажмите «Подсказать»: ИИ заполнит ЦА и ключевики сам.
+              {t('sec.audience.intro', 'Опишите продукт и аудиторию — ИИ разложит её на узкие ниши-темы и подберёт ключевики, а мы найдём под каждую реальные ролики. Меньше конкуренции, точнее попадание. Не знаете аудиторию — опишите продукт и нажмите «Подсказать»: ИИ заполнит ЦА и ключевики сам.')}
             </p>
             <p className="text-[11px] mt-1 font-600" style={{ color: 'var(--brand)' }}>
-              Один клик: строим ниши → находим ролики → ранжируем по спросу. Дальше — «В TrendFlow» на нужной нише.
+              {t('sec.audience.oneClickHint', 'Один клик: строим ниши → находим ролики → ранжируем по спросу. Дальше — «В TrendFlow» на нужной нише.')}
             </p>
           </div>
         </div>
@@ -359,40 +401,40 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             <span className="flex items-center justify-between gap-2">
-              <span>Что продвигаем (продукт / оффер / смысл)</span>
+              <span>{t('sec.audience.productLabel', 'Что продвигаем (продукт / оффер / смысл)')}</span>
               <button type="button" onClick={(e) => { e.preventDefault(); void suggest(); }} disabled={suggesting || !product.trim()}
-                title="ИИ по описанию продукта сам заполнит «Базовая ЦА» и «Ключевые слова» — потом их можно править и дополнять"
+                title={t('sec.audience.suggestTitle', 'ИИ по описанию продукта сам заполнит «Базовая ЦА» и «Ключевые слова» — потом их можно править и дополнять')}
                 className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-600 transition-colors disabled:opacity-45"
                 style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.35)', cursor: 'pointer' }}>
                 {suggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                {suggesting ? 'Подсказываю…' : 'Подсказать'}
+                {suggesting ? t('sec.audience.suggesting', 'Подсказываю…') : t('sec.audience.suggestBtn', 'Подсказать')}
               </button>
             </span>
             <textarea value={product} onChange={(e) => setProduct(e.target.value)} rows={2}
-              placeholder="напр.: онлайн-школа инвестиций для предпринимателей"
+              placeholder={t('sec.audience.productPh', 'напр.: онлайн-школа инвестиций для предпринимателей')}
               className="px-3 py-2 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </label>
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Базовая целевая аудитория
+            {t('sec.audience.audienceLabel', 'Базовая целевая аудитория')}
             <textarea value={audience} onChange={(e) => setAudience(e.target.value)} rows={2}
-              placeholder="напр.: богатые люди / предприниматели и их жёны"
+              placeholder={t('sec.audience.audiencePh', 'напр.: богатые люди / предприниматели и их жёны')}
               className="px-3 py-2 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </label>
         </div>
 
         <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          Ваши ключевые слова (необязательно — ИИ учтёт и расширит; через запятую)
+          {t('sec.audience.seedsLabel', 'Ваши ключевые слова (необязательно — ИИ учтёт и расширит; через запятую)')}
           <input value={seeds} onChange={(e) => setSeeds(e.target.value)}
-            placeholder="напр.: гольф, падл, конный спорт, F1, горные лыжи"
+            placeholder={t('sec.audience.seedsPh', 'напр.: гольф, падл, конный спорт, F1, горные лыжи')}
             className="px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
         </label>
 
         <div className="flex flex-wrap items-end gap-x-3 gap-y-3">
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Площадка
+            {t('sec.audience.platformLabel', 'Площадка')}
             <select value={platform} onChange={(e) => setPlatform(e.target.value as Source)}
               className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
@@ -401,11 +443,11 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
           </label>
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            <span className="inline-flex items-center gap-1"><Globe size={12} /> Регион</span>
+            <span className="inline-flex items-center gap-1"><Globe size={12} /> {t('sec.audience.regionLabel', 'Регион')}</span>
             <select value={region} onChange={(e) => { const r = e.target.value; setRegion(r); setLanguages([REGION_LANG_NAME[r] || 'русский']); }}
               className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ minWidth: 170, background: region ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)', border: `1px solid ${region ? 'var(--brand)' : 'var(--border-medium)'}`, color: 'var(--text-primary)' }}>
-              <option value="">🌐 Глобально</option>
+              <option value="">{t('sec.audience.regionGlobal', '🌐 Глобально')}</option>
               {REGION_GROUPS.map((g) => (
                 <optgroup key={g} label={g}>
                   {REGIONS.filter((r) => r.group === g).map((r) => <option key={r.code} value={r.code}>{r.flag} {r.name}</option>)}
@@ -415,19 +457,19 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
           </label>
 
           <div ref={langBoxRef} className="relative flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            <span title="Подставляется из региона автоматически — можно выбрать один или несколько языков">Язык ключевиков</span>
+            <span title={t('sec.audience.langLabelTitle', 'Подставляется из региона автоматически — можно выбрать один или несколько языков')}>{t('sec.audience.langLabel', 'Язык ключевиков')}</span>
             <button type="button" onClick={() => setLangOpen((o) => !o)} aria-expanded={langOpen}
-              title="Выберите язык(и) из списка — ключевики будут на каждом выбранном"
+              title={t('sec.audience.langBtnTitle', 'Выберите язык(и) из списка — ключевики будут на каждом выбранном')}
               className="h-10 px-3 rounded-lg text-sm inline-flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ minWidth: 150, maxWidth: 210, background: 'var(--bg-tertiary)', border: `1px solid ${langOpen ? 'var(--brand)' : 'var(--border-medium)'}`, color: 'var(--text-primary)', cursor: 'pointer' }}>
-              <span className="truncate">{languages[0]}{languages.length > 1 ? ` +${languages.length - 1}` : ''}</span>
+              <span className="truncate">{langLabel(languages[0])}{languages.length > 1 ? ` +${languages.length - 1}` : ''}</span>
               <ChevronDown size={14} className="flex-shrink-0 transition-transform" style={{ transform: langOpen ? 'rotate(180deg)' : 'none', color: 'var(--text-muted)' }} />
             </button>
             {langOpen && (
               <div className="absolute z-50 top-full left-0 mt-1 w-60 rounded-xl shadow-xl p-2"
                 style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', boxShadow: '0 12px 32px rgba(0,0,0,0.25)' }}>
                 <div className="text-[10px] px-1 pb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Можно выбрать несколько — ключевики будут на каждом языке
+                  {t('sec.audience.langMultiHint', 'Можно выбрать несколько — ключевики будут на каждом языке')}
                 </div>
                 <div className="max-h-60 overflow-y-auto pr-0.5">
                   {allLangs.map((l) => {
@@ -440,7 +482,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                           style={{ background: sel ? 'var(--brand)' : 'var(--bg-tertiary)', border: `1px solid ${sel ? 'var(--brand)' : 'var(--border-medium)'}` }}>
                           {sel && <Check size={11} strokeWidth={3} style={{ color: 'var(--brand-contrast)' }} />}
                         </span>
-                        {l}
+                        {langLabel(l)}
                       </button>
                     );
                   })}
@@ -448,10 +490,10 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                 <div className="flex items-center gap-1.5 pt-1.5 mt-1" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <input value={customLang} onChange={(e) => setCustomLang(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomLang(); } }}
-                    placeholder="Другой язык…"
+                    placeholder={t('sec.audience.langCustomPh', 'Другой язык…')}
                     className="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                  <button type="button" onClick={addCustomLang} disabled={!customLang.trim()} title="Добавить язык"
+                  <button type="button" onClick={addCustomLang} disabled={!customLang.trim()} title={t('sec.audience.langAddTitle', 'Добавить язык')}
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40"
                     style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
                     <Plus size={14} />
@@ -462,7 +504,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
           </div>
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Ниш
+            {t('sec.audience.nichesLabel', 'Ниш')}
             <select value={maxNiches} onChange={(e) => setMaxNiches(Number(e.target.value))}
               className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
@@ -471,7 +513,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
           </label>
 
           <label className="flex flex-col gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Видео / нишу
+            {t('sec.audience.perNicheLabel', 'Видео / нишу')}
             <select value={perNiche} onChange={(e) => setPerNiche(Number(e.target.value))}
               className="h-10 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>
@@ -481,14 +523,14 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
           <AuroraButton onClick={buildMap} disabled={building}
             icon={building ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}>
-            {building ? 'Строю карту…' : 'Построить карту ЦА'}
+            {building ? t('sec.audience.building', 'Строю карту…') : t('sec.audience.buildBtn', 'Построить карту ЦА')}
           </AuroraButton>
         </div>
 
         {/* Заземление ключевиков — тумблер-НАСТРОЙКА (отдельной строкой, не путать с кнопкой действия). */}
         <div className="flex items-center gap-2.5 flex-wrap">
           <button type="button" role="switch" aria-checked={ground} onClick={() => setGround((g) => !g)}
-            title="Берём ключевики из реальных поисковых запросов TikTok/YouTube вместо чистых догадок ИИ. Дёшево (не видео-скан)."
+            title={t('sec.audience.groundToggleTitle', 'Берём ключевики из реальных поисковых запросов TikTok/YouTube вместо чистых догадок ИИ. Это дешёвая проверка: видео не сканируются.')}
             className="inline-flex items-center gap-2 text-[12px] font-600 px-2.5 py-1.5 rounded-lg transition-colors"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
             <span className="relative inline-block w-8 h-[18px] rounded-full transition-colors flex-shrink-0"
@@ -496,16 +538,16 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
               <span className="absolute top-[2px] w-[14px] h-[14px] rounded-full transition-all"
                     style={{ left: ground ? 16 : 2, background: '#fff' }} />
             </span>
-            🔎 Проверять ключевики реальными запросами
+            {t('sec.audience.groundToggle', '🔎 Проверять ключевики реальными запросами')}
           </button>
           <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            {ground ? 'вкл. — берём реальные запросы TikTok/YouTube вместо догадок ИИ (дёшево)' : 'выкл. — ключевики только от ИИ (быстрее, но непроверенные)'}
+            {ground ? t('sec.audience.groundOn', 'вкл. — берём реальные запросы TikTok/YouTube вместо догадок ИИ (дёшево)') : t('sec.audience.groundOff', 'выкл. — ключевики только от ИИ (быстрее, но непроверенные)')}
           </span>
         </div>
 
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          В один клик: 1 запрос ИИ на карту{ground ? ' + по 1 подсказке-запросу на нишу (дёшево)' : ''} + по 1 скану на нишу (до {maxNiches} — они и ранжируют ниши по спросу).
-          {' '}Регион и реальные запросы работают в TikTok и YouTube.
+          {t('sec.audience.costPrefix', 'В один клик: 1 запрос ИИ на карту')}{ground ? ` ${t('sec.audience.costGround', '+ по 1 подсказке-запросу на нишу (дёшево)')}` : ''} {t('sec.audience.costScan', '+ по 1 скану на нишу (до {{n}} — они и ранжируют ниши по спросу).', { n: maxNiches })}
+          {' '}{t('sec.audience.costRegion', 'Регион и реальные запросы работают в TikTok и YouTube.')}
         </p>
 
         {notice && (
@@ -526,29 +568,29 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>
-                Микро-ниши: {map.niches.length}
+                {t('sec.audience.nichesCount', 'Микро-ниши: {{n}}', { n: map.niches.length })}
               </div>
               {map.grounded ? (
                 <span className="text-[11px] px-2 py-1 rounded-full font-600 inline-flex items-center gap-1"
                   style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}
-                  title="Ключевики взяты из реальных подсказок запросов, а не догадка ИИ">
-                  <Search size={11} /> Реальные запросы · {map.groundingSource === 'youtube' ? 'YouTube' : 'TikTok'}{map.region ? ` · ${map.region}` : ''}
+                  title={t('sec.audience.groundedBadgeTitle', 'Ключевики взяты из реальных подсказок запросов, а не догадка ИИ')}>
+                  <Search size={11} /> {t('sec.audience.groundedBadge', 'Реальные запросы')} · {map.groundingSource === 'youtube' ? 'YouTube' : 'TikTok'}{map.region ? ` · ${map.region}` : ''}
                 </span>
               ) : (
                 <span className="text-[11px] px-2 py-1 rounded-full font-600"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
-                  title="Ключевики сгенерированы ИИ без проверки реальными запросами (включите «Реальные запросы» или площадка их не поддерживает)">
-                  ключевики от ИИ
+                  title={t('sec.audience.aiOnlyTitle', 'Ключевики сгенерированы ИИ без проверки реальными запросами — включите «Проверять ключевики реальными запросами» (работает в TikTok и YouTube)')}>
+                  {t('sec.audience.aiOnlyBadge', 'ключевики от ИИ')}
                 </span>
               )}
               {rankOrder && (
                 <span className="text-[11px] px-2 py-1 rounded-full font-600" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                  title="Ниши отсортированы: с бóльшим спросом — сверху">↓ по спросу</span>
+                  title={t('sec.audience.rankBadgeTitle', 'Ниши отсортированы: с бóльшим спросом — сверху')}>{t('sec.audience.rankBadge', '↓ по спросу')}</span>
               )}
             </div>
             <AuroraButton variant="secondary" onClick={scanAll} disabled={scanningAll}
               icon={scanningAll ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
-              {scanningAll ? `Ищу по нишам… (${totalScans})` : `Пересканировать (${totalScans})`}
+              {scanningAll ? t('sec.audience.scanningAllBtn', 'Ищу по нишам… ({{n}})', { n: totalScans }) : t('sec.audience.rescanBtn', 'Пересканировать ({{n}})', { n: totalScans })}
             </AuroraButton>
           </div>
 
@@ -565,7 +607,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                     {rankOrder && (
                       <span className="text-[11px] font-700 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                         style={{ background: idx < 3 ? 'rgba(16,185,129,0.15)' : 'var(--bg-tertiary)', color: idx < 3 ? '#10b981' : 'var(--text-muted)' }}
-                        title="Позиция по спросу">#{idx + 1}</span>
+                        title={t('sec.audience.rankPosTitle', 'Позиция по спросу')}>#{idx + 1}</span>
                     )}
                     <div className="text-2xl leading-none mt-0.5">{n.emoji || '🎯'}</div>
                     <div className="min-w-0 flex-1">
@@ -576,14 +618,14 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                         )}
                         {sc && sc.videos.length > 0 && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded font-700" style={{ background: tier.bg, color: tier.color }}>
-                            {tier.label} · медиана {fmt(med)}
+                            {tier.label} · {t('sec.audience.median', 'медиана')} {fmt(med)}
                           </span>
                         )}
                       </div>
                       {n.rationale && <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{n.rationale}</p>}
                       {n.angle && (
                         <p className="text-[12px] mt-1.5 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--text-secondary)' }}>
-                          <b style={{ color: 'var(--brand)' }}>Идея:</b> {n.angle}
+                          <b style={{ color: 'var(--brand)' }}>{t('sec.audience.angleLabel', 'Идея:')}</b> {n.angle}
                         </p>
                       )}
                       {/* Кластер ключевиков — кликом сканируем нишу по конкретному слову */}
@@ -593,7 +635,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                           const isReal = (n.realKeywords || []).some((x) => x.toLowerCase() === kw.toLowerCase());
                           return (
                             <button key={kw} type="button" onClick={() => scanNiche(n, kw)} disabled={sc?.scanning}
-                              title={isReal ? 'Реальный запрос (из подсказок TikHub) — искать по нему' : 'Ключевик от ИИ — искать по нему'}
+                              title={isReal ? t('sec.audience.kwRealTitle', 'Реальный запрос (из подсказок поиска площадки) — искать по нему') : t('sec.audience.kwAiTitle', 'Ключевик от ИИ — искать по нему')}
                               className="text-[11px] px-2 py-1 rounded-full font-600 transition-colors disabled:opacity-50 inline-flex items-center gap-1"
                               style={{
                                 background: active ? 'var(--brand)' : (isReal ? 'rgba(16,185,129,0.10)' : 'var(--bg-tertiary)'),
@@ -611,14 +653,14 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                         className="inline-flex items-center justify-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
                         style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
                         {sc?.scanning ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-                        Найти ролики
+                        {t('sec.audience.findBtn', 'Найти ролики')}
                       </button>
                       <button type="button" onClick={() => toTrendFlow(n)} disabled={flowBusy === n.id}
-                        title="Создать сценарий в TrendFlow, заполненный темой/идеей/ключевиками этой ниши (+ референс), и открыть его"
+                        title={t('sec.audience.toFlowTitle', 'Создать сценарий в TrendFlow, заполненный темой/идеей/ключевиками этой ниши (+ референс), и открыть его')}
                         className="inline-flex items-center justify-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
                         style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.35)' }}>
                         {flowBusy === n.id ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />}
-                        В TrendFlow
+                        {t('sec.audience.toFlowBtn', 'В TrendFlow')}
                       </button>
                     </div>
                   </div>
@@ -630,7 +672,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                     </div>
                   )}
                   {sc && !sc.scanning && !sc.error && sc.videos.length === 0 && (
-                    <p className="text-[12px] mt-3" style={{ color: 'var(--text-muted)' }}>По этой нише ничего не нашлось — попробуйте другой ключевик.</p>
+                    <p className="text-[12px] mt-3" style={{ color: 'var(--text-muted)' }}>{t('sec.audience.nicheEmpty', 'По этой нише ничего не нашлось — попробуйте другой ключевик.')}</p>
                   )}
                   {sc && sc.videos.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 mt-3">
@@ -663,21 +705,21 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                             )}
                             <div className="flex items-center gap-1 mt-auto pt-0.5">
                               {v.webUrl && (
-                                <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title="Аналитика"
+                                <button type="button" onClick={() => onAnalyze(v.webUrl!, v.coverUrl)} title={t('sec.audience.analyzeTitle', 'Аналитика')}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:opacity-80"
                                   style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}>
                                   <BarChart3 size={13} />
                                 </button>
                               )}
                               {v.webUrl && (
-                                <a href={v.webUrl} target="_blank" rel="noreferrer" title="Открыть оригинал"
+                                <a href={v.webUrl} target="_blank" rel="noreferrer" title={t('sec.audience.openOrigTitle', 'Открыть оригинал')}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:opacity-80"
                                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                                   <ExternalLink size={13} />
                                 </a>
                               )}
                               {v.fileUrl ? (
-                                <a href={v.fileUrl} target="_blank" rel="noreferrer" title="Скачано — открыть файл"
+                                <a href={v.fileUrl} target="_blank" rel="noreferrer" title={t('sec.audience.downloadedTitle', 'Скачано — открыть файл')}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center ml-auto"
                                   style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
                                   <CheckCircle2 size={13} />
@@ -689,7 +731,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
                                 </span>
                               ) : (
                                 <button type="button" onClick={() => download(n.id, v)} disabled={!v.id || platform === 'youtube'}
-                                  title={platform === 'youtube' ? 'Скачивание YouTube недоступно' : 'Скачать (в фоне → Галерея)'}
+                                  title={platform === 'youtube' ? t('sec.audience.ytDlOff', 'Скачивание YouTube недоступно') : t('sec.audience.dlTitle', 'Скачать (в фоне → Галерея)')}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center ml-auto transition-colors disabled:opacity-40"
                                   style={{ background: v.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'var(--brand)', color: v.status === 'failed' ? '#ef4444' : 'var(--brand-contrast)' }}>
                                   {v.status === 'failed' ? <AlertCircle size={13} /> : <Download size={13} />}
@@ -708,7 +750,7 @@ export default function AudienceTargetPanel({ token, sectionTabs, onAnalyze }: A
 
           <div className="flex items-center gap-2 text-[12px] rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
             <ChevronRight size={14} className="flex-shrink-0" style={{ color: 'var(--brand)' }} />
-            <span>«В TrendFlow» на нужной нише — создаёт сценарий с её темой/идеей/ключевиками и открывает студию. Или «Аналитика»/«Скачать» по конкретному ролику-референсу.</span>
+            <span>{t('sec.audience.footerHint', '«В TrendFlow» на нужной нише — создаёт сценарий с её темой/идеей/ключевиками и открывает студию. Или «Аналитика»/«Скачать» по конкретному ролику-референсу.')}</span>
           </div>
         </>
       )}

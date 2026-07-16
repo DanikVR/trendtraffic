@@ -6,6 +6,7 @@
 
 import type { ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { PublicHeader } from '../../components/public/PublicHeader';
 import { PublicFooter } from '../../components/public/PublicFooter';
 
@@ -29,6 +30,7 @@ interface LegalLayoutProps {
 }
 
 export function LegalLayout({ title, updated, intro, children, metaDescription }: LegalLayoutProps) {
+  const { t } = useTranslation('common');
   return (
     <div className="dark relative min-h-screen text-white" style={{ background: '#0A0A0B' }}>
       <Helmet>
@@ -42,17 +44,17 @@ export function LegalLayout({ title, updated, intro, children, metaDescription }
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-14">
         <div className="flex items-center gap-3 mb-5">
           <span className="h-px w-8" style={{ background: 'rgba(99,102,241,0.6)' }} />
-          <span className="text-xs font-700 uppercase tracking-[0.2em] text-white/50">Правовая информация</span>
+          <span className="text-xs font-700 uppercase tracking-[0.2em] text-white/50">{t('sec.pub.legalKicker', 'Правовая информация')}</span>
         </div>
         <h1 className="font-display font-800 text-3xl sm:text-5xl tracking-[-0.02em] mb-3">{title}</h1>
-        <p className="text-sm text-white/40 mb-8">Последнее обновление: {updated}</p>
+        <p className="text-sm text-white/40 mb-8">{t('sec.pub.legalUpdatedAt', 'Последнее обновление:')} {updated}</p>
 
         {intro && <div className="legal mb-2">{intro}</div>}
 
         <article className="legal">{children}</article>
 
         <div className="mt-12 pt-6 text-sm text-white/45" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          По всем вопросам: <a href="mailto:SEO@vibevox.pro" style={{ color: 'var(--brand)' }}>SEO@vibevox.pro</a>
+          {t('sec.pub.legalContact', 'По всем вопросам:')} <a href="mailto:SEO@vibevox.pro" style={{ color: 'var(--brand)' }}>SEO@vibevox.pro</a>
         </div>
       </main>
 

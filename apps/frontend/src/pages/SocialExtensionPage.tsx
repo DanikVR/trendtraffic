@@ -14,6 +14,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, X, ImagePlus, Loader2, Play, Eye, Flame, Target, BarChart3, Radio, Trash2 } from 'lucide-react';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -62,6 +63,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export default function SocialExtensionPage() {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [tab, setTab] = useState<Tab>('search');
@@ -118,10 +120,10 @@ export default function SocialExtensionPage() {
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       setRecent((prev) => prev.filter((v) => v.id !== id));
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось удалить видео' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.delVideoFail', 'Не удалось удалить видео') });
       setTimeout(() => setGalleryNote(null), 6000);
     }
-  }, [token]);
+  }, [token, t]);
 
   // «Очистить всё» — массовое удаление всех видео плитки одной ручкой delete-bulk.
   const clearRecentAll = useCallback(async () => {
@@ -138,35 +140,35 @@ export default function SocialExtensionPage() {
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       const gone = new Set(ids);
       setRecent((prev) => prev.filter((v) => !v.id || !gone.has(v.id)));
-      setGalleryNote({ ok: true, text: `Удалено видео: ${d.deleted ?? ids.length} ✓` });
+      setGalleryNote({ ok: true, text: t('sec.socialext.deletedN', 'Удалено видео: {{n}} ✓', { n: d.deleted ?? ids.length }) });
       setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось очистить список' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.clearListFail', 'Не удалось очистить список') });
       setTimeout(() => setGalleryNote(null), 6000);
     } finally {
       setClearingRecent(false);
     }
-  }, [recent, token]);
+  }, [recent, token, t]);
 
   const askDeleteRecent = useCallback((v: StoredVideo) => {
     if (!v.id) return;
     const id = v.id;
     setConfirm({
-      title: 'Удалить видео?',
-      message: `@${v.author || '—'} — видео исчезнет из поиска и аналитики; если оно было скачано, файл удалится с диска безвозвратно.`,
+      title: t('sec.socialext.delOneTitle', 'Удалить видео?'),
+      message: t('sec.socialext.delOneMsg', '@{{author}} — видео исчезнет из поиска и аналитики; если оно было скачано, файл удалится с диска безвозвратно.', { author: v.author || '—' }),
       onConfirm: () => { setConfirm(null); void deleteRecentOne(id); },
     });
-  }, [deleteRecentOne]);
+  }, [deleteRecentOne, t]);
 
   const askClearRecent = useCallback(() => {
     const n = recent.filter((v) => v.id).length;
     if (n === 0) return;
     setConfirm({
-      title: `Очистить все видео (${n})?`,
-      message: 'Все найденные видео будут удалены из поиска и аналитики; скачанные файлы — с диска безвозвратно.',
+      title: t('sec.socialext.clearAllTitle', 'Очистить все видео ({{n}})?', { n }),
+      message: t('sec.socialext.clearAllMsg', 'Все найденные видео будут удалены из поиска и аналитики; скачанные файлы — с диска безвозвратно.'),
       onConfirm: () => { setConfirm(null); void clearRecentAll(); },
     });
-  }, [recent, clearRecentAll]);
+  }, [recent, clearRecentAll, t]);
 
   const addToGallery = useCallback(async () => {
     const target = appliedRef.current || url.trim();
@@ -185,17 +187,17 @@ export default function SocialExtensionPage() {
       // дозреют файлы), ошибку — стандартные 6с.
       setGalleryNote({
         ok: true,
-        text: 'Добавлено ✓ Видео уже в Галерее; разбор (.md) и субтитры (.srt) появятся там через минуту-другую.',
-        link: { label: 'Открыть: Галерея → Медиафайлы → Аналитика', to: '/gallery?tab=reference&kind=analytics' },
+        text: t('sec.socialext.addedOk', 'Добавлено ✓ Видео уже в Галерее; разбор (.md) и субтитры (.srt) появятся там через минуту-другую.'),
+        link: { label: t('sec.socialext.addedLink', 'Открыть: Галерея → Медиафайлы → Аналитика'), to: '/gallery?tab=reference&kind=analytics' },
       });
       setTimeout(() => setGalleryNote(null), 120000);
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось добавить в галерею' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.addFail', 'Не удалось добавить в галерею') });
       setTimeout(() => setGalleryNote(null), 6000);
     } finally {
       setAdding(false);
     }
-  }, [url, token]);
+  }, [url, token, t]);
 
   // Кнопки раздела Music расширения (через postMessage):
   //  • 'download' — скачать трек на устройство;
@@ -210,11 +212,11 @@ export default function SocialExtensionPage() {
         const res = await fetch('/api/social-ext/music', { method: 'POST', headers: authJson, body: JSON.stringify({ url: target, action: 'open' }) });
         const d = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
-        if (d.url) window.open(d.url, '_blank', 'noopener'); else throw new Error('Ссылка на музыку не найдена');
+        if (d.url) window.open(d.url, '_blank', 'noopener'); else throw new Error(t('sec.socialext.musicNoLink', 'Ссылка на музыку не найдена'));
         return;
       }
       // download | view → бэкенд стримит аудио как attachment (+ заголовок X-Music-Url)
-      setGalleryNote({ ok: true, text: action === 'view' ? 'Скачиваю и открываю музыку…' : 'Скачиваю музыку…' });
+      setGalleryNote({ ok: true, text: action === 'view' ? t('sec.socialext.musicDlOpenBusy', 'Скачиваю и открываю музыку…') : t('sec.socialext.musicDlBusy', 'Скачиваю музыку…') });
       const res = await fetch('/api/social-ext/music', { method: 'POST', headers: authJson, body: JSON.stringify({ url: target, action: 'download' }) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
       const blob = await res.blob();
@@ -225,13 +227,13 @@ export default function SocialExtensionPage() {
         const musicUrl = res.headers.get('X-Music-Url');
         if (musicUrl) window.open(musicUrl, '_blank', 'noopener');
       }
-      setGalleryNote({ ok: true, text: 'Музыка скачана ✓' });
+      setGalleryNote({ ok: true, text: t('sec.socialext.musicDone', 'Музыка скачана ✓') });
       setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось обработать музыку' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.musicFail', 'Не удалось обработать музыку') });
       setTimeout(() => setGalleryNote(null), 6000);
     }
-  }, [token]);
+  }, [token, t]);
 
   // Кнопка «Download video» расширения — перехватываем (custom.js) и качаем БЕЗ
   // водяного знака через наш бэкенд (App V3 play_addr), стримом на устройство.
@@ -240,26 +242,26 @@ export default function SocialExtensionPage() {
     if (!target) return;
     const authJson = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     try {
-      setGalleryNote({ ok: true, text: 'Скачиваю видео без водяного знака…' });
+      setGalleryNote({ ok: true, text: t('sec.socialext.dlNoWmBusy', 'Скачиваю видео без водяного знака…') });
       const res = await fetch('/api/social-ext/download', { method: 'POST', headers: authJson, body: JSON.stringify({ url: target }) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
       const blob = await res.blob();
       const cd = res.headers.get('Content-Disposition') || '';
       const m = /filename="?([^"]+)"?/.exec(cd);
       downloadBlob(blob, (m && m[1]) || 'video.mp4');
-      setGalleryNote({ ok: true, text: 'Видео скачано ✓' });
+      setGalleryNote({ ok: true, text: t('sec.socialext.videoDone', 'Видео скачано ✓') });
       setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось скачать видео' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.videoFail', 'Не удалось скачать видео') });
       setTimeout(() => setGalleryNote(null), 6000);
     }
-  }, [token]);
+  }, [token, t]);
 
   // Манифест IG-медиа (прямые ссылки макс. качества) — один вызов на пост, кэш по ссылке.
   const igManifestRef = useRef<{ url: string; data: any } | null>(null);
   const getIgManifest = useCallback(async (): Promise<any> => {
     const target = appliedRef.current;
-    if (!target) throw new Error('Сначала выберите ссылку.');
+    if (!target) throw new Error(t('sec.socialext.pickUrlFirst', 'Сначала выберите ссылку.'));
     if (igManifestRef.current?.url === target) return igManifestRef.current.data;
     const res = await fetch('/api/social-ext/ig-manifest', {
       method: 'POST',
@@ -270,7 +272,7 @@ export default function SocialExtensionPage() {
     if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
     igManifestRef.current = { url: target, data: d };
     return d;
-  }, [token]);
+  }, [token, t]);
 
   // Стрим CDN-ссылки на устройство через медиа-прокси (allow-list + Referer + auth-заголовок).
   const streamViaMediaProxy = useCallback(async (cdnUrl: string, filename: string) => {
@@ -283,40 +285,40 @@ export default function SocialExtensionPage() {
   // IG-кнопки «Скачать» (custom.js): медиа по индексу карусели (макс. качество) или аудио.
   const handleIgDownload = useCallback(async (kind: 'media' | 'audio', index: number) => {
     try {
-      setGalleryNote({ ok: true, text: kind === 'audio' ? 'Скачиваю аудио…' : 'Скачиваю медиа в максимальном качестве…' });
+      setGalleryNote({ ok: true, text: kind === 'audio' ? t('sec.socialext.igAudioBusy', 'Скачиваю аудио…') : t('sec.socialext.igMediaBusy', 'Скачиваю медиа в максимальном качестве…') });
       const manifest = await getIgManifest();
       const sc = manifest.shortcode || 'instagram';
       if (kind === 'audio') {
-        if (!manifest.audio?.url) throw new Error('У этого трека нет файла для скачивания (лицензионная музыка).');
+        if (!manifest.audio?.url) throw new Error(t('sec.socialext.igNoAudio', 'У этого трека нет файла для скачивания (лицензионная музыка).'));
         await streamViaMediaProxy(manifest.audio.url, `instagram-audio-${sc}.mp3`);
       } else {
         const arr = Array.isArray(manifest.items) ? manifest.items : [];
         const item = arr[index] || arr[0];
-        if (!item?.url) throw new Error('Не удалось получить ссылку на медиа.');
+        if (!item?.url) throw new Error(t('sec.socialext.igNoMediaLink', 'Не удалось получить ссылку на медиа.'));
         const ext = item.type === 'video' ? 'mp4' : 'jpg';
         await streamViaMediaProxy(item.url, `instagram-${sc}-${(index || 0) + 1}.${ext}`);
       }
-      setGalleryNote({ ok: true, text: kind === 'audio' ? 'Аудио скачано ✓' : 'Медиа скачано ✓' });
+      setGalleryNote({ ok: true, text: kind === 'audio' ? t('sec.socialext.igAudioDone', 'Аудио скачано ✓') : t('sec.socialext.igMediaDone', 'Медиа скачано ✓') });
       setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось скачать' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.dlFail', 'Не удалось скачать') });
       setTimeout(() => setGalleryNote(null), 6000);
     }
-  }, [getIgManifest, streamViaMediaProxy]);
+  }, [getIgManifest, streamViaMediaProxy, t]);
 
   // Кнопка «Скачать» в строке «Quality variants» (custom.js): качаем КОНКРЕТНУЮ
   // CDN-ссылку варианта через медиа-прокси (allow-list + Referer), стримом на устройство.
   const handleMediaUrl = useCallback(async (cdnUrl: string, filename: string) => {
     try {
-      setGalleryNote({ ok: true, text: 'Скачиваю файл…' });
+      setGalleryNote({ ok: true, text: t('sec.socialext.fileDlBusy', 'Скачиваю файл…') });
       await streamViaMediaProxy(cdnUrl, filename || 'media.mp4');
-      setGalleryNote({ ok: true, text: 'Файл скачан ✓' });
+      setGalleryNote({ ok: true, text: t('sec.socialext.fileDone', 'Файл скачан ✓') });
       setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
-      setGalleryNote({ ok: false, text: e?.message || 'Не удалось скачать файл' });
+      setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.fileFail', 'Не удалось скачать файл') });
       setTimeout(() => setGalleryNote(null), 6000);
     }
-  }, [streamViaMediaProxy]);
+  }, [streamViaMediaProxy, t]);
 
   const apply = useCallback((value: string) => {
     appliedRef.current = value;
@@ -364,12 +366,12 @@ export default function SocialExtensionPage() {
     // Не ссылка (ключевое слово) → не шлём расширению (иначе его экран «Open a supported
     // platform»); подсказываем уйти на «Поиск».
     if (!isAnalyzableUrl(v)) {
-      setGalleryNote({ ok: false, text: 'Это не ссылка. Вставьте URL видео/поста. Для поиска по слову — вкладка «Поиск».' });
+      setGalleryNote({ ok: false, text: t('sec.socialext.notAUrl', 'Это не ссылка. Вставьте URL видео/поста. Для поиска по слову — вкладка «Поиск».') });
       setTimeout(() => setGalleryNote(null), 6000);
       return;
     }
     setQueue([]); apply(v); autoSaveAnalysis(v);
-  }, [url, apply, autoSaveAnalysis]);
+  }, [url, apply, autoSaveAnalysis, t]);
 
   const handleClear = useCallback(() => {
     setUrl(''); setQueue([]); appliedRef.current = ''; setAppliedUrl('');
@@ -408,7 +410,7 @@ export default function SocialExtensionPage() {
   const renderTabs = () => (
     <div className="flex flex-col gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
       {/* Иконки-линии как везде в приложении (вместо эмодзи), по фидбэку. */}
-      {([['search', 'Поиск', <Flame key="s" size={16} />], ['audience', 'Таргет на ЦА', <Target key="a" size={16} />], ['analytics', 'Аналитика', <BarChart3 key="an" size={16} />], ['channels', 'Каналы', <Radio key="c" size={16} />]] as [Tab, string, React.ReactNode][]).map(([v, lbl, icon]) => (
+      {([['search', t('sec.socialext.tabSearch', 'Поиск'), <Flame key="s" size={16} />], ['audience', t('sec.socialext.tabAudience', 'Таргет на ЦА'), <Target key="a" size={16} />], ['analytics', t('sec.socialext.tabAnalytics', 'Аналитика'), <BarChart3 key="an" size={16} />], ['channels', t('sec.socialext.tabChannels', 'Каналы'), <Radio key="c" size={16} />]] as [Tab, string, React.ReactNode][]).map(([v, lbl, icon]) => (
         <button key={v} onClick={() => setTab(v)}
           className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap inline-flex items-center gap-2"
           style={{ background: tab === v ? 'var(--brand)' : 'transparent', color: tab === v ? 'var(--brand-contrast)' : 'var(--text-muted)', boxShadow: tab === v ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>
@@ -425,15 +427,15 @@ export default function SocialExtensionPage() {
         <img src="/icons/nav-trends.png" alt="" draggable={false}
              className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Тренды</h1>
-          <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Поиск вирусных видео в TikTok, Instagram, YouTube и X — и аналитика трендов.</p>
+          <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>{t('sec.socialext.pageTitle', 'Тренды')}</h1>
+          <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>{t('sec.socialext.pageSubtitle', 'Поиск вирусных видео в TikTok, Instagram, YouTube и X — и аналитика трендов.')}</p>
         </div>
         {/* Пришли из Галереи («+ Добавить тренд») — даём «Закрыть» для возврата в Галерею */}
         {fromGallery && (
-          <button type="button" onClick={() => navigate('/gallery')} title="Закрыть и вернуться в Галерею"
+          <button type="button" onClick={() => navigate('/gallery')} title={t('sec.socialext.closeTitle', 'Закрыть и вернуться в Галерею')}
             className="inline-flex items-center gap-1.5 text-sm font-600 px-3 py-2 rounded-xl flex-shrink-0 transition-colors"
             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
-            <X size={16} /> Закрыть
+            <X size={16} /> {t('sec.socialext.closeBtn', 'Закрыть')}
           </button>
         )}
       </div>
@@ -470,12 +472,12 @@ export default function SocialExtensionPage() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAnalyzeInput(); }}
-                  placeholder="Ссылка на видео / пост…"
+                  placeholder={t('sec.socialext.urlPh', 'Ссылка на видео / пост…')}
                   className="w-full pl-11 pr-10 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(99,102,241,0.4)] transition-shadow"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
                 />
                 {url && (
-                  <button type="button" onClick={handleClear} title="Очистить"
+                  <button type="button" onClick={handleClear} title={t('sec.socialext.clearInputTitle', 'Очистить')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center"
                     style={{ color: 'var(--text-muted)' }}>
                     <X size={15} />
@@ -483,11 +485,11 @@ export default function SocialExtensionPage() {
                 )}
               </div>
               <AuroraButton onClick={handleAnalyzeInput} disabled={!url.trim()} fullWidth icon={<Search size={16} />}>
-                Анализировать
+                {t('sec.socialext.analyzeBtn', 'Анализировать')}
               </AuroraButton>
               <AuroraButton variant="secondary" onClick={addToGallery} disabled={!appliedUrl || adding} fullWidth
                 icon={adding ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}>
-                Добавить в галерею
+                {t('sec.socialext.addToGalleryBtn', 'Добавить в галерею')}
               </AuroraButton>
               {galleryNote && (
                 <div className="text-[12px] font-600" style={{ color: galleryNote.ok ? '#10b981' : '#ef4444' }}>
@@ -505,7 +507,7 @@ export default function SocialExtensionPage() {
               {/* Очередь массового разбора */}
               {queue.length > 1 && (
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Выбрано {queue.length}:</span>
+                  <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.socialext.selectedN', 'Выбрано {{n}}:', { n: queue.length })}</span>
                   {queue.map((q, i) => {
                     const active = q.url === appliedRef.current;
                     return (
@@ -534,7 +536,7 @@ export default function SocialExtensionPage() {
                   <iframe
                     ref={iframeRef}
                     src="/social-ext/sidepanel.html"
-                    title="Тренды — аналитика"
+                    title={t('sec.socialext.iframeTitle', 'Тренды — аналитика')}
                     className="w-full h-full block"
                     style={{ border: 0 }}
                     allow="clipboard-read; clipboard-write"
@@ -545,26 +547,26 @@ export default function SocialExtensionPage() {
                     <div className="absolute inset-0 overflow-y-auto p-3" style={{ background: 'var(--bg-secondary)' }}>
                       {appliedUrl && (
                         <p className="text-[12px] font-600 mb-2 rounded-lg p-2" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
-                          «{appliedUrl}» — это не ссылка на пост. Вставьте URL видео/аккаунта, либо выберите видео ниже. Для поиска по слову — вкладка «Поиск».
+                          {t('sec.socialext.notPostUrl', '«{{url}}» — это не ссылка на пост. Вставьте URL видео/аккаунта, либо выберите видео ниже. Для поиска по слову — вкладка «Поиск».', { url: appliedUrl })}
                         </p>
                       )}
                       {recent.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center gap-1 px-6">
                           <Play size={26} style={{ color: 'var(--text-muted)' }} />
-                          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Вставьте ссылку слева</p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>или найдите видео во вкладке «Поиск» — оно появится здесь.</p>
+                          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>{t('sec.socialext.pasteLeftTitle', 'Вставьте ссылку слева')}</p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('sec.socialext.pasteLeftHint', 'или найдите видео во вкладке «Поиск» — оно появится здесь.')}</p>
                         </div>
                       ) : (
                         <>
                           <div className="flex items-center justify-between gap-2 mb-2">
-                            <p className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>Видео из поиска — нажмите, чтобы проанализировать:</p>
+                            <p className="text-[11px] font-600" style={{ color: 'var(--text-muted)' }}>{t('sec.socialext.recentHint', 'Видео из поиска — нажмите, чтобы проанализировать:')}</p>
                             {/* «Очистить всё» — удаляет ВСЕ видео плитки (delete-bulk), с подтверждением */}
                             <button type="button" onClick={askClearRecent} disabled={clearingRecent}
-                              title="Удалить все найденные видео (из поиска и аналитики)"
+                              title={t('sec.socialext.clearAllBtnTitle', 'Удалить все найденные видео (из поиска и аналитики)')}
                               className="inline-flex items-center gap-1 text-[11px] font-600 px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors disabled:opacity-40"
                               style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
                               {clearingRecent ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                              Очистить всё · {recent.length}
+                              {t('sec.socialext.clearAllBtn', 'Очистить всё · {{n}}', { n: recent.length })}
                             </button>
                           </div>
                           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
@@ -590,7 +592,7 @@ export default function SocialExtensionPage() {
                                 </button>
                                 {/* Удалить одно видео — кнопка ВИДИМАЯ (не за ховером), по канону карточек */}
                                 {v.id && (
-                                  <button type="button" onClick={() => askDeleteRecent(v)} title="Удалить видео (из поиска и аналитики)"
+                                  <button type="button" onClick={() => askDeleteRecent(v)} title={t('sec.socialext.delOneBtnTitle', 'Удалить видео (из поиска и аналитики)')}
                                     className="absolute top-1 right-1 w-6 h-6 rounded-md flex items-center justify-center z-10 transition-opacity hover:opacity-100 opacity-90"
                                     style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
                                     <Trash2 size={12} />
@@ -628,7 +630,7 @@ export default function SocialExtensionPage() {
         open={!!confirm}
         title={confirm?.title || ''}
         message={confirm?.message}
-        confirmLabel="Удалить"
+        confirmLabel={t('sec.socialext.confirmDelete', 'Удалить')}
         variant="danger"
         onConfirm={() => confirm?.onConfirm()}
         onCancel={() => setConfirm(null)}

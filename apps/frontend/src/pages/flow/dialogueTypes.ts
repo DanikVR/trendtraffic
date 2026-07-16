@@ -6,18 +6,13 @@
 
 export type PodAnim = 'auto' | 'slide-left' | 'slide-right' | 'slide-up' | 'fade' | 'zoom';
 
-export const POD_ANIMS: { v: PodAnim; label: string }[] = [
-  { v: 'auto', label: 'Авто' }, { v: 'slide-left', label: '← Слева' }, { v: 'slide-right', label: 'Справа →' },
-  { v: 'slide-up', label: '↑ Снизу' }, { v: 'zoom', label: 'Зум' }, { v: 'fade', label: 'Проявление' },
-];
+/** Значения выезда карточки. Подписи (i18n) — в точке рендера: DialogueTimeline, ключи sec.dialogue.anim*. */
+export const POD_ANIMS: PodAnim[] = ['auto', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'fade'];
 
 /** Как показать медиа реплики в режиме «Диалоги» ('auto' → решает Claude). */
 export type DlgMediaHint = 'auto' | 'media-full' | 'media-bg-left' | 'media-bg-right' | 'media-split';
-export const DLG_MEDIA_HINTS: { v: DlgMediaHint; label: string }[] = [
-  { v: 'auto', label: 'Авто (Клод)' }, { v: 'media-full', label: 'Во весь кадр' },
-  { v: 'media-bg-left', label: 'Фон · лицо слева' }, { v: 'media-bg-right', label: 'Фон · лицо справа' },
-  { v: 'media-split', label: 'Сверху-снизу' },
-];
+/** Значения раскладки. Подписи (i18n) — в точке рендера: DialogueTimeline, ключи sec.dialogue.hint*. */
+export const DLG_MEDIA_HINTS: DlgMediaHint[] = ['auto', 'media-full', 'media-bg-left', 'media-bg-right', 'media-split'];
 
 /** Кадр-окно медиа реплики (доли кадра 0..1) — выставляется драгом на превью UGC-студии.
  *  Отсутствует (undefined) = медиа во весь кадр. ТА ЖЕ геометрия уходит в рендер (overlayExtras). */

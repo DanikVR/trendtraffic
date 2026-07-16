@@ -16,6 +16,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
@@ -34,6 +35,7 @@ export interface FlowBlockRequest {
 }
 
 export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onClose: () => void }) {
+  const { t } = useTranslation('common');
   const token = useAppStore((s) => s.token);
   const [flowId, setFlowId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -61,7 +63,8 @@ export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onCl
           if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
           id = cd.flow?.id || null;
         } else if (req.src) {
-          const flowName = (req.srcName ? `${req.cloud === 'omni' ? 'Omni Flash' : 'Сценарий'} — ${req.srcName}` : 'Новый сценарий').slice(0, 120);
+          const prefix = req.cloud === 'omni' ? 'Omni Flash' : t('sec.ugc.flowGenericName', 'Сценарий');
+          const flowName = (req.srcName ? `${prefix} — ${req.srcName}` : t('sec.ugc.newFlowName', 'Новый сценарий')).slice(0, 120);
           const cr = await fetch('/api/flows', { method: 'POST', headers, body: JSON.stringify({ name: flowName }) });
           const cd = await cr.json();
           if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
@@ -69,7 +72,7 @@ export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onCl
           if (id) {
             await fetch(`/api/flows/${id}`, {
               method: 'PUT', headers,
-              body: JSON.stringify({ graph: { source: { url: req.src, name: req.srcName || 'Видео', ...(req.srcAssetId ? { assetId: req.srcAssetId } : {}) } } }),
+              body: JSON.stringify({ graph: { source: { url: req.src, name: req.srcName || t('sec.ugc.videoSourceName', 'Видео'), ...(req.srcAssetId ? { assetId: req.srcAssetId } : {}) } } }),
             });
           }
         } else {
@@ -78,17 +81,17 @@ export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onCl
           if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
           id = (d.flows || [])[0]?.id || null;
           if (!id) {
-            const cr = await fetch('/api/flows', { method: 'POST', headers, body: JSON.stringify({ name: 'Новый сценарий' }) });
+            const cr = await fetch('/api/flows', { method: 'POST', headers, body: JSON.stringify({ name: t('sec.ugc.newFlowName', 'Новый сценарий') }) });
             const cd = await cr.json();
             if (!cr.ok) throw new Error(cd.error || `HTTP ${cr.status}`);
             id = cd.flow?.id || null;
           }
         }
         if (!cancelled) {
-          if (id) setFlowId(id); else setErr('Не удалось открыть блок.');
+          if (id) setFlowId(id); else setErr(t('sec.ugc.openBlockFail', 'Не удалось открыть блок.'));
         }
       } catch (e: any) {
-        if (!cancelled) setErr(e?.message || 'Не удалось открыть блок.');
+        if (!cancelled) setErr(e?.message || t('sec.ugc.openBlockFail', 'Не удалось открыть блок.'));
       }
     })();
     return () => { cancelled = true; };
@@ -110,7 +113,7 @@ export function FlowBlockOverlay({ req, onClose }: { req: FlowBlockRequest; onCl
         <button type="button" onClick={onClose}
           className="text-sm font-600 px-4 py-2 rounded-xl"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-          Назад
+          {t('sec.ugc.back', 'Назад')}
         </button>
       </div>
     );

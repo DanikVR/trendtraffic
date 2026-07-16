@@ -4,6 +4,7 @@
  */
 
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import { X } from 'lucide-react';
 
@@ -19,6 +20,7 @@ interface AuroraInputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const AuroraInput = forwardRef<HTMLInputElement, AuroraInputProps>(
   ({ label, icon, iconRight, error, hint, onClear, inputId, className = '', value, ...props }, ref) => {
+    const { t } = useTranslation('common');
     const id = inputId || `input-${label?.toLowerCase().replace(/\s+/g, '-') || 'field'}`;
     const hasValue = value !== undefined && value !== '';
 
@@ -69,7 +71,7 @@ const AuroraInput = forwardRef<HTMLInputElement, AuroraInputProps>(
               className="absolute right-3 flex items-center justify-center w-6 h-6 rounded-full transition-colors"
               style={{ color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
               tabIndex={-1}
-              aria-label="Очистить"
+              aria-label={t('sec.misc.clear', 'Очистить')}
             >
               <X size={12} strokeWidth={2} />
             </button>

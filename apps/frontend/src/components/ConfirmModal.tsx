@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmModalProps {
@@ -27,12 +28,15 @@ export function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = 'Да',
-  cancelLabel = 'Отмена',
+  confirmLabel,
+  cancelLabel,
   variant = 'primary',
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useTranslation('common');
+  const confirmText = confirmLabel ?? t('sec.misc.confirmYes', 'Да');
+  const cancelText = cancelLabel ?? t('sec.misc.cancelBtn', 'Отмена');
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -117,7 +121,7 @@ export function ConfirmModal({
               border: '1px solid var(--border-medium)',
             }}
           >
-            {cancelLabel}
+            {cancelText}
           </button>
           <button
             type="button"
@@ -126,7 +130,7 @@ export function ConfirmModal({
             className="px-4 py-2 rounded-xl text-sm font-700 transition-all hover:opacity-90"
             style={{ background: confirmBg, color: '#fff' }}
           >
-            {confirmLabel}
+            {confirmText}
           </button>
         </div>
       </div>

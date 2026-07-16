@@ -2,7 +2,7 @@
  * GalleryPicker — ЕДИНЫЙ пикер «из Галереи» для всех блоков сценария.
  *
  * По просьбе юзера: везде, где добавляем из Галереи, — один и тот же вид:
- *  • ПОЛНАЯ Галерея вкладками (TrendFlow / Аудио / Из анализа / Тренды / Hotebook);
+ *  • ПОЛНАЯ Галерея вкладками (Медиафайлы / Аудио / Аналитика / Тренды / Hotebook);
  *  • поиск; сетка квадратных превью (кадр видео/обложка, картинка, файл);
  *  • у аудио — встроенный проигрыватель (слушать прямо в пикере, как в Галерее);
  *  • открывается на нужной вкладке (defaultTab), но можно листать все;
@@ -21,17 +21,21 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Loader2, X, Music, Video, FileText, Check, Play, Pause, Plus } from 'lucide-react';
 
 export type GalleryCat = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
 export type GalleryPickType = 'image' | 'video' | 'audio';
 export interface GalleryPickItem { id: string; fileUrl: string; title: string; type: string; cat: GalleryCat; cover?: string }
 
-const TABS: { key: GalleryCat; label: string }[] = [
-  { key: 'reference', label: 'TrendFlow' },
-  { key: 'audio', label: 'Аудио' },
-  { key: 'analyzed', label: 'Из анализа' },
-  { key: 'trends', label: 'Тренды' },
+// Русские ярлыки папок живут в pickerTabLabel() внутри компонента (t() с ru-дефолтом);
+// здесь label только у непереводимого имени блока. Имена = как в самой Галерее
+// (раньше висели легаси «TrendFlow» / «Из анализа» — теперь «Медиафайлы» / «Аналитика»).
+const TABS: { key: GalleryCat; label?: string }[] = [
+  { key: 'reference' },
+  { key: 'audio' },
+  { key: 'analyzed' },
+  { key: 'trends' },
   { key: 'hotebook', label: 'Hotebook' },
 ];
 
@@ -44,8 +48,6 @@ const FOLDER_TYPES: Record<GalleryCat, readonly string[]> = {
   analyzed: ['image', 'video', 'audio', 'file'],
   hotebook: ['image', 'video', 'audio', 'file'],
 };
-
-const TYPE_RU: Record<string, string> = { image: 'фото', video: 'видео', audio: 'аудио' };
 
 /** Мини-плеер аудио для карточки пикера (на CSS-переменных, тёмная/светлая тема). */
 function CardAudio({ url }: { url: string }) {
@@ -79,7 +81,7 @@ function CardAudio({ url }: { url: string }) {
 }
 
 export function GalleryPicker({
-  open, onClose, onPick, title = 'Из Галереи', defaultTab = 'reference', multi = false, pickedKeys,
+  open, onClose, onPick, title, defaultTab = 'reference', multi = false, pickedKeys,
   token, note, onUpload, uploadAccept = 'image/*,video/*,audio/*', uploadHint, onlyType,
 }: {
   open: boolean;
@@ -99,6 +101,20 @@ export function GalleryPicker({
    *  Аватар = картинки, музыка = аудио, запись = аудио/видео, медиа реплики = фото/видео. */
   onlyType?: GalleryPickType | GalleryPickType[];
 }) {
+  const { t } = useTranslation('common');
+  // Ярлыки папок пикера = как вкладки самой Галереи; «Hotebook» — имя блока, не переводим.
+  const pickerTabLabel = (key: GalleryCat, fallback?: string): string => {
+    if (key === 'reference') return t('sec.picker.tabMedia', 'Медиафайлы');
+    if (key === 'audio') return t('sec.picker.tabAudio', 'Аудио');
+    if (key === 'analyzed') return t('sec.picker.tabAnalytics', 'Аналитика');
+    if (key === 'trends') return t('sec.picker.tabTrends', 'Тренды');
+    return fallback || key;
+  };
+  // Человекочитаемый тип файла — для подсказок «нужно фото / видео / аудио».
+  const typeLabel = (k: string): string =>
+    k === 'image' ? t('sec.picker.typeImage', 'фото')
+      : k === 'video' ? t('sec.picker.typeVideo', 'видео')
+      : k === 'audio' ? t('sec.picker.typeAudio', 'аудио') : k;
   const [items, setItems] = useState<GalleryPickItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<GalleryCat>(defaultTab);
@@ -116,7 +132,7 @@ export function GalleryPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Array.isArray(onlyType) ? onlyType.join(',') : onlyType]);
   const fits = useCallback((g: GalleryPickItem) => !allow || allow.has(g.type), [allow]);
-  const allowLabel = allow ? Array.from(allow).map((k) => TYPE_RU[k] || k).join(' / ') : '';
+  const allowLabel = allow ? Array.from(allow).map(typeLabel).join(' / ') : '';
 
   /* Видимые папки: прячем те, где нужный тип не встречается в принципе
      (страховка items.some — вдруг файл нужного типа всё же лежит в «несвойственной» папке). */
@@ -142,11 +158,11 @@ export function GalleryPicker({
         const k = `${cat}:${fileUrl}`;
         if (fileUrl && !seen.has(k)) { seen.add(k); out.push({ id: id || fileUrl, fileUrl, title: title2, type, cat, cover }); }
       };
-      if (tr.ok) for (const v of (await tr.json()).videos || []) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || 'видео', 'video', 'trends', v.coverUrl);
-      if (r.ok) for (const m of (await r.json()).assets || []) push(m.id, m.fileUrl, m.originalName || 'файл', m.mediaType || 'file', 'reference', m.coverUrl);
-      if (a.ok) for (const m of (await a.json()).assets || []) push(m.id, m.fileUrl, m.originalName || 'аудио', m.mediaType || 'audio', 'audio', m.coverUrl);
-      if (an.ok) for (const m of (await an.json()).assets || []) push(m.id, m.fileUrl, m.originalName || 'файл', m.mediaType || 'file', 'analyzed', m.coverUrl);
-      if (hb.ok) for (const m of (await hb.json()).assets || []) push(m.id, m.fileUrl, m.originalName || 'файл', m.mediaType || 'file', 'hotebook', m.coverUrl);
+      if (tr.ok) for (const v of (await tr.json()).videos || []) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || t('sec.picker.typeVideo', 'видео'), 'video', 'trends', v.coverUrl);
+      if (r.ok) for (const m of (await r.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'reference', m.coverUrl);
+      if (a.ok) for (const m of (await a.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.typeAudio', 'аудио'), m.mediaType || 'audio', 'audio', m.coverUrl);
+      if (an.ok) for (const m of (await an.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'analyzed', m.coverUrl);
+      if (hb.ok) for (const m of (await hb.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'hotebook', m.coverUrl);
       setItems(out);
     } catch { setItems([]); }
     finally { setLoading(false); }
@@ -221,8 +237,8 @@ export function GalleryPicker({
         onDrop={onUpload ? (e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer?.files?.length) void doUpload(e.dataTransfer.files); } : undefined}
         style={{ width: '100%', maxWidth: 640, maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: `1px solid ${dragOver ? 'var(--brand)' : 'var(--border-medium)'}`, borderRadius: 16, padding: 16, outline: dragOver ? '2px dashed var(--brand)' : 'none', outlineOffset: -6 }}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{title}</span>
-          <button onClick={onClose} title="Закрыть" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+          <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{title || t('sec.picker.title', 'Из Галереи')}</span>
+          <button onClick={onClose} title={t('sec.picker.btnClose', 'Закрыть')} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
         </div>
         {note && <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>{note}</p>}
 
@@ -235,8 +251,8 @@ export function GalleryPicker({
               className="w-full mb-2 rounded-xl flex flex-col items-center justify-center gap-1 py-4 transition-colors"
               style={{ background: dragOver ? 'rgba(99,102,241,0.08)' : 'var(--bg-tertiary)', border: `1.5px dashed ${dragOver ? 'var(--brand)' : 'var(--border-strong)'}`, color: dragOver ? 'var(--brand)' : 'var(--text-secondary)', cursor: uploading ? 'wait' : 'pointer' }}>
               {uploading ? <Loader2 size={18} className="animate-spin" style={{ color: 'var(--brand)' }} /> : <Plus size={18} style={{ color: 'var(--brand)' }} />}
-              <span className="text-[12px] font-600">{uploading ? 'Загружаю…' : 'Загрузить с устройства'}</span>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{uploadHint || 'с компьютера/телефона или перетащите сюда → попадёт в Галерею'}</span>
+              <span className="text-[12px] font-600">{uploading ? t('sec.picker.uploading', 'Загружаю…') : t('sec.picker.uploadBtn', 'Загрузить с устройства')}</span>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{uploadHint || t('sec.picker.uploadHintDefault', 'с компьютера/телефона или перетащите сюда → попадёт в Галерею')}</span>
             </button>
           </>
         )}
@@ -250,7 +266,7 @@ export function GalleryPicker({
               <button key={tb.key} onClick={() => { tabTouched.current = true; setTab(tb.key); }}
                 className="inline-flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-[11px] font-600 whitespace-nowrap"
                 style={{ background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--brand-contrast)' : 'var(--text-muted)' }}>
-                <span className="truncate">{tb.label}</span>{n > 0 && <span style={{ opacity: 0.7 }}>{n}</span>}
+                <span className="truncate">{pickerTabLabel(tb.key, tb.label)}</span>{n > 0 && <span style={{ opacity: 0.7 }}>{n}</span>}
               </button>
             );
           })}
@@ -259,7 +275,7 @@ export function GalleryPicker({
         {/* Поиск */}
         <div className="relative mb-2">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по имени…"
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('sec.picker.searchPh', 'Поиск по имени…')}
             className="w-full pl-8 pr-2 py-2 rounded-lg text-xs outline-none"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
         </div>
@@ -268,15 +284,15 @@ export function GalleryPicker({
           <div className="py-10 text-center"><Loader2 size={20} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
         ) : filtered.length === 0 ? (
           <p className="text-[11px] py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-            {query.trim() ? 'Ничего не найдено.'
-              : allow && items.some((g) => g.cat === tab) ? `В этой папке нет подходящих файлов — нужно ${allowLabel}.`
-              : allow ? `Подходящих файлов (${allowLabel}) в Галерее пока нет.`
-              : 'В этой папке пусто.'}
-            {!query.trim() && onUpload ? ' Загрузите с устройства — кнопка сверху.' : ''}
+            {query.trim() ? t('sec.picker.notFound', 'Ничего не найдено.')
+              : allow && items.some((g) => g.cat === tab) ? t('sec.picker.noFitFolder', 'В этой папке нет подходящих файлов — нужно {{types}}.', { types: allowLabel })
+              : allow ? t('sec.picker.noFitAll', 'Подходящих файлов ({{types}}) в Галерее пока нет.', { types: allowLabel })
+              : t('sec.picker.emptyFolder', 'В этой папке пусто.')}
+            {!query.trim() && onUpload ? ' ' + t('sec.picker.uploadCta', 'Загрузите с устройства — кнопка сверху.') : ''}
           </p>
         ) : (
           <>
-            <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>Найдено: {filtered.length}{multi ? ' · клик — добавить, можно несколько' : ' · клик — выбрать'}</div>
+            <div className="text-[10px] mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('sec.picker.foundCount', 'Найдено: {{n}}', { n: filtered.length })}{' · '}{multi ? t('sec.picker.pickHintMulti', 'клик — добавить, можно несколько') : t('sec.picker.pickHintSingle', 'клик — выбрать')}</div>
             <div className="grid grid-cols-3 gap-2" style={{ maxHeight: '54vh', overflowY: 'auto' }}>
               {filtered.map((g) => {
                 const sel = isPicked(g);
@@ -312,8 +328,8 @@ export function GalleryPicker({
 
         {multi && (
           <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-medium)' }}>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{pickedCount ? `Добавлено: ${pickedCount}` : 'Можно выбрать несколько'}</span>
-            <button onClick={onClose} className="text-xs font-700 px-4 py-2 rounded-lg" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>Готово</button>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{pickedCount ? t('sec.picker.addedCount', 'Добавлено: {{n}}', { n: pickedCount }) : t('sec.picker.multiHint', 'Можно выбрать несколько')}</span>
+            <button onClick={onClose} className="text-xs font-700 px-4 py-2 rounded-lg" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>{t('sec.picker.done', 'Готово')}</button>
           </div>
         )}
       </div>

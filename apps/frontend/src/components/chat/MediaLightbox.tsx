@@ -13,6 +13,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Download, Loader2 } from 'lucide-react';
 
 /** Чистое имя файла из URL: '/uploads/enterprise-chat/123-456.png?x=1' → '123-456.png'. */
@@ -55,6 +56,7 @@ interface MediaDownloadButtonProps {
 
 /** Иконка-кнопка «Скачать» (без текста). */
 export function MediaDownloadButton({ url, overlay = false, className = '' }: MediaDownloadButtonProps) {
+  const { t } = useTranslation('common');
   const [busy, setBusy] = useState(false);
   const handle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,8 +74,8 @@ export function MediaDownloadButton({ url, overlay = false, className = '' }: Me
       type="button"
       onClick={handle}
       disabled={busy}
-      title="Скачать"
-      aria-label="Скачать"
+      title={t('sec.misc.dlBtn', 'Скачать')}
+      aria-label={t('sec.misc.dlBtn', 'Скачать')}
       className={`flex items-center justify-center flex-shrink-0 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 ${overlay ? 'w-7 h-7' : 'w-6 h-6'} ${className}`}
       style={
         overlay
@@ -93,6 +95,7 @@ interface MediaLightboxProps {
 }
 
 export function MediaLightbox({ open, url, onClose }: MediaLightboxProps) {
+  const { t } = useTranslation('common');
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -123,8 +126,8 @@ export function MediaLightbox({ open, url, onClose }: MediaLightboxProps) {
           onClick={onClose}
           className="w-10 h-10 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90"
           style={{ background: 'rgba(255,255,255,0.16)', color: '#fff', backdropFilter: 'blur(8px)' }}
-          title="Закрыть"
-          aria-label="Закрыть"
+          title={t('sec.misc.close', 'Закрыть')}
+          aria-label={t('sec.misc.close', 'Закрыть')}
         >
           <X size={20} />
         </button>

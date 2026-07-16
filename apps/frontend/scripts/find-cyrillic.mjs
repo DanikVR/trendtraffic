@@ -107,8 +107,12 @@ function findInFile(filePath, cleaned, raw) {
       const before = line.slice(0, m.index);
       // Пропускаем литералы внутри t('...'), useTranslation, console.log etc.
       // — пропускаем если перед литералом идёт идентификатор t/Trans/i18n/console.
-      const beforeTail = before.slice(-40);
-      if (/\bt\s*\(\s*$/.test(beforeTail)) continue;
+      const beforeTail = before.slice(-80);
+      // t(...) и его алиасы из useTranslation (например `const { t: tc } = useTranslation`).
+      if (/\b(?:t|tc)\s*\(\s*$/.test(beforeTail)) continue;
+      // Уже-обёрнутые ru-дефолты: t('sec.x.y', 'дефолт') / i18n.t('common:sec.x.y', 'дефолт')
+      // — 2-й аргумент t() это фолбэк уже извлечённой строки, не «зашитая» кириллица.
+      if (/\b(?:t|tc)\s*\(\s*(['"`])(?:\\.|(?!\1).)*\1\s*,\s*$/.test(beforeTail)) continue;
       if (/useTranslation\s*\(\s*$/.test(beforeTail)) continue;
       if (/console\.(log|warn|error|debug|info)\s*\(\s*$/.test(beforeTail)) continue;
       if (/\bdebug\s*[:=]\s*$/.test(beforeTail)) continue;

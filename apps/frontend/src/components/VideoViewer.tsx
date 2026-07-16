@@ -14,6 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   X, Play, Pause, Scissors, RotateCw, Crop, Undo2, RefreshCw, Save, Loader2, Download,
   SkipBack, SkipForward, Check, Music, Pencil, Plus, Volume2, VolumeX, Cloud,
@@ -82,8 +83,11 @@ function normalize(segs: Seg[]): Seg[] {
 }
 
 export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind }: VideoViewerProps) {
+  const { t } = useTranslation('common');
   const isAudio = kind === 'audio';
   const token = useAppStore((s) => s.token);
+  // Дефолтное имя файла (используется и в состоянии, и в фолбэках рендера/сохранения).
+  const defName = t('sec.viewer.defaultName', 'Видео');
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +110,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   const [savedOk, setSavedOk] = useState(false);
 
   // Имя файла (редактируемое вверху) + несколько отмеченных промежутков (мульти-обрезка).
-  const [nameEdit, setNameEdit] = useState(title || 'Видео');
+  const [nameEdit, setNameEdit] = useState(title || defName);
   const [editingName, setEditingName] = useState(false);
   const [marks, setMarks] = useState<Seg[]>([]);
   const [muted, setMuted] = useState(false); // звук включён по умолчанию
@@ -121,7 +125,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     setCurUrl(url); setDuration(0); setTime(0); setPlaying(false);
     setKeep([]); setRotate(0); setSelIn(0); setSelOut(0); setHistory([]);
     setErr(null); setSavedOk(false);
-    setNameEdit(title || 'Видео'); setEditingName(false); setMarks([]);
+    setNameEdit(title || defName); setEditingName(false); setMarks([]);
     setOmniReq(null);
   }, [open, url, title]);
 
@@ -248,7 +252,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
   // Omni Flash: оверлей ПОВЕРХ редактора — новый сценарий с этим видео-источником и
   // открытым облаком Omni. Закрытие оверлея возвращает сюда же, в редактор (не выходим).
   const openInOmni = () => {
-    const name = (nameEdit || title || 'Видео').trim();
+    const name = (nameEdit || title || defName).trim();
     videoRef.current?.pause();
     setOmniReq({ cloud: 'omni', src: curUrl, srcName: name });
   };
@@ -257,7 +261,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
     if (!hasChanges || saving) return;
     setSaving(true); setErr(null); setSavedOk(false);
     try {
-      const body: any = { inputUrl: curUrl, name: (nameEdit || title || 'Видео').trim() };
+      const body: any = { inputUrl: curUrl, name: (nameEdit || title || defName).trim() };
       if (!isFullKeep) body.segments = keep.map((s) => ({ start: +s.start.toFixed(3), end: +s.end.toFixed(3) }));
       if (rotate !== 0) body.rotate = rotate;
       const res = await fetch('/api/video-edit', {
@@ -266,7 +270,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Ошибка ${res.status}`);
+      if (!res.ok) throw new Error(data.error || t('sec.viewer.errStatus', 'Ошибка {{status}}', { status: res.status }));
       const result: VideoEditResult = { fileUrl: data.fileUrl, assetId: data.assetId ?? null };
       setSavedOk(true);
       onSaved?.(result);
@@ -274,7 +278,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
       setCurUrl(result.fileUrl);
       setKeep([]); setRotate(0); setHistory([]);
     } catch (e: any) {
-      setErr(e?.message || 'Не удалось сохранить');
+      setErr(e?.message || t('sec.viewer.errSave', 'Не удалось сохранить'));
     } finally {
       setSaving(false);
     }
@@ -297,11 +301,11 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
               style={{ background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)', maxWidth: 460 }} />
           ) : (
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-sm font-700 truncate" style={{ color: '#fff' }} title={canEdit ? (nameEdit || 'Видео') : (title || 'Видео')}>
-                {canEdit ? (nameEdit || 'Видео') : (title || 'Видео')}
+              <span className="text-sm font-700 truncate" style={{ color: '#fff' }} title={canEdit ? (nameEdit || defName) : (title || defName)}>
+                {canEdit ? (nameEdit || defName) : (title || defName)}
               </span>
               {canEdit && (
-                <button type="button" onClick={() => setEditingName(true)} title="Переименовать файл"
+                <button type="button" onClick={() => setEditingName(true)} title={t('sec.viewer.renameTitle', 'Переименовать файл')}
                   className="flex-shrink-0" style={{ color: 'rgba(255,255,255,0.7)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}>
                   <Pencil size={14} />
                 </button>
@@ -309,26 +313,28 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             </div>
           )}
           <div className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            {canEdit ? (isAudio ? 'Прослушивание и обрезка аудио' : 'Просмотр и обрезка') : 'Просмотр'}
+            {canEdit
+              ? (isAudio ? t('sec.viewer.audioSubtitle', 'Прослушивание и обрезка аудио') : t('sec.viewer.editSubtitle', 'Просмотр и обрезка'))
+              : t('sec.viewer.viewSubtitle', 'Просмотр')}
           </div>
         </div>
         {canEdit && (
           <>
             {err && <span className="text-xs hidden sm:inline" style={{ color: '#fca5a5' }}>{err}</span>}
-            {savedOk && !err && <span className="inline-flex items-center gap-1 text-xs" style={{ color: '#86efac' }}><Check size={14} /> Сохранено</span>}
-            <button type="button" onClick={save} disabled={!hasChanges || saving} title="Сохранить результат в Галерею (новый файл)"
+            {savedOk && !err && <span className="inline-flex items-center gap-1 text-xs" style={{ color: '#86efac' }}><Check size={14} /> {t('sec.viewer.savedOk', 'Сохранено')}</span>}
+            <button type="button" onClick={save} disabled={!hasChanges || saving} title={t('sec.viewer.saveTitle', 'Сохранить результат в Галерею (новый файл)')}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-700 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: hasChanges ? 'var(--brand)' : 'rgba(255,255,255,0.14)', color: hasChanges ? 'var(--brand-contrast, #fff)' : 'rgba(255,255,255,0.5)' }}>
-              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Сохранить
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} {t('sec.viewer.saveBtn', 'Сохранить')}
             </button>
           </>
         )}
-        <button type="button" onClick={() => downloadMedia(curUrl)} title="Скачать"
+        <button type="button" onClick={() => downloadMedia(curUrl)} title={t('sec.viewer.dlTitle', 'Скачать')}
           className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90 flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.14)', color: '#fff' }}>
           <Download size={18} />
         </button>
-        <button type="button" onClick={onClose} title="Закрыть (Esc)"
+        <button type="button" onClick={onClose} title={t('sec.viewer.closeTitle', 'Закрыть (Esc)')}
           className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90 flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.14)', color: '#fff' }}>
           <X size={18} />
@@ -355,7 +361,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
         {isAudio && (
           <div className="pointer-events-none flex flex-col items-center gap-2" style={{ position: 'absolute', color: 'rgba(255,255,255,0.9)' }}>
             <Music size={48} />
-            <span className="text-sm">Аудио — обрезайте по дорожке ниже</span>
+            <span className="text-sm">{t('sec.viewer.audioHint', 'Аудио — обрезайте по дорожке ниже')}</span>
           </div>
         )}
       </div>
@@ -364,12 +370,12 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
       <div className="flex-shrink-0 px-4 pb-4 pt-2 space-y-3" style={{ background: 'rgba(0,0,0,0.35)' }}>
         {/* Транспорт */}
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => seek(time - 1 / 30)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Кадр назад (←)"><SkipBack size={16} /></button>
+          <button type="button" onClick={() => seek(time - 1 / 30)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.frameBack', 'Кадр назад (←)')}><SkipBack size={16} /></button>
           <button type="button" onClick={togglePlay} className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: 'var(--brand)', color: 'var(--brand-contrast, #fff)' }} title="Play/Pause (Space)">
             {playing ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
           </button>
-          <button type="button" onClick={() => seek(time + 1 / 30)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Кадр вперёд (→)"><SkipForward size={16} /></button>
-          <button type="button" onClick={() => setMuted((m) => !m)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: muted ? '#fca5a5' : '#fff' }} title={muted ? 'Включить звук' : 'Выключить звук'}>
+          <button type="button" onClick={() => seek(time + 1 / 30)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.frameFwd', 'Кадр вперёд (→)')}><SkipForward size={16} /></button>
+          <button type="button" onClick={() => setMuted((m) => !m)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', color: muted ? '#fca5a5' : '#fff' }} title={muted ? t('sec.viewer.unmute', 'Включить звук') : t('sec.viewer.mute', 'Выключить звук')}>
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
           <div className="text-xs tabular-nums ml-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
@@ -379,7 +385,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             {/* Omni Flash: перегенерация/рестайл этого видео — открывает блок Omni в TrendFlow */}
             {!isAudio && isLocal(curUrl) && (
               <button type="button" onClick={openInOmni}
-                title="Открыть в Omni Flash — сгенерировать/переделать фрагменты этого видео (блок Omni в TrendFlow)"
+                title={t('sec.viewer.omniTitle', 'Открыть в Omni Flash — сгенерировать/переделать фрагменты этого видео (блок Omni в TrendFlow)')}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-700 transition-opacity hover:opacity-90"
                 style={{ background: 'rgba(66,133,244,0.16)', color: '#8ab4f8', border: '1px solid rgba(66,133,244,0.45)' }}>
                 <Cloud size={15} /> <span className="hidden sm:inline">Omni Flash</span>
@@ -387,7 +393,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             )}
             {canEdit && (
               <div className="text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                Итог: <span style={{ color: 'var(--brand)' }}>{fmtTime(resultDuration)}</span>
+                {t('sec.viewer.resultLabel', 'Итог:')} <span style={{ color: 'var(--brand)' }}>{fmtTime(resultDuration)}</span>
               </div>
             )}
           </div>
@@ -404,7 +410,7 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
             ))}
             {/* Отмеченные промежутки (красные) — применятся все сразу «Вырезать»/«Оставить» */}
             {canEdit && marks.map((m, i) => (
-              <div key={`m${i}`} className="absolute top-0 bottom-0" title={`Промежуток ${i + 1} — двойной клик снимет`} onDoubleClick={(e) => { e.stopPropagation(); removeMark(i); }}
+              <div key={`m${i}`} className="absolute top-0 bottom-0" title={t('sec.viewer.markTitle', 'Промежуток {{n}} — двойной клик снимет', { n: i + 1 })} onDoubleClick={(e) => { e.stopPropagation(); removeMark(i); }}
                 style={{ left: `${pct(m.start)}%`, width: `${pct(m.end - m.start)}%`, background: 'rgba(239,68,68,0.38)', borderLeft: '2px solid rgba(239,68,68,0.95)', borderRight: '2px solid rgba(239,68,68,0.95)' }} />
             ))}
             {/* Текущее выделение IN..OUT */}
@@ -419,9 +425,9 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
           {canEdit && duration > 0 && (
             <>
               <div onPointerDown={dragHandle('in')} className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 cursor-ew-resize rounded"
-                style={{ left: `${pct(selIn)}%`, width: 12, height: 38, background: 'var(--brand)', touchAction: 'none' }} title="Начало выделения" />
+                style={{ left: `${pct(selIn)}%`, width: 12, height: 38, background: 'var(--brand)', touchAction: 'none' }} title={t('sec.viewer.inHandle', 'Начало выделения')} />
               <div onPointerDown={dragHandle('out')} className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 cursor-ew-resize rounded"
-                style={{ left: `${pct(selOut)}%`, width: 12, height: 38, background: 'var(--brand)', touchAction: 'none' }} title="Конец выделения" />
+                style={{ left: `${pct(selOut)}%`, width: 12, height: 38, background: 'var(--brand)', touchAction: 'none' }} title={t('sec.viewer.outHandle', 'Конец выделения')} />
             </>
           )}
         </div>
@@ -429,42 +435,42 @@ export function VideoViewer({ open, url, title, onClose, onSaved, editable, kind
         {/* Инструменты обрезки */}
         {canEdit ? (
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={setInPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Начало выделения здесь (I)">[ Начало</button>
-            <button type="button" onClick={setOutPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Конец выделения здесь (O)">Конец ]</button>
-            <button type="button" onClick={addMark} className={btn} style={{ background: 'rgba(239,68,68,0.22)', color: '#fca5a5' }} title="Отметить текущий промежуток. Можно несколько — потом «Вырезать»/«Оставить» применит все сразу">
-              <Plus size={15} /> Отметить{marks.length ? ` · ${marks.length}` : ''}
+            <button type="button" onClick={setInPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.inBtnTitle', 'Начало выделения здесь (I)')}>{t('sec.viewer.inBtn', '[ Начало')}</button>
+            <button type="button" onClick={setOutPoint} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.outBtnTitle', 'Конец выделения здесь (O)')}>{t('sec.viewer.outBtn', 'Конец ]')}</button>
+            <button type="button" onClick={addMark} className={btn} style={{ background: 'rgba(239,68,68,0.22)', color: '#fca5a5' }} title={t('sec.viewer.markBtnTitle', 'Отметить текущий промежуток. Можно несколько — потом «Вырезать»/«Оставить» применит все сразу')}>
+              <Plus size={15} /> {t('sec.viewer.markBtn', 'Отметить')}{marks.length ? ` · ${marks.length}` : ''}
             </button>
-            <button type="button" onClick={keepSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={marks.length ? `Оставить только отмеченные промежутки (${marks.length})` : 'Оставить только выделенное'}>
-              <Crop size={15} /> Оставить{marks.length ? ` (${marks.length})` : ''}
+            <button type="button" onClick={keepSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={marks.length ? t('sec.viewer.keepMarkedTitle', 'Оставить только отмеченные промежутки ({{n}})', { n: marks.length }) : t('sec.viewer.keepSelTitle', 'Оставить только выделенное')}>
+              <Crop size={15} /> {t('sec.viewer.keepBtn', 'Оставить')}{marks.length ? ` (${marks.length})` : ''}
             </button>
-            <button type="button" onClick={cutSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={marks.length ? `Вырезать все отмеченные промежутки (${marks.length})` : 'Вырезать выделенный кусок'}>
-              <Scissors size={15} /> Вырезать{marks.length ? ` (${marks.length})` : ''}
+            <button type="button" onClick={cutSelection} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={marks.length ? t('sec.viewer.cutMarkedTitle', 'Вырезать все отмеченные промежутки ({{n}})', { n: marks.length }) : t('sec.viewer.cutSelTitle', 'Вырезать выделенный кусок')}>
+              <Scissors size={15} /> {t('sec.viewer.cutBtn', 'Вырезать')}{marks.length ? ` (${marks.length})` : ''}
             </button>
             {marks.length > 0 && (
-              <button type="button" onClick={clearMarks} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Снять все отметки">
-                <X size={15} /> Отметки
+              <button type="button" onClick={clearMarks} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.clearMarksTitle', 'Снять все отметки')}>
+                <X size={15} /> {t('sec.viewer.clearMarksBtn', 'Снять отметки')}
               </button>
             )}
             {!isAudio && (
-              <button type="button" onClick={rotateStep} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Повернуть на 90°">
-                <RotateCw size={15} /> Поворот{rotate ? ` ${rotate}°` : ''}
+              <button type="button" onClick={rotateStep} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.rotateTitle', 'Повернуть на 90°')}>
+                <RotateCw size={15} /> {t('sec.viewer.rotateBtn', 'Поворот')}{rotate ? ` ${rotate}°` : ''}
               </button>
             )}
-            <button type="button" onClick={undo} disabled={!history.length} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Отменить последнее действие">
-              <Undo2 size={15} /> Отменить
+            <button type="button" onClick={undo} disabled={!history.length} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.undoTitle', 'Отменить последнее действие')}>
+              <Undo2 size={15} /> {t('sec.viewer.undoBtn', 'Отменить')}
             </button>
-            <button type="button" onClick={resetEdits} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title="Сбросить все правки">
-              <RefreshCw size={15} /> Сброс
+            <button type="button" onClick={resetEdits} className={btn} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }} title={t('sec.viewer.resetTitle', 'Сбросить все правки')}>
+              <RefreshCw size={15} /> {t('sec.viewer.resetBtn', 'Сброс')}
             </button>
             {marks.length > 0 && (
               <span className="text-[11px] w-full sm:w-auto sm:ml-auto" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Красным — {marks.length} отмеч. промежут(ок/ка): «Вырезать»/«Оставить» применит все сразу; двойной клик по красному — снять.
+                {t('sec.viewer.marksHint', 'Красным отмечено промежутков: {{n}}. «Вырезать»/«Оставить» применит все сразу; двойной клик по красному — снять отметку.', { n: marks.length })}
               </span>
             )}
           </div>
         ) : (
           <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Обрезка доступна для видео из Галереи. Добавьте это видео в Галерею, чтобы редактировать.
+            {t('sec.viewer.viewOnlyHint', 'Обрезка доступна для видео из Галереи. Добавьте это видео в Галерею, чтобы редактировать.')}
           </div>
         )}
       </div>

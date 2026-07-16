@@ -56,11 +56,11 @@ export function BottomTabBar() {
   // внутри Галереи. «Каналы» переехали внутрь «Тренды», страница /publisher удалена.
   const moreItems = [
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
-    { path: '/gallery?tab=trendhub', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: 'Разборы и запросы', accent: '#f59e0b' },
-    { path: '/gallery?tab=ugc', icon: <Users size={20} strokeWidth={1.5} />, label: 'UGC', sublabel: 'Ролики с аватаром', accent: '#a855f7' },
-    { path: '/gallery?tab=flow', icon: <Image size={20} strokeWidth={1.5} />, label: 'Google Flow', sublabel: 'Клипы Veo', accent: '#4285F4' },
-    { path: '/gallery?tab=reference', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Медиафайлы'), sublabel: 'Медиа и аудио', accent: '#10b981' },
-    { path: '/gallery?tab=publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: 'Посты в соцсети', accent: '#7c5cff' },
+    { path: '/gallery?tab=trendhub', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('sec.misc.tabTrendsSub', 'Разборы и запросы'), accent: '#f59e0b' },
+    { path: '/gallery?tab=ugc', icon: <Users size={20} strokeWidth={1.5} />, label: 'UGC', sublabel: t('sec.misc.tabUgcSub', 'Ролики с аватаром'), accent: '#a855f7' },
+    { path: '/gallery?tab=flow', icon: <Image size={20} strokeWidth={1.5} />, label: 'Google Flow', sublabel: t('sec.misc.tabFlowSub', 'Клипы Veo'), accent: '#4285F4' },
+    { path: '/gallery?tab=reference', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Медиафайлы'), sublabel: t('sec.misc.tabMediaSub', 'Медиа и аудио'), accent: '#10b981' },
+    { path: '/gallery?tab=publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('sec.misc.tabPublisherSub', 'Посты в соцсети'), accent: '#7c5cff' },
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
 

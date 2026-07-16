@@ -8,6 +8,7 @@
  */
 
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, Paperclip, Loader2, X } from 'lucide-react';
 
 interface ComposerWithMediaProps {
@@ -19,6 +20,7 @@ interface ComposerWithMediaProps {
 }
 
 export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyToTelegram }: ComposerWithMediaProps) {
+  const { t } = useTranslation('common');
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [stagedFile, setStagedFile] = useState<File | null>(null);
@@ -88,14 +90,14 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
             type="text"
             value={stagedCaption}
             onChange={(e) => setStagedCaption(e.target.value.slice(0, 1000))}
-            placeholder="Подпись (необязательно)"
+            placeholder={t('sec.misc.captionPh', 'Подпись (необязательно)')}
             className="flex-1 max-w-[50%] px-2 py-1 rounded-lg text-xs focus:outline-none"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
           />
           <button onClick={handleSendMedia} disabled={sending}
                   className="px-3 py-1 rounded-lg text-xs font-700"
                   style={{ background: 'var(--brand)', color: 'var(--brand-contrast)' }}>
-            {sending ? <Loader2 size={12} className="animate-spin" /> : 'Отправить'}
+            {sending ? <Loader2 size={12} className="animate-spin" /> : t('sec.misc.sendBtn', 'Отправить')}
           </button>
           <button onClick={() => { setStagedFile(null); setStagedCaption(''); }}
                   className="w-6 h-6 rounded-lg flex items-center justify-center"
@@ -112,7 +114,7 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
         <button type="button" onClick={() => fileRef.current?.click()} disabled={disabled || sending}
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[var(--bg-tertiary)]"
                 style={{ color: 'var(--text-muted)' }}
-                title="Прикрепить файл">
+                title={t('sec.misc.attachFile', 'Прикрепить файл')}>
           <Paperclip size={16} />
         </button>
 
@@ -122,7 +124,7 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
           onChange={(e) => setText(e.target.value.slice(0, 4000))}
           onInput={autoResize}
           onKeyDown={handleKeyDown}
-          placeholder="Напишите сообщение клиенту..."
+          placeholder={t('sec.misc.msgToClientPh', 'Напишите сообщение клиенту...')}
           rows={1}
           disabled={disabled || sending}
           className="flex-1 px-3 py-2 rounded-xl text-sm leading-relaxed resize-none focus:outline-none focus:border-[var(--brand)]"
@@ -140,7 +142,7 @@ export function ComposerWithMedia({ onSendText, onSendMedia, disabled, readOnlyT
                   background: text.trim() ? 'linear-gradient(135deg,#6366f1,#818cf8)' : 'var(--bg-tertiary)',
                   color: text.trim() ? 'var(--brand-contrast)' : 'var(--text-muted)',
                 }}
-                title="Отправить (Enter)">
+                title={t('sec.misc.sendEnterTitle', 'Отправить (Enter)')}>
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>
       </div>

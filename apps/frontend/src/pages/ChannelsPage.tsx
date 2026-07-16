@@ -10,10 +10,12 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Users, Search, Loader2, ExternalLink, Eye, Heart, MessageCircle, Share2, Play,
   BadgeCheck, AlertCircle, XCircle, Film, TrendingUp, RefreshCw, Trash2, Plus, ArrowLeft, Clock,
 } from 'lucide-react';
+import i18n from '../config/i18n';
 import { useAppStore } from '../store/useAppStore';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
@@ -73,16 +75,16 @@ function coverSrc(url?: string | null): string | undefined {
   return url;
 }
 function ago(iso: string | null): string {
-  if (!iso) return 'ещё не обновлялся';
+  if (!iso) return i18n.t('common:sec.channels.agoNever', 'ещё не обновлялся');
   const ms = Date.now() - new Date(iso).getTime();
   const h = Math.floor(ms / 3.6e6);
-  if (h < 1) return 'только что';
-  if (h < 24) return `${h} ч назад`;
-  return `${Math.floor(h / 24)} дн назад`;
+  if (h < 1) return i18n.t('common:sec.channels.agoJustNow', 'только что');
+  if (h < 24) return i18n.t('common:sec.channels.agoHours', '{{n}} ч назад', { n: h });
+  return i18n.t('common:sec.channels.agoDays', '{{n}} дн назад', { n: Math.floor(h / 24) });
 }
 function friendlyError(e: any, fallback: string): string {
   const msg = typeof e?.message === 'string' ? e.message : '';
-  if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)) return 'Сервер недоступен. Обновите страницу.';
+  if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)) return i18n.t('common:sec.channels.serverDown', 'Сервер недоступен. Обновите страницу.');
   return msg || fallback;
 }
 
@@ -100,6 +102,7 @@ function Delta({ cur, prev }: { cur: number | null | undefined; prev: number | n
 }
 
 export default function ChannelsPage() {
+  const { t } = useTranslation('common');
   const { token } = useAppStore();
   const authHeaders = useCallback((): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }), [token]);
 
@@ -141,7 +144,7 @@ export default function ChannelsPage() {
     if (!sh) return null;   // нет Shorts — без переключателя
     return (
       <div className="inline-grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-        {([['videos', `Видео (${reg})`], ['shorts', `Shorts (${sh})`]] as ['videos' | 'shorts', string][]).map(([k, lbl]) => (
+        {([['videos', t('sec.channels.ytTabVideos', 'Видео ({{n}})', { n: reg })], ['shorts', `Shorts (${sh})`]] as ['videos' | 'shorts', string][]).map(([k, lbl]) => (
           <button key={k} onClick={() => setYtTab(k)} className="px-4 py-1.5 rounded-lg text-sm font-600 transition-all whitespace-nowrap"
             style={{ background: ytTab === k ? 'var(--brand)' : 'transparent', color: ytTab === k ? 'var(--brand-contrast)' : 'var(--text-muted)' }}>{lbl}</button>
         ))}
@@ -154,16 +157,16 @@ export default function ChannelsPage() {
   const controlsBar = (platform: string, vids: { isShort?: boolean | null }[]) => (
     <div className="flex items-center gap-2 flex-wrap">
       {ytToggle(platform, vids)}
-      <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className={selCls} style={selStyle} title="Сортировка">
-        <option value="desc">Больше просмотров</option>
-        <option value="asc">Меньше просмотров</option>
+      <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className={selCls} style={selStyle} title={t('sec.channels.sortTitle', 'Сортировка')}>
+        <option value="desc">{t('sec.channels.sortDesc', 'Больше просмотров')}</option>
+        <option value="asc">{t('sec.channels.sortAsc', 'Меньше просмотров')}</option>
       </select>
-      <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className={selCls} style={selStyle} title="Период публикации">
-        <option value="all">Всё время</option>
-        <option value="day">За день</option>
-        <option value="week">За неделю</option>
-        <option value="month">За месяц</option>
-        <option value="45d">За 45 дней</option>
+      <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className={selCls} style={selStyle} title={t('sec.channels.periodTitle', 'Период публикации')}>
+        <option value="all">{t('sec.channels.periodAll', 'Всё время')}</option>
+        <option value="day">{t('sec.channels.periodDay', 'За день')}</option>
+        <option value="week">{t('sec.channels.periodWeek', 'За неделю')}</option>
+        <option value="month">{t('sec.channels.periodMonth', 'За месяц')}</option>
+        <option value="45d">{t('sec.channels.period45d', 'За 45 дней')}</option>
       </select>
     </div>
   );
@@ -180,27 +183,27 @@ export default function ChannelsPage() {
 
   const addWatch = async () => {
     const v = url.trim();
-    if (!v) { setError('Вставьте ссылку на канал.'); return; }
+    if (!v) { setError(t('sec.channels.pasteChannelUrl', 'Вставьте ссылку на канал.')); return; }
     setAdding(true); setError(null); setNote(null);
     try {
       const res = await fetch('/api/channels/watch', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ url: v }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
-      setUrl(''); setNote('Канал добавлен в отслеживаемые. Базовый снимок собран — дельты появятся при следующем обновлении.');
+      setUrl(''); setNote(t('sec.channels.watchAddedBase', 'Канал добавлен в отслеживаемые. Базовый снимок собран — дельты появятся при следующем обновлении.'));
       await loadChannels();
-    } catch (e: any) { setError(friendlyError(e, 'Не удалось добавить канал')); } finally { setAdding(false); }
+    } catch (e: any) { setError(friendlyError(e, t('sec.channels.addChannelFail', 'Не удалось добавить канал'))); } finally { setAdding(false); }
   };
 
   const analyzeOnDemand = async () => {
     const v = url.trim();
-    if (!v) { setError('Вставьте ссылку на канал.'); return; }
+    if (!v) { setError(t('sec.channels.pasteChannelUrl', 'Вставьте ссылку на канал.')); return; }
     setAnalyzing(true); setError(null); setNote(null); setAnalysis(null);
     try {
       const res = await fetch('/api/channels/analyze', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ url: v, maxVideos: 120 }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       setAnalysis(d as OnDemand); setView('analyze');
-    } catch (e: any) { setError(friendlyError(e, 'Не удалось разобрать канал')); } finally { setAnalyzing(false); }
+    } catch (e: any) { setError(friendlyError(e, t('sec.channels.analyzeFail', 'Не удалось разобрать канал'))); } finally { setAnalyzing(false); }
   };
 
   const watchFromAnalysis = async () => {
@@ -211,8 +214,8 @@ export default function ChannelsPage() {
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       await loadChannels(); setView('list'); setAnalysis(null);
-      setNote('Канал добавлен в отслеживаемые.');
-    } catch (e: any) { setError(friendlyError(e, 'Не удалось добавить канал')); } finally { setAdding(false); }
+      setNote(t('sec.channels.watchAdded', 'Канал добавлен в отслеживаемые.'));
+    } catch (e: any) { setError(friendlyError(e, t('sec.channels.addChannelFail', 'Не удалось добавить канал'))); } finally { setAdding(false); }
   };
 
   const detailReq = useRef(0);
@@ -225,7 +228,7 @@ export default function ChannelsPage() {
       if (my !== detailReq.current) return;            // ответ устаревшего запроса — игнорируем
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       setDetail(d);
-    } catch (e: any) { if (my === detailReq.current) setError(friendlyError(e, 'Не удалось открыть канал')); }
+    } catch (e: any) { if (my === detailReq.current) setError(friendlyError(e, t('sec.channels.openChannelFail', 'Не удалось открыть канал'))); }
   };
 
   const refreshChannel = async (id: string, reopenDetail: boolean) => {
@@ -236,13 +239,13 @@ export default function ChannelsPage() {
       if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
       await loadChannels();
       if (reopenDetail) await openDetail(id);
-    } catch (e: any) { setError(friendlyError(e, 'Не удалось обновить')); } finally { setBusyId(null); }
+    } catch (e: any) { setError(friendlyError(e, t('sec.channels.refreshFail', 'Не удалось обновить'))); } finally { setBusyId(null); }
   };
 
   const removeChannel = (c: WatchedChannel) => {
     setConfirm({
-      title: 'Убрать канал из отслеживаемых?',
-      message: `«${c.displayName || c.handle}» и вся его история будут удалены. Действие необратимо.`,
+      title: t('sec.channels.removeTitle', 'Убрать канал из отслеживаемых?'),
+      message: t('sec.channels.removeMsg', '«{{name}}» и вся его история будут удалены. Действие необратимо.', { name: c.displayName || c.handle }),
       onConfirm: () => {
         setConfirm(null);
         (async () => {
@@ -252,7 +255,7 @@ export default function ChannelsPage() {
             if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || `HTTP ${res.status}`); }
             if (detail?.channel.id === c.id) { setView('list'); setDetail(null); }
             await loadChannels();
-          } catch (e: any) { setError(friendlyError(e, 'Не удалось удалить')); } finally { setBusyId(null); }
+          } catch (e: any) { setError(friendlyError(e, t('sec.channels.deleteFail', 'Не удалось удалить'))); } finally { setBusyId(null); }
         })();
       },
     });
@@ -269,9 +272,9 @@ export default function ChannelsPage() {
       <img src="/icons/nav-channels.png" alt="" draggable={false}
            className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0" style={{ objectFit: 'contain' }} />
       <div className="min-w-0">
-        <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>Каналы</h1>
+        <h1 className="text-xl sm:text-2xl font-700 leading-tight" style={{ color: 'var(--text-primary)' }}>{t('sec.channels.pageTitle', 'Каналы')}</h1>
         <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-          Отслеживайте каналы — метрики обновляются раз в сутки, рядом с цифрами видно «было→стало».
+          {t('sec.channels.pageSubtitle', 'Отслеживайте каналы — метрики обновляются раз в сутки, рядом с цифрами видно «было→стало».')}
         </p>
       </div>
     </div>
@@ -283,11 +286,11 @@ export default function ChannelsPage() {
     return (
       <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
         <div className="flex items-center gap-2">
-          <button onClick={() => { setView('list'); setDetail(null); }} title="Назад"
+          <button onClick={() => { setView('list'); setDetail(null); }} title={t('sec.channels.backTitle', 'Назад')}
             className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
             <ArrowLeft size={17} />
           </button>
-          <h1 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{ch?.displayName || (ch ? `@${ch.handle}` : 'Канал')}</h1>
+          <h1 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{ch?.displayName || (ch ? `@${ch.handle}` : t('sec.channels.channelFallback', 'Канал'))}</h1>
         </div>
         {error && <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}><XCircle size={16} className="mt-[2px]" /><span>{error}</span></div>}
         {!detail ? (
@@ -307,21 +310,21 @@ export default function ChannelsPage() {
                     <span className="text-[11px] font-600 px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>{PLATFORM_LABEL[ch!.platform] || ch!.platform}</span>
                   </div>
                   <div className="text-sm font-600 mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    {fmt(ch!.followers)} подписчиков<Delta cur={ch!.followers} prev={ch!.prevFollowers} />
+                    {t('sec.channels.followersN', '{{n}} подписчиков', { n: fmt(ch!.followers) })}<Delta cur={ch!.followers} prev={ch!.prevFollowers} />
                   </div>
                   <div className="text-[11px] mt-1 inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                    <Clock size={11} /> Обновлён {ago(ch!.lastRefreshedAt)} · {ch!.videosCount} видео
+                    <Clock size={11} /> {t('sec.channels.updatedLine', 'Обновлён {{ago}} · {{n}} видео', { ago: ago(ch!.lastRefreshedAt), n: ch!.videosCount })}
                   </div>
                 </div>
                 <AuroraButton onClick={() => refreshChannel(ch!.id, true)} disabled={busyId === ch!.id} variant="secondary" className="!w-auto"
                   icon={busyId === ch!.id ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}>
-                  Обновить сейчас
+                  {t('sec.channels.refreshNowBtn', 'Обновить сейчас')}
                 </AuroraButton>
               </div>
               {ch!.prevRefreshedAt == null && (
                 <p className="text-[11px] mt-3 flex items-start gap-1.5" style={{ color: 'var(--text-muted)' }}>
                   <AlertCircle size={12} className="mt-[1px] flex-shrink-0" style={{ color: '#f59e0b' }} />
-                  Это базовый снимок. Дельты «было→стало» появятся после следующего обновления (авто — раз в сутки, либо кнопкой).
+                  {t('sec.channels.baseSnapshotHint', 'Это базовый снимок. Дельты «было→стало» появятся после следующего обновления (авто — раз в сутки, либо кнопкой).')}
                 </p>
               )}
             </AuroraCard>
@@ -335,7 +338,7 @@ export default function ChannelsPage() {
                       : <div className="w-full h-full flex items-center justify-center"><Play size={26} style={{ color: 'var(--text-muted)' }} /></div>}
                     <div className="absolute inset-x-0 bottom-0 h-14 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
                     {v.webUrl && (
-                      <a href={v.webUrl} target="_blank" rel="noreferrer" className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(0,0,0,0.28)' }} title="Открыть оригинал">
+                      <a href={v.webUrl} target="_blank" rel="noreferrer" className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(0,0,0,0.28)' }} title={t('sec.channels.openOriginalTitle', 'Открыть оригинал')}>
                         <span className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}><Play size={22} color="#fff" fill="#fff" /></span>
                       </a>
                     )}
@@ -371,8 +374,8 @@ export default function ChannelsPage() {
     return (
       <div className="max-w-[1760px] mx-auto py-2 sm:py-3 space-y-5">
         <div className="flex items-center gap-2">
-          <button onClick={() => { setView('list'); setAnalysis(null); }} title="Назад" className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ArrowLeft size={17} /></button>
-          <h1 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>Разовый разбор</h1>
+          <button onClick={() => { setView('list'); setAnalysis(null); }} title={t('sec.channels.backTitle', 'Назад')} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><ArrowLeft size={17} /></button>
+          <h1 className="text-lg font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.channels.onDemand', 'Разовый разбор')}</h1>
         </div>
         {error && <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}><XCircle size={16} className="mt-[2px]" /><span>{error}</span></div>}
         <AuroraCard className="p-4 sm:p-5">
@@ -387,12 +390,12 @@ export default function ChannelsPage() {
                 {a.profile.verified && <BadgeCheck size={16} style={{ color: 'var(--brand)' }} />}
                 <span className="text-[11px] font-600 px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>{PLATFORM_LABEL[a.profile.platform] || a.profile.platform}</span>
               </div>
-              {a.profile.followers != null && <div className="text-sm font-600 mt-1" style={{ color: 'var(--text-secondary)' }}>{fmt(a.profile.followers)} подписчиков</div>}
+              {a.profile.followers != null && <div className="text-sm font-600 mt-1" style={{ color: 'var(--text-secondary)' }}>{t('sec.channels.followersN', '{{n}} подписчиков', { n: fmt(a.profile.followers) })}</div>}
             </div>
-            <AuroraButton onClick={watchFromAnalysis} disabled={adding} className="!w-auto" icon={adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}>Отслеживать</AuroraButton>
+            <AuroraButton onClick={watchFromAnalysis} disabled={adding} className="!w-auto" icon={adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}>{t('sec.channels.watchBtn', 'Отслеживать')}</AuroraButton>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
-            {([['Видео', String(a.count), <Film size={15} key="f" />], ['Просмотры (сумма)', fmt(agg.views), <Eye size={15} key="e" />], ['Лайки (сумма)', fmt(agg.likes), <Heart size={15} key="h" />], ['Подписчики', fmt(a.profile.followers), <Users size={15} key="u" />]] as [string, string, React.ReactNode][]).map(([l, val, ic]) => (
+            {([[t('sec.channels.statVideos', 'Видео'), String(a.count), <Film size={15} key="f" />], [t('sec.channels.statViewsSum', 'Просмотры (сумма)'), fmt(agg.views), <Eye size={15} key="e" />], [t('sec.channels.statLikesSum', 'Лайки (сумма)'), fmt(agg.likes), <Heart size={15} key="h" />], [t('sec.channels.statFollowers', 'Подписчики'), fmt(a.profile.followers), <Users size={15} key="u" />]] as [string, string, React.ReactNode][]).map(([l, val, ic]) => (
               <div key={l} className="rounded-xl p-3" style={{ background: 'var(--bg-tertiary)' }}>
                 <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{ic}{l}</div>
                 <div className="text-lg font-800 mt-0.5" style={{ color: 'var(--text-primary)' }}>{val}</div>
@@ -444,14 +447,14 @@ export default function ChannelsPage() {
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
           </div>
           <AuroraButton onClick={addWatch} disabled={adding || analyzing} className="sm:!w-auto" icon={adding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}>
-            {adding ? 'Добавляю…' : 'Отслеживать'}
+            {adding ? t('sec.channels.addingBusy', 'Добавляю…') : t('sec.channels.watchBtn', 'Отслеживать')}
           </AuroraButton>
           <AuroraButton variant="secondary" onClick={analyzeOnDemand} disabled={adding || analyzing} className="sm:!w-auto" icon={analyzing ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}>
-            {analyzing ? 'Разбираю…' : 'Разовый разбор'}
+            {analyzing ? t('sec.channels.analyzingBusy', 'Разбираю…') : t('sec.channels.onDemand', 'Разовый разбор')}
           </AuroraButton>
         </div>
         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          «Отслеживать» — добавит канал в список с авто-обновлением раз в сутки (дельты «было→стало»). «Разовый разбор» — покажет все видео сейчас, без истории.
+          {t('sec.channels.actionsHint', '«Отслеживать» — добавит канал в список с авто-обновлением раз в сутки (дельты «было→стало»). «Разовый разбор» — покажет все видео сейчас, без истории.')}
         </p>
         {error && <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}><XCircle size={16} className="mt-[2px]" /><span>{error}</span></div>}
         {note && <div className="flex items-start gap-2 text-sm rounded-xl p-3" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}><AlertCircle size={15} className="mt-[2px]" style={{ color: '#10b981' }} /><span>{note}</span></div>}
@@ -462,8 +465,8 @@ export default function ChannelsPage() {
       ) : channels.length === 0 ? (
         <AuroraCard className="p-10 sm:p-14 text-center">
           <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}><Users size={26} style={{ color: 'var(--text-muted)' }} /></div>
-          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>Пока нет отслеживаемых каналов</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Вставьте ссылку выше и нажмите «Отслеживать» — начнём копить историю метрик.</p>
+          <p className="text-sm font-600" style={{ color: 'var(--text-secondary)' }}>{t('sec.channels.emptyTitle', 'Пока нет отслеживаемых каналов')}</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{t('sec.channels.emptyHint', 'Вставьте ссылку выше и нажмите «Отслеживать» — начнём копить историю метрик.')}</p>
         </AuroraCard>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -479,19 +482,19 @@ export default function ChannelsPage() {
                     <span className="text-sm font-700 truncate" style={{ color: 'var(--text-primary)' }}>{c.displayName || `@${c.handle}`}</span>
                     {c.verified && <BadgeCheck size={14} style={{ color: 'var(--brand)' }} />}
                   </div>
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{PLATFORM_LABEL[c.platform] || c.platform} · {c.videosCount} видео</div>
-                  <div className="text-sm font-600 mt-0.5" style={{ color: 'var(--text-secondary)' }}>{fmt(c.followers)} подписчиков<Delta cur={c.followers} prev={c.prevFollowers} /></div>
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{PLATFORM_LABEL[c.platform] || c.platform} · {t('sec.channels.videosN', '{{n}} видео', { n: c.videosCount })}</div>
+                  <div className="text-sm font-600 mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('sec.channels.followersN', '{{n}} подписчиков', { n: fmt(c.followers) })}<Delta cur={c.followers} prev={c.prevFollowers} /></div>
                 </div>
               </button>
-              {c.lastError && <div className="text-[11px] rounded-lg p-2" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>Ошибка обновления: {c.lastError}</div>}
+              {c.lastError && <div className="text-[11px] rounded-lg p-2" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>{t('sec.channels.lastErrorLabel', 'Ошибка обновления:')} {c.lastError}</div>}
               <div className="flex items-center justify-between gap-2 mt-auto">
                 <span className="text-[11px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Clock size={11} /> {ago(c.lastRefreshedAt)}</span>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => refreshChannel(c.id, false)} disabled={busyId === c.id} title="Обновить сейчас"
+                  <button onClick={() => refreshChannel(c.id, false)} disabled={busyId === c.id} title={t('sec.channels.refreshNowBtn', 'Обновить сейчас')}
                     className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.3)' }}>
                     {busyId === c.id ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   </button>
-                  <button onClick={() => removeChannel(c)} disabled={busyId === c.id} title="Убрать из отслеживаемых"
+                  <button onClick={() => removeChannel(c)} disabled={busyId === c.id} title={t('sec.channels.removeBtnTitle', 'Убрать из отслеживаемых')}
                     className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444' }}>
                     <Trash2 size={14} />
                   </button>

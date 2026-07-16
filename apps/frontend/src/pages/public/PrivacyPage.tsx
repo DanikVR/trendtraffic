@@ -5,14 +5,16 @@
  * сохранены, контактный e-mail — SEO@vibevox.pro.
  */
 
+import { useTranslation } from 'react-i18next';
 import { LegalLayout } from './LegalLayout';
 
 export function PrivacyPage() {
+  const { t } = useTranslation('common');
   return (
     <LegalLayout
-      title="Политика конфиденциальности"
-      updated="28 апреля 2026 г."
-      metaDescription="Политика конфиденциальности VibeVox: какие данные обрабатывает платформа синхронного ИИ-перевода видеовстреч и SIP-звонков, на каких основаниях и какие права есть у пользователей по GDPR."
+      title={t('sec.pub.privacyTitle', 'Политика конфиденциальности')}
+      updated={t('sec.pub.legalUpdated', '28 апреля 2026 г.')}
+      metaDescription={t('sec.pub.privacyMetaDesc', 'Политика конфиденциальности VibeVox: какие данные обрабатывает платформа синхронного ИИ-перевода видеовстреч и SIP-звонков, на каких основаниях и какие права есть у пользователей по GDPR.')}
       intro={
         <p>
           Настоящая Политика конфиденциальности описывает, как Платформа <strong>VibeVox</strong> (платформа
