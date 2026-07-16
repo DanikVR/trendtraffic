@@ -310,6 +310,8 @@ export function TTFooter() {
   return (
     <footer className="ttl-footer">
       <div className="ttl-wrap">
+        {/* Копирайт — первым, в начале футера (пожелание владельца) */}
+        <p className="ttl-caption ttl-footer-copy">© Trendtraffic.pro 2026</p>
         <div className="ttl-footer-grid">
           <div>
             <TTLogo big />
@@ -336,7 +338,6 @@ export function TTFooter() {
           </div>
         </div>
         <div className="ttl-footer-bottom">
-          <span className="ttl-caption" style={{ color: 'var(--ttl-mist)' }}>trendtraffic.pro 2026</span>
           <span className="ttl-caption">
             LARYSA DANYUK · woj. MAZOWIECKIE, pow. Warszawa, gm. Warszawa, miejsc. Warszawa,
             ul. Jana III Sobieskiego, nr 1, lok. 49, 02-957

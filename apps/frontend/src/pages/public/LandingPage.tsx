@@ -343,6 +343,9 @@ export function LandingPage() {
                   <a className="ttl-btn" href={`${APP_URL}/auth/register`}>
                     {t('sec.ttLanding.finCta', 'Начать бесплатно')} <Arrow />
                   </a>
+                  <a className="ttl-ghost" href={`${APP_URL}/auth/login`}>
+                    {t('sec.ttLanding.finLogin', 'Войти')}
+                  </a>
                 </div>
               </FadeUp>
             </div>

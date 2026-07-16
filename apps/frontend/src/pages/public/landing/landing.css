@@ -360,6 +360,12 @@ body:has(.ttl)::-webkit-scrollbar-thumb:hover { background: #2c2c2c; }
 
 /* ── Футер ── */
 .ttl-footer { padding-top: clamp(70px, 9vw, 120px); padding-bottom: 40px; }
+.ttl-footer-copy {
+  margin: 0 0 clamp(30px, 4.5vw, 52px);
+  color: var(--ttl-mist);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
 .ttl-footer-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);

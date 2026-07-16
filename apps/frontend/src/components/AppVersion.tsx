@@ -2787,8 +2787,13 @@
  *          меряются от реальных секций (how/savings/pricing/final) с ленивой
  *          перемеркой. Файлы: landing/Constellation.tsx (переписан),
  *          landing/chrome.tsx (posRef), landing/landing.css (.ttl-fx/.ttl-page),
- *          LandingPage.tsx, AppVersion. */
-export const APP_VERSION = '2.3.5';
+ *          LandingPage.tsx, AppVersion.
+ * 2.3.6 — Лендинг: финальный экран получил обе кнопки — «Начать бесплатно»
+ *          (pill) + «Войти» (ghost); «© Trendtraffic.pro 2026» перенесён
+ *          В НАЧАЛО футера отдельной строкой (пожелание владельца), нижняя
+ *          строка футера — только реквизиты. Файлы: LandingPage.tsx,
+ *          landing/chrome.tsx (TTFooter), landing/landing.css, AppVersion. */
+export const APP_VERSION = '2.3.6';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
