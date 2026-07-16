@@ -211,22 +211,33 @@ export async function directDialogue(opts: {
   tenantId: string;
   turns: { i: number; speaker: 'A' | 'B'; text: string; hasMedia: boolean; mediaAuto: boolean }[];
   ivMax: number; twoshotMax: number; model?: string;
+  /** ДНК тренда (галочка «Режиссура Монтажа по анализу»): премиум-реплики, реакции и
+   *  раскладка медиа выбираются с оглядкой на формулу успеха разобранного оригинала —
+   *  зеркально tagUgcRetention у «Динамичного монтажа». */
+  trendBrief?: string;
 }): Promise<{ scores: DlgScore[]; note: string }> {
   const turns = (opts.turns || []).filter((t) => t && Number.isInteger(t.i));
   if (!turns.length) return { scores: [], note: 'реплик нет' };
   const apiKey = await resolveAnthropicKey(opts.tenantId);
   if (!apiKey) return { scores: [], note: 'диалог-режиссёр: ключ Claude не задан — эвристика' };
   const list = turns.map((t) => `${t.i}: [${t.speaker}]${t.hasMedia ? (t.mediaAuto ? '[медиа:авто]' : '[медиа:задано]') : ''} ${String(t.text || '').slice(0, 160) || '(без текста)'}`).join('\n');
+  const trendCtx = String(opts.trendBrief || '').trim().slice(0, 1600);
   const system =
     'Ты — режиссёр коротких вертикальных UGC-диалогов ДВУХ собеседников (A и B) под одну дорожку голоса. ' +
     'На вход — реплики по порядку. Твоя задача — удержание внимания при экономии дорогого рендера. Реши по каждой важной реплике:\n' +
     `• "engine":"iv" — поднять на ПРЕМИУМ-аватар (максимум качества): крючок в начале, сильная эмоция/панчлайн, призыв в конце. Максимум ${Math.max(1, opts.ivMax)} реплик, остальные и так на дешёвом.\n` +
     `• "twoshot":true — показать ОБОИХ в кадре одновременно (яркая реакция, спор, поддакивание). Максимум ${Math.max(0, opts.twoshotMax)} реплик.\n` +
     '• "mediaLayout" — ТОЛЬКО для реплик с пометкой [медиа:авто]: "media-full" (медиа во весь кадр, если реплика про «смотрите/вот это»), "media-bg-left"/"media-bg-right" (медиа на фоне, говорящий маленьким сбоку — если человек комментирует), "media-split" (медиа и лицо поровну). Реплики [медиа:задано] НЕ трогай.\n' +
+    (trendCtx
+      ? 'Диалог записан ПО МОТИВАМ вирусного тренда — его разбор ниже. Решай с оглядкой на формулу успеха оригинала: ' +
+        'реплику, играющую роль ЕГО хука, подними на "iv" (даже если она не первая); реакции/two-shot ставь в местах пиков оригинала; ' +
+        'медиа раскладывай, повторяя ритм его первых секунд из разбора хука.\n'
+      : '') +
     'Верни СТРОГО JSON-массив (только значимые реплики) и ничего больше: ' +
     '[{"i":<индекс>,"engine":"iv","twoshot":true,"mediaLayout":"media-bg-right","score":<0..100>}]. Любое поле кроме i — опционально.';
   try {
-    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user: `Реплики:\n${list}`, maxTokens: 900 });
+    const user = (trendCtx ? `Разбор тренда:\n${trendCtx}\n\n` : '') + `Реплики:\n${list}`;
+    const raw = await generateText({ apiKey, model: opts.model || DEFAULT_DIRECTOR_MODEL, system, user, maxTokens: 900 });
     const arr = extractJsonArray(raw);
     if (!arr) return { scores: [], note: 'диалог-режиссёр: не JSON — эвристика' };
     const okLayout = new Set<DlgLayout>(['media-full', 'media-bg-left', 'media-bg-right', 'media-split']);
@@ -243,7 +254,9 @@ export async function directDialogue(opts: {
         } as DlgScore;
       })
       .filter((s) => Number.isInteger(s.i) && s.i >= 0);
-    return scores.length ? { scores, note: `диалог-режиссёр: ${scores.length} решений` } : { scores: [], note: 'диалог-режиссёр: пусто — эвристика' };
+    return scores.length
+      ? { scores, note: `диалог-режиссёр: ${scores.length} решений${trendCtx ? ' · с ДНК тренда' : ''}` }
+      : { scores: [], note: 'диалог-режиссёр: пусто — эвристика' };
   } catch (e: any) {
     return { scores: [], note: `диалог-режиссёр: ошибка ${e?.message || e} — эвристика` };
   }

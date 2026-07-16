@@ -2694,7 +2694,16 @@
  *          статус «качается…» поллится. Файлы: trends/service.ts (parseVideoUrl/addVideoByUrl),
  *          trends/router.ts, tikhub_client.ts (extract*Meta), GalleryPage.tsx,
  *          SocialExtensionPage.tsx (дип-линк url), AppVersion. */
-export const APP_VERSION = '2.2.58';
+/* 2.2.59 — «Диалог двоих»: разбор тренда дошёл до режиссёра диалога. Галочка «Режиссура
+ *          Монтажа по анализу» теперь работает и в диалогах: brief+hookAnalysis разбора
+ *          уходят в directDialogue (зеркально tagUgcRetention «Динамичного монтажа») —
+ *          Claude поднимает на премиум Avatar IV реплику, играющую роль ХУКА оригинала
+ *          (даже если она не первая), ставит two-shot-реакции в местах пиков тренда и
+ *          раскладывает медиа по ритму его первых секунд. Текст/голос не меняются (запись),
+ *          цена та же (лимиты IV/two-shot пресета прежние — меняется, КУДА потрачен премиум).
+ *          В note джоба видно «· с ДНК тренда». Файлы: render/director.ts (trendBrief в
+ *          directDialogue), render/router.ts (прокидка), AppVersion. */
+export const APP_VERSION = '2.2.59';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

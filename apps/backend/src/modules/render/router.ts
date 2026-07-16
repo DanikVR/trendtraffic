@@ -943,6 +943,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             tenantId: j.tenantId!,
             turns: faceSpeech.map((x) => ({ i: x.i, speaker: x.s.speaker as 'A' | 'B', text: x.s.text, hasMedia: !!x.s.image, mediaAuto: x.s.mediaAuto })),
             ivMax: preset.ivMax, twoshotMax: preset.twoshotMax,
+            // ДНК тренда (галочка «Режиссура Монтажа по анализу») — как у «Динамичного монтажа»:
+            // премиум-реплики/реакции/медиа выбираются по формуле успеха разобранного оригинала.
+            trendBrief: trendBriefForDirector,
           });
           if (dir.scores.length) applyDlgBudget(segs, dir.scores, preset);
           else applyDlgBudget(segs, scoreDialogueHeuristic(segs), preset);
