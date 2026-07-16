@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Ang pinag-isang TrendTraffic extension: isang tulay sa Google Flow (Veo), Google NotebookLM (Hotebook), at HeyGen (UGC talking heads na may subscription mo). Real browser task queue, generation automation, at Gallery exchange. I-install nang isang beses — ang panel ay mag-a-activate sa serbisyo kung saan bukas ang tab."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "timeout ng task"
+  },
+  "bg_openFlowTab": {
+    "message": "Buksan ang tab ng Google Flow — awtomatikong makukumpleto ang task"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: hindi pangkaraniwang aktibidad — naka-pause"
+  },
+  "bg_noResult": {
+    "message": "walang resulta"
+  },
+  "bg_notConnected": {
+    "message": "hindi nakakonekta"
+  },
+  "bg_openFlowFailed": {
+    "message": "nabigong buksan ang Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Hindi na-load ang Flow — mangyaring mag-sign in sa labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "walang tugon mula sa Flow"
+  },
+  "bg_noUrl": {
+    "message": "walang url"
+  },
+  "bg_dlRejected": {
+    "message": "nabigo ang pag-download (tinanggihan ng CDN ang kahilingan)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — masyadong malaki"
+  },
+  "bg_openNlmFailed": {
+    "message": "nabigong buksan ang NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "hindi nagawa ang notebook (kailangan ang selector scouting para sa 'create')"
+  },
+  "bg_listFailed": {
+    "message": "nabigong makuha ang listahan"
+  },
+  "bg_actionFailed": {
+    "message": "nabigo ang aksyon"
+  },
+  "bg_openNlmGen": {
+    "message": "Buksan ang NotebookLM — awtomatikong makukumpleto ang henerasyon"
+  },
+  "bg_loginNlm": {
+    "message": "Mag-sign in sa NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "nabigong maharang ang pag-download ng artifact"
+  },
+  "bg_artifactDlFailed": {
+    "message": "nabigo ang pag-download ng artifact: "
+  },
+  "bg_openHgTab": {
+    "message": "Buksan ang tab ng app.heygen.com studio — awtomatikong magre-render ang avatar"
+  },
+  "bg_hgLoading": {
+    "message": "Naglo-load pa rin ang HeyGen Studio — susubukan ulit mamaya"
+  },
+  "bg_retry": {
+    "message": "subukan ulit"
+  },
+  "bg_dlFailed": {
+    "message": "nabigo ang pag-download"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "hindi nakakonekta"
+  },
+  "flow_waitingTask": {
+    "message": "Naghihintay ng mga task mula sa TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "I-pause"
+  },
+  "flow_openTT": {
+    "message": "Buksan ang TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Sa Gallery"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Magpadala ng tapos na clip mula sa Flow sa TrendTraffic Gallery"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Mula sa Gallery"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Kumuha ng video mula sa Gallery at i-upload ito sa Flow para sa pagproseso"
+  },
+  "flow_reconPrefix": {
+    "message": "scouting: "
+  },
+  "flow_reconSuffix": {
+    "message": " Mga kahilingan sa Flow"
+  },
+  "flow_reconBtn": {
+    "message": "scout layout"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Kuhanan ang kasalukuyang layout ng Flow at ipadala ito sa amin (para sa pagsasaayos)"
+  },
+  "flow_pauseManual": {
+    "message": "Naka-enable ang pause nang manu-mano"
+  },
+  "flow_statusPause": {
+    "message": "naka-pause"
+  },
+  "flow_statusWorking": {
+    "message": "gumagana"
+  },
+  "flow_statusLogin": {
+    "message": "mag-sign in sa account"
+  },
+  "flow_stTitleOpen": {
+    "message": "Buksan ang TrendTraffic at mag-sign in — awtomatiko itong kokonekta"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Buksan ang buong Gallery →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Gallery — pumili tulad ng sa isang editor, na may button na '→ Flow' sa bawat file"
+  },
+  "flow_fileFallback": {
+    "message": "file"
+  },
+  "flow_pickHint": {
+    "message": "I-click ang nais na item — idaragdag ito sa Gallery"
+  },
+  "flow_noPrompt": {
+    "message": "(walang prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Task #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ hindi nakita ang prompt field — kailangan ang selector scouting"
+  },
+  "flow_promptSet": {
+    "message": "nakatakda ang prompt"
+  },
+  "flow_refUploaded": {
+    "message": "na-upload ang reference sa Flow"
+  },
+  "flow_refPrefix": {
+    "message": "reference: "
+  },
+  "flow_refDlFailed": {
+    "message": "nabigo ang pag-download ng reference"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ hindi nakita ang generation button — kailangan ang scouting"
+  },
+  "flow_genStarted": {
+    "message": "nagsimula ang henerasyon, naghihintay ng clip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ timeout sa paghihintay ng clip"
+  },
+  "flow_clipReady": {
+    "message": "✓ handa na ang clip"
+  },
+  "flow_kindClip": {
+    "message": "clip"
+  },
+  "flow_kindPicture": {
+    "message": "larawan"
+  },
+  "flow_grabPre": {
+    "message": "kinukuha "
+  },
+  "flow_grabSuf": {
+    "message": " mula sa Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ nabigong basahin ang media"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN auth: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — sinusubukan sa pamamagitan ng server"
+  },
+  "flow_inGallerySuf": {
+    "message": " sa Gallery → tab na \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "walang koneksyon — i-click ang \"Connect\" sa TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ i-click ang nais na larawan/video sa Flow, pagkatapos ay \"To Gallery\""
+  },
+  "flow_multipleMedia": {
+    "message": "maraming media — piliin kung ano ang kukunin ↓"
+  },
+  "flow_openingProject": {
+    "message": "binubuksan ang proyekto sa Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Ang Flow ay tumatanggap lang ng mga larawan dito — mag-upload ng mga video sa pamamagitan ng seksyon ng \"Uploads\" ng Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "hindi nakita ang field ng pag-upload — magbukas ng PROJECT sa Flow (hindi pangunahing pahina): sa loob ng isang proyekto mayroong pag-upload (+/\"Uploads\")"
+  },
+  "flow_loadingList": {
+    "message": "nilo-load ang listahan…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "walang koneksyon — i-click ang \"Connect\""
+  },
+  "flow_galleryEmpty": {
+    "message": "walang media sa Gallery"
+  },
+  "flow_reconSent": {
+    "message": "✓ naipadala ang layout recon"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "walang koneksyon"
+  },
+  "flow_gettingMedia": {
+    "message": "kinukuha ang media mula sa Gallery…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ nabigong mag-download mula sa Gallery"
+  },
+  "flow_insertedImage": {
+    "message": "larawan"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " naipasok sa Flow mula sa Gallery"
+  },
+  "flow_newClipReady": {
+    "message": "handa na ang bagong clip — ina-upload sa Gallery…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ clip sa Gallery → \"Videos\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ hindi na-save ang clip: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "hindi konektado"
+  },
+  "hg_keepTabOpen": {
+    "message": "Panatilihing bukas ang tab na ito — awtomatikong magre-render ang mga ulo batay sa iyong subscription."
+  },
+  "hg_openTT": {
+    "message": "Buksan ang TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " tawag sa studio"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Kuhanan ang kasalukuyang API ng studio at ipadala sa amin (para sa pagsasaayos)"
+  },
+  "hg_statusWorking": {
+    "message": "gumagana"
+  },
+  "hg_statusLogin": {
+    "message": "mag-log in sa iyong account"
+  },
+  "hg_stTitleOpen": {
+    "message": "Buksan ang TrendTraffic at mag-log in — awtomatiko itong kokonekta"
+  },
+  "hg_photoDlFailed": {
+    "message": "nabigong mag-download ng larawan"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: nabigong mag-render"
+  },
+  "hg_genPrefix": {
+    "message": "henerasyon: "
+  },
+  "hg_waiting": {
+    "message": "naghihintay"
+  },
+  "hg_noVideoInTime": {
+    "message": "Hindi nagbigay ng video sa oras ang HeyGen"
+  },
+  "hg_headNum": {
+    "message": "▶ ulo #"
+  },
+  "hg_readyLook": {
+    "message": "handa na ang avatar ng account — nilaktawan ang pag-upload ng larawan"
+  },
+  "hg_photoUpload": {
+    "message": "larawan → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "sinisimulan ang henerasyon ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ hindi nakita ang look sa session na ito — ina-upload ang larawan at sinusubukang muli…"
+  },
+  "hg_headReady": {
+    "message": "✓ handa na ang ulo, kinukuha ang mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ ipinapadala sa TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ naipadala ang API recon"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "walang koneksyon"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "na-intercept ang artifact file ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "nabigong i-intercept ang file: "
+  },
+  "nlm_dlProbe": {
+    "message": "i-download? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "na-intercept ang download URL (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "hindi nakakonekta"
+  },
+  "nlm_account": {
+    "message": "Account"
+  },
+  "nlm_accountTitle": {
+    "message": "Google Account na ginagamit para sa NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Naghihintay ng task mula sa TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Ipakita ang mga handang studio works — i-click ang isang work para i-load ito sa TrendTraffic Gallery"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Sa Gallery"
+  },
+  "nlm_openTT": {
+    "message": "Buksan ang TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Kuhanan ang kasalukuyang layout ng NotebookLM at ipadala sa amin (para sa pagsasaayos ng selector)"
+  },
+  "nlm_reconBtn": {
+    "message": "layout recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "buksan ang isang notebook — ipapakita ko ang mga studio works nito"
+  },
+  "nlm_noReadyWorks": {
+    "message": "walang handang studio works (o naghe-generate pa)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "I-load ang \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" sa Gallery"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ naidagdag na"
+  },
+  "nlm_refresh": {
+    "message": "i-refresh"
+  },
+  "nlm_close": {
+    "message": "isara"
+  },
+  "nlm_loginTT": {
+    "message": "mag-log in sa TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "mag-log in sa Google"
+  },
+  "nlm_working": {
+    "message": "gumagana"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Gumagawa ng notebook: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ notebook nagawa: "
+  },
+  "nlm_addingSource": {
+    "message": "Nagdadagdag ng source ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "nabigo ang pag-download ng file mula sa Gallery"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "Hindi tinatanggap ng NotebookLM ang mga video file. Para sa mga video, magdagdag ng \"Analysis\" bilang text o link (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Hindi available ang pag-upload ng file sa NotebookLM mula sa extension (native window). Gamitin ang \"Analysis\"/\"I-paste ang text\" o isang link (website/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ naidagdag ang file source"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "hindi kilalang uri ng source"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ naidagdag ang source ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Binabasa ang listahan ng notebook…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ mga notebook (akin+available): "
+  },
+  "nlm_asking": {
+    "message": "Nagtatanong: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "hindi pa nababasa nang buo ang sagot"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ natanggap ang sagot"
+  },
+  "nlm_unknownType": {
+    "message": "hindi kilalang uri: "
+  },
+  "nlm_generatingTask": {
+    "message": "Naghe-generate: "
+  },
+  "nlm_genStartedPre": {
+    "message": "nagsimula ang henerasyon ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", default), naghihintay ng artifact…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ handa na ang artifact ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), naghihintay ng artifact…"
+  },
+  "nlm_dlRequested": {
+    "message": "hiniling ang pag-download ng artifact…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nabigo ang pagharang sa pag-download ng artifact"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "I-download sa TrendTraffic Gallery"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" walang \"Download\" — kinukuha bilang text…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" walang \"Download\" — kinukuha bilang text…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Gallery"
+  },
+  "nlm_alreadyWas": {
+    "message": " (umiiral na)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ hindi na-save: "
+  },
+  "nlm_noConnection": {
+    "message": "walang koneksyon"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ nabigo ang pag-download ng URL: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nabigo ang pagkuha ng file \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ ang pag-click ay humantong palayo sa pahina ng notebook — bumabalik"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ text \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" hindi nakuha"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Gallery (bilang text)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertical"
+  },
+  "nlm_916Title": {
+    "message": "Magdagdag ng 9:16 vertical format prompt (Shorts/Reels/TikTok). Prompt sa English — pinakamahusay na nauunawaan ng NotebookLM ang mga tagubilin sa ganitong paraan."
+  },
+  "nlm_916Already": {
+    "message": "✓ naidagdag na"
+  },
+  "nlm_916Added": {
+    "message": "✓ naidagdag"
+  },
+  "nlm_reconSent": {
+    "message": "✓ naipadala ang layout recon"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Nabigo ang Recon: "
+  },
+  "nlm_unknownAction": {
+    "message": "Hindi kilalang pagkilos: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — ረዳት (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "የተዋሃደው የTrendTraffic ቅጥያ: ወደ Google Flow (Veo), Google NotebookLM (Hotebook), እና HeyGen (የእርስዎ የደንበኝነት ምዝገባ ያለው UGC ተናጋሪ ራሶች) ድልድይ። እውነተኛ የአሳሽ ተግባር ወረፋ፣ የማመንጨት አውቶሜሽን እና የጋለሪ ልውውጥ። አንዴ ይጫኑ — ፓነሉ ትሩ በተከፈተበት አገልግሎት ላይ ይሠራል።"
+  },
+  "extTitle": {
+    "message": "TrendTraffic — ረዳት (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "የተግባር ጊዜ አልፏል"
+  },
+  "bg_openFlowTab": {
+    "message": "የGoogle Flow ትርን ይክፈቱ — ተግባሩ በራስ-ሰር ይጠናቀቃል"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: ያልተለመደ እንቅስቃሴ — ቆሟል"
+  },
+  "bg_noResult": {
+    "message": "ምንም ውጤት የለም"
+  },
+  "bg_notConnected": {
+    "message": "አልተገናኘም"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flowን መክፈት አልተሳካም"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow አልተጫነም — እባክዎ ወደ labs.google/flow ይግቡ"
+  },
+  "bg_noFlowAnswer": {
+    "message": "ከFlow ምንም ምላሽ የለም"
+  },
+  "bg_noUrl": {
+    "message": "ምንም url የለም"
+  },
+  "bg_dlRejected": {
+    "message": "ማውረድ አልተሳካም (CDN ጥያቄውን ውድቅ አደረገው)"
+  },
+  "bg_tooBig": {
+    "message": "ሚዲያ >500MB — በጣም ትልቅ ነው"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLMን መክፈት አልተሳካም"
+  },
+  "bg_notebookNotCreated": {
+    "message": "ማስታወሻ ደብተር አልተፈጠረም ('ፍጠር' የሚለውን ለመፈለግ መራጭ ያስፈልጋል)"
+  },
+  "bg_listFailed": {
+    "message": "ዝርዝር ማግኘት አልተሳካም"
+  },
+  "bg_actionFailed": {
+    "message": "ድርጊት አልተሳካም"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLMን ይክፈቱ — ማመንጨት በራስ-ሰር ይጠናቀቃል"
+  },
+  "bg_loginNlm": {
+    "message": "ወደ NotebookLM ይግቡ"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "የአርቲፋክት ማውረድን መጥለፍ አልተሳካም"
+  },
+  "bg_artifactDlFailed": {
+    "message": "የአርቲፋክት ማውረድ አልተሳካም: "
+  },
+  "bg_openHgTab": {
+    "message": "የapp.heygen.com ስቱዲዮ ትርን ይክፈቱ — አምሳያው በራስ-ሰር ይቀርጻል"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen ስቱዲዮ አሁንም እየተጫነ ነው — በኋላ እንደገና በመሞከር ላይ"
+  },
+  "bg_retry": {
+    "message": "እንደገና ይሞክሩ"
+  },
+  "bg_dlFailed": {
+    "message": "ማውረድ አልተሳካም"
+  },
+  "flow_state": {
+    "message": "ሁኔታ"
+  },
+  "flow_notConnected": {
+    "message": "አልተገናኘም"
+  },
+  "flow_waitingTask": {
+    "message": "ከTrendTraffic ተግባራትን በመጠበቅ ላይ…"
+  },
+  "flow_pauseBtn": {
+    "message": "አቁም"
+  },
+  "flow_openTT": {
+    "message": "TrendTrafficን ክፈት"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ ወደ ጋለሪ"
+  },
+  "flow_toGalleryTitle": {
+    "message": "የተጠናቀቀ ክሊፕ ከFlow ወደ TrendTraffic ጋለሪ ይላኩ"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ ከጋለሪ"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "ቪዲዮ ከጋለሪ ወስደው ለማስኬድ ወደ Flow ይስቀሉት"
+  },
+  "flow_reconPrefix": {
+    "message": "በመፈለግ ላይ: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow ጥያቄዎች"
+  },
+  "flow_reconBtn": {
+    "message": "አቀማመጥ ፈልግ"
+  },
+  "flow_reconBtnTitle": {
+    "message": "የአሁኑን Flow አቀማመጥ ይቅረጹ እና ይላኩልን (ለማስተካከል)"
+  },
+  "flow_pauseManual": {
+    "message": "ማቆም በእጅ ነቅቷል"
+  },
+  "flow_statusPause": {
+    "message": "ቆሟል"
+  },
+  "flow_statusWorking": {
+    "message": "በመሥራት ላይ"
+  },
+  "flow_statusLogin": {
+    "message": "ወደ መለያ ይግቡ"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTrafficን ይክፈቱ እና ይግቡ — በራስ-ሰር ይገናኛል"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 ሙሉ ጋለሪ ክፈት →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic ጋለሪ — በአርታዒ ውስጥ እንደሚመርጡት ይምረጡ፣ በእያንዳንዱ ፋይል ላይ '→ Flow' የሚል ቁልፍ ያለው"
+  },
+  "flow_fileFallback": {
+    "message": "ፋይል"
+  },
+  "flow_pickHint": {
+    "message": "የሚፈልጉትን ንጥል ይጫኑ — ወደ ጋለሪ ይታከማል"
+  },
+  "flow_noPrompt": {
+    "message": "(ምንም ጥያቄ የለም)"
+  },
+  "flow_taskNum": {
+    "message": "ተግባር #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ የጥያቄ መስክ አልተገኘም — መራጭ መፈለግ ያስፈልጋል"
+  },
+  "flow_promptSet": {
+    "message": "ጥያቄ ተዘጋጅቷል"
+  },
+  "flow_refUploaded": {
+    "message": "ማጣቀሻ ወደ Flow ተሰቅሏል"
+  },
+  "flow_refPrefix": {
+    "message": "ማጣቀሻ: "
+  },
+  "flow_refDlFailed": {
+    "message": "የማጣቀሻ ማውረድ አልተሳካም"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ የማመንጨት ቁልፍ አልተገኘም — መፈለግ ያስፈልጋል"
+  },
+  "flow_genStarted": {
+    "message": "ማመንጨት ተጀምሯል፣ ክሊፕ በመጠበቅ ላይ…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ የክሊፕ መጠበቂያ ጊዜ አልፏል"
+  },
+  "flow_clipReady": {
+    "message": "✓ ክሊፕ ዝግጁ ነው"
+  },
+  "flow_kindClip": {
+    "message": "ክሊፕ"
+  },
+  "flow_kindPicture": {
+    "message": "ምስል"
+  },
+  "flow_grabPre": {
+    "message": "ከፍሎው እየተወሰደ ነው "
+  },
+  "flow_grabSuf": {
+    "message": "…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ ሚዲያውን ማንበብ አልተቻለም"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN ማረጋገጫ: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — በአገልጋይ በኩል በመሞከር ላይ"
+  },
+  "flow_inGallerySuf": {
+    "message": " ወደ ጋለሪ → \"Google Flow\" ትር"
+  },
+  "flow_noConnConnect": {
+    "message": "ግንኙነት የለም — በTrendTraffic ውስጥ \"አገናኝ\" የሚለውን ይጫኑ"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ በፍሎው ውስጥ የሚፈልጉትን ፎቶ/ቪዲዮ ይጫኑ፣ ከዚያ \"ወደ ጋለሪ\""
+  },
+  "flow_multipleMedia": {
+    "message": "በርካታ ሚዲያዎች — የሚወስዱትን ይምረጡ ↓"
+  },
+  "flow_openingProject": {
+    "message": "ፕሮጀክት በፍሎው ውስጥ እየተከፈተ ነው…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "ፍሎው እዚህ ምስሎችን ብቻ ይቀበላል — ቪዲዮዎችን በፍሎው \"Uploads\" ክፍል በኩል ይስቀሉ"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "የመስቀያ ቦታ አልተገኘም — በፍሎው ውስጥ ፕሮጀክት ይክፈቱ (ዋናው ገጽ አይደለም): በፕሮጀክት ውስጥ መስቀያ (+/\"Uploads\") አለ"
+  },
+  "flow_loadingList": {
+    "message": "ዝርዝር እየተጫነ ነው…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "ግንኙነት የለም — \"አገናኝ\" የሚለውን ይጫኑ"
+  },
+  "flow_galleryEmpty": {
+    "message": "በጋለሪ ውስጥ ምንም ሚዲያ የለም"
+  },
+  "flow_reconSent": {
+    "message": "✓ አቀማመጥ recon ተልኳል"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "ግንኙነት የለም"
+  },
+  "flow_gettingMedia": {
+    "message": "ሚዲያ ከጋለሪ እየተወሰደ ነው…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ ከጋለሪ ማውረድ አልተቻለም"
+  },
+  "flow_insertedImage": {
+    "message": "ምስል"
+  },
+  "flow_insertedVideo": {
+    "message": "ቪዲዮ"
+  },
+  "flow_insertedSuf": {
+    "message": " ከጋለሪ ወደ ፍሎው ገብቷል"
+  },
+  "flow_newClipReady": {
+    "message": "አዲስ ክሊፕ ዝግጁ ነው — ወደ ጋለሪ እየተሰቀለ ነው…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ ክሊፕ በጋለሪ ውስጥ → \"ቪዲዮዎች\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ ክሊፕ አልተቀመጠም: "
+  },
+  "hg_state": {
+    "message": "ሁኔታ"
+  },
+  "hg_notConnected": {
+    "message": "አልተገናኘም"
+  },
+  "hg_keepTabOpen": {
+    "message": "ይህን ትር ክፍት ያድርጉት — ራሶች እንደ ምዝገባዎ በራስ-ሰር ይሰራሉ።"
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic ክፈት"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " የስቱዲዮ ጥሪዎች"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "የአሁኑን ስቱዲዮ API ይያዙ እና ለእኛ ይላኩ (ለማስተካከያ)"
+  },
+  "hg_statusWorking": {
+    "message": "በስራ ላይ"
+  },
+  "hg_statusLogin": {
+    "message": "ወደ መለያዎ ይግቡ"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic ክፈት እና ግባ — በራስ-ሰር ይገናኛል"
+  },
+  "hg_photoDlFailed": {
+    "message": "ፎቶ ማውረድ አልተሳካም"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: ማሳየት አልተሳካም"
+  },
+  "hg_genPrefix": {
+    "message": "ትውልድ: "
+  },
+  "hg_waiting": {
+    "message": "በመጠበቅ ላይ"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen በጊዜው ቪዲዮ አላቀረበም"
+  },
+  "hg_headNum": {
+    "message": "▶ ራስ #"
+  },
+  "hg_readyLook": {
+    "message": "ዝግጁ የመለያ አምሳያ — ፎቶ መስቀል ተዘሏል"
+  },
+  "hg_photoUpload": {
+    "message": "ፎቶ → ተናጋሪ_ፎቶ…"
+  },
+  "hg_genStartPre": {
+    "message": "ትውልድ በመጀመር ላይ ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ በዚህ ክፍለ ጊዜ መልክ አልተገኘም — ፎቶ በመስቀል እና እንደገና በመሞከር ላይ…"
+  },
+  "hg_headReady": {
+    "message": "✓ ራስ ዝግጁ ነው፣ mp4 እየተወሰደ ነው…"
+  },
+  "hg_sending": {
+    "message": "✓ ወደ TrendTraffic በመላክ ላይ"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon ተልኳል"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "ግንኙነት የለም"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "የአርቲፋክት ፋይል ተቋርጧል ("
+  },
+  "nlm_kbComma": {
+    "message": " ኪባ፣ "
+  },
+  "nlm_captureFailed": {
+    "message": "ፋይል ማቋረጥ አልተሳካም: "
+  },
+  "nlm_dlProbe": {
+    "message": "አውርድ? "
+  },
+  "nlm_kb": {
+    "message": "ኪባ"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "የማውረጃ URL ተቋርጧል (window.open)"
+  },
+  "nlm_state": {
+    "message": "ሁኔታ"
+  },
+  "nlm_notConnected": {
+    "message": "አልተገናኘም"
+  },
+  "nlm_account": {
+    "message": "መለያ"
+  },
+  "nlm_accountTitle": {
+    "message": "ለNotebookLM የሚያገለግል የGoogle መለያ"
+  },
+  "nlm_waitingTask": {
+    "message": "ከTrendTraffic ተግባር በመጠባበቅ ላይ…"
+  },
+  "nlm_grabTitle": {
+    "message": "ዝግጁ የሆኑ የስቱዲዮ ስራዎችን አሳይ — ወደ TrendTraffic Gallery ለመጫን ስራ ላይ ጠቅ ያድርጉ"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ ወደ Gallery"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic ክፈት"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "የአሁኑን የNotebookLM አቀማመጥ ያንሱ እና ይላኩልን (ለሰሌክተር ማስተካከያ)"
+  },
+  "nlm_reconBtn": {
+    "message": "አቀማመጥ recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "ማስታወሻ ደብተር ክፈት — የስቱዲዮ ስራዎቹን አሳይሻለሁ"
+  },
+  "nlm_noReadyWorks": {
+    "message": "ዝግጁ የሆኑ የስቱዲዮ ስራዎች የሉም (ወይም አሁንም በመፍጠር ላይ)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" ወደ Gallery ጫን"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ አስቀድሞ"
+  },
+  "nlm_refresh": {
+    "message": "አድስ"
+  },
+  "nlm_close": {
+    "message": "ዝጋ"
+  },
+  "nlm_loginTT": {
+    "message": "ወደ TrendTraffic ግባ"
+  },
+  "nlm_loginGoogle": {
+    "message": "ወደ Google ግባ"
+  },
+  "nlm_working": {
+    "message": "በመስራት ላይ"
+  },
+  "nlm_creatingNotebook": {
+    "message": "ማስታወሻ ደብተር በመፍጠር ላይ: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ ማስታወሻ ደብተር ተፈጥሯል: "
+  },
+  "nlm_addingSource": {
+    "message": "ምንጭ በመጨመር ላይ ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "ከGallery ፋይል ማውረድ አልተሳካም"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM የቪዲዮ ፋይሎችን አይቀበልም። ለቪዲዮዎች፣ \"ትንተና\"ን እንደ ጽሑፍ ወይም አገናኝ (YouTube) ያክሉ።"
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "ወደ NotebookLM ፋይል መስቀል ከቅጥያው (ቤተኛ መስኮት) አይገኝም። \"ትንተና\"/\"ጽሑፍ ለጥፍ\" ወይም አገናኝ (ድር ጣቢያ/YouTube) ይጠቀሙ።"
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ የፋይል ምንጭ ታክሏል"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "ያልታወቀ የምንጭ አይነት"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ ምንጭ ታክሏል ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "የማስታወሻ ደብተር ዝርዝር በመነበብ ላይ…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ ማስታወሻ ደብተሮች (የእኔ+የሚገኙ): "
+  },
+  "nlm_asking": {
+    "message": "በመጠየቅ ላይ: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "መልስ ሙሉ በሙሉ አልተነበበም"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ መልስ ደርሷል"
+  },
+  "nlm_unknownType": {
+    "message": "ያልታወቀ አይነት: "
+  },
+  "nlm_generatingTask": {
+    "message": "በመፍጠር ላይ: "
+  },
+  "nlm_genStartedPre": {
+    "message": "ፍጥረት ተጀምሯል ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", ነባሪ), ቅርሶችን በመጠባበቅ ላይ…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ ቅርሶች ዝግጁ ናቸው ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), ቅርሶችን በመጠባበቅ ላይ…"
+  },
+  "nlm_dlRequested": {
+    "message": "ቅርሶችን ማውረድ ተጠይቋል…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "የቅርሶችን ማውረድ መጥለፍ አልተሳካም"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "ወደ TrendTraffic Gallery አውርድ"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" \"አውርድ\" የለውም — እንደ ጽሑፍ በመያዝ ላይ…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" \"አውርድ\" የለውም — እንደ ጽሑፍ በመያዝ ላይ…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Gallery"
+  },
+  "nlm_alreadyWas": {
+    "message": " (አስቀድሞ ነበር)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ አልተቀመጠም: "
+  },
+  "nlm_noConnection": {
+    "message": "ግንኙነት የለም"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ የURL ማውረድ አልተሳካም: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ፋይል \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ ጠቅታ ከማስታወሻ ደብተር ገጽ አርቋል — በመመለስ ላይ"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ ጽሑፍ \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" አልተያዘም"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Gallery (እንደ ጽሑፍ)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 ቀጥ ያለ"
+  },
+  "nlm_916Title": {
+    "message": "9:16 ቀጥ ያለ ቅርጸት ጥያቄ (Shorts/Reels/TikTok) ያክሉ። ጥያቄው በእንግሊዝኛ ይሁን — NotebookLM መመሪያዎችን በዚህ መንገድ በተሻለ ሁኔታ ይረዳል።"
+  },
+  "nlm_916Already": {
+    "message": "✓ አስቀድሞ ታክሏል"
+  },
+  "nlm_916Added": {
+    "message": "✓ ታክሏል"
+  },
+  "nlm_reconSent": {
+    "message": "✓ የአቀማመጥ recon ተልኳል"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ ማወቂያ አልተሳካም፦ "
+  },
+  "nlm_unknownAction": {
+    "message": "ያልታወቀ ድርጊት፦ "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asszisztens (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Az egységes TrendTraffic bővítmény: híd a Google Flow (Veo), Google NotebookLM (Hotebook) és HeyGen (UGC beszélő fejek az előfizetéseddel) között. Valódi böngésző feladatlista, generálási automatizálás és Galéria csere. Telepítsd egyszer — a panel aktiválódik azon a szolgáltatáson, ahol a lap nyitva van."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asszisztens (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "feladat időtúllépés"
+  },
+  "bg_openFlowTab": {
+    "message": "Nyissa meg a Google Flow lapot — a feladat automatikusan befejeződik"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: szokatlan tevékenység — szüneteltetve"
+  },
+  "bg_noResult": {
+    "message": "nincs eredmény"
+  },
+  "bg_notConnected": {
+    "message": "nincs csatlakoztatva"
+  },
+  "bg_openFlowFailed": {
+    "message": "nem sikerült megnyitni a Flow-t"
+  },
+  "bg_flowNotLoaded": {
+    "message": "A Flow nincs betöltve — kérjük, jelentkezzen be a labs.google/flow oldalra"
+  },
+  "bg_noFlowAnswer": {
+    "message": "nincs válasz a Flow-tól"
+  },
+  "bg_noUrl": {
+    "message": "nincs URL"
+  },
+  "bg_dlRejected": {
+    "message": "letöltés sikertelen (a CDN elutasította a kérést)"
+  },
+  "bg_tooBig": {
+    "message": "média >500MB — túl nagy"
+  },
+  "bg_openNlmFailed": {
+    "message": "nem sikerült megnyitni a NotebookLM-et"
+  },
+  "bg_notebookNotCreated": {
+    "message": "jegyzetfüzet nem jött létre (szükséges a 'létrehozás' kiválasztó felderítése)"
+  },
+  "bg_listFailed": {
+    "message": "nem sikerült lekérni a listát"
+  },
+  "bg_actionFailed": {
+    "message": "művelet sikertelen"
+  },
+  "bg_openNlmGen": {
+    "message": "Nyissa meg a NotebookLM-et — a generálás automatikusan befejeződik"
+  },
+  "bg_loginNlm": {
+    "message": "Jelentkezzen be a NotebookLM-be"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "nem sikerült elfogni az artefakt letöltését"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artefakt letöltése sikertelen: "
+  },
+  "bg_openHgTab": {
+    "message": "Nyissa meg az app.heygen.com stúdió lapot — az avatar automatikusan renderelődik"
+  },
+  "bg_hgLoading": {
+    "message": "A HeyGen Stúdió még töltődik — később újrapróbálkozik"
+  },
+  "bg_retry": {
+    "message": "újrapróbálkozás"
+  },
+  "bg_dlFailed": {
+    "message": "letöltés sikertelen"
+  },
+  "flow_state": {
+    "message": "Állapot"
+  },
+  "flow_notConnected": {
+    "message": "nincs csatlakoztatva"
+  },
+  "flow_waitingTask": {
+    "message": "Feladatokra vár a TrendTraffic-től…"
+  },
+  "flow_pauseBtn": {
+    "message": "Szünet"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic megnyitása"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Galériába"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Kész klip küldése a Flow-ból a TrendTraffic Galériába"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Galériából"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Videó kivétele a Galériából és feltöltése a Flow-ba feldolgozásra"
+  },
+  "flow_reconPrefix": {
+    "message": "felderítés: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow kérések"
+  },
+  "flow_reconBtn": {
+    "message": "elrendezés felderítése"
+  },
+  "flow_reconBtnTitle": {
+    "message": "A jelenlegi Flow elrendezés rögzítése és elküldése nekünk (beállításhoz)"
+  },
+  "flow_pauseManual": {
+    "message": "Szünet manuálisan engedélyezve"
+  },
+  "flow_statusPause": {
+    "message": "szüneteltetve"
+  },
+  "flow_statusWorking": {
+    "message": "dolgozik"
+  },
+  "flow_statusLogin": {
+    "message": "jelentkezzen be a fiókba"
+  },
+  "flow_stTitleOpen": {
+    "message": "Nyissa meg a TrendTraffic-et és jelentkezzen be — automatikusan csatlakozik"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Teljes Galéria megnyitása →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Galéria — válasszon, mint egy szerkesztőben, minden fájlon van egy '→ Flow' gomb"
+  },
+  "flow_fileFallback": {
+    "message": "fájl"
+  },
+  "flow_pickHint": {
+    "message": "Kattintson a kívánt elemre — hozzáadódik a Galériához"
+  },
+  "flow_noPrompt": {
+    "message": "(nincs prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Feladat #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ prompt mező nem található — kiválasztó felderítés szükséges"
+  },
+  "flow_promptSet": {
+    "message": "prompt beállítva"
+  },
+  "flow_refUploaded": {
+    "message": "referencia feltöltve a Flow-ba"
+  },
+  "flow_refPrefix": {
+    "message": "referencia: "
+  },
+  "flow_refDlFailed": {
+    "message": "referencia letöltése sikertelen"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ generálás gomb nem található — felderítés szükséges"
+  },
+  "flow_genStarted": {
+    "message": "generálás elindítva, klipre vár…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ klip várakozási időtúllépés"
+  },
+  "flow_clipReady": {
+    "message": "✓ klip kész"
+  },
+  "flow_kindClip": {
+    "message": "klip"
+  },
+  "flow_kindPicture": {
+    "message": "kép"
+  },
+  "flow_grabPre": {
+    "message": "Flow-ból letöltés: "
+  },
+  "flow_grabSuf": {
+    "message": "…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ média olvasása sikertelen"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN hitelesítés: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — szerveren keresztül próbálkozás"
+  },
+  "flow_inGallerySuf": {
+    "message": " a Galériába → „Google Flow” fül"
+  },
+  "flow_noConnConnect": {
+    "message": "nincs kapcsolat — kattintson a „Csatlakozás” gombra a TrendTrafficben"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ kattintson a kívánt fotóra/videóra a Flow-ban, majd a „Galériába” gombra"
+  },
+  "flow_multipleMedia": {
+    "message": "több média — válassza ki, melyiket töltse le ↓"
+  },
+  "flow_openingProject": {
+    "message": "projekt megnyitása a Flow-ban…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "A Flow itt csak képeket fogad el — videókat a Flow „Feltöltések” szakaszán keresztül tölthet fel"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "feltöltési mező nem található — nyisson meg egy PROJEKTET a Flow-ban (nem a főoldalt): egy projekten belül van feltöltési (+/„Feltöltések”) lehetőség"
+  },
+  "flow_loadingList": {
+    "message": "lista betöltése…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "nincs kapcsolat — kattintson a „Csatlakozás” gombra"
+  },
+  "flow_galleryEmpty": {
+    "message": "nincs média a Galériában"
+  },
+  "flow_reconSent": {
+    "message": "✓ elrendezés felderítés elküldve"
+  },
+  "flow_reconFail": {
+    "message": "⚠ felderítés: "
+  },
+  "flow_noConnection": {
+    "message": "nincs kapcsolat"
+  },
+  "flow_gettingMedia": {
+    "message": "média lekérése a Galériából…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ letöltés sikertelen a Galériából"
+  },
+  "flow_insertedImage": {
+    "message": "kép"
+  },
+  "flow_insertedVideo": {
+    "message": "videó"
+  },
+  "flow_insertedSuf": {
+    "message": " beillesztve a Flow-ba a Galériából"
+  },
+  "flow_newClipReady": {
+    "message": "új klip kész — feltöltés a Galériába…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klip a Galériában → „Videók”"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klip mentése sikertelen: "
+  },
+  "hg_state": {
+    "message": "Állapot"
+  },
+  "hg_notConnected": {
+    "message": "nincs csatlakoztatva"
+  },
+  "hg_keepTabOpen": {
+    "message": "Tartsa nyitva ezt a lapot — a fejek automatikusan renderelődnek az előfizetése alapján."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic megnyitása"
+  },
+  "hg_reconPrefix": {
+    "message": "felderítés: "
+  },
+  "hg_reconSuffix": {
+    "message": " stúdióhívások"
+  },
+  "hg_reconBtn": {
+    "message": "API felderítés"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Jelenlegi stúdió API rögzítése és elküldése nekünk (beállításhoz)"
+  },
+  "hg_statusWorking": {
+    "message": "dolgozik"
+  },
+  "hg_statusLogin": {
+    "message": "jelentkezzen be fiókjába"
+  },
+  "hg_stTitleOpen": {
+    "message": "Nyissa meg a TrendTrafficet és jelentkezzen be — automatikusan csatlakozni fog"
+  },
+  "hg_photoDlFailed": {
+    "message": "fotó letöltése sikertelen"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderelés sikertelen"
+  },
+  "hg_genPrefix": {
+    "message": "generálás: "
+  },
+  "hg_waiting": {
+    "message": "várakozás"
+  },
+  "hg_noVideoInTime": {
+    "message": "A HeyGen nem biztosított időben videót"
+  },
+  "hg_headNum": {
+    "message": "▶ fej #"
+  },
+  "hg_readyLook": {
+    "message": "kész fiók avatar — fotófeltöltés kihagyva"
+  },
+  "hg_photoUpload": {
+    "message": "fotó → beszélő_fotó…"
+  },
+  "hg_genStartPre": {
+    "message": "generálás indítása ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ megjelenés nem található ebben a munkamenetben — fotó feltöltése és újrapróbálkozás…"
+  },
+  "hg_headReady": {
+    "message": "✓ fej kész, mp4 lekérése…"
+  },
+  "hg_sending": {
+    "message": "✓ küldés a TrendTrafficnek"
+  },
+  "hg_reconSent": {
+    "message": "✓ API felderítés elküldve"
+  },
+  "hg_reconFail": {
+    "message": "⚠ felderítés: "
+  },
+  "hg_noConnection": {
+    "message": "nincs kapcsolat"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "elfogott műtermékfájl ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "fájl elfogása sikertelen: "
+  },
+  "nlm_dlProbe": {
+    "message": "letöltés? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "letöltési URL elfogva (window.open)"
+  },
+  "nlm_state": {
+    "message": "Állapot"
+  },
+  "nlm_notConnected": {
+    "message": "nincs kapcsolat"
+  },
+  "nlm_account": {
+    "message": "Fiók"
+  },
+  "nlm_accountTitle": {
+    "message": "A NotebookLM-hez használt Google-fiók"
+  },
+  "nlm_waitingTask": {
+    "message": "Feladatra várok a TrendTraffictól…"
+  },
+  "nlm_grabTitle": {
+    "message": "Kész stúdiómunkák megjelenítése – kattintson egy munkára a TrendTraffic Galériába való betöltéshez"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Galériába"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic megnyitása"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Jelenlegi NotebookLM elrendezés rögzítése és elküldése nekünk (választó beállításhoz)"
+  },
+  "nlm_reconBtn": {
+    "message": "elrendezés felmérés"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "nyisson meg egy jegyzetfüzetet – megmutatom a stúdiómunkáit"
+  },
+  "nlm_noReadyWorks": {
+    "message": "nincsenek kész stúdiómunkák (vagy még generálás alatt)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Betöltés: „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "” a Galériába"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ már"
+  },
+  "nlm_refresh": {
+    "message": "frissítés"
+  },
+  "nlm_close": {
+    "message": "bezárás"
+  },
+  "nlm_loginTT": {
+    "message": "bejelentkezés a TrendTrafficbe"
+  },
+  "nlm_loginGoogle": {
+    "message": "bejelentkezés Google-fiókkal"
+  },
+  "nlm_working": {
+    "message": "dolgozom"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Jegyzetfüzet létrehozása: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ jegyzetfüzet létrehozva: "
+  },
+  "nlm_addingSource": {
+    "message": "Forrás hozzáadása ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "fájlletöltés a Galériából sikertelen"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "A NotebookLM nem fogad el videófájlokat. Videókhoz adjon hozzá „Elemzést” szövegként vagy linkként (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Fájlfeltöltés a NotebookLM-be nem elérhető a bővítményből (natív ablak). Használja az „Elemzés”/„Szöveg beillesztése” opciót vagy egy linket (weboldal/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ fájlforrás hozzáadva"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "ismeretlen forrástípus"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ forrás hozzáadva ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Jegyzetfüzetlista olvasása…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ jegyzetfüzetek (saját+elérhető): "
+  },
+  "nlm_asking": {
+    "message": "Kérdés: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "válasz nem teljesen beolvasva"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ válasz megérkezett"
+  },
+  "nlm_unknownType": {
+    "message": "ismeretlen típus: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generálás: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generálás elindult ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", alapértelmezett), műtermékre várok…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ műtermék kész ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), műtermékre várok…"
+  },
+  "nlm_dlRequested": {
+    "message": "műtermék letöltése kérve…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nem sikerült elfogni a műtermék letöltését"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Letöltés a TrendTraffic Galériába"
+  },
+  "nlm_noDownloadPre": {
+    "message": "” nem rendelkezik „Letöltés” funkcióval – szövegként rögzítem…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "” nem rendelkezik „Letöltés” funkcióval – szövegként rögzítem…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "” → Galéria"
+  },
+  "nlm_alreadyWas": {
+    "message": " (már létezett)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ nincs mentve: "
+  },
+  "nlm_noConnection": {
+    "message": "nincs kapcsolat"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL letöltés sikertelen: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nem sikerült rögzíteni a fájlt: „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ a kattintás elvitt a jegyzetfüzet oldaláról – visszatérés"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ szöveg „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "” nem rögzítve"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "” → Galéria (szövegként)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 függőleges"
+  },
+  "nlm_916Title": {
+    "message": "Adjon hozzá egy 9:16 függőleges formátumú promptot (Shorts/Reels/TikTok). A prompt angolul legyen – a NotebookLM így érti a legjobban az utasításokat."
+  },
+  "nlm_916Already": {
+    "message": "✓ már hozzáadva"
+  },
+  "nlm_916Added": {
+    "message": "✓ hozzáadva"
+  },
+  "nlm_reconSent": {
+    "message": "✓ elrendezés felmérés elküldve"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Azonosítás sikertelen: "
+  },
+  "nlm_unknownAction": {
+    "message": "Ismeretlen művelet: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — アシスタント (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "TrendTraffic統合拡張機能: Google Flow (Veo)、Google NotebookLM (Hotebook)、HeyGen (サブスクリプションでUGCトーキングヘッド)への架け橋。実際のブラウザタスクキュー、生成自動化、ギャラリー交換。一度インストールすれば、タブが開いているサービスでパネルがアクティブになります。"
+  },
+  "extTitle": {
+    "message": "TrendTraffic — アシスタント (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "タスクタイムアウト"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flowタブを開くと、タスクは自動的に完了します"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: 不審なアクティビティ — 一時停止"
+  },
+  "bg_noResult": {
+    "message": "結果なし"
+  },
+  "bg_notConnected": {
+    "message": "未接続"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flowを開けませんでした"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flowが読み込まれていません — labs.google/flowにサインインしてください"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flowからの応答がありません"
+  },
+  "bg_noUrl": {
+    "message": "URLなし"
+  },
+  "bg_dlRejected": {
+    "message": "ダウンロード失敗 (CDNがリクエストを拒否しました)"
+  },
+  "bg_tooBig": {
+    "message": "メディアが500MB超 — サイズが大きすぎます"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLMを開けませんでした"
+  },
+  "bg_notebookNotCreated": {
+    "message": "ノートブックが作成されていません ('作成'のセレクタースカウティングが必要です)"
+  },
+  "bg_listFailed": {
+    "message": "リストの取得に失敗しました"
+  },
+  "bg_actionFailed": {
+    "message": "アクション失敗"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLMを開くと、生成は自動的に完了します"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLMにサインイン"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "アーティファクトのダウンロードを傍受できませんでした"
+  },
+  "bg_artifactDlFailed": {
+    "message": "アーティファクトのダウンロード失敗: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.comスタジオタブを開くと、アバターは自動的にレンダリングされます"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studioはまだ読み込み中です — 後で再試行します"
+  },
+  "bg_retry": {
+    "message": "再試行"
+  },
+  "bg_dlFailed": {
+    "message": "ダウンロード失敗"
+  },
+  "flow_state": {
+    "message": "ステータス"
+  },
+  "flow_notConnected": {
+    "message": "未接続"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTrafficからのタスクを待機中…"
+  },
+  "flow_pauseBtn": {
+    "message": "一時停止"
+  },
+  "flow_openTT": {
+    "message": "TrendTrafficを開く"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ ギャラリーへ"
+  },
+  "flow_toGalleryTitle": {
+    "message": "完成したクリップをFlowからTrendTrafficギャラリーに送信"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ ギャラリーから"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "ギャラリーからビデオを取り込み、Flowにアップロードして処理"
+  },
+  "flow_reconPrefix": {
+    "message": "スカウティング: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flowリクエスト"
+  },
+  "flow_reconBtn": {
+    "message": "レイアウトをスカウト"
+  },
+  "flow_reconBtnTitle": {
+    "message": "現在のFlowレイアウトをキャプチャして送信 (調整用)"
+  },
+  "flow_pauseManual": {
+    "message": "手動で一時停止を有効にしました"
+  },
+  "flow_statusPause": {
+    "message": "一時停止中"
+  },
+  "flow_statusWorking": {
+    "message": "作業中"
+  },
+  "flow_statusLogin": {
+    "message": "アカウントにサインイン"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTrafficを開いてサインインすると、自動的に接続されます"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 ギャラリー全体を開く →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTrafficギャラリー — エディターのように選択し、各ファイルに「→ Flow」ボタンがあります"
+  },
+  "flow_fileFallback": {
+    "message": "ファイル"
+  },
+  "flow_pickHint": {
+    "message": "目的のアイテムをクリックすると、ギャラリーに追加されます"
+  },
+  "flow_noPrompt": {
+    "message": "(プロンプトなし)"
+  },
+  "flow_taskNum": {
+    "message": "タスク #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ プロンプトフィールドが見つかりません — セレクタースカウティングが必要です"
+  },
+  "flow_promptSet": {
+    "message": "プロンプト設定済み"
+  },
+  "flow_refUploaded": {
+    "message": "参照がFlowにアップロードされました"
+  },
+  "flow_refPrefix": {
+    "message": "参照: "
+  },
+  "flow_refDlFailed": {
+    "message": "参照のダウンロードに失敗しました"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ 生成ボタンが見つかりません — スカウティングが必要です"
+  },
+  "flow_genStarted": {
+    "message": "生成開始、クリップを待機中…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ クリップ待機タイムアウト"
+  },
+  "flow_clipReady": {
+    "message": "✓ クリップ準備完了"
+  },
+  "flow_kindClip": {
+    "message": "クリップ"
+  },
+  "flow_kindPicture": {
+    "message": "画像"
+  },
+  "flow_grabPre": {
+    "message": "Flowから"
+  },
+  "flow_grabSuf": {
+    "message": "を取得中…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠メディアの読み取りに失敗しました"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN認証: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — サーバー経由で試行中"
+  },
+  "flow_inGallerySuf": {
+    "message": "をギャラリー→「Google Flow」タブへ"
+  },
+  "flow_noConnConnect": {
+    "message": "接続されていません — TrendTrafficで「接続」をクリックしてください"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠Flowで目的の写真/ビデオをクリックしてから「ギャラリーへ」をクリックしてください"
+  },
+  "flow_multipleMedia": {
+    "message": "複数のメディア — 取得するものを選択してください↓"
+  },
+  "flow_openingProject": {
+    "message": "Flowでプロジェクトを開いています…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flowはここでは画像のみを受け入れます — ビデオはFlowの「アップロード」セクションからアップロードしてください"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "アップロードフィールドが見つかりません — Flowでプロジェクトを開いてください（メインページではありません）：プロジェクト内にはアップロード（+/「アップロード」）があります"
+  },
+  "flow_loadingList": {
+    "message": "リストを読み込み中…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "接続されていません — 「接続」をクリックしてください"
+  },
+  "flow_galleryEmpty": {
+    "message": "ギャラリーにメディアがありません"
+  },
+  "flow_reconSent": {
+    "message": "✓レイアウトリコンを送信しました"
+  },
+  "flow_reconFail": {
+    "message": "⚠リコン: "
+  },
+  "flow_noConnection": {
+    "message": "接続されていません"
+  },
+  "flow_gettingMedia": {
+    "message": "ギャラリーからメディアを取得中…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ギャラリーからのダウンロードに失敗しました"
+  },
+  "flow_insertedImage": {
+    "message": "画像"
+  },
+  "flow_insertedVideo": {
+    "message": "ビデオ"
+  },
+  "flow_insertedSuf": {
+    "message": "をギャラリーからFlowに挿入しました"
+  },
+  "flow_newClipReady": {
+    "message": "新しいクリップの準備ができました — ギャラリーにアップロード中…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓クリップをギャラリー→「ビデオ」に保存しました"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠クリップが保存されませんでした: "
+  },
+  "hg_state": {
+    "message": "ステータス"
+  },
+  "hg_notConnected": {
+    "message": "未接続"
+  },
+  "hg_keepTabOpen": {
+    "message": "このタブを開いたままにしてください — サブスクリプションに基づいてヘッドが自動的にレンダリングされます。"
+  },
+  "hg_openTT": {
+    "message": "TrendTrafficを開く"
+  },
+  "hg_reconPrefix": {
+    "message": "リコン: "
+  },
+  "hg_reconSuffix": {
+    "message": "スタジオコール"
+  },
+  "hg_reconBtn": {
+    "message": "APIリコン"
+  },
+  "hg_reconBtnTitle": {
+    "message": "現在のスタジオAPIをキャプチャして送信します（調整用）"
+  },
+  "hg_statusWorking": {
+    "message": "作業中"
+  },
+  "hg_statusLogin": {
+    "message": "アカウントにログインしてください"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTrafficを開いてログインしてください — 自動的に接続されます"
+  },
+  "hg_photoDlFailed": {
+    "message": "写真のダウンロードに失敗しました"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: レンダリングに失敗しました"
+  },
+  "hg_genPrefix": {
+    "message": "生成: "
+  },
+  "hg_waiting": {
+    "message": "待機中"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGenが時間内にビデオを提供しませんでした"
+  },
+  "hg_headNum": {
+    "message": "▶ヘッド #"
+  },
+  "hg_readyLook": {
+    "message": "準備完了のアカウントアバター — 写真のアップロードはスキップされました"
+  },
+  "hg_photoUpload": {
+    "message": "写真 → トーキングフォト…"
+  },
+  "hg_genStartPre": {
+    "message": "生成を開始しています（"
+  },
+  "hg_lookNotFound": {
+    "message": "⚠このセッションでルックが見つかりませんでした — 写真をアップロードして再試行中…"
+  },
+  "hg_headReady": {
+    "message": "✓ヘッドの準備ができました、mp4を取得中…"
+  },
+  "hg_sending": {
+    "message": "✓TrendTrafficに送信中"
+  },
+  "hg_reconSent": {
+    "message": "✓APIリコンを送信しました"
+  },
+  "hg_reconFail": {
+    "message": "⚠リコン: "
+  },
+  "hg_noConnection": {
+    "message": "接続されていません"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "アーティファクトファイルを傍受しました（"
+  },
+  "nlm_kbComma": {
+    "message": " KB、"
+  },
+  "nlm_captureFailed": {
+    "message": "ファイルの傍受に失敗しました: "
+  },
+  "nlm_dlProbe": {
+    "message": "ダウンロード？"
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "ダウンロードURLを傍受しました（window.open）"
+  },
+  "nlm_state": {
+    "message": "ステータス"
+  },
+  "nlm_notConnected": {
+    "message": "未接続"
+  },
+  "nlm_account": {
+    "message": "アカウント"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLMに使用するGoogleアカウント"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTrafficからのタスクを待機中…"
+  },
+  "nlm_grabTitle": {
+    "message": "準備済みのスタジオ作品を表示 — 作品をクリックしてTrendTrafficギャラリーにロード"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ ギャラリーへ"
+  },
+  "nlm_openTT": {
+    "message": "TrendTrafficを開く"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "現在のNotebookLMレイアウトをキャプチャして送信（セレクター調整用）"
+  },
+  "nlm_reconBtn": {
+    "message": "レイアウト再認識"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "ノートブックを開いてください — スタジオ作品を表示します"
+  },
+  "nlm_noReadyWorks": {
+    "message": "準備済みのスタジオ作品はありません（または生成中）"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\"をギャラリーにロード"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ 済み"
+  },
+  "nlm_refresh": {
+    "message": "更新"
+  },
+  "nlm_close": {
+    "message": "閉じる"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTrafficにログイン"
+  },
+  "nlm_loginGoogle": {
+    "message": "Googleにログイン"
+  },
+  "nlm_working": {
+    "message": "作業中"
+  },
+  "nlm_creatingNotebook": {
+    "message": "ノートブックを作成中: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ ノートブックを作成しました: "
+  },
+  "nlm_addingSource": {
+    "message": "ソースを追加中 ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "ギャラリーからのファイルダウンロードに失敗しました"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLMは動画ファイルを受け付けません。動画の場合は、「分析」をテキストまたはリンク（YouTube）として追加してください。"
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "拡張機能（ネイティブウィンドウ）からのNotebookLMへのファイルアップロードは利用できません。「分析」/「テキストを貼り付け」またはリンク（ウェブサイト/YouTube）を使用してください。"
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ ファイルソースを追加しました"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "不明なソースタイプ"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ ソースを追加しました ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "ノートブックリストを読み込み中…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ ノートブック（マイ+利用可能）: "
+  },
+  "nlm_asking": {
+    "message": "質問中: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "回答が完全に読み込まれていません"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ 回答を受信しました"
+  },
+  "nlm_unknownType": {
+    "message": "不明なタイプ: "
+  },
+  "nlm_generatingTask": {
+    "message": "生成中: "
+  },
+  "nlm_genStartedPre": {
+    "message": "生成を開始しました ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", デフォルト), アーティファクトを待機中…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ アーティファクト準備完了 ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), アーティファクトを待機中…"
+  },
+  "nlm_dlRequested": {
+    "message": "アーティファクトのダウンロードをリクエストしました…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "アーティファクトのダウンロードを傍受できませんでした"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTrafficギャラリーにダウンロード"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" には「ダウンロード」がありません — テキストとしてキャプチャ中…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" には「ダウンロード」がありません — テキストとしてキャプチャ中…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → ギャラリー"
+  },
+  "nlm_alreadyWas": {
+    "message": " (既に存在します)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ 保存されませんでした: "
+  },
+  "nlm_noConnection": {
+    "message": "接続なし"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URLダウンロードに失敗しました: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ファイル「"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ クリックによりノートブックページから移動しました — 戻ります"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ テキスト「"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "」がキャプチャされませんでした"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "」 → ギャラリー（テキストとして）"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 縦型"
+  },
+  "nlm_916Title": {
+    "message": "9:16の縦型フォーマットプロンプト（Shorts/Reels/TikTok）を追加します。プロンプトは英語で — NotebookLMはこの方法で指示を最もよく理解します。"
+  },
+  "nlm_916Already": {
+    "message": "✓ 既に追加済み"
+  },
+  "nlm_916Added": {
+    "message": "✓ 追加済み"
+  },
+  "nlm_reconSent": {
+    "message": "✓ レイアウト再認識を送信しました"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ 認識に失敗しました:"
+  },
+  "nlm_unknownAction": {
+    "message": "不明なアクション:"
+  }
+}

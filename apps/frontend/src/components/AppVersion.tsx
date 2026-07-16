@@ -2716,11 +2716,22 @@
  *          перегенерированы (3563 ключа × 108 языков), глоссарий брендов соблюдён, плейсхолдеры
  *          {{…}} под защитой. Файлы: 106 src-файлов, scripts/translate-pivot.mjs (новый),
  *          harvest-sec-keys.mjs (+common: префикс), public/locales/*, AppVersion. */
-export const APP_VERSION = '2.3.0';
+/* 2.3.1  — i18n ЕДИНОГО Chrome-расширения (ext 1.4.0): манифест на __MSG__ (name/desc/title,
+ *          default_locale=en), собственные UI-строки панелей (Flow/NotebookLM/HeyGen/background)
+ *          обёрнуты в T('key','ru-фолбэк') поверх chrome.i18n.getMessage — DOM-матчеры чужого UI
+ *          и payload-тексты НЕ тронуты (перевод матчеров ломает автоматизацию — урок бага «чип
+ *          9:16»). _locales = 52 локали СТРОГО из списка chrome.i18n (левые коды валят установку
+ *          распакованного расширения; tl→fil, zh→zh_CN/zh_TW, +es_419/pt_BR/pt_PT). Пайплайн:
+ *          harvest T() → ru → нативный en → 50 языков (translate-ext-runtime.mjs, Gemini). Zip
+ *          пересобран с _locales (python zipfile), BRIDGE_VERSION==manifest==1.4.0, TT_EXT_VERSION
+ *          бампнут. social-ext (TikHub в iframe) НЕ трогали: его UI локализует собственный i18next
+ *          бандла, наши _locales там — только метаданные. Файлы: apps/trendtraffic-extension/*,
+ *          scripts/translate-ext-runtime.mjs (новый), AppVersion. */
+export const APP_VERSION = '2.3.1';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.3.30';
+export const TT_EXT_VERSION = '1.4.0';
 
 export function AppVersion() {
   return (

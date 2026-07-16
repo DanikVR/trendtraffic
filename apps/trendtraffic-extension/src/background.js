@@ -50,6 +50,8 @@ const STATE = {
 const jitter = (min, max) => Math.floor(min + Math.random() * (max - min));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log('[tt-ext bg]', ...a);
+// i18n: перевод строк, видимых юзеру (статусы/ошибки). Фолбэк — русский (как было).
+const T = (key, fallback) => { try { const m = chrome.i18n.getMessage(key); return m || fallback; } catch (e) { return fallback; } };
 
 async function loadState() {
   const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil', 'nlmAccount', 'nlmBusy', 'busyUntil', 'activeTaskId', 'nlmTabId']);
@@ -97,7 +99,7 @@ async function disconnect() {
 }
 
 function withTimeout(promise, ms) {
-  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('таймаут задачи')), ms))]);
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error(T('bg_taskTimeout', 'таймаут задачи'))), ms))]);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -152,7 +154,7 @@ async function tickFlow() {
 
 async function runFlowTask(task) {
   const tabId = await ensureFlowTab(false);
-  if (!tabId) { await flowStatus(task.id, 'retry', 'Откройте вкладку Google Flow — задача выполнится сама'); return; }
+  if (!tabId) { await flowStatus(task.id, 'retry', T('bg_openFlowTab', 'Откройте вкладку Google Flow — задача выполнится сама')); return; }
   await flowStatus(task.id, 'running');
   let result;
   try {
@@ -164,10 +166,10 @@ async function runFlowTask(task) {
   if (result && result.throttled) {
     STATE.pausedUntil = Date.now() + THROTTLE_PAUSE_MS;
     await saveState();
-    await flowStatus(task.id, 'retry', 'Flow: unusual activity — пауза');
+    await flowStatus(task.id, 'retry', T('bg_flowThrottledNote', 'Flow: unusual activity — пауза'));
     return;
   }
-  if (!result || !result.ok) { await flowStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }
+  if (!result || !result.ok) { await flowStatus(task.id, 'failed', (result && result.reason) || T('bg_noResult', 'нет результата')); return; }
   try {
     await flowIngest(task, result);
     await flowStatus(task.id, 'done');
@@ -198,7 +200,7 @@ async function flowStatus(taskId, status, note) {
 
 /** Ручная заливка видео из Flow в Галерею (кнопка «В галерею»). */
 async function manualIngest(payload) {
-  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
   try {
     const res = await fetch(api('/api/flow-ext/ingest-manual'), {
       method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -211,7 +213,7 @@ async function manualIngest(payload) {
 }
 /** Список видео Галереи для кнопки «Из Галереи» (Flow). */
 async function galleryList() {
-  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
   try {
     const res = await fetch(api('/api/flow-ext/gallery'), { headers: authHeaders() });
     const d = await res.json().catch(() => ({}));
@@ -221,7 +223,7 @@ async function galleryList() {
 }
 /** Снимок разведки вёрстки Flow → бэкенд. */
 async function sendReconFlow(payload) {
-  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
   try {
     const res = await fetch(api('/api/flow-ext/recon'), {
       method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -233,7 +235,7 @@ async function sendReconFlow(payload) {
 /** Из Галереи TrendTraffic: открыть/сфокусировать вкладку Flow и залить туда медиа по URL. */
 async function pushToFlow(url, title, kind) {
   const tabId = await ensureFlowTab(true);
-  if (!tabId) return { ok: false, error: 'не удалось открыть Flow' };
+  if (!tabId) return { ok: false, error: T('bg_openFlowFailed', 'не удалось открыть Flow') };
   try {
     await chrome.tabs.update(tabId, { active: true });
     const t = await chrome.tabs.get(tabId);
@@ -278,11 +280,11 @@ async function listFlowProjects() {
   const createOpts = { url: 'https://labs.google/fx/tools/flow', active: false };
   if (anyFlowTab && anyFlowTab.windowId != null) createOpts.windowId = anyFlowTab.windowId;
   try { tab = await chrome.tabs.create(createOpts); }
-  catch (e) { return { ok: false, error: 'не удалось открыть Flow: ' + (e && e.message || e) }; }
+  catch (e) { return { ok: false, error: T('bg_openFlowFailed', 'не удалось открыть Flow') + ': ' + (e && e.message || e) }; }
   let r = null;
   try {
     const ready = await waitForTabReady(tab.id, 45_000);
-    if (!ready) r = { ok: false, error: 'Flow не загрузился — войдите в labs.google/flow' };
+    if (!ready) r = { ok: false, error: T('bg_flowNotLoaded', 'Flow не загрузился — войдите в labs.google/flow') };
     else {
       for (let attempt = 0; attempt < 2 && !hasProjects(r); attempt++) {
         r = await askTab(tab.id);
@@ -300,20 +302,20 @@ async function listFlowProjects() {
   } finally {
     try { await chrome.tabs.remove(tab.id); } catch { /* закрытие best-effort */ }
   }
-  return r || { ok: false, error: 'нет ответа от Flow' };
+  return r || { ok: false, error: T('bg_noFlowAnswer', 'нет ответа от Flow') };
 }
 
 /** Скачать байты медиа в КОНТЕКСТЕ РАСШИРЕНИЯ (обход CORS страницы) → dataURL.
  *  Общий помощник для Flow (референсы) и NotebookLM (файл-источник из Галереи). */
 async function fetchBytes(url) {
-  if (!url) return { ok: false, error: 'нет url' };
+  if (!url) return { ok: false, error: T('bg_noUrl', 'нет url') };
   if (url.startsWith('/') && STATE.apiBase) url = STATE.apiBase.replace(/\/+$/, '') + url;
   try {
     const tryFetch = async (opts) => { try { const r = await fetch(url, opts); return r.ok ? r : null; } catch { return null; } };
     const res = (await tryFetch({ credentials: 'include' })) || (await tryFetch({}));
-    if (!res) return { ok: false, error: 'скачивание не удалось (CDN отклонил запрос)' };
+    if (!res) return { ok: false, error: T('bg_dlRejected', 'скачивание не удалось (CDN отклонил запрос)') };
     const buf = await res.arrayBuffer();
-    if (buf.byteLength > 500 * 1024 * 1024) return { ok: false, error: 'медиа >500МБ — слишком большое' };
+    if (buf.byteLength > 500 * 1024 * 1024) return { ok: false, error: T('bg_tooBig', 'медиа >500МБ — слишком большое') };
     const bytes = new Uint8Array(buf);
     let binary = ''; const CH = 0x8000;
     for (let i = 0; i < bytes.length; i += CH) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
@@ -434,13 +436,13 @@ async function runNlmAction(action) {
   // reload), поэтому результат ждём отдельным событием от content (переживает перезагрузку).
   if (action.kind === 'create-notebook') {
     const tabId = await ensureNotebookTab(null, true);
-    if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
+    if (!tabId) { await nlmActionResult(action.id, false, null, T('bg_openNlmFailed', 'не удалось открыть NotebookLM')); return; }
     await chrome.storage.local.set({ ttNlmPendingCreate: { actionId: action.id, title: action.payload?.title || '', at: Date.now() } });
     try { await chrome.tabs.sendMessage(tabId, { type: 'run-action', action }); } catch { /* мог перезагрузиться */ }
     const ev = await waitForNlmEvent('create-done', action.id, NLM_CREATE_WAIT_MS);
     await chrome.storage.local.remove('ttNlmPendingCreate');
     if (ev && ev.notebookId) await nlmActionResult(action.id, true, { notebookId: ev.notebookId, title: ev.title || action.payload?.title || null });
-    else await nlmActionResult(action.id, false, null, 'блокнот не создался (нужна разведка селекторов «создать»)');
+    else await nlmActionResult(action.id, false, null, T('bg_notebookNotCreated', 'блокнот не создался (нужна разведка селекторов «создать»)'));
     return;
   }
 
@@ -450,7 +452,7 @@ async function runNlmAction(action) {
     // иначе прервём генерацию И вернём 0 блокнотов. Отвечаем «занят», фронт оставит прежний список.
     if (STATE.nlmBusy && Date.now() < STATE.busyUntil) { await nlmActionResult(action.id, false, null, 'busy-generating'); return; }
     const tabId = await ensureNotebookTab(null, true);
-    if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
+    if (!tabId) { await nlmActionResult(action.id, false, null, T('bg_openNlmFailed', 'не удалось открыть NotebookLM')); return; }
     try {
       const t = await chrome.tabs.get(tabId);
       if (/\/notebook\//.test(t.url || '')) { await chrome.tabs.update(tabId, { url: nlmUrl('/', t.url) }); await waitForTabReady(tabId); }
@@ -461,14 +463,14 @@ async function runNlmAction(action) {
     if (result && result.ok) await nlmActionResult(action.id, true, result);
     else {
       if (result && result.reason === 'not-logged-in') { try { await chrome.tabs.update(tabId, { active: true }); } catch { /* */ } }
-      await nlmActionResult(action.id, false, null, (result && result.reason) || 'не удалось получить список');
+      await nlmActionResult(action.id, false, null, (result && result.reason) || T('bg_listFailed', 'не удалось получить список'));
     }
     return;
   }
 
   // Прочие действия — в контексте уже открытого нужного блокнота (навигация — в ensureNotebookTab).
   const tabId = await ensureNotebookTab(action.notebookId || null, true);
-  if (!tabId) { await nlmActionResult(action.id, false, null, 'не удалось открыть NotebookLM'); return; }
+  if (!tabId) { await nlmActionResult(action.id, false, null, T('bg_openNlmFailed', 'не удалось открыть NotebookLM')); return; }
   let result;
   try {
     result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action }), 4 * 60_000);
@@ -480,7 +482,7 @@ async function runNlmAction(action) {
   else {
     // Не залогинен → сфокусировать вкладку, чтобы юзер вошёл.
     if (result && result.reason === 'not-logged-in') { try { await chrome.tabs.update(tabId, { active: true }); } catch { /* */ } }
-    await nlmActionResult(action.id, false, null, (result && result.reason) || 'действие не выполнено');
+    await nlmActionResult(action.id, false, null, (result && result.reason) || T('bg_actionFailed', 'действие не выполнено'));
   }
 }
 
@@ -564,7 +566,7 @@ async function runNlmTask(task) {
 }
 async function _runNlmTask(task) {
   const tabId = await ensureNotebookTab(task.notebookId || null, true);
-  if (!tabId) { await nlmTaskStatus(task.id, 'retry', 'Откройте NotebookLM — генерация выполнится сама'); return; }
+  if (!tabId) { await nlmTaskStatus(task.id, 'retry', T('bg_openNlmGen', 'Откройте NotebookLM — генерация выполнится сама')); return; }
   await nlmTaskStatus(task.id, 'running');
   // Аудио/видео качаются через меню «Скачать» → ставим перехватчик ДО генерации.
   const isMedia = (task.type === 'audio' || task.type === 'video');
@@ -588,14 +590,14 @@ async function _runNlmTask(task) {
       return;
     }
   }
-  if (result && result.reason === 'not-logged-in') { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'retry', 'Войдите в NotebookLM'); return; }
-  if (!result || !result.ok) { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }
+  if (result && result.reason === 'not-logged-in') { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'retry', T('bg_loginNlm', 'Войдите в NotebookLM')); return; }
+  if (!result || !result.ok) { if (dl) dl.cancel(); await nlmTaskStatus(task.id, 'failed', (result && result.reason) || T('bg_noResult', 'нет результата')); return; }
   // Захват через загрузку (аудио/видео): дождаться перехваченного URL и стянуть байты в фоне.
   if (result.viaDownload) {
     const got = dl ? await dl : null;
-    if (!got || !got.url) { await nlmTaskStatus(task.id, 'failed', 'не удалось перехватить скачивание артефакта'); return; }
+    if (!got || !got.url) { await nlmTaskStatus(task.id, 'failed', T('bg_dlCaptureFailed', 'не удалось перехватить скачивание артефакта')); return; }
     const b = await fetchBytes(got.url);
-    if (!b || !b.ok) { await nlmTaskStatus(task.id, 'failed', 'не скачался артефакт: ' + (b && b.error || '')); return; }
+    if (!b || !b.ok) { await nlmTaskStatus(task.id, 'failed', T('bg_artifactDlFailed', 'не скачался артефакт: ') + (b && b.error || '')); return; }
     result.dataUrl = b.dataUrl;
     result.mime = result.mime || b.mime || got.mime || '';
   } else if (dl) { dl.cancel(); }
@@ -643,7 +645,7 @@ async function ingestArtifactFromContent(msg) {
 
 /** Снимок разведки вёрстки NotebookLM → бэкенд. */
 async function sendReconNlm(payload) {
-  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
   try {
     const res = await fetch(api('/api/notebooklm-ext/recon'), {
       method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -687,15 +689,15 @@ async function heygenIngest(task, result) {
 }
 async function runHeygenTask(task) {
   const tabId = await hgFindTab();
-  if (!tabId) { await heygenStatus(task.id, 'retry', 'Откройте вкладку студии app.heygen.com — голова отрендерится сама'); return; }
+  if (!tabId) { await heygenStatus(task.id, 'retry', T('bg_openHgTab', 'Откройте вкладку студии app.heygen.com — голова отрендерится сама')); return; }
   const ready = await hgWaitReady(tabId);
-  if (!ready) { await heygenStatus(task.id, 'retry', 'Студия HeyGen ещё грузится — повторю позже'); return; }
+  if (!ready) { await heygenStatus(task.id, 'retry', T('bg_hgLoading', 'Студия HeyGen ещё грузится — повторю позже')); return; }
   await heygenStatus(task.id, 'running');
   let result;
   try { result = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'render-head', task }), HG_TASK_TIMEOUT_MS); }
   catch (e) { await heygenStatus(task.id, 'failed', String(e && e.message || e)); return; }
-  if (result && result.retry) { await heygenStatus(task.id, 'retry', result.reason || 'повтор'); return; }
-  if (!result || !result.ok) { await heygenStatus(task.id, 'failed', (result && result.reason) || 'нет результата'); return; }
+  if (result && result.retry) { await heygenStatus(task.id, 'retry', result.reason || T('bg_retry', 'повтор')); return; }
+  if (!result || !result.ok) { await heygenStatus(task.id, 'failed', (result && result.reason) || T('bg_noResult', 'нет результата')); return; }
   try { await heygenIngest(task, result); await heygenStatus(task.id, 'done'); }
   catch (e) { await heygenStatus(task.id, 'failed', 'ingest: ' + (e && e.message)); }
 }
@@ -715,7 +717,7 @@ async function tickHeygen() {
   finally { STATE.hgBusy = false; }
 }
 async function sendReconHeygen(payload) {
-  if (!STATE.token || !STATE.apiBase) return { ok: false, error: 'не подключено' };
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
   try {
     const res = await fetch(api('/api/heygen-ext/recon'), {
       method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -859,10 +861,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // ВЫЗОВ window.open → сюда приходит URL: качаем байты в фоне и заливаем в Галерею.
         void (async () => {
           if (!STATE.token || !STATE.apiBase) await loadState();
-          if (!STATE.token || !STATE.apiBase || !msg.url) { sendResponse({ ok: false, error: 'не подключено' }); return; }
+          if (!STATE.token || !STATE.apiBase || !msg.url) { sendResponse({ ok: false, error: T('bg_notConnected', 'не подключено') }); return; }
           try {
             const bytes = await fetchBytes(msg.url);
-            if (!bytes || !bytes.ok || !bytes.dataUrl) { sendResponse({ ok: false, error: (bytes && bytes.error) || 'скачивание не удалось' }); return; }
+            if (!bytes || !bytes.ok || !bytes.dataUrl) { sendResponse({ ok: false, error: (bytes && bytes.error) || T('bg_dlFailed', 'скачивание не удалось') }); return; }
             const res = await fetch(api('/api/notebooklm-ext/observed-ingest'), {
               method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
               body: JSON.stringify({ notebookId: msg.notebookId || null, title: msg.title || null, gtype: msg.gtype || null, dataUrl: bytes.dataUrl, mime: bytes.mime || null }),
@@ -876,7 +878,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // Готовая работа студии NotebookLM (авто-подхват или кнопка «в Галерею») → Галерея.
         void (async () => {
           if (!STATE.token || !STATE.apiBase) await loadState();
-          if (!STATE.token || !STATE.apiBase || !msg.dataUrl) { sendResponse({ ok: false, error: 'не подключено' }); return; }
+          if (!STATE.token || !STATE.apiBase || !msg.dataUrl) { sendResponse({ ok: false, error: T('bg_notConnected', 'не подключено') }); return; }
           try {
             const res = await fetch(api('/api/notebooklm-ext/observed-ingest'), {
               method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),

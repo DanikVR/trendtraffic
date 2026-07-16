@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Extensia unificată TrendTraffic: o punte către Google Flow (Veo), Google NotebookLM (Hotebook) și HeyGen (capete vorbitoare UGC cu abonamentul tău). Coadă de sarcini reală în browser, automatizare a generării și schimb de Galerie. Instalează o dată — panoul se activează pe serviciul unde este deschisă fila."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "timp expirat pentru sarcină"
+  },
+  "bg_openFlowTab": {
+    "message": "Deschide fila Google Flow — sarcina se va finaliza automat"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: activitate neobișnuită — întrerupt"
+  },
+  "bg_noResult": {
+    "message": "niciun rezultat"
+  },
+  "bg_notConnected": {
+    "message": "nu este conectat"
+  },
+  "bg_openFlowFailed": {
+    "message": "nu s-a putut deschide Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow nu este încărcat — te rugăm să te conectezi la labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "niciun răspuns de la Flow"
+  },
+  "bg_noUrl": {
+    "message": "niciun URL"
+  },
+  "bg_dlRejected": {
+    "message": "descărcare eșuată (CDN a respins cererea)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — prea mare"
+  },
+  "bg_openNlmFailed": {
+    "message": "nu s-a putut deschide NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "caietul nu a fost creat (este necesară căutarea selectorului pentru „creare”)"
+  },
+  "bg_listFailed": {
+    "message": "nu s-a putut obține lista"
+  },
+  "bg_actionFailed": {
+    "message": "acțiune eșuată"
+  },
+  "bg_openNlmGen": {
+    "message": "Deschide NotebookLM — generarea se va finaliza automat"
+  },
+  "bg_loginNlm": {
+    "message": "Conectează-te la NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "nu s-a putut intercepta descărcarea artefactului"
+  },
+  "bg_artifactDlFailed": {
+    "message": "descărcare artefact eșuată: "
+  },
+  "bg_openHgTab": {
+    "message": "Deschide fila studioului app.heygen.com — avatarul se va randa automat"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio se încarcă încă — se reîncearcă mai târziu"
+  },
+  "bg_retry": {
+    "message": "reîncearcă"
+  },
+  "bg_dlFailed": {
+    "message": "descărcare eșuată"
+  },
+  "flow_state": {
+    "message": "Stare"
+  },
+  "flow_notConnected": {
+    "message": "nu este conectat"
+  },
+  "flow_waitingTask": {
+    "message": "Se așteaptă sarcini de la TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pauză"
+  },
+  "flow_openTT": {
+    "message": "Deschide TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Către Galerie"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Trimite un clip finalizat din Flow în Galeria TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Din Galerie"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Preia un videoclip din Galerie și încarcă-l în Flow pentru procesare"
+  },
+  "flow_reconPrefix": {
+    "message": "căutare: "
+  },
+  "flow_reconSuffix": {
+    "message": " cereri Flow"
+  },
+  "flow_reconBtn": {
+    "message": "caută aspectul"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Capturează aspectul curent al Flow și trimite-l nouă (pentru ajustare)"
+  },
+  "flow_pauseManual": {
+    "message": "Pauză activată manual"
+  },
+  "flow_statusPause": {
+    "message": "întrerupt"
+  },
+  "flow_statusWorking": {
+    "message": "în lucru"
+  },
+  "flow_statusLogin": {
+    "message": "conectează-te la cont"
+  },
+  "flow_stTitleOpen": {
+    "message": "Deschide TrendTraffic și conectează-te — se va conecta automat"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Deschide Galeria completă →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Galeria TrendTraffic — selectează ca într-un editor, cu un buton „→ Flow” pe fiecare fișier"
+  },
+  "flow_fileFallback": {
+    "message": "fișier"
+  },
+  "flow_pickHint": {
+    "message": "Apasă pe elementul dorit — va fi adăugat în Galerie"
+  },
+  "flow_noPrompt": {
+    "message": "(fără prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Sarcină #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ câmpul prompt nu a fost găsit — este necesară căutarea selectorului"
+  },
+  "flow_promptSet": {
+    "message": "prompt setat"
+  },
+  "flow_refUploaded": {
+    "message": "referință încărcată în Flow"
+  },
+  "flow_refPrefix": {
+    "message": "referință: "
+  },
+  "flow_refDlFailed": {
+    "message": "descărcare referință eșuată"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ butonul de generare nu a fost găsit — este necesară căutarea"
+  },
+  "flow_genStarted": {
+    "message": "generare începută, se așteaptă clipul…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ timp expirat pentru așteptarea clipului"
+  },
+  "flow_clipReady": {
+    "message": "✓ clip gata"
+  },
+  "flow_kindClip": {
+    "message": "clip"
+  },
+  "flow_kindPicture": {
+    "message": "imagine"
+  },
+  "flow_grabPre": {
+    "message": "se preia "
+  },
+  "flow_grabSuf": {
+    "message": " din Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ citirea media a eșuat"
+  },
+  "flow_cdnAuthPre": {
+    "message": "autentificare CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — se încearcă prin server"
+  },
+  "flow_inGallerySuf": {
+    "message": " în Galerie → fila „Google Flow”"
+  },
+  "flow_noConnConnect": {
+    "message": "fără conexiune — apasă „Conectare” în TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ apasă pe fotografia/videoclipul dorit în Flow, apoi „În Galerie”"
+  },
+  "flow_multipleMedia": {
+    "message": "media multiple — selectează ce să preiei ↓"
+  },
+  "flow_openingProject": {
+    "message": "se deschide proiectul în Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow acceptă doar imagini aici — încarcă videoclipuri prin secțiunea „Încărcări” din Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "câmpul de încărcare nu a fost găsit — deschide un PROIECT în Flow (nu pagina principală): într-un proiect există o încărcare (+/„Încărcări”)"
+  },
+  "flow_loadingList": {
+    "message": "se încarcă lista…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "fără conexiune — apasă „Conectare”"
+  },
+  "flow_galleryEmpty": {
+    "message": "nu există media în Galerie"
+  },
+  "flow_reconSent": {
+    "message": "✓ reconfigurația aspectului trimisă"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "fără conexiune"
+  },
+  "flow_gettingMedia": {
+    "message": "se preia media din Galerie…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ descărcarea din Galerie a eșuat"
+  },
+  "flow_insertedImage": {
+    "message": "imagine"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " inserat în Flow din Galerie"
+  },
+  "flow_newClipReady": {
+    "message": "clip nou gata — se încarcă în Galerie…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ clip în Galerie → „Videoclipuri”"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ clipul nu a fost salvat: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "neconectat"
+  },
+  "hg_keepTabOpen": {
+    "message": "Păstrează această filă deschisă — capetele se vor randa automat în funcție de abonamentul tău."
+  },
+  "hg_openTT": {
+    "message": "Deschide TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " apeluri studio"
+  },
+  "hg_reconBtn": {
+    "message": "recon API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Capturează API-ul studioului curent și trimite-l nouă (pentru ajustare)"
+  },
+  "hg_statusWorking": {
+    "message": "funcționează"
+  },
+  "hg_statusLogin": {
+    "message": "autentifică-te în contul tău"
+  },
+  "hg_stTitleOpen": {
+    "message": "Deschide TrendTraffic și autentifică-te — se va conecta automat"
+  },
+  "hg_photoDlFailed": {
+    "message": "descărcarea fotografiei a eșuat"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: randarea a eșuat"
+  },
+  "hg_genPrefix": {
+    "message": "generare: "
+  },
+  "hg_waiting": {
+    "message": "în așteptare"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen nu a furnizat videoclipul la timp"
+  },
+  "hg_headNum": {
+    "message": "▶ cap #"
+  },
+  "hg_readyLook": {
+    "message": "avatar cont gata — încărcarea fotografiei a fost omisă"
+  },
+  "hg_photoUpload": {
+    "message": "fotografie → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "se începe generarea ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ aspectul nu a fost găsit în această sesiune — se încarcă fotografia și se reîncearcă…"
+  },
+  "hg_headReady": {
+    "message": "✓ cap gata, se preia mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ se trimite către TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ recon API trimis"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "fără conexiune"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "fișier artefact interceptat ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "interceptarea fișierului a eșuat: "
+  },
+  "nlm_dlProbe": {
+    "message": "descărcare? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL de descărcare interceptat (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "nu este conectat"
+  },
+  "nlm_account": {
+    "message": "Cont"
+  },
+  "nlm_accountTitle": {
+    "message": "Cont Google utilizat pentru NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Se așteaptă o sarcină de la TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Afișează lucrările de studio gata — fă clic pe o lucrare pentru a o încărca în Galeria TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ În Galerie"
+  },
+  "nlm_openTT": {
+    "message": "Deschide TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Capturează aspectul curent NotebookLM și trimite-ne (pentru ajustarea selectorului)"
+  },
+  "nlm_reconBtn": {
+    "message": "recunoaștere aspect"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "deschide un caiet — voi arăta lucrările sale de studio"
+  },
+  "nlm_noReadyWorks": {
+    "message": "nu există lucrări de studio gata (sau încă se generează)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Încarcă „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "” în Galerie"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ deja"
+  },
+  "nlm_refresh": {
+    "message": "reîmprospătare"
+  },
+  "nlm_close": {
+    "message": "închide"
+  },
+  "nlm_loginTT": {
+    "message": "conectează-te la TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "conectează-te la Google"
+  },
+  "nlm_working": {
+    "message": "se lucrează"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Se creează caietul: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ caiet creat: "
+  },
+  "nlm_addingSource": {
+    "message": "Se adaugă sursa ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "descărcarea fișierului din Galerie a eșuat"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM nu acceptă fișiere video. Pentru videoclipuri, adaugă „Analiză” ca text sau un link (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Încărcarea fișierelor în NotebookLM nu este disponibilă din extensie (fereastră nativă). Utilizează „Analiză”/„Lipește text” sau un link (site web/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ sursa fișierului adăugată"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "tip de sursă necunoscut"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ sursă adăugată ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Se citește lista de caiete…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ caiete (ale mele+disponibile): "
+  },
+  "nlm_asking": {
+    "message": "Se întreabă: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "răspunsul nu a fost citit complet"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ răspuns primit"
+  },
+  "nlm_unknownType": {
+    "message": "tip necunoscut: "
+  },
+  "nlm_generatingTask": {
+    "message": "Se generează: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generare începută ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", implicit), se așteaptă artefactul…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefact gata ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), se așteaptă artefactul…"
+  },
+  "nlm_dlRequested": {
+    "message": "descărcarea artefactului solicitată…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nu s-a reușit interceptarea descărcării artefactului"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Descarcă în Galeria TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" nu are „Descărcare” — se capturează ca text…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" nu are „Descărcare” — se capturează ca text…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "” → Galerie"
+  },
+  "nlm_alreadyWas": {
+    "message": " (exista deja)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ nu s-a salvat: "
+  },
+  "nlm_noConnection": {
+    "message": "fără conexiune"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ descărcarea URL-ului a eșuat: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nu s-a reușit capturarea fișierului „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ clic-ul a dus departe de pagina caietului — se revine"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ textul „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "” nu a fost capturat"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "” → Galerie (ca text)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertical"
+  },
+  "nlm_916Title": {
+    "message": "Adaugă o solicitare în format vertical 9:16 (Shorts/Reels/TikTok). Solicitarea în engleză — NotebookLM înțelege cel mai bine instrucțiunile în acest fel."
+  },
+  "nlm_916Already": {
+    "message": "✓ deja adăugat"
+  },
+  "nlm_916Added": {
+    "message": "✓ adăugat"
+  },
+  "nlm_reconSent": {
+    "message": "✓ recunoașterea aspectului trimisă"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Reconstrucție eșuată: "
+  },
+  "nlm_unknownAction": {
+    "message": "Acțiune necunoscută: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asistentas (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Vieningas TrendTraffic plėtinys: tiltas į Google Flow (Veo), Google NotebookLM (Hotebook) ir HeyGen (UGC kalbančios galvos su jūsų prenumerata). Tikra naršyklės užduočių eilė, generavimo automatizavimas ir galerijos mainai. Įdiekite vieną kartą – skydelis aktyvuojasi paslaugoje, kurioje atidarytas skirtukas."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asistentas (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "užduoties laikas baigėsi"
+  },
+  "bg_openFlowTab": {
+    "message": "Atidarykite Google Flow skirtuką – užduotis bus baigta automatiškai"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: neįprasta veikla – pristabdyta"
+  },
+  "bg_noResult": {
+    "message": "nėra rezultato"
+  },
+  "bg_notConnected": {
+    "message": "neprisijungta"
+  },
+  "bg_openFlowFailed": {
+    "message": "nepavyko atidaryti Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow neįkeltas – prisijunkite prie labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "nėra atsakymo iš Flow"
+  },
+  "bg_noUrl": {
+    "message": "nėra URL"
+  },
+  "bg_dlRejected": {
+    "message": "atsisiuntimas nepavyko (CDN atmetė užklausą)"
+  },
+  "bg_tooBig": {
+    "message": "medija >500MB – per didelė"
+  },
+  "bg_openNlmFailed": {
+    "message": "nepavyko atidaryti NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "užrašinė nesukurta (reikalingas selektoriaus ieškojimas „sukurti“)"
+  },
+  "bg_listFailed": {
+    "message": "nepavyko gauti sąrašo"
+  },
+  "bg_actionFailed": {
+    "message": "veiksmas nepavyko"
+  },
+  "bg_openNlmGen": {
+    "message": "Atidarykite NotebookLM – generavimas bus baigtas automatiškai"
+  },
+  "bg_loginNlm": {
+    "message": "Prisijunkite prie NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "nepavyko perimti artefakto atsisiuntimo"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artefakto atsisiuntimas nepavyko: "
+  },
+  "bg_openHgTab": {
+    "message": "Atidarykite app.heygen.com studijos skirtuką – avataras bus atvaizduotas automatiškai"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio vis dar kraunasi – bandysime vėliau"
+  },
+  "bg_retry": {
+    "message": "bandyti dar kartą"
+  },
+  "bg_dlFailed": {
+    "message": "atsisiuntimas nepavyko"
+  },
+  "flow_state": {
+    "message": "Būsena"
+  },
+  "flow_notConnected": {
+    "message": "neprisijungta"
+  },
+  "flow_waitingTask": {
+    "message": "Laukiama užduočių iš TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pauzė"
+  },
+  "flow_openTT": {
+    "message": "Atidaryti TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Į galeriją"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Siųsti baigtą klipą iš Flow į TrendTraffic galeriją"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Iš galerijos"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Paimkite vaizdo įrašą iš galerijos ir įkelkite jį į Flow apdorojimui"
+  },
+  "flow_reconPrefix": {
+    "message": "ieškoma: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow užklausų"
+  },
+  "flow_reconBtn": {
+    "message": "ieškoti išdėstymo"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Užfiksuokite dabartinį Flow išdėstymą ir atsiųskite mums (koregavimui)"
+  },
+  "flow_pauseManual": {
+    "message": "Pauzė įjungta rankiniu būdu"
+  },
+  "flow_statusPause": {
+    "message": "pristabdyta"
+  },
+  "flow_statusWorking": {
+    "message": "dirba"
+  },
+  "flow_statusLogin": {
+    "message": "prisijungti prie paskyros"
+  },
+  "flow_stTitleOpen": {
+    "message": "Atidarykite TrendTraffic ir prisijunkite – prisijungs automatiškai"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Atidaryti visą galeriją →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic galerija – pasirinkite kaip redaktoriuje, su mygtuku „→ Flow“ prie kiekvieno failo"
+  },
+  "flow_fileFallback": {
+    "message": "failas"
+  },
+  "flow_pickHint": {
+    "message": "Spustelėkite norimą elementą – jis bus pridėtas į galeriją"
+  },
+  "flow_noPrompt": {
+    "message": "(nėra raginimo)"
+  },
+  "flow_taskNum": {
+    "message": "Užduotis #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ raginimo laukas nerastas – reikalingas selektoriaus ieškojimas"
+  },
+  "flow_promptSet": {
+    "message": "raginimas nustatytas"
+  },
+  "flow_refUploaded": {
+    "message": "nuoroda įkelta į Flow"
+  },
+  "flow_refPrefix": {
+    "message": "nuoroda: "
+  },
+  "flow_refDlFailed": {
+    "message": "nuorodos atsisiuntimas nepavyko"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ generavimo mygtukas nerastas – reikalingas ieškojimas"
+  },
+  "flow_genStarted": {
+    "message": "generavimas pradėtas, laukiama klipo…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ klipo laukimo laikas baigėsi"
+  },
+  "flow_clipReady": {
+    "message": "✓ klipas paruoštas"
+  },
+  "flow_kindClip": {
+    "message": "klipas"
+  },
+  "flow_kindPicture": {
+    "message": "paveikslėlis"
+  },
+  "flow_grabPre": {
+    "message": "griebiama "
+  },
+  "flow_grabSuf": {
+    "message": " iš Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ nepavyko nuskaityti medijos"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN autentifikavimas: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — bandoma per serverį"
+  },
+  "flow_inGallerySuf": {
+    "message": " į Galeriją → „Google Flow“ skirtuką"
+  },
+  "flow_noConnConnect": {
+    "message": "nėra ryšio — spustelėkite „Prisijungti“ TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ spustelėkite norimą nuotrauką/vaizdo įrašą Flow, tada „Į galeriją“"
+  },
+  "flow_multipleMedia": {
+    "message": "daugialypė medija — pasirinkite, ką griebti ↓"
+  },
+  "flow_openingProject": {
+    "message": "atidaromas projektas Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow čia priima tik paveikslėlius — vaizdo įrašus įkelkite per Flow „Įkėlimai“ skiltį"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "įkėlimo laukas nerastas — atidarykite PROJEKTĄ Flow (ne pagrindinį puslapį): projekto viduje yra įkėlimas (+/„Įkėlimai“)"
+  },
+  "flow_loadingList": {
+    "message": "įkeliamas sąrašas…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "nėra ryšio — spustelėkite „Prisijungti“"
+  },
+  "flow_galleryEmpty": {
+    "message": "galerijoje nėra medijos"
+  },
+  "flow_reconSent": {
+    "message": "✓ išdėstymo atpažinimas išsiųstas"
+  },
+  "flow_reconFail": {
+    "message": "⚠ atpažinimas: "
+  },
+  "flow_noConnection": {
+    "message": "nėra ryšio"
+  },
+  "flow_gettingMedia": {
+    "message": "gaunama medija iš Galerijos…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ nepavyko atsisiųsti iš Galerijos"
+  },
+  "flow_insertedImage": {
+    "message": "paveikslėlis"
+  },
+  "flow_insertedVideo": {
+    "message": "vaizdo įrašas"
+  },
+  "flow_insertedSuf": {
+    "message": " įterptas į Flow iš Galerijos"
+  },
+  "flow_newClipReady": {
+    "message": "naujas klipas paruoštas — įkeliamas į Galeriją…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klipas Galerijoje → „Vaizdo įrašai“"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klipas neišsaugotas: "
+  },
+  "hg_state": {
+    "message": "Būsena"
+  },
+  "hg_notConnected": {
+    "message": "neprisijungta"
+  },
+  "hg_keepTabOpen": {
+    "message": "Palikite šį skirtuką atidarytą — galvos bus generuojamos automatiškai pagal jūsų prenumeratą."
+  },
+  "hg_openTT": {
+    "message": "Atidaryti TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "atpažinimas: "
+  },
+  "hg_reconSuffix": {
+    "message": " studijos skambučiai"
+  },
+  "hg_reconBtn": {
+    "message": "API atpažinimas"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Užfiksuoti dabartinį studijos API ir atsiųsti mums (koregavimui)"
+  },
+  "hg_statusWorking": {
+    "message": "veikia"
+  },
+  "hg_statusLogin": {
+    "message": "prisijunkite prie savo paskyros"
+  },
+  "hg_stTitleOpen": {
+    "message": "Atidarykite TrendTraffic ir prisijunkite — jis prisijungs automatiškai"
+  },
+  "hg_photoDlFailed": {
+    "message": "nuotraukos atsisiuntimas nepavyko"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: generavimas nepavyko"
+  },
+  "hg_genPrefix": {
+    "message": "generavimas: "
+  },
+  "hg_waiting": {
+    "message": "laukia"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen laiku nepateikė vaizdo įrašo"
+  },
+  "hg_headNum": {
+    "message": "▶ galva #"
+  },
+  "hg_readyLook": {
+    "message": "paruoštas paskyros avataras — nuotraukos įkėlimas praleistas"
+  },
+  "hg_photoUpload": {
+    "message": "nuotrauka → kalbanti_nuotrauka…"
+  },
+  "hg_genStartPre": {
+    "message": "pradedamas generavimas ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ išvaizda nerasta šioje sesijoje — įkeliama nuotrauka ir bandoma iš naujo…"
+  },
+  "hg_headReady": {
+    "message": "✓ galva paruošta, gaunamas mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ siunčiama į TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API atpažinimas išsiųstas"
+  },
+  "hg_reconFail": {
+    "message": "⚠ atpažinimas: "
+  },
+  "hg_noConnection": {
+    "message": "nėra ryšio"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artefakto failas perimtas ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "failo perėmimas nepavyko: "
+  },
+  "nlm_dlProbe": {
+    "message": "atsisiųsti? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "atsisiuntimo URL perimtas (window.open)"
+  },
+  "nlm_state": {
+    "message": "Būsena"
+  },
+  "nlm_notConnected": {
+    "message": "neprisijungta"
+  },
+  "nlm_account": {
+    "message": "Paskyra"
+  },
+  "nlm_accountTitle": {
+    "message": "Google paskyra, naudojama NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Laukiama užduoties iš TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Rodyti paruoštus studijos darbus — spustelėkite darbą, kad įkeltumėte jį į TrendTraffic galeriją"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Į galeriją"
+  },
+  "nlm_openTT": {
+    "message": "Atidaryti TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Užfiksuoti dabartinį NotebookLM išdėstymą ir atsiųsti mums (dėl selektoriaus koregavimo)"
+  },
+  "nlm_reconBtn": {
+    "message": "išdėstymo atpažinimas"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "atidarykite užrašų knygelę — parodysiu jos studijos darbus"
+  },
+  "nlm_noReadyWorks": {
+    "message": "nėra paruoštų studijos darbų (arba vis dar generuojama)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Įkelti „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "“ į galeriją"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ jau"
+  },
+  "nlm_refresh": {
+    "message": "atnaujinti"
+  },
+  "nlm_close": {
+    "message": "uždaryti"
+  },
+  "nlm_loginTT": {
+    "message": "prisijungti prie TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "prisijungti prie Google"
+  },
+  "nlm_working": {
+    "message": "dirbama"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Kuriama užrašų knygelė: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ užrašų knygelė sukurta: "
+  },
+  "nlm_addingSource": {
+    "message": "Pridedamas šaltinis ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "nepavyko atsisiųsti failo iš galerijos"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM nepriima vaizdo failų. Vaizdo įrašams pridėkite „Analizę“ kaip tekstą arba nuorodą (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Failų įkėlimas į NotebookLM nepasiekiamas iš plėtinio (vietinis langas). Naudokite „Analizę“/„Įklijuoti tekstą“ arba nuorodą (svetainė/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ failo šaltinis pridėtas"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "nežinomas šaltinio tipas"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ šaltinis pridėtas ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Skaitomas užrašų knygelių sąrašas…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ užrašų knygelės (mano+pasiekiamos): "
+  },
+  "nlm_asking": {
+    "message": "Klausiama: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "atsakymas ne visiškai perskaitytas"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ atsakymas gautas"
+  },
+  "nlm_unknownType": {
+    "message": "nežinomas tipas: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generuojama: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generavimas pradėtas ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", numatytasis), laukiama artefakto…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefaktas paruoštas ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), laukiama artefakto…"
+  },
+  "nlm_dlRequested": {
+    "message": "prašoma atsisiųsti artefaktą…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nepavyko perimti artefakto atsisiuntimo"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Atsisiųsti į TrendTraffic galeriją"
+  },
+  "nlm_noDownloadPre": {
+    "message": "“ neturi „Atsisiųsti“ — fiksuojama kaip tekstas…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "“ neturi „Atsisiųsti“ — fiksuojama kaip tekstas…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "“ → Galerija"
+  },
+  "nlm_alreadyWas": {
+    "message": " (jau egzistavo)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ neišsaugota: "
+  },
+  "nlm_noConnection": {
+    "message": "nėra ryšio"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL atsisiuntimas nepavyko: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nepavyko užfiksuoti failo „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ paspaudimas nukreipė nuo užrašų knygelės puslapio — grįžtama"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekstas „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "“ neužfiksuotas"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "“ → Galerija (kaip tekstas)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikalus"
+  },
+  "nlm_916Title": {
+    "message": "Pridėkite 9:16 vertikalaus formato raginimą (Shorts/Reels/TikTok). Raginimas anglų kalba — NotebookLM geriausiai supranta instrukcijas tokiu būdu."
+  },
+  "nlm_916Already": {
+    "message": "✓ jau pridėta"
+  },
+  "nlm_916Added": {
+    "message": "✓ pridėta"
+  },
+  "nlm_reconSent": {
+    "message": "✓ išdėstymo atpažinimas išsiųstas"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Atpažinimas nepavyko: "
+  },
+  "nlm_unknownAction": {
+    "message": "Nežinomas veiksmas: "
+  }
+}

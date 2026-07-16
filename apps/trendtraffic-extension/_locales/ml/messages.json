@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — അസിസ്റ്റന്റ് (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "ഏകീകൃത TrendTraffic എക്സ്റ്റൻഷൻ: Google Flow (Veo), Google NotebookLM (Hotebook), HeyGen (നിങ്ങളുടെ സബ്‌സ്‌ക്രിപ്‌ഷനോടുകൂടിയ UGC ടോക്കിംഗ് ഹെഡ്‌സ്) എന്നിവയിലേക്കുള്ള ഒരു പാലം. യഥാർത്ഥ ബ്രൗസർ ടാസ്‌ക് ക്യൂ, ജനറേഷൻ ഓട്ടോമേഷൻ, ഗാലറി എക്സ്ചേഞ്ച്. ഒരു തവണ ഇൻസ്റ്റാൾ ചെയ്യുക — ടാബ് തുറന്നിരിക്കുന്ന സേവനത്തിൽ പാനൽ സജീവമാകും."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — അസിസ്റ്റന്റ് (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "ടാസ്‌ക് സമയപരിധി"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow ടാബ് തുറക്കുക — ടാസ്‌ക് സ്വയമേവ പൂർത്തിയാകും"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: അസാധാരണമായ പ്രവർത്തനം — താൽക്കാലികമായി നിർത്തി"
+  },
+  "bg_noResult": {
+    "message": "ഫലങ്ങളൊന്നുമില്ല"
+  },
+  "bg_notConnected": {
+    "message": "ബന്ധിപ്പിച്ചിട്ടില്ല"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow തുറക്കുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow ലോഡ് ചെയ്തിട്ടില്ല — labs.google/flow-ൽ സൈൻ ഇൻ ചെയ്യുക"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow-ൽ നിന്ന് പ്രതികരണമൊന്നുമില്ല"
+  },
+  "bg_noUrl": {
+    "message": "URL ഇല്ല"
+  },
+  "bg_dlRejected": {
+    "message": "ഡൗൺലോഡ് പരാജയപ്പെട്ടു (CDN അഭ്യർത്ഥന നിരസിച്ചു)"
+  },
+  "bg_tooBig": {
+    "message": "മീഡിയ >500MB — വളരെ വലുതാണ്"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM തുറക്കുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "bg_notebookNotCreated": {
+    "message": "നോട്ട്ബുക്ക് ഉണ്ടാക്കിയിട്ടില്ല ('create' എന്നതിനായുള്ള സെലക്ടർ സ്കൗട്ടിംഗ് ആവശ്യമാണ്)"
+  },
+  "bg_listFailed": {
+    "message": "ലിസ്റ്റ് ലഭിക്കുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "bg_actionFailed": {
+    "message": "പ്രവർത്തനം പരാജയപ്പെട്ടു"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM തുറക്കുക — ജനറേഷൻ സ്വയമേവ പൂർത്തിയാകും"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLM-ൽ സൈൻ ഇൻ ചെയ്യുക"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "ആർട്ടിഫാക്റ്റ് ഡൗൺലോഡ് തടസ്സപ്പെടുത്തുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "bg_artifactDlFailed": {
+    "message": "ആർട്ടിഫാക്റ്റ് ഡൗൺലോഡ് പരാജയപ്പെട്ടു: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com സ്റ്റുഡിയോ ടാബ് തുറക്കുക — അവതാർ സ്വയമേവ റെൻഡർ ചെയ്യും"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen സ്റ്റുഡിയോ ഇപ്പോഴും ലോഡ് ചെയ്യുന്നു — പിന്നീട് വീണ്ടും ശ്രമിക്കുന്നു"
+  },
+  "bg_retry": {
+    "message": "വീണ്ടും ശ്രമിക്കുക"
+  },
+  "bg_dlFailed": {
+    "message": "ഡൗൺലോഡ് പരാജയപ്പെട്ടു"
+  },
+  "flow_state": {
+    "message": "നില"
+  },
+  "flow_notConnected": {
+    "message": "ബന്ധിപ്പിച്ചിട്ടില്ല"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic-ൽ നിന്നുള്ള ടാസ്‌ക്കുകൾക്കായി കാത്തിരിക്കുന്നു…"
+  },
+  "flow_pauseBtn": {
+    "message": "താൽക്കാലികമായി നിർത്തുക"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic തുറക്കുക"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ ഗാലറിയിലേക്ക്"
+  },
+  "flow_toGalleryTitle": {
+    "message": "പൂർത്തിയാക്കിയ ക്ലിപ്പ് Flow-ൽ നിന്ന് TrendTraffic ഗാലറിയിലേക്ക് അയക്കുക"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ ഗാലറിയിൽ നിന്ന്"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "ഗാലറിയിൽ നിന്ന് ഒരു വീഡിയോ എടുത്ത് പ്രോസസ്സിംഗിനായി Flow-ലേക്ക് അപ്‌ലോഡ് ചെയ്യുക"
+  },
+  "flow_reconPrefix": {
+    "message": "സ്കൗട്ടിംഗ്: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow അഭ്യർത്ഥനകൾ"
+  },
+  "flow_reconBtn": {
+    "message": "ലേഔട്ട് സ്കൗട്ട് ചെയ്യുക"
+  },
+  "flow_reconBtnTitle": {
+    "message": "നിലവിലെ Flow ലേഔട്ട് ക്യാപ്ചർ ചെയ്ത് ഞങ്ങൾക്ക് അയക്കുക (ക്രമീകരണത്തിനായി)"
+  },
+  "flow_pauseManual": {
+    "message": "മാനുവലായി താൽക്കാലികമായി നിർത്തൽ പ്രവർത്തനക്ഷമമാക്കി"
+  },
+  "flow_statusPause": {
+    "message": "താൽക്കാലികമായി നിർത്തി"
+  },
+  "flow_statusWorking": {
+    "message": "പ്രവർത്തിക്കുന്നു"
+  },
+  "flow_statusLogin": {
+    "message": "അക്കൗണ്ടിൽ സൈൻ ഇൻ ചെയ്യുക"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic തുറന്ന് സൈൻ ഇൻ ചെയ്യുക — അത് സ്വയമേവ ബന്ധിപ്പിക്കും"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 പൂർണ്ണ ഗാലറി തുറക്കുക →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic ഗാലറി — ഒരു എഡിറ്ററിൽ എന്നപോലെ തിരഞ്ഞെടുക്കുക, ഓരോ ഫയലിലും '→ Flow' ബട്ടൺ സഹിതം"
+  },
+  "flow_fileFallback": {
+    "message": "ഫയൽ"
+  },
+  "flow_pickHint": {
+    "message": "ആവശ്യമുള്ള ഇനത്തിൽ ക്ലിക്ക് ചെയ്യുക — അത് ഗാലറിയിൽ ചേർക്കപ്പെടും"
+  },
+  "flow_noPrompt": {
+    "message": "(പ്രോംപ്റ്റ് ഇല്ല)"
+  },
+  "flow_taskNum": {
+    "message": "ടാസ്‌ക് #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ പ്രോംപ്റ്റ് ഫീൽഡ് കണ്ടെത്തിയില്ല — സെലക്ടർ സ്കൗട്ടിംഗ് ആവശ്യമാണ്"
+  },
+  "flow_promptSet": {
+    "message": "പ്രോംപ്റ്റ് സജ്ജമാക്കി"
+  },
+  "flow_refUploaded": {
+    "message": "റഫറൻസ് Flow-ലേക്ക് അപ്‌ലോഡ് ചെയ്തു"
+  },
+  "flow_refPrefix": {
+    "message": "റഫറൻസ്: "
+  },
+  "flow_refDlFailed": {
+    "message": "റഫറൻസ് ഡൗൺലോഡ് പരാജയപ്പെട്ടു"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ ജനറേഷൻ ബട്ടൺ കണ്ടെത്തിയില്ല — സ്കൗട്ടിംഗ് ആവശ്യമാണ്"
+  },
+  "flow_genStarted": {
+    "message": "ജനറേഷൻ ആരംഭിച്ചു, ക്ലിപ്പിനായി കാത്തിരിക്കുന്നു…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ ക്ലിപ്പ് കാത്തിരിപ്പ് സമയപരിധി"
+  },
+  "flow_clipReady": {
+    "message": "✓ ക്ലിപ്പ് തയ്യാറാണ്"
+  },
+  "flow_kindClip": {
+    "message": "ക്ലിപ്പ്"
+  },
+  "flow_kindPicture": {
+    "message": "ചിത്രം"
+  },
+  "flow_grabPre": {
+    "message": "Flow-ൽ നിന്ന് "
+  },
+  "flow_grabSuf": {
+    "message": " എടുക്കുന്നു..."
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ മീഡിയ വായിക്കുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN അംഗീകാരം: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — സെർവർ വഴി ശ്രമിക്കുന്നു"
+  },
+  "flow_inGallerySuf": {
+    "message": " ഗാലറിയിലേക്ക് → \"Google Flow\" ടാബ്"
+  },
+  "flow_noConnConnect": {
+    "message": "കണക്ഷനില്ല — TrendTraffic-ൽ \"കണക്റ്റ്\" ക്ലിക്ക് ചെയ്യുക"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ Flow-ൽ ആവശ്യമുള്ള ഫോട്ടോ/വീഡിയോ ക്ലിക്ക് ചെയ്യുക, തുടർന്ന് \"ഗാലറിയിലേക്ക്\""
+  },
+  "flow_multipleMedia": {
+    "message": "ഒന്നിലധികം മീഡിയ — എടുക്കേണ്ടത് തിരഞ്ഞെടുക്കുക ↓"
+  },
+  "flow_openingProject": {
+    "message": "Flow-ൽ പ്രോജക്റ്റ് തുറക്കുന്നു..."
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow ഇവിടെ ചിത്രങ്ങൾ മാത്രമേ സ്വീകരിക്കൂ — Flow-ൻ്റെ \"അപ്‌ലോഡുകൾ\" വിഭാഗം വഴി വീഡിയോകൾ അപ്‌ലോഡ് ചെയ്യുക"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "അപ്‌ലോഡ് ഫീൽഡ് കണ്ടെത്തിയില്ല — Flow-ൽ ഒരു പ്രോജക്റ്റ് തുറക്കുക (പ്രധാന പേജല്ല): ഒരു പ്രോജക്റ്റിനുള്ളിൽ ഒരു അപ്‌ലോഡ് (+/\"അപ്‌ലോഡുകൾ\") ഉണ്ട്"
+  },
+  "flow_loadingList": {
+    "message": "ലിസ്റ്റ് ലോഡ് ചെയ്യുന്നു..."
+  },
+  "flow_noConnConnectShort": {
+    "message": "കണക്ഷനില്ല — \"കണക്റ്റ്\" ക്ലിക്ക് ചെയ്യുക"
+  },
+  "flow_galleryEmpty": {
+    "message": "ഗാലറിയിൽ മീഡിയ ഇല്ല"
+  },
+  "flow_reconSent": {
+    "message": "✓ ലേഔട്ട് റീകോൺ അയച്ചു"
+  },
+  "flow_reconFail": {
+    "message": "⚠ റീകോൺ: "
+  },
+  "flow_noConnection": {
+    "message": "കണക്ഷനില്ല"
+  },
+  "flow_gettingMedia": {
+    "message": "ഗാലറിയിൽ നിന്ന് മീഡിയ എടുക്കുന്നു..."
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ ഗാലറിയിൽ നിന്ന് ഡൗൺലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "flow_insertedImage": {
+    "message": "ചിത്രം"
+  },
+  "flow_insertedVideo": {
+    "message": "വീഡിയോ"
+  },
+  "flow_insertedSuf": {
+    "message": " ഗാലറിയിൽ നിന്ന് Flow-ലേക്ക് ചേർത്തു"
+  },
+  "flow_newClipReady": {
+    "message": "പുതിയ ക്ലിപ്പ് തയ്യാർ — ഗാലറിയിലേക്ക് അപ്‌ലോഡ് ചെയ്യുന്നു..."
+  },
+  "flow_clipInGallery": {
+    "message": "✓ ക്ലിപ്പ് ഗാലറിയിൽ → \"വീഡിയോകൾ\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ ക്ലിപ്പ് സംരക്ഷിച്ചില്ല: "
+  },
+  "hg_state": {
+    "message": "നില"
+  },
+  "hg_notConnected": {
+    "message": "കണക്റ്റ് ചെയ്തിട്ടില്ല"
+  },
+  "hg_keepTabOpen": {
+    "message": "ഈ ടാബ് തുറന്നിടുക — നിങ്ങളുടെ സബ്‌സ്‌ക്രിപ്‌ഷൻ അനുസരിച്ച് ഹെഡ്ഡുകൾ സ്വയമേവ റെൻഡർ ചെയ്യും."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic തുറക്കുക"
+  },
+  "hg_reconPrefix": {
+    "message": "റീകോൺ: "
+  },
+  "hg_reconSuffix": {
+    "message": " സ്റ്റുഡിയോ കോളുകൾ"
+  },
+  "hg_reconBtn": {
+    "message": "API റീകോൺ"
+  },
+  "hg_reconBtnTitle": {
+    "message": "നിലവിലെ സ്റ്റുഡിയോ API പിടിച്ചെടുത്ത് ഞങ്ങൾക്ക് അയയ്ക്കുക (ക്രമീകരണത്തിനായി)"
+  },
+  "hg_statusWorking": {
+    "message": "പ്രവർത്തിക്കുന്നു"
+  },
+  "hg_statusLogin": {
+    "message": "നിങ്ങളുടെ അക്കൗണ്ടിൽ ലോഗിൻ ചെയ്യുക"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic തുറന്ന് ലോഗിൻ ചെയ്യുക — അത് സ്വയമേവ കണക്റ്റ് ചെയ്യും"
+  },
+  "hg_photoDlFailed": {
+    "message": "ഫോട്ടോ ഡൗൺലോഡ് പരാജയപ്പെട്ടു"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: റെൻഡർ പരാജയപ്പെട്ടു"
+  },
+  "hg_genPrefix": {
+    "message": "ജനറേഷൻ: "
+  },
+  "hg_waiting": {
+    "message": "കാത്തിരിക്കുന്നു"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen സമയത്തിന് വീഡിയോ നൽകിയില്ല"
+  },
+  "hg_headNum": {
+    "message": "▶ ഹെഡ് #"
+  },
+  "hg_readyLook": {
+    "message": "അക്കൗണ്ട് അവതാർ തയ്യാർ — ഫോട്ടോ അപ്‌ലോഡ് ഒഴിവാക്കി"
+  },
+  "hg_photoUpload": {
+    "message": "ഫോട്ടോ → സംസാരിക്കുന്ന_ഫോട്ടോ..."
+  },
+  "hg_genStartPre": {
+    "message": "ജനറേഷൻ ആരംഭിക്കുന്നു ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ ഈ സെഷനിൽ ലുക്ക് കണ്ടെത്തിയില്ല — ഫോട്ടോ അപ്‌ലോഡ് ചെയ്ത് വീണ്ടും ശ്രമിക്കുന്നു..."
+  },
+  "hg_headReady": {
+    "message": "✓ ഹെഡ് തയ്യാർ, mp4 എടുക്കുന്നു..."
+  },
+  "hg_sending": {
+    "message": "✓ TrendTraffic-ലേക്ക് അയയ്ക്കുന്നു"
+  },
+  "hg_reconSent": {
+    "message": "✓ API റീകോൺ അയച്ചു"
+  },
+  "hg_reconFail": {
+    "message": "⚠ റീകോൺ: "
+  },
+  "hg_noConnection": {
+    "message": "കണക്ഷനില്ല"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "ആർട്ടിഫാക്റ്റ് ഫയൽ തടഞ്ഞു ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "ഫയൽ തടയൽ പരാജയപ്പെട്ടു: "
+  },
+  "nlm_dlProbe": {
+    "message": "ഡൗൺലോഡ് ചെയ്യണോ? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "ഡൗൺലോഡ് URL തടഞ്ഞു (window.open)"
+  },
+  "nlm_state": {
+    "message": "നില"
+  },
+  "nlm_notConnected": {
+    "message": "ബന്ധിപ്പിച്ചിട്ടില്ല"
+  },
+  "nlm_account": {
+    "message": "അക്കൗണ്ട്"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM-നായി ഉപയോഗിക്കുന്ന Google അക്കൗണ്ട്"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic-ൽ നിന്നുള്ള ടാസ്കിനായി കാത്തിരിക്കുന്നു…"
+  },
+  "nlm_grabTitle": {
+    "message": "തയ്യാറായ സ്റ്റുഡിയോ വർക്കുകൾ കാണിക്കുക — TrendTraffic ഗാലറിയിലേക്ക് ലോഡ് ചെയ്യാൻ ഒരു വർക്കിൽ ക്ലിക്ക് ചെയ്യുക"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ ഗാലറിയിലേക്ക്"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic തുറക്കുക"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "നിലവിലെ NotebookLM ലേഔട്ട് ക്യാപ്ചർ ചെയ്ത് ഞങ്ങൾക്ക് അയയ്ക്കുക (സെലക്ടർ ക്രമീകരണത്തിനായി)"
+  },
+  "nlm_reconBtn": {
+    "message": "ലേഔട്ട് റീകോൺ"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "ഒരു നോട്ട്ബുക്ക് തുറക്കുക — ഞാൻ അതിന്റെ സ്റ്റുഡിയോ വർക്കുകൾ കാണിക്കാം"
+  },
+  "nlm_noReadyWorks": {
+    "message": "തയ്യാറായ സ്റ്റുഡിയോ വർക്കുകളൊന്നുമില്ല (അല്ലെങ്കിൽ ഇപ്പോഴും ജനറേറ്റ് ചെയ്യുന്നു)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" ഗാലറിയിലേക്ക് ലോഡ് ചെയ്യുക"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ ഇതിനകം"
+  },
+  "nlm_refresh": {
+    "message": "പുതുക്കുക"
+  },
+  "nlm_close": {
+    "message": "അടയ്ക്കുക"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTraffic-ലേക്ക് ലോഗിൻ ചെയ്യുക"
+  },
+  "nlm_loginGoogle": {
+    "message": "Google-ലേക്ക് ലോഗിൻ ചെയ്യുക"
+  },
+  "nlm_working": {
+    "message": "പ്രവർത്തിക്കുന്നു"
+  },
+  "nlm_creatingNotebook": {
+    "message": "നോട്ട്ബുക്ക് ഉണ്ടാക്കുന്നു: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ നോട്ട്ബുക്ക് ഉണ്ടാക്കി: "
+  },
+  "nlm_addingSource": {
+    "message": "ഉറവിടം ചേർക്കുന്നു ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "ഗാലറിയിൽ നിന്ന് ഫയൽ ഡൗൺലോഡ് പരാജയപ്പെട്ടു"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM വീഡിയോ ഫയലുകൾ സ്വീകരിക്കുന്നില്ല. വീഡിയോകൾക്കായി, \"വിശകലനം\" ടെക്സ്റ്റ് ആയോ ലിങ്ക് ആയോ (YouTube) ചേർക്കുക."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "എക്സ്റ്റൻഷനിൽ നിന്ന് (നേറ്റീവ് വിൻഡോ) NotebookLM-ലേക്ക് ഫയൽ അപ്‌ലോഡ് ലഭ്യമല്ല. \"വിശകലനം\"/\"ടെക്സ്റ്റ് ഒട്ടിക്കുക\" അല്ലെങ്കിൽ ഒരു ലിങ്ക് (വെബ്സൈറ്റ്/YouTube) ഉപയോഗിക്കുക."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ ഫയൽ ഉറവിടം ചേർത്തു"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "അജ്ഞാത ഉറവിട തരം"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ ഉറവിടം ചേർത്തു ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "നോട്ട്ബുക്ക് ലിസ്റ്റ് വായിക്കുന്നു…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ നോട്ട്ബുക്കുകൾ (എന്റേത്+ലഭ്യം): "
+  },
+  "nlm_asking": {
+    "message": "ചോദിക്കുന്നു: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "ഉത്തരം പൂർണ്ണമായി വായിച്ചില്ല"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ ഉത്തരം ലഭിച്ചു"
+  },
+  "nlm_unknownType": {
+    "message": "അജ്ഞാത തരം: "
+  },
+  "nlm_generatingTask": {
+    "message": "ഉണ്ടാക്കുന്നു: "
+  },
+  "nlm_genStartedPre": {
+    "message": "ജനറേഷൻ ആരംഭിച്ചു ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", ഡിഫോൾട്ട്), ആർട്ടിഫാക്റ്റിനായി കാത്തിരിക്കുന്നു…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ ആർട്ടിഫാക്റ്റ് തയ്യാർ ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), ആർട്ടിഫാക്റ്റിനായി കാത്തിരിക്കുന്നു…"
+  },
+  "nlm_dlRequested": {
+    "message": "ആർട്ടിഫാക്റ്റ് ഡൗൺലോഡ് ചെയ്യാൻ അഭ്യർത്ഥിച്ചു…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "ആർട്ടിഫാക്റ്റ് ഡൗൺലോഡ് തടസ്സപ്പെടുത്തുന്നതിൽ പരാജയപ്പെട്ടു"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic ഗാലറിയിലേക്ക് ഡൗൺലോഡ് ചെയ്യുക"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" എന്നതിന് \"ഡൗൺലോഡ്\" ഇല്ല — ടെക്സ്റ്റ് ആയി ക്യാപ്ചർ ചെയ്യുന്നു…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" എന്നതിന് \"ഡൗൺലോഡ്\" ഇല്ല — ടെക്സ്റ്റ് ആയി ക്യാപ്ചർ ചെയ്യുന്നു…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → ഗാലറി"
+  },
+  "nlm_alreadyWas": {
+    "message": " (ഇതിനകം നിലവിലുണ്ടായിരുന്നു)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ സംരക്ഷിച്ചില്ല: "
+  },
+  "nlm_noConnection": {
+    "message": "കണക്ഷനില്ല"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL ഡൗൺലോഡ് പരാജയപ്പെട്ടു: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ഫയൽ ക്യാപ്ചർ ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ ക്ലിക്ക് നോട്ട്ബുക്ക് പേജിൽ നിന്ന് മാറി — തിരികെ പോകുന്നു"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ ടെക്സ്റ്റ് \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" ക്യാപ്ചർ ചെയ്തില്ല"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → ഗാലറി (ടെക്സ്റ്റ് ആയി)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 ലംബം"
+  },
+  "nlm_916Title": {
+    "message": "ഒരു 9:16 ലംബ ഫോർമാറ്റ് പ്രോംപ്റ്റ് ചേർക്കുക (Shorts/Reels/TikTok). പ്രോംപ്റ്റ് ഇംഗ്ലീഷിൽ — NotebookLM-ന് നിർദ്ദേശങ്ങൾ ഏറ്റവും നന്നായി മനസ്സിലാകുന്നത് ഇങ്ങനെയാണ്."
+  },
+  "nlm_916Already": {
+    "message": "✓ ഇതിനകം ചേർത്തു"
+  },
+  "nlm_916Added": {
+    "message": "✓ ചേർത്തു"
+  },
+  "nlm_reconSent": {
+    "message": "✓ ലേഔട്ട് റീകോൺ അയച്ചു"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ തിരിച്ചറിയൽ പരാജയപ്പെട്ടു: "
+  },
+  "nlm_unknownAction": {
+    "message": "അജ്ഞാത പ്രവർത്തനം: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Den samlede TrendTraffic-utvidelsen: en bro til Google Flow (Veo), Google NotebookLM (Hotebook) og HeyGen (UGC snakkende hoder med ditt abonnement). Ekte nettleseroppgavekø, generasjonsautomatisering og galleriutveksling. Installer én gang – panelet aktiveres på tjenesten der fanen er åpen."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "oppgave tidsavbrutt"
+  },
+  "bg_openFlowTab": {
+    "message": "Åpne Google Flow-fanen – oppgaven fullføres automatisk"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: uvanlig aktivitet – satt på pause"
+  },
+  "bg_noResult": {
+    "message": "ingen resultat"
+  },
+  "bg_notConnected": {
+    "message": "ikke tilkoblet"
+  },
+  "bg_openFlowFailed": {
+    "message": "kunne ikke åpne Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow ikke lastet – vennligst logg inn på labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "ingen respons fra Flow"
+  },
+  "bg_noUrl": {
+    "message": "ingen url"
+  },
+  "bg_dlRejected": {
+    "message": "nedlasting mislyktes (CDN avviste forespørsel)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB – for stor"
+  },
+  "bg_openNlmFailed": {
+    "message": "kunne ikke åpne NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "notatbok ikke opprettet (velger-speiding for 'opprett' nødvendig)"
+  },
+  "bg_listFailed": {
+    "message": "kunne ikke hente liste"
+  },
+  "bg_actionFailed": {
+    "message": "handling mislyktes"
+  },
+  "bg_openNlmGen": {
+    "message": "Åpne NotebookLM – generering fullføres automatisk"
+  },
+  "bg_loginNlm": {
+    "message": "Logg inn på NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "kunne ikke avskjære nedlasting av artefakt"
+  },
+  "bg_artifactDlFailed": {
+    "message": "nedlasting av artefakt mislyktes: "
+  },
+  "bg_openHgTab": {
+    "message": "Åpne app.heygen.com studio-fanen – avataren gjengis automatisk"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio laster fortsatt – prøver igjen senere"
+  },
+  "bg_retry": {
+    "message": "prøv igjen"
+  },
+  "bg_dlFailed": {
+    "message": "nedlasting mislyktes"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "ikke tilkoblet"
+  },
+  "flow_waitingTask": {
+    "message": "Venter på oppgaver fra TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pause"
+  },
+  "flow_openTT": {
+    "message": "Åpne TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Til Galleri"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Send et ferdig klipp fra Flow til TrendTraffic-galleriet"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Fra Galleri"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Ta en video fra Galleriet og last den opp til Flow for behandling"
+  },
+  "flow_reconPrefix": {
+    "message": "speiding: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow-forespørsler"
+  },
+  "flow_reconBtn": {
+    "message": "speid layout"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Fang gjeldende Flow-layout og send den til oss (for justering)"
+  },
+  "flow_pauseManual": {
+    "message": "Pause aktivert manuelt"
+  },
+  "flow_statusPause": {
+    "message": "pauset"
+  },
+  "flow_statusWorking": {
+    "message": "arbeider"
+  },
+  "flow_statusLogin": {
+    "message": "logg inn på konto"
+  },
+  "flow_stTitleOpen": {
+    "message": "Åpne TrendTraffic og logg inn – den kobles til automatisk"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Åpne fullt Galleri →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Galleri – velg som i en redigerer, med en '→ Flow'-knapp på hver fil"
+  },
+  "flow_fileFallback": {
+    "message": "fil"
+  },
+  "flow_pickHint": {
+    "message": "Klikk ønsket element – det legges til Galleriet"
+  },
+  "flow_noPrompt": {
+    "message": "(ingen prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Oppgave #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ prompt-felt ikke funnet – velger-speiding nødvendig"
+  },
+  "flow_promptSet": {
+    "message": "prompt satt"
+  },
+  "flow_refUploaded": {
+    "message": "referanse lastet opp til Flow"
+  },
+  "flow_refPrefix": {
+    "message": "referanse: "
+  },
+  "flow_refDlFailed": {
+    "message": "nedlasting av referanse mislyktes"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ generasjonsknapp ikke funnet – speiding nødvendig"
+  },
+  "flow_genStarted": {
+    "message": "generering startet, venter på klipp…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ klipp ventetidsavbrudd"
+  },
+  "flow_clipReady": {
+    "message": "✓ klipp klart"
+  },
+  "flow_kindClip": {
+    "message": "klipp"
+  },
+  "flow_kindPicture": {
+    "message": "bilde"
+  },
+  "flow_grabPre": {
+    "message": "henter "
+  },
+  "flow_grabSuf": {
+    "message": " fra Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ klarte ikke å lese media"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN-autentisering: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — prøver via server"
+  },
+  "flow_inGallerySuf": {
+    "message": " til Galleri → \"Google Flow\"-fanen"
+  },
+  "flow_noConnConnect": {
+    "message": "ingen tilkobling — klikk \"Koble til\" i TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klikk ønsket bilde/video i Flow, deretter \"Til Galleri\""
+  },
+  "flow_multipleMedia": {
+    "message": "flere medier — velg hva du vil hente ↓"
+  },
+  "flow_openingProject": {
+    "message": "åpner prosjekt i Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow godtar kun bilder her — last opp videoer via Flows \"Opplastinger\"-seksjon"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "opplastingsfelt ikke funnet — åpne et PROSJEKT i Flow (ikke hovedsiden): inne i et prosjekt er det en opplasting (+/\"Opplastinger\")"
+  },
+  "flow_loadingList": {
+    "message": "laster liste…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "ingen tilkobling — klikk \"Koble til\""
+  },
+  "flow_galleryEmpty": {
+    "message": "ingen medier i Galleri"
+  },
+  "flow_reconSent": {
+    "message": "✓ layout-rekognosering sendt"
+  },
+  "flow_reconFail": {
+    "message": "⚠ rekognosering: "
+  },
+  "flow_noConnection": {
+    "message": "ingen tilkobling"
+  },
+  "flow_gettingMedia": {
+    "message": "henter medier fra Galleri…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ klarte ikke å laste ned fra Galleri"
+  },
+  "flow_insertedImage": {
+    "message": "bilde"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " satt inn i Flow fra Galleri"
+  },
+  "flow_newClipReady": {
+    "message": "nytt klipp klart — laster opp til Galleri…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klipp i Galleri → \"Videoer\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klipp ikke lagret: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "ikke tilkoblet"
+  },
+  "hg_keepTabOpen": {
+    "message": "Hold denne fanen åpen — hoder vil gjengis automatisk basert på abonnementet ditt."
+  },
+  "hg_openTT": {
+    "message": "Åpne TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "rekognosering: "
+  },
+  "hg_reconSuffix": {
+    "message": " studioanrop"
+  },
+  "hg_reconBtn": {
+    "message": "API-rekognosering"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Fang gjeldende studio-API og send til oss (for justering)"
+  },
+  "hg_statusWorking": {
+    "message": "arbeider"
+  },
+  "hg_statusLogin": {
+    "message": "logg inn på kontoen din"
+  },
+  "hg_stTitleOpen": {
+    "message": "Åpne TrendTraffic og logg inn — den kobles til automatisk"
+  },
+  "hg_photoDlFailed": {
+    "message": "nedlasting av bilde mislyktes"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: gjengivelse mislyktes"
+  },
+  "hg_genPrefix": {
+    "message": "generering: "
+  },
+  "hg_waiting": {
+    "message": "venter"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen ga ikke video i tide"
+  },
+  "hg_headNum": {
+    "message": "▶ hode #"
+  },
+  "hg_readyLook": {
+    "message": "klar kontoavatar — bildeopplasting hoppet over"
+  },
+  "hg_photoUpload": {
+    "message": "bilde → snakkende_bilde…"
+  },
+  "hg_genStartPre": {
+    "message": "starter generering ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ utseende ikke funnet i denne økten — laster opp bilde og prøver på nytt…"
+  },
+  "hg_headReady": {
+    "message": "✓ hode klart, henter mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ sender til TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API-rekognosering sendt"
+  },
+  "hg_reconFail": {
+    "message": "⚠ rekognosering: "
+  },
+  "hg_noConnection": {
+    "message": "ingen tilkobling"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artefaktfil fanget opp ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "filfangst mislyktes: "
+  },
+  "nlm_dlProbe": {
+    "message": "last ned? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "nedlastings-URL fanget opp (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "ikke tilkoblet"
+  },
+  "nlm_account": {
+    "message": "Konto"
+  },
+  "nlm_accountTitle": {
+    "message": "Google-konto brukt for NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Venter på oppgave fra TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Vis ferdige studioarbeider — klikk på et arbeid for å laste det inn i TrendTraffic-galleriet"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Til Galleri"
+  },
+  "nlm_openTT": {
+    "message": "Åpne TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Fang gjeldende NotebookLM-oppsett og send til oss (for justering av velger)"
+  },
+  "nlm_reconBtn": {
+    "message": "oppsett recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "åpne en notatbok — jeg viser studioarbeidene dens"
+  },
+  "nlm_noReadyWorks": {
+    "message": "ingen ferdige studioarbeider (eller genereres fortsatt)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Last inn \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" til Galleri"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ allerede"
+  },
+  "nlm_refresh": {
+    "message": "oppdater"
+  },
+  "nlm_close": {
+    "message": "lukk"
+  },
+  "nlm_loginTT": {
+    "message": "logg inn på TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "logg inn på Google"
+  },
+  "nlm_working": {
+    "message": "arbeider"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Oppretter notatbok: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ notatbok opprettet: "
+  },
+  "nlm_addingSource": {
+    "message": "Legger til kilde ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "filnedlasting fra Galleri mislyktes"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM godtar ikke videofiler. For videoer, legg til \"Analyse\" som tekst eller en lenke (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Filopplasting til NotebookLM er utilgjengelig fra utvidelsen (innfødt vindu). Bruk \"Analyse\"/\"Lim inn tekst\" eller en lenke (nettsted/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ filkilde lagt til"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "ukjent kildetype"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ kilde lagt til ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Leser notatbokliste…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ notatbøker (mine+tilgjengelige): "
+  },
+  "nlm_asking": {
+    "message": "Spør: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "svar ikke fullstendig lest"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ svar mottatt"
+  },
+  "nlm_unknownType": {
+    "message": "ukjent type: "
+  },
+  "nlm_generatingTask": {
+    "message": "Genererer: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generering startet ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", standard), venter på artefakt…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakt klar ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), venter på artefakt…"
+  },
+  "nlm_dlRequested": {
+    "message": "nedlasting av artefakt forespurt…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "klarte ikke å avskjære artefaktnedlasting"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Last ned til TrendTraffic Galleri"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" har ingen \"Last ned\" — fanger som tekst…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" har ingen \"Last ned\" — fanger som tekst…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galleri"
+  },
+  "nlm_alreadyWas": {
+    "message": " (eksisterte allerede)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ ikke lagret: "
+  },
+  "nlm_noConnection": {
+    "message": "ingen forbindelse"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL-nedlasting mislyktes: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ klarte ikke å fange fil \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ klikk førte bort fra notatboksiden — returnerer"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekst \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" ikke fanget"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galleri (som tekst)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikal"
+  },
+  "nlm_916Title": {
+    "message": "Legg til en 9:16 vertikal formatprompt (Shorts/Reels/TikTok). Prompt på engelsk — NotebookLM forstår instruksjoner best på denne måten."
+  },
+  "nlm_916Already": {
+    "message": "✓ allerede lagt til"
+  },
+  "nlm_916Added": {
+    "message": "✓ lagt til"
+  },
+  "nlm_reconSent": {
+    "message": "✓ oppsett recon sendt"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Gjenkjenning mislyktes: "
+  },
+  "nlm_unknownAction": {
+    "message": "Ukjent handling: "
+  }
+}

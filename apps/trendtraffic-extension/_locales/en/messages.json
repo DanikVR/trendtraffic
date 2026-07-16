@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "The unified TrendTraffic extension: a bridge to Google Flow (Veo), Google NotebookLM (Hotebook), and HeyGen (UGC talking heads with your subscription). Real browser task queue, generation automation, and Gallery exchange. Install once — the panel activates on the service where the tab is open."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "task timeout"
+  },
+  "bg_openFlowTab": {
+    "message": "Open the Google Flow tab — the task will complete automatically"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: unusual activity — paused"
+  },
+  "bg_noResult": {
+    "message": "no result"
+  },
+  "bg_notConnected": {
+    "message": "not connected"
+  },
+  "bg_openFlowFailed": {
+    "message": "failed to open Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow not loaded — please sign in to labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "no response from Flow"
+  },
+  "bg_noUrl": {
+    "message": "no url"
+  },
+  "bg_dlRejected": {
+    "message": "download failed (CDN rejected request)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — too large"
+  },
+  "bg_openNlmFailed": {
+    "message": "failed to open NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "notebook not created (selector scouting for 'create' needed)"
+  },
+  "bg_listFailed": {
+    "message": "failed to get list"
+  },
+  "bg_actionFailed": {
+    "message": "action failed"
+  },
+  "bg_openNlmGen": {
+    "message": "Open NotebookLM — generation will complete automatically"
+  },
+  "bg_loginNlm": {
+    "message": "Sign in to NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "failed to intercept artifact download"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artifact download failed: "
+  },
+  "bg_openHgTab": {
+    "message": "Open the app.heygen.com studio tab — the avatar will render automatically"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio is still loading — retrying later"
+  },
+  "bg_retry": {
+    "message": "retry"
+  },
+  "bg_dlFailed": {
+    "message": "download failed"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "not connected"
+  },
+  "flow_waitingTask": {
+    "message": "Waiting for tasks from TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pause"
+  },
+  "flow_openTT": {
+    "message": "Open TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ To Gallery"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Send a finished clip from Flow to the TrendTraffic Gallery"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ From Gallery"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Take a video from the Gallery and upload it to Flow for processing"
+  },
+  "flow_reconPrefix": {
+    "message": "scouting: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow requests"
+  },
+  "flow_reconBtn": {
+    "message": "scout layout"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Capture the current Flow layout and send it to us (for adjustment)"
+  },
+  "flow_pauseManual": {
+    "message": "Pause enabled manually"
+  },
+  "flow_statusPause": {
+    "message": "paused"
+  },
+  "flow_statusWorking": {
+    "message": "working"
+  },
+  "flow_statusLogin": {
+    "message": "sign in to account"
+  },
+  "flow_stTitleOpen": {
+    "message": "Open TrendTraffic and sign in — it will connect automatically"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Open full Gallery →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Gallery — select like in an editor, with a '→ Flow' button on each file"
+  },
+  "flow_fileFallback": {
+    "message": "file"
+  },
+  "flow_pickHint": {
+    "message": "Click the desired item — it will be added to the Gallery"
+  },
+  "flow_noPrompt": {
+    "message": "(no prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Task #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ prompt field not found — selector scouting needed"
+  },
+  "flow_promptSet": {
+    "message": "prompt set"
+  },
+  "flow_refUploaded": {
+    "message": "reference uploaded to Flow"
+  },
+  "flow_refPrefix": {
+    "message": "reference: "
+  },
+  "flow_refDlFailed": {
+    "message": "reference download failed"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ generation button not found — scouting needed"
+  },
+  "flow_genStarted": {
+    "message": "generation started, waiting for clip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ clip wait timeout"
+  },
+  "flow_clipReady": {
+    "message": "✓ clip ready"
+  },
+  "flow_kindClip": {
+    "message": "clip"
+  },
+  "flow_kindPicture": {
+    "message": "image"
+  },
+  "flow_grabPre": {
+    "message": "grabbing "
+  },
+  "flow_grabSuf": {
+    "message": " from Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ failed to read media"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN auth: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — trying via server"
+  },
+  "flow_inGallerySuf": {
+    "message": " to Gallery → \"Google Flow\" tab"
+  },
+  "flow_noConnConnect": {
+    "message": "no connection — click \"Connect\" in TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ click desired photo/video in Flow, then \"To Gallery\""
+  },
+  "flow_multipleMedia": {
+    "message": "multiple media — select what to grab ↓"
+  },
+  "flow_openingProject": {
+    "message": "opening project in Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow only accepts images here — upload videos via Flow's \"Uploads\" section"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "upload field not found — open a PROJECT in Flow (not main page): inside a project there's an upload (+/\"Uploads\")"
+  },
+  "flow_loadingList": {
+    "message": "loading list…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "no connection — click \"Connect\""
+  },
+  "flow_galleryEmpty": {
+    "message": "no media in Gallery"
+  },
+  "flow_reconSent": {
+    "message": "✓ layout recon sent"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "no connection"
+  },
+  "flow_gettingMedia": {
+    "message": "getting media from Gallery…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ failed to download from Gallery"
+  },
+  "flow_insertedImage": {
+    "message": "image"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " inserted into Flow from Gallery"
+  },
+  "flow_newClipReady": {
+    "message": "new clip ready — uploading to Gallery…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ clip in Gallery → \"Videos\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ clip not saved: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "not connected"
+  },
+  "hg_keepTabOpen": {
+    "message": "Keep this tab open — heads will render automatically based on your subscription."
+  },
+  "hg_openTT": {
+    "message": "Open TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " studio calls"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Capture current studio API and send to us (for adjustment)"
+  },
+  "hg_statusWorking": {
+    "message": "working"
+  },
+  "hg_statusLogin": {
+    "message": "log in to your account"
+  },
+  "hg_stTitleOpen": {
+    "message": "Open TrendTraffic and log in — it will connect automatically"
+  },
+  "hg_photoDlFailed": {
+    "message": "photo download failed"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: render failed"
+  },
+  "hg_genPrefix": {
+    "message": "generation: "
+  },
+  "hg_waiting": {
+    "message": "waiting"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen didn't provide video in time"
+  },
+  "hg_headNum": {
+    "message": "▶ head #"
+  },
+  "hg_readyLook": {
+    "message": "ready account avatar — photo upload skipped"
+  },
+  "hg_photoUpload": {
+    "message": "photo → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "starting generation ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ look not found in this session — uploading photo and retrying…"
+  },
+  "hg_headReady": {
+    "message": "✓ head ready, getting mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ sending to TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon sent"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "no connection"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artifact file intercepted ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "file interception failed: "
+  },
+  "nlm_dlProbe": {
+    "message": "download? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "download URL intercepted (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "not connected"
+  },
+  "nlm_account": {
+    "message": "Account"
+  },
+  "nlm_accountTitle": {
+    "message": "Google Account used for NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Waiting for task from TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Show ready studio works — click on a work to load it into the TrendTraffic Gallery"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ To Gallery"
+  },
+  "nlm_openTT": {
+    "message": "Open TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Capture current NotebookLM layout and send to us (for selector adjustment)"
+  },
+  "nlm_reconBtn": {
+    "message": "layout recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "open a notebook — I'll show its studio works"
+  },
+  "nlm_noReadyWorks": {
+    "message": "no ready studio works (or still generating)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Load \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" to Gallery"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ already"
+  },
+  "nlm_refresh": {
+    "message": "refresh"
+  },
+  "nlm_close": {
+    "message": "close"
+  },
+  "nlm_loginTT": {
+    "message": "log in to TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "log in to Google"
+  },
+  "nlm_working": {
+    "message": "working"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Creating notebook: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ notebook created: "
+  },
+  "nlm_addingSource": {
+    "message": "Adding source ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "file download from Gallery failed"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM does not accept video files. For videos, add \"Analysis\" as text or a link (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "File upload to NotebookLM is unavailable from the extension (native window). Use \"Analysis\"/\"Paste text\" or a link (website/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ file source added"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "unknown source type"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ source added ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Reading notebook list…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ notebooks (my+available): "
+  },
+  "nlm_asking": {
+    "message": "Asking: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "answer not fully read"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ answer received"
+  },
+  "nlm_unknownType": {
+    "message": "unknown type: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generating: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generation started ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", default), waiting for artifact…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artifact ready ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), waiting for artifact…"
+  },
+  "nlm_dlRequested": {
+    "message": "downloading artifact requested…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "failed to intercept artifact download"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Download to TrendTraffic Gallery"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" has no \"Download\" — capturing as text…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" has no \"Download\" — capturing as text…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Gallery"
+  },
+  "nlm_alreadyWas": {
+    "message": " (already existed)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ not saved: "
+  },
+  "nlm_noConnection": {
+    "message": "no connection"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL download failed: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ failed to capture file \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ click led away from notebook page — returning"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ text \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" not captured"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Gallery (as text)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertical"
+  },
+  "nlm_916Title": {
+    "message": "Add a 9:16 vertical format prompt (Shorts/Reels/TikTok). Prompt in English — NotebookLM understands instructions best this way."
+  },
+  "nlm_916Already": {
+    "message": "✓ already added"
+  },
+  "nlm_916Added": {
+    "message": "✓ added"
+  },
+  "nlm_reconSent": {
+    "message": "✓ layout recon sent"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Recon failed: "
+  },
+  "nlm_unknownAction": {
+    "message": "Unknown action: "
+  }
+}

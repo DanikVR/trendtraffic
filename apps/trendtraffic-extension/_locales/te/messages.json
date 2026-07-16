@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — అసిస్టెంట్ (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "యూనిఫైడ్ TrendTraffic ఎక్స్‌టెన్షన్: Google Flow (Veo), Google NotebookLM (Hotebook), మరియు HeyGen (మీ సబ్‌స్క్రిప్షన్‌తో UGC టాకింగ్ హెడ్స్)కి ఒక వంతెన. నిజమైన బ్రౌజర్ టాస్క్ క్యూ, జనరేషన్ ఆటోమేషన్, మరియు గ్యాలరీ ఎక్స్ఛేంజ్. ఒక్కసారి ఇన్‌స్టాల్ చేయండి — ట్యాబ్ తెరిచి ఉన్న సేవలో ప్యానెల్ యాక్టివేట్ అవుతుంది."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — అసిస్టెంట్ (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "పని సమయం ముగిసింది"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow ట్యాబ్‌ను తెరవండి — పని స్వయంచాలకంగా పూర్తవుతుంది"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: అసాధారణ కార్యాచరణ — పాజ్ చేయబడింది"
+  },
+  "bg_noResult": {
+    "message": "ఫలితం లేదు"
+  },
+  "bg_notConnected": {
+    "message": "కనెక్ట్ కాలేదు"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow తెరవడంలో విఫలమైంది"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow లోడ్ కాలేదు — దయచేసి labs.google/flowకి సైన్ ఇన్ చేయండి"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow నుండి స్పందన లేదు"
+  },
+  "bg_noUrl": {
+    "message": "url లేదు"
+  },
+  "bg_dlRejected": {
+    "message": "డౌన్‌లోడ్ విఫలమైంది (CDN అభ్యర్థనను తిరస్కరించింది)"
+  },
+  "bg_tooBig": {
+    "message": "మీడియా >500MB — చాలా పెద్దది"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM తెరవడంలో విఫలమైంది"
+  },
+  "bg_notebookNotCreated": {
+    "message": "నోట్‌బుక్ సృష్టించబడలేదు ('సృష్టించు' కోసం సెలెక్టర్ స్కౌటింగ్ అవసరం)"
+  },
+  "bg_listFailed": {
+    "message": "జాబితాను పొందడంలో విఫలమైంది"
+  },
+  "bg_actionFailed": {
+    "message": "చర్య విఫలమైంది"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM తెరవండి — జనరేషన్ స్వయంచాలకంగా పూర్తవుతుంది"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLMకి సైన్ ఇన్ చేయండి"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "ఆర్టిఫాక్ట్ డౌన్‌లోడ్‌ను అడ్డగించడంలో విఫలమైంది"
+  },
+  "bg_artifactDlFailed": {
+    "message": "ఆర్టిఫాక్ట్ డౌన్‌లోడ్ విఫలమైంది: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com స్టూడియో ట్యాబ్‌ను తెరవండి — అవతార్ స్వయంచాలకంగా రెండర్ అవుతుంది"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen స్టూడియో ఇంకా లోడ్ అవుతోంది — తర్వాత మళ్లీ ప్రయత్నిస్తోంది"
+  },
+  "bg_retry": {
+    "message": "మళ్లీ ప్రయత్నించండి"
+  },
+  "bg_dlFailed": {
+    "message": "డౌన్‌లోడ్ విఫలమైంది"
+  },
+  "flow_state": {
+    "message": "స్థితి"
+  },
+  "flow_notConnected": {
+    "message": "కనెక్ట్ కాలేదు"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic నుండి పనుల కోసం వేచి ఉంది…"
+  },
+  "flow_pauseBtn": {
+    "message": "పాజ్ చేయండి"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic తెరవండి"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ గ్యాలరీకి"
+  },
+  "flow_toGalleryTitle": {
+    "message": "పూర్తయిన క్లిప్‌ను Flow నుండి TrendTraffic గ్యాలరీకి పంపండి"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ గ్యాలరీ నుండి"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "గ్యాలరీ నుండి వీడియోను తీసుకొని, ప్రాసెసింగ్ కోసం Flowకి అప్‌లోడ్ చేయండి"
+  },
+  "flow_reconPrefix": {
+    "message": "స్కౌటింగ్: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow అభ్యర్థనలు"
+  },
+  "flow_reconBtn": {
+    "message": "లేఅవుట్‌ను స్కౌట్ చేయండి"
+  },
+  "flow_reconBtnTitle": {
+    "message": "ప్రస్తుత Flow లేఅవుట్‌ను క్యాప్చర్ చేసి మాకు పంపండి (సర్దుబాటు కోసం)"
+  },
+  "flow_pauseManual": {
+    "message": "మాన్యువల్‌గా పాజ్ ప్రారంభించబడింది"
+  },
+  "flow_statusPause": {
+    "message": "పాజ్ చేయబడింది"
+  },
+  "flow_statusWorking": {
+    "message": "పని చేస్తోంది"
+  },
+  "flow_statusLogin": {
+    "message": "ఖాతాకు సైన్ ఇన్ చేయండి"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic తెరిచి సైన్ ఇన్ చేయండి — అది స్వయంచాలకంగా కనెక్ట్ అవుతుంది"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 పూర్తి గ్యాలరీని తెరవండి →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic గ్యాలరీ — ఎడిటర్‌లో వలె ఎంచుకోండి, ప్రతి ఫైల్‌లో '→ Flow' బటన్‌తో"
+  },
+  "flow_fileFallback": {
+    "message": "ఫైల్"
+  },
+  "flow_pickHint": {
+    "message": "కావాల్సిన అంశంపై క్లిక్ చేయండి — అది గ్యాలరీకి జోడించబడుతుంది"
+  },
+  "flow_noPrompt": {
+    "message": "(ప్రాంప్ట్ లేదు)"
+  },
+  "flow_taskNum": {
+    "message": "పని #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ ప్రాంప్ట్ ఫీల్డ్ కనుగొనబడలేదు — సెలెక్టర్ స్కౌటింగ్ అవసరం"
+  },
+  "flow_promptSet": {
+    "message": "ప్రాంప్ట్ సెట్ చేయబడింది"
+  },
+  "flow_refUploaded": {
+    "message": "రిఫరెన్స్ Flowకి అప్‌లోడ్ చేయబడింది"
+  },
+  "flow_refPrefix": {
+    "message": "రిఫరెన్స్: "
+  },
+  "flow_refDlFailed": {
+    "message": "రిఫరెన్స్ డౌన్‌లోడ్ విఫలమైంది"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ జనరేషన్ బటన్ కనుగొనబడలేదు — స్కౌటింగ్ అవసరం"
+  },
+  "flow_genStarted": {
+    "message": "జనరేషన్ ప్రారంభించబడింది, క్లిప్ కోసం వేచి ఉంది…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ క్లిప్ వేచి ఉండే సమయం ముగిసింది"
+  },
+  "flow_clipReady": {
+    "message": "✓ క్లిప్ సిద్ధంగా ఉంది"
+  },
+  "flow_kindClip": {
+    "message": "క్లిప్"
+  },
+  "flow_kindPicture": {
+    "message": "చిత్రం"
+  },
+  "flow_grabPre": {
+    "message": "గ్రాబింగ్ "
+  },
+  "flow_grabSuf": {
+    "message": " Flow నుండి…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ మీడియాను చదవడంలో విఫలమైంది"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN ప్రమాణీకరణ: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — సర్వర్ ద్వారా ప్రయత్నిస్తోంది"
+  },
+  "flow_inGallerySuf": {
+    "message": " గ్యాలరీకి → \"Google Flow\" ట్యాబ్"
+  },
+  "flow_noConnConnect": {
+    "message": "కనెక్షన్ లేదు — TrendTrafficలో \"కనెక్ట్\" క్లిక్ చేయండి"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ Flowలో కావలసిన ఫోటో/వీడియోను క్లిక్ చేసి, ఆపై \"గ్యాలరీకి\" క్లిక్ చేయండి"
+  },
+  "flow_multipleMedia": {
+    "message": "బహుళ మీడియా — దేనిని గ్రాబ్ చేయాలో ఎంచుకోండి ↓"
+  },
+  "flow_openingProject": {
+    "message": "Flowలో ప్రాజెక్ట్‌ను తెరుస్తోంది…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow ఇక్కడ చిత్రాలను మాత్రమే అంగీకరిస్తుంది — Flow యొక్క \"అప్‌లోడ్‌లు\" విభాగం ద్వారా వీడియోలను అప్‌లోడ్ చేయండి"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "అప్‌లోడ్ ఫీల్డ్ కనుగొనబడలేదు — Flowలో ఒక ప్రాజెక్ట్‌ను తెరవండి (ప్రధాన పేజీ కాదు): ప్రాజెక్ట్ లోపల అప్‌లోడ్ (+/\"అప్‌లోడ్‌లు\") ఉంటుంది"
+  },
+  "flow_loadingList": {
+    "message": "జాబితాను లోడ్ చేస్తోంది…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "కనెక్షన్ లేదు — \"కనెక్ట్\" క్లిక్ చేయండి"
+  },
+  "flow_galleryEmpty": {
+    "message": "గ్యాలరీలో మీడియా లేదు"
+  },
+  "flow_reconSent": {
+    "message": "✓ లేఅవుట్ రీకాన్ పంపబడింది"
+  },
+  "flow_reconFail": {
+    "message": "⚠ రీకాన్: "
+  },
+  "flow_noConnection": {
+    "message": "కనెక్షన్ లేదు"
+  },
+  "flow_gettingMedia": {
+    "message": "గ్యాలరీ నుండి మీడియాను పొందుతోంది…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ గ్యాలరీ నుండి డౌన్‌లోడ్ చేయడంలో విఫలమైంది"
+  },
+  "flow_insertedImage": {
+    "message": "చిత్రం"
+  },
+  "flow_insertedVideo": {
+    "message": "వీడియో"
+  },
+  "flow_insertedSuf": {
+    "message": " గ్యాలరీ నుండి Flowలోకి చొప్పించబడింది"
+  },
+  "flow_newClipReady": {
+    "message": "కొత్త క్లిప్ సిద్ధంగా ఉంది — గ్యాలరీకి అప్‌లోడ్ చేస్తోంది…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ గ్యాలరీలో క్లిప్ → \"వీడియోలు\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ క్లిప్ సేవ్ చేయబడలేదు: "
+  },
+  "hg_state": {
+    "message": "స్థితి"
+  },
+  "hg_notConnected": {
+    "message": "కనెక్ట్ చేయబడలేదు"
+  },
+  "hg_keepTabOpen": {
+    "message": "ఈ ట్యాబ్‌ను తెరిచి ఉంచండి — మీ సబ్‌స్క్రిప్షన్ ఆధారంగా హెడ్‌లు స్వయంచాలకంగా రెండర్ చేయబడతాయి."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic తెరవండి"
+  },
+  "hg_reconPrefix": {
+    "message": "రీకాన్: "
+  },
+  "hg_reconSuffix": {
+    "message": " స్టూడియో కాల్స్"
+  },
+  "hg_reconBtn": {
+    "message": "API రీకాన్"
+  },
+  "hg_reconBtnTitle": {
+    "message": "ప్రస్తుత స్టూడియో APIని క్యాప్చర్ చేసి మాకు పంపండి (సర్దుబాటు కోసం)"
+  },
+  "hg_statusWorking": {
+    "message": "పనిచేస్తోంది"
+  },
+  "hg_statusLogin": {
+    "message": "మీ ఖాతాలోకి లాగిన్ అవ్వండి"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTrafficని తెరిచి లాగిన్ అవ్వండి — అది స్వయంచాలకంగా కనెక్ట్ అవుతుంది"
+  },
+  "hg_photoDlFailed": {
+    "message": "ఫోటో డౌన్‌లోడ్ విఫలమైంది"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: రెండర్ విఫలమైంది"
+  },
+  "hg_genPrefix": {
+    "message": "ఉత్పత్తి: "
+  },
+  "hg_waiting": {
+    "message": "వేచి ఉంది"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen సమయానికి వీడియోను అందించలేదు"
+  },
+  "hg_headNum": {
+    "message": "▶ హెడ్ #"
+  },
+  "hg_readyLook": {
+    "message": "సిద్ధంగా ఉన్న ఖాతా అవతార్ — ఫోటో అప్‌లోడ్ దాటవేయబడింది"
+  },
+  "hg_photoUpload": {
+    "message": "ఫోటో → టాకింగ్_ఫోటో…"
+  },
+  "hg_genStartPre": {
+    "message": "ఉత్పత్తిని ప్రారంభిస్తోంది ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ ఈ సెషన్‌లో లుక్ కనుగొనబడలేదు — ఫోటోను అప్‌లోడ్ చేసి మళ్లీ ప్రయత్నిస్తోంది…"
+  },
+  "hg_headReady": {
+    "message": "✓ హెడ్ సిద్ధంగా ఉంది, mp4 పొందుతోంది…"
+  },
+  "hg_sending": {
+    "message": "✓ TrendTrafficకి పంపుతోంది"
+  },
+  "hg_reconSent": {
+    "message": "✓ API రీకాన్ పంపబడింది"
+  },
+  "hg_reconFail": {
+    "message": "⚠ రీకాన్: "
+  },
+  "hg_noConnection": {
+    "message": "కనెక్షన్ లేదు"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "ఆర్టిఫాక్ట్ ఫైల్ అడ్డగించబడింది ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "ఫైల్ అడ్డగించడం విఫలమైంది: "
+  },
+  "nlm_dlProbe": {
+    "message": "డౌన్‌లోడ్? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "డౌన్‌లోడ్ URL అడ్డగించబడింది (window.open)"
+  },
+  "nlm_state": {
+    "message": "స్థితి"
+  },
+  "nlm_notConnected": {
+    "message": "కనెక్ట్ కాలేదు"
+  },
+  "nlm_account": {
+    "message": "ఖాతా"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM కోసం ఉపయోగించిన Google ఖాతా"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic నుండి పని కోసం వేచి ఉంది…"
+  },
+  "nlm_grabTitle": {
+    "message": "సిద్ధంగా ఉన్న స్టూడియో పనులను చూపించు — TrendTraffic గ్యాలరీలోకి లోడ్ చేయడానికి పనిపై క్లిక్ చేయండి"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ గ్యాలరీకి"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic తెరవండి"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "ప్రస్తుత NotebookLM లేఅవుట్‌ను క్యాప్చర్ చేసి మాకు పంపండి (సెలెక్టర్ సర్దుబాటు కోసం)"
+  },
+  "nlm_reconBtn": {
+    "message": "లేఅవుట్ రీకాన్"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "నోట్‌బుక్‌ను తెరవండి — నేను దాని స్టూడియో పనులను చూపిస్తాను"
+  },
+  "nlm_noReadyWorks": {
+    "message": "సిద్ధంగా ఉన్న స్టూడియో పనులు లేవు (లేదా ఇంకా ఉత్పత్తి అవుతున్నాయి)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "లోడ్ చేయి \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" గ్యాలరీకి"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ ఇప్పటికే"
+  },
+  "nlm_refresh": {
+    "message": "తాజాకరించు"
+  },
+  "nlm_close": {
+    "message": "మూసివేయి"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTrafficకి లాగిన్ అవ్వండి"
+  },
+  "nlm_loginGoogle": {
+    "message": "Googleకి లాగిన్ అవ్వండి"
+  },
+  "nlm_working": {
+    "message": "పని చేస్తోంది"
+  },
+  "nlm_creatingNotebook": {
+    "message": "నోట్‌బుక్ సృష్టిస్తోంది: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ నోట్‌బుక్ సృష్టించబడింది: "
+  },
+  "nlm_addingSource": {
+    "message": "మూలాన్ని జోడిస్తోంది ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "గ్యాలరీ నుండి ఫైల్ డౌన్‌లోడ్ విఫలమైంది"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM వీడియో ఫైల్‌లను అంగీకరించదు. వీడియోల కోసం, \"విశ్లేషణ\"ను టెక్స్ట్‌గా లేదా లింక్‌గా (YouTube) జోడించండి."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "ఎక్స్‌టెన్షన్ (స్థానిక విండో) నుండి NotebookLMకి ఫైల్ అప్‌లోడ్ అందుబాటులో లేదు. \"విశ్లేషణ\"/\"టెక్స్ట్ అతికించు\" లేదా లింక్‌ను (వెబ్‌సైట్/YouTube) ఉపయోగించండి."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ ఫైల్ మూలం జోడించబడింది"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "తెలియని మూలం రకం"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ మూలం జోడించబడింది ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "నోట్‌బుక్ జాబితాను చదువుతోంది…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ నోట్‌బుక్‌లు (నా+అందుబాటులో): "
+  },
+  "nlm_asking": {
+    "message": "అడుగుతోంది: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "సమాధానం పూర్తిగా చదవబడలేదు"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ సమాధానం అందింది"
+  },
+  "nlm_unknownType": {
+    "message": "తెలియని రకం: "
+  },
+  "nlm_generatingTask": {
+    "message": "ఉత్పత్తి చేస్తోంది: "
+  },
+  "nlm_genStartedPre": {
+    "message": "ఉత్పత్తి ప్రారంభమైంది ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", డిఫాల్ట్), ఆర్టిఫాక్ట్ కోసం వేచి ఉంది…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ ఆర్టిఫాక్ట్ సిద్ధంగా ఉంది ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), ఆర్టిఫాక్ట్ కోసం వేచి ఉంది…"
+  },
+  "nlm_dlRequested": {
+    "message": "ఆర్టిఫాక్ట్ డౌన్‌లోడ్ అభ్యర్థించబడింది…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "ఆర్టిఫాక్ట్ డౌన్‌లోడ్‌ను అడ్డుకోవడంలో విఫలమైంది"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic గ్యాలరీకి డౌన్‌లోడ్ చేయండి"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\"కి \"డౌన్‌లోడ్\" లేదు — టెక్స్ట్‌గా క్యాప్చర్ చేస్తోంది…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\"కి \"డౌన్‌లోడ్\" లేదు — టెక్స్ట్‌గా క్యాప్చర్ చేస్తోంది…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → గ్యాలరీ"
+  },
+  "nlm_alreadyWas": {
+    "message": " (ఇప్పటికే ఉంది)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ సేవ్ చేయబడలేదు: "
+  },
+  "nlm_noConnection": {
+    "message": "కనెక్షన్ లేదు"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL డౌన్‌లోడ్ విఫలమైంది: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ఫైల్ \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ క్లిక్ నోట్‌బుక్ పేజీ నుండి దూరంగా దారితీసింది — తిరిగి వస్తోంది"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ టెక్స్ట్ \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" క్యాప్చర్ చేయబడలేదు"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → గ్యాలరీ (టెక్స్ట్‌గా)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 నిలువు"
+  },
+  "nlm_916Title": {
+    "message": "9:16 నిలువు ఫార్మాట్ ప్రాంప్ట్‌ను (షార్ట్స్/రీల్స్/టిక్‌టాక్) జోడించండి. ప్రాంప్ట్ ఆంగ్లంలో — NotebookLM సూచనలను ఈ విధంగా ఉత్తమంగా అర్థం చేసుకుంటుంది."
+  },
+  "nlm_916Already": {
+    "message": "✓ ఇప్పటికే జోడించబడింది"
+  },
+  "nlm_916Added": {
+    "message": "✓ జోడించబడింది"
+  },
+  "nlm_reconSent": {
+    "message": "✓ లేఅవుట్ రీకాన్ పంపబడింది"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ రీకాన్ విఫలమైంది: "
+  },
+  "nlm_unknownAction": {
+    "message": "తెలియని చర్య: "
+  }
+}

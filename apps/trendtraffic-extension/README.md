@@ -86,10 +86,22 @@ DOM обоих сервисов нестабилен, поэтому селек�
 cd apps/trendtraffic-extension
 # ОБЯЗАТЕЛЬНО с icons/ — манифест ссылается на них, без папки Chrome не грузит манифест
 # («Could not load icon 'icons/icon-16.png'», грабли v1.3.29 15.07.2026).
+# ОБЯЗАТЕЛЬНО с _locales/ — manifest.name = __MSG_extName__ + default_locale (с v1.4.0);
+# без папки Chrome не установит расширение вовсе.
 # Форвард-слэши в путях (Chrome и unzip читают одинаково):
-zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md icons src
+zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md icons src _locales
 # Если бинаря zip нет (Windows): python zipfile с путями через '/' — см. deployment-state.
 ```
+
+### _locales (i18n, с v1.4.0)
+- Коды папок — СТРОГО из списка chrome.i18n (~54: en, ru, de, …, fil, zh_CN, zh_TW,
+  es_419, pt_BR, pt_PT). Папка с любым другим кодом (ceb, haw, tl…) валит установку
+  распакованного расширения («unrecognized locale»).
+- Генерация/обновление: `node apps/frontend/scripts/translate-ext-runtime.mjs`
+  (харвестит `T('key','русский фолбэк')` из src/*.js → ru → нативный en → остальные).
+- В коде переводятся ТОЛЬКО строки, которые расширение само рендерит. DOM-матчеры
+  чужого UI (LABELS/GEN_UI/стемы кнопок/SRC_DLG_RE) НЕ переводить — сломается
+  автоматизация (урок бага «чип 9:16»).
 
 Версию (`manifest.json` → `version`) бампать вместе с `TT_EXT_VERSION` в
 `apps/frontend/src/components/AppVersion.tsx` — она показывается на карточке «Скачать».

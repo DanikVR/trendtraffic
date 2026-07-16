@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — помощник (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Единое расширение TrendTraffic: мост с Google Flow (Veo), Google NotebookLM (Hotebook) и HeyGen (говорящие головы UGC по вашей подписке). Очередь задач в реальном браузере, автоматизация генераций и обмен с Галереей. Ставится один раз — панель включается на том сервисе, где открыта вкладка."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — помощник (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "таймаут задачи"
+  },
+  "bg_openFlowTab": {
+    "message": "Откройте вкладку Google Flow — задача выполнится сама"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: unusual activity — пауза"
+  },
+  "bg_noResult": {
+    "message": "нет результата"
+  },
+  "bg_notConnected": {
+    "message": "не подключено"
+  },
+  "bg_openFlowFailed": {
+    "message": "не удалось открыть Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow не загрузился — войдите в labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "нет ответа от Flow"
+  },
+  "bg_noUrl": {
+    "message": "нет url"
+  },
+  "bg_dlRejected": {
+    "message": "скачивание не удалось (CDN отклонил запрос)"
+  },
+  "bg_tooBig": {
+    "message": "медиа >500МБ — слишком большое"
+  },
+  "bg_openNlmFailed": {
+    "message": "не удалось открыть NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "блокнот не создался (нужна разведка селекторов «создать»)"
+  },
+  "bg_listFailed": {
+    "message": "не удалось получить список"
+  },
+  "bg_actionFailed": {
+    "message": "действие не выполнено"
+  },
+  "bg_openNlmGen": {
+    "message": "Откройте NotebookLM — генерация выполнится сама"
+  },
+  "bg_loginNlm": {
+    "message": "Войдите в NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "не удалось перехватить скачивание артефакта"
+  },
+  "bg_artifactDlFailed": {
+    "message": "не скачался артефакт: "
+  },
+  "bg_openHgTab": {
+    "message": "Откройте вкладку студии app.heygen.com — голова отрендерится сама"
+  },
+  "bg_hgLoading": {
+    "message": "Студия HeyGen ещё грузится — повторю позже"
+  },
+  "bg_retry": {
+    "message": "повтор"
+  },
+  "bg_dlFailed": {
+    "message": "скачивание не удалось"
+  },
+  "flow_state": {
+    "message": "Состояние"
+  },
+  "flow_notConnected": {
+    "message": "не подключено"
+  },
+  "flow_waitingTask": {
+    "message": "Ожидаю задачи из TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Пауза"
+  },
+  "flow_openTT": {
+    "message": "Открыть TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ В галерею"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Отправить готовый клип из Flow в Галерею TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Из Галереи"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Взять видео из Галереи и залить в Flow на переработку"
+  },
+  "flow_reconPrefix": {
+    "message": "разведка: "
+  },
+  "flow_reconSuffix": {
+    "message": " запросов Flow"
+  },
+  "flow_reconBtn": {
+    "message": "разведка вёрстки"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Снять текущую вёрстку Flow и прислать нам (для подстройки)"
+  },
+  "flow_pauseManual": {
+    "message": "Пауза включена вручную"
+  },
+  "flow_statusPause": {
+    "message": "пауза"
+  },
+  "flow_statusWorking": {
+    "message": "работает"
+  },
+  "flow_statusLogin": {
+    "message": "войдите в аккаунт"
+  },
+  "flow_stTitleOpen": {
+    "message": "Открыть TrendTraffic и войти — подключится само"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Открыть полную Галерею →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Галерея TrendTraffic — выбор как в редакторе, на каждом файле кнопка «→ Flow»"
+  },
+  "flow_fileFallback": {
+    "message": "файл"
+  },
+  "flow_pickHint": {
+    "message": "Кликни нужное — заберётся в Галерею"
+  },
+  "flow_noPrompt": {
+    "message": "(без промпта)"
+  },
+  "flow_taskNum": {
+    "message": "Задача #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ поле промпта не найдено — нужна разведка селекторов"
+  },
+  "flow_promptSet": {
+    "message": "промпт подставлен"
+  },
+  "flow_refUploaded": {
+    "message": "референс залит в Flow"
+  },
+  "flow_refPrefix": {
+    "message": "референс: "
+  },
+  "flow_refDlFailed": {
+    "message": "референс не скачался"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ кнопка генерации не найдена — нужна разведка"
+  },
+  "flow_genStarted": {
+    "message": "генерация запущена, жду клип…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ таймаут ожидания клипа"
+  },
+  "flow_clipReady": {
+    "message": "✓ клип готов"
+  },
+  "flow_kindClip": {
+    "message": "клип"
+  },
+  "flow_kindPicture": {
+    "message": "картинку"
+  },
+  "flow_grabPre": {
+    "message": "забираю "
+  },
+  "flow_grabSuf": {
+    "message": " из Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ не удалось прочитать медиа"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN за авторизацией: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — пробую через сервер"
+  },
+  "flow_inGallerySuf": {
+    "message": " в Галерее → вкладка «Google Flow»"
+  },
+  "flow_noConnConnect": {
+    "message": "нет подключения — нажми «Подключить» в TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ кликни нужное фото/видео в Flow, потом «В галерею»"
+  },
+  "flow_multipleMedia": {
+    "message": "несколько медиа — выбери, что забрать ↓"
+  },
+  "flow_openingProject": {
+    "message": "открываю проект в Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow здесь принимает только картинки — видео залей через раздел «Загрузки» Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "поле загрузки не найдено — открой ПРОЕКТ в Flow (не главную): внутри проекта есть загрузка (+/«Загрузки»)"
+  },
+  "flow_loadingList": {
+    "message": "загрузка списка…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "нет подключения — нажми «Подключить»"
+  },
+  "flow_galleryEmpty": {
+    "message": "в Галерее нет медиа"
+  },
+  "flow_reconSent": {
+    "message": "✓ разведка вёрстки отправлена"
+  },
+  "flow_reconFail": {
+    "message": "⚠ разведка: "
+  },
+  "flow_noConnection": {
+    "message": "нет подключения"
+  },
+  "flow_gettingMedia": {
+    "message": "получаю медиа из Галереи…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ не скачалось из Галереи"
+  },
+  "flow_insertedImage": {
+    "message": "картинка"
+  },
+  "flow_insertedVideo": {
+    "message": "видео"
+  },
+  "flow_insertedSuf": {
+    "message": " вставлено в Flow из Галереи"
+  },
+  "flow_newClipReady": {
+    "message": "новый клип готов — заливаю в Галерею…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ клип в Галерее → «Видео»"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ клип не сохранился: "
+  },
+  "hg_state": {
+    "message": "Состояние"
+  },
+  "hg_notConnected": {
+    "message": "не подключено"
+  },
+  "hg_keepTabOpen": {
+    "message": "Держите эту вкладку открытой — головы отрендерятся сами по вашей подписке."
+  },
+  "hg_openTT": {
+    "message": "Открыть TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "разведка: "
+  },
+  "hg_reconSuffix": {
+    "message": " вызовов студии"
+  },
+  "hg_reconBtn": {
+    "message": "разведка API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Снять текущее API студии и прислать нам (для подстройки)"
+  },
+  "hg_statusWorking": {
+    "message": "работает"
+  },
+  "hg_statusLogin": {
+    "message": "войдите в аккаунт"
+  },
+  "hg_stTitleOpen": {
+    "message": "Открыть TrendTraffic и войти — подключится само"
+  },
+  "hg_photoDlFailed": {
+    "message": "фото не скачалось"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: рендер не удался"
+  },
+  "hg_genPrefix": {
+    "message": "генерация: "
+  },
+  "hg_waiting": {
+    "message": "ждём"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen не отдал видео вовремя"
+  },
+  "hg_headNum": {
+    "message": "▶ голова #"
+  },
+  "hg_readyLook": {
+    "message": "готовый аватар аккаунта — загрузка фото пропущена"
+  },
+  "hg_photoUpload": {
+    "message": "фото → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "запускаю генерацию ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ лук не найден в этой сессии — заливаю фото и повторяю…"
+  },
+  "hg_headReady": {
+    "message": "✓ голова готова, забираю mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ отправляю в TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ разведка API отправлена"
+  },
+  "hg_reconFail": {
+    "message": "⚠ разведка: "
+  },
+  "hg_noConnection": {
+    "message": "нет подключения"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "перехвачен файл артефакта ("
+  },
+  "nlm_kbComma": {
+    "message": " КБ, "
+  },
+  "nlm_captureFailed": {
+    "message": "перехват файла не удался: "
+  },
+  "nlm_dlProbe": {
+    "message": "скачивание? "
+  },
+  "nlm_kb": {
+    "message": "КБ"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "перехвачен URL скачивания (window.open)"
+  },
+  "nlm_state": {
+    "message": "Состояние"
+  },
+  "nlm_notConnected": {
+    "message": "не подключено"
+  },
+  "nlm_account": {
+    "message": "Аккаунт"
+  },
+  "nlm_accountTitle": {
+    "message": "Аккаунт Google, под которым открыт NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Ожидаю задачи из TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Показать готовые работы студии — клик по работе загружает её в Галерею TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ В галерею"
+  },
+  "nlm_openTT": {
+    "message": "Открыть TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Снять текущую вёрстку NotebookLM и прислать нам (для подстройки селекторов)"
+  },
+  "nlm_reconBtn": {
+    "message": "разведка вёрстки"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "откройте блокнот — покажу его работы студии"
+  },
+  "nlm_noReadyWorks": {
+    "message": "нет готовых работ студии (или ещё генерятся)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Загрузить «"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "» в Галерею"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ уже"
+  },
+  "nlm_refresh": {
+    "message": "обновить"
+  },
+  "nlm_close": {
+    "message": "закрыть"
+  },
+  "nlm_loginTT": {
+    "message": "войдите в TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "войдите в Google"
+  },
+  "nlm_working": {
+    "message": "работает"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Создаю блокнот: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ блокнот создан: "
+  },
+  "nlm_addingSource": {
+    "message": "Добавляю источник ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "не скачался файл из Галереи"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM не принимает видео-файлы. Для ролика добавьте «Анализ» текстом или ссылку (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Загрузка файлов в NotebookLM недоступна из расширения (нативное окно). Используйте «Анализ»/«Вставить текст» или ссылку (сайт/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ файл-источник добавлен"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "неизвестный тип источника"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ источник добавлен ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Читаю список блокнотов…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ блокнотов (мои+доступные): "
+  },
+  "nlm_asking": {
+    "message": "Спрашиваю: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "ответ не дочитался"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ ответ получен"
+  },
+  "nlm_unknownType": {
+    "message": "неизвестный тип: "
+  },
+  "nlm_generatingTask": {
+    "message": "Генерирую: "
+  },
+  "nlm_genStartedPre": {
+    "message": "генерация запущена ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", дефолт), жду артефакт…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ артефакт готов ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), жду артефакт…"
+  },
+  "nlm_dlRequested": {
+    "message": "запросил скачивание артефакта…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "не удалось перехватить скачивание артефакта"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Скачать в Галерею TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "у «"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "» нет «Скачать» — снимаю текстом…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ «"
+  },
+  "nlm_toGallerySuf": {
+    "message": "» → Галерея"
+  },
+  "nlm_alreadyWas": {
+    "message": " (уже была)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ не сохранилось: "
+  },
+  "nlm_noConnection": {
+    "message": "нет подключения"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ не скачалось по URL: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ не перехватил файл «"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ клик увёл со страницы блокнота — возвращаюсь"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ текст «"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "» не снялся"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "» → Галерея (текстом)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 вертикально"
+  },
+  "nlm_916Title": {
+    "message": "Дописать промпт вертикального формата 9:16 (Shorts/Reels/TikTok). Промпт на английском — так NotebookLM понимает инструкции лучше всего."
+  },
+  "nlm_916Already": {
+    "message": "✓ уже добавлено"
+  },
+  "nlm_916Added": {
+    "message": "✓ добавлено"
+  },
+  "nlm_reconSent": {
+    "message": "✓ разведка вёрстки отправлена"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ разведка: "
+  },
+  "nlm_unknownAction": {
+    "message": "неизвестное действие: "
+  }
+}

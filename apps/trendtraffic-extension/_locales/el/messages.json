@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Βοηθός (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Η ενιαία επέκταση TrendTraffic: μια γέφυρα προς το Google Flow (Veo), το Google NotebookLM (Hotebook) και το HeyGen (UGC talking heads με τη συνδρομή σας). Πραγματική ουρά εργασιών προγράμματος περιήγησης, αυτοματοποίηση δημιουργίας και ανταλλαγή Gallery. Εγκαταστήστε μία φορά — ο πίνακας ενεργοποιείται στην υπηρεσία όπου είναι ανοιχτή η καρτέλα."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Βοηθός (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "λήξη χρονικού ορίου εργασίας"
+  },
+  "bg_openFlowTab": {
+    "message": "Ανοίξτε την καρτέλα Google Flow — η εργασία θα ολοκληρωθεί αυτόματα"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: ασυνήθιστη δραστηριότητα — σε παύση"
+  },
+  "bg_noResult": {
+    "message": "κανένα αποτέλεσμα"
+  },
+  "bg_notConnected": {
+    "message": "μη συνδεδεμένο"
+  },
+  "bg_openFlowFailed": {
+    "message": "αποτυχία ανοίγματος Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Το Flow δεν φορτώθηκε — συνδεθείτε στο labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "καμία απάντηση από το Flow"
+  },
+  "bg_noUrl": {
+    "message": "καμία διεύθυνση URL"
+  },
+  "bg_dlRejected": {
+    "message": "αποτυχία λήψης (το CDN απέρριψε το αίτημα)"
+  },
+  "bg_tooBig": {
+    "message": "μέσα >500MB — πολύ μεγάλο"
+  },
+  "bg_openNlmFailed": {
+    "message": "αποτυχία ανοίγματος NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "το σημειωματάριο δεν δημιουργήθηκε (απαιτείται ανίχνευση επιλογέα για «δημιουργία»)"
+  },
+  "bg_listFailed": {
+    "message": "αποτυχία λήψης λίστας"
+  },
+  "bg_actionFailed": {
+    "message": "η ενέργεια απέτυχε"
+  },
+  "bg_openNlmGen": {
+    "message": "Ανοίξτε το NotebookLM — η δημιουργία θα ολοκληρωθεί αυτόματα"
+  },
+  "bg_loginNlm": {
+    "message": "Συνδεθείτε στο NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "αποτυχία αναχαίτισης λήψης αντικειμένου"
+  },
+  "bg_artifactDlFailed": {
+    "message": "αποτυχία λήψης αντικειμένου: "
+  },
+  "bg_openHgTab": {
+    "message": "Ανοίξτε την καρτέλα στο studio app.heygen.com — το avatar θα αποδοθεί αυτόματα"
+  },
+  "bg_hgLoading": {
+    "message": "Το HeyGen Studio φορτώνεται ακόμα — επανάληψη αργότερα"
+  },
+  "bg_retry": {
+    "message": "επανάληψη"
+  },
+  "bg_dlFailed": {
+    "message": "αποτυχία λήψης"
+  },
+  "flow_state": {
+    "message": "Κατάσταση"
+  },
+  "flow_notConnected": {
+    "message": "μη συνδεδεμένο"
+  },
+  "flow_waitingTask": {
+    "message": "Αναμονή για εργασίες από το TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Παύση"
+  },
+  "flow_openTT": {
+    "message": "Άνοιγμα TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Προς Gallery"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Στείλτε ένα ολοκληρωμένο κλιπ από το Flow στο TrendTraffic Gallery"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Από Gallery"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Πάρτε ένα βίντεο από το Gallery και ανεβάστε το στο Flow για επεξεργασία"
+  },
+  "flow_reconPrefix": {
+    "message": "ανίχνευση: "
+  },
+  "flow_reconSuffix": {
+    "message": " αιτήματα Flow"
+  },
+  "flow_reconBtn": {
+    "message": "ανίχνευση διάταξης"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Καταγράψτε την τρέχουσα διάταξη Flow και στείλτε την σε εμάς (για προσαρμογή)"
+  },
+  "flow_pauseManual": {
+    "message": "Η παύση ενεργοποιήθηκε χειροκίνητα"
+  },
+  "flow_statusPause": {
+    "message": "σε παύση"
+  },
+  "flow_statusWorking": {
+    "message": "σε λειτουργία"
+  },
+  "flow_statusLogin": {
+    "message": "σύνδεση στον λογαριασμό"
+  },
+  "flow_stTitleOpen": {
+    "message": "Ανοίξτε το TrendTraffic και συνδεθείτε — θα συνδεθεί αυτόματα"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Άνοιγμα πλήρους Gallery →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Gallery — επιλέξτε όπως σε ένα πρόγραμμα επεξεργασίας, με ένα κουμπί «→ Flow» σε κάθε αρχείο"
+  },
+  "flow_fileFallback": {
+    "message": "αρχείο"
+  },
+  "flow_pickHint": {
+    "message": "Κάντε κλικ στο επιθυμητό στοιχείο — θα προστεθεί στο Gallery"
+  },
+  "flow_noPrompt": {
+    "message": "(χωρίς προτροπή)"
+  },
+  "flow_taskNum": {
+    "message": "Εργασία #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ το πεδίο προτροπής δεν βρέθηκε — απαιτείται ανίχνευση επιλογέα"
+  },
+  "flow_promptSet": {
+    "message": "η προτροπή ορίστηκε"
+  },
+  "flow_refUploaded": {
+    "message": "η αναφορά ανέβηκε στο Flow"
+  },
+  "flow_refPrefix": {
+    "message": "αναφορά: "
+  },
+  "flow_refDlFailed": {
+    "message": "αποτυχία λήψης αναφοράς"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ το κουμπί δημιουργίας δεν βρέθηκε — απαιτείται ανίχνευση"
+  },
+  "flow_genStarted": {
+    "message": "η δημιουργία ξεκίνησε, αναμονή για κλιπ…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ λήξη χρονικού ορίου αναμονής κλιπ"
+  },
+  "flow_clipReady": {
+    "message": "✓ το κλιπ είναι έτοιμο"
+  },
+  "flow_kindClip": {
+    "message": "κλιπ"
+  },
+  "flow_kindPicture": {
+    "message": "εικόνα"
+  },
+  "flow_grabPre": {
+    "message": "λήψη "
+  },
+  "flow_grabSuf": {
+    "message": " από το Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ αποτυχία ανάγνωσης μέσων"
+  },
+  "flow_cdnAuthPre": {
+    "message": "Έλεγχος ταυτότητας CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — προσπάθεια μέσω διακομιστή"
+  },
+  "flow_inGallerySuf": {
+    "message": " στη Συλλογή → καρτέλα \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "χωρίς σύνδεση — κάντε κλικ στο \"Σύνδεση\" στο TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ κάντε κλικ στην επιθυμητή φωτογραφία/βίντεο στο Flow και μετά στο \"Προς Συλλογή\""
+  },
+  "flow_multipleMedia": {
+    "message": "πολλαπλά μέσα — επιλέξτε τι θα τραβήξετε ↓"
+  },
+  "flow_openingProject": {
+    "message": "άνοιγμα έργου στο Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Το Flow δέχεται μόνο εικόνες εδώ — ανεβάστε βίντεο μέσω της ενότητας \"Μεταφορτώσεις\" του Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "το πεδίο μεταφόρτωσης δεν βρέθηκε — ανοίξτε ένα ΕΡΓΟ στο Flow (όχι την κύρια σελίδα): μέσα σε ένα έργο υπάρχει μια μεταφόρτωση (+/\"Μεταφορτώσεις\")"
+  },
+  "flow_loadingList": {
+    "message": "φόρτωση λίστας…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "χωρίς σύνδεση — κάντε κλικ στο \"Σύνδεση\""
+  },
+  "flow_galleryEmpty": {
+    "message": "δεν υπάρχουν μέσα στη Συλλογή"
+  },
+  "flow_reconSent": {
+    "message": "✓ αναγνώριση διάταξης απεστάλη"
+  },
+  "flow_reconFail": {
+    "message": "⚠ αναγνώριση: "
+  },
+  "flow_noConnection": {
+    "message": "χωρίς σύνδεση"
+  },
+  "flow_gettingMedia": {
+    "message": "λήψη μέσων από τη Συλλογή…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ αποτυχία λήψης από τη Συλλογή"
+  },
+  "flow_insertedImage": {
+    "message": "εικόνα"
+  },
+  "flow_insertedVideo": {
+    "message": "βίντεο"
+  },
+  "flow_insertedSuf": {
+    "message": " εισήχθη στο Flow από τη Συλλογή"
+  },
+  "flow_newClipReady": {
+    "message": "νέο κλιπ έτοιμο — μεταφόρτωση στη Συλλογή…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ κλιπ στη Συλλογή → \"Βίντεο\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ το κλιπ δεν αποθηκεύτηκε: "
+  },
+  "hg_state": {
+    "message": "Κατάσταση"
+  },
+  "hg_notConnected": {
+    "message": "μη συνδεδεμένο"
+  },
+  "hg_keepTabOpen": {
+    "message": "Κρατήστε αυτήν την καρτέλα ανοιχτή — οι κεφαλές θα αποδοθούν αυτόματα με βάση τη συνδρομή σας."
+  },
+  "hg_openTT": {
+    "message": "Άνοιγμα TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "αναγνώριση: "
+  },
+  "hg_reconSuffix": {
+    "message": " κλήσεις στούντιο"
+  },
+  "hg_reconBtn": {
+    "message": "Αναγνώριση API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Καταγράψτε το τρέχον API στούντιο και στείλτε το σε εμάς (για προσαρμογή)"
+  },
+  "hg_statusWorking": {
+    "message": "λειτουργεί"
+  },
+  "hg_statusLogin": {
+    "message": "συνδεθείτε στον λογαριασμό σας"
+  },
+  "hg_stTitleOpen": {
+    "message": "Ανοίξτε το TrendTraffic και συνδεθείτε — θα συνδεθεί αυτόματα"
+  },
+  "hg_photoDlFailed": {
+    "message": "αποτυχία λήψης φωτογραφίας"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: αποτυχία απόδοσης"
+  },
+  "hg_genPrefix": {
+    "message": "δημιουργία: "
+  },
+  "hg_waiting": {
+    "message": "αναμονή"
+  },
+  "hg_noVideoInTime": {
+    "message": "Το HeyGen δεν παρείχε βίντεο εγκαίρως"
+  },
+  "hg_headNum": {
+    "message": "▶ κεφαλή #"
+  },
+  "hg_readyLook": {
+    "message": "έτοιμο avatar λογαριασμού — η μεταφόρτωση φωτογραφίας παραλείφθηκε"
+  },
+  "hg_photoUpload": {
+    "message": "φωτογραφία → ομιλούσα_φωτογραφία…"
+  },
+  "hg_genStartPre": {
+    "message": "έναρξη δημιουργίας ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ η εμφάνιση δεν βρέθηκε σε αυτήν τη συνεδρία — μεταφόρτωση φωτογραφίας και επανάληψη…"
+  },
+  "hg_headReady": {
+    "message": "✓ κεφαλή έτοιμη, λήψη mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ αποστολή στο TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ αναγνώριση API απεστάλη"
+  },
+  "hg_reconFail": {
+    "message": "⚠ αναγνώριση: "
+  },
+  "hg_noConnection": {
+    "message": "χωρίς σύνδεση"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "αρχείο τεχνουργήματος υποκλάπηκε ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "αποτυχία υποκλοπής αρχείου: "
+  },
+  "nlm_dlProbe": {
+    "message": "λήψη; "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "υποκλάπηκε URL λήψης (window.open)"
+  },
+  "nlm_state": {
+    "message": "Κατάσταση"
+  },
+  "nlm_notConnected": {
+    "message": "μη συνδεδεμένο"
+  },
+  "nlm_account": {
+    "message": "Λογαριασμός"
+  },
+  "nlm_accountTitle": {
+    "message": "Λογαριασμός Google που χρησιμοποιείται για το NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Αναμονή για εργασία από το TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Εμφάνιση έτοιμων εργασιών στούντιο — κάντε κλικ σε μια εργασία για να τη φορτώσετε στην Έκθεση TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Στην Έκθεση"
+  },
+  "nlm_openTT": {
+    "message": "Άνοιγμα TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Καταγραφή της τρέχουσας διάταξης του NotebookLM και αποστολή σε εμάς (για προσαρμογή επιλογέα)"
+  },
+  "nlm_reconBtn": {
+    "message": "αναγνώριση διάταξης"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "ανοίξτε ένα σημειωματάριο — θα δείξω τις εργασίες του στούντιο"
+  },
+  "nlm_noReadyWorks": {
+    "message": "δεν υπάρχουν έτοιμες εργασίες στούντιο (ή ακόμα δημιουργούνται)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Φόρτωση \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" στην Έκθεση"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ ήδη"
+  },
+  "nlm_refresh": {
+    "message": "ανανέωση"
+  },
+  "nlm_close": {
+    "message": "κλείσιμο"
+  },
+  "nlm_loginTT": {
+    "message": "σύνδεση στο TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "σύνδεση στο Google"
+  },
+  "nlm_working": {
+    "message": "εργασία"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Δημιουργία σημειωματάριου: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ σημειωματάριο δημιουργήθηκε: "
+  },
+  "nlm_addingSource": {
+    "message": "Προσθήκη πηγής ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "αποτυχία λήψης αρχείου από την Έκθεση"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "Το NotebookLM δεν δέχεται αρχεία βίντεο. Για βίντεο, προσθέστε \"Ανάλυση\" ως κείμενο ή σύνδεσμο (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Η μεταφόρτωση αρχείου στο NotebookLM δεν είναι διαθέσιμη από την επέκταση (εγγενές παράθυρο). Χρησιμοποιήστε \"Ανάλυση\"/\"Επικόλληση κειμένου\" ή σύνδεσμο (ιστοσελίδα/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ πηγή αρχείου προστέθηκε"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "άγνωστος τύπος πηγής"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ πηγή προστέθηκε ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Ανάγνωση λίστας σημειωματάριων…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ σημειωματάρια (δικά μου+διαθέσιμα): "
+  },
+  "nlm_asking": {
+    "message": "Ρωτώντας: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "η απάντηση δεν διαβάστηκε πλήρως"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ απάντηση ελήφθη"
+  },
+  "nlm_unknownType": {
+    "message": "άγνωστος τύπος: "
+  },
+  "nlm_generatingTask": {
+    "message": "Δημιουργία: "
+  },
+  "nlm_genStartedPre": {
+    "message": "η δημιουργία ξεκίνησε ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", προεπιλογή), αναμονή για τεχνούργημα…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ τεχνούργημα έτοιμο ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), αναμονή για τεχνούργημα…"
+  },
+  "nlm_dlRequested": {
+    "message": "ζητήθηκε λήψη τεχνουργήματος…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "αποτυχία αναχαίτισης λήψης τεχνουργήματος"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Λήψη στην Έκθεση TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" δεν έχει \"Λήψη\" — καταγραφή ως κείμενο…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" δεν έχει \"Λήψη\" — καταγραφή ως κείμενο…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Έκθεση"
+  },
+  "nlm_alreadyWas": {
+    "message": " (υπήρχε ήδη)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ δεν αποθηκεύτηκε: "
+  },
+  "nlm_noConnection": {
+    "message": "καμία σύνδεση"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ αποτυχία λήψης URL: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ αποτυχία καταγραφής αρχείου \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ το κλικ οδήγησε μακριά από τη σελίδα του σημειωματάριου — επιστροφή"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ κείμενο \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" δεν καταγράφηκε"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Έκθεση (ως κείμενο)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 κάθετο"
+  },
+  "nlm_916Title": {
+    "message": "Προσθέστε μια προτροπή κάθετης μορφής 9:16 (Shorts/Reels/TikTok). Η προτροπή στα Αγγλικά — το NotebookLM κατανοεί καλύτερα τις οδηγίες με αυτόν τον τρόπο."
+  },
+  "nlm_916Already": {
+    "message": "✓ ήδη προστέθηκε"
+  },
+  "nlm_916Added": {
+    "message": "✓ προστέθηκε"
+  },
+  "nlm_reconSent": {
+    "message": "✓ αναγνώριση διάταξης απεστάλη"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Αποτυχία αναγνώρισης: "
+  },
+  "nlm_unknownAction": {
+    "message": "Άγνωστη ενέργεια: "
+  }
+}

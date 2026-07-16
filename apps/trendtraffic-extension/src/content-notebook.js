@@ -22,6 +22,9 @@
   window.__ttNlmContent = true;
 
   const log = (...a) => console.log('[tt-nlm]', ...a);
+  // i18n: перевод строк НАШЕЙ панели/статусов. Фолбэк — русский (как было).
+  // ВАЖНО: матчеры NotebookLM (GEN_UI/LABELS/SRC_DLG_RE/findByText-кандидаты) НЕ переводятся.
+  const T = (key, fallback) => { try { const m = chrome.i18n.getMessage(key); return m || fallback; } catch (e) { return fallback; } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const send = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(); } };
   const reconApis = [];
@@ -147,17 +150,17 @@
     } else if (d.kind === 'artifact-blob' && d.dataUrl) {
       // Перехвачены байты готового артефакта (аудио/видео) прямо на странице.
       lastArtifact = { dataUrl: d.dataUrl, mime: d.mime || '', fileName: d.fileName || '', size: d.size || 0, ts: Date.now() };
-      try { ui.line('перехвачен файл артефакта (' + Math.round((d.size || 0) / 1024) + ' КБ, ' + (d.via || '') + ')'); } catch { /* */ }
+      try { ui.line(T('nlm_artifactCapturedPre', 'перехвачен файл артефакта (') + Math.round((d.size || 0) / 1024) + T('nlm_kbComma', ' КБ, ') + (d.via || '') + ')'); } catch { /* */ }
     } else if (d.kind === 'artifact-blob-error') {
-      try { ui.line('перехват файла не удался: ' + d.error); } catch { /* */ }
+      try { ui.line(T('nlm_captureFailed', 'перехват файла не удался: ') + d.error); } catch { /* */ }
     } else if (d.kind === 'dl-probe') {
       // Диагностика механизма скачивания (что реально делает «Скачать») — видно в логе виджета.
-      try { ui.line('скачивание? ' + d.at + (d.mime ? ' ' + d.mime : '') + (d.size ? ' ' + Math.round(d.size / 1024) + 'КБ' : '') + (d.href ? ' ' + d.href : '')); } catch { /* */ }
+      try { ui.line(T('nlm_dlProbe', 'скачивание? ') + d.at + (d.mime ? ' ' + d.mime : '') + (d.size ? ' ' + Math.round(d.size / 1024) + T('nlm_kb', 'КБ') : '') + (d.href ? ' ' + d.href : '')); } catch { /* */ }
     } else if (d.kind === 'dl-open' && d.url) {
       // NotebookLM попытался открыть подписанный URL скачивания через window.open (Chrome мог
       // ЗАБЛОКИРОВАТЬ попап — не важно: URL мы уже перехватили, фон скачает байты сам).
       lastOpenUrl = { url: String(d.url), ts: Date.now() };
-      try { ui.line('перехвачен URL скачивания (window.open)'); } catch { /* */ }
+      try { ui.line(T('nlm_openUrlCaptured', 'перехвачен URL скачивания (window.open)')); } catch { /* */ }
     }
   });
 
@@ -169,6 +172,19 @@
       host.id = 'tt-nlm-host';
       host.style.cssText = 'position:fixed;z-index:2147483647;right:16px;bottom:16px;';
       const sh = host.attachShadow({ mode: 'open' });
+      // Видимые тексты панели — через T() (структуру/классы шаблона не меняем).
+      const TXT = {
+        state: T('nlm_state', 'Состояние'),
+        notConnected: T('nlm_notConnected', 'не подключено'),
+        account: T('nlm_account', 'Аккаунт'),
+        accountTitle: T('nlm_accountTitle', 'Аккаунт Google, под которым открыт NotebookLM'),
+        waitingTask: T('nlm_waitingTask', 'Ожидаю задачи из TrendTraffic…'),
+        grabTitle: T('nlm_grabTitle', 'Показать готовые работы студии — клик по работе загружает её в Галерею TrendTraffic'),
+        grabBtn: T('nlm_grabBtn', '⬇ В галерею'),
+        openTT: T('nlm_openTT', 'Открыть TrendTraffic'),
+        reconBtnTitle: T('nlm_reconBtnTitle', 'Снять текущую вёрстку NotebookLM и прислать нам (для подстройки селекторов)'),
+        reconBtn: T('nlm_reconBtn', 'разведка вёрстки'),
+      };
       sh.innerHTML = `
         <style>
           *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif}
@@ -219,19 +235,19 @@
             <span class="sub" id="ver"></span>
           </div>
           <div class="bd" id="bd">
-            <div class="row"><span>Состояние</span><span class="pill off" id="st">не подключено</span></div>
-            <div class="row"><span>Аккаунт</span><span class="acct" id="acct" title="Аккаунт Google, под которым открыт NotebookLM">—</span></div>
+            <div class="row"><span>${TXT.state}</span><span class="pill off" id="st">${TXT.notConnected}</span></div>
+            <div class="row"><span>${TXT.account}</span><span class="acct" id="acct" title="${TXT.accountTitle}">—</span></div>
             <div class="wire" id="wire"></div>
-            <div class="task" id="task">Ожидаю задачи из TrendTraffic…</div>
+            <div class="task" id="task">${TXT.waitingTask}</div>
             <div class="lg" id="lg"></div>
             <div class="btns">
-              <button class="pri" id="grab" title="Показать готовые работы студии — клик по работе загружает её в Галерею TrendTraffic">⬇ В галерею</button>
-              <button id="open">Открыть TrendTraffic</button>
+              <button class="pri" id="grab" title="${TXT.grabTitle}">${TXT.grabBtn}</button>
+              <button id="open">${TXT.openTT}</button>
             </div>
             <div class="pick hide" id="pick"></div>
             <div class="foot">
               <span class="rec" id="verlbl"></span>
-              <button class="rec" id="recBtn" title="Снять текущую вёрстку NotebookLM и прислать нам (для подстройки селекторов)">разведка вёрстки</button>
+              <button class="rec" id="recBtn" title="${TXT.reconBtnTitle}">${TXT.reconBtn}</button>
             </div>
           </div>
         </div>`;
@@ -263,14 +279,14 @@
         els.pick.innerHTML = '';
         const nbId = notebookIdFromUrl();
         const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-        if (!nbId) { els.pick.appendChild(mk('div', 'prow', 'откройте блокнот — покажу его работы студии')); return; }
+        if (!nbId) { els.pick.appendChild(mk('div', 'prow', T('nlm_openNotebookFirst', 'откройте блокнот — покажу его работы студии'))); return; }
         const cards = studioArtifactCards();
-        if (!cards.length) { els.pick.appendChild(mk('div', 'prow', 'нет готовых работ студии (или ещё генерятся)')); }
+        if (!cards.length) { els.pick.appendChild(mk('div', 'prow', T('nlm_noReadyWorks', 'нет готовых работ студии (или ещё генерятся)'))); }
         for (const c of cards) {
           const row = mk('div', 'prow');
           row.appendChild(mk('span', 'pt', (c.kind === 'media' ? '▶ ' : '📄 ') + c.title));
           const b = mk('button', '', '⬇');
-          b.title = 'Загрузить «' + c.title.slice(0, 60) + '» в Галерею';
+          b.title = T('nlm_loadTitlePre', 'Загрузить «') + c.title.slice(0, 60) + T('nlm_loadTitleSuf', '» в Галерею');
           b.addEventListener('click', async () => {
             if (b.disabled) return;
             b.disabled = true; b.textContent = '…';
@@ -285,14 +301,14 @@
               } finally { watcherBusy = false; }
             } catch { /* */ }
             b.disabled = false;
-            b.textContent = r && r.ok ? (r.dedup ? '✓ уже' : '✓') : '⚠';
+            b.textContent = r && r.ok ? (r.dedup ? T('nlm_alreadyShort', '✓ уже') : '✓') : '⚠';
           });
           row.appendChild(b);
           els.pick.appendChild(row);
         }
         const foot = mk('div', 'pfoot');
-        const refresh = mk('button', 'rec', 'обновить'); refresh.addEventListener('click', renderPicker);
-        const close = mk('button', 'rec', 'закрыть'); close.addEventListener('click', () => els.pick.classList.add('hide'));
+        const refresh = mk('button', 'rec', T('nlm_refresh', 'обновить')); refresh.addEventListener('click', renderPicker);
+        const close = mk('button', 'rec', T('nlm_close', 'закрыть')); close.addEventListener('click', () => els.pick.classList.add('hide'));
         foot.appendChild(refresh); foot.appendChild(close);
         els.pick.appendChild(foot);
       };
@@ -367,7 +383,7 @@
       const loggedIn = isLoggedIn();
       const acct = loggedIn ? accountEmail() : null;
       // Аккаунт на плашке расширения (NotebookLM всегда справа снизу).
-      if (els.acct) { els.acct.textContent = acct || (loggedIn ? '…' : '—'); els.acct.title = acct || 'Аккаунт Google, под которым открыт NotebookLM'; }
+      if (els.acct) { els.acct.textContent = acct || (loggedIn ? '…' : '—'); els.acct.title = acct || T('nlm_accountTitle', 'Аккаунт Google, под которым открыт NotebookLM'); }
       // Сообщаем background о входе + аккаунте + видима ли вкладка. active=true → это та вкладка,
       // что перед глазами у юзера → background закрепляет ЕЁ как рабочую (иначе при мультиаккаунте
       // Google операции/список блокнотов уезжали в другой аккаунт из случайной фоновой вкладки).
@@ -376,9 +392,9 @@
         lastLoggedIn = loggedIn; if (acct) lastAccount = acct; lastActive = active;
         send({ type: 'nlm-presence', loggedIn, account: acct || undefined, active });
       }
-      if (!r.connected) { status('off', 'войдите в TrendTraffic'); toggleWire(false); armAutoRecon(false); return; }
-      if (!loggedIn) { status('wait', 'войдите в Google'); toggleWire(false); armAutoRecon(false); return; }
-      status('on', 'работает'); toggleWire(true); armAutoRecon(true);
+      if (!r.connected) { status('off', T('nlm_loginTT', 'войдите в TrendTraffic')); toggleWire(false); armAutoRecon(false); return; }
+      if (!loggedIn) { status('wait', T('nlm_loginGoogle', 'войдите в Google')); toggleWire(false); armAutoRecon(false); return; }
+      status('on', T('nlm_working', 'работает')); toggleWire(true); armAutoRecon(true);
     }
     function toggleWire(on) { if (els.wire) els.wire.classList.toggle('on', !!on); }
     function armAutoRecon(ok) { if (ok && !reconSent) { reconSent = true; setTimeout(() => runRecon(true), 1500); } }
@@ -435,7 +451,7 @@
   // ── создать блокнот ──
   async function createNotebook(title) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
-    ui.task('Создаю блокнот: ' + (title || ''));
+    ui.task(T('nlm_creatingNotebook', 'Создаю блокнот: ') + (title || ''));
     // ВАЖНО: кнопка «Создать блокнот» (aria) есть И на главной, И внутри блокнота.
     // Раньше код, будучи уже на /notebook/<id>, НЕ жал «создать», а «усыновлял» открытый
     // блокнот (часто чужой/рекомендованный → потом запрос доступа). Теперь жмём ВСЕГДА и
@@ -452,7 +468,7 @@
         if (t) { typeInto(t, title); await sleep(300); t.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }
       } catch { /* имя не критично */ }
     }
-    ui.line('✓ блокнот создан: ' + nbId);
+    ui.line(T('nlm_notebookCreated', '✓ блокнот создан: ') + nbId);
     // Через background — переживает возможную перезагрузку страницы.
     send({ type: 'nlm-create-done', actionId: currentActionId, notebookId: nbId, title: title || null });
     return { ok: true, notebookId: nbId, title: title || null };
@@ -469,7 +485,7 @@
   async function addSource(a) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     const kind = a.srcKind;
-    ui.task('Добавляю источник (' + kind + ')');
+    ui.task(T('nlm_addingSource', 'Добавляю источник (') + kind + ')');
     await openAddSource();
     if (kind === 'url') {
       // Под-вкладка «Сайты» (иконки link+youtube). Затем поле URL и кнопка «Добавить».
@@ -493,14 +509,14 @@
     } else if (kind === 'file') {
       // Файл из Галереи: скачиваем байты в background (обход CORS).
       const b = await send({ type: 'fetch-bytes', url: a.fileUrl });
-      if (!b || !b.ok) return { ok: false, reason: 'не скачался файл из Галереи' + (b && b.error ? ': ' + b.error : '') };
+      if (!b || !b.ok) return { ok: false, reason: T('nlm_fileDlFailed', 'не скачался файл из Галереи') + (b && b.error ? ': ' + b.error : '') };
       // ВАЖНО (разведано вживую): загрузить файл в NotebookLM из расширения НАДЁЖНО НЕЛЬЗЯ:
       // в DOM нет input[type=file] («Загрузить файлы» открывает нативное окно ОС), а синтетический
       // drag-drop NotebookLM игнорирует (isTrusted=false — проверено, источник не добавляется).
       // Поэтому файл-путь = короткая попытка drag-drop + БЫСТРЫЙ честный отказ с подсказкой, а не зависание.
       const suggest = /^video\//i.test(b.mime || '')
-        ? 'NotebookLM не принимает видео-файлы. Для ролика добавьте «Анализ» текстом или ссылку (YouTube).'
-        : 'Загрузка файлов в NotebookLM недоступна из расширения (нативное окно). Используйте «Анализ»/«Вставить текст» или ссылку (сайт/YouTube).';
+        ? T('nlm_videoNotAccepted', 'NotebookLM не принимает видео-файлы. Для ролика добавьте «Анализ» текстом или ссылку (YouTube).')
+        : T('nlm_fileUploadUnavailable', 'Загрузка файлов в NotebookLM недоступна из расширения (нативное окно). Используйте «Анализ»/«Вставить текст» или ссылку (сайт/YouTube).');
       if (/^video\//i.test(b.mime || '')) return { ok: false, reason: suggest };
       const dz = pickDeep(['.xap-uploader-dropzone.drop-zone', '.xap-uploader-dropzone', '.drop-zone-container', '[class*="drop-zone" i]', '[class*="dropzone" i]']);
       const beforeN = listSourcesDom().length;
@@ -516,15 +532,15 @@
       }
       const appeared = await waitFor(() => (listSourcesDom().length > beforeN ? true : null), 8000, 1000);
       if (!appeared) return { ok: false, reason: suggest };
-      ui.line('✓ файл-источник добавлен');
+      ui.line(T('nlm_fileSourceAdded', '✓ файл-источник добавлен'));
       return { ok: true, source: { title: a.title || a.fileName || 'файл', kind }, sources: listSourcesDom() };
     } else {
-      return { ok: false, reason: 'неизвестный тип источника' };
+      return { ok: false, reason: T('nlm_unknownSourceKind', 'неизвестный тип источника') };
     }
     // URL/текст: дождаться, что источник появился (best-effort), вернуть свежий список.
     await sleep(2500);
     const sources = listSourcesDom();
-    ui.line('✓ источник добавлен (' + kind + ')');
+    ui.line(T('nlm_sourceAdded', '✓ источник добавлен (') + kind + ')');
     return { ok: true, source: { title: a.title || (a.url || 'источник'), kind }, sources };
   }
   function listSourcesDom() {
@@ -557,7 +573,7 @@
   // background наводит вкладку на главную перед этим действием (плитки живут только там).
   async function listNotebooks() {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
-    ui.task('Читаю список блокнотов…');
+    ui.task(T('nlm_readingNotebooks', 'Читаю список блокнотов…'));
     const collected = new Map();
     const scrapeVisible = () => {
       for (const pb of queryAllDeep('project-button, .project-button').filter(visible)) {
@@ -606,7 +622,7 @@
       }
     }
     const out = [...collected.values()].slice(0, 200);
-    ui.line('✓ блокнотов (мои+доступные): ' + out.length);
+    ui.line(T('nlm_notebooksCount', '✓ блокнотов (мои+доступные): ') + out.length);
     return { ok: true, notebooks: out };
   }
   async function deleteSource(sourceId) {
@@ -678,7 +694,7 @@
   }
   async function chat(question) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
-    ui.task('Спрашиваю: ' + String(question || '').slice(0, 60));
+    ui.task(T('nlm_asking', 'Спрашиваю: ') + String(question || '').slice(0, 60));
     // Поле чата рендерится не мгновенно (после прошлого ответа панель перерисовывается, стриминг) —
     // ждём его до ~15с, а не падаем сразу (частая ошибка selector:chatInput = гонка, 2-й вопрос).
     let inp = null;
@@ -709,8 +725,8 @@
       await sleep(700);
     }
     if (!finalText) finalText = (lastText && !isLoadingText(lastText)) ? lastText : '';
-    if (!finalText) return { ok: false, reason: 'ответ не дочитался' };
-    ui.line('✓ ответ получен');
+    if (!finalText) return { ok: false, reason: T('nlm_answerIncomplete', 'ответ не дочитался') };
+    ui.line(T('nlm_answerReceived', '✓ ответ получен'));
     // + подсказки-продолжения (чипы) — фронт покажет их кнопками.
     return { ok: true, answer: finalText, citations: [], suggestions: chatSuggestionsDom() };
   }
@@ -801,8 +817,8 @@
   async function generate(gtype, params) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     const spec = GEN_UI[gtype];
-    if (!spec) return { ok: false, reason: 'неизвестный тип: ' + gtype };
-    ui.task('Генерирую: ' + gtype);
+    if (!spec) return { ok: false, reason: T('nlm_unknownType', 'неизвестный тип: ') + gtype };
+    ui.task(T('nlm_generatingTask', 'Генерирую: ') + gtype);
     await openStudio();
     // 1) Открываем ПАНЕЛЬ НАСТРОЙКИ типа («Настроить аудиопересказ» и т.п.) — там опции + «Сгенерировать».
     //    Студия поднимается НЕ сразу (после навигации в блокнот) → ждём плитку до ~14с, не падаем сразу
@@ -818,11 +834,11 @@
       // Плитку тоже не нашли за отведённое время → студия не отрисовалась/не тот экран.
       if (!tileClicked) return { ok: false, reason: 'selector:tile:' + gtype };
       // Клик по самой плитке = генерация с дефолтами (без опций/фокуса).
-      ui.line('генерация запущена (' + gtype + ', дефолт), жду артефакт…');
+      ui.line(T('nlm_genStartedPre', 'генерация запущена (') + gtype + T('nlm_genStartedDefaultSuf', ', дефолт), жду артефакт…'));
       const cap0 = await captureArtifact(gtype, spec);
       if (!cap0) return { ok: false, reason: 'timeout' };
       if (cap0.reason) return { ok: false, reason: cap0.reason };
-      ui.line('✓ артефакт готов (' + gtype + ')');
+      ui.line(T('nlm_artifactReadyPre', '✓ артефакт готов (') + gtype + ')');
       void markAllStudioSeen(); // наша джоба сама зальёт файл — вотчер не должен дублировать
       return { ok: true, ...cap0, fileName: (baseName(params) || gtype) + spec.ext, mime: spec.mime };
     }
@@ -844,12 +860,12 @@
     // 5) ЗАПУСК — РОВНО «Сгенерировать» (НЕ «создать» → это «Создать блокнот»!).
     await sleep(300);
     if (!await clickByText(['сгенерировать', 'generate', 'запустить генерацию'])) return { ok: false, reason: 'selector:generate:' + gtype };
-    ui.line('генерация запущена (' + gtype + '), жду артефакт…');
+    ui.line(T('nlm_genStartedPre', 'генерация запущена (') + gtype + T('nlm_genStartedSuf', '), жду артефакт…'));
     // 6) ждать артефакт и захватить
     const captured = await captureArtifact(gtype, spec);
     if (!captured) return { ok: false, reason: 'timeout' };
     if (captured.reason) return { ok: false, reason: captured.reason };
-    ui.line('✓ артефакт готов (' + gtype + ')');
+    ui.line(T('nlm_artifactReadyPre', '✓ артефакт готов (') + gtype + ')');
     void markAllStudioSeen(); // наша джоба сама зальёт файл — вотчер не должен дублировать
     return { ok: true, ...captured, fileName: (baseName(params) || gtype) + spec.ext, mime: spec.mime };
   }
@@ -873,7 +889,7 @@
           // background chrome.downloads (для http-скачиваний).
           lastArtifact = null;
           if (await triggerArtifactDownload(gtype)) {
-            ui.line('запросил скачивание артефакта…');
+            ui.line(T('nlm_dlRequested', 'запросил скачивание артефакта…'));
             const t0 = Date.now();
             while (Date.now() - t0 < 15_000) {
               if (lastArtifact && lastArtifact.dataUrl) return { dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || spec.mime };
@@ -1014,7 +1030,7 @@
       if (lastArtifact && lastArtifact.dataUrl) return { ok: true, dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || '', fileName: card.title };
       await sleep(500);
     }
-    return { ok: false, reason: 'не удалось перехватить скачивание артефакта' };
+    return { ok: false, reason: T('nlm_dlCaptureFailed', 'не удалось перехватить скачивание артефакта') };
   }
 
   // ── ВОТЧЕР СТУДИИ: юзер работает ПРЯМО в NotebookLM ─────────────────────────
@@ -1099,7 +1115,7 @@
         const btn = document.createElement('button');
         btn.className = 'tt-dl-btn';
         btn.type = 'button';
-        btn.title = 'Скачать в Галерею TrendTraffic';
+        btn.title = T('nlm_dlToGalleryTitle', 'Скачать в Галерею TrendTraffic');
         btn.textContent = '⬇TT';
         btn.style.cssText = 'margin:0 4px;padding:2px 7px;border:none;border-radius:8px;background:#22d3ee;color:#083344;font:700 10px ui-sans-serif,system-ui;cursor:pointer;vertical-align:middle;';
         btn.addEventListener('click', async (e) => {
@@ -1142,7 +1158,7 @@
         // У части типов (карточки/тест/ментальная карта…) в ⋮ НЕТ «Скачать» — файл не предусмотрен.
         // Фолбэк: открываем работу кликом по карточке, снимаем видимый текст и заливаем как .md.
         closeOpenMenu();
-        ui.line('у «' + card.title.slice(0, 30) + '» нет «Скачать» — снимаю текстом…');
+        ui.line(T('nlm_noDownloadPre', 'у «') + card.title.slice(0, 30) + T('nlm_noDownloadSuf', '» нет «Скачать» — снимаю текстом…'));
         return await captureCardAsText(card);
       }
       clickEl(item);
@@ -1163,20 +1179,20 @@
           type: 'nlm-observed-artifact', notebookId: nbId, title: card.title,
           gtype, dataUrl: lastArtifact.dataUrl, mime: lastArtifact.mime || '',
         });
-        if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
-        else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
+        if (r && r.ok) ui.line(T('nlm_okQuote', '✓ «') + card.title.slice(0, 40) + T('nlm_toGallerySuf', '» → Галерея') + (r.dedup ? T('nlm_alreadyWas', ' (уже была)') : ''));
+        else ui.line(T('nlm_notSaved', '⚠ не сохранилось: ') + ((r && r.error) || T('nlm_noConnection', 'нет подключения')));
         return r || { ok: false };
       }
       if (lastOpenUrl && lastOpenUrl.ts >= wt0 - 2000) {
         // Фон скачает байты по перехваченному URL (сессия та же — host_permissions) и зальёт сам.
         const r = await send({ type: 'nlm-ingest-url', url: lastOpenUrl.url, notebookId: nbId, title: card.title, gtype });
-        if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (r.dedup ? ' (уже была)' : ''));
-        else ui.line('⚠ не скачалось по URL: ' + ((r && r.error) || 'нет подключения'));
+        if (r && r.ok) ui.line(T('nlm_okQuote', '✓ «') + card.title.slice(0, 40) + T('nlm_toGallerySuf', '» → Галерея') + (r.dedup ? T('nlm_alreadyWas', ' (уже была)') : ''));
+        else ui.line(T('nlm_urlDlFailed', '⚠ не скачалось по URL: ') + ((r && r.error) || T('nlm_noConnection', 'нет подключения')));
         return r || { ok: false };
       }
       // blob не пришёл — но фон мог поймать прямую загрузку и уже залить.
-      if (bg && bg.done && bg.ok) { ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея' + (bg.dedup ? ' (уже была)' : '')); return { ok: true, dedup: bg.dedup }; }
-      ui.line('⚠ не перехватил файл «' + card.title.slice(0, 30) + '»' + (bg && bg.error ? ': ' + bg.error : ''));
+      if (bg && bg.done && bg.ok) { ui.line(T('nlm_okQuote', '✓ «') + card.title.slice(0, 40) + T('nlm_toGallerySuf', '» → Галерея') + (bg.dedup ? T('nlm_alreadyWas', ' (уже была)') : '')); return { ok: true, dedup: bg.dedup }; }
+      ui.line(T('nlm_fileCaptureFailedPre', '⚠ не перехватил файл «') + card.title.slice(0, 30) + '»' + (bg && bg.error ? ': ' + bg.error : ''));
       return { ok: false };
     } finally {
       try { await send({ type: 'nlm-disarm-download', capId }); } catch { /* */ }
@@ -1191,7 +1207,7 @@
     // Клик увёл СО СТРАНИЦЫ БЛОКНОТА (на главную/другой блокнот — попали в ссылку, не в карточку)?
     // Возвращаемся и прерываемся — иначе наскрейпим главную и зальём мусор под заголовком карточки.
     if (notebookIdFromUrl() !== nbId) {
-      ui.line('⚠ клик увёл со страницы блокнота — возвращаюсь');
+      ui.line(T('nlm_clickLeftNotebook', '⚠ клик увёл со страницы блокнота — возвращаюсь'));
       try { history.back(); } catch { /* */ }
       await sleep(2000);
       return { ok: false };
@@ -1203,13 +1219,13 @@
     if (back) clickEl(back);
     else { closeOpenMenu(); try { history.back(); } catch { /* */ } }
     await sleep(1200);
-    if (!scraped || !scraped.dataUrl) { ui.line('⚠ текст «' + card.title.slice(0, 30) + '» не снялся'); return { ok: false }; }
+    if (!scraped || !scraped.dataUrl) { ui.line(T('nlm_textNotCapturedPre', '⚠ текст «') + card.title.slice(0, 30) + T('nlm_textNotCapturedSuf', '» не снялся')); return { ok: false }; }
     const r = await send({
       type: 'nlm-observed-artifact', notebookId: nbId, title: card.title,
       gtype: detectGtype((card.el && card.el.textContent) || card.title), dataUrl: scraped.dataUrl, mime: 'text/markdown',
     });
-    if (r && r.ok) ui.line('✓ «' + card.title.slice(0, 40) + '» → Галерея (текстом)' + (r.dedup ? ' (уже была)' : ''));
-    else ui.line('⚠ не сохранилось: ' + ((r && r.error) || 'нет подключения'));
+    if (r && r.ok) ui.line(T('nlm_okQuote', '✓ «') + card.title.slice(0, 40) + T('nlm_toGalleryTextSuf', '» → Галерея (текстом)') + (r.dedup ? T('nlm_alreadyWas', ' (уже была)') : ''));
+    else ui.line(T('nlm_notSaved', '⚠ не сохранилось: ') + ((r && r.error) || T('nlm_noConnection', 'нет подключения')));
     return r || { ok: false };
   }
 
@@ -1268,15 +1284,15 @@
         const btn = document.createElement('button');
         btn.className = 'tt-916-btn';
         btn.type = 'button';
-        btn.textContent = '📱 9:16 вертикально';
-        btn.title = 'Дописать промпт вертикального формата 9:16 (Shorts/Reels/TikTok). Промпт на английском — так NotebookLM понимает инструкции лучше всего.';
+        btn.textContent = T('nlm_916Btn', '📱 9:16 вертикально');
+        btn.title = T('nlm_916Title', 'Дописать промпт вертикального формата 9:16 (Shorts/Reels/TikTok). Промпт на английском — так NotebookLM понимает инструкции лучше всего.');
         btn.style.cssText = 'display:inline-block;margin:0 0 8px;padding:4px 10px;border:none;border-radius:8px;background:#22d3ee;color:#083344;font:700 12px ui-sans-serif,system-ui;cursor:pointer;';
         btn.addEventListener('click', (e) => {
           e.preventDefault(); e.stopPropagation();
           const cur = ta.value || '';
-          if (/9:16/.test(cur)) btn.textContent = '✓ уже добавлено';
-          else { typeInto(ta, cur.trim() ? cur.trim() + '\n' + hit.prompt : hit.prompt); btn.textContent = '✓ добавлено'; }
-          setTimeout(() => { btn.textContent = '📱 9:16 вертикально'; }, 2500);
+          if (/9:16/.test(cur)) btn.textContent = T('nlm_916Already', '✓ уже добавлено');
+          else { typeInto(ta, cur.trim() ? cur.trim() + '\n' + hit.prompt : hit.prompt); btn.textContent = T('nlm_916Added', '✓ добавлено'); }
+          setTimeout(() => { btn.textContent = T('nlm_916Btn', '📱 9:16 вертикально'); }, 2500);
         });
         // над полем инструкций (вместе с обёрткой mat-form-field, чтобы не ломать вёрстку поля)
         const anchor = ta.closest('mat-form-field, [class*="form-field"]') || ta;
@@ -1367,7 +1383,7 @@
   }
   async function runRecon(silent) {
     const r = await send({ type: 'nlm-send-recon', payload: { data: collectRecon(), url: location.href } });
-    if (!silent) ui.line(r && r.ok ? '✓ разведка вёрстки отправлена' : ('⚠ разведка: ' + ((r && r.error) || 'нет подключения')));
+    if (!silent) ui.line(r && r.ok ? T('nlm_reconSent', '✓ разведка вёрстки отправлена') : (T('nlm_reconFail', '⚠ разведка: ') + ((r && r.error) || T('nlm_noConnection', 'нет подключения'))));
   }
 
   // ── команды от background ──
@@ -1402,7 +1418,7 @@
         }
         return gr;
       }
-      default: return { ok: false, reason: 'неизвестное действие: ' + a.kind };
+      default: return { ok: false, reason: T('nlm_unknownAction', 'неизвестное действие: ') + a.kind };
     }
   }
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

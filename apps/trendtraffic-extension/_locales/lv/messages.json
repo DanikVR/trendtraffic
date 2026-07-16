@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asistents (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Vienotais TrendTraffic paplašinājums: tilts uz Google Flow (Veo), Google NotebookLM (Hotebook) un HeyGen (UGC runājošās galvas ar jūsu abonementu). Reāla pārlūkprogrammas uzdevumu rinda, ģenerēšanas automatizācija un galerijas apmaiņa. Instalējiet vienreiz — panelis aktivizējas pakalpojumā, kurā ir atvērta cilne."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asistents (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "uzdevuma taimauts"
+  },
+  "bg_openFlowTab": {
+    "message": "Atvērt Google Flow cilni — uzdevums tiks pabeigts automātiski"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: neparasta aktivitāte — apturēts"
+  },
+  "bg_noResult": {
+    "message": "nav rezultātu"
+  },
+  "bg_notConnected": {
+    "message": "nav savienots"
+  },
+  "bg_openFlowFailed": {
+    "message": "neizdevās atvērt Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow nav ielādēts — lūdzu, pierakstieties labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "nav atbildes no Flow"
+  },
+  "bg_noUrl": {
+    "message": "nav URL"
+  },
+  "bg_dlRejected": {
+    "message": "lejupielāde neizdevās (CDN noraidīja pieprasījumu)"
+  },
+  "bg_tooBig": {
+    "message": "multivide >500 MB — pārāk liela"
+  },
+  "bg_openNlmFailed": {
+    "message": "neizdevās atvērt NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "piezīmju grāmatiņa nav izveidota (nepieciešama 'izveidot' selektora izpēte)"
+  },
+  "bg_listFailed": {
+    "message": "neizdevās iegūt sarakstu"
+  },
+  "bg_actionFailed": {
+    "message": "darbība neizdevās"
+  },
+  "bg_openNlmGen": {
+    "message": "Atvērt NotebookLM — ģenerēšana tiks pabeigta automātiski"
+  },
+  "bg_loginNlm": {
+    "message": "Pierakstieties NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "neizdevās pārtvert artefakta lejupielādi"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artefakta lejupielāde neizdevās: "
+  },
+  "bg_openHgTab": {
+    "message": "Atvērt app.heygen.com studijas cilni — iemiesojums tiks renderēts automātiski"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio joprojām ielādējas — mēģinām vēlāk"
+  },
+  "bg_retry": {
+    "message": "mēģināt vēlreiz"
+  },
+  "bg_dlFailed": {
+    "message": "lejupielāde neizdevās"
+  },
+  "flow_state": {
+    "message": "Statuss"
+  },
+  "flow_notConnected": {
+    "message": "nav savienots"
+  },
+  "flow_waitingTask": {
+    "message": "Gaida uzdevumus no TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pauzēt"
+  },
+  "flow_openTT": {
+    "message": "Atvērt TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Uz galeriju"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Nosūtīt pabeigtu klipu no Flow uz TrendTraffic galeriju"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ No galerijas"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Paņemt video no galerijas un augšupielādēt to Flow apstrādei"
+  },
+  "flow_reconPrefix": {
+    "message": "izpēte: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow pieprasījumi"
+  },
+  "flow_reconBtn": {
+    "message": "izpētīt izkārtojumu"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Uztvert pašreizējo Flow izkārtojumu un nosūtīt mums (pielāgošanai)"
+  },
+  "flow_pauseManual": {
+    "message": "Pauze ieslēgta manuāli"
+  },
+  "flow_statusPause": {
+    "message": "apturēts"
+  },
+  "flow_statusWorking": {
+    "message": "strādā"
+  },
+  "flow_statusLogin": {
+    "message": "pierakstīties kontā"
+  },
+  "flow_stTitleOpen": {
+    "message": "Atvērt TrendTraffic un pierakstīties — tas savienosies automātiski"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Atvērt pilnu galeriju →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic galerija — izvēlieties kā redaktorā, ar pogu '→ Flow' pie katra faila"
+  },
+  "flow_fileFallback": {
+    "message": "fails"
+  },
+  "flow_pickHint": {
+    "message": "Noklikšķiniet uz vēlamā vienuma — tas tiks pievienots galerijai"
+  },
+  "flow_noPrompt": {
+    "message": "(nav uzvednes)"
+  },
+  "flow_taskNum": {
+    "message": "Uzdevums #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ uzvednes lauks nav atrasts — nepieciešama selektora izpēte"
+  },
+  "flow_promptSet": {
+    "message": "uzvedne iestatīta"
+  },
+  "flow_refUploaded": {
+    "message": "atsauce augšupielādēta Flow"
+  },
+  "flow_refPrefix": {
+    "message": "atsauce: "
+  },
+  "flow_refDlFailed": {
+    "message": "atsauces lejupielāde neizdevās"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ ģenerēšanas poga nav atrasta — nepieciešama izpēte"
+  },
+  "flow_genStarted": {
+    "message": "ģenerēšana sākta, gaida klipu…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ klipa gaidīšanas taimauts"
+  },
+  "flow_clipReady": {
+    "message": "✓ klips gatavs"
+  },
+  "flow_kindClip": {
+    "message": "klips"
+  },
+  "flow_kindPicture": {
+    "message": "attēls"
+  },
+  "flow_grabPre": {
+    "message": "tiek ņemts "
+  },
+  "flow_grabSuf": {
+    "message": " no Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ neizdevās nolasīt multividi"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN autentifikācija: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — mēģina caur serveri"
+  },
+  "flow_inGallerySuf": {
+    "message": " uz galeriju → cilni \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "nav savienojuma — noklikšķiniet uz \"Savienot\" TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ noklikšķiniet uz vēlamā fotoattēla/video Flow, pēc tam uz \"Uz galeriju\""
+  },
+  "flow_multipleMedia": {
+    "message": "vairāki multivides faili — izvēlieties, ko paņemt ↓"
+  },
+  "flow_openingProject": {
+    "message": "atver projektu Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow šeit pieņem tikai attēlus — augšupielādējiet video, izmantojot Flow sadaļu \"Augšupielādes\""
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "augšupielādes lauks nav atrasts — atveriet PROJEKTU Flow (nevis galveno lapu): projekta iekšienē ir augšupielādes (+/\"Augšupielādes\")"
+  },
+  "flow_loadingList": {
+    "message": "ielādē sarakstu…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "nav savienojuma — noklikšķiniet uz \"Savienot\""
+  },
+  "flow_galleryEmpty": {
+    "message": "galerijā nav multivides"
+  },
+  "flow_reconSent": {
+    "message": "✓ izkārtojuma atpazīšana nosūtīta"
+  },
+  "flow_reconFail": {
+    "message": "⚠ atpazīšana: "
+  },
+  "flow_noConnection": {
+    "message": "nav savienojuma"
+  },
+  "flow_gettingMedia": {
+    "message": "iegūst multividi no galerijas…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ neizdevās lejupielādēt no galerijas"
+  },
+  "flow_insertedImage": {
+    "message": "attēls"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " ievietots Flow no galerijas"
+  },
+  "flow_newClipReady": {
+    "message": "jauns klips gatavs — tiek augšupielādēts galerijā…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klips galerijā → \"Video\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klips nav saglabāts: "
+  },
+  "hg_state": {
+    "message": "Statuss"
+  },
+  "hg_notConnected": {
+    "message": "nav savienots"
+  },
+  "hg_keepTabOpen": {
+    "message": "Saglabājiet šo cilni atvērtu — galvas tiks renderētas automātiski, pamatojoties uz jūsu abonementu."
+  },
+  "hg_openTT": {
+    "message": "Atvērt TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "atpazīšana: "
+  },
+  "hg_reconSuffix": {
+    "message": " studijas zvani"
+  },
+  "hg_reconBtn": {
+    "message": "API atpazīšana"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Tveriet pašreizējo studijas API un nosūtiet mums (pielāgošanai)"
+  },
+  "hg_statusWorking": {
+    "message": "strādā"
+  },
+  "hg_statusLogin": {
+    "message": "piesakieties savā kontā"
+  },
+  "hg_stTitleOpen": {
+    "message": "Atveriet TrendTraffic un piesakieties — tas savienosies automātiski"
+  },
+  "hg_photoDlFailed": {
+    "message": "fotoattēla lejupielāde neizdevās"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderēšana neizdevās"
+  },
+  "hg_genPrefix": {
+    "message": "ģenerēšana: "
+  },
+  "hg_waiting": {
+    "message": "gaida"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen nesniedza video laikā"
+  },
+  "hg_headNum": {
+    "message": "▶ galva #"
+  },
+  "hg_readyLook": {
+    "message": "gatavs konta iemiesojums — fotoattēla augšupielāde izlaista"
+  },
+  "hg_photoUpload": {
+    "message": "fotoattēls → runājošs_fotoattēls…"
+  },
+  "hg_genStartPre": {
+    "message": "sāk ģenerēšanu ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ izskats nav atrasts šajā sesijā — tiek augšupielādēts fotoattēls un mēģināts vēlreiz…"
+  },
+  "hg_headReady": {
+    "message": "✓ galva gatava, iegūst mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ sūta uz TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API atpazīšana nosūtīta"
+  },
+  "hg_reconFail": {
+    "message": "⚠ atpazīšana: "
+  },
+  "hg_noConnection": {
+    "message": "nav savienojuma"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artefakta fails pārtverts ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "faila pārtveršana neizdevās: "
+  },
+  "nlm_dlProbe": {
+    "message": "lejupielādēt? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "lejupielādes URL pārtverts (window.open)"
+  },
+  "nlm_state": {
+    "message": "Statuss"
+  },
+  "nlm_notConnected": {
+    "message": "nav savienots"
+  },
+  "nlm_account": {
+    "message": "Konts"
+  },
+  "nlm_accountTitle": {
+    "message": "Google konts, ko izmanto NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Gaida uzdevumu no TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Parādīt gatavus studijas darbus — noklikšķiniet uz darba, lai to ielādētu TrendTraffic galerijā"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Uz galeriju"
+  },
+  "nlm_openTT": {
+    "message": "Atvērt TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Uztvert pašreizējo NotebookLM izkārtojumu un nosūtīt mums (selektora pielāgošanai)"
+  },
+  "nlm_reconBtn": {
+    "message": "izkārtojuma atpazīšana"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "atveriet piezīmju grāmatiņu — es parādīšu tās studijas darbus"
+  },
+  "nlm_noReadyWorks": {
+    "message": "nav gatavu studijas darbu (vai vēl ģenerē)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Ielādēt \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" uz galeriju"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ jau"
+  },
+  "nlm_refresh": {
+    "message": "atsvaidzināt"
+  },
+  "nlm_close": {
+    "message": "aizvērt"
+  },
+  "nlm_loginTT": {
+    "message": "pieteikties TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "pieteikties Google"
+  },
+  "nlm_working": {
+    "message": "strādā"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Veido piezīmju grāmatiņu: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ piezīmju grāmatiņa izveidota: "
+  },
+  "nlm_addingSource": {
+    "message": "Pievieno avotu ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "faila lejupielāde no galerijas neizdevās"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM nepieņem video failus. Videoklipiem pievienojiet \"Analīzi\" kā tekstu vai saiti (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Failu augšupielāde NotebookLM nav pieejama no paplašinājuma (vietējais logs). Izmantojiet \"Analīzi\"/\"Ielīmēt tekstu\" vai saiti (vietne/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ faila avots pievienots"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "nezināms avota veids"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ avots pievienots ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Lasu piezīmju grāmatiņu sarakstu…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ piezīmju grāmatiņas (manas+pieejamās): "
+  },
+  "nlm_asking": {
+    "message": "Jautā: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "atbilde nav pilnībā nolasīta"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ atbilde saņemta"
+  },
+  "nlm_unknownType": {
+    "message": "nezināms veids: "
+  },
+  "nlm_generatingTask": {
+    "message": "Ģenerē: "
+  },
+  "nlm_genStartedPre": {
+    "message": "ģenerēšana sākta ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", noklusējums), gaida artefaktu…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakts gatavs ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), gaida artefaktu…"
+  },
+  "nlm_dlRequested": {
+    "message": "pieprasīta artefakta lejupielāde…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "neizdevās pārtvert artefakta lejupielādi"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Lejupielādēt TrendTraffic galerijā"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" nav \"Lejupielādēt\" — uztver kā tekstu…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" nav \"Lejupielādēt\" — uztver kā tekstu…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galerija"
+  },
+  "nlm_alreadyWas": {
+    "message": " (jau pastāvēja)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ nav saglabāts: "
+  },
+  "nlm_noConnection": {
+    "message": "nav savienojuma"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL lejupielāde neizdevās: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ neizdevās uztvert failu \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ klikšķis novirzīja no piezīmju grāmatiņas lapas — atgriežos"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ teksts \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" nav uztverts"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galerija (kā teksts)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikāli"
+  },
+  "nlm_916Title": {
+    "message": "Pievienojiet 9:16 vertikālā formāta uzvedni (Shorts/Reels/TikTok). Uzvedne angļu valodā — NotebookLM vislabāk saprot instrukcijas šādā veidā."
+  },
+  "nlm_916Already": {
+    "message": "✓ jau pievienots"
+  },
+  "nlm_916Added": {
+    "message": "✓ pievienots"
+  },
+  "nlm_reconSent": {
+    "message": "✓ izkārtojuma atpazīšana nosūtīta"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Atpazīšana neizdevās: "
+  },
+  "nlm_unknownAction": {
+    "message": "Nezināma darbība: "
+  }
+}

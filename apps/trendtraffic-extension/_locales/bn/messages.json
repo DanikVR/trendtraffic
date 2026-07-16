@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — অ্যাসিস্ট্যান্ট (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "একত্রিত TrendTraffic এক্সটেনশন: Google Flow (Veo), Google NotebookLM (Hotebook), এবং HeyGen (আপনার সাবস্ক্রিপশন সহ UGC টকিং হেডস) এর একটি সেতু। বাস্তব ব্রাউজার টাস্ক কিউ, জেনারেশন অটোমেশন, এবং গ্যালারি এক্সচেঞ্জ। একবার ইনস্টল করুন — ট্যাব খোলা থাকা পরিষেবাতে প্যানেল সক্রিয় হবে।"
+  },
+  "extTitle": {
+    "message": "TrendTraffic — অ্যাসিস্ট্যান্ট (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "টাস্ক টাইমআউট"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow ট্যাব খুলুন — টাস্ক স্বয়ংক্রিয়ভাবে সম্পন্ন হবে"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: অস্বাভাবিক কার্যকলাপ — বিরতি"
+  },
+  "bg_noResult": {
+    "message": "কোন ফলাফল নেই"
+  },
+  "bg_notConnected": {
+    "message": "সংযুক্ত নয়"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow খুলতে ব্যর্থ হয়েছে"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow লোড হয়নি — অনুগ্রহ করে labs.google/flow-এ সাইন ইন করুন"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow থেকে কোন প্রতিক্রিয়া নেই"
+  },
+  "bg_noUrl": {
+    "message": "কোন URL নেই"
+  },
+  "bg_dlRejected": {
+    "message": "ডাউনলোড ব্যর্থ হয়েছে (CDN অনুরোধ প্রত্যাখ্যান করেছে)"
+  },
+  "bg_tooBig": {
+    "message": "মিডিয়া >500MB — খুব বড়"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM খুলতে ব্যর্থ হয়েছে"
+  },
+  "bg_notebookNotCreated": {
+    "message": "নোটবুক তৈরি হয়নি ('তৈরি করুন' এর জন্য নির্বাচক স্কাউটিং প্রয়োজন)"
+  },
+  "bg_listFailed": {
+    "message": "তালিকা পেতে ব্যর্থ হয়েছে"
+  },
+  "bg_actionFailed": {
+    "message": "অ্যাকশন ব্যর্থ হয়েছে"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM খুলুন — জেনারেশন স্বয়ংক্রিয়ভাবে সম্পন্ন হবে"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLM-এ সাইন ইন করুন"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "আর্টিফ্যাক্ট ডাউনলোড আটকাতে ব্যর্থ হয়েছে"
+  },
+  "bg_artifactDlFailed": {
+    "message": "আর্টিফ্যাক্ট ডাউনলোড ব্যর্থ হয়েছে: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com স্টুডিও ট্যাব খুলুন — অবতার স্বয়ংক্রিয়ভাবে রেন্ডার হবে"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen স্টুডিও এখনও লোড হচ্ছে — পরে আবার চেষ্টা করা হচ্ছে"
+  },
+  "bg_retry": {
+    "message": "পুনরায় চেষ্টা করুন"
+  },
+  "bg_dlFailed": {
+    "message": "ডাউনলোড ব্যর্থ হয়েছে"
+  },
+  "flow_state": {
+    "message": "স্থিতি"
+  },
+  "flow_notConnected": {
+    "message": "সংযুক্ত নয়"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic থেকে টাস্কের জন্য অপেক্ষা করা হচ্ছে…"
+  },
+  "flow_pauseBtn": {
+    "message": "বিরতি"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic খুলুন"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ গ্যালারিতে"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Flow থেকে একটি সমাপ্ত ক্লিপ TrendTraffic গ্যালারিতে পাঠান"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ গ্যালারি থেকে"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "গ্যালারি থেকে একটি ভিডিও নিন এবং প্রক্রিয়াকরণের জন্য Flow-এ আপলোড করুন"
+  },
+  "flow_reconPrefix": {
+    "message": "স্কাউটিং: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow অনুরোধ"
+  },
+  "flow_reconBtn": {
+    "message": "লেআউট স্কাউট করুন"
+  },
+  "flow_reconBtnTitle": {
+    "message": "বর্তমান Flow লেআউট ক্যাপচার করুন এবং আমাদের কাছে পাঠান (সমন্বয়ের জন্য)"
+  },
+  "flow_pauseManual": {
+    "message": "ম্যানুয়ালি বিরতি সক্ষম করা হয়েছে"
+  },
+  "flow_statusPause": {
+    "message": "বিরতি"
+  },
+  "flow_statusWorking": {
+    "message": "কাজ করছে"
+  },
+  "flow_statusLogin": {
+    "message": "অ্যাকাউন্টে সাইন ইন করুন"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic খুলুন এবং সাইন ইন করুন — এটি স্বয়ংক্রিয়ভাবে সংযুক্ত হবে"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 সম্পূর্ণ গ্যালারি খুলুন →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic গ্যালারি — একটি সম্পাদকের মতো নির্বাচন করুন, প্রতিটি ফাইলে একটি '→ Flow' বোতাম সহ"
+  },
+  "flow_fileFallback": {
+    "message": "ফাইল"
+  },
+  "flow_pickHint": {
+    "message": "পছন্দসই আইটেমটিতে ক্লিক করুন — এটি গ্যালারিতে যুক্ত হবে"
+  },
+  "flow_noPrompt": {
+    "message": "(কোন প্রম্পট নেই)"
+  },
+  "flow_taskNum": {
+    "message": "টাস্ক #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ প্রম্পট ক্ষেত্র পাওয়া যায়নি — নির্বাচক স্কাউটিং প্রয়োজন"
+  },
+  "flow_promptSet": {
+    "message": "প্রম্পট সেট করা হয়েছে"
+  },
+  "flow_refUploaded": {
+    "message": "রেফারেন্স Flow-এ আপলোড করা হয়েছে"
+  },
+  "flow_refPrefix": {
+    "message": "রেফারেন্স: "
+  },
+  "flow_refDlFailed": {
+    "message": "রেফারেন্স ডাউনলোড ব্যর্থ হয়েছে"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ জেনারেশন বোতাম পাওয়া যায়নি — স্কাউটিং প্রয়োজন"
+  },
+  "flow_genStarted": {
+    "message": "জেনারেশন শুরু হয়েছে, ক্লিপের জন্য অপেক্ষা করা হচ্ছে…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ ক্লিপ অপেক্ষার সময়সীমা"
+  },
+  "flow_clipReady": {
+    "message": "✓ ক্লিপ প্রস্তুত"
+  },
+  "flow_kindClip": {
+    "message": "ক্লিপ"
+  },
+  "flow_kindPicture": {
+    "message": "ছবি"
+  },
+  "flow_grabPre": {
+    "message": "ফ্লো থেকে "
+  },
+  "flow_grabSuf": {
+    "message": " নেওয়া হচ্ছে…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ মিডিয়া পড়া যায়নি"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN প্রমাণীকরণ: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — সার্ভারের মাধ্যমে চেষ্টা করা হচ্ছে"
+  },
+  "flow_inGallerySuf": {
+    "message": " গ্যালারিতে → \"Google Flow\" ট্যাব"
+  },
+  "flow_noConnConnect": {
+    "message": "সংযোগ নেই — TrendTraffic-এ \"Connect\" ক্লিক করুন"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ ফ্লোতে পছন্দের ছবি/ভিডিওতে ক্লিক করুন, তারপর \"To Gallery\""
+  },
+  "flow_multipleMedia": {
+    "message": "একাধিক মিডিয়া — কোনটি নিতে চান তা নির্বাচন করুন ↓"
+  },
+  "flow_openingProject": {
+    "message": "ফ্লোতে প্রোজেক্ট খোলা হচ্ছে…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "ফ্লো এখানে শুধুমাত্র ছবি গ্রহণ করে — ফ্লোর \"Uploads\" বিভাগ ব্যবহার করে ভিডিও আপলোড করুন"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "আপলোড ক্ষেত্র পাওয়া যায়নি — ফ্লোতে একটি প্রোজেক্ট খুলুন (মূল পৃষ্ঠা নয়): একটি প্রোজেক্টের ভিতরে একটি আপলোড (+/\"Uploads\") আছে"
+  },
+  "flow_loadingList": {
+    "message": "তালিকা লোড হচ্ছে…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "সংযোগ নেই — \"Connect\" ক্লিক করুন"
+  },
+  "flow_galleryEmpty": {
+    "message": "গ্যালারিতে কোনো মিডিয়া নেই"
+  },
+  "flow_reconSent": {
+    "message": "✓ লেআউট রিকন পাঠানো হয়েছে"
+  },
+  "flow_reconFail": {
+    "message": "⚠ রিকন: "
+  },
+  "flow_noConnection": {
+    "message": "সংযোগ নেই"
+  },
+  "flow_gettingMedia": {
+    "message": "গ্যালারি থেকে মিডিয়া নেওয়া হচ্ছে…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ গ্যালারি থেকে ডাউনলোড ব্যর্থ হয়েছে"
+  },
+  "flow_insertedImage": {
+    "message": "ছবি"
+  },
+  "flow_insertedVideo": {
+    "message": "ভিডিও"
+  },
+  "flow_insertedSuf": {
+    "message": " গ্যালারি থেকে ফ্লোতে ঢোকানো হয়েছে"
+  },
+  "flow_newClipReady": {
+    "message": "নতুন ক্লিপ প্রস্তুত — গ্যালারিতে আপলোড করা হচ্ছে…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ ক্লিপ গ্যালারিতে → \"ভিডিও\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ ক্লিপ সেভ করা হয়নি: "
+  },
+  "hg_state": {
+    "message": "স্থিতি"
+  },
+  "hg_notConnected": {
+    "message": "সংযুক্ত নয়"
+  },
+  "hg_keepTabOpen": {
+    "message": "এই ট্যাবটি খোলা রাখুন — আপনার সাবস্ক্রিপশন অনুযায়ী হেডগুলি স্বয়ংক্রিয়ভাবে রেন্ডার হবে।"
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic খুলুন"
+  },
+  "hg_reconPrefix": {
+    "message": "রিকন: "
+  },
+  "hg_reconSuffix": {
+    "message": " স্টুডিও কল"
+  },
+  "hg_reconBtn": {
+    "message": "API রিকন"
+  },
+  "hg_reconBtnTitle": {
+    "message": "বর্তমান স্টুডিও API ক্যাপচার করুন এবং আমাদের কাছে পাঠান (সমন্বয়ের জন্য)"
+  },
+  "hg_statusWorking": {
+    "message": "কাজ করছে"
+  },
+  "hg_statusLogin": {
+    "message": "আপনার অ্যাকাউন্টে লগ ইন করুন"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic খুলুন এবং লগ ইন করুন — এটি স্বয়ংক্রিয়ভাবে সংযুক্ত হবে"
+  },
+  "hg_photoDlFailed": {
+    "message": "ছবি ডাউনলোড ব্যর্থ হয়েছে"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: রেন্ডার ব্যর্থ হয়েছে"
+  },
+  "hg_genPrefix": {
+    "message": "জেনারেটিং: "
+  },
+  "hg_waiting": {
+    "message": "অপেক্ষা করা হচ্ছে"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen সময়মতো ভিডিও সরবরাহ করেনি"
+  },
+  "hg_headNum": {
+    "message": "▶ হেড #"
+  },
+  "hg_readyLook": {
+    "message": "প্রস্তুত অ্যাকাউন্ট অবতার — ছবি আপলোড বাদ দেওয়া হয়েছে"
+  },
+  "hg_photoUpload": {
+    "message": "ছবি → টকিং_ছবি…"
+  },
+  "hg_genStartPre": {
+    "message": "জেনারেটিং শুরু হচ্ছে ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ এই সেশনে লুক পাওয়া যায়নি — ছবি আপলোড করা হচ্ছে এবং আবার চেষ্টা করা হচ্ছে…"
+  },
+  "hg_headReady": {
+    "message": "✓ হেড প্রস্তুত, mp4 নেওয়া হচ্ছে…"
+  },
+  "hg_sending": {
+    "message": "✓ TrendTraffic-এ পাঠানো হচ্ছে"
+  },
+  "hg_reconSent": {
+    "message": "✓ API রিকন পাঠানো হয়েছে"
+  },
+  "hg_reconFail": {
+    "message": "⚠ রিকন: "
+  },
+  "hg_noConnection": {
+    "message": "সংযোগ নেই"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "আর্টিফ্যাক্ট ফাইল আটকানো হয়েছে ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "ফাইল আটকাতে ব্যর্থ: "
+  },
+  "nlm_dlProbe": {
+    "message": "ডাউনলোড? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "ডাউনলোড URL আটকানো হয়েছে (window.open)"
+  },
+  "nlm_state": {
+    "message": "স্থিতি"
+  },
+  "nlm_notConnected": {
+    "message": "সংযুক্ত নয়"
+  },
+  "nlm_account": {
+    "message": "অ্যাকাউন্ট"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM-এর জন্য ব্যবহৃত Google অ্যাকাউন্ট"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic থেকে কাজের জন্য অপেক্ষা করা হচ্ছে…"
+  },
+  "nlm_grabTitle": {
+    "message": "তৈরি স্টুডিও কাজগুলি দেখান — TrendTraffic গ্যালারিতে লোড করতে একটি কাজে ক্লিক করুন"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ গ্যালারিতে"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic খুলুন"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "বর্তমান NotebookLM লেআউট ক্যাপচার করুন এবং আমাদের কাছে পাঠান (নির্বাচক সমন্বয়ের জন্য)"
+  },
+  "nlm_reconBtn": {
+    "message": "লেআউট রিকন"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "একটি নোটবুক খুলুন — আমি এর স্টুডিও কাজগুলি দেখাব"
+  },
+  "nlm_noReadyWorks": {
+    "message": "কোনো তৈরি স্টুডিও কাজ নেই (বা এখনও তৈরি হচ্ছে)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" গ্যালারিতে লোড করুন"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ ইতিমধ্যেই"
+  },
+  "nlm_refresh": {
+    "message": "রিফ্রেশ করুন"
+  },
+  "nlm_close": {
+    "message": "বন্ধ করুন"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTraffic-এ লগ ইন করুন"
+  },
+  "nlm_loginGoogle": {
+    "message": "Google-এ লগ ইন করুন"
+  },
+  "nlm_working": {
+    "message": "কাজ চলছে"
+  },
+  "nlm_creatingNotebook": {
+    "message": "নোটবুক তৈরি হচ্ছে: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ নোটবুক তৈরি হয়েছে: "
+  },
+  "nlm_addingSource": {
+    "message": "উৎস যোগ করা হচ্ছে ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "গ্যালারি থেকে ফাইল ডাউনলোড ব্যর্থ হয়েছে"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM ভিডিও ফাইল গ্রহণ করে না। ভিডিওর জন্য, টেক্সট বা লিঙ্ক (YouTube) হিসাবে \"বিশ্লেষণ\" যোগ করুন।"
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "এক্সটেনশন থেকে NotebookLM-এ ফাইল আপলোড অনুপলব্ধ (নেটিভ উইন্ডো)। \"বিশ্লেষণ\"/\"টেক্সট পেস্ট করুন\" বা একটি লিঙ্ক (ওয়েবসাইট/YouTube) ব্যবহার করুন।"
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ ফাইল উৎস যোগ করা হয়েছে"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "অজানা উৎসের ধরন"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ উৎস যোগ করা হয়েছে ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "নোটবুক তালিকা পড়া হচ্ছে…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ নোটবুক (আমার+উপলব্ধ): "
+  },
+  "nlm_asking": {
+    "message": "জিজ্ঞেস করা হচ্ছে: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "উত্তর সম্পূর্ণরূপে পড়া হয়নি"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ উত্তর পাওয়া গেছে"
+  },
+  "nlm_unknownType": {
+    "message": "অজানা ধরন: "
+  },
+  "nlm_generatingTask": {
+    "message": "তৈরি হচ্ছে: "
+  },
+  "nlm_genStartedPre": {
+    "message": "তৈরি শুরু হয়েছে ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", ডিফল্ট), আর্টিফ্যাক্টের জন্য অপেক্ষা করা হচ্ছে…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ আর্টিফ্যাক্ট প্রস্তুত ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), আর্টিফ্যাক্টের জন্য অপেক্ষা করা হচ্ছে…"
+  },
+  "nlm_dlRequested": {
+    "message": "আর্টিফ্যাক্ট ডাউনলোড করার অনুরোধ করা হয়েছে…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "আর্টিফ্যাক্ট ডাউনলোড আটকাতে ব্যর্থ হয়েছে"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic গ্যালারিতে ডাউনলোড করুন"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" এর কোনো \"ডাউনলোড\" নেই — টেক্সট হিসাবে ক্যাপচার করা হচ্ছে…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" এর কোনো \"ডাউনলোড\" নেই — টেক্সট হিসাবে ক্যাপচার করা হচ্ছে…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → গ্যালারি"
+  },
+  "nlm_alreadyWas": {
+    "message": " (ইতিমধ্যেই বিদ্যমান ছিল)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ সেভ করা হয়নি: "
+  },
+  "nlm_noConnection": {
+    "message": "কোনো সংযোগ নেই"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL ডাউনলোড ব্যর্থ হয়েছে: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ফাইল ক্যাপচার করতে ব্যর্থ হয়েছে \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ ক্লিক নোটবুক পৃষ্ঠা থেকে দূরে নিয়ে গেছে — ফিরে আসছে"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ টেক্সট \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" ক্যাপচার করা হয়নি"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → গ্যালারি (টেক্সট হিসাবে)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 উল্লম্ব"
+  },
+  "nlm_916Title": {
+    "message": "একটি 9:16 উল্লম্ব ফরম্যাট প্রম্পট যোগ করুন (Shorts/Reels/TikTok)। প্রম্পট ইংরেজিতে দিন — NotebookLM এভাবে নির্দেশাবলী সবচেয়ে ভালোভাবে বোঝে।"
+  },
+  "nlm_916Already": {
+    "message": "✓ ইতিমধ্যেই যোগ করা হয়েছে"
+  },
+  "nlm_916Added": {
+    "message": "✓ যোগ করা হয়েছে"
+  },
+  "nlm_reconSent": {
+    "message": "✓ লেআউট রিকন পাঠানো হয়েছে"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ রিকন ব্যর্থ হয়েছে: "
+  },
+  "nlm_unknownAction": {
+    "message": "অজানা অ্যাকশন: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asistan (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Birleşik TrendTraffic uzantısı: Google Flow (Veo), Google NotebookLM (Hotebook) ve HeyGen'e (aboneliğinizle UGC konuşan kafalar) köprü. Gerçek tarayıcı görev kuyruğu, üretim otomasyonu ve Galeri değişimi. Bir kez yükleyin — panel, sekmenin açık olduğu hizmette etkinleşir."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asistan (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "görev zaman aşımı"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow sekmesini açın — görev otomatik olarak tamamlanacaktır"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: olağandışı etkinlik — duraklatıldı"
+  },
+  "bg_noResult": {
+    "message": "sonuç yok"
+  },
+  "bg_notConnected": {
+    "message": "bağlı değil"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow açılamadı"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow yüklenmedi — lütfen labs.google/flow adresinden oturum açın"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow'dan yanıt yok"
+  },
+  "bg_noUrl": {
+    "message": "url yok"
+  },
+  "bg_dlRejected": {
+    "message": "indirme başarısız (CDN isteği reddetti)"
+  },
+  "bg_tooBig": {
+    "message": "medya >500MB — çok büyük"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM açılamadı"
+  },
+  "bg_notebookNotCreated": {
+    "message": "defter oluşturulmadı ('oluştur' için seçici keşfi gerekli)"
+  },
+  "bg_listFailed": {
+    "message": "liste alınamadı"
+  },
+  "bg_actionFailed": {
+    "message": "eylem başarısız oldu"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM'yi açın — üretim otomatik olarak tamamlanacaktır"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLM'ye oturum açın"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "yapıt indirme engellenemedi"
+  },
+  "bg_artifactDlFailed": {
+    "message": "yapıt indirme başarısız: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com stüdyo sekmesini açın — avatar otomatik olarak oluşturulacaktır"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio hala yükleniyor — daha sonra tekrar denenecek"
+  },
+  "bg_retry": {
+    "message": "tekrar dene"
+  },
+  "bg_dlFailed": {
+    "message": "indirme başarısız"
+  },
+  "flow_state": {
+    "message": "Durum"
+  },
+  "flow_notConnected": {
+    "message": "bağlı değil"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic'ten görevler bekleniyor…"
+  },
+  "flow_pauseBtn": {
+    "message": "Duraklat"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic'i Aç"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Galeriye"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Bitmiş bir klibi Flow'dan TrendTraffic Galerisi'ne gönder"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Galeriden"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Galeriden bir video alıp işlenmek üzere Flow'a yükle"
+  },
+  "flow_reconPrefix": {
+    "message": "keşif: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow isteği"
+  },
+  "flow_reconBtn": {
+    "message": "düzen keşfet"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Mevcut Flow düzenini yakalayın ve bize gönderin (ayarlama için)"
+  },
+  "flow_pauseManual": {
+    "message": "Manuel olarak duraklatma etkin"
+  },
+  "flow_statusPause": {
+    "message": "duraklatıldı"
+  },
+  "flow_statusWorking": {
+    "message": "çalışıyor"
+  },
+  "flow_statusLogin": {
+    "message": "hesaba oturum aç"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic'i açın ve oturum açın — otomatik olarak bağlanacaktır"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Tam Galeriyi Aç →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Galerisi — her dosyada '→ Flow' düğmesiyle bir düzenleyicideki gibi seçin"
+  },
+  "flow_fileFallback": {
+    "message": "dosya"
+  },
+  "flow_pickHint": {
+    "message": "İstenen öğeye tıklayın — Galeriye eklenecektir"
+  },
+  "flow_noPrompt": {
+    "message": "(istem yok)"
+  },
+  "flow_taskNum": {
+    "message": "Görev #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ istem alanı bulunamadı — seçici keşfi gerekli"
+  },
+  "flow_promptSet": {
+    "message": "istem ayarlandı"
+  },
+  "flow_refUploaded": {
+    "message": "referans Flow'a yüklendi"
+  },
+  "flow_refPrefix": {
+    "message": "referans: "
+  },
+  "flow_refDlFailed": {
+    "message": "referans indirme başarısız"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ üretim düğmesi bulunamadı — keşif gerekli"
+  },
+  "flow_genStarted": {
+    "message": "üretim başladı, klip bekleniyor…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ klip bekleme zaman aşımı"
+  },
+  "flow_clipReady": {
+    "message": "✓ klip hazır"
+  },
+  "flow_kindClip": {
+    "message": "klip"
+  },
+  "flow_kindPicture": {
+    "message": "resim"
+  },
+  "flow_grabPre": {
+    "message": "Flow'dan alınıyor: "
+  },
+  "flow_grabSuf": {
+    "message": " from Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ medya okunamadı"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN yetkilendirme: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — sunucu üzerinden deneniyor"
+  },
+  "flow_inGallerySuf": {
+    "message": " Galeriye → \"Google Flow\" sekmesi"
+  },
+  "flow_noConnConnect": {
+    "message": "bağlantı yok — TrendTraffic'te \"Bağlan\"a tıklayın"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ Flow'da istediğiniz fotoğraf/videoya tıklayın, ardından \"Galeriye\""
+  },
+  "flow_multipleMedia": {
+    "message": "birden çok medya — hangisini alacağınızı seçin ↓"
+  },
+  "flow_openingProject": {
+    "message": "Flow'da proje açılıyor…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow burada yalnızca resimleri kabul eder — videoları Flow'un \"Yüklemeler\" bölümünden yükleyin"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "yükleme alanı bulunamadı — Flow'da bir PROJE açın (ana sayfa değil): bir projenin içinde bir yükleme (+/\"Yüklemeler\") vardır"
+  },
+  "flow_loadingList": {
+    "message": "liste yükleniyor…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "bağlantı yok — \"Bağlan\"a tıklayın"
+  },
+  "flow_galleryEmpty": {
+    "message": "Galeride medya yok"
+  },
+  "flow_reconSent": {
+    "message": "✓ düzen yeniden yapılandırması gönderildi"
+  },
+  "flow_reconFail": {
+    "message": "⚠ yeniden yapılandırma: "
+  },
+  "flow_noConnection": {
+    "message": "bağlantı yok"
+  },
+  "flow_gettingMedia": {
+    "message": "Galeriden medya alınıyor…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ Galeriden indirme başarısız oldu"
+  },
+  "flow_insertedImage": {
+    "message": "resim"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " Galeriden Flow'a eklendi"
+  },
+  "flow_newClipReady": {
+    "message": "yeni klip hazır — Galeriye yükleniyor…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klip Galeride → \"Videolar\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klip kaydedilemedi: "
+  },
+  "hg_state": {
+    "message": "Durum"
+  },
+  "hg_notConnected": {
+    "message": "bağlı değil"
+  },
+  "hg_keepTabOpen": {
+    "message": "Bu sekmeyi açık tutun — aboneliğinize göre avatarlar otomatik olarak oluşturulacaktır."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic'i Aç"
+  },
+  "hg_reconPrefix": {
+    "message": "yeniden yapılandırma: "
+  },
+  "hg_reconSuffix": {
+    "message": " stüdyo çağrıları"
+  },
+  "hg_reconBtn": {
+    "message": "API yeniden yapılandırma"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Mevcut stüdyo API'sini yakalayın ve bize gönderin (ayarlama için)"
+  },
+  "hg_statusWorking": {
+    "message": "çalışıyor"
+  },
+  "hg_statusLogin": {
+    "message": "hesabınıza giriş yapın"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic'i açın ve giriş yapın — otomatik olarak bağlanacaktır"
+  },
+  "hg_photoDlFailed": {
+    "message": "fotoğraf indirme başarısız oldu"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: oluşturma başarısız oldu"
+  },
+  "hg_genPrefix": {
+    "message": "oluşturma: "
+  },
+  "hg_waiting": {
+    "message": "bekleniyor"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen zamanında video sağlamadı"
+  },
+  "hg_headNum": {
+    "message": "▶ avatar #"
+  },
+  "hg_readyLook": {
+    "message": "hazır hesap avatarı — fotoğraf yükleme atlandı"
+  },
+  "hg_photoUpload": {
+    "message": "fotoğraf → konuşan_fotoğraf…"
+  },
+  "hg_genStartPre": {
+    "message": "oluşturma başlatılıyor ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ bu oturumda avatar bulunamadı — fotoğraf yükleniyor ve yeniden deneniyor…"
+  },
+  "hg_headReady": {
+    "message": "✓ avatar hazır, mp4 alınıyor…"
+  },
+  "hg_sending": {
+    "message": "✓ TrendTraffic'e gönderiliyor"
+  },
+  "hg_reconSent": {
+    "message": "✓ API yeniden yapılandırması gönderildi"
+  },
+  "hg_reconFail": {
+    "message": "⚠ yeniden yapılandırma: "
+  },
+  "hg_noConnection": {
+    "message": "bağlantı yok"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "yapay zeka dosyası yakalandı ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "dosya yakalama başarısız oldu: "
+  },
+  "nlm_dlProbe": {
+    "message": "indirilsin mi? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "indirme URL'si yakalandı (window.open)"
+  },
+  "nlm_state": {
+    "message": "Durum"
+  },
+  "nlm_notConnected": {
+    "message": "bağlı değil"
+  },
+  "nlm_account": {
+    "message": "Hesap"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM için kullanılan Google Hesabı"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic'ten görev bekleniyor…"
+  },
+  "nlm_grabTitle": {
+    "message": "Hazır stüdyo çalışmalarını göster — bir çalışmaya tıklayarak TrendTraffic Galerisi'ne yükle"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Galeriye"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic'i Aç"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Mevcut NotebookLM düzenini yakala ve bize gönder (seçici ayarı için)"
+  },
+  "nlm_reconBtn": {
+    "message": "düzen keşfi"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "bir not defteri aç — stüdyo çalışmalarını göstereceğim"
+  },
+  "nlm_noReadyWorks": {
+    "message": "hazır stüdyo çalışması yok (veya hala oluşturuluyor)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" Galeriye Yükle"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ zaten"
+  },
+  "nlm_refresh": {
+    "message": "yenile"
+  },
+  "nlm_close": {
+    "message": "kapat"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTraffic'e giriş yap"
+  },
+  "nlm_loginGoogle": {
+    "message": "Google'a giriş yap"
+  },
+  "nlm_working": {
+    "message": "çalışıyor"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Not defteri oluşturuluyor: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ not defteri oluşturuldu: "
+  },
+  "nlm_addingSource": {
+    "message": "Kaynak ekleniyor ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "Galeriden dosya indirme başarısız oldu"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM video dosyalarını kabul etmez. Videolar için, \"Analiz\"i metin veya bağlantı (YouTube) olarak ekleyin."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Uzantıdan NotebookLM'e dosya yükleme kullanılamıyor (yerel pencere). \"Analiz\"/\"Metin yapıştır\" veya bir bağlantı (web sitesi/YouTube) kullanın."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ dosya kaynağı eklendi"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "bilinmeyen kaynak türü"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ kaynak eklendi ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Not defteri listesi okunuyor…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ not defterleri (benim+mevcut): "
+  },
+  "nlm_asking": {
+    "message": "Soruluyor: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "cevap tam okunmadı"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ cevap alındı"
+  },
+  "nlm_unknownType": {
+    "message": "bilinmeyen tür: "
+  },
+  "nlm_generatingTask": {
+    "message": "Oluşturuluyor: "
+  },
+  "nlm_genStartedPre": {
+    "message": "oluşturma başlatıldı ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", varsayılan), yapıt bekleniyor…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ yapıt hazır ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), yapıt bekleniyor…"
+  },
+  "nlm_dlRequested": {
+    "message": "yapıt indirme talep edildi…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "yapıt indirmesi engellenemedi"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic Galerisi'ne İndir"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" \"İndir\" seçeneği yok — metin olarak yakalanıyor…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" \"İndir\" seçeneği yok — metin olarak yakalanıyor…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galeri"
+  },
+  "nlm_alreadyWas": {
+    "message": " (zaten vardı)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ kaydedilmedi: "
+  },
+  "nlm_noConnection": {
+    "message": "bağlantı yok"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL indirme başarısız oldu: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ dosya yakalanamadı \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ tıklama not defteri sayfasından uzaklaştırdı — geri dönülüyor"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ metin \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" yakalanamadı"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galeri (metin olarak)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 dikey"
+  },
+  "nlm_916Title": {
+    "message": "9:16 dikey formatında bir istem ekleyin (Shorts/Reels/TikTok). İstem İngilizce olsun — NotebookLM talimatları bu şekilde en iyi anlar."
+  },
+  "nlm_916Already": {
+    "message": "✓ zaten eklendi"
+  },
+  "nlm_916Added": {
+    "message": "✓ eklendi"
+  },
+  "nlm_reconSent": {
+    "message": "✓ düzen keşfi gönderildi"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Tanıma başarısız: "
+  },
+  "nlm_unknownAction": {
+    "message": "Bilinmeyen eylem: "
+  }
+}

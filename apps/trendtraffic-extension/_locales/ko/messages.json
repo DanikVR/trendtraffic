@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — 어시스턴트 (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "통합 TrendTraffic 확장 프로그램: Google Flow (Veo), Google NotebookLM (Hotebook), HeyGen (구독을 통한 UGC 토킹 헤드)로 연결합니다. 실제 브라우저 작업 대기열, 생성 자동화 및 갤러리 교환. 한 번 설치하면 탭이 열려 있는 서비스에서 패널이 활성화됩니다."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — 어시스턴트 (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "작업 시간 초과"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow 탭 열기 — 작업이 자동으로 완료됩니다"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: 비정상적인 활동 — 일시 중지됨"
+  },
+  "bg_noResult": {
+    "message": "결과 없음"
+  },
+  "bg_notConnected": {
+    "message": "연결되지 않음"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow를 여는 데 실패했습니다"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow가 로드되지 않았습니다 — labs.google/flow에 로그인하십시오"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow에서 응답이 없습니다"
+  },
+  "bg_noUrl": {
+    "message": "URL 없음"
+  },
+  "bg_dlRejected": {
+    "message": "다운로드 실패 (CDN 요청 거부)"
+  },
+  "bg_tooBig": {
+    "message": "미디어 >500MB — 너무 큼"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM을 여는 데 실패했습니다"
+  },
+  "bg_notebookNotCreated": {
+    "message": "노트북이 생성되지 않았습니다 ('생성'을 위한 선택기 스카우트 필요)"
+  },
+  "bg_listFailed": {
+    "message": "목록을 가져오는 데 실패했습니다"
+  },
+  "bg_actionFailed": {
+    "message": "작업 실패"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM 열기 — 생성이 자동으로 완료됩니다"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLM에 로그인"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "아티팩트 다운로드 가로채기 실패"
+  },
+  "bg_artifactDlFailed": {
+    "message": "아티팩트 다운로드 실패: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com 스튜디오 탭 열기 — 아바타가 자동으로 렌더링됩니다"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio가 아직 로드 중입니다 — 나중에 다시 시도합니다"
+  },
+  "bg_retry": {
+    "message": "재시도"
+  },
+  "bg_dlFailed": {
+    "message": "다운로드 실패"
+  },
+  "flow_state": {
+    "message": "상태"
+  },
+  "flow_notConnected": {
+    "message": "연결되지 않음"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic의 작업을 기다리는 중…"
+  },
+  "flow_pauseBtn": {
+    "message": "일시 중지"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic 열기"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ 갤러리로"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Flow에서 완성된 클립을 TrendTraffic 갤러리로 보냅니다"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ 갤러리에서"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "갤러리에서 비디오를 가져와 Flow에 업로드하여 처리합니다"
+  },
+  "flow_reconPrefix": {
+    "message": "스카우트: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow 요청"
+  },
+  "flow_reconBtn": {
+    "message": "레이아웃 스카우트"
+  },
+  "flow_reconBtnTitle": {
+    "message": "현재 Flow 레이아웃을 캡처하여 저희에게 보냅니다 (조정용)"
+  },
+  "flow_pauseManual": {
+    "message": "수동으로 일시 중지 활성화됨"
+  },
+  "flow_statusPause": {
+    "message": "일시 중지됨"
+  },
+  "flow_statusWorking": {
+    "message": "작업 중"
+  },
+  "flow_statusLogin": {
+    "message": "계정에 로그인"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic을 열고 로그인하십시오 — 자동으로 연결됩니다"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 전체 갤러리 열기 →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic 갤러리 — 편집기처럼 선택하고 각 파일에 '→ Flow' 버튼이 있습니다"
+  },
+  "flow_fileFallback": {
+    "message": "파일"
+  },
+  "flow_pickHint": {
+    "message": "원하는 항목을 클릭하십시오 — 갤러리에 추가됩니다"
+  },
+  "flow_noPrompt": {
+    "message": "(프롬프트 없음)"
+  },
+  "flow_taskNum": {
+    "message": "작업 #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ 프롬프트 필드를 찾을 수 없습니다 — 선택기 스카우트 필요"
+  },
+  "flow_promptSet": {
+    "message": "프롬프트 설정됨"
+  },
+  "flow_refUploaded": {
+    "message": "참조가 Flow에 업로드됨"
+  },
+  "flow_refPrefix": {
+    "message": "참조: "
+  },
+  "flow_refDlFailed": {
+    "message": "참조 다운로드 실패"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ 생성 버튼을 찾을 수 없습니다 — 스카우트 필요"
+  },
+  "flow_genStarted": {
+    "message": "생성 시작됨, 클립 대기 중…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ 클립 대기 시간 초과"
+  },
+  "flow_clipReady": {
+    "message": "✓ 클립 준비 완료"
+  },
+  "flow_kindClip": {
+    "message": "클립"
+  },
+  "flow_kindPicture": {
+    "message": "이미지"
+  },
+  "flow_grabPre": {
+    "message": "Flow에서 "
+  },
+  "flow_grabSuf": {
+    "message": " 가져오는 중…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ 미디어 읽기 실패"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN 인증: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — 서버를 통해 시도 중"
+  },
+  "flow_inGallerySuf": {
+    "message": " 갤러리 → \"Google Flow\" 탭으로"
+  },
+  "flow_noConnConnect": {
+    "message": "연결 없음 — TrendTraffic에서 \"연결\" 클릭"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ Flow에서 원하는 사진/동영상 클릭 후 \"갤러리로\""
+  },
+  "flow_multipleMedia": {
+    "message": "여러 미디어 — 가져올 항목 선택 ↓"
+  },
+  "flow_openingProject": {
+    "message": "Flow에서 프로젝트 여는 중…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow는 여기에서 이미지만 허용합니다 — 동영상은 Flow의 \"업로드\" 섹션을 통해 업로드하세요"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "업로드 필드를 찾을 수 없습니다 — Flow에서 프로젝트를 여세요 (메인 페이지 아님): 프로젝트 내에 업로드(+ / \"업로드\")가 있습니다"
+  },
+  "flow_loadingList": {
+    "message": "목록 로드 중…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "연결 없음 — \"연결\" 클릭"
+  },
+  "flow_galleryEmpty": {
+    "message": "갤러리에 미디어 없음"
+  },
+  "flow_reconSent": {
+    "message": "✓ 레이아웃 재구성 전송됨"
+  },
+  "flow_reconFail": {
+    "message": "⚠ 재구성: "
+  },
+  "flow_noConnection": {
+    "message": "연결 없음"
+  },
+  "flow_gettingMedia": {
+    "message": "갤러리에서 미디어 가져오는 중…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ 갤러리에서 다운로드 실패"
+  },
+  "flow_insertedImage": {
+    "message": "이미지"
+  },
+  "flow_insertedVideo": {
+    "message": "동영상"
+  },
+  "flow_insertedSuf": {
+    "message": " 갤러리에서 Flow로 삽입됨"
+  },
+  "flow_newClipReady": {
+    "message": "새 클립 준비 완료 — 갤러리에 업로드 중…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ 갤러리에 클립 있음 → \"동영상\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ 클립 저장 안 됨: "
+  },
+  "hg_state": {
+    "message": "상태"
+  },
+  "hg_notConnected": {
+    "message": "연결되지 않음"
+  },
+  "hg_keepTabOpen": {
+    "message": "이 탭을 열어두세요 — 구독에 따라 헤드가 자동으로 렌더링됩니다."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic 열기"
+  },
+  "hg_reconPrefix": {
+    "message": "재구성: "
+  },
+  "hg_reconSuffix": {
+    "message": " 스튜디오 호출"
+  },
+  "hg_reconBtn": {
+    "message": "API 재구성"
+  },
+  "hg_reconBtnTitle": {
+    "message": "현재 스튜디오 API 캡처 및 전송 (조정용)"
+  },
+  "hg_statusWorking": {
+    "message": "작업 중"
+  },
+  "hg_statusLogin": {
+    "message": "계정에 로그인"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic을 열고 로그인하세요 — 자동으로 연결됩니다"
+  },
+  "hg_photoDlFailed": {
+    "message": "사진 다운로드 실패"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: 렌더링 실패"
+  },
+  "hg_genPrefix": {
+    "message": "생성: "
+  },
+  "hg_waiting": {
+    "message": "대기 중"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen이 제시간에 동영상을 제공하지 못했습니다"
+  },
+  "hg_headNum": {
+    "message": "▶ 헤드 #"
+  },
+  "hg_readyLook": {
+    "message": "준비된 계정 아바타 — 사진 업로드 건너뜀"
+  },
+  "hg_photoUpload": {
+    "message": "사진 → 말하는_사진…"
+  },
+  "hg_genStartPre": {
+    "message": "생성 시작 중 ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ 이 세션에서 룩을 찾을 수 없습니다 — 사진 업로드 후 재시도 중…"
+  },
+  "hg_headReady": {
+    "message": "✓ 헤드 준비 완료, mp4 가져오는 중…"
+  },
+  "hg_sending": {
+    "message": "✓ TrendTraffic으로 전송 중"
+  },
+  "hg_reconSent": {
+    "message": "✓ API 재구성 전송됨"
+  },
+  "hg_reconFail": {
+    "message": "⚠ 재구성: "
+  },
+  "hg_noConnection": {
+    "message": "연결 없음"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "아티팩트 파일 가로챔 ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "파일 가로채기 실패: "
+  },
+  "nlm_dlProbe": {
+    "message": "다운로드? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "다운로드 URL 가로챔 (window.open)"
+  },
+  "nlm_state": {
+    "message": "상태"
+  },
+  "nlm_notConnected": {
+    "message": "연결되지 않음"
+  },
+  "nlm_account": {
+    "message": "계정"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM에 사용되는 Google 계정"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic 작업 대기 중…"
+  },
+  "nlm_grabTitle": {
+    "message": "준비된 스튜디오 작품 표시 — 작품을 클릭하여 TrendTraffic 갤러리에 로드"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ 갤러리로"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic 열기"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "현재 NotebookLM 레이아웃 캡처 및 전송 (선택기 조정용)"
+  },
+  "nlm_reconBtn": {
+    "message": "레이아웃 재구성"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "노트북 열기 — 스튜디오 작품을 보여드리겠습니다"
+  },
+  "nlm_noReadyWorks": {
+    "message": "준비된 스튜디오 작품 없음 (또는 아직 생성 중)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" 갤러리에 로드"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ 이미"
+  },
+  "nlm_refresh": {
+    "message": "새로고침"
+  },
+  "nlm_close": {
+    "message": "닫기"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTraffic 로그인"
+  },
+  "nlm_loginGoogle": {
+    "message": "Google 로그인"
+  },
+  "nlm_working": {
+    "message": "작업 중"
+  },
+  "nlm_creatingNotebook": {
+    "message": "노트북 생성 중: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ 노트북 생성됨: "
+  },
+  "nlm_addingSource": {
+    "message": "소스 추가 중 ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "갤러리에서 파일 다운로드 실패"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM은 동영상 파일을 허용하지 않습니다. 동영상은 텍스트 또는 링크(YouTube)로 \"분석\"을 추가하세요."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "확장 프로그램(네이티브 창)에서 NotebookLM으로 파일 업로드 불가. \"분석\"/\"텍스트 붙여넣기\" 또는 링크(웹사이트/YouTube)를 사용하세요."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ 파일 소스 추가됨"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "알 수 없는 소스 유형"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ 소스 추가됨 ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "노트북 목록 읽는 중…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ 노트북 (내 것+사용 가능): "
+  },
+  "nlm_asking": {
+    "message": "질문 중: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "답변이 완전히 읽히지 않음"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ 답변 수신됨"
+  },
+  "nlm_unknownType": {
+    "message": "알 수 없는 유형: "
+  },
+  "nlm_generatingTask": {
+    "message": "생성 중: "
+  },
+  "nlm_genStartedPre": {
+    "message": "생성 시작됨 ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", 기본), 아티팩트 대기 중…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ 아티팩트 준비됨 ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), 아티팩트 대기 중…"
+  },
+  "nlm_dlRequested": {
+    "message": "아티팩트 다운로드 요청됨…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "아티팩트 다운로드 가로채기 실패"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic 갤러리로 다운로드"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\"에 \"다운로드\" 없음 — 텍스트로 캡처 중…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\"에 \"다운로드\" 없음 — 텍스트로 캡처 중…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → 갤러리"
+  },
+  "nlm_alreadyWas": {
+    "message": " (이미 존재함)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ 저장되지 않음: "
+  },
+  "nlm_noConnection": {
+    "message": "연결 없음"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL 다운로드 실패: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ 파일 캡처 실패 \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ 클릭으로 노트북 페이지를 벗어남 — 돌아가는 중"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ 텍스트 \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" 캡처되지 않음"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → 갤러리 (텍스트로)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 세로"
+  },
+  "nlm_916Title": {
+    "message": "9:16 세로 형식 프롬프트(Shorts/Reels/TikTok)를 추가합니다. 프롬프트는 영어로 작성하세요 — NotebookLM이 지시를 가장 잘 이해합니다."
+  },
+  "nlm_916Already": {
+    "message": "✓ 이미 추가됨"
+  },
+  "nlm_916Added": {
+    "message": "✓ 추가됨"
+  },
+  "nlm_reconSent": {
+    "message": "✓ 레이아웃 재구성 전송됨"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ 재인식 실패: "
+  },
+  "nlm_unknownAction": {
+    "message": "알 수 없는 작업: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Objedinjena TrendTraffic ekstenzija: most ka Google Flow (Veo), Google NotebookLM (Hotebook) i HeyGen (UGC avatari koji govore sa vašom pretplatom). Red zadataka u pregledaču, automatizacija generisanja i razmena u Galeriji. Instalirajte jednom — panel se aktivira na servisu gde je tab otvoren."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "isteklo vreme zadatka"
+  },
+  "bg_openFlowTab": {
+    "message": "Otvorite Google Flow tab — zadatak će se automatski završiti"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: neuobičajena aktivnost — pauzirano"
+  },
+  "bg_noResult": {
+    "message": "nema rezultata"
+  },
+  "bg_notConnected": {
+    "message": "nije povezano"
+  },
+  "bg_openFlowFailed": {
+    "message": "neuspelo otvaranje Flow-a"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow nije učitan — prijavite se na labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "nema odgovora od Flow-a"
+  },
+  "bg_noUrl": {
+    "message": "nema URL-a"
+  },
+  "bg_dlRejected": {
+    "message": "preuzimanje neuspelo (CDN odbio zahtev)"
+  },
+  "bg_tooBig": {
+    "message": "medij >500MB — preveliko"
+  },
+  "bg_openNlmFailed": {
+    "message": "neuspelo otvaranje NotebookLM-a"
+  },
+  "bg_notebookNotCreated": {
+    "message": "beležnica nije kreirana (potrebno skautiranje selektora za 'kreiraj')"
+  },
+  "bg_listFailed": {
+    "message": "neuspelo dobijanje liste"
+  },
+  "bg_actionFailed": {
+    "message": "akcija neuspela"
+  },
+  "bg_openNlmGen": {
+    "message": "Otvorite NotebookLM — generisanje će se automatski završiti"
+  },
+  "bg_loginNlm": {
+    "message": "Prijavite se na NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "neuspelo presretanje preuzimanja artefakta"
+  },
+  "bg_artifactDlFailed": {
+    "message": "preuzimanje artefakta neuspelo: "
+  },
+  "bg_openHgTab": {
+    "message": "Otvorite tab studija app.heygen.com — avatar će se automatski renderovati"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio se još uvek učitava — pokušavam ponovo kasnije"
+  },
+  "bg_retry": {
+    "message": "ponovi"
+  },
+  "bg_dlFailed": {
+    "message": "preuzimanje neuspelo"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "nije povezano"
+  },
+  "flow_waitingTask": {
+    "message": "Čekam zadatke od TrendTraffic-a…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pauziraj"
+  },
+  "flow_openTT": {
+    "message": "Otvori TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ U Galeriju"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Pošaljite gotov klip iz Flow-a u TrendTraffic Galeriju"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Iz Galerije"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Uzmite video iz Galerije i otpremite ga u Flow na obradu"
+  },
+  "flow_reconPrefix": {
+    "message": "skautiranje: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow zahteva"
+  },
+  "flow_reconBtn": {
+    "message": "skautiraj raspored"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Snimite trenutni Flow raspored i pošaljite nam ga (za podešavanje)"
+  },
+  "flow_pauseManual": {
+    "message": "Pauza omogućena ručno"
+  },
+  "flow_statusPause": {
+    "message": "pauzirano"
+  },
+  "flow_statusWorking": {
+    "message": "radi"
+  },
+  "flow_statusLogin": {
+    "message": "prijavite se na nalog"
+  },
+  "flow_stTitleOpen": {
+    "message": "Otvorite TrendTraffic i prijavite se — automatski će se povezati"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Otvori punu Galeriju →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Galerija — izaberite kao u editoru, sa dugmetom '→ Flow' na svakoj datoteci"
+  },
+  "flow_fileFallback": {
+    "message": "datoteka"
+  },
+  "flow_pickHint": {
+    "message": "Kliknite na željenu stavku — biće dodata u Galeriju"
+  },
+  "flow_noPrompt": {
+    "message": "(nema prompta)"
+  },
+  "flow_taskNum": {
+    "message": "Zadatak #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ polje prompta nije pronađeno — potrebno skautiranje selektora"
+  },
+  "flow_promptSet": {
+    "message": "prompt postavljen"
+  },
+  "flow_refUploaded": {
+    "message": "referenca otpremljena u Flow"
+  },
+  "flow_refPrefix": {
+    "message": "referenca: "
+  },
+  "flow_refDlFailed": {
+    "message": "preuzimanje reference neuspelo"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ dugme za generisanje nije pronađeno — potrebno skautiranje"
+  },
+  "flow_genStarted": {
+    "message": "generisanje započeto, čekam klip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ isteklo vreme čekanja na klip"
+  },
+  "flow_clipReady": {
+    "message": "✓ klip spreman"
+  },
+  "flow_kindClip": {
+    "message": "klip"
+  },
+  "flow_kindPicture": {
+    "message": "slika"
+  },
+  "flow_grabPre": {
+    "message": "preuzimanje "
+  },
+  "flow_grabSuf": {
+    "message": " iz Flow-a…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ čitanje medija nije uspelo"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN autorizacija: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — pokušavam preko servera"
+  },
+  "flow_inGallerySuf": {
+    "message": " u Galeriju → kartica „Google Flow“"
+  },
+  "flow_noConnConnect": {
+    "message": "nema veze — kliknite „Poveži se“ u TrendTraffic-u"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ kliknite željenu fotografiju/video u Flow-u, zatim „U Galeriju“"
+  },
+  "flow_multipleMedia": {
+    "message": "više medija — izaberite šta da preuzmete ↓"
+  },
+  "flow_openingProject": {
+    "message": "otvaranje projekta u Flow-u…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow ovde prihvata samo slike — video snimke otpremite putem Flow-ove sekcije „Otpremanja“"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "polje za otpremanje nije pronađeno — otvorite PROJEKAT u Flow-u (ne glavnu stranicu): unutar projekta postoji otpremanje (+/„Otpremanja“)"
+  },
+  "flow_loadingList": {
+    "message": "učitavanje liste…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "nema veze — kliknite „Poveži se“"
+  },
+  "flow_galleryEmpty": {
+    "message": "nema medija u Galeriji"
+  },
+  "flow_reconSent": {
+    "message": "✓ raspored rekon poslat"
+  },
+  "flow_reconFail": {
+    "message": "⚠ rekon: "
+  },
+  "flow_noConnection": {
+    "message": "nema veze"
+  },
+  "flow_gettingMedia": {
+    "message": "preuzimanje medija iz Galerije…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ preuzimanje iz Galerije nije uspelo"
+  },
+  "flow_insertedImage": {
+    "message": "slika"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " umetnut u Flow iz Galerije"
+  },
+  "flow_newClipReady": {
+    "message": "novi klip spreman — otpremanje u Galeriju…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klip u Galeriji → „Video snimci“"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klip nije sačuvan: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "nije povezan"
+  },
+  "hg_keepTabOpen": {
+    "message": "Držite ovu karticu otvorenom — glave će se automatski renderovati na osnovu vaše pretplate."
+  },
+  "hg_openTT": {
+    "message": "Otvori TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "rekon: "
+  },
+  "hg_reconSuffix": {
+    "message": " poziva studija"
+  },
+  "hg_reconBtn": {
+    "message": "API rekon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Snimite trenutni studio API i pošaljite nam (za podešavanje)"
+  },
+  "hg_statusWorking": {
+    "message": "radi"
+  },
+  "hg_statusLogin": {
+    "message": "prijavite se na svoj nalog"
+  },
+  "hg_stTitleOpen": {
+    "message": "Otvorite TrendTraffic i prijavite se — automatski će se povezati"
+  },
+  "hg_photoDlFailed": {
+    "message": "preuzimanje fotografije nije uspelo"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderovanje nije uspelo"
+  },
+  "hg_genPrefix": {
+    "message": "generisanje: "
+  },
+  "hg_waiting": {
+    "message": "čekanje"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen nije obezbedio video na vreme"
+  },
+  "hg_headNum": {
+    "message": "▶ glava #"
+  },
+  "hg_readyLook": {
+    "message": "spreman avatar naloga — otpremanje fotografije preskočeno"
+  },
+  "hg_photoUpload": {
+    "message": "fotografija → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "pokretanje generisanja ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ izgled nije pronađen u ovoj sesiji — otpremanje fotografije i ponovni pokušaj…"
+  },
+  "hg_headReady": {
+    "message": "✓ glava spremna, preuzimanje mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ slanje u TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API rekon poslat"
+  },
+  "hg_reconFail": {
+    "message": "⚠ rekon: "
+  },
+  "hg_noConnection": {
+    "message": "nema veze"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "datoteka artefakta presretnuta ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "presretanje datoteke nije uspelo: "
+  },
+  "nlm_dlProbe": {
+    "message": "preuzeti? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL za preuzimanje presretnut (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "nije povezano"
+  },
+  "nlm_account": {
+    "message": "Nalog"
+  },
+  "nlm_accountTitle": {
+    "message": "Google nalog korišćen za NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Čekam zadatak od TrendTraffic-a…"
+  },
+  "nlm_grabTitle": {
+    "message": "Prikaži gotove studijske radove — klikni na rad da ga učitaš u TrendTraffic Galeriju"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ U Galeriju"
+  },
+  "nlm_openTT": {
+    "message": "Otvori TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Snimi trenutni izgled NotebookLM-a i pošalji nam (za podešavanje selektora)"
+  },
+  "nlm_reconBtn": {
+    "message": "recon izgleda"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "otvori svesku — pokazaću njene studijske radove"
+  },
+  "nlm_noReadyWorks": {
+    "message": "nema gotovih studijskih radova (ili se još generišu)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Učitaj „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "“ u Galeriju"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ već"
+  },
+  "nlm_refresh": {
+    "message": "osveži"
+  },
+  "nlm_close": {
+    "message": "zatvori"
+  },
+  "nlm_loginTT": {
+    "message": "prijavi se na TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "prijavi se na Google"
+  },
+  "nlm_working": {
+    "message": "radim"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Kreiranje sveske: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ sveska kreirana: "
+  },
+  "nlm_addingSource": {
+    "message": "Dodavanje izvora ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "preuzimanje datoteke iz Galerije nije uspelo"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM ne prihvata video datoteke. Za video zapise, dodajte „Analizu“ kao tekst ili link (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Otpremanje datoteka na NotebookLM nije dostupno iz ekstenzije (izvorni prozor). Koristite „Analizu“/„Nalepi tekst“ ili link (veb-sajt/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ izvor datoteke dodat"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "nepoznat tip izvora"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ izvor dodat ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Čitanje liste svezaka…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ sveske (moje+dostupne): "
+  },
+  "nlm_asking": {
+    "message": "Pitam: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "odgovor nije u potpunosti pročitan"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ odgovor primljen"
+  },
+  "nlm_unknownType": {
+    "message": "nepoznat tip: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generisanje: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generisanje započeto ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", podrazumevano), čekam artefakt…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakt spreman ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), čekam artefakt…"
+  },
+  "nlm_dlRequested": {
+    "message": "zahtevano preuzimanje artefakta…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nije uspelo presretanje preuzimanja artefakta"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Preuzmi u TrendTraffic Galeriju"
+  },
+  "nlm_noDownloadPre": {
+    "message": "“ nema „Preuzmi“ — snimam kao tekst…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "“ nema „Preuzmi“ — snimam kao tekst…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "“ → Galerija"
+  },
+  "nlm_alreadyWas": {
+    "message": " (već je postojao)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ nije sačuvano: "
+  },
+  "nlm_noConnection": {
+    "message": "nema veze"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ preuzimanje URL-a nije uspelo: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nije uspelo snimanje datoteke „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ klik je odveo sa stranice sveske — vraćam se"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekst „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "“ nije snimljen"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "“ → Galerija (kao tekst)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikalno"
+  },
+  "nlm_916Title": {
+    "message": "Dodajte upit za vertikalni format 9:16 (Shorts/Reels/TikTok). Upit na engleskom — NotebookLM najbolje razume uputstva na taj način."
+  },
+  "nlm_916Already": {
+    "message": "✓ već dodato"
+  },
+  "nlm_916Added": {
+    "message": "✓ dodato"
+  },
+  "nlm_reconSent": {
+    "message": "✓ recon izgleda poslat"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Rekonstrukcija neuspešna: "
+  },
+  "nlm_unknownAction": {
+    "message": "Nepoznata radnja: "
+  }
+}

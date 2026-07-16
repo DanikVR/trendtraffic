@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Pembantu (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Sambungan TrendTraffic yang disatukan: jambatan ke Google Flow (Veo), Google NotebookLM (Hotebook), dan HeyGen (ketua bercakap UGC dengan langganan anda). Barisan tugas pelayar sebenar, automasi penjanaan, dan pertukaran Galeri. Pasang sekali — panel akan aktif pada perkhidmatan di mana tab dibuka."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Pembantu (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "tugas tamat masa"
+  },
+  "bg_openFlowTab": {
+    "message": "Buka tab Google Flow — tugas akan selesai secara automatik"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: aktiviti luar biasa — dijeda"
+  },
+  "bg_noResult": {
+    "message": "tiada hasil"
+  },
+  "bg_notConnected": {
+    "message": "tidak bersambung"
+  },
+  "bg_openFlowFailed": {
+    "message": "gagal membuka Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow tidak dimuatkan — sila log masuk ke labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "tiada respons daripada Flow"
+  },
+  "bg_noUrl": {
+    "message": "tiada url"
+  },
+  "bg_dlRejected": {
+    "message": "muat turun gagal (CDN menolak permintaan)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — terlalu besar"
+  },
+  "bg_openNlmFailed": {
+    "message": "gagal membuka NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "buku nota tidak dibuat (pengakap pemilih untuk 'buat' diperlukan)"
+  },
+  "bg_listFailed": {
+    "message": "gagal mendapatkan senarai"
+  },
+  "bg_actionFailed": {
+    "message": "tindakan gagal"
+  },
+  "bg_openNlmGen": {
+    "message": "Buka NotebookLM — penjanaan akan selesai secara automatik"
+  },
+  "bg_loginNlm": {
+    "message": "Log masuk ke NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "gagal memintas muat turun artifak"
+  },
+  "bg_artifactDlFailed": {
+    "message": "muat turun artifak gagal: "
+  },
+  "bg_openHgTab": {
+    "message": "Buka tab studio app.heygen.com — avatar akan dipaparkan secara automatik"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio masih memuatkan — mencuba semula kemudian"
+  },
+  "bg_retry": {
+    "message": "cuba semula"
+  },
+  "bg_dlFailed": {
+    "message": "muat turun gagal"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "tidak bersambung"
+  },
+  "flow_waitingTask": {
+    "message": "Menunggu tugas daripada TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Jeda"
+  },
+  "flow_openTT": {
+    "message": "Buka TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Ke Galeri"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Hantar klip yang telah siap dari Flow ke Galeri TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Dari Galeri"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Ambil video dari Galeri dan muat naik ke Flow untuk diproses"
+  },
+  "flow_reconPrefix": {
+    "message": "pengakap: "
+  },
+  "flow_reconSuffix": {
+    "message": " permintaan Flow"
+  },
+  "flow_reconBtn": {
+    "message": "susun atur pengakap"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Tangkap susun atur Flow semasa dan hantar kepada kami (untuk pelarasan)"
+  },
+  "flow_pauseManual": {
+    "message": "Jeda diaktifkan secara manual"
+  },
+  "flow_statusPause": {
+    "message": "dijeda"
+  },
+  "flow_statusWorking": {
+    "message": "berfungsi"
+  },
+  "flow_statusLogin": {
+    "message": "log masuk ke akaun"
+  },
+  "flow_stTitleOpen": {
+    "message": "Buka TrendTraffic dan log masuk — ia akan bersambung secara automatik"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Buka Galeri penuh →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Galeri TrendTraffic — pilih seperti dalam editor, dengan butang '→ Flow' pada setiap fail"
+  },
+  "flow_fileFallback": {
+    "message": "fail"
+  },
+  "flow_pickHint": {
+    "message": "Klik item yang dikehendaki — ia akan ditambahkan ke Galeri"
+  },
+  "flow_noPrompt": {
+    "message": "(tiada gesaan)"
+  },
+  "flow_taskNum": {
+    "message": "Tugas #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ medan gesaan tidak ditemui — pengakap pemilih diperlukan"
+  },
+  "flow_promptSet": {
+    "message": "gesaan ditetapkan"
+  },
+  "flow_refUploaded": {
+    "message": "rujukan dimuat naik ke Flow"
+  },
+  "flow_refPrefix": {
+    "message": "rujukan: "
+  },
+  "flow_refDlFailed": {
+    "message": "muat turun rujukan gagal"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ butang penjanaan tidak ditemui — pengakap diperlukan"
+  },
+  "flow_genStarted": {
+    "message": "penjanaan dimulakan, menunggu klip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ tamat masa menunggu klip"
+  },
+  "flow_clipReady": {
+    "message": "✓ klip sedia"
+  },
+  "flow_kindClip": {
+    "message": "klip"
+  },
+  "flow_kindPicture": {
+    "message": "imej"
+  },
+  "flow_grabPre": {
+    "message": "mengambil "
+  },
+  "flow_grabSuf": {
+    "message": " dari Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ gagal membaca media"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN auth: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — mencuba melalui pelayan"
+  },
+  "flow_inGallerySuf": {
+    "message": " ke Galeri → tab \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "tiada sambungan — klik \"Sambung\" di TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klik foto/video yang dikehendaki dalam Flow, kemudian \"Ke Galeri\""
+  },
+  "flow_multipleMedia": {
+    "message": "pelbagai media — pilih apa yang hendak diambil ↓"
+  },
+  "flow_openingProject": {
+    "message": "membuka projek dalam Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow hanya menerima imej di sini — muat naik video melalui bahagian \"Muat Naik\" Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "medan muat naik tidak ditemui — buka PROJEK dalam Flow (bukan halaman utama): di dalam projek terdapat muat naik (+/\"Muat Naik\")"
+  },
+  "flow_loadingList": {
+    "message": "memuatkan senarai…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "tiada sambungan — klik \"Sambung\""
+  },
+  "flow_galleryEmpty": {
+    "message": "tiada media dalam Galeri"
+  },
+  "flow_reconSent": {
+    "message": "✓ recon susun atur dihantar"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "tiada sambungan"
+  },
+  "flow_gettingMedia": {
+    "message": "mendapatkan media dari Galeri…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ gagal memuat turun dari Galeri"
+  },
+  "flow_insertedImage": {
+    "message": "imej"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " dimasukkan ke dalam Flow dari Galeri"
+  },
+  "flow_newClipReady": {
+    "message": "klip baharu sedia — memuat naik ke Galeri…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klip dalam Galeri → \"Video\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klip tidak disimpan: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "tidak bersambung"
+  },
+  "hg_keepTabOpen": {
+    "message": "Biarkan tab ini terbuka — kepala akan dipaparkan secara automatik berdasarkan langganan anda."
+  },
+  "hg_openTT": {
+    "message": "Buka TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " panggilan studio"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Tangkap API studio semasa dan hantar kepada kami (untuk pelarasan)"
+  },
+  "hg_statusWorking": {
+    "message": "berfungsi"
+  },
+  "hg_statusLogin": {
+    "message": "log masuk ke akaun anda"
+  },
+  "hg_stTitleOpen": {
+    "message": "Buka TrendTraffic dan log masuk — ia akan bersambung secara automatik"
+  },
+  "hg_photoDlFailed": {
+    "message": "muat turun foto gagal"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: render gagal"
+  },
+  "hg_genPrefix": {
+    "message": "penjanaan: "
+  },
+  "hg_waiting": {
+    "message": "menunggu"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen tidak menyediakan video tepat pada masanya"
+  },
+  "hg_headNum": {
+    "message": "▶ kepala #"
+  },
+  "hg_readyLook": {
+    "message": "avatar akaun sedia — muat naik foto dilangkau"
+  },
+  "hg_photoUpload": {
+    "message": "foto → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "memulakan penjanaan ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ rupa tidak ditemui dalam sesi ini — memuat naik foto dan mencuba semula…"
+  },
+  "hg_headReady": {
+    "message": "✓ kepala sedia, mendapatkan mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ menghantar ke TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon dihantar"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "tiada sambungan"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "fail artifak dipintas ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "pemintasan fail gagal: "
+  },
+  "nlm_dlProbe": {
+    "message": "muat turun? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL muat turun dipintas (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "tidak bersambung"
+  },
+  "nlm_account": {
+    "message": "Akaun"
+  },
+  "nlm_accountTitle": {
+    "message": "Akaun Google yang digunakan untuk NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Menunggu tugasan daripada TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Tunjukkan karya studio sedia — klik pada karya untuk memuatkannya ke Galeri TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Ke Galeri"
+  },
+  "nlm_openTT": {
+    "message": "Buka TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Tangkap susun atur NotebookLM semasa dan hantar kepada kami (untuk pelarasan pemilih)"
+  },
+  "nlm_reconBtn": {
+    "message": "recon susun atur"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "buka buku nota — saya akan tunjukkan karya studionya"
+  },
+  "nlm_noReadyWorks": {
+    "message": "tiada karya studio sedia (atau masih menjana)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Muat \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" ke Galeri"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ sudah"
+  },
+  "nlm_refresh": {
+    "message": "muat semula"
+  },
+  "nlm_close": {
+    "message": "tutup"
+  },
+  "nlm_loginTT": {
+    "message": "log masuk ke TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "log masuk ke Google"
+  },
+  "nlm_working": {
+    "message": "sedang bekerja"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Mencipta buku nota: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ buku nota dicipta: "
+  },
+  "nlm_addingSource": {
+    "message": "Menambah sumber ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "muat turun fail dari Galeri gagal"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM tidak menerima fail video. Untuk video, tambah \"Analisis\" sebagai teks atau pautan (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Muat naik fail ke NotebookLM tidak tersedia daripada sambungan (tetingkap asli). Gunakan \"Analisis\"/\"Tampal teks\" atau pautan (laman web/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ sumber fail ditambah"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "jenis sumber tidak diketahui"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ sumber ditambah ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Membaca senarai buku nota…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ buku nota (saya+tersedia): "
+  },
+  "nlm_asking": {
+    "message": "Bertanya: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "jawapan tidak dibaca sepenuhnya"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ jawapan diterima"
+  },
+  "nlm_unknownType": {
+    "message": "jenis tidak diketahui: "
+  },
+  "nlm_generatingTask": {
+    "message": "Menjana: "
+  },
+  "nlm_genStartedPre": {
+    "message": "penjanaan dimulakan ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", lalai), menunggu artifak…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artifak sedia ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), menunggu artifak…"
+  },
+  "nlm_dlRequested": {
+    "message": "muat turun artifak diminta…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "gagal memintas muat turun artifak"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Muat turun ke Galeri TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" tiada \"Muat turun\" — menangkap sebagai teks…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" tiada \"Muat turun\" — menangkap sebagai teks…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galeri"
+  },
+  "nlm_alreadyWas": {
+    "message": " (sudah wujud)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ tidak disimpan: "
+  },
+  "nlm_noConnection": {
+    "message": "tiada sambungan"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ muat turun URL gagal: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ gagal menangkap fail \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ klik membawa keluar dari halaman buku nota — kembali"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ teks \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" tidak ditangkap"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galeri (sebagai teks)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 menegak"
+  },
+  "nlm_916Title": {
+    "message": "Tambah gesaan format menegak 9:16 (Shorts/Reels/TikTok). Gesaan dalam bahasa Inggeris — NotebookLM memahami arahan dengan terbaik dengan cara ini."
+  },
+  "nlm_916Already": {
+    "message": "✓ sudah ditambah"
+  },
+  "nlm_916Added": {
+    "message": "✓ ditambah"
+  },
+  "nlm_reconSent": {
+    "message": "✓ recon susun atur dihantar"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Recon gagal: "
+  },
+  "nlm_unknownAction": {
+    "message": "Tindakan tidak diketahui: "
+  }
+}

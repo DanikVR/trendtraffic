@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "De uniforme TrendTraffic-extensie: een brug naar Google Flow (Veo), Google NotebookLM (Hotebook) en HeyGen (UGC pratende hoofden met uw abonnement). Echte browsertaakwachtrij, generatieautomatisering en galerij-uitwisseling. Eén keer installeren — het paneel wordt geactiveerd op de service waar het tabblad is geopend."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "taak time-out"
+  },
+  "bg_openFlowTab": {
+    "message": "Open het Google Flow-tabblad — de taak wordt automatisch voltooid"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: ongebruikelijke activiteit — gepauzeerd"
+  },
+  "bg_noResult": {
+    "message": "geen resultaat"
+  },
+  "bg_notConnected": {
+    "message": "niet verbonden"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow kon niet worden geopend"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow niet geladen — meld u aan bij labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "geen reactie van Flow"
+  },
+  "bg_noUrl": {
+    "message": "geen URL"
+  },
+  "bg_dlRejected": {
+    "message": "download mislukt (CDN heeft verzoek geweigerd)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — te groot"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM kon niet worden geopend"
+  },
+  "bg_notebookNotCreated": {
+    "message": "notitieboek niet gemaakt (selector scouting voor 'maken' nodig)"
+  },
+  "bg_listFailed": {
+    "message": "lijst ophalen mislukt"
+  },
+  "bg_actionFailed": {
+    "message": "actie mislukt"
+  },
+  "bg_openNlmGen": {
+    "message": "Open NotebookLM — generatie wordt automatisch voltooid"
+  },
+  "bg_loginNlm": {
+    "message": "Meld u aan bij NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "onderscheppen van artifact download mislukt"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artifact download mislukt: "
+  },
+  "bg_openHgTab": {
+    "message": "Open het app.heygen.com studio-tabblad — de avatar wordt automatisch gerenderd"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio wordt nog geladen — later opnieuw proberen"
+  },
+  "bg_retry": {
+    "message": "opnieuw proberen"
+  },
+  "bg_dlFailed": {
+    "message": "download mislukt"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "niet verbonden"
+  },
+  "flow_waitingTask": {
+    "message": "Wachten op taken van TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pauze"
+  },
+  "flow_openTT": {
+    "message": "Open TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Naar Galerij"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Stuur een voltooide clip van Flow naar de TrendTraffic Galerij"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Uit Galerij"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Neem een video uit de Galerij en upload deze naar Flow voor verwerking"
+  },
+  "flow_reconPrefix": {
+    "message": "scouting: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow-verzoeken"
+  },
+  "flow_reconBtn": {
+    "message": "scout lay-out"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Leg de huidige Flow-lay-out vast en stuur deze naar ons (voor aanpassing)"
+  },
+  "flow_pauseManual": {
+    "message": "Pauze handmatig ingeschakeld"
+  },
+  "flow_statusPause": {
+    "message": "gepauzeerd"
+  },
+  "flow_statusWorking": {
+    "message": "bezig"
+  },
+  "flow_statusLogin": {
+    "message": "aanmelden bij account"
+  },
+  "flow_stTitleOpen": {
+    "message": "Open TrendTraffic en meld u aan — het maakt automatisch verbinding"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Volledige Galerij openen →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Galerij — selecteer zoals in een editor, met een '→ Flow'-knop op elk bestand"
+  },
+  "flow_fileFallback": {
+    "message": "bestand"
+  },
+  "flow_pickHint": {
+    "message": "Klik op het gewenste item — het wordt toegevoegd aan de Galerij"
+  },
+  "flow_noPrompt": {
+    "message": "(geen prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Taak #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ promptveld niet gevonden — selector scouting nodig"
+  },
+  "flow_promptSet": {
+    "message": "prompt ingesteld"
+  },
+  "flow_refUploaded": {
+    "message": "referentie geüpload naar Flow"
+  },
+  "flow_refPrefix": {
+    "message": "referentie: "
+  },
+  "flow_refDlFailed": {
+    "message": "download van referentie mislukt"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ generatieknop niet gevonden — scouting nodig"
+  },
+  "flow_genStarted": {
+    "message": "generatie gestart, wachten op clip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ clip wachttijd verstreken"
+  },
+  "flow_clipReady": {
+    "message": "✓ clip klaar"
+  },
+  "flow_kindClip": {
+    "message": "clip"
+  },
+  "flow_kindPicture": {
+    "message": "afbeelding"
+  },
+  "flow_grabPre": {
+    "message": "bezig met ophalen "
+  },
+  "flow_grabSuf": {
+    "message": " van Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ media lezen mislukt"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN auth: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — via server proberen"
+  },
+  "flow_inGallerySuf": {
+    "message": " naar Galerij → tabblad \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "geen verbinding — klik op \"Verbinden\" in TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klik op gewenste foto/video in Flow, dan \"Naar Galerij\""
+  },
+  "flow_multipleMedia": {
+    "message": "meerdere media — selecteer wat u wilt pakken ↓"
+  },
+  "flow_openingProject": {
+    "message": "project openen in Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow accepteert hier alleen afbeeldingen — upload video's via de sectie \"Uploads\" van Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "uploadveld niet gevonden — open een PROJECT in Flow (niet de hoofdpagina): binnen een project is er een upload (+/\"Uploads\")"
+  },
+  "flow_loadingList": {
+    "message": "lijst laden…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "geen verbinding — klik op \"Verbinden\""
+  },
+  "flow_galleryEmpty": {
+    "message": "geen media in Galerij"
+  },
+  "flow_reconSent": {
+    "message": "✓ lay-out recon verzonden"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "geen verbinding"
+  },
+  "flow_gettingMedia": {
+    "message": "media ophalen uit Galerij…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ downloaden uit Galerij mislukt"
+  },
+  "flow_insertedImage": {
+    "message": "afbeelding"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " ingevoegd in Flow vanuit Galerij"
+  },
+  "flow_newClipReady": {
+    "message": "nieuwe clip klaar — uploaden naar Galerij…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ clip in Galerij → \"Video's\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ clip niet opgeslagen: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "niet verbonden"
+  },
+  "hg_keepTabOpen": {
+    "message": "Houd dit tabblad open — hoofden worden automatisch gerenderd op basis van uw abonnement."
+  },
+  "hg_openTT": {
+    "message": "Open TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " studio-oproepen"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Huidige studio-API vastleggen en naar ons verzenden (voor aanpassing)"
+  },
+  "hg_statusWorking": {
+    "message": "bezig"
+  },
+  "hg_statusLogin": {
+    "message": "log in op uw account"
+  },
+  "hg_stTitleOpen": {
+    "message": "Open TrendTraffic en log in — het maakt automatisch verbinding"
+  },
+  "hg_photoDlFailed": {
+    "message": "downloaden foto mislukt"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderen mislukt"
+  },
+  "hg_genPrefix": {
+    "message": "generatie: "
+  },
+  "hg_waiting": {
+    "message": "wachten"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen heeft geen video op tijd geleverd"
+  },
+  "hg_headNum": {
+    "message": "▶ hoofd #"
+  },
+  "hg_readyLook": {
+    "message": "klaar accountavatar — foto-upload overgeslagen"
+  },
+  "hg_photoUpload": {
+    "message": "foto → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "generatie starten ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ look niet gevonden in deze sessie — foto uploaden en opnieuw proberen…"
+  },
+  "hg_headReady": {
+    "message": "✓ hoofd klaar, mp4 ophalen…"
+  },
+  "hg_sending": {
+    "message": "✓ verzenden naar TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon verzonden"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "geen verbinding"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artefactbestand onderschept ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "bestandsonderschepping mislukt: "
+  },
+  "nlm_dlProbe": {
+    "message": "downloaden? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "download-URL onderschept (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "niet verbonden"
+  },
+  "nlm_account": {
+    "message": "Account"
+  },
+  "nlm_accountTitle": {
+    "message": "Google-account gebruikt voor NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Wachten op taak van TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Toon gereed studiowerk — klik op een werk om het in de TrendTraffic Gallery te laden"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Naar Gallery"
+  },
+  "nlm_openTT": {
+    "message": "Open TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Huidige NotebookLM-lay-out vastleggen en naar ons verzenden (voor aanpassing van de selector)"
+  },
+  "nlm_reconBtn": {
+    "message": "lay-out recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "open een notitieboek — ik toon de studiowerken"
+  },
+  "nlm_noReadyWorks": {
+    "message": "geen gereed studiowerk (of nog bezig met genereren)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Laad \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" naar Gallery"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ al"
+  },
+  "nlm_refresh": {
+    "message": "vernieuwen"
+  },
+  "nlm_close": {
+    "message": "sluiten"
+  },
+  "nlm_loginTT": {
+    "message": "inloggen bij TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "inloggen bij Google"
+  },
+  "nlm_working": {
+    "message": "bezig"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Notitieboek maken: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ notitieboek gemaakt: "
+  },
+  "nlm_addingSource": {
+    "message": "Bron toevoegen ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "bestand downloaden van Gallery mislukt"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM accepteert geen videobestanden. Voor video's voeg je \"Analyse\" toe als tekst of een link (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Bestand uploaden naar NotebookLM is niet beschikbaar vanuit de extensie (native venster). Gebruik \"Analyse\"/\"Tekst plakken\" of een link (website/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ bestandsbron toegevoegd"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "onbekend brontype"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ bron toegevoegd ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Notitieboeklijst lezen…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ notitieboeken (mijn+beschikbaar): "
+  },
+  "nlm_asking": {
+    "message": "Vragen: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "antwoord niet volledig gelezen"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ antwoord ontvangen"
+  },
+  "nlm_unknownType": {
+    "message": "onbekend type: "
+  },
+  "nlm_generatingTask": {
+    "message": "Genereren: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generatie gestart ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", standaard), wachten op artefact…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefact gereed ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), wachten op artefact…"
+  },
+  "nlm_dlRequested": {
+    "message": "downloaden van artefact aangevraagd…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "onderscheppen van artefactdownload mislukt"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Downloaden naar TrendTraffic Gallery"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" heeft geen \"Download\" — vastleggen als tekst…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" heeft geen \"Download\" — vastleggen als tekst…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Gallery"
+  },
+  "nlm_alreadyWas": {
+    "message": " (bestond al)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ niet opgeslagen: "
+  },
+  "nlm_noConnection": {
+    "message": "geen verbinding"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL-download mislukt: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ bestand \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ klik leidde weg van notitieboekpagina — terugkeren"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekst \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" niet vastgelegd"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Gallery (als tekst)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 verticaal"
+  },
+  "nlm_916Title": {
+    "message": "Voeg een 9:16 verticaal formaat prompt toe (Shorts/Reels/TikTok). Prompt in het Engels — NotebookLM begrijpt instructies op deze manier het beste."
+  },
+  "nlm_916Already": {
+    "message": "✓ al toegevoegd"
+  },
+  "nlm_916Added": {
+    "message": "✓ toegevoegd"
+  },
+  "nlm_reconSent": {
+    "message": "✓ lay-out recon verzonden"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Herkenning mislukt: "
+  },
+  "nlm_unknownAction": {
+    "message": "Onbekende actie: "
+  }
+}

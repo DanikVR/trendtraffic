@@ -43,6 +43,8 @@
   const RESULT_MAX_MS = 7 * 60_000;
 
   const log = (...a) => console.log('[tt-flow]', ...a);
+  // i18n: перевод строк НАШЕЙ панели/статусов. Фолбэк — русский (как было). Матчеры Flow не трогаем.
+  const T = (key, fallback) => { try { const m = chrome.i18n.getMessage(key); return m || fallback; } catch (e) { return fallback; } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const send = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(); } };
   const reconApis = []; // последние виденные эндпоинты Flow (для авто-разведки)
@@ -76,6 +78,22 @@
       host.id = 'tt-flow-host';
       host.style.cssText = 'position:fixed;z-index:2147483647;right:16px;bottom:16px;';
       const sh = host.attachShadow({ mode: 'open' });
+      // Видимые тексты панели — через T() (структуру/классы шаблона не меняем).
+      const TXT = {
+        state: T('flow_state', 'Состояние'),
+        notConnected: T('flow_notConnected', 'не подключено'),
+        waitingTask: T('flow_waitingTask', 'Ожидаю задачи из TrendTraffic…'),
+        pauseBtn: T('flow_pauseBtn', 'Пауза'),
+        openTT: T('flow_openTT', 'Открыть TrendTraffic'),
+        toGalBtn: T('flow_toGalleryBtn', '⬆ В галерею'),
+        toGalTitle: T('flow_toGalleryTitle', 'Отправить готовый клип из Flow в Галерею TrendTraffic'),
+        fromGalBtn: T('flow_fromGalleryBtn', '⬇ Из Галереи'),
+        fromGalTitle: T('flow_fromGalleryTitle', 'Взять видео из Галереи и залить в Flow на переработку'),
+        reconPrefix: T('flow_reconPrefix', 'разведка: '),
+        reconSuffix: T('flow_reconSuffix', ' запросов Flow'),
+        reconBtn: T('flow_reconBtn', 'разведка вёрстки'),
+        reconBtnTitle: T('flow_reconBtnTitle', 'Снять текущую вёрстку Flow и прислать нам (для подстройки)'),
+      };
       sh.innerHTML = `
         <style>
           *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif}
@@ -125,22 +143,22 @@
             <span class="sub" id="ver"></span>
           </div>
           <div class="bd" id="bd">
-            <div class="row"><span>Состояние</span><span class="pill off" id="st">не подключено</span></div>
+            <div class="row"><span>${TXT.state}</span><span class="pill off" id="st">${TXT.notConnected}</span></div>
             <div class="wire" id="wire"></div>
-            <div class="task" id="task">Ожидаю задачи из TrendTraffic…</div>
+            <div class="task" id="task">${TXT.waitingTask}</div>
             <div class="lg" id="lg"></div>
             <div class="btns">
-              <button id="pause">Пауза</button>
-              <button class="pri" id="open">Открыть TrendTraffic</button>
+              <button id="pause">${TXT.pauseBtn}</button>
+              <button class="pri" id="open">${TXT.openTT}</button>
             </div>
             <div class="btns">
-              <button id="toGal" title="Отправить готовый клип из Flow в Галерею TrendTraffic">⬆ В галерею</button>
-              <button id="fromGal" title="Взять видео из Галереи и залить в Flow на переработку">⬇ Из Галереи</button>
+              <button id="toGal" title="${TXT.toGalTitle}">${TXT.toGalBtn}</button>
+              <button id="fromGal" title="${TXT.fromGalTitle}">${TXT.fromGalBtn}</button>
             </div>
             <div class="pick hide" id="pick"></div>
             <div class="foot">
-              <span class="mini" id="reconc">разведка: 0 запросов Flow</span>
-              <button class="rec" id="recBtn" title="Снять текущую вёрстку Flow и прислать нам (для подстройки)">разведка вёрстки</button>
+              <span class="mini" id="reconc">${TXT.reconPrefix}0${TXT.reconSuffix}</span>
+              <button class="rec" id="recBtn" title="${TXT.reconBtnTitle}">${TXT.reconBtn}</button>
             </div>
           </div>
         </div>`;
@@ -156,7 +174,7 @@
       makeDraggable(host, els.hd, () => els.bd.classList.toggle('hide'));
       // «Открыть TrendTraffic» → вкладка «Google Flow» Галереи (там — готовые проекты + генерация).
       els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro/gallery?tab=flow', '_blank'));
-      els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line('Пауза включена вручную')));
+      els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line(T('flow_pauseManual', 'Пауза включена вручную'))));
       sh.getElementById('toGal').addEventListener('click', () => sendToGallery());
       sh.getElementById('fromGal').addEventListener('click', () => openGalleryPicker());
       sh.getElementById('recBtn').addEventListener('click', () => runRecon(false));
@@ -226,20 +244,20 @@
       els.st.textContent = text;
     }
     function task(t) { if (els.task) els.task.textContent = t; }
-    function recon() { reconCount++; if (els.reconc) els.reconc.textContent = `разведка: ${reconCount} запросов Flow`; }
+    function recon() { reconCount++; if (els.reconc) els.reconc.textContent = T('flow_reconPrefix', 'разведка: ') + reconCount + T('flow_reconSuffix', ' запросов Flow'); }
     async function refreshStatus() {
       const r = await send({ type: 'tt-status' });
       if (!r) return;
       const paused = r.connected && Date.now() < (r.pausedUntil || 0);
-      if (paused) status('wait', 'пауза');
-      else if (r.connected) status('on', 'работает');
-      else status('off', 'войдите в аккаунт');
+      if (paused) status('wait', T('flow_statusPause', 'пауза'));
+      else if (r.connected) status('on', T('flow_statusWorking', 'работает'));
+      else status('off', T('flow_statusLogin', 'войдите в аккаунт'));
       // «Войдите в аккаунт» — кликабельно: открывает TrendTraffic (там авто-подключение).
       if (els.st) {
         const off = !r.connected && !paused;
         els.st.style.cursor = off ? 'pointer' : 'default';
         els.st.style.textDecoration = off ? 'underline' : 'none';
-        els.st.title = off ? 'Открыть TrendTraffic и войти — подключится само' : '';
+        els.st.title = off ? T('flow_stTitleOpen', 'Открыть TrendTraffic и войти — подключится само') : '';
         els.st.onclick = off ? () => window.open('https://app.trendtraffic.pro/gallery?tab=flow', '_blank') : null;
       }
       // Бегущая лента горит, когда «работает» (подключено и не на паузе).
@@ -255,14 +273,14 @@
       // Ссылка на ПОЛНУЮ Галерею (выбор как в редакторе: превью/поиск/папки + кнопка «→ Flow»).
       const full = document.createElement('div');
       full.className = 'it'; full.style.fontWeight = '700';
-      full.textContent = '📂 Открыть полную Галерею →';
-      full.title = 'Галерея TrendTraffic — выбор как в редакторе, на каждом файле кнопка «→ Flow»';
+      full.textContent = T('flow_openFullGallery', '📂 Открыть полную Галерею →');
+      full.title = T('flow_fullGalleryTitle', 'Галерея TrendTraffic — выбор как в редакторе, на каждом файле кнопка «→ Flow»');
       full.addEventListener('click', () => window.open('https://app.trendtraffic.pro/gallery', '_blank'));
       els.pick.appendChild(full);
       if (placeholder) { const p = document.createElement('div'); p.className = 'ph'; p.textContent = placeholder; els.pick.appendChild(p); }
       for (const it of (items || [])) {
         const row = document.createElement('div'); row.className = 'it';
-        row.textContent = (it.type === 'image' ? '🖼 ' : '🎬 ') + (it.title || 'файл') + (it.folder ? '  ·  ' + it.folder : '');
+        row.textContent = (it.type === 'image' ? '🖼 ' : '🎬 ') + (it.title || T('flow_fileFallback', 'файл')) + (it.folder ? '  ·  ' + it.folder : '');
         row.title = it.fileUrl || '';
         row.addEventListener('click', () => pickGalleryItem(it));
         els.pick.appendChild(row);
@@ -274,7 +292,7 @@
       if (!els.pick) return;
       els.pick.classList.remove('hide');
       els.pick.innerHTML = '';
-      const hint = document.createElement('div'); hint.className = 'ph'; hint.textContent = 'Кликни нужное — заберётся в Галерею';
+      const hint = document.createElement('div'); hint.className = 'ph'; hint.textContent = T('flow_pickHint', 'Кликни нужное — заберётся в Галерею');
       els.pick.appendChild(hint);
       const grid = document.createElement('div');
       grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:5px';
@@ -359,14 +377,14 @@
   }
 
   async function runTask(task) {
-    ui.task('▶ ' + (task.prompt || '(без промпта)'));
-    ui.line('Задача #' + task.id);
+    ui.task('▶ ' + (task.prompt || T('flow_noPrompt', '(без промпта)')));
+    ui.line(T('flow_taskNum', 'Задача #') + task.id);
 
     if (detectThrottle()) { send({ type: 'flow-throttled' }); return { ok: false, throttled: true }; }
 
     const okPrompt = await setPrompt(task.prompt || '');
-    if (!okPrompt) { ui.line('⚠ поле промпта не найдено — нужна разведка селекторов'); return { ok: false, reason: 'selector:promptInput' }; }
-    ui.line('промпт подставлен');
+    if (!okPrompt) { ui.line(T('flow_promptNotFound', '⚠ поле промпта не найдено — нужна разведка селекторов')); return { ok: false, reason: 'selector:promptInput' }; }
+    ui.line(T('flow_promptSet', 'промпт подставлен'));
 
     // Референсы из Галереи → заливаем в Flow (video-to-video / кадры) ДО генерации. Best-effort.
     if (task.references && task.references.length) {
@@ -376,23 +394,23 @@
           if (b && b.ok) {
             const k = kindOfMime(b.mime);
             const up = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
-            ui.line(up.ok ? 'референс залит в Flow' : ('референс: ' + up.reason));
+            ui.line(up.ok ? T('flow_refUploaded', 'референс залит в Flow') : (T('flow_refPrefix', 'референс: ') + up.reason));
             await sleep(700);
-          } else { ui.line('референс не скачался' + (b && b.error ? ': ' + b.error : '')); }
+          } else { ui.line(T('flow_refDlFailed', 'референс не скачался') + (b && b.error ? ': ' + b.error : '')); }
         } catch { /* референс best-effort */ }
       }
     }
 
     await sleep(600);
     const btn = findGenerateButton();
-    if (!btn) { ui.line('⚠ кнопка генерации не найдена — нужна разведка'); return { ok: false, reason: 'selector:generateBtn' }; }
+    if (!btn) { ui.line(T('flow_genBtnNotFound', '⚠ кнопка генерации не найдена — нужна разведка')); return { ok: false, reason: 'selector:generateBtn' }; }
     btn.click();
-    ui.line('генерация запущена, жду клип…');
+    ui.line(T('flow_genStarted', 'генерация запущена, жду клип…'));
 
     const r = await waitForResult(Date.now());
     if (r.throttled) { send({ type: 'flow-throttled' }); ui.line('⏸ Flow: unusual activity'); return { ok: false, throttled: true }; }
-    if (r.timeout) { ui.line('⌛ таймаут ожидания клипа'); return { ok: false, reason: 'timeout' }; }
-    ui.line('✓ клип готов');
+    if (r.timeout) { ui.line(T('flow_timeoutClip', '⌛ таймаут ожидания клипа')); return { ok: false, reason: 'timeout' }; }
+    ui.line(T('flow_clipReady', '✓ клип готов'));
     return { ok: true, sourceUrl: r.sourceUrl || null, dataUrl: r.dataUrl || null, meta: { title: task.title || null } };
   }
 
@@ -483,14 +501,14 @@
   // Забрать КОНКРЕТНЫЙ элемент → Галерея.
   async function grabAndSend(el) {
     flashHighlight(el);
-    const what = el.tagName === 'VIDEO' ? 'клип' : 'картинку';
-    ui.line('забираю ' + what + ' из Flow…');
+    const what = el.tagName === 'VIDEO' ? T('flow_kindClip', 'клип') : T('flow_kindPicture', 'картинку');
+    ui.line(T('flow_grabPre', 'забираю ') + what + T('flow_grabSuf', ' из Flow…'));
     const data = await grabMediaData(el);
-    if (!data.sourceUrl && !data.dataUrl) { ui.line('⚠ не удалось прочитать медиа'); return; }
-    if (data.sourceUrl && !data.dataUrl) { try { ui.line('CDN за авторизацией: ' + new URL(data.sourceUrl).host + ' — пробую через сервер'); } catch { /* */ } }
+    if (!data.sourceUrl && !data.dataUrl) { ui.line(T('flow_mediaReadFailed', '⚠ не удалось прочитать медиа')); return; }
+    if (data.sourceUrl && !data.dataUrl) { try { ui.line(T('flow_cdnAuthPre', 'CDN за авторизацией: ') + new URL(data.sourceUrl).host + T('flow_cdnAuthSuf', ' — пробую через сервер')); } catch { /* */ } }
     const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
-    if (r && r.ok) ui.line('✓ ' + what + ' в Галерее → вкладка «Google Flow»');
-    else ui.line('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить» в TrendTraffic'));
+    if (r && r.ok) ui.line('✓ ' + what + T('flow_inGallerySuf', ' в Галерее → вкладка «Google Flow»'));
+    else ui.line('⚠ ' + ((r && r.error) || T('flow_noConnConnect', 'нет подключения — нажми «Подключить» в TrendTraffic')));
   }
   // «В галерею»: (1) кликнул медиа ≤12с — берём ЕГО; (2) одно на экране — его; (3) несколько — ВЫБОР превьюшками.
   async function sendToGallery() {
@@ -498,9 +516,9 @@
       return grabAndSend(lastClickedMedia);
     }
     const cands = collectVisibleMedia();
-    if (!cands.length) { ui.line('⚠ кликни нужное фото/видео в Flow, потом «В галерею»'); return; }
+    if (!cands.length) { ui.line(T('flow_clickMediaFirst', '⚠ кликни нужное фото/видео в Flow, потом «В галерею»')); return; }
     if (cands.length === 1) return grabAndSend(cands[0]);
-    ui.line('несколько медиа — выбери, что забрать ↓');
+    ui.line(T('flow_multipleMedia', 'несколько медиа — выбери, что забрать ↓'));
     ui.showMediaPicker(cands, (el) => grabAndSend(el));
   }
   // Подходит ли input[type=file] под тип (image/video). Пустой accept или */* — принимает всё.
@@ -535,7 +553,7 @@
     const card = clickable.find((b) => b.tagName === 'A' && /\/project\//.test(b.getAttribute('href') || ''));
     const target = create || card;
     if (!target) return false;
-    ui.line('открываю проект в Flow…');
+    ui.line(T('flow_openingProject', 'открываю проект в Flow…'));
     target.click();
     for (let i = 0; i < 14; i++) { await sleep(700); if (/\/project\//.test(location.href) && findFileInput('image')) return true; }
     return /\/project\//.test(location.href) && !!findFileInput('image');
@@ -550,8 +568,8 @@
     if (!inp) {
       // Для видео есть только image-поле → честно сообщаем (не втыкаем видео в image → ошибка Flow).
       const imageOnly = [...document.querySelectorAll('input[type="file"]')].some((i) => /image/i.test(i.accept || '') && !/video|\*/i.test(i.accept || ''));
-      if (kind === 'video' && imageOnly) return { ok: false, reason: 'Flow здесь принимает только картинки — видео залей через раздел «Загрузки» Flow' };
-      return { ok: false, reason: 'поле загрузки не найдено — открой ПРОЕКТ в Flow (не главную): внутри проекта есть загрузка (+/«Загрузки»)' };
+      if (kind === 'video' && imageOnly) return { ok: false, reason: T('flow_onlyImagesHere', 'Flow здесь принимает только картинки — видео залей через раздел «Загрузки» Flow') };
+      return { ok: false, reason: T('flow_uploadFieldNotFound', 'поле загрузки не найдено — открой ПРОЕКТ в Flow (не главную): внутри проекта есть загрузка (+/«Загрузки»)') };
     }
     try {
       const dt = new DataTransfer(); dt.items.add(file);
@@ -579,10 +597,10 @@
   const guessExt = (mime) => extFor(mime, kindOfMime(mime));
   // «Из Галереи»: список видео → пикер в панели.
   async function openGalleryPicker() {
-    ui.showPicker('загрузка списка…', []);
+    ui.showPicker(T('flow_loadingList', 'загрузка списка…'), []);
     const r = await send({ type: 'gallery-list' });
-    if (!r || !r.ok) { ui.showPicker('⚠ ' + ((r && r.error) || 'нет подключения — нажми «Подключить»'), []); return; }
-    if (!r.items || !r.items.length) { ui.showPicker('в Галерее нет медиа', []); return; }
+    if (!r || !r.ok) { ui.showPicker('⚠ ' + ((r && r.error) || T('flow_noConnConnectShort', 'нет подключения — нажми «Подключить»')), []); return; }
+    if (!r.items || !r.items.length) { ui.showPicker(T('flow_galleryEmpty', 'в Галерее нет медиа'), []); return; }
     ui.showPicker(null, r.items);
   }
   // Выбор медиа из Галереи → скачиваем в фоне (обход CORS) → File → в поле загрузки Flow (+ авто-открытие проекта).
@@ -609,7 +627,7 @@
   }
   async function runRecon(silent) {
     const r = await send({ type: 'send-recon', payload: { data: collectRecon(), url: location.href } });
-    if (!silent) ui.line(r && r.ok ? '✓ разведка вёрстки отправлена' : ('⚠ разведка: ' + ((r && r.error) || 'нет подключения')));
+    if (!silent) ui.line(r && r.ok ? T('flow_reconSent', '✓ разведка вёрстки отправлена') : (T('flow_reconFail', '⚠ разведка: ') + ((r && r.error) || T('flow_noConnection', 'нет подключения'))));
   }
 
   // ── список ГОТОВЫХ ПРОЕКТОВ Flow (карточки главной labs.google/fx/…/tools/flow) ──
@@ -711,12 +729,12 @@
     if (!isRetry && !/\/project\//.test(location.href)) {
       try { chrome.storage.local.set({ pendingInject: { url, kind, title, ts: Date.now() } }); } catch { /* */ }
     }
-    ui.line('получаю медиа из Галереи…');
+    ui.line(T('flow_gettingMedia', 'получаю медиа из Галереи…'));
     const b = await send({ type: 'fetch-bytes', url });
-    if (!b || !b.ok) { ui.line('⚠ не скачалось из Галереи' + (b && b.error ? ': ' + b.error : '')); try { chrome.storage.local.remove('pendingInject'); } catch { /* */ } return { ok: false, error: b && b.error }; }
+    if (!b || !b.ok) { ui.line(T('flow_galleryDlFailed', '⚠ не скачалось из Галереи') + (b && b.error ? ': ' + b.error : '')); try { chrome.storage.local.remove('pendingInject'); } catch { /* */ } return { ok: false, error: b && b.error }; }
     const k = (kind === 'image' || kind === 'video') ? kind : kindOfMime(b.mime);
     const res = await injectFileIntoFlow(dataUrlToFile(b.dataUrl, 'flow-' + k + extFor(b.mime, k)), k);
-    ui.line(res.ok ? ('✓ ' + (k === 'image' ? 'картинка' : 'видео') + ' вставлено в Flow из Галереи') : ('⚠ ' + res.reason));
+    ui.line(res.ok ? ('✓ ' + (k === 'image' ? T('flow_insertedImage', 'картинка') : T('flow_insertedVideo', 'видео')) + T('flow_insertedSuf', ' вставлено в Flow из Галереи')) : ('⚠ ' + res.reason));
     if (res.ok) { try { chrome.storage.local.remove('pendingInject'); } catch { /* */ } }
     return res;
   }
@@ -835,12 +853,12 @@
           const el = vids[i];
           const fails = flowIngestFails.get(keys[i]) || 0;
           if (fails >= 3) { seen.push(keys[i]); continue; } // 3 неудачи → сдаёмся (не качаем 500МБ каждые 25с)
-          ui.line('новый клип готов — заливаю в Галерею…');
+          ui.line(T('flow_newClipReady', 'новый клип готов — заливаю в Галерею…'));
           const data = await grabMediaData(el);
           if (!data.dataUrl && !data.sourceUrl) { flowIngestFails.set(keys[i], fails + 1); continue; }
           const r = await send({ type: 'manual-ingest', payload: { ...data, title: (document.title || 'Flow').slice(0, 80) } });
-          if (r && r.ok) { seen.push(keys[i]); ui.line('✓ клип в Галерее → «Видео»'); }
-          else { flowIngestFails.set(keys[i], fails + 1); ui.line('⚠ клип не сохранился: ' + ((r && r.error) || 'нет подключения')); }
+          if (r && r.ok) { seen.push(keys[i]); ui.line(T('flow_clipInGallery', '✓ клип в Галерее → «Видео»')); }
+          else { flowIngestFails.set(keys[i], fails + 1); ui.line(T('flow_clipNotSaved', '⚠ клип не сохранился: ') + ((r && r.error) || T('flow_noConnection', 'нет подключения'))); }
         }
       } else if (freshIdx.length) {
         // вне окна генерации (скролл/ленивая подгрузка старых) — просто запоминаем, НЕ заливаем

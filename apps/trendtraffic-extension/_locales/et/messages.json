@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Ühtne TrendTrafficu laiendus: sild Google Flow (Veo), Google NotebookLM (Hotebook) ja HeyGeni (UGC rääkivad pead sinu tellimusega) juurde. Reaalne brauseri ülesannete järjekord, genereerimise automatiseerimine ja galerii vahetus. Installi üks kord — paneel aktiveerub teenuses, kus vaheleht on avatud."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "ülesande aegumine"
+  },
+  "bg_openFlowTab": {
+    "message": "Ava Google Flow vaheleht — ülesanne lõpetatakse automaatselt"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: ebatavaline tegevus — peatatud"
+  },
+  "bg_noResult": {
+    "message": "tulemust pole"
+  },
+  "bg_notConnected": {
+    "message": "pole ühendatud"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow avamine ebaõnnestus"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow pole laaditud — palun logi sisse labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow'lt vastust ei tulnud"
+  },
+  "bg_noUrl": {
+    "message": "URL puudub"
+  },
+  "bg_dlRejected": {
+    "message": "allalaadimine ebaõnnestus (CDN keeldus päringust)"
+  },
+  "bg_tooBig": {
+    "message": "meedia >500MB — liiga suur"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM avamine ebaõnnestus"
+  },
+  "bg_notebookNotCreated": {
+    "message": "märkmikku pole loodud (vaja on 'loo' valija skautimist)"
+  },
+  "bg_listFailed": {
+    "message": "loendi hankimine ebaõnnestus"
+  },
+  "bg_actionFailed": {
+    "message": "toiming ebaõnnestus"
+  },
+  "bg_openNlmGen": {
+    "message": "Ava NotebookLM — genereerimine lõpetatakse automaatselt"
+  },
+  "bg_loginNlm": {
+    "message": "Logi sisse NotebookLM-i"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "artefakti allalaadimise pealtkuulamine ebaõnnestus"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artefakti allalaadimine ebaõnnestus: "
+  },
+  "bg_openHgTab": {
+    "message": "Ava app.heygen.com stuudio vaheleht — avatar renderdatakse automaatselt"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio laadib endiselt — proovin hiljem uuesti"
+  },
+  "bg_retry": {
+    "message": "proovi uuesti"
+  },
+  "bg_dlFailed": {
+    "message": "allalaadimine ebaõnnestus"
+  },
+  "flow_state": {
+    "message": "Olek"
+  },
+  "flow_notConnected": {
+    "message": "pole ühendatud"
+  },
+  "flow_waitingTask": {
+    "message": "Ootan ülesandeid TrendTrafficult…"
+  },
+  "flow_pauseBtn": {
+    "message": "Peata"
+  },
+  "flow_openTT": {
+    "message": "Ava TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Galeriisse"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Saada valmis klipp Flow'st TrendTrafficu galeriisse"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Galeriist"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Võta video galeriist ja laadi see Flow'sse töötlemiseks üles"
+  },
+  "flow_reconPrefix": {
+    "message": "skautimine: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow päringud"
+  },
+  "flow_reconBtn": {
+    "message": "skauti paigutust"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Jäädvusta praegune Flow paigutus ja saada see meile (kohandamiseks)"
+  },
+  "flow_pauseManual": {
+    "message": "Käsitsi peatamine lubatud"
+  },
+  "flow_statusPause": {
+    "message": "peatatud"
+  },
+  "flow_statusWorking": {
+    "message": "töötab"
+  },
+  "flow_statusLogin": {
+    "message": "logi kontole sisse"
+  },
+  "flow_stTitleOpen": {
+    "message": "Ava TrendTraffic ja logi sisse — see ühendub automaatselt"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Ava täielik galerii →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTrafficu galerii — vali nagu redaktoris, igal failil on nupp '→ Flow'"
+  },
+  "flow_fileFallback": {
+    "message": "fail"
+  },
+  "flow_pickHint": {
+    "message": "Klõpsa soovitud elemendil — see lisatakse galeriisse"
+  },
+  "flow_noPrompt": {
+    "message": "(viipa pole)"
+  },
+  "flow_taskNum": {
+    "message": "Ülesanne #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ viiba välja ei leitud — vaja on valija skautimist"
+  },
+  "flow_promptSet": {
+    "message": "viip seatud"
+  },
+  "flow_refUploaded": {
+    "message": "viide Flow'sse üles laaditud"
+  },
+  "flow_refPrefix": {
+    "message": "viide: "
+  },
+  "flow_refDlFailed": {
+    "message": "viite allalaadimine ebaõnnestus"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ genereerimisnuppu ei leitud — vaja on skautimist"
+  },
+  "flow_genStarted": {
+    "message": "genereerimine alustatud, ootan klippi…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ klipi ootamise aegumine"
+  },
+  "flow_clipReady": {
+    "message": "✓ klipp valmis"
+  },
+  "flow_kindClip": {
+    "message": "klipp"
+  },
+  "flow_kindPicture": {
+    "message": "pilt"
+  },
+  "flow_grabPre": {
+    "message": "haaran "
+  },
+  "flow_grabSuf": {
+    "message": " Flow'st…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ meedia lugemine ebaõnnestus"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN-i autentimine: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — proovin serveri kaudu"
+  },
+  "flow_inGallerySuf": {
+    "message": " galeriisse → vahekaart \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "ühendus puudub — klõpsa TrendTrafficus \"Ühenda\""
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klõpsa Flow's soovitud fotol/videol, seejärel \"Galeriisse\""
+  },
+  "flow_multipleMedia": {
+    "message": "mitu meediat — vali, mida haarata ↓"
+  },
+  "flow_openingProject": {
+    "message": "avan projekti Flow's…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow aktsepteerib siin ainult pilte — laadi videod üles Flow' \"Üleslaadimiste\" jaotise kaudu"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "üleslaadimise väli ei leitud — ava Flow's PROJEKT (mitte pealeht): projekti sees on üleslaadimine (+/\"Üleslaadimised\")"
+  },
+  "flow_loadingList": {
+    "message": "loendi laadimine…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "ühendus puudub — klõpsa \"Ühenda\""
+  },
+  "flow_galleryEmpty": {
+    "message": "galeriis pole meediat"
+  },
+  "flow_reconSent": {
+    "message": "✓ paigutuse tuvastus saadetud"
+  },
+  "flow_reconFail": {
+    "message": "⚠ tuvastus: "
+  },
+  "flow_noConnection": {
+    "message": "ühendus puudub"
+  },
+  "flow_gettingMedia": {
+    "message": "hangin meediat galeriist…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ galeriist allalaadimine ebaõnnestus"
+  },
+  "flow_insertedImage": {
+    "message": "pilt"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " sisestatud Flow'sse galeriist"
+  },
+  "flow_newClipReady": {
+    "message": "uus klipp valmis — laadin galeriisse üles…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klipp galeriis → \"Videod\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klippi ei salvestatud: "
+  },
+  "hg_state": {
+    "message": "Olek"
+  },
+  "hg_notConnected": {
+    "message": "pole ühendatud"
+  },
+  "hg_keepTabOpen": {
+    "message": "Hoia see vahekaart avatuna — pead renderdatakse automaatselt vastavalt sinu tellimusele."
+  },
+  "hg_openTT": {
+    "message": "Ava TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "tuvastus: "
+  },
+  "hg_reconSuffix": {
+    "message": " stuudiokõned"
+  },
+  "hg_reconBtn": {
+    "message": "API tuvastus"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Hõiva praegune stuudio API ja saada meile (kohandamiseks)"
+  },
+  "hg_statusWorking": {
+    "message": "töötab"
+  },
+  "hg_statusLogin": {
+    "message": "logi oma kontole sisse"
+  },
+  "hg_stTitleOpen": {
+    "message": "Ava TrendTraffic ja logi sisse — see ühendub automaatselt"
+  },
+  "hg_photoDlFailed": {
+    "message": "foto allalaadimine ebaõnnestus"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderdamine ebaõnnestus"
+  },
+  "hg_genPrefix": {
+    "message": "genereerimine: "
+  },
+  "hg_waiting": {
+    "message": "ootab"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen ei pakkunud videot õigeaegselt"
+  },
+  "hg_headNum": {
+    "message": "▶ pea #"
+  },
+  "hg_readyLook": {
+    "message": "valmis konto avatar — foto üleslaadimine vahele jäetud"
+  },
+  "hg_photoUpload": {
+    "message": "foto → rääkiv_foto…"
+  },
+  "hg_genStartPre": {
+    "message": "alustan genereerimist ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ välimust ei leitud sellest seansist — laadin foto üles ja proovin uuesti…"
+  },
+  "hg_headReady": {
+    "message": "✓ pea valmis, hangin mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ saadan TrendTrafficule"
+  },
+  "hg_reconSent": {
+    "message": "✓ API tuvastus saadetud"
+  },
+  "hg_reconFail": {
+    "message": "⚠ tuvastus: "
+  },
+  "hg_noConnection": {
+    "message": "ühendus puudub"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artefakti fail pealt kuulatud ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "faili pealtkuulamine ebaõnnestus: "
+  },
+  "nlm_dlProbe": {
+    "message": "alla laadida? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "allalaadimise URL pealt kuulatud (window.open)"
+  },
+  "nlm_state": {
+    "message": "Olek"
+  },
+  "nlm_notConnected": {
+    "message": "pole ühendatud"
+  },
+  "nlm_account": {
+    "message": "Konto"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM-i jaoks kasutatav Google'i konto"
+  },
+  "nlm_waitingTask": {
+    "message": "Ootan ülesannet TrendTrafficult…"
+  },
+  "nlm_grabTitle": {
+    "message": "Näita valmis stuudiotöid — klõpsa tööle, et laadida see TrendTraffici Galeriisse"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Galeriisse"
+  },
+  "nlm_openTT": {
+    "message": "Ava TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Jäädvusta praegune NotebookLM-i paigutus ja saada meile (valija kohandamiseks)"
+  },
+  "nlm_reconBtn": {
+    "message": "paigutuse recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "ava märkmik — näitan selle stuudiotöid"
+  },
+  "nlm_noReadyWorks": {
+    "message": "valmis stuudiotöid pole (või veel genereerimisel)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Laadi \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" Galeriisse"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ juba"
+  },
+  "nlm_refresh": {
+    "message": "värskenda"
+  },
+  "nlm_close": {
+    "message": "sulge"
+  },
+  "nlm_loginTT": {
+    "message": "logi sisse TrendTraffici"
+  },
+  "nlm_loginGoogle": {
+    "message": "logi sisse Google'isse"
+  },
+  "nlm_working": {
+    "message": "töötan"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Märkmiku loomine: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ märkmik loodud: "
+  },
+  "nlm_addingSource": {
+    "message": "Allika lisamine ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "faili allalaadimine Galeriist ebaõnnestus"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM ei aktsepteeri videofaile. Videote puhul lisa \"Analüüs\" tekstina või lingina (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Faili üleslaadimine NotebookLM-i pole laiendist saadaval (kohalik aken). Kasuta \"Analüüs\"/\"Kleebi tekst\" või linki (veebisait/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ failiallikas lisatud"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "tundmatu allika tüüp"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ allikas lisatud ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Märkmike loendi lugemine…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ märkmikud (minu+saadaval): "
+  },
+  "nlm_asking": {
+    "message": "Küsin: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "vastust pole täielikult loetud"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ vastus saadud"
+  },
+  "nlm_unknownType": {
+    "message": "tundmatu tüüp: "
+  },
+  "nlm_generatingTask": {
+    "message": "Genereerin: "
+  },
+  "nlm_genStartedPre": {
+    "message": "genereerimine algas ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", vaikimisi), ootan artefakti…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakt valmis ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), ootan artefakti…"
+  },
+  "nlm_dlRequested": {
+    "message": "artefakti allalaadimine taotletud…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "artefakti allalaadimise pealtkuulamine ebaõnnestus"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Laadi alla TrendTrafficu Galeriisse"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" pole \"Laadi alla\" — jäädvustan tekstina…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" pole \"Laadi alla\" — jäädvustan tekstina…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galerii"
+  },
+  "nlm_alreadyWas": {
+    "message": " (juba eksisteeris)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ salvestamata: "
+  },
+  "nlm_noConnection": {
+    "message": "ühendus puudub"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL-i allalaadimine ebaõnnestus: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ faili \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ klõps viis märkmiku lehelt eemale — naasen"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekst \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" pole jäädvustatud"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galerii (tekstina)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikaalne"
+  },
+  "nlm_916Title": {
+    "message": "Lisa 9:16 vertikaalse formaadi viip (Shorts/Reels/TikTok). Viip inglise keeles — NotebookLM mõistab juhiseid nii kõige paremini."
+  },
+  "nlm_916Already": {
+    "message": "✓ juba lisatud"
+  },
+  "nlm_916Added": {
+    "message": "✓ lisatud"
+  },
+  "nlm_reconSent": {
+    "message": "✓ paigutuse recon saadetud"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Recon nurjus: "
+  },
+  "nlm_unknownAction": {
+    "message": "Tundmatu tegevus: "
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — असिस्टंट (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "युनिफाइड TrendTraffic एक्स्टेंशन: Google Flow (Veo), Google NotebookLM (Hotebook), आणि HeyGen (तुमच्या सबस्क्रिप्शनसह UGC बोलणारे डोके) यांच्यासाठी एक पूल. वास्तविक ब्राउझर कार्य रांग, जनरेशन ऑटोमेशन आणि गॅलरी एक्सचेंज. एकदा इन्स्टॉल करा — टॅब उघडलेल्या सेवेवर पॅनेल सक्रिय होते."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — असिस्टंट (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "कार्य कालबाह्य झाले"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow टॅब उघडा — कार्य आपोआप पूर्ण होईल"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: असामान्य क्रियाकलाप — थांबवले"
+  },
+  "bg_noResult": {
+    "message": "निकाल नाही"
+  },
+  "bg_notConnected": {
+    "message": "कनेक्ट केलेले नाही"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow उघडण्यात अयशस्वी"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow लोड झाले नाही — कृपया labs.google/flow वर साइन इन करा"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow कडून प्रतिसाद नाही"
+  },
+  "bg_noUrl": {
+    "message": "url नाही"
+  },
+  "bg_dlRejected": {
+    "message": "डाउनलोड अयशस्वी (CDN ने विनंती नाकारली)"
+  },
+  "bg_tooBig": {
+    "message": "मीडिया >500MB — खूप मोठा"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM उघडण्यात अयशस्वी"
+  },
+  "bg_notebookNotCreated": {
+    "message": "नोटबुक तयार केले नाही ('तयार करा' साठी सिलेक्टर स्काउटिंग आवश्यक)"
+  },
+  "bg_listFailed": {
+    "message": "सूची मिळवण्यात अयशस्वी"
+  },
+  "bg_actionFailed": {
+    "message": "क्रिया अयशस्वी"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM उघडा — जनरेशन आपोआप पूर्ण होईल"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLM मध्ये साइन इन करा"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "आर्टिफॅक्ट डाउनलोड अडवण्यात अयशस्वी"
+  },
+  "bg_artifactDlFailed": {
+    "message": "आर्टिफॅक्ट डाउनलोड अयशस्वी: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com स्टुडिओ टॅब उघडा — अवतार आपोआप रेंडर होईल"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen स्टुडिओ अजूनही लोड होत आहे — नंतर पुन्हा प्रयत्न करत आहे"
+  },
+  "bg_retry": {
+    "message": "पुन्हा प्रयत्न करा"
+  },
+  "bg_dlFailed": {
+    "message": "डाउनलोड अयशस्वी"
+  },
+  "flow_state": {
+    "message": "स्थिती"
+  },
+  "flow_notConnected": {
+    "message": "कनेक्ट केलेले नाही"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic कडून कार्यांची वाट पाहत आहे…"
+  },
+  "flow_pauseBtn": {
+    "message": "थांबवा"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic उघडा"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ गॅलरीमध्ये"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Flow मधून पूर्ण झालेली क्लिप TrendTraffic गॅलरीमध्ये पाठवा"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ गॅलरीमधून"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "गॅलरीमधून व्हिडिओ घ्या आणि प्रक्रियेसाठी Flow मध्ये अपलोड करा"
+  },
+  "flow_reconPrefix": {
+    "message": "स्काउटिंग: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow विनंत्या"
+  },
+  "flow_reconBtn": {
+    "message": "लेआउट स्काउट करा"
+  },
+  "flow_reconBtnTitle": {
+    "message": "सध्याचे Flow लेआउट कॅप्चर करा आणि आम्हाला पाठवा (समायोजनासाठी)"
+  },
+  "flow_pauseManual": {
+    "message": "मॅन्युअली थांबवले"
+  },
+  "flow_statusPause": {
+    "message": "थांबवले"
+  },
+  "flow_statusWorking": {
+    "message": "कार्यरत"
+  },
+  "flow_statusLogin": {
+    "message": "खात्यात साइन इन करा"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic उघडा आणि साइन इन करा — ते आपोआप कनेक्ट होईल"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 पूर्ण गॅलरी उघडा →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic गॅलरी — संपादकाप्रमाणे निवडा, प्रत्येक फाइलवर '→ Flow' बटणासह"
+  },
+  "flow_fileFallback": {
+    "message": "फाइल"
+  },
+  "flow_pickHint": {
+    "message": "इच्छित आयटमवर क्लिक करा — तो गॅलरीमध्ये जोडला जाईल"
+  },
+  "flow_noPrompt": {
+    "message": "(प्रॉम्प्ट नाही)"
+  },
+  "flow_taskNum": {
+    "message": "कार्य #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ प्रॉम्प्ट फील्ड सापडले नाही — सिलेक्टर स्काउटिंग आवश्यक"
+  },
+  "flow_promptSet": {
+    "message": "प्रॉम्प्ट सेट"
+  },
+  "flow_refUploaded": {
+    "message": "संदर्भ Flow मध्ये अपलोड केला"
+  },
+  "flow_refPrefix": {
+    "message": "संदर्भ: "
+  },
+  "flow_refDlFailed": {
+    "message": "संदर्भ डाउनलोड अयशस्वी"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ जनरेशन बटण सापडले नाही — स्काउटिंग आवश्यक"
+  },
+  "flow_genStarted": {
+    "message": "जनरेशन सुरू झाले, क्लिपची वाट पाहत आहे…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ क्लिप प्रतीक्षा कालबाह्य"
+  },
+  "flow_clipReady": {
+    "message": "✓ क्लिप तयार"
+  },
+  "flow_kindClip": {
+    "message": "क्लिप"
+  },
+  "flow_kindPicture": {
+    "message": "प्रतिमा"
+  },
+  "flow_grabPre": {
+    "message": "Flow मधून "
+  },
+  "flow_grabSuf": {
+    "message": " मिळवत आहे…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ मीडिया वाचण्यात अयशस्वी"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN प्रमाणीकरण: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — सर्व्हरद्वारे प्रयत्न करत आहे"
+  },
+  "flow_inGallerySuf": {
+    "message": " गॅलरीमध्ये → \"Google Flow\" टॅब"
+  },
+  "flow_noConnConnect": {
+    "message": "कनेक्शन नाही — TrendTraffic मध्ये \"कनेक्ट करा\" वर क्लिक करा"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ Flow मध्ये इच्छित फोटो/व्हिडिओवर क्लिक करा, नंतर \"गॅलरीमध्ये\""
+  },
+  "flow_multipleMedia": {
+    "message": "एकाधिक मीडिया — काय घ्यायचे ते निवडा ↓"
+  },
+  "flow_openingProject": {
+    "message": "Flow मध्ये प्रकल्प उघडत आहे…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow येथे फक्त प्रतिमा स्वीकारतो — Flow च्या \"अपलोड्स\" विभागातून व्हिडिओ अपलोड करा"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "अपलोड फील्ड सापडले नाही — Flow मध्ये एक प्रकल्प उघडा (मुख्य पृष्ठ नाही): प्रकल्पाच्या आत एक अपलोड (+/\"अपलोड्स\") आहे"
+  },
+  "flow_loadingList": {
+    "message": "यादी लोड करत आहे…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "कनेक्शन नाही — \"कनेक्ट करा\" वर क्लिक करा"
+  },
+  "flow_galleryEmpty": {
+    "message": "गॅलरीमध्ये मीडिया नाही"
+  },
+  "flow_reconSent": {
+    "message": "✓ लेआउट रिकॉन पाठवला"
+  },
+  "flow_reconFail": {
+    "message": "⚠ रिकॉन: "
+  },
+  "flow_noConnection": {
+    "message": "कनेक्शन नाही"
+  },
+  "flow_gettingMedia": {
+    "message": "गॅलरीमधून मीडिया मिळवत आहे…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ गॅलरीमधून डाउनलोड करण्यात अयशस्वी"
+  },
+  "flow_insertedImage": {
+    "message": "प्रतिमा"
+  },
+  "flow_insertedVideo": {
+    "message": "व्हिडिओ"
+  },
+  "flow_insertedSuf": {
+    "message": " गॅलरीमधून Flow मध्ये घातला"
+  },
+  "flow_newClipReady": {
+    "message": "नवीन क्लिप तयार आहे — गॅलरीमध्ये अपलोड करत आहे…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ क्लिप गॅलरीमध्ये → \"व्हिडिओ\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ क्लिप सेव्ह झाली नाही: "
+  },
+  "hg_state": {
+    "message": "स्थिती"
+  },
+  "hg_notConnected": {
+    "message": "कनेक्ट केलेले नाही"
+  },
+  "hg_keepTabOpen": {
+    "message": "ही टॅब उघडी ठेवा — तुमच्या सदस्यत्वानुसार हेड्स आपोआप रेंडर होतील."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic उघडा"
+  },
+  "hg_reconPrefix": {
+    "message": "रिकॉन: "
+  },
+  "hg_reconSuffix": {
+    "message": " स्टुडिओ कॉल्स"
+  },
+  "hg_reconBtn": {
+    "message": "API रिकॉन"
+  },
+  "hg_reconBtnTitle": {
+    "message": "सध्याचा स्टुडिओ API कॅप्चर करा आणि आम्हाला पाठवा (समायोजनासाठी)"
+  },
+  "hg_statusWorking": {
+    "message": "कार्यरत"
+  },
+  "hg_statusLogin": {
+    "message": "तुमच्या खात्यात लॉग इन करा"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic उघडा आणि लॉग इन करा — ते आपोआप कनेक्ट होईल"
+  },
+  "hg_photoDlFailed": {
+    "message": "फोटो डाउनलोड अयशस्वी"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: रेंडर अयशस्वी"
+  },
+  "hg_genPrefix": {
+    "message": "निर्मिती: "
+  },
+  "hg_waiting": {
+    "message": "प्रतीक्षा करत आहे"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen ने वेळेत व्हिडिओ प्रदान केला नाही"
+  },
+  "hg_headNum": {
+    "message": "▶ हेड #"
+  },
+  "hg_readyLook": {
+    "message": "तयार खाते अवतार — फोटो अपलोड वगळले"
+  },
+  "hg_photoUpload": {
+    "message": "फोटो → बोलणारा_फोटो…"
+  },
+  "hg_genStartPre": {
+    "message": "निर्मिती सुरू करत आहे ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ या सत्रात लुक सापडला नाही — फोटो अपलोड करत आहे आणि पुन्हा प्रयत्न करत आहे…"
+  },
+  "hg_headReady": {
+    "message": "✓ हेड तयार, mp4 मिळवत आहे…"
+  },
+  "hg_sending": {
+    "message": "✓ TrendTraffic ला पाठवत आहे"
+  },
+  "hg_reconSent": {
+    "message": "✓ API रिकॉन पाठवला"
+  },
+  "hg_reconFail": {
+    "message": "⚠ रिकॉन: "
+  },
+  "hg_noConnection": {
+    "message": "कनेक्शन नाही"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "आर्टिफॅक्ट फाइल अडवली ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "फाइल अडवणे अयशस्वी: "
+  },
+  "nlm_dlProbe": {
+    "message": "डाउनलोड? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "डाउनलोड URL अडवली (window.open)"
+  },
+  "nlm_state": {
+    "message": "स्थिती"
+  },
+  "nlm_notConnected": {
+    "message": "कनेक्ट केलेले नाही"
+  },
+  "nlm_account": {
+    "message": "खाते"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM साठी वापरलेले Google खाते"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic कडून कार्याची वाट पाहत आहे…"
+  },
+  "nlm_grabTitle": {
+    "message": "तयार स्टुडिओ कार्ये दाखवा — TrendTraffic गॅलरीमध्ये लोड करण्यासाठी कार्यावर क्लिक करा"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ गॅलरीमध्ये"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic उघडा"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "सध्याचे NotebookLM लेआउट कॅप्चर करा आणि आम्हाला पाठवा (निवडक समायोजनासाठी)"
+  },
+  "nlm_reconBtn": {
+    "message": "लेआउट रिकॉन"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "एक नोटबुक उघडा — मी त्याची स्टुडिओ कार्ये दाखवीन"
+  },
+  "nlm_noReadyWorks": {
+    "message": "तयार स्टुडिओ कार्ये नाहीत (किंवा अजून तयार होत आहेत)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" गॅलरीमध्ये लोड करा"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ आधीच"
+  },
+  "nlm_refresh": {
+    "message": "रिफ्रेश करा"
+  },
+  "nlm_close": {
+    "message": "बंद करा"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTraffic मध्ये लॉग इन करा"
+  },
+  "nlm_loginGoogle": {
+    "message": "Google मध्ये लॉग इन करा"
+  },
+  "nlm_working": {
+    "message": "कार्य करत आहे"
+  },
+  "nlm_creatingNotebook": {
+    "message": "नोटबुक तयार करत आहे: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ नोटबुक तयार झाली: "
+  },
+  "nlm_addingSource": {
+    "message": "स्रोत जोडत आहे ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "गॅलरीमधून फाइल डाउनलोड अयशस्वी"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM व्हिडिओ फाइल्स स्वीकारत नाही. व्हिडिओंसाठी, \"विश्लेषण\" मजकूर म्हणून किंवा लिंक (YouTube) म्हणून जोडा."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "विस्तारातून (मूळ विंडो) NotebookLM वर फाइल अपलोड अनुपलब्ध आहे. \"विश्लेषण\"/\"मजकूर पेस्ट करा\" किंवा लिंक (वेबसाइट/YouTube) वापरा."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ फाइल स्रोत जोडला"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "अज्ञात स्रोत प्रकार"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ स्रोत जोडला ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "नोटबुक सूची वाचत आहे…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ नोटबुक (माझ्या+उपलब्ध): "
+  },
+  "nlm_asking": {
+    "message": "विचारत आहे: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "उत्तर पूर्णपणे वाचले नाही"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ उत्तर मिळाले"
+  },
+  "nlm_unknownType": {
+    "message": "अज्ञात प्रकार: "
+  },
+  "nlm_generatingTask": {
+    "message": "तयार करत आहे: "
+  },
+  "nlm_genStartedPre": {
+    "message": "निर्मिती सुरू झाली ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", डीफॉल्ट), कलाकृतीची वाट पाहत आहे…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ कलाकृती तयार ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), कलाकृतीची वाट पाहत आहे…"
+  },
+  "nlm_dlRequested": {
+    "message": "कलाकृती डाउनलोड करण्याची विनंती केली…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "कलाकृती डाउनलोड अडवण्यात अयशस्वी"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic गॅलरीमध्ये डाउनलोड करा"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" मध्ये \"डाउनलोड\" नाही — मजकूर म्हणून कॅप्चर करत आहे…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" मध्ये \"डाउनलोड\" नाही — मजकूर म्हणून कॅप्चर करत आहे…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → गॅलरी"
+  },
+  "nlm_alreadyWas": {
+    "message": " (आधीच अस्तित्वात होते)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ जतन केले नाही: "
+  },
+  "nlm_noConnection": {
+    "message": "कनेक्शन नाही"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL डाउनलोड अयशस्वी: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ फाइल कॅप्चर करण्यात अयशस्वी \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ क्लिकमुळे नोटबुक पृष्ठापासून दूर गेले — परत येत आहे"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ मजकूर \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" कॅप्चर केला नाही"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → गॅलरी (मजकूर म्हणून)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 अनुलंब"
+  },
+  "nlm_916Title": {
+    "message": "9:16 अनुलंब स्वरूप प्रॉम्प्ट (Shorts/Reels/TikTok) जोडा. प्रॉम्प्ट इंग्रजीमध्ये — NotebookLM सूचना उत्तम प्रकारे समजून घेते."
+  },
+  "nlm_916Already": {
+    "message": "✓ आधीच जोडले"
+  },
+  "nlm_916Added": {
+    "message": "✓ जोडले"
+  },
+  "nlm_reconSent": {
+    "message": "✓ लेआउट रिकॉन पाठवले"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ ओळख पटवण्यात अयशस्वी: "
+  },
+  "nlm_unknownAction": {
+    "message": "अज्ञात क्रिया: "
+  }
+}

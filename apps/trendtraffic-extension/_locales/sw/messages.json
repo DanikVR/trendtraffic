@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Msaidizi (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Kiendelezi cha TrendTraffic kilichounganishwa: daraja la kuelekea Google Flow (Veo), Google NotebookLM (Hotebook), na HeyGen (vichwa vinavyozungumza vya UGC kwa usajili wako). Foleni ya kazi ya kivinjari halisi, otomatiki ya uzalishaji, na ubadilishanaji wa Matunzio. Sakinisha mara moja — paneli huwezeshwa kwenye huduma ambapo kichupo kimefunguliwa."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Msaidizi (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "muda wa kazi umekwisha"
+  },
+  "bg_openFlowTab": {
+    "message": "Fungua kichupo cha Google Flow — kazi itakamilika kiotomatiki"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: shughuli isiyo ya kawaida — imesitishwa"
+  },
+  "bg_noResult": {
+    "message": "hakuna matokeo"
+  },
+  "bg_notConnected": {
+    "message": "haijaunganishwa"
+  },
+  "bg_openFlowFailed": {
+    "message": "imeshindwa kufungua Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow haijapakiwa — tafadhali ingia kwenye labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "hakuna jibu kutoka Flow"
+  },
+  "bg_noUrl": {
+    "message": "hakuna url"
+  },
+  "bg_dlRejected": {
+    "message": "upakuaji umeshindwa (CDN imekataa ombi)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — kubwa mno"
+  },
+  "bg_openNlmFailed": {
+    "message": "imeshindwa kufungua NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "daftari halijaundwa (utafutaji wa kiteuzi cha 'unda' unahitajika)"
+  },
+  "bg_listFailed": {
+    "message": "imeshindwa kupata orodha"
+  },
+  "bg_actionFailed": {
+    "message": "kitendo kimeshindwa"
+  },
+  "bg_openNlmGen": {
+    "message": "Fungua NotebookLM — uzalishaji utakamilika kiotomatiki"
+  },
+  "bg_loginNlm": {
+    "message": "Ingia kwenye NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "imeshindwa kukatiza upakuaji wa artifact"
+  },
+  "bg_artifactDlFailed": {
+    "message": "upakuaji wa artifact umeshindwa: "
+  },
+  "bg_openHgTab": {
+    "message": "Fungua kichupo cha studio cha app.heygen.com — avatar itatolewa kiotomatiki"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio bado inapakia — inajaribu tena baadaye"
+  },
+  "bg_retry": {
+    "message": "jaribu tena"
+  },
+  "bg_dlFailed": {
+    "message": "upakuaji umeshindwa"
+  },
+  "flow_state": {
+    "message": "Hali"
+  },
+  "flow_notConnected": {
+    "message": "haijaunganishwa"
+  },
+  "flow_waitingTask": {
+    "message": "Inasubiri kazi kutoka TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Sitisha"
+  },
+  "flow_openTT": {
+    "message": "Fungua TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Kwenye Matunzio"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Tuma klipu iliyokamilika kutoka Flow hadi Matunzio ya TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Kutoka Matunzio"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Chukua video kutoka Matunzio na uipakie kwenye Flow kwa ajili ya kuchakata"
+  },
+  "flow_reconPrefix": {
+    "message": "utafutaji: "
+  },
+  "flow_reconSuffix": {
+    "message": " maombi ya Flow"
+  },
+  "flow_reconBtn": {
+    "message": "tafuta mpangilio"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Nasa mpangilio wa sasa wa Flow na ututumie (kwa marekebisho)"
+  },
+  "flow_pauseManual": {
+    "message": "Kusitisha kumewezeshwa mwenyewe"
+  },
+  "flow_statusPause": {
+    "message": "imesitishwa"
+  },
+  "flow_statusWorking": {
+    "message": "inafanya kazi"
+  },
+  "flow_statusLogin": {
+    "message": "ingia kwenye akaunti"
+  },
+  "flow_stTitleOpen": {
+    "message": "Fungua TrendTraffic na uingie — itaunganishwa kiotomatiki"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Fungua Matunzio kamili →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Matunzio ya TrendTraffic — chagua kama kwenye kihariri, na kitufe cha '→ Flow' kwenye kila faili"
+  },
+  "flow_fileFallback": {
+    "message": "faili"
+  },
+  "flow_pickHint": {
+    "message": "Bofya kipengee unachotaka — kitaongezwa kwenye Matunzio"
+  },
+  "flow_noPrompt": {
+    "message": "(hakuna kidokezo)"
+  },
+  "flow_taskNum": {
+    "message": "Kazi #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ sehemu ya kidokezo haijapatikana — utafutaji wa kiteuzi unahitajika"
+  },
+  "flow_promptSet": {
+    "message": "kidokezo kimewekwa"
+  },
+  "flow_refUploaded": {
+    "message": "rejea imepakiwa kwenye Flow"
+  },
+  "flow_refPrefix": {
+    "message": "rejea: "
+  },
+  "flow_refDlFailed": {
+    "message": "upakuaji wa rejea umeshindwa"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ kitufe cha uzalishaji hakijapatikana — utafutaji unahitajika"
+  },
+  "flow_genStarted": {
+    "message": "uzalishaji umeanza, inasubiri klipu…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ muda wa kusubiri klipu umekwisha"
+  },
+  "flow_clipReady": {
+    "message": "✓ klipu tayari"
+  },
+  "flow_kindClip": {
+    "message": "klipu"
+  },
+  "flow_kindPicture": {
+    "message": "picha"
+  },
+  "flow_grabPre": {
+    "message": "inakusanya "
+  },
+  "flow_grabSuf": {
+    "message": " kutoka Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ imeshindwa kusoma media"
+  },
+  "flow_cdnAuthPre": {
+    "message": "Uthibitishaji wa CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — inajaribu kupitia seva"
+  },
+  "flow_inGallerySuf": {
+    "message": " kwenye Matunzio → kichupo cha \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "hakuna muunganisho — bofya \"Unganisha\" katika TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ bofya picha/video unayotaka katika Flow, kisha \"Nenda kwenye Matunzio\""
+  },
+  "flow_multipleMedia": {
+    "message": "media nyingi — chagua cha kukusanya ↓"
+  },
+  "flow_openingProject": {
+    "message": "inafungua mradi katika Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow inakubali picha tu hapa — pakia video kupitia sehemu ya \"Upakiaji\" ya Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "sehemu ya kupakia haikupatikana — fungua MRADI katika Flow (sio ukurasa mkuu): ndani ya mradi kuna sehemu ya kupakia (+/\"Upakiaji\")"
+  },
+  "flow_loadingList": {
+    "message": "inaleta orodha…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "hakuna muunganisho — bofya \"Unganisha\""
+  },
+  "flow_galleryEmpty": {
+    "message": "hakuna media katika Matunzio"
+  },
+  "flow_reconSent": {
+    "message": "✓ mpangilio wa recon umetuma"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "hakuna muunganisho"
+  },
+  "flow_gettingMedia": {
+    "message": "inaleta media kutoka Matunzio…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ imeshindwa kupakua kutoka Matunzio"
+  },
+  "flow_insertedImage": {
+    "message": "picha"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " imeingizwa kwenye Flow kutoka Matunzio"
+  },
+  "flow_newClipReady": {
+    "message": "klipu mpya iko tayari — inapakiwa kwenye Matunzio…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klipu katika Matunzio → \"Video\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klipu haijahifadhiwa: "
+  },
+  "hg_state": {
+    "message": "Hali"
+  },
+  "hg_notConnected": {
+    "message": "haijaunganishwa"
+  },
+  "hg_keepTabOpen": {
+    "message": "Weka kichupo hiki wazi — vichwa vitatolewa kiotomatiki kulingana na usajili wako."
+  },
+  "hg_openTT": {
+    "message": "Fungua TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " simu za studio"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Nasa API ya studio ya sasa na utume kwetu (kwa marekebisho)"
+  },
+  "hg_statusWorking": {
+    "message": "inafanya kazi"
+  },
+  "hg_statusLogin": {
+    "message": "ingia kwenye akaunti yako"
+  },
+  "hg_stTitleOpen": {
+    "message": "Fungua TrendTraffic na uingie — itaunganishwa kiotomatiki"
+  },
+  "hg_photoDlFailed": {
+    "message": "upakuaji wa picha umeshindwa"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: utoaji umeshindwa"
+  },
+  "hg_genPrefix": {
+    "message": "uzalishaji: "
+  },
+  "hg_waiting": {
+    "message": "inasubiri"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen haikutoa video kwa wakati"
+  },
+  "hg_headNum": {
+    "message": "▶ kichwa #"
+  },
+  "hg_readyLook": {
+    "message": "avatar ya akaunti iko tayari — upakiaji wa picha umepitwa"
+  },
+  "hg_photoUpload": {
+    "message": "picha → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "inaanza uzalishaji ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ mwonekano haukupatikana katika kipindi hiki — inapakiwa picha na inajaribu tena…"
+  },
+  "hg_headReady": {
+    "message": "✓ kichwa kiko tayari, inaleta mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ inatuma kwa TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon imetumwa"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "hakuna muunganisho"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "faili ya artifact imenaswa ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "ukunasi wa faili umeshindwa: "
+  },
+  "nlm_dlProbe": {
+    "message": "pakua? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL ya kupakua imenaswa (window.open)"
+  },
+  "nlm_state": {
+    "message": "Hali"
+  },
+  "nlm_notConnected": {
+    "message": "haijaunganishwa"
+  },
+  "nlm_account": {
+    "message": "Akaunti"
+  },
+  "nlm_accountTitle": {
+    "message": "Akaunti ya Google inayotumika kwa NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Inasubiri kazi kutoka TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Onyesha kazi za studio zilizo tayari — bofya kazi ili kuipakia kwenye Matunzio ya TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Kwenye Matunzio"
+  },
+  "nlm_openTT": {
+    "message": "Fungua TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Nasa mpangilio wa sasa wa NotebookLM na utume kwetu (kwa marekebisho ya kiteuzi)"
+  },
+  "nlm_reconBtn": {
+    "message": "mpangilio recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "fungua daftari — nitaonyesha kazi zake za studio"
+  },
+  "nlm_noReadyWorks": {
+    "message": "hakuna kazi za studio zilizo tayari (au bado zinazalishwa)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Pakia \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" kwenye Matunzio"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ tayari"
+  },
+  "nlm_refresh": {
+    "message": "onyesha upya"
+  },
+  "nlm_close": {
+    "message": "funga"
+  },
+  "nlm_loginTT": {
+    "message": "ingia kwenye TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "ingia kwenye Google"
+  },
+  "nlm_working": {
+    "message": "inafanya kazi"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Inaunda daftari: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ daftari limeundwa: "
+  },
+  "nlm_addingSource": {
+    "message": "Inaongeza chanzo ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "upakuaji wa faili kutoka Matunzio umeshindwa"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM haikubali faili za video. Kwa video, ongeza \"Uchambuzi\" kama maandishi au kiungo (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Upakiaji wa faili kwenye NotebookLM haupatikani kutoka kwa kiendelezi (dirisha asili). Tumia \"Uchambuzi\"/\"Bandika maandishi\" au kiungo (tovuti/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ chanzo cha faili kimeongezwa"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "aina isiyojulikana ya chanzo"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ chanzo kimeongezwa ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Inasoma orodha ya daftari…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ madftari (yangu+yanayopatikana): "
+  },
+  "nlm_asking": {
+    "message": "Inauliza: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "jibu halijasomwa kikamilifu"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ jibu limepokelewa"
+  },
+  "nlm_unknownType": {
+    "message": "aina isiyojulikana: "
+  },
+  "nlm_generatingTask": {
+    "message": "Inazalisha: "
+  },
+  "nlm_genStartedPre": {
+    "message": "uzalishaji umeanza ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", chaguo-msingi), inasubiri kifaa…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ kifaa kiko tayari ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), inasubiri kifaa…"
+  },
+  "nlm_dlRequested": {
+    "message": "upakuaji wa kifaa umeombwa…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "imeshindwa kukatiza upakuaji wa kifaa"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Pakua kwenye Matunzio ya TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" haina \"Pakua\" — inanaswa kama maandishi…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" haina \"Pakua\" — inanaswa kama maandishi…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Matunzio"
+  },
+  "nlm_alreadyWas": {
+    "message": " (tayari kilikuwepo)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ haijahifadhiwa: "
+  },
+  "nlm_noConnection": {
+    "message": "hakuna muunganisho"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ upakuaji wa URL umeshindwa: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ imeshindwa kunasa faili \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ kubofya kuliondoa kwenye ukurasa wa daftari — inarudi"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ maandishi \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" hayakunasiwa"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Matunzio (kama maandishi)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 wima"
+  },
+  "nlm_916Title": {
+    "message": "Ongeza kidokezo cha umbizo wima cha 9:16 (Shorts/Reels/TikTok). Kidokezo kwa Kiingereza — NotebookLM inaelewa maelekezo vizuri zaidi kwa njia hii."
+  },
+  "nlm_916Already": {
+    "message": "✓ tayari kimeongezwa"
+  },
+  "nlm_916Added": {
+    "message": "✓ kimeongezwa"
+  },
+  "nlm_reconSent": {
+    "message": "✓ recon ya mpangilio imetumwa"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Recon imeshindwa: "
+  },
+  "nlm_unknownAction": {
+    "message": "Kitendo kisichojulikana: "
+  }
+}

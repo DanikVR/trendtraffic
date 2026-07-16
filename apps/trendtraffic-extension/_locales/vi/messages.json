@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Trợ lý (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Tiện ích mở rộng TrendTraffic hợp nhất: cầu nối đến Google Flow (Veo), Google NotebookLM (Hotebook) và HeyGen (UGC talking heads với gói đăng ký của bạn). Hàng đợi tác vụ trình duyệt thực, tự động hóa tạo và trao đổi Thư viện. Cài đặt một lần — bảng điều khiển sẽ kích hoạt trên dịch vụ nơi tab đang mở."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Trợ lý (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "hết thời gian tác vụ"
+  },
+  "bg_openFlowTab": {
+    "message": "Mở tab Google Flow — tác vụ sẽ tự động hoàn thành"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: hoạt động bất thường — đã tạm dừng"
+  },
+  "bg_noResult": {
+    "message": "không có kết quả"
+  },
+  "bg_notConnected": {
+    "message": "chưa kết nối"
+  },
+  "bg_openFlowFailed": {
+    "message": "không mở được Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow chưa tải — vui lòng đăng nhập vào labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "không có phản hồi từ Flow"
+  },
+  "bg_noUrl": {
+    "message": "không có url"
+  },
+  "bg_dlRejected": {
+    "message": "tải xuống thất bại (CDN từ chối yêu cầu)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — quá lớn"
+  },
+  "bg_openNlmFailed": {
+    "message": "không mở được NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "sổ ghi chép chưa được tạo (cần tìm bộ chọn 'tạo')"
+  },
+  "bg_listFailed": {
+    "message": "không lấy được danh sách"
+  },
+  "bg_actionFailed": {
+    "message": "hành động thất bại"
+  },
+  "bg_openNlmGen": {
+    "message": "Mở NotebookLM — quá trình tạo sẽ tự động hoàn thành"
+  },
+  "bg_loginNlm": {
+    "message": "Đăng nhập vào NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "không chặn được tải xuống artifact"
+  },
+  "bg_artifactDlFailed": {
+    "message": "tải xuống artifact thất bại: "
+  },
+  "bg_openHgTab": {
+    "message": "Mở tab studio app.heygen.com — hình đại diện sẽ tự động hiển thị"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio vẫn đang tải — thử lại sau"
+  },
+  "bg_retry": {
+    "message": "thử lại"
+  },
+  "bg_dlFailed": {
+    "message": "tải xuống thất bại"
+  },
+  "flow_state": {
+    "message": "Trạng thái"
+  },
+  "flow_notConnected": {
+    "message": "chưa kết nối"
+  },
+  "flow_waitingTask": {
+    "message": "Đang chờ tác vụ từ TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Tạm dừng"
+  },
+  "flow_openTT": {
+    "message": "Mở TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Đến Thư viện"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Gửi một clip đã hoàn thành từ Flow đến Thư viện TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Từ Thư viện"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Lấy một video từ Thư viện và tải lên Flow để xử lý"
+  },
+  "flow_reconPrefix": {
+    "message": "đang tìm: "
+  },
+  "flow_reconSuffix": {
+    "message": " yêu cầu Flow"
+  },
+  "flow_reconBtn": {
+    "message": "tìm bố cục"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Chụp bố cục Flow hiện tại và gửi cho chúng tôi (để điều chỉnh)"
+  },
+  "flow_pauseManual": {
+    "message": "Đã bật tạm dừng thủ công"
+  },
+  "flow_statusPause": {
+    "message": "đã tạm dừng"
+  },
+  "flow_statusWorking": {
+    "message": "đang hoạt động"
+  },
+  "flow_statusLogin": {
+    "message": "đăng nhập tài khoản"
+  },
+  "flow_stTitleOpen": {
+    "message": "Mở TrendTraffic và đăng nhập — sẽ tự động kết nối"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Mở toàn bộ Thư viện →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Thư viện TrendTraffic — chọn như trong trình chỉnh sửa, với nút '→ Flow' trên mỗi tệp"
+  },
+  "flow_fileFallback": {
+    "message": "tệp"
+  },
+  "flow_pickHint": {
+    "message": "Nhấp vào mục mong muốn — nó sẽ được thêm vào Thư viện"
+  },
+  "flow_noPrompt": {
+    "message": "(không có lời nhắc)"
+  },
+  "flow_taskNum": {
+    "message": "Tác vụ #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ không tìm thấy trường lời nhắc — cần tìm bộ chọn"
+  },
+  "flow_promptSet": {
+    "message": "đã đặt lời nhắc"
+  },
+  "flow_refUploaded": {
+    "message": "đã tải tham chiếu lên Flow"
+  },
+  "flow_refPrefix": {
+    "message": "tham chiếu: "
+  },
+  "flow_refDlFailed": {
+    "message": "tải xuống tham chiếu thất bại"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ không tìm thấy nút tạo — cần tìm"
+  },
+  "flow_genStarted": {
+    "message": "đã bắt đầu tạo, đang chờ clip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ hết thời gian chờ clip"
+  },
+  "flow_clipReady": {
+    "message": "✓ clip đã sẵn sàng"
+  },
+  "flow_kindClip": {
+    "message": "clip"
+  },
+  "flow_kindPicture": {
+    "message": "ảnh"
+  },
+  "flow_grabPre": {
+    "message": "đang lấy "
+  },
+  "flow_grabSuf": {
+    "message": " từ Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ không đọc được nội dung nghe nhìn"
+  },
+  "flow_cdnAuthPre": {
+    "message": "Xác thực CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — đang thử qua máy chủ"
+  },
+  "flow_inGallerySuf": {
+    "message": " vào Thư viện → tab \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "không có kết nối — nhấp vào \"Kết nối\" trong TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ nhấp vào ảnh/video mong muốn trong Flow, sau đó nhấp vào \"Vào Thư viện\""
+  },
+  "flow_multipleMedia": {
+    "message": "nhiều nội dung nghe nhìn — chọn nội dung cần lấy ↓"
+  },
+  "flow_openingProject": {
+    "message": "đang mở dự án trong Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow chỉ chấp nhận hình ảnh ở đây — tải video lên qua phần \"Tải lên\" của Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "không tìm thấy trường tải lên — mở DỰ ÁN trong Flow (không phải trang chính): bên trong một dự án có một mục tải lên (+/\"Tải lên\")"
+  },
+  "flow_loadingList": {
+    "message": "đang tải danh sách…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "không có kết nối — nhấp vào \"Kết nối\""
+  },
+  "flow_galleryEmpty": {
+    "message": "không có nội dung nghe nhìn trong Thư viện"
+  },
+  "flow_reconSent": {
+    "message": "✓ bố cục recon đã gửi"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "không có kết nối"
+  },
+  "flow_gettingMedia": {
+    "message": "đang lấy nội dung nghe nhìn từ Thư viện…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ không tải được từ Thư viện"
+  },
+  "flow_insertedImage": {
+    "message": "ảnh"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " đã chèn vào Flow từ Thư viện"
+  },
+  "flow_newClipReady": {
+    "message": "clip mới đã sẵn sàng — đang tải lên Thư viện…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ clip trong Thư viện → \"Video\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ clip chưa lưu: "
+  },
+  "hg_state": {
+    "message": "Trạng thái"
+  },
+  "hg_notConnected": {
+    "message": "chưa kết nối"
+  },
+  "hg_keepTabOpen": {
+    "message": "Giữ tab này mở — các đầu sẽ tự động hiển thị dựa trên gói đăng ký của bạn."
+  },
+  "hg_openTT": {
+    "message": "Mở TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " cuộc gọi studio"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Chụp API studio hiện tại và gửi cho chúng tôi (để điều chỉnh)"
+  },
+  "hg_statusWorking": {
+    "message": "đang hoạt động"
+  },
+  "hg_statusLogin": {
+    "message": "đăng nhập vào tài khoản của bạn"
+  },
+  "hg_stTitleOpen": {
+    "message": "Mở TrendTraffic và đăng nhập — nó sẽ tự động kết nối"
+  },
+  "hg_photoDlFailed": {
+    "message": "tải ảnh xuống thất bại"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: hiển thị thất bại"
+  },
+  "hg_genPrefix": {
+    "message": "tạo: "
+  },
+  "hg_waiting": {
+    "message": "đang chờ"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen không cung cấp video kịp thời"
+  },
+  "hg_headNum": {
+    "message": "▶ đầu #"
+  },
+  "hg_readyLook": {
+    "message": "ảnh đại diện tài khoản đã sẵn sàng — bỏ qua tải ảnh lên"
+  },
+  "hg_photoUpload": {
+    "message": "ảnh → ảnh nói…"
+  },
+  "hg_genStartPre": {
+    "message": "đang bắt đầu tạo ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ không tìm thấy giao diện trong phiên này — đang tải ảnh lên và thử lại…"
+  },
+  "hg_headReady": {
+    "message": "✓ đầu đã sẵn sàng, đang lấy mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ đang gửi đến TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon đã gửi"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "không có kết nối"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "tệp tạo tác đã bị chặn ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "chặn tệp thất bại: "
+  },
+  "nlm_dlProbe": {
+    "message": "tải xuống? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL tải xuống đã bị chặn (window.open)"
+  },
+  "nlm_state": {
+    "message": "Trạng thái"
+  },
+  "nlm_notConnected": {
+    "message": "chưa kết nối"
+  },
+  "nlm_account": {
+    "message": "Tài khoản"
+  },
+  "nlm_accountTitle": {
+    "message": "Tài khoản Google dùng cho NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Đang chờ tác vụ từ TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Hiển thị các tác phẩm studio đã sẵn sàng — nhấp vào một tác phẩm để tải vào Thư viện TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Vào Thư viện"
+  },
+  "nlm_openTT": {
+    "message": "Mở TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Chụp bố cục NotebookLM hiện tại và gửi cho chúng tôi (để điều chỉnh bộ chọn)"
+  },
+  "nlm_reconBtn": {
+    "message": "nhận diện bố cục"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "mở một sổ ghi chép — tôi sẽ hiển thị các tác phẩm studio của nó"
+  },
+  "nlm_noReadyWorks": {
+    "message": "không có tác phẩm studio nào sẵn sàng (hoặc vẫn đang tạo)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Tải \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" vào Thư viện"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ đã rồi"
+  },
+  "nlm_refresh": {
+    "message": "làm mới"
+  },
+  "nlm_close": {
+    "message": "đóng"
+  },
+  "nlm_loginTT": {
+    "message": "đăng nhập TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "đăng nhập Google"
+  },
+  "nlm_working": {
+    "message": "đang làm việc"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Đang tạo sổ ghi chép: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ đã tạo sổ ghi chép: "
+  },
+  "nlm_addingSource": {
+    "message": "Đang thêm nguồn ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "tải tệp từ Thư viện thất bại"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM không chấp nhận tệp video. Đối với video, hãy thêm \"Phân tích\" dưới dạng văn bản hoặc liên kết (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Tải tệp lên NotebookLM không khả dụng từ tiện ích mở rộng (cửa sổ gốc). Sử dụng \"Phân tích\"/\"Dán văn bản\" hoặc liên kết (trang web/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ đã thêm nguồn tệp"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "loại nguồn không xác định"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ đã thêm nguồn ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Đang đọc danh sách sổ ghi chép…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ sổ ghi chép (của tôi+khả dụng): "
+  },
+  "nlm_asking": {
+    "message": "Đang hỏi: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "chưa đọc hết câu trả lời"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ đã nhận câu trả lời"
+  },
+  "nlm_unknownType": {
+    "message": "loại không xác định: "
+  },
+  "nlm_generatingTask": {
+    "message": "Đang tạo: "
+  },
+  "nlm_genStartedPre": {
+    "message": "bắt đầu tạo ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", mặc định), đang chờ tạo phẩm…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ tạo phẩm đã sẵn sàng ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), đang chờ tạo phẩm…"
+  },
+  "nlm_dlRequested": {
+    "message": "yêu cầu tải tạo phẩm…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "không thể chặn tải tạo phẩm"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Tải xuống Thư viện TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" không có \"Tải xuống\" — đang chụp dưới dạng văn bản…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" không có \"Tải xuống\" — đang chụp dưới dạng văn bản…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Thư viện"
+  },
+  "nlm_alreadyWas": {
+    "message": " (đã tồn tại)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ chưa lưu: "
+  },
+  "nlm_noConnection": {
+    "message": "không có kết nối"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ tải URL thất bại: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ không thể chụp tệp \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ nhấp chuột đã dẫn ra khỏi trang sổ ghi chép — đang quay lại"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ văn bản \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" chưa được chụp"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Thư viện (dưới dạng văn bản)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 dọc"
+  },
+  "nlm_916Title": {
+    "message": "Thêm lời nhắc định dạng dọc 9:16 (Shorts/Reels/TikTok). Lời nhắc bằng tiếng Anh — NotebookLM hiểu hướng dẫn tốt nhất theo cách này."
+  },
+  "nlm_916Already": {
+    "message": "✓ đã thêm rồi"
+  },
+  "nlm_916Added": {
+    "message": "✓ đã thêm"
+  },
+  "nlm_reconSent": {
+    "message": "✓ đã gửi nhận diện bố cục"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Recon thất bại: "
+  },
+  "nlm_unknownAction": {
+    "message": "Hành động không xác định: "
+  }
+}

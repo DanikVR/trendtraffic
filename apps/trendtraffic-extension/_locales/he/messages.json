@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "הרחבת TrendTraffic המאוחדת: גשר ל-Google Flow (Veo), ל-Google NotebookLM (Hotebook) ול-HeyGen (ראשי דיבור UGC עם המנוי שלך). תור משימות דפדפן אמיתי, אוטומציה של יצירה והחלפת גלריה. התקן פעם אחת — הפאנל יופעל בשירות שבו הכרטיסייה פתוחה."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "פסק זמן למשימה"
+  },
+  "bg_openFlowTab": {
+    "message": "פתח את כרטיסיית Google Flow — המשימה תושלם אוטומטית"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: פעילות חריגה — מושהה"
+  },
+  "bg_noResult": {
+    "message": "אין תוצאות"
+  },
+  "bg_notConnected": {
+    "message": "לא מחובר"
+  },
+  "bg_openFlowFailed": {
+    "message": "פתיחת Flow נכשלה"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow לא נטען — אנא היכנס ל-labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "אין תגובה מ-Flow"
+  },
+  "bg_noUrl": {
+    "message": "אין כתובת אתר"
+  },
+  "bg_dlRejected": {
+    "message": "ההורדה נכשלה (CDN דחה את הבקשה)"
+  },
+  "bg_tooBig": {
+    "message": "מדיה >500MB — גדולה מדי"
+  },
+  "bg_openNlmFailed": {
+    "message": "פתיחת NotebookLM נכשלה"
+  },
+  "bg_notebookNotCreated": {
+    "message": "המחברת לא נוצרה (נדרש סריקת סלקטור עבור 'צור')"
+  },
+  "bg_listFailed": {
+    "message": "קבלת הרשימה נכשלה"
+  },
+  "bg_actionFailed": {
+    "message": "הפעולה נכשלה"
+  },
+  "bg_openNlmGen": {
+    "message": "פתח את NotebookLM — היצירה תושלם אוטומטית"
+  },
+  "bg_loginNlm": {
+    "message": "היכנס ל-NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "יירוט הורדת הארטיפקט נכשל"
+  },
+  "bg_artifactDlFailed": {
+    "message": "הורדת ארטיפקט נכשלה: "
+  },
+  "bg_openHgTab": {
+    "message": "פתח את כרטיסיית הסטודיו app.heygen.com — האווטאר יוצג אוטומטית"
+  },
+  "bg_hgLoading": {
+    "message": "סטודיו HeyGen עדיין נטען — מנסה שוב מאוחר יותר"
+  },
+  "bg_retry": {
+    "message": "נסה שוב"
+  },
+  "bg_dlFailed": {
+    "message": "ההורדה נכשלה"
+  },
+  "flow_state": {
+    "message": "סטטוס"
+  },
+  "flow_notConnected": {
+    "message": "לא מחובר"
+  },
+  "flow_waitingTask": {
+    "message": "ממתין למשימות מ-TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "השהה"
+  },
+  "flow_openTT": {
+    "message": "פתח את TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ לגלריה"
+  },
+  "flow_toGalleryTitle": {
+    "message": "שלח קליפ גמור מ-Flow לגלריית TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ מגלריה"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "קח סרטון מהגלריה והעלה אותו ל-Flow לעיבוד"
+  },
+  "flow_reconPrefix": {
+    "message": "סריקה: "
+  },
+  "flow_reconSuffix": {
+    "message": " בקשות Flow"
+  },
+  "flow_reconBtn": {
+    "message": "סרוק פריסה"
+  },
+  "flow_reconBtnTitle": {
+    "message": "לכוד את פריסת Flow הנוכחית ושלח אותה אלינו (לצורך התאמה)"
+  },
+  "flow_pauseManual": {
+    "message": "השהיה הופעלה ידנית"
+  },
+  "flow_statusPause": {
+    "message": "מושהה"
+  },
+  "flow_statusWorking": {
+    "message": "עובד"
+  },
+  "flow_statusLogin": {
+    "message": "היכנס לחשבון"
+  },
+  "flow_stTitleOpen": {
+    "message": "פתח את TrendTraffic והיכנס — הוא יתחבר אוטומטית"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 פתח גלריה מלאה ←"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "גלריית TrendTraffic — בחר כמו בעורך, עם כפתור '← Flow' על כל קובץ"
+  },
+  "flow_fileFallback": {
+    "message": "קובץ"
+  },
+  "flow_pickHint": {
+    "message": "לחץ על הפריט הרצוי — הוא יתווסף לגלריה"
+  },
+  "flow_noPrompt": {
+    "message": "(אין הנחיה)"
+  },
+  "flow_taskNum": {
+    "message": "משימה #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ שדה הנחיה לא נמצא — נדרשת סריקת סלקטור"
+  },
+  "flow_promptSet": {
+    "message": "הנחיה הוגדרה"
+  },
+  "flow_refUploaded": {
+    "message": "הפניה הועלתה ל-Flow"
+  },
+  "flow_refPrefix": {
+    "message": "הפניה: "
+  },
+  "flow_refDlFailed": {
+    "message": "הורדת הפניה נכשלה"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ כפתור יצירה לא נמצא — נדרשת סריקה"
+  },
+  "flow_genStarted": {
+    "message": "היצירה החלה, ממתין לקליפ…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ פסק זמן המתנה לקליפ"
+  },
+  "flow_clipReady": {
+    "message": "✓ קליפ מוכן"
+  },
+  "flow_kindClip": {
+    "message": "קליפ"
+  },
+  "flow_kindPicture": {
+    "message": "תמונה"
+  },
+  "flow_grabPre": {
+    "message": "תופס "
+  },
+  "flow_grabSuf": {
+    "message": " מ-Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ קריאת המדיה נכשלה"
+  },
+  "flow_cdnAuthPre": {
+    "message": "אימות CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — מנסה דרך השרת"
+  },
+  "flow_inGallerySuf": {
+    "message": " לגלריה ← לשונית \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "אין חיבור — לחץ על \"התחבר\" ב-TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ לחץ על התמונה/וידאו הרצוי ב-Flow, ואז על \"לגלריה\""
+  },
+  "flow_multipleMedia": {
+    "message": "מדיה מרובה — בחר מה לתפוס ↓"
+  },
+  "flow_openingProject": {
+    "message": "פותח פרויקט ב-Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow מקבל רק תמונות כאן — העלה סרטונים דרך קטע \"העלאות\" של Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "שדה העלאה לא נמצא — פתח פרויקט ב-Flow (לא עמוד ראשי): בתוך פרויקט יש העלאה (+/\"העלאות\")"
+  },
+  "flow_loadingList": {
+    "message": "טוען רשימה…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "אין חיבור — לחץ על \"התחבר\""
+  },
+  "flow_galleryEmpty": {
+    "message": "אין מדיה בגלריה"
+  },
+  "flow_reconSent": {
+    "message": "✓ זיהוי פריסה נשלח"
+  },
+  "flow_reconFail": {
+    "message": "⚠ זיהוי: "
+  },
+  "flow_noConnection": {
+    "message": "אין חיבור"
+  },
+  "flow_gettingMedia": {
+    "message": "מקבל מדיה מהגלריה…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ הורדה מהגלריה נכשלה"
+  },
+  "flow_insertedImage": {
+    "message": "תמונה"
+  },
+  "flow_insertedVideo": {
+    "message": "וידאו"
+  },
+  "flow_insertedSuf": {
+    "message": " הוכנס ל-Flow מהגלריה"
+  },
+  "flow_newClipReady": {
+    "message": "קליפ חדש מוכן — מעלה לגלריה…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ קליפ בגלריה ← \"סרטונים\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ קליפ לא נשמר: "
+  },
+  "hg_state": {
+    "message": "סטטוס"
+  },
+  "hg_notConnected": {
+    "message": "לא מחובר"
+  },
+  "hg_keepTabOpen": {
+    "message": "שמור את הכרטיסייה הזו פתוחה — ראשים יופקו אוטומטית בהתאם למנוי שלך."
+  },
+  "hg_openTT": {
+    "message": "פתח את TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "זיהוי: "
+  },
+  "hg_reconSuffix": {
+    "message": " קריאות סטודיו"
+  },
+  "hg_reconBtn": {
+    "message": "זיהוי API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "לכוד את ה-API הנוכחי של הסטודיו ושלח אלינו (לצורך התאמה)"
+  },
+  "hg_statusWorking": {
+    "message": "עובד"
+  },
+  "hg_statusLogin": {
+    "message": "היכנס לחשבונך"
+  },
+  "hg_stTitleOpen": {
+    "message": "פתח את TrendTraffic והיכנס — הוא יתחבר אוטומטית"
+  },
+  "hg_photoDlFailed": {
+    "message": "הורדת תמונה נכשלה"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: רינדור נכשל"
+  },
+  "hg_genPrefix": {
+    "message": "יצירה: "
+  },
+  "hg_waiting": {
+    "message": "ממתין"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen לא סיפק וידאו בזמן"
+  },
+  "hg_headNum": {
+    "message": "▶ ראש #"
+  },
+  "hg_readyLook": {
+    "message": "אווטאר חשבון מוכן — העלאת תמונה דולגה"
+  },
+  "hg_photoUpload": {
+    "message": "תמונה ← talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "מתחיל יצירה ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ מראה לא נמצא בסשן זה — מעלה תמונה ומנסה שוב…"
+  },
+  "hg_headReady": {
+    "message": "✓ ראש מוכן, מקבל mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ שולח ל-TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ זיהוי API נשלח"
+  },
+  "hg_reconFail": {
+    "message": "⚠ זיהוי: "
+  },
+  "hg_noConnection": {
+    "message": "אין חיבור"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "קובץ ארטיפקט יורט ("
+  },
+  "nlm_kbComma": {
+    "message": " ק\"ב, "
+  },
+  "nlm_captureFailed": {
+    "message": "יירוט קובץ נכשל: "
+  },
+  "nlm_dlProbe": {
+    "message": "הורדה? "
+  },
+  "nlm_kb": {
+    "message": "ק\"ב"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "כתובת URL להורדה יורטה (window.open)"
+  },
+  "nlm_state": {
+    "message": "סטטוס"
+  },
+  "nlm_notConnected": {
+    "message": "לא מחובר"
+  },
+  "nlm_account": {
+    "message": "חשבון"
+  },
+  "nlm_accountTitle": {
+    "message": "חשבון Google המשמש עבור NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "ממתין למשימה מ-TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "הצג עבודות סטודיו מוכנות — לחץ על עבודה כדי לטעון אותה לגלריית TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ לגלריה"
+  },
+  "nlm_openTT": {
+    "message": "פתח את TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "צלם את פריסת NotebookLM הנוכחית ושלח אלינו (להתאמת בורר)"
+  },
+  "nlm_reconBtn": {
+    "message": "זיהוי פריסה"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "פתח מחברת — אראה את עבודות הסטודיו שלה"
+  },
+  "nlm_noReadyWorks": {
+    "message": "אין עבודות סטודיו מוכנות (או עדיין נוצרות)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "טען \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" לגלריה"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ כבר קיים"
+  },
+  "nlm_refresh": {
+    "message": "רענן"
+  },
+  "nlm_close": {
+    "message": "סגור"
+  },
+  "nlm_loginTT": {
+    "message": "התחבר ל-TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "התחבר ל-Google"
+  },
+  "nlm_working": {
+    "message": "עובד"
+  },
+  "nlm_creatingNotebook": {
+    "message": "יוצר מחברת: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ מחברת נוצרה: "
+  },
+  "nlm_addingSource": {
+    "message": "מוסיף מקור ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "הורדת קובץ מהגלריה נכשלה"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM אינו מקבל קבצי וידאו. עבור סרטונים, הוסף \"ניתוח\" כטקסט או קישור (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "העלאת קבצים ל-NotebookLM אינה זמינה מההרחבה (חלון מקורי). השתמש ב\"ניתוח\"/\"הדבק טקסט\" או בקישור (אתר/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ מקור קובץ נוסף"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "סוג מקור לא ידוע"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ מקור נוסף ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "קורא רשימת מחברות…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ מחברות (שלי+זמינות): "
+  },
+  "nlm_asking": {
+    "message": "שואל: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "התשובה לא נקראה במלואה"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ התשובה התקבלה"
+  },
+  "nlm_unknownType": {
+    "message": "סוג לא ידוע: "
+  },
+  "nlm_generatingTask": {
+    "message": "מייצר: "
+  },
+  "nlm_genStartedPre": {
+    "message": "התחילה יצירה ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", ברירת מחדל), ממתין לחפץ…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ חפץ מוכן ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), ממתין לחפץ…"
+  },
+  "nlm_dlRequested": {
+    "message": "הורדת חפץ התבקשה…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "נכשל ביירוט הורדת חפץ"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "הורד לגלריית TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" אין \"הורדה\" — לוכד כטקסט…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" אין \"הורדה\" — לוכד כטקסט…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" ← גלריה"
+  },
+  "nlm_alreadyWas": {
+    "message": " (כבר היה קיים)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ לא נשמר: "
+  },
+  "nlm_noConnection": {
+    "message": "אין חיבור"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ הורדת URL נכשלה: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ נכשל בלכידת קובץ \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ לחיצה הובילה מחוץ לדף המחברת — חוזר"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ טקסט \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" לא נלכד"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" ← גלריה (כטקסט)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 אנכי"
+  },
+  "nlm_916Title": {
+    "message": "הוסף הנחיה בפורמט אנכי 9:16 (Shorts/Reels/TikTok). הנחיה באנגלית — NotebookLM מבין הוראות בצורה הטובה ביותר כך."
+  },
+  "nlm_916Already": {
+    "message": "✓ כבר נוסף"
+  },
+  "nlm_916Added": {
+    "message": "✓ נוסף"
+  },
+  "nlm_reconSent": {
+    "message": "✓ זיהוי פריסה נשלח"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ זיהוי נכשל: "
+  },
+  "nlm_unknownAction": {
+    "message": "פעולה לא ידועה: "
+  }
+}

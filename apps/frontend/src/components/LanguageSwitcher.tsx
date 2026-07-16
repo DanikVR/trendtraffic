@@ -54,19 +54,34 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
       ? Math.max(VIEWPORT_PADDING, vw - VIEWPORT_PADDING - width)
       : VIEWPORT_PADDING;
 
-    // top: ниже кнопки на 8px.
-    const top = rect.bottom + 8;
-    // Максимальная высота — до низа viewport минус отступ.
-    const maxHeight = Math.max(200, vh - top - VIEWPORT_PADDING);
+    // Вертикаль: по умолчанию вниз от кнопки, но если снизу мало места
+    // (кнопка у нижнего края, напр. глобус внизу сайдбара) — открываем ВВЕРХ.
+    const DESIRED_H = 440; // комфортная высота списка
+    const spaceBelow = vh - rect.bottom - 8 - VIEWPORT_PADDING;
+    const spaceAbove = rect.top - 8 - VIEWPORT_PADDING;
+    const openUp = spaceBelow < Math.min(DESIRED_H, 280) && spaceAbove > spaceBelow;
 
-    setPopupStyle({
-      position: 'fixed',
-      top,
-      left,
-      width,
-      maxHeight,
-      visibility: 'visible',
-    });
+    if (openUp) {
+      const maxHeight = Math.max(200, Math.min(DESIRED_H, spaceAbove));
+      setPopupStyle({
+        position: 'fixed',
+        bottom: vh - rect.top + 8, // прижат НАД кнопкой
+        left,
+        width,
+        maxHeight,
+        visibility: 'visible',
+      });
+    } else {
+      const maxHeight = Math.max(200, Math.min(DESIRED_H, spaceBelow));
+      setPopupStyle({
+        position: 'fixed',
+        top: rect.bottom + 8,
+        left,
+        width,
+        maxHeight,
+        visibility: 'visible',
+      });
+    }
   };
 
   useLayoutEffect(() => {

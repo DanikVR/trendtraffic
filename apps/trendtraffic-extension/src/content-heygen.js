@@ -32,6 +32,8 @@
   };
 
   const log = (...a) => console.log('[tt-heygen]', ...a);
+  // i18n: перевод строк НАШЕЙ панели/статусов. Фолбэк — русский (как было).
+  const T = (key, fallback) => { try { const m = chrome.i18n.getMessage(key); return m || fallback; } catch (e) { return fallback; } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const send = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(); } };
   const reconApis = [];
@@ -79,6 +81,17 @@
       host.id = 'tt-heygen-host';
       host.style.cssText = 'position:fixed;z-index:2147483647;right:16px;bottom:16px;';
       const sh = host.attachShadow({ mode: 'open' });
+      // Видимые тексты панели — через T() (структуру/классы шаблона не меняем).
+      const TXT = {
+        state: T('hg_state', 'Состояние'),
+        notConnected: T('hg_notConnected', 'не подключено'),
+        keepTabOpen: T('hg_keepTabOpen', 'Держите эту вкладку открытой — головы отрендерятся сами по вашей подписке.'),
+        openTT: T('hg_openTT', 'Открыть TrendTraffic'),
+        reconPrefix: T('hg_reconPrefix', 'разведка: '),
+        reconSuffix: T('hg_reconSuffix', ' вызовов студии'),
+        reconBtn: T('hg_reconBtn', 'разведка API'),
+        reconBtnTitle: T('hg_reconBtnTitle', 'Снять текущее API студии и прислать нам (для подстройки)'),
+      };
       sh.innerHTML = `
         <style>
           *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif}
@@ -121,16 +134,16 @@
             <span class="sub" id="ver"></span>
           </div>
           <div class="bd" id="bd">
-            <div class="row"><span>Состояние</span><span class="pill off" id="st">не подключено</span></div>
+            <div class="row"><span>${TXT.state}</span><span class="pill off" id="st">${TXT.notConnected}</span></div>
             <div class="wire" id="wire"></div>
-            <div class="task" id="task">Держите эту вкладку открытой — головы отрендерятся сами по вашей подписке.</div>
+            <div class="task" id="task">${TXT.keepTabOpen}</div>
             <div class="lg" id="lg"></div>
             <div class="btns">
-              <button class="pri" id="open">Открыть TrendTraffic</button>
+              <button class="pri" id="open">${TXT.openTT}</button>
             </div>
             <div class="foot">
-              <span class="mini" id="reconc" style="font-size:10px;color:#6B7280">разведка: 0 вызовов студии</span>
-              <button class="rec" id="recBtn" title="Снять текущее API студии и прислать нам (для подстройки)">разведка API</button>
+              <span class="mini" id="reconc" style="font-size:10px;color:#6B7280">${TXT.reconPrefix}0${TXT.reconSuffix}</span>
+              <button class="rec" id="recBtn" title="${TXT.reconBtnTitle}">${TXT.reconBtn}</button>
             </div>
           </div>
         </div>`;
@@ -202,16 +215,16 @@
     }
     function status(kind, text) { if (els.st) { els.st.className = 'pill ' + kind; els.st.textContent = text; } }
     function task(t) { if (els.task) els.task.textContent = t; }
-    function recon() { reconCount++; if (els.reconc) els.reconc.textContent = `разведка: ${reconCount} вызовов студии`; }
+    function recon() { reconCount++; if (els.reconc) els.reconc.textContent = T('hg_reconPrefix', 'разведка: ') + reconCount + T('hg_reconSuffix', ' вызовов студии'); }
     async function refreshStatus() {
       const r = await send({ type: 'tt-status' });
       if (!r) return;
-      if (r.connected) status('on', 'работает'); else status('off', 'войдите в аккаунт');
+      if (r.connected) status('on', T('hg_statusWorking', 'работает')); else status('off', T('hg_statusLogin', 'войдите в аккаунт'));
       if (els.st) {
         const off = !r.connected;
         els.st.style.cursor = off ? 'pointer' : 'default';
         els.st.style.textDecoration = off ? 'underline' : 'none';
-        els.st.title = off ? 'Открыть TrendTraffic и войти — подключится само' : '';
+        els.st.title = off ? T('hg_stTitleOpen', 'Открыть TrendTraffic и войти — подключится само') : '';
         els.st.onclick = off ? () => window.open('https://app.trendtraffic.pro/flow', '_blank') : null;
       }
       if (els.wire) els.wire.classList.toggle('on', !!r.connected);
@@ -233,7 +246,7 @@
   /** Загрузить фото как talking_photo → talking_photo_id (под сессией). */
   async function uploadTalkingPhoto(photoUrl) {
     const b = await send({ type: 'fetch-bytes', url: photoUrl });
-    if (!b || !b.ok || !b.dataUrl) throw new Error('фото не скачалось' + (b && b.error ? ': ' + b.error : ''));
+    if (!b || !b.ok || !b.dataUrl) throw new Error(T('hg_photoDlFailed', 'фото не скачалось') + (b && b.error ? ': ' + b.error : ''));
     const blob = dataUrlToBlob(b.dataUrl);
     const mime = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/jpeg';
     const res = await fetch(CONFIG.UPLOAD_TALKING_PHOTO, {
@@ -279,12 +292,12 @@
       const x = (d && d.data) || {};
       if (x.status === 'completed' && x.video_url) return x.video_url;
       if (x.status === 'failed' || x.status === 'error') {
-        throw new Error(x.error ? (x.error.message || JSON.stringify(x.error)) : 'HeyGen: рендер не удался');
+        throw new Error(x.error ? (x.error.message || JSON.stringify(x.error)) : T('hg_renderFailed', 'HeyGen: рендер не удался'));
       }
-      ui.task(`генерация: ${x.status || 'ждём'}…`);
+      ui.task(T('hg_genPrefix', 'генерация: ') + (x.status || T('hg_waiting', 'ждём')) + '…');
       await sleep(CONFIG.POLL_MS);
     }
-    throw new Error('HeyGen не отдал видео вовремя');
+    throw new Error(T('hg_noVideoInTime', 'HeyGen не отдал видео вовремя'));
   }
 
   /** Скачать готовый mp4 → dataUrl (или отдать прямую ссылку, если большое). */
@@ -306,23 +319,23 @@
   }
 
   async function renderHead(task) {
-    ui.task('▶ голова #' + (task.id || '').slice(0, 6) + (task.useIV !== false ? ' · Avatar IV' : ' · Avatar III'));
+    ui.task(T('hg_headNum', '▶ голова #') + (task.id || '').slice(0, 6) + (task.useIV !== false ? ' · Avatar IV' : ' · Avatar III'));
     // Готовый лук из аккаунта (tpId) — фото не заливаем: не тратит слоты фото-аватаров.
     let tpId = task.tpId || null;
-    if (tpId) ui.line('готовый аватар аккаунта — загрузка фото пропущена');
+    if (tpId) ui.line(T('hg_readyLook', 'готовый аватар аккаунта — загрузка фото пропущена'));
     else {
-      ui.line('фото → talking_photo…');
+      ui.line(T('hg_photoUpload', 'фото → talking_photo…'));
       try { tpId = await uploadTalkingPhoto(task.photoUrl); }
       catch (e) { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
     }
-    ui.line('запускаю генерацию (' + (task.useIV !== false ? 'IV' : 'III') + ')…');
+    ui.line(T('hg_genStartPre', 'запускаю генерацию (') + (task.useIV !== false ? 'IV' : 'III') + ')…');
     let videoId;
     try { videoId = await submitGenerate(task, tpId); }
     catch (e) {
       // Лук живёт в аккаунте API-ключа; если сессия студии — другой аккаунт, generate его
       // не найдёт → фолбэк: заливаем фото (превью лука) как обычно и повторяем один раз.
       if (task.tpId && tpId === task.tpId && task.photoUrl) {
-        ui.line('⚠ лук не найден в этой сессии — заливаю фото и повторяю…');
+        ui.line(T('hg_lookNotFound', '⚠ лук не найден в этой сессии — заливаю фото и повторяю…'));
         try { tpId = await uploadTalkingPhoto(task.photoUrl); videoId = await submitGenerate(task, tpId); }
         catch (e2) { ui.line('⚠ ' + (e2 && e2.message)); return { ok: false, reason: String(e2 && e2.message || e2) }; }
       } else { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
@@ -330,9 +343,9 @@
     let videoUrl;
     try { videoUrl = await pollStatus(videoId); }
     catch (e) { ui.line('⚠ ' + (e && e.message)); return { ok: false, reason: String(e && e.message || e) }; }
-    ui.line('✓ голова готова, забираю mp4…');
+    ui.line(T('hg_headReady', '✓ голова готова, забираю mp4…'));
     const out = await grabResult(videoUrl);
-    ui.line('✓ отправляю в TrendTraffic');
+    ui.line(T('hg_sending', '✓ отправляю в TrendTraffic'));
     return { ok: true, ...out };
   }
 
@@ -342,7 +355,7 @@
   }
   async function runRecon(silent) {
     const r = await send({ type: 'hg-send-recon', payload: { data: collectRecon(), url: location.href } });
-    if (!silent) ui.line(r && r.ok ? '✓ разведка API отправлена' : ('⚠ разведка: ' + ((r && r.error) || 'нет подключения')));
+    if (!silent) ui.line(r && r.ok ? T('hg_reconSent', '✓ разведка API отправлена') : (T('hg_reconFail', '⚠ разведка: ') + ((r && r.error) || T('hg_noConnection', 'нет подключения'))));
   }
 
   // ---------- команды от background ----------

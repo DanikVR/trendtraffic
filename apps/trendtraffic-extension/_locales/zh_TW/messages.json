@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — 助理 (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "TrendTraffic 統一擴充功能：連接 Google Flow (Veo)、Google NotebookLM (Hotebook) 和 HeyGen (使用您的訂閱製作 UGC 說話頭像)。真實瀏覽器任務佇列、自動生成和圖庫交換。安裝一次 — 面板會在分頁開啟服務時啟用。"
+  },
+  "extTitle": {
+    "message": "TrendTraffic — 助理 (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "任務逾時"
+  },
+  "bg_openFlowTab": {
+    "message": "開啟 Google Flow 分頁 — 任務將自動完成"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow：異常活動 — 已暫停"
+  },
+  "bg_noResult": {
+    "message": "無結果"
+  },
+  "bg_notConnected": {
+    "message": "未連接"
+  },
+  "bg_openFlowFailed": {
+    "message": "開啟 Flow 失敗"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow 未載入 — 請登入 labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow 無回應"
+  },
+  "bg_noUrl": {
+    "message": "無網址"
+  },
+  "bg_dlRejected": {
+    "message": "下載失敗 (CDN 拒絕請求)"
+  },
+  "bg_tooBig": {
+    "message": "媒體 >500MB — 過大"
+  },
+  "bg_openNlmFailed": {
+    "message": "開啟 NotebookLM 失敗"
+  },
+  "bg_notebookNotCreated": {
+    "message": "筆記本未建立 (需要偵測「建立」選擇器)"
+  },
+  "bg_listFailed": {
+    "message": "取得清單失敗"
+  },
+  "bg_actionFailed": {
+    "message": "動作失敗"
+  },
+  "bg_openNlmGen": {
+    "message": "開啟 NotebookLM — 生成將自動完成"
+  },
+  "bg_loginNlm": {
+    "message": "登入 NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "攔截成品下載失敗"
+  },
+  "bg_artifactDlFailed": {
+    "message": "成品下載失敗："
+  },
+  "bg_openHgTab": {
+    "message": "開啟 app.heygen.com 工作室分頁 — 頭像將自動渲染"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio 仍在載入 — 稍後重試"
+  },
+  "bg_retry": {
+    "message": "重試"
+  },
+  "bg_dlFailed": {
+    "message": "下載失敗"
+  },
+  "flow_state": {
+    "message": "狀態"
+  },
+  "flow_notConnected": {
+    "message": "未連接"
+  },
+  "flow_waitingTask": {
+    "message": "正在等待 TrendTraffic 的任務…"
+  },
+  "flow_pauseBtn": {
+    "message": "暫停"
+  },
+  "flow_openTT": {
+    "message": "開啟 TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ 到圖庫"
+  },
+  "flow_toGalleryTitle": {
+    "message": "將 Flow 中完成的片段傳送到 TrendTraffic 圖庫"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ 從圖庫"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "從圖庫中選取影片並上傳到 Flow 進行處理"
+  },
+  "flow_reconPrefix": {
+    "message": "偵測："
+  },
+  "flow_reconSuffix": {
+    "message": " Flow 請求"
+  },
+  "flow_reconBtn": {
+    "message": "偵測佈局"
+  },
+  "flow_reconBtnTitle": {
+    "message": "擷取目前的 Flow 佈局並傳送給我們 (用於調整)"
+  },
+  "flow_pauseManual": {
+    "message": "手動啟用暫停"
+  },
+  "flow_statusPause": {
+    "message": "已暫停"
+  },
+  "flow_statusWorking": {
+    "message": "工作中"
+  },
+  "flow_statusLogin": {
+    "message": "登入帳戶"
+  },
+  "flow_stTitleOpen": {
+    "message": "開啟 TrendTraffic 並登入 — 將自動連接"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 開啟完整圖庫 →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic 圖庫 — 像編輯器一樣選擇，每個檔案都有一個「→ Flow」按鈕"
+  },
+  "flow_fileFallback": {
+    "message": "檔案"
+  },
+  "flow_pickHint": {
+    "message": "點擊所需項目 — 它將被添加到圖庫"
+  },
+  "flow_noPrompt": {
+    "message": "(無提示)"
+  },
+  "flow_taskNum": {
+    "message": "任務 #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ 未找到提示欄位 — 需要偵測選擇器"
+  },
+  "flow_promptSet": {
+    "message": "提示已設定"
+  },
+  "flow_refUploaded": {
+    "message": "參考已上傳到 Flow"
+  },
+  "flow_refPrefix": {
+    "message": "參考："
+  },
+  "flow_refDlFailed": {
+    "message": "參考下載失敗"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ 未找到生成按鈕 — 需要偵測"
+  },
+  "flow_genStarted": {
+    "message": "生成已開始，正在等待片段…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ 片段等待逾時"
+  },
+  "flow_clipReady": {
+    "message": "✓ 片段已就緒"
+  },
+  "flow_kindClip": {
+    "message": "片段"
+  },
+  "flow_kindPicture": {
+    "message": "圖片"
+  },
+  "flow_grabPre": {
+    "message": "正在從 Flow 抓取"
+  },
+  "flow_grabSuf": {
+    "message": "…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ 讀取媒體失敗"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN 驗證："
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — 正在透過伺服器嘗試"
+  },
+  "flow_inGallerySuf": {
+    "message": "到媒體庫 → 「Google Flow」分頁"
+  },
+  "flow_noConnConnect": {
+    "message": "沒有連線 — 請在 TrendTraffic 中點擊「連線」"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ 請先在 Flow 中點擊所需的照片/影片，然後點擊「到媒體庫」"
+  },
+  "flow_multipleMedia": {
+    "message": "多個媒體 — 請選擇要抓取的項目 ↓"
+  },
+  "flow_openingProject": {
+    "message": "正在 Flow 中開啟專案…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow 在此處僅接受圖片 — 請透過 Flow 的「上傳」部分上傳影片"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "找不到上傳欄位 — 請在 Flow 中開啟一個專案（不是主頁）：專案內部有上傳（+/「上傳」）"
+  },
+  "flow_loadingList": {
+    "message": "正在載入清單…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "沒有連線 — 請點擊「連線」"
+  },
+  "flow_galleryEmpty": {
+    "message": "媒體庫中沒有媒體"
+  },
+  "flow_reconSent": {
+    "message": "✓ 版面配置偵測已傳送"
+  },
+  "flow_reconFail": {
+    "message": "⚠ 偵測："
+  },
+  "flow_noConnection": {
+    "message": "沒有連線"
+  },
+  "flow_gettingMedia": {
+    "message": "正在從媒體庫獲取媒體…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ 從媒體庫下載失敗"
+  },
+  "flow_insertedImage": {
+    "message": "圖片"
+  },
+  "flow_insertedVideo": {
+    "message": "影片"
+  },
+  "flow_insertedSuf": {
+    "message": "已從媒體庫插入 Flow"
+  },
+  "flow_newClipReady": {
+    "message": "新片段已準備就緒 — 正在上傳到媒體庫…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ 片段已在媒體庫 → 「影片」"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ 片段未儲存："
+  },
+  "hg_state": {
+    "message": "狀態"
+  },
+  "hg_notConnected": {
+    "message": "未連線"
+  },
+  "hg_keepTabOpen": {
+    "message": "請保持此分頁開啟 — 頭像將根據您的訂閱自動渲染。"
+  },
+  "hg_openTT": {
+    "message": "開啟 TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "偵測："
+  },
+  "hg_reconSuffix": {
+    "message": " 工作室呼叫"
+  },
+  "hg_reconBtn": {
+    "message": "API 偵測"
+  },
+  "hg_reconBtnTitle": {
+    "message": "擷取目前的 studio API 並傳送給我們（用於調整）"
+  },
+  "hg_statusWorking": {
+    "message": "工作中"
+  },
+  "hg_statusLogin": {
+    "message": "登入您的帳戶"
+  },
+  "hg_stTitleOpen": {
+    "message": "開啟 TrendTraffic 並登入 — 它將自動連線"
+  },
+  "hg_photoDlFailed": {
+    "message": "照片下載失敗"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen：渲染失敗"
+  },
+  "hg_genPrefix": {
+    "message": "生成："
+  },
+  "hg_waiting": {
+    "message": "等待中"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen 未及時提供影片"
+  },
+  "hg_headNum": {
+    "message": "▶ 頭像 #"
+  },
+  "hg_readyLook": {
+    "message": "準備好的帳戶頭像 — 已跳過照片上傳"
+  },
+  "hg_photoUpload": {
+    "message": "照片 → 會說話的照片…"
+  },
+  "hg_genStartPre": {
+    "message": "開始生成（"
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ 在此會話中找不到外觀 — 正在上傳照片並重試…"
+  },
+  "hg_headReady": {
+    "message": "✓ 頭像已準備就緒，正在獲取 mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ 正在傳送至 TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API 偵測已傳送"
+  },
+  "hg_reconFail": {
+    "message": "⚠ 偵測："
+  },
+  "hg_noConnection": {
+    "message": "沒有連線"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "已攔截到工件檔案（"
+  },
+  "nlm_kbComma": {
+    "message": " KB，"
+  },
+  "nlm_captureFailed": {
+    "message": "檔案攔截失敗："
+  },
+  "nlm_dlProbe": {
+    "message": "下載？"
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "已攔截到下載 URL (window.open)"
+  },
+  "nlm_state": {
+    "message": "狀態"
+  },
+  "nlm_notConnected": {
+    "message": "未連線"
+  },
+  "nlm_account": {
+    "message": "帳戶"
+  },
+  "nlm_accountTitle": {
+    "message": "用於 NotebookLM 的 Google 帳戶"
+  },
+  "nlm_waitingTask": {
+    "message": "正在等待 TrendTraffic 的任務…"
+  },
+  "nlm_grabTitle": {
+    "message": "顯示準備好的工作室作品 — 點擊作品即可載入到 TrendTraffic 圖庫"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ 到圖庫"
+  },
+  "nlm_openTT": {
+    "message": "開啟 TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "擷取目前的 NotebookLM 版面配置並傳送給我們（用於選擇器調整）"
+  },
+  "nlm_reconBtn": {
+    "message": "版面配置偵測"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "開啟筆記本 — 我會顯示其工作室作品"
+  },
+  "nlm_noReadyWorks": {
+    "message": "沒有準備好的工作室作品（或仍在生成中）"
+  },
+  "nlm_loadTitlePre": {
+    "message": "載入「"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "」到圖庫"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ 已有"
+  },
+  "nlm_refresh": {
+    "message": "重新整理"
+  },
+  "nlm_close": {
+    "message": "關閉"
+  },
+  "nlm_loginTT": {
+    "message": "登入 TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "登入 Google"
+  },
+  "nlm_working": {
+    "message": "工作中"
+  },
+  "nlm_creatingNotebook": {
+    "message": "正在建立筆記本："
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ 筆記本已建立："
+  },
+  "nlm_addingSource": {
+    "message": "正在新增來源 ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "從圖庫下載檔案失敗"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM 不接受影片檔案。對於影片，請以文字或連結（YouTube）新增「分析」。"
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "無法從擴充功能（原生視窗）上傳檔案到 NotebookLM。請使用「分析」/「貼上文字」或連結（網站/YouTube）。"
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ 檔案來源已新增"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "未知來源類型"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ 來源已新增 ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "正在讀取筆記本列表…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ 筆記本（我的+可用）："
+  },
+  "nlm_asking": {
+    "message": "正在詢問："
+  },
+  "nlm_answerIncomplete": {
+    "message": "答案未完全讀取"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ 答案已收到"
+  },
+  "nlm_unknownType": {
+    "message": "未知類型："
+  },
+  "nlm_generatingTask": {
+    "message": "正在生成："
+  },
+  "nlm_genStartedPre": {
+    "message": "生成已開始 ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": "，預設)，正在等待成品…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ 成品已準備好 ("
+  },
+  "nlm_genStartedSuf": {
+    "message": ")，正在等待成品…"
+  },
+  "nlm_dlRequested": {
+    "message": "已請求下載成品…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "未能攔截成品下載"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "下載到 TrendTraffic 圖庫"
+  },
+  "nlm_noDownloadPre": {
+    "message": "」沒有「下載」— 正在擷取為文字…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "」沒有「下載」— 正在擷取為文字…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ 「"
+  },
+  "nlm_toGallerySuf": {
+    "message": "」→ 圖庫"
+  },
+  "nlm_alreadyWas": {
+    "message": " (已存在)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ 未儲存："
+  },
+  "nlm_noConnection": {
+    "message": "無連線"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL 下載失敗："
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ 無法擷取檔案「"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ 點擊離開了筆記本頁面 — 正在返回"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ 文字「"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "」未擷取"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "」→ 圖庫（作為文字）"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 垂直"
+  },
+  "nlm_916Title": {
+    "message": "新增 9:16 垂直格式提示（Shorts/Reels/TikTok）。請用英文提示 — NotebookLM 以此方式最能理解指令。"
+  },
+  "nlm_916Already": {
+    "message": "✓ 已新增"
+  },
+  "nlm_916Added": {
+    "message": "✓ 已新增"
+  },
+  "nlm_reconSent": {
+    "message": "✓ 版面配置偵測已傳送"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ 識別失敗："
+  },
+  "nlm_unknownAction": {
+    "message": "未知動作："
+  }
+}

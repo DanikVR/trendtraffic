@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Die einheitliche TrendTraffic-Erweiterung: eine Brücke zu Google Flow (Veo), Google NotebookLM (Hotebook) und HeyGen (UGC-sprechende Köpfe mit Ihrem Abonnement). Echte Browser-Aufgabenwarteschlange, Generierungsautomatisierung und Galerieaustausch. Einmal installieren — das Panel wird auf dem Dienst aktiviert, auf dem der Tab geöffnet ist."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "Aufgaben-Timeout"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow-Tab öffnen — die Aufgabe wird automatisch abgeschlossen"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: ungewöhnliche Aktivität — pausiert"
+  },
+  "bg_noResult": {
+    "message": "kein Ergebnis"
+  },
+  "bg_notConnected": {
+    "message": "nicht verbunden"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow konnte nicht geöffnet werden"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow nicht geladen — bitte bei labs.google/flow anmelden"
+  },
+  "bg_noFlowAnswer": {
+    "message": "keine Antwort von Flow"
+  },
+  "bg_noUrl": {
+    "message": "keine URL"
+  },
+  "bg_dlRejected": {
+    "message": "Download fehlgeschlagen (CDN hat Anfrage abgelehnt)"
+  },
+  "bg_tooBig": {
+    "message": "Medien >500MB — zu groß"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM konnte nicht geöffnet werden"
+  },
+  "bg_notebookNotCreated": {
+    "message": "Notizbuch nicht erstellt (Selektor-Scouting für 'Erstellen' erforderlich)"
+  },
+  "bg_listFailed": {
+    "message": "Liste konnte nicht abgerufen werden"
+  },
+  "bg_actionFailed": {
+    "message": "Aktion fehlgeschlagen"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM öffnen — die Generierung wird automatisch abgeschlossen"
+  },
+  "bg_loginNlm": {
+    "message": "Bei NotebookLM anmelden"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "Abfangen des Artefakt-Downloads fehlgeschlagen"
+  },
+  "bg_artifactDlFailed": {
+    "message": "Artefakt-Download fehlgeschlagen: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com Studio-Tab öffnen — der Avatar wird automatisch gerendert"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio lädt noch — später erneut versuchen"
+  },
+  "bg_retry": {
+    "message": "erneut versuchen"
+  },
+  "bg_dlFailed": {
+    "message": "Download fehlgeschlagen"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "nicht verbunden"
+  },
+  "flow_waitingTask": {
+    "message": "Warten auf Aufgaben von TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pause"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic öffnen"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Zur Galerie"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Einen fertigen Clip von Flow an die TrendTraffic Galerie senden"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Aus Galerie"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Ein Video aus der Galerie nehmen und zum Bearbeiten in Flow hochladen"
+  },
+  "flow_reconPrefix": {
+    "message": "Scouting: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow-Anfragen"
+  },
+  "flow_reconBtn": {
+    "message": "Layout scouten"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Das aktuelle Flow-Layout erfassen und an uns senden (zur Anpassung)"
+  },
+  "flow_pauseManual": {
+    "message": "Manuelle Pause aktiviert"
+  },
+  "flow_statusPause": {
+    "message": "pausiert"
+  },
+  "flow_statusWorking": {
+    "message": "arbeitet"
+  },
+  "flow_statusLogin": {
+    "message": "bei Konto anmelden"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic öffnen und anmelden — es wird automatisch verbunden"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Vollständige Galerie öffnen →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic Galerie — wie in einem Editor auswählen, mit einem '→ Flow'-Button bei jeder Datei"
+  },
+  "flow_fileFallback": {
+    "message": "Datei"
+  },
+  "flow_pickHint": {
+    "message": "Klicken Sie auf das gewünschte Element — es wird zur Galerie hinzugefügt"
+  },
+  "flow_noPrompt": {
+    "message": "(kein Prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Aufgabe #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ Prompt-Feld nicht gefunden — Selektor-Scouting erforderlich"
+  },
+  "flow_promptSet": {
+    "message": "Prompt gesetzt"
+  },
+  "flow_refUploaded": {
+    "message": "Referenz in Flow hochgeladen"
+  },
+  "flow_refPrefix": {
+    "message": "Referenz: "
+  },
+  "flow_refDlFailed": {
+    "message": "Referenz-Download fehlgeschlagen"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ Generierungs-Button nicht gefunden — Scouting erforderlich"
+  },
+  "flow_genStarted": {
+    "message": "Generierung gestartet, warte auf Clip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ Clip-Warte-Timeout"
+  },
+  "flow_clipReady": {
+    "message": "✓ Clip bereit"
+  },
+  "flow_kindClip": {
+    "message": "Clip"
+  },
+  "flow_kindPicture": {
+    "message": "Bild"
+  },
+  "flow_grabPre": {
+    "message": "greife "
+  },
+  "flow_grabSuf": {
+    "message": " von Flow ab…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ Medien konnten nicht gelesen werden"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN-Auth: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — versuche es über den Server"
+  },
+  "flow_inGallerySuf": {
+    "message": " zur Galerie → Tab „Google Flow“"
+  },
+  "flow_noConnConnect": {
+    "message": "keine Verbindung — klicken Sie in TrendTraffic auf „Verbinden“"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klicken Sie zuerst auf das gewünschte Foto/Video in Flow, dann auf „Zur Galerie“"
+  },
+  "flow_multipleMedia": {
+    "message": "mehrere Medien — wählen Sie aus, was abgegriffen werden soll ↓"
+  },
+  "flow_openingProject": {
+    "message": "Projekt in Flow wird geöffnet…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow akzeptiert hier nur Bilder — Videos laden Sie über den Bereich „Uploads“ von Flow hoch"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "Upload-Feld nicht gefunden — öffnen Sie ein PROJEKT in Flow (nicht die Hauptseite): innerhalb eines Projekts gibt es einen Upload (+/„Uploads“)"
+  },
+  "flow_loadingList": {
+    "message": "Liste wird geladen…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "keine Verbindung — klicken Sie auf „Verbinden“"
+  },
+  "flow_galleryEmpty": {
+    "message": "keine Medien in der Galerie"
+  },
+  "flow_reconSent": {
+    "message": "✓ Layout-Recon gesendet"
+  },
+  "flow_reconFail": {
+    "message": "⚠ Recon: "
+  },
+  "flow_noConnection": {
+    "message": "keine Verbindung"
+  },
+  "flow_gettingMedia": {
+    "message": "Medien aus der Galerie werden abgerufen…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ Download aus der Galerie fehlgeschlagen"
+  },
+  "flow_insertedImage": {
+    "message": "Bild"
+  },
+  "flow_insertedVideo": {
+    "message": "Video"
+  },
+  "flow_insertedSuf": {
+    "message": " aus der Galerie in Flow eingefügt"
+  },
+  "flow_newClipReady": {
+    "message": "neuer Clip bereit — wird in die Galerie hochgeladen…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ Clip in Galerie → „Videos“"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ Clip nicht gespeichert: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "nicht verbunden"
+  },
+  "hg_keepTabOpen": {
+    "message": "Lassen Sie diesen Tab geöffnet — Köpfe werden automatisch basierend auf Ihrem Abonnement gerendert."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic öffnen"
+  },
+  "hg_reconPrefix": {
+    "message": "Recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " Studio-Aufrufe"
+  },
+  "hg_reconBtn": {
+    "message": "API-Recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Aktuelle Studio-API erfassen und an uns senden (zur Anpassung)"
+  },
+  "hg_statusWorking": {
+    "message": "arbeitet"
+  },
+  "hg_statusLogin": {
+    "message": "melden Sie sich in Ihrem Konto an"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic öffnen und anmelden — es wird automatisch verbunden"
+  },
+  "hg_photoDlFailed": {
+    "message": "Foto-Download fehlgeschlagen"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: Rendering fehlgeschlagen"
+  },
+  "hg_genPrefix": {
+    "message": "Generierung: "
+  },
+  "hg_waiting": {
+    "message": "wartet"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen hat das Video nicht rechtzeitig bereitgestellt"
+  },
+  "hg_headNum": {
+    "message": "▶ Kopf #"
+  },
+  "hg_readyLook": {
+    "message": "fertiger Konto-Avatar — Foto-Upload übersprungen"
+  },
+  "hg_photoUpload": {
+    "message": "Foto → sprechendes_Foto…"
+  },
+  "hg_genStartPre": {
+    "message": "Generierung wird gestartet ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ Look in dieser Sitzung nicht gefunden — Foto wird hochgeladen und erneut versucht…"
+  },
+  "hg_headReady": {
+    "message": "✓ Kopf bereit, mp4 wird abgerufen…"
+  },
+  "hg_sending": {
+    "message": "✓ wird an TrendTraffic gesendet"
+  },
+  "hg_reconSent": {
+    "message": "✓ API-Recon gesendet"
+  },
+  "hg_reconFail": {
+    "message": "⚠ Recon: "
+  },
+  "hg_noConnection": {
+    "message": "keine Verbindung"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "Artefaktdatei abgefangen ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "Dateiabfang fehlgeschlagen: "
+  },
+  "nlm_dlProbe": {
+    "message": "herunterladen? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "Download-URL abgefangen (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "nicht verbunden"
+  },
+  "nlm_account": {
+    "message": "Konto"
+  },
+  "nlm_accountTitle": {
+    "message": "Für NotebookLM verwendetes Google-Konto"
+  },
+  "nlm_waitingTask": {
+    "message": "Warte auf Aufgabe von TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Bereite Studioarbeiten anzeigen – klicken Sie auf eine Arbeit, um sie in die TrendTraffic Galerie zu laden"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Zur Galerie"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic öffnen"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Aktuelles NotebookLM-Layout erfassen und an uns senden (zur Selektoranpassung)"
+  },
+  "nlm_reconBtn": {
+    "message": "Layout-Recon"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "Notizbuch öffnen – ich zeige seine Studioarbeiten"
+  },
+  "nlm_noReadyWorks": {
+    "message": "keine fertigen Studioarbeiten (oder noch in Generierung)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Lade „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "“ in Galerie"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ bereits"
+  },
+  "nlm_refresh": {
+    "message": "aktualisieren"
+  },
+  "nlm_close": {
+    "message": "schließen"
+  },
+  "nlm_loginTT": {
+    "message": "bei TrendTraffic anmelden"
+  },
+  "nlm_loginGoogle": {
+    "message": "bei Google anmelden"
+  },
+  "nlm_working": {
+    "message": "arbeite"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Notizbuch wird erstellt: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ Notizbuch erstellt: "
+  },
+  "nlm_addingSource": {
+    "message": "Quelle wird hinzugefügt ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "Dateidownload aus Galerie fehlgeschlagen"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM akzeptiert keine Videodateien. Für Videos fügen Sie „Analyse“ als Text oder Link (YouTube) hinzu."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Dateiupload zu NotebookLM ist von der Erweiterung aus nicht verfügbar (natives Fenster). Verwenden Sie „Analyse“/„Text einfügen“ oder einen Link (Website/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ Dateiquelle hinzugefügt"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "unbekannter Quelltyp"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ Quelle hinzugefügt ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Notizbuchliste wird gelesen…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ Notizbücher (meine+verfügbare): "
+  },
+  "nlm_asking": {
+    "message": "Frage: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "Antwort nicht vollständig gelesen"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ Antwort erhalten"
+  },
+  "nlm_unknownType": {
+    "message": "unbekannter Typ: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generiere: "
+  },
+  "nlm_genStartedPre": {
+    "message": "Generierung gestartet ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", Standard), warte auf Artefakt…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ Artefakt bereit ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), warte auf Artefakt…"
+  },
+  "nlm_dlRequested": {
+    "message": "Download des Artefakts angefordert…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "Fehler beim Abfangen des Artefakt-Downloads"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "In TrendTraffic Galerie herunterladen"
+  },
+  "nlm_noDownloadPre": {
+    "message": "“ hat keinen „Download“ – erfasse als Text…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "“ hat keinen „Download“ – erfasse als Text…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "“ → Galerie"
+  },
+  "nlm_alreadyWas": {
+    "message": " (existierte bereits)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ nicht gespeichert: "
+  },
+  "nlm_noConnection": {
+    "message": "keine Verbindung"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL-Download fehlgeschlagen: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ Datei „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ Klick führte von der Notizbuchseite weg – kehre zurück"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ Text „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "“ nicht erfasst"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "“ → Galerie (als Text)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikal"
+  },
+  "nlm_916Title": {
+    "message": "Fügen Sie eine 9:16-Vertikalformat-Eingabeaufforderung hinzu (Shorts/Reels/TikTok). Eingabeaufforderung auf Englisch – NotebookLM versteht Anweisungen so am besten."
+  },
+  "nlm_916Already": {
+    "message": "✓ bereits hinzugefügt"
+  },
+  "nlm_916Added": {
+    "message": "✓ hinzugefügt"
+  },
+  "nlm_reconSent": {
+    "message": "✓ Layout-Recon gesendet"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Erkennung fehlgeschlagen: "
+  },
+  "nlm_unknownAction": {
+    "message": "Unbekannte Aktion: "
+  }
+}

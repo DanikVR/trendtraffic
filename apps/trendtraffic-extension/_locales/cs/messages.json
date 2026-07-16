@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asistent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Jednotné rozšíření TrendTraffic: most k Google Flow (Veo), Google NotebookLM (Hotebook) a HeyGen (mluvící hlavy UGC s vaším předplatným). Skutečná fronta úloh prohlížeče, automatizace generování a výměna v Galerii. Nainstalujte jednou — panel se aktivuje na službě, kde je otevřena záložka."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asistent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "časový limit úlohy"
+  },
+  "bg_openFlowTab": {
+    "message": "Otevřete záložku Google Flow — úloha se dokončí automaticky"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: neobvyklá aktivita — pozastaveno"
+  },
+  "bg_noResult": {
+    "message": "žádný výsledek"
+  },
+  "bg_notConnected": {
+    "message": "nepřipojeno"
+  },
+  "bg_openFlowFailed": {
+    "message": "nepodařilo se otevřít Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow se nenačetlo — přihlaste se prosím na labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "žádná odpověď z Flow"
+  },
+  "bg_noUrl": {
+    "message": "žádná URL"
+  },
+  "bg_dlRejected": {
+    "message": "stažení se nezdařilo (CDN zamítlo požadavek)"
+  },
+  "bg_tooBig": {
+    "message": "médium >500MB — příliš velké"
+  },
+  "bg_openNlmFailed": {
+    "message": "nepodařilo se otevřít NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "poznámkový blok nebyl vytvořen (potřeba skauting selektoru pro 'vytvořit')"
+  },
+  "bg_listFailed": {
+    "message": "nepodařilo se získat seznam"
+  },
+  "bg_actionFailed": {
+    "message": "akce se nezdařila"
+  },
+  "bg_openNlmGen": {
+    "message": "Otevřete NotebookLM — generování se dokončí automaticky"
+  },
+  "bg_loginNlm": {
+    "message": "Přihlaste se do NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "nepodařilo se zachytit stažení artefaktu"
+  },
+  "bg_artifactDlFailed": {
+    "message": "stažení artefaktu se nezdařilo: "
+  },
+  "bg_openHgTab": {
+    "message": "Otevřete záložku studia app.heygen.com — avatar se vykreslí automaticky"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio se stále načítá — zkusím to později"
+  },
+  "bg_retry": {
+    "message": "zkusit znovu"
+  },
+  "bg_dlFailed": {
+    "message": "stažení se nezdařilo"
+  },
+  "flow_state": {
+    "message": "Stav"
+  },
+  "flow_notConnected": {
+    "message": "nepřipojeno"
+  },
+  "flow_waitingTask": {
+    "message": "Čekám na úkoly z TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pozastavit"
+  },
+  "flow_openTT": {
+    "message": "Otevřít TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Do Galerie"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Odeslat hotový klip z Flow do Galerie TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Z Galerie"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Vezměte video z Galerie a nahrajte jej do Flow ke zpracování"
+  },
+  "flow_reconPrefix": {
+    "message": "skauting: "
+  },
+  "flow_reconSuffix": {
+    "message": " požadavky Flow"
+  },
+  "flow_reconBtn": {
+    "message": "skauting rozložení"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Zachyťte aktuální rozložení Flow a pošlete nám ho (pro úpravu)"
+  },
+  "flow_pauseManual": {
+    "message": "Pozastavení povoleno ručně"
+  },
+  "flow_statusPause": {
+    "message": "pozastaveno"
+  },
+  "flow_statusWorking": {
+    "message": "pracuje"
+  },
+  "flow_statusLogin": {
+    "message": "přihlaste se k účtu"
+  },
+  "flow_stTitleOpen": {
+    "message": "Otevřete TrendTraffic a přihlaste se — připojí se automaticky"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Otevřít celou Galerii →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Galerie TrendTraffic — vybírejte jako v editoru, s tlačítkem '→ Flow' u každého souboru"
+  },
+  "flow_fileFallback": {
+    "message": "soubor"
+  },
+  "flow_pickHint": {
+    "message": "Klikněte na požadovanou položku — bude přidána do Galerie"
+  },
+  "flow_noPrompt": {
+    "message": "(žádná výzva)"
+  },
+  "flow_taskNum": {
+    "message": "Úkol #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ pole výzvy nenalezeno — potřeba skauting selektoru"
+  },
+  "flow_promptSet": {
+    "message": "výzva nastavena"
+  },
+  "flow_refUploaded": {
+    "message": "reference nahrána do Flow"
+  },
+  "flow_refPrefix": {
+    "message": "reference: "
+  },
+  "flow_refDlFailed": {
+    "message": "stažení reference se nezdařilo"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ tlačítko generování nenalezeno — potřeba skauting"
+  },
+  "flow_genStarted": {
+    "message": "generování spuštěno, čekám na klip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ časový limit čekání na klip"
+  },
+  "flow_clipReady": {
+    "message": "✓ klip připraven"
+  },
+  "flow_kindClip": {
+    "message": "klip"
+  },
+  "flow_kindPicture": {
+    "message": "obrázek"
+  },
+  "flow_grabPre": {
+    "message": "stahuji "
+  },
+  "flow_grabSuf": {
+    "message": " z Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ nepodařilo se přečíst médium"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN auth: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — zkouším přes server"
+  },
+  "flow_inGallerySuf": {
+    "message": " do Galerie → záložka \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "bez připojení — klikněte na \"Připojit\" v TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klikněte na požadovanou fotku/video ve Flow, pak na \"Do Galerie\""
+  },
+  "flow_multipleMedia": {
+    "message": "více médií — vyberte, co stáhnout ↓"
+  },
+  "flow_openingProject": {
+    "message": "otevírám projekt ve Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow zde přijímá pouze obrázky — videa nahrávejte přes sekci \"Nahrávání\" ve Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "pole pro nahrávání nenalezeno — otevřete PROJEKT ve Flow (ne hlavní stránku): uvnitř projektu je nahrávání (+/\"Nahrávání\")"
+  },
+  "flow_loadingList": {
+    "message": "načítám seznam…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "bez připojení — klikněte na \"Připojit\""
+  },
+  "flow_galleryEmpty": {
+    "message": "v Galerii nejsou žádná média"
+  },
+  "flow_reconSent": {
+    "message": "✓ rozložení recon odesláno"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "bez připojení"
+  },
+  "flow_gettingMedia": {
+    "message": "načítám média z Galerie…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ nepodařilo se stáhnout z Galerie"
+  },
+  "flow_insertedImage": {
+    "message": "obrázek"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " vloženo do Flow z Galerie"
+  },
+  "flow_newClipReady": {
+    "message": "nový klip připraven — nahrávám do Galerie…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klip v Galerii → \"Videa\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klip nebyl uložen: "
+  },
+  "hg_state": {
+    "message": "Stav"
+  },
+  "hg_notConnected": {
+    "message": "nepřipojeno"
+  },
+  "hg_keepTabOpen": {
+    "message": "Nechte tuto záložku otevřenou — hlavy se budou renderovat automaticky na základě vašeho předplatného."
+  },
+  "hg_openTT": {
+    "message": "Otevřít TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " volání studia"
+  },
+  "hg_reconBtn": {
+    "message": "API recon"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Zachyťte aktuální API studia a pošlete nám (pro úpravu)"
+  },
+  "hg_statusWorking": {
+    "message": "pracuji"
+  },
+  "hg_statusLogin": {
+    "message": "přihlaste se ke svému účtu"
+  },
+  "hg_stTitleOpen": {
+    "message": "Otevřete TrendTraffic a přihlaste se — připojí se automaticky"
+  },
+  "hg_photoDlFailed": {
+    "message": "stažení fotky selhalo"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderování selhalo"
+  },
+  "hg_genPrefix": {
+    "message": "generování: "
+  },
+  "hg_waiting": {
+    "message": "čekám"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen neposkytl video včas"
+  },
+  "hg_headNum": {
+    "message": "▶ hlava #"
+  },
+  "hg_readyLook": {
+    "message": "připravený avatar účtu — nahrávání fotky přeskočeno"
+  },
+  "hg_photoUpload": {
+    "message": "fotka → mluvící_fotka…"
+  },
+  "hg_genStartPre": {
+    "message": "zahajuji generování ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ vzhled nenalezen v této relaci — nahrávám fotku a zkouším znovu…"
+  },
+  "hg_headReady": {
+    "message": "✓ hlava připravena, získávám mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ odesílám do TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ API recon odeslán"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "bez připojení"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "soubor artefaktu zachycen ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "zachycení souboru selhalo: "
+  },
+  "nlm_dlProbe": {
+    "message": "stáhnout? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL pro stažení zachycena (window.open)"
+  },
+  "nlm_state": {
+    "message": "Stav"
+  },
+  "nlm_notConnected": {
+    "message": "nepřipojeno"
+  },
+  "nlm_account": {
+    "message": "Účet"
+  },
+  "nlm_accountTitle": {
+    "message": "Účet Google použitý pro NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Čekám na úkol z TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Zobrazit hotové studiové práce – kliknutím na práci ji načtete do Galerie TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Do Galerie"
+  },
+  "nlm_openTT": {
+    "message": "Otevřít TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Zachytit aktuální rozložení NotebookLM a odeslat nám (pro úpravu selektoru)"
+  },
+  "nlm_reconBtn": {
+    "message": "recon rozložení"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "otevřete zápisník – ukážu jeho studiové práce"
+  },
+  "nlm_noReadyWorks": {
+    "message": "žádné hotové studiové práce (nebo se stále generují)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Načíst „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "“ do Galerie"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ již"
+  },
+  "nlm_refresh": {
+    "message": "obnovit"
+  },
+  "nlm_close": {
+    "message": "zavřít"
+  },
+  "nlm_loginTT": {
+    "message": "přihlásit se do TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "přihlásit se do Google"
+  },
+  "nlm_working": {
+    "message": "pracuji"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Vytvářím zápisník: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ zápisník vytvořen: "
+  },
+  "nlm_addingSource": {
+    "message": "Přidávám zdroj ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "stažení souboru z Galerie se nezdařilo"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM nepřijímá video soubory. Pro videa přidejte „Analýzu“ jako text nebo odkaz (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Nahrávání souborů do NotebookLM není z rozšíření dostupné (nativní okno). Použijte „Analýzu“/„Vložit text“ nebo odkaz (web/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ zdroj souboru přidán"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "neznámý typ zdroje"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ zdroj přidán ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Čtu seznam zápisníků…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ zápisníky (mé+dostupné): "
+  },
+  "nlm_asking": {
+    "message": "Ptám se: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "odpověď nebyla plně přečtena"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ odpověď přijata"
+  },
+  "nlm_unknownType": {
+    "message": "neznámý typ: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generuji: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generování zahájeno ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", výchozí), čekám na artefakt…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakt připraven ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), čekám na artefakt…"
+  },
+  "nlm_dlRequested": {
+    "message": "vyžádáno stažení artefaktu…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nepodařilo se zachytit stažení artefaktu"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Stáhnout do Galerie TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "“ nemá „Stáhnout“ – zachycuji jako text…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "“ nemá „Stáhnout“ – zachycuji jako text…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "“ → Galerie"
+  },
+  "nlm_alreadyWas": {
+    "message": " (již existovalo)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ neuloženo: "
+  },
+  "nlm_noConnection": {
+    "message": "žádné připojení"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ stažení URL se nezdařilo: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nepodařilo se zachytit soubor „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ kliknutí vedlo pryč ze stránky zápisníku – vracím se"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ text „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "“ nebyl zachycen"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "“ → Galerie (jako text)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertikální"
+  },
+  "nlm_916Title": {
+    "message": "Přidejte výzvu ve vertikálním formátu 9:16 (Shorts/Reels/TikTok). Výzva v angličtině – NotebookLM takto nejlépe rozumí pokynům."
+  },
+  "nlm_916Already": {
+    "message": "✓ již přidáno"
+  },
+  "nlm_916Added": {
+    "message": "✓ přidáno"
+  },
+  "nlm_reconSent": {
+    "message": "✓ recon rozložení odeslán"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Rekonstrukce se nezdařila: "
+  },
+  "nlm_unknownAction": {
+    "message": "Neznámá akce: "
+  }
+}

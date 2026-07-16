@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — دستیار (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "افزونه یکپارچه TrendTraffic: پلی به Google Flow (Veo)، Google NotebookLM (Hotebook) و HeyGen (سران سخنگوی UGC با اشتراک شما). صف وظایف مرورگر واقعی، اتوماسیون تولید و تبادل گالری. یک بار نصب کنید — پنل در سرویسی که تب باز است فعال می‌شود."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — دستیار (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "مهلت وظیفه"
+  },
+  "bg_openFlowTab": {
+    "message": "تب Google Flow را باز کنید — وظیفه به طور خودکار تکمیل می‌شود"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: فعالیت غیرمعمول — متوقف شد"
+  },
+  "bg_noResult": {
+    "message": "نتیجه‌ای یافت نشد"
+  },
+  "bg_notConnected": {
+    "message": "متصل نیست"
+  },
+  "bg_openFlowFailed": {
+    "message": "باز کردن Flow ناموفق بود"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow بارگذاری نشد — لطفاً وارد labs.google/flow شوید"
+  },
+  "bg_noFlowAnswer": {
+    "message": "پاسخی از Flow دریافت نشد"
+  },
+  "bg_noUrl": {
+    "message": "بدون URL"
+  },
+  "bg_dlRejected": {
+    "message": "دانلود ناموفق (CDN درخواست را رد کرد)"
+  },
+  "bg_tooBig": {
+    "message": "رسانه >500 مگابایت — خیلی بزرگ است"
+  },
+  "bg_openNlmFailed": {
+    "message": "باز کردن NotebookLM ناموفق بود"
+  },
+  "bg_notebookNotCreated": {
+    "message": "دفترچه یادداشت ایجاد نشد (نیاز به شناسایی انتخابگر برای 'ایجاد')"
+  },
+  "bg_listFailed": {
+    "message": "دریافت لیست ناموفق بود"
+  },
+  "bg_actionFailed": {
+    "message": "عملیات ناموفق بود"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM را باز کنید — تولید به طور خودکار تکمیل می‌شود"
+  },
+  "bg_loginNlm": {
+    "message": "وارد NotebookLM شوید"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "رهگیری دانلود مصنوع ناموفق بود"
+  },
+  "bg_artifactDlFailed": {
+    "message": "دانلود مصنوع ناموفق بود: "
+  },
+  "bg_openHgTab": {
+    "message": "تب استودیوی app.heygen.com را باز کنید — آواتار به طور خودکار رندر می‌شود"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio هنوز در حال بارگذاری است — بعداً دوباره تلاش می‌شود"
+  },
+  "bg_retry": {
+    "message": "تلاش مجدد"
+  },
+  "bg_dlFailed": {
+    "message": "دانلود ناموفق بود"
+  },
+  "flow_state": {
+    "message": "وضعیت"
+  },
+  "flow_notConnected": {
+    "message": "متصل نیست"
+  },
+  "flow_waitingTask": {
+    "message": "در انتظار وظایف از TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "مکث"
+  },
+  "flow_openTT": {
+    "message": "باز کردن TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ به گالری"
+  },
+  "flow_toGalleryTitle": {
+    "message": "یک کلیپ تمام شده را از Flow به گالری TrendTraffic ارسال کنید"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ از گالری"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "یک ویدیو از گالری بگیرید و برای پردازش در Flow آپلود کنید"
+  },
+  "flow_reconPrefix": {
+    "message": "شناسایی: "
+  },
+  "flow_reconSuffix": {
+    "message": " درخواست‌های Flow"
+  },
+  "flow_reconBtn": {
+    "message": "شناسایی طرح‌بندی"
+  },
+  "flow_reconBtnTitle": {
+    "message": "طرح‌بندی فعلی Flow را ضبط کرده و برای ما ارسال کنید (برای تنظیم)"
+  },
+  "flow_pauseManual": {
+    "message": "مکث به صورت دستی فعال شد"
+  },
+  "flow_statusPause": {
+    "message": "متوقف شده"
+  },
+  "flow_statusWorking": {
+    "message": "در حال کار"
+  },
+  "flow_statusLogin": {
+    "message": "ورود به حساب کاربری"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic را باز کرده و وارد شوید — به طور خودکار متصل می‌شود"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 باز کردن گالری کامل →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "گالری TrendTraffic — مانند یک ویرایشگر انتخاب کنید، با دکمه '→ Flow' روی هر فایل"
+  },
+  "flow_fileFallback": {
+    "message": "فایل"
+  },
+  "flow_pickHint": {
+    "message": "روی مورد دلخواه کلیک کنید — به گالری اضافه خواهد شد"
+  },
+  "flow_noPrompt": {
+    "message": "(بدون پرامپت)"
+  },
+  "flow_taskNum": {
+    "message": "وظیفه #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ فیلد پرامپت یافت نشد — نیاز به شناسایی انتخابگر"
+  },
+  "flow_promptSet": {
+    "message": "پرامپت تنظیم شد"
+  },
+  "flow_refUploaded": {
+    "message": "مرجع در Flow آپلود شد"
+  },
+  "flow_refPrefix": {
+    "message": "مرجع: "
+  },
+  "flow_refDlFailed": {
+    "message": "دانلود مرجع ناموفق بود"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ دکمه تولید یافت نشد — نیاز به شناسایی"
+  },
+  "flow_genStarted": {
+    "message": "تولید آغاز شد، در انتظار کلیپ…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ مهلت انتظار کلیپ"
+  },
+  "flow_clipReady": {
+    "message": "✓ کلیپ آماده است"
+  },
+  "flow_kindClip": {
+    "message": "کلیپ"
+  },
+  "flow_kindPicture": {
+    "message": "تصویر"
+  },
+  "flow_grabPre": {
+    "message": "دریافت "
+  },
+  "flow_grabSuf": {
+    "message": " از Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ خواندن رسانه ناموفق بود"
+  },
+  "flow_cdnAuthPre": {
+    "message": "احراز هویت CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — تلاش از طریق سرور"
+  },
+  "flow_inGallerySuf": {
+    "message": " به گالری ← تب «Google Flow»"
+  },
+  "flow_noConnConnect": {
+    "message": "بدون اتصال — روی «اتصال» در TrendTraffic کلیک کنید"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ روی عکس/ویدیوی مورد نظر در Flow کلیک کنید، سپس «به گالری»"
+  },
+  "flow_multipleMedia": {
+    "message": "چندین رسانه — انتخاب کنید کدام را دریافت کنید ↓"
+  },
+  "flow_openingProject": {
+    "message": "باز کردن پروژه در Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow فقط تصاویر را در اینجا می‌پذیرد — ویدیوها را از طریق بخش «آپلودها» در Flow آپلود کنید"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "فیلد آپلود یافت نشد — یک پروژه را در Flow باز کنید (نه صفحه اصلی): در داخل یک پروژه یک بخش آپلود (+/«آپلودها») وجود دارد"
+  },
+  "flow_loadingList": {
+    "message": "در حال بارگذاری لیست…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "بدون اتصال — روی «اتصال» کلیک کنید"
+  },
+  "flow_galleryEmpty": {
+    "message": "هیچ رسانه‌ای در گالری وجود ندارد"
+  },
+  "flow_reconSent": {
+    "message": "✓ طرح‌بندی بازسازی ارسال شد"
+  },
+  "flow_reconFail": {
+    "message": "⚠ بازسازی: "
+  },
+  "flow_noConnection": {
+    "message": "بدون اتصال"
+  },
+  "flow_gettingMedia": {
+    "message": "در حال دریافت رسانه از گالری…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ دانلود از گالری ناموفق بود"
+  },
+  "flow_insertedImage": {
+    "message": "تصویر"
+  },
+  "flow_insertedVideo": {
+    "message": "ویدیو"
+  },
+  "flow_insertedSuf": {
+    "message": " از گالری در Flow درج شد"
+  },
+  "flow_newClipReady": {
+    "message": "کلیپ جدید آماده است — در حال آپلود در گالری…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ کلیپ در گالری ← «ویدیوها»"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ کلیپ ذخیره نشد: "
+  },
+  "hg_state": {
+    "message": "وضعیت"
+  },
+  "hg_notConnected": {
+    "message": "متصل نیست"
+  },
+  "hg_keepTabOpen": {
+    "message": "این تب را باز نگه دارید — سرها به طور خودکار بر اساس اشتراک شما رندر می‌شوند."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic را باز کنید"
+  },
+  "hg_reconPrefix": {
+    "message": "بازسازی: "
+  },
+  "hg_reconSuffix": {
+    "message": " تماس‌های استودیو"
+  },
+  "hg_reconBtn": {
+    "message": "بازسازی API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "API استودیوی فعلی را ضبط کرده و برای ما ارسال کنید (برای تنظیم)"
+  },
+  "hg_statusWorking": {
+    "message": "در حال کار"
+  },
+  "hg_statusLogin": {
+    "message": "وارد حساب کاربری خود شوید"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic را باز کرده و وارد شوید — به طور خودکار متصل خواهد شد"
+  },
+  "hg_photoDlFailed": {
+    "message": "دانلود عکس ناموفق بود"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: رندر ناموفق بود"
+  },
+  "hg_genPrefix": {
+    "message": "تولید: "
+  },
+  "hg_waiting": {
+    "message": "در انتظار"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen ویدیو را به موقع ارائه نکرد"
+  },
+  "hg_headNum": {
+    "message": "▶ سر #"
+  },
+  "hg_readyLook": {
+    "message": "آواتار حساب آماده — آپلود عکس رد شد"
+  },
+  "hg_photoUpload": {
+    "message": "عکس → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "شروع تولید ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ ظاهر در این جلسه یافت نشد — در حال آپلود عکس و تلاش مجدد…"
+  },
+  "hg_headReady": {
+    "message": "✓ سر آماده است، در حال دریافت mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ در حال ارسال به TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ بازسازی API ارسال شد"
+  },
+  "hg_reconFail": {
+    "message": "⚠ بازسازی: "
+  },
+  "hg_noConnection": {
+    "message": "بدون اتصال"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "فایل artifact رهگیری شد ("
+  },
+  "nlm_kbComma": {
+    "message": " کیلوبایت، "
+  },
+  "nlm_captureFailed": {
+    "message": "رهگیری فایل ناموفق بود: "
+  },
+  "nlm_dlProbe": {
+    "message": "دانلود؟ "
+  },
+  "nlm_kb": {
+    "message": "کیلوبایت"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL دانلود رهگیری شد (window.open)"
+  },
+  "nlm_state": {
+    "message": "وضعیت"
+  },
+  "nlm_notConnected": {
+    "message": "متصل نیست"
+  },
+  "nlm_account": {
+    "message": "حساب کاربری"
+  },
+  "nlm_accountTitle": {
+    "message": "حساب Google مورد استفاده برای NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "در انتظار وظیفه از TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "نمایش کارهای آماده استودیو — برای بارگذاری در گالری TrendTraffic روی یک کار کلیک کنید"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ به گالری"
+  },
+  "nlm_openTT": {
+    "message": "باز کردن TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "طرح‌بندی فعلی NotebookLM را ضبط کرده و برای ما ارسال کنید (برای تنظیم انتخابگر)"
+  },
+  "nlm_reconBtn": {
+    "message": "بازسازی طرح‌بندی"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "یک دفترچه یادداشت باز کنید — من کارهای استودیوی آن را نشان خواهم داد"
+  },
+  "nlm_noReadyWorks": {
+    "message": "هیچ کار استودیوی آماده‌ای وجود ندارد (یا هنوز در حال تولید است)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "بارگذاری \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" به گالری"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ از قبل"
+  },
+  "nlm_refresh": {
+    "message": "تازه‌سازی"
+  },
+  "nlm_close": {
+    "message": "بستن"
+  },
+  "nlm_loginTT": {
+    "message": "ورود به TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "ورود به Google"
+  },
+  "nlm_working": {
+    "message": "در حال کار"
+  },
+  "nlm_creatingNotebook": {
+    "message": "در حال ایجاد دفترچه یادداشت: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ دفترچه یادداشت ایجاد شد: "
+  },
+  "nlm_addingSource": {
+    "message": "در حال افزودن منبع ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "دانلود فایل از گالری ناموفق بود"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM فایل‌های ویدیویی را نمی‌پذیرد. برای ویدیوها، «تحلیل» را به عنوان متن یا پیوند (YouTube) اضافه کنید."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "بارگذاری فایل در NotebookLM از طریق افزونه (پنجره بومی) در دسترس نیست. از «تحلیل»/«چسباندن متن» یا یک پیوند (وب‌سایت/YouTube) استفاده کنید."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ منبع فایل اضافه شد"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "نوع منبع ناشناخته"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ منبع اضافه شد ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "در حال خواندن لیست دفترچه‌های یادداشت…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ دفترچه‌های یادداشت (من+در دسترس): "
+  },
+  "nlm_asking": {
+    "message": "در حال پرسیدن: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "پاسخ به طور کامل خوانده نشد"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ پاسخ دریافت شد"
+  },
+  "nlm_unknownType": {
+    "message": "نوع ناشناخته: "
+  },
+  "nlm_generatingTask": {
+    "message": "در حال تولید: "
+  },
+  "nlm_genStartedPre": {
+    "message": "تولید آغاز شد ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", پیش‌فرض)، در انتظار مصنوع…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ مصنوع آماده است ("
+  },
+  "nlm_genStartedSuf": {
+    "message": ")، در انتظار مصنوع…"
+  },
+  "nlm_dlRequested": {
+    "message": "درخواست دانلود مصنوع…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "رهگیری دانلود مصنوع ناموفق بود"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "دانلود در گالری TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" فاقد «دانلود» است — در حال ضبط به عنوان متن…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" فاقد «دانلود» است — در حال ضبط به عنوان متن…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" ← گالری"
+  },
+  "nlm_alreadyWas": {
+    "message": " (از قبل وجود داشت)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ ذخیره نشد: "
+  },
+  "nlm_noConnection": {
+    "message": "عدم اتصال"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ دانلود URL ناموفق بود: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ضبط فایل \" ناموفق بود"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ کلیک از صفحه دفترچه یادداشت دور شد — در حال بازگشت"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ متن \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" ضبط نشد"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" ← گالری (به عنوان متن)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 عمودی"
+  },
+  "nlm_916Title": {
+    "message": "یک پرامپت با فرمت عمودی 9:16 (Shorts/Reels/TikTok) اضافه کنید. پرامپت به زبان انگلیسی باشد — NotebookLM دستورالعمل‌ها را به این روش بهتر درک می‌کند."
+  },
+  "nlm_916Already": {
+    "message": "✓ از قبل اضافه شده"
+  },
+  "nlm_916Added": {
+    "message": "✓ اضافه شد"
+  },
+  "nlm_reconSent": {
+    "message": "✓ بازسازی طرح‌بندی ارسال شد"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ شناسایی ناموفق بود: "
+  },
+  "nlm_unknownAction": {
+    "message": "اقدام نامشخص: "
+  }
+}

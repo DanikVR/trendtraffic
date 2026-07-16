@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Yhdistetty TrendTraffic-laajennus: silta Google Flow'hun (Veo), Google NotebookLM:ään (Hotebook) ja HeyGeniin (UGC-puhuvat päät tilauksellasi). Todellinen selaimen tehtäväjono, generoinnin automatisointi ja Gallerian vaihto. Asenna kerran – paneeli aktivoituu palvelussa, jossa välilehti on auki."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "tehtävän aikakatkaisu"
+  },
+  "bg_openFlowTab": {
+    "message": "Avaa Google Flow -välilehti – tehtävä valmistuu automaattisesti"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: epätavallista toimintaa – keskeytetty"
+  },
+  "bg_noResult": {
+    "message": "ei tulosta"
+  },
+  "bg_notConnected": {
+    "message": "ei yhteyttä"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow'n avaaminen epäonnistui"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow ei latautunut – kirjaudu sisään osoitteessa labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "ei vastausta Flow'lta"
+  },
+  "bg_noUrl": {
+    "message": "ei URL-osoitetta"
+  },
+  "bg_dlRejected": {
+    "message": "lataus epäonnistui (CDN hylkäsi pyynnön)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB – liian suuri"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM:n avaaminen epäonnistui"
+  },
+  "bg_notebookNotCreated": {
+    "message": "muistikirjaa ei luotu (valitsimen etsintä 'luo'-painikkeelle tarvitaan)"
+  },
+  "bg_listFailed": {
+    "message": "luettelon hakeminen epäonnistui"
+  },
+  "bg_actionFailed": {
+    "message": "toiminto epäonnistui"
+  },
+  "bg_openNlmGen": {
+    "message": "Avaa NotebookLM – generointi valmistuu automaattisesti"
+  },
+  "bg_loginNlm": {
+    "message": "Kirjaudu sisään NotebookLM:ään"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "artefaktin latauksen sieppaaminen epäonnistui"
+  },
+  "bg_artifactDlFailed": {
+    "message": "artefaktin lataus epäonnistui: "
+  },
+  "bg_openHgTab": {
+    "message": "Avaa app.heygen.com-studiovälilehti – avatari renderöityy automaattisesti"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio latautuu edelleen – yritetään myöhemmin uudelleen"
+  },
+  "bg_retry": {
+    "message": "yritä uudelleen"
+  },
+  "bg_dlFailed": {
+    "message": "lataus epäonnistui"
+  },
+  "flow_state": {
+    "message": "Tila"
+  },
+  "flow_notConnected": {
+    "message": "ei yhteyttä"
+  },
+  "flow_waitingTask": {
+    "message": "Odotetaan tehtäviä TrendTrafficilta…"
+  },
+  "flow_pauseBtn": {
+    "message": "Keskeytä"
+  },
+  "flow_openTT": {
+    "message": "Avaa TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Galleriaan"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Lähetä valmis leike Flow'sta TrendTraffic-galleriaan"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Galleriasta"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Ota video Galleriasta ja lataa se Flow'hun käsittelyä varten"
+  },
+  "flow_reconPrefix": {
+    "message": "etsitään: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow-pyyntöä"
+  },
+  "flow_reconBtn": {
+    "message": "etsi asettelu"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Kaappaa nykyinen Flow-asettelu ja lähetä se meille (säätöä varten)"
+  },
+  "flow_pauseManual": {
+    "message": "Keskeytys käytössä manuaalisesti"
+  },
+  "flow_statusPause": {
+    "message": "keskeytetty"
+  },
+  "flow_statusWorking": {
+    "message": "työskentelee"
+  },
+  "flow_statusLogin": {
+    "message": "kirjaudu sisään"
+  },
+  "flow_stTitleOpen": {
+    "message": "Avaa TrendTraffic ja kirjaudu sisään – se yhdistyy automaattisesti"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Avaa koko Galleria →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic-galleria – valitse kuten editorissa, jokaisessa tiedostossa on '→ Flow' -painike"
+  },
+  "flow_fileFallback": {
+    "message": "tiedosto"
+  },
+  "flow_pickHint": {
+    "message": "Napsauta haluttua kohdetta – se lisätään Galleriaan"
+  },
+  "flow_noPrompt": {
+    "message": "(ei kehotetta)"
+  },
+  "flow_taskNum": {
+    "message": "Tehtävä #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ kehotekenttää ei löydy – valitsimen etsintä tarvitaan"
+  },
+  "flow_promptSet": {
+    "message": "kehotteet asetettu"
+  },
+  "flow_refUploaded": {
+    "message": "viite ladattu Flow'hun"
+  },
+  "flow_refPrefix": {
+    "message": "viite: "
+  },
+  "flow_refDlFailed": {
+    "message": "viitteen lataus epäonnistui"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ generointipainiketta ei löydy – etsintä tarvitaan"
+  },
+  "flow_genStarted": {
+    "message": "generointi aloitettu, odotetaan leikettä…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ leikkeen odotuksen aikakatkaisu"
+  },
+  "flow_clipReady": {
+    "message": "✓ leike valmis"
+  },
+  "flow_kindClip": {
+    "message": "leike"
+  },
+  "flow_kindPicture": {
+    "message": "kuva"
+  },
+  "flow_grabPre": {
+    "message": "nappaamassa "
+  },
+  "flow_grabSuf": {
+    "message": " Flow'sta…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ median luku epäonnistui"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN-todennus: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — yritetään palvelimen kautta"
+  },
+  "flow_inGallerySuf": {
+    "message": " Galleriaan → \"Google Flow\" -välilehti"
+  },
+  "flow_noConnConnect": {
+    "message": "ei yhteyttä — klikkaa \"Yhdistä\" TrendTrafficissa"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ klikkaa haluttua kuvaa/videota Flow'ssa, sitten \"Galleriaan\""
+  },
+  "flow_multipleMedia": {
+    "message": "useita medioita — valitse mitä napataan ↓"
+  },
+  "flow_openingProject": {
+    "message": "avaamassa projektia Flow'ssa…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow hyväksyy tähän vain kuvia — lataa videot Flow'n \"Lataukset\"-osiosta"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "latauskenttää ei löydy — avaa PROJEKTI Flow'ssa (ei pääsivu): projektin sisällä on lataus (+/\"Lataukset\")"
+  },
+  "flow_loadingList": {
+    "message": "ladataan listaa…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "ei yhteyttä — klikkaa \"Yhdistä\""
+  },
+  "flow_galleryEmpty": {
+    "message": "ei mediaa Galleriassa"
+  },
+  "flow_reconSent": {
+    "message": "✓ asettelun tunnistus lähetetty"
+  },
+  "flow_reconFail": {
+    "message": "⚠ tunnistus: "
+  },
+  "flow_noConnection": {
+    "message": "ei yhteyttä"
+  },
+  "flow_gettingMedia": {
+    "message": "haetaan mediaa Galleriasta…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ lataus Galleriasta epäonnistui"
+  },
+  "flow_insertedImage": {
+    "message": "kuva"
+  },
+  "flow_insertedVideo": {
+    "message": "video"
+  },
+  "flow_insertedSuf": {
+    "message": " lisätty Flow'hun Galleriasta"
+  },
+  "flow_newClipReady": {
+    "message": "uusi klippi valmis — ladataan Galleriaan…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klippi Galleriassa → \"Videot\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klippiä ei tallennettu: "
+  },
+  "hg_state": {
+    "message": "Tila"
+  },
+  "hg_notConnected": {
+    "message": "ei yhdistetty"
+  },
+  "hg_keepTabOpen": {
+    "message": "Pidä tämä välilehti auki — päät renderöityvät automaattisesti tilauksesi perusteella."
+  },
+  "hg_openTT": {
+    "message": "Avaa TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "tunnistus: "
+  },
+  "hg_reconSuffix": {
+    "message": " studiopuhelua"
+  },
+  "hg_reconBtn": {
+    "message": "API-tunnistus"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Kaappaa nykyinen studio-API ja lähetä meille (säätöä varten)"
+  },
+  "hg_statusWorking": {
+    "message": "työskentelee"
+  },
+  "hg_statusLogin": {
+    "message": "kirjaudu tilillesi"
+  },
+  "hg_stTitleOpen": {
+    "message": "Avaa TrendTraffic ja kirjaudu sisään — se yhdistyy automaattisesti"
+  },
+  "hg_photoDlFailed": {
+    "message": "kuvan lataus epäonnistui"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderöinti epäonnistui"
+  },
+  "hg_genPrefix": {
+    "message": "generointi: "
+  },
+  "hg_waiting": {
+    "message": "odottaa"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen ei toimittanut videota ajoissa"
+  },
+  "hg_headNum": {
+    "message": "▶ pää #"
+  },
+  "hg_readyLook": {
+    "message": "valmis tilin avatar — kuvan lataus ohitettu"
+  },
+  "hg_photoUpload": {
+    "message": "kuva → puhuva_kuva…"
+  },
+  "hg_genStartPre": {
+    "message": "aloitetaan generointi ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ ulkoasua ei löytynyt tässä sessiossa — ladataan kuva ja yritetään uudelleen…"
+  },
+  "hg_headReady": {
+    "message": "✓ pää valmis, haetaan mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ lähetetään TrendTrafficiin"
+  },
+  "hg_reconSent": {
+    "message": "✓ API-tunnistus lähetetty"
+  },
+  "hg_reconFail": {
+    "message": "⚠ tunnistus: "
+  },
+  "hg_noConnection": {
+    "message": "ei yhteyttä"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "artefaktitiedosto siepattu ("
+  },
+  "nlm_kbComma": {
+    "message": " kt, "
+  },
+  "nlm_captureFailed": {
+    "message": "tiedoston sieppaus epäonnistui: "
+  },
+  "nlm_dlProbe": {
+    "message": "ladataanko? "
+  },
+  "nlm_kb": {
+    "message": "kt"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "lataus-URL siepattu (window.open)"
+  },
+  "nlm_state": {
+    "message": "Tila"
+  },
+  "nlm_notConnected": {
+    "message": "ei yhteyttä"
+  },
+  "nlm_account": {
+    "message": "Tili"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLM:n käyttämä Google-tili"
+  },
+  "nlm_waitingTask": {
+    "message": "Odotetaan tehtävää TrendTrafficista…"
+  },
+  "nlm_grabTitle": {
+    "message": "Näytä valmiit studiotyöt — lataa työ TrendTraffic-galleriaan napsauttamalla sitä"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Galleriaan"
+  },
+  "nlm_openTT": {
+    "message": "Avaa TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Tallenna nykyinen NotebookLM-asettelu ja lähetä meille (valitsimen säätöä varten)"
+  },
+  "nlm_reconBtn": {
+    "message": "asettelun tunnistus"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "avaa muistikirja — näytän sen studiotyöt"
+  },
+  "nlm_noReadyWorks": {
+    "message": "ei valmiita studiotöitä (tai vielä luodaan)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Lataa \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" galleriaan"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ jo"
+  },
+  "nlm_refresh": {
+    "message": "päivitä"
+  },
+  "nlm_close": {
+    "message": "sulje"
+  },
+  "nlm_loginTT": {
+    "message": "kirjaudu TrendTrafficiin"
+  },
+  "nlm_loginGoogle": {
+    "message": "kirjaudu Googleen"
+  },
+  "nlm_working": {
+    "message": "työstää"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Luodaan muistikirjaa: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ muistikirja luotu: "
+  },
+  "nlm_addingSource": {
+    "message": "Lisätään lähdettä ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "tiedoston lataus galleriasta epäonnistui"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM ei hyväksy videotiedostoja. Lisää videoille \"Analyysi\" tekstinä tai linkkinä (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Tiedoston lataus NotebookLM:ään ei ole käytettävissä laajennuksesta (natiivi-ikkuna). Käytä \"Analyysiä\"/\"Liitä teksti\" tai linkkiä (verkkosivusto/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ tiedostolähde lisätty"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "tuntematon lähdetyyppi"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ lähde lisätty ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Luetaan muistikirjaluetteloa…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ muistikirjat (omat+saatavilla): "
+  },
+  "nlm_asking": {
+    "message": "Kysytään: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "vastausta ei luettu kokonaan"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ vastaus vastaanotettu"
+  },
+  "nlm_unknownType": {
+    "message": "tuntematon tyyppi: "
+  },
+  "nlm_generatingTask": {
+    "message": "Luodaan: "
+  },
+  "nlm_genStartedPre": {
+    "message": "luonti aloitettu ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", oletus), odotetaan artefaktia…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakti valmis ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), odotetaan artefaktia…"
+  },
+  "nlm_dlRequested": {
+    "message": "artefaktin latausta pyydetty…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "artefaktin latauksen sieppaus epäonnistui"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Lataa TrendTraffic-galleriaan"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" ei sisällä \"Lataa\"-toimintoa — siepataan tekstinä…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" ei sisällä \"Lataa\"-toimintoa — siepataan tekstinä…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galleria"
+  },
+  "nlm_alreadyWas": {
+    "message": " (oli jo olemassa)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ ei tallennettu: "
+  },
+  "nlm_noConnection": {
+    "message": "ei yhteyttä"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL-lataus epäonnistui: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ tiedoston sieppaus epäonnistui \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ napsautus johti pois muistikirjasivulta — palataan"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekstiä \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" ei siepattu"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galleria (tekstinä)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 pysty"
+  },
+  "nlm_916Title": {
+    "message": "Lisää 9:16 pystyformaatin kehotus (Shorts/Reels/TikTok). Kehotus englanniksi — NotebookLM ymmärtää ohjeet parhaiten tällä tavalla."
+  },
+  "nlm_916Already": {
+    "message": "✓ jo lisätty"
+  },
+  "nlm_916Added": {
+    "message": "✓ lisätty"
+  },
+  "nlm_reconSent": {
+    "message": "✓ asettelun tunnistus lähetetty"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Tunnistus epäonnistui: "
+  },
+  "nlm_unknownAction": {
+    "message": "Tuntematon toiminto: "
+  }
+}

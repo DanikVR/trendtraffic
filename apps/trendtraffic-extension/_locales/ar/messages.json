@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — مساعد (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "امتداد TrendTraffic الموحد: جسر إلى Google Flow (Veo)، وGoogle NotebookLM (Hotebook)، وHeyGen (رؤوس متحدثة UGC باشتراكك). قائمة انتظار مهام المتصفح الحقيقية، وأتمتة الإنشاء، وتبادل المعرض. قم بالتثبيت مرة واحدة — يتم تنشيط اللوحة على الخدمة التي تم فتح علامة التبويب فيها."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — مساعد (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "انتهت مهلة المهمة"
+  },
+  "bg_openFlowTab": {
+    "message": "افتح علامة تبويب Google Flow — ستكتمل المهمة تلقائيًا"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: نشاط غير عادي — متوقف مؤقتًا"
+  },
+  "bg_noResult": {
+    "message": "لا توجد نتيجة"
+  },
+  "bg_notConnected": {
+    "message": "غير متصل"
+  },
+  "bg_openFlowFailed": {
+    "message": "فشل فتح Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "لم يتم تحميل Flow — يرجى تسجيل الدخول إلى labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "لا يوجد رد من Flow"
+  },
+  "bg_noUrl": {
+    "message": "لا يوجد عنوان URL"
+  },
+  "bg_dlRejected": {
+    "message": "فشل التنزيل (رفضت CDN الطلب)"
+  },
+  "bg_tooBig": {
+    "message": "الوسائط >500 ميجابايت — كبيرة جدًا"
+  },
+  "bg_openNlmFailed": {
+    "message": "فشل فتح NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "لم يتم إنشاء دفتر الملاحظات (يلزم استكشاف محدد لـ 'إنشاء')"
+  },
+  "bg_listFailed": {
+    "message": "فشل الحصول على القائمة"
+  },
+  "bg_actionFailed": {
+    "message": "فشل الإجراء"
+  },
+  "bg_openNlmGen": {
+    "message": "افتح NotebookLM — سيكتمل الإنشاء تلقائيًا"
+  },
+  "bg_loginNlm": {
+    "message": "سجل الدخول إلى NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "فشل اعتراض تنزيل الأثر"
+  },
+  "bg_artifactDlFailed": {
+    "message": "فشل تنزيل الأثر: "
+  },
+  "bg_openHgTab": {
+    "message": "افتح علامة تبويب استوديو app.heygen.com — سيتم عرض الصورة الرمزية تلقائيًا"
+  },
+  "bg_hgLoading": {
+    "message": "لا يزال HeyGen Studio قيد التحميل — سيتم إعادة المحاولة لاحقًا"
+  },
+  "bg_retry": {
+    "message": "إعادة المحاولة"
+  },
+  "bg_dlFailed": {
+    "message": "فشل التنزيل"
+  },
+  "flow_state": {
+    "message": "الحالة"
+  },
+  "flow_notConnected": {
+    "message": "غير متصل"
+  },
+  "flow_waitingTask": {
+    "message": "في انتظار المهام من TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "إيقاف مؤقت"
+  },
+  "flow_openTT": {
+    "message": "افتح TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ إلى المعرض"
+  },
+  "flow_toGalleryTitle": {
+    "message": "أرسل مقطعًا مكتملًا من Flow إلى معرض TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ من المعرض"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "خذ مقطع فيديو من المعرض وارفعه إلى Flow للمعالجة"
+  },
+  "flow_reconPrefix": {
+    "message": "استكشاف: "
+  },
+  "flow_reconSuffix": {
+    "message": " طلبات Flow"
+  },
+  "flow_reconBtn": {
+    "message": "استكشاف التخطيط"
+  },
+  "flow_reconBtnTitle": {
+    "message": "التقط تخطيط Flow الحالي وأرسله إلينا (للتعديل)"
+  },
+  "flow_pauseManual": {
+    "message": "تم تمكين الإيقاف المؤقت يدويًا"
+  },
+  "flow_statusPause": {
+    "message": "متوقف مؤقتًا"
+  },
+  "flow_statusWorking": {
+    "message": "يعمل"
+  },
+  "flow_statusLogin": {
+    "message": "تسجيل الدخول إلى الحساب"
+  },
+  "flow_stTitleOpen": {
+    "message": "افتح TrendTraffic وسجل الدخول — سيتصل تلقائيًا"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 افتح المعرض الكامل →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "معرض TrendTraffic — حدد كما في المحرر، مع زر '→ Flow' على كل ملف"
+  },
+  "flow_fileFallback": {
+    "message": "ملف"
+  },
+  "flow_pickHint": {
+    "message": "انقر فوق العنصر المطلوب — سيتم إضافته إلى المعرض"
+  },
+  "flow_noPrompt": {
+    "message": "(لا يوجد موجه)"
+  },
+  "flow_taskNum": {
+    "message": "المهمة #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ لم يتم العثور على حقل الموجه — يلزم استكشاف محدد"
+  },
+  "flow_promptSet": {
+    "message": "تم تعيين الموجه"
+  },
+  "flow_refUploaded": {
+    "message": "تم تحميل المرجع إلى Flow"
+  },
+  "flow_refPrefix": {
+    "message": "المرجع: "
+  },
+  "flow_refDlFailed": {
+    "message": "فشل تنزيل المرجع"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ لم يتم العثور على زر الإنشاء — يلزم الاستكشاف"
+  },
+  "flow_genStarted": {
+    "message": "بدأ الإنشاء، في انتظار المقطع…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ انتهت مهلة انتظار المقطع"
+  },
+  "flow_clipReady": {
+    "message": "✓ المقطع جاهز"
+  },
+  "flow_kindClip": {
+    "message": "مقطع"
+  },
+  "flow_kindPicture": {
+    "message": "صورة"
+  },
+  "flow_grabPre": {
+    "message": "جارٍ سحب "
+  },
+  "flow_grabSuf": {
+    "message": " من Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ فشل قراءة الوسائط"
+  },
+  "flow_cdnAuthPre": {
+    "message": "مصادقة CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — تتم المحاولة عبر الخادم"
+  },
+  "flow_inGallerySuf": {
+    "message": " إلى المعرض ← علامة التبويب \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "لا يوجد اتصال — انقر على \"اتصال\" في TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ انقر على الصورة/الفيديو المطلوب في Flow، ثم \"إلى المعرض\""
+  },
+  "flow_multipleMedia": {
+    "message": "وسائط متعددة — حدد ما تريد سحبه ↓"
+  },
+  "flow_openingProject": {
+    "message": "جارٍ فتح المشروع في Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "يقبل Flow الصور فقط هنا — قم بتحميل مقاطع الفيديو عبر قسم \"التحميلات\" في Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "لم يتم العثور على حقل التحميل — افتح مشروعًا في Flow (وليس الصفحة الرئيسية): داخل المشروع يوجد تحميل (+/\"التحميلات\")"
+  },
+  "flow_loadingList": {
+    "message": "جارٍ تحميل القائمة…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "لا يوجد اتصال — انقر على \"اتصال\""
+  },
+  "flow_galleryEmpty": {
+    "message": "لا توجد وسائط في المعرض"
+  },
+  "flow_reconSent": {
+    "message": "✓ تم إرسال إعادة تهيئة التخطيط"
+  },
+  "flow_reconFail": {
+    "message": "⚠ إعادة تهيئة: "
+  },
+  "flow_noConnection": {
+    "message": "لا يوجد اتصال"
+  },
+  "flow_gettingMedia": {
+    "message": "جارٍ الحصول على الوسائط من المعرض…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ فشل التنزيل من المعرض"
+  },
+  "flow_insertedImage": {
+    "message": "صورة"
+  },
+  "flow_insertedVideo": {
+    "message": "فيديو"
+  },
+  "flow_insertedSuf": {
+    "message": " تم إدراجها في Flow من المعرض"
+  },
+  "flow_newClipReady": {
+    "message": "مقطع جديد جاهز — جارٍ التحميل إلى المعرض…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ المقطع في المعرض ← \"مقاطع الفيديو\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ لم يتم حفظ المقطع: "
+  },
+  "hg_state": {
+    "message": "الحالة"
+  },
+  "hg_notConnected": {
+    "message": "غير متصل"
+  },
+  "hg_keepTabOpen": {
+    "message": "أبقِ علامة التبويب هذه مفتوحة — سيتم عرض الرؤوس تلقائيًا بناءً على اشتراكك."
+  },
+  "hg_openTT": {
+    "message": "افتح TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "إعادة تهيئة: "
+  },
+  "hg_reconSuffix": {
+    "message": " مكالمات الاستوديو"
+  },
+  "hg_reconBtn": {
+    "message": "إعادة تهيئة API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "التقط واجهة برمجة تطبيقات الاستوديو الحالية وأرسلها إلينا (للتعديل)"
+  },
+  "hg_statusWorking": {
+    "message": "يعمل"
+  },
+  "hg_statusLogin": {
+    "message": "سجل الدخول إلى حسابك"
+  },
+  "hg_stTitleOpen": {
+    "message": "افتح TrendTraffic وسجل الدخول — سيتصل تلقائيًا"
+  },
+  "hg_photoDlFailed": {
+    "message": "فشل تنزيل الصورة"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: فشل العرض"
+  },
+  "hg_genPrefix": {
+    "message": "الجيل: "
+  },
+  "hg_waiting": {
+    "message": "في انتظار"
+  },
+  "hg_noVideoInTime": {
+    "message": "لم يوفر HeyGen الفيديو في الوقت المحدد"
+  },
+  "hg_headNum": {
+    "message": "▶ رأس #"
+  },
+  "hg_readyLook": {
+    "message": "صورة رمزية للحساب جاهزة — تم تخطي تحميل الصورة"
+  },
+  "hg_photoUpload": {
+    "message": "صورة ← talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "بدء الجيل ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ لم يتم العثور على المظهر في هذه الجلسة — جارٍ تحميل الصورة وإعادة المحاولة…"
+  },
+  "hg_headReady": {
+    "message": "✓ الرأس جاهز، جارٍ الحصول على mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ جارٍ الإرسال إلى TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ تم إرسال إعادة تهيئة API"
+  },
+  "hg_reconFail": {
+    "message": "⚠ إعادة تهيئة: "
+  },
+  "hg_noConnection": {
+    "message": "لا يوجد اتصال"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "تم اعتراض ملف الأثر ("
+  },
+  "nlm_kbComma": {
+    "message": " كيلوبايت، "
+  },
+  "nlm_captureFailed": {
+    "message": "فشل اعتراض الملف: "
+  },
+  "nlm_dlProbe": {
+    "message": "تنزيل؟ "
+  },
+  "nlm_kb": {
+    "message": "كيلوبايت"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "تم اعتراض عنوان URL للتنزيل (window.open)"
+  },
+  "nlm_state": {
+    "message": "الحالة"
+  },
+  "nlm_notConnected": {
+    "message": "غير متصل"
+  },
+  "nlm_account": {
+    "message": "الحساب"
+  },
+  "nlm_accountTitle": {
+    "message": "حساب Google المستخدم لـ NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "في انتظار مهمة من TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "عرض أعمال الاستوديو الجاهزة — انقر على عمل لتحميله إلى معرض TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ إلى المعرض"
+  },
+  "nlm_openTT": {
+    "message": "فتح TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "التقاط تخطيط NotebookLM الحالي وإرساله إلينا (لتعديل المحدد)"
+  },
+  "nlm_reconBtn": {
+    "message": "إعادة تخطيط"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "افتح دفتر ملاحظات — سأعرض أعمال الاستوديو الخاصة به"
+  },
+  "nlm_noReadyWorks": {
+    "message": "لا توجد أعمال استوديو جاهزة (أو لا تزال قيد الإنشاء)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "تحميل \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" إلى المعرض"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ بالفعل"
+  },
+  "nlm_refresh": {
+    "message": "تحديث"
+  },
+  "nlm_close": {
+    "message": "إغلاق"
+  },
+  "nlm_loginTT": {
+    "message": "تسجيل الدخول إلى TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "تسجيل الدخول إلى Google"
+  },
+  "nlm_working": {
+    "message": "جاري العمل"
+  },
+  "nlm_creatingNotebook": {
+    "message": "جاري إنشاء دفتر ملاحظات: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ تم إنشاء دفتر الملاحظات: "
+  },
+  "nlm_addingSource": {
+    "message": "جاري إضافة المصدر ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "فشل تنزيل الملف من المعرض"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "لا يقبل NotebookLM ملفات الفيديو. بالنسبة لمقاطع الفيديو، أضف \"تحليل\" كنص أو رابط (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "تحميل الملف إلى NotebookLM غير متاح من الإضافة (نافذة أصلية). استخدم \"تحليل\"/\"لصق نص\" أو رابط (موقع ويب/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ تم إضافة مصدر الملف"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "نوع مصدر غير معروف"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ تم إضافة المصدر ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "جاري قراءة قائمة دفاتر الملاحظات…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ دفاتر الملاحظات (خاص بي+متاح): "
+  },
+  "nlm_asking": {
+    "message": "جاري السؤال: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "لم تتم قراءة الإجابة بالكامل"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ تم استلام الإجابة"
+  },
+  "nlm_unknownType": {
+    "message": "نوع غير معروف: "
+  },
+  "nlm_generatingTask": {
+    "message": "جاري الإنشاء: "
+  },
+  "nlm_genStartedPre": {
+    "message": "بدأ الإنشاء ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": "، افتراضي)، في انتظار القطعة الفنية…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ القطعة الفنية جاهزة ("
+  },
+  "nlm_genStartedSuf": {
+    "message": ")، في انتظار القطعة الفنية…"
+  },
+  "nlm_dlRequested": {
+    "message": "تم طلب تنزيل القطعة الفنية…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "فشل اعتراض تنزيل القطعة الفنية"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "تنزيل إلى معرض TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" لا يحتوي على \"تنزيل\" — جاري الالتقاط كنص…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" لا يحتوي على \"تنزيل\" — جاري الالتقاط كنص…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" ← المعرض"
+  },
+  "nlm_alreadyWas": {
+    "message": " (موجود بالفعل)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ لم يتم الحفظ: "
+  },
+  "nlm_noConnection": {
+    "message": "لا يوجد اتصال"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ فشل تنزيل الرابط: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ فشل التقاط الملف \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ النقرة أدت إلى الابتعاد عن صفحة دفتر الملاحظات — جاري العودة"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ النص \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" لم يتم التقاطه"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" ← المعرض (كنص)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 عمودي"
+  },
+  "nlm_916Title": {
+    "message": "أضف موجهًا بتنسيق عمودي 9:16 (Shorts/Reels/TikTok). الموجه باللغة الإنجليزية — NotebookLM يفهم التعليمات بشكل أفضل بهذه الطريقة."
+  },
+  "nlm_916Already": {
+    "message": "✓ تمت الإضافة بالفعل"
+  },
+  "nlm_916Added": {
+    "message": "✓ تمت الإضافة"
+  },
+  "nlm_reconSent": {
+    "message": "✓ تم إرسال إعادة التخطيط"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ فشل التعرف: "
+  },
+  "nlm_unknownAction": {
+    "message": "إجراء غير معروف: "
+  }
+}

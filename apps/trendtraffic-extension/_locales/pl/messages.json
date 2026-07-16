@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Asystent (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "Ujednolicona wtyczka TrendTraffic: most do Google Flow (Veo), Google NotebookLM (Hotebook) i HeyGen (gadające głowy UGC z Twoją subskrypcją). Prawdziwa kolejka zadań przeglądarki, automatyzacja generowania i wymiana w Galerii. Zainstaluj raz — panel aktywuje się w usłudze, w której otwarta jest karta."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Asystent (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "przekroczono limit czasu zadania"
+  },
+  "bg_openFlowTab": {
+    "message": "Otwórz kartę Google Flow — zadanie zostanie ukończone automatycznie"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: nietypowa aktywność — wstrzymano"
+  },
+  "bg_noResult": {
+    "message": "brak wyniku"
+  },
+  "bg_notConnected": {
+    "message": "brak połączenia"
+  },
+  "bg_openFlowFailed": {
+    "message": "nie udało się otworzyć Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow nie załadowano — zaloguj się do labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "brak odpowiedzi z Flow"
+  },
+  "bg_noUrl": {
+    "message": "brak adresu URL"
+  },
+  "bg_dlRejected": {
+    "message": "pobieranie nie powiodło się (CDN odrzucił żądanie)"
+  },
+  "bg_tooBig": {
+    "message": "media >500MB — za duże"
+  },
+  "bg_openNlmFailed": {
+    "message": "nie udało się otworzyć NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "notatnik nie został utworzony (potrzebne skanowanie selektora dla 'utwórz')"
+  },
+  "bg_listFailed": {
+    "message": "nie udało się pobrać listy"
+  },
+  "bg_actionFailed": {
+    "message": "akcja nie powiodła się"
+  },
+  "bg_openNlmGen": {
+    "message": "Otwórz NotebookLM — generowanie zostanie ukończone automatycznie"
+  },
+  "bg_loginNlm": {
+    "message": "Zaloguj się do NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "nie udało się przechwycić pobierania artefaktu"
+  },
+  "bg_artifactDlFailed": {
+    "message": "pobieranie artefaktu nie powiodło się: "
+  },
+  "bg_openHgTab": {
+    "message": "Otwórz kartę studia app.heygen.com — awatar zostanie wyrenderowany automatycznie"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio wciąż się ładuje — ponowna próba później"
+  },
+  "bg_retry": {
+    "message": "ponów"
+  },
+  "bg_dlFailed": {
+    "message": "pobieranie nie powiodło się"
+  },
+  "flow_state": {
+    "message": "Status"
+  },
+  "flow_notConnected": {
+    "message": "brak połączenia"
+  },
+  "flow_waitingTask": {
+    "message": "Oczekiwanie na zadania z TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pauza"
+  },
+  "flow_openTT": {
+    "message": "Otwórz TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ Do Galerii"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Wyślij gotowy klip z Flow do Galerii TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ Z Galerii"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Pobierz wideo z Galerii i prześlij je do Flow do przetworzenia"
+  },
+  "flow_reconPrefix": {
+    "message": "skanowanie: "
+  },
+  "flow_reconSuffix": {
+    "message": " żądań Flow"
+  },
+  "flow_reconBtn": {
+    "message": "skanuj układ"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Przechwyć bieżący układ Flow i wyślij go do nas (do korekty)"
+  },
+  "flow_pauseManual": {
+    "message": "Pauza włączona ręcznie"
+  },
+  "flow_statusPause": {
+    "message": "wstrzymano"
+  },
+  "flow_statusWorking": {
+    "message": "pracuje"
+  },
+  "flow_statusLogin": {
+    "message": "zaloguj się do konta"
+  },
+  "flow_stTitleOpen": {
+    "message": "Otwórz TrendTraffic i zaloguj się — połączy się automatycznie"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Otwórz pełną Galerię →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Galeria TrendTraffic — wybierz jak w edytorze, z przyciskiem '→ Flow' przy każdym pliku"
+  },
+  "flow_fileFallback": {
+    "message": "plik"
+  },
+  "flow_pickHint": {
+    "message": "Kliknij żądany element — zostanie dodany do Galerii"
+  },
+  "flow_noPrompt": {
+    "message": "(brak podpowiedzi)"
+  },
+  "flow_taskNum": {
+    "message": "Zadanie #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ nie znaleziono pola podpowiedzi — potrzebne skanowanie selektora"
+  },
+  "flow_promptSet": {
+    "message": "podpowiedź ustawiona"
+  },
+  "flow_refUploaded": {
+    "message": "referencja przesłana do Flow"
+  },
+  "flow_refPrefix": {
+    "message": "referencja: "
+  },
+  "flow_refDlFailed": {
+    "message": "pobieranie referencji nie powiodło się"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ nie znaleziono przycisku generowania — potrzebne skanowanie"
+  },
+  "flow_genStarted": {
+    "message": "generowanie rozpoczęte, oczekiwanie na klip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ przekroczono limit czasu oczekiwania na klip"
+  },
+  "flow_clipReady": {
+    "message": "✓ klip gotowy"
+  },
+  "flow_kindClip": {
+    "message": "klip"
+  },
+  "flow_kindPicture": {
+    "message": "obraz"
+  },
+  "flow_grabPre": {
+    "message": "pobieranie "
+  },
+  "flow_grabSuf": {
+    "message": " z Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ nie udało się odczytać multimediów"
+  },
+  "flow_cdnAuthPre": {
+    "message": "autoryzacja CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — próba przez serwer"
+  },
+  "flow_inGallerySuf": {
+    "message": " do Galerii → zakładka „Google Flow”"
+  },
+  "flow_noConnConnect": {
+    "message": "brak połączenia — kliknij „Połącz” w TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ kliknij wybrane zdjęcie/wideo w Flow, następnie „Do Galerii”"
+  },
+  "flow_multipleMedia": {
+    "message": "wiele multimediów — wybierz, co pobrać ↓"
+  },
+  "flow_openingProject": {
+    "message": "otwieranie projektu w Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow akceptuje tu tylko obrazy — filmy przesyłaj przez sekcję „Przesyłanie” w Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "nie znaleziono pola przesyłania — otwórz PROJEKT w Flow (nie stronę główną): w projekcie jest przesyłanie (+/„Przesyłanie”)"
+  },
+  "flow_loadingList": {
+    "message": "ładowanie listy…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "brak połączenia — kliknij „Połącz”"
+  },
+  "flow_galleryEmpty": {
+    "message": "brak multimediów w Galerii"
+  },
+  "flow_reconSent": {
+    "message": "✓ wysłano recon układu"
+  },
+  "flow_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "flow_noConnection": {
+    "message": "brak połączenia"
+  },
+  "flow_gettingMedia": {
+    "message": "pobieranie multimediów z Galerii…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ nie udało się pobrać z Galerii"
+  },
+  "flow_insertedImage": {
+    "message": "obraz"
+  },
+  "flow_insertedVideo": {
+    "message": "wideo"
+  },
+  "flow_insertedSuf": {
+    "message": " wstawiono do Flow z Galerii"
+  },
+  "flow_newClipReady": {
+    "message": "nowy klip gotowy — przesyłanie do Galerii…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ klip w Galerii → „Filmy”"
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ klip nie został zapisany: "
+  },
+  "hg_state": {
+    "message": "Status"
+  },
+  "hg_notConnected": {
+    "message": "niepołączony"
+  },
+  "hg_keepTabOpen": {
+    "message": "Pozostaw tę kartę otwartą — głowy będą renderowane automatycznie w zależności od Twojej subskrypcji."
+  },
+  "hg_openTT": {
+    "message": "Otwórz TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "recon: "
+  },
+  "hg_reconSuffix": {
+    "message": " wywołań studia"
+  },
+  "hg_reconBtn": {
+    "message": "recon API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Przechwyć bieżące API studia i wyślij do nas (do dostosowania)"
+  },
+  "hg_statusWorking": {
+    "message": "działa"
+  },
+  "hg_statusLogin": {
+    "message": "zaloguj się na swoje konto"
+  },
+  "hg_stTitleOpen": {
+    "message": "Otwórz TrendTraffic i zaloguj się — połączy się automatycznie"
+  },
+  "hg_photoDlFailed": {
+    "message": "nie udało się pobrać zdjęcia"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: renderowanie nie powiodło się"
+  },
+  "hg_genPrefix": {
+    "message": "generowanie: "
+  },
+  "hg_waiting": {
+    "message": "oczekiwanie"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen nie dostarczył wideo na czas"
+  },
+  "hg_headNum": {
+    "message": "▶ głowa #"
+  },
+  "hg_readyLook": {
+    "message": "gotowy awatar konta — pominięto przesyłanie zdjęcia"
+  },
+  "hg_photoUpload": {
+    "message": "zdjęcie → mówiące_zdjęcie…"
+  },
+  "hg_genStartPre": {
+    "message": "rozpoczynanie generowania ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ nie znaleziono wyglądu w tej sesji — przesyłanie zdjęcia i ponowna próba…"
+  },
+  "hg_headReady": {
+    "message": "✓ głowa gotowa, pobieranie mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ wysyłanie do TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ wysłano recon API"
+  },
+  "hg_reconFail": {
+    "message": "⚠ recon: "
+  },
+  "hg_noConnection": {
+    "message": "brak połączenia"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "przechwycono plik artefaktu ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "przechwytywanie pliku nie powiodło się: "
+  },
+  "nlm_dlProbe": {
+    "message": "pobrać? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "przechwycono URL pobierania (window.open)"
+  },
+  "nlm_state": {
+    "message": "Status"
+  },
+  "nlm_notConnected": {
+    "message": "brak połączenia"
+  },
+  "nlm_account": {
+    "message": "Konto"
+  },
+  "nlm_accountTitle": {
+    "message": "Konto Google używane dla NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Oczekiwanie na zadanie z TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Pokaż gotowe prace studyjne — kliknij pracę, aby załadować ją do Galerii TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ Do Galerii"
+  },
+  "nlm_openTT": {
+    "message": "Otwórz TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Przechwyć bieżący układ NotebookLM i wyślij do nas (do regulacji selektora)"
+  },
+  "nlm_reconBtn": {
+    "message": "rozpoznanie układu"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "otwórz notatnik — pokażę jego prace studyjne"
+  },
+  "nlm_noReadyWorks": {
+    "message": "brak gotowych prac studyjnych (lub nadal generowane)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Załaduj „"
+  },
+  "nlm_loadTitleSuf": {
+    "message": "” do Galerii"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ już"
+  },
+  "nlm_refresh": {
+    "message": "odśwież"
+  },
+  "nlm_close": {
+    "message": "zamknij"
+  },
+  "nlm_loginTT": {
+    "message": "zaloguj się do TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "zaloguj się do Google"
+  },
+  "nlm_working": {
+    "message": "pracuję"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Tworzę notatnik: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ notatnik utworzony: "
+  },
+  "nlm_addingSource": {
+    "message": "Dodaję źródło ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "nie udało się pobrać pliku z Galerii"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM nie akceptuje plików wideo. W przypadku filmów dodaj „Analizę” jako tekst lub link (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "Przesyłanie plików do NotebookLM jest niedostępne z rozszerzenia (okno natywne). Użyj „Analizy”/„Wklej tekst” lub linku (strona internetowa/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ źródło pliku dodane"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "nieznany typ źródła"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ źródło dodane ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Czytam listę notatników…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ notatniki (moje+dostępne): "
+  },
+  "nlm_asking": {
+    "message": "Pytam: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "odpowiedź nie w pełni odczytana"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ odpowiedź otrzymana"
+  },
+  "nlm_unknownType": {
+    "message": "nieznany typ: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generuję: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generowanie rozpoczęte ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", domyślne), czekam na artefakt…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefakt gotowy ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), czekam na artefakt…"
+  },
+  "nlm_dlRequested": {
+    "message": "żądano pobrania artefaktu…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "nie udało się przechwycić pobierania artefaktu"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Pobierz do Galerii TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "” nie ma „Pobierz” — przechwytuję jako tekst…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "” nie ma „Pobierz” — przechwytuję jako tekst…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ „"
+  },
+  "nlm_toGallerySuf": {
+    "message": "” → Galeria"
+  },
+  "nlm_alreadyWas": {
+    "message": " (już istniało)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ nie zapisano: "
+  },
+  "nlm_noConnection": {
+    "message": "brak połączenia"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ nie udało się pobrać URL: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ nie udało się przechwycić pliku „"
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ kliknięcie przeniosło poza stronę notatnika — wracam"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ tekst „"
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "” nie przechwycony"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "” → Galeria (jako tekst)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 pionowo"
+  },
+  "nlm_916Title": {
+    "message": "Dodaj monit w formacie pionowym 9:16 (Shorts/Reels/TikTok). Monit w języku angielskim — NotebookLM najlepiej rozumie instrukcje w ten sposób."
+  },
+  "nlm_916Already": {
+    "message": "✓ już dodano"
+  },
+  "nlm_916Added": {
+    "message": "✓ dodano"
+  },
+  "nlm_reconSent": {
+    "message": "✓ rozpoznanie układu wysłane"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Rozpoznawanie nie powiodło się: "
+  },
+  "nlm_unknownAction": {
+    "message": "Nieznana akcja: "
+  }
+}

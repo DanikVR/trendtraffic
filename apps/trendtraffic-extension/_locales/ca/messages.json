@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "L'extensió unificada de TrendTraffic: un pont a Google Flow (Veo), Google NotebookLM (Hotebook) i HeyGen (caps parlants UGC amb la teva subscripció). Cua de tasques del navegador real, automatització de la generació i intercanvi de galeries. Instal·la-la una vegada — el panell s'activa al servei on la pestanya està oberta."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — Assistant (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "temps d'espera de la tasca"
+  },
+  "bg_openFlowTab": {
+    "message": "Obre la pestanya de Google Flow — la tasca es completarà automàticament"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: activitat inusual — en pausa"
+  },
+  "bg_noResult": {
+    "message": "sense resultat"
+  },
+  "bg_notConnected": {
+    "message": "no connectat"
+  },
+  "bg_openFlowFailed": {
+    "message": "no s'ha pogut obrir Flow"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow no carregat — inicia sessió a labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "sense resposta de Flow"
+  },
+  "bg_noUrl": {
+    "message": "sense URL"
+  },
+  "bg_dlRejected": {
+    "message": "descàrrega fallida (CDN ha rebutjat la sol·licitud)"
+  },
+  "bg_tooBig": {
+    "message": "mèdia >500MB — massa gran"
+  },
+  "bg_openNlmFailed": {
+    "message": "no s'ha pogut obrir NotebookLM"
+  },
+  "bg_notebookNotCreated": {
+    "message": "quadern no creat (cal cercar el selector per a 'crear')"
+  },
+  "bg_listFailed": {
+    "message": "no s'ha pogut obtenir la llista"
+  },
+  "bg_actionFailed": {
+    "message": "acció fallida"
+  },
+  "bg_openNlmGen": {
+    "message": "Obre NotebookLM — la generació es completarà automàticament"
+  },
+  "bg_loginNlm": {
+    "message": "Inicia sessió a NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "no s'ha pogut interceptar la descàrrega de l'artefacte"
+  },
+  "bg_artifactDlFailed": {
+    "message": "descàrrega de l'artefacte fallida: "
+  },
+  "bg_openHgTab": {
+    "message": "Obre la pestanya de l'estudi app.heygen.com — l'avatar es renderitzarà automàticament"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio encara s'està carregant — reintentant més tard"
+  },
+  "bg_retry": {
+    "message": "reintentar"
+  },
+  "bg_dlFailed": {
+    "message": "descàrrega fallida"
+  },
+  "flow_state": {
+    "message": "Estat"
+  },
+  "flow_notConnected": {
+    "message": "no connectat"
+  },
+  "flow_waitingTask": {
+    "message": "Esperant tasques de TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "Pausa"
+  },
+  "flow_openTT": {
+    "message": "Obre TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ A la Galeria"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Envia un clip acabat de Flow a la Galeria de TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ De la Galeria"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "Agafa un vídeo de la Galeria i puja'l a Flow per processar-lo"
+  },
+  "flow_reconPrefix": {
+    "message": "cercant: "
+  },
+  "flow_reconSuffix": {
+    "message": " sol·licituds de Flow"
+  },
+  "flow_reconBtn": {
+    "message": "cercar disseny"
+  },
+  "flow_reconBtnTitle": {
+    "message": "Captura el disseny actual de Flow i envia'ns-el (per ajustar-lo)"
+  },
+  "flow_pauseManual": {
+    "message": "Pausa activada manualment"
+  },
+  "flow_statusPause": {
+    "message": "en pausa"
+  },
+  "flow_statusWorking": {
+    "message": "treballant"
+  },
+  "flow_statusLogin": {
+    "message": "inicia sessió al compte"
+  },
+  "flow_stTitleOpen": {
+    "message": "Obre TrendTraffic i inicia sessió — es connectarà automàticament"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 Obre la Galeria completa →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "Galeria de TrendTraffic — selecciona com en un editor, amb un botó '→ Flow' a cada fitxer"
+  },
+  "flow_fileFallback": {
+    "message": "fitxer"
+  },
+  "flow_pickHint": {
+    "message": "Fes clic a l'element desitjat — s'afegirà a la Galeria"
+  },
+  "flow_noPrompt": {
+    "message": "(sense prompt)"
+  },
+  "flow_taskNum": {
+    "message": "Tasca #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ camp de prompt no trobat — cal cercar el selector"
+  },
+  "flow_promptSet": {
+    "message": "prompt establert"
+  },
+  "flow_refUploaded": {
+    "message": "referència pujada a Flow"
+  },
+  "flow_refPrefix": {
+    "message": "referència: "
+  },
+  "flow_refDlFailed": {
+    "message": "descàrrega de referència fallida"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ botó de generació no trobat — cal cercar"
+  },
+  "flow_genStarted": {
+    "message": "generació iniciada, esperant clip…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ temps d'espera del clip"
+  },
+  "flow_clipReady": {
+    "message": "✓ clip a punt"
+  },
+  "flow_kindClip": {
+    "message": "clip"
+  },
+  "flow_kindPicture": {
+    "message": "imatge"
+  },
+  "flow_grabPre": {
+    "message": "agafant "
+  },
+  "flow_grabSuf": {
+    "message": " de Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ no s'ha pogut llegir el contingut multimèdia"
+  },
+  "flow_cdnAuthPre": {
+    "message": "autenticació CDN: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — provant via servidor"
+  },
+  "flow_inGallerySuf": {
+    "message": " a la Galeria → pestanya \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "sense connexió — fes clic a \"Connectar\" a TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ fes clic a la foto/vídeo desitjat a Flow, després a \"A la Galeria\""
+  },
+  "flow_multipleMedia": {
+    "message": "contingut multimèdia múltiple — selecciona què vols agafar ↓"
+  },
+  "flow_openingProject": {
+    "message": "obrint projecte a Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow només accepta imatges aquí — puja vídeos a través de la secció \"Càrregues\" de Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "camp de càrrega no trobat — obre un PROJECTE a Flow (no la pàgina principal): dins d'un projecte hi ha una càrrega (+/\"Càrregues\")"
+  },
+  "flow_loadingList": {
+    "message": "carregant llista…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "sense connexió — fes clic a \"Connectar\""
+  },
+  "flow_galleryEmpty": {
+    "message": "no hi ha contingut multimèdia a la Galeria"
+  },
+  "flow_reconSent": {
+    "message": "✓ reconeixement de disseny enviat"
+  },
+  "flow_reconFail": {
+    "message": "⚠ reconeixement: "
+  },
+  "flow_noConnection": {
+    "message": "sense connexió"
+  },
+  "flow_gettingMedia": {
+    "message": "obtenint contingut multimèdia de la Galeria…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ no s'ha pogut descarregar de la Galeria"
+  },
+  "flow_insertedImage": {
+    "message": "imatge"
+  },
+  "flow_insertedVideo": {
+    "message": "vídeo"
+  },
+  "flow_insertedSuf": {
+    "message": " inserit a Flow des de la Galeria"
+  },
+  "flow_newClipReady": {
+    "message": "nou clip llest — pujant a la Galeria…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ clip a la Galeria → \"Vídeos\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ clip no desat: "
+  },
+  "hg_state": {
+    "message": "Estat"
+  },
+  "hg_notConnected": {
+    "message": "no connectat"
+  },
+  "hg_keepTabOpen": {
+    "message": "Mantén aquesta pestanya oberta — els caps es renderitzaran automàticament segons la teva subscripció."
+  },
+  "hg_openTT": {
+    "message": "Obre TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "reconeixement: "
+  },
+  "hg_reconSuffix": {
+    "message": " trucades d'estudi"
+  },
+  "hg_reconBtn": {
+    "message": "Reconeixement d'API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "Captura l'API de l'estudi actual i envia'ns-la (per a ajustos)"
+  },
+  "hg_statusWorking": {
+    "message": "funcionant"
+  },
+  "hg_statusLogin": {
+    "message": "inicia sessió al teu compte"
+  },
+  "hg_stTitleOpen": {
+    "message": "Obre TrendTraffic i inicia sessió — es connectarà automàticament"
+  },
+  "hg_photoDlFailed": {
+    "message": "ha fallat la descàrrega de la foto"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: ha fallat la renderització"
+  },
+  "hg_genPrefix": {
+    "message": "generació: "
+  },
+  "hg_waiting": {
+    "message": "esperant"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen no ha proporcionat el vídeo a temps"
+  },
+  "hg_headNum": {
+    "message": "▶ cap #"
+  },
+  "hg_readyLook": {
+    "message": "avatar de compte llest — s'ha omès la càrrega de la foto"
+  },
+  "hg_photoUpload": {
+    "message": "foto → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "iniciant generació ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ aspecte no trobat en aquesta sessió — pujant foto i tornant a intentar…"
+  },
+  "hg_headReady": {
+    "message": "✓ cap llest, obtenint mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ enviant a TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ reconeixement d'API enviat"
+  },
+  "hg_reconFail": {
+    "message": "⚠ reconeixement: "
+  },
+  "hg_noConnection": {
+    "message": "sense connexió"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "fitxer d'artefacte interceptat ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "ha fallat la intercepció del fitxer: "
+  },
+  "nlm_dlProbe": {
+    "message": "descarregar? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL de descàrrega interceptada (window.open)"
+  },
+  "nlm_state": {
+    "message": "Estat"
+  },
+  "nlm_notConnected": {
+    "message": "no connectat"
+  },
+  "nlm_account": {
+    "message": "Compte"
+  },
+  "nlm_accountTitle": {
+    "message": "Compte de Google utilitzat per a NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "Esperant tasca de TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "Mostra els treballs d'estudi preparats — fes clic en un treball per carregar-lo a la Galeria de TrendTraffic"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ A la Galeria"
+  },
+  "nlm_openTT": {
+    "message": "Obrir TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "Captura el disseny actual de NotebookLM i envia'ns-el (per a l'ajust del selector)"
+  },
+  "nlm_reconBtn": {
+    "message": "reconeixement de disseny"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "obre un quadern — et mostraré els seus treballs d'estudi"
+  },
+  "nlm_noReadyWorks": {
+    "message": "no hi ha treballs d'estudi preparats (o encara s'estan generant)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "Carrega \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" a la Galeria"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ ja"
+  },
+  "nlm_refresh": {
+    "message": "actualitza"
+  },
+  "nlm_close": {
+    "message": "tanca"
+  },
+  "nlm_loginTT": {
+    "message": "inicia sessió a TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "inicia sessió a Google"
+  },
+  "nlm_working": {
+    "message": "treballant"
+  },
+  "nlm_creatingNotebook": {
+    "message": "Creant quadern: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ quadern creat: "
+  },
+  "nlm_addingSource": {
+    "message": "Afegint font ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "la baixada de fitxers de la Galeria ha fallat"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM no accepta fitxers de vídeo. Per als vídeos, afegeix \"Anàlisi\" com a text o un enllaç (YouTube)."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "La càrrega de fitxers a NotebookLM no està disponible des de l'extensió (finestra nativa). Utilitza \"Anàlisi\"/\"Enganxa text\" o un enllaç (lloc web/YouTube)."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ font de fitxer afegida"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "tipus de font desconegut"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ font afegida ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "Llegint la llista de quaderns…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ quaderns (meus+disponibles): "
+  },
+  "nlm_asking": {
+    "message": "Preguntant: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "resposta no llegida completament"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ resposta rebuda"
+  },
+  "nlm_unknownType": {
+    "message": "tipus desconegut: "
+  },
+  "nlm_generatingTask": {
+    "message": "Generant: "
+  },
+  "nlm_genStartedPre": {
+    "message": "generació iniciada ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", per defecte), esperant l'artefacte…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ artefacte preparat ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), esperant l'artefacte…"
+  },
+  "nlm_dlRequested": {
+    "message": "s'ha sol·licitat la baixada de l'artefacte…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "no s'ha pogut interceptar la baixada de l'artefacte"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "Baixa a la Galeria de TrendTraffic"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" no té \"Baixa\" — capturant com a text…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" no té \"Baixa\" — capturant com a text…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → Galeria"
+  },
+  "nlm_alreadyWas": {
+    "message": " (ja existia)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ no desat: "
+  },
+  "nlm_noConnection": {
+    "message": "sense connexió"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ la baixada de l'URL ha fallat: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ no s'ha pogut capturar el fitxer \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ el clic ha allunyat de la pàgina del quadern — tornant"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ text \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" no capturat"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → Galeria (com a text)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 vertical"
+  },
+  "nlm_916Title": {
+    "message": "Afegeix una indicació de format vertical 9:16 (Shorts/Reels/TikTok). Indicació en anglès — NotebookLM entén millor les instruccions d'aquesta manera."
+  },
+  "nlm_916Already": {
+    "message": "✓ ja afegit"
+  },
+  "nlm_916Added": {
+    "message": "✓ afegit"
+  },
+  "nlm_reconSent": {
+    "message": "✓ reconeixement de disseny enviat"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Reconeixement fallit: "
+  },
+  "nlm_unknownAction": {
+    "message": "Acció desconeguda: "
+  }
+}

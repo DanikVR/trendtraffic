@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — ผู้ช่วย (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "ส่วนขยาย TrendTraffic แบบรวม: สะพานเชื่อมไปยัง Google Flow (Veo), Google NotebookLM (Hotebook) และ HeyGen (UGC talking heads พร้อมการสมัครสมาชิกของคุณ) คิวงานเบราว์เซอร์จริง, ระบบอัตโนมัติในการสร้าง และการแลกเปลี่ยนแกลเลอรี ติดตั้งครั้งเดียว — แผงจะเปิดใช้งานบนบริการที่แท็บเปิดอยู่"
+  },
+  "extTitle": {
+    "message": "TrendTraffic — ผู้ช่วย (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "หมดเวลาทำงาน"
+  },
+  "bg_openFlowTab": {
+    "message": "เปิดแท็บ Google Flow — งานจะเสร็จสมบูรณ์โดยอัตโนมัติ"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: กิจกรรมผิดปกติ — หยุดชั่วคราว"
+  },
+  "bg_noResult": {
+    "message": "ไม่มีผลลัพธ์"
+  },
+  "bg_notConnected": {
+    "message": "ไม่ได้เชื่อมต่อ"
+  },
+  "bg_openFlowFailed": {
+    "message": "เปิด Flow ไม่สำเร็จ"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow ไม่โหลด — โปรดลงชื่อเข้าใช้ labs.google/flow"
+  },
+  "bg_noFlowAnswer": {
+    "message": "ไม่มีการตอบสนองจาก Flow"
+  },
+  "bg_noUrl": {
+    "message": "ไม่มี URL"
+  },
+  "bg_dlRejected": {
+    "message": "ดาวน์โหลดไม่สำเร็จ (CDN ปฏิเสธคำขอ)"
+  },
+  "bg_tooBig": {
+    "message": "สื่อ >500MB — ใหญ่เกินไป"
+  },
+  "bg_openNlmFailed": {
+    "message": "เปิด NotebookLM ไม่สำเร็จ"
+  },
+  "bg_notebookNotCreated": {
+    "message": "สมุดบันทึกไม่ได้ถูกสร้างขึ้น (จำเป็นต้องมีการสอดแนมตัวเลือกสำหรับ 'สร้าง')"
+  },
+  "bg_listFailed": {
+    "message": "ดึงรายการไม่สำเร็จ"
+  },
+  "bg_actionFailed": {
+    "message": "ดำเนินการไม่สำเร็จ"
+  },
+  "bg_openNlmGen": {
+    "message": "เปิด NotebookLM — การสร้างจะเสร็จสมบูรณ์โดยอัตโนมัติ"
+  },
+  "bg_loginNlm": {
+    "message": "ลงชื่อเข้าใช้ NotebookLM"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "ดักจับการดาวน์โหลดอาร์ติแฟกต์ไม่สำเร็จ"
+  },
+  "bg_artifactDlFailed": {
+    "message": "ดาวน์โหลดอาร์ติแฟกต์ไม่สำเร็จ: "
+  },
+  "bg_openHgTab": {
+    "message": "เปิดแท็บสตูดิโอ app.heygen.com — อวตารจะแสดงผลโดยอัตโนมัติ"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio ยังคงโหลดอยู่ — กำลังลองใหม่ภายหลัง"
+  },
+  "bg_retry": {
+    "message": "ลองใหม่"
+  },
+  "bg_dlFailed": {
+    "message": "ดาวน์โหลดไม่สำเร็จ"
+  },
+  "flow_state": {
+    "message": "สถานะ"
+  },
+  "flow_notConnected": {
+    "message": "ไม่ได้เชื่อมต่อ"
+  },
+  "flow_waitingTask": {
+    "message": "กำลังรอภารกิจจาก TrendTraffic…"
+  },
+  "flow_pauseBtn": {
+    "message": "หยุดชั่วคราว"
+  },
+  "flow_openTT": {
+    "message": "เปิด TrendTraffic"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ ไปที่แกลเลอรี"
+  },
+  "flow_toGalleryTitle": {
+    "message": "ส่งคลิปที่เสร็จแล้วจาก Flow ไปยังแกลเลอรี TrendTraffic"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ จากแกลเลอรี"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "นำวิดีโอจากแกลเลอรีและอัปโหลดไปยัง Flow เพื่อประมวลผล"
+  },
+  "flow_reconPrefix": {
+    "message": "กำลังสอดแนม: "
+  },
+  "flow_reconSuffix": {
+    "message": " คำขอ Flow"
+  },
+  "flow_reconBtn": {
+    "message": "สอดแนมเค้าโครง"
+  },
+  "flow_reconBtnTitle": {
+    "message": "จับภาพเค้าโครง Flow ปัจจุบันและส่งให้เรา (เพื่อปรับแต่ง)"
+  },
+  "flow_pauseManual": {
+    "message": "เปิดใช้งานการหยุดชั่วคราวด้วยตนเอง"
+  },
+  "flow_statusPause": {
+    "message": "หยุดชั่วคราว"
+  },
+  "flow_statusWorking": {
+    "message": "กำลังทำงาน"
+  },
+  "flow_statusLogin": {
+    "message": "ลงชื่อเข้าใช้บัญชี"
+  },
+  "flow_stTitleOpen": {
+    "message": "เปิด TrendTraffic และลงชื่อเข้าใช้ — จะเชื่อมต่อโดยอัตโนมัติ"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 เปิดแกลเลอรีทั้งหมด →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "แกลเลอรี TrendTraffic — เลือกเหมือนในโปรแกรมแก้ไข โดยมีปุ่ม '→ Flow' บนแต่ละไฟล์"
+  },
+  "flow_fileFallback": {
+    "message": "ไฟล์"
+  },
+  "flow_pickHint": {
+    "message": "คลิกรายการที่ต้องการ — จะถูกเพิ่มไปยังแกลเลอรี"
+  },
+  "flow_noPrompt": {
+    "message": "(ไม่มีข้อความแจ้ง)"
+  },
+  "flow_taskNum": {
+    "message": "งาน #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ ไม่พบช่องข้อความแจ้ง — จำเป็นต้องมีการสอดแนมตัวเลือก"
+  },
+  "flow_promptSet": {
+    "message": "ตั้งค่าข้อความแจ้งแล้ว"
+  },
+  "flow_refUploaded": {
+    "message": "อ้างอิงอัปโหลดไปยัง Flow แล้ว"
+  },
+  "flow_refPrefix": {
+    "message": "อ้างอิง: "
+  },
+  "flow_refDlFailed": {
+    "message": "ดาวน์โหลดอ้างอิงไม่สำเร็จ"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ ไม่พบปุ่มสร้าง — จำเป็นต้องมีการสอดแนม"
+  },
+  "flow_genStarted": {
+    "message": "เริ่มการสร้างแล้ว กำลังรอคลิป…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ หมดเวลาการรอคลิป"
+  },
+  "flow_clipReady": {
+    "message": "✓ คลิปพร้อมแล้ว"
+  },
+  "flow_kindClip": {
+    "message": "คลิป"
+  },
+  "flow_kindPicture": {
+    "message": "รูปภาพ"
+  },
+  "flow_grabPre": {
+    "message": "กำลังดึง"
+  },
+  "flow_grabSuf": {
+    "message": "จาก Flow…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ ไม่สามารถอ่านสื่อได้"
+  },
+  "flow_cdnAuthPre": {
+    "message": "การตรวจสอบสิทธิ์ CDN:"
+  },
+  "flow_cdnAuthSuf": {
+    "message": "— กำลังลองผ่านเซิร์ฟเวอร์"
+  },
+  "flow_inGallerySuf": {
+    "message": "ไปยังแกลเลอรี → แท็บ \"Google Flow\""
+  },
+  "flow_noConnConnect": {
+    "message": "ไม่มีการเชื่อมต่อ — คลิก \"เชื่อมต่อ\" ใน TrendTraffic"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ คลิกรูปภาพ/วิดีโอที่ต้องการใน Flow จากนั้น \"ไปยังแกลเลอรี\""
+  },
+  "flow_multipleMedia": {
+    "message": "สื่อหลายรายการ — เลือกสิ่งที่ต้องการดึง ↓"
+  },
+  "flow_openingProject": {
+    "message": "กำลังเปิดโปรเจกต์ใน Flow…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow รับเฉพาะรูปภาพที่นี่ — อัปโหลดวิดีโอผ่านส่วน \"อัปโหลด\" ของ Flow"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "ไม่พบช่องอัปโหลด — เปิดโปรเจกต์ใน Flow (ไม่ใช่หน้าหลัก): ภายในโปรเจกต์จะมีส่วนอัปโหลด (+/\"อัปโหลด\")"
+  },
+  "flow_loadingList": {
+    "message": "กำลังโหลดรายการ…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "ไม่มีการเชื่อมต่อ — คลิก \"เชื่อมต่อ\""
+  },
+  "flow_galleryEmpty": {
+    "message": "ไม่มีสื่อในแกลเลอรี"
+  },
+  "flow_reconSent": {
+    "message": "✓ ส่งการปรับโครงสร้างเลย์เอาต์แล้ว"
+  },
+  "flow_reconFail": {
+    "message": "⚠ การปรับโครงสร้าง:"
+  },
+  "flow_noConnection": {
+    "message": "ไม่มีการเชื่อมต่อ"
+  },
+  "flow_gettingMedia": {
+    "message": "กำลังรับสื่อจากแกลเลอรี…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ ดาวน์โหลดจากแกลเลอรีล้มเหลว"
+  },
+  "flow_insertedImage": {
+    "message": "รูปภาพ"
+  },
+  "flow_insertedVideo": {
+    "message": "วิดีโอ"
+  },
+  "flow_insertedSuf": {
+    "message": "แทรกเข้าสู่ Flow จากแกลเลอรีแล้ว"
+  },
+  "flow_newClipReady": {
+    "message": "คลิปใหม่พร้อมแล้ว — กำลังอัปโหลดไปยังแกลเลอรี…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ คลิปในแกลเลอรี → \"วิดีโอ\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ คลิปไม่ได้บันทึก:"
+  },
+  "hg_state": {
+    "message": "สถานะ"
+  },
+  "hg_notConnected": {
+    "message": "ไม่ได้เชื่อมต่อ"
+  },
+  "hg_keepTabOpen": {
+    "message": "เปิดแท็บนี้ไว้ — หัวจะแสดงผลโดยอัตโนมัติตามการสมัครของคุณ"
+  },
+  "hg_openTT": {
+    "message": "เปิด TrendTraffic"
+  },
+  "hg_reconPrefix": {
+    "message": "การปรับโครงสร้าง:"
+  },
+  "hg_reconSuffix": {
+    "message": "การเรียกสตูดิโอ"
+  },
+  "hg_reconBtn": {
+    "message": "การปรับโครงสร้าง API"
+  },
+  "hg_reconBtnTitle": {
+    "message": "จับภาพ API สตูดิโอปัจจุบันและส่งให้เรา (เพื่อการปรับแต่ง)"
+  },
+  "hg_statusWorking": {
+    "message": "กำลังทำงาน"
+  },
+  "hg_statusLogin": {
+    "message": "เข้าสู่ระบบบัญชีของคุณ"
+  },
+  "hg_stTitleOpen": {
+    "message": "เปิด TrendTraffic และเข้าสู่ระบบ — จะเชื่อมต่อโดยอัตโนมัติ"
+  },
+  "hg_photoDlFailed": {
+    "message": "ดาวน์โหลดรูปภาพล้มเหลว"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: การแสดงผลล้มเหลว"
+  },
+  "hg_genPrefix": {
+    "message": "การสร้าง:"
+  },
+  "hg_waiting": {
+    "message": "กำลังรอ"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen ไม่ได้ให้วิดีโอทันเวลา"
+  },
+  "hg_headNum": {
+    "message": "▶ หัว #"
+  },
+  "hg_readyLook": {
+    "message": "อวตารบัญชีพร้อมแล้ว — ข้ามการอัปโหลดรูปภาพ"
+  },
+  "hg_photoUpload": {
+    "message": "รูปภาพ → talking_photo…"
+  },
+  "hg_genStartPre": {
+    "message": "กำลังเริ่มสร้าง ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ ไม่พบรูปลักษณ์ในเซสชันนี้ — กำลังอัปโหลดรูปภาพและลองใหม่…"
+  },
+  "hg_headReady": {
+    "message": "✓ หัวพร้อมแล้ว กำลังรับ mp4…"
+  },
+  "hg_sending": {
+    "message": "✓ กำลังส่งไปยัง TrendTraffic"
+  },
+  "hg_reconSent": {
+    "message": "✓ ส่งการปรับโครงสร้าง API แล้ว"
+  },
+  "hg_reconFail": {
+    "message": "⚠ การปรับโครงสร้าง:"
+  },
+  "hg_noConnection": {
+    "message": "ไม่มีการเชื่อมต่อ"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "ไฟล์อาร์ติแฟกต์ถูกดักจับ ("
+  },
+  "nlm_kbComma": {
+    "message": " KB,"
+  },
+  "nlm_captureFailed": {
+    "message": "การดักจับไฟล์ล้มเหลว:"
+  },
+  "nlm_dlProbe": {
+    "message": "ดาวน์โหลด?"
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "URL ดาวน์โหลดถูกดักจับ (window.open)"
+  },
+  "nlm_state": {
+    "message": "สถานะ"
+  },
+  "nlm_notConnected": {
+    "message": "ไม่ได้เชื่อมต่อ"
+  },
+  "nlm_account": {
+    "message": "บัญชี"
+  },
+  "nlm_accountTitle": {
+    "message": "บัญชี Google ที่ใช้สำหรับ NotebookLM"
+  },
+  "nlm_waitingTask": {
+    "message": "กำลังรอภารกิจจาก TrendTraffic…"
+  },
+  "nlm_grabTitle": {
+    "message": "แสดงผลงานสตูดิโอที่พร้อม — คลิกที่ผลงานเพื่อโหลดเข้าสู่ TrendTraffic Gallery"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ ไปยังแกลเลอรี"
+  },
+  "nlm_openTT": {
+    "message": "เปิด TrendTraffic"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "จับภาพเค้าโครง NotebookLM ปัจจุบันและส่งให้เรา (สำหรับการปรับตัวเลือก)"
+  },
+  "nlm_reconBtn": {
+    "message": "สำรวจเค้าโครง"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "เปิดสมุดบันทึก — ฉันจะแสดงผลงานสตูดิโอของมัน"
+  },
+  "nlm_noReadyWorks": {
+    "message": "ไม่มีผลงานสตูดิโอที่พร้อม (หรือยังสร้างไม่เสร็จ)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "โหลด \""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" ไปยังแกลเลอรี"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ เรียบร้อยแล้ว"
+  },
+  "nlm_refresh": {
+    "message": "รีเฟรช"
+  },
+  "nlm_close": {
+    "message": "ปิด"
+  },
+  "nlm_loginTT": {
+    "message": "เข้าสู่ระบบ TrendTraffic"
+  },
+  "nlm_loginGoogle": {
+    "message": "เข้าสู่ระบบ Google"
+  },
+  "nlm_working": {
+    "message": "กำลังทำงาน"
+  },
+  "nlm_creatingNotebook": {
+    "message": "กำลังสร้างสมุดบันทึก: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ สร้างสมุดบันทึกแล้ว: "
+  },
+  "nlm_addingSource": {
+    "message": "กำลังเพิ่มแหล่งที่มา ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "ดาวน์โหลดไฟล์จากแกลเลอรีล้มเหลว"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM ไม่รองรับไฟล์วิดีโอ สำหรับวิดีโอ ให้เพิ่ม \"การวิเคราะห์\" เป็นข้อความหรือลิงก์ (YouTube)"
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "การอัปโหลดไฟล์ไปยัง NotebookLM ไม่พร้อมใช้งานจากส่วนขยาย (หน้าต่างดั้งเดิม) ใช้ \"การวิเคราะห์\"/\"วางข้อความ\" หรือลิงก์ (เว็บไซต์/YouTube)"
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ เพิ่มแหล่งที่มาไฟล์แล้ว"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "ประเภทแหล่งที่มาไม่รู้จัก"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ เพิ่มแหล่งที่มาแล้ว ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "กำลังอ่านรายการสมุดบันทึก…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ สมุดบันทึก (ของฉัน+ที่ใช้ได้): "
+  },
+  "nlm_asking": {
+    "message": "กำลังถาม: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "อ่านคำตอบไม่สมบูรณ์"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ ได้รับคำตอบแล้ว"
+  },
+  "nlm_unknownType": {
+    "message": "ประเภทไม่รู้จัก: "
+  },
+  "nlm_generatingTask": {
+    "message": "กำลังสร้าง: "
+  },
+  "nlm_genStartedPre": {
+    "message": "เริ่มการสร้าง ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", ค่าเริ่มต้น), กำลังรออาร์ติแฟกต์…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ อาร์ติแฟกต์พร้อมแล้ว ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), กำลังรออาร์ติแฟกต์…"
+  },
+  "nlm_dlRequested": {
+    "message": "ร้องขอการดาวน์โหลดอาร์ติแฟกต์…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "ไม่สามารถสกัดกั้นการดาวน์โหลดอาร์ติแฟกต์ได้"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "ดาวน์โหลดไปยัง TrendTraffic Gallery"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" ไม่มี \"ดาวน์โหลด\" — กำลังจับภาพเป็นข้อความ…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" ไม่มี \"ดาวน์โหลด\" — กำลังจับภาพเป็นข้อความ…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → แกลเลอรี"
+  },
+  "nlm_alreadyWas": {
+    "message": " (มีอยู่แล้ว)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ ไม่ได้บันทึก: "
+  },
+  "nlm_noConnection": {
+    "message": "ไม่มีการเชื่อมต่อ"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ ดาวน์โหลด URL ล้มเหลว: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ ไม่สามารถจับภาพไฟล์ \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ คลิกนำออกจากหน้าสมุดบันทึก — กำลังกลับ"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ ข้อความ \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" ไม่ถูกจับภาพ"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → แกลเลอรี (เป็นข้อความ)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 แนวตั้ง 9:16"
+  },
+  "nlm_916Title": {
+    "message": "เพิ่มข้อความแจ้งรูปแบบแนวตั้ง 9:16 (Shorts/Reels/TikTok) ข้อความแจ้งเป็นภาษาอังกฤษ — NotebookLM เข้าใจคำแนะนำได้ดีที่สุดด้วยวิธีนี้"
+  },
+  "nlm_916Already": {
+    "message": "✓ เพิ่มแล้ว"
+  },
+  "nlm_916Added": {
+    "message": "✓ เพิ่มแล้ว"
+  },
+  "nlm_reconSent": {
+    "message": "✓ ส่งการสำรวจเค้าโครงแล้ว"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ การระบุตัวตนล้มเหลว: "
+  },
+  "nlm_unknownAction": {
+    "message": "การดำเนินการที่ไม่รู้จัก: "
+  }
+}

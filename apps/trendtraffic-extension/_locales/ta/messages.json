@@ -1,0 +1,548 @@
+{
+  "extName": {
+    "message": "TrendTraffic — உதவியாளர் (Flow · NotebookLM · HeyGen)"
+  },
+  "extDesc": {
+    "message": "ஒருங்கிணைந்த TrendTraffic நீட்டிப்பு: Google Flow (Veo), Google NotebookLM (Hotebook) மற்றும் HeyGen (உங்கள் சந்தாவுடன் UGC பேசும் தலைகள்) ஆகியவற்றுக்கான ஒரு பாலம். உண்மையான உலாவி பணி வரிசை, உருவாக்கும் ஆட்டோமேஷன் மற்றும் கேலரி பரிமாற்றம். ஒருமுறை நிறுவவும் — தாவல் திறந்திருக்கும் சேவையில் பேனல் செயல்படும்."
+  },
+  "extTitle": {
+    "message": "TrendTraffic — உதவியாளர் (Flow · NotebookLM · HeyGen)"
+  },
+  "bg_taskTimeout": {
+    "message": "பணி நேரம் முடிந்தது"
+  },
+  "bg_openFlowTab": {
+    "message": "Google Flow தாவலைத் திறக்கவும் — பணி தானாகவே முடிவடையும்"
+  },
+  "bg_flowThrottledNote": {
+    "message": "Flow: அசாதாரண செயல்பாடு — இடைநிறுத்தப்பட்டது"
+  },
+  "bg_noResult": {
+    "message": "முடிவு இல்லை"
+  },
+  "bg_notConnected": {
+    "message": "இணைக்கப்படவில்லை"
+  },
+  "bg_openFlowFailed": {
+    "message": "Flow ஐத் திறக்க முடியவில்லை"
+  },
+  "bg_flowNotLoaded": {
+    "message": "Flow ஏற்றப்படவில்லை — labs.google/flow இல் உள்நுழையவும்"
+  },
+  "bg_noFlowAnswer": {
+    "message": "Flow இலிருந்து பதில் இல்லை"
+  },
+  "bg_noUrl": {
+    "message": "url இல்லை"
+  },
+  "bg_dlRejected": {
+    "message": "பதிவிறக்கம் தோல்வியடைந்தது (CDN கோரிக்கையை நிராகரித்தது)"
+  },
+  "bg_tooBig": {
+    "message": "மீடியா >500MB — மிக பெரியது"
+  },
+  "bg_openNlmFailed": {
+    "message": "NotebookLM ஐத் திறக்க முடியவில்லை"
+  },
+  "bg_notebookNotCreated": {
+    "message": "நோட்புக் உருவாக்கப்படவில்லை ('create' க்கான தேர்வாளர் ஸ்கவுட்டிங் தேவை)"
+  },
+  "bg_listFailed": {
+    "message": "பட்டியலைப் பெற முடியவில்லை"
+  },
+  "bg_actionFailed": {
+    "message": "செயல் தோல்வியடைந்தது"
+  },
+  "bg_openNlmGen": {
+    "message": "NotebookLM ஐத் திறக்கவும் — உருவாக்கம் தானாகவே முடிவடையும்"
+  },
+  "bg_loginNlm": {
+    "message": "NotebookLM இல் உள்நுழையவும்"
+  },
+  "bg_dlCaptureFailed": {
+    "message": "கலைப்பொருள் பதிவிறக்கத்தைத் தடுக்க முடியவில்லை"
+  },
+  "bg_artifactDlFailed": {
+    "message": "கலைப்பொருள் பதிவிறக்கம் தோல்வியடைந்தது: "
+  },
+  "bg_openHgTab": {
+    "message": "app.heygen.com ஸ்டுடியோ தாவலைத் திறக்கவும் — அவதார் தானாகவே ரெண்டர் செய்யப்படும்"
+  },
+  "bg_hgLoading": {
+    "message": "HeyGen Studio இன்னும் ஏற்றப்படுகிறது — பின்னர் மீண்டும் முயற்சிக்கிறது"
+  },
+  "bg_retry": {
+    "message": "மீண்டும் முயற்சி"
+  },
+  "bg_dlFailed": {
+    "message": "பதிவிறக்கம் தோல்வியடைந்தது"
+  },
+  "flow_state": {
+    "message": "நிலை"
+  },
+  "flow_notConnected": {
+    "message": "இணைக்கப்படவில்லை"
+  },
+  "flow_waitingTask": {
+    "message": "TrendTraffic இலிருந்து பணிகளுக்காக காத்திருக்கிறது…"
+  },
+  "flow_pauseBtn": {
+    "message": "இடைநிறுத்து"
+  },
+  "flow_openTT": {
+    "message": "TrendTraffic ஐத் திறக்கவும்"
+  },
+  "flow_toGalleryBtn": {
+    "message": "⬆ கேலரிக்கு"
+  },
+  "flow_toGalleryTitle": {
+    "message": "Flow இலிருந்து முடிக்கப்பட்ட கிளிப்பை TrendTraffic கேலரிக்கு அனுப்பவும்"
+  },
+  "flow_fromGalleryBtn": {
+    "message": "⬇ கேலரியில் இருந்து"
+  },
+  "flow_fromGalleryTitle": {
+    "message": "கேலரியில் இருந்து ஒரு வீடியோவை எடுத்து, செயலாக்கத்திற்காக Flow இல் பதிவேற்றவும்"
+  },
+  "flow_reconPrefix": {
+    "message": "ஸ்கவுட்டிங்: "
+  },
+  "flow_reconSuffix": {
+    "message": " Flow கோரிக்கைகள்"
+  },
+  "flow_reconBtn": {
+    "message": "லேஅவுட்டை ஸ்கவுட் செய்யவும்"
+  },
+  "flow_reconBtnTitle": {
+    "message": "தற்போதைய Flow லேஅவுட்டைப் பிடித்து எங்களுக்கு அனுப்பவும் (சரிசெய்தலுக்காக)"
+  },
+  "flow_pauseManual": {
+    "message": "இடைநிறுத்தம் கைமுறையாக இயக்கப்பட்டது"
+  },
+  "flow_statusPause": {
+    "message": "இடைநிறுத்தப்பட்டது"
+  },
+  "flow_statusWorking": {
+    "message": "செயல்படுகிறது"
+  },
+  "flow_statusLogin": {
+    "message": "கணக்கில் உள்நுழையவும்"
+  },
+  "flow_stTitleOpen": {
+    "message": "TrendTraffic ஐத் திறந்து உள்நுழையவும் — அது தானாகவே இணைக்கப்படும்"
+  },
+  "flow_openFullGallery": {
+    "message": "📂 முழு கேலரியைத் திறக்கவும் →"
+  },
+  "flow_fullGalleryTitle": {
+    "message": "TrendTraffic கேலரி — ஒரு எடிட்டரில் உள்ளதைப் போல தேர்ந்தெடுக்கவும், ஒவ்வொரு கோப்பிலும் '→ Flow' பொத்தான் இருக்கும்"
+  },
+  "flow_fileFallback": {
+    "message": "கோப்பு"
+  },
+  "flow_pickHint": {
+    "message": "விரும்பிய உருப்படியைக் கிளிக் செய்யவும் — அது கேலரியில் சேர்க்கப்படும்"
+  },
+  "flow_noPrompt": {
+    "message": "(தூண்டுதல் இல்லை)"
+  },
+  "flow_taskNum": {
+    "message": "பணி #"
+  },
+  "flow_promptNotFound": {
+    "message": "⚠ தூண்டுதல் புலம் காணப்படவில்லை — தேர்வாளர் ஸ்கவுட்டிங் தேவை"
+  },
+  "flow_promptSet": {
+    "message": "தூண்டுதல் அமைக்கப்பட்டது"
+  },
+  "flow_refUploaded": {
+    "message": "குறிப்பு Flow இல் பதிவேற்றப்பட்டது"
+  },
+  "flow_refPrefix": {
+    "message": "குறிப்பு: "
+  },
+  "flow_refDlFailed": {
+    "message": "குறிப்பு பதிவிறக்கம் தோல்வியடைந்தது"
+  },
+  "flow_genBtnNotFound": {
+    "message": "⚠ உருவாக்கும் பொத்தான் காணப்படவில்லை — ஸ்கவுட்டிங் தேவை"
+  },
+  "flow_genStarted": {
+    "message": "உருவாக்கம் தொடங்கியது, கிளிப்பிற்காக காத்திருக்கிறது…"
+  },
+  "flow_timeoutClip": {
+    "message": "⌛ கிளிப் காத்திருப்பு நேரம் முடிந்தது"
+  },
+  "flow_clipReady": {
+    "message": "✓ கிளிப் தயார்"
+  },
+  "flow_kindClip": {
+    "message": "கிளிப்"
+  },
+  "flow_kindPicture": {
+    "message": "படம்"
+  },
+  "flow_grabPre": {
+    "message": "எடுக்கிறது "
+  },
+  "flow_grabSuf": {
+    "message": " Flow இலிருந்து…"
+  },
+  "flow_mediaReadFailed": {
+    "message": "⚠ மீடியாவை படிக்க முடியவில்லை"
+  },
+  "flow_cdnAuthPre": {
+    "message": "CDN அங்கீகாரம்: "
+  },
+  "flow_cdnAuthSuf": {
+    "message": " — சேவையகம் வழியாக முயற்சிக்கிறது"
+  },
+  "flow_inGallerySuf": {
+    "message": " கேலரிக்கு → \"Google Flow\" தாவல்"
+  },
+  "flow_noConnConnect": {
+    "message": "இணைப்பு இல்லை — TrendTraffic இல் \"இணை\" என்பதைக் கிளிக் செய்யவும்"
+  },
+  "flow_clickMediaFirst": {
+    "message": "⚠ Flow இல் விரும்பிய புகைப்படம்/வீடியோவைக் கிளிக் செய்து, பின்னர் \"கேலரிக்கு\""
+  },
+  "flow_multipleMedia": {
+    "message": "பல மீடியா — எதை எடுக்க வேண்டும் என்பதைத் தேர்ந்தெடுக்கவும் ↓"
+  },
+  "flow_openingProject": {
+    "message": "Flow இல் திட்டத்தைத் திறக்கிறது…"
+  },
+  "flow_onlyImagesHere": {
+    "message": "Flow இங்கே படங்களை மட்டுமே ஏற்கிறது — Flow இன் \"பதிவேற்றங்கள்\" பிரிவின் வழியாக வீடியோக்களைப் பதிவேற்றவும்"
+  },
+  "flow_uploadFieldNotFound": {
+    "message": "பதிவேற்ற புலம் காணப்படவில்லை — Flow இல் ஒரு திட்டத்தைத் திறக்கவும் (முக்கிய பக்கம் அல்ல): ஒரு திட்டத்திற்குள் ஒரு பதிவேற்றம் (+/\"பதிவேற்றங்கள்\") உள்ளது"
+  },
+  "flow_loadingList": {
+    "message": "பட்டியலை ஏற்றுகிறது…"
+  },
+  "flow_noConnConnectShort": {
+    "message": "இணைப்பு இல்லை — \"இணை\" என்பதைக் கிளிக் செய்யவும்"
+  },
+  "flow_galleryEmpty": {
+    "message": "கேலரியில் மீடியா இல்லை"
+  },
+  "flow_reconSent": {
+    "message": "✓ தளவமைப்பு மறுசீரமைப்பு அனுப்பப்பட்டது"
+  },
+  "flow_reconFail": {
+    "message": "⚠ மறுசீரமைப்பு: "
+  },
+  "flow_noConnection": {
+    "message": "இணைப்பு இல்லை"
+  },
+  "flow_gettingMedia": {
+    "message": "கேலரியில் இருந்து மீடியாவைப் பெறுகிறது…"
+  },
+  "flow_galleryDlFailed": {
+    "message": "⚠ கேலரியில் இருந்து பதிவிறக்க முடியவில்லை"
+  },
+  "flow_insertedImage": {
+    "message": "படம்"
+  },
+  "flow_insertedVideo": {
+    "message": "வீடியோ"
+  },
+  "flow_insertedSuf": {
+    "message": " கேலரியில் இருந்து Flow இல் செருகப்பட்டது"
+  },
+  "flow_newClipReady": {
+    "message": "புதிய கிளிப் தயாராக உள்ளது — கேலரியில் பதிவேற்றுகிறது…"
+  },
+  "flow_clipInGallery": {
+    "message": "✓ கேலரியில் கிளிப் → \"வீடியோக்கள்\""
+  },
+  "flow_clipNotSaved": {
+    "message": "⚠ கிளிப் சேமிக்கப்படவில்லை: "
+  },
+  "hg_state": {
+    "message": "நிலை"
+  },
+  "hg_notConnected": {
+    "message": "இணைக்கப்படவில்லை"
+  },
+  "hg_keepTabOpen": {
+    "message": "இந்த தாவலைத் திறந்து வைக்கவும் — உங்கள் சந்தாவின் அடிப்படையில் தலைகள் தானாகவே ரெண்டர் செய்யப்படும்."
+  },
+  "hg_openTT": {
+    "message": "TrendTraffic ஐத் திறக்கவும்"
+  },
+  "hg_reconPrefix": {
+    "message": "மறுசீரமைப்பு: "
+  },
+  "hg_reconSuffix": {
+    "message": " ஸ்டுடியோ அழைப்புகள்"
+  },
+  "hg_reconBtn": {
+    "message": "API மறுசீரமைப்பு"
+  },
+  "hg_reconBtnTitle": {
+    "message": "தற்போதைய ஸ்டுடியோ API ஐப் பிடித்து எங்களுக்கு அனுப்பவும் (சரிசெய்தலுக்காக)"
+  },
+  "hg_statusWorking": {
+    "message": "வேலை செய்கிறது"
+  },
+  "hg_statusLogin": {
+    "message": "உங்கள் கணக்கில் உள்நுழையவும்"
+  },
+  "hg_stTitleOpen": {
+    "message": "TrendTraffic ஐத் திறந்து உள்நுழையவும் — அது தானாகவே இணையும்"
+  },
+  "hg_photoDlFailed": {
+    "message": "புகைப்படம் பதிவிறக்கம் தோல்வியடைந்தது"
+  },
+  "hg_renderFailed": {
+    "message": "HeyGen: ரெண்டர் தோல்வியடைந்தது"
+  },
+  "hg_genPrefix": {
+    "message": "உருவாக்கம்: "
+  },
+  "hg_waiting": {
+    "message": "காத்திருக்கிறது"
+  },
+  "hg_noVideoInTime": {
+    "message": "HeyGen சரியான நேரத்தில் வீடியோவை வழங்கவில்லை"
+  },
+  "hg_headNum": {
+    "message": "▶ தலை #"
+  },
+  "hg_readyLook": {
+    "message": "தயாரான கணக்கு அவதார் — புகைப்படம் பதிவேற்றம் தவிர்க்கப்பட்டது"
+  },
+  "hg_photoUpload": {
+    "message": "புகைப்படம் → பேசும்_புகைப்படம்…"
+  },
+  "hg_genStartPre": {
+    "message": "உருவாக்கத்தைத் தொடங்குகிறது ("
+  },
+  "hg_lookNotFound": {
+    "message": "⚠ இந்த அமர்வில் தோற்றம் காணப்படவில்லை — புகைப்படத்தைப் பதிவேற்றி மீண்டும் முயற்சிக்கிறது…"
+  },
+  "hg_headReady": {
+    "message": "✓ தலை தயாராக உள்ளது, mp4 ஐப் பெறுகிறது…"
+  },
+  "hg_sending": {
+    "message": "✓ TrendTraffic க்கு அனுப்புகிறது"
+  },
+  "hg_reconSent": {
+    "message": "✓ API மறுசீரமைப்பு அனுப்பப்பட்டது"
+  },
+  "hg_reconFail": {
+    "message": "⚠ மறுசீரமைப்பு: "
+  },
+  "hg_noConnection": {
+    "message": "இணைப்பு இல்லை"
+  },
+  "nlm_artifactCapturedPre": {
+    "message": "கலைப்பொருள் கோப்பு இடைமறிக்கப்பட்டது ("
+  },
+  "nlm_kbComma": {
+    "message": " KB, "
+  },
+  "nlm_captureFailed": {
+    "message": "கோப்பு இடைமறிப்பு தோல்வியடைந்தது: "
+  },
+  "nlm_dlProbe": {
+    "message": "பதிவிறக்கவா? "
+  },
+  "nlm_kb": {
+    "message": "KB"
+  },
+  "nlm_openUrlCaptured": {
+    "message": "பதிவிறக்க URL இடைமறிக்கப்பட்டது (window.open)"
+  },
+  "nlm_state": {
+    "message": "நிலை"
+  },
+  "nlm_notConnected": {
+    "message": "இணைக்கப்படவில்லை"
+  },
+  "nlm_account": {
+    "message": "கணக்கு"
+  },
+  "nlm_accountTitle": {
+    "message": "NotebookLMக்கு பயன்படுத்தப்படும் Google கணக்கு"
+  },
+  "nlm_waitingTask": {
+    "message": "TrendTraffic இலிருந்து பணி காத்திருக்கிறது…"
+  },
+  "nlm_grabTitle": {
+    "message": "தயாரான ஸ்டுடியோ வேலைகளைக் காட்டு — TrendTraffic Gallery இல் ஏற்ற ஒரு வேலையை கிளிக் செய்யவும்"
+  },
+  "nlm_grabBtn": {
+    "message": "⬇ கேலரிக்கு"
+  },
+  "nlm_openTT": {
+    "message": "TrendTraffic ஐ திற"
+  },
+  "nlm_reconBtnTitle": {
+    "message": "தற்போதைய NotebookLM அமைப்பைப் பிடித்து எங்களுக்கு அனுப்பவும் (தேர்வு சரிசெய்தலுக்கு)"
+  },
+  "nlm_reconBtn": {
+    "message": "அமைப்பு மறுசீரமைப்பு"
+  },
+  "nlm_openNotebookFirst": {
+    "message": "ஒரு நோட்புக்கை திற — அதன் ஸ்டுடியோ வேலைகளை நான் காட்டுவேன்"
+  },
+  "nlm_noReadyWorks": {
+    "message": "தயாரான ஸ்டுடியோ வேலைகள் இல்லை (அல்லது இன்னும் உருவாக்கப்படுகிறது)"
+  },
+  "nlm_loadTitlePre": {
+    "message": "\""
+  },
+  "nlm_loadTitleSuf": {
+    "message": "\" ஐ கேலரிக்கு ஏற்றவும்"
+  },
+  "nlm_alreadyShort": {
+    "message": "✓ ஏற்கனவே"
+  },
+  "nlm_refresh": {
+    "message": "புதுப்பி"
+  },
+  "nlm_close": {
+    "message": "மூடு"
+  },
+  "nlm_loginTT": {
+    "message": "TrendTraffic இல் உள்நுழைக"
+  },
+  "nlm_loginGoogle": {
+    "message": "Google இல் உள்நுழைக"
+  },
+  "nlm_working": {
+    "message": "செயல்படுகிறது"
+  },
+  "nlm_creatingNotebook": {
+    "message": "நோட்புக் உருவாக்கப்படுகிறது: "
+  },
+  "nlm_notebookCreated": {
+    "message": "✓ நோட்புக் உருவாக்கப்பட்டது: "
+  },
+  "nlm_addingSource": {
+    "message": "மூலத்தைச் சேர்க்கிறது ("
+  },
+  "nlm_fileDlFailed": {
+    "message": "கேலரியில் இருந்து கோப்பு பதிவிறக்கம் தோல்வியடைந்தது"
+  },
+  "nlm_videoNotAccepted": {
+    "message": "NotebookLM வீடியோ கோப்புகளை ஏற்காது. வீடியோக்களுக்கு, \"பகுப்பாய்வு\" ஐ உரை அல்லது இணைப்பு (YouTube) ஆக சேர்க்கவும்."
+  },
+  "nlm_fileUploadUnavailable": {
+    "message": "நீட்டிப்பிலிருந்து (நேட்டிவ் விண்டோ) NotebookLM க்கு கோப்பு பதிவேற்றம் கிடைக்கவில்லை. \"பகுப்பாய்வு\"/\"உரையை ஒட்டு\" அல்லது ஒரு இணைப்பு (வலைத்தளம்/YouTube) பயன்படுத்தவும்."
+  },
+  "nlm_fileSourceAdded": {
+    "message": "✓ கோப்பு மூலம் சேர்க்கப்பட்டது"
+  },
+  "nlm_unknownSourceKind": {
+    "message": "அறியப்படாத மூல வகை"
+  },
+  "nlm_sourceAdded": {
+    "message": "✓ மூலம் சேர்க்கப்பட்டது ("
+  },
+  "nlm_readingNotebooks": {
+    "message": "நோட்புக் பட்டியலைப் படிக்கிறது…"
+  },
+  "nlm_notebooksCount": {
+    "message": "✓ நோட்புக்குகள் (எனது+கிடைக்கும்): "
+  },
+  "nlm_asking": {
+    "message": "கேட்கிறது: "
+  },
+  "nlm_answerIncomplete": {
+    "message": "பதில் முழுமையாகப் படிக்கப்படவில்லை"
+  },
+  "nlm_answerReceived": {
+    "message": "✓ பதில் பெறப்பட்டது"
+  },
+  "nlm_unknownType": {
+    "message": "அறியப்படாத வகை: "
+  },
+  "nlm_generatingTask": {
+    "message": "உருவாக்குகிறது: "
+  },
+  "nlm_genStartedPre": {
+    "message": "உருவாக்கம் தொடங்கியது ("
+  },
+  "nlm_genStartedDefaultSuf": {
+    "message": ", இயல்புநிலை), கலைப்பொருளுக்காக காத்திருக்கிறது…"
+  },
+  "nlm_artifactReadyPre": {
+    "message": "✓ கலைப்பொருள் தயார் ("
+  },
+  "nlm_genStartedSuf": {
+    "message": "), கலைப்பொருளுக்காக காத்திருக்கிறது…"
+  },
+  "nlm_dlRequested": {
+    "message": "கலைப்பொருள் பதிவிறக்கம் கோரப்பட்டது…"
+  },
+  "nlm_dlCaptureFailed": {
+    "message": "கலைப்பொருள் பதிவிறக்கத்தைத் தடுக்கத் தவறிவிட்டது"
+  },
+  "nlm_dlToGalleryTitle": {
+    "message": "TrendTraffic Gallery க்கு பதிவிறக்கு"
+  },
+  "nlm_noDownloadPre": {
+    "message": "\" இல் \"பதிவிறக்கு\" இல்லை — உரையாகப் பிடிக்கிறது…"
+  },
+  "nlm_noDownloadSuf": {
+    "message": "\" இல் \"பதிவிறக்கு\" இல்லை — உரையாகப் பிடிக்கிறது…"
+  },
+  "nlm_okQuote": {
+    "message": "✓ \""
+  },
+  "nlm_toGallerySuf": {
+    "message": "\" → கேலரி"
+  },
+  "nlm_alreadyWas": {
+    "message": " (ஏற்கனவே இருந்தது)"
+  },
+  "nlm_notSaved": {
+    "message": "⚠ சேமிக்கப்படவில்லை: "
+  },
+  "nlm_noConnection": {
+    "message": "இணைப்பு இல்லை"
+  },
+  "nlm_urlDlFailed": {
+    "message": "⚠ URL பதிவிறக்கம் தோல்வியடைந்தது: "
+  },
+  "nlm_fileCaptureFailedPre": {
+    "message": "⚠ கோப்பு \""
+  },
+  "nlm_clickLeftNotebook": {
+    "message": "⚠ கிளிக் நோட்புக் பக்கத்திலிருந்து விலகிச் சென்றது — திரும்புகிறது"
+  },
+  "nlm_textNotCapturedPre": {
+    "message": "⚠ உரை \""
+  },
+  "nlm_textNotCapturedSuf": {
+    "message": "\" பிடிக்கப்படவில்லை"
+  },
+  "nlm_toGalleryTextSuf": {
+    "message": "\" → கேலரி (உரையாக)"
+  },
+  "nlm_916Btn": {
+    "message": "📱 9:16 செங்குத்து"
+  },
+  "nlm_916Title": {
+    "message": "ஒரு 9:16 செங்குத்து வடிவமைப்பு தூண்டுதலைச் சேர்க்கவும் (Shorts/Reels/TikTok). ஆங்கிலத்தில் தூண்டுதல் — NotebookLM இந்த வழியில் வழிமுறைகளை சிறப்பாகப் புரிந்துகொள்கிறது."
+  },
+  "nlm_916Already": {
+    "message": "✓ ஏற்கனவே சேர்க்கப்பட்டது"
+  },
+  "nlm_916Added": {
+    "message": "✓ சேர்க்கப்பட்டது"
+  },
+  "nlm_reconSent": {
+    "message": "✓ அமைப்பு மறுசீரமைப்பு அனுப்பப்பட்டது"
+  },
+  "nlm_reconFail": {
+    "message": "⚠ Recon தோல்வியடைந்தது: "
+  },
+  "nlm_unknownAction": {
+    "message": "தெரியாத செயல்: "
+  }
+}
