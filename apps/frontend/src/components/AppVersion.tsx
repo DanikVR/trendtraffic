@@ -2747,7 +2747,13 @@
  *          локали (остальные 106 языков падают на EN-фолбэк до прогона translate-pivot).
  *          Файлы: shared/schemas/billing.ts, billing/{service,router}.ts, BillingPage.tsx,
  *          locales/{ru,en}/common.json, AppVersion. */
-export const APP_VERSION = '2.3.2';
+/* 2.3.3  — Биллинг-локали: 124 ключа новой страницы тарифов (sec.billing.*49*) переведены
+ *          на остальные 106 языков (translate-pivot.mjs c английской базы, gemini-2.5-flash,
+ *          thinkingBudget:0; только недостающие ключи — существующие переводы не тронуты;
+ *          плейсхолдеры {{…}} и глоссарий брендов под защитой скрипта). Теперь /billing
+ *          говорит на всех 108 языках, EN-фолбэк больше не показывается. Файлы:
+ *          public/locales/<lng>/common.json (106 шт.), AppVersion. */
+export const APP_VERSION = '2.3.3';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
