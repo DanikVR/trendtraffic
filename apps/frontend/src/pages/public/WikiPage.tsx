@@ -81,6 +81,17 @@ const ARTICLES: WikiArticleMeta[] = [
     ],
   },
   {
+    id: 'storyboard',
+    category: 'app',
+    sections: [
+      { id: 'overview', tab: 'Storyboard', image: '/wiki-shots/storyboard-tab.png', open: G('storyboard') },
+      { id: 'transcribe', tab: 'Storyboard', open: G('storyboard') },
+      { id: 'board', tab: 'Storyboard', image: '/wiki-shots/storyboard-board.png', open: G('storyboard') },
+      { id: 'engines', tab: 'Storyboard', open: G('storyboard') },
+      { id: 'assemble', tab: 'Storyboard', open: G('storyboard') },
+    ],
+  },
+  {
     id: 'google-flow',
     category: 'app',
     sections: [

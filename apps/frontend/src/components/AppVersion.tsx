@@ -3151,7 +3151,18 @@
  *          Файлы: modules/skills/{router,service}.ts + pages/skills/* УДАЛЕНЫ;
  *          server, mcp/tools_tt, mcp/scopes, GalleryPage, MainLayout, BottomTabBar,
  *          StoryboardStudio, locales/*, AppVersion. */
-export const APP_VERSION = '2.5.3';
+/* 2.5.4 — вики: +раздел «Сториборд» (по слову юзера, программный разбор
+ *          StoryboardStudio/Tab v2.5.3) — 5 тем: что это и как открыть
+ *          (карточки проектов, 5 станций, замок «сначала кусок 1», экономика
+ *          1 Gemini + 1 Claude), Источник и Расшифровка (куски ≤8с по концам
+ *          фраз, «Без ИИ»), Раскадровка (6 типов панелей, Claude-режиссёр,
+ *          филмстрип «клик=кадр панели», wysiwyg-титры, PNG-сетка), Генерация
+ *          (3 движка: ffmpeg бесплатно / Omni ≈$1/кусок / Flow полуавтомат+
+ *          АВТОМАТ с очередью и вотчером), Сборка (бейдж, кодовое слово CTA,
+ *          субтитры, автосборка). 2 скрина юзера (Content/Storyboard) →
+ *          wiki-shots/storyboard-{tab,board}.png. Файлы: WikiPage.tsx,
+ *          locales/{en,ru}/wiki.json, AppVersion. */
+export const APP_VERSION = '2.5.4';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

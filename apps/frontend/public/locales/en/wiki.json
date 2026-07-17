@@ -328,6 +328,61 @@
           ]
         }
       }
+    },
+    "storyboard": {
+      "title": "Storyboard",
+      "excerpt": "Auto-edit a Reel from a talking video: transcription → storyboard → generation → assembly.",
+      "lead": "<b>Storyboard</b> re-edits a finished “talking” video into a dynamic Reel using a professional editing-conveyor mechanic: <b>transcription → chunks of ≤8 s → a storyboard of up to 6 panels per chunk → generation → assembly</b>. Open it from the Gallery: the <b>Storyboard</b> tab → the “New storyboard” tile (a video from the Gallery or an upload from your device) or an existing project card. The studio is a 5-station stepper; the pipeline is frugal: transcription — 1 Gemini request, the AI panel plan — 1 Claude request, and the software render engine is free.",
+      "sections": {
+        "overview": {
+          "title": "What it is and how to open it",
+          "body": "<p>The idea: you already have a video of a person talking (your take, a trend, a UGC clip) — Storyboard turns it into an edited Reel with shot changes, titles and cutaways. A project lives as a card on the Gallery’s <b>Storyboard</b> tab (the cover is the first panel’s frame, plus status and chunk count); clicking opens the studio with 5 stations: <b>Source → Transcription → Storyboard → Generation → Assembly</b>.</p><p>Pipeline discipline: only <b>chunk 1</b> is generated and reviewed first — the rest unlock after it. That protects your keys and time: a mistake is cheaper to catch on the first chunk.</p>",
+          "examples": [
+            "Gallery → Storyboard → “New storyboard” → pick a video from the Gallery or upload a file.",
+            "Take your own footage from Media files or a downloaded trend from Trends.",
+            "The project card shows the status (“Storyboard ready · N chunks”) — click to continue."
+          ]
+        },
+        "transcribe": {
+          "title": "Source and Transcription",
+          "body": "<p>At the <b>Transcription</b> station Gemini watches the whole video: verbatim speech with timecodes plus real scene changes. The clip is then cut into <b>chunks of up to 8 seconds at phrase ends</b> — chunks never tear words apart, and 8 seconds is the Google Flow generation limit. There is a mini-player of the source and a fallback path — <b>“No AI (even chunks)”</b> — equal slices without transcription.</p>",
+          "examples": [
+            "Press “Transcribe and storyboard” — one Gemini request for the whole clip.",
+            "Check the line texts against the timecodes — titles and subtitles follow them.",
+            "No Gemini key? “No AI (even chunks)” still slices the clip without a transcription."
+          ]
+        },
+        "board": {
+          "title": "Storyboard — panels and frames",
+          "body": "<p>Each chunk holds up to <b>6 panels</b>; the types: <b>Close-up speaker · Full-screen title · Cutaway · Split screen · Mockup · Final + CTA</b>. The plan is built by the <b>Claude director</b> (the “Replan AI” button; without a key a template fallback kicks in). Every panel has a timing, a caption and a live preview: titles render exactly as in the clip (wysiwyg, in the style preset’s colour).</p><p>The chunk’s <b>filmstrip</b> — a strip of frames (~every 0.7 s) with a coloured bar of panel boundaries: select a panel and click a frame on the strip — it becomes that panel’s frame. The <b>“Assemble PNG storyboard”</b> button builds a grid of all panels as one image — checking the storyboard with your eyes is cheaper before generation than after.</p>",
+          "examples": [
+            "“Replan AI” — Claude re-lays the chunk into panels to match your speech.",
+            "Change a panel’s type in the dropdown — e.g. “Cutaway” instead of “Close-up speaker”.",
+            "Click a frame on the filmstrip — assign the panel an exact frame (say, the movement peak).",
+            "“Assemble PNG storyboard” — the whole storyboard as one image for review."
+          ]
+        },
+        "engines": {
+          "title": "Generation — three engines",
+          "body": "<p><b>Software (ffmpeg)</b> — free, no external keys: camera push-ins on the speaker, titles, split screens — everything is built programmatically from your source. <b>Omni Flash API</b> (≈$1 per chunk, a Gemini key): the chunk’s starting frame “comes alive” following a per-second prompt built from the panels; the output is fitted to 1080×1920 with the chunk’s <b>original voice</b> on top. <b>Flow extension</b> (a Google Flow subscription, no API keys): <b>semi-auto</b> — the studio prepares the chunk + a PNG storyboard + a prompt, you generate in Google Flow and press “Attach result”; <b>automatic</b> — the “Send all chunks to Flow” button: the queue goes to the extension, it uploads the references and starts the generations itself, and a watcher attaches the finished clips (with the original voice) and shows queue badges.</p>",
+          "examples": [
+            "Start with the software engine — fast, free and keyless.",
+            "Omni Flash API — a living shot instead of a static cut (≈$1 per chunk).",
+            "Flow automatic: keep the labs.google/flow tab open — the chunks generate themselves in turn.",
+            "Chunk 1 first: review the result, then the remaining chunks unlock."
+          ]
+        },
+        "assemble": {
+          "title": "Assembly — badge, CTA, subtitles",
+          "body": "<p>The <b>Assembly</b> station glues the enabled chunks into one Reel. Options: a <b>corner badge</b> (e.g. @mychannel), a <b>CTA code word</b> (use the same word in the post caption — viewers type it in the comments), and <b>subtitles from the transcription</b> (a checkbox). <b>Auto-assembly</b>: once every enabled chunk is ready, the clip assembles itself (on by default). The result goes to the Gallery — from there send it to the Publisher.</p>",
+          "examples": [
+            "Type the @mychannel badge — it stays in the corner of the whole clip.",
+            "The “TREND” CTA code word + the same word in the post caption — a clear call to action.",
+            "Enable “Subtitles from transcription” — titles follow the speech timecodes.",
+            "Send the finished Reel from the Gallery to the Publisher — a manual series or an auto chain."
+          ]
+        }
+      }
     }
   }
 }
