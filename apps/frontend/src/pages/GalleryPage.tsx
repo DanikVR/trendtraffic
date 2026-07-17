@@ -607,8 +607,10 @@ export default function GalleryPage() {
     }
   };
   // Рендер-функция (не компонент — чтобы не перемонтировалась на каждый рендер страницы).
-  const renderAddTile = (which: Tab) => {
-    const a = addAction(which);
+  // override — для секций, где «+» ведёт не в дефолтное действие вкладки (напр. «По ссылке»
+  // на Трендах: скан по ключевику, а не Аналитика).
+  const renderAddTile = (which: Tab, override?: Partial<ReturnType<typeof addAction>>) => {
+    const a = { ...addAction(which), ...override };
     return (
       <button type="button" onClick={a.run} title={a.hint}
         className="rounded-xl flex flex-col items-center justify-center gap-2 p-2 text-center transition-colors hover:border-[var(--border-stronger)]"
@@ -891,20 +893,8 @@ export default function GalleryPage() {
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fQs.length} — {t('sec.gallery.hubQueriesHint', 'клик: «Тренды» откроются с готовой выдачей по этому слову')}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {/* «+ Добавить тренд» — ПЕРВЫЙ чип (вернули по фидбэку: плюс-плитка в «Анализе»
-                не видна за длинной секцией «По ссылке» и ведёт в Аналитику, а не в скан).
-                Открывает «Тренды» (скан по ключевику) с кнопкой «Закрыть» (?from=gallery). */}
-            <button type="button" onClick={() => navigate('/social-extension?from=gallery')}
-              title={t('sec.gallery.addTrendTitle', 'Открыть «Тренды»: сканировать по ключевому слову — запрос сохранится здесь')}
-              className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl text-[13px] font-600 transition-colors hover:border-[var(--border-stronger)]"
-              style={{ background: 'var(--bg-tertiary)', border: '1px dashed var(--border-strong)', color: 'var(--text-primary)', cursor: 'pointer' }}>
-              <span className="relative w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 animate-attract" style={{ boxShadow: '0 0 12px rgba(99,102,241,0.45)' }}>
-                <span aria-hidden className="absolute inset-0 rounded-full animate-iridescent"
-                  style={{ background: 'conic-gradient(from 0deg, #6366f1, #22d3ee, #a855f7, #ec4899, #f59e0b, #6366f1)' }} />
-                <Plus size={14} className="relative z-[1]" style={{ color: '#fff' }} />
-              </span>
-              {t('sec.gallery.addTrendChip', 'Добавить тренд')}
-            </button>
+            {/* Кнопки в чипах нет: добавление — плюс-плиткой ПЕРВОЙ карточкой в сетке
+                «По ссылке» ниже (идентично остальным вкладкам, по фидбэку). */}
             {fQs.map((x) => (
               <span key={x.id} className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-xl"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
@@ -934,11 +924,12 @@ export default function GalleryPage() {
 
         {/* По ссылке — видео, добавленные прямой ссылкой через поле поиска (trend_id NULL).
             Карточка: обложка + платформа; кнопки: разобрать (Аналитика), скачать/статус,
-            оригинал, удалить. Скачанное открывается в просмотрщике кликом по обложке. */}
+            оригинал, удалить. Скачанное открывается в просмотрщике кликом по обложке.
+            Секция видна ВСЕГДА (даже пустая): первой карточкой стоит плюс-плитка «Добавить»
+            (идентично остальным вкладкам) — открывает «Тренды» для скана/вставки ссылки. */}
         {(() => {
           const fLv = q ? linkVideos.filter((v) =>
             (v.description || '').toLowerCase().includes(q) || (v.author || '').toLowerCase().includes(q) || (v.authorName || '').toLowerCase().includes(q)) : linkVideos;
-          if (!fLv.length) return null;
           return (
             <div className="space-y-2.5">
               <div className="flex items-center gap-2">
@@ -948,6 +939,10 @@ export default function GalleryPage() {
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>· {fLv.length} — {t('sec.gallery.byLinkHint', 'добавлены прямой ссылкой: разобрать в Аналитике, скачать, открыть оригинал')}</span>
               </div>
               <div className={CARD_GRID}>
+                {renderAddTile('trendhub', {
+                  hint: t('sec.gallery.addTrendTitle', 'Открыть «Тренды»: сканировать по ключевому слову или вставить ссылку на видео — найденное появится здесь'),
+                  run: () => navigate('/social-extension?from=gallery'),
+                })}
                 {fLv.map((v) => {
                   const title = v.description || v.authorName || v.author || t('sec.gallery.platformVideo', '{{platform}}-видео', { platform: v.platform });
                   const dlBusy = v.status === 'downloading';
