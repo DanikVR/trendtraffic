@@ -132,7 +132,7 @@ function genChaos(n: number): Vec3[] {
 }
 
 export function Constellation({
-  started, posRef, ambient = false,
+  started, posRef, ambient = false, ambientTotalRef,
 }: {
   started: boolean;
   /** Текущий ВИЗУАЛЬНЫЙ скролл (лерпнутый cur плавного скролла или window.scrollY). */
@@ -144,6 +144,11 @@ export function Constellation({
    * якорных секций лендинга (#how/#savings/…) не требуется.
    */
   ambient?: boolean;
+  /**
+   * Ambient: полный пробег прокрутки хоста (px), если скроллит не window
+   * (например, /billing внутри лейаута приложения). Без него — body.scrollHeight.
+   */
+  ambientTotalRef?: { current: number };
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const startedRef = useRef(started);
@@ -193,7 +198,7 @@ export function Constellation({
       const pos = posRef.current;
       if (ambient) {
         const vh = H;
-        const total = Math.max(document.body.scrollHeight - vh, vh);
+        const total = Math.max(ambientTotalRef?.current || (document.body.scrollHeight - vh), vh);
         const side = narrow ? 0.5 : 0.72;
         const side2 = narrow ? 0.5 : 0.70;
         keys = [

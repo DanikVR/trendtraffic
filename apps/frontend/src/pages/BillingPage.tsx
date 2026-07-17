@@ -18,7 +18,7 @@
  * Тексты — через t('sec.billing.*') с русским фолбэком (EN — базовый язык локалей).
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +29,7 @@ import {
   Wallet, PiggyBank, Zap, Clapperboard, Puzzle,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
+import { Constellation } from './public/landing/Constellation';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ClaudeLogo } from '../components/ClaudeLogo';
@@ -466,6 +467,44 @@ export function BillingPage() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { subscriptionTier, subscriptionTierName, token, refreshBilling } = useAppStore();
+
+  // ── Ambient-частицы лендинга (подложка). Только тёмная тема: палитра
+  // Constellation (кость/индиго/янтарь) рассчитана на чёрный фон.
+  const fxContentRef = useRef<HTMLDivElement>(null);
+  const fxPosRef = useRef(0);
+  const fxTotalRef = useRef(0);
+  const [fxDark, setFxDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const html = document.documentElement;
+    const mo = new MutationObserver(() => setFxDark(html.classList.contains('dark')));
+    mo.observe(html, { attributes: true, attributeFilter: ['class'] });
+    return () => mo.disconnect();
+  }, []);
+  // Скролл и полный пробег — через rect контента: /billing скроллится window-ом
+  // (публичная обвязка) ЛИБО внутренним #main-scroll (лейаут с сайдбаром) —
+  // capture-слушатель ловит оба, rect не зависит от того, кто скроллит.
+  useEffect(() => {
+    if (!fxDark) return;
+    const el = fxContentRef.current;
+    if (!el) return;
+    let baseTop: number | null = null;
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      if (baseTop === null) baseTop = r.top;
+      fxPosRef.current = Math.max(0, baseTop - r.top);
+      fxTotalRef.current = Math.max(r.height - window.innerHeight, 1);
+    };
+    update();
+    window.addEventListener('scroll', update, { capture: true, passive: true });
+    window.addEventListener('resize', update);
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      window.removeEventListener('scroll', update, { capture: true });
+      window.removeEventListener('resize', update);
+      ro.disconnect();
+    };
+  }, [fxDark]);
   // v2.3.8: /billing публичный — аноним видит витрину тарифов; оплату начинаем с регистрации.
   const isAnon = !token;
   // null = простой; 'paid' = оформляет сразу; 'trial' = оформляет 7-дневный триал.
@@ -671,7 +710,20 @@ export function BillingPage() {
 
   // ═══════════════════════════════════════════════
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
+    <div className="animate-fade-in">
+      {/* Подложка-частицы лендинга (ambient). Sticky-обёртка высотой в вьюпорт
+          «прилипает» при скролле и window, и #main-scroll; transform делает её
+          containing block-ом для position:fixed канваса (.ttl-fx) — частицы
+          живут в колонке контента и не лезут под сайдбар приложения. */}
+      {fxDark && (
+        <div aria-hidden style={{
+          position: 'sticky', top: 0, height: '100dvh', marginBottom: '-100dvh',
+          zIndex: 0, pointerEvents: 'none', transform: 'translateZ(0)',
+        }}>
+          <Constellation started posRef={fxPosRef} ambient ambientTotalRef={fxTotalRef} />
+        </div>
+      )}
+      <div ref={fxContentRef} className="space-y-8 pb-12" style={{ position: 'relative', zIndex: 1 }}>
       {/* SEO: /billing публичный — свой title/description по локали */}
       <Helmet defer={false}>
         <title>{t('sec.billing.seoTitle', 'Тариф Premium €49/мес — TrendTraffic')}</title>
@@ -976,6 +1028,7 @@ export function BillingPage() {
         onConfirm={() => { const cb = confirmDialog?.onConfirm; setConfirmDialog(null); cb?.(); }}
         onCancel={() => setConfirmDialog(null)}
       />
+      </div>{/* /контент поверх частиц (fxContentRef, z1) */}
     </div>
   );
 }

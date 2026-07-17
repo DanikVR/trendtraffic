@@ -2964,7 +2964,18 @@
  *          фигуры собраны всю дорогу, морф-вспышки на переходах) вместо
  *          фолбэк-хаоса, который на длинных документах почти не видно.
  *          Файлы: landing.css, Constellation.tsx, LegalDocPage.tsx, AppVersion. */
-export const APP_VERSION = '2.3.19';
+/* 2.3.20 — /billing: ambient-подложка частиц лендинга (по фидбэку юзера).
+ *          Constellation ambient внутри BillingPage — работает в ОБЕИХ
+ *          обвязках: публичной (PublicBillingShell, скролл window) и в
+ *          приложении (MainLayout, скролл #main-scroll). Механика: sticky
+ *          обёртка высотой 100dvh с transform:translateZ(0) — становится
+ *          containing block-ом для position:fixed канваса (.ttl-fx), частицы
+ *          живут в колонке контента и не лезут под сайдбар; скролл/пробег —
+ *          через rect контента (capture-слушатель ловит любой скроллер),
+ *          новый проп ambientTotalRef. Только тёмная тема (палитра частиц
+ *          под чёрный фон; MutationObserver на html.dark).
+ *          Файлы: BillingPage.tsx, Constellation.tsx, AppVersion. */
+export const APP_VERSION = '2.3.20';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
