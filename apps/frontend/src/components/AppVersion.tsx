@@ -3062,7 +3062,12 @@
  *          (5) Мини-плеер исходника на шаге «Расшифровка»; обложка карточки
  *          списка = кадр первой панели (COALESCE с pngUrl).
  *          Файлы: storyboard/{ffmpeg,service,router,planner,types}, Studio. */
-export const APP_VERSION = '2.4.5';
+/* 2.4.6 — вики: скрин секции MCP заменён на свежий кадр юзера (Enterprise →
+ *          MCP со скоупами вкл. новый skills:use; Content/…settingsenterprise/
+ *          174206.png). Живой ключ в оранжевом боксе ЗАМАЗАН Pillow-ом,
+ *          старый mcp-connector.png удалён (ссылка → /wiki-shots/mcp.png).
+ *          Файлы: WikiPage.tsx, public/wiki-shots/mcp.png, AppVersion. */
+export const APP_VERSION = '2.4.6';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
