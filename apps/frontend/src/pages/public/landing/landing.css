@@ -487,12 +487,18 @@
   inset: 0;
   z-index: 60;
   background: var(--ttl-void);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: transform 0.85s cubic-bezier(0.76, 0, 0.24, 1);
 }
 .ttl-preloader.is-done { transform: translateY(-100%); }
+/* Логотип в начале экрана — геометрия 1:1 с .ttl-nav-inner (строка 76px в .ttl-wrap):
+   после ухода шторки логотип хедера появляется ровно там же. */
+.ttl-preloader-brand {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 76px;
+  display: flex;
+  align-items: center;
+}
 .ttl-preloader-count {
   position: absolute;
   right: clamp(20px, 5vw, 60px);

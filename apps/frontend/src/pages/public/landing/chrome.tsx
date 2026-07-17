@@ -8,6 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { CookieConsent } from '../../../components/CookieConsent';
 
 export const APP_URL = 'https://app.trendtraffic.pro';
 
@@ -156,7 +157,12 @@ export function Preloader({ onDone }: { onDone: () => void }) {
   if (gone) return null;
   return (
     <div className={`ttl-preloader${done ? ' is-done' : ''}`} aria-hidden="true">
-      <TTLogo big />
+      {/* Логотип В НАЧАЛЕ экрана (пожелание владельца): та же геометрия, что у
+          логотипа в хедере (.ttl-wrap + строка 76px) — после ухода шторки
+          логотип навигации оказывается ровно на этом же месте. */}
+      <div className="ttl-preloader-brand ttl-wrap">
+        <TTLogo />
+      </div>
       <div className="ttl-preloader-count">{count}</div>
     </div>
   );
@@ -345,6 +351,8 @@ export function TTFooter() {
           </span>
         </div>
       </div>
+      {/* Плашка cookie-согласия (ЕС): фиксирована внизу, на всех маркетинговых страницах */}
+      <CookieConsent />
     </footer>
   );
 }

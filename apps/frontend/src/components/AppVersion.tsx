@@ -2833,8 +2833,21 @@
  *          «Промокод» (требуют аккаунт); CTA оплаты ведут на /auth/register
  *          (после регистрации RequirePaid сам возвращает на /billing).
  *          Файлы: router.tsx (BillingChrome + публичный роут),
- *          PublicBillingShell (нов), BillingPage (isAnon), AppVersion. */
-export const APP_VERSION = '2.3.10';
+ *          PublicBillingShell (нов), BillingPage (isAnon), AppVersion.
+ * 2.3.11 — Лендинг: логотип прелоадера перенесён В НАЧАЛО экрана (верхняя
+ *          строка 76px в .ttl-wrap — геометрия 1:1 с хедером: после ухода
+ *          шторки логотип навигации оказывается на том же месте; счётчик
+ *          остался справа-внизу). + Плашка COOKIE-СОГЛАСИЯ по нормам ЕС
+ *          (GDPR/ePrivacy): выбор до установки необязательных cookies,
+ *          равнозначные кнопки «Только необходимые» / «Принять все», ссылки
+ *          на /cookies и /privacy, решение в localStorage tt_cookie_consent;
+ *          показывается на всех маркетинговых страницах (внутри TTFooter)
+ *          и на публичном /billing (PublicBillingShell). Аналитики на сайте
+ *          пока нет — выбор учитывается на будущее. Файлы: CookieConsent
+ *          (нов), landing/chrome.tsx (Preloader, TTFooter),
+ *          landing/landing.css (.ttl-preloader-brand), PublicBillingShell,
+ *          AppVersion. */
+export const APP_VERSION = '2.3.11';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

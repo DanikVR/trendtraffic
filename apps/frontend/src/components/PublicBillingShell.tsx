@@ -10,6 +10,7 @@
 import { Link, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
+import { CookieConsent } from './CookieConsent';
 
 export function PublicBillingShell() {
   const { t } = useTranslation('common');
@@ -54,6 +55,9 @@ export function PublicBillingShell() {
       <main className="max-w-6xl mx-auto px-4 pt-8">
         <Outlet />
       </main>
+
+      {/* Плашка cookie-согласия (ЕС) — публичная страница */}
+      <CookieConsent />
     </div>
   );
 }
