@@ -3085,7 +3085,17 @@
  *          (3) Радио движков активны все три, с подсказками цены; тексты шага
  *          «Генерация» per-engine; замок «сначала кусок 1» действует везде.
  *          Файлы: storyboard/{omni,ffmpeg,service,router}, StoryboardStudio. */
-export const APP_VERSION = '2.4.7';
+/* 2.4.8 — вики: +4 раздела по схеме «Первого запуска» (новая категория
+ *          «Работа в приложении»): «Тренды» (4 темы: Поиск / Таргет на ЦА /
+ *          Аналитика / Каналы), «Google Flow», «Hotebook», «Медиафайлы» — с
+ *          описанием, deep-link «Открыть в приложении» (/gallery?tab=…) и 3–4
+ *          примерами на тему. 7 скриншотов юзера в public/wiki-shots/ (на Google
+ *          Flow и Hotebook e-mail аккаунта ЗАМАЗАНЫ Pillow-блуром). «Содержание»
+ *          переверстано: группировка по категориям, статьи — подзаголовками с
+ *          якорем w-<article>. Тексты — en+ru wiki.json. Файлы: WikiPage.tsx,
+ *          landing.css, locales/{en,ru}/wiki.json, public/wiki-shots/*.png,
+ *          AppVersion. */
+export const APP_VERSION = '2.4.8';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

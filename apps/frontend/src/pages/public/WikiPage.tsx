@@ -40,6 +40,8 @@ interface WikiArticleMeta {
 }
 
 const ES = `${APP_URL}/settings/enterprise`;
+/** Deep-link на вкладку Галереи приложения (app-хост). */
+const G = (tab: string) => `${APP_URL}/gallery?tab=${tab}`;
 
 const ARTICLES: WikiArticleMeta[] = [
   {
@@ -56,7 +58,41 @@ const ARTICLES: WikiArticleMeta[] = [
       { id: 'hotebook', tab: 'Hotebook', open: `${ES}?section=hotebook`, keyHref: 'https://notebooklm.google.com' },
     ],
   },
+  {
+    id: 'trends',
+    category: 'app',
+    sections: [
+      { id: 'search', tab: 'Trends', image: '/wiki-shots/trends-search.png', open: G('trendhub') },
+      { id: 'audience', tab: 'Trends', image: '/wiki-shots/trends-audience.png', open: G('trendhub') },
+      { id: 'analytics', tab: 'Trends', image: '/wiki-shots/trends-analytics.png', open: G('trendhub') },
+      { id: 'channels', tab: 'Trends', image: '/wiki-shots/trends-channels.png', open: G('trendhub') },
+    ],
+  },
+  {
+    id: 'google-flow',
+    category: 'app',
+    sections: [
+      { id: 'use', tab: 'Google Flow', image: '/wiki-shots/google-flow.png', open: G('flow'), keyHref: 'https://labs.google/flow' },
+    ],
+  },
+  {
+    id: 'hotebook',
+    category: 'app',
+    sections: [
+      { id: 'use', tab: 'Hotebook', image: '/wiki-shots/hotebook.png', open: G('hotebook'), keyHref: 'https://notebooklm.google.com' },
+    ],
+  },
+  {
+    id: 'media-files',
+    category: 'app',
+    sections: [
+      { id: 'use', tab: 'Media files', image: '/wiki-shots/media-files.png', open: G('reference') },
+    ],
+  },
 ];
+
+/** Порядок категорий в «Содержании» (для группировки статей). */
+const CATEGORY_ORDER = ['start', 'app'];
 
 /* ── Хелперы ── */
 
@@ -223,21 +259,33 @@ export function WikiPage() {
           ) : (
             /* ── Портал: содержание + статья ── */
             <div className="ttl-wiki-layout">
-              {/* Содержание (sticky) */}
+              {/* Содержание — сгруппировано по категориям, статьи как подзаголовки */}
               <aside className="ttl-wiki-toc" aria-label={t('ui.contents', 'Contents')}>
                 <p className="ttl-caption ttl-wiki-toc-title">{t('ui.contents', 'Contents')}</p>
-                {ARTICLES.map((art) => (
-                  <nav key={art.id} className="ttl-wiki-toc-group">
-                    <p className="ttl-wiki-toc-cat">{t(`categories.${art.category}.title`)}</p>
-                    <ul>
-                      {art.sections.map((s) => (
-                        <li key={s.id}>
-                          <button type="button" onClick={() => scrollToId(anchorId(art.id, s.id))}>
-                            {t(`articles.${art.id}.sections.${s.id}.title`)}
+                {CATEGORY_ORDER.map((catId) => (
+                  <nav key={catId} className="ttl-wiki-toc-group">
+                    <p className="ttl-wiki-toc-cat">{t(`categories.${catId}.title`)}</p>
+                    {ARTICLES.filter((a) => a.category === catId).map((art) => {
+                      const multi = art.sections.length > 1;
+                      return (
+                        <div key={art.id} className="ttl-wiki-toc-art">
+                          <button type="button" className="ttl-wiki-toc-artbtn" onClick={() => scrollToId(`w-${art.id}`)}>
+                            {t(`articles.${art.id}.title`)}
                           </button>
-                        </li>
-                      ))}
-                    </ul>
+                          {multi && (
+                            <ul>
+                              {art.sections.map((s) => (
+                                <li key={s.id}>
+                                  <button type="button" onClick={() => scrollToId(anchorId(art.id, s.id))}>
+                                    {t(`articles.${art.id}.sections.${s.id}.title`)}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
                   </nav>
                 ))}
               </aside>
@@ -245,7 +293,7 @@ export function WikiPage() {
               {/* Статьи */}
               <div className="ttl-wiki-articles">
                 {ARTICLES.map((art) => (
-                  <article key={art.id} className="ttl-wiki-article">
+                  <article key={art.id} id={`w-${art.id}`} className="ttl-wiki-article">
                     <p className="ttl-wiki-cat-chip">
                       <BookOpen size={13} /> {t('ui.categoryLabel', 'Topic')}: {t(`categories.${art.category}.title`)}
                     </p>

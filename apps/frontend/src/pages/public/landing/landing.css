@@ -705,6 +705,15 @@
   transition: color 0.2s ease;
 }
 .ttl-wiki-toc button:hover { color: var(--ttl-spark); }
+.ttl-wiki-toc-art { margin-bottom: 12px; }
+.ttl-wiki-toc-art:last-child { margin-bottom: 0; }
+.ttl-wiki-toc-art > .ttl-wiki-toc-artbtn {
+  display: block; background: none; border: 0; padding: 0; cursor: pointer; text-align: start;
+  font-size: 14px; font-weight: 400; line-height: 1.35; color: var(--ttl-bone);
+  margin-bottom: 6px; transition: color 0.2s ease;
+}
+.ttl-wiki-toc-art > .ttl-wiki-toc-artbtn:hover { color: var(--ttl-spark); }
+.ttl-wiki-toc-art ul { padding-inline-start: 11px; border-inline-start: 1px solid rgba(255, 255, 255, 0.09); }
 
 /* ── Статья ── */
 .ttl-wiki-article { scroll-margin-top: 96px; }

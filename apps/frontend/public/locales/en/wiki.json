@@ -28,6 +28,10 @@
     "start": {
       "title": "Getting started",
       "desc": "First steps: connect your keys and switch on the paid features."
+    },
+    "app": {
+      "title": "Working in the app",
+      "desc": "Trends, video generation, notebooks and the media library — how to use each section."
     }
   },
   "articles": {
@@ -98,6 +102,102 @@
             "Generate audio or video overviews from your sources and pull the results into the Gallery.",
             "Keep the NotebookLM tab open while the block works — sources, chat and generation run inside it.",
             "Press “Check” on this tab if the status is stuck — it re-reads the live connection."
+          ]
+        }
+      }
+    },
+    "trends": {
+      "title": "Trends",
+      "excerpt": "Find viral videos, target your audience, analyse by link and track channels.",
+      "lead": "The <b>Trends</b> section finds viral videos on TikTok, Instagram, YouTube and X — and analyses them. Four tabs: <b>Search</b>, <b>Audience targeting</b>, <b>Analytics</b> and <b>Channels</b>.",
+      "sections": {
+        "search": {
+          "title": "Search — find viral videos",
+          "body": "<p>The <b>Search</b> tab builds a feed of trends. Choose the <b>sources</b> (TikTok, Instagram, YouTube, X), the <b>By keyword</b> or <b>Trending</b> mode, and optionally a <b>region</b>, the number of videos (10/20/30), the search type (<b>Smart search</b>), sorting and period. The <b>Scan</b> button builds the feed. The <b>Auto-analysis</b> block runs on a schedule: it scans, takes one new video, analyses it and (optionally) assembles a UGC clip from a template.</p>",
+          "examples": [
+            "Type a keyword (e.g. “morning routine”) and press “Scan”.",
+            "The “Trending” mode returns fresh viral videos without a keyword.",
+            "Set a region and the number of videos to narrow the results.",
+            "Enable “Auto-analysis” (e.g. daily) — the platform finds and analyses a fresh trend by itself."
+          ]
+        },
+        "audience": {
+          "title": "Audience targeting — a map of micro-niches",
+          "body": "<p>The <b>Audience targeting</b> tab starts from your product: describe <b>what you promote</b> and your <b>core audience</b> — the AI picks micro-niches and keywords and finds relevant videos for each. That means less competition and more precise targeting. Don't know your audience? Describe the product and press <b>Suggest</b> and the AI fills it in. One click builds the niches, finds the videos and ranks them by demand; then use the <b>To TrendFlow</b> button on the niche you want.</p>",
+          "examples": [
+            "Describe the product and press “Suggest” — the AI fills in the audience and keywords.",
+            "“Build audience map” — niches are ranked by demand (#1/#2/#3).",
+            "Choose a region and the keyword language (several at once is allowed).",
+            "The “Validate keywords” toggle uses real TikTok/YouTube queries instead of AI guesses."
+          ]
+        },
+        "analytics": {
+          "title": "Analytics — analyse a video by link",
+          "body": "<p>The <b>Analytics</b> tab breaks down any video by link: paste a TikTok / Instagram / YouTube URL and press <b>Analyze</b> — Gemini analyses it frame by frame (speech, scenes, hooks). The <b>Add to gallery</b> button saves the video and the breakdown into Media files. Videos found on the Search tab open here too.</p>",
+          "examples": [
+            "Paste a video link and press “Analyze”.",
+            "“Add to gallery” — the video and breakdown (.md + subtitles) go to Media files → “Analytics”.",
+            "Open a video from Search — it shows up here for analysis."
+          ]
+        },
+        "channels": {
+          "title": "Channels — track competitors",
+          "body": "<p>The <b>Channels</b> tab watches channels: paste a TikTok / Instagram / YouTube channel URL. <b>Track</b> adds the channel to your list with daily auto-updates of its metrics (showing “was → is” changes). <b>One-time analysis</b> shows all of the channel's videos right now, without history.</p>",
+          "examples": [
+            "“Track” — watch a competitor's channel: followers and metrics update daily.",
+            "“One-time analysis” — all of the channel's videos at once, without keeping history.",
+            "The cards show the follower count and the time of the last update."
+          ]
+        }
+      }
+    },
+    "google-flow": {
+      "title": "Google Flow",
+      "excerpt": "Generate Veo videos in Google Flow through the TrendTraffic extension.",
+      "lead": "The <b>Google Flow</b> block generates <b>Veo</b> videos right inside Google Flow through the TrendTraffic browser extension: a prompt queue and exchange of finished videos with the Gallery.",
+      "sections": {
+        "use": {
+          "title": "How to connect and generate",
+          "body": "<p>Install the TrendTraffic extension (the button on the banner), open <b>labs.google/flow</b> and sign in to Google — the extension connects automatically as long as you're logged into the app. The <b>Add</b> tile sends a prompt/reference into the queue; finished videos appear in the Gallery and in Media files. If the status says the extension is offline, use the <b>Reconnect</b> button.</p>",
+          "examples": [
+            "Install the extension (the “Download” / “Update” banner) and sign in at labs.google/flow.",
+            "The “Add” tile — send a prompt or reference into the generation queue.",
+            "Finished Veo videos arrive in the Gallery and Media files by themselves.",
+            "“Reconnect” on the banner — if the extension connection drops."
+          ]
+        }
+      }
+    },
+    "hotebook": {
+      "title": "Hotebook",
+      "excerpt": "Google NotebookLM through the extension: sources, chat, audio and video overviews.",
+      "lead": "The <b>Hotebook</b> block is your own <b>Google NotebookLM</b> through the TrendTraffic extension. Work inside NotebookLM itself (sources, chat, generation), and finished studio outputs appear automatically in “Media files” (video/audio/images) and on this tab.",
+      "sections": {
+        "use": {
+          "title": "Working with notebooks",
+          "body": "<p>Install the extension and sign in at <b>notebooklm.google.com</b>. Your notebooks are listed here; <b>click a notebook</b> to open it in NotebookLM — that's where you work. While something is generating, a spinner turns on the card; finished audio and video overviews land in Media files by themselves. Generation runs under your own Google account and its limits (it can be separate from the app account).</p>",
+          "examples": [
+            "Install the extension, sign in at notebooklm.google.com — your notebooks appear here.",
+            "Click a notebook — it opens in NotebookLM, and you work right there.",
+            "Generate an audio or video overview — it arrives in Media files by itself.",
+            "“Refresh” updates the list; a spinner on a card means generation is running."
+          ]
+        }
+      }
+    },
+    "media-files": {
+      "title": "Media files",
+      "excerpt": "The media library: all your videos, images, audio and breakdowns in one place.",
+      "lead": "<b>Media files</b> is your account's single media library: everything finished flows here — UGC-studio clips, Google Flow videos, NotebookLM outputs, Analytics breakdowns.",
+      "sections": {
+        "use": {
+          "title": "Media library: filters, publishing, downloading",
+          "body": "<p>Switch the type: <b>video / image / audio / analytics</b>; search by name, author or description. Tick files (or <b>Select all</b>) and <b>download</b> them or send them to the <b>Publisher</b>. Every card has quick buttons: play, add to gallery, publish, delete, download.</p>",
+          "examples": [
+            "The “video / image / audio” filter shows only the type of file you need.",
+            "“Select all” → “Download” — grab a batch of files at once.",
+            "“Publish” — send a clip to the Publisher (social networks).",
+            "The “Analytics” sub-filter — saved video breakdowns (.md + subtitles)."
           ]
         }
       }
