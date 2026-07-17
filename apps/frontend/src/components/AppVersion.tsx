@@ -2847,7 +2847,15 @@
  *          (нов), landing/chrome.tsx (Preloader, TTFooter),
  *          landing/landing.css (.ttl-preloader-brand), PublicBillingShell,
  *          AppVersion. */
-export const APP_VERSION = '2.3.11';
+/* 2.3.12 — Галерея → Тренды: ВЕРНУЛИ кнопку «+ Добавить тренд» — первым чипом в «Запросах
+ *          трендов» (по фидбэку: после 2.2.22 добавление жило только на плюс-плитке в секции
+ *          «Анализ», которая уезжает за длинную «По ссылке» и ведёт в Аналитику, а не в скан —
+ *          на вкладке «Тренды» не оставалось видимой кнопки создания). Чип: переливающийся
+ *          плюс-в-кружке (animate-iridescent + animate-attract) + подпись; клик → «Тренды»
+ *          (скан по ключевику) с кнопкой «Закрыть» для возврата (?from=gallery). i18n:
+ *          sec.gallery.addTrendChip/addTrendTitle (ru/en). Файлы: GalleryPage.tsx,
+ *          locales/{ru,en}/common.json, AppVersion. */
+export const APP_VERSION = '2.3.12';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

@@ -2433,6 +2433,8 @@
       "addHintTrends": "Open 'Trends → Analytics': analyze video — analysis will appear here",
       "addHintUgc": "Open UGC Studio: new video (name - date and time, you can rename later)",
       "addTile": "Add",
+      "addTrendChip": "Add trend",
+      "addTrendTitle": "Open 'Trends': scan by keyword — the query will be saved here",
       "analysisHint": "already analyzed videos: cover + analysis data",
       "analysisLoadFail": "Failed to load analysis.",
       "analysisNotFound": "Analysis not found.",
