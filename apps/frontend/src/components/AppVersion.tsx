@@ -3037,7 +3037,18 @@
  *          (3) Вики: секция MCP переписана под этот метод (en+ru). Ключи
  *          settings.mcp.way* добавлены в en+ru common.json. Файлы: mcp/router.ts,
  *          McpConnectorCard.tsx, locales/{en,ru}/{common,wiki}.json, AppVersion. */
-export const APP_VERSION = '2.4.3';
+/* 2.4.4 — фидбэк юзера по 2.4.3: «Способ 1»/«Скачать MCP для Claude» были
+ *          ТОЛЬКО в /settings, а юзер создаёт ключ в Enterprise → MCP и там
+ *          пусто. Блок подключения вынесен в общий McpConnectSnippets.tsx
+ *          (Способ 1: Название+URL-с-ключом+5 шагов; Способ 2: кнопка
+ *          скачивания claude_desktop_config.json + сниппет; Способ 3: команда
+ *          Claude Code) и подключён В ОБА места: McpConnectorCard (/settings)
+ *          и Section5Mcp (Enterprise → MCP, карточкой после создания ключа —
+ *          свежий ключ подставляется сам). howToBody (en+ru) упоминает
+ *          ?key=<ключ> для агентов без заголовков. Файлы: McpConnectSnippets.tsx
+ *          (нов.), McpConnectorCard.tsx, Section5Mcp.tsx,
+ *          locales/{en,ru}/common.json, AppVersion. */
+export const APP_VERSION = '2.4.4';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

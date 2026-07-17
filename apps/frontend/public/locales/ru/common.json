@@ -617,7 +617,7 @@
       "confirmDeleteTitle": "Удалить MCP-ключ?",
       "confirmDeleteBody": "Агенты с этим ключом сразу потеряют доступ.",
       "howToHeading": "Как подключить",
-      "howToBody": "В вашем агенте/CRM добавьте remote MCP-сервер: URL выше + заголовок Authorization: Bearer <ваш ключ>. Агент увидит только те инструменты, что разрешены вашими scopes.",
+      "howToBody": "В вашем агенте/CRM добавьте remote MCP-сервер: URL выше + заголовок Authorization: Bearer <ваш ключ>. Если агент не умеет слать заголовки (как «Add custom connector» в Claude) — вставьте ключ прямо в URL: …/api/mcp?key=<ваш ключ>. Агент увидит только те инструменты, что разрешены вашими scopes.",
       "errLoad": "Не удалось загрузить настройки MCP",
       "errCreate": "Не удалось создать ключ",
       "errDelete": "Не удалось удалить ключ"

@@ -616,7 +616,7 @@
       "confirmDeleteTitle": "Delete MCP key?",
       "confirmDeleteBody": "Agents using this key will immediately lose access.",
       "howToHeading": "How to connect",
-      "howToBody": "In your agent/CRM, add the remote MCP server: the URL above + Authorization header: Bearer <your key>. The agent will only see tools allowed by your scopes.",
+      "howToBody": "In your agent/CRM, add the remote MCP server: the URL above + Authorization header: Bearer <your key>. If the agent cannot send headers (like Claude's “Add custom connector”), put the key right into the URL: …/api/mcp?key=<your key>. The agent will only see tools allowed by your scopes.",
       "errLoad": "Failed to load MCP settings",
       "errCreate": "Failed to create key",
       "errDelete": "Failed to delete key"

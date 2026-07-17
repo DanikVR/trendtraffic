@@ -14,6 +14,7 @@ import {
 import { AuroraCard } from '../../components/AuroraCard';
 import { AuroraButton } from '../../components/AuroraButton';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { McpConnectSnippets } from '../../components/McpConnectSnippets';
 import { useAppStore } from '../../store/useAppStore';
 
 interface McpKey {
@@ -263,7 +264,13 @@ export function Section5Mcp() {
         )}
       </AuroraCard>
 
-      {/* How to connect */}
+      {/* Подключение: Способ 1 (приложение Claude, ключ в URL) + скачивание + сниппеты.
+          Свежесозданный ключ подставляется автоматически; без него — плейсхолдер. */}
+      <AuroraCard className="p-5">
+        <McpConnectSnippets url={url || 'https://app.trendtraffic.pro/api/mcp'} rawKey={justCreated?.rawKey || null} />
+      </AuroraCard>
+
+      {/* How to connect (другие агенты: n8n, ChatGPT-коннекторы, свои) */}
       <AuroraCard className="p-5 space-y-2">
         <h3 className="text-sm font-700 uppercase tracking-wider" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
           {t('enterprise.mcp.howToHeading')}
