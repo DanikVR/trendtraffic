@@ -200,10 +200,20 @@ export function useSmoothScroll(contentRef: React.RefObject<HTMLDivElement>) {
     let cur = target;
     let raf = 0;
 
-    const setHeight = () => { spacer.style.height = `${el.scrollHeight}px`; };
+    const setHeight = () => {
+      // Общая высота прокрутки должна равняться ФАКТИЧЕСКОЙ высоте контента.
+      // Контент на время smooth-скролла fixed, но его обёртки (#root и .ttl с
+      // min-height:100vh) остаются в потоке и добавляют высоту вьюпорта —
+      // без компенсации после футера остаётся пустой «хвост» на целый экран.
+      const flowOther = document.body.scrollHeight - spacer.offsetHeight;
+      spacer.style.height = `${Math.max(0, el.scrollHeight - flowOther)}px`;
+    };
     const ro = new ResizeObserver(setHeight);
     ro.observe(el);
     setHeight();
+    // Поздние шрифты/картинки и ресайз окна меняют и контент, и вклад 100vh-обёрток.
+    window.addEventListener('resize', setHeight);
+    document.fonts?.ready.then(setHeight).catch(() => {});
 
     const onScroll = () => { target = window.scrollY; };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -231,6 +241,7 @@ export function useSmoothScroll(contentRef: React.RefObject<HTMLDivElement>) {
       cancelAnimationFrame(raf);
       ro.disconnect();
       spacer.remove();
+      window.removeEventListener('resize', setHeight);
       window.removeEventListener('scroll', onScroll);
       el.classList.remove('ttl-smooth');
       el.style.transform = '';

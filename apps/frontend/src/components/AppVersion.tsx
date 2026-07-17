@@ -2930,7 +2930,16 @@
  *          Файлы: LegalDocPage.tsx, Privacy/Terms/CookiePage.tsx,
  *          CookieConsent.tsx, chrome.tsx, landing.css, translate-legal.mjs,
  *          locales (108 legal.json + footerCookieSettings), AppVersion. */
-export const APP_VERSION = '2.3.16';
+/* 2.3.17 — Лендинг: убран пустой «хвост» прокрутки после футера (страница
+ *          листалась на целый экран черноты ниже конца сайта). Причина:
+ *          useSmoothScroll делает контент fixed и создаёт spacer высотой
+ *          el.scrollHeight, но обёртки контента (#root и .ttl с
+ *          min-height:100vh) ОСТАЮТСЯ в потоке и добавляют к прокрутке
+ *          высоту вьюпорта. Фикс: spacer = высота контента МИНУС прочая
+ *          потоковая высота body (универсально для любых обёрток) +
+ *          пересчёт на window.resize и fonts.ready (закрывает и недобор
+ *          высоты от поздних шрифтов). Файлы: landing/chrome.tsx, AppVersion. */
+export const APP_VERSION = '2.3.17';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
