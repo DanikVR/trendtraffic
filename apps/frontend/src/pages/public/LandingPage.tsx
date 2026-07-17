@@ -10,7 +10,8 @@
  * Изолирована от приложения: стили в landing/landing.css (скоуп .ttl),
  * обвязка в landing/chrome.tsx. Тексты — новые ключи sec.ttLanding.*
  * (русский эталон; прогон translate-pivot — после утверждения текстов).
- * Фото-слоты пустые (.ttl-media) — изображения зальёт владелец.
+ * Фото-слоты (.ttl-media) заполнены скриншотами продукта —
+ * landing/shots/*.webp 1600×1200 (4:3, как и слот), alt = прежний текст заглушки.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -22,6 +23,10 @@ import {
 import { Constellation } from './landing/Constellation';
 import { ClaudeLogo } from '../../components/ClaudeLogo';
 import './landing/landing.css';
+import shotTrends from './landing/shots/trends.webp';
+import shotAnalysis from './landing/shots/analysis.webp';
+import shotStudio from './landing/shots/studio.webp';
+import shotPublisher from './landing/shots/publisher.webp';
 
 function Arrow() {
   return (
@@ -79,24 +84,28 @@ export function LandingPage() {
       title: t('sec.ttLanding.f1Title', 'Тренды — раньше всех'),
       text: t('sec.ttLanding.f1Text', 'Скан трёх платформ по нише и гео-региону выдачи. «Таргет на ЦА»: опишите продукт — ИИ сам заполнит аудиторию, подберёт ключевики на 29 языках и найдёт ниши с реальным спросом. Каналы конкурентов — в вотчлисте с историей метрик.'),
       ph: t('sec.ttLanding.f1Ph', 'Скриншот: лента трендов'),
+      img: shotTrends,
     },
     {
       label: t('sec.ttLanding.f2Label', 'Аналитика · TrendDNA'),
       title: t('sec.ttLanding.f2Title', 'Рецепт вирусности — по кадрам'),
       text: t('sec.ttLanding.f2Text', 'Вставьте ссылку на любое видео TikTok, Instagram или YouTube — Gemini разберёт его покадрово: хук, ритм, структура, титры. Разбор и субтитры лягут в галерею, а «ДНК тренда» автоматически срежиссирует ваш будущий ролик.'),
       ph: t('sec.ttLanding.f2Ph', 'Скриншот: разбор видео'),
+      img: shotAnalysis,
     },
     {
       label: t('sec.ttLanding.f3Label', 'UGC-студия'),
       title: t('sec.ttLanding.f3Title', 'Аватар говорит за вас'),
       text: t('sec.ttLanding.f3Text', 'Четыре режима: соло, диалог двоих, свой текст «как есть», режиссура по анализу тренда. Готовые луки HeyGen или аватар по вашему фото, все голоса ElevenLabs включая клоны, живые стили субтитров и брендкиты.'),
       ph: t('sec.ttLanding.f3Ph', 'Скриншот: студия'),
+      img: shotStudio,
     },
     {
       label: t('sec.ttLanding.f4Label', 'Автопилот · Публикатор'),
       title: t('sec.ttLanding.f4Title', 'Контент-план на месяц — без вас'),
       text: t('sec.ttLanding.f4Text', 'Слежение за трендами превращает находки в готовые ролики по вашему шаблону. Цепочки автопубликации сами раскладывают форматы по площадкам и слотам — TikTok, YouTube и Instagram получают контент по расписанию.'),
       ph: t('sec.ttLanding.f4Ph', 'Скриншот: публикатор'),
+      img: shotPublisher,
     },
   ];
 
@@ -233,7 +242,9 @@ export function LandingPage() {
               {features.map((f, i) => {
                 const media = (
                   <FadeUp key="m" delay={0.1}>
-                    <div className="ttl-media"><span>{f.ph}</span></div>
+                    <div className="ttl-media">
+                      <img src={f.img} alt={f.ph} width={1600} height={1200} loading="lazy" decoding="async" />
+                    </div>
                   </FadeUp>
                 );
                 const copy = (

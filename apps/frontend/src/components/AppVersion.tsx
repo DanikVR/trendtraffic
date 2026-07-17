@@ -2939,7 +2939,19 @@
  *          потоковая высота body (универсально для любых обёрток) +
  *          пересчёт на window.resize и fonts.ready (закрывает и недобор
  *          высоты от поздних шрифтов). Файлы: landing/chrome.tsx, AppVersion. */
-export const APP_VERSION = '2.3.17';
+/* 2.3.18 — Лендинг: фото-слоты секции «Возможности» заполнены реальными
+ *          скриншотами продукта (были пустые пунктирные заглушки).
+ *          1 — лента трендов (поиск/таргет на ЦА), 2 — разбор видео
+ *          (метрики+Viral Breakdown), 3 — UGC-студия, 4 — публикатор.
+ *          PNG 1600×1200 из Content/one сконвертированы в WebP q82
+ *          (2.25 МБ → 336 КБ на все четыре), лежат в src/pages/public/
+ *          landing/shots/ и импортируются с вайтовым хешем; alt =
+ *          прежний текст заглушки (ключи f1Ph–f4Ph). Слот: пунктир →
+ *          тонкая сплошная рамка, object-fit:cover (пропорции 4:3
+ *          совпадают — без обрезки), lazy+async, width/height против CLS.
+ *          Файлы: LandingPage.tsx, landing.css, landing/shots/*.webp,
+ *          AppVersion. */
+export const APP_VERSION = '2.3.18';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
