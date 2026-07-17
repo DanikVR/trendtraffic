@@ -1190,7 +1190,7 @@
     "geminiFixCount": 131,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:24.245Z",
+    "pivotAt": "2026-07-17T20:12:32.018Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Bejelentkezés",
       "publicStart": "Indítás ingyen",
       "seoDesc": "TrendTraffic Premium előfizetés havi 49 €-ért: virális trendkeresés, közösségi média analitika, UGC stúdió AI avatarokkal és automatikus közzététel. 7 nap ingyenes, bármikor lemondható.",
-      "seoTitle": "Premium csomag havi 49 € – TrendTraffic"
+      "seoTitle": "Premium csomag havi 49 € – TrendTraffic",
+      "pf49Storyboard": "Storyboard: egyfelvételes Reels — AI storyboard akár 6 panel/rész, 3 renderelő motor (ingyenes is), feliratok, csatorna jelvény és CTA szó"
     },
     "channels": {
       "actionsHint": "A 'Követés' hozzáadja a csatornát a listájához a napi automatikus frissítésekhez (megmutatva a 'volt→van' változásokat). Az 'Egyszeri elemzés' most megmutatja az összes videót, előzmények nélkül.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Ez a rész fejlesztés alatt áll – tartalom hamarosan érkezik.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Süti beállítások"
+      "footerCookieSettings": "Süti beállítások",
+      "incSb": "Storyboard: egyfelvételes Reels megtartási szerkesztés",
+      "sbB1": "Az AI rendező automatikusan panelekre rendezi a beszédet — Önnek csak a storyboardot kell beállítania a filmszalagon",
+      "sbB2": "Három renderelő motor: szoftveres (ingyenes, kulcs nélkül), Omni API, vagy Google Flow az előfizetésével",
+      "sbB3": "Flow automatizálás: a generálási sor magától fut, az automatikus összeállítás összevarrja a kész Reel-t Ön nélkül",
+      "sbB4": "CTA szó a végén: a nézők kommentelik — az elkötelezettség növeli az elérést",
+      "sbBody": "A statikus beszélő fejek mellett másodpercek alatt elgörgetnek — csak a változó felvételek tartják fenn a figyelmet. A Storyboard dinamikus Reel-lé alakítja az Ön felvételét: átírja a beszédet, legfeljebb 8 másodperces mondatokra vágja, és mindegyiket panelekre rendezi — közeli beszélő, teljes képernyős címek, bevágások, osztott képernyők, makettek és egy cselekvésre ösztönző finálé.",
+      "sbCardBadge": "@csatornám",
+      "sbCardChunk": "1. rész · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Feliratok: beszédből",
+      "sbLabel": "Storyboard · megtartási szerkesztés",
+      "sbNote": "Tartalmazza a Premium · \"Storyboard\" fül a Galériában · kész Reel — közvetlenül a Kiadóba",
+      "sbP1": "Beszélő közeli",
+      "sbP2": "Teljes képernyős cím",
+      "sbP3": "Bevágás",
+      "sbP4": "Osztott képernyő",
+      "sbP5": "Makett",
+      "sbP6": "Finálé + CTA",
+      "sbTitleL1": "Egy felvétel kamerával —",
+      "sbTitleL2": "top-alkotói szintű szerkesztés."
     },
     "storyboard": {
       "actFail": "Sikertelen — próbálja újra.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papír",
       "style_terminal": "Terminál",
-      "style_bold": "Félkövér"
+      "style_bold": "Félkövér",
+      "ctaHintV2": "Használja ugyanazt a kódszót a poszt feliratában."
     }
   }
 }

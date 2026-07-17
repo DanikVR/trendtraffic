@@ -1190,7 +1190,7 @@
     "geminiFixCount": 88,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:31.835Z",
+    "pivotAt": "2026-07-17T20:12:53.593Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "පිවිසෙන්න",
       "publicStart": "නොමිලේ ආරම්භ කරන්න",
       "seoDesc": "TrendTraffic Premium දායකත්වය මසකට €49: වෛරස් ප්‍රවණතා සෙවීම, සමාජ මාධ්‍ය විශ්ලේෂණ, AI avatars සහිත UGC studio, සහ ස්වයංක්‍රීය ප්‍රකාශනය. දින 7ක් නොමිලේ, ඕනෑම වේලාවක අවලංගු කරන්න.",
-      "seoTitle": "Premium සැලැස්ම මසකට €49 — TrendTraffic"
+      "seoTitle": "Premium සැලැස්ම මසකට €49 — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI storyboard up to 6 panels per chunk, 3 render engines (incl. free), subtitles, channel badge, and CTA word"
     },
     "channels": {
       "actionsHint": "'Track' මඟින් නාලිකාව දිනපතා ස්වයංක්‍රීය යාවත්කාලීන කිරීම් සඳහා ඔබේ ලැයිස්තුවට එක් කරයි ('was→is' වෙනස්කම් පෙන්වයි). 'One-time analysis' මඟින් ඉතිහාසයක් නොමැතිව සියලුම වීඩියෝ දැන් පෙන්වයි.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "කොටස සංවර්ධනය වෙමින් පවතී—අන්තර්ගතය ඉක්මනින් පැමිණේ.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "කුකී සැකසුම්"
+      "footerCookieSettings": "කුකී සැකසුම්",
+      "incSb": "Storyboard: one-take Reels retention edit",
+      "sbB1": "AI director auto-arranges speech into panels — you just adjust the storyboard on the filmstrip",
+      "sbB2": "Three render engines: software (free, no keys), Omni API, or Google Flow with your subscription",
+      "sbB3": "Flow automation: generation queue runs itself, auto-assembly stitches the finished Reel without you",
+      "sbB4": "CTA word at the end: viewers comment it — engagement boosts reach",
+      "sbBody": "Static talking heads get scrolled past in seconds — only changing shots hold attention. Storyboard reassembles your take into a dynamic Reel: transcribes speech, cuts it into phrases up to 8 seconds, and arranges each into panels — close-up speaker, full-screen titles, cutaways, split-screens, mockups, and a call-to-action finale.",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panels",
+      "sbCardSubs": "Subtitles: from speech",
+      "sbLabel": "Storyboard · retention edit",
+      "sbNote": "Included in Premium · \"Storyboard\" tab in Gallery · finished Reel — directly to Publisher",
+      "sbP1": "Speaker close-up",
+      "sbP2": "Full-screen title",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "One take on camera —",
+      "sbTitleL2": "top-creator level editing."
     },
     "storyboard": {
       "actFail": "අසාර්ථකයි — කරුණාකර නැවත උත්සාහ කරන්න.",
@@ -4259,7 +4281,8 @@
       "style_neon": "නියොන්",
       "style_paper": "කඩදාසි",
       "style_terminal": "ටර්මිනල්",
-      "style_bold": "තද"
+      "style_bold": "තද",
+      "ctaHintV2": "Use the same code word in your post caption."
     }
   }
 }

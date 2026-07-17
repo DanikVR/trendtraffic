@@ -1172,7 +1172,7 @@
     "geminiFixCount": 56,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:20.918Z",
+    "pivotAt": "2026-07-17T20:12:22.181Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Ensaluti",
       "publicStart": "Komencu senpage",
       "seoDesc": "TrendTraffic Premium-abono por €49/monato: virala tendenca serĉo, socia amaskomunikila analizo, UGC-studio kun AI-avataroj, kaj aŭtomata publikigo. 7 tagoj senpage, nuligu iam ajn.",
-      "seoTitle": "Premium-plano €49/monato — TrendTraffic"
+      "seoTitle": "Premium-plano €49/monato — TrendTraffic",
+      "pf49Storyboard": "Bildrakonto: unu-prenaj Reels — AI-bildrakonto ĝis 6 paneloj por bloko, 3 bildigaj motoroj (inkl. senpaga), subtekstoj, kanala insigno, kaj CTA-vorto"
     },
     "channels": {
       "actionsHint": "'Spuri' aldonas la kanalon al via listo por ĉiutagaj aŭtomataj ĝisdatigoj (montrante 'estis→estas' ŝanĝojn). 'Unufoja analizo' montras ĉiujn filmetojn nun, sen historio.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sekcio sub evoluo—enhavo baldaŭ havebla.",
       "wikiMeta": "Vikio — TrendTraffic",
       "wikiTitle": "Vikio",
-      "footerCookieSettings": "Kuketaj agordoj"
+      "footerCookieSettings": "Kuketaj agordoj",
+      "incSb": "Bildrakonto: unu-prenaj Reels retena redakto",
+      "sbB1": "AI-direktoro aŭtomate aranĝas paroladon en panelojn — vi nur ĝustigas la bildrakonton sur la filmbendo",
+      "sbB2": "Tri bildigaj motoroj: programaro (senpaga, sen ŝlosiloj), Omni API, aŭ Google Flow kun via abono",
+      "sbB3": "Flua aŭtomatigo: generacia vico mem funkcias, aŭtomata kunigo kunkudras la finitan Reel sen vi",
+      "sbB4": "CTA-vorto ĉe la fino: spektantoj komentas ĝin — engaĝiĝo plifortigas atingon",
+      "sbBody": "Senmovaj parolantaj kapoj estas preterpasataj en sekundoj — nur ŝanĝiĝantaj pafoj tenas atenton. Bildrakonto rekunmetas vian prenadon en dinamikan Reel: transskribas paroladon, tranĉas ĝin en frazojn ĝis 8 sekundoj, kaj aranĝas ĉiun en panelojn — proksima plano de parolanto, tutekranaj titoloj, fortranĉaĵoj, dividitaj ekranoj, maketoj, kaj alvoko al ago-finalo.",
+      "sbCardBadge": "@miakanalo",
+      "sbCardChunk": "Bloko 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 paneloj",
+      "sbCardSubs": "Subtekstoj: el parolado",
+      "sbLabel": "Bildrakonto · retena redakto",
+      "sbNote": "Inkluzivita en Premium · langeto \"Bildrakonto\" en Galerio · finita Reel — rekte al Eldonisto",
+      "sbP1": "Parolanto proksima plano",
+      "sbP2": "Tutekrana titolo",
+      "sbP3": "Fortranĉaĵo",
+      "sbP4": "Dividita ekrano",
+      "sbP5": "Maketo",
+      "sbP6": "Finalo + CTA",
+      "sbTitleL1": "Unu preno per fotilo —",
+      "sbTitleL2": "redaktado je nivelo de pintaj kreantoj."
     },
     "storyboard": {
       "actFail": "Malsukcesis — bonvolu reprovi.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neono",
       "style_paper": "Papero",
       "style_terminal": "Terminalo",
-      "style_bold": "Aŭdaca"
+      "style_bold": "Aŭdaca",
+      "ctaHintV2": "Uzu la saman kodvorton en via afiŝa priskribo."
     }
   }
 }

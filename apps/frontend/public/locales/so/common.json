@@ -1172,7 +1172,7 @@
     "geminiFixCount": 31,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:32.541Z",
+    "pivotAt": "2026-07-17T20:12:57.647Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Soo gal",
       "publicStart": "Bilaash ku bilow",
       "seoDesc": "TrendTraffic Premium isdiiwaangelin €49/bishii: raadinta isbeddellada fayraska, falanqaynta baraha bulshada, istuudiyaha UGC oo leh avatars AI, iyo daabacaadda tooska ah. 7 maalmood oo bilaash ah, wakhti kasta jooji.",
-      "seoTitle": "Qorshaha Premium €49/bishii — TrendTraffic"
+      "seoTitle": "Qorshaha Premium €49/bishii — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels hal-mar ah — AI storyboard ilaa 6 qaybood oo chunk ah, 3 matoor oo render ah (oo ay ku jiraan kuwa bilaashka ah), qoraal-hoosaadyo, calaamadda kanaalka, iyo ereyga CTA"
     },
     "channels": {
       "actionsHint": "'Raadraac' wuxuu ku daraa kanaalka liiskaaga si loo helo cusboonaysiinta tooska ah ee maalinlaha ah (oo muujinaya isbeddellada 'ahaa→waa'). 'Falanqayn hal mar ah' wuxuu muujinayaa dhammaan fiidiyowyada hadda, iyada oo aan lahayn taariikh.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Qaybtan waa la horumarinayaa—waxyaabaha ayaa soo socda dhawaan.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Dejinta Kukiyada"
+      "footerCookieSettings": "Dejinta Kukiyada",
+      "incSb": "Storyboard: Reels hal-mar ah oo la hagaajiyay",
+      "sbB1": "Agaasimaha AI wuxuu si toos ah u habaynayaa hadalka qaybo — adiga kaliya waxaad hagaajinaysaa storyboard-ka filimka",
+      "sbB2": "Saddex matoor oo render ah: software (bilaash, furayaal la'aan), Omni API, ama Google Flow oo leh rukunkaaga",
+      "sbB3": "Automation-ka Flow: safka wax-soo-saarka ayaa iskiis u shaqeeya, isku-xirka tooska ah ayaa isku-dhafan Reel-ka dhameystiran adiga la'aantaa",
+      "sbB4": "Ereyga CTA dhamaadka: daawadayaashu way ka faalloodaan — ka-qaybgalku wuxuu kordhiyaa gaarista",
+      "sbBody": "Madaxyada hadlaya ee taagan waxaa lagu dhaafaa ilbiriqsiyo gudahood — kaliya sawirada isbedelaya ayaa soo jiita dareenka. Storyboard wuxuu dib u habaynayaa qaabkaaga Reel firfircoon: wuxuu qoraa hadalka, wuxuu u kala gooyaa weedho ilaa 8 ilbiriqsi ah, wuxuuna mid walba u habaynayaa qaybo — ku-dhawaanshaha hadlaha, cinwaannada shaashadda oo dhan, gooyn, shaashado kala qaybsan, mockups, iyo gabagabo wicitaan-ficil ah.",
+      "sbCardBadge": "@kanaalkayga",
+      "sbCardChunk": "Qaybta 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 qaybood",
+      "sbCardSubs": "Qoraal-hoosaadyo: hadalka",
+      "sbLabel": "Storyboard · hagaajinta joogitaanka",
+      "sbNote": "Waxaa ku jira Premium · tabka \"Storyboard\" ee Gallery · Reel-ka dhameystiran — si toos ah u aada Publisher",
+      "sbP1": "Ku-dhawaanshaha hadlaha",
+      "sbP2": "Cinwaanka shaashadda oo dhan",
+      "sbP3": "Gooyn",
+      "sbP4": "Shaashad kala qaybsan",
+      "sbP5": "Mockup",
+      "sbP6": "Gabagabo + CTA",
+      "sbTitleL1": "Hal mar oo kamarad ah —",
+      "sbTitleL2": "wax-ka-beddel heer sare ah."
     },
     "storyboard": {
       "actFail": "Wuu fashilmay — fadlan mar kale isku day.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Waraaq",
       "style_terminal": "Terminal",
-      "style_bold": "Geesinimo"
+      "style_bold": "Geesinimo",
+      "ctaHintV2": "Isticmaal ereyga sirta ah ee la midka ah qoraalkaaga."
     }
   }
 }

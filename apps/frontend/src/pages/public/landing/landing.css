@@ -404,6 +404,62 @@
 }
 .ttl-mcp-note { margin-top: 26px; }
 
+/* ── Секция Сториборд (ретеншн-монтаж) ── */
+.ttl-sb-list { margin: 26px 0 0; padding: 0; list-style: none; display: grid; gap: 11px; max-width: 540px; }
+.ttl-sb-list li {
+  display: flex; gap: 13px; align-items: baseline;
+  color: var(--ttl-mist); font-weight: 200; font-size: 15px; line-height: 1.55;
+}
+.ttl-sb-list li::before { content: '—'; color: var(--ttl-iris); font-weight: 400; flex-shrink: 0; }
+.ttl-sb-board {
+  border-radius: 24px;
+  /* Непрозрачный фон как у ttl-mcp-panel: частицы-подложка живут ПОД контентом */
+  background: #0b0b0d;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: clamp(22px, 3.2vw, 36px);
+  display: grid;
+  gap: 16px;
+}
+.ttl-sb-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ttl-sb-chip {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14); color: var(--ttl-ash);
+}
+.ttl-sb-chip-rec { border-color: rgba(128, 82, 255, 0.5); color: #a98aff; }
+.ttl-sb-chip-rec::before {
+  content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ttl-iris); margin-right: 7px; vertical-align: 1px;
+  animation: ttl-sb-blink 1.6s ease-in-out infinite;
+}
+.ttl-sb-chip-amber { border-color: rgba(255, 184, 41, 0.55); color: var(--ttl-spark); }
+@keyframes ttl-sb-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.ttl-sb-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ttl-sb-panel {
+  aspect-ratio: 3 / 4; /* вертикальные мини-кадры раскадровки */
+  border-radius: 14px;
+  background: #101014;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 9px; padding: 10px; text-align: center; position: relative;
+  color: var(--ttl-mist);
+}
+.ttl-sb-panel svg { color: #a98aff; }
+.ttl-sb-num {
+  position: absolute; top: 8px; left: 10px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--ttl-ash);
+}
+.ttl-sb-panel-label { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.3; }
+.ttl-sb-panel-final { background: #16110a; border-color: rgba(255, 184, 41, 0.45); }
+.ttl-sb-panel-final svg { color: var(--ttl-spark); }
+@media (max-width: 520px) {
+  .ttl-sb-grid { gap: 7px; }
+  .ttl-sb-panel-label { font-size: 9.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ttl-sb-chip-rec::before { animation: none; }
+}
+
 /* ── Тариф ── */
 .ttl-price-amount {
   font-size: clamp(64px, 10vw, 140px);

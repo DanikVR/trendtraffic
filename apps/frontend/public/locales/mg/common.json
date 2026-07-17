@@ -1190,7 +1190,7 @@
     "geminiFixCount": 130,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:27.766Z",
+    "pivotAt": "2026-07-17T20:12:43.537Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Midira",
       "publicStart": "Manomboka maimaim-poana",
       "seoDesc": "Fisoratana anarana TrendTraffic Premium amin'ny €49/volana: fikarohana fironana viral, fanadihadiana media sosialy, studio UGC miaraka amin'ny avatars AI, ary famoahana mandeha ho azy. 7 andro maimaim-poana, azo foanana amin'ny fotoana rehetra.",
-      "seoTitle": "Drafitra Premium €49/volana — TrendTraffic"
+      "seoTitle": "Drafitra Premium €49/volana — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels indray mandeha — Storyboard AI hatramin'ny takelaka 6 isaky ny ampahany, motera fandikana 3 (anisan'izany ny maimaim-poana), dikanteny, mari-pamantarana fantsona, ary teny CTA"
     },
     "channels": {
       "actionsHint": "'Track' dia manampy ny fantsona amin'ny lisitry ny fanavaozana mandeha ho azy isan'andro (mampiseho fiovana 'taloha→ankehitriny'). Ny 'One-time analysis' dia mampiseho ny horonan-tsary rehetra ankehitriny, tsy misy tantara.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Fizarana eo an-dalam-pandrosoana—ho avy tsy ho ela ny votoaty.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Fikirana momba ny cookies"
+      "footerCookieSettings": "Fikirana momba ny cookies",
+      "incSb": "Storyboard: fanitsiana fitazonana Reels indray mandeha",
+      "sbB1": "Ny talen'ny AI dia mandamina ho azy ny lahateny ho takelaka — ianao kosa manitsy fotsiny ny storyboard eo amin'ny sarimihetsika",
+      "sbB2": "Motera fandikana telo: rindrambaiko (maimaim-poana, tsy misy fanalahidy), Omni API, na Google Flow miaraka amin'ny famandrihanao",
+      "sbB3": "Fandefasana mandeha ho azy: mandeha ho azy ny filaharana famokarana, ny fanangonana mandeha ho azy dia manambatra ny Reel vita tsy misy anao",
+      "sbB4": "Teny CTA any amin'ny farany: manome hevitra izany ny mpijery — mampitombo ny fidirana ny fifandraisana",
+      "sbBody": "Ny loha miresaka static dia voasokitra ao anatin'ny segondra — ny sary miova ihany no mitazona ny saina. Ny Storyboard dia manangona indray ny fakanao ho Reel mavitrika: mandika lahateny, manapaka izany ho fehezanteny hatramin'ny 8 segondra, ary mandamina ny tsirairay ho takelaka — mpandahateny akaiky, lohateny feno efijery, fanapahana, efijery mizara, maketa, ary famaranana miaraka amin'ny antso ho amin'ny hetsika.",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "Ampahany 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Takelaka 6",
+      "sbCardSubs": "Dikanteny: avy amin'ny lahateny",
+      "sbLabel": "Storyboard · fanitsiana fitazonana",
+      "sbNote": "Tafiditra ao amin'ny Premium · tabilao \"Storyboard\" ao amin'ny Gallery · Reel vita — mivantana any amin'ny Publisher",
+      "sbP1": "Mpandahateny akaiky",
+      "sbP2": "Lohateny feno efijery",
+      "sbP3": "Fanapahana",
+      "sbP4": "Efijery mizara",
+      "sbP5": "Maketa",
+      "sbP6": "Famaranana + CTA",
+      "sbTitleL1": "Fandraisana iray amin'ny fakantsary —",
+      "sbTitleL2": "fanitsiana amin'ny haavon'ny mpamorona ambony."
     },
     "storyboard": {
       "actFail": "Tsy nahomby — andramo indray azafady.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Taratsy",
       "style_terminal": "Terminal",
-      "style_bold": "Sahy"
+      "style_bold": "Sahy",
+      "ctaHintV2": "Ampiasao ilay teny kaody mitovy amin'ny lohatenin'ny lahatsoratrao."
     }
   }
 }

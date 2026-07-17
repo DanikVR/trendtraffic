@@ -1172,7 +1172,7 @@
     "geminiFixCount": 45,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:34.345Z",
+    "pivotAt": "2026-07-17T20:13:04.171Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Giriş",
       "publicStart": "Mugt başla",
       "seoDesc": "TrendTraffic Premium abunalygy aýda €49: wiral tendensiýa gözlegi, sosial media analitikasy, AI awatarlary bilen UGC studiýasy we awtomatiki neşir. 7 gün mugt, islendik wagt ýatyryp bilersiňiz.",
-      "seoTitle": "Premium plan aýda €49 — TrendTraffic"
+      "seoTitle": "Premium plan aýda €49 — TrendTraffic",
+      "pf49Storyboard": "Storyboard: bir gezeklik Reels — AI storyboard 6 panele çenli, 3 render hereketlendirijisi (mugt), subtitrler, kanal nyşany we CTA sözi"
     },
     "channels": {
       "actionsHint": "'Yzarla' kanaly gündelik awtomatiki täzelenmeler üçin sanawyňyza goşýar ('boldy→bolýar' üýtgeşmeleri görkezýär). 'Bir gezeklik derňew' ähli wideolary taryhsyz görkezýär.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bölüm işlenip düzülýär — mazmun ýakyn wagtda geler.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie sazlamalary"
+      "footerCookieSettings": "Cookie sazlamalary",
+      "incSb": "Storyboard: bir gezeklik Reels saklamak redaktirlenmesi",
+      "sbB1": "AI reŽissýor gürleýşi panellere awtomatiki ýerleşdirýär — siz diňe storyboardy film zolagynda sazlaýarsyňyz",
+      "sbB2": "Üç render hereketlendirijisi: programma üpjünçiligi (mugt, açarsyz), Omni API ýa-da abunalygyňyz bilen Google Flow",
+      "sbB3": "Flow awtomatizasiýasy: döretme nobaty öz-özünden işleýär, awtomatiki ýygnamak taýýar Reeli siziň gatnaşmagyňyzsyz birleşdirýär",
+      "sbB4": "Soňunda CTA sözi: tomaşaçylar ony teswirleýärler — gatnaşyk elýeterliligi ýokarlandyrýar",
+      "sbBody": "Statik gürleýän kelleler birnäçe sekuntda geçilýär — diňe üýtgeýän kadrlar ünsi saklaýar. Storyboard siziň wideonyňyzy dinamiki Reele öwürýär: gürleýşi transkripsiýa edýär, ony 8 sekunda çenli sözlemlere bölýär we her birini panellere ýerleşdirýär — ýakyn plan spiker, doly ekran atlar, kesme kadrlar, bölünen ekranlar, maketler we herekete çagyryş finaly.",
+      "sbCardBadge": "@meninkanalym",
+      "sbCardChunk": "Bölüm 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Subtitrler: gürleýişden",
+      "sbLabel": "Storyboard · saklamak redaktirlenmesi",
+      "sbNote": "Premium-a girýär · Galereýadaky \"Storyboard\" belligi · taýýar Reel — göni Neşirýatçyga",
+      "sbP1": "Spiker ýakyn plan",
+      "sbP2": "Doly ekran at",
+      "sbP3": "Kesme kadr",
+      "sbP4": "Bölünen ekran",
+      "sbP5": "Maket",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Kamerada bir gezeklik —",
+      "sbTitleL2": "iň gowy döredijiniň derejesindäki redaktirleme."
     },
     "storyboard": {
       "actFail": "Şowsuzlyk — gaýtadan synanyşyň.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kagyzy",
       "style_terminal": "Terminal",
-      "style_bold": "Galyň"
+      "style_bold": "Galyň",
+      "ctaHintV2": "Ýazgyňyzda şol bir kod sözüni ulanyň."
     }
   }
 }

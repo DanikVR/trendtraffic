@@ -3174,7 +3174,17 @@
  *          300/900мс (пересчёт после доката картинок/шрифтов). Подключён к
  *          кнопкам статей И подзаголовков «Содержания» и к результатам поиска.
  *          Файлы: WikiPage.tsx, AppVersion. */
-export const APP_VERSION = '2.5.5';
+/* 2.5.6 — маркетинг Сториборда: на лендинге (trendtraffic.pro) новая секция
+ *          #storyboard между «Возможностями» и «Экономией» — заголовок
+ *          «Один дубль на камеру — монтаж уровня топ-криэйторов», ретеншн-
+ *          аргумент, 4 буллета (ИИ-режиссёр, 3 движка, Flow-автомат,
+ *          CTA-слово) и CSS-мокап раскадровки (6 панелей, чипы бейджа/
+ *          субтитров/CTA); +строка Сториборда в списке тарифа лендинга.
+ *          В /billing пункт Premium pf49Storyboard (иконка Film) после
+ *          UGC-студии. Все тексты — новые ключи sec.ttLanding.sb…/incSb и
+ *          sec.billing.pf49Storyboard, прогнаны пивотом ru→en→106 языков.
+ *          Файлы: LandingPage, landing.css, BillingPage, locales/*. */
+export const APP_VERSION = '2.5.6';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

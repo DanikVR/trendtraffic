@@ -1190,7 +1190,7 @@
     "geminiFixCount": 53,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:18.315Z",
+    "pivotAt": "2026-07-17T20:12:16.337Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "ግባ",
       "publicStart": "በነጻ ጀምር",
       "seoDesc": "TrendTraffic Premium ምዝገባ በ€49/በወር፡ የቫይረስ አዝማሚያ ፍለጋ፣ የማህበራዊ ሚዲያ ትንተና፣ UGC ስቱዲዮ ከAI አምሳያዎች ጋር፣ እና ራስ-ሰር ማተም. 7 ቀናት ነጻ፣ በማንኛውም ጊዜ ይሰርዙ።",
-      "seoTitle": "Premium ዕቅድ €49/በወር — TrendTraffic"
+      "seoTitle": "Premium ዕቅድ €49/በወር — TrendTraffic",
+      "pf49Storyboard": "Storyboard: አንድ-ጊዜ ሪልስ — AI ስቶሪቦርድ እስከ 6 ፓነሎች በአንድ ክፍል፣ 3 ሬንደር ሞተሮች (ነጻን ጨምሮ)፣ ንዑስ ርዕሶች፣ ቻናል ባጅ እና የCTA ቃል"
     },
     "channels": {
       "actionsHint": "'Track' ቻናሉን ለዕለታዊ ራስ-ሰር ዝመናዎች (የ'ነበር→ነው' ለውጦችን በማሳየት) ወደ ዝርዝርዎ ያክላል። 'One-time analysis' ሁሉንም ቪዲዮዎች አሁን ያሳያል፣ ያለ ታሪክ።",
@@ -4125,7 +4126,28 @@
       "stubSoon": "ክፍል በልማት ላይ ነው—ይዘት በቅርቡ ይመጣል።",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "የኩኪ ቅንብሮች"
+      "footerCookieSettings": "የኩኪ ቅንብሮች",
+      "incSb": "Storyboard: የአንድ-ጊዜ ሪልስ ማቆያ አርትዖት",
+      "sbB1": "AI ዳይሬክተር ንግግርን በራስ-ሰር ወደ ፓነሎች ያዘጋጃል — እርስዎ በፊልም ስትሪፕ ላይ ስቶሪቦርዱን ብቻ ያስተካክላሉ",
+      "sbB2": "ሶስት ሬንደር ሞተሮች: ሶፍትዌር (ነጻ፣ ቁልፎች የሉም)፣ Omni API፣ ወይም Google Flow ከደንበኝነት ምዝገባዎ ጋር",
+      "sbB3": "ፍሰት አውቶሜሽን: የማመንጨት ወረፋ በራሱ ይሠራል፣ አውቶ-አሰምብሊ የተጠናቀቀውን ሪል ያለእርስዎ ያገናኛል",
+      "sbB4": "በመጨረሻ የCTA ቃል: ተመልካቾች አስተያየት ይሰጡበታል — ተሳትፎ ተደራሽነትን ይጨምራል",
+      "sbBody": "የማይንቀሳቀሱ ተናጋሪዎች በሰከንዶች ውስጥ ይዘለላሉ — ትኩረትን የሚይዙት የሚለዋወጡ ምስሎች ብቻ ናቸው። ስቶሪቦርድ የእርስዎን ቀረጻ ወደ ተለዋዋጭ ሪል ያሰባስባል: ንግግርን ይጽፋል፣ እስከ 8 ሰከንድ ባሉት ሀረጎች ይቆርጠዋል፣ እና እያንዳንዱን ወደ ፓነሎች ያዘጋጃል — ተናጋሪው በቅርብ፣ ሙሉ ማያ ገጽ ርዕሶች፣ መቆራረጦች፣ የተከፈለ ማያ ገጾች፣ ሞክአፕስ እና የድርጊት ጥሪ ፍጻሜ።",
+      "sbCardBadge": "@የእኔቻናል",
+      "sbCardChunk": "ክፍል 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 ፓነሎች",
+      "sbCardSubs": "ንዑስ ርዕሶች: ከንግግር",
+      "sbLabel": "Storyboard · ማቆያ አርትዖት",
+      "sbNote": "በPremium ውስጥ ተካትቷል · በGallery ውስጥ \"Storyboard\" ትር · የተጠናቀቀ ሪል — በቀጥታ ወደ አሳታሚ",
+      "sbP1": "ተናጋሪ በቅርብ",
+      "sbP2": "ሙሉ ማያ ገጽ ርዕስ",
+      "sbP3": "መቆራረጥ",
+      "sbP4": "የተከፈለ ማያ ገጽ",
+      "sbP5": "ሞክአፕ",
+      "sbP6": "ፍጻሜ + CTA",
+      "sbTitleL1": "አንድ ቀረጻ በካሜራ —",
+      "sbTitleL2": "ከፍተኛ-ፈጣሪ ደረጃ አርትዖት።"
     },
     "storyboard": {
       "actFail": "አልተሳካም — እባክዎ እንደገና ይሞክሩ።",
@@ -4259,7 +4281,8 @@
       "style_neon": "ኒዮን",
       "style_paper": "ወረቀት",
       "style_terminal": "ተርሚናል",
-      "style_bold": "ደማቅ"
+      "style_bold": "ደማቅ",
+      "ctaHintV2": "በፖስት መግለጫዎ ውስጥ ተመሳሳይ የምስጢር ቃል ይጠቀሙ።"
     }
   }
 }

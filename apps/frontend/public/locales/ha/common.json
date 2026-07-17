@@ -1172,7 +1172,7 @@
     "geminiFixCount": 20,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:23.001Z",
+    "pivotAt": "2026-07-17T20:12:27.999Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Shiga",
       "publicStart": "Fara kyauta",
       "seoDesc": "TrendTraffic Premium biyan kuɗi na €49/wata: binciken abubuwan da ke faruwa na viral, nazarin kafofin watsa labarun, ɗakin studio na UGC tare da avatars na AI, da bugawa ta atomatik. Kwanaki 7 kyauta, soke kowane lokaci.",
-      "seoTitle": "Shirin Premium €49/wata — TrendTraffic"
+      "seoTitle": "Shirin Premium €49/wata — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels mai daukar hoto guda — AI storyboard har zuwa bangarori 6 a kowane yanki, injunan render 3 (ciki har da kyauta), fassarori, alamar tashar, da kalmar CTA"
     },
     "channels": {
       "actionsHint": "'Bi' yana ƙara tashar zuwa jerin ku don sabuntawa ta atomatik na yau da kullun (yana nuna canje-canje 'daga→zuwa'). 'Bincike na lokaci ɗaya' yana nuna duk bidiyo yanzu, ba tare da tarihi ba.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sashe yana ci gaba—abun ciki zai zo nan ba da jimawa ba.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Saitunan kukis"
+      "footerCookieSettings": "Saitunan kukis",
+      "incSb": "Storyboard: gyaran riƙe Reels mai ɗaukar hoto guda",
+      "sbB1": "Darakta na AI yana shirya magana ta atomatik zuwa bangarori — kai kawai ka daidaita storyboard ɗin akan fim ɗin",
+      "sbB2": "Injinan render guda uku: software (kyauta, babu maɓallai), Omni API, ko Google Flow tare da biyan kuɗinka",
+      "sbB3": "Sarrafa kansa na Flow: jerin samarwa yana gudana da kansa, haɗawa ta atomatik yana haɗa Reel ɗin da aka gama ba tare da kai ba",
+      "sbB4": "Kalmar CTA a ƙarshe: masu kallo suna yin sharhi — haɓaka haɗin kai yana ƙara isa",
+      "sbBody": "Ana gungura kawunan magana marasa motsi cikin daƙiƙa — kawai canza hotuna ne ke riƙe hankali. Storyboard yana sake haɗa hotonka zuwa Reel mai motsi: yana fassara magana, yana yanke shi zuwa jimloli har zuwa daƙiƙa 8, kuma yana shirya kowane ɗaya zuwa bangarori — mai magana kusa, taken cikakken allo, yanke-yanke, raba-allo, samfura, da kuma kiran-aiki na ƙarshe.",
+      "sbCardBadge": "@tashata",
+      "sbCardChunk": "Yanki 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Bangarori 6",
+      "sbCardSubs": "Fassarori: daga magana",
+      "sbLabel": "Storyboard · gyaran riƙewa",
+      "sbNote": "An haɗa shi a cikin Premium · shafin \"Storyboard\" a cikin Gallery · Reel da aka gama — kai tsaye zuwa Publisher",
+      "sbP1": "Mai magana kusa",
+      "sbP2": "Taken cikakken allo",
+      "sbP3": "Yanke-yanke",
+      "sbP4": "Raba-allo",
+      "sbP5": "Samfuri",
+      "sbP6": "Karshe + CTA",
+      "sbTitleL1": "Daukar hoto guda a kan kyamara —",
+      "sbTitleL2": "gyaran matakin babban mahalicci."
     },
     "storyboard": {
       "actFail": "Ya gaza — da fatan za a sake gwadawa.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Takarda",
       "style_terminal": "Terminal",
-      "style_bold": "Mai kauri"
+      "style_bold": "Mai kauri",
+      "ctaHintV2": "Yi amfani da kalmar sirri ɗaya a cikin taken sakonka."
     }
   }
 }

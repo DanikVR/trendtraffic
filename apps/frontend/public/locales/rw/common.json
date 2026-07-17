@@ -1190,7 +1190,7 @@
     "geminiFixCount": 105,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:31.078Z",
+    "pivotAt": "2026-07-17T20:12:53.778Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Injira",
       "publicStart": "Tangira ku buntu",
       "seoDesc": "Kwishyura TrendTraffic Premium ku €49/ukwezi: gushakisha ibigezweho bya virusi, isesengura ry'imbuga nkoranyambaga, studio ya UGC ifite avatar za AI, no kwiyandikisha. Iminsi 7 y'ubuntu, ushobora guhagarika igihe icyo ari cyo cyose.",
-      "seoTitle": "Gahunda ya Premium €49/ukwezi — TrendTraffic"
+      "seoTitle": "Gahunda ya Premium €49/ukwezi — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels y'umukino umwe — AI storyboard kugeza kuri paneli 6 kuri buri gice, moteri 3 zitanga (harimo n'ubuntu), imyandikire, ikimenyetso cya channel, n'ijambo rya CTA"
     },
     "channels": {
       "actionsHint": "'Track' yongeraho umuyoboro ku rutonde rwawe kugira ngo uhore ubona amakuru mashya buri munsi (yerekana impinduka 'yari→iri'). 'One-time analysis' yerekana amashusho yose ubu, nta mateka.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Igice kiri gukorwa—ibiri muri iki gice bizageraho vuba.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Aho ushobora guhindura ibijyanye na 'cookies'"
+      "footerCookieSettings": "Aho ushobora guhindura ibijyanye na 'cookies'",
+      "incSb": "Storyboard: Reels y'umukino umwe ihindura uburyo bwo kugumana abakoresha",
+      "sbB1": "Umuyobozi wa AI yikora atunganya imvugo mu mapaneli — wowe uhindura gusa storyboard kuri filmstrip",
+      "sbB2": "Moteri eshatu zitanga: software (ubuntu, nta funguro), Omni API, cyangwa Google Flow hamwe na subscription yawe",
+      "sbB3": "Gukora byikora kwa Flow: umurongo wo gutunganya wikora, kwishyira hamwe byikora bigahuza Reel yarangiye ntawe",
+      "sbB4": "Ijambo rya CTA ku iherezo: abareba bararivuga — gushyira hamwe bizamura kugera kure",
+      "sbBody": "Abantu bavuga batimuka barengwa mu masegonda — ni amashusho ahinduka gusa akurura abantu. Storyboard ihindura amashusho yawe akaba Reel ikora: yandika imvugo, iyigabanyamo interuro zifata amasegonda 8, kandi buri yose iyishyira mu mapaneli — umuvugizi uri hafi, imitwe yuzuye ecran, amashusho yaciwe, amashusho agabanyijemo kabiri, amashusho y'igereranyo, n'iherezo ryo guhamagarira gukora ikintu.",
+      "sbCardBadge": "@channelyanjye",
+      "sbCardChunk": "Igice cya 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Amapaneli 6",
+      "sbCardSubs": "Imyandikire: ivuye mu mvugo",
+      "sbLabel": "Storyboard · guhindura uburyo bwo kugumana abakoresha",
+      "sbNote": "Irimo muri Premium · tab \"Storyboard\" muri Gallery · Reel yarangiye — ihita ijya kuri Publisher",
+      "sbP1": "Umuvugizi uri hafi",
+      "sbP2": "Umutwe wuzuye ecran",
+      "sbP3": "Igice cyaciwe",
+      "sbP4": "Ecran igabanyijemo kabiri",
+      "sbP5": "Igereranyo",
+      "sbP6": "Iherezo + CTA",
+      "sbTitleL1": "Umukino umwe kuri kamera —",
+      "sbTitleL2": "guhindura ku rwego rw'abakora ibyiza."
     },
     "storyboard": {
       "actFail": "Byananiranye — nyamuneka ongera ugerageze.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Impapuro",
       "style_terminal": "Terminal",
-      "style_bold": "Iby'ingenzi"
+      "style_bold": "Iby'ingenzi",
+      "ctaHintV2": "Koresha ijambo rimwe ry'ibanga mu kinyamakuru cyawe."
     }
   }
 }

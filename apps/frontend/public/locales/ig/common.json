@@ -1190,7 +1190,7 @@
     "geminiFixCount": 205,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:24.867Z",
+    "pivotAt": "2026-07-17T20:12:33.657Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Banye",
       "publicStart": "Bido n'efu",
       "seoDesc": "TrendTraffic Premium ndenye aha maka €49/ọnwa: nyocha usoro viral, nyocha mgbasa ozi ọha, ụlọ ọrụ UGC nwere avatars AI, na nkwusa akpaaka. Ụbọchị 7 n'efu, kagbuo oge ọ bụla.",
-      "seoTitle": "Atụmatụ Premium €49/ọnwa — TrendTraffic"
+      "seoTitle": "Atụmatụ Premium €49/ọnwa — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels otu-nara — AI storyboard ruo panel 6 kwa mpaghara, injin ngosi 3 (gụnyere n'efu), ndepụta okwu, akara ọwa, na okwu CTA"
     },
     "channels": {
       "actionsHint": "'Track' na-agbakwunye ọwa ahụ na ndepụta gị maka mmelite akpaaka kwa ụbọchị (na-egosi mgbanwe 'bụ→dị'). 'Nyocha otu oge' na-egosi vidiyo niile ugbu a, na-enweghị akụkọ ihe mere eme.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Ngalaba na-emepe emepe—ọdịnaya na-abịa n'oge adịghị anya.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Ntọala kuki"
+      "footerCookieSettings": "Ntọala kuki",
+      "incSb": "Storyboard: Reels otu-nara ndezi nkwụnye",
+      "sbB1": "Onye nduzi AI na-ahazi okwu n'ime panel na-akpaghị aka — ị na-edozi storyboard ahụ na filmstrip",
+      "sbB2": "Injin ngosi atọ: ngwanrọ (n'efu, enweghị igodo), Omni API, ma ọ bụ Google Flow na ndenye aha gị",
+      "sbB3": "Mkpụrụ akpaaka: ahịrị ọgbọ na-agba n'onwe ya, mgbakọ akpaaka na-ejikọta Reel emechara na-enweghị gị",
+      "sbB4": "Okwu CTA na njedebe: ndị na-ekiri na-ekwu ya — ntinye aka na-ebuli iru",
+      "sbBody": "Isi okwu na-anọkarị na-agagharị n'ime sekọnd — naanị mgbanwe agbapụ na-ejide uche. Storyboard na-agbakọta ihe ị na-ese n'ime Reel dị ike: na-edepụta okwu, na-ebipụ ya n'ime ahịrịokwu ruo sekọnd 8, ma na-ahazi nke ọ bụla n'ime panel — onye na-ekwu okwu nso, aha ihuenyo zuru oke, nkwụsị, ihuenyo kewara ekewa, ihe ngosi, na njedebe oku-ka-eme.",
+      "sbCardBadge": "@ọwa m",
+      "sbCardChunk": "Mpaghara 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Panel 6",
+      "sbCardSubs": "Ndepụta okwu: site na okwu",
+      "sbLabel": "Storyboard · ndezi nkwụnye",
+      "sbNote": "Etinyere na Premium · taabụ \"Storyboard\" na Gallery · Reel emechara — ozugbo na Onye Mbipụta",
+      "sbP1": "Onye na-ekwu okwu nso",
+      "sbP2": "Aha ihuenyo zuru oke",
+      "sbP3": "Nkwụsị",
+      "sbP4": "Ihuenyo kewara ekewa",
+      "sbP5": "Ihe ngosi",
+      "sbP6": "Njedebe + CTA",
+      "sbTitleL1": "Otu nara na igwefoto —",
+      "sbTitleL2": "ndezi ọkwa onye okike kachasị elu."
     },
     "storyboard": {
       "actFail": "Emeghị — biko gbalịa ọzọ.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Akwụkwọ",
       "style_terminal": "Ọdụ ụgbọ mmiri",
-      "style_bold": "Ike"
+      "style_bold": "Ike",
+      "ctaHintV2": "Jiri otu okwu koodu ahụ na nkọwa post gị."
     }
   }
 }

@@ -1183,7 +1183,7 @@
     "geminiModel": "gemini-2.5-flash",
     "geminiFixCount": 1,
     "geminiSourceHash": "3bc9c39d12c4ae82",
-    "pivotAt": "2026-07-17T18:56:58.110Z",
+    "pivotAt": "2026-07-17T20:11:48.241Z",
     "pivotSource": "ru",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2295,7 +2295,8 @@
       "publicLogin": "Log in",
       "publicStart": "Start for free",
       "seoDesc": "TrendTraffic Premium subscription for €49/month: viral trend search, social media analytics, UGC studio with AI avatars, and auto-publishing. 7 days free, cancel anytime.",
-      "seoTitle": "Premium plan €49/month — TrendTraffic"
+      "seoTitle": "Premium plan €49/month — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI storyboard up to 6 panels per chunk, 3 render engines (incl. free), subtitles, channel badge, and CTA word"
     },
     "channels": {
       "actionsHint": "'Track' adds the channel to your list for daily auto-updates (showing 'was→is' changes). 'One-time analysis' shows all videos now, without history.",
@@ -4118,7 +4119,28 @@
       "stubSoon": "Section under development—content coming soon.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie settings"
+      "footerCookieSettings": "Cookie settings",
+      "incSb": "Storyboard: one-take Reels retention edit",
+      "sbB1": "AI director auto-arranges speech into panels — you just adjust the storyboard on the filmstrip",
+      "sbB2": "Three render engines: software (free, no keys), Omni API, or Google Flow with your subscription",
+      "sbB3": "Flow automation: generation queue runs itself, auto-assembly stitches the finished Reel without you",
+      "sbB4": "CTA word at the end: viewers comment it — engagement boosts reach",
+      "sbBody": "Static talking heads get scrolled past in seconds — only changing shots hold attention. Storyboard reassembles your take into a dynamic Reel: transcribes speech, cuts it into phrases up to 8 seconds, and arranges each into panels — close-up speaker, full-screen titles, cutaways, split-screens, mockups, and a call-to-action finale.",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panels",
+      "sbCardSubs": "Subtitles: from speech",
+      "sbLabel": "Storyboard · retention edit",
+      "sbNote": "Included in Premium · \"Storyboard\" tab in Gallery · finished Reel — directly to Publisher",
+      "sbP1": "Speaker close-up",
+      "sbP2": "Full-screen title",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "One take on camera —",
+      "sbTitleL2": "top-creator level editing."
     },
     "storyboard": {
       "actFail": "Failed — please try again.",
@@ -4252,7 +4274,8 @@
       "style_neon": "Neon",
       "style_paper": "Paper",
       "style_terminal": "Terminal",
-      "style_bold": "Bold"
+      "style_bold": "Bold",
+      "ctaHintV2": "Use the same code word in your post caption."
     }
   }
 }

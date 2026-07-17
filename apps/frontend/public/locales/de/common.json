@@ -1190,7 +1190,7 @@
     "geminiFixCount": 160,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:20.222Z",
+    "pivotAt": "2026-07-17T20:12:18.721Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Anmelden",
       "publicStart": "Kostenlos starten",
       "seoDesc": "TrendTraffic Premium-Abonnement für 49 €/Monat: virale Trendsuche, Social Media Analytics, UGC-Studio mit KI-Avataren und automatische Veröffentlichung. 7 Tage kostenlos, jederzeit kündbar.",
-      "seoTitle": "Premium-Plan 49 €/Monat — TrendTraffic"
+      "seoTitle": "Premium-Plan 49 €/Monat — TrendTraffic",
+      "pf49Storyboard": "Storyboard: One-Take Reels — KI-Storyboard mit bis zu 6 Panels pro Chunk, 3 Render-Engines (inkl. kostenlos), Untertitel, Kanal-Badge und CTA-Wort"
     },
     "channels": {
       "actionsHint": "„Verfolgen“ fügt den Kanal zu Ihrer Liste für tägliche automatische Updates hinzu (zeigt „war→ist“-Änderungen). „Einmalige Analyse“ zeigt alle Videos jetzt, ohne Verlauf.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bereich in Entwicklung – Inhalte folgen in Kürze.",
       "wikiMeta": "Wiki – TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie-Einstellungen"
+      "footerCookieSettings": "Cookie-Einstellungen",
+      "incSb": "Storyboard: One-Take Reels Retention-Bearbeitung",
+      "sbB1": "KI-Regisseur ordnet Sprache automatisch in Panels an — Sie passen das Storyboard einfach auf dem Filmstreifen an",
+      "sbB2": "Drei Render-Engines: Software (kostenlos, keine Keys), Omni API oder Google Flow mit Ihrem Abonnement",
+      "sbB3": "Flow-Automatisierung: Generierungswarteschlange läuft von selbst, automatische Montage fügt den fertigen Reel ohne Ihr Zutun zusammen",
+      "sbB4": "CTA-Wort am Ende: Zuschauer kommentieren es — Engagement steigert die Reichweite",
+      "sbBody": "Statische Talking Heads werden in Sekunden weggescrollt — nur wechselnde Aufnahmen halten die Aufmerksamkeit. Storyboard setzt Ihre Aufnahme zu einem dynamischen Reel zusammen: transkribiert Sprache, schneidet sie in Phrasen von bis zu 8 Sekunden und ordnet jede in Panels an — Sprecher-Nahaufnahme, Vollbildtitel, Zwischenschnitte, Splitscreens, Mockups und ein Call-to-Action-Finale.",
+      "sbCardBadge": "@meinKanal",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: „TREND“",
+      "sbCardPanels": "6 Panels",
+      "sbCardSubs": "Untertitel: aus Sprache",
+      "sbLabel": "Storyboard · Retention-Bearbeitung",
+      "sbNote": "In Premium enthalten · Tab „Storyboard“ in der Galerie · fertiger Reel — direkt zum Publisher",
+      "sbP1": "Sprecher-Nahaufnahme",
+      "sbP2": "Vollbildtitel",
+      "sbP3": "Zwischenschnitt",
+      "sbP4": "Splitscreen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Eine Aufnahme mit der Kamera —",
+      "sbTitleL2": "Bearbeitung auf Top-Creator-Niveau."
     },
     "storyboard": {
       "actFail": "Fehlgeschlagen — bitte versuchen Sie es erneut.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Paper",
       "style_terminal": "Terminal",
-      "style_bold": "Bold"
+      "style_bold": "Bold",
+      "ctaHintV2": "Verwenden Sie dasselbe Codewort in Ihrer Beitragsbeschreibung."
     }
   }
 }

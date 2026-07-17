@@ -1172,7 +1172,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:34.964Z",
+    "pivotAt": "2026-07-17T20:13:03.158Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Giriş yap",
       "publicStart": "Ücretsiz başla",
       "seoDesc": "TrendTraffic Premium aboneliği ayda 49€: viral trend arama, sosyal medya analizi, AI avatarlı UGC stüdyosu ve otomatik yayınlama. 7 gün ücretsiz, istediğiniz zaman iptal edin.",
-      "seoTitle": "Premium plan ayda 49€ — TrendTraffic"
+      "seoTitle": "Premium plan ayda 49€ — TrendTraffic",
+      "pf49Storyboard": "Storyboard: tek çekim Reels — yapay zeka storyboard ile parça başına 6 panele kadar, 3 render motoru (ücretsiz dahil), altyazılar, kanal etiketi ve CTA kelimesi"
     },
     "channels": {
       "actionsHint": "'Takip Et' kanalı günlük otomatik güncellemeler için listenize ekler ('önce→şimdi' değişikliklerini gösterir). 'Tek seferlik analiz' geçmiş olmadan tüm videoları şimdi gösterir.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bölüm geliştirme aşamasında—içerik yakında geliyor.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Çerez ayarları"
+      "footerCookieSettings": "Çerez ayarları",
+      "incSb": "Storyboard: tek çekim Reels elde tutma düzenlemesi",
+      "sbB1": "Yapay zeka yönetmeni konuşmayı otomatik olarak panellere ayırır — siz sadece film şeridindeki storyboard'u ayarlarsınız",
+      "sbB2": "Üç render motoru: yazılım (ücretsiz, anahtar gerektirmez), Omni API veya aboneliğinizle Google Flow",
+      "sbB3": "Akış otomasyonu: üretim kuyruğu kendi kendine çalışır, otomatik montaj bitmiş Reel'i sizin müdahaleniz olmadan birleştirir",
+      "sbB4": "Sonda CTA kelimesi: izleyiciler yorum yapar — etkileşim erişimi artırır",
+      "sbBody": "Statik konuşan kafalar saniyeler içinde geçilir — sadece değişen çekimler dikkat çeker. Storyboard, çekiminizi dinamik bir Reel'e dönüştürür: konuşmayı yazıya döker, 8 saniyeye kadar cümlelere böler ve her birini panellere yerleştirir — yakın çekim konuşmacı, tam ekran başlıklar, ara çekimler, bölünmüş ekranlar, maketler ve bir harekete geçirici mesaj finali.",
+      "sbCardBadge": "@kanalım",
+      "sbCardChunk": "Parça 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Altyazılar: konuşmadan",
+      "sbLabel": "Storyboard · elde tutma düzenlemesi",
+      "sbNote": "Premium'a dahil · Galeri'deki \"Storyboard\" sekmesi · bitmiş Reel — doğrudan Yayıncıya",
+      "sbP1": "Konuşmacı yakın çekim",
+      "sbP2": "Tam ekran başlık",
+      "sbP3": "Ara çekim",
+      "sbP4": "Bölünmüş ekran",
+      "sbP5": "Maket",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Kamerada tek çekim —",
+      "sbTitleL2": "üst düzey içerik oluşturucu düzenlemesi."
     },
     "storyboard": {
       "actFail": "Başarısız oldu — lütfen tekrar deneyin.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kağıt",
       "style_terminal": "Terminal",
-      "style_bold": "Kalın"
+      "style_bold": "Kalın",
+      "ctaHintV2": "Gönderi başlığınızda aynı kod kelimesini kullanın."
     }
   }
 }

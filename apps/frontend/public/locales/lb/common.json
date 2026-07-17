@@ -1190,7 +1190,7 @@
     "geminiFixCount": 92,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:27.008Z",
+    "pivotAt": "2026-07-17T20:12:40.984Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Aloggen",
       "publicStart": "Gratis starten",
       "seoDesc": "TrendTraffic Premium Abonnement fir 49€/Mount: viral Trend Sich, Social Media Analyse, UGC Studio mat AI Avataren, an Auto-Publishing. 7 Deeg gratis, kann zu all Moment gekënnegt ginn.",
-      "seoTitle": "Premium Plang 49€/Mount — TrendTraffic"
+      "seoTitle": "Premium Plang 49€/Mount — TrendTraffic",
+      "pf49Storyboard": "Storyboard: One-Take Reels — AI Storyboard mat bis zu 6 Panelen pro Chunk, 3 Render-Enginen (inklusiv gratis), Ënnertitelen, Kanalbadge, an CTA-Wuert"
     },
     "channels": {
       "actionsHint": "'Verfollegen' füügt de Kanal op Är Lëscht fir deeglech automatesch Updates (weist 'war→ass' Ännerungen). 'Eemoleg Analyse' weist all Videoen elo, ouni Geschicht.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sektioun an Entwécklung – Inhalt kënnt geschwënn.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie-Astellungen"
+      "footerCookieSettings": "Cookie-Astellungen",
+      "incSb": "Storyboard: One-Take Reels Retention Edit",
+      "sbB1": "AI-Regisseur arrangéiert Ried automatesch a Panelen — Dir passt just de Storyboard op der Filmsträif un",
+      "sbB2": "Dräi Render-Enginen: Software (gratis, ouni Schlësselen), Omni API, oder Google Flow mat Ärem Abonnement",
+      "sbB3": "Flow Automatiséierung: Generatiounsqueue leeft eleng, Auto-Assembléierung setzt de fäerdege Reel ouni Iech zesummen",
+      "sbB4": "CTA-Wuert um Enn: Zuschauer kommentéieren et — Engagement boost d'Reechwäit",
+      "sbBody": "Statesch schwätzend Käpp ginn a Sekonne weidergescrollt — nëmme wiesselnd Biller halen d'Opmierksamkeet. Storyboard setzt Ären Take zu engem dynamesche Reel zesummen: transkribéiert Ried, schneit se a Sätz vu bis zu 8 Sekonnen, an arrangéiert all Saz a Panelen — Close-up Spriecher, Vollbild-Titelen, Cutaways, Split-Screens, Mockups, an e Call-to-Action Finale.",
+      "sbCardBadge": "@mäiKanal",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 Panelen",
+      "sbCardSubs": "Ënnertitelen: aus Ried",
+      "sbLabel": "Storyboard · Retention Edit",
+      "sbNote": "An Premium abegraff · \"Storyboard\" Tab an der Galerie · fäerdege Reel — direkt an de Publisher",
+      "sbP1": "Spriecher Close-up",
+      "sbP2": "Vollbild-Titel",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-Screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Een Take op der Kamera —",
+      "sbTitleL2": "Top-Creator Niveau Editing."
     },
     "storyboard": {
       "actFail": "Feeler — probéiert w.e.g. nach eng Kéier.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pabeier",
       "style_terminal": "Terminal",
-      "style_bold": "Fett"
+      "style_bold": "Fett",
+      "ctaHintV2": "Benotzt dat selwecht Codewuert an Ärer Post-Beschreiwung."
     }
   }
 }

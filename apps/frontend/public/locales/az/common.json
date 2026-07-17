@@ -1172,7 +1172,7 @@
     "geminiFixCount": 30,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:18.650Z",
+    "pivotAt": "2026-07-17T20:12:15.523Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Daxil ol",
       "publicStart": "Pulsuz başla",
       "seoDesc": "TrendTraffic Premium abunəliyi ayda €49: viral trend axtarışı, sosial media analitikası, AI avatarlı UGC studiyası və avtomatik nəşr. 7 gün pulsuz, istənilən vaxt ləğv edin.",
-      "seoTitle": "Premium plan ayda €49 — TrendTraffic"
+      "seoTitle": "Premium plan ayda €49 — TrendTraffic",
+      "pf49Storyboard": "Storyboard: bir çəkilişlik Reels — hər hissə üçün 6 panelə qədər AI storyboard, 3 render mühərriki (pulsuz daxil olmaqla), subtitrlər, kanal nişanı və CTA sözü"
     },
     "channels": {
       "actionsHint": "'İzlə' kanalı gündəlik avtomatik yeniləmələr üçün siyahınıza əlavə edir ('oldu→indi' dəyişikliklərini göstərir). 'Birdəfəlik analiz' bütün videoları indi, tarixçəsiz göstərir.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bölmə inkişafdadır—məzmun tezliklə gələcək.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Kuki tənzimləmələri"
+      "footerCookieSettings": "Kuki tənzimləmələri",
+      "incSb": "Storyboard: bir çəkilişlik Reels saxlama redaktəsi",
+      "sbB1": "AI rejissor nitqi avtomatik olaraq panellərə düzür — siz sadəcə storyboardu film zolağında tənzimləyirsiniz",
+      "sbB2": "Üç render mühərriki: proqram təminatı (pulsuz, açarsız), Omni API və ya abunəliyinizlə Google Flow",
+      "sbB3": "Axın avtomatlaşdırılması: generasiya növbəsi öz-özünə işləyir, avtomatik montaj bitmiş Reeli sizin iştirakınız olmadan birləşdirir",
+      "sbB4": "Sonda CTA sözü: izləyicilər onu şərh edir — cəlb olunma əhatə dairəsini artırır",
+      "sbBody": "Statik danışan başlar saniyələr ərzində keçilir — yalnız dəyişən kadrlar diqqəti cəlb edir. Storyboard çəkilişinizi dinamik Reelə yığır: nitqi transkripsiya edir, onu 8 saniyəyə qədər ifadələrə bölür və hər birini panellərə düzür — yaxın plan spiker, tam ekran başlıqlar, kəsmələr, bölünmüş ekranlar, maketlər və hərəkətə çağırış finalı.",
+      "sbCardBadge": "@mənimkanalım",
+      "sbCardChunk": "Hissə 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Subtitrlər: nitqdən",
+      "sbLabel": "Storyboard · saxlama redaktəsi",
+      "sbNote": "Premium paketinə daxildir · Qalereyada \"Storyboard\" tabı · hazır Reel — birbaşa Nəşrçiyə",
+      "sbP1": "Spiker yaxın plan",
+      "sbP2": "Tam ekran başlığı",
+      "sbP3": "Kəsmə",
+      "sbP4": "Bölünmüş ekran",
+      "sbP5": "Maket",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Kamerada bir çəkiliş —",
+      "sbTitleL2": "ən yaxşı yaradıcı səviyyəsində redaktə."
     },
     "storyboard": {
       "actFail": "Uğursuz oldu — lütfən, yenidən cəhd edin.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kağız",
       "style_terminal": "Terminal",
-      "style_bold": "Qalın"
+      "style_bold": "Qalın",
+      "ctaHintV2": "Postunuzun başlığında eyni kod sözündən istifadə edin."
     }
   }
 }

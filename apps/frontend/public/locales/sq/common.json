@@ -1190,7 +1190,7 @@
     "geminiFixCount": 141,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:32.622Z",
+    "pivotAt": "2026-07-17T20:12:57.968Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Hyr",
       "publicStart": "Fillo falas",
       "seoDesc": "Abonimi Premium i TrendTraffic për 49 €/muaj: kërkim i tendencave virale, analitikë e mediave sociale, studio UGC me avatarë AI dhe auto-publikim. 7 ditë falas, anulo në çdo kohë.",
-      "seoTitle": "Plan Premium 49 €/muaj — TrendTraffic"
+      "seoTitle": "Plan Premium 49 €/muaj — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels me një marrje — storyboard me AI deri në 6 panele për copë, 3 motorë renderimi (përfshirë falas), titra, shenjë kanali dhe fjalë CTA"
     },
     "channels": {
       "actionsHint": "'Gjurmo' shton kanalin në listën tuaj për përditësime automatike ditore (duke treguar ndryshimet 'ishte→është'). 'Analiza një herë' tregon të gjitha videot tani, pa histori.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seksion në zhvillim—përmbajtja do të vijë së shpejti.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cilësimet e kukive"
+      "footerCookieSettings": "Cilësimet e kukive",
+      "incSb": "Storyboard: redaktim për mbajtjen e Reels me një marrje",
+      "sbB1": "Regjisori AI rregullon automatikisht fjalimin në panele — ju thjesht rregulloni storyboard-in në shiritin e filmit",
+      "sbB2": "Tre motorë renderimi: softuer (falas, pa çelësa), Omni API, ose Google Flow me abonimin tuaj",
+      "sbB3": "Automatizimi i rrjedhës: radha e gjenerimit funksionon vetë, montimi automatik bashkon Reel-in e përfunduar pa ju",
+      "sbB4": "Fjala CTA në fund: shikuesit e komentojnë — angazhimi rrit shtrirjen",
+      "sbBody": "Kokat statike që flasin kalohen në sekonda — vetëm ndryshimi i pamjeve mban vëmendjen. Storyboard-i ri-montazhon marrjen tuaj në një Reel dinamik: transkripton fjalimin, e pret në fraza deri në 8 sekonda, dhe rregullon secilën në panele — folës në plan të afërt, titra në ekran të plotë, prerje, ekrane të ndara, makete, dhe një finale me thirrje për veprim.",
+      "sbCardBadge": "@kanaliim",
+      "sbCardChunk": "Copë 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panele",
+      "sbCardSubs": "Titra: nga fjalimi",
+      "sbLabel": "Storyboard · redaktim për mbajtje",
+      "sbNote": "Përfshirë në Premium · skeda \"Storyboard\" në Galeri · Reel i përfunduar — direkt te Botuesi",
+      "sbP1": "Folës në plan të afërt",
+      "sbP2": "Titull në ekran të plotë",
+      "sbP3": "Prerje",
+      "sbP4": "Ekran i ndarë",
+      "sbP5": "Maket",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Një marrje në kamera —",
+      "sbTitleL2": "redaktim i nivelit të krijuesve kryesorë."
     },
     "storyboard": {
       "actFail": "Dështoi — ju lutemi provoni përsëri.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Letër",
       "style_terminal": "Terminal",
-      "style_bold": "E theksuar"
+      "style_bold": "E theksuar",
+      "ctaHintV2": "Përdorni të njëjtën fjalë kodi në përshkrimin e postimit tuaj."
     }
   }
 }

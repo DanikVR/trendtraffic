@@ -1190,7 +1190,7 @@
     "geminiFixCount": 123,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:25.420Z",
+    "pivotAt": "2026-07-17T20:12:34.426Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Accedi",
       "publicStart": "Inizia gratuitamente",
       "seoDesc": "Abbonamento TrendTraffic Premium a 49€/mese: ricerca di trend virali, analisi dei social media, studio UGC con avatar AI e pubblicazione automatica. 7 giorni gratuiti, annulla in qualsiasi momento.",
-      "seoTitle": "Piano Premium 49€/mese — TrendTraffic"
+      "seoTitle": "Piano Premium 49€/mese — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reel in un’unica ripresa — storyboard AI fino a 6 pannelli per blocco, 3 motori di rendering (incluso gratuito), sottotitoli, badge canale e parola CTA"
     },
     "channels": {
       "actionsHint": "'Traccia' aggiunge il canale alla tua lista per aggiornamenti automatici giornalieri (mostrando i cambiamenti 'era→è'). 'Analisi una tantum' mostra tutti i video ora, senza cronologia.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sezione in sviluppo—contenuti in arrivo.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Impostazioni cookie"
+      "footerCookieSettings": "Impostazioni cookie",
+      "incSb": "Storyboard: modifica per la fidelizzazione dei Reel in un’unica ripresa",
+      "sbB1": "Il regista AI organizza automaticamente il discorso in pannelli — tu devi solo regolare lo storyboard sulla pellicola",
+      "sbB2": "Tre motori di rendering: software (gratuito, senza chiavi), Omni API o Google Flow con il tuo abbonamento",
+      "sbB3": "Automazione del flusso: la coda di generazione si esegue da sola, l'assemblaggio automatico unisce il Reel finito senza il tuo intervento",
+      "sbB4": "Parola CTA alla fine: gli spettatori la commentano — l'engagement aumenta la portata",
+      "sbBody": "Le statiche \"talking heads\" vengono ignorate in pochi secondi — solo le inquadrature che cambiano catturano l'attenzione. Storyboard riassembla la tua ripresa in un Reel dinamico: trascrive il discorso, lo taglia in frasi fino a 8 secondi e le organizza in pannelli — primo piano dell'oratore, titoli a schermo intero, stacchi, split-screen, mockup e un finale con call-to-action.",
+      "sbCardBadge": "@miocanale",
+      "sbCardChunk": "Blocco 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 pannelli",
+      "sbCardSubs": "Sottotitoli: dal parlato",
+      "sbLabel": "Storyboard · modifica per la fidelizzazione",
+      "sbNote": "Incluso in Premium · scheda \"Storyboard\" nella Galleria · Reel finito — direttamente al Publisher",
+      "sbP1": "Primo piano dell'oratore",
+      "sbP2": "Titolo a schermo intero",
+      "sbP3": "Stacco",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Una ripresa in camera —",
+      "sbTitleL2": "montaggio da top-creator."
     },
     "storyboard": {
       "actFail": "Fallito — riprova.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Carta",
       "style_terminal": "Terminale",
-      "style_bold": "Grassetto"
+      "style_bold": "Grassetto",
+      "ctaHintV2": "Usa la stessa parola chiave nella didascalia del tuo post."
     }
   }
 }

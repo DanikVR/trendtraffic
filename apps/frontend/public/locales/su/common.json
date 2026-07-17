@@ -1190,7 +1190,7 @@
     "geminiFixCount": 66,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:33.099Z",
+    "pivotAt": "2026-07-17T20:12:59.027Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Asup",
       "publicStart": "Mimitian gratis",
       "seoDesc": "Langganan TrendTraffic Premium pikeun €49/bulan: pamilarian tren viral, analitik média sosial, studio UGC sareng avatar AI, sareng auto-publishing. 7 dinten gratis, tiasa dibatalkeun iraha waé.",
-      "seoTitle": "Rencana Premium €49/bulan — TrendTraffic"
+      "seoTitle": "Rencana Premium €49/bulan — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels sakali take — AI storyboard nepi ka 6 panel per chunk, 3 mesin render (kaasup nu gratis), subtitle, lencana saluran, jeung kecap CTA"
     },
     "channels": {
       "actionsHint": "'Lacak' nambihan saluran kana daptar anjeun pikeun apdet otomatis harian (nunjukkeun parobahan 'baheula→ayeuna'). 'Analisis sakali' nunjukkeun sadaya video ayeuna, tanpa riwayat.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bagian nuju dikembangkeun—eusi bakal sayogi pas.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Setélan kukis"
+      "footerCookieSettings": "Setélan kukis",
+      "incSb": "Storyboard: édit réténsi Reels sakali take",
+      "sbB1": "Diréktur AI otomatis ngatur omongan kana panel — anjeun ngan ukur nyaluyukeun storyboard dina filmstrip",
+      "sbB2": "Tilu mesin render: software (gratis, teu perlu konci), Omni API, atawa Google Flow ku langganan anjeun",
+      "sbB3": "Automasi Flow: antrian generasi jalan sorangan, auto-assembly ngahijikeun Reel nu geus réngsé tanpa anjeun",
+      "sbB4": "Kecap CTA di ahir: panongton mairan — engagement ngaronjatkeun jangkauan",
+      "sbBody": "Sirah nu ngomong statis bakal diliwatan dina sababaraha detik — ngan shot nu robah nu bisa nahan perhatian. Storyboard nyusun deui take anjeun jadi Reel nu dinamis: nranskripsi omongan, motong kana frasa nepi ka 8 detik, jeung ngatur unggal frasa kana panel — close-up panyatur, judul layar pinuh, cutaway, split-screen, mockup, jeung pamungkas call-to-action.",
+      "sbCardBadge": "@salurankuring",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Subtitle: tina omongan",
+      "sbLabel": "Storyboard · édit réténsi",
+      "sbNote": "Kaasup dina Premium · tab \"Storyboard\" dina Galeri · Reel nu geus réngsé — langsung ka Publisher",
+      "sbP1": "Close-up panyatur",
+      "sbP2": "Judul layar pinuh",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Pamungkas + CTA",
+      "sbTitleL1": "Sakali take dina kaméra —",
+      "sbTitleL2": "éditing tingkat panyipta top."
     },
     "storyboard": {
       "actFail": "Gagal — mangga coba deui.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kertas",
       "style_terminal": "Terminal",
-      "style_bold": "Kandel"
+      "style_bold": "Kandel",
+      "ctaHintV2": "Anggo kecap kode nu sarua dina caption postingan anjeun."
     }
   }
 }

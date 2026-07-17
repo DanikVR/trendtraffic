@@ -1172,7 +1172,7 @@
     "geminiFixCount": 44,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:25.282Z",
+    "pivotAt": "2026-07-17T20:12:34.611Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "ログイン",
       "publicStart": "無料で始める",
       "seoDesc": "TrendTraffic Premiumサブスクリプションは月額€49: バイラルトレンド検索、ソーシャルメディア分析、AIアバター付きUGCスタジオ、自動公開。7日間無料、いつでもキャンセル可能。",
-      "seoTitle": "プレミアムプラン 月額€49 — TrendTraffic"
+      "seoTitle": "プレミアムプラン 月額€49 — TrendTraffic",
+      "pf49Storyboard": "ストーリーボード：ワンテイクReels — AIストーリーボード（1チャンク最大6パネル）、3つのレンダリングエンジン（無料含む）、字幕、チャンネルバッジ、CTAワード"
     },
     "channels": {
       "actionsHint": "「追跡」はチャンネルをリストに追加し、毎日自動更新します（「以前→現在」の変化を表示）。「1回限りの分析」は履歴なしで現在のすべての動画を表示します。",
@@ -4125,7 +4126,28 @@
       "stubSoon": "セクションは開発中です。コンテンツは近日公開予定です。",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie設定"
+      "footerCookieSettings": "Cookie設定",
+      "incSb": "ストーリーボード：ワンテイクReelsの維持編集",
+      "sbB1": "AIディレクターが音声を自動でパネルに配置 — フィルムストリップでストーリーボードを調整するだけ",
+      "sbB2": "3つのレンダリングエンジン：ソフトウェア（無料、キー不要）、Omni API、またはサブスクリプションでGoogle Flow",
+      "sbB3": "フロー自動化：生成キューが自動で実行され、自動アセンブリが完成したReelを自動で結合します",
+      "sbB4": "最後にCTAワード：視聴者がコメント — エンゲージメントがリーチを向上させます",
+      "sbBody": "静的なトーキングヘッドは数秒でスクロールされてしまいます — 変化するショットだけが注目を集めます。ストーリーボードはあなたのテイクをダイナミックなReelに再構成します：音声を文字起こしし、最大8秒のフレーズにカットし、それぞれをパネルに配置します — スピーカーのクローズアップ、全画面タイトル、カットアウェイ、分割画面、モックアップ、そして行動喚起のフィナーレ。",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "チャンク1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6パネル",
+      "sbCardSubs": "字幕：音声から",
+      "sbLabel": "ストーリーボード · 維持編集",
+      "sbNote": "Premiumに含まれます · ギャラリーの「ストーリーボード」タブ · 完成したReel — パブリッシャーに直接",
+      "sbP1": "スピーカーのクローズアップ",
+      "sbP2": "全画面タイトル",
+      "sbP3": "カットアウェイ",
+      "sbP4": "分割画面",
+      "sbP5": "モックアップ",
+      "sbP6": "フィナーレ + CTA",
+      "sbTitleL1": "カメラでワンテイク —",
+      "sbTitleL2": "トップクリエイターレベルの編集。"
     },
     "storyboard": {
       "actFail": "失敗しました — もう一度お試しください。",
@@ -4259,7 +4281,8 @@
       "style_neon": "ネオン",
       "style_paper": "ペーパー",
       "style_terminal": "ターミナル",
-      "style_bold": "ボールド"
+      "style_bold": "ボールド",
+      "ctaHintV2": "投稿キャプションに同じコードワードを使用してください。"
     }
   }
 }

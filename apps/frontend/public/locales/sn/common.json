@@ -1190,7 +1190,7 @@
     "geminiFixCount": 168,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:32.617Z",
+    "pivotAt": "2026-07-17T20:12:56.275Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Pinda",
       "publicStart": "Tanga mahara",
       "seoDesc": "TrendTraffic Premium subscription ye€49/mwedzi: kutsvaga kwetrend yeviral, social media analytics, UGC studio ine AI avatars, uye auto-publishing. Mazuva 7 mahara, unogona kucancel chero nguva.",
-      "seoTitle": "Premium plan €49/mwedzi — TrendTraffic"
+      "seoTitle": "Premium plan €49/mwedzi — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels dze-one-take — AI storyboard inosvika mapaneru matanhatu pachikamu, ma render engines matatu (kusanganisira emahara), masubtitles, channel badge, uye izwi reCTA"
     },
     "channels": {
       "actionsHint": "'Track' inoisa chiteshi kune yako rondedzero yekuvandudzwa otomatiki zuva nezuva (ichiratidza shanduko 'yaive→iri'). 'One-time analysis' inoratidza mavhidhiyo ese izvozvi, pasina nhoroondo.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Chikamu chiri kugadzirwa—zvemukati zvichauya munguva pfupi.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Zvirongwa zvemacookie"
+      "footerCookieSettings": "Zvirongwa zvemacookie",
+      "incSb": "Storyboard: one-take Reels retention edit",
+      "sbB1": "AI director inoisa hurukuro mumapaneru — iwe unongogadzirisa storyboard pafirimu",
+      "sbB2": "Ma render engines matatu: software (mahara, hapana makiyi), Omni API, kana Google Flow ne subscription yako",
+      "sbB3": "Flow automation: generation queue inomhanya yega, auto-assembly inosunga Reel yakapera pasina iwe",
+      "sbB4": "Izwi reCTA pakupedzisira: vataridzi vanorinyora — engagement inowedzera kusvika",
+      "sbBody": "Misoro inotaura yakamira inopfuudzwa mumasekonzi — chete shanduko dzemifananidzo dzinobata pfungwa. Storyboard inounganidza take yako kuita Reel ine simba: inonyora hurukuro, inoicheka kuita mitsara inosvika masekonzi masere, uye inoisa imwe neimwe mumapaneru — speaker close-up, mazita akazara-screen, cutaways, split-screens, mockups, uye call-to-action pakupedzisira.",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "Chikamu 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Mapaneru matanhatu",
+      "sbCardSubs": "Masubtitles: kubva muhurukuro",
+      "sbLabel": "Storyboard · retention edit",
+      "sbNote": "Inosanganisirwa muPremium · \"Storyboard\" tab muGallery · Reel yakapera — yakananga kuPublisher",
+      "sbP1": "Speaker close-up",
+      "sbP2": "Zita rakazara-screen",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Kupedzisira + CTA",
+      "sbTitleL1": "One take pakamera —",
+      "sbTitleL2": "editing ye top-creator level."
     },
     "storyboard": {
       "actFail": "Yatadza — ndapota edza zvakare.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pepa",
       "style_terminal": "Terminal",
-      "style_bold": "Yakakora"
+      "style_bold": "Yakakora",
+      "ctaHintV2": "Shandisa izwi rekodhi rimwe chete mune yako post caption."
     }
   }
 }

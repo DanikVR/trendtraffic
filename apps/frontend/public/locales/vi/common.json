@@ -1172,7 +1172,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:36.278Z",
+    "pivotAt": "2026-07-17T20:13:09.981Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Đăng nhập",
       "publicStart": "Bắt đầu miễn phí",
       "seoDesc": "Đăng ký TrendTraffic Premium với €49/tháng: tìm kiếm xu hướng viral, phân tích mạng xã hội, studio UGC với hình đại diện AI và tự động xuất bản. 7 ngày miễn phí, hủy bất cứ lúc nào.",
-      "seoTitle": "Gói Premium €49/tháng — TrendTraffic"
+      "seoTitle": "Gói Premium €49/tháng — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels một lần quay — storyboard AI lên đến 6 bảng mỗi đoạn, 3 công cụ render (bao gồm miễn phí), phụ đề, huy hiệu kênh và từ CTA"
     },
     "channels": {
       "actionsHint": "'Theo dõi' thêm kênh vào danh sách của bạn để tự động cập nhật hàng ngày (hiển thị thay đổi 'trước→sau'). 'Phân tích một lần' hiển thị tất cả video hiện tại, không có lịch sử.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Mục đang được phát triển—nội dung sẽ sớm ra mắt.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cài đặt cookie"
+      "footerCookieSettings": "Cài đặt cookie",
+      "incSb": "Storyboard: chỉnh sửa giữ chân người xem cho Reels một lần quay",
+      "sbB1": "Đạo diễn AI tự động sắp xếp lời nói thành các bảng — bạn chỉ cần điều chỉnh storyboard trên dải phim",
+      "sbB2": "Ba công cụ render: phần mềm (miễn phí, không cần khóa), Omni API hoặc Google Flow với gói đăng ký của bạn",
+      "sbB3": "Tự động hóa Flow: hàng đợi tạo chạy tự động, tự động lắp ráp ghép nối Reels đã hoàn thành mà không cần bạn",
+      "sbB4": "Từ CTA ở cuối: người xem bình luận — tương tác tăng cường phạm vi tiếp cận",
+      "sbBody": "Những đoạn nói chuyện tĩnh sẽ bị lướt qua trong vài giây — chỉ những cảnh quay thay đổi mới giữ được sự chú ý. Storyboard lắp ráp lại cảnh quay của bạn thành một Reels động: phiên âm lời nói, cắt thành các cụm từ tối đa 8 giây và sắp xếp từng cụm từ vào các bảng — cận cảnh người nói, tiêu đề toàn màn hình, cảnh cắt ngang, màn hình chia đôi, mô hình và phần kết thúc kêu gọi hành động.",
+      "sbCardBadge": "@kênhcủatôi",
+      "sbCardChunk": "Đoạn 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 bảng",
+      "sbCardSubs": "Phụ đề: từ lời nói",
+      "sbLabel": "Storyboard · chỉnh sửa giữ chân người xem",
+      "sbNote": "Bao gồm trong Premium · tab \"Storyboard\" trong Thư viện · Reels đã hoàn thành — trực tiếp đến Publisher",
+      "sbP1": "Cận cảnh người nói",
+      "sbP2": "Tiêu đề toàn màn hình",
+      "sbP3": "Cảnh cắt ngang",
+      "sbP4": "Màn hình chia đôi",
+      "sbP5": "Mô hình",
+      "sbP6": "Kết thúc + CTA",
+      "sbTitleL1": "Một lần quay trên máy ảnh —",
+      "sbTitleL2": "chỉnh sửa cấp độ nhà sáng tạo hàng đầu."
     },
     "storyboard": {
       "actFail": "Thất bại — vui lòng thử lại.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Giấy",
       "style_terminal": "Thiết bị đầu cuối",
-      "style_bold": "In đậm"
+      "style_bold": "In đậm",
+      "ctaHintV2": "Sử dụng cùng một từ khóa trong chú thích bài đăng của bạn."
     }
   }
 }

@@ -1172,7 +1172,7 @@
     "geminiFixCount": 52,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:29.350Z",
+    "pivotAt": "2026-07-17T20:12:48.348Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "ဝင်ရောက်ရန်",
       "publicStart": "အခမဲ့စတင်ရန်",
       "seoDesc": "TrendTraffic Premium စာရင်းသွင်းမှု တစ်လလျှင် €49: viral trend ရှာဖွေခြင်း၊ လူမှုမီဒီယာ analytics၊ AI avatar များပါသော UGC studio နှင့် အလိုအလျောက်ထုတ်ဝေခြင်း။ ၇ ရက် အခမဲ့၊ အချိန်မရွေး ပယ်ဖျက်နိုင်သည်။",
-      "seoTitle": "Premium plan တစ်လလျှင် €49 — TrendTraffic"
+      "seoTitle": "Premium plan တစ်လလျှင် €49 — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI storyboard (chunk တစ်ခုလျှင် ၆ ပုံအထိ), render engines ၃ ခု (အခမဲ့အပါအဝင်), စာတန်းထိုး, channel badge, CTA စကားလုံး"
     },
     "channels": {
       "actionsHint": "'ခြေရာခံ' သည် ချန်နယ်ကို သင်၏စာရင်းသို့ နေ့စဉ်အလိုအလျောက် အပ်ဒိတ်များအတွက် ထည့်သွင်းပေးသည် ('was→is' ပြောင်းလဲမှုများကို ပြသသည်)။ 'တစ်ကြိမ်တည်းခွဲခြမ်းစိတ်ဖြာခြင်း' သည် ဗီဒီယိုများအားလုံးကို ယခုပြသပြီး မှတ်တမ်းမပါဝင်ပါ။",
@@ -4125,7 +4126,28 @@
       "stubSoon": "ဤအပိုင်းကို ဖန်တီးဆဲဖြစ်သည်—အကြောင်းအရာများ မကြာမီလာမည်။",
       "wikiMeta": "ဝီကီ — TrendTraffic",
       "wikiTitle": "ဝီကီ",
-      "footerCookieSettings": "ကွတ်ကီး ဆက်တင်များ"
+      "footerCookieSettings": "ကွတ်ကီး ဆက်တင်များ",
+      "incSb": "Storyboard: one-take Reels ကြည့်ရှုမှုထိန်းသိမ်းတည်းဖြတ်မှု",
+      "sbB1": "AI ဒါရိုက်တာသည် စကားပြောများကို ပုံများအဖြစ် အလိုအလျောက်စီစဉ်ပေးသည် — သင်သည် filmstrip ပေါ်ရှိ storyboard ကိုသာ ချိန်ညှိရန်လိုသည်",
+      "sbB2": "Render engines သုံးခု: software (အခမဲ့, key မလို), Omni API, သို့မဟုတ် သင်၏ subscription ဖြင့် Google Flow",
+      "sbB3": "Flow automation: generation queue သည် သူ့ဘာသာသူ လည်ပတ်ပြီး၊ သင်မပါဘဲ ပြီးစီးသော Reel ကို အလိုအလျောက် ပေါင်းစပ်ပေးသည်",
+      "sbB4": "အဆုံးတွင် CTA စကားလုံး: ကြည့်ရှုသူများ မှတ်ချက်ပေးသည် — engagement သည် reach ကို မြှင့်တင်ပေးသည်",
+      "sbBody": "ငြိမ်သက်နေသော စကားပြောခေါင်းများသည် စက္ကန့်ပိုင်းအတွင်း ကျော်သွားတတ်သည် — ပြောင်းလဲနေသော ရိုက်ချက်များသာ အာရုံစိုက်မှုကို ဆွဲဆောင်နိုင်သည်။ Storyboard သည် သင်၏ရိုက်ချက်ကို dynamic Reel အဖြစ် ပြန်လည်စုစည်းပေးသည်: စကားပြောကို ကူးယူသည်၊ ၈ စက္ကန့်အထိ စကားစုများအဖြစ် ဖြတ်တောက်သည်၊ နှင့် တစ်ခုချင်းစီကို ပုံများအဖြစ် စီစဉ်ပေးသည် — စပီကာ၏ close-up၊ မျက်နှာပြင်အပြည့် ခေါင်းစဉ်များ၊ cutaway များ၊ split-screen များ၊ mockup များ၊ နှင့် call-to-action အဆုံးသတ်။",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "၆ ပုံ",
+      "sbCardSubs": "စာတန်းထိုး: စကားပြောမှ",
+      "sbLabel": "Storyboard · ကြည့်ရှုမှုထိန်းသိမ်းတည်းဖြတ်မှု",
+      "sbNote": "Premium တွင် ပါဝင်သည် · Gallery ရှိ \"Storyboard\" tab · ပြီးစီးသော Reel — Publisher သို့ တိုက်ရိုက်",
+      "sbP1": "စပီကာ close-up",
+      "sbP2": "မျက်နှာပြင်အပြည့် ခေါင်းစဉ်",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "အဆုံးသတ် + CTA",
+      "sbTitleL1": "ကင်မရာပေါ်တွင် တစ်ကြိမ်ရိုက်ကူး —",
+      "sbTitleL2": "ထိပ်တန်းဖန်တီးရှင်အဆင့် တည်းဖြတ်မှု။"
     },
     "storyboard": {
       "actFail": "မအောင်မြင်ပါ — ထပ်ကြိုးစားပါ။",
@@ -4259,7 +4281,8 @@
       "style_neon": "နီယွန်",
       "style_paper": "စက္ကူ",
       "style_terminal": "တာမီနယ်",
-      "style_bold": "ထူ"
+      "style_bold": "ထူ",
+      "ctaHintV2": "သင်၏ post caption တွင် တူညီသော code word ကို အသုံးပြုပါ။"
     }
   }
 }

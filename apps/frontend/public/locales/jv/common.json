@@ -1190,7 +1190,7 @@
     "geminiFixCount": 73,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:25.347Z",
+    "pivotAt": "2026-07-17T20:12:34.858Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Mlebu",
       "publicStart": "Mulai gratis",
       "seoDesc": "Langganan TrendTraffic Premium rega €49/sasi: telusuran tren viral, analitik media sosial, studio UGC kanthi avatar AI, lan penerbitan otomatis. 7 dina gratis, bisa dibatalake kapan wae.",
-      "seoTitle": "Rencana Premium €49/sasi — TrendTraffic"
+      "seoTitle": "Rencana Premium €49/sasi — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels siji-take — storyboard AI nganti 6 panel saben chunk, 3 mesin render (kalebu gratis), subtitle, badge saluran, lan tembung CTA"
     },
     "channels": {
       "actionsHint": "'Lacak' nambahake saluran menyang dhaptar sampeyan kanggo nganyari otomatis saben dina (nuduhake owah-owahan 'sadurunge→saiki'). 'Analisis sapisan' nuduhake kabeh video saiki, tanpa riwayat.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bagean isih dikembangake—konten bakal teka.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Setelan cookie"
+      "footerCookieSettings": "Setelan cookie",
+      "incSb": "Storyboard: suntingan retensi Reels siji-take",
+      "sbB1": "Direktur AI otomatis ngatur pidato dadi panel — sampeyan mung nyetel storyboard ing filmstrip",
+      "sbB2": "Telung mesin render: piranti lunak (gratis, tanpa kunci), Omni API, utawa Google Flow nganggo langganan sampeyan",
+      "sbB3": "Otomatisasi Flow: antrian generasi mlaku dhewe, perakitan otomatis nyambungake Reel sing wis rampung tanpa sampeyan",
+      "sbB4": "Tembung CTA ing pungkasan: pamirsa menehi komentar — keterlibatan nambah jangkauan",
+      "sbBody": "Kepala sing ngomong statis bakal dilewati sajrone sawetara detik — mung gambar sing ganti sing narik kawigaten. Storyboard ngumpulake maneh take sampeyan dadi Reel sing dinamis: nyalin pidato, motong dadi frasa nganti 8 detik, lan ngatur saben dadi panel — speaker close-up, judhul layar penuh, cutaway, split-screen, mockup, lan final call-to-action.",
+      "sbCardBadge": "@saluranku",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Subtitle: saka pidato",
+      "sbLabel": "Storyboard · suntingan retensi",
+      "sbNote": "Kalebu ing Premium · tab \"Storyboard\" ing Galeri · Reel sing wis rampung — langsung menyang Publisher",
+      "sbP1": "Speaker close-up",
+      "sbP2": "Judhul layar penuh",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Siji take ing kamera —",
+      "sbTitleL2": "suntingan level kreator paling dhuwur."
     },
     "storyboard": {
       "actFail": "Gagal — coba maneh.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kertas",
       "style_terminal": "Terminal",
-      "style_bold": "Kandel"
+      "style_bold": "Kandel",
+      "ctaHintV2": "Gunakake tembung kode sing padha ing caption postingan sampeyan."
     }
   }
 }

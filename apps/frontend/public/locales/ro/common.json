@@ -1190,7 +1190,7 @@
     "geminiFixCount": 157,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:31.079Z",
+    "pivotAt": "2026-07-17T20:12:52.092Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Autentificare",
       "publicStart": "Începe gratuit",
       "seoDesc": "Abonament TrendTraffic Premium pentru 49 €/lună: căutare de tendințe virale, analiză social media, studio UGC cu avatare AI și publicare automată. 7 zile gratuite, anulează oricând.",
-      "seoTitle": "Plan Premium 49 €/lună — TrendTraffic"
+      "seoTitle": "Plan Premium 49 €/lună — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels dintr-o singură înregistrare — storyboard AI până la 6 panouri per segment, 3 motoare de randare (inclusiv gratuit), subtitrări, insignă canal și cuvânt CTA"
     },
     "channels": {
       "actionsHint": "„Urmărește” adaugă canalul în lista ta pentru actualizări automate zilnice (afișând modificările „era→este”). „Analiză unică” arată toate videoclipurile acum, fără istoric.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Secțiune în dezvoltare — conținut disponibil în curând.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Setări cookie"
+      "footerCookieSettings": "Setări cookie",
+      "incSb": "Storyboard: editare de retenție Reels dintr-o singură înregistrare",
+      "sbB1": "Regizorul AI aranjează automat discursul în panouri — tu doar ajustezi storyboard-ul pe banda de film",
+      "sbB2": "Trei motoare de randare: software (gratuit, fără chei), Omni API sau Google Flow cu abonamentul tău",
+      "sbB3": "Automatizare Flow: coada de generare rulează singură, auto-asamblarea unește Reel-ul finalizat fără intervenția ta",
+      "sbB4": "Cuvânt CTA la final: spectatorii îl comentează — implicarea crește acoperirea",
+      "sbBody": "Capetele vorbitoare statice sunt derulate în câteva secunde — doar cadrele în schimbare mențin atenția. Storyboard-ul reasamblează înregistrarea ta într-un Reel dinamic: transcrie discursul, îl taie în fraze de până la 8 secunde și aranjează fiecare în panouri — prim-plan vorbitor, titluri pe tot ecranul, inserturi, ecrane divizate, machete și un final cu apel la acțiune.",
+      "sbCardBadge": "@canalulmeu",
+      "sbCardChunk": "Segment 1 · 0:00–0:08",
+      "sbCardCta": "CTA: „TREND”",
+      "sbCardPanels": "6 panouri",
+      "sbCardSubs": "Subtitrări: din vorbire",
+      "sbLabel": "Storyboard · editare de retenție",
+      "sbNote": "Inclus în Premium · fila „Storyboard” în Galerie · Reel finalizat — direct către Publisher",
+      "sbP1": "Prim-plan vorbitor",
+      "sbP2": "Titlu pe tot ecranul",
+      "sbP3": "Insert",
+      "sbP4": "Ecran divizat",
+      "sbP5": "Machetă",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "O singură înregistrare pe cameră —",
+      "sbTitleL2": "editare la nivel de creator de top."
     },
     "storyboard": {
       "actFail": "Eșuat — te rugăm să încerci din nou.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Hârtie",
       "style_terminal": "Terminal",
-      "style_bold": "Îndrăzneț"
+      "style_bold": "Îndrăzneț",
+      "ctaHintV2": "Folosește același cuvânt cheie în descrierea postării tale."
     }
   }
 }

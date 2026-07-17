@@ -1172,7 +1172,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:29.218Z",
+    "pivotAt": "2026-07-17T20:12:48.348Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Logg inn",
       "publicStart": "Start gratis",
       "seoDesc": "TrendTraffic Premium-abonnement for €49/måned: viral trend-søk, analyse av sosiale medier, UGC-studio med AI-avatarer og automatisk publisering. 7 dager gratis, avbryt når som helst.",
-      "seoTitle": "Premium-plan €49/måned — TrendTraffic"
+      "seoTitle": "Premium-plan €49/måned — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI-storyboard opptil 6 paneler per del, 3 rendermotorer (inkl. gratis), undertekster, kanalskilt og CTA-ord"
     },
     "channels": {
       "actionsHint": "'Spor' legger kanalen til listen din for daglige auto-oppdateringer (viser 'var→er'-endringer). 'Engangsanalyse' viser alle videoer nå, uten historikk.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seksjonen er under utvikling – innhold kommer snart.",
       "wikiMeta": "Wiki – TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Informasjonskapselinnstillinger"
+      "footerCookieSettings": "Informasjonskapselinnstillinger",
+      "incSb": "Storyboard: one-take Reels retensjonsredigering",
+      "sbB1": "AI-regissør arrangerer tale automatisk i paneler — du justerer bare storyboardet på filmstripen",
+      "sbB2": "Tre rendermotorer: programvare (gratis, ingen nøkler), Omni API, eller Google Flow med ditt abonnement",
+      "sbB3": "Flytautomatisering: generasjonskøen kjører av seg selv, auto-montering syr sammen den ferdige Reelen uten deg",
+      "sbB4": "CTA-ord på slutten: seere kommenterer det — engasjement øker rekkevidden",
+      "sbBody": "Statisk snakkende hoder blir skrollet forbi på sekunder — bare skiftende bilder holder oppmerksomheten. Storyboard setter sammen opptaket ditt til en dynamisk Reel: transkriberer tale, kutter den i fraser på opptil 8 sekunder, og arrangerer hver i paneler — nærbilde av taler, fullskjermstitler, mellomklipp, delt skjerm, mockups og en call-to-action-finale.",
+      "sbCardBadge": "@min_kanal",
+      "sbCardChunk": "Del 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 paneler",
+      "sbCardSubs": "Undertekster: fra tale",
+      "sbLabel": "Storyboard · retensjonsredigering",
+      "sbNote": "Inkludert i Premium · \"Storyboard\"-fanen i Galleri · ferdig Reel — direkte til Utgiver",
+      "sbP1": "Taler nærbilde",
+      "sbP2": "Fullskjermstittel",
+      "sbP3": "Mellomklipp",
+      "sbP4": "Delt skjerm",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Ett opptak på kamera —",
+      "sbTitleL2": "redigering på toppskaper-nivå."
     },
     "storyboard": {
       "actFail": "Mislyktes — prøv igjen.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papir",
       "style_terminal": "Terminal",
-      "style_bold": "Fet"
+      "style_bold": "Fet",
+      "ctaHintV2": "Bruk det samme kodeordet i innleggets bildetekst."
     }
   }
 }

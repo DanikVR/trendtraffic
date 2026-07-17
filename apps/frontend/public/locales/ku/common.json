@@ -1190,7 +1190,7 @@
     "geminiFixCount": 116,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:26.797Z",
+    "pivotAt": "2026-07-17T20:12:39.315Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Têkeve",
       "publicStart": "Belaş dest pê bike",
       "seoDesc": "Abonetiya TrendTraffic Premium bi 49 €/meh: lêgerîna trendên viral, analîtîkên medyaya civakî, stûdyoya UGC bi avatarên AI, û weşana otomatîk. 7 roj belaş, her dem betal bike.",
-      "seoTitle": "Plana Premium 49 €/meh — TrendTraffic"
+      "seoTitle": "Plana Premium 49 €/meh — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reelsên yek-girtî — storyboarda AI-ê heya 6 panelan ji bo her beşekê, 3 motorên renderê (tevî yên belaş), jêrnivîs, nîşana kanalê, û peyva CTA"
     },
     "channels": {
       "actionsHint": "'Bişopîne' kanalê li lîsteya we zêde dike ji bo nûvekirinên otomatîkî yên rojane (guhertinên 'bû→ye' nîşan dide). 'Analîza yek-carî' hemî vîdyoyan niha nîşan dide, bêyî dîrokê.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Beş di bin pêşkeftinê de ye—naverok dê di nêzîk de were.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Mîhengên çerezan"
+      "footerCookieSettings": "Mîhengên çerezan",
+      "incSb": "Storyboard: sererastkirina ragirtina Reelsên yek-girtî",
+      "sbB1": "Rêveberê AI-ê axaftinê bixweber di panelan de rêz dike — hûn tenê storyboardê li ser fîlîmê sererast dikin",
+      "sbB2": "Sê motorên renderê: nermalav (belaş, bê kilît), Omni API, an Google Flow bi abonetiya we",
+      "sbB3": "Otomasyona Flow: rêza hilberînê bixwe dimeşe, kombûna otomatîkî Reelê qediyayî bêyî we li hev dike",
+      "sbB4": "Peyva CTA di dawiyê de: temaşevan wê şîrove dikin — tevlêbûn gihîştinê zêde dike",
+      "sbBody": "Serên axaftinê yên statîk di çend saniyan de têne derbas kirin — tenê dîmenên guherbar balê dikişînin. Storyboard girtina we vediguherîne Reelêk dînamîk: axaftinê vediguherîne nivîsê, wê dike hevokên heya 8 saniyan, û her yekê di panelan de rêz dike — axaftvanê nêzîk, sernavên tev-ekran, qutkirin, ekranên dabeşkirî, maket, û fînala banga-çalakiyê.",
+      "sbCardBadge": "@kanala_min",
+      "sbCardChunk": "Beş 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Jêrnivîs: ji axaftinê",
+      "sbLabel": "Storyboard · sererastkirina ragirtinê",
+      "sbNote": "Di Premium de tê de ye · Tabloya \"Storyboard\" di Galeriyê de · Reelê qediyayî — rasterast ji Weşanger re",
+      "sbP1": "Axaftvanê nêzîk",
+      "sbP2": "Sernavê tev-ekran",
+      "sbP3": "Qutkirin",
+      "sbP4": "Ekrana dabeşkirî",
+      "sbP5": "Maket",
+      "sbP6": "Fînal + CTA",
+      "sbTitleL1": "Yek girtin li ser kamerayê —",
+      "sbTitleL2": "sererastkirina asta afirînerê top."
     },
     "storyboard": {
       "actFail": "Têk çû — ji kerema xwe dîsa biceribîne.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kaxez",
       "style_terminal": "Termînal",
-      "style_bold": "Stûr"
+      "style_bold": "Stûr",
+      "ctaHintV2": "Heman peyva kodê di sernivîsa posta xwe de bikar bînin."
     }
   }
 }

@@ -1190,7 +1190,7 @@
     "geminiFixCount": 65,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:19.949Z",
+    "pivotAt": "2026-07-17T20:12:19.945Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Mewngofnodi",
       "publicStart": "Dechrau am ddim",
       "seoDesc": "Tanysgrifiad TrendTraffic Premium am €49/mis: chwiliad tueddiadau firaol, dadansoddiadau cyfryngau cymdeithasol, stiwdio UGC gydag afatarau AI, a hunan-gyhoeddi. 7 diwrnod am ddim, canslo unrhyw bryd.",
-      "seoTitle": "Cynllun Premium €49/mis — TrendTraffic"
+      "seoTitle": "Cynllun Premium €49/mis — TrendTraffic",
+      "pf49Storyboard": "Bwrdd Stori: Reels un-gymeriad — bwrdd stori AI hyd at 6 panel fesul darn, 3 injan rendro (gan gynnwys rhad ac am ddim), isdeitlau, bathodyn sianel, a gair CTA"
     },
     "channels": {
       "actionsHint": "Mae 'Tracio' yn ychwanegu'r sianel at eich rhestr ar gyfer diweddariadau awtomatig dyddiol (yn dangos newidiadau 'oedd→yw'). Mae 'Dadansoddiad un-tro' yn dangos pob fideo nawr, heb hanes.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Adran dan ddatblygiad—cynnwys yn dod yn fuan.",
       "wikiMeta": "Wici — TrendTraffic",
       "wikiTitle": "Wici",
-      "footerCookieSettings": "Gosodiadau cwcis"
+      "footerCookieSettings": "Gosodiadau cwcis",
+      "incSb": "Bwrdd Stori: golygiad cadw Reels un-gymeriad",
+      "sbB1": "Mae cyfarwyddwr AI yn trefnu lleferydd yn baneli yn awtomatig — dim ond addasu'r bwrdd stori ar y stribed ffilm y byddwch chi",
+      "sbB2": "Tri injan rendro: meddalwedd (rhad ac am ddim, dim allweddi), API Omni, neu Google Flow gyda'ch tanysgrifiad",
+      "sbB3": "Awtomeiddio llif: mae ciw cynhyrchu yn rhedeg ei hun, mae hunan-gynulliad yn gwnïo'r Reel gorffenedig hebddoch chi",
+      "sbB4": "Gair CTA ar y diwedd: mae gwylwyr yn ei sylwebu — mae ymgysylltu yn rhoi hwb i gyrhaeddiad",
+      "sbBody": "Mae pennau siarad statig yn cael eu sgrolio heibio mewn eiliadau — dim ond ergydion sy'n newid sy'n dal sylw. Mae Bwrdd Stori yn ail-gynnull eich cymeriad yn Reel dynamig: yn trawsgrifio lleferydd, yn ei dorri'n ymadroddion hyd at 8 eiliad, ac yn trefnu pob un yn baneli — siaradwr agos, teitlau sgrin lawn, toriadau, sgriniau hollt, ffug-ddelweddau, a diweddglo galwad-i-weithredu.",
+      "sbCardBadge": "@fy sianel",
+      "sbCardChunk": "Darn 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Isdeitlau: o leferydd",
+      "sbLabel": "Bwrdd Stori · golygiad cadw",
+      "sbNote": "Cynhwysir yn Premium · tab \"Bwrdd Stori\" yn yr Oriel · Reel gorffenedig — yn uniongyrchol i'r Cyhoeddwr",
+      "sbP1": "Siaradwr agos",
+      "sbP2": "Teitl sgrin lawn",
+      "sbP3": "Toriad",
+      "sbP4": "Sgrin hollt",
+      "sbP5": "Ffug-ddelwedd",
+      "sbP6": "Diweddglo + CTA",
+      "sbTitleL1": "Un gymeriad ar gamera —",
+      "sbTitleL2": "golygu lefel prif-grëwr."
     },
     "storyboard": {
       "actFail": "Wedi methu — ceisiwch eto.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papur",
       "style_terminal": "Terfynell",
-      "style_bold": "Beiddgar"
+      "style_bold": "Beiddgar",
+      "ctaHintV2": "Defnyddiwch yr un gair cod yn eich capsiwn post."
     }
   }
 }

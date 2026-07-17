@@ -1,6 +1,6 @@
 {
   "name": "@vibevox/frontend",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "//version-rule": "Decimal-carry, max 9 per column: 1.0.9 → 1.1.0, 1.9.9 → 2.0.0. Sync with APP_VERSION in src/components/AppVersion.tsx on every change.",
   "type": "module",

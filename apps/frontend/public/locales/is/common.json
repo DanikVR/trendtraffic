@@ -1190,7 +1190,7 @@
     "geminiFixCount": 124,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:24.867Z",
+    "pivotAt": "2026-07-17T20:12:32.781Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Innskráning",
       "publicStart": "Byrjaðu ókeypis",
       "seoDesc": "TrendTraffic Premium áskrift fyrir 49€/mánuði: veiruþróunarleit, greining samfélagsmiðla, UGC stúdíó með AI avatörum og sjálfvirk útgáfa. 7 dagar ókeypis, hætta hvenær sem er.",
-      "seoTitle": "Premium áskrift 49€/mánuði — TrendTraffic"
+      "seoTitle": "Premium áskrift 49€/mánuði — TrendTraffic",
+      "pf49Storyboard": "Storyboard: einnar töku Reels — AI storyboard allt að 6 spjöld á hluta, 3 flutningsvélar (þ.m.t. ókeypis), textar, rásarmerki og CTA orð"
     },
     "channels": {
       "actionsHint": "'Fylgjast með' bætir rásinni við listann þinn fyrir daglega sjálfvirka uppfærslu (sýnir 'var→er' breytingar). 'Einu sinni greining' sýnir öll myndbönd núna, án sögu.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Hluti í þróun — efni kemur fljótlega.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Fótsporsstillingar"
+      "footerCookieSettings": "Fótsporsstillingar",
+      "incSb": "Storyboard: einnar töku Reels varðveisluvinnsla",
+      "sbB1": "AI leikstjóri raðar sjálfkrafa tali í spjöld — þú stillir bara storyboardið á filmuröndinni",
+      "sbB2": "Þrjár flutningsvélar: hugbúnaður (ókeypis, engir lyklar), Omni API, eða Google Flow með áskriftinni þinni",
+      "sbB3": "Sjálfvirkni flæðis: biðröðin keyrir sig sjálf, sjálfvirk samsetning saumar saman fullbúna Reel án þín",
+      "sbB4": "CTA orð í lokin: áhorfendur kommenta það — þátttaka eykur útbreiðslu",
+      "sbBody": "Stöðugir talandi hausar eru skrunaðir framhjá á sekúndum — aðeins breyttar tökur halda athygli. Storyboard setur tökuna þína saman í kraftmikla Reel: umritar tal, klippir það í setningar allt að 8 sekúndur, og raðar hverri í spjöld — nærmynd af ræðumanni, titlar á fullum skjá, klippur, skiptiskjáir, spotta og kalli til aðgerða í lokin.",
+      "sbCardBadge": "@rásinmín",
+      "sbCardChunk": "Hluti 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 spjöld",
+      "sbCardSubs": "Textar: úr tali",
+      "sbLabel": "Storyboard · varðveisluvinnsla",
+      "sbNote": "Innifalið í Premium · „Storyboard“ flipi í Galleríi · fullbúin Reel — beint í Útgefanda",
+      "sbP1": "Nærmynd af ræðumanni",
+      "sbP2": "Titill á fullum skjá",
+      "sbP3": "Klippa",
+      "sbP4": "Skiptiskjár",
+      "sbP5": "Spott",
+      "sbP6": "Lok + CTA",
+      "sbTitleL1": "Ein taka á myndavél —",
+      "sbTitleL2": "klipping á hæsta stigi."
     },
     "storyboard": {
       "actFail": "Mistókst — vinsamlegast reyndu aftur.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pappír",
       "style_terminal": "Flugstöð",
-      "style_bold": "Feitletrað"
+      "style_bold": "Feitletrað",
+      "ctaHintV2": "Notaðu sama kóðaorð í færslunni þinni."
     }
   }
 }

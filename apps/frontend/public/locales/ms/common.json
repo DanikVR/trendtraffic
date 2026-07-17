@@ -1190,7 +1190,7 @@
     "geminiFixCount": 119,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:28.808Z",
+    "pivotAt": "2026-07-17T20:12:45.588Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Log masuk",
       "publicStart": "Mula secara percuma",
       "seoDesc": "Langganan TrendTraffic Premium untuk €49/bulan: carian trend viral, analitik media sosial, studio UGC dengan avatar AI, dan penerbitan automatik. 7 hari percuma, batalkan bila-bila masa.",
-      "seoTitle": "Pelan Premium €49/bulan — TrendTraffic"
+      "seoTitle": "Pelan Premium €49/bulan — TrendTraffic",
+      "pf49Storyboard": "Papan Cerita: Reels satu rakaman — papan cerita AI sehingga 6 panel setiap bahagian, 3 enjin render (termasuk percuma), sari kata, lencana saluran, dan perkataan CTA"
     },
     "channels": {
       "actionsHint": "'Jejak' menambah saluran ke senarai anda untuk kemas kini automatik harian (menunjukkan perubahan 'dahulu→kini'). 'Analisis sekali' menunjukkan semua video sekarang, tanpa sejarah.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bahagian dalam pembangunan—kandungan akan datang tidak lama lagi.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Tetapan kuki"
+      "footerCookieSettings": "Tetapan kuki",
+      "incSb": "Papan Cerita: suntingan pengekalan Reels satu rakaman",
+      "sbB1": "Pengarah AI menyusun ucapan secara automatik ke dalam panel — anda hanya perlu melaraskan papan cerita pada jalur filem",
+      "sbB2": "Tiga enjin render: perisian (percuma, tiada kunci), Omni API, atau Google Flow dengan langganan anda",
+      "sbB3": "Automasi Flow: giliran penjanaan berjalan sendiri, pemasangan automatik menyatukan Reels yang telah siap tanpa anda",
+      "sbB4": "Perkataan CTA di akhir: penonton mengulasnya — penglibatan meningkatkan jangkauan",
+      "sbBody": "Kepala bercakap statik akan digulirkan dalam beberapa saat — hanya perubahan rakaman yang menarik perhatian. Papan Cerita menyusun semula rakaman anda menjadi Reels yang dinamik: menyalin ucapan, memotongnya menjadi frasa sehingga 8 saat, dan menyusun setiap satu ke dalam panel — pembesar suara dekat, tajuk skrin penuh, potongan, skrin pisah, mockup, dan penamat panggilan untuk bertindak.",
+      "sbCardBadge": "@saluransaya",
+      "sbCardChunk": "Bahagian 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Sari kata: dari ucapan",
+      "sbLabel": "Papan Cerita · suntingan pengekalan",
+      "sbNote": "Termasuk dalam Premium · tab \"Papan Cerita\" dalam Galeri · Reels yang telah siap — terus ke Penerbit",
+      "sbP1": "Pembesar suara dekat",
+      "sbP2": "Tajuk skrin penuh",
+      "sbP3": "Potongan",
+      "sbP4": "Skrin pisah",
+      "sbP5": "Mockup",
+      "sbP6": "Penamat + CTA",
+      "sbTitleL1": "Satu rakaman di kamera —",
+      "sbTitleL2": "penyuntingan tahap pencipta teratas."
     },
     "storyboard": {
       "actFail": "Gagal — sila cuba lagi.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kertas",
       "style_terminal": "Terminal",
-      "style_bold": "Tebal"
+      "style_bold": "Tebal",
+      "ctaHintV2": "Gunakan perkataan kod yang sama dalam kapsyen siaran anda."
     }
   }
 }

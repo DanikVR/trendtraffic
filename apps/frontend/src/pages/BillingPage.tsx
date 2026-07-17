@@ -26,7 +26,7 @@ import {
   Check, ArrowRight, Crown, Sparkles, TrendingUp, BarChart3, Image as ImageIcon,
   Workflow, Send, KeyRound, MessageSquare, Tags, Loader2, X, Ban, RotateCcw,
   Calendar, Settings, Headphones, Gauge, Layers, Plug, Target, Chrome, Bot,
-  Wallet, PiggyBank, Zap, Clapperboard, Puzzle,
+  Wallet, PiggyBank, Zap, Clapperboard, Puzzle, Film,
 } from 'lucide-react';
 import { AuroraCard } from '../components/AuroraCard';
 import { Constellation } from './public/landing/Constellation';
@@ -517,6 +517,7 @@ export function BillingPage() {
     { icon: <Target size={14} />, text: t('sec.billing.pf49Audience', '«Таргет на ЦА»: ИИ строит микро-ниши, проверяет их реальными запросами и ранжирует по спросу') },
     { icon: <BarChart3 size={14} />, text: t('sec.billing.pf49Analytics', 'Аналитика: метрики и ER, тональность комментариев, TrendDNA-разбор, покадровый ИИ-анализ, транскрипт + .srt') },
     { icon: <Clapperboard size={14} />, text: t('sec.billing.pf49Ugc', 'UGC-студия: 4 режима ролика, форматы 9:16 · 16:9 · 1:1 · 4:5, аватары из вашего фото, серия сразу на 29 языках') },
+    { icon: <Film size={14} />, text: t('sec.billing.pf49Storyboard', 'Сториборд: рилс из одного дубля — ИИ-раскадровка до 6 панелей на кусок, 3 движка рендера (в т.ч. бесплатный), субтитры, бейдж канала и CTA-слово') },
     { icon: <Send size={14} />, text: t('sec.billing.pf49Publisher', 'Публикатор: 9 соцсетей через ваш Blotato, слоты и календарь на 35 дней, ИИ-подписи с хэштегами') },
     { icon: <Bot size={14} />, text: t('sec.billing.pf49Autopilot', 'Автопилот: тренд → автоанализ → автосборка UGC → публикация по расписанию, без вашего участия') },
     { icon: <ImageIcon size={14} />, text: t('sec.billing.pf49Gallery', 'Галерея-хаб + скачивание видео без водяного знака (TikTok, Instagram, X)') },

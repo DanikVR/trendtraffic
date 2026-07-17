@@ -1172,7 +1172,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:36.972Z",
+    "pivotAt": "2026-07-17T20:13:15.238Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "登录",
       "publicStart": "免费开始",
       "seoDesc": "TrendTraffic Premium 订阅每月 €49：病毒式趋势搜索、社交媒体分析、带 AI 头像的 UGC 工作室和自动发布。7 天免费试用，随时取消。",
-      "seoTitle": "Premium 计划每月 €49 — TrendTraffic"
+      "seoTitle": "Premium 计划每月 €49 — TrendTraffic",
+      "pf49Storyboard": "故事板：一镜到底的Reels短视频 — AI故事板，每个片段最多6个分镜，3种渲染引擎（含免费），字幕，频道徽章和CTA词"
     },
     "channels": {
       "actionsHint": "“跟踪”将频道添加到您的列表，以便每日自动更新（显示“过去→现在”的变化）。“一次性分析”显示所有视频，不含历史记录。",
@@ -4125,7 +4126,28 @@
       "stubSoon": "此版块正在开发中——内容即将推出。",
       "wikiMeta": "维基 — TrendTraffic",
       "wikiTitle": "维基",
-      "footerCookieSettings": "Cookie设置"
+      "footerCookieSettings": "Cookie设置",
+      "incSb": "故事板：一镜到底的Reels短视频留存编辑",
+      "sbB1": "AI导演自动将语音编排成分镜 — 您只需在电影胶片上调整故事板",
+      "sbB2": "三种渲染引擎：软件（免费，无需密钥）、Omni API或使用您的订阅通过Google Flow",
+      "sbB3": "Flow自动化：生成队列自动运行，自动组装无需您操作即可拼接完成的Reel短视频",
+      "sbB4": "结尾的CTA词：观众评论它 — 互动提升触达率",
+      "sbBody": "静态的“大头照”视频在几秒内就会被划过 — 只有不断变化的镜头才能吸引注意力。故事板将您的拍摄重新组装成动态的Reel短视频：转录语音，将其剪切成最长8秒的短语，并将每个短语编排成分镜 — 特写发言人、全屏标题、插播镜头、分屏、模型展示和号召性用语结局。",
+      "sbCardBadge": "@我的频道",
+      "sbCardChunk": "片段 1 · 0:00–0:08",
+      "sbCardCta": "CTA：“趋势”",
+      "sbCardPanels": "6个分镜",
+      "sbCardSubs": "字幕：来自语音",
+      "sbLabel": "故事板 · 留存编辑",
+      "sbNote": "包含在Premium中 · 画廊中的“故事板”选项卡 · 完成的Reel短视频 — 直接发布到Publisher",
+      "sbP1": "发言人特写",
+      "sbP2": "全屏标题",
+      "sbP3": "插播镜头",
+      "sbP4": "分屏",
+      "sbP5": "模型展示",
+      "sbP6": "结局 + CTA",
+      "sbTitleL1": "一镜到底的拍摄 —",
+      "sbTitleL2": "顶尖创作者级别的剪辑。"
     },
     "storyboard": {
       "actFail": "失败 — 请重试。",
@@ -4259,7 +4281,8 @@
       "style_neon": "霓虹",
       "style_paper": "纸张",
       "style_terminal": "终端",
-      "style_bold": "粗体"
+      "style_bold": "粗体",
+      "ctaHintV2": "在您的帖子标题中使用相同的代码词。"
     }
   }
 }

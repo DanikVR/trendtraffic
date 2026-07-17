@@ -1172,7 +1172,7 @@
     "geminiFixCount": 47,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:21.551Z",
+    "pivotAt": "2026-07-17T20:12:23.370Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Hasi saioa",
       "publicStart": "Hasi doan",
       "seoDesc": "TrendTraffic Premium harpidetza 49 €/hileko: joera biralen bilaketa, sare sozialen analisia, UGC estudioa AI avatarrekin eta auto-argitalpena. 7 egun doan, edozein unetan ezeztatu.",
-      "seoTitle": "Premium plana 49 €/hileko — TrendTraffic"
+      "seoTitle": "Premium plana 49 €/hileko — TrendTraffic",
+      "pf49Storyboard": "Storyboard: hartualdi bakarreko Reels — AI storyboarda 6 panel arte zati bakoitzeko, 3 errenderizazio-motor (doakoa barne), azpitituluak, kanalaren txapa eta CTA hitza"
     },
     "channels": {
       "actionsHint": "'Jarraitu' kanala zure zerrendara gehitzen du eguneroko auto-eguneratzeetarako ('zen→da' aldaketak erakutsiz). 'Behin-behineko analisia'-k bideo guztiak erakusten ditu orain, historiarik gabe.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Atala garatzen ari da—edukia laster.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie ezarpenak"
+      "footerCookieSettings": "Cookie ezarpenak",
+      "incSb": "Storyboard: hartualdi bakarreko Reels atxikipen edizioa",
+      "sbB1": "AI zuzendariak hizketa paneletan automatikoki antolatzen du — zuk storyboarda film-zintan egokitu besterik ez duzu egin behar",
+      "sbB2": "Hiru errenderizazio-motor: softwarea (doakoa, gako gabe), Omni API, edo Google Flow zure harpidetzarekin",
+      "sbB3": "Flow automatizazioa: sorkuntza-ilarak bere kabuz funtzionatzen du, auto-muntaketak amaitutako Reela josten du zu gabe",
+      "sbB4": "CTA hitza amaieran: ikusleek komentatzen dute — engagement-ak irismena areagotzen du",
+      "sbBody": "Buruen irudi estatikoak segundotan pasatzen dira — soilik aldatzen diren planoek mantentzen dute arreta. Storyboard-ak zure hartualdia Reel dinamiko batean berrantolatzen du: hizketa transkribatzen du, 8 segundoko esaldietan mozten du, eta bakoitza paneletan antolatzen du — hizlariaren lehen planoa, pantaila osoko tituluak, mozketa-planoak, pantaila zatituak, maketak eta ekintza-deiaren amaiera.",
+      "sbCardBadge": "@nirekanala",
+      "sbCardChunk": "Zatia 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Azpitituluak: hizketatik",
+      "sbLabel": "Storyboard · atxikipen edizioa",
+      "sbNote": "Premium-en barne · \"Storyboard\" fitxa Galerian · amaitutako Reela — zuzenean Publisher-era",
+      "sbP1": "Hizlariaren lehen planoa",
+      "sbP2": "Pantaila osoko titulua",
+      "sbP3": "Mozketa-planoa",
+      "sbP4": "Pantaila zatitua",
+      "sbP5": "Maketa",
+      "sbP6": "Amaiera + CTA",
+      "sbTitleL1": "Hartualdi bakarra kameran —",
+      "sbTitleL2": "sortzaile nagusien mailako edizioa."
     },
     "storyboard": {
       "actFail": "Huts egin du — saiatu berriro, mesedez.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papera",
       "style_terminal": "Terminala",
-      "style_bold": "Lodia"
+      "style_bold": "Lodia",
+      "ctaHintV2": "Erabili kode-hitz bera zure argitalpenaren deskribapenean."
     }
   }
 }

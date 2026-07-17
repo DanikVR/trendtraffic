@@ -1172,7 +1172,7 @@
     "geminiFixCount": 25,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:30.180Z",
+    "pivotAt": "2026-07-17T20:12:50.397Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Lowani",
       "publicStart": "Yambani kwaulere",
       "seoDesc": "TrendTraffic Premium subscription kwa €49/mwezi: kufufuza zochitika za viral, kusanthula ma social media, studio ya UGC yokhala ndi ma avatar a AI, ndi kufalitsa okha. Masiku 7 aulere, thetsani nthawi iliyonse.",
-      "seoTitle": "Pulani ya Premium €49/mwezi — TrendTraffic"
+      "seoTitle": "Pulani ya Premium €49/mwezi — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels za nthawi imodzi — AI storyboard mpaka mapanelo 6 pa chunk, ma injini 3 opangira (kuphatikiza zaulere), mawu omasulira, chizindikiro cha channel, ndi mawu a CTA"
     },
     "channels": {
       "actionsHint": "'Track' imawonjezera channel pamndandanda wanu kuti muzilandira zosintha zatsiku ndi tsiku (kuwonetsa kusintha kwa 'kale→tsopano'). 'One-time analysis' imawonetsa mavidiyo onse tsopano, popanda mbiri.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Gawo likupangidwa—zomwe zili mkati zikubwera posachedwa.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Zokonda za ma cookie"
+      "footerCookieSettings": "Zokonda za ma cookie",
+      "incSb": "Storyboard: kusintha kwa Reels kuti anthu azikhala nthawi yayitali",
+      "sbB1": "Mtsogoleri wa AI amakonza zokamba kukhala mapanelo — inu mumangosintha storyboard pa filimu",
+      "sbB2": "Ma injini atatu opangira: mapulogalamu (aulere, opanda makiyi), Omni API, kapena Google Flow ndi kulembetsa kwanu",
+      "sbB3": "Kukonza zokha: mzere wopanga umangoyenda wokha, kusonkhanitsa kokha kumalumikiza Reel yomalizidwa popanda inu",
+      "sbB4": "Mawu a CTA kumapeto: owonera amayankha — kuchita nawo kumawonjezera kufikira",
+      "sbBody": "Mitu yolankhula yosasintha imadutsa m'masekondi — zithunzi zosinthasintha zokha ndizo zimakopa chidwi. Storyboard imasonkhanitsanso kujambula kwanu kukhala Reel yosinthasintha: imalemba zokamba, imadula kukhala mawu mpaka masekondi 8, ndikukonza chilichonse kukhala mapanelo — wokamba nkhani wapafupi, mitu yodzaza chophimba, zodulidwa, zowonera ziwiri, zitsanzo, ndi kutha kwa kuyitanira kuchitapo kanthu.",
+      "sbCardBadge": "@mychannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Mapanelo 6",
+      "sbCardSubs": "Mawu omasulira: kuchokera ku zokamba",
+      "sbLabel": "Storyboard · kusintha kuti anthu azikhala nthawi yayitali",
+      "sbNote": "Kuphatikizidwa mu Premium · tabu ya \"Storyboard\" mu Gallery · Reel yomalizidwa — mwachindunji ku Publisher",
+      "sbP1": "Wokamba nkhani wapafupi",
+      "sbP2": "Mutu wathunthu wa chophimba",
+      "sbP3": "Kudula",
+      "sbP4": "Chophimba chogawika",
+      "sbP5": "Chitsanzo",
+      "sbP6": "Kutha + CTA",
+      "sbTitleL1": "Kujambula kamodzi pa kamera —",
+      "sbTitleL2": "kusintha kwapamwamba ngati kwa opanga akulu."
     },
     "storyboard": {
       "actFail": "Zalephera — chonde yesaninso.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pepa",
       "style_terminal": "Terminal",
-      "style_bold": "Kulimba mtima"
+      "style_bold": "Kulimba mtima",
+      "ctaHintV2": "Gwiritsani ntchito mawu omwewo mu mawu anu a positi."
     }
   }
 }

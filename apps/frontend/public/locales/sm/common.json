@@ -1190,7 +1190,7 @@
     "geminiFixCount": 93,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:32.544Z",
+    "pivotAt": "2026-07-17T20:12:57.026Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Saini i totonu",
       "publicStart": "Amata fua",
       "seoDesc": "TrendTraffic Premium lesitala mo le €49/masina: suʻesuʻega aga viral, auʻiliʻiliga faʻasalalau lautele, potu UGC ma AI avatars, ma faʻasalalau otometi. 7 aso fua, faʻaleaogaina i soʻo se taimi.",
-      "seoTitle": "Fuafuaga Premium €49/masina — TrendTraffic"
+      "seoTitle": "Fuafuaga Premium €49/masina — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels tasi le puʻeina — AI storyboard e oʻo atu i le 6 panels i le vaega, 3 afi faʻaliliu (e aofia ai le leai se totogi), ulutala, pine alaleo, ma le upu CTA"
     },
     "channels": {
       "actionsHint": "O le 'Track' e fa'aopoopo le channel i lau lisi mo fa'afouga otometi i aso uma (fa'aalia suiga 'sa→o'). O le 'One-time analysis' e fa'aalia uma vitiō i le taimi nei, e aunoa ma se tala fa'asolopito.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Vaega o lo'o atina'e—o le a vave ona maua mea.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Fa'atonuga kuki"
+      "footerCookieSettings": "Fa'atonuga kuki",
+      "incSb": "Storyboard: faʻatonutonuina o le taofiga o Reels tasi le puʻeina",
+      "sbB1": "AI faʻatonu e otometi ona faʻatulaga tautalaga i panels — e te fetuunai lava le storyboard i luga o le filmstrip",
+      "sbB2": "Tolu afi faʻaliliu: polokalama (leai se totogi, leai ni ki), Omni API, poʻo Google Flow ma lau saofaga",
+      "sbB3": "Flow automation: o le laina faʻatupu e tamoʻe na o ia, o le faʻapotopotoga otometi e suʻi faʻatasi le Reel ua maeʻa e aunoa ma oe",
+      "sbB4": "Upu CTA i le faaiuga: e faia e tagata matamata ni faʻamatalaga — o le faʻaauai e faʻateleina ai le aapa atu",
+      "sbBody": "O ulu tautala tumau e vave ona soloia i ni nai sekone — na o ata e suia e taofia ai le gauai. E toe faʻapipiʻi e le Storyboard lau puʻeina i se Reel malosi: e tusia le tautalaga, tipi i fuaitau e oʻo atu i le 8 sekone, ma faʻatulaga taʻitasi i panels — faʻataʻitaʻiga faʻalatalata i le failauga, ulutala atoa le lau, cutaways, split-screens, mockups, ma se valaʻau-i-gaioiga faaiuga.",
+      "sbCardBadge": "@laumataalaleo",
+      "sbCardChunk": "Vaega 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panels",
+      "sbCardSubs": "Ulutala: mai le tautalaga",
+      "sbLabel": "Storyboard · faʻatonutonuina o le taofiga",
+      "sbNote": "E aofia i le Premium · tab \"Storyboard\" i le Gallery · Reel ua maeʻa — tuusaʻo i le Publisher",
+      "sbP1": "Faʻataʻitaʻiga faʻalatalata i le failauga",
+      "sbP2": "Ulutala atoa le lau",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Faaiuga + CTA",
+      "sbTitleL1": "Tasi le puʻeina i luga o le mea puʻeata —",
+      "sbTitleL2": "faʻatonutonuina tulaga maualuga a le tagata foafoa."
     },
     "storyboard": {
       "actFail": "Le manuia — faʻamolemole toe taumafai.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Moli susulu",
       "style_paper": "Pepa",
       "style_terminal": "Terminal",
-      "style_bold": "Mata'itusi mafiafia"
+      "style_bold": "Mata'itusi mafiafia",
+      "ctaHintV2": "Faʻaaoga le upu code lava lea i lau faʻamatalaga o le pou."
     }
   }
 }

@@ -1190,7 +1190,7 @@
     "geminiFixCount": 82,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:18.720Z",
+    "pivotAt": "2026-07-17T20:12:14.652Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Meld aan",
       "publicStart": "Begin gratis",
       "seoDesc": "TrendTraffic Premium-intekening vir €49/maand: virale neigingsoektog, sosiale media-analise, UGC-ateljee met AI-avatars, en outo-publisering. 7 dae gratis, kanselleer enige tyd.",
-      "seoTitle": "Premium-plan €49/maand — TrendTraffic"
+      "seoTitle": "Premium-plan €49/maand — TrendTraffic",
+      "pf49Storyboard": "Storyboard: een-opname Reels — KI-storiebord tot 6 panele per brokkie, 3 leweringsenjins (insl. gratis), onderskrifte, kanaalkenteken en Oproep-tot-aksie-woord"
     },
     "channels": {
       "actionsHint": "'Volg' voeg die kanaal by jou lys vir daaglikse outo-opdaterings (wat 'was→is'-veranderinge wys). 'Eenmalige analise' wys nou alle video's, sonder geskiedenis.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Afdeling onder ontwikkeling—inhoud kom binnekort.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Koekie-instellings"
+      "footerCookieSettings": "Koekie-instellings",
+      "incSb": "Storyboard: een-opname Reels behoud-redigering",
+      "sbB1": "KI-regisseur rangskik spraak outomaties in panele — jy pas net die storiebord op die filmstrook aan",
+      "sbB2": "Drie leweringsenjins: sagteware (gratis, geen sleutels), Omni API, of Google Flow met jou intekening",
+      "sbB3": "Vloei-outomatisering: generasie-tou loop vanself, outo-samestelling heg die voltooide Reel aan sonder jou",
+      "sbB4": "Oproep-tot-aksie-woord aan die einde: kykers lewer kommentaar daarop — betrokkenheid verhoog bereik",
+      "sbBody": "Statiese pratende koppe word binne sekondes verbygeskuif — slegs veranderende skote hou aandag. Storyboard hersaamstel jou opname in 'n dinamiese Reel: transkribeer spraak, sny dit in frases van tot 8 sekondes, en rangskik elkeen in panele — nabyskoot spreker, volskermtitels, wegsnydings, gesplete skerms, modelle, en 'n oproep-tot-aksie-finale.",
+      "sbCardBadge": "@mykanaal",
+      "sbCardChunk": "Brokkie 1 · 0:00–0:08",
+      "sbCardCta": "Oproep-tot-aksie: \"TREND\"",
+      "sbCardPanels": "6 panele",
+      "sbCardSubs": "Onderskrifte: van spraak",
+      "sbLabel": "Storyboard · behoud-redigering",
+      "sbNote": "Ingesluit by Premium · \"Storyboard\"-oortjie in Galery · voltooide Reel — direk na Uitgewer",
+      "sbP1": "Spreker nabyskoot",
+      "sbP2": "Volskermtitel",
+      "sbP3": "Wegsnyding",
+      "sbP4": "Gesplete skerm",
+      "sbP5": "Model",
+      "sbP6": "Finale + Oproep-tot-aksie",
+      "sbTitleL1": "Een opname op kamera —",
+      "sbTitleL2": "redigering op top-skepper vlak."
     },
     "storyboard": {
       "actFail": "Misluk — probeer asseblief weer.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papier",
       "style_terminal": "Terminaal",
-      "style_bold": "Vet"
+      "style_bold": "Vet",
+      "ctaHintV2": "Gebruik dieselfde kodewoord in jou plasing se onderskrif."
     }
   }
 }

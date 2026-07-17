@@ -1172,7 +1172,7 @@
     "geminiFixCount": 49,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:33.796Z",
+    "pivotAt": "2026-07-17T20:13:00.518Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Ingia",
       "publicStart": "Anza bila malipo",
       "seoDesc": "Usajili wa TrendTraffic Premium kwa €49/mwezi: utafutaji wa mitindo ya virusi, uchambuzi wa mitandao ya kijamii, studio ya UGC yenye avatari za AI, na uchapishaji kiotomatiki. Siku 7 za bure, ghairi wakati wowote.",
-      "seoTitle": "Mpango wa Premium €49/mwezi — TrendTraffic"
+      "seoTitle": "Mpango wa Premium €49/mwezi — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels za kuchukua mara moja — storyboard ya AI hadi paneli 6 kwa kila kipande, injini 3 za kutoa (pamoja na ya bure), manukuu, beji ya chaneli, na neno la CTA"
     },
     "channels": {
       "actionsHint": "'Fuatilia' huongeza kituo kwenye orodha yako kwa masasisho ya kiotomatiki ya kila siku (kuonyesha mabadiliko ya 'ilikuwa→ni'). 'Uchambuzi wa mara moja' huonyesha video zote sasa, bila historia.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sehemu inaendelezwa—maudhui yanakuja hivi karibuni.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Mipangilio ya vidakuzi"
+      "footerCookieSettings": "Mipangilio ya vidakuzi",
+      "incSb": "Storyboard: uhariri wa Reels wa kuhifadhi watazamaji",
+      "sbB1": "Mkurugenzi wa AI hupanga hotuba kiotomatiki kwenye paneli — wewe hurekebisha tu storyboard kwenye filamu",
+      "sbB2": "Injini tatu za kutoa: programu (bure, hakuna funguo), Omni API, au Google Flow na usajili wako",
+      "sbB3": "Uendeshaji wa Flow: foleni ya uzalishaji huendeshwa yenyewe, mkusanyiko wa kiotomatiki huunganisha Reel iliyomalizika bila wewe",
+      "sbB4": "Neno la CTA mwishoni: watazamaji hulichangia — ushiriki huongeza ufikiaji",
+      "sbBody": "Vichwa vinavyozungumza visivyobadilika hupitwa kwa sekunde — ni picha zinazobadilika tu ndizo zinazoshikilia umakini. Storyboard huunganisha upya picha yako kuwa Reel yenye nguvu: huandika hotuba, huikata katika misemo hadi sekunde 8, na hupanga kila moja kwenye paneli — mzungumzaji wa karibu, vichwa vya skrini nzima, picha za kukata, skrini zilizogawanyika, mifano, na hitimisho la wito wa kuchukua hatua.",
+      "sbCardBadge": "@chaneliyangu",
+      "sbCardChunk": "Kipande 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Paneli 6",
+      "sbCardSubs": "Manukuu: kutoka hotuba",
+      "sbLabel": "Storyboard · uhariri wa kuhifadhi watazamaji",
+      "sbNote": "Imejumuishwa katika Premium · kichupo cha \"Storyboard\" kwenye Nyumba ya sanaa · Reel iliyomalizika — moja kwa moja kwa Mchapishaji",
+      "sbP1": "Mzungumzaji wa karibu",
+      "sbP2": "Kichwa cha skrini nzima",
+      "sbP3": "Picha ya kukata",
+      "sbP4": "Skrini iliyogawanyika",
+      "sbP5": "Mfano",
+      "sbP6": "Hitimisho + CTA",
+      "sbTitleL1": "Picha moja kwenye kamera —",
+      "sbTitleL2": "uhariri wa kiwango cha muundaji mkuu."
     },
     "storyboard": {
       "actFail": "Imeshindwa — tafadhali jaribu tena.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Karatasi",
       "style_terminal": "Kituo",
-      "style_bold": "Ujasiri"
+      "style_bold": "Ujasiri",
+      "ctaHintV2": "Tumia neno la msimbo lile lile kwenye maelezo ya chapisho lako."
     }
   }
 }

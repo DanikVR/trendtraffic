@@ -1172,7 +1172,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:33.511Z",
+    "pivotAt": "2026-07-17T20:12:59.096Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Logga in",
       "publicStart": "Börja gratis",
       "seoDesc": "TrendTraffic Premium-prenumeration för 49 €/månad: viral trendsökning, analys av sociala medier, UGC-studio med AI-avatarer och automatisk publicering. 7 dagar gratis, avbryt när som helst.",
-      "seoTitle": "Premium-plan 49 €/månad — TrendTraffic"
+      "seoTitle": "Premium-plan 49 €/månad — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI-storyboard upp till 6 paneler per \"chunk\", 3 renderingmotorer (inkl. gratis), undertexter, kanalmärke och CTA-ord"
     },
     "channels": {
       "actionsHint": "'Spåra' lägger till kanalen i din lista för dagliga automatiska uppdateringar (visar 'var→är'-ändringar). 'Engångsanalys' visar alla videor nu, utan historik.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Avsnittet är under utveckling – innehåll kommer snart.",
       "wikiMeta": "Wiki – TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookieinställningar"
+      "footerCookieSettings": "Cookieinställningar",
+      "incSb": "Storyboard: one-take Reels retention-redigering",
+      "sbB1": "AI-regissör arrangerar automatiskt tal till paneler — du justerar bara storyboarden på filmremsan",
+      "sbB2": "Tre renderingmotorer: programvara (gratis, inga nycklar), Omni API eller Google Flow med din prenumeration",
+      "sbB3": "Flödesautomation: genereringskön körs av sig själv, automatisk sammansättning syr ihop den färdiga Reelen utan dig",
+      "sbB4": "CTA-ord i slutet: tittare kommenterar det — engagemang ökar räckvidden",
+      "sbBody": "Statiska pratande huvuden scrollas förbi på sekunder — bara skiftande bilder håller uppmärksamheten. Storyboard sätter ihop ditt klipp till en dynamisk Reel: transkriberar tal, klipper det i fraser upp till 8 sekunder och arrangerar varje fras i paneler — närbild på talare, helskärmstitlar, \"cutaways\", delade skärmar, mockups och en call-to-action-final.",
+      "sbCardBadge": "@min_kanal",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 paneler",
+      "sbCardSubs": "Undertexter: från tal",
+      "sbLabel": "Storyboard · retention-redigering",
+      "sbNote": "Ingår i Premium · fliken \"Storyboard\" i Galleri · färdig Reel — direkt till Publisher",
+      "sbP1": "Talare närbild",
+      "sbP2": "Helskärmstitel",
+      "sbP3": "Cutaway",
+      "sbP4": "Delad skärm",
+      "sbP5": "Mockup",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "En tagning på kamera —",
+      "sbTitleL2": "redigering på toppkreatörsnivå."
     },
     "storyboard": {
       "actFail": "Misslyckades — försök igen.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papper",
       "style_terminal": "Terminal",
-      "style_bold": "Fet"
+      "style_bold": "Fet",
+      "ctaHintV2": "Använd samma kodord i din bildtext."
     }
   }
 }

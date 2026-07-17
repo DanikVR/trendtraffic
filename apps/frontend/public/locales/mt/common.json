@@ -1172,7 +1172,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:29.419Z",
+    "pivotAt": "2026-07-17T20:12:46.464Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Idħol",
       "publicStart": "Ibda b'xejn",
       "seoDesc": "Abbonament TrendTraffic Premium għal €49/xahar: tfittxija ta' xejriet virali, analitika tal-midja soċjali, studio UGC b'avatars AI, u pubblikazzjoni awtomatika. 7 ijiem b'xejn, ikkanċella f'kull ħin.",
-      "seoTitle": "Pjan Premium €49/xahar — TrendTraffic"
+      "seoTitle": "Pjan Premium €49/xahar — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels b'teħid wieħed — storyboard tal-AI sa 6 pannelli kull biċċa, 3 magni tal-rendering (inkluż b'xejn), sottotitli, badge tal-kanal, u kelma CTA"
     },
     "channels": {
       "actionsHint": "'Track' iżid il-kanal mal-lista tiegħek għal aġġornamenti awtomatiċi ta' kuljum (juri bidliet 'kien→huwa'). 'Analiżi ta' darba' turi l-vidjows kollha issa, mingħajr storja.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sezzjoni qed tiġi żviluppata—il-kontenut dalwaqt.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Settings tal-cookies"
+      "footerCookieSettings": "Settings tal-cookies",
+      "incSb": "Storyboard: editjar tar-retenzjoni ta' Reels b'teħid wieħed",
+      "sbB1": "Id-direttur tal-AI jirranġa awtomatikament id-diskors f'pannelli — int sempliċement taġġusta l-istroryboard fuq il-filmstrip",
+      "sbB2": "Tliet magni tal-rendering: software (b'xejn, mingħajr ċwievet), Omni API, jew Google Flow bl-abbonament tiegħek",
+      "sbB3": "Awtomazzjoni tal-fluss: il-kju tal-ġenerazzjoni jaħdem waħdu, l-assemblaġġ awtomatiku jgħaqqad ir-Reel lest mingħajrek",
+      "sbB4": "Kelma CTA fl-aħħar: it-telespettaturi jikkummentawha — l-ingaġġ iżid il-firxa",
+      "sbBody": "Irjus statiċi jitħallew lura f'sekondi — biss shots li jinbidlu jżommu l-attenzjoni. Storyboard jerġa' jgħaqqad it-teħid tiegħek f'Reel dinamiku: jittraskrivi d-diskors, jaqtgħu fi frażijiet sa 8 sekondi, u jirranġa kull wieħed f'pannelli — kelliem mill-qrib, titli full-screen, cutaways, split-screens, mockups, u finale ta' sejħa għall-azzjoni.",
+      "sbCardBadge": "@il-kanal_tiegħi",
+      "sbCardChunk": "Biċċa 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 pannelli",
+      "sbCardSubs": "Sottotitli: mid-diskors",
+      "sbLabel": "Storyboard · editjar tar-retenzjoni",
+      "sbNote": "Inkluż fil-Premium · tab \"Storyboard\" fil-Gallerija · Reel lest — direttament lill-Pubblikatur",
+      "sbP1": "Kelliem mill-qrib",
+      "sbP2": "Titlu full-screen",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Teħid wieħed bil-kamera —",
+      "sbTitleL2": "editjar fil-livell tal-aqwa kreatur."
     },
     "storyboard": {
       "actFail": "Falliet — jekk jogħġbok erġa' pprova.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Karta",
       "style_terminal": "Terminal",
-      "style_bold": "Qawwi"
+      "style_bold": "Qawwi",
+      "ctaHintV2": "Uża l-istess kelma kodiċi fil-caption tal-post tiegħek."
     }
   }
 }

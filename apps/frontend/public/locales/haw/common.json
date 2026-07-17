@@ -1172,7 +1172,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:23.280Z",
+    "pivotAt": "2026-07-17T20:12:28.500Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "ʻEʻe",
       "publicStart": "Hoʻomaka no ka manuahi",
       "seoDesc": "Kākoʻo TrendTraffic Premium no €49/mahina: ʻimi ʻana i nā ʻano viral, analytics media kaiapili, studio UGC me nā avatars AI, a me ka hoʻopuka ʻakomi. 7 lā manuahi, hiki ke hoʻopau i kēlā me kēia manawa.",
-      "seoTitle": "Hoʻolālā Premium €49/mahina — TrendTraffic"
+      "seoTitle": "Hoʻolālā Premium €49/mahina — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels hoʻokahi paʻi — AI storyboard a hiki i 6 papa i kēlā me kēia ʻāpana, 3 ʻenekini hōʻike (me ka manuahi), nā huaʻōlelo, hōʻailona kahawai, a me ka huaʻōlelo CTA"
     },
     "channels": {
       "actionsHint": "'Track' hoʻohui i ke kahawai i kāu papa inoa no nā hoʻohou hou ʻana i kēlā me kēia lā (e hōʻike ana i nā loli 'was→is'). 'One-time analysis' hōʻike i nā wikiō āpau i kēia manawa, me ka ʻole o ka mōʻaukala.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Ke hoʻomohala ʻia nei ka ʻāpana—e hiki koke mai ana ka ʻike.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Nā hoʻonohonoho kuki"
+      "footerCookieSettings": "Nā hoʻonohonoho kuki",
+      "incSb": "Storyboard: hoʻokahi paʻi Reels hoʻoponopono paʻa",
+      "sbB1": "Hoʻonohonoho ʻakomi ka luna AI i ka haʻiʻōlelo i loko o nā papa — hoʻoponopono wale ʻoe i ka storyboard ma ka lipine kiʻiʻoniʻoni",
+      "sbB2": "ʻEkolu ʻenekini hōʻike: lako polokalamu (manuahi, ʻaʻohe kī), Omni API, a i ʻole Google Flow me kāu kau inoa",
+      "sbB3": "Hoʻokele Flow: holo ka pila hana iā ia iho, hoʻohui ʻakomi i ka Reel i hoʻopau ʻia me ka ʻole ʻoe",
+      "sbB4": "Huaʻōlelo CTA ma ka hopena: ʻōlelo nā mea nānā iā ia — hoʻonui ka hoʻopili i ka laulā",
+      "sbBody": "Hoʻopaʻa ʻia nā poʻo kamaʻilio paʻa i loko o kekona — ʻo nā kiʻi hoʻololi wale nō e paʻa ai ka manaʻo. Hoʻohui hou ʻo Storyboard i kāu paʻi i loko o kahi Reel ikaika: kākau i ka haʻiʻōlelo, ʻokiʻoki i nā huaʻōlelo a hiki i 8 kekona, a hoʻonohonoho i kēlā me kēia i loko o nā papa — haʻiʻōlelo kokoke, nā poʻo inoa piha, nā ʻokiʻoki, nā pale māhele, nā mockups, a me kahi hopena kāhea-i-hana.",
+      "sbCardBadge": "@koʻu kahawai",
+      "sbCardChunk": "ʻĀpana 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 papa",
+      "sbCardSubs": "Nā huaʻōlelo: mai ka haʻiʻōlelo",
+      "sbLabel": "Storyboard · hoʻoponopono paʻa",
+      "sbNote": "Hoʻokomo ʻia i loko o Premium · ʻaoʻao \"Storyboard\" ma ka Hale Hōʻikeʻike · Reel i hoʻopau ʻia — pololei i ka Mea Hoʻopuka",
+      "sbP1": "Haʻiʻōlelo kokoke",
+      "sbP2": "Poʻo inoa piha",
+      "sbP3": "ʻOkiʻoki",
+      "sbP4": "Pale māhele",
+      "sbP5": "Mockup",
+      "sbP6": "Hopena + CTA",
+      "sbTitleL1": "Hoʻokahi paʻi ma ke kāmela —",
+      "sbTitleL2": "hoʻoponopono pae mea hana kiʻekiʻe."
     },
     "storyboard": {
       "actFail": "Ua hāʻule — e ʻoluʻolu e hoʻāʻo hou.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pepapila",
       "style_terminal": "Kikowaena",
-      "style_bold": "Mānoanoa"
+      "style_bold": "Mānoanoa",
+      "ctaHintV2": "E hoʻohana i ka huaʻōlelo code like ma kāu leka hoʻouna."
     }
   }
 }

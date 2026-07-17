@@ -1190,7 +1190,7 @@
     "geminiFixCount": 249,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:30.381Z",
+    "pivotAt": "2026-07-17T20:12:50.709Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Zaloguj się",
       "publicStart": "Rozpocznij za darmo",
       "seoDesc": "Subskrypcja TrendTraffic Premium za 49 €/miesiąc: wyszukiwanie wirusowych trendów, analityka mediów społecznościowych, studio UGC z awatarami AI i automatyczne publikowanie. 7 dni za darmo, anuluj w dowolnym momencie.",
-      "seoTitle": "Plan Premium 49 €/miesiąc — TrendTraffic"
+      "seoTitle": "Plan Premium 49 €/miesiąc — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels z jednego ujęcia — storyboard AI do 6 paneli na fragment, 3 silniki renderujące (w tym darmowy), napisy, plakietka kanału i słowo CTA"
     },
     "channels": {
       "actionsHint": "„Śledź” dodaje kanał do Twojej listy w celu codziennych automatycznych aktualizacji (pokazując zmiany „było→jest”). „Jednorazowa analiza” pokazuje wszystkie filmy teraz, bez historii.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sekcja w trakcie rozwoju — zawartość wkrótce.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Ustawienia plików cookie"
+      "footerCookieSettings": "Ustawienia plików cookie",
+      "incSb": "Storyboard: edycja Reels zwiększająca retencję",
+      "sbB1": "Reżyser AI automatycznie układa mowę w panele — Ty tylko dostosowujesz storyboard na taśmie filmowej",
+      "sbB2": "Trzy silniki renderujące: oprogramowanie (darmowe, bez kluczy), Omni API lub Google Flow z Twoją subskrypcją",
+      "sbB3": "Automatyzacja Flow: kolejka generowania działa sama, auto-montaż łączy gotowy Reel bez Twojej ingerencji",
+      "sbB4": "Słowo CTA na końcu: widzowie komentują je — zaangażowanie zwiększa zasięg",
+      "sbBody": "Statyczne gadające głowy są przewijane w kilka sekund — tylko zmieniające się ujęcia utrzymują uwagę. Storyboard przekształca Twoje ujęcie w dynamiczny Reel: transkrybuje mowę, dzieli ją na frazy do 8 sekund i układa każdą w panele — zbliżenie na mówcę, tytuły na pełnym ekranie, wstawki, podzielone ekrany, makiety i finał z wezwaniem do działania.",
+      "sbCardBadge": "@mójkanał",
+      "sbCardChunk": "Fragment 1 · 0:00–0:08",
+      "sbCardCta": "CTA: „TREND”",
+      "sbCardPanels": "6 paneli",
+      "sbCardSubs": "Napisy: z mowy",
+      "sbLabel": "Storyboard · edycja retencyjna",
+      "sbNote": "W zestawie z Premium · zakładka „Storyboard” w Galerii · gotowy Reel — bezpośrednio do Publishera",
+      "sbP1": "Zbliżenie na mówcę",
+      "sbP2": "Tytuł na pełnym ekranie",
+      "sbP3": "Wstawka",
+      "sbP4": "Podzielony ekran",
+      "sbP5": "Makieta",
+      "sbP6": "Finał + CTA",
+      "sbTitleL1": "Jedno ujęcie kamerą —",
+      "sbTitleL2": "edycja na poziomie topowych twórców."
     },
     "storyboard": {
       "actFail": "Niepowodzenie — spróbuj ponownie.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papier",
       "style_terminal": "Terminal",
-      "style_bold": "Pogrubiony"
+      "style_bold": "Pogrubiony",
+      "ctaHintV2": "Użyj tego samego słowa-kodu w opisie posta."
     }
   }
 }

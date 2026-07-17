@@ -1190,7 +1190,7 @@
     "geminiFixCount": 141,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:23.969Z",
+    "pivotAt": "2026-07-17T20:12:30.829Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Prijava",
       "publicStart": "Započnite besplatno",
       "seoDesc": "TrendTraffic Premium pretplata za 49 €/mjesečno: pretraživanje viralnih trendova, analitika društvenih medija, UGC studio s AI avatarima i automatsko objavljivanje. 7 dana besplatno, otkažite bilo kada.",
-      "seoTitle": "Premium plan 49 €/mjesečno — TrendTraffic"
+      "seoTitle": "Premium plan 49 €/mjesečno — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels iz jednog kadra — AI storyboard do 6 panela po isječku, 3 render motora (uklj. besplatni), titlovi, značka kanala i CTA riječ"
     },
     "channels": {
       "actionsHint": "'Prati' dodaje kanal na vaš popis za dnevna automatska ažuriranja (prikazuje promjene 'bilo→je'). 'Jednokratna analiza' prikazuje sve videozapise sada, bez povijesti.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Odjeljak je u razvoju—sadržaj uskoro.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Postavke kolačića"
+      "footerCookieSettings": "Postavke kolačića",
+      "incSb": "Storyboard: zadržavanje Reels uređivanja iz jednog kadra",
+      "sbB1": "AI redatelj automatski raspoređuje govor u panele — vi samo prilagodite storyboard na filmskoj traci",
+      "sbB2": "Tri render motora: softverski (besplatno, bez ključeva), Omni API ili Google Flow s vašom pretplatom",
+      "sbB3": "Flow automatizacija: red za generiranje radi sam, automatsko sastavljanje spaja gotov Reel bez vas",
+      "sbB4": "CTA riječ na kraju: gledatelji je komentiraju — angažman povećava doseg",
+      "sbBody": "Statične glave koje govore preskaču se u sekundama — samo promjenjivi kadrovi drže pažnju. Storyboard preuređuje vaš snimak u dinamičan Reel: transkribira govor, reže ga u fraze do 8 sekundi i svaku raspoređuje u panele — krupni plan govornika, naslovi preko cijelog zaslona, isječci, podijeljeni zasloni, makete i poziv na akciju na kraju.",
+      "sbCardBadge": "@mojkanal",
+      "sbCardChunk": "Isječak 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panela",
+      "sbCardSubs": "Titlovi: iz govora",
+      "sbLabel": "Storyboard · zadržavanje uređivanja",
+      "sbNote": "Uključeno u Premium · kartica \"Storyboard\" u Galeriji · gotov Reel — izravno u Publisher",
+      "sbP1": "Krupni plan govornika",
+      "sbP2": "Naslov preko cijelog zaslona",
+      "sbP3": "Isječak",
+      "sbP4": "Podijeljeni zaslon",
+      "sbP5": "Maketa",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Jedan kadar kamerom —",
+      "sbTitleL2": "uređivanje na razini vrhunskog kreatora."
     },
     "storyboard": {
       "actFail": "Neuspješno — pokušajte ponovno.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papir",
       "style_terminal": "Terminal",
-      "style_bold": "Podebljano"
+      "style_bold": "Podebljano",
+      "ctaHintV2": "Koristite istu kodnu riječ u opisu objave."
     }
   }
 }

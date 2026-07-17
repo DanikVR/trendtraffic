@@ -1172,7 +1172,7 @@
     "geminiFixCount": 34,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:36.067Z",
+    "pivotAt": "2026-07-17T20:13:13.928Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Ngena",
       "publicStart": "Qalisa simahla",
       "seoDesc": "Urhumo lweTrendTraffic Premium nge-€49/ngenyanga: ukukhangela iintsingiselo ezisasazekayo, uhlalutyo lweendaba zentlalo, istudiyo se-UGC esinee-avatar ze-AI, kunye nokupapasha ngokuzenzekelayo. Iintsuku ezi-7 simahla, rhoxisa nanini na.",
-      "seoTitle": "Iplani yePremium €49/ngenyanga — TrendTraffic"
+      "seoTitle": "Iplani yePremium €49/ngenyanga — TrendTraffic",
+      "pf49Storyboard": "Ibhodi yamabali: iiReels zokuthatha kanye — ibhodi yamabali ye-AI ukuya kuthi ga kwiiphaneli ezi-6 ngokwesahlulo, ii-injini zokunikezela ezi-3 (kubandakanya ezisimahla), imibhalo engezantsi, ibheji yesitishi, kunye negama le-CTA"
     },
     "channels": {
       "actionsHint": "'Landela' yongeza itshaneli kuluhlu lwakho ukuze uhlaziywe ngokuzenzekelayo mihla le (ibonisa utshintsho 'olwalukho→olukhoyo'). 'Uhlalutyo lwenye ixesha' lubonisa zonke iividiyo ngoku, ngaphandle kwembali.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Icandelo elisaphuhliswa—umxholo uza kungekudala.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Izicwangciso zekuki"
+      "footerCookieSettings": "Izicwangciso zekuki",
+      "incSb": "Ibhodi yamabali: uhlelo lokugcina iiReels zokuthatha kanye",
+      "sbB1": "Umqondisi we-AI ulungisa intetho ngokuzenzekelayo ibe ziiphaneli — wena ulungisa nje ibhodi yamabali kumgca wefilimu",
+      "sbB2": "Ii-injini zokunikezela ezintathu: isoftware (isimahla, akukho zitshixo), i-Omni API, okanye i-Google Flow ngobhaliso lwakho",
+      "sbB3": "Ukwenza ngokuzenzekelayo kweFlow: umgca wokwenza uziqhuba ngokwawo, ukudibanisa ngokuzenzekelayo kudibanisa iReel egqityiweyo ngaphandle kwakho",
+      "sbB4": "Igama le-CTA ekugqibeleni: ababukeli baliphawula — ukubandakanyeka konyusa ukufikelela",
+      "sbBody": "Iintloko ezithetha ngokungashukumi zityibilika ngemizuzwana — kuphela izithonga ezitshintshayo zigcina ingqalelo. Ibhodi yamabali ihlanganisa kwakhona into oyithathileyo ibe yiReel enamandla: ibhala intetho, iyinqumle ibe ngamabinzana afikelela kwimizuzwana esi-8, kwaye ilungiselele ngalinye libe ziiphaneli — isithethi esisondeleyo, izihloko zesikrini esipheleleyo, izinto ezisikiweyo, izikrini ezahluliweyo, iimockups, kunye nesiphelo sokubiza isenzo.",
+      "sbCardBadge": "@isitishi sam",
+      "sbCardChunk": "Isahlulo 1 · 0:00–0:08",
+      "sbCardCta": "I-CTA: \"TREND\"",
+      "sbCardPanels": "Iiphaneli ezi-6",
+      "sbCardSubs": "Imibhalo engezantsi: kwintetho",
+      "sbLabel": "Ibhodi yamabali · uhlelo lokugcina",
+      "sbNote": "Ifakiwe kwiPremium · ithebhu \"Ibhodi yamabali\" kwiGalari · iReel egqityiweyo — ngqo kuMshicileli",
+      "sbP1": "Isithethi esisondeleyo",
+      "sbP2": "Isihloko sesikrini esipheleleyo",
+      "sbP3": "Ukusika",
+      "sbP4": "Isikrini esahluliweyo",
+      "sbP5": "Imockup",
+      "sbP6": "Isiphelo + CTA",
+      "sbTitleL1": "Ukuthatha kanye kwikhamera —",
+      "sbTitleL2": "uhlelo olukwinqanaba lomdali ophezulu."
     },
     "storyboard": {
       "actFail": "Ayiphumelelanga — nceda uzame kwakhona.",
@@ -4259,7 +4281,8 @@
       "style_neon": "I-Neon",
       "style_paper": "Iphepha",
       "style_terminal": "Itheminali",
-      "style_bold": "Etyebileyo"
+      "style_bold": "Etyebileyo",
+      "ctaHintV2": "Sebenzisa igama elifanayo lekhowudi kumxholo wakho weposi."
     }
   }
 }

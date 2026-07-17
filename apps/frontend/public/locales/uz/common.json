@@ -1172,7 +1172,7 @@
     "geminiFixCount": 34,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:36.066Z",
+    "pivotAt": "2026-07-17T20:13:11.289Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Kirish",
       "publicStart": "Bepul boshlash",
       "seoDesc": "TrendTraffic Premium obunasi oyiga €49: viral trend qidiruvi, ijtimoiy media tahlili, AI avatarlari bilan UGC studiyasi va avtomatik nashr qilish. 7 kun bepul, istalgan vaqtda bekor qiling.",
-      "seoTitle": "Premium reja oyiga €49 — TrendTraffic"
+      "seoTitle": "Premium reja oyiga €49 — TrendTraffic",
+      "pf49Storyboard": "Storyboard: bir martalik Reels — har bir boʻlak uchun 6 tagacha panel, 3 ta render dvigateli (bepul ham), subtitrlar, kanal belgisi va CTA soʻzi bilan AI storyboard"
     },
     "channels": {
       "actionsHint": "'Kuzatish' kanalni kundalik avtomatik yangilanishlar uchun ro'yxatingizga qo'shadi ('edi→hozir' o'zgarishlarini ko'rsatadi). 'Bir martalik tahlil' barcha videolarni hozirda, tarixsisiz ko'rsatadi.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bo'lim ishlab chiqilmoqda — kontent tez orada qo'shiladi.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie sozlamalari"
+      "footerCookieSettings": "Cookie sozlamalari",
+      "incSb": "Storyboard: bir martalik Reelsni saqlab qolish uchun tahrirlash",
+      "sbB1": "AI rejissyor nutqni panellarga avtomatik joylashtiradi — siz faqat storyboardni filmstripda sozlaysiz",
+      "sbB2": "Uchta render dvigateli: dasturiy ta'minot (bepul, kalitsiz), Omni API yoki obunangiz bilan Google Flow",
+      "sbB3": "Flow avtomatizatsiyasi: generatsiya navbati oʻz-oʻzidan ishlaydi, avtomatik yigʻish sizsiz tayyor Reelni birlashtiradi",
+      "sbB4": "Oxirida CTA soʻzi: tomoshabinlar uni izohlaydi — jalb qilish qamrovni oshiradi",
+      "sbBody": "Statik gapiruvchi boshlar soniyalar ichida oʻtkazib yuboriladi — faqat oʻzgaruvchan kadrlar e'tiborni tortadi. Storyboard sizning tasviringizni dinamik Reelga qayta yigʻadi: nutqni transkripsiya qiladi, uni 8 soniyagacha boʻlgan iboralarga boʻladi va har birini panellarga joylashtiradi — yaqin plandagi spiker, toʻliq ekranli sarlavhalar, kesmalar, boʻlingan ekranlar, maketlar va harakatga chaqiruvchi final.",
+      "sbCardBadge": "@meningkanalim",
+      "sbCardChunk": "Boʻlak 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Subtitrlar: nutqdan",
+      "sbLabel": "Storyboard · saqlab qolish uchun tahrirlash",
+      "sbNote": "Premiumga kiritilgan · Galereyadagi \"Storyboard\" yorligʻi · tayyor Reel — toʻgʻridan-toʻgʻri Nashriyotga",
+      "sbP1": "Spiker yaqin planda",
+      "sbP2": "Toʻliq ekranli sarlavha",
+      "sbP3": "Kesma",
+      "sbP4": "Boʻlingan ekran",
+      "sbP5": "Maket",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Kamerada bir martalik tasvir —",
+      "sbTitleL2": "eng yaxshi ijodkor darajasidagi tahrirlash."
     },
     "storyboard": {
       "actFail": "Muvaffaqiyatsiz — iltimos, qayta urinib ko‘ring.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Qog'oz",
       "style_terminal": "Terminal",
-      "style_bold": "Qalin"
+      "style_bold": "Qalin",
+      "ctaHintV2": "Post sarlavhangizda xuddi shu kod soʻzidan foydalaning."
     }
   }
 }

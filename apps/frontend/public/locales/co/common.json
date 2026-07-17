@@ -1172,7 +1172,7 @@
     "geminiFixCount": 23,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:19.948Z",
+    "pivotAt": "2026-07-17T20:12:18.479Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Accedi",
       "publicStart": "Principià di rigalu",
       "seoDesc": "Abbonamentu TrendTraffic Premium per 49 €/mese: ricerca di tendenze virali, analisi di e rete suciale, studiu UGC cù avatar AI, è autopublicazione. 7 ghjorni gratuiti, annullate in ogni mumentu.",
-      "seoTitle": "Pianu Premium 49 €/mese — TrendTraffic"
+      "seoTitle": "Pianu Premium 49 €/mese — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels à una ripresa — storyboard AI finu à 6 pannelli per pezzu, 3 mutori di rendering (cumpresu gratuitu), sottotituli, badge di canali è parolla CTA"
     },
     "channels": {
       "actionsHint": "'Segui' aghjusta u canali à a vostra lista per aghjurnamenti autumatichi cutidiani (mostra cambiamenti 'era→hè'). 'Analisi una volta' mostra tutti i video avà, senza storia.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sezione in sviluppu—cuntenutu prestu dispunibule.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Paràmetri di i cookies"
+      "footerCookieSettings": "Paràmetri di i cookies",
+      "incSb": "Storyboard: edizione di ritenzione di Reels à una ripresa",
+      "sbB1": "U direttore AI arrange automaticamente u discorsu in pannelli — basta à aghjustà u storyboard nantu à a striscia di film",
+      "sbB2": "Trè mutori di rendering: software (gratuitu, senza chjave), Omni API, o Google Flow cù u vostru abbonamentu",
+      "sbB3": "Automazione di u flussu: a fila di generazione si esegue da sola, l'auto-assemblea cuce u Reel finitu senza voi",
+      "sbB4": "Parolla CTA à a fine: i spettatori a cummentanu — l'ingaghjamentu aumenta a portata",
+      "sbBody": "I capi parlanti statici sò scorruti in pochi secondi — solu i colpi cambianti mantenenu l'attenzione. Storyboard riassembla a vostra ripresa in un Reel dinamicu: trascrive u discorsu, u taglia in frasi finu à 8 secondi, è arrange ognunu in pannelli — primu pianu di u parlante, tituli à schermu pienu, cutaways, schermi divisi, mockups, è un finale di chjama à l'azzione.",
+      "sbCardBadge": "@u mo canale",
+      "sbCardChunk": "Pezzu 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 pannelli",
+      "sbCardSubs": "Sottotituli: da u discorsu",
+      "sbLabel": "Storyboard · edizione di ritenzione",
+      "sbNote": "Inclusu in Premium · tabulazione \"Storyboard\" in Galleria · Reel finitu — direttamente à l'Editore",
+      "sbP1": "Primariu di u parlante",
+      "sbP2": "Titulu à schermu pienu",
+      "sbP3": "Cutaway",
+      "sbP4": "Schermu divisu",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Una ripresa in camera —",
+      "sbTitleL2": "edizione di livellu di creatore di punta."
     },
     "storyboard": {
       "actFail": "Fallitu — per piacè riprova.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Carta",
       "style_terminal": "Terminal",
-      "style_bold": "Grassetu"
+      "style_bold": "Grassetu",
+      "ctaHintV2": "Aduprate a stessa parolla codice in a didascalia di u vostru postu."
     }
   }
 }

@@ -1190,7 +1190,7 @@
     "geminiFixCount": 166,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:33.100Z",
+    "pivotAt": "2026-07-17T20:12:59.467Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Kena",
       "publicStart": "Qala mahala",
       "seoDesc": "TrendTraffic Premium subscription bakeng sa €49/khoeli: ho batla mekhoa ea viral, tlhahlobo ea mecha ea litaba ea sechaba, studio sa UGC se nang le li-avatar tsa AI, le ho hatisa ka boiketsetso. Matsatsi a 7 mahala, hlakola neng kapa neng.",
-      "seoTitle": "Moralo oa Premium €49/khoeli — TrendTraffic"
+      "seoTitle": "Moralo oa Premium €49/khoeli — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels ea nako e le 'ngoe — AI storyboard ho fihlela liphanele tse 6 ka karolo, lienjine tse 3 tsa ho fana (ho kenyeletsoa le tse sa lefelloeng), litlotlana, beche ea mocha, le lentsoe la CTA"
     },
     "channels": {
       "actionsHint": "'Track' e eketsa kanale lethathamong la hau bakeng sa lintlha tsa letsatsi le letsatsi (e bonts'a liphetoho tsa 'e ne e le→ke'). 'Tlhahlobo ea nako e le 'ngoe' e bonts'a livideo tsohle hona joale, ntle le nalane.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Karolo e ntse e ntlafatsoa—litaba li tla fumaneha haufinyane.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Litlhophiso tsa li-cookie"
+      "footerCookieSettings": "Litlhophiso tsa li-cookie",
+      "incSb": "Storyboard: tokiso ea ho boloka Reels ea nako e le 'ngoe",
+      "sbB1": "Motsamaisi oa AI o hlophisa puo ka boiketsetso ka liphanele — u mpa u fetola storyboard ho filimi",
+      "sbB2": "Lienjine tse tharo tsa ho fana: software (mahala, ha ho linotlolo), Omni API, kapa Google Flow ka ngoliso ea hau",
+      "sbB3": "Boiketsetso ba phallo: mola oa tlhahiso o itšebetsa, kopano ea boiketsetso e kopanya Reel e phethiloeng ntle le uena",
+      "sbB4": "Lentsoe la CTA qetellong: bashebelli ba le fana ka maikutlo — ho kenella ho matlafatsa phihlello",
+      "sbBody": "Lihlooho tse sa sisinyeheng li fetisoa ka metsotsoana — ke feela lithunya tse fetohang tse ts'oarang tlhokomelo. Storyboard e kopanya ntho ea hau hape hore e be Reel e matla: e ngola puo, e e khaola ka lipoleloana ho fihlela metsotsoana e 8, 'me e hlophisa e 'ngoe le e 'ngoe ka liphanele — sebui se haufi-ufi, litlotla tse felletseng, likhaolo, li-split-screen, li-mockup, le qetello ea pitso ea ketso.",
+      "sbCardBadge": "@mocha waka",
+      "sbCardChunk": "Karolo ea 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Liphanele tse 6",
+      "sbCardSubs": "Litlotlana: ho tsoa puong",
+      "sbLabel": "Storyboard · tokiso ea ho boloka",
+      "sbNote": "E kenyelelitsoe ho Premium · tab ea \"Storyboard\" ho Gallery · Reel e phethiloeng — ka kotloloho ho Publisher",
+      "sbP1": "Sebui se haufi-ufi",
+      "sbP2": "Sehlooho se felletseng",
+      "sbP3": "Khaolo",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Qetello + CTA",
+      "sbTitleL1": "Nako e le 'ngoe khamera —",
+      "sbTitleL2": "tokiso ea boemo ba moetsi ea holimo."
     },
     "storyboard": {
       "actFail": "E hlolehile — ka kopo leka hape.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pampiri",
       "style_terminal": "Terminal",
-      "style_bold": "E teteaneng"
+      "style_bold": "E teteaneng",
+      "ctaHintV2": "Sebelisa lentsoe le tšoanang la khoutu ho caption ea poso ea hau."
     }
   }
 }

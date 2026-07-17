@@ -17,6 +17,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
+import { User, Type, Film, Columns, Smartphone, Megaphone } from 'lucide-react';
 import {
   APP_URL, TTNav, TTFooter, Preloader, RevealLines, FadeUp, useSmoothScroll,
 } from './landing/chrome';
@@ -120,8 +121,19 @@ export function LandingPage() {
     t('sec.ttLanding.inc1', 'Тренды, ниши и каналы — без лимита сканов'),
     t('sec.ttLanding.inc2', 'Покадровая аналитика и TrendDNA'),
     t('sec.ttLanding.inc3', 'UGC-студия: аватары, голоса, субтитры'),
+    t('sec.ttLanding.incSb', 'Сториборд: ретеншн-монтаж рилса из одного дубля'),
     t('sec.ttLanding.inc4', 'Автопилот и автопубликация в 3 платформы'),
     t('sec.ttLanding.inc5', 'Chrome-расширение: HeyGen, Google Flow, NotebookLM по подписке'),
+  ];
+
+  // Мокап раскадровки в секции «Сториборд»: 6 типов панелей конвейера (зеркало студии)
+  const sbPanels = [
+    { icon: <User size={22} strokeWidth={1.5} />, label: t('sec.ttLanding.sbP1', 'Спикер крупно') },
+    { icon: <Type size={22} strokeWidth={1.5} />, label: t('sec.ttLanding.sbP2', 'Титр во весь экран') },
+    { icon: <Film size={22} strokeWidth={1.5} />, label: t('sec.ttLanding.sbP3', 'Врезка') },
+    { icon: <Columns size={22} strokeWidth={1.5} />, label: t('sec.ttLanding.sbP4', 'Сплит-экран') },
+    { icon: <Smartphone size={22} strokeWidth={1.5} />, label: t('sec.ttLanding.sbP5', 'Мокап') },
+    { icon: <Megaphone size={22} strokeWidth={1.5} />, label: t('sec.ttLanding.sbP6', 'Финал + CTA'), final: true },
   ];
 
   return (
@@ -260,6 +272,66 @@ export function LandingPage() {
                   </div>
                 );
               })}
+            </div>
+          </section>
+
+          {/* ══════════ СТОРИБОРД (ретеншн-монтаж) ══════════ */}
+          <section className="ttl-section" id="storyboard">
+            <div className="ttl-wrap">
+              <div className="ttl-cols">
+                <div>
+                  <FadeUp>
+                    <p className="ttl-label">{t('sec.ttLanding.sbLabel', 'Сториборд · ретеншн-монтаж')}</p>
+                  </FadeUp>
+                  <RevealLines
+                    className="ttl-h"
+                    lines={[
+                      t('sec.ttLanding.sbTitleL1', 'Один дубль на камеру —'),
+                      <span className="ttl-amber" key="a">{t('sec.ttLanding.sbTitleL2', 'монтаж уровня топ-криэйторов.')}</span>,
+                    ]}
+                  />
+                  <FadeUp delay={0.15}>
+                    <p className="ttl-body">
+                      {t('sec.ttLanding.sbBody', 'Статичную «говорящую голову» пролистывают за пару секунд — внимание держит только смена планов. Сториборд пересобирает ваш дубль в динамичный рилс сам: расшифровывает речь, режет её по фразам на куски до 8 секунд и раскладывает каждый на панели — спикер крупно, титры во весь экран, врезки, сплит-скрины, мокапы и финал с призывом.')}
+                    </p>
+                  </FadeUp>
+                  <FadeUp delay={0.22}>
+                    <ul className="ttl-sb-list">
+                      <li>{t('sec.ttLanding.sbB1', 'ИИ-режиссёр раскладывает речь по панелям сам — вы лишь правите раскадровку на плёнке кадров')}</li>
+                      <li>{t('sec.ttLanding.sbB2', 'Три движка рендера: программный — бесплатно и без ключей, Omni API или Google Flow по вашей подписке')}</li>
+                      <li>{t('sec.ttLanding.sbB3', 'Flow-автомат: очередь генераций крутится сама, автосборка склеивает готовый рилс без вас')}</li>
+                      <li>{t('sec.ttLanding.sbB4', 'CTA-слово в финале: зрители пишут его в комментарии — вовлечённость разгоняет охват')}</li>
+                    </ul>
+                  </FadeUp>
+                  <FadeUp delay={0.3}>
+                    <p className="ttl-caption ttl-mcp-note">
+                      {t('sec.ttLanding.sbNote', 'Входит в Premium · вкладка «Сториборд» в Галерее · готовый рилс — сразу в Публикатор')}
+                    </p>
+                  </FadeUp>
+                </div>
+                <FadeUp delay={0.1}>
+                  <div className="ttl-sb-board">
+                    <div className="ttl-sb-row">
+                      <span className="ttl-sb-chip ttl-sb-chip-rec">{t('sec.ttLanding.sbCardChunk', 'Кусок 1 · 0:00–0:08')}</span>
+                      <span className="ttl-sb-chip">{t('sec.ttLanding.sbCardPanels', '6 панелей')}</span>
+                    </div>
+                    <div className="ttl-sb-grid">
+                      {sbPanels.map((p, i) => (
+                        <div className={`ttl-sb-panel${p.final ? ' ttl-sb-panel-final' : ''}`} key={p.label}>
+                          <span className="ttl-sb-num">{String(i + 1).padStart(2, '0')}</span>
+                          {p.icon}
+                          <span className="ttl-sb-panel-label">{p.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="ttl-sb-row">
+                      <span className="ttl-sb-chip">{t('sec.ttLanding.sbCardBadge', '@мойканал')}</span>
+                      <span className="ttl-sb-chip">{t('sec.ttLanding.sbCardSubs', 'Субтитры: по речи')}</span>
+                      <span className="ttl-sb-chip ttl-sb-chip-amber">{t('sec.ttLanding.sbCardCta', 'CTA: «ТРЕНД»')}</span>
+                    </div>
+                  </div>
+                </FadeUp>
+              </div>
             </div>
           </section>
 

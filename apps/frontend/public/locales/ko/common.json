@@ -1190,7 +1190,7 @@
     "geminiFixCount": 202,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:26.385Z",
+    "pivotAt": "2026-07-17T20:12:37.599Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "로그인",
       "publicStart": "무료로 시작하기",
       "seoDesc": "TrendTraffic Premium 구독 월 €49: 바이럴 트렌드 검색, 소셜 미디어 분석, AI 아바타가 있는 UGC 스튜디오, 자동 게시. 7일 무료, 언제든지 취소 가능.",
-      "seoTitle": "Premium 플랜 월 €49 — TrendTraffic"
+      "seoTitle": "Premium 플랜 월 €49 — TrendTraffic",
+      "pf49Storyboard": "스토리보드: 원테이크 Reels — AI 스토리보드 (청크당 최대 6개 패널), 3가지 렌더링 엔진 (무료 포함), 자막, 채널 배지, CTA 단어"
     },
     "channels": {
       "actionsHint": "'추적'은 채널을 목록에 추가하여 매일 자동 업데이트합니다('was→is' 변경 사항 표시). '일회성 분석'은 현재 모든 비디오를 기록 없이 보여줍니다.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "섹션 개발 중—콘텐츠가 곧 제공됩니다.",
       "wikiMeta": "위키 — TrendTraffic",
       "wikiTitle": "위키",
-      "footerCookieSettings": "쿠키 설정"
+      "footerCookieSettings": "쿠키 설정",
+      "incSb": "스토리보드: 원테이크 Reels 시청 유지 편집",
+      "sbB1": "AI 디렉터가 음성을 패널로 자동 배열 — 필름 스트립에서 스토리보드만 조정하세요",
+      "sbB2": "3가지 렌더링 엔진: 소프트웨어 (무료, 키 불필요), Omni API, 또는 구독 시 Google Flow",
+      "sbB3": "Flow 자동화: 생성 대기열이 자동으로 실행되고, 자동 조립으로 완성된 Reel을 직접 만들 필요 없이 연결합니다",
+      "sbB4": "마지막 CTA 단어: 시청자가 댓글을 달면 — 참여도가 도달률을 높입니다",
+      "sbBody": "정적인 토킹 헤드는 몇 초 만에 스크롤됩니다 — 변화하는 샷만이 시선을 사로잡습니다. 스토리보드는 촬영본을 다이내믹한 Reel로 재구성합니다: 음성을 텍스트로 변환하고, 최대 8초 길이의 구절로 자르고, 각 구절을 패널로 배열합니다 — 클로즈업 화자, 전체 화면 제목, 컷어웨이, 분할 화면, 목업, 그리고 행동 유도 결말까지.",
+      "sbCardBadge": "@내채널",
+      "sbCardChunk": "청크 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "패널 6개",
+      "sbCardSubs": "자막: 음성에서",
+      "sbLabel": "스토리보드 · 시청 유지 편집",
+      "sbNote": "Premium에 포함 · 갤러리의 \"스토리보드\" 탭 · 완성된 Reel — Publisher로 바로 전송",
+      "sbP1": "화자 클로즈업",
+      "sbP2": "전체 화면 제목",
+      "sbP3": "컷어웨이",
+      "sbP4": "분할 화면",
+      "sbP5": "목업",
+      "sbP6": "피날레 + CTA",
+      "sbTitleL1": "카메라 원테이크로 —",
+      "sbTitleL2": "최고 크리에이터 수준의 편집."
     },
     "storyboard": {
       "actFail": "실패했습니다 — 다시 시도해주세요.",
@@ -4259,7 +4281,8 @@
       "style_neon": "네온",
       "style_paper": "페이퍼",
       "style_terminal": "터미널",
-      "style_bold": "볼드"
+      "style_bold": "볼드",
+      "ctaHintV2": "게시물 캡션에 동일한 코드 단어를 사용하세요."
     }
   }
 }

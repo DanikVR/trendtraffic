@@ -1190,7 +1190,7 @@
     "geminiFixCount": 78,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:24.038Z",
+    "pivotAt": "2026-07-17T20:12:31.269Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Konekte",
       "publicStart": "Kòmanse gratis",
       "seoDesc": "Abònman TrendTraffic Premium pou €49/mwa: rechèch tandans viral, analiz medya sosyal, estidyo UGC ak avatar AI, ak piblikasyon otomatik. 7 jou gratis, anile nenpòt lè.",
-      "seoTitle": "Plan Premium €49/mwa — TrendTraffic"
+      "seoTitle": "Plan Premium €49/mwa — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels yon sèl pran — storyboard AI jiska 6 panno pa moso, 3 motè rann (ki gen ladan gratis), sou-tit, badj chanèl, ak mo CTA"
     },
     "channels": {
       "actionsHint": "'Swiv' ajoute chanèl la nan lis ou pou mizajou otomatik chak jou (ki montre chanjman 'te→ye'). 'Analiz yon sèl fwa' montre tout videyo kounye a, san istwa.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seksyon an anba devlopman—kontni ap vini byento.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Paramèt bonbon"
+      "footerCookieSettings": "Paramèt bonbon",
+      "incSb": "Storyboard: edit retansyon Reels yon sèl pran",
+      "sbB1": "Direktè AI ranje diskou otomatikman an panno — ou jis ajiste storyboard la sou fim nan",
+      "sbB2": "Twa motè rann: lojisyèl (gratis, pa gen kle), Omni API, oswa Google Flow ak abònman ou",
+      "sbB3": "Otomatik Flow: keu jenerasyon an kouri poukont li, oto-asanblaj koud Reel la fini san ou",
+      "sbB4": "Mo CTA nan fen an: telespektatè yo komante li — angajman ogmante rive",
+      "sbBody": "Tèt k ap pale estatik yo pase nan kèk segonn — se sèlman chanjman piki ki kenbe atansyon. Storyboard rasanble pran ou an nan yon Reel dinamik: transkri diskou, koupe li an fraz jiska 8 segonn, epi ranje chak an panno — oratè an gwo plan, tit tout ekran, koupe, ekran divize, makèt, ak yon apèl a aksyon final.",
+      "sbCardBadge": "@chanèl_mwen",
+      "sbCardChunk": "Moso 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panno",
+      "sbCardSubs": "Sou-tit: soti nan diskou",
+      "sbLabel": "Storyboard · edit retansyon",
+      "sbNote": "Enkli nan Premium · tab \"Storyboard\" nan Galeri · Reel fini — dirèkteman nan Piblikatè",
+      "sbP1": "Oratè an gwo plan",
+      "sbP2": "Tit tout ekran",
+      "sbP3": "Koupe",
+      "sbP4": "Ekran divize",
+      "sbP5": "Makèt",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Yon sèl pran sou kamera —",
+      "sbTitleL2": "edit nivo kreyatè tèt."
     },
     "storyboard": {
       "actFail": "Echwe — tanpri eseye ankò.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neyon",
       "style_paper": "Papye",
       "style_terminal": "Tèminal",
-      "style_bold": "Gras"
+      "style_bold": "Gras",
+      "ctaHintV2": "Itilize menm mo kòd la nan deskripsyon pòs ou."
     }
   }
 }

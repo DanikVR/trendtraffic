@@ -1190,7 +1190,7 @@
     "geminiFixCount": 68,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:22.235Z",
+    "pivotAt": "2026-07-17T20:12:25.132Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Oanmelde",
       "publicStart": "Fergees begjinne",
       "seoDesc": "TrendTraffic Premium-abonnemint foar €49/moanne: virale trend-sykjen, sosjale media-analyse, UGC-studio mei AI-avatars, en automatysk publisearjen. 7 dagen fergees, annulearje op elk momint.",
-      "seoTitle": "Premium-plan €49/moanne — TrendTraffic"
+      "seoTitle": "Premium-plan €49/moanne — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI-storyboard oant 6 panielen per stik, 3 render-engines (ynkl. fergees), ûndertitels, kanaalbadge, en CTA-wurd"
     },
     "channels": {
       "actionsHint": "'Folgje' foeget it kanaal ta oan jo list foar deistige auto-updates (toant 'wie→is' feroarings). 'Ienmalige analyse' toant alle fideo's no, sûnder skiednis.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seksje yn ûntwikkeling—ynhâld komt gau.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Koekje-ynstellings"
+      "footerCookieSettings": "Koekje-ynstellings",
+      "incSb": "Storyboard: one-take Reels retinsje-bewurking",
+      "sbB1": "AI-regisseur rangskikt spraak automatysk yn panielen — jo hoege allinich it storyboard op de filmstrip oan te passen",
+      "sbB2": "Trije render-engines: software (fergees, gjin kaaien), Omni API, of Google Flow mei jo abonnemint",
+      "sbB3": "Flow-automatisearring: generaasjeko rint himsels, auto-assemblage stikt de foltôge Reel sûnder jo",
+      "sbB4": "CTA-wurd oan 'e ein: sjoggers kommentearje it — belutsenens fergruttet berik",
+      "sbBody": "Statyske pratende hollen wurde yn sekonden foarby skrold — allinich feroarjende shots hâlde de oandacht. Storyboard set jo opname opnij gear yn in dynamyske Reel: transkribearret spraak, snijt it yn frases fan maksimaal 8 sekonden, en rangskikt elk yn panielen — close-up sprekker, folslein skerm titels, cutaways, split-screens, mockups, en in call-to-action finale.",
+      "sbCardBadge": "@mynkanaal",
+      "sbCardChunk": "Stik 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panielen",
+      "sbCardSubs": "Ûndertitels: fan spraak",
+      "sbLabel": "Storyboard · retinsje-bewurking",
+      "sbNote": "Ynklusyf yn Premium · \"Storyboard\" tab yn Gallery · foltôge Reel — direkt nei Publisher",
+      "sbP1": "Sprekker close-up",
+      "sbP2": "Folslein skerm titel",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Ien opname op kamera —",
+      "sbTitleL2": "bewurking op top-creator nivo."
     },
     "storyboard": {
       "actFail": "Mislukke — besykje it opnij.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papier",
       "style_terminal": "Terminal",
-      "style_bold": "Fet"
+      "style_bold": "Fet",
+      "ctaHintV2": "Brûk itselde koade-wurd yn jo post-byldtekst."
     }
   }
 }

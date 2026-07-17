@@ -1190,7 +1190,7 @@
     "geminiFixCount": 91,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:22.935Z",
+    "pivotAt": "2026-07-17T20:12:26.130Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Iniciar sesión",
       "publicStart": "Comezar de balde",
       "seoDesc": "Subscrición Premium de TrendTraffic por 49 €/mes: busca de tendencias virais, analíticas de redes sociais, estudo UGC con avatares de IA e publicación automática. 7 días de balde, cancela cando queiras.",
-      "seoTitle": "Plan Premium 49 €/mes — TrendTraffic"
+      "seoTitle": "Plan Premium 49 €/mes — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels dunha toma — storyboard con IA de ata 6 paneis por segmento, 3 motores de renderizado (incl. gratuíto), subtítulos, distintivo de canle e palabra de CTA"
     },
     "channels": {
       "actionsHint": "'Seguir' engade a canle á túa lista para actualizacións automáticas diarias (mostrando cambios 'era→é'). 'Análise única' mostra todos os vídeos agora, sen historial.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sección en desenvolvemento — contido en breve.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Configuración de cookies"
+      "footerCookieSettings": "Configuración de cookies",
+      "incSb": "Storyboard: edición de retención de Reels dunha toma",
+      "sbB1": "O director de IA organiza automaticamente a fala en paneis — ti só axustas o storyboard na tira de película",
+      "sbB2": "Tres motores de renderizado: software (gratuíto, sen claves), Omni API ou Google Flow coa túa subscrición",
+      "sbB3": "Automatización do fluxo: a cola de xeración execútase soa, a montaxe automática une o Reel rematado sen ti",
+      "sbB4": "Palabra de CTA ao final: os espectadores coméntana — o compromiso aumenta o alcance",
+      "sbBody": "As cabezas parlantes estáticas pasan de longo en segundos — só os planos cambiantes manteñen a atención. Storyboard volve montar a túa toma nun Reel dinámico: transcribe a fala, córtana en frases de ata 8 segundos e organiza cada unha en paneis — primeiro plano do orador, títulos a pantalla completa, planos de corte, pantallas divididas, maquetas e un final de chamada á acción.",
+      "sbCardBadge": "@amicana",
+      "sbCardChunk": "Segmento 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 paneis",
+      "sbCardSubs": "Subtítulos: da fala",
+      "sbLabel": "Storyboard · edición de retención",
+      "sbNote": "Incluído en Premium · pestana \"Storyboard\" na Galería · Reel rematado — directamente ao Editor",
+      "sbP1": "Primeiro plano do orador",
+      "sbP2": "Título a pantalla completa",
+      "sbP3": "Plano de corte",
+      "sbP4": "Pantalla dividida",
+      "sbP5": "Maqueta",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Unha toma na cámara —",
+      "sbTitleL2": "edición de nivel de creador principal."
     },
     "storyboard": {
       "actFail": "Fallou — tenta de novo.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papel",
       "style_terminal": "Terminal",
-      "style_bold": "Negra"
+      "style_bold": "Negra",
+      "ctaHintV2": "Usa a mesma palabra clave na descrición da túa publicación."
     }
   }
 }

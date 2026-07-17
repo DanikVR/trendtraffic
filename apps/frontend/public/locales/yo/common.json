@@ -1172,7 +1172,7 @@
     "geminiFixCount": 59,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:36.628Z",
+    "pivotAt": "2026-07-17T20:13:15.498Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Wọle",
       "publicStart": "Bẹrẹ fun ọfẹ",
       "seoDesc": "Alabapin TrendTraffic Ere fun €49/oṣu: wiwa aṣa gbogun ti, itupalẹ media awujọ, ile-iṣere UGC pẹlu awọn avatars AI, ati titẹjade aifọwọyi. Ọfẹ ọjọ 7, fagile nigbakugba.",
-      "seoTitle": "Eto Ere €49/oṣu — TrendTraffic"
+      "seoTitle": "Eto Ere €49/oṣu — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels kan-kan — AI storyboard to 6 panels fun chunk kọọkan, 3 render engines (pẹlu ọfẹ), awọn atunkọ, ami ikanni, ati ọrọ CTA"
     },
     "channels": {
       "actionsHint": "'Tọpinpin' ṣafikun ikanni si atokọ rẹ fun awọn imudojuiwọn aifọwọyi ojoojumọ (nfihan 'wa→jẹ' awọn iyipada). 'Atupale akoko kan' fihan gbogbo awọn fidio ni bayi, laisi itan-akọọlẹ.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Abala labẹ idagbasoke—akoonu n bọ laipẹ.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Ètò Kúkì"
+      "footerCookieSettings": "Ètò Kúkì",
+      "incSb": "Storyboard: atunṣe idaduro Reels kan-kan",
+      "sbB1": "Oludari AI ṣe eto ọrọ laifọwọyi si awọn panẹli — iwọ kan ṣatunṣe storyboard lori filmstrip",
+      "sbB2": "Awọn ẹrọ atunṣe mẹta: sọfitiwia (ọfẹ, ko si bọtini), Omni API, tabi Google Flow pẹlu ṣiṣe alabapin rẹ",
+      "sbB3": "Adaṣiṣẹ sisan: tito lẹsẹsẹ iran nṣiṣẹ funrararẹ, apejọ laifọwọyi nran Reel ti o pari pọ laisi iwọ",
+      "sbB4": "Ọrọ CTA ni ipari: awọn oluwo sọ asọye rẹ — ilowosi nmu arọwọto pọ si",
+      "sbBody": "Awọn ori ti o nsoro ti o duro ṣinṣin ni a yiyi kọja ni iṣẹju-aaya — awọn iyipada ibọn nikan ni o nfa akiyesi. Storyboard tun ṣajọpọ gbigba rẹ sinu Reel ti o ni agbara: ṣe atunkọ ọrọ, ge si awọn gbolohun ọrọ to 8 iṣẹju-aaya, ati ṣeto ọkọọkan sinu awọn panẹli — agbọrọsọ ti o sunmọ, awọn akọle iboju kikun, awọn gige kuro, awọn iboju pipin, awọn apẹrẹ, ati ipari ipe-si-iṣe.",
+      "sbCardBadge": "@ikanni mi",
+      "sbCardChunk": "Apakan 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "Awọn panẹli 6",
+      "sbCardSubs": "Awọn atunkọ: lati ọrọ",
+      "sbLabel": "Storyboard · atunṣe idaduro",
+      "sbNote": "Ti o wa ninu Ere · taabu \"Storyboard\" ninu Gallery · Reel ti o pari — taara si Atẹjade",
+      "sbP1": "Agbọrọsọ ti o sunmọ",
+      "sbP2": "Akọle iboju kikun",
+      "sbP3": "Ge kuro",
+      "sbP4": "Iboju pipin",
+      "sbP5": "Apẹrẹ",
+      "sbP6": "Ipari + CTA",
+      "sbTitleL1": "Gbigba kan lori kamẹra —",
+      "sbTitleL2": "ṣiṣatunṣe ipele olupilẹṣẹ-oke."
     },
     "storyboard": {
       "actFail": "Kò já sí rere — jọ̀wọ́ tún gbìyànjú.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Iwe",
       "style_terminal": "Ebute",
-      "style_bold": "Lile"
+      "style_bold": "Lile",
+      "ctaHintV2": "Lo ọrọ koodu kanna ninu akọle ifiweranṣẹ rẹ."
     }
   }
 }

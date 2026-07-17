@@ -1172,7 +1172,7 @@
     "geminiFixCount": 31,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:19.542Z",
+    "pivotAt": "2026-07-17T20:12:18.156Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Inicia la sessió",
       "publicStart": "Comença de franc",
       "seoDesc": "Subscripció Premium de TrendTraffic per 49 €/mes: cerca de tendències virals, anàlisi de xarxes socials, estudi UGC amb avatars d'IA i publicació automàtica. 7 dies gratis, cancel·la en qualsevol moment.",
-      "seoTitle": "Pla Premium 49 €/mes — TrendTraffic"
+      "seoTitle": "Pla Premium 49 €/mes — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels d'una sola presa — storyboard amb IA de fins a 6 panells per fragment, 3 motors de renderització (inclòs el gratuït), subtítols, insígnia de canal i paraula de CTA"
     },
     "channels": {
       "actionsHint": "'Seguir' afegeix el canal a la teva llista per a actualitzacions automàtiques diàries (mostrant canvis 'era→és'). 'Anàlisi única' mostra tots els vídeos ara, sense historial.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Secció en desenvolupament: contingut properament.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Configuració de galetes"
+      "footerCookieSettings": "Configuració de galetes",
+      "incSb": "Storyboard: edició de retenció per a Reels d'una sola presa",
+      "sbB1": "El director d'IA organitza automàticament el discurs en panells; tu només has d'ajustar el storyboard a la tira de pel·lícula",
+      "sbB2": "Tres motors de renderització: programari (gratuït, sense claus), Omni API o Google Flow amb la teva subscripció",
+      "sbB3": "Automatització del flux: la cua de generació s'executa sola, el muntatge automàtic uneix el Reel acabat sense que hagis de fer res",
+      "sbB4": "Paraula de CTA al final: els espectadors la comenten — la interacció augmenta l'abast",
+      "sbBody": "Els plans estàtics de caps parlants es passen per alt en segons; només els plans canviants mantenen l'atenció. Storyboard reuneix la teva presa en un Reel dinàmic: transcriu el discurs, el talla en frases de fins a 8 segons i organitza cadascuna en panells — primer pla de l'orador, títols a pantalla completa, plans de tall, pantalles dividides, maquetes i un final amb crida a l'acció.",
+      "sbCardBadge": "@elmeucanal",
+      "sbCardChunk": "Fragment 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panells",
+      "sbCardSubs": "Subtítols: a partir del discurs",
+      "sbLabel": "Storyboard · edició de retenció",
+      "sbNote": "Inclòs a Premium · pestanya \"Storyboard\" a la Galeria · Reel acabat — directament al Publicador",
+      "sbP1": "Primer pla de l'orador",
+      "sbP2": "Títol a pantalla completa",
+      "sbP3": "Pla de tall",
+      "sbP4": "Pantalla dividida",
+      "sbP5": "Maqueta",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Una sola presa amb càmera —",
+      "sbTitleL2": "edició de nivell de creador top."
     },
     "storyboard": {
       "actFail": "Ha fallat — torna-ho a provar.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neó",
       "style_paper": "Paper",
       "style_terminal": "Terminal",
-      "style_bold": "Negreta"
+      "style_bold": "Negreta",
+      "ctaHintV2": "Utilitza la mateixa paraula clau a la descripció de la teva publicació."
     }
   }
 }

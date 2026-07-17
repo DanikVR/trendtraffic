@@ -1190,7 +1190,7 @@
     "geminiFixCount": 78,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:22.654Z",
+    "pivotAt": "2026-07-17T20:12:28.125Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Log a-steach",
       "publicStart": "Tòisich an-asgaidh",
       "seoDesc": "Fo-sgrìobhadh TrendTraffic Premium airson €49/mìos: rannsachadh gluasadan viral, anailis meadhanan sòisealta, stiùidio UGC le avatars AI, agus fèin-fhoillseachadh. 7 latha an-asgaidh, cuir dheth uair sam bith.",
-      "seoTitle": "Plana Premium €49/mìos — TrendTraffic"
+      "seoTitle": "Plana Premium €49/mìos — TrendTraffic",
+      "pf49Storyboard": "Clàr-sgeulachd: Reels aon-ghabhail — clàr-sgeulachd AI suas ri 6 pannalan gach earrann, 3 einnseanan-rèanaidh (a’ gabhail a-steach an-asgaidh), fo-thiotalan, bràiste seanail, agus facal CTA"
     },
     "channels": {
       "actionsHint": "Bidh 'Cum sùil' a' cur an t-seanail ris an liosta agad airson ùrachaidhean fèin-ghluasadach làitheil (a' sealltainn atharrachaidhean 'bha→tha'). Bidh 'Anailis aon-uair' a' sealltainn a h-uile bhidio a-nis, gun eachdraidh.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Earrann fo leasachadh—susbaint ri thighinn a dh'aithghearr.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Roghainnean chèicichean"
+      "footerCookieSettings": "Roghainnean chèicichean",
+      "incSb": "Clàr-sgeulachd: deasachadh gleidhidh Reels aon-ghabhail",
+      "sbB1": "Bidh stiùiriche AI a’ cur òraid air dòigh gu fèin-ghluasadach ann am pannalan — cha leig thu leas ach an clàr-sgeulachd atharrachadh air an stiall-fhilm",
+      "sbB2": "Trì einnseanan-rèanaidh: bathar-bog (an-asgaidh, gun iuchraichean), Omni API, no Google Flow leis an fho-sgrìobhadh agad",
+      "sbB3": "Fèin-ghluasad sruth: bidh ciudha ginealach a’ ruith leis fhèin, bidh fèin-chruinneachadh a’ fuaigheal an Reel chrìochnaichte às do aonais",
+      "sbB4": "Facal CTA aig an deireadh: bidh luchd-amhairc ga thoirt seachad mar bheachd — bidh conaltradh ag àrdachadh ruigsinneachd",
+      "sbBody": "Bidh cinn-labhairt statach air an sgrìobadh seachad ann an diogan — chan eil ach seallaidhean ag atharrachadh a’ cumail aire. Bidh Clàr-sgeulachd ag ath-chruinneachadh do ghabhail a-steach gu Reel fiùghantach: a’ tar-sgrìobhadh òraid, ga ghearradh ann an abairtean suas ri 8 diogan, agus a’ cur gach fear ann am pannalan — neach-labhairt dlùth, tiotalan làn-sgrìn, gearraidhean-air-falbh, sgrionaichean-sgoltadh, mockups, agus crìoch gairm-gu-gnìomh.",
+      "sbCardBadge": "@mochanail",
+      "sbCardChunk": "Earrann 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 pannalan",
+      "sbCardSubs": "Fo-thiotalan: bho òraid",
+      "sbLabel": "Clàr-sgeulachd · deasachadh gleidhidh",
+      "sbNote": "Air a ghabhail a-steach ann am Premium · taba \"Clàr-sgeulachd\" ann an Gailearaidh · Reel crìochnaichte — gu dìreach gu Foillsichear",
+      "sbP1": "Neach-labhairt dlùth",
+      "sbP2": "Tiotal làn-sgrìn",
+      "sbP3": "Gearradh-air-falbh",
+      "sbP4": "Sgrìn-sgoltadh",
+      "sbP5": "Mockup",
+      "sbP6": "Crìoch + CTA",
+      "sbTitleL1": "Aon ghabhail air camara —",
+      "sbTitleL2": "deasachadh ìre prìomh-chruthaiche."
     },
     "storyboard": {
       "actFail": "Dh'fhàillig — feuch ris a-rithist.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pàipear",
       "style_terminal": "Terminal",
-      "style_bold": "Dàna"
+      "style_bold": "Dàna",
+      "ctaHintV2": "Cleachd an aon fhacal còd ann an tiotal do phuist."
     }
   }
 }

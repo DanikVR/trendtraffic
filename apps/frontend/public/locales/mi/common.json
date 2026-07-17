@@ -1172,7 +1172,7 @@
     "geminiFixCount": 26,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:28.036Z",
+    "pivotAt": "2026-07-17T20:12:43.598Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Takiuru",
       "publicStart": "Tīmata mō te kore utu",
       "seoDesc": "Ohaurunga TrendTraffic Premium mō te €49/marama: rapu ia viral, tātari pāpāho pāpori, studio UGC me ngā avatar AI, me te whakaputa-aunoa. 7 rā kore utu, whakakore i ngā wā katoa.",
-      "seoTitle": "Mahere Premium €49/marama — TrendTraffic"
+      "seoTitle": "Mahere Premium €49/marama — TrendTraffic",
+      "pf49Storyboard": "Papa Pakiwaitara: Reels kotahi-tango — papa pakiwaitara AI tae atu ki te 6 papa mo ia wāhanga, 3 miihini whakaputa (tae atu ki te kore utu), kupu hauraro, tohu hongere, me te kupu CTA"
     },
     "channels": {
       "actionsHint": "Mā te 'Aroturuki' ka tāpiri i te hongere ki tō rārangi mō ngā whakahou aunoa o ia rā (e whakaatu ana i ngā huringa 'i mua→inaianei'). Ka whakaatu te 'Tātari kotahi-wā' i ngā ataata katoa ināianei, kāore he hītori.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Kei te whanake tēnei wāhanga—ka tae mai ngā ihirangi ākuanei.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Tautuhinga Pihikete"
+      "footerCookieSettings": "Tautuhinga Pihikete",
+      "incSb": "Papa Pakiwaitara: whakatika pupuri Reels kotahi-tango",
+      "sbB1": "Ka whakarite aunoa te kaiwhakahaere AI i te whaikōrero ki roto i ngā papa — ka whakatika noa koe i te papa pakiwaitara i runga i te rīpene kiriata",
+      "sbB2": "E toru ngā miihini whakaputa: pūmanawa (kore utu, kāore he kī), Omni API, ko Google Flow rānei me tō ohaurunga",
+      "sbB3": "Aunoatanga Rere: ka rere noa te rārangi whakaputa, ka tuitui aunoa te huihuinga i te Reel kua oti me te kore koe",
+      "sbB4": "Kupu CTA i te mutunga: ka kōrero ngā kaimātaki — ka whakanui te whai wāhi i te whānuitanga",
+      "sbBody": "Ka huri haere ngā upoko kōrero pūmau i roto i ngā hēkona — ko ngā huringa anake ka mau i te aro. Ka whakahuihui anō te Papa Pakiwaitara i tō tango ki roto i tētahi Reel hihiri: ka tuhi i te whaikōrero, ka tapahia ki ngā kīanga tae atu ki te 8 hēkona, ka whakarite i ia kīanga ki roto i ngā papa — te kaikōrero tata, ngā taitara mata-katoa, ngā tapahi, ngā mata-wehe, ngā tauira, me te mutunga karanga-ki-te-mahi.",
+      "sbCardBadge": "@tōhongere",
+      "sbCardChunk": "Wāhanga 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 papa",
+      "sbCardSubs": "Kupu Hauraro: mai i te whaikōrero",
+      "sbLabel": "Papa Pakiwaitara · whakatika pupuri",
+      "sbNote": "Kei roto i te Premium · ripa \"Papa Pakiwaitara\" i roto i te Taiwhanga · Reel kua oti — tika ki te Kaiwhakaputa",
+      "sbP1": "Kaikōrero tata",
+      "sbP2": "Taitara mata-katoa",
+      "sbP3": "Tapahi",
+      "sbP4": "Mata-wehe",
+      "sbP5": "Tauira",
+      "sbP6": "Whakamutunga + CTA",
+      "sbTitleL1": "Kotahi te tango i runga i te kāmera —",
+      "sbTitleL2": "whakatika taumata-kaihanga-nui."
     },
     "storyboard": {
       "actFail": "I rahua — tēnā whakamātau anō.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Pepapātuhi",
       "style_terminal": "Kāpeka",
-      "style_bold": "Mātotoru"
+      "style_bold": "Mātotoru",
+      "ctaHintV2": "Whakamahia te kupu waehere kotahi i roto i tō tapanga pou."
     }
   }
 }

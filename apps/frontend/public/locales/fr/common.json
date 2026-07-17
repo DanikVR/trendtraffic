@@ -1190,7 +1190,7 @@
     "geminiFixCount": 250,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:21.754Z",
+    "pivotAt": "2026-07-17T20:12:23.680Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Se connecter",
       "publicStart": "Commencer gratuitement",
       "seoDesc": "Abonnement TrendTraffic Premium pour 49 €/mois : recherche de tendances virales, analyse des médias sociaux, studio UGC avec avatars IA et publication automatique. 7 jours gratuits, annulez à tout moment.",
-      "seoTitle": "Forfait Premium 49 €/mois — TrendTraffic"
+      "seoTitle": "Forfait Premium 49 €/mois — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels en une prise — storyboard IA jusqu'à 6 panneaux par séquence, 3 moteurs de rendu (dont gratuit), sous-titres, badge de chaîne et mot d'appel à l'action"
     },
     "channels": {
       "actionsHint": "« Suivre » ajoute la chaîne à votre liste pour des mises à jour automatiques quotidiennes (affichant les changements « était→est »). « Analyse unique » affiche toutes les vidéos maintenant, sans historique.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Section en développement—contenu à venir.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Paramètres des cookies"
+      "footerCookieSettings": "Paramètres des cookies",
+      "incSb": "Storyboard: montage de rétention Reels en une prise",
+      "sbB1": "Le réalisateur IA organise automatiquement le discours en panneaux — vous n'avez qu'à ajuster le storyboard sur la bande-film",
+      "sbB2": "Trois moteurs de rendu: logiciel (gratuit, sans clés), Omni API, ou Google Flow avec votre abonnement",
+      "sbB3": "Automatisation du flux: la file d'attente de génération s'exécute seule, l'assemblage automatique assemble le Reel terminé sans vous",
+      "sbB4": "Mot d'appel à l'action à la fin: les spectateurs le commentent — l'engagement augmente la portée",
+      "sbBody": "Les têtes parlantes statiques sont ignorées en quelques secondes — seuls les plans changeants retiennent l'attention. Storyboard réassemble votre prise en un Reel dynamique: transcrit le discours, le découpe en phrases de 8 secondes maximum, et arrange chacune en panneaux — gros plan de l'orateur, titres plein écran, plans de coupe, écrans partagés, maquettes, et un final avec appel à l'action.",
+      "sbCardBadge": "@machaine",
+      "sbCardChunk": "Séquence 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panneaux",
+      "sbCardSubs": "Sous-titres: à partir du discours",
+      "sbLabel": "Storyboard · montage de rétention",
+      "sbNote": "Inclus dans Premium · Onglet \"Storyboard\" dans la Galerie · Reel terminé — directement vers l'Éditeur",
+      "sbP1": "Gros plan de l'orateur",
+      "sbP2": "Titre plein écran",
+      "sbP3": "Plan de coupe",
+      "sbP4": "Écran partagé",
+      "sbP5": "Maquette",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Une prise caméra —",
+      "sbTitleL2": "montage de niveau top-créateur."
     },
     "storyboard": {
       "actFail": "Échec — veuillez réessayer.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Néon",
       "style_paper": "Papier",
       "style_terminal": "Terminal",
-      "style_bold": "Gras"
+      "style_bold": "Gras",
+      "ctaHintV2": "Utilisez le même mot-clé dans la légende de votre publication."
     }
   }
 }

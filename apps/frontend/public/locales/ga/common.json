@@ -1172,7 +1172,7 @@
     "geminiFixCount": 28,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:22.437Z",
+    "pivotAt": "2026-07-17T20:12:26.934Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Logáil isteach",
       "publicStart": "Tosaigh saor in aisce",
       "seoDesc": "Síntiús TrendTraffic Premium ar €49/mí: cuardach treochtaí víreasacha, anailísíocht meán sóisialta, stiúideo UGC le havatáir AI, agus uathfhoilsiú. 7 lá saor in aisce, cealaigh am ar bith.",
-      "seoTitle": "Plean Préimhe €49/mí — TrendTraffic"
+      "seoTitle": "Plean Préimhe €49/mí — TrendTraffic",
+      "pf49Storyboard": "Clár Scéil: Reels aon-ghlacadh — clár scéil AI suas le 6 phainéal in aghaidh an smután, 3 inneall rindreála (saor in aisce san áireamh), fotheidil, suaitheantas cainéil, agus focal CTA"
     },
     "channels": {
       "actionsHint": "Cuireann 'Rianú' an cainéal le do liosta le haghaidh nuashonruithe uathoibríocha laethúla (ag taispeáint athruithe 'bhí→tá'). Taispeánann 'Anailís aonuaire' gach físeán anois, gan stair.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Roinn faoi fhorbairt—ábhar ag teacht go luath.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Socruithe fianán"
+      "footerCookieSettings": "Socruithe fianán",
+      "incSb": "Clár Scéil: eagarthóireacht coinneála Reels aon-ghlacadh",
+      "sbB1": "Déanann stiúrthóir AI an chaint a shocrú go huathoibríoch i bpainéil — níl le déanamh agat ach an clár scéil a choigeartú ar an stiall scannáin",
+      "sbB2": "Trí inneall rindreála: bogearraí (saor in aisce, gan eochracha), Omni API, nó Google Flow le do shíntiús",
+      "sbB3": "Uathoibriú sreafa: ritheann an scuaine giniúna leis féin, déanann uath-chóimeáil an Reel críochnaithe a fhuáil gan tú",
+      "sbB4": "Focal CTA ag an deireadh: déanann lucht féachana trácht air — méadaíonn rannpháirtíocht an teacht",
+      "sbBody": "Déantar neamhaird de chinn chainte statacha i soicindí — ní choinníonn ach seatanna athraitheacha aird. Athchóimeálann an Clár Scéil do ghlacadh i Reel dinimiciúil: trascríobhann sé caint, gearrann sé i bhfrásaí suas le 8 soicind é, agus socraíonn sé gach ceann i bpainéil — cainteoir gar-suas, teidil lánscáileáin, gearrthacha, scáileáin scoilte, samhlacha, agus críoch le glao chun gnímh.",
+      "sbCardBadge": "@mochainéal",
+      "sbCardChunk": "Smután 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREOCHT\"",
+      "sbCardPanels": "6 phainéal",
+      "sbCardSubs": "Fotheidil: ón gcaint",
+      "sbLabel": "Clár Scéil · eagarthóireacht coinneála",
+      "sbNote": "San áireamh i bPremium · cluaisín \"Clár Scéil\" sa Ghailearaí · Reel críochnaithe — díreach chuig an bhFoilsitheoir",
+      "sbP1": "Cainteoir gar-suas",
+      "sbP2": "Teideal lánscáileáin",
+      "sbP3": "Gearrthach",
+      "sbP4": "Scáileán scoilte",
+      "sbP5": "Samhail",
+      "sbP6": "Críoch + CTA",
+      "sbTitleL1": "Aon ghlacadh ar cheamara —",
+      "sbTitleL2": "eagarthóireacht ar leibhéal an chruthaitheora is fearr."
     },
     "storyboard": {
       "actFail": "Theip — bain triail eile as le do thoil.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Páipéar",
       "style_terminal": "Críochfort",
-      "style_bold": "Trom"
+      "style_bold": "Trom",
+      "ctaHintV2": "Úsáid an focal cóid céanna i d’fhotheideal poist."
     }
   }
 }

@@ -1190,7 +1190,7 @@
     "geminiFixCount": 171,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:27.834Z",
+    "pivotAt": "2026-07-17T20:12:42.104Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Pieteikties",
       "publicStart": "Sākt bez maksas",
       "seoDesc": "TrendTraffic Premium abonements par 49 €/mēnesī: vīrusu tendenču meklēšana, sociālo mediju analīze, UGC studija ar AI avatāriem un automātiska publicēšana. 7 dienas bez maksas, atceliet jebkurā laikā.",
-      "seoTitle": "Premium plāns 49 €/mēnesī — TrendTraffic"
+      "seoTitle": "Premium plāns 49 €/mēnesī — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels ar vienu kadru — AI sižeta līnija līdz 6 paneļiem vienā fragmentā, 3 renderēšanas dzinēji (tostarp bezmaksas), subtitri, kanāla emblēma un CTA vārds"
     },
     "channels": {
       "actionsHint": "'Izsekot' pievieno kanālu jūsu sarakstam ikdienas automātiskajiem atjauninājumiem (parādot izmaiņas 'bija→ir'). 'Vienreizēja analīze' parāda visus videoklipus tagad, bez vēstures.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sadaļa tiek izstrādāta — saturs drīzumā.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Sīkdatņu iestatījumi"
+      "footerCookieSettings": "Sīkdatņu iestatījumi",
+      "incSb": "Storyboard: Reels ar vienu kadru, rediģēšana noturībai",
+      "sbB1": "AI režisors automātiski sakārto runu paneļos — jums tikai jāpielāgo sižeta līnija uz filmas lentes",
+      "sbB2": "Trīs renderēšanas dzinēji: programmatūra (bezmaksas, bez atslēgām), Omni API vai Google Flow ar jūsu abonementu",
+      "sbB3": "Plūsmas automatizācija: ģenerēšanas rinda darbojas pati, automātiskā montāža saliek pabeigto Reel bez jūsu iesaistes",
+      "sbB4": "CTA vārds beigās: skatītāji to komentē — iesaiste palielina sasniedzamību",
+      "sbBody": "Statiskas runājošas galvas tiek pārtītas dažu sekunžu laikā — uzmanību notur tikai mainīgi kadri. Storyboard pārveido jūsu uzņemto materiālu dinamiskā Reel: transkribē runu, sagriež to frāzēs līdz 8 sekundēm un katru sakārto paneļos — runātāja tuvplāns, pilnekrāna virsraksti, pārejas, dalīti ekrāni, maketi un aicinājums uz darbību finālā.",
+      "sbCardBadge": "@manskanāls",
+      "sbCardChunk": "Fragments 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TRENDS\"",
+      "sbCardPanels": "6 paneļi",
+      "sbCardSubs": "Subtitri: no runas",
+      "sbLabel": "Storyboard · rediģēšana noturībai",
+      "sbNote": "Iekļauts Premium · cilne \"Storyboard\" galerijā · pabeigts Reel — tieši uz Publisher",
+      "sbP1": "Runātāja tuvplāns",
+      "sbP2": "Pilnekrāna virsraksts",
+      "sbP3": "Pāreja",
+      "sbP4": "Dalīts ekrāns",
+      "sbP5": "Makets",
+      "sbP6": "Fināls + CTA",
+      "sbTitleL1": "Viens kadrs kamerā —",
+      "sbTitleL2": "augstākā līmeņa rediģēšana."
     },
     "storyboard": {
       "actFail": "Neizdevās — lūdzu, mēģiniet vēlreiz.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neons",
       "style_paper": "Papīrs",
       "style_terminal": "Terminālis",
-      "style_bold": "Treknraksts"
+      "style_bold": "Treknraksts",
+      "ctaHintV2": "Izmantojiet to pašu koda vārdu savā ziņas parakstā."
     }
   }
 }

@@ -1172,7 +1172,7 @@
     "geminiFixCount": 32,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:27.697Z",
+    "pivotAt": "2026-07-17T20:12:41.667Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Prisijungti",
       "publicStart": "Pradėti nemokamai",
       "seoDesc": "TrendTraffic Premium prenumerata už 49 €/mėn.: virusinių tendencijų paieška, socialinės žiniasklaidos analizė, UGC studija su AI avatarais ir automatinis publikavimas. 7 dienos nemokamai, atšaukti bet kada.",
-      "seoTitle": "Premium planas 49 €/mėn. — TrendTraffic"
+      "seoTitle": "Premium planas 49 €/mėn. — TrendTraffic",
+      "pf49Storyboard": "Storyboard: vieno kadro Reels – AI storyboard iki 6 panelių vienam segmentui, 3 atvaizdavimo varikliai (įsk. nemokamą), subtitrai, kanalo ženklelis ir CTA žodis"
     },
     "channels": {
       "actionsHint": "„Stebėti“ prideda kanalą į jūsų sąrašą kasdieniams automatiniams atnaujinimams (rodomi „buvo→yra“ pokyčiai). „Vienkartinė analizė“ rodo visus vaizdo įrašus dabar, be istorijos.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Skyrius kuriamas – turinys bus netrukus.",
       "wikiMeta": "Wiki – TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Slapukų nustatymai"
+      "footerCookieSettings": "Slapukų nustatymai",
+      "incSb": "Storyboard: vieno kadro Reels išlaikymo redagavimas",
+      "sbB1": "AI režisierius automatiškai išdėsto kalbą į paneles – jums tereikia koreguoti storyboard'ą juostoje",
+      "sbB2": "Trys atvaizdavimo varikliai: programinė įranga (nemokama, be raktų), Omni API arba Google Flow su jūsų prenumerata",
+      "sbB3": "Srauto automatizavimas: generavimo eilė veikia pati, automatinis surinkimas sujungia baigtą Reel be jūsų įsikišimo",
+      "sbB4": "CTA žodis pabaigoje: žiūrovai jį komentuoja – įsitraukimas padidina pasiekiamumą",
+      "sbBody": "Statiškos kalbančios galvos praleidžiamos per kelias sekundes – tik besikeičiantys kadrai išlaiko dėmesį. Storyboard perrenka jūsų įrašą į dinamišką Reel: transkribuoja kalbą, supjausto ją į frazes iki 8 sekundžių ir išdėsto kiekvieną į paneles – artimas planas kalbėtojo, viso ekrano pavadinimai, intarpai, padalinti ekranai, maketai ir kvietimo veikti finalas.",
+      "sbCardBadge": "@mano_kanalas",
+      "sbCardChunk": "Segmentas 1 · 0:00–0:08",
+      "sbCardCta": "CTA: „TRENDAS“",
+      "sbCardPanels": "6 panelės",
+      "sbCardSubs": "Subtitrai: iš kalbos",
+      "sbLabel": "Storyboard · išlaikymo redagavimas",
+      "sbNote": "Įtraukta į Premium · „Storyboard“ skirtukas Galerijoje · baigtas Reel – tiesiai į Leidėją",
+      "sbP1": "Kalbėtojo artimas planas",
+      "sbP2": "Viso ekrano pavadinimas",
+      "sbP3": "Intarpas",
+      "sbP4": "Padalintas ekranas",
+      "sbP5": "Maketas",
+      "sbP6": "Finalas + CTA",
+      "sbTitleL1": "Vienas kadras kamera –",
+      "sbTitleL2": "aukščiausio lygio kūrėjo redagavimas."
     },
     "storyboard": {
       "actFail": "Nepavyko — bandykite dar kartą.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neonas",
       "style_paper": "Popierius",
       "style_terminal": "Terminalas",
-      "style_bold": "Ryškus"
+      "style_bold": "Ryškus",
+      "ctaHintV2": "Naudokite tą patį kodinį žodį savo įrašo antraštėje."
     }
   }
 }

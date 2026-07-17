@@ -1172,7 +1172,7 @@
     "geminiFixCount": 37,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:34.549Z",
+    "pivotAt": "2026-07-17T20:13:02.518Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Mag-log in",
       "publicStart": "Magsimula nang libre",
       "seoDesc": "TrendTraffic Premium subscription sa €49/buwan: paghahanap ng viral trend, social media analytics, UGC studio na may AI avatars, at auto-publishing. 7 araw na libre, maaaring kanselahin anumang oras.",
-      "seoTitle": "Premium plan €49/buwan — TrendTraffic"
+      "seoTitle": "Premium plan €49/buwan — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI storyboard hanggang 6 na panel bawat chunk, 3 render engine (kasama ang libre), subtitle, channel badge, at CTA word"
     },
     "channels": {
       "actionsHint": "Idinaragdag ng 'Track' ang channel sa iyong listahan para sa pang-araw-araw na auto-update (nagpapakita ng mga pagbabagong 'dati→ngayon'). Ipinapakita ng 'One-time analysis' ang lahat ng video ngayon, nang walang kasaysayan.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seksyon na ginagawa—paparating ang nilalaman.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Mga setting ng cookie"
+      "footerCookieSettings": "Mga setting ng cookie",
+      "incSb": "Storyboard: one-take Reels retention edit",
+      "sbB1": "Awtomatikong inaayos ng AI director ang pagsasalita sa mga panel — ikaw lang ang mag-aayos ng storyboard sa filmstrip",
+      "sbB2": "Tatlong render engine: software (libre, walang key), Omni API, o Google Flow gamit ang iyong subscription",
+      "sbB3": "Flow automation: awtomatikong tumatakbo ang generation queue, awtomatikong pinagsasama-sama ang tapos na Reel nang wala ka",
+      "sbB4": "CTA word sa dulo: kinokomento ito ng mga manonood — pinapalakas ng engagement ang reach",
+      "sbBody": "Ang mga static na nagsasalita ay nilalampasan sa loob ng ilang segundo — tanging ang nagbabagong shots ang nakakakuha ng atensyon. Muling pinagsasama-sama ng Storyboard ang iyong take sa isang dynamic na Reel: isinasalin ang pagsasalita, pinuputol ito sa mga parirala hanggang 8 segundo, at inaayos ang bawat isa sa mga panel — close-up speaker, full-screen titles, cutaways, split-screens, mockups, at isang call-to-action finale.",
+      "sbCardBadge": "@akingchannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 na panel",
+      "sbCardSubs": "Mga Subtitle: mula sa pagsasalita",
+      "sbLabel": "Storyboard · retention edit",
+      "sbNote": "Kasama sa Premium · tab na \"Storyboard\" sa Gallery · tapos na Reel — direkta sa Publisher",
+      "sbP1": "Speaker close-up",
+      "sbP2": "Full-screen title",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Isang take sa camera —",
+      "sbTitleL2": "editing na pang-top-creator."
     },
     "storyboard": {
       "actFail": "Nabigo — pakisubukang muli.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Paper",
       "style_terminal": "Terminal",
-      "style_bold": "Bold"
+      "style_bold": "Bold",
+      "ctaHintV2": "Gamitin ang parehong code word sa caption ng iyong post."
     }
   }
 }

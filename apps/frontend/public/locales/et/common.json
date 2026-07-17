@@ -1172,7 +1172,7 @@
     "geminiFixCount": 77,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:21.338Z",
+    "pivotAt": "2026-07-17T20:12:22.568Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Logi sisse",
       "publicStart": "Alusta tasuta",
       "seoDesc": "TrendTraffic Premium tellimus hinnaga 49 €/kuus: viiruslike trendide otsing, sotsiaalmeedia analüüs, UGC stuudio AI avataridega ja automaatne avaldamine. 7 päeva tasuta, tühista igal ajal.",
-      "seoTitle": "Premium pakett 49 €/kuus — TrendTraffic"
+      "seoTitle": "Premium pakett 49 €/kuus — TrendTraffic",
+      "pf49Storyboard": "Storyboard: ühe võtte Reels – AI storyboard kuni 6 paneeli tüki kohta, 3 renderdusmootorit (sh tasuta), subtiitrid, kanali märk ja CTA sõna"
     },
     "channels": {
       "actionsHint": "'Jälgi' lisab kanali teie loendisse igapäevasteks automaatseteks uuendusteks (näitab 'oli→on' muutusi). 'Ühekordne analüüs' näitab kõiki videoid kohe, ilma ajalooga.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Jaotis on arendamisel – sisu on peagi saadaval.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Küpsiste seaded"
+      "footerCookieSettings": "Küpsiste seaded",
+      "incSb": "Storyboard: ühe võtte Reelsi hoidmise redigeerimine",
+      "sbB1": "AI-direktor paigutab kõne automaatselt paneelidesse – sina kohandad lihtsalt storyboardi filmiribal",
+      "sbB2": "Kolm renderdusmootorit: tarkvara (tasuta, võtmeid pole), Omni API või Google Flow sinu tellimusega",
+      "sbB3": "Flow automatiseerimine: genereerimisjärjekord töötab iseseisvalt, automaatne kokkupanek ühendab valmis Reeli ilma sinuta",
+      "sbB4": "CTA sõna lõpus: vaatajad kommenteerivad seda – kaasatus suurendab levikut",
+      "sbBody": "Staatilistest rääkivatest peadest keritakse sekunditega mööda – ainult muutuvad kaadrid hoiavad tähelepanu. Storyboard paneb sinu võtte kokku dünaamiliseks Reeliks: transkribeerib kõne, lõikab selle kuni 8-sekundilisteks fraasideks ja paigutab igaühe paneelidesse – kõneleja lähivõte, täisekraani pealkirjad, vahekaadrid, jagatud ekraanid, maketid ja tegevusele kutsuv finaal.",
+      "sbCardBadge": "@minukanal",
+      "sbCardChunk": "Tükk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 paneeli",
+      "sbCardSubs": "Subtiitrid: kõnest",
+      "sbLabel": "Storyboard · hoidmise redigeerimine",
+      "sbNote": "Sisaldub Premiumis · \"Storyboard\" vaheleht Galeriis · valmis Reel – otse Publisherisse",
+      "sbP1": "Kõneleja lähivõte",
+      "sbP2": "Täisekraani pealkiri",
+      "sbP3": "Vahekaader",
+      "sbP4": "Jagatud ekraan",
+      "sbP5": "Makett",
+      "sbP6": "Finaal + CTA",
+      "sbTitleL1": "Üks võte kaameraga —",
+      "sbTitleL2": "tipplooja tasemel monteerimine."
     },
     "storyboard": {
       "actFail": "Ebaõnnestus — proovige uuesti.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neoon",
       "style_paper": "Paber",
       "style_terminal": "Terminal",
-      "style_bold": "Julge"
+      "style_bold": "Julge",
+      "ctaHintV2": "Kasuta sama koodsõna oma postituse pealdises."
     }
   }
 }

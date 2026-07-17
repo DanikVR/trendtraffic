@@ -1172,7 +1172,7 @@
     "geminiFixCount": 23,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:20.294Z",
+    "pivotAt": "2026-07-17T20:12:18.850Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Log in",
       "publicStart": "Sugdi nga libre",
       "seoDesc": "TrendTraffic Premium subscription sa €49/bulan: viral trend search, social media analytics, UGC studio nga adunay AI avatars, ug auto-publishing. 7 ka adlaw nga libre, kanselahon bisan unsang orasa.",
-      "seoTitle": "Premium plan €49/bulan — TrendTraffic"
+      "seoTitle": "Premium plan €49/bulan — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI storyboard hangtod 6 ka panel kada chunk, 3 ka render engine (apil ang libre), subtitles, channel badge, ug CTA word"
     },
     "channels": {
       "actionsHint": "Ang 'Track' nagdugang sa channel sa imong listahan alang sa adlaw-adlaw nga auto-updates (nagpakita sa 'was→is' nga mga kausaban). Ang 'One-time analysis' nagpakita sa tanang video karon, walay history.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seksyon nga gipaubos sa pagpalambo—ang sulod moabot sa dili madugay.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Mga setting sa cookie"
+      "footerCookieSettings": "Mga setting sa cookie",
+      "incSb": "Storyboard: one-take Reels retention edit",
+      "sbB1": "Ang AI director awtomatikong nag-arrange sa sinultihan ngadto sa mga panel — ikaw na lang ang mag-adjust sa storyboard sa filmstrip",
+      "sbB2": "Tulo ka render engine: software (libre, walay keys), Omni API, o Google Flow uban sa imong subscription",
+      "sbB3": "Flow automation: ang generation queue nagdagan sa iyang kaugalingon, ang auto-assembly nagtahi sa nahuman nga Reel nga wala ka",
+      "sbB4": "CTA word sa katapusan: ang mga viewers mokomento niini — ang engagement makapausbaw sa reach",
+      "sbBody": "Ang static nga nag-istorya nga mga ulo dali ra ma-scroll sa pipila ka segundo — ang nag-usab-usab lang nga mga shot ang makapugong sa atensyon. Ang Storyboard nag-reassemble sa imong take ngadto sa usa ka dinamikong Reel: nag-transcribe sa sinultihan, nagputol niini ngadto sa mga hugpong sa pulong hangtod sa 8 segundos, ug nag-arrange sa matag usa ngadto sa mga panel — close-up speaker, full-screen titles, cutaways, split-screens, mockups, ug usa ka call-to-action nga finale.",
+      "sbCardBadge": "@akongchannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 ka panel",
+      "sbCardSubs": "Subtitles: gikan sa sinultihan",
+      "sbLabel": "Storyboard · retention edit",
+      "sbNote": "Apil sa Premium · \"Storyboard\" tab sa Gallery · nahuman nga Reel — direkta sa Publisher",
+      "sbP1": "Speaker close-up",
+      "sbP2": "Full-screen title",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Usa ka take sa camera —",
+      "sbTitleL2": "editing nga lebel sa top-creator."
     },
     "storyboard": {
       "actFail": "Napakyas — palihug sulayi pag-usab.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papel",
       "style_terminal": "Terminal",
-      "style_bold": "Bold"
+      "style_bold": "Bold",
+      "ctaHintV2": "Gamita ang parehas nga code word sa caption sa imong post."
     }
   }
 }

@@ -1172,7 +1172,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:23.966Z",
+    "pivotAt": "2026-07-17T20:12:30.767Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Nkag mus",
       "publicStart": "Pib dawb",
       "seoDesc": "TrendTraffic Premium subscription rau €49/hli: tshawb cov qauv viral, social media analytics, UGC studio nrog AI avatars, thiab auto-publishing. 7 hnub dawb, tshem tawm txhua lub sijhawm.",
-      "seoTitle": "Premium plan €49/hli — TrendTraffic"
+      "seoTitle": "Premium plan €49/hli — TrendTraffic",
+      "pf49Storyboard": "Storyboard: ib-zaj Reels — AI storyboard txog 6 lub vaj huam sib luag ib qho, 3 lub cav ua haujlwm (suav nrog dawb), subtitles, channel badge, thiab CTA lo lus"
     },
     "channels": {
       "actionsHint": "'Track' ntxiv cov channel rau koj daim ntawv teev npe rau kev hloov tshiab txhua hnub (qhia 'yog→yog' kev hloov pauv). 'One-time analysis' qhia tag nrho cov yeeb yaj kiab tam sim no, tsis muaj keeb kwm.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Tshooj tab tom tsim—cov ntsiab lus yuav tuaj sai sai.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Kev teeb tsa ncuav qab zib"
+      "footerCookieSettings": "Kev teeb tsa ncuav qab zib",
+      "incSb": "Storyboard: ib-zaj Reels kho kom nco ntsoov",
+      "sbB1": "AI tus thawj coj npaj cov lus hais rau hauv cov vaj huam sib luag — koj tsuas yog kho lub storyboard ntawm daim duab",
+      "sbB2": "Peb lub cav ua haujlwm: software (dawb, tsis muaj yuam sij), Omni API, lossis Google Flow nrog koj qhov subscription",
+      "sbB3": "Flow automation: kev tsim tawm ua haujlwm nws tus kheej, auto-assembly sib sau ua ke cov Reels tiav yam tsis muaj koj",
+      "sbB4": "CTA lo lus thaum kawg: cov neeg saib tawm tswv yim — kev koom tes ua rau muaj kev ncav cuag ntau dua",
+      "sbBody": "Cov neeg hais lus zoo li qub raug scroll dhau hauv vib nas this — tsuas yog hloov cov duab thiaj tuav tau kev saib. Storyboard rov sib sau koj cov duab rau hauv ib zaj Reel uas muaj zog: sau cov lus hais, txiav rau hauv cov kab lus txog 8 vib nas this, thiab npaj txhua qhov rau hauv cov vaj huam sib luag — tus neeg hais lus ze, cov npe tag nrho, cutaways, split-screens, mockups, thiab hu rau kev ua tiav.",
+      "sbCardBadge": "@kuvchannel",
+      "sbCardChunk": "Chunk 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 vaj huam sib luag",
+      "sbCardSubs": "Subtitles: los ntawm lus hais",
+      "sbLabel": "Storyboard · kho kom nco ntsoov",
+      "sbNote": "Suav nrog hauv Premium · \"Storyboard\" tab hauv Gallery · Reel tiav — ncaj qha mus rau Publisher",
+      "sbP1": "Tus neeg hais lus ze",
+      "sbP2": "Lub npe tag nrho",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Xaus + CTA",
+      "sbTitleL1": "Ib zaj ntawm lub koob yees duab —",
+      "sbTitleL2": "kev kho kom zoo tshaj plaws."
     },
     "storyboard": {
       "actFail": "Ua tsis tiav — thov sim dua.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Xim ci",
       "style_paper": "Daim ntawv",
       "style_terminal": "Terminal",
-      "style_bold": "Sau ntawv tuab"
+      "style_bold": "Sau ntawv tuab",
+      "ctaHintV2": "Siv tib lo lus code hauv koj qhov kev tshaj tawm."
     }
   }
 }

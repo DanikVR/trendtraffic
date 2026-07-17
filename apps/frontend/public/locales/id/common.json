@@ -1190,7 +1190,7 @@
     "geminiFixCount": 201,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:24.727Z",
+    "pivotAt": "2026-07-17T20:12:31.457Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Masuk",
       "publicStart": "Mulai gratis",
       "seoDesc": "Langganan TrendTraffic Premium seharga €49/bulan: pencarian tren viral, analitik media sosial, studio UGC dengan avatar AI, dan penerbitan otomatis. 7 hari gratis, batalkan kapan saja.",
-      "seoTitle": "Paket Premium €49/bulan — TrendTraffic"
+      "seoTitle": "Paket Premium €49/bulan — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels sekali rekam — storyboard AI hingga 6 panel per segmen, 3 mesin render (termasuk gratis), subtitle, lencana saluran, dan kata CTA"
     },
     "channels": {
       "actionsHint": "'Lacak' menambahkan saluran ke daftar Anda untuk pembaruan otomatis harian (menampilkan perubahan 'dulu→sekarang'). 'Analisis satu kali' menampilkan semua video sekarang, tanpa riwayat.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Bagian sedang dalam pengembangan—konten akan segera hadir.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Pengaturan cookie"
+      "footerCookieSettings": "Pengaturan cookie",
+      "incSb": "Storyboard: edit retensi Reels sekali rekam",
+      "sbB1": "Direktur AI secara otomatis mengatur ucapan ke dalam panel — Anda tinggal menyesuaikan storyboard pada filmstrip",
+      "sbB2": "Tiga mesin render: perangkat lunak (gratis, tanpa kunci), Omni API, atau Google Flow dengan langganan Anda",
+      "sbB3": "Otomatisasi Flow: antrean generasi berjalan sendiri, perakitan otomatis menyatukan Reel yang sudah jadi tanpa Anda",
+      "sbB4": "Kata CTA di akhir: pemirsa mengomentarinya — keterlibatan meningkatkan jangkauan",
+      "sbBody": "Kepala bicara statis akan dilewati dalam hitungan detik — hanya perubahan bidikan yang menarik perhatian. Storyboard menyusun ulang rekaman Anda menjadi Reel yang dinamis: menyalin ucapan, memotongnya menjadi frasa hingga 8 detik, dan mengatur setiap frasa ke dalam panel — pembicara close-up, judul layar penuh, cutaway, split-screen, mockup, dan final call-to-action.",
+      "sbCardBadge": "@saluransaya",
+      "sbCardChunk": "Segmen 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panel",
+      "sbCardSubs": "Subtitle: dari ucapan",
+      "sbLabel": "Storyboard · edit retensi",
+      "sbNote": "Termasuk dalam Premium · tab \"Storyboard\" di Galeri · Reel yang sudah jadi — langsung ke Publisher",
+      "sbP1": "Close-up pembicara",
+      "sbP2": "Judul layar penuh",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Satu kali rekam di kamera —",
+      "sbTitleL2": "pengeditan tingkat kreator top."
     },
     "storyboard": {
       "actFail": "Gagal — coba lagi.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Kertas",
       "style_terminal": "Terminal",
-      "style_bold": "Tebal"
+      "style_bold": "Tebal",
+      "ctaHintV2": "Gunakan kata kode yang sama di caption postingan Anda."
     }
   }
 }

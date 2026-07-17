@@ -1190,7 +1190,7 @@
     "geminiFixCount": 192,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:30.521Z",
+    "pivotAt": "2026-07-17T20:12:50.651Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Entrar",
       "publicStart": "Começar gratuitamente",
       "seoDesc": "Assinatura TrendTraffic Premium por €49/mês: pesquisa de tendências virais, análise de redes sociais, estúdio UGC com avatares de IA e publicação automática. 7 dias grátis, cancele a qualquer momento.",
-      "seoTitle": "Plano Premium €49/mês — TrendTraffic"
+      "seoTitle": "Plano Premium €49/mês — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels de uma só tomada — storyboard de IA com até 6 painéis por bloco, 3 motores de renderização (incl. grátis), legendas, selo de canal e palavra CTA"
     },
     "channels": {
       "actionsHint": "'Rastrear' adiciona o canal à sua lista para atualizações automáticas diárias (mostrando alterações 'era→é'). 'Análise única' mostra todos os vídeos agora, sem histórico.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Seção em desenvolvimento—conteúdo em breve.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Definições de cookies"
+      "footerCookieSettings": "Definições de cookies",
+      "incSb": "Storyboard: edição de retenção para Reels de uma só tomada",
+      "sbB1": "O diretor de IA organiza automaticamente a fala em painéis — você só precisa ajustar o storyboard na tira de filme",
+      "sbB2": "Três motores de renderização: software (gratuito, sem chaves), Omni API ou Google Flow com sua assinatura",
+      "sbB3": "Automação de fluxo: a fila de geração funciona sozinha, a montagem automática une o Reel finalizado sem você",
+      "sbB4": "Palavra CTA no final: os espectadores comentam — o engajamento aumenta o alcance",
+      "sbBody": "Cabeças falantes estáticas são ignoradas em segundos — apenas tomadas em mudança prendem a atenção. O Storyboard remonta sua tomada em um Reel dinâmico: transcreve a fala, a corta em frases de até 8 segundos e organiza cada uma em painéis — orador em close-up, títulos em tela cheia, cortes, telas divididas, mockups e um final com chamada para ação.",
+      "sbCardBadge": "@meucanal",
+      "sbCardChunk": "Bloco 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 painéis",
+      "sbCardSubs": "Legendas: da fala",
+      "sbLabel": "Storyboard · edição de retenção",
+      "sbNote": "Incluído no Premium · aba \"Storyboard\" na Galeria · Reel finalizado — diretamente para o Editor",
+      "sbP1": "Orador em close-up",
+      "sbP2": "Título em tela cheia",
+      "sbP3": "Corte",
+      "sbP4": "Tela dividida",
+      "sbP5": "Mockup",
+      "sbP6": "Final + CTA",
+      "sbTitleL1": "Uma tomada na câmera —",
+      "sbTitleL2": "edição de nível de criador top."
     },
     "storyboard": {
       "actFail": "Falha — por favor, tente novamente.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papel",
       "style_terminal": "Terminal",
-      "style_bold": "Negrito"
+      "style_bold": "Negrito",
+      "ctaHintV2": "Use a mesma palavra-código na legenda da sua publicação."
     }
   }
 }

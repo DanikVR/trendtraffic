@@ -1172,7 +1172,7 @@
     "geminiFixCount": 50,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:29.566Z",
+    "pivotAt": "2026-07-17T20:12:47.149Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Inloggen",
       "publicStart": "Gratis starten",
       "seoDesc": "TrendTraffic Premium-abonnement voor €49/maand: virale trendzoektocht, social media-analyse, UGC-studio met AI-avatars en automatische publicatie. 7 dagen gratis, op elk moment opzegbaar.",
-      "seoTitle": "Premium-abonnement €49/maand — TrendTraffic"
+      "seoTitle": "Premium-abonnement €49/maand — TrendTraffic",
+      "pf49Storyboard": "Storyboard: one-take Reels — AI-storyboard tot 6 panelen per segment, 3 render-engines (incl. gratis), ondertitels, kanaalbadge en CTA-woord"
     },
     "channels": {
       "actionsHint": "'Volgen' voegt het kanaal toe aan uw lijst voor dagelijkse automatische updates (met 'was→is' wijzigingen). 'Eenmalige analyse' toont nu alle video's, zonder geschiedenis.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sectie in ontwikkeling—inhoud volgt binnenkort.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Cookie-instellingen"
+      "footerCookieSettings": "Cookie-instellingen",
+      "incSb": "Storyboard: one-take Reels retentie-edit",
+      "sbB1": "AI-regisseur rangschikt spraak automatisch in panelen — jij past alleen het storyboard aan op de filmstrip",
+      "sbB2": "Drie render-engines: software (gratis, geen sleutels), Omni API, of Google Flow met je abonnement",
+      "sbB3": "Flow-automatisering: de generatiewachtrij draait vanzelf, automatische assemblage voegt de voltooide Reel samen zonder jou",
+      "sbB4": "CTA-woord aan het einde: kijkers reageren erop — betrokkenheid vergroot bereik",
+      "sbBody": "Statische pratende hoofden worden binnen enkele seconden voorbij gescrold — alleen veranderende shots houden de aandacht vast. Storyboard herschikt je opname tot een dynamische Reel: transcribeert spraak, snijdt het in zinnen van maximaal 8 seconden en rangschikt elke zin in panelen — close-up spreker, schermvullende titels, cutaways, split-screens, mockups en een call-to-action finale.",
+      "sbCardBadge": "@mijnkanaal",
+      "sbCardChunk": "Segment 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 panelen",
+      "sbCardSubs": "Ondertitels: van spraak",
+      "sbLabel": "Storyboard · retentie-edit",
+      "sbNote": "Inbegrepen in Premium · tabblad \"Storyboard\" in Galerij · voltooide Reel — direct naar Publisher",
+      "sbP1": "Spreker close-up",
+      "sbP2": "Schermvullende titel",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Eén opname op camera —",
+      "sbTitleL2": "editing op top-creator niveau."
     },
     "storyboard": {
       "actFail": "Mislukt — probeer het opnieuw.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Papier",
       "style_terminal": "Terminal",
-      "style_bold": "Vet"
+      "style_bold": "Vet",
+      "ctaHintV2": "Gebruik hetzelfde codewoord in het bijschrift van je bericht."
     }
   }
 }

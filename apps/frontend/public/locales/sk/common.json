@@ -1190,7 +1190,7 @@
     "geminiFixCount": 173,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:31.697Z",
+    "pivotAt": "2026-07-17T20:12:54.475Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Prihlásiť sa",
       "publicStart": "Začať zadarmo",
       "seoDesc": "Predplatné TrendTraffic Premium za 49 €/mesiac: vyhľadávanie virálnych trendov, analýza sociálnych médií, UGC štúdio s AI avatarmi a automatické publikovanie. 7 dní zadarmo, zrušiť kedykoľvek.",
-      "seoTitle": "Premium plán 49 €/mesiac — TrendTraffic"
+      "seoTitle": "Premium plán 49 €/mesiac — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels na jeden záber — AI storyboard až 6 panelov na úsek, 3 renderovacie enginy (vrátane bezplatného), titulky, odznak kanála a CTA slovo"
     },
     "channels": {
       "actionsHint": "„Sledovať“ pridá kanál do vášho zoznamu pre denné automatické aktualizácie (zobrazuje zmeny „bolo→je“). „Jednorazová analýza“ zobrazí všetky videá teraz, bez histórie.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sekcia vo vývoji – obsah už čoskoro.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Nastavenia súborov cookie"
+      "footerCookieSettings": "Nastavenia súborov cookie",
+      "incSb": "Storyboard: úprava Reels na jeden záber pre udržanie diváka",
+      "sbB1": "AI režisér automaticky usporiada reč do panelov — vy len upravíte storyboard na filmovom páse",
+      "sbB2": "Tri renderovacie enginy: softvérový (zadarmo, bez kľúčov), Omni API alebo Google Flow s vaším predplatným",
+      "sbB3": "Flow automatizácia: fronta generovania beží sama, automatické zostavenie spojí hotový Reel bez vašej pomoci",
+      "sbB4": "CTA slovo na konci: diváci ho komentujú — angažovanosť zvyšuje dosah",
+      "sbBody": "Statické hovoriace hlavy sa preskočia za sekundy — pozornosť udržia len meniace sa zábery. Storyboard preusporiada váš záber do dynamického Reelu: prepíše reč, rozdelí ju na frázy do 8 sekúnd a každú usporiada do panelov — detailný záber na rečníka, celoobrazovkové titulky, prestrihy, rozdelené obrazovky, makety a finále s výzvou na akciu.",
+      "sbCardBadge": "@mojkanál",
+      "sbCardChunk": "Úsek 1 · 0:00–0:08",
+      "sbCardCta": "CTA: „TREND“",
+      "sbCardPanels": "6 panelov",
+      "sbCardSubs": "Titulky: z reči",
+      "sbLabel": "Storyboard · úprava pre udržanie diváka",
+      "sbNote": "Zahrnuté v Premium · záložka „Storyboard“ v Galérii · hotový Reel — priamo do Publishera",
+      "sbP1": "Detail rečníka",
+      "sbP2": "Titulok na celú obrazovku",
+      "sbP3": "Prestrih",
+      "sbP4": "Rozdelená obrazovka",
+      "sbP5": "Maketa",
+      "sbP6": "Finále + CTA",
+      "sbTitleL1": "Jeden záber na kameru —",
+      "sbTitleL2": "úprava na úrovni top tvorcu."
     },
     "storyboard": {
       "actFail": "Zlyhalo — skúste to znova.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neónový",
       "style_paper": "Papierový",
       "style_terminal": "Terminálový",
-      "style_bold": "Výrazný"
+      "style_bold": "Výrazný",
+      "ctaHintV2": "Použite rovnaké kódové slovo v popise vášho príspevku."
     }
   }
 }

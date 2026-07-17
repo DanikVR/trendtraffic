@@ -1190,7 +1190,7 @@
     "geminiFixCount": 174,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:21.474Z",
+    "pivotAt": "2026-07-17T20:12:23.680Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Kirjaudu sisään",
       "publicStart": "Aloita ilmaiseksi",
       "seoDesc": "TrendTraffic Premium -tilaus hintaan 49 €/kk: viraalisten trendien haku, sosiaalisen median analytiikka, UGC-studio tekoälyhahmoilla ja automaattinen julkaisu. 7 päivää ilmaiseksi, peruuta milloin tahansa.",
-      "seoTitle": "Premium-tilaus 49 €/kk – TrendTraffic"
+      "seoTitle": "Premium-tilaus 49 €/kk – TrendTraffic",
+      "pf49Storyboard": "Käsikirjoitus: yhden oton Reels — tekoälykäsikirjoitus jopa 6 paneelia per pätkä, 3 renderöintimoottoria (sis. ilmaisen), tekstitykset, kanavatunnus ja CTA-sana"
     },
     "channels": {
       "actionsHint": "'Seuraa' lisää kanavan listallesi päivittäisiä automaattisia päivityksiä varten (näyttää 'oli→on'-muutokset). 'Kertaluonteinen analyysi' näyttää kaikki videot nyt, ilman historiaa.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Osio kehitteillä – sisältöä tulossa pian.",
       "wikiMeta": "Wiki – TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Evästeasetukset"
+      "footerCookieSettings": "Evästeasetukset",
+      "incSb": "Käsikirjoitus: yhden oton Reels-sitoutumiseditointi",
+      "sbB1": "Tekoälyohjaaja järjestää puheen automaattisesti paneeleiksi — sinä vain säädät käsikirjoitusta filmirullalla",
+      "sbB2": "Kolme renderöintimoottoria: ohjelmisto (ilmainen, ei avaimia), Omni API tai Google Flow tilauksellasi",
+      "sbB3": "Flow-automaatio: generointijono toimii itsestään, automaattinen kokoonpano yhdistää valmiin Reelin ilman sinua",
+      "sbB4": "CTA-sana lopussa: katsojat kommentoivat sitä — sitoutuminen lisää tavoittavuutta",
+      "sbBody": "Staattiset puhuvat päät ohitetaan sekunneissa — vain vaihtuvat kuvat pitävät huomion. Käsikirjoitus kokoaa otoksesi dynaamiseksi Reeliksi: litteroi puheen, leikkaa sen enintään 8 sekunnin lauseiksi ja järjestää kunkin paneeleiksi — lähikuva puhujasta, koko näytön otsikot, leikkaukset, jaetut näytöt, mallinnukset ja toimintakehotusfinaali.",
+      "sbCardBadge": "@kanavani",
+      "sbCardChunk": "Pätkä 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TRENDI\"",
+      "sbCardPanels": "6 paneelia",
+      "sbCardSubs": "Tekstitykset: puheesta",
+      "sbLabel": "Käsikirjoitus · sitoutumiseditointi",
+      "sbNote": "Sisältyy Premium-tilaukseen · \"Käsikirjoitus\"-välilehti Galleriassa · valmis Reel — suoraan Julkaisijaan",
+      "sbP1": "Puhujan lähikuva",
+      "sbP2": "Koko näytön otsikko",
+      "sbP3": "Leikkauskuva",
+      "sbP4": "Jaettu näyttö",
+      "sbP5": "Mallinnus",
+      "sbP6": "Finaali + CTA",
+      "sbTitleL1": "Yksi otto kameralla —",
+      "sbTitleL2": "huipputason editointi."
     },
     "storyboard": {
       "actFail": "Epäonnistui – yritä uudelleen.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Paperi",
       "style_terminal": "Pääte",
-      "style_bold": "Lihavoitu"
+      "style_bold": "Lihavoitu",
+      "ctaHintV2": "Käytä samaa koodisanaa julkaisusi kuvauksessa."
     }
   }
 }

@@ -1172,7 +1172,7 @@
     "geminiFixCount": 27,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:57:26.732Z",
+    "pivotAt": "2026-07-17T20:12:38.684Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -2302,7 +2302,8 @@
       "publicLogin": "Inire",
       "publicStart": "Incipe gratis",
       "seoDesc": "TrendTraffic Premium subscriptio pro €49/mense: quaestio trendum viralium, analysis socialis mediae, UGC studium cum AI avataribus, et auto-publicatio. 7 dies gratis, quandoque rescindere potes.",
-      "seoTitle": "Consilium Premium €49/mense — TrendTraffic"
+      "seoTitle": "Consilium Premium €49/mense — TrendTraffic",
+      "pf49Storyboard": "Storyboard: Reels uno-captura — AI storyboard usque ad 6 tabulas per segmentum, 3 machinae reddendi (liberae inclusae), subtituli, insigne canalis, et verbum CTA"
     },
     "channels": {
       "actionsHint": "'Sequere' canalem ad indicem tuum addit pro renovationibus quotidianis automaticis (mutationes 'erat→est' ostendens). 'Analysis unica' omnes videos nunc ostendit, sine historia.",
@@ -4125,7 +4126,28 @@
       "stubSoon": "Sectio in progressu—contentum mox venturum.",
       "wikiMeta": "Wiki — TrendTraffic",
       "wikiTitle": "Wiki",
-      "footerCookieSettings": "Optiones crustulorum"
+      "footerCookieSettings": "Optiones crustulorum",
+      "incSb": "Storyboard: Reels uno-captura retentio editio",
+      "sbB1": "AI moderator orationem in tabulas sponte disponit — tu modo storyboard in pellicula accommodas",
+      "sbB2": "Tres machinae reddendi: software (libera, sine clavibus), Omni API, vel Google Flow cum subscriptione tua",
+      "sbB3": "Flow automatizatio: generatio queue ipsa currit, auto-coagmentatio Reel perfectum sine te contexit",
+      "sbB4": "Verbum CTA in fine: spectatores commentantur — engagement auget pervenientiam",
+      "sbBody": "Capita loquentia statica intra secundas praeterlabuntur — solum mutantes scaenae attentionem tenent. Storyboard capturam tuam in Reel dynamicum reponit: orationem transcribit, eam in locutiones usque ad 8 secundas secat, et unamquamque in tabulas disponit — loquens prope, tituli pleni-screen, cutaways, split-screens, mockups, et finale ad actionem vocans.",
+      "sbCardBadge": "@canalismeus",
+      "sbCardChunk": "Segmentum 1 · 0:00–0:08",
+      "sbCardCta": "CTA: \"TREND\"",
+      "sbCardPanels": "6 tabulae",
+      "sbCardSubs": "Subtituli: ex oratione",
+      "sbLabel": "Storyboard · retentio editio",
+      "sbNote": "In Premium inclusum · tab \"Storyboard\" in Gallery · Reel perfectum — directe ad Publisher",
+      "sbP1": "Loquens prope",
+      "sbP2": "Titulus plenus-screen",
+      "sbP3": "Cutaway",
+      "sbP4": "Split-screen",
+      "sbP5": "Mockup",
+      "sbP6": "Finale + CTA",
+      "sbTitleL1": "Una captura in camera —",
+      "sbTitleL2": "editio summi-creatoris gradus."
     },
     "storyboard": {
       "actFail": "Defecit — quaeso iterum tenta.",
@@ -4259,7 +4281,8 @@
       "style_neon": "Neon",
       "style_paper": "Chartaceus",
       "style_terminal": "Terminalis",
-      "style_bold": "Audax"
+      "style_bold": "Audax",
+      "ctaHintV2": "Eodem verbo codice in post caption utere."
     }
   }
 }
