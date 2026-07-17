@@ -16,6 +16,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const LS_KEY = 'tt_cookie_consent';
+const REOPEN_EVENT = 'tt-cookie-consent-open';
+/** Согласие «протухает» через 12 месяцев — плашка показывается заново (рекомендация ЕС). */
+const CONSENT_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 
 export type CookieConsentLevel = 'all' | 'essential';
 
@@ -24,6 +27,7 @@ export function getCookieConsent(): CookieConsentLevel | null {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const v = JSON.parse(raw);
+    if (v?.ts && Date.now() - new Date(v.ts).getTime() > CONSENT_TTL_MS) return null;
     return v?.level === 'all' || v?.level === 'essential' ? v.level : null;
   } catch { return null; }
 }
@@ -32,13 +36,25 @@ function saveConsent(level: CookieConsentLevel) {
   try { localStorage.setItem(LS_KEY, JSON.stringify({ level, ts: new Date().toISOString() })); } catch { /* private mode */ }
 }
 
+/**
+ * Повторно открыть плашку согласия (ссылка «Настройки cookie» в футере,
+ * кнопка на /cookies): отзыв согласия обязан быть так же прост, как выдача.
+ */
+export function openCookieConsent() {
+  try { localStorage.removeItem(LS_KEY); } catch { /* private mode */ }
+  window.dispatchEvent(new Event(REOPEN_EVENT));
+}
+
 export function CookieConsent() {
   const { t } = useTranslation('common');
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Показываем только если решение ещё не принято.
+    // Показываем только если решение ещё не принято (или устарело).
     if (!getCookieConsent()) setVisible(true);
+    const reopen = () => setVisible(true);
+    window.addEventListener(REOPEN_EVENT, reopen);
+    return () => window.removeEventListener(REOPEN_EVENT, reopen);
   }, []);
 
   if (!visible) return null;

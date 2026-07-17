@@ -1159,7 +1159,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:19.898Z",
+    "pivotAt": "2026-07-17T10:56:08.134Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "此版块正在开发中——内容即将推出。",
       "wikiMeta": "维基 — TrendTraffic",
-      "wikiTitle": "维基"
+      "wikiTitle": "维基",
+      "footerCookieSettings": "Cookie设置"
     }
   }
 }

@@ -1177,7 +1177,7 @@
     "geminiFixCount": 93,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:47.179Z",
+    "pivotAt": "2026-07-17T10:56:06.316Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Vaega o lo'o atina'e—o le a vave ona maua mea.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Fa'atonuga kuki"
     }
   }
 }

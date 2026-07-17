@@ -1173,7 +1173,7 @@
   },
   "_meta": {
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:34.687Z",
+    "pivotAt": "2026-07-17T10:56:00.908Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4105,7 +4105,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "यह सेक्शन अभी बन रहा है—सामग्री जल्द ही आएगी।",
       "wikiMeta": "विकि — TrendTraffic",
-      "wikiTitle": "विकि"
+      "wikiTitle": "विकि",
+      "footerCookieSettings": "कुकी सेटिंग्स"
     }
   }
 }

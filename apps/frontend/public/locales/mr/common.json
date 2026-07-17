@@ -1159,7 +1159,7 @@
     "geminiFixCount": 21,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:15.339Z",
+    "pivotAt": "2026-07-17T10:56:04.108Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "विभाग विकासाधीन आहे—सामग्री लवकरच येत आहे.",
       "wikiMeta": "विकी — TrendTraffic",
-      "wikiTitle": "विकी"
+      "wikiTitle": "विकी",
+      "footerCookieSettings": "कुकी सेटिंग्ज"
     }
   }
 }

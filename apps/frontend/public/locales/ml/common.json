@@ -1159,7 +1159,7 @@
     "geminiFixCount": 42,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:14.662Z",
+    "pivotAt": "2026-07-17T10:56:04.112Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "വിഭാഗം വികസിപ്പിച്ചുകൊണ്ടിരിക്കുന്നു—ഉള്ളടക്കം ഉടൻ വരുന്നു.",
       "wikiMeta": "വിക്കി — TrendTraffic",
-      "wikiTitle": "വിക്കി"
+      "wikiTitle": "വിക്കി",
+      "footerCookieSettings": "കുക്കി ക്രമീകരണങ്ങൾ"
     }
   }
 }

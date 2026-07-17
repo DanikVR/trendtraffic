@@ -1159,7 +1159,7 @@
     "geminiFixCount": 59,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:24.542Z",
+    "pivotAt": "2026-07-17T10:56:08.275Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Abala labẹ idagbasoke—akoonu n bọ laipẹ.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Ètò Kúkì"
     }
   }
 }

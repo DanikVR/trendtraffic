@@ -1159,7 +1159,7 @@
     "geminiFixCount": 20,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:47:56.508Z",
+    "pivotAt": "2026-07-17T10:55:58.315Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "বিভাগটি বিকাশে রয়েছে—শীঘ্রই কন্টেন্ট আসছে।",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "কুকি সেটিংস"
     }
   }
 }

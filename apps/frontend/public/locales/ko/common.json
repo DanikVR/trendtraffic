@@ -1177,7 +1177,7 @@
     "geminiFixCount": 202,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:54.490Z",
+    "pivotAt": "2026-07-17T10:56:02.508Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "섹션 개발 중—콘텐츠가 곧 제공됩니다.",
       "wikiMeta": "위키 — TrendTraffic",
-      "wikiTitle": "위키"
+      "wikiTitle": "위키",
+      "footerCookieSettings": "쿠키 설정"
     }
   }
 }

@@ -1177,7 +1177,7 @@
     "geminiFixCount": 166,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:55.527Z",
+    "pivotAt": "2026-07-17T10:56:06.524Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Karolo e ntse e ntlafatsoa—litaba li tla fumaneha haufinyane.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Litlhophiso tsa li-cookie"
     }
   }
 }

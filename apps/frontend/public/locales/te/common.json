@@ -1177,7 +1177,7 @@
     "geminiFixCount": 59,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:01.791Z",
+    "pivotAt": "2026-07-17T10:56:07.073Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "విభాగం అభివృద్ధిలో ఉంది—కంటెంట్ త్వరలో వస్తుంది.",
       "wikiMeta": "వికీ — TrendTraffic",
-      "wikiTitle": "వికీ"
+      "wikiTitle": "వికీ",
+      "footerCookieSettings": "కుకీ సెట్టింగ్‌లు"
     }
   }
 }

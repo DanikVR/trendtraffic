@@ -1159,7 +1159,7 @@
     "geminiFixCount": 21,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:12.707Z",
+    "pivotAt": "2026-07-17T10:56:07.993Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "سیکشن زیرِ تعمیر ہے—مواد جلد آرہا ہے۔",
       "wikiMeta": "وکی — TrendTraffic",
-      "wikiTitle": "وکی"
+      "wikiTitle": "وکی",
+      "footerCookieSettings": "کوکی سیٹنگز"
     }
   }
 }

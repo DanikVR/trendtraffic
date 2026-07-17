@@ -528,6 +528,103 @@
 .ttl-stub-main .ttl-body { margin-top: 28px; max-width: 460px; }
 .ttl-stub-main .ttl-ghost { margin-top: 40px; }
 
+/* ── Правовые страницы (/privacy, /terms, /cookies) ── */
+.ttl-legal-main {
+  max-width: 880px;
+  padding-top: clamp(120px, 16vw, 170px);
+  padding-bottom: clamp(70px, 9vw, 120px);
+  position: relative;
+  z-index: 1;
+}
+.ttl-legal-main .ttl-label { margin-bottom: 22px; }
+.ttl-legal-sub { margin-top: 20px; }
+.ttl-legal-updated { margin-top: 10px; }
+
+.ttl-legal-docnav { margin-top: 30px; display: flex; gap: 12px; flex-wrap: wrap; }
+.ttl-legal-chip {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ttl-mist);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 8px 16px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.ttl-legal-chip:hover { color: var(--ttl-bone); border-color: rgba(255, 255, 255, 0.4); }
+
+.ttl-legal-toc {
+  margin-top: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 20px 24px;
+  background: rgba(10, 10, 12, 0.55);
+  backdrop-filter: blur(6px);
+}
+.ttl-legal-toc-title { letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 12px; }
+.ttl-legal-toc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ttl-legal-toc button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: start;
+  font-size: 14.5px;
+  font-weight: 300;
+  color: var(--ttl-mist);
+  transition: color 0.2s ease;
+}
+.ttl-legal-toc button:hover { color: var(--ttl-spark); }
+
+.ttl-legal section { scroll-margin-top: 96px; }
+.ttl-legal h2 {
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  margin: clamp(44px, 6vw, 64px) 0 0;
+}
+.ttl-legal p {
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--ttl-mist);
+  margin: 14px 0 0;
+}
+.ttl-legal ul {
+  margin: 12px 0 0;
+  padding-inline-start: 22px;
+  list-style: disc;
+}
+.ttl-legal li {
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--ttl-mist);
+  margin-top: 8px;
+}
+.ttl-legal b, .ttl-legal strong { font-weight: 500; color: var(--ttl-bone); }
+.ttl-legal i { color: var(--ttl-ash); }
+.ttl-legal a { color: var(--ttl-spark); transition: color 0.2s ease; }
+.ttl-legal a:hover { color: var(--ttl-bone); }
+
+.ttl-legal-cookiebtn { margin-top: 48px; display: grid; gap: 12px; justify-items: start; }
+.ttl-legal-contact {
+  margin-top: clamp(48px, 6vw, 72px);
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.ttl-legal-contact a { color: var(--ttl-spark); }
+.ttl-legal-contact a:hover { color: var(--ttl-bone); }
+
+/* Ссылка-кнопка в футере («Настройки cookie») — в один ряд с обычными ссылками */
+.ttl-footer-linkbtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: start;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ttl *, .ttl *::before, .ttl *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

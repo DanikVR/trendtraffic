@@ -1177,7 +1177,7 @@
     "geminiFixCount": 180,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:06.446Z",
+    "pivotAt": "2026-07-17T10:56:06.924Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Қисмат дар ҳоли таҳия аст — мундариҷа ба зудӣ дастрас мешавад.",
       "wikiMeta": "Вики — TrendTraffic",
-      "wikiTitle": "Вики"
+      "wikiTitle": "Вики",
+      "footerCookieSettings": "Танзимоти куки"
     }
   }
 }

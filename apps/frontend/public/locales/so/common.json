@@ -1159,7 +1159,7 @@
     "geminiFixCount": 31,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:56.143Z",
+    "pivotAt": "2026-07-17T10:56:06.114Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Qaybtan waa la horumarinayaa—waxyaabaha ayaa soo socda dhawaan.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Dejinta Kukiyada"
     }
   }
 }

@@ -1159,7 +1159,7 @@
     "geminiFixCount": 108,
     "geminiSourceHash": "8b2847303d250145",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:26.337Z",
+    "pivotAt": "2026-07-17T10:56:08.755Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Isigaba sisathuthukiswa—okuqukethwe kuyeza maduze.",
       "wikiMeta": "I-Wiki — TrendTraffic",
-      "wikiTitle": "I-Wiki"
+      "wikiTitle": "I-Wiki",
+      "footerCookieSettings": "Izilungiselelo zamakhukhi"
     }
   }
 }

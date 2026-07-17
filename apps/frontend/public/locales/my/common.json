@@ -1159,7 +1159,7 @@
     "geminiFixCount": 52,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:26.778Z",
+    "pivotAt": "2026-07-17T10:56:04.507Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "ဤအပိုင်းကို ဖန်တီးဆဲဖြစ်သည်—အကြောင်းအရာများ မကြာမီလာမည်။",
       "wikiMeta": "ဝီကီ — TrendTraffic",
-      "wikiTitle": "ဝီကီ"
+      "wikiTitle": "ဝီကီ",
+      "footerCookieSettings": "ကွတ်ကီး ဆက်တင်များ"
     }
   }
 }

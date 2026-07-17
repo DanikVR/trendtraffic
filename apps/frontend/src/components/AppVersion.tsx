@@ -2907,7 +2907,30 @@
  *          gen-og-image.mjs, SeoMeta.tsx, LandingPage.tsx, BillingPage.tsx,
  *          StubPage.tsx, LegalLayout.tsx, package.json+lock, prerender.mjs,
  *          _glossary.json, locales (108 common.json), AppVersion. */
-export const APP_VERSION = '2.3.15';
+/* 2.3.16 — Правовые страницы TrendTraffic по праву ЕС + 108 языков.
+ *          /privacy, /terms, /cookies переписаны с нуля под TrendTraffic
+ *          (были VibeVox-тексты про видеозвонки): GDPR-политика (12 разделов:
+ *          категории данных вкл. BYOK-ключи и публичные соцданные TikHub,
+ *          основания ст. 6, фото/голос — только по явному действию и без
+ *          биометрической идентификации, субпроцессоры, трансферы DPF/SCC,
+ *          сроки, права + UODO), Условия (15 разделов: триал 7 дней,
+ *          Premium €49/мес, БЕЗ ВОЗВРАТОВ через явный отказ от 14-дневного
+ *          права отзыва по ст. 38 закона о правах потребителя + оговорка о
+ *          mandatory law, EU AI Act: запреты ст. 5 + раскрытие дипфейков
+ *          ст. 50(4), BYOK/расширение/MCP, ответственность с потребительскими
+ *          изъятиями, польское право + Rome I), Cookie-политика (реальные
+ *          ключи localStorage, Stripe/Google, баннер с равными кнопками).
+ *          Дизайн: хедер/футер/Constellation-подложка лендинга (LegalDocPage,
+ *          лерп-скролл, оглавление, чипы навигации между документами);
+ *          старые LegalLayout/PublicHeader/PublicFooter удалены. Тексты —
+ *          новый ленивый неймспейс legal.json (EN база, все локали через
+ *          scripts/translate-legal.mjs, native-legal промпт). CookieConsent:
+ *          согласие протухает через 12 мес, openCookieConsent() — повторное
+ *          открытие из футера («Настройки cookie») и с /cookies.
+ *          Файлы: LegalDocPage.tsx, Privacy/Terms/CookiePage.tsx,
+ *          CookieConsent.tsx, chrome.tsx, landing.css, translate-legal.mjs,
+ *          locales (108 legal.json + footerCookieSettings), AppVersion. */
+export const APP_VERSION = '2.3.16';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

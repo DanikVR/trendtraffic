@@ -1177,7 +1177,7 @@
     "geminiFixCount": 210,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:52.378Z",
+    "pivotAt": "2026-07-17T10:56:06.316Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Sekcija je u razvoju – sadržaj uskoro stiže.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Podešavanja kolačića"
     }
   }
 }

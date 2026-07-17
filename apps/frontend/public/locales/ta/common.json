@@ -1177,7 +1177,7 @@
     "geminiFixCount": 88,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:01.039Z",
+    "pivotAt": "2026-07-17T10:56:06.778Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "பிரிவு உருவாக்கத்தில் உள்ளது—உள்ளடக்கம் விரைவில் வரும்.",
       "wikiMeta": "விக்கி — TrendTraffic",
-      "wikiTitle": "விக்கி"
+      "wikiTitle": "விக்கி",
+      "footerCookieSettings": "குக்கீ அமைப்புகள்"
     }
   }
 }

@@ -8,7 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { CookieConsent } from '../../../components/CookieConsent';
+import { CookieConsent, openCookieConsent } from '../../../components/CookieConsent';
 
 export const APP_URL = 'https://app.trendtraffic.pro';
 
@@ -336,6 +336,9 @@ export function TTFooter() {
               <Link className="ttl-footer-link" to="/privacy">{t('sec.ttLanding.footerPrivacy', 'Политика конфиденциальности')}</Link>
               <Link className="ttl-footer-link" to="/terms">{t('sec.ttLanding.footerTerms', 'Условия использования')}</Link>
               <Link className="ttl-footer-link" to="/cookies">{t('sec.ttLanding.footerCookies', 'Политика Cookie')}</Link>
+              <button type="button" className="ttl-footer-link ttl-footer-linkbtn" onClick={openCookieConsent}>
+                {t('sec.ttLanding.footerCookieSettings', 'Настройки cookie')}
+              </button>
             </div>
           </div>
         </div>

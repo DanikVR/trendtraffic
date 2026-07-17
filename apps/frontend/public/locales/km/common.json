@@ -1159,7 +1159,7 @@
     "geminiFixCount": 50,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:57.829Z",
+    "pivotAt": "2026-07-17T10:56:02.712Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "ផ្នែកកំពុងអភិវឌ្ឍន៍—មាតិកានឹងមកដល់ឆាប់ៗនេះ។",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "ការកំណត់ខូគី"
     }
   }
 }

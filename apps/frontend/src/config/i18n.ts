@@ -242,8 +242,11 @@ const pathLanguageDetector = {
 };
 
 // Custom query-string detector: ?lang=es
+// ВАЖНО: имя НЕ 'querystring' — при i18n.init() детектор заново регистрирует
+// встроенные детекторы и одноимённый встроенный (?lng=) затирал кастомный:
+// ссылки ?lang=xx молча не работали. Уникальное имя решает коллизию.
 const queryLanguageDetector = {
-  name: 'querystring',
+  name: 'langQuery',
   lookup() {
     if (typeof window === 'undefined') return undefined;
     const m = window.location.search.match(/[?&]lang=([a-z\-]+)/i);
@@ -282,7 +285,8 @@ i18n
       //   5. <html lang> как последний fallback (на prerendered en-странице
       //      htmlTag='en' — если бы стоял раньше navigator, английский всегда
       //      побеждал бы родной язык юзера на первой загрузке).
-      order: ['pathSegment', 'querystring', 'localStorage', 'navigator', 'htmlTag'],
+      // langQuery = наш ?lang=xx; querystring = встроенный ?lng=xx (оба живут)
+      order: ['pathSegment', 'langQuery', 'querystring', 'localStorage', 'navigator', 'htmlTag'],
       lookupLocalStorage: 'i18nextLng',
       caches: ['localStorage'],
     },

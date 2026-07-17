@@ -1159,7 +1159,7 @@
     "geminiFixCount": 23,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:05.769Z",
+    "pivotAt": "2026-07-17T10:55:59.318Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Sezione in sviluppu—cuntenutu prestu dispunibule.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Paràmetri di i cookies"
     }
   }
 }

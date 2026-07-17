@@ -1159,7 +1159,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:32.784Z",
+    "pivotAt": "2026-07-17T10:56:01.117Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Ke hoʻomohala ʻia nei ka ʻāpana—e hiki koke mai ana ka ʻike.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Nā hoʻonohonoho kuki"
     }
   }
 }

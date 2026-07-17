@@ -1177,7 +1177,7 @@
     "geminiFixCount": 105,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:15.274Z",
+    "pivotAt": "2026-07-17T10:55:59.513Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Η ενότητα είναι υπό ανάπτυξη—το περιεχόμενο θα είναι διαθέσιμο σύντομα.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Ρυθμίσεις cookie"
     }
   }
 }

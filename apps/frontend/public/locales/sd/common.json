@@ -1177,7 +1177,7 @@
     "geminiFixCount": 55,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:43.332Z",
+    "pivotAt": "2026-07-17T10:56:05.504Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "سيڪشن ترقي هيٺ آهي—مواد جلد اچي رهيو آهي.",
       "wikiMeta": "وڪي — TrendTraffic",
-      "wikiTitle": "وڪي"
+      "wikiTitle": "وڪي",
+      "footerCookieSettings": "ڪوڪي سيٽنگون"
     }
   }
 }

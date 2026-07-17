@@ -1159,7 +1159,7 @@
     "geminiFixCount": 28,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:12.454Z",
+    "pivotAt": "2026-07-17T10:56:07.537Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Бүлек эшләнү өстендә — контент тиздән булачак.",
       "wikiMeta": "Вики — TrendTraffic",
-      "wikiTitle": "Вики"
+      "wikiTitle": "Вики",
+      "footerCookieSettings": "Куки көйләүләре"
     }
   }
 }

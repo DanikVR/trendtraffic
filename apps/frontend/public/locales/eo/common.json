@@ -1159,7 +1159,7 @@
     "geminiFixCount": 56,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:15.070Z",
+    "pivotAt": "2026-07-17T10:55:59.512Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Sekcio sub evoluo—enhavo baldaŭ havebla.",
       "wikiMeta": "Vikio — TrendTraffic",
-      "wikiTitle": "Vikio"
+      "wikiTitle": "Vikio",
+      "footerCookieSettings": "Kuketaj agordoj"
     }
   }
 }

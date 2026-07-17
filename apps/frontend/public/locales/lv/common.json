@@ -1177,7 +1177,7 @@
     "geminiFixCount": 171,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:07.528Z",
+    "pivotAt": "2026-07-17T10:56:03.501Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Sadaļa tiek izstrādāta — saturs drīzumā.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Sīkdatņu iestatījumi"
     }
   }
 }

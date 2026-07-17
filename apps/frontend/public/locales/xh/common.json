@@ -1159,7 +1159,7 @@
     "geminiFixCount": 34,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:20.330Z",
+    "pivotAt": "2026-07-17T10:56:08.134Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Icandelo elisaphuhliswa—umxholo uza kungekudala.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Izicwangciso zekuki"
     }
   }
 }

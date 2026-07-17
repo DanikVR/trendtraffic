@@ -1177,7 +1177,7 @@
     "geminiFixCount": 215,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:48:34.266Z",
+    "pivotAt": "2026-07-17T10:56:00.908Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "הקטע בפיתוח – תוכן יגיע בקרוב.",
       "wikiMeta": "ויקי — TrendTraffic",
-      "wikiTitle": "ויקי"
+      "wikiTitle": "ויקי",
+      "footerCookieSettings": "הגדרות קובצי Cookie"
     }
   }
 }

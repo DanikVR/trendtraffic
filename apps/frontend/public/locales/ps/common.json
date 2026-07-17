@@ -1177,7 +1177,7 @@
     "geminiFixCount": 122,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:49:34.821Z",
+    "pivotAt": "2026-07-17T10:56:05.312Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "برخه تر کار لاندې ده — محتويات به ډیر ژر راشي.",
       "wikiMeta": "ویکی — TrendTraffic",
-      "wikiTitle": "ویکی"
+      "wikiTitle": "ویکی",
+      "footerCookieSettings": "د کوکي تنظیمات"
     }
   }
 }

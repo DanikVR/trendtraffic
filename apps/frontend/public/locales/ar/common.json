@@ -1177,7 +1177,7 @@
     "geminiFixCount": 195,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:47:56.300Z",
+    "pivotAt": "2026-07-17T10:55:58.512Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "القسم قيد التطوير—المحتوى قادم قريبًا.",
       "wikiMeta": "ويكي — TrendTraffic",
-      "wikiTitle": "ويكي"
+      "wikiTitle": "ويكي",
+      "footerCookieSettings": "إعدادات ملفات تعريف الارتباط"
     }
   }
 }

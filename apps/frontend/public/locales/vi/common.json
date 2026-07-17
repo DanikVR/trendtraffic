@@ -1159,7 +1159,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:14.008Z",
+    "pivotAt": "2026-07-17T10:56:07.846Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Mục đang được phát triển—nội dung sẽ sớm ra mắt.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Cài đặt cookie"
     }
   }
 }

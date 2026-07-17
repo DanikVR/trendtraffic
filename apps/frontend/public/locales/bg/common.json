@@ -1177,7 +1177,7 @@
     "geminiFixCount": 222,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:47:56.941Z",
+    "pivotAt": "2026-07-17T10:55:58.719Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Разделът е в процес на разработка – съдържанието предстои скоро.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Настройки на бисквитките"
     }
   }
 }

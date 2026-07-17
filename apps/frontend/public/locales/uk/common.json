@@ -1159,7 +1159,7 @@
     "geminiFixCount": 26,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": false,
-    "pivotAt": "2026-07-17T09:50:11.713Z",
+    "pivotAt": "2026-07-17T10:56:07.845Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4109,7 +4109,8 @@
       "stubLabel": "TrendTraffic",
       "stubSoon": "Розділ у розробці — контент незабаром.",
       "wikiMeta": "Wiki — TrendTraffic",
-      "wikiTitle": "Wiki"
+      "wikiTitle": "Wiki",
+      "footerCookieSettings": "Налаштування файлів cookie"
     }
   }
 }
