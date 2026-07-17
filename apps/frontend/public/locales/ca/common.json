@@ -16,8 +16,7 @@
     "trends": "Tendències",
     "gallery": "Galeria multimèdia",
     "publisher": "Editor",
-    "storyboard": "Storyboard",
-    "skills": "Habilitats"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Sales de traducció",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Obrir Google Flow",
       "vpTitle": "Vídeos \n→ Google Flow",
       "addTrendTitle": "Obre 'Tendències': cerca per paraula clau o enganxa un enllaç de vídeo — els resultats apareixeran aquí",
-      "tabSkills": "Habilitats",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Política de cookies",
       "cookiePrivacyLink": "Política de privadesa",
       "cookieText": "Utilitzem cookies: estrictament necessàries per al funcionament del lloc (inici de sessió, idioma, tema) i, amb el teu consentiment, analítiques, per millorar el servei. Detalls a la nostra ",
-      "tabSkillsSub": "Viralitat · anti-clixé · subtítol",
       "tabStoryboardSub": "Muntatge automàtic de reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Configuració de galetes"
     },
-    "skills": {
-      "acChanges": "Abans → després",
-      "acNeedText": "Enganxa el text (mín. 20 caràcters).",
-      "acPh": "Enganxa aquí la teva publicació, subtítol o guió…",
-      "acQuestions": "A l'autor: ",
-      "acRemoved": "(eliminat)",
-      "acRun": "Executar anti-clixé",
-      "acSub": "Elimina els clixés generats per IA per a un text més humà. No inventa fets.",
-      "acTitle": "Anti-clixé",
-      "copy": "Copiar",
-      "cpCtaNote": "Utilitza la paraula clau {{w}} al panell final de CTA del teu Storyboard.",
-      "cpHooks": "3 opcions de ganxo — clica per reemplaçar la primera línia",
-      "cpLinkPh": "Enllaç (opcional)",
-      "cpNeedTopic": "Descriu el tema de la publicació.",
-      "cpRun": "Escriure subtítol",
-      "cpSub": "Estructura del subtítol: ganxo → experiència personal → què resol → CTA amb paraula clau. Fins a 1000 caràcters.",
-      "cpTitle": "Fórmula de subtítol",
-      "cpTopicPh": "De què tracta la publicació: tema, producte, idea principal, què obtindrà l'espectador…",
-      "cpWordPh": "Paraula clau (o l'IA en generarà una)",
-      "fvDaysHint": "Frescor en dies",
-      "fvDaysPh": "dies",
-      "fvEmpty": "No s'ha trobat res amb aquests criteris; relaxa els filtres.",
-      "fvNeedTopic": "Introdueix un tema de cerca.",
-      "fvRun": "Trobar",
-      "fvSub": "Troba vídeos virals per tema i proporciona enllaços. Només troba, no descarrega.",
-      "fvTitle": "Trobar viralitat",
-      "fvTopicPh": "Tema o nínxol: \"IA per a negocis\"",
-      "fvViewsPh": "vistes mínimes",
-      "intro": "Tres habilitats de pipeline de contingut. Utilitzen les teves claus de Configuració: cerca — TikHub, textos — Claude (Anthropic). Aquestes habilitats també estan disponibles per a Claude mitjançant el nostre connector MCP (abast \"skills:use\").",
-      "views": "vistes"
-    },
     "storyboard": {
       "actFail": "Ha fallat — torna-ho a provar.",
       "addPanel": "Panell",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Fragment desactivat — no s'inclourà al vídeo.",
       "chunksN": "{{n}} fragments",
       "costNote": "El motor de programari no utilitza claus externes. Transcripció — 1 sol·licitud Gemini; planificació de panells AI — 1 sol·licitud Claude (claus a Configuració).",
-      "ctaHint": "Utilitza la mateixa paraula a la descripció (“Habilitats → Fórmula de descripció”).",
       "ctaPh": "Escriu PARAULA als comentaris",
       "ctaWordPh": "TENDÈNCIA",
       "delConfirm": "Suprimir",

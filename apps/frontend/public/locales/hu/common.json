@@ -16,8 +16,7 @@
     "trends": "Trendek",
     "gallery": "Médiagaléria",
     "publisher": "Közzétevő",
-    "storyboard": "Storyboard",
-    "skills": "Készségek"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Fordító szobák",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow megnyitása",
       "vpTitle": "Videók \n→ Google Flow",
       "addTrendTitle": "Nyissa meg a „Trendek” menüpontot: keressen kulcsszó alapján, vagy illesszen be egy videó linket – az eredmények itt jelennek meg",
-      "tabSkills": "Készségek",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Süti szabályzat",
       "cookiePrivacyLink": "Adatvédelmi irányelvek",
       "cookieText": "Sütiket használunk: szigorúan szükségesek az oldal működéséhez (bejelentkezés, nyelv, téma), és az Ön hozzájárulásával analitikai célokra – a szolgáltatás fejlesztése érdekében. Részletek az ",
-      "tabSkillsSub": "Viralitás · antikliché · felirat",
       "tabStoryboardSub": "Automata montázs videó"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Süti beállítások"
     },
-    "skills": {
-      "acChanges": "Előtte → utána",
-      "acNeedText": "Illesszen be szöveget (min. 20 karakter).",
-      "acPh": "Illessze be ide a bejegyzését, feliratát vagy forgatókönyvét…",
-      "acQuestions": "A szerzőnek: ",
-      "acRemoved": "(eltávolítva)",
-      "acRun": "Antikliché futtatása",
-      "acSub": "Eltávolítja az AI által generált kliséket a emberibb hangzású szöveg érdekében. Nem talál ki tényeket.",
-      "acTitle": "Antikliché",
-      "copy": "Másolás",
-      "cpCtaNote": "Használja a(z) {{w}} kulcsszót a Storyboard utolsó CTA paneljén.",
-      "cpHooks": "3 bevezető opció — kattintson az első sor cseréjéhez",
-      "cpLinkPh": "Link (opcionális)",
-      "cpNeedTopic": "Írja le a bejegyzés témáját.",
-      "cpRun": "Felirat írása",
-      "cpSub": "Felirat szerkezete: bevezető → személyes tapasztalat → mit old meg → CTA kulcsszóval. Max. 1000 karakter.",
-      "cpTitle": "Felirat formula",
-      "cpTopicPh": "Miről szól a bejegyzés: téma, termék, fő gondolat, mit kap a néző…",
-      "cpWordPh": "Kulcsszó (vagy az AI generál egyet)",
-      "fvDaysHint": "Frissesség napokban",
-      "fvDaysPh": "nap",
-      "fvEmpty": "Nincs találat ezekre a kritériumokra — lazítson a szűrőkön.",
-      "fvNeedTopic": "Adjon meg egy keresési témát.",
-      "fvRun": "Keresés",
-      "fvSub": "Megtalálja a virális videókat téma szerint és linkeket biztosít. Csak keres — nem tölt le.",
-      "fvTitle": "Viralitás keresése",
-      "fvTopicPh": "Téma vagy niche: „AI az üzletben”",
-      "fvViewsPh": "min. megtekintés",
-      "intro": "Három tartalomgyártási képesség. A beállításokban megadott kulcsokat használják: keresés — TikHub, szövegek — Claude (Anthropic). Ezek a képességek a Claude számára is elérhetők a MCP-csatlakozónkon keresztül (hatókör „skills:use”).",
-      "views": "megtekintés"
-    },
     "storyboard": {
       "actFail": "Sikertelen — próbálja újra.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Kikapcsolt szelet — nem lesz benne a videóban.",
       "chunksN": "{{n}} szelet",
       "costNote": "A szoftveres motor nem használ külső kulcsokat. Átírás — 1 Gemini kérés; AI panelterv — 1 Claude kérés (kulcsok a Beállításokban).",
-      "ctaHint": "Használd ugyanazt a szót a feliratban („Készségek → Felirat képlet”).",
       "ctaPh": "Írd be a SZÓT a kommentekbe",
       "ctaWordPh": "TREND",
       "delConfirm": "Törlés",

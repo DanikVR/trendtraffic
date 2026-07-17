@@ -16,8 +16,7 @@
     "trends": "Tren",
     "gallery": "Galeri média",
     "publisher": "Pamedal",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Kamar tarjamahan",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Buka Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Buka 'Tren': scan ku kecap konci atanapi témpél tautan video — hasilna bakal muncul di dieu",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kawijakan Cookie",
       "cookiePrivacyLink": "Kawijakan Privasi",
       "cookieText": "Kami nganggo cookie: leres-leres diperyogikeun pikeun operasi situs (login, basa, téma), sareng, kalayan idin anjeun, analitik — pikeun ningkatkeun layanan. Rincian dina ",
-      "tabSkillsSub": "Viral · anti-klise · caption",
       "tabStoryboardSub": "Reel auto-montage"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Setélan kukis"
     },
-    "skills": {
-      "acChanges": "Sateuacan → saatos",
-      "acNeedText": "Témpél téks (min. 20 karakter).",
-      "acPh": "Témpélkeun postingan, caption, atanapi naskah anjeun di dieu…",
-      "acQuestions": "Ka pangarang: ",
-      "acRemoved": "(dipiceun)",
-      "acRun": "Jalankeun anti-klise",
-      "acSub": "Ngaleungitkeun klise anu dijieun ku AI pikeun téks anu langkung manusa. Henteu nyiptakeun fakta.",
-      "acTitle": "Anti-klise",
-      "copy": "Salin",
-      "cpCtaNote": "Anggo kecap konci {{w}} dina panel CTA ahir Storyboard anjeun.",
-      "cpHooks": "3 pilihan hook — klik pikeun ngaganti baris kahiji",
-      "cpLinkPh": "Tumbu (opsional)",
-      "cpNeedTopic": "Jelaskeun topik postingan.",
-      "cpRun": "Tulis caption",
-      "cpSub": "Struktur caption: hook → pangalaman pribadi → naon anu direngsekeun → CTA kalayan kecap konci. Nepi ka 1000 karakter.",
-      "cpTitle": "Rumus caption",
-      "cpTopicPh": "Naon ngeunaan postingan: topik, produk, ide utama, naon anu bakal didapet ku panempo…",
-      "cpWordPh": "Kecap konci (atanapi AI bakal ngahasilkeun hiji)",
-      "fvDaysHint": "Kasegaran dina dinten",
-      "fvDaysPh": "dinten",
-      "fvEmpty": "Teu aya anu kapanggih pikeun kriteria ieu — leungitkeun filter anjeun.",
-      "fvNeedTopic": "Asupkeun topik pilarian.",
-      "fvRun": "Panggihan",
-      "fvSub": "Manggihan video viral dumasar topik sareng nyayogikeun tautan. Ngan manggihan — henteu ngunduh.",
-      "fvTitle": "Panggihan viralitas",
-      "fvTopicPh": "Topik atanapi niche: \"AI pikeun bisnis\"",
-      "fvViewsPh": "min. panempoan",
-      "intro": "Tilu kaahlian pipa eusi. Éta nganggo konci anjeun tina Setélan: milarian — TikHub, téks — Claude (Anthropic). Kaahlian ieu ogé sayogi pikeun Claude via MCP-connector kami (lingkup \"skills:use\").",
-      "views": "panempoan"
-    },
     "storyboard": {
       "actFail": "Gagal — mangga coba deui.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Potong — moal dilebetkeun kana pidéo.",
       "chunksN": "{{n}} potongan",
       "costNote": "Mesin parangkat lunak henteu nganggo konci éksternal. Transkripsi — 1 paménta Gemini; rencana panel AI — 1 paménta Claude (konci dina Setélan).",
-      "ctaHint": "Anggo kecap anu sami dina caption (“Skills → Caption formula”).",
       "ctaPh": "Ketik KECAP dina koméntar",
       "ctaWordPh": "TREND",
       "delConfirm": "Hapus",

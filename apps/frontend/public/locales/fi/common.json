@@ -16,8 +16,7 @@
     "trends": "Trendit",
     "gallery": "Mediakirjasto",
     "publisher": "Julkaisija",
-    "storyboard": "Käsikirjoitus",
-    "skills": "Taidot"
+    "storyboard": "Käsikirjoitus"
   },
   "rooms": {
     "title": "Käännöshuoneet",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Avaa Google Flow",
       "vpTitle": "Videot \n→ Google Flow",
       "addTrendTitle": "Avaa 'Trendit': skannaa avainsanalla tai liitä videolinkki – tulokset ilmestyvät tänne",
-      "tabSkills": "Taidot",
       "tabStoryboard": "Käsikirjoitus"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Evästekäytäntö",
       "cookiePrivacyLink": "Tietosuojakäytäntö",
       "cookieText": "Käytämme evästeitä: ehdottoman välttämättömiä sivuston toiminnan kannalta (kirjautuminen, kieli, teema) ja suostumuksellasi analyyttisiä – palvelun parantamiseksi. Lisätietoja ",
-      "tabSkillsSub": "Viraliteetti · anti-klisee · kuvateksti",
       "tabStoryboardSub": "Automontaasi-rulla"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Evästeasetukset"
     },
-    "skills": {
-      "acChanges": "Ennen → jälkeen",
-      "acNeedText": "Liitä teksti (väh. 20 merkkiä).",
-      "acPh": "Liitä julkaisusi, kuvatekstisi tai käsikirjoituksesi tähän…",
-      "acQuestions": "Kirjoittajalle: ",
-      "acRemoved": "(poistettu)",
-      "acRun": "Suorita anti-klisee",
-      "acSub": "Poistaa tekoälyn luomat kliseet, jotta teksti kuulostaa inhimillisemmältä. Ei keksi faktoja.",
-      "acTitle": "Anti-klisee",
-      "copy": "Kopioi",
-      "cpCtaNote": "Käytä avainsanaa {{w}} käsikirjoituksesi viimeisessä CTA-paneelissa.",
-      "cpHooks": "3 koukkua – napsauta vaihtaaksesi ensimmäisen rivin",
-      "cpLinkPh": "Linkki (valinnainen)",
-      "cpNeedTopic": "Kuvaile julkaisun aihe.",
-      "cpRun": "Kirjoita kuvateksti",
-      "cpSub": "Kuvatekstin rakenne: koukku → henkilökohtainen kokemus → mitä se ratkaisee → CTA avainsanalla. Enintään 1000 merkkiä.",
-      "cpTitle": "Kuvatekstikaava",
-      "cpTopicPh": "Mistä julkaisussa on kyse: aihe, tuote, pääidea, mitä katsoja saa…",
-      "cpWordPh": "Avainsana (tai tekoäly luo sellaisen)",
-      "fvDaysHint": "Tuoreus päivinä",
-      "fvDaysPh": "päivää",
-      "fvEmpty": "Mitään ei löytynyt näillä kriteereillä – löysennä suodattimia.",
-      "fvNeedTopic": "Anna hakusana.",
-      "fvRun": "Etsi",
-      "fvSub": "Löytää viraalivideoita aiheen mukaan ja tarjoaa linkit. Vain etsii – ei lataa.",
-      "fvTitle": "Löydä viraliteetti",
-      "fvTopicPh": "Aihe tai niche: \"Tekoäly yrityksille\"",
-      "fvViewsPh": "min. katselukerrat",
-      "intro": "Kolme sisällöntuotantotaitoa. Ne käyttävät asetuksistasi löytyviä avaimiasi: haku – TikHub, tekstit – Claude (Anthropic). Nämä taidot ovat myös Clauden käytettävissä MCP-liittimemme kautta (laajuus \"skills:use\").",
-      "views": "katselukerrat"
-    },
     "storyboard": {
       "actFail": "Epäonnistui – yritä uudelleen.",
       "addPanel": "Paneeli",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Pala pois – ei sisälly videoon.",
       "chunksN": "{{n}} palaa",
       "costNote": "Ohjelmistomoottori ei käytä ulkoisia avaimia. Transkriptio – 1 Gemini-pyyntö; tekoälypaneelisuunnitelma – 1 Claude-pyyntö (avaimet asetuksissa).",
-      "ctaHint": "Käytä samaa sanaa kuvatekstissä (\"Taidot → Kuvatekstikaava\").",
       "ctaPh": "Kirjoita SANA kommentteihin",
       "ctaWordPh": "TRENDI",
       "delConfirm": "Poista",

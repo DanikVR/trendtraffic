@@ -16,8 +16,7 @@
     "trends": "Faiga",
     "gallery": "Fale ata",
     "publisher": "Fa'asalalau",
-    "storyboard": "Storyboard",
-    "skills": "Tomai"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Potu fa'aliliuga",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Tatala Google Flow",
       "vpTitle": "Vitiō \n→ Google Flow",
       "addTrendTitle": "Tatala 'Aga': suʻe e ala i upu autu poʻo le faʻapipiʻiina o se fesoʻotaʻiga vitiō — o le a aliali mai iʻuga iinei",
-      "tabSkills": "Tomai",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Faiga Faʻavae Kuki",
       "cookiePrivacyLink": "Faiga Faʻavae Faʻalilolilo",
       "cookieText": "Matou te faʻaaogaina kuki: e matua manaʻomia mo le faʻagaioiga o le saite (saini, gagana, autu), ma, ma lau maliega, auʻiliʻiliga — e faʻaleleia atili ai le tautua. Faʻamatalaga i la matou ",
-      "tabSkillsSub": "Viral · anti-cliché · faʻamatalaga",
       "tabStoryboardSub": "Faʻapotopotoina otometi"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Fa'atonuga kuki"
     },
-    "skills": {
-      "acChanges": "Muamua → mulimuli",
-      "acNeedText": "Faʻapipiʻi tusitusiga (a itiiti ifo 20 mataʻitusi).",
-      "acPh": "Faʻapipiʻi lau pou, faʻamatalaga, poʻo le tusitusiga iinei…",
-      "acQuestions": "I le tusitala: ",
-      "acRemoved": "(aveesea)",
-      "acRun": "Faʻaaoga le anti-cliché",
-      "acSub": "Aveesea clichés na gaosia e AI mo se tusitusiga e sili atu ona faʻaletagata. E le faia ni mea moni.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopi",
-      "cpCtaNote": "Faʻaaoga le upu autu {{w}} i le vaega mulimuli o le CTA o lau Storyboard.",
-      "cpHooks": "3 filifiliga matau — kiliki e sui le laina muamua",
-      "cpLinkPh": "Soʻotaga (filifiliga)",
-      "cpNeedTopic": "Faʻamatala le autu o le pou.",
-      "cpRun": "Tusi faʻamatalaga",
-      "cpSub": "Faʻatulagaga o faʻamatalaga: matau → aafiaga patino → mea e foʻia → CTA ma upu autu. E oʻo atu i le 1000 mataʻitusi.",
-      "cpTitle": "Faʻamatalaga faʻavae",
-      "cpTopicPh": "O le a le mea e uiga i ai le pou: autu, oloa, manatu autu, mea o le a maua e le tagata matamata…",
-      "cpWordPh": "Upu autu (pe o le a gaosia e AI se tasi)",
-      "fvDaysHint": "Fou i aso",
-      "fvDaysPh": "aso",
-      "fvEmpty": "Leai se mea na maua mo nei taʻiala — faʻamalolo au faamama.",
-      "fvNeedTopic": "Ulufale i se autu suʻesuʻe.",
-      "fvRun": "Suʻe",
-      "fvSub": "Suʻe vitio viral i le autu ma tuʻuina atu soʻotaga. Naʻo le suʻeina — e le laʻuina.",
-      "fvTitle": "Suʻe le viral",
-      "fvTopicPh": "Autu poʻo le niche: \"AI mo pisinisi\"",
-      "fvViewsPh": "vaʻaiga a itiiti ifo",
-      "intro": "Tolu tomai faʻapipiʻi anotusi. Latou te faʻaaogaina au ki mai Faʻatonu: suʻesuʻe — TikHub, tusitusiga — Claude (Anthropic). O nei tomai e avanoa foi ia Claude e ala i la matou MCP-connector (scope \"skills:use\").",
-      "views": "vaʻaiga"
-    },
     "storyboard": {
       "actFail": "Le manuia — faʻamolemole toe taumafai.",
       "addPanel": "Vaega",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Oti ese le vaega — e le aofia i le vitio.",
       "chunksN": "{{n}} vaega",
       "costNote": "E le fa'aaogaina e le masini polokalama ni ki fafo. Fa'aliliuga — 1 talosaga Gemini; Fuafuaga o le laulau AI — 1 talosaga Claude (ki i Fa'atonuga).",
-      "ctaHint": "Fa'aaoga le upu lava e tasi i le fa'amatalaga (\"Tomai → Fa'amatalaga fa'avae\").",
       "ctaPh": "Tusitusi le UPU i fa'amatalaga",
       "ctaWordPh": "TREND",
       "delConfirm": "Aveese",

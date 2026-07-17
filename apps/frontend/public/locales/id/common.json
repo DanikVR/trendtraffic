@@ -16,8 +16,7 @@
     "trends": "Tren",
     "gallery": "Galeri media",
     "publisher": "Penerbit",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Ruangan terjemahan",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Buka Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Buka 'Tren': pindai berdasarkan kata kunci atau tempel tautan video — hasilnya akan muncul di sini",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kebijakan Cookie",
       "cookiePrivacyLink": "Kebijakan Privasi",
       "cookieText": "Kami menggunakan cookie: yang sangat diperlukan untuk pengoperasian situs (login, bahasa, tema), dan, dengan persetujuan Anda, analitis — untuk meningkatkan layanan. Detail dalam ",
-      "tabSkillsSub": "Viral · anti-klise · caption",
       "tabStoryboardSub": "Reel auto-montase"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Pengaturan cookie"
     },
-    "skills": {
-      "acChanges": "Sebelum → sesudah",
-      "acNeedText": "Tempel teks (min. 20 karakter).",
-      "acPh": "Tempel postingan, caption, atau skrip Anda di sini…",
-      "acQuestions": "Untuk penulis: ",
-      "acRemoved": "(dihapus)",
-      "acRun": "Jalankan anti-klise",
-      "acSub": "Menghapus klise hasil AI agar teks terdengar lebih manusiawi. Tidak mengarang fakta.",
-      "acTitle": "Anti-klise",
-      "copy": "Salin",
-      "cpCtaNote": "Gunakan kata kunci {{w}} di panel CTA terakhir Storyboard Anda.",
-      "cpHooks": "3 opsi hook — klik untuk mengganti baris pertama",
-      "cpLinkPh": "Tautan (opsional)",
-      "cpNeedTopic": "Jelaskan topik postingan.",
-      "cpRun": "Tulis caption",
-      "cpSub": "Struktur caption: hook → pengalaman pribadi → solusi → CTA dengan kata kunci. Maks. 1000 karakter.",
-      "cpTitle": "Formula caption",
-      "cpTopicPh": "Tentang apa postingan ini: topik, produk, ide utama, apa yang akan didapat penonton…",
-      "cpWordPh": "Kata kunci (atau AI akan membuatnya)",
-      "fvDaysHint": "Keterbaruan dalam hari",
-      "fvDaysPh": "hari",
-      "fvEmpty": "Tidak ada yang ditemukan untuk kriteria ini — longgarkan filter Anda.",
-      "fvNeedTopic": "Masukkan topik pencarian.",
-      "fvRun": "Cari",
-      "fvSub": "Menemukan video viral berdasarkan topik dan menyediakan tautan. Hanya menemukan — tidak mengunduh.",
-      "fvTitle": "Temukan viralitas",
-      "fvTopicPh": "Topik atau niche: \"AI untuk bisnis\"",
-      "fvViewsPh": "min. tayangan",
-      "intro": "Tiga skill pipeline konten. Menggunakan kunci Anda dari Pengaturan: pencarian — TikHub, teks — Claude (Anthropic). Skill ini juga tersedia untuk Claude melalui MCP-connector kami (cakupan \"skills:use\").",
-      "views": "tayangan"
-    },
     "storyboard": {
       "actFail": "Gagal — coba lagi.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Potongan dimatikan — tidak akan disertakan dalam video.",
       "chunksN": "{{n}} potongan",
       "costNote": "Mesin perangkat lunak tidak menggunakan kunci eksternal. Transkripsi — 1 permintaan Gemini; rencana panel AI — 1 permintaan Claude (kunci di Pengaturan).",
-      "ctaHint": "Gunakan kata yang sama di keterangan (“Keterampilan → Formula keterangan”).",
       "ctaPh": "Ketik KATA di komentar",
       "ctaWordPh": "TREND",
       "delConfirm": "Hapus",

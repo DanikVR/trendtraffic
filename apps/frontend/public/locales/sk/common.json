@@ -16,8 +16,7 @@
     "trends": "Trendy",
     "gallery": "Galéria médií",
     "publisher": "Vydavateľ",
-    "storyboard": "Storyboard",
-    "skills": "Zručnosti"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Prekladové miestnosti",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Otvoriť Google Flow",
       "vpTitle": "Videá \n→ Google Flow",
       "addTrendTitle": "Otvorte 'Trendy': skenujte podľa kľúčového slova alebo vložte odkaz na video – výsledky sa zobrazia tu",
-      "tabSkills": "Zručnosti",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Zásady používania súborov cookie",
       "cookiePrivacyLink": "Zásady ochrany osobných údajov",
       "cookieText": "Používame súbory cookie: striktne nevyhnutné pre fungovanie stránky (prihlásenie, jazyk, téma) a s vaším súhlasom analytické – na zlepšenie služby. Podrobnosti v našich ",
-      "tabSkillsSub": "Viralita · anti-klišé · popis",
       "tabStoryboardSub": "Auto-montáž reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Nastavenia súborov cookie"
     },
-    "skills": {
-      "acChanges": "Pred → po",
-      "acNeedText": "Vložte text (min. 20 znakov).",
-      "acPh": "Vložte sem svoj príspevok, popis alebo scenár…",
-      "acQuestions": "Autorovi: ",
-      "acRemoved": "(odstránené)",
-      "acRun": "Spustiť anti-klišé",
-      "acSub": "Odstraňuje AI-generované klišé pre ľudskejšie znejúci text. Nevymýšľa fakty.",
-      "acTitle": "Anti-klišé",
-      "copy": "Kopírovať",
-      "cpCtaNote": "Použite kľúčové slovo {{w}} v záverečnom CTA paneli vášho Storyboardu.",
-      "cpHooks": "3 možnosti úvodného háčika — kliknutím nahradíte prvý riadok",
-      "cpLinkPh": "Odkaz (voliteľné)",
-      "cpNeedTopic": "Popíšte tému príspevku.",
-      "cpRun": "Napísať popis",
-      "cpSub": "Štruktúra popisu: úvodný háčik → osobná skúsenosť → čo rieši → CTA s kľúčovým slovom. Max. 1000 znakov.",
-      "cpTitle": "Vzorec popisu",
-      "cpTopicPh": "O čom je príspevok: téma, produkt, hlavná myšlienka, čo divák získa…",
-      "cpWordPh": "Kľúčové slovo (alebo ho vygeneruje AI)",
-      "fvDaysHint": "Čerstvosť v dňoch",
-      "fvDaysPh": "dni",
-      "fvEmpty": "Pre tieto kritériá nič nenájdené — uvoľnite filtre.",
-      "fvNeedTopic": "Zadajte tému vyhľadávania.",
-      "fvRun": "Nájsť",
-      "fvSub": "Nájde virálne videá podľa témy a poskytne odkazy. Len nájde — nestiahne.",
-      "fvTitle": "Nájsť viralitu",
-      "fvTopicPh": "Téma alebo nika: „AI pre podnikanie“",
-      "fvViewsPh": "min. zhliadnutí",
-      "intro": "Tri zručnosti pre obsahovú pipeline. Používajú vaše kľúče z Nastavení: vyhľadávanie — TikHub, texty — Claude (Anthropic). Tieto zručnosti sú dostupné aj pre Claude cez náš MCP-konektor (rozsah „skills:use“).",
-      "views": "zhliadnutí"
-    },
     "storyboard": {
       "actFail": "Zlyhalo — skúste to znova.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Vypnúť časť — nebude zahrnutá vo videu.",
       "chunksN": "{{n}} častí",
       "costNote": "Softvérový engine nepoužíva externé kľúče. Prepis – 1 Gemini požiadavka; plán AI panelov – 1 Claude požiadavka (kľúče v Nastaveniach).",
-      "ctaHint": "Použite rovnaké slovo v popise („Zručnosti → Vzorec popisu“).",
       "ctaPh": "Napíšte SLOVO do komentárov",
       "ctaWordPh": "TREND",
       "delConfirm": "Odstrániť",

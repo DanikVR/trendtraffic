@@ -21,7 +21,6 @@ export const MCP_SCOPES: Record<string, string> = {
   'flows:read': 'Читать сценарии и шаблоны UGC-студии',
   'publisher:read': 'Читать слоты и цепочки Публикатора',
   'billing:read': 'Читать статус подписки',
-  'skills:use': 'Скиллы: найди-виралку / антиклише / формула-подписи',
 };
 
 export type McpScope = keyof typeof MCP_SCOPES;

@@ -16,8 +16,7 @@
     "trends": "Tendencijos",
     "gallery": "Medijos galerija",
     "publisher": "Leidėjas",
-    "storyboard": "Storyboard",
-    "skills": "Įgūdžiai"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Vertimo kambariai",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Atidaryti „Google Flow“",
       "vpTitle": "Vaizdo įrašai \n→ „Google Flow“",
       "addTrendTitle": "Atidarykite „Tendencijos“: ieškokite pagal raktinį žodį arba įklijuokite vaizdo įrašo nuorodą – rezultatai pasirodys čia",
-      "tabSkills": "Įgūdžiai",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Slapukų politika",
       "cookiePrivacyLink": "Privatumo politika",
       "cookieText": "Mes naudojame slapukus: griežtai būtinus svetainės veikimui (prisijungimas, kalba, tema) ir, su jūsų sutikimu, analizės – paslaugai tobulinti. Išsami informacija mūsų ",
-      "tabSkillsSub": "Viralumas · anti-klišė · antraštė",
       "tabStoryboardSub": "Automatinis montažas"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Slapukų nustatymai"
     },
-    "skills": {
-      "acChanges": "Prieš → po",
-      "acNeedText": "Įklijuokite tekstą (min. 20 simbolių).",
-      "acPh": "Įklijuokite savo įrašą, antraštę ar scenarijų čia…",
-      "acQuestions": "Autoriui: ",
-      "acRemoved": "(pašalinta)",
-      "acRun": "Paleisti anti-klišę",
-      "acSub": "Pašalina dirbtinio intelekto generuojamas klišes, kad tekstas skambėtų žmogiškiau. Neišgalvoja faktų.",
-      "acTitle": "Anti-klišė",
-      "copy": "Kopijuoti",
-      "cpCtaNote": "Naudokite raktinį žodį {{w}} paskutiniame savo Storyboard CTA skydelyje.",
-      "cpHooks": "3 kabliukų parinktys — spustelėkite, kad pakeistumėte pirmą eilutę",
-      "cpLinkPh": "Nuoroda (nebūtina)",
-      "cpNeedTopic": "Apibūdinkite įrašo temą.",
-      "cpRun": "Rašyti antraštę",
-      "cpSub": "Antraštės struktūra: kabliukas → asmeninė patirtis → ką sprendžia → CTA su raktiniu žodžiu. Iki 1000 simbolių.",
-      "cpTitle": "Antraštės formulė",
-      "cpTopicPh": "Apie ką yra įrašas: tema, produktas, pagrindinė idėja, ką gaus žiūrovas…",
-      "cpWordPh": "Raktinis žodis (arba AI jį sugeneruos)",
-      "fvDaysHint": "Šviežumas dienomis",
-      "fvDaysPh": "dienos",
-      "fvEmpty": "Pagal šiuos kriterijus nieko nerasta — sušvelninkite filtrus.",
-      "fvNeedTopic": "Įveskite paieškos temą.",
-      "fvRun": "Rasti",
-      "fvSub": "Randa virusinius vaizdo įrašus pagal temą ir pateikia nuorodas. Tik randa — neatsisiunčia.",
-      "fvTitle": "Rasti viralumą",
-      "fvTopicPh": "Tema ar niša: „AI verslui“",
-      "fvViewsPh": "min. peržiūrų",
-      "intro": "Trys turinio kūrimo įgūdžiai. Jie naudoja jūsų raktus iš Nustatymų: paieška — TikHub, tekstai — Claude (Anthropic). Šie įgūdžiai taip pat prieinami Claude per mūsų MCP-jungtį (sritis „skills:use“).",
-      "views": "peržiūros"
-    },
     "storyboard": {
       "actFail": "Nepavyko — bandykite dar kartą.",
       "addPanel": "Skydelis",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Išjungti segmentą — nebus įtrauktas į vaizdo įrašą.",
       "chunksN": "{{n}} segmentai",
       "costNote": "Programinės įrangos variklis nenaudoja išorinių raktų. Transkripcija – 1 Gemini užklausa; AI panelės planas – 1 Claude užklausa (raktai nustatymuose).",
-      "ctaHint": "Naudokite tą patį žodį antraštėje („Įgūdžiai → Antraštės formulė“).",
       "ctaPh": "Įveskite ŽODĮ komentaruose",
       "ctaWordPh": "TRENDAS",
       "delConfirm": "Ištrinti",

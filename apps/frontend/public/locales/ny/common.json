@@ -16,8 +16,7 @@
     "trends": "Zochitika",
     "gallery": "Media gallery",
     "publisher": "Wofalitsa",
-    "storyboard": "Storyboard",
-    "skills": "Maluso"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Zipinda zomasulira",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Tsegulani Google Flow",
       "vpTitle": "Makanema \n→ Google Flow",
       "addTrendTitle": "Tsegulani 'Trends': fufuzani ndi mawu osakira kapena ikani ulalo wa vidiyo — zotsatira zidzawonekera pano",
-      "tabSkills": "Maluso",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Ndondomeko ya Cookie",
       "cookiePrivacyLink": "Ndondomeko Yachinsinsi",
       "cookieText": "Timagwiritsa ntchito ma cookies: ofunikira kwambiri pakugwira ntchito kwa tsamba (kulowa, chilankhulo, mutu), ndipo, ndi chilolezo chanu, osanthula — kuti tithandizire ntchitoyo. Zambiri mu ",
-      "tabSkillsSub": "Kufalikira · anti-cliché · mawu",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Zokonda za ma cookie"
     },
-    "skills": {
-      "acChanges": "Patsogolo → pambuyo",
-      "acNeedText": "Ikani mawu (osachepera zilembo 20).",
-      "acPh": "Ikani positi yanu, mawu, kapena script pano…",
-      "acQuestions": "Kwa wolemba: ",
-      "acRemoved": "(wachotsedwa)",
-      "acRun": "Yambitsani anti-cliché",
-      "acSub": "Amachotsa mawu achikale opangidwa ndi AI kuti mawuwo azimveka ngati a munthu. Sasinthira zinthu zenizeni.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopera",
-      "cpCtaNote": "Gwiritsani ntchito mawu {{w}} mu gawo lomaliza la CTA la Storyboard yanu.",
-      "cpHooks": "Zosankha zitatu zoyambira — dinani kuti musinthe mzere woyamba",
-      "cpLinkPh": "Ulalo (ngati mukufuna)",
-      "cpNeedTopic": "Fotokozani mutu wa positi.",
-      "cpRun": "Lembani mawu",
-      "cpSub": "Kapangidwe ka mawu: choyambira → zomwe munakumana nazo → chomwe chimathetsa → CTA ndi mawu ofunikira. Mpaka zilembo 1000.",
-      "cpTitle": "Njira yolemba mawu",
-      "cpTopicPh": "Zomwe positi ikunena: mutu, chinthu, mfundo yayikulu, zomwe wowonera adzapeza…",
-      "cpWordPh": "Mawu ofunikira (kapena AI ipanga imodzi)",
-      "fvDaysHint": "Katsopano m'masiku",
-      "fvDaysPh": "masiku",
-      "fvEmpty": "Palibe chomwe chapezeka malinga ndi zofunikira izi — chepetsani zosefera zanu.",
-      "fvNeedTopic": "Lowetsani mutu wofufuzira.",
-      "fvRun": "Pezani",
-      "fvSub": "Imapeza mavidiyo otchuka ndi mutu ndikupereka maulalo. Imapeza kokha — sitsitsa.",
-      "fvTitle": "Pezani kufalikira",
-      "fvTopicPh": "Mutu kapena niche: \"AI ya bizinesi\"",
-      "fvViewsPh": "mawonedwe ochepera",
-      "intro": "Maluso atatu opangira zinthu. Amagwiritsa ntchito makiyi anu kuchokera ku Zokonda: kufufuza — TikHub, malemba — Claude (Anthropic). Maluso amenewa amapezekanso kwa Claude kudzera pa MCP-connector yathu (scope \"skills:use\").",
-      "views": "mawonedwe"
-    },
     "storyboard": {
       "actFail": "Zalephera — chonde yesaninso.",
       "addPanel": "Gulu",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chigawo chachotsedwa — sichidzakhala mu vidiyo.",
       "chunksN": "Zigawo {{n}}",
       "costNote": "Injini ya pulogalamuyi sigwiritsa ntchito makiyi akunja. Kulemba — pempho limodzi la Gemini; dongosolo la AI panel — pempho limodzi la Claude (makiyi mu Zokonda).",
-      "ctaHint": "Gwiritsani ntchito mawu omwewo mu mawu ofotokozera (“Maluso → Njira yofotokozera”).",
       "ctaPh": "Lembani MAWU mu ndemanga",
       "ctaWordPh": "TREND",
       "delConfirm": "Chotsani",

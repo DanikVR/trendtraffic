@@ -16,8 +16,7 @@
     "trends": "Trendlər",
     "gallery": "Media qalereyası",
     "publisher": "Nəşriyyatçı",
-    "storyboard": "Storyboard",
-    "skills": "Bacarıqlar"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Tərcümə otaqları",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow-u aç",
       "vpTitle": "Videolar \n→ Google Flow",
       "addTrendTitle": "'Trendlər'i açın: açar sözə görə skan edin və ya video linki yapışdırın — nəticələr burada görünəcək",
-      "tabSkills": "Bacarıqlar",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kuki Siyasəti",
       "cookiePrivacyLink": "Məxfilik Siyasəti",
       "cookieText": "Biz kukilərdən istifadə edirik: saytın işləməsi üçün qəti şəkildə zəruri olanlar (giriş, dil, mövzu) və sizin razılığınızla, analitik — xidməti yaxşılaşdırmaq üçün. Ətraflı məlumat bizim ",
-      "tabSkillsSub": "Viral · anti-klişe · başlıq",
       "tabStoryboardSub": "Avto-montaj çarxı"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Kuki tənzimləmələri"
     },
-    "skills": {
-      "acChanges": "Əvvəl → sonra",
-      "acNeedText": "Mətn daxil edin (min. 20 simvol).",
-      "acPh": "Postunuzu, başlığınızı və ya ssenarinizi bura yapışdırın…",
-      "acQuestions": "Müəllifə: ",
-      "acRemoved": "(silindi)",
-      "acRun": "Anti-klişeni işə sal",
-      "acSub": "Daha insani səslənən mətn üçün AI tərəfindən yaradılan klişeləri silir. Faktlar uydurmur.",
-      "acTitle": "Anti-klişe",
-      "copy": "Kopyala",
-      "cpCtaNote": "Storyboard-unuzun son CTA panelində {{w}} açar sözündən istifadə edin.",
-      "cpHooks": "3 hook seçimi — ilk sətri dəyişmək üçün klikləyin",
-      "cpLinkPh": "Link (isteğe bağlı)",
-      "cpNeedTopic": "Postun mövzusunu təsvir edin.",
-      "cpRun": "Başlıq yaz",
-      "cpSub": "Başlıq strukturu: hook → şəxsi təcrübə → nəyi həll edir → açar söz ilə CTA. 1000 simvola qədər.",
-      "cpTitle": "Başlıq düsturu",
-      "cpTopicPh": "Post nə haqqındadır: mövzu, məhsul, əsas ideya, izləyicinin nə əldə edəcəyi…",
-      "cpWordPh": "Açar söz (və ya AI tərəfindən yaradılacaq)",
-      "fvDaysHint": "Günlərlə təzəlik",
-      "fvDaysPh": "gün",
-      "fvEmpty": "Bu meyarlar üçün heç nə tapılmadı — filtrlərinizi yumşaldın.",
-      "fvNeedTopic": "Axtarış mövzusunu daxil edin.",
-      "fvRun": "Tap",
-      "fvSub": "Mövzuya görə viral videoları tapır və linklər təqdim edir. Yalnız tapır — yükləmir.",
-      "fvTitle": "Virallığı tap",
-      "fvTopicPh": "Mövzu və ya niş: \"Biznes üçün AI\"",
-      "fvViewsPh": "min. baxış",
-      "intro": "Üç məzmun boru kəməri bacarığı. Onlar Ayarlarınızdan açarlarınızı istifadə edirlər: axtarış — TikHub, mətnlər — Claude (Anthropic). Bu bacarıqlar həmçinin MCP-bağlayıcımız vasitəsilə Claude üçün də mövcuddur (\"skills:use\" əhatə dairəsi).",
-      "views": "baxış"
-    },
     "storyboard": {
       "actFail": "Uğursuz oldu — lütfən, yenidən cəhd edin.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Çıxarılıb — videoya daxil edilməyəcək.",
       "chunksN": "{{n}} hissə",
       "costNote": "Proqram mühərriki xarici açarlardan istifadə etmir. Transkripsiya — 1 Gemini sorğusu; AI panel planı — 1 Claude sorğusu (Parametrlərdə açarlar).",
-      "ctaHint": "Şərtdə eyni sözdən istifadə edin (“Bacarıqlar → Şərt formulu”).",
       "ctaPh": "Şərhlərdə SÖZ yazın",
       "ctaWordPh": "TREND",
       "delConfirm": "Sil",

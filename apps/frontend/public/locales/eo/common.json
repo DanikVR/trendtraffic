@@ -16,8 +16,7 @@
     "trends": "Tendencoj",
     "gallery": "Amaskomunikila galerio",
     "publisher": "Eldonisto",
-    "storyboard": "Rakontotabulo",
-    "skills": "Kapabloj"
+    "storyboard": "Rakontotabulo"
   },
   "rooms": {
     "title": "Tradukaj ĉambroj",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Malfermi Google Flow",
       "vpTitle": "Videoj \n→ Google Flow",
       "addTrendTitle": "Malfermu 'Tendencoj': skanu laŭ ŝlosilvorto aŭ algluu videoligon — rezultoj aperos ĉi tie",
-      "tabSkills": "Kapabloj",
       "tabStoryboard": "Rakontotabulo"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kuketa Politiko",
       "cookiePrivacyLink": "Privateca Politiko",
       "cookieText": "Ni uzas kuketojn: strikte necesajn por reteja funkciado (ensaluto, lingvo, temo), kaj, kun via konsento, analizajn — por plibonigi la servon. Detaloj en nia ",
-      "tabSkillsSub": "Viruseco · kontraŭ-kliŝo · subteksto",
       "tabStoryboardSub": "Aŭtomontaĵo"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Vikio",
       "footerCookieSettings": "Kuketaj agordoj"
     },
-    "skills": {
-      "acChanges": "Antaŭ → post",
-      "acNeedText": "Algluu tekston (min. 20 signoj).",
-      "acPh": "Algluu vian afiŝon, subtekston aŭ skripton ĉi tie…",
-      "acQuestions": "Al la aŭtoro: ",
-      "acRemoved": "(forigita)",
-      "acRun": "Ruli kontraŭ-kliŝon",
-      "acSub": "Forigas AI-generitajn kliŝojn por pli homa teksto. Ne inventas faktojn.",
-      "acTitle": "Kontraŭ-kliŝo",
-      "copy": "Kopii",
-      "cpCtaNote": "Uzu la ŝlosilvorton {{w}} en la fina CTA-panelon de via Rakontotabulo.",
-      "cpHooks": "3 hokaj opcioj — alklaku por anstataŭigi la unuan linion",
-      "cpLinkPh": "Ligo (laŭvola)",
-      "cpNeedTopic": "Priskribu la temon de la afiŝo.",
-      "cpRun": "Verki subtekston",
-      "cpSub": "Strukturo de subteksto: hoko → persona sperto → kion ĝi solvas → CTA kun ŝlosilvorto. Ĝis 1000 signoj.",
-      "cpTitle": "Subteksta formulo",
-      "cpTopicPh": "Pri kio temas la afiŝo: temo, produkto, ĉefa ideo, kion la spektanto ricevos…",
-      "cpWordPh": "Ŝlosilvorto (aŭ AI generos unu)",
-      "fvDaysHint": "Freŝeco en tagoj",
-      "fvDaysPh": "tagoj",
-      "fvEmpty": "Nenio trovita laŭ ĉi tiuj kriterioj — malstreĉu viajn filtrojn.",
-      "fvNeedTopic": "Enigu serĉtemon.",
-      "fvRun": "Trovi",
-      "fvSub": "Trovas virusajn filmetojn laŭ temo kaj provizas ligilojn. Nur trovas — ne elŝutas.",
-      "fvTitle": "Trovi virusecon",
-      "fvTopicPh": "Temo aŭ niĉo: \"AI por negoco\"",
-      "fvViewsPh": "min. vidoj",
-      "intro": "Tri kapabloj de enhava dukto. Ili uzas viajn ŝlosilojn el Agordoj: serĉo — TikHub, tekstoj — Claude (Anthropic). Ĉi tiuj kapabloj ankaŭ estas haveblaj al Claude per nia MCP-konektilo (amplekso \"skills:use\").",
-      "views": "vidoj"
-    },
     "storyboard": {
       "actFail": "Malsukcesis — bonvolu reprovi.",
       "addPanel": "Panelo",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Forĵeti — ne estos en la video.",
       "chunksN": "{{n}} partoj",
       "costNote": "La programara motoro ne uzas eksterajn ŝlosilojn. Transskribo — 1 Gemini-peto; AI-panelplano — 1 Claude-peto (ŝlosiloj en Agordoj).",
-      "ctaHint": "Uzu la saman vorton en la priskribo (“Kapabloj → Priskriba formulo”).",
       "ctaPh": "Tajpu VORTON en komentoj",
       "ctaWordPh": "TREND",
       "delConfirm": "Forigi",

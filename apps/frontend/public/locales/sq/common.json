@@ -16,8 +16,7 @@
     "trends": "Trendet",
     "gallery": "Galeria e medias",
     "publisher": "Botuesi",
-    "storyboard": "Storyboard",
-    "skills": "Aftësi"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Dhoma përkthimi",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Hap Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Hapni 'Tendencat': skanoni sipas fjalës kyçe ose ngjisni një lidhje video — rezultatet do të shfaqen këtu",
-      "tabSkills": "Aftësi",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Politika e Kukive",
       "cookiePrivacyLink": "Politika e Privatësisë",
       "cookieText": "Ne përdorim kukit: rreptësisht të nevojshme për funksionimin e faqes (hyrja, gjuha, tema), dhe, me pëlqimin tuaj, analitike — për të përmirësuar shërbimin. Detaje në ",
-      "tabSkillsSub": "Viralitet · anti-klishe · titull",
       "tabStoryboardSub": "Montazh automatik"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cilësimet e kukive"
     },
-    "skills": {
-      "acChanges": "Para → pas",
-      "acNeedText": "Ngjit tekstin (min. 20 karaktere).",
-      "acPh": "Ngjit postimin, titullin ose skriptin këtu…",
-      "acQuestions": "Për autorin: ",
-      "acRemoved": "(u hoq)",
-      "acRun": "Ekzekuto anti-klishe",
-      "acSub": "Heq klishetë e gjeneruara nga AI për një tekst më njerëzor. Nuk shpik fakte.",
-      "acTitle": "Anti-klishe",
-      "copy": "Kopjo",
-      "cpCtaNote": "Përdor fjalën kyçe {{w}} në panelin përfundimtar të CTA-së së Storyboard-it tuaj.",
-      "cpHooks": "3 opsione grepi — kliko për të zëvendësuar rreshtin e parë",
-      "cpLinkPh": "Lidhje (opsionale)",
-      "cpNeedTopic": "Përshkruaj temën e postimit.",
-      "cpRun": "Shkruaj titullin",
-      "cpSub": "Struktura e titullit: grep → përvojë personale → çfarë zgjidh → CTA me fjalë kyçe. Deri në 1000 karaktere.",
-      "cpTitle": "Formula e titullit",
-      "cpTopicPh": "Për çfarë është postimi: temë, produkt, ide kryesore, çfarë do të marrë shikuesi…",
-      "cpWordPh": "Fjalë kyçe (ose AI do të gjenerojë një)",
-      "fvDaysHint": "Freskia në ditë",
-      "fvDaysPh": "ditë",
-      "fvEmpty": "Asgjë nuk u gjet për këto kritere — lehtësoni filtrat tuaj.",
-      "fvNeedTopic": "Fut një temë kërkimi.",
-      "fvRun": "Gjej",
-      "fvSub": "Gjen video virale sipas temës dhe ofron lidhje. Vetëm gjen — nuk shkarkon.",
-      "fvTitle": "Gjej viralitetin",
-      "fvTopicPh": "Temë ose niç: \"AI për biznes\"",
-      "fvViewsPh": "min. shikime",
-      "intro": "Tre aftësi të linjës së përmbajtjes. Ato përdorin çelësat tuaj nga Cilësimet: kërkimi — TikHub, tekstet — Claude (Anthropic). Këto aftësi janë gjithashtu të disponueshme për Claude nëpërmjet lidhësit tonë MCP (fushëveprimi \"skills:use\").",
-      "views": "shikime"
-    },
     "storyboard": {
       "actFail": "Dështoi — ju lutemi provoni përsëri.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Pjesa jashtë — nuk do të përfshihet në video.",
       "chunksN": "{{n}} pjesë",
       "costNote": "Motori i softuerit nuk përdor çelësa të jashtëm. Transkriptimi — 1 kërkesë Gemini; plani i panelit AI — 1 kërkesë Claude (çelësat te Cilësimet).",
-      "ctaHint": "Përdorni të njëjtën fjalë në përshkrim (“Aftësitë → Formula e përshkrimit”).",
       "ctaPh": "Shkruaj FJALË në komente",
       "ctaWordPh": "TREND",
       "delConfirm": "Fshij",

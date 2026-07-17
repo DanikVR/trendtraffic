@@ -16,8 +16,7 @@
     "trends": "トレンド",
     "gallery": "メディアギャラリー",
     "publisher": "パブリッシャー",
-    "storyboard": "ストーリーボード",
-    "skills": "スキル"
+    "storyboard": "ストーリーボード"
   },
   "rooms": {
     "title": "翻訳ルーム",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flowを開く",
       "vpTitle": "動画 \n→ Google Flow",
       "addTrendTitle": "「トレンド」を開く: キーワードでスキャンするか、動画リンクを貼り付けると、ここに結果が表示されます",
-      "tabSkills": "スキル",
       "tabStoryboard": "ストーリーボード"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "クッキーポリシー",
       "cookiePrivacyLink": "プライバシーポリシー",
       "cookieText": "当サイトでは、サイト運営に厳密に必要なクッキー（ログイン、言語、テーマ）と、お客様の同意を得て、サービス改善のための分析クッキーを使用しています。詳細は当社の",
-      "tabSkillsSub": "バイラル性 · アンチクリシェ · キャプション",
       "tabStoryboardSub": "オートモンタージュリール"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie設定"
     },
-    "skills": {
-      "acChanges": "変更点",
-      "acNeedText": "テキストを貼り付けてください（20文字以上）。",
-      "acPh": "投稿、キャプション、スクリプトをここに貼り付けてください…",
-      "acQuestions": "作者へ：",
-      "acRemoved": "（削除済み）",
-      "acRun": "アンチクリシェを実行",
-      "acSub": "AIが生成したクリシェを削除し、より人間らしいテキストにします。事実を捏造することはありません。",
-      "acTitle": "アンチクリシェ",
-      "copy": "コピー",
-      "cpCtaNote": "ストーリーボードの最終CTAパネルでキーワード「{{w}}」を使用してください。",
-      "cpHooks": "3つのフックオプション — クリックで最初の行を置き換え",
-      "cpLinkPh": "リンク（任意）",
-      "cpNeedTopic": "投稿のトピックを説明してください。",
-      "cpRun": "キャプションを作成",
-      "cpSub": "キャプションの構成：フック → 個人的な経験 → 解決策 → キーワードを含むCTA。最大1000文字。",
-      "cpTitle": "キャプション作成",
-      "cpTopicPh": "投稿内容：トピック、製品、主要なアイデア、視聴者が得られるもの…",
-      "cpWordPh": "キーワード（AIが生成することも可能）",
-      "fvDaysHint": "鮮度（日数）",
-      "fvDaysPh": "日数",
-      "fvEmpty": "この条件では何も見つかりませんでした — フィルターを緩めてください。",
-      "fvNeedTopic": "検索トピックを入力してください。",
-      "fvRun": "検索",
-      "fvSub": "トピック別にバイラル動画を検索し、リンクを提供します。検索のみでダウンロードはしません。",
-      "fvTitle": "バイラル動画を検索",
-      "fvTopicPh": "トピックまたはニッチ：「ビジネス向けAI」",
-      "fvViewsPh": "最小再生回数",
-      "intro": "3つのコンテンツパイプラインスキル。設定からキーを使用します：検索 — TikHub、テキスト — Claude (Anthropic)。これらのスキルは、当社のMCPコネクタ（スコープ「skills:use」）を介してClaudeでも利用可能です。",
-      "views": "再生回数"
-    },
     "storyboard": {
       "actFail": "失敗しました — もう一度お試しください。",
       "addPanel": "パネル",
@@ -4190,7 +4156,6 @@
       "chunkOff": "このチャンクは動画に含まれません。",
       "chunksN": "{{n}}個のチャンク",
       "costNote": "ソフトウェアエンジンは外部キーを使用しません。文字起こし — Geminiリクエスト1回; AIパネルプラン — Claudeリクエスト1回（キーは設定にあります）。",
-      "ctaHint": "キャプションでも同じ単語を使用してください（「スキル → キャプションの定型文」）。",
       "ctaPh": "コメントに「WORD」と入力",
       "ctaWordPh": "トレンド",
       "delConfirm": "削除",

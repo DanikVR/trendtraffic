@@ -16,8 +16,7 @@
     "trends": "Cov qauv",
     "gallery": "Media gallery",
     "publisher": "Tus tshaj tawm",
-    "storyboard": "Storyboard",
-    "skills": "Kev Txawj"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Chav txhais lus",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Qhib Google Flow",
       "vpTitle": "Cov yees duab \n→ Google Flow",
       "addTrendTitle": "Qhib 'Trends': tshawb los ntawm keyword lossis muab video link — cov txiaj ntsig yuav tshwm sim ntawm no",
-      "tabSkills": "Kev Txawj",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Txoj Cai Ncuav Qab Zib",
       "cookiePrivacyLink": "Txoj Cai Tswj Tus Kheej",
       "cookieText": "Peb siv ncuav qab zib: tsim nyog rau kev ua haujlwm ntawm lub xaib (nkag mus, lus, ntsiab lus), thiab, nrog koj tso cai, analytical — los txhim kho cov kev pabcuam. Cov ntsiab lus hauv peb ",
-      "tabSkillsSub": "Kis Mus · tsis yog cliché · lus piav",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Kev teeb tsa ncuav qab zib"
     },
-    "skills": {
-      "acChanges": "Ua ntej → tom qab",
-      "acNeedText": "Muab ntawv tso rau ntawm no (yam tsawg 20 cim).",
-      "acPh": "Muab koj cov ntawv, lus piav, lossis tsab ntawv tso rau ntawm no…",
-      "acQuestions": "Rau tus sau: ",
-      "acRemoved": "(tshem tawm lawm)",
-      "acRun": "Khiav anti-cliché",
-      "acSub": "Tshem tawm AI-generated clichés kom cov ntawv zoo li tib neeg sau ntau dua. Tsis tsim cov lus tseeb.",
-      "acTitle": "Anti-cliché",
-      "copy": "Luam",
-      "cpCtaNote": "Siv lo lus {{w}} hauv qhov kawg CTA panel ntawm koj Storyboard.",
-      "cpHooks": "3 qhov kev xaiv hook — nyem los hloov thawj kab",
-      "cpLinkPh": "Txuas (yeem)",
-      "cpNeedTopic": "Piav qhia txog cov ntsiab lus ntawm tus ncej.",
-      "cpRun": "Sau lus piav",
-      "cpSub": "Cov qauv lus piav: hook → kev paub tus kheej → qhov nws daws tau → CTA nrog lo lus tseem ceeb. Mus txog 1000 cim.",
-      "cpTitle": "Daim ntawv qhia lus piav",
-      "cpTopicPh": "Tus ncej hais txog dab tsi: ntsiab lus, khoom, lub tswv yim tseem ceeb, tus saib yuav tau dab tsi…",
-      "cpWordPh": "Lo lus tseem ceeb (lossis AI yuav tsim ib qho)",
-      "fvDaysHint": "Freshness hauv hnub",
-      "fvDaysPh": "hnub",
-      "fvEmpty": "Tsis pom dab tsi rau cov qauv no — ua kom koj cov lim dej xoob.",
-      "fvNeedTopic": "Sau ib lub ntsiab lus tshawb nrhiav.",
-      "fvRun": "Nrhiav",
-      "fvSub": "Nrhiav cov yeeb yaj kiab kis mus los ntawm ntsiab lus thiab muab cov txuas. Tsuas yog nrhiav — tsis rub tawm.",
-      "fvTitle": "Nrhiav virality",
-      "fvTopicPh": "Ntsiab lus lossis niche: \"AI rau kev lag luam\"",
-      "fvViewsPh": "yam tsawg kawg nkaus views",
-      "intro": "Peb qhov kev txawj ua cov ntsiab lus. Lawv siv koj cov yuam sij los ntawm Chaw: tshawb nrhiav — TikHub, ntawv — Claude (Anthropic). Cov kev txawj no kuj muaj rau Claude ntawm peb MCP-connector (scope \"skills:use\").",
-      "views": "views"
-    },
     "storyboard": {
       "actFail": "Ua tsis tiav — thov sim dua.",
       "addPanel": "Vaj Huam Sib Luag",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Tsis suav nrog hauv daim vis dis aus.",
       "chunksN": "{{n}} qhov",
       "costNote": "Lub tshuab software tsis siv cov yuam sij sab nraud. Sau ntawv — 1 Gemini thov; AI panel npaj — 1 Claude thov (cov yuam sij hauv Chaw).",
-      "ctaHint": "Siv tib lo lus hauv cov lus piav qhia (“Kev Txawj Ntse → Lus Piav Qhia”).",
       "ctaPh": "Sau lo lus hauv cov lus",
       "ctaWordPh": "TREND",
       "delConfirm": "Rho tawm",

@@ -16,8 +16,7 @@
     "trends": "Joerak",
     "gallery": "Multimedia galeria",
     "publisher": "Argitaratzailea",
-    "storyboard": "Storyboard",
-    "skills": "Trebetasunak"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Itzulpen gelak",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Ireki Google Flow",
       "vpTitle": "Bideoak \n→ Google Flow",
       "addTrendTitle": "Ireki 'Joerak': eskaneatu gako-hitzaren arabera edo itsatsi bideo-esteka bat — emaitzak hemen agertuko dira",
-      "tabSkills": "Trebetasunak",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookie Politika",
       "cookiePrivacyLink": "Pribatutasun Politika",
       "cookieText": "Cookieak erabiltzen ditugu: gunearen funtzionamendurako (saioa hasi, hizkuntza, gaia) erabat beharrezkoak direnak, eta, zure baimenarekin, analitikoak — zerbitzua hobetzeko. Xehetasunak gure ",
-      "tabSkillsSub": "Biralitatea · anti-klitxea · epigrafea",
       "tabStoryboardSub": "Auto-muntaia bideoa"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie ezarpenak"
     },
-    "skills": {
-      "acChanges": "Aurretik → ondoren",
-      "acNeedText": "Itsatsi testua (gutxieneko 20 karaktere).",
-      "acPh": "Itsatsi zure argitalpena, epigrafea edo gidoia hemen…",
-      "acQuestions": "Egileari: ",
-      "acRemoved": "(ezabatua)",
-      "acRun": "Exekutatu anti-klitxea",
-      "acSub": "AI-k sortutako klitxeak kentzen ditu, testu gizatiarragoa lortzeko. Ez du gertakaririk asmatzen.",
-      "acTitle": "Anti-klitxea",
-      "copy": "Kopiatu",
-      "cpCtaNote": "Erabili {{w}} gako-hitza zure Storyboard-eko azken CTA panelean.",
-      "cpHooks": "3 amu aukera — egin klik lehen lerroa ordezkatzeko",
-      "cpLinkPh": "Esteka (aukerakoa)",
-      "cpNeedTopic": "Deskribatu argitalpenaren gaia.",
-      "cpRun": "Idatzi epigrafea",
-      "cpSub": "Epigrafearen egitura: amu → esperientzia pertsonala → zer konpontzen duen → CTA gako-hitzarekin. Gehienez 1000 karaktere.",
-      "cpTitle": "Epigrafearen formula",
-      "cpTopicPh": "Zeri buruzkoa den argitalpena: gaia, produktua, ideia nagusia, ikusleak zer lortuko duen…",
-      "cpWordPh": "Gako-hitza (edo AI-k sortuko du bat)",
-      "fvDaysHint": "Freskotasuna egunetan",
-      "fvDaysPh": "egun",
-      "fvEmpty": "Ez da ezer aurkitu irizpide horiekin — lasaitu iragazkiak.",
-      "fvNeedTopic": "Sartu bilaketa-gaia.",
-      "fvRun": "Aurkitu",
-      "fvSub": "Bideo biralak aurkitzen ditu gaiaren arabera eta estekak eskaintzen ditu. Aurkitu bakarrik — ez du deskargatzen.",
-      "fvTitle": "Biralitatea aurkitu",
-      "fvTopicPh": "Gaia edo nitxoa: \"AI negozioetarako\"",
-      "fvViewsPh": "gutxieneko ikustaldiak",
-      "intro": "Hiru eduki-kanalizazio trebetasun. Ezarpenetan dituzun gakoak erabiltzen dituzte: bilaketa — TikHub, testuak — Claude (Anthropic). Trebetasun hauek Claude-ren eskura ere badaude gure MCP-konektorearen bidez (\"skills:use\" esparrua).",
-      "views": "ikustaldiak"
-    },
     "storyboard": {
       "actFail": "Huts egin du — saiatu berriro, mesedez.",
       "addPanel": "Panela",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Zatia kendu — ez da bideoan sartuko.",
       "chunksN": "{{n}} zati",
       "costNote": "Software motorrak ez ditu kanpoko gakoak erabiltzen. Transkripzioa — Gemini eskaera 1; AI panelen plana — Claude eskaera 1 (gakoak Ezarpenetan).",
-      "ctaHint": "Erabili hitz bera epigrafean (“Trebetasunak → Epigrafe formula”).",
       "ctaPh": "Idatzi HITZA iruzkinetan",
       "ctaWordPh": "JOERA",
       "delConfirm": "Ezabatu",

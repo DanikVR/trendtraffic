@@ -16,8 +16,7 @@
     "trends": "Iintsingiselo",
     "gallery": "Igalari yemidiya",
     "publisher": "Umshicileli",
-    "storyboard": "Ibali",
-    "skills": "Izakhono"
+    "storyboard": "Ibali"
   },
   "rooms": {
     "title": "Amagumbi okuguqulela",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Vula iGoogle Flow",
       "vpTitle": "Iividiyo \n→ Google Flow",
       "addTrendTitle": "Vula 'Iintsingiselo': skena ngegama elingundoqo okanye uncamathisele ikhonkco levidiyo — iziphumo ziya kuvela apha",
-      "tabSkills": "Izakhono",
       "tabStoryboard": "Ibali"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Umgaqo-nkqubo weKuki",
       "cookiePrivacyLink": "Umgaqo-nkqubo waBucala",
       "cookieText": "Sisebenzisa iikuki: ezibaluleke kakhulu ekusebenzeni kwesayithi (ukungena, ulwimi, umxholo), kwaye, ngemvume yakho, ezohlalutyo — ukuphucula inkonzo. Iinkcukacha kwi ",
-      "tabSkillsSub": "Ukusasazeka · anti-cliché · isihloko",
       "tabStoryboardSub": "I-reel yokudibanisa ngokuzenzekelayo"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Izicwangciso zekuki"
     },
-    "skills": {
-      "acChanges": "Ngaphambi → emva",
-      "acNeedText": "Ncamathisela umbhalo (ubuncinci oonobumba abangama-20).",
-      "acPh": "Ncamathisela isithuba sakho, isihloko, okanye iskripthi apha…",
-      "acQuestions": "Kumlobi: ",
-      "acRemoved": "(kukhutshiwe)",
-      "acRun": "Sebenzisa i-anti-cliché",
-      "acSub": "Isusa izinto eziqhelekileyo ezenziwe yi-AI ukuze umbhalo uvakale ngathi ngowomntu. Ayilii nyaniso.",
-      "acTitle": "I-Anti-cliché",
-      "copy": "Kopa",
-      "cpCtaNote": "Sebenzisa igama elingundoqo {{w}} kwiphaneli yokugqibela ye-CTA yeBali lakho.",
-      "cpHooks": "Iinketho ezi-3 zokutsala — cofa ukuze utshintshe umgca wokuqala",
-      "cpLinkPh": "Ikhonkco (ukhetho)",
-      "cpNeedTopic": "Chaza isihloko sesithuba.",
-      "cpRun": "Bhala isihloko",
-      "cpSub": "Ulwakhiwo lwesihloko: intshayelelo → amava omntu → oko ikusombululayo → i-CTA enegama elingundoqo. Ukuya kuthi ga kwi-1000 yoonobumba.",
-      "cpTitle": "Ifomula yesihloko",
-      "cpTopicPh": "Isihloko sesithuba: isihloko, imveliso, ingcamango ephambili, oko umbukeli aya kukufumana…",
-      "cpWordPh": "Igama elingundoqo (okanye i-AI iya kulenza)",
-      "fvDaysHint": "Ubutsha ngeentsuku",
-      "fvDaysPh": "iintsuku",
-      "fvEmpty": "Akukho nto ifunyenweyo kwezi zinto — khulula izihluzi zakho.",
-      "fvNeedTopic": "Faka isihloko sokukhangela.",
-      "fvRun": "Fumana",
-      "fvSub": "Ifumana iividiyo ezisasazekayo ngesihloko kwaye inikeze amakhonkco. Ifumana kuphela — ayikhupheli.",
-      "fvTitle": "Fumana ukusasazeka",
-      "fvTopicPh": "Isihloko okanye indawo: \"I-AI yoshishino\"",
-      "fvViewsPh": "ubuncinci bokubukwa",
-      "intro": "Izakhono ezintathu zombhobho womxholo. Zisebenzisa izitshixo zakho ezisuka kwiiSetingi: ukukhangela — TikHub, imibhalo — Claude (Anthropic). Ezi zakhono ziyafumaneka nakuClaude ngeMCP-connector yethu (isikali \"skills:use\").",
-      "views": "ukubukwa"
-    },
     "storyboard": {
       "actFail": "Ayiphumelelanga — nceda uzame kwakhona.",
       "addPanel": "Iphaneli",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk off — ayizukufakwa kwividiyo.",
       "chunksN": "{{n}} iichunk",
       "costNote": "Injini yesoftware ayisebenzisi izitshixo zangaphandle. Ukubhalwa — isicelo esi-1 seGemini; isicwangciso sephaneli ye-AI — isicelo esi-1 seClaude (izitshixo kwiiSetingi).",
-      "ctaHint": "Sebenzisa igama elifanayo kwinkcazo (“Izakhono → Ifomula yenkcazo”).",
       "ctaPh": "Chwetheza IGAMA kumagqabantshintshi",
       "ctaWordPh": "TREND",
       "delConfirm": "Cima",

@@ -16,8 +16,7 @@
     "trends": "Trender",
     "gallery": "Mediegalleri",
     "publisher": "Publiserer",
-    "storyboard": "Storyboard",
-    "skills": "Ferdigheter"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Oversettelsesrom",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Åpne Google Flow",
       "vpTitle": "Videoer \n→ Google Flow",
       "addTrendTitle": "Åpne 'Trender': skann etter søkeord eller lim inn en videolenke – resultater vises her",
-      "tabSkills": "Ferdigheter",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Retningslinjer for informasjonskapsler",
       "cookiePrivacyLink": "Personvernregler",
       "cookieText": "Vi bruker informasjonskapsler: strengt nødvendige for nettstedets drift (pålogging, språk, tema), og, med ditt samtykke, analytiske – for å forbedre tjenesten. Detaljer i våre ",
-      "tabSkillsSub": "Viralitet · anti-klisjé · bildetekst",
       "tabStoryboardSub": "Auto-montasje-snutt"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Informasjonskapselinnstillinger"
     },
-    "skills": {
-      "acChanges": "Før → etter",
-      "acNeedText": "Lim inn tekst (min. 20 tegn).",
-      "acPh": "Lim inn innlegget, bildeteksten eller manuset ditt her…",
-      "acQuestions": "Til forfatteren: ",
-      "acRemoved": "(fjernet)",
-      "acRun": "Kjør anti-klisjé",
-      "acSub": "Fjerner AI-genererte klisjeer for en mer menneskelig tekst. Oppfinner ikke fakta.",
-      "acTitle": "Anti-klisjé",
-      "copy": "Kopier",
-      "cpCtaNote": "Bruk nøkkelordet {{w}} i det siste CTA-panelet i Storyboardet ditt.",
-      "cpHooks": "3 hook-alternativer — klikk for å erstatte første linje",
-      "cpLinkPh": "Lenke (valgfritt)",
-      "cpNeedTopic": "Beskriv innleggets emne.",
-      "cpRun": "Skriv bildetekst",
-      "cpSub": "Bildetekststruktur: hook → personlig erfaring → hva det løser → CTA med nøkkelord. Opptil 1000 tegn.",
-      "cpTitle": "Bildetekstformel",
-      "cpTopicPh": "Hva innlegget handler om: emne, produkt, hovedidé, hva seeren får…",
-      "cpWordPh": "Nøkkelord (eller AI genererer ett)",
-      "fvDaysHint": "Ferskhet i dager",
-      "fvDaysPh": "dager",
-      "fvEmpty": "Ingenting funnet for disse kriteriene — løsne filtrene dine.",
-      "fvNeedTopic": "Skriv inn et søkeemne.",
-      "fvRun": "Finn",
-      "fvSub": "Finner virale videoer etter emne og gir lenker. Finner bare — laster ikke ned.",
-      "fvTitle": "Finn viralitet",
-      "fvTopicPh": "Emne eller nisje: \"AI for business\"",
-      "fvViewsPh": "min. visninger",
-      "intro": "Tre ferdigheter for innholdspipeline. De bruker nøklene dine fra Innstillinger: søk — TikHub, tekster — Claude (Anthropic). Disse ferdighetene er også tilgjengelige for Claude via vår MCP-kobling (omfang \"skills:use\").",
-      "views": "visninger"
-    },
     "storyboard": {
       "actFail": "Mislyktes — prøv igjen.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Fjern del – blir ikke inkludert i videoen.",
       "chunksN": "{{n}} deler",
       "costNote": "Programvaremotoren bruker ikke eksterne nøkler. Transkripsjon – 1 Gemini-forespørsel; AI-panelplan – 1 Claude-forespørsel (nøkler i Innstillinger).",
-      "ctaHint": "Bruk samme ord i bildeteksten (“Ferdigheter → Bildetekstformel”).",
       "ctaPh": "Skriv ORD i kommentarer",
       "ctaWordPh": "TREND",
       "delConfirm": "Slett",

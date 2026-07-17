@@ -16,8 +16,7 @@
     "trends": "Mga Trend",
     "gallery": "Media gallery",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Mga kuwarto ng pagsasalin",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Buksan ang Google Flow",
       "vpTitle": "Mga Video \n→ Google Flow",
       "addTrendTitle": "Buksan ang 'Trends': mag-scan ayon sa keyword o i-paste ang link ng video — lalabas ang mga resulta dito",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Patakaran sa Cookie",
       "cookiePrivacyLink": "Patakaran sa Privacy",
       "cookieText": "Gumagamit kami ng cookies: mahigpit na kinakailangan para sa operasyon ng site (login, wika, tema), at, sa iyong pahintulot, analytical — upang mapabuti ang serbisyo. Mga detalye sa aming ",
-      "tabSkillsSub": "Viral · anti-cliché · caption",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Mga setting ng cookie"
     },
-    "skills": {
-      "acChanges": "Bago → pagkatapos",
-      "acNeedText": "Idikit ang text (min. 20 character).",
-      "acPh": "Idikit ang iyong post, caption, o script dito…",
-      "acQuestions": "Sa may-akda: ",
-      "acRemoved": "(tinanggal)",
-      "acRun": "Patakbuhin ang anti-cliché",
-      "acSub": "Inaalis ang mga cliché na gawa ng AI para sa mas makataong text. Hindi nag-iimbento ng mga katotohanan.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopyahin",
-      "cpCtaNote": "Gamitin ang keyword na {{w}} sa huling CTA panel ng iyong Storyboard.",
-      "cpHooks": "3 opsyon sa hook — i-click para palitan ang unang linya",
-      "cpLinkPh": "Link (opsyonal)",
-      "cpNeedTopic": "Ilarawan ang paksa ng post.",
-      "cpRun": "Sumulat ng caption",
-      "cpSub": "Istruktura ng caption: hook → personal na karanasan → kung ano ang nalulutas nito → CTA na may keyword. Hanggang 1000 character.",
-      "cpTitle": "Formula ng caption",
-      "cpTopicPh": "Tungkol saan ang post: paksa, produkto, pangunahing ideya, kung ano ang makukuha ng manonood…",
-      "cpWordPh": "Keyword (o bubuo ang AI)",
-      "fvDaysHint": "Pagiging bago sa araw",
-      "fvDaysPh": "araw",
-      "fvEmpty": "Walang nakita para sa mga pamantayang ito — luwagan ang iyong mga filter.",
-      "fvNeedTopic": "Maglagay ng paksa ng paghahanap.",
-      "fvRun": "Hanapin",
-      "fvSub": "Naghahanap ng mga viral na video ayon sa paksa at nagbibigay ng mga link. Naghahanap lang — hindi nagda-download.",
-      "fvTitle": "Hanapin ang pagiging viral",
-      "fvTopicPh": "Paksa o niche: \"AI for business\"",
-      "fvViewsPh": "min. views",
-      "intro": "Tatlong kasanayan sa content pipeline. Ginagamit nila ang iyong mga key mula sa Settings: paghahanap — TikHub, mga text — Claude (Anthropic). Available din ang mga kasanayang ito kay Claude sa pamamagitan ng aming MCP-connector (saklaw na \"skills:use\").",
-      "views": "views"
-    },
     "storyboard": {
       "actFail": "Nabigo — pakisubukang muli.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Alisin ang chunk — hindi isasama sa video.",
       "chunksN": "{{n}} chunks",
       "costNote": "Ang software engine ay hindi gumagamit ng panlabas na keys. Transcription — 1 Gemini request; AI panel plan — 1 Claude request (keys sa Settings).",
-      "ctaHint": "Gamitin ang parehong salita sa caption (“Skills → Caption formula”).",
       "ctaPh": "I-type ang SALITA sa comments",
       "ctaWordPh": "TREND",
       "delConfirm": "Burahin",

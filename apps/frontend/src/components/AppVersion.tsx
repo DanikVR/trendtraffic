@@ -3139,7 +3139,19 @@
  *          их не извлекал (шаблонный ключ, не строка-литерал), из-за чего они
  *          падали на РУССКИЙ инлайн-фолбэк (юзер увидел «Спикер крупно»/«Чистый»
  *          в англ. UI). Добавил 11 ключей в ru → пивот ru→en→106. */
-export const APP_VERSION = '2.5.2';
+/* 2.5.3 — убран раздел «Скиллы» (по решению юзера): дублировал существующие
+ *          функции — «найди-виралку» ≈ сканер «Тренды» (тот же поиск TikHub, но
+ *          без сохранения в Галерею), «формула-подписи» ≈ ИИ-подписи Публикатора
+ *          (generateCaptions). Уникальное «антиклише» удалено вместе с разделом.
+ *          Снята вкладка Галереи-хаба (+пункты сайдбара и нижней панели), backend
+ *          /api/skills, 3 MCP-тулзы (find_viral/anticliche/caption_formula) и скоуп
+ *          skills:use. Хелпер skills/claude.ts ОСТАВЛЕН — им пользуется Сториборд
+ *          (planner). i18n-ключи скиллов вычищены из 108 локалей; подсказка
+ *          Сториборда перефразирована (ctaHint→ctaHintV2).
+ *          Файлы: modules/skills/{router,service}.ts + pages/skills/* УДАЛЕНЫ;
+ *          server, mcp/tools_tt, mcp/scopes, GalleryPage, MainLayout, BottomTabBar,
+ *          StoryboardStudio, locales/*, AppVersion. */
+export const APP_VERSION = '2.5.3';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

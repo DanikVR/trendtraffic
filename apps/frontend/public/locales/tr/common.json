@@ -16,8 +16,7 @@
     "trends": "Trendler",
     "gallery": "Medya galerisi",
     "publisher": "Yayıncı",
-    "storyboard": "Storyboard",
-    "skills": "Beceriler"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Çeviri odaları",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow'u Aç",
       "vpTitle": "Videolar \n→ Google Flow",
       "addTrendTitle": "'Trendler'i açın: anahtar kelimeye göre tarayın veya bir video bağlantısı yapıştırın — sonuçlar burada görünecektir",
-      "tabSkills": "Beceriler",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Çerez Politikası",
       "cookiePrivacyLink": "Gizlilik Politikası",
       "cookieText": "Çerez kullanıyoruz: sitenin çalışması için kesinlikle gerekli olanlar (giriş, dil, tema) ve sizin onayınızla, hizmeti iyileştirmek için analitik çerezler. Detaylar ",
-      "tabSkillsSub": "Viralite · anti-klişe · başlık",
       "tabStoryboardSub": "Otomatik montaj makarası"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Çerez ayarları"
     },
-    "skills": {
-      "acChanges": "Önce → sonra",
-      "acNeedText": "Metin yapıştırın (min. 20 karakter).",
-      "acPh": "Gönderinizi, başlığınızı veya senaryonuzu buraya yapıştırın…",
-      "acQuestions": "Yazara: ",
-      "acRemoved": "(kaldırıldı)",
-      "acRun": "Anti-klişe çalıştır",
-      "acSub": "Daha insancıl bir metin için yapay zeka tarafından oluşturulan klişeleri kaldırır. Gerçekleri uydurmaz.",
-      "acTitle": "Anti-klişe",
-      "copy": "Kopyala",
-      "cpCtaNote": "Storyboard'unuzun son CTA panelinde {{w}} anahtar kelimesini kullanın.",
-      "cpHooks": "3 kanca seçeneği — ilk satırı değiştirmek için tıklayın",
-      "cpLinkPh": "Bağlantı (isteğe bağlı)",
-      "cpNeedTopic": "Gönderi konusunu açıklayın.",
-      "cpRun": "Başlık yaz",
-      "cpSub": "Başlık yapısı: kanca → kişisel deneyim → neyi çözdüğü → anahtar kelimeyle CTA. 1000 karaktere kadar.",
-      "cpTitle": "Başlık formülü",
-      "cpTopicPh": "Gönderi ne hakkında: konu, ürün, ana fikir, izleyicinin ne elde edeceği…",
-      "cpWordPh": "Anahtar kelime (veya AI bir tane oluşturur)",
-      "fvDaysHint": "Gün cinsinden tazelik",
-      "fvDaysPh": "gün",
-      "fvEmpty": "Bu kriterlere göre hiçbir şey bulunamadı — filtrelerinizi gevşetin.",
-      "fvNeedTopic": "Bir arama konusu girin.",
-      "fvRun": "Bul",
-      "fvSub": "Konuya göre viral videoları bulur ve bağlantılar sağlar. Sadece bulur — indirmez.",
-      "fvTitle": "Viralite bul",
-      "fvTopicPh": "Konu veya niş: \"iş için yapay zeka\"",
-      "fvViewsPh": "min. görüntüleme",
-      "intro": "Üç içerik hattı becerisi. Ayarlarınızdaki anahtarlarınızı kullanırlar: arama — TikHub, metinler — Claude (Anthropic). Bu beceriler, MCP-bağlayıcımız (kapsam \"skills:use\") aracılığıyla Claude için de mevcuttur.",
-      "views": "görüntüleme"
-    },
     "storyboard": {
       "actFail": "Başarısız oldu — lütfen tekrar deneyin.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Parça kapalı — videoya dahil edilmeyecek.",
       "chunksN": "{{n}} parça",
       "costNote": "Yazılım motoru harici anahtarlar kullanmaz. Transkripsiyon — 1 Gemini isteği; Yapay Zeka panel planı — 1 Claude isteği (Ayarlar'daki anahtarlar).",
-      "ctaHint": "Açıklamada aynı kelimeyi kullanın (\"Beceriler → Açıklama formülü\").",
       "ctaPh": "Yorumlara KELİME yazın",
       "ctaWordPh": "TREND",
       "delConfirm": "Sil",

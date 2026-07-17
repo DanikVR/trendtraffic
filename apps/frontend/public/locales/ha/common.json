@@ -16,8 +16,7 @@
     "trends": "Abubuwan da ke faruwa",
     "gallery": "Gallery na Media",
     "publisher": "Mai wallafawa",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Dakunan fassara",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Bude Google Flow",
       "vpTitle": "Bidiyo \n→ Google Flow",
       "addTrendTitle": "Bude 'Abubuwan da ke faruwa': bincika ta kalmar shiga ko liƙa hanyar haɗin bidiyo — sakamakon zai bayyana a nan",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Manufar Kukis",
       "cookiePrivacyLink": "Manufar Sirri",
       "cookieText": "Muna amfani da kukis: masu mahimmanci don aikin shafin (shiga, harshe, jigo), kuma, tare da yardarka, nazari — don inganta sabis ɗin. Cikakkun bayanai a cikin mu ",
-      "tabSkillsSub": "Virality · anti-cliché · caption",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Saitunan kukis"
     },
-    "skills": {
-      "acChanges": "Kafin → bayan",
-      "acNeedText": "Manna rubutu (aƙalla haruffa 20).",
-      "acPh": "Manna post ɗinka, taken, ko rubutun nan…",
-      "acQuestions": "Ga marubucin: ",
-      "acRemoved": "(an cire)",
-      "acRun": "Gudanar da anti-cliché",
-      "acSub": "Yana cire clichés da AI ta samar don rubutun da ya fi kama da na ɗan adam. Ba ya ƙirƙira gaskiya.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kwafi",
-      "cpCtaNote": "Yi amfani da kalmar maɓalli {{w}} a cikin panel na ƙarshe na CTA na Storyboard ɗinka.",
-      "cpHooks": "Zaɓuɓɓukan ƙugiya 3 — danna don maye gurbin layin farko",
-      "cpLinkPh": "Hanyar haɗi (na zaɓi)",
-      "cpNeedTopic": "Bayyana batun post ɗin.",
-      "cpRun": "Rubuta take",
-      "cpSub": "Tsarin take: ƙugiya → gogewar kai → abin da yake warwarewa → CTA da kalmar maɓalli. Har zuwa haruffa 1000.",
-      "cpTitle": "Tsarin take",
-      "cpTopicPh": "Mene ne post ɗin game da shi: batu, samfur, babban ra'ayi, abin da mai kallo zai samu…",
-      "cpWordPh": "Kalmar maɓalli (ko AI za ta samar da ɗaya)",
-      "fvDaysHint": "Sabon abu a cikin kwanaki",
-      "fvDaysPh": "kwanaki",
-      "fvEmpty": "Ba a sami komai ba don waɗannan sharuɗɗan — sassauta matatunka.",
-      "fvNeedTopic": "Shigar da batun bincike.",
-      "fvRun": "Nemo",
-      "fvSub": "Yana nemo bidiyoyin viral ta batu kuma yana samar da hanyoyin haɗi. Yana nemo kawai — ba ya saukewa.",
-      "fvTitle": "Nemo virality",
-      "fvTopicPh": "Batu ko niche: \"AI don kasuwanci\"",
-      "fvViewsPh": "ƙaramin ra'ayoyi",
-      "intro": "Ƙwarewar bututun abun ciki guda uku. Suna amfani da maɓallan ku daga Saituna: bincike — TikHub, rubutu — Claude (Anthropic). Waɗannan ƙwarewar kuma suna samuwa ga Claude ta hanyar MCP-connector ɗinmu (iyakar \"skills:use\").",
-      "views": "ra'ayoyi"
-    },
     "storyboard": {
       "actFail": "Ya gaza — da fatan za a sake gwadawa.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "An cire guntun — ba za a haɗa shi a cikin bidiyon ba.",
       "chunksN": "Guntu {{n}}",
       "costNote": "Injin software baya amfani da maɓallan waje. Rubutawa — buƙatar Gemini 1; Shirin AI panel — buƙatar Claude 1 (maɓallai a cikin Saituna).",
-      "ctaHint": "Yi amfani da kalma ɗaya a cikin taken (\"Skills → Caption formula\").",
       "ctaPh": "Rubuta KALMA a cikin sharhi",
       "ctaWordPh": "TREND",
       "delConfirm": "Share",

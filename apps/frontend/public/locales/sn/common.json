@@ -16,8 +16,7 @@
     "trends": "Mafambiro",
     "gallery": "Media gallery",
     "publisher": "Muparidzi",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Makamuri ekushandura",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Vhura Google Flow",
       "vpTitle": "Mavhidhiyo \n→ Google Flow",
       "addTrendTitle": "Vhura 'Trends': scan nemazwi akakosha kana peta link yevhidhiyo — mhinduro dzichaonekwa pano",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookie Policy",
       "cookiePrivacyLink": "Privacy Policy",
       "cookieText": "Tinoshandisa makuki: anonyatsodiwa pakushanda kwesaiti (kupinda, mutauro, theme), uye, nemvumo yako, analytical — kuvandudza sevhisi. Ruzivo rwakadzama mu",
-      "tabSkillsSub": "Virality · anti-cliché · caption",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Zvirongwa zvemacookie"
     },
-    "skills": {
-      "acChanges": "Pamberi → pashure",
-      "acNeedText": "Isa zvinyorwa (zvishoma 20 mavara).",
-      "acPh": "Isa chinyorwa chako, caption, kana script pano…",
-      "acQuestions": "Kumunyori: ",
-      "acRemoved": "(yakabviswa)",
-      "acRun": "Mhanyisa anti-cliché",
-      "acSub": "Inobvisa clichés akagadzirwa neAI kuti zvinyorwa zvive sevanhu. Haisiki kugadzira chokwadi.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopa",
-      "cpCtaNote": "Shandisa izwi kiyi {{w}} mupanel yekupedzisira yeCTA yeStoryboard yako.",
-      "cpHooks": "3 sarudzo dzehook — tinya kuti utsive mutsara wekutanga",
-      "cpLinkPh": "Link (sarudzo)",
-      "cpNeedTopic": "Tsana musoro wechinyorwa.",
-      "cpRun": "Nyora caption",
-      "cpSub": "Chimiro checaption: hook → ruzivo rwemunhu → zvinogadzirisa → CTA neizwi kiyi. Kusvika ku1000 mavara.",
-      "cpTitle": "Caption formula",
-      "cpTopicPh": "Chinyorwa chiri pamusoro pei: musoro, chigadzirwa, pfungwa huru, chii chichawanikwa nemuoni…",
-      "cpWordPh": "Izwi kiyi (kana AI ichagadzira rimwe)",
-      "fvDaysHint": "Kutsva mumazuva",
-      "fvDaysPh": "mazuva",
-      "fvEmpty": "Hapana chawanikwa nezvinodiwa izvi — sunungura mafirita ako.",
-      "fvNeedTopic": "Isa musoro wekutsvaga.",
-      "fvRun": "Tsvaga",
-      "fvSub": "Inotsvaga mavhidhiyo evirality nemusoro uye inopa malink. Inongotsvaga chete — haidhaunirodhi.",
-      "fvTitle": "Tsvaga virality",
-      "fvTopicPh": "Musoro kana niche: \"AI yebhizinesi\"",
-      "fvViewsPh": "zvishoma maonero",
-      "intro": "Matatu ehunyanzvi hwekuita zvemukati. Anoshandisa makiyi ako kubva kuSettings: tsvaga — TikHub, zvinyorwa — Claude (Anthropic). Hunyanzvi uhu hunowanikwawo kuna Claude kuburikidza neMCP-connector yedu (scope \"skills:use\").",
-      "views": "maonero"
-    },
     "storyboard": {
       "actFail": "Yatadza — ndapota edza zvakare.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Bvisa chikamu — hachizoiswa muvhidhiyo.",
       "chunksN": "Zvikamu {{n}}",
       "costNote": "Injini yesoftware haishandisi makiyi ekunze. Kunyora — 1 Gemini request; AI panel plan — 1 Claude request (makiyi muSettings).",
-      "ctaHint": "Shandisa izwi rimwe chete mu caption (“Skills → Caption formula”).",
       "ctaPh": "Nyora IZWI mumacomments",
       "ctaWordPh": "TREND",
       "delConfirm": "Bvisa",

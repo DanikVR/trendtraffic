@@ -16,8 +16,7 @@
     "trends": "Trends",
     "gallery": "Media gallery",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Translation rooms",
@@ -2699,7 +2698,6 @@
       "vpManual": "Google Flow only accepts videos manually — via the 'Downloads' section. Flow does not support automatic video insertion (images only).",
       "vpOpenFlow": "Open Google Flow",
       "vpTitle": "Videos \n→ Google Flow",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2896,7 +2894,6 @@
       "cookiePolicyLink": "Cookie Policy",
       "cookiePrivacyLink": "Privacy Policy",
       "cookieText": "We use cookies: strictly necessary for site operation (login, language, theme), and, with your consent, analytical — to improve the service. Details in our ",
-      "tabSkillsSub": "Virality · anti-cliché · caption",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4123,37 +4120,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie settings"
     },
-    "skills": {
-      "acChanges": "Before → after",
-      "acNeedText": "Paste text (min. 20 characters).",
-      "acPh": "Paste your post, caption, or script here…",
-      "acQuestions": "To the author: ",
-      "acRemoved": "(removed)",
-      "acRun": "Run anti-cliché",
-      "acSub": "Removes AI-generated clichés for a more human-sounding text. Does not invent facts.",
-      "acTitle": "Anti-cliché",
-      "copy": "Copy",
-      "cpCtaNote": "Use the keyword {{w}} in the final CTA panel of your Storyboard.",
-      "cpHooks": "3 hook options — click to replace the first line",
-      "cpLinkPh": "Link (optional)",
-      "cpNeedTopic": "Describe the post topic.",
-      "cpRun": "Write caption",
-      "cpSub": "Caption structure: hook → personal experience → what it solves → CTA with keyword. Up to 1000 characters.",
-      "cpTitle": "Caption formula",
-      "cpTopicPh": "What the post is about: topic, product, main idea, what the viewer will get…",
-      "cpWordPh": "Keyword (or AI will generate one)",
-      "fvDaysHint": "Freshness in days",
-      "fvDaysPh": "days",
-      "fvEmpty": "Nothing found for these criteria — loosen your filters.",
-      "fvNeedTopic": "Enter a search topic.",
-      "fvRun": "Find",
-      "fvSub": "Finds viral videos by topic and provides links. Only finds — does not download.",
-      "fvTitle": "Find virality",
-      "fvTopicPh": "Topic or niche: \"AI for business\"",
-      "fvViewsPh": "min. views",
-      "intro": "Three content pipeline skills. They use your keys from Settings: search — TikHub, texts — Claude (Anthropic). These skills are also available to Claude via our MCP-connector (scope \"skills:use\").",
-      "views": "views"
-    },
     "storyboard": {
       "actFail": "Failed — please try again.",
       "addPanel": "Panel",
@@ -4183,7 +4149,6 @@
       "chunkOff": "Chunk off — will not be included in the video.",
       "chunksN": "{{n}} chunks",
       "costNote": "The software engine does not use external keys. Transcription — 1 Gemini request; AI panel plan — 1 Claude request (keys in Settings).",
-      "ctaHint": "Use the same word in the caption (“Skills → Caption formula”).",
       "ctaPh": "Type WORD in comments",
       "ctaWordPh": "TREND",
       "delConfirm": "Delete",

@@ -16,8 +16,7 @@
     "trends": "趋势",
     "gallery": "媒体库",
     "publisher": "发布器",
-    "storyboard": "故事板",
-    "skills": "技能"
+    "storyboard": "故事板"
   },
   "rooms": {
     "title": "翻译房间",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "打开 Google Flow",
       "vpTitle": "视频 \n→ Google Flow",
       "addTrendTitle": "打开“趋势”：按关键词扫描或粘贴视频链接 — 结果将显示在此处",
-      "tabSkills": "技能",
       "tabStoryboard": "故事板"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookie 政策",
       "cookiePrivacyLink": "隐私政策",
       "cookieText": "我们使用 Cookie：严格必要用于网站运营（登录、语言、主题），并在您同意的情况下，用于分析 — 以改进服务。详情请参阅我们的",
-      "tabSkillsSub": "病毒式传播 · 反套路 · 文案",
       "tabStoryboardSub": "自动剪辑短片"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "维基",
       "footerCookieSettings": "Cookie设置"
     },
-    "skills": {
-      "acChanges": "修改前 → 修改后",
-      "acNeedText": "粘贴文本（最少20个字符）。",
-      "acPh": "在此处粘贴您的帖子、文案或脚本…",
-      "acQuestions": "致作者：",
-      "acRemoved": "（已删除）",
-      "acRun": "运行反套路",
-      "acSub": "移除AI生成的套路，使文本听起来更人性化。不虚构事实。",
-      "acTitle": "反套路",
-      "copy": "复制",
-      "cpCtaNote": "在故事板的最终CTA面板中使用关键词 {{w}}。",
-      "cpHooks": "3个钩子选项 — 点击替换第一行",
-      "cpLinkPh": "链接（可选）",
-      "cpNeedTopic": "描述帖子主题。",
-      "cpRun": "撰写文案",
-      "cpSub": "文案结构：钩子 → 个人经验 → 解决的问题 → 带关键词的CTA。最多1000个字符。",
-      "cpTitle": "文案公式",
-      "cpTopicPh": "帖子内容：主题、产品、主要思想、观众将获得什么…",
-      "cpWordPh": "关键词（或AI将生成一个）",
-      "fvDaysHint": "新鲜度（天）",
-      "fvDaysPh": "天",
-      "fvEmpty": "未找到符合条件的内容 — 请放宽筛选条件。",
-      "fvNeedTopic": "输入搜索主题。",
-      "fvRun": "查找",
-      "fvSub": "按主题查找病毒视频并提供链接。只查找 — 不下载。",
-      "fvTitle": "查找病毒式内容",
-      "fvTopicPh": "主题或利基市场：“AI for business”",
-      "fvViewsPh": "最低观看量",
-      "intro": "三项内容管道技能。它们使用您在“设置”中的密钥：搜索 — TikHub，文本 — Claude (Anthropic)。这些技能也可通过我们的MCP连接器（范围“skills:use”）供Claude使用。",
-      "views": "观看"
-    },
     "storyboard": {
       "actFail": "失败 — 请重试。",
       "addPanel": "面板",
@@ -4190,7 +4156,6 @@
       "chunkOff": "分段关闭 — 不会包含在视频中。",
       "chunksN": "{{n}} 个分段",
       "costNote": "软件引擎不使用外部密钥。转录 — 1 个 Gemini 请求；AI 面板计划 — 1 个 Claude 请求（密钥在“设置”中）。",
-      "ctaHint": "在字幕中使用相同的词语（“技能 → 字幕公式”）。",
       "ctaPh": "在评论中输入 WORD",
       "ctaWordPh": "趋势",
       "delConfirm": "删除",

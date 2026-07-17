@@ -16,8 +16,7 @@
     "trends": "Fironana",
     "gallery": "Galerie media",
     "publisher": "Mpanonta",
-    "storyboard": "Storyboard",
-    "skills": "Fahaiza-manao"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Efitrano fandikana",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Sokafy ny Google Flow",
       "vpTitle": "Horonantsary \n→ Google Flow",
       "addTrendTitle": "Sokafy ny 'Trends': karohy amin'ny teny fanalahidy na apetaho ny rohy video — hiseho eto ny valiny",
-      "tabSkills": "Fahaiza-manao",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Politika momba ny Cookie",
       "cookiePrivacyLink": "Politika momba ny Tsiambaratelo",
       "cookieText": "Mampiasa cookies izahay: tena ilaina amin'ny fampandehanana ny tranokala (fidirana, fiteny, lohahevitra), ary, miaraka amin'ny fankatoavanao, analytical — hanatsarana ny serivisy. Tsipiriany ao amin'ny ",
-      "tabSkillsSub": "Fahaviraliana · manohitra ny mahazatra · lohateny",
       "tabStoryboardSub": "Famoronana horonantsary mandeha ho azy"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Fikirana momba ny cookies"
     },
-    "skills": {
-      "acChanges": "Taloha → aorian'izay",
-      "acNeedText": "Apetaho ny lahatsoratra (farafahakeliny 20 litera).",
-      "acPh": "Apetaho eto ny lahatsoratrao, ny lohateninao, na ny soratrao…",
-      "acQuestions": "Ho an'ny mpanoratra: ",
-      "acRemoved": "(nesorina)",
-      "acRun": "Alefaso ny anti-cliché",
-      "acSub": "Manala ny clichés novokarin'ny AI mba hahatonga ny lahatsoratra ho toy ny olombelona kokoa. Tsy mamorona zava-misy.",
-      "acTitle": "Anti-cliché",
-      "copy": "Adikao",
-      "cpCtaNote": "Ampiasao ny teny fanalahidy {{w}} ao amin'ny tontonana CTA farany amin'ny Storyboard anao.",
-      "cpHooks": "Safidy 3 ho an'ny hook — tsindrio hanoloana ny andalana voalohany",
-      "cpLinkPh": "Rohy (tsy voatery)",
-      "cpNeedTopic": "Farito ny lohahevitry ny lahatsoratra.",
-      "cpRun": "Manorata lohateny",
-      "cpSub": "Firafitry ny lohateny: hook → traikefa manokana → inona no vahaolana → CTA miaraka amin'ny teny fanalahidy. Hatramin'ny 1000 litera.",
-      "cpTitle": "Fomba fanoratana lohateny",
-      "cpTopicPh": "Momba ny inona ny lahatsoratra: lohahevitra, vokatra, hevitra fototra, inona no ho azon'ny mpijery…",
-      "cpWordPh": "Teny fanalahidy (na hamorona ny AI)",
-      "fvDaysHint": "Havaozana ao anatin'ny andro",
-      "fvDaysPh": "andro",
-      "fvEmpty": "Tsy nisy hita tamin'ireo fepetra ireo — ahitsio ny sivanao.",
-      "fvNeedTopic": "Ampidiro ny lohahevitra hotadiavina.",
-      "fvRun": "Tadiavo",
-      "fvSub": "Mitady horonantsary viralin'ny lohahevitra ary manome rohy. Mitady fotsiny — tsy misintona.",
-      "fvTitle": "Mitady fahaviraliana",
-      "fvTopicPh": "Lohahevitra na niche: \"AI ho an'ny orinasa\"",
-      "fvViewsPh": "farafahakeliny fijery",
-      "intro": "Fahaiza-manao telo amin'ny famoronana votoaty. Mampiasa ny fanalahidinao avy amin'ny Fikirana izy ireo: fikarohana — TikHub, lahatsoratra — Claude (Anthropic). Ireo fahaiza-manao ireo dia azo ampiasaina amin'ny Claude amin'ny alàlan'ny mcp-connector anay (scope \"skills:use\").",
-      "views": "fijery"
-    },
     "storyboard": {
       "actFail": "Tsy nahomby — andramo indray azafady.",
       "addPanel": "Tontonana",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Tsy ho tafiditra ao anaty lahatsary.",
       "chunksN": "Fizarana {{n}}",
       "costNote": "Tsy mampiasa fanalahidy ivelany ny motera rindrambaiko. Fandikana — fangatahana Gemini 1; drafitra tontonana AI — fangatahana Claude 1 (fanalahidy ao amin'ny Fikirana).",
-      "ctaHint": "Ampiasao ny teny mitovy amin'ny lohateny (\"Fahaiza-manao → Fomba lohateny\").",
       "ctaPh": "Soraty ny TENY ao amin'ny fanehoan-kevitra",
       "ctaWordPh": "TREND",
       "delConfirm": "Fafao",

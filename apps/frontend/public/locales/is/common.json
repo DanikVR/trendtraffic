@@ -16,8 +16,7 @@
     "trends": "Trend",
     "gallery": "Fjölmiðlagallerí",
     "publisher": "Útgefandi",
-    "storyboard": "Kvikmyndahandrit",
-    "skills": "Færni"
+    "storyboard": "Kvikmyndahandrit"
   },
   "rooms": {
     "title": "Þýðingarherbergi",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Opna Google Flow",
       "vpTitle": "Myndbönd \n→ Google Flow",
       "addTrendTitle": "Opnaðu 'Straumar': skannaðu eftir leitarorði eða límtu inn myndbandstengil — niðurstöður birtast hér",
-      "tabSkills": "Færni",
       "tabStoryboard": "Kvikmyndahandrit"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Vafrakökustefna",
       "cookiePrivacyLink": "Persónuverndarstefna",
       "cookieText": "Við notum vafrakökur: algjörlega nauðsynlegar fyrir rekstur vefsíðunnar (innskráning, tungumál, þema), og, með þínu samþykki, greiningarvafrakökur — til að bæta þjónustuna. Nánari upplýsingar í okkar ",
-      "tabSkillsSub": "Veirufræði · gegn-klisju · myndatexti",
       "tabStoryboardSub": "Sjálfvirk klippimynd"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Fótsporsstillingar"
     },
-    "skills": {
-      "acChanges": "Fyrir → eftir",
-      "acNeedText": "Límdu texta (minnst 20 stafir).",
-      "acPh": "Límdu færsluna þína, myndatexta eða handrit hér…",
-      "acQuestions": "Til höfundar: ",
-      "acRemoved": "(fjarlægt)",
-      "acRun": "Keyra gegn-klisju",
-      "acSub": "Fjarlægir gervigreindarklisjur fyrir mannlegri texta. Býr ekki til staðreyndir.",
-      "acTitle": "Gegn-klisju",
-      "copy": "Afrita",
-      "cpCtaNote": "Notaðu leitarorðið {{w}} í loka CTA spjaldinu í kvikmyndahandritinu þínu.",
-      "cpHooks": "3 krókavalkostir — smelltu til að skipta um fyrstu línu",
-      "cpLinkPh": "Tengill (valfrjálst)",
-      "cpNeedTopic": "Lýstu efni færslunnar.",
-      "cpRun": "Skrifa myndatexta",
-      "cpSub": "Uppbygging myndatexta: krókur → persónuleg reynsla → hvað það leysir → CTA með leitarorði. Allt að 1000 stafir.",
-      "cpTitle": "Formúla fyrir myndatexta",
-      "cpTopicPh": "Hvað færslan snýst um: efni, vara, meginhugmynd, hvað áhorfandinn fær…",
-      "cpWordPh": "Leitarorð (eða gervigreind býr til eitt)",
-      "fvDaysHint": "Ferskleiki í dögum",
-      "fvDaysPh": "dagar",
-      "fvEmpty": "Ekkert fannst fyrir þessi skilyrði — slakaðu á síunum þínum.",
-      "fvNeedTopic": "Sláðu inn leitarefni.",
-      "fvRun": "Finna",
-      "fvSub": "Finnur veiru myndbönd eftir efni og gefur upp tengla. Finnur aðeins — hleður ekki niður.",
-      "fvTitle": "Finna veirufræði",
-      "fvTopicPh": "Efni eða sess: „Gervigreind fyrir fyrirtæki“",
-      "fvViewsPh": "min. áhorf",
-      "intro": "Þrjár færni í efnisleiðslu. Þær nota lykla þína úr stillingum: leit — TikHub, textar — Claude (Anthropic). Þessi færni er einnig í boði fyrir Claude í gegnum MCP-tengilinn okkar (svið „skills:use“).",
-      "views": "áhorf"
-    },
     "storyboard": {
       "actFail": "Mistókst — vinsamlegast reyndu aftur.",
       "addPanel": "Spjald",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Taka burt — verður ekki með í myndbandinu.",
       "chunksN": "{{n}} hlutar",
       "costNote": "Hugbúnaðarvélin notar ekki ytri lykla. Umritun — 1 Gemini beiðni; AI spjaldskipulag — 1 Claude beiðni (lyklar í Stillingum).",
-      "ctaHint": "Notaðu sama orð í myndatexta („Færni → Formúla myndatexta“).",
       "ctaPh": "Sláðu inn ORÐ í athugasemdir",
       "ctaWordPh": "TREND",
       "delConfirm": "Eyða",

@@ -16,8 +16,7 @@
     "trends": "Trendlar",
     "gallery": "Media galereyasi",
     "publisher": "Nashrchi",
-    "storyboard": "Storyboard",
-    "skills": "Ko‘nikmalar"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Tarjima xonalari",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow'ni ochish",
       "vpTitle": "Videolar \n→ Google Flow",
       "addTrendTitle": "'Trendlar'ni oching: kalit so'z bo'yicha skanerlang yoki video havolasini joylashtiring — natijalar shu yerda paydo bo'ladi",
-      "tabSkills": "Ko‘nikmalar",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kuki siyosati",
       "cookiePrivacyLink": "Maxfiylik siyosati",
       "cookieText": "Biz kukilardan foydalanamiz: sayt ishlashi uchun qat'iy zarur (kirish, til, mavzu) va sizning roziligingiz bilan, tahliliy — xizmatni yaxshilash uchun. Batafsil ma'lumot bizning ",
-      "tabSkillsSub": "Viral · anti-klishe · sarlavha",
       "tabStoryboardSub": "Avto-montaj roli"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie sozlamalari"
     },
-    "skills": {
-      "acChanges": "Oldin → keyin",
-      "acNeedText": "Matnni joylashtiring (kamida 20 belgi).",
-      "acPh": "Post, sarlavha yoki skriptingizni shu yerga joylashtiring…",
-      "acQuestions": "Muallifga: ",
-      "acRemoved": "(olib tashlandi)",
-      "acRun": "Anti-klisheni ishga tushirish",
-      "acSub": "Matnni insoniyroq qilish uchun AI tomonidan yaratilgan klishelarni olib tashlaydi. Faktlarni o‘ylab topmaydi.",
-      "acTitle": "Anti-klishe",
-      "copy": "Nusxalash",
-      "cpCtaNote": "Storyboard’ingizning yakuniy CTA panelida {{w}} kalit so‘zidan foydalaning.",
-      "cpHooks": "3 ta ilgak varianti — birinchi qatorni almashtirish uchun bosing",
-      "cpLinkPh": "Havola (ixtiyoriy)",
-      "cpNeedTopic": "Post mavzusini ta’riflang.",
-      "cpRun": "Sarlavha yozish",
-      "cpSub": "Sarlavha tuzilishi: ilgak → shaxsiy tajriba → nima yechadi → kalit so‘z bilan CTA. 1000 belgiga qadar.",
-      "cpTitle": "Sarlavha formulasi",
-      "cpTopicPh": "Post nima haqida: mavzu, mahsulot, asosiy g‘oya, tomoshabin nima oladi…",
-      "cpWordPh": "Kalit so‘z (yoki AI yaratadi)",
-      "fvDaysHint": "Kunlardagi yangilik",
-      "fvDaysPh": "kun",
-      "fvEmpty": "Bu mezonlar bo‘yicha hech narsa topilmadi — filtrlaringizni yumshating.",
-      "fvNeedTopic": "Qidiruv mavzusini kiriting.",
-      "fvRun": "Topish",
-      "fvSub": "Mavzu bo‘yicha viral videolarni topadi va havolalar beradi. Faqat topadi — yuklab olmaydi.",
-      "fvTitle": "Virallikni topish",
-      "fvTopicPh": "Mavzu yoki nisha: \"Biznes uchun AI\"",
-      "fvViewsPh": "min. ko‘rishlar",
-      "intro": "Uchta kontent quvur liniyasi ko‘nikmasi. Ular Sozlamalardagi kalitlaringizdan foydalanadi: qidiruv — TikHub, matnlar — Claude (Anthropic). Bu ko‘nikmalar Claude uchun bizning MCP-ulagichimiz orqali ham mavjud (\"skills:use\" doirasi).",
-      "views": "ko‘rishlar"
-    },
     "storyboard": {
       "actFail": "Muvaffaqiyatsiz — iltimos, qayta urinib ko‘ring.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk oʻchirilgan — videoga kiritilmaydi.",
       "chunksN": "{{n}} boʻlak",
       "costNote": "Dastur dvigateli tashqi kalitlardan foydalanmaydi. Transkripsiya — 1 Gemini soʻrovi; AI panel rejasi — 1 Claude soʻrovi (kalitlar Sozlamalarda).",
-      "ctaHint": "Sarlavhada bir xil soʻzdan foydalaning (“Koʻnikmalar → Sarlavha formulasi”).",
       "ctaPh": "Izohlarga SOʻZ yozing",
       "ctaWordPh": "TREND",
       "delConfirm": "Oʻchirish",

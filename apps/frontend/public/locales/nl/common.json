@@ -16,8 +16,7 @@
     "trends": "Trends",
     "gallery": "Mediagalerij",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Vaardigheden"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Vertaalkamers",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Open Google Flow",
       "vpTitle": "Video's \n→ Google Flow",
       "addTrendTitle": "Open 'Trends': scan op trefwoord of plak een videolink — resultaten verschijnen hier",
-      "tabSkills": "Vaardigheden",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookiebeleid",
       "cookiePrivacyLink": "Privacybeleid",
       "cookieText": "We gebruiken cookies: strikt noodzakelijk voor de werking van de site (login, taal, thema), en, met uw toestemming, analytisch — om de service te verbeteren. Details in ons ",
-      "tabSkillsSub": "Viraliteit · anti-cliché · bijschrift",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie-instellingen"
     },
-    "skills": {
-      "acChanges": "Voor → na",
-      "acNeedText": "Plak tekst (min. 20 tekens).",
-      "acPh": "Plak hier je bericht, bijschrift of script…",
-      "acQuestions": "Aan de auteur: ",
-      "acRemoved": "(verwijderd)",
-      "acRun": "Voer anti-cliché uit",
-      "acSub": "Verwijdert door AI gegenereerde clichés voor een menselijker klinkende tekst. Verzint geen feiten.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopiëren",
-      "cpCtaNote": "Gebruik het trefwoord {{w}} in het laatste CTA-paneel van je Storyboard.",
-      "cpHooks": "3 hook-opties — klik om de eerste regel te vervangen",
-      "cpLinkPh": "Link (optioneel)",
-      "cpNeedTopic": "Beschrijf het onderwerp van het bericht.",
-      "cpRun": "Schrijf bijschrift",
-      "cpSub": "Bijschriftstructuur: hook → persoonlijke ervaring → wat het oplost → CTA met trefwoord. Maximaal 1000 tekens.",
-      "cpTitle": "Bijschriftformule",
-      "cpTopicPh": "Waar het bericht over gaat: onderwerp, product, hoofdidee, wat de kijker zal krijgen…",
-      "cpWordPh": "Trefwoord (of AI genereert er een)",
-      "fvDaysHint": "Versheid in dagen",
-      "fvDaysPh": "dagen",
-      "fvEmpty": "Niets gevonden voor deze criteria — versoepel je filters.",
-      "fvNeedTopic": "Voer een zoekonderwerp in.",
-      "fvRun": "Vinden",
-      "fvSub": "Vindt virale video's per onderwerp en geeft links. Vindt alleen — downloadt niet.",
-      "fvTitle": "Viraliteit vinden",
-      "fvTopicPh": "Onderwerp of niche: \"AI voor bedrijven\"",
-      "fvViewsPh": "min. weergaven",
-      "intro": "Drie content pipeline vaardigheden. Ze gebruiken je sleutels uit Instellingen: zoeken — TikHub, teksten — Claude (Anthropic). Deze vaardigheden zijn ook beschikbaar voor Claude via onze MCP-connector (scope \"skills:use\").",
-      "views": "weergaven"
-    },
     "storyboard": {
       "actFail": "Mislukt — probeer het opnieuw.",
       "addPanel": "Paneel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk uit — wordt niet opgenomen in de video.",
       "chunksN": "{{n}} chunks",
       "costNote": "De software-engine gebruikt geen externe sleutels. Transcriptie — 1 Gemini-verzoek; AI-panelplan — 1 Claude-verzoek (sleutels in Instellingen).",
-      "ctaHint": "Gebruik hetzelfde woord in het bijschrift (\"Vaardigheden → Bijschriftformule\").",
       "ctaPh": "Typ WOORD in opmerkingen",
       "ctaWordPh": "TREND",
       "delConfirm": "Verwijderen",

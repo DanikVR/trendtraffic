@@ -16,8 +16,7 @@
     "trends": "Auahatanga",
     "gallery": "Taiwhanga Pāpāho",
     "publisher": "Kaiwhakaputa",
-    "storyboard": "Papakupu",
-    "skills": "Pūkenga"
+    "storyboard": "Papakupu"
   },
   "rooms": {
     "title": "Rūma Whakamaori",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Whakatuwheratia te Rere Google",
       "vpTitle": "Ngā Ataata \n→ Rere Google",
       "addTrendTitle": "Whakatuwheratia 'Ngā Ia': karapa mā te kupu matua, whakapiri rānei i tētahi hononga ataata — ka puta ngā hua ki konei",
-      "tabSkills": "Pūkenga",
       "tabStoryboard": "Papakupu"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kaupapahere Pihikete",
       "cookiePrivacyLink": "Kaupapahere Tūmataitinga",
       "cookieText": "Ka whakamahi mātou i ngā pihikete: he mea tino tika mō te mahi o te pae (takiuru, reo, kaupapa), ā, me tō whakaaetanga, tātari — hei whakapai ake i te ratonga. Ngā taipitopito i roto i tā mātou ",
-      "tabSkillsSub": "Horapa · anti-cliché · tapanga",
       "tabStoryboardSub": "Rīpene whakahuihui-aunoa"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Tautuhinga Pihikete"
     },
-    "skills": {
-      "acChanges": "I mua → i muri",
-      "acNeedText": "Whakapiri kuputuhi (iti rawa 20 pūāhua).",
-      "acPh": "Whakapirihia tō pou, tapanga, tuhinga rānei ki konei…",
-      "acQuestions": "Ki te kaituhi: ",
-      "acRemoved": "(kua tangohia)",
-      "acRun": "Whakahaere anti-cliché",
-      "acSub": "Ka tango i ngā kīanga AI-hanga kia pai ake ai te tangi tangata o te kuputuhi. Kāore e hanga meka.",
-      "acTitle": "Anti-cliché",
-      "copy": "Tārua",
-      "cpCtaNote": "Whakamahia te kupu matua {{w}} i te rōpū CTA whakamutunga o tō Papakupu.",
-      "cpHooks": "3 kōwhiringa matau — pāwhiri ki te whakakapi i te rārangi tuatahi",
-      "cpLinkPh": "Hononga (kōwhiringa)",
-      "cpNeedTopic": "Whakaahuahia te kaupapa o te pou.",
-      "cpRun": "Tuhia te tapanga",
-      "cpSub": "Hanganga tapanga: matau → wheako whaiaro → he aha te otinga → CTA me te kupu matua. Tae atu ki te 1000 pūāhua.",
-      "cpTitle": "Tātai tapanga",
-      "cpTopicPh": "He aha te kaupapa o te pou: kaupapa, hua, whakaaro matua, he aha ka riro i te kaimātaki…",
-      "cpWordPh": "Kupu matua (ka hanga rānei e AI tētahi)",
-      "fvDaysHint": "Hou i roto i ngā rā",
-      "fvDaysPh": "rā",
-      "fvEmpty": "Kāore he mea i kitea mō ēnei paearu — wetewetea ō tātari.",
-      "fvNeedTopic": "Whakauruhia he kaupapa rapu.",
-      "fvRun": "Kimihia",
-      "fvSub": "Ka kimi i ngā ataata horapa mā te kaupapa me te whakarato hononga. Ka kimi anake — kāore e tikiake.",
-      "fvTitle": "Kimihia te horapa",
-      "fvTopicPh": "Kaupapa, niche rānei: \"AI mō te pakihi\"",
-      "fvViewsPh": "iti rawa ngā tirohanga",
-      "intro": "E toru ngā pūkenga putunga ihirangi. Ka whakamahi rātou i ō kī mai i Ngā Tautuhinga: rapu — TikHub, kuputuhi — Claude (Anthropic). Kei te wātea hoki ēnei pūkenga ki a Claude mā tō mātou hononga MCP (awhe \"skills:use\").",
-      "views": "tirohanga"
-    },
     "storyboard": {
       "actFail": "I rahua — tēnā whakamātau anō.",
       "addPanel": "Rōpū",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Wāhanga kua whakaweto — e kore e uru ki te ataata.",
       "chunksN": "{{n}} wāhanga",
       "costNote": "Kāore te pūkaha pūmanawa e whakamahi kī o waho. Tuhinga — 1 tono Gemini; mahere rōpū AI — 1 tono Claude (kī kei ngā Tautuhinga).",
-      "ctaHint": "Whakamahia te kupu kotahi i roto i te tapanga (“Pūkenga → Tātai tapanga”).",
       "ctaPh": "Patohia te KUPU ki ngā kōrero",
       "ctaWordPh": "AUAHATANGA",
       "delConfirm": "Muku",

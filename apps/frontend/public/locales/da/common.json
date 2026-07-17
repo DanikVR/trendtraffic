@@ -16,8 +16,7 @@
     "trends": "Trends",
     "gallery": "Mediegalleri",
     "publisher": "Udgiver",
-    "storyboard": "Storyboard",
-    "skills": "Færdigheder"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Oversættelsesrum",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Åbn Google Flow",
       "vpTitle": "Videoer \n→ Google Flow",
       "addTrendTitle": "Åbn 'Trends': scan efter søgeord eller indsæt et videolink – resultaterne vises her",
-      "tabSkills": "Færdigheder",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookiepolitik",
       "cookiePrivacyLink": "Privatlivspolitik",
       "cookieText": "Vi bruger cookies: strengt nødvendige for sidens funktion (login, sprog, tema), og, med dit samtykke, analytiske – for at forbedre tjenesten. Detaljer i vores ",
-      "tabSkillsSub": "Viralitet · anti-kliché · billedtekst",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookieindstillinger"
     },
-    "skills": {
-      "acChanges": "Før → efter",
-      "acNeedText": "Indsæt tekst (min. 20 tegn).",
-      "acPh": "Indsæt dit opslag, billedtekst eller manuskript her…",
-      "acQuestions": "Til forfatteren: ",
-      "acRemoved": "(fjernet)",
-      "acRun": "Kør anti-kliché",
-      "acSub": "Fjerner AI-genererede klichéer for en mere menneskelig tekst. Opfinder ikke fakta.",
-      "acTitle": "Anti-kliché",
-      "copy": "Kopiér",
-      "cpCtaNote": "Brug nøgleordet {{w}} i det sidste CTA-panel i dit Storyboard.",
-      "cpHooks": "3 hook-muligheder — klik for at erstatte den første linje",
-      "cpLinkPh": "Link (valgfrit)",
-      "cpNeedTopic": "Beskriv emnet for opslaget.",
-      "cpRun": "Skriv billedtekst",
-      "cpSub": "Billedtekststruktur: hook → personlig erfaring → hvad det løser → CTA med nøgleord. Op til 1000 tegn.",
-      "cpTitle": "Billedtekstformel",
-      "cpTopicPh": "Hvad opslaget handler om: emne, produkt, hovedidé, hvad seeren får ud af det…",
-      "cpWordPh": "Nøgleord (eller AI genererer et)",
-      "fvDaysHint": "Friskhed i dage",
-      "fvDaysPh": "dage",
-      "fvEmpty": "Intet fundet for disse kriterier — løsn dine filtre.",
-      "fvNeedTopic": "Indtast et søgeemne.",
-      "fvRun": "Find",
-      "fvSub": "Finder virale videoer efter emne og giver links. Finder kun — downloader ikke.",
-      "fvTitle": "Find viralitet",
-      "fvTopicPh": "Emne eller niche: \"AI til erhverv\"",
-      "fvViewsPh": "min. visninger",
-      "intro": "Tre færdigheder til indholdspipeline. De bruger dine nøgler fra Indstillinger: søgning — TikHub, tekster — Claude (Anthropic). Disse færdigheder er også tilgængelige for Claude via vores MCP-connector (scope \"skills:use\").",
-      "views": "visninger"
-    },
     "storyboard": {
       "actFail": "Mislykkedes — prøv venligst igen.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Fravælg segment — inkluderes ikke i videoen.",
       "chunksN": "{{n}} segmenter",
       "costNote": "Softwaremotoren bruger ikke eksterne nøgler. Transskription — 1 Gemini-anmodning; AI-panelplan — 1 Claude-anmodning (nøgler i Indstillinger).",
-      "ctaHint": "Brug det samme ord i billedteksten (“Færdigheder → Billedtekstformel”).",
       "ctaPh": "Skriv ORD i kommentarer",
       "ctaWordPh": "TREND",
       "delConfirm": "Slet",

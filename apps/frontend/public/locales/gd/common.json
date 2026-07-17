@@ -16,8 +16,7 @@
     "trends": "Glacan",
     "gallery": "Gailearaidh Mheadhanan",
     "publisher": "Foillsichear",
-    "storyboard": "Clàr-sgeulachd",
-    "skills": "Sgilean"
+    "storyboard": "Clàr-sgeulachd"
   },
   "rooms": {
     "title": "Seòmraichean eadar-theangachaidh",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Fosgail Google Flow",
       "vpTitle": "Bhideothan \n→ Google Flow",
       "addTrendTitle": "Fosgail 'Trends': sgan le prìomh fhacal no cuir a-steach ceangal bhidio - nochdaidh toraidhean an seo",
-      "tabSkills": "Sgilean",
       "tabStoryboard": "Clàr-sgeulachd"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Poileasaidh Cookie",
       "cookiePrivacyLink": "Poileasaidh Dìomhaireachd",
       "cookieText": "Bidh sinn a' cleachdadh cookies: gu tur riatanach airson obrachadh na làraich (log a-steach, cànan, cuspair), agus, le do chead, anailiseach - gus an t-seirbheis a leasachadh. Mion-fhiosrachadh anns an ",
-      "tabSkillsSub": "Bhìorasachd · an-aghaidh-cliché · fo-thiotal",
       "tabStoryboardSub": "Ruidhle fèin-chruinneachaidh"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Roghainnean chèicichean"
     },
-    "skills": {
-      "acChanges": "Roimhe → às dèidh",
-      "acNeedText": "Cuir a-steach teacsa (co-dhiù 20 caractar).",
-      "acPh": "Cuir a-steach do phost, fo-thiotal, no sgriobt an seo…",
-      "acQuestions": "Don ùghdar: ",
-      "acRemoved": "(air a thoirt air falbh)",
-      "acRun": "Ruith an-aghaidh-cliché",
-      "acSub": "A' toirt air falbh clichés a ghineadh le AI airson teacsa nas coltaiche ri daoine. Cha bhith e a' cruthachadh fìrinnean.",
-      "acTitle": "An-aghaidh-cliché",
-      "copy": "Dèan lethbhreac",
-      "cpCtaNote": "Cleachd am facal-luirg {{w}} anns a' phannal CTA mu dheireadh den Chlàr-sgeulachd agad.",
-      "cpHooks": "3 roghainnean dubhan — cliog gus a' chiad loidhne a chur an àite",
-      "cpLinkPh": "Ceangal (roghainneil)",
-      "cpNeedTopic": "Thoir cunntas air cuspair a' phuist.",
-      "cpRun": "Sgrìobh fo-thiotal",
-      "cpSub": "Structar fo-thiotal: dubhan → eòlas pearsanta → dè a tha e a' fuasgladh → CTA le facal-luirg. Suas ri 1000 caractar.",
-      "cpTitle": "Foirmle fo-thiotal",
-      "cpTopicPh": "Dè mu dheidhinn a tha am post: cuspair, toradh, prìomh bheachd, dè a gheibh an neach-coimhead…",
-      "cpWordPh": "Facal-luirg (no gineadh AI fear)",
-      "fvDaysHint": "Ùrachd ann an làithean",
-      "fvDaysPh": "làithean",
-      "fvEmpty": "Cha deach dad a lorg airson na slatan-tomhais seo — fuasgail na sìoltachain agad.",
-      "fvNeedTopic": "Cuir a-steach cuspair rannsachaidh.",
-      "fvRun": "Lorg",
-      "fvSub": "A' lorg bhideothan viral a rèir cuspair agus a' toirt seachad ceanglaichean. Cha lorg ach — cha luchdaich e sìos.",
-      "fvTitle": "Lorg bhìorasachd",
-      "fvTopicPh": "Cuspair no àite sònraichte: \"AI airson gnìomhachas\"",
-      "fvViewsPh": "seallaidhean as ìsle",
-      "intro": "Trì sgilean pìoban susbaint. Bidh iad a' cleachdadh na h-iuchraichean agad bho Roghainnean: rannsachadh — TikHub, teacsaichean — Claude (Anthropic). Tha na sgilean seo rim faighinn cuideachd do Claude tron cheangal MCP againn (raon \"skills:use\").",
-      "views": "seallaidhean"
-    },
     "storyboard": {
       "actFail": "Dh'fhàillig — feuch ris a-rithist.",
       "addPanel": "Pannal",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Cuir às a' chnap — cha bhith e sa bhidio.",
       "chunksN": "{{n}} cnap",
       "costNote": "Cha bhith an einnsean bathar-bog a' cleachdadh iuchraichean taobh a-muigh. Tar-sgrìobhadh — 1 iarrtas Gemini; plana pannail AI — 1 iarrtas Claude (iuchraichean ann an Roghainnean).",
-      "ctaHint": "Cleachd an aon fhacal sa cheann-sgrìobhadh (“Sgilean → Foirmle ceann-sgrìobhaidh”).",
       "ctaPh": "Sgrìobh FACAL anns na beachdan",
       "ctaWordPh": "TREND",
       "delConfirm": "Sguab às",

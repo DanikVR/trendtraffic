@@ -16,8 +16,7 @@
     "trends": "Trendy",
     "gallery": "Galeria mediów",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Umiejętności"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Pokoje tłumaczeń",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Otwórz Google Flow",
       "vpTitle": "Filmy \n→ Google Flow",
       "addTrendTitle": "Otwórz „Trendy”: skanuj według słowa kluczowego lub wklej link do filmu — wyniki pojawią się tutaj",
-      "tabSkills": "Umiejętności",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Polityka plików cookie",
       "cookiePrivacyLink": "Polityka prywatności",
       "cookieText": "Używamy plików cookie: ściśle niezbędnych do działania witryny (logowanie, język, motyw) oraz, za Twoją zgodą, analitycznych — w celu ulepszania usługi. Szczegóły w naszej ",
-      "tabSkillsSub": "Wiralność · anti-cliché · opis",
       "tabStoryboardSub": "Automontaż rolki"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Ustawienia plików cookie"
     },
-    "skills": {
-      "acChanges": "Przed → po",
-      "acNeedText": "Wklej tekst (min. 20 znaków).",
-      "acPh": "Wklej swój post, opis lub scenariusz tutaj…",
-      "acQuestions": "Do autora: ",
-      "acRemoved": "(usunięto)",
-      "acRun": "Uruchom anti-cliché",
-      "acSub": "Usuwa klisze generowane przez AI, aby tekst brzmiał bardziej naturalnie. Nie wymyśla faktów.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopiuj",
-      "cpCtaNote": "Użyj słowa kluczowego {{w}} w ostatnim panelu CTA swojego Storyboardu.",
-      "cpHooks": "3 opcje haczyków — kliknij, aby zastąpić pierwszą linię",
-      "cpLinkPh": "Link (opcjonalnie)",
-      "cpNeedTopic": "Opisz temat posta.",
-      "cpRun": "Napisz opis",
-      "cpSub": "Struktura opisu: haczyk → osobiste doświadczenie → co rozwiązuje → CTA ze słowem kluczowym. Do 1000 znaków.",
-      "cpTitle": "Formuła opisu",
-      "cpTopicPh": "O czym jest post: temat, produkt, główna idea, co zyska widz…",
-      "cpWordPh": "Słowo kluczowe (lub AI wygeneruje)",
-      "fvDaysHint": "Świeżość w dniach",
-      "fvDaysPh": "dni",
-      "fvEmpty": "Nic nie znaleziono dla tych kryteriów — rozluźnij filtry.",
-      "fvNeedTopic": "Wprowadź temat wyszukiwania.",
-      "fvRun": "Znajdź",
-      "fvSub": "Znajduje wirusowe filmy według tematu i podaje linki. Tylko znajduje — nie pobiera.",
-      "fvTitle": "Znajdź wiralność",
-      "fvTopicPh": "Temat lub nisza: „AI dla biznesu”",
-      "fvViewsPh": "min. wyświetleń",
-      "intro": "Trzy umiejętności pipeline'u treści. Wykorzystują Twoje klucze z Ustawień: wyszukiwanie — TikHub, teksty — Claude (Anthropic). Te umiejętności są również dostępne dla Claude'a za pośrednictwem naszego konektora MCP (zakres „skills:use”).",
-      "views": "wyświetleń"
-    },
     "storyboard": {
       "actFail": "Niepowodzenie — spróbuj ponownie.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Wyłączony — nie zostanie uwzględniony w wideo.",
       "chunksN": "{{n}} fragmentów",
       "costNote": "Silnik oprogramowania nie używa zewnętrznych kluczy. Transkrypcja — 1 zapytanie Gemini; plan panelu AI — 1 zapytanie Claude (klucze w Ustawieniach).",
-      "ctaHint": "Użyj tego samego słowa w podpisie („Umiejętności → Formuła podpisu”).",
       "ctaPh": "Wpisz SŁOWO w komentarzach",
       "ctaWordPh": "TREND",
       "delConfirm": "Usuń",

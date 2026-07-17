@@ -16,8 +16,7 @@
     "trends": "Trenda",
     "gallery": "Pinacotheca Mediae",
     "publisher": "Editor",
-    "storyboard": "Tabula Fabulae",
-    "skills": "Peritiae"
+    "storyboard": "Tabula Fabulae"
   },
   "rooms": {
     "title": "Conclavia Interpretationis",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Aperi Google Flow",
       "vpTitle": "Videos \n→ Google Flow",
       "addTrendTitle": "Aperi 'Trends': lustra per keyword vel liga video — eventus hic apparebunt",
-      "tabSkills": "Peritiae",
       "tabStoryboard": "Tabula Fabulae"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Consilium Crustularum",
       "cookiePrivacyLink": "Consilium Secreti",
       "cookieText": "Crustulis utimur: stricte necessaria ad operationem situs (login, lingua, thema), et, cum tuo consensu, analytica — ad emendandum officium. Singula in nostro ",
-      "tabSkillsSub": "Viralitas · anti-cliché · inscriptio",
       "tabStoryboardSub": "Automontage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Optiones crustulorum"
     },
-    "skills": {
-      "acChanges": "Ante → Post",
-      "acNeedText": "Textum insere (min. 20 characteres).",
-      "acPh": "Hic insere nuntium, inscriptionem, vel scriptum tuum…",
-      "acQuestions": "Ad auctorem:",
-      "acRemoved": "(remotum)",
-      "acRun": "Exerce anti-cliché",
-      "acSub": "Cliché ab AI generata removet ut textus humanior sonet. Facta non fingit.",
-      "acTitle": "Anti-cliché",
-      "copy": "Effinge",
-      "cpCtaNote": "Utere verbo clave {{w}} in ultima CTA tabula Tabulae Fabulae tuae.",
-      "cpHooks": "3 optiones hamorum — preme ut primam lineam reponas",
-      "cpLinkPh": "Nexus (libitum)",
-      "cpNeedTopic": "Describe argumentum nuntii.",
-      "cpRun": "Scribe inscriptionem",
-      "cpSub": "Structura inscriptionis: hamus → experientia personalis → quid solvit → CTA cum verbo clave. Usque ad 1000 characteres.",
-      "cpTitle": "Formula inscriptionis",
-      "cpTopicPh": "De quo est nuntius: argumentum, productum, idea principalis, quid spectatores accipient…",
-      "cpWordPh": "Verbum clave (vel AI generabit)",
-      "fvDaysHint": "Novitas in diebus",
-      "fvDaysPh": "dies",
-      "fvEmpty": "Nihil inventum his criteriis — laxa filtra tua.",
-      "fvNeedTopic": "Intra argumentum quaerendi.",
-      "fvRun": "Inveni",
-      "fvSub": "Videas virales per argumentum invenit et nexus praebet. Tantum invenit — non detrahet.",
-      "fvTitle": "Inveni viralitatem",
-      "fvTopicPh": "Argumentum vel niche: \"AI pro negotio\"",
-      "fvViewsPh": "min. visus",
-      "intro": "Tres peritiae contenti pipeline. Clavibus tuis ex Occasionibus utuntur: quaerere — TikHub, textus — Claude (Anthropic). Hae peritiae etiam Claude praesto sunt per MCP-connectorem nostrum (scope \"skills:use\").",
-      "views": "visus"
-    },
     "storyboard": {
       "actFail": "Defecit — quaeso iterum tenta.",
       "addPanel": "Tabula",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Segmentum exclusum — in video non erit.",
       "chunksN": "{{n}} segmenta",
       "costNote": "Machina programmatis clavibus externis non utitur. Transscriptio — 1 petitio Gemini; consilium tabulae AI — 1 petitio Claude (claves in Optionibus).",
-      "ctaHint": "Eodem verbo utere in inscriptione (\"Peritiae → Formula inscriptionis\").",
       "ctaPh": "Scribe VERBUM in commentariis",
       "ctaWordPh": "TREND",
       "delConfirm": "Dele",

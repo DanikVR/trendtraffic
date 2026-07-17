@@ -16,8 +16,7 @@
     "trends": "Ụdịdị",
     "gallery": "Ụlọ ihe ngosi mgbasa ozi",
     "publisher": "Onye mbipụta",
-    "storyboard": "Storyboard",
-    "skills": "Nka"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Ụlọ ntụgharị asụsụ",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Mepee Google Flow",
       "vpTitle": "Vidiyo n→ Google Flow",
       "addTrendTitle": "Mepee 'Usoro': nyochaa site na isiokwu ma ọ bụ mado njikọ vidiyo — nsonaazụ ga-apụta ebe a",
-      "tabSkills": "Nka",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Iwu Kuki",
       "cookiePrivacyLink": "Iwu Nzuzo",
       "cookieText": "Anyị na-eji kuki: dị mkpa maka ọrụ saịtị (nbanye, asụsụ, isiokwu), na, site na nkwenye gị, nyocha — iji meziwanye ọrụ ahụ. Nkọwa zuru ezu na anyị ",
-      "tabSkillsSub": "Ịgbasa ngwa ngwa · mgbochi okwu a na-ahụkarị · nkọwa",
       "tabStoryboardSub": "Nchịkọta vidiyo na-akpaghị aka"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Ntọala kuki"
     },
-    "skills": {
-      "acChanges": "Tupu → mgbe",
-      "acNeedText": "Mado ederede (opekempe mkpụrụedemede 20).",
-      "acPh": "Mado post gị, nkọwa gị, ma ọ bụ edemede gị ebe a…",
-      "acQuestions": "Nye onye edemede: ",
-      "acRemoved": "(ewepụrụ)",
-      "acRun": "Gbaa mgbochi okwu a na-ahụkarị",
-      "acSub": "Na-ewepụ okwu a na-ahụkarị nke AI mepụtara maka ederede na-ada ka mmadụ. Anaghị emepụta eziokwu.",
-      "acTitle": "Mgbochi okwu a na-ahụkarị",
-      "copy": "Detuo",
-      "cpCtaNote": "Jiri isiokwu {{w}} n'ime panel CTA ikpeazụ nke Storyboard gị.",
-      "cpHooks": "Nhọrọ nko 3 — pịa iji dochie ahịrị mbụ",
-      "cpLinkPh": "Njikọ (nhọrọ)",
-      "cpNeedTopic": "Kọwaa isiokwu post ahụ.",
-      "cpRun": "Dee nkọwa",
-      "cpSub": "Nhazi nkọwa: nko → ahụmịhe onwe onye → ihe ọ na-edozi → CTA nwere isiokwu. Ihe ruru mkpụrụedemede 1000.",
-      "cpTitle": "Usoro nkọwa",
-      "cpTopicPh": "Ihe post ahụ bụ maka: isiokwu, ngwaahịa, isi echiche, ihe onye na-ekiri ga-enweta…",
-      "cpWordPh": "Isiokwu (ma ọ bụ AI ga-emepụta otu)",
-      "fvDaysHint": "Ịdị ọhụrụ n'ụbọchị",
-      "fvDaysPh": "ụbọchị",
-      "fvEmpty": "Achọtaghị ihe ọ bụla maka njirimara ndị a — mee ka ihe nzacha gị dị nro.",
-      "fvNeedTopic": "Tinye isiokwu ọchụchọ.",
-      "fvRun": "Chọta",
-      "fvSub": "Na-achọta vidiyo na-agbasa ngwa ngwa site na isiokwu ma na-enye njikọ. Naanị na-achọta — anaghị ebudata.",
-      "fvTitle": "Chọta ịgbasa ngwa ngwa",
-      "fvTopicPh": "Isiokwu ma ọ bụ niche: \"AI maka azụmahịa\"",
-      "fvViewsPh": "opekempe nlele",
-      "intro": "Nka atọ nke usoro ọdịnaya. Ha na-eji igodo gị site na Ntọala: ọchụchọ — TikHub, ederede — Claude (Anthropic). Nka ndị a dịkwa Claude site na njikọ MCP anyị (oke \"skills:use\").",
-      "views": "nlele"
-    },
     "storyboard": {
       "actFail": "Emeghị — biko gbalịa ọzọ.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Wepụta — agaghị etinye ya na vidiyo.",
       "chunksN": "Ibe {{n}}",
       "costNote": "Igwe ngwanrọ anaghị eji igodo mpụga. Ndegharị — arịrịọ Gemini 1; Atụmatụ panel AI — arịrịọ Claude 1 (igodo na Ntọala).",
-      "ctaHint": "Jiri otu okwu ahụ na nkọwa (“Nka → Usoro nkọwa”).",
       "ctaPh": "Pịnye OKWU na nkwupụta",
       "ctaWordPh": "TREND",
       "delConfirm": "Hichapụ",

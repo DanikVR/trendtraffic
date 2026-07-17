@@ -16,8 +16,7 @@
     "trends": "Trend",
     "gallery": "Galeriya Medyayê",
     "publisher": "Weşanger",
-    "storyboard": "Storyboard",
-    "skills": "Şiyan"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Odeyên wergerê",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow veke",
       "vpTitle": "Vîdeo \n→ Google Flow",
       "addTrendTitle": "‘Trendan’ veke: li gorî peyva sereke bigere an zencîreyek vîdyoyê lê zêde bike — encam dê li vir xuya bibin",
-      "tabSkills": "Şiyan",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Siyaseta Cookie",
       "cookiePrivacyLink": "Siyaseta Nepenîtiyê",
       "cookieText": "Em cookie bikar tînin: bi tundî ji bo xebitandina malperê pêwîst in (têketin, ziman, mijar), û, bi razîbûna te, analîtîk — ji bo baştirkirina karûbarê. Agahiyên berfireh di ",
-      "tabSkillsSub": "Vîralîtî · dij-klîşe · sernivîs",
       "tabStoryboardSub": "Reel a otomatîk"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Mîhengên çerezan"
     },
-    "skills": {
-      "acChanges": "Berî → piştî",
-      "acNeedText": "Nivîsê bixin (kêmtirîn 20 tîp).",
-      "acPh": "Post, sernivîs an senaryoya xwe li vir bixin…",
-      "acQuestions": "Ji nivîskar re:",
-      "acRemoved": "(rakirî)",
-      "acRun": "Dij-klîşeyê bimeşîne",
-      "acSub": "Klîşeyên ku ji hêla AI ve hatine çêkirin radike ji bo nivîsek mirovîtir. Rastiyan îcad nake.",
-      "acTitle": "Dij-klîşe",
-      "copy": "Kopî bike",
-      "cpCtaNote": "Peyva sereke {{w}} di panela CTA ya dawîn a Storyboarda xwe de bikar bînin.",
-      "cpHooks": "3 vebijarkên çengê — bikirtînin da ku rêza yekem biguherînin",
-      "cpLinkPh": "Girêdan (vebijarkî)",
-      "cpNeedTopic": "Mijara postê vebêje.",
-      "cpRun": "Sernivîsê binivîse",
-      "cpSub": "Struktura sernivîsê: çeng → ezmûna kesane → çi çareser dike → CTA bi peyva sereke. Heta 1000 tîpan.",
-      "cpTitle": "Formula sernivîsê",
-      "cpTopicPh": "Post li ser çi ye: mijar, hilber, ramana sereke, temaşevan dê çi bistîne…",
-      "cpWordPh": "Peyva sereke (an AI dê yek çêbike)",
-      "fvDaysHint": "Tezebûn di rojan de",
-      "fvDaysPh": "roj",
-      "fvEmpty": "Ji bo van pîvanan tiştek nehat dîtin — fîlterên xwe sist bikin.",
-      "fvNeedTopic": "Mijarek lêgerînê binivîse.",
-      "fvRun": "Bibîne",
-      "fvSub": "Vîdyoyên vîral li gorî mijarê dibîne û girêdanan peyda dike. Tenê dibîne — daxistinan nake.",
-      "fvTitle": "Vîralîtiyê bibîne",
-      "fvTopicPh": "Mijar an nîş: \"AI ji bo karsaziyê\"",
-      "fvViewsPh": "kêmtirîn dîtin",
-      "intro": "Sê şiyanên boriyên naverokê. Ew kilîtên we yên ji Mîhengan bikar tînin: lêgerîn — TikHub, nivîs — Claude (Anthropic). Van şiyan ji Claude re jî bi riya girêdana me ya MCP (qada \"skills:use\") peyda ne.",
-      "views": "dîtin"
-    },
     "storyboard": {
       "actFail": "Têk çû — ji kerema xwe dîsa biceribîne.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk off — dê di vîdyoyê de neyê nav kirin.",
       "chunksN": "{{n}} beş",
       "costNote": "Motora nermalavê mifteyên derveyî bikar nayne. Transkrîpsiyon — 1 daxwaza Gemini; plansaziya panela AI — 1 daxwaza Claude (mifte di Mîhengan de).",
-      "ctaHint": "Heman peyvê di sernavê de bikar bînin (“Jêhatîbûn → Formula sernavê”).",
       "ctaPh": "Peyvê di şîroveyan de binivîse",
       "ctaWordPh": "TREND",
       "delConfirm": "Jêbirin",

@@ -16,8 +16,7 @@
     "trends": "Trender",
     "gallery": "Mediagalleri",
     "publisher": "Publicerare",
-    "storyboard": "Storyboard",
-    "skills": "Färdigheter"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Översättningsrum",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Öppna Google Flow",
       "vpTitle": "Videor \n→ Google Flow",
       "addTrendTitle": "Öppna 'Trender': skanna efter nyckelord eller klistra in en videolänk – resultat visas här",
-      "tabSkills": "Färdigheter",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookiepolicy",
       "cookiePrivacyLink": "Integritetspolicy",
       "cookieText": "Vi använder cookies: strikt nödvändiga för webbplatsens funktion (inloggning, språk, tema), och, med ditt samtycke, analytiska – för att förbättra tjänsten. Detaljer i vår ",
-      "tabSkillsSub": "Viralitet · anti-kliché · bildtext",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookieinställningar"
     },
-    "skills": {
-      "acChanges": "Före → efter",
-      "acNeedText": "Klistra in text (min. 20 tecken).",
-      "acPh": "Klistra in ditt inlägg, din bildtext eller ditt manus här…",
-      "acQuestions": "Till författaren: ",
-      "acRemoved": "(borttagen)",
-      "acRun": "Kör anti-kliché",
-      "acSub": "Tar bort AI-genererade klichéer för en mer mänsklig text. Hittar inte på fakta.",
-      "acTitle": "Anti-kliché",
-      "copy": "Kopiera",
-      "cpCtaNote": "Använd nyckelordet {{w}} i den sista CTA-panelen i din Storyboard.",
-      "cpHooks": "3 hook-alternativ — klicka för att ersätta första raden",
-      "cpLinkPh": "Länk (valfritt)",
-      "cpNeedTopic": "Beskriv inläggets ämne.",
-      "cpRun": "Skriv bildtext",
-      "cpSub": "Bildtextstruktur: hook → personlig erfarenhet → vad den löser → CTA med nyckelord. Upp till 1000 tecken.",
-      "cpTitle": "Bildtextformel",
-      "cpTopicPh": "Vad inlägget handlar om: ämne, produkt, huvudidé, vad tittaren får ut…",
-      "cpWordPh": "Nyckelord (eller så genererar AI ett)",
-      "fvDaysHint": "Färskhet i dagar",
-      "fvDaysPh": "dagar",
-      "fvEmpty": "Inget hittades för dessa kriterier — lös upp dina filter.",
-      "fvNeedTopic": "Ange ett sökämne.",
-      "fvRun": "Hitta",
-      "fvSub": "Hittar virala videor efter ämne och tillhandahåller länkar. Hittar bara — laddar inte ner.",
-      "fvTitle": "Hitta viralitet",
-      "fvTopicPh": "Ämne eller nisch: \"AI för företag\"",
-      "fvViewsPh": "min. visningar",
-      "intro": "Tre färdigheter för innehållspipelinen. De använder dina nycklar från Inställningar: sök — TikHub, texter — Claude (Anthropic). Dessa färdigheter är också tillgängliga för Claude via vår MCP-anslutning (omfattning \"skills:use\").",
-      "views": "visningar"
-    },
     "storyboard": {
       "actFail": "Misslyckades — försök igen.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk av – inkluderas inte i videon.",
       "chunksN": "{{n}} segment",
       "costNote": "Programvarumotorn använder inga externa nycklar. Transkription – 1 Gemini-förfrågan; AI-panelplan – 1 Claude-förfrågan (nycklar i Inställningar).",
-      "ctaHint": "Använd samma ord i bildtexten (\"Färdigheter → Bildtextformel\").",
       "ctaPh": "Skriv ORD i kommentarerna",
       "ctaWordPh": "TREND",
       "delConfirm": "Radera",

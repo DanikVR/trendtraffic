@@ -16,8 +16,7 @@
     "trends": "Treochtaí",
     "gallery": "Gailearaí meán",
     "publisher": "Foilsitheoir",
-    "storyboard": "Clár Scéil",
-    "skills": "Scileanna"
+    "storyboard": "Clár Scéil"
   },
   "rooms": {
     "title": "Seomraí aistriúcháin",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Oscail Sreabhadh Google",
       "vpTitle": "Físeáin \n→ Sreabhadh Google",
       "addTrendTitle": "Oscail 'Treochtaí': scanadh de réir eochairfhocail nó greamaigh nasc físeáin — beidh torthaí le feiceáil anseo",
-      "tabSkills": "Scileanna",
       "tabStoryboard": "Clár Scéil"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Polasaí Fianán",
       "cookiePrivacyLink": "Polasaí Príobháideachais",
       "cookieText": "Úsáidimid fianáin: atá fíor-riachtanach d'oibriú an tsuímh (logáil isteach, teanga, téama), agus, le do thoiliú, anailíseach — chun an tseirbhís a fheabhsú. Sonraí inár ",
-      "tabSkillsSub": "Víreasacht · frith-cliché · fotheideal",
       "tabStoryboardSub": "Físeán uath-chóimeála"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Socruithe fianán"
     },
-    "skills": {
-      "acChanges": "Roimh → tar éis",
-      "acNeedText": "Greamaigh téacs (20 carachtar ar a laghad).",
-      "acPh": "Greamaigh do phostáil, fotheideal, nó script anseo…",
-      "acQuestions": "Don údar: ",
-      "acRemoved": "(baineadh)",
-      "acRun": "Rith frith-cliché",
-      "acSub": "Baineann sé clichés a ghineann AI chun téacs níos daonna a chruthú. Ní chumann sé fíricí.",
-      "acTitle": "Frith-cliché",
-      "copy": "Cóipeáil",
-      "cpCtaNote": "Úsáid an eochairfhocal {{w}} sa phainéal CTA deiridh de do Chlár Scéil.",
-      "cpHooks": "3 rogha crúca — cliceáil chun an chéad líne a athsholáthar",
-      "cpLinkPh": "Nasc (roghnach)",
-      "cpNeedTopic": "Déan cur síos ar ábhar an phoist.",
-      "cpRun": "Scríobh fotheideal",
-      "cpSub": "Struchtúr an fhotheideal: crúca → eispéireas pearsanta → cad a réitíonn sé → CTA le heochairfhocal. Suas le 1000 carachtar.",
-      "cpTitle": "Foirmle fotheideal",
-      "cpTopicPh": "Cad é faoi atá an post: ábhar, táirge, príomhsmaoineamh, cad a gheobhaidh an breathnóir…",
-      "cpWordPh": "Eochairfhocal (nó ginfidh AI ceann)",
-      "fvDaysHint": "Úire i laethanta",
-      "fvDaysPh": "laethanta",
-      "fvEmpty": "Níor aimsíodh aon rud do na critéir seo — scaoil do scagairí.",
-      "fvNeedTopic": "Cuir isteach ábhar cuardaigh.",
-      "fvRun": "Aimsigh",
-      "fvSub": "Aimsíonn sé físeáin víreasacha de réir ábhair agus soláthraíonn sé naisc. Ní aimsíonn sé ach — ní íoslódálann sé.",
-      "fvTitle": "Aimsigh víreasacht",
-      "fvTopicPh": "Ábhar nó nideoige: \"AI do ghnó\"",
-      "fvViewsPh": "radhairc íosta",
-      "intro": "Trí scil píblíne ábhair. Úsáideann siad do chuid eochracha ó Socruithe: cuardach — TikHub, téacsanna — Claude (Anthropic). Tá na scileanna seo ar fáil do Claude freisin tríd ár MCP-nascóir (scóip \"skills:use\").",
-      "views": "radhairc"
-    },
     "storyboard": {
       "actFail": "Theip — bain triail eile as le do thoil.",
       "addPanel": "Painéal",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Múch an smután — ní bheidh sé san fhíseán.",
       "chunksN": "{{n}} smután",
       "costNote": "Ní úsáideann an t-inneall bogearraí eochracha seachtracha. Tras-scríobh — 1 iarratas Gemini; plean painéil AI — 1 iarratas Claude (eochracha sna Socruithe).",
-      "ctaHint": "Úsáid an focal céanna sa cheannteideal (“Scileanna → Foirmle ceannteidil”).",
       "ctaPh": "Clóscríobh FOCAL sna tuairimí",
       "ctaWordPh": "TREOCHT",
       "delConfirm": "Scrios",

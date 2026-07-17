@@ -16,8 +16,7 @@
     "trends": "Tendances",
     "gallery": "Galerie média",
     "publisher": "Éditeur",
-    "storyboard": "Storyboard",
-    "skills": "Compétences"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Salons de traduction",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Ouvrir Google Flow",
       "vpTitle": "Vidéos \n→ Google Flow",
       "addTrendTitle": "Ouvrez 'Tendances' : recherchez par mot-clé ou collez un lien vidéo — les résultats apparaîtront ici",
-      "tabSkills": "Compétences",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Politique de cookies",
       "cookiePrivacyLink": "Politique de confidentialité",
       "cookieText": "Nous utilisons des cookies : strictement nécessaires au fonctionnement du site (connexion, langue, thème), et, avec votre consentement, analytiques — pour améliorer le service. Détails dans notre ",
-      "tabSkillsSub": "Viralité · anti-cliché · légende",
       "tabStoryboardSub": "Reel auto-montage"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Paramètres des cookies"
     },
-    "skills": {
-      "acChanges": "Avant → après",
-      "acNeedText": "Collez du texte (min. 20 caractères).",
-      "acPh": "Collez votre publication, légende ou script ici…",
-      "acQuestions": "À l'auteur : ",
-      "acRemoved": "(supprimé)",
-      "acRun": "Exécuter anti-cliché",
-      "acSub": "Supprime les clichés générés par l'IA pour un texte plus humain. N'invente pas de faits.",
-      "acTitle": "Anti-cliché",
-      "copy": "Copier",
-      "cpCtaNote": "Utilisez le mot-clé {{w}} dans le dernier panneau CTA de votre Storyboard.",
-      "cpHooks": "3 options d'accroche — cliquez pour remplacer la première ligne",
-      "cpLinkPh": "Lien (facultatif)",
-      "cpNeedTopic": "Décrivez le sujet de la publication.",
-      "cpRun": "Écrire la légende",
-      "cpSub": "Structure de la légende : accroche → expérience personnelle → ce que ça résout → CTA avec mot-clé. Jusqu'à 1000 caractères.",
-      "cpTitle": "Formule de légende",
-      "cpTopicPh": "Sujet de la publication : thème, produit, idée principale, ce que le spectateur obtiendra…",
-      "cpWordPh": "Mot-clé (ou l'IA en générera un)",
-      "fvDaysHint": "Fraîcheur en jours",
-      "fvDaysPh": "jours",
-      "fvEmpty": "Rien trouvé pour ces critères — élargissez vos filtres.",
-      "fvNeedTopic": "Entrez un sujet de recherche.",
-      "fvRun": "Trouver",
-      "fvSub": "Trouve des vidéos virales par sujet et fournit des liens. Ne fait que trouver — ne télécharge pas.",
-      "fvTitle": "Trouver la viralité",
-      "fvTopicPh": "Sujet ou niche : \"IA pour les entreprises\"",
-      "fvViewsPh": "vues min.",
-      "intro": "Trois compétences de pipeline de contenu. Elles utilisent vos clés des Paramètres : recherche — TikHub, textes — Claude (Anthropic). Ces compétences sont également disponibles pour Claude via notre connecteur MCP (portée \"skills:use\").",
-      "views": "vues"
-    },
     "storyboard": {
       "actFail": "Échec — veuillez réessayer.",
       "addPanel": "Panneau",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Désactiver le chunk — ne sera pas inclus dans la vidéo.",
       "chunksN": "{{n}} chunks",
       "costNote": "Le moteur logiciel n'utilise pas de clés externes. Transcription — 1 requête Gemini; plan de panneau IA — 1 requête Claude (clés dans les Paramètres).",
-      "ctaHint": "Utilisez le même mot dans la légende (« Compétences → Formule de légende »).",
       "ctaPh": "Tapez MOT dans les commentaires",
       "ctaWordPh": "TENDANCE",
       "delConfirm": "Supprimer",

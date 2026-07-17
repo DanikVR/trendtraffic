@@ -16,8 +16,7 @@
     "trends": "트렌드",
     "gallery": "미디어 갤러리",
     "publisher": "퍼블리셔",
-    "storyboard": "스토리보드",
-    "skills": "스킬"
+    "storyboard": "스토리보드"
   },
   "rooms": {
     "title": "번역 룸",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow 열기",
       "vpTitle": "동영상 \n→ Google Flow",
       "addTrendTitle": "'트렌드' 열기: 키워드로 스캔하거나 비디오 링크를 붙여넣으세요 — 결과가 여기에 표시됩니다",
-      "tabSkills": "스킬",
       "tabStoryboard": "스토리보드"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "쿠키 정책",
       "cookiePrivacyLink": "개인정보 처리방침",
       "cookieText": "당사는 사이트 운영에 필수적인 쿠키(로그인, 언어, 테마)와 귀하의 동의하에 서비스 개선을 위한 분석 쿠키를 사용합니다. 자세한 내용은 다음에서 확인하세요. ",
-      "tabSkillsSub": "바이럴 · 안티클리셰 · 캡션",
       "tabStoryboardSub": "자동 몽타주 릴"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "위키",
       "footerCookieSettings": "쿠키 설정"
     },
-    "skills": {
-      "acChanges": "이전 → 이후",
-      "acNeedText": "텍스트를 붙여넣으세요 (최소 20자).",
-      "acPh": "여기에 게시물, 캡션 또는 스크립트를 붙여넣으세요…",
-      "acQuestions": "작성자에게: ",
-      "acRemoved": "(제거됨)",
-      "acRun": "안티클리셰 실행",
-      "acSub": "AI가 생성한 상투적인 표현을 제거하여 더 인간적인 텍스트를 만듭니다. 사실을 지어내지 않습니다.",
-      "acTitle": "안티클리셰",
-      "copy": "복사",
-      "cpCtaNote": "스토리보드의 마지막 CTA 패널에 키워드 {{w}}를 사용하세요.",
-      "cpHooks": "3가지 후크 옵션 — 클릭하여 첫 줄 교체",
-      "cpLinkPh": "링크 (선택 사항)",
-      "cpNeedTopic": "게시물 주제를 설명하세요.",
-      "cpRun": "캡션 작성",
-      "cpSub": "캡션 구조: 후크 → 개인 경험 → 해결책 → 키워드 포함 CTA. 최대 1000자.",
-      "cpTitle": "캡션 공식",
-      "cpTopicPh": "게시물 내용: 주제, 제품, 주요 아이디어, 시청자가 얻을 것…",
-      "cpWordPh": "키워드 (AI가 생성할 수도 있음)",
-      "fvDaysHint": "최신성 (일)",
-      "fvDaysPh": "일",
-      "fvEmpty": "이 조건에 맞는 결과가 없습니다 — 필터를 완화하세요.",
-      "fvNeedTopic": "검색 주제를 입력하세요.",
-      "fvRun": "찾기",
-      "fvSub": "주제별 바이럴 영상을 찾아 링크를 제공합니다. 찾기만 하고 다운로드하지는 않습니다.",
-      "fvTitle": "바이럴 찾기",
-      "fvTopicPh": "주제 또는 틈새 시장: \"비즈니스를 위한 AI\"",
-      "fvViewsPh": "최소 조회수",
-      "intro": "세 가지 콘텐츠 파이프라인 스킬. 설정에서 키를 사용합니다: 검색 — TikHub, 텍스트 — Claude (Anthropic). 이 스킬은 MCP-커넥터(범위 \"skills:use\")를 통해 Claude에서도 사용할 수 있습니다.",
-      "views": "조회수"
-    },
     "storyboard": {
       "actFail": "실패했습니다 — 다시 시도해주세요.",
       "addPanel": "패널",
@@ -4190,7 +4156,6 @@
       "chunkOff": "청크 끄기 — 동영상에 포함되지 않습니다.",
       "chunksN": "청크 {{n}}개",
       "costNote": "소프트웨어 엔진은 외부 키를 사용하지 않습니다. 스크립트 — Gemini 요청 1회; AI 패널 계획 — Claude 요청 1회 (설정에서 키 확인).",
-      "ctaHint": "캡션에 동일한 단어를 사용하세요 (\"스킬 → 캡션 공식\").",
       "ctaPh": "댓글에 단어 입력",
       "ctaWordPh": "트렌드",
       "delConfirm": "삭제",

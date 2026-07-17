@@ -16,8 +16,7 @@
     "trends": "Àwọn Àṣà",
     "gallery": "Àtúnkọ Àwòrán",
     "publisher": "Atẹ̀wéjáde",
-    "storyboard": "Ìtàn Fídíò",
-    "skills": "Awọn Ọgbọn"
+    "storyboard": "Ìtàn Fídíò"
   },
   "rooms": {
     "title": "Yara ìtumọ̀",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Ṣí Google Flow",
       "vpTitle": "Àwọn fídíò \n→ Google Flow",
       "addTrendTitle": "Ṣii 'Awọn aṣa': ṣayẹwo nipasẹ ọrọ-ọrọ tabi lẹẹmọ ọna asopọ fidio — awọn abajade yoo han nibi",
-      "tabSkills": "Awọn Ọgbọn",
       "tabStoryboard": "Ìtàn Fídíò"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Ilana Kuki",
       "cookiePrivacyLink": "Ilana Asiri",
       "cookieText": "A nlo awọn kuki: pataki fun iṣẹ aaye (iwọle, ede, akori), ati, pẹlu ifọwọsi rẹ, itupalẹ — lati mu iṣẹ naa dara si. Awọn alaye ninu ",
-      "tabSkillsSub": "Gbígbòòrò · kò-ṣe-àṣà · àkọlé",
       "tabStoryboardSub": "Fídíò àpapọ̀-ara-ẹni"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Ètò Kúkì"
     },
-    "skills": {
-      "acChanges": "Ṣáájú → lẹ́hìn",
-      "acNeedText": "Límatì ọ̀rọ̀ (kéré jùlọ àwọn lẹ́tà 20).",
-      "acPh": "Límatì ìfìwéránṣẹ́ rẹ, àkọlé, tàbí àkọsílẹ̀ rẹ síbí…",
-      "acQuestions": "Sí òǹkọ̀wé: ",
-      "acRemoved": "(yọkúrò)",
-      "acRun": "Ṣiṣẹ́ kò-ṣe-àṣà",
-      "acSub": "Yọ àwọn àṣà tí AI ṣe kúrò fún ọ̀rọ̀ tí ó dún bí ènìyàn. Kò ṣe àwọn òtítọ́ tuntun.",
-      "acTitle": "Kò-ṣe-àṣà",
-      "copy": "Ẹ̀dà",
-      "cpCtaNote": "Lo ọ̀rọ̀-kókó {{w}} nínú àkọlé CTA ìkẹyìn ti Ìtàn Fídíò rẹ.",
-      "cpHooks": "Àwọn àṣàyàn ìkọ́ni 3 — tẹ láti rọ́pò ìlà àkọ́kọ́",
-      "cpLinkPh": "Ọ̀na asopọ (ìyàn)",
-      "cpNeedTopic": "Ṣàlàyé àkọlé ìfìwéránṣẹ́ náà.",
-      "cpRun": "Kọ àkọlé",
-      "cpSub": "Ìṣètò àkọlé: ìkọ́ni → ìrírí ara ẹni → ohun tí ó yanjú → CTA pẹ̀lú ọ̀rọ̀-kókó. Títí di àwọn lẹ́tà 1000.",
-      "cpTitle": "Àgbékalẹ̀ àkọlé",
-      "cpTopicPh": "Kí ni ìfìwéránṣẹ́ náà jẹ́ nípa: àkọlé, ọjà, èrò-kókó, ohun tí olùwòran yóò rí gbà…",
-      "cpWordPh": "Ọ̀rọ̀-kókó (tàbí AI yóò ṣe ọ̀kan)",
-      "fvDaysHint": "Ìtúntúnṣe ní àwọn ọjọ́",
-      "fvDaysPh": "ọjọ́",
-      "fvEmpty": "Kò sí ohun tí a rí fún àwọn ìlànà wọ̀nyí — tú àwọn àlẹ̀mọ́ rẹ sílẹ̀.",
-      "fvNeedTopic": "Tẹ àkọlé ìwádìí kan.",
-      "fvRun": "Wá",
-      "fvSub": "Wá àwọn fídíò gbígbòòrò nípa àkọlé àti pèsè àwọn ọ̀na asopọ. Kìí ṣe ìgbàsílẹ̀.",
-      "fvTitle": "Wá gbígbòòrò",
-      "fvTopicPh": "Àkọlé tàbí àyè: \"AI fún ìṣòwò\"",
-      "fvViewsPh": "ìwòye kéré jùlọ",
-      "intro": "Awọn ọgbọn ìṣàkóso àkóónú mẹ́ta. Wọn lo àwọn kọ́kọ́rọ́ rẹ láti Ètò: wádìí — TikHub, àwọn ọ̀rọ̀ — Claude (Anthropic). Awọn ọgbọn wọ̀nyí tún wà fún Claude nípasẹ̀ asopọ MCP wa (ìwọ̀n \"skills:use\").",
-      "views": "ìwòye"
-    },
     "storyboard": {
       "actFail": "Kò já sí rere — jọ̀wọ́ tún gbìyànjú.",
       "addPanel": "Àwòrán",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Yọ kuro — kò ní sí nínú fídíò náà.",
       "chunksN": "ìpín {{n}}",
       "costNote": "Ẹ̀rọ atúnṣe kò lo àwọn kọ́kọ́rọ̀ ìta. Ìyípadà ọ̀rọ̀ sí àkọsílẹ̀ — ìbéèrè Gemini 1; ètò ìgbìmọ̀ AI — ìbéèrè Claude 1 (àwọn kọ́kọ́rọ̀ nínú Ètò).",
-      "ctaHint": "Lo ọ̀rọ̀ kan náà nínú àkọlé (“Àwọn Ìmọ̀ → Ọ̀nà Àkọlé”).",
       "ctaPh": "Tẹ Ọ̀RỌ̀ sínú àwọn àlàyé",
       "ctaWordPh": "ÀSÀ",
       "delConfirm": "Paarẹ",

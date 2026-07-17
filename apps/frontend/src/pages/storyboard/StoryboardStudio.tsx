@@ -796,7 +796,7 @@ export default function StoryboardStudio() {
               <input value={doc.settings?.ctaWord ?? ''} placeholder={t('sec.storyboard.ctaWordPh', 'ТРЕНД')}
                 onChange={(e) => patchLocal((d) => { d.settings = { ...d.settings, ctaWord: e.target.value.slice(0, 24) }; })}
                 className="w-full text-[12px] rounded-lg px-2 py-1.5 outline-none" style={inputStyle} />
-              <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{t('sec.storyboard.ctaHint', 'То же слово используйте в подписи («Скиллы → Формула подписи»).')}</p>
+              <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{t('sec.storyboard.ctaHintV2', 'То же кодовое слово используйте в подписи к посту.')}</p>
             </div>
             <label className="inline-flex items-center gap-2 text-[12px]" style={{ color: 'var(--text-primary)' }}>
               <input type="checkbox" checked={!!doc.settings?.subtitles}

@@ -16,8 +16,7 @@
     "trends": "Tandans",
     "gallery": "Galeri Medya",
     "publisher": "Piblikatè",
-    "storyboard": "Storyboard",
-    "skills": "Konpetans"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Chanm tradiksyon",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Louvri Google Flow",
       "vpTitle": "Videyo \n→ Google Flow",
       "addTrendTitle": "Louvri 'Tandans': eskane pa mo kle oswa kole yon lyen videyo — rezilta yo ap parèt isit la",
-      "tabSkills": "Konpetans",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Règleman sou Bonbon",
       "cookiePrivacyLink": "Règleman sou Konfidansyalite",
       "cookieText": "Nou itilize bonbon: estrikteman nesesè pou operasyon sit la (koneksyon, lang, tèm), epi, avèk konsantman ou, analitik — pou amelyore sèvis la. Detay nan ",
-      "tabSkillsSub": "Viralite · anti-kliché · deskripsyon",
       "tabStoryboardSub": "Montaj oto reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Paramèt bonbon"
     },
-    "skills": {
-      "acChanges": "Anvan → apre",
-      "acNeedText": "Kole tèks (min. 20 karaktè).",
-      "acPh": "Kole post ou, deskripsyon, oswa script ou isit la…",
-      "acQuestions": "Pou otè a: ",
-      "acRemoved": "(retire)",
-      "acRun": "Lanse anti-kliché",
-      "acSub": "Retire kliché AI-jenere yo pou yon tèks ki sonnen pi imen. Pa envante enfòmasyon.",
-      "acTitle": "Anti-kliché",
-      "copy": "Kopye",
-      "cpCtaNote": "Sèvi ak mo kle {{w}} nan dènye panèl CTA Storyboard ou a.",
-      "cpHooks": "3 opsyon kwòk — klike pou ranplase premye liy lan",
-      "cpLinkPh": "Lyen (opsyonèl)",
-      "cpNeedTopic": "Dekri sijè post la.",
-      "cpRun": "Ekri deskripsyon",
-      "cpSub": "Estrikti deskripsyon: kwòk → eksperyans pèsonèl → sa li rezoud → CTA ak mo kle. Jiska 1000 karaktè.",
-      "cpTitle": "Fòmil deskripsyon",
-      "cpTopicPh": "Sa post la ap pale de: sijè, pwodwi, ide prensipal, sa telespektatè a ap jwenn…",
-      "cpWordPh": "Mo kle (oswa AI ap jenere youn)",
-      "fvDaysHint": "Frechè an jou",
-      "fvDaysPh": "jou",
-      "fvEmpty": "Pa gen anyen ki jwenn pou kritè sa yo — dekole filtè ou yo.",
-      "fvNeedTopic": "Antre yon sijè rechèch.",
-      "fvRun": "Jwenn",
-      "fvSub": "Jwenn videyo viral pa sijè epi bay lyen. Sèlman jwenn — pa telechaje.",
-      "fvTitle": "Jwenn viralite",
-      "fvTopicPh": "Sijè oswa nich: \"AI pou biznis\"",
-      "fvViewsPh": "min. vi",
-      "intro": "Twa konpetans pou pwosesis kontni. Yo itilize kle ou yo nan Anviwònman: rechèch — TikHub, tèks — Claude (Anthropic). Konpetans sa yo disponib tou pou Claude atravè konektè MCP nou an (dimansyon \"skills:use\").",
-      "views": "vi"
-    },
     "storyboard": {
       "actFail": "Echwe — tanpri eseye ankò.",
       "addPanel": "Panèl",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Koupe moso a — li pap enkli nan videyo a.",
       "chunksN": "{{n}} moso",
       "costNote": "Motè lojisyèl an pa itilize kle ekstèn. Transkripsyon — 1 demann Gemini; plan panèl AI — 1 demann Claude (kle nan Anviwònman).",
-      "ctaHint": "Itilize menm mo a nan deskripsyon an (“Konpetans → Fòmil deskripsyon”).",
       "ctaPh": "Tape MO nan kòmantè yo",
       "ctaWordPh": "TREND",
       "delConfirm": "Efase",

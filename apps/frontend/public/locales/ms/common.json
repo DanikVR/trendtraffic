@@ -16,8 +16,7 @@
     "trends": "Trend",
     "gallery": "Galeri media",
     "publisher": "Penerbit",
-    "storyboard": "Papan Cerita",
-    "skills": "Kemahiran"
+    "storyboard": "Papan Cerita"
   },
   "rooms": {
     "title": "Bilik terjemahan",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Buka Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Buka 'Trend': imbas mengikut kata kunci atau tampal pautan video — hasil akan muncul di sini",
-      "tabSkills": "Kemahiran",
       "tabStoryboard": "Papan Cerita"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Dasar Kuki",
       "cookiePrivacyLink": "Dasar Privasi",
       "cookieText": "Kami menggunakan kuki: sangat diperlukan untuk operasi tapak (log masuk, bahasa, tema), dan, dengan persetujuan anda, analitik — untuk meningkatkan perkhidmatan. Butiran dalam ",
-      "tabSkillsSub": "Viral · anti-klise · kapsyen",
       "tabStoryboardSub": "Reel auto-montaj"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Tetapan kuki"
     },
-    "skills": {
-      "acChanges": "Sebelum → selepas",
-      "acNeedText": "Tampal teks (min. 20 aksara).",
-      "acPh": "Tampal siaran, kapsyen, atau skrip anda di sini…",
-      "acQuestions": "Kepada penulis: ",
-      "acRemoved": "(dibuang)",
-      "acRun": "Jalankan anti-klise",
-      "acSub": "Membuang klise yang dijana AI untuk teks yang lebih kedengaran manusia. Tidak mencipta fakta.",
-      "acTitle": "Anti-klise",
-      "copy": "Salin",
-      "cpCtaNote": "Gunakan kata kunci {{w}} dalam panel CTA terakhir Papan Cerita anda.",
-      "cpHooks": "3 pilihan cangkuk — klik untuk menggantikan baris pertama",
-      "cpLinkPh": "Pautan (pilihan)",
-      "cpNeedTopic": "Huraikan topik siaran.",
-      "cpRun": "Tulis kapsyen",
-      "cpSub": "Struktur kapsyen: cangkuk → pengalaman peribadi → apa yang diselesaikan → CTA dengan kata kunci. Sehingga 1000 aksara.",
-      "cpTitle": "Formula kapsyen",
-      "cpTopicPh": "Tentang apa siaran itu: topik, produk, idea utama, apa yang penonton akan dapat…",
-      "cpWordPh": "Kata kunci (atau AI akan menjana satu)",
-      "fvDaysHint": "Kesegaran dalam hari",
-      "fvDaysPh": "hari",
-      "fvEmpty": "Tiada apa-apa ditemui untuk kriteria ini — longgarkan penapis anda.",
-      "fvNeedTopic": "Masukkan topik carian.",
-      "fvRun": "Cari",
-      "fvSub": "Mencari video viral mengikut topik dan menyediakan pautan. Hanya mencari — tidak memuat turun.",
-      "fvTitle": "Cari viraliti",
-      "fvTopicPh": "Topik atau niche: \"AI untuk perniagaan\"",
-      "fvViewsPh": "min. tontonan",
-      "intro": "Tiga kemahiran saluran kandungan. Ia menggunakan kunci anda daripada Tetapan: carian — TikHub, teks — Claude (Anthropic). Kemahiran ini juga tersedia kepada Claude melalui penyambung MCP kami (skop \"skills:use\").",
-      "views": "tontonan"
-    },
     "storyboard": {
       "actFail": "Gagal — sila cuba lagi.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Potongan dimatikan — tidak akan disertakan dalam video.",
       "chunksN": "{{n}} potongan",
       "costNote": "Enjin perisian tidak menggunakan kunci luaran. Transkripsi — 1 permintaan Gemini; rancangan panel AI — 1 permintaan Claude (kunci dalam Tetapan).",
-      "ctaHint": "Gunakan perkataan yang sama dalam kapsyen (“Kemahiran → Formula kapsyen”).",
       "ctaPh": "Taip PERKATAAN dalam komen",
       "ctaWordPh": "TREND",
       "delConfirm": "Padam",

@@ -16,8 +16,7 @@
     "trends": "Tendenze",
     "gallery": "Galleria media",
     "publisher": "Editore",
-    "storyboard": "Storyboard",
-    "skills": "Competenze"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Stanze di traduzzione",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Apri Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Aprite 'Tendenze': scansate per parolla chjave o incollate un ligame video — i risultati appareranu quì",
-      "tabSkills": "Competenze",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Pulitica di i Cookies",
       "cookiePrivacyLink": "Pulitica di Cunfidenzialità",
       "cookieText": "Utilizemu i cookies: strettamente necessarii per u funziunamentu di u situ (accessu, lingua, tema), è, cù u vostru accunsentu, analitici — per migliurà u serviziu. Dettagli in a nostra ",
-      "tabSkillsSub": "Viralità · anti-cliché · didascalia",
       "tabStoryboardSub": "Reel auto-montatu"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Paràmetri di i cookies"
     },
-    "skills": {
-      "acChanges": "Prima → dopu",
-      "acNeedText": "Incolla testu (min. 20 caratteri).",
-      "acPh": "Incolla u vostru post, didascalia, o script quì…",
-      "acQuestions": "À l'autore: ",
-      "acRemoved": "(cacciatu)",
-      "acRun": "Esegui anti-cliché",
-      "acSub": "Elimina i cliché generati da l'AI per un testu più umanu. Ùn inventa micca fatti.",
-      "acTitle": "Anti-cliché",
-      "copy": "Copia",
-      "cpCtaNote": "Aduprate a parolla chjave {{w}} in u pannellu CTA finale di u vostru Storyboard.",
-      "cpHooks": "3 opzioni di ganciu — clicca per rimpiazzà a prima linea",
-      "cpLinkPh": "Ligame (opzionale)",
-      "cpNeedTopic": "Descrivi u sughjettu di u post.",
-      "cpRun": "Scrivi didascalia",
-      "cpSub": "Struttura di a didascalia: ganciu → sperienza persunale → ciò chì risolve → CTA cù parolla chjave. Finu à 1000 caratteri.",
-      "cpTitle": "Formula di didascalia",
-      "cpTopicPh": "Di chì tratta u post: sughjettu, pruduttu, idea principale, ciò chì u spettatore uttene…",
-      "cpWordPh": "Parolla chjave (o l'AI ne genererà una)",
-      "fvDaysHint": "Freschezza in ghjorni",
-      "fvDaysPh": "ghjorni",
-      "fvEmpty": "Nunda truvatu per sti criteri — allentate i vostri filtri.",
-      "fvNeedTopic": "Inserite un sughjettu di ricerca.",
-      "fvRun": "Trova",
-      "fvSub": "Trova video virali per sughjettu è furnisce ligami. Solu trova — ùn scarica micca.",
-      "fvTitle": "Trova viralità",
-      "fvTopicPh": "Sughjettu o nicchia: \"AI per l'affari\"",
-      "fvViewsPh": "min. viste",
-      "intro": "Trè cumpetenze di pipeline di cuntenutu. Adupranu e vostre chjave da i Paràmetri: ricerca — TikHub, testi — Claude (Anthropic). Queste cumpetenze sò ancu dispunibili per Claude via u nostru connettore MCP (scopu \"skills:use\").",
-      "views": "viste"
-    },
     "storyboard": {
       "actFail": "Fallitu — per piacè riprova.",
       "addPanel": "Pannellu",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk disattivatu — ùn serà micca inclusu in u video.",
       "chunksN": "{{n}} chunks",
       "costNote": "U mutore di u software ùn usa micca chjavi esterni. Trascrizzione — 1 dumanda Gemini; pianu di pannellu AI — 1 dumanda Claude (chjavi in Impostazioni).",
-      "ctaHint": "Aduprate a stessa parolla in a didascalia (“Abilità → Formula di didascalia”).",
       "ctaPh": "Scrivite PAROLLA in i cumenti",
       "ctaWordPh": "TREND",
       "delConfirm": "Sguassà",

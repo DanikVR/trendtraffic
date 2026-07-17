@@ -16,8 +16,7 @@
     "trends": "Trends",
     "gallery": "Medien-Galerie",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Übersetzungsräume",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow öffnen",
       "vpTitle": "Videos \n→ Google Flow",
       "addTrendTitle": "'Trends' öffnen: nach Keyword scannen oder einen Videolink einfügen – Ergebnisse erscheinen hier",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookie-Richtlinie",
       "cookiePrivacyLink": "Datenschutzrichtlinie",
       "cookieText": "Wir verwenden Cookies: unbedingt notwendig für den Website-Betrieb (Login, Sprache, Theme) und, mit Ihrer Zustimmung, analytische – zur Verbesserung des Dienstes. Details in unserer ",
-      "tabSkillsSub": "Viralität · Anti-Klischee · Caption",
       "tabStoryboardSub": "Auto-Montage Reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie-Einstellungen"
     },
-    "skills": {
-      "acChanges": "Vorher → Nachher",
-      "acNeedText": "Text einfügen (mind. 20 Zeichen).",
-      "acPh": "Fügen Sie hier Ihren Beitrag, Ihre Caption oder Ihr Skript ein…",
-      "acQuestions": "An den Autor:",
-      "acRemoved": "(entfernt)",
-      "acRun": "Anti-Klischee ausführen",
-      "acSub": "Entfernt KI-generierte Klischees für einen menschlicheren Text. Erfindet keine Fakten.",
-      "acTitle": "Anti-Klischee",
-      "copy": "Kopieren",
-      "cpCtaNote": "Verwenden Sie das Keyword {{w}} im letzten CTA-Panel Ihres Storyboards.",
-      "cpHooks": "3 Hook-Optionen — klicken zum Ersetzen der ersten Zeile",
-      "cpLinkPh": "Link (optional)",
-      "cpNeedTopic": "Beschreiben Sie das Thema des Beitrags.",
-      "cpRun": "Caption schreiben",
-      "cpSub": "Caption-Struktur: Hook → persönliche Erfahrung → was es löst → CTA mit Keyword. Bis zu 1000 Zeichen.",
-      "cpTitle": "Caption-Formel",
-      "cpTopicPh": "Worum es im Beitrag geht: Thema, Produkt, Hauptidee, was der Zuschauer bekommt…",
-      "cpWordPh": "Keyword (oder KI generiert eines)",
-      "fvDaysHint": "Frische in Tagen",
-      "fvDaysPh": "Tage",
-      "fvEmpty": "Nichts für diese Kriterien gefunden — lockern Sie Ihre Filter.",
-      "fvNeedTopic": "Geben Sie ein Suchthema ein.",
-      "fvRun": "Finden",
-      "fvSub": "Findet virale Videos nach Thema und liefert Links. Findet nur — lädt nicht herunter.",
-      "fvTitle": "Viralität finden",
-      "fvTopicPh": "Thema oder Nische: „KI für Unternehmen“",
-      "fvViewsPh": "min. Aufrufe",
-      "intro": "Drei Content-Pipeline-Skills. Sie verwenden Ihre Schlüssel aus den Einstellungen: Suche — TikHub, Texte — Claude (Anthropic). Diese Skills sind auch Claude über unseren MCP-Connector (Bereich „skills:use“) zugänglich.",
-      "views": "Aufrufe"
-    },
     "storyboard": {
       "actFail": "Fehlgeschlagen — bitte versuchen Sie es erneut.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk aus – wird nicht ins Video übernommen.",
       "chunksN": "{{n}} Chunks",
       "costNote": "Die Software-Engine verwendet keine externen Schlüssel. Transkription – 1 Gemini-Anfrage; KI-Panel-Plan – 1 Claude-Anfrage (Schlüssel in den Einstellungen).",
-      "ctaHint": "Verwenden Sie dasselbe Wort in der Bildunterschrift („Skills → Caption formula“).",
       "ctaPh": "WORD in Kommentare eingeben",
       "ctaWordPh": "TREND",
       "delConfirm": "Löschen",

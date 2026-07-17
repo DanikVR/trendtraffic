@@ -16,8 +16,7 @@
     "trends": "Trendi",
     "gallery": "Medijska galerija",
     "publisher": "Založnik",
-    "storyboard": "Storyboard",
-    "skills": "Spretnosti"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Prevajalske sobe",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Odpri Google Flow",
       "vpTitle": "Videoposnetki \n→ Google Flow",
       "addTrendTitle": "Odpri 'Trendi': skeniraj po ključni besedi ali prilepi povezavo do videa — rezultati se bodo prikazali tukaj",
-      "tabSkills": "Spretnosti",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Politika piškotkov",
       "cookiePrivacyLink": "Politika zasebnosti",
       "cookieText": "Uporabljamo piškotke: nujno potrebne za delovanje spletnega mesta (prijava, jezik, tema) in, z vašim soglasjem, analitične — za izboljšanje storitve. Podrobnosti v naši ",
-      "tabSkillsSub": "Viralnost · anti-klišej · napis",
       "tabStoryboardSub": "Avtomatska montaža"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Nastavitve piškotkov"
     },
-    "skills": {
-      "acChanges": "Pred → po",
-      "acNeedText": "Prilepite besedilo (min. 20 znakov).",
-      "acPh": "Prilepite objavo, napis ali scenarij tukaj…",
-      "acQuestions": "Avtorju: ",
-      "acRemoved": "(odstranjeno)",
-      "acRun": "Zaženi anti-klišej",
-      "acSub": "Odstrani klišeje, ki jih je ustvarila umetna inteligenca, za bolj človeško zveneče besedilo. Ne izumlja dejstev.",
-      "acTitle": "Anti-klišej",
-      "copy": "Kopiraj",
-      "cpCtaNote": "Uporabite ključno besedo {{w}} v zadnji CTA plošči vašega Storyboarda.",
-      "cpHooks": "3 možnosti za uvod — kliknite za zamenjavo prve vrstice",
-      "cpLinkPh": "Povezava (neobvezno)",
-      "cpNeedTopic": "Opišite temo objave.",
-      "cpRun": "Napiši napis",
-      "cpSub": "Struktura napisa: uvod → osebna izkušnja → kaj rešuje → CTA s ključno besedo. Do 1000 znakov.",
-      "cpTitle": "Formula za napis",
-      "cpTopicPh": "O čem govori objava: tema, izdelek, glavna ideja, kaj bo gledalec dobil…",
-      "cpWordPh": "Ključna beseda (ali jo bo ustvarila AI)",
-      "fvDaysHint": "Svežina v dneh",
-      "fvDaysPh": "dni",
-      "fvEmpty": "Za te kriterije ni bilo najdeno nič – sprostite filtre.",
-      "fvNeedTopic": "Vnesite temo iskanja.",
-      "fvRun": "Najdi",
-      "fvSub": "Najde viralne videoposnetke po temi in ponudi povezave. Samo najde — ne prenese.",
-      "fvTitle": "Poišči viralnost",
-      "fvTopicPh": "Tema ali niša: \"AI za posel\"",
-      "fvViewsPh": "min. ogledov",
-      "intro": "Tri spretnosti za vsebinski cevovod. Uporabljajo vaše ključe iz Nastavitev: iskanje — TikHub, besedila — Claude (Anthropic). Te spretnosti so na voljo tudi Claudu prek našega MCP-konektorja (obseg \"skills:use\").",
-      "views": "ogledov"
-    },
     "storyboard": {
       "actFail": "Neuspešno — poskusite znova.",
       "addPanel": "Plošča",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Izključi del – ne bo vključen v video.",
       "chunksN": "{{n}} delov",
       "costNote": "Programski pogon ne uporablja zunanjih ključev. Transkripcija — 1 zahteva Gemini; AI načrt panela — 1 zahteva Claude (ključ v Nastavitvah).",
-      "ctaHint": "Uporabite isto besedo v napisu (»Spretnosti → Formula napisa«).",
       "ctaPh": "Vpišite BESEDO v komentarje",
       "ctaWordPh": "TREND",
       "delConfirm": "Izbriši",

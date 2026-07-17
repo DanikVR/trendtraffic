@@ -16,8 +16,7 @@
     "trends": "Ibishya",
     "gallery": "Ububiko bw'ibyamamajwe",
     "publisher": "Umwanditsi",
-    "storyboard": "Storyboard",
-    "skills": "Ubumenyi"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Ibyumba by'ubuhinduzi",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Fungura Google Flow",
       "vpTitle": "Amashusho \n→ Google Flow",
       "addTrendTitle": "Fungura 'Trends': scan ukoresheje ijambo ry'ingenzi cyangwa ushyireho umurongo wa videwo — ibisubizo bizagaragara hano",
-      "tabSkills": "Ubumenyi",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Amabwiriza y'amakuru y'ibanze",
       "cookiePrivacyLink": "Amabwiriza y'ibanga",
       "cookieText": "Dukoresha amakuru y'ibanze: akenewe cyane mu mikorere y'urubuga (kwinjira, ururimi, insanganyamatsiko), kandi, ku bwumvikane bwawe, ay'isesengura — kugira ngo duhindure serivisi. Amakuru arambuye muri ",
-      "tabSkillsSub": "Kwamamara · anti-cliché · ibisobanuro",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Aho ushobora guhindura ibijyanye na 'cookies'"
     },
-    "skills": {
-      "acChanges": "Mbere → nyuma",
-      "acNeedText": "Andika inyandiko (nibura inyuguti 20).",
-      "acPh": "Andika hano ibyo wanditse, ibisobanuro, cyangwa inyandiko…",
-      "acQuestions": "Ku mwanditsi: ",
-      "acRemoved": "(yakuyweho)",
-      "acRun": "Koresha anti-cliché",
-      "acSub": "Ikura clichés zikomoka kuri AI kugira ngo inyandiko yumvikane nk'iy'umuntu. Ntabwo ihimba amakuru.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopi",
-      "cpCtaNote": "Koresha ijambo ry'ingenzi {{w}} mu gice cya nyuma cya CTA cya Storyboard yawe.",
-      "cpHooks": "Uburyo 3 bwo gufata — kanda kugira ngo uhindure umurongo wa mbere",
-      "cpLinkPh": "Ihuza (bishobora kuba bidahari)",
-      "cpNeedTopic": "Sobanura insanganyamatsiko y'inyandiko.",
-      "cpRun": "Andika ibisobanuro",
-      "cpSub": "Imiterere y'ibisobanuro: hook → uburambe bwite → icyo bikemura → CTA n'ijambo ry'ingenzi. Kugeza ku nyuguti 1000.",
-      "cpTitle": "Uburyo bwo kwandika ibisobanuro",
-      "cpTopicPh": "Ibyo inyandiko ivugaho: insanganyamatsiko, igicuruzwa, igitekerezo nyamukuru, icyo ureba azabona…",
-      "cpWordPh": "Ijambo ry'ingenzi (cyangwa AI izaribyara)",
-      "fvDaysHint": "Ubushya mu minsi",
-      "fvDaysPh": "iminsi",
-      "fvEmpty": "Nta kintu cyabonetse kuri ibi bipimo — koroshya ibyo ushakisha.",
-      "fvNeedTopic": "Andika insanganyamatsiko yo gushakisha.",
-      "fvRun": "Shakisha",
-      "fvSub": "Ishakisha amashusho akwirakwira ku nsanganyamatsiko kandi igatanga amashusho. Ishakisha gusa — ntabwo iyadownloada.",
-      "fvTitle": "Shakisha ikwirakwira",
-      "fvTopicPh": "Insanganyamatsiko cyangwa umwihariko: \"AI ku bucuruzi\"",
-      "fvViewsPh": "nibura views",
-      "intro": "Ubumenyi butatu bwo gutunganya ibikubiyemo. Bikoresha imfunguzo zawe ziri muri Settings: gushakisha — TikHub, inyandiko — Claude (Anthropic). Ubu bumenyi buranaboneka kuri Claude binyuze muri MCP-connector yacu (scope \"skills:use\").",
-      "views": "views"
-    },
     "storyboard": {
       "actFail": "Byananiranye — nyamuneka ongera ugerageze.",
       "addPanel": "Igice",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk off — ntizashyirwa muri videwo.",
       "chunksN": "Ibyiciro {{n}}",
       "costNote": "Moteri ya software ntikoresha imfunguzo z'inyongera. Kwandika — ikibazo 1 cya Gemini; gahunda ya paneli ya AI — ikibazo 1 cya Claude (imfunguzo muri Settings).",
-      "ctaHint": "Koresha ijambo rimwe mu nyandiko (“Skills → Caption formula”).",
       "ctaPh": "Andika IJAMBO muri comments",
       "ctaWordPh": "TREND",
       "delConfirm": "Siba",

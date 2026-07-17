@@ -16,8 +16,7 @@
     "trends": "Tueddiadau",
     "gallery": "Oriel cyfryngau",
     "publisher": "Cyhoeddwr",
-    "storyboard": "Bwrdd Stori",
-    "skills": "Sgiliau"
+    "storyboard": "Bwrdd Stori"
   },
   "rooms": {
     "title": "Ystafelloedd cyfieithu",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Agor Google Flow",
       "vpTitle": "Fideos \n→ Google Flow",
       "addTrendTitle": "Agor 'Tueddiadau': sganio yn ôl allweddair neu gludo dolen fideo — bydd y canlyniadau'n ymddangos yma",
-      "tabSkills": "Sgiliau",
       "tabStoryboard": "Bwrdd Stori"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Polisi Cwcis",
       "cookiePrivacyLink": "Polisi Preifatrwydd",
       "cookieText": "Rydym yn defnyddio cwcis: yn hollol angenrheidiol ar gyfer gweithrediad y safle (mewngofnodi, iaith, thema), ac, gyda'ch caniatâd, dadansoddol — i wella'r gwasanaeth. Manylion yn ein ",
-      "tabSkillsSub": "Firaeledd · gwrth-glicé · capsiwn",
       "tabStoryboardSub": "Rîl auto-montage"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wici",
       "footerCookieSettings": "Gosodiadau cwcis"
     },
-    "skills": {
-      "acChanges": "Cyn → ar ôl",
-      "acNeedText": "Gludwch destun (min. 20 nod).",
-      "acPh": "Gludwch eich post, capsiwn, neu sgript yma…",
-      "acQuestions": "I'r awdur: ",
-      "acRemoved": "(wedi'i dynnu)",
-      "acRun": "Rhedeg gwrth-glicé",
-      "acSub": "Yn tynnu clicé a gynhyrchir gan AI am destun sy'n swnio'n fwy dynol. Nid yw'n dyfeisio ffeithiau.",
-      "acTitle": "Gwrth-glicé",
-      "copy": "Copi",
-      "cpCtaNote": "Defnyddiwch yr allweddair {{w}} ym mhanel CTA terfynol eich Bwrdd Stori.",
-      "cpHooks": "3 opsiwn bachyn — cliciwch i ddisodli'r llinell gyntaf",
-      "cpLinkPh": "Dolen (dewisol)",
-      "cpNeedTopic": "Disgrifiwch bwnc y post.",
-      "cpRun": "Ysgrifennu capsiwn",
-      "cpSub": "Strwythur capsiwn: bachyn → profiad personol → beth mae'n ei ddatrys → CTA gydag allweddair. Hyd at 1000 nod.",
-      "cpTitle": "Fformiwla capsiwn",
-      "cpTopicPh": "Beth yw pwrpas y post: pwnc, cynnyrch, prif syniad, beth fydd y gwyliwr yn ei gael…",
-      "cpWordPh": "Allweddair (neu bydd AI yn cynhyrchu un)",
-      "fvDaysHint": "Ffresni mewn diwrnodau",
-      "fvDaysPh": "diwrnodau",
-      "fvEmpty": "Dim byd wedi'i ddarganfod ar gyfer y meini prawf hyn — llaciwch eich hidlwyr.",
-      "fvNeedTopic": "Rhowch bwnc chwilio.",
-      "fvRun": "Dod o hyd",
-      "fvSub": "Yn dod o hyd i fideos firaol yn ôl pwnc ac yn darparu dolenni. Dim ond yn dod o hyd — nid yw'n lawrlwytho.",
-      "fvTitle": "Dod o hyd i firaeledd",
-      "fvTopicPh": "Pwnc neu gilfach: \"AI ar gyfer busnes\"",
-      "fvViewsPh": "isafswm gwyliadau",
-      "intro": "Tri sgil piblinell cynnwys. Maent yn defnyddio'ch allweddi o Gosodiadau: chwilio — TikHub, testunau — Claude (Anthropic). Mae'r sgiliau hyn hefyd ar gael i Claude trwy ein cysylltydd MCP (cwmpas \"skills:use\").",
-      "views": "gwyliadau"
-    },
     "storyboard": {
       "actFail": "Wedi methu — ceisiwch eto.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Tynnu darn – ni fydd yn cael ei gynnwys yn y fideo.",
       "chunksN": "{{n}} darn",
       "costNote": "Nid yw'r injan feddalwedd yn defnyddio allweddi allanol. Trawsgrifio — 1 cais Gemini; cynllun panel AI — 1 cais Claude (allweddi yn Gosodiadau).",
-      "ctaHint": "Defnyddiwch yr un gair yn y pennawd (“Sgiliau → Fformiwla pennawd”).",
       "ctaPh": "Teipiwch AIR yn y sylwadau",
       "ctaWordPh": "TREND",
       "delConfirm": "Dileu",

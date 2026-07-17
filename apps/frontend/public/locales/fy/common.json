@@ -16,8 +16,7 @@
     "trends": "Trends",
     "gallery": "Mediagalery",
     "publisher": "Utjouwer",
-    "storyboard": "Storyboard",
-    "skills": "Feardichheden"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Oersetkeamers",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow iepenje",
       "vpTitle": "Fideo's \n→ Google Flow",
       "addTrendTitle": "Iepenje 'Trends': scan op trefwurd of plak in fideo-keppeling — resultaten ferskine hjir",
-      "tabSkills": "Feardichheden",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookiebelied",
       "cookiePrivacyLink": "Privacybelied",
       "cookieText": "Wy brûke cookies: strikt needsaaklik foar side-operaasje (oanmelde, taal, tema), en, mei jo tastimming, analytysk — om de tsjinst te ferbetterjen. Details yn ús ",
-      "tabSkillsSub": "Viraliteit · anty-klisjee · ûnderskrift",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Koekje-ynstellings"
     },
-    "skills": {
-      "acChanges": "Foar → nei",
-      "acNeedText": "Plak tekst (min. 20 tekens).",
-      "acPh": "Plak hjir dyn post, ûnderskrift of skript…",
-      "acQuestions": "Oan de auteur: ",
-      "acRemoved": "(fuorthelle)",
-      "acRun": "Fier anty-klisjee út",
-      "acSub": "Ferwideret troch AI generearre klisjees foar in minskliker klinkende tekst. Fynt gjin feiten út.",
-      "acTitle": "Anty-klisjee",
-      "copy": "Kopiearje",
-      "cpCtaNote": "Brûk it kaaiwurd {{w}} yn it lêste CTA-paniel fan dyn Storyboard.",
-      "cpHooks": "3 hook-opsjes — klik om de earste rigel te ferfangen",
-      "cpLinkPh": "Link (opsjoneel)",
-      "cpNeedTopic": "Beskriuw it ûnderwerp fan de post.",
-      "cpRun": "Skriuw ûnderskrift",
-      "cpSub": "Struktuer ûnderskrift: hook → persoanlike ûnderfining → wat it oplost → CTA mei kaaiwurd. Oant 1000 tekens.",
-      "cpTitle": "Ûnderskriftformule",
-      "cpTopicPh": "Wêr't de post oer giet: ûnderwerp, produkt, haadidee, wat de sjogger krije sil…",
-      "cpWordPh": "Kaaiwurd (of AI sil ien generearje)",
-      "fvDaysHint": "Farsk yn dagen",
-      "fvDaysPh": "dagen",
-      "fvEmpty": "Neat fûn foar dizze kritearia — meitsje dyn filters losser.",
-      "fvNeedTopic": "Fier in sykûnderwerp yn.",
-      "fvRun": "Fyn",
-      "fvSub": "Fynt virale fideo's op ûnderwerp en jout links. Fynt allinich — downloadt net.",
-      "fvTitle": "Fyn viraliteit",
-      "fvTopicPh": "Ûnderwerp of nis: \"AI foar bedriuwen\"",
-      "fvViewsPh": "min. werjeften",
-      "intro": "Trije feardichheden foar ynhâldpipeline. Se brûke dyn kaaien út Ynstellings: sykje — TikHub, teksten — Claude (Anthropic). Dizze feardichheden binne ek beskikber foar Claude fia ús MCP-connector (berik \"skills:use\").",
-      "views": "werjeften"
-    },
     "storyboard": {
       "actFail": "Mislukke — besykje it opnij.",
       "addPanel": "Paniel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk út — wurdt net opnommen yn de fideo.",
       "chunksN": "{{n}} chunks",
       "costNote": "De software-engine brûkt gjin eksterne kaaien. Transkripsje — 1 Gemini-oanfraach; AI-panielplan — 1 Claude-oanfraach (kaaien yn Ynstellings).",
-      "ctaHint": "Brûk itselde wurd yn de ûnderskriften (\"Feardichheden → Underskriftenformule\").",
       "ctaPh": "Typ WURD yn opmerkingen",
       "ctaWordPh": "TREND",
       "delConfirm": "Wiskje",

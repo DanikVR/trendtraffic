@@ -16,8 +16,7 @@
     "trends": "Trends",
     "gallery": "Mediegalerie",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Iwwersetzungsraim",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow opmaachen",
       "vpTitle": "Videoen \n→ Google Flow",
       "addTrendTitle": "„Trends“ opmaachen: no Schlësselwuert scannen oder e Video Link pechen — d'Resultater erschéngen hei",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookie Politik",
       "cookiePrivacyLink": "Dateschutzpolitik",
       "cookieText": "Mir benotze Cookien: strikt néideg fir de Site Betrib (Login, Sprooch, Thema), an, mat Ärer Zoustëmmung, analytesch — fir de Service ze verbesseren. Detailer an eiser ",
-      "tabSkillsSub": "Viralitéit · Anti-Cliché · Caption",
       "tabStoryboardSub": "Auto-Montage Reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie-Astellungen"
     },
-    "skills": {
-      "acChanges": "Virun → duerno",
-      "acNeedText": "Text pechen (min. 20 Zeechen).",
-      "acPh": "Äre Post, Caption oder Skript hei pechen…",
-      "acQuestions": "Un den Auteur: ",
-      "acRemoved": "(ewechgeholl)",
-      "acRun": "Anti-Cliché lafen",
-      "acSub": "Ewechhuelen AI-generéiert Clichéen fir en méi mënschlechen Text. Erfënnt keng Fakten.",
-      "acTitle": "Anti-Cliché",
-      "copy": "Kopéieren",
-      "cpCtaNote": "Benotzt de Schlësselwuert {{w}} am leschte CTA-Panel vun Ärem Storyboard.",
-      "cpHooks": "3 Hook-Optiounen — klickt fir déi éischt Zeil z'ersetzen",
-      "cpLinkPh": "Link (optional)",
-      "cpNeedTopic": "Beschreift den Thema vum Post.",
-      "cpRun": "Caption schreiwen",
-      "cpSub": "Caption-Struktur: Hook → perséinlech Erfahrung → wat et léist → CTA mat Schlësselwuert. Bis zu 1000 Zeechen.",
-      "cpTitle": "Caption Formel",
-      "cpTopicPh": "Wourëm et am Post geet: Thema, Produkt, Haaptidee, wat de Betruechter kritt…",
-      "cpWordPh": "Schlësselwuert (oder AI generéiert een)",
-      "fvDaysHint": "Frëschheet an Deeg",
-      "fvDaysPh": "Deeg",
-      "fvEmpty": "Näischt fonnt fir dës Critèren — lockert Är Filteren.",
-      "fvNeedTopic": "Gitt en Sich-Thema an.",
-      "fvRun": "Fannen",
-      "fvSub": "Fënnt viral Videoen no Thema a bitt Linken. Fënnt nëmmen — lued net erof.",
-      "fvTitle": "Viralitéit fannen",
-      "fvTopicPh": "Thema oder Nisch: \"AI fir Betriber\"",
-      "fvViewsPh": "min. Views",
-      "intro": "Dräi Inhalts-Pipeline Skills. Si benotzen Är Schlësselen aus den Astellungen: Sich — TikHub, Texter — Claude (Anthropic). Dës Skills sinn och fir Claude iwwer eisen MCP-Connector verfügbar (Scope \"skills:use\").",
-      "views": "Views"
-    },
     "storyboard": {
       "actFail": "Feeler — probéiert w.e.g. nach eng Kéier.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk aus — gëtt net am Video abegraff.",
       "chunksN": "{{n}} Chunks",
       "costNote": "De Software-Engine benotzt keng extern Schlësselen. Transkriptioun — 1 Gemini Ufro; AI Panel Plang — 1 Claude Ufro (Schlësselen an den Astellungen).",
-      "ctaHint": "Benotzt datselwecht Wuert an der Iwwerschrëft (\"Fäegkeeten → Iwwerschrëft Formel\").",
       "ctaPh": "Gitt WUERT an de Kommentaren an",
       "ctaWordPh": "TREND",
       "delConfirm": "Läschen",

@@ -16,8 +16,7 @@
     "trends": "Tendences",
     "gallery": "Multivides galerija",
     "publisher": "Publicētājs",
-    "storyboard": "Storyboard",
-    "skills": "Prasmes"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Tulkošanas istabas",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Atvērt Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Atvērt “Tendences”: skenējiet pēc atslēgvārda vai ielīmējiet video saiti — rezultāti parādīsies šeit",
-      "tabSkills": "Prasmes",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Sīkdatņu politika",
       "cookiePrivacyLink": "Privātuma politika",
       "cookieText": "Mēs izmantojam sīkdatnes: stingri nepieciešamas vietnes darbībai (pieteikšanās, valoda, tēma) un, ar jūsu piekrišanu, analītiskās — pakalpojuma uzlabošanai. Sīkāka informācija mūsu ",
-      "tabSkillsSub": "Viralitāte · anti-klišejas · paraksts",
       "tabStoryboardSub": "Automātiskā montāža"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Sīkdatņu iestatījumi"
     },
-    "skills": {
-      "acChanges": "Pirms → pēc",
-      "acNeedText": "Ielīmējiet tekstu (vismaz 20 rakstzīmes).",
-      "acPh": "Ielīmējiet savu ziņu, parakstu vai scenāriju šeit…",
-      "acQuestions": "Autoram: ",
-      "acRemoved": "(noņemts)",
-      "acRun": "Palaist anti-klišejas",
-      "acSub": "Noņem AI ģenerētās klišejas, lai teksts izklausītos dabiskāk. Neizgudro faktus.",
-      "acTitle": "Anti-klišejas",
-      "copy": "Kopēt",
-      "cpCtaNote": "Izmantojiet atslēgvārdu {{w}} sava Storyboard pēdējā CTA panelī.",
-      "cpHooks": "3 āķu opcijas — noklikšķiniet, lai aizstātu pirmo rindu",
-      "cpLinkPh": "Saite (pēc izvēles)",
-      "cpNeedTopic": "Aprakstiet ziņas tēmu.",
-      "cpRun": "Rakstīt parakstu",
-      "cpSub": "Paraksta struktūra: āķis → personīgā pieredze → ko tas atrisina → CTA ar atslēgvārdu. Līdz 1000 rakstzīmēm.",
-      "cpTitle": "Paraksta formula",
-      "cpTopicPh": "Par ko ir ziņa: tēma, produkts, galvenā ideja, ko skatītājs iegūs…",
-      "cpWordPh": "Atslēgvārds (vai AI to ģenerēs)",
-      "fvDaysHint": "Svaigums dienās",
-      "fvDaysPh": "dienas",
-      "fvEmpty": "Nekas nav atrasts pēc šiem kritērijiem — atvieglojiet filtrus.",
-      "fvNeedTopic": "Ievadiet meklēšanas tēmu.",
-      "fvRun": "Atrast",
-      "fvSub": "Atrod vīrusu videoklipus pēc tēmas un nodrošina saites. Tikai atrod — nelejuplādē.",
-      "fvTitle": "Atrast viralitāti",
-      "fvTopicPh": "Tēma vai niša: \"AI biznesam\"",
-      "fvViewsPh": "min. skatījumi",
-      "intro": "Trīs satura veidošanas prasmes. Tās izmanto jūsu atslēgas no Iestatījumiem: meklēšana — TikHub, teksti — Claude (Anthropic). Šīs prasmes ir pieejamas arī Claude, izmantojot mūsu MCP-savienotāju (tvērums \"skills:use\").",
-      "views": "skatījumi"
-    },
     "storyboard": {
       "actFail": "Neizdevās — lūdzu, mēģiniet vēlreiz.",
       "addPanel": "Panelis",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Izslēgt gabalu — netiks iekļauts video.",
       "chunksN": "{{n}} gabali",
       "costNote": "Programmatūras dzinējs neizmanto ārējās atslēgas. Transkripcija — 1 Gemini pieprasījums; AI paneļa plāns — 1 Claude pieprasījums (atslēgas iestatījumos).",
-      "ctaHint": "Izmantojiet to pašu vārdu parakstā (\"Prasmes → Paraksta formula\").",
       "ctaPh": "Ierakstiet VĀRDU komentāros",
       "ctaWordPh": "TRENDS",
       "delConfirm": "Dzēst",

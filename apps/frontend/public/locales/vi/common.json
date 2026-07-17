@@ -16,8 +16,7 @@
     "trends": "Xu hướng",
     "gallery": "Thư viện media",
     "publisher": "Nhà xuất bản",
-    "storyboard": "Storyboard",
-    "skills": "Kỹ năng"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Phòng dịch thuật",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Mở Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Mở 'Xu hướng': quét theo từ khóa hoặc dán liên kết video — kết quả sẽ xuất hiện ở đây",
-      "tabSkills": "Kỹ năng",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Chính sách Cookie",
       "cookiePrivacyLink": "Chính sách quyền riêng tư",
       "cookieText": "Chúng tôi sử dụng cookie: hoàn toàn cần thiết cho hoạt động của trang web (đăng nhập, ngôn ngữ, chủ đề) và, với sự đồng ý của bạn, phân tích — để cải thiện dịch vụ. Chi tiết trong ",
-      "tabSkillsSub": "Độ lan truyền · chống sáo rỗng · chú thích",
       "tabStoryboardSub": "Tự động dựng phim"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cài đặt cookie"
     },
-    "skills": {
-      "acChanges": "Trước → sau",
-      "acNeedText": "Dán văn bản (tối thiểu 20 ký tự).",
-      "acPh": "Dán bài đăng, chú thích hoặc kịch bản của bạn vào đây…",
-      "acQuestions": "Gửi tác giả: ",
-      "acRemoved": "(đã xóa)",
-      "acRun": "Chạy chống sáo rỗng",
-      "acSub": "Loại bỏ các cụm từ sáo rỗng do AI tạo ra để văn bản nghe tự nhiên hơn. Không bịa đặt sự thật.",
-      "acTitle": "Chống sáo rỗng",
-      "copy": "Sao chép",
-      "cpCtaNote": "Sử dụng từ khóa {{w}} trong bảng CTA cuối cùng của Storyboard của bạn.",
-      "cpHooks": "3 tùy chọn hook — nhấp để thay thế dòng đầu tiên",
-      "cpLinkPh": "Liên kết (tùy chọn)",
-      "cpNeedTopic": "Mô tả chủ đề bài đăng.",
-      "cpRun": "Viết chú thích",
-      "cpSub": "Cấu trúc chú thích: hook → trải nghiệm cá nhân → giải pháp → CTA với từ khóa. Tối đa 1000 ký tự.",
-      "cpTitle": "Công thức chú thích",
-      "cpTopicPh": "Bài đăng nói về gì: chủ đề, sản phẩm, ý chính, người xem sẽ nhận được gì…",
-      "cpWordPh": "Từ khóa (hoặc AI sẽ tạo)",
-      "fvDaysHint": "Độ mới theo ngày",
-      "fvDaysPh": "ngày",
-      "fvEmpty": "Không tìm thấy gì với các tiêu chí này — hãy nới lỏng bộ lọc của bạn.",
-      "fvNeedTopic": "Nhập chủ đề tìm kiếm.",
-      "fvRun": "Tìm",
-      "fvSub": "Tìm video viral theo chủ đề và cung cấp liên kết. Chỉ tìm — không tải xuống.",
-      "fvTitle": "Tìm độ lan truyền",
-      "fvTopicPh": "Chủ đề hoặc ngách: \"AI cho doanh nghiệp\"",
-      "fvViewsPh": "lượt xem tối thiểu",
-      "intro": "Ba kỹ năng trong quy trình nội dung. Chúng sử dụng khóa của bạn từ Cài đặt: tìm kiếm — TikHub, văn bản — Claude (Anthropic). Các kỹ năng này cũng có sẵn cho Claude thông qua MCP-connector của chúng tôi (phạm vi \"skills:use\").",
-      "views": "lượt xem"
-    },
     "storyboard": {
       "actFail": "Thất bại — vui lòng thử lại.",
       "addPanel": "Bảng",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Tắt đoạn — sẽ không có trong video.",
       "chunksN": "{{n}} đoạn",
       "costNote": "Công cụ phần mềm không sử dụng khóa ngoài. Chuyển ngữ — 1 yêu cầu Gemini; Lập kế hoạch bảng AI — 1 yêu cầu Claude (khóa trong Cài đặt).",
-      "ctaHint": "Sử dụng cùng một từ trong chú thích (“Kỹ năng → Công thức chú thích”).",
       "ctaPh": "Gõ TỪ trong bình luận",
       "ctaWordPh": "TREND",
       "delConfirm": "Xóa",

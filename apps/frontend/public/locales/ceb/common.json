@@ -16,8 +16,7 @@
     "trends": "Mga Uso",
     "gallery": "Media gallery",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Mga Kahanas"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Mga kwarto sa paghubad",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Ablihi ang Google Flow",
       "vpTitle": "Mga Video \n→ Google Flow",
       "addTrendTitle": "Ablihi ang 'Trends': i-scan pinaagi sa keyword o i-paste ang link sa video — ang mga resulta makita dinhi",
-      "tabSkills": "Mga Kahanas",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Patakaran sa Cookie",
       "cookiePrivacyLink": "Patakaran sa Pagkapribado",
       "cookieText": "Gigamit namo ang cookies: estrikto nga gikinahanglan alang sa operasyon sa site (login, pinulongan, tema), ug, uban sa imong pagtugot, analytical — aron mapauswag ang serbisyo. Mga detalye sa among ",
-      "tabSkillsSub": "Virality · anti-cliché · caption",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Mga setting sa cookie"
     },
-    "skills": {
-      "acChanges": "Kaniadto → Karon",
-      "acNeedText": "Idikit ang text (min. 20 ka karakter).",
-      "acPh": "Idikit ang imong post, caption, o script dinhi…",
-      "acQuestions": "Para sa awtor: ",
-      "acRemoved": "(gitangtang)",
-      "acRun": "Padagana ang anti-cliché",
-      "acSub": "Gitangtang ang mga cliché nga gihimo sa AI para mas tawhanon ang tunog sa text. Dili mag-imbento og kamatuoran.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopya",
-      "cpCtaNote": "Gamita ang keyword nga {{w}} sa katapusang CTA panel sa imong Storyboard.",
-      "cpHooks": "3 ka opsyon sa hook — i-klik aron ilisan ang unang linya",
-      "cpLinkPh": "Link (opsyonal)",
-      "cpNeedTopic": "Ihulagway ang topiko sa post.",
-      "cpRun": "Pagsulat og caption",
-      "cpSub": "Istruktura sa caption: hook → personal nga kasinatian → unsay masulbad → CTA nga may keyword. Hangtod 1000 ka karakter.",
-      "cpTitle": "Pormula sa Caption",
-      "cpTopicPh": "Unsa ang bahin sa post: topiko, produkto, pangunang ideya, unsay makuha sa tumatan-aw…",
-      "cpWordPh": "Keyword (o ang AI ang maghimo)",
-      "fvDaysHint": "Kabag-o sa mga adlaw",
-      "fvDaysPh": "mga adlaw",
-      "fvEmpty": "Walay nakit-an alang niini nga mga kriterya — luwasi ang imong mga filter.",
-      "fvNeedTopic": "Pagsulod og topiko sa pagpangita.",
-      "fvRun": "Pangitaa",
-      "fvSub": "Nangita og viral nga mga video pinaagi sa topiko ug naghatag og mga link. Nangita lang — dili mag-download.",
-      "fvTitle": "Pangitaa ang virality",
-      "fvTopicPh": "Topiko o niche: \"AI for business\"",
-      "fvViewsPh": "min. views",
-      "intro": "Tulo ka kahanas sa content pipeline. Gigamit nila ang imong mga key gikan sa Settings: search — TikHub, texts — Claude (Anthropic). Kini nga mga kahanas anaa usab sa Claude pinaagi sa among MCP-connector (scope \"skills:use\").",
-      "views": "views"
-    },
     "storyboard": {
       "actFail": "Napakyas — palihug sulayi pag-usab.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk off — dili iapil sa video.",
       "chunksN": "{{n}} ka chunks",
       "costNote": "Ang software engine wala mogamit og external keys. Transcription — 1 Gemini request; AI panel plan — 1 Claude request (keys sa Settings).",
-      "ctaHint": "Gamita ang parehas nga pulong sa caption (“Skills → Caption formula”).",
       "ctaPh": "I-type ang WORD sa comments",
       "ctaWordPh": "TREND",
       "delConfirm": "Delete",

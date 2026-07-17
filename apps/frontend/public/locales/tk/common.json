@@ -16,8 +16,7 @@
     "trends": "Trendler",
     "gallery": "Media galereýasy",
     "publisher": "Neşirçi",
-    "storyboard": "Storyboard",
-    "skills": "Ukyplar"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Terjime otaglary",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Google Flow-y aç",
       "vpTitle": "Wideolar \n→ Google Flow",
       "addTrendTitle": "'Tendensiýalar' açyň: açar söz boýunça skanirleň ýa-da wideo baglanyşygyny goýuň — netijeler şu ýerde peýda bolar",
-      "tabSkills": "Ukyplar",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Cookie Syýasaty",
       "cookiePrivacyLink": "Gizlinlik Syýasaty",
       "cookieText": "Biz cookie-leri ulanýarys: saýtyň işlemegi üçin hökmany (giriş, dil, tema) we siziň razylygyňyz bilen analitiki — hyzmaty gowulandyrmak üçin. Jikme-jik maglumatlar biziň ",
-      "tabSkillsSub": "Wirallyk · anti-klişe · ýazgy",
       "tabStoryboardSub": "Awtomatiki montaž roligi"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Cookie sazlamalary"
     },
-    "skills": {
-      "acChanges": "Öň → soň",
-      "acNeedText": "Teksti goýuň (iň azy 20 simwol).",
-      "acPh": "Ýazgyňyzy, teswiriňizi ýa-da ssenariýaňyzy şu ýere goýuň…",
-      "acQuestions": "Awtor üçin: ",
-      "acRemoved": "(aýryldy)",
-      "acRun": "Anti-klişeni işe giriz",
-      "acSub": "Adam sesine meňzeş tekst üçin AI tarapyndan döredilen klişeleri aýyrýar. Faktlary oýlap tapmaýar.",
-      "acTitle": "Anti-klişe",
-      "copy": "Göçür",
-      "cpCtaNote": "Storyboard-yňyzda iň soňky CTA panelinde {{w}} açar sözüni ulanyň.",
-      "cpHooks": "3 sany hook warianty — birinji setiri çalşyrmak üçin basyň",
-      "cpLinkPh": "Baglanyşyk (meýletin)",
-      "cpNeedTopic": "Ýazgynyň temasyny beýan ediň.",
-      "cpRun": "Ýazgy ýaz",
-      "cpSub": "Ýazgy gurluşy: hook → şahsy tejribe → nämäni çözýär → açar sözli CTA. 1000 simwola çenli.",
-      "cpTitle": "Ýazgy formulasy",
-      "cpTopicPh": "Ýazgy näme hakda: tema, önüm, esasy pikir, tomaşaçy näme alar…",
-      "cpWordPh": "Açar söz (ýa-da AI döreder)",
-      "fvDaysHint": "Täzelik günlerde",
-      "fvDaysPh": "gün",
-      "fvEmpty": "Bu kriteriýalar boýunça hiç zat tapylmady — süzgüçleri gowşadyň.",
-      "fvNeedTopic": "Gözleg temasyny giriziň.",
-      "fvRun": "Tap",
-      "fvSub": "Tema boýunça wiraýl wideolary tapýar we baglanyşyklary berýär. Diňe tapýar — ýüklemeýär.",
-      "fvTitle": "Wirallyk tap",
-      "fvTopicPh": "Tema ýa-da ugur: \"Biznes üçin AI\"",
-      "fvViewsPh": "min. görkezme",
-      "intro": "Üç sany mazmun turba geçiriji ukyplar. Olar Sazlamalardan açarlaryňyzy ulanýarlar: gözleg — TikHub, tekstler — Claude (Anthropic). Bu ukyplar biziň MCP-birleşdirijimiz (çäk \"skills:use\") arkaly Claude üçin hem elýeterlidir.",
-      "views": "görkezme"
-    },
     "storyboard": {
       "actFail": "Şowsuzlyk — gaýtadan synanyşyň.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Bölüm aýryldy — wideo goşulmaz.",
       "chunksN": "{{n}} bölüm",
       "costNote": "Programma üpjünçiligi daşarky açarlary ulanmaýar. Transkripsiýa — 1 Gemini soragy; AI panel meýilnamasy — 1 Claude soragy (Sazlamalardaky açarlar).",
-      "ctaHint": "Tekstde şol bir sözi ulanyň (“Endikler → Tekst formulasy”).",
       "ctaPh": "Teswirlerde SÖZI ýazyň",
       "ctaWordPh": "TREND",
       "delConfirm": "Pozmak",

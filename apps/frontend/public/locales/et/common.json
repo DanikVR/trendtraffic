@@ -16,8 +16,7 @@
     "trends": "Trendid",
     "gallery": "Meediagalerii",
     "publisher": "Avaldamine",
-    "storyboard": "Storyboard",
-    "skills": "Oskused"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Tõlketoa",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Ava Google Flow",
       "vpTitle": "Videod \n→ Google Flow",
       "addTrendTitle": "Ava 'Trendid': skaneeri märksõna järgi või kleebi videolink – tulemused ilmuvad siia",
-      "tabSkills": "Oskused",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Küpsiste poliitika",
       "cookiePrivacyLink": "Privaatsuspoliitika",
       "cookieText": "Me kasutame küpsiseid: rangelt vajalikud saidi toimimiseks (sisselogimine, keel, teema) ja teie nõusolekul analüütilised – teenuse parendamiseks. Üksikasjad meie ",
-      "tabSkillsSub": "Viraalsus · antiklišeelik · pealkiri",
       "tabStoryboardSub": "Automaatne montaažirull"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Küpsiste seaded"
     },
-    "skills": {
-      "acChanges": "Enne → pärast",
-      "acNeedText": "Kleepige tekst (min. 20 märki).",
-      "acPh": "Kleepige siia oma postitus, pealkiri või stsenaarium…",
-      "acQuestions": "Autorile: ",
-      "acRemoved": "(eemaldatud)",
-      "acRun": "Käivita antiklišeelik",
-      "acSub": "Eemaldab tehisintellekti loodud klišeed, et tekst kõlaks inimlikumalt. Ei loo fakte.",
-      "acTitle": "Antiklišeelik",
-      "copy": "Kopeeri",
-      "cpCtaNote": "Kasutage märksõna {{w}} oma Storyboardi viimases CTA-paneelis.",
-      "cpHooks": "3 konksu valikut — klõpsake esimese rea asendamiseks",
-      "cpLinkPh": "Link (valikuline)",
-      "cpNeedTopic": "Kirjeldage postituse teemat.",
-      "cpRun": "Kirjuta pealkiri",
-      "cpSub": "Pealkirja struktuur: konks → isiklik kogemus → mida see lahendab → CTA märksõnaga. Kuni 1000 märki.",
-      "cpTitle": "Pealkirja valem",
-      "cpTopicPh": "Mille kohta postitus on: teema, toode, põhiidee, mida vaataja saab…",
-      "cpWordPh": "Märksõna (või AI genereerib selle)",
-      "fvDaysHint": "Värskus päevades",
-      "fvDaysPh": "päeva",
-      "fvEmpty": "Nende kriteeriumitega ei leitud midagi — leevendage filtreid.",
-      "fvNeedTopic": "Sisestage otsinguteema.",
-      "fvRun": "Leia",
-      "fvSub": "Leiab viraalsed videod teema järgi ja pakub linke. Ainult leiab — ei laadi alla.",
-      "fvTitle": "Leia viraalsus",
-      "fvTopicPh": "Teema või nišš: \"AI ärile\"",
-      "fvViewsPh": "min. vaatamisi",
-      "intro": "Kolm sisutoru oskust. Need kasutavad teie seadetest pärit võtmeid: otsing — TikHub, tekstid — Claude (Anthropic). Need oskused on Claude'ile saadaval ka meie MCP-konnektori kaudu (ulatus \"skills:use\").",
-      "views": "vaatamisi"
-    },
     "storyboard": {
       "actFail": "Ebaõnnestus — proovige uuesti.",
       "addPanel": "Paneel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Tükk välja jäetud — ei lisata videosse.",
       "chunksN": "{{n}} tükki",
       "costNote": "Tarkvaramootor ei kasuta väliseid võtmeid. Transkriptsioon — 1 Gemini päring; AI paneeli plaan — 1 Claude päring (võtmed seadetes).",
-      "ctaHint": "Kasuta sama sõna pealdises (\"Oskused → Pealdise valem\").",
       "ctaPh": "Sisesta SÕNA kommentaaridesse",
       "ctaWordPh": "TREND",
       "delConfirm": "Kustuta",

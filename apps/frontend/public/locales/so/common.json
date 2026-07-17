@@ -16,8 +16,7 @@
     "trends": "Isbeddellada",
     "gallery": "Maktabadda warbaahinta",
     "publisher": "Daabace",
-    "storyboard": "Storyboard",
-    "skills": "Xirfadaha"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Qolalka turjumaada",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Fur Google Flow",
       "vpTitle": "Fiidiyowyada \n→ Google Flow",
       "addTrendTitle": "Fur 'Trends': ku baadh ereyga muhiimka ah ama dheji xiriirka fiidiyowga — natiijooyinka halkan ayay ka soo muuqan doonaan",
-      "tabSkills": "Xirfadaha",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Siyaasadda Cookie",
       "cookiePrivacyLink": "Siyaasadda Qarsoodiga",
       "cookieText": "Waxaan isticmaalnaa cookies: si adag lagama maarmaan u ah hawlgalka goobta (soo galidda, luqadda, mawduuca), iyo, oggolaanshahaaga, falanqaynta — si loo hagaajiyo adeegga. Faahfaahinta ku jirta ",
-      "tabSkillsSub": "Fayraska · ka-hortagga caadiga ah · qoraalka",
       "tabStoryboardSub": "Dib-u-habayn otomaatig ah"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Dejinta Kukiyada"
     },
-    "skills": {
-      "acChanges": "Kahor → kadib",
-      "acNeedText": "Ku dheji qoraalka (ugu yaraan 20 xaraf).",
-      "acPh": "Ku dheji qoraalkaaga, cinwaanka, ama qoraalkaaga halkan…",
-      "acQuestions": "Qoraaga: ",
-      "acRemoved": "(la saaray)",
-      "acRun": "Samee ka-hortagga caadiga ah",
-      "acSub": "Wuxuu ka saaraa caadiga ah ee AI-da si uu u helo qoraal bini'aadan u eg. Ma abuuro xaqiiqooyin.",
-      "acTitle": "Ka-hortagga caadiga ah",
-      "copy": "Koobiyeey",
-      "cpCtaNote": "Isticmaal ereyga furaha ah {{w}} qaybta ugu dambaysa ee CTA ee Storyboard-kaaga.",
-      "cpHooks": "3 ikhtiyaar oo soo jiidasho leh — guji si aad u beddesho khadka koowaad",
-      "cpLinkPh": "Xiriiriye (ikhtiyaari)",
-      "cpNeedTopic": "Sharax mawduuca qoraalka.",
-      "cpRun": "Qor qoraal",
-      "cpSub": "Qaab-dhismeedka qoraalka: soo jiidasho → waayo-aragnimo shakhsiyeed → waxa uu xalliyo → CTA oo leh erey fure ah. Ilaa 1000 xaraf.",
-      "cpTitle": "Qaacidada qoraalka",
-      "cpTopicPh": "Waxa uu qoraalka ku saabsan yahay: mawduuc, badeecad, fikrad guud, waxa daawaduhu heli doono…",
-      "cpWordPh": "Erey fure ah (ama AI ayaa soo saari doonta)",
-      "fvDaysHint": "Cusboonaanta maalmaha",
-      "fvDaysPh": "maalmo",
-      "fvEmpty": "Waxba laguma helin shuruudahan — dabci shaandhayntaada.",
-      "fvNeedTopic": "Geli mawduuc raadin ah.",
-      "fvRun": "Raadi",
-      "fvSub": "Wuxuu helaa fiidiyowyada fayraska ah ee mawduuca wuxuuna bixiyaa xiriiriyeyaal. Kaliya wuu helaa — ma soo dejiyo.",
-      "fvTitle": "Raadi fayraska",
-      "fvTopicPh": "Mawduuc ama meel gaar ah: \"AI ganacsiga\"",
-      "fvViewsPh": "ugu yaraan daawasho",
-      "intro": "Saddex xirfadood oo socodka wax-soo-saarka ah. Waxay isticmaalaan furayaashaaga Settings: raadinta — TikHub, qoraallada — Claude (Anthropic). Xirfadahan waxaa sidoo kale heli kara Claude iyada oo loo marayo isku-xiraha MCP (baaxadda \"skills:use\").",
-      "views": "daawasho"
-    },
     "storyboard": {
       "actFail": "Wuu fashilmay — fadlan mar kale isku day.",
       "addPanel": "Guddi",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Qaybta ka saar — muuqaalka kuma jiri doonto.",
       "chunksN": "{{n}} qaybood",
       "costNote": "Mashiinka software-ka ma isticmaalo furayaal dibadeed. Qoraal-qoris — 1 codsi Gemini; Qorshaha guddiga AI — 1 codsi Claude (furayaasha Settings-ka).",
-      "ctaHint": "Isticmaal isla ereyga qoraalka (“Xirfadaha → Qaacidada qoraalka”).",
       "ctaPh": "Ku qor EREY faallooyinka",
       "ctaWordPh": "ISBEDEL",
       "delConfirm": "Tirtir",

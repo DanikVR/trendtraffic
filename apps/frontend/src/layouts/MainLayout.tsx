@@ -24,7 +24,6 @@ import {
   Video,
   Loader2,
   LayoutTemplate,
-  Sparkles,
 } from 'lucide-react';
 
 // ── Функция переключения темы (глобальная, без re-render всего layout) ──
@@ -105,7 +104,6 @@ export function MainLayout() {
     { tab: 'hotebook',  icon: BookOpen,    label: 'Hotebook' },
     { tab: 'reference', icon: Video,       label: t('nav.gallery', 'Медиафайлы') },
     { tab: 'publisher', icon: Send,        label: t('nav.publisher', 'Публикатор') },
-    { tab: 'skills',    icon: Sparkles,    label: t('nav.skills', 'Скиллы') },
   ];
   // Активная вкладка Галереи — из ?tab= (дефолт 'trendhub'); подсвечиваем пункт сайдбара.
   const { search } = useLocation();

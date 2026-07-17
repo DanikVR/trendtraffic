@@ -16,8 +16,7 @@
     "trends": "Xejriet",
     "gallery": "Gallerija tal-midja",
     "publisher": "Pubblikatur",
-    "storyboard": "Storyboard",
-    "skills": "Ħiliet"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Kmamar tat-traduzzjoni",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Iftaħ Google Flow",
       "vpTitle": "Vidjows \n→ Google Flow",
       "addTrendTitle": "Iftaħ 'Xejriet': skennja bil-kelma ewlenija jew pejstja link tal-vidjo — ir-riżultati jidhru hawn",
-      "tabSkills": "Ħiliet",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Politika tal-Cookies",
       "cookiePrivacyLink": "Politika tal-Privatezza",
       "cookieText": "Aħna nużaw il-cookies: strettament meħtieġa għall-operat tas-sit (login, lingwa, tema), u, bil-kunsens tiegħek, analitiċi — biex intejbu s-servizz. Dettalji fil-",
-      "tabSkillsSub": "Viralità · anti-kliċé · caption",
       "tabStoryboardSub": "Reel b'montaġġ awtomatiku"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Settings tal-cookies"
     },
-    "skills": {
-      "acChanges": "Qabel → wara",
-      "acNeedText": "Pejstja t-test (min. 20 karattru).",
-      "acPh": "Pejstja l-post, caption, jew skript tiegħek hawn…",
-      "acQuestions": "Lill-awtur:",
-      "acRemoved": "(imneħħi)",
-      "acRun": "Ħaddem anti-kliċé",
-      "acSub": "Ineħħi l-kliċejiet ġenerati mill-AI għal test li jinstema' aktar uman. Ma jivvintax fatti.",
-      "acTitle": "Anti-kliċé",
-      "copy": "Ikkopja",
-      "cpCtaNote": "Uża l-kelma ewlenija {{w}} fil-pannell finali tas-CTA tal-Storyboard tiegħek.",
-      "cpHooks": "3 għażliet ta' hook — ikklikkja biex tissostitwixxi l-ewwel linja",
-      "cpLinkPh": "Link (mhux obbligatorju)",
-      "cpNeedTopic": "Iddeskrivi s-suġġett tal-post.",
-      "cpRun": "Ikteb caption",
-      "cpSub": "Struttura tal-caption: hook → esperjenza personali → x'issolvi → CTA b'kelma ewlenija. Sa 1000 karattru.",
-      "cpTitle": "Formula tal-caption",
-      "cpTopicPh": "X'inhu l-post: suġġett, prodott, idea prinċipali, x'se jikseb l-ispettatur…",
-      "cpWordPh": "Kelma ewlenija (jew l-AI tiġġenera waħda)",
-      "fvDaysHint": "Freskezza fi ġranet",
-      "fvDaysPh": "ġranet",
-      "fvEmpty": "Ma nstab xejn għal dawn il-kriterji — illaxka l-filtri tiegħek.",
-      "fvNeedTopic": "Daħħal suġġett ta' tfittxija.",
-      "fvRun": "Sib",
-      "fvSub": "Issib vidjows virali skont is-suġġett u tipprovdi links. Issib biss — ma tniżżilx.",
-      "fvTitle": "Sib il-viralità",
-      "fvTopicPh": "Suġġett jew niċċa: \"AI għan-negozju\"",
-      "fvViewsPh": "min. fehmiet",
-      "intro": "Tliet ħiliet tal-pipeline tal-kontenut. Jużaw iċ-ċwievet tiegħek mis-Settings: tfittxija — TikHub, testi — Claude (Anthropic). Dawn il-ħiliet huma disponibbli wkoll għal Claude permezz tal-konnettur MCP tagħna (skop \"skills:use\").",
-      "views": "fehmiet"
-    },
     "storyboard": {
       "actFail": "Falliet — jekk jogħġbok erġa' pprova.",
       "addPanel": "Pannell",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk mitfi — mhux se jiġi inkluż fil-video.",
       "chunksN": "{{n}} chunks",
       "costNote": "Il-magna tas-softwer ma tużax ċwievet esterni. Traskrizzjoni — 1 talba Gemini; pjan tal-pannell AI — 1 talba Claude (ċwievet fis-Settings).",
-      "ctaHint": "Uża l-istess kelma fil-caption (“Ħiliet → Formula tal-caption”).",
       "ctaPh": "Ikteb KELMA fil-kummenti",
       "ctaWordPh": "TREND",
       "delConfirm": "Ħassar",

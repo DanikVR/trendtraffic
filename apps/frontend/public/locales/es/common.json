@@ -16,8 +16,7 @@
     "trends": "Tendencias",
     "gallery": "Galería de medios",
     "publisher": "Publicador",
-    "storyboard": "Storyboard",
-    "skills": "Habilidades"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Salas de traducción",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Abrir Google Flow",
       "vpTitle": "Videos \n→ Google Flow",
       "addTrendTitle": "Abre 'Tendencias': busca por palabra clave o pega un enlace de vídeo — los resultados aparecerán aquí",
-      "tabSkills": "Habilidades",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Política de Cookies",
       "cookiePrivacyLink": "Política de Privacidad",
       "cookieText": "Utilizamos cookies: estrictamente necesarias para el funcionamiento del sitio (inicio de sesión, idioma, tema) y, con tu consentimiento, analíticas — para mejorar el servicio. Detalles en nuestra ",
-      "tabSkillsSub": "Viralidad · anticliché · pie de foto",
       "tabStoryboardSub": "Reel de automontaje"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Configuración de cookies"
     },
-    "skills": {
-      "acChanges": "Antes → después",
-      "acNeedText": "Pega el texto (mín. 20 caracteres).",
-      "acPh": "Pega aquí tu publicación, pie de foto o guion…",
-      "acQuestions": "Al autor: ",
-      "acRemoved": "(eliminado)",
-      "acRun": "Ejecutar anticliché",
-      "acSub": "Elimina los clichés generados por IA para un texto más humano. No inventa hechos.",
-      "acTitle": "Anticliché",
-      "copy": "Copiar",
-      "cpCtaNote": "Usa la palabra clave {{w}} en el panel final de CTA de tu Storyboard.",
-      "cpHooks": "3 opciones de gancho — haz clic para reemplazar la primera línea",
-      "cpLinkPh": "Enlace (opcional)",
-      "cpNeedTopic": "Describe el tema de la publicación.",
-      "cpRun": "Escribir pie de foto",
-      "cpSub": "Estructura del pie de foto: gancho → experiencia personal → qué resuelve → CTA con palabra clave. Hasta 1000 caracteres.",
-      "cpTitle": "Fórmula de pie de foto",
-      "cpTopicPh": "De qué trata la publicación: tema, producto, idea principal, qué obtendrá el espectador…",
-      "cpWordPh": "Palabra clave (o la IA generará una)",
-      "fvDaysHint": "Frescura en días",
-      "fvDaysPh": "días",
-      "fvEmpty": "No se encontró nada con estos criterios; relaja tus filtros.",
-      "fvNeedTopic": "Introduce un tema de búsqueda.",
-      "fvRun": "Buscar",
-      "fvSub": "Encuentra videos virales por tema y proporciona enlaces. Solo encuentra, no descarga.",
-      "fvTitle": "Encontrar viralidad",
-      "fvTopicPh": "Tema o nicho: \"IA para negocios\"",
-      "fvViewsPh": "vistas mín.",
-      "intro": "Tres habilidades de pipeline de contenido. Utilizan tus claves de Configuración: búsqueda — TikHub, textos — Claude (Anthropic). Estas habilidades también están disponibles para Claude a través de nuestro conector MCP (alcance \"skills:use\").",
-      "views": "vistas"
-    },
     "storyboard": {
       "actFail": "Falló; inténtalo de nuevo.",
       "addPanel": "Panel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Desactivar fragmento — no se incluirá en el video.",
       "chunksN": "{{n}} fragmentos",
       "costNote": "El motor de software no utiliza claves externas. Transcripción — 1 solicitud de Gemini; plan de panel de IA — 1 solicitud de Claude (claves en Configuración).",
-      "ctaHint": "Usa la misma palabra en la descripción (“Habilidades → Fórmula de descripción”).",
       "ctaPh": "Escribe PALABRA en los comentarios",
       "ctaWordPh": "TENDENCIA",
       "delConfirm": "Eliminar",

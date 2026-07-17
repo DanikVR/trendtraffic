@@ -16,8 +16,7 @@
     "trends": "Tendințe",
     "gallery": "Galerie media",
     "publisher": "Publicare",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Camere de traducere",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Deschide Google Flow",
       "vpTitle": "Videoclipuri \n→ Google Flow",
       "addTrendTitle": "Deschide 'Tendințe': scanează după cuvinte cheie sau lipește un link video — rezultatele vor apărea aici",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Politica de cookie-uri",
       "cookiePrivacyLink": "Politica de confidențialitate",
       "cookieText": "Utilizăm cookie-uri: strict necesare pentru funcționarea site-ului (autentificare, limbă, temă) și, cu acordul dumneavoastră, analitice — pentru a îmbunătăți serviciul. Detalii în ",
-      "tabSkillsSub": "Viralitate · anti-clișeu · descriere",
       "tabStoryboardSub": "Montaj automat"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Setări cookie"
     },
-    "skills": {
-      "acChanges": "Înainte → după",
-      "acNeedText": "Lipește text (min. 20 caractere).",
-      "acPh": "Lipește aici postarea, descrierea sau scenariul tău…",
-      "acQuestions": "Către autor: ",
-      "acRemoved": "(eliminat)",
-      "acRun": "Rulează anti-clișeu",
-      "acSub": "Elimină clișeele generate de AI pentru un text mai natural. Nu inventează fapte.",
-      "acTitle": "Anti-clișeu",
-      "copy": "Copiază",
-      "cpCtaNote": "Folosește cuvântul cheie {{w}} în panoul final CTA al Storyboard-ului tău.",
-      "cpHooks": "3 opțiuni de hook — click pentru a înlocui prima linie",
-      "cpLinkPh": "Link (opțional)",
-      "cpNeedTopic": "Descrie subiectul postării.",
-      "cpRun": "Scrie descrierea",
-      "cpSub": "Structura descrierii: hook → experiență personală → ce rezolvă → CTA cu cuvânt cheie. Până la 1000 de caractere.",
-      "cpTitle": "Formula descrierii",
-      "cpTopicPh": "Despre ce este postarea: subiect, produs, idee principală, ce va obține privitorul…",
-      "cpWordPh": "Cuvânt cheie (sau AI va genera unul)",
-      "fvDaysHint": "Prospețime în zile",
-      "fvDaysPh": "zile",
-      "fvEmpty": "Nu s-a găsit nimic pentru aceste criterii — relaxează filtrele.",
-      "fvNeedTopic": "Introdu un subiect de căutare.",
-      "fvRun": "Găsește",
-      "fvSub": "Găsește videoclipuri virale după subiect și oferă linkuri. Doar găsește — nu descarcă.",
-      "fvTitle": "Găsește viralitate",
-      "fvTopicPh": "Subiect sau nișă: „AI pentru afaceri”",
-      "fvViewsPh": "vizualizări min.",
-      "intro": "Trei skill-uri pentru pipeline-ul de conținut. Folosesc cheile tale din Setări: căutare — TikHub, texte — Claude (Anthropic). Aceste skill-uri sunt disponibile și pentru Claude prin conectorul nostru MCP (domeniu „skills:use”).",
-      "views": "vizualizări"
-    },
     "storyboard": {
       "actFail": "Eșuat — te rugăm să încerci din nou.",
       "addPanel": "Panou",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk dezactivat — nu va fi inclus în videoclip.",
       "chunksN": "{{n}} fragmente",
       "costNote": "Motorul software nu utilizează chei externe. Transcriere — 1 cerere Gemini; plan panou AI — 1 cerere Claude (cheile în Setări).",
-      "ctaHint": "Folosește același cuvânt în descriere („Abilități → Formulă descriere”).",
       "ctaPh": "Scrie CUVÂNT în comentarii",
       "ctaWordPh": "TREND",
       "delConfirm": "Șterge",

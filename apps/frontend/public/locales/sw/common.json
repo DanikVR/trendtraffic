@@ -16,8 +16,7 @@
     "trends": "Mitindo",
     "gallery": "Matunzio ya media",
     "publisher": "Mchapishaji",
-    "storyboard": "Storyboard",
-    "skills": "Ujuzi"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Vyumba vya tafsiri",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Fungua Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Fungua 'Mitindo': changanua kwa neno muhimu au bandika kiungo cha video — matokeo yataonekana hapa",
-      "tabSkills": "Ujuzi",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Sera ya Kuki",
       "cookiePrivacyLink": "Sera ya Faragha",
       "cookieText": "Tunatumia kuki: muhimu kabisa kwa uendeshaji wa tovuti (kuingia, lugha, mandhari), na, kwa idhini yako, za uchambuzi — kuboresha huduma. Maelezo katika ",
-      "tabSkillsSub": "Uvirality · anti-cliché · maelezo",
       "tabStoryboardSub": "Video fupi ya kuunganisha kiotomatiki"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Mipangilio ya vidakuzi"
     },
-    "skills": {
-      "acChanges": "Kabla → baada",
-      "acNeedText": "Bandika maandishi (angalau herufi 20).",
-      "acPh": "Bandika chapisho lako, maelezo, au hati hapa…",
-      "acQuestions": "Kwa mwandishi: ",
-      "acRemoved": "(imeondolewa)",
-      "acRun": "Endesha anti-cliché",
-      "acSub": "Huondoa misemo ya kawaida inayotokana na AI ili maandishi yasikike kama ya binadamu. Haibuni ukweli.",
-      "acTitle": "Anti-cliché",
-      "copy": "Nakili",
-      "cpCtaNote": "Tumia neno muhimu {{w}} kwenye paneli ya mwisho ya CTA ya Storyboard yako.",
-      "cpHooks": "Chaguo 3 za kuvutia — bofya ili kubadilisha mstari wa kwanza",
-      "cpLinkPh": "Kiungo (si lazima)",
-      "cpNeedTopic": "Eleza mada ya chapisho.",
-      "cpRun": "Andika maelezo",
-      "cpSub": "Muundo wa maelezo: kivutio → uzoefu binafsi → inasuluhisha nini → CTA na neno muhimu. Hadi herufi 1000.",
-      "cpTitle": "Mfumo wa maelezo",
-      "cpTopicPh": "Chapisho linahusu nini: mada, bidhaa, wazo kuu, mtazamaji atapata nini…",
-      "cpWordPh": "Neno muhimu (au AI itatengeneza)",
-      "fvDaysHint": "Usasa katika siku",
-      "fvDaysPh": "siku",
-      "fvEmpty": "Hakuna kilichopatikana kwa vigezo hivi — legeza vichujio vyako.",
-      "fvNeedTopic": "Weka mada ya utafutaji.",
-      "fvRun": "Tafuta",
-      "fvSub": "Hupata video maarufu kwa mada na hutoa viungo. Hupata tu — haipakui.",
-      "fvTitle": "Pata uvirality",
-      "fvTopicPh": "Mada au niche: \"AI kwa biashara\"",
-      "fvViewsPh": "mtazamo wa chini",
-      "intro": "Ujuzi tatu wa bomba la maudhui. Hutumia funguo zako kutoka Mipangilio: utafutaji — TikHub, maandishi — Claude (Anthropic). Ujuzi huu pia unapatikana kwa Claude kupitia kiunganishi chetu cha MCP (wigo \"skills:use\").",
-      "views": "mtazamo"
-    },
     "storyboard": {
       "actFail": "Imeshindwa — tafadhali jaribu tena.",
       "addPanel": "Paneli",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Ondoa kipande — hakitajumuishwa kwenye video.",
       "chunksN": "Vipande {{n}}",
       "costNote": "Injini ya programu haitumii funguo za nje. Unukuzi — ombi 1 la Gemini; mpango wa paneli ya AI — ombi 1 la Claude (funguo kwenye Mipangilio).",
-      "ctaHint": "Tumia neno hilohilo kwenye maelezo (\"Ujuzi → Fomula ya maelezo\").",
       "ctaPh": "Andika NENO kwenye maoni",
       "ctaWordPh": "TREND",
       "delConfirm": "Futa",

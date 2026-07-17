@@ -16,8 +16,7 @@
     "trends": "Tendense",
     "gallery": "Mediagalery",
     "publisher": "Uitgewer",
-    "storyboard": "Storiebord",
-    "skills": "Vaardighede"
+    "storyboard": "Storiebord"
   },
   "rooms": {
     "title": "Vertalingskamers",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Maak Google Flow oop",
       "vpTitle": "Video's \n→ Google Flow",
       "addTrendTitle": "Maak 'Neigings' oop: skandeer volgens sleutelwoord of plak 'n videoskakel – resultate sal hier verskyn",
-      "tabSkills": "Vaardighede",
       "tabStoryboard": "Storiebord"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Koekiebeleid",
       "cookiePrivacyLink": "Privaatheidsbeleid",
       "cookieText": "Ons gebruik koekies: streng noodsaaklik vir webwerfwerking (aanmelding, taal, tema), en, met jou toestemming, analities – om die diens te verbeter. Besonderhede in ons ",
-      "tabSkillsSub": "Viraliteit · anti-cliché · onderskrif",
       "tabStoryboardSub": "Outo-montage rolprent"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Koekie-instellings"
     },
-    "skills": {
-      "acChanges": "Voor → na",
-      "acNeedText": "Plak teks (min. 20 karakters).",
-      "acPh": "Plak jou pos, onderskrif of skrif hier…",
-      "acQuestions": "Aan die outeur: ",
-      "acRemoved": "(verwyder)",
-      "acRun": "Loop anti-cliché",
-      "acSub": "Verwyder KI-gegenereerde clichés vir 'n meer menslike teks. Vind nie feite uit nie.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopieer",
-      "cpCtaNote": "Gebruik die sleutelwoord {{w}} in die finale CTA-paneel van jou Storiebord.",
-      "cpHooks": "3 haakopsies — klik om die eerste reël te vervang",
-      "cpLinkPh": "Skakel (opsioneel)",
-      "cpNeedTopic": "Beskryf die posonderwerp.",
-      "cpRun": "Skryf onderskrif",
-      "cpSub": "Onderskrifstruktuur: haak → persoonlike ervaring → wat dit oplos → CTA met sleutelwoord. Tot 1000 karakters.",
-      "cpTitle": "Onderskrifformule",
-      "cpTopicPh": "Waaroor die pos gaan: onderwerp, produk, hoofgedagte, wat die kyker sal kry…",
-      "cpWordPh": "Sleutelwoord (of KI sal een genereer)",
-      "fvDaysHint": "Varsheid in dae",
-      "fvDaysPh": "dae",
-      "fvEmpty": "Niks gevind vir hierdie kriteria nie — verslap jou filters.",
-      "fvNeedTopic": "Voer 'n soekonderwerp in.",
-      "fvRun": "Vind",
-      "fvSub": "Vind virale video's volgens onderwerp en verskaf skakels. Vind slegs — laai nie af nie.",
-      "fvTitle": "Vind viraliteit",
-      "fvTopicPh": "Onderwerp of nis: \"KI vir besigheid\"",
-      "fvViewsPh": "min. kyke",
-      "intro": "Drie inhoudspyplynvaardighede. Hulle gebruik jou sleutels uit Instellings: soek — TikHub, tekste — Claude (Anthropic). Hierdie vaardighede is ook beskikbaar vir Claude via ons MCP-konnektor (omvang \"skills:use\").",
-      "views": "kyke"
-    },
     "storyboard": {
       "actFail": "Misluk — probeer asseblief weer.",
       "addPanel": "Paneel",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Stuk af — sal nie in die video ingesluit word nie.",
       "chunksN": "{{n}} stukke",
       "costNote": "Die sagteware-enjin gebruik nie eksterne sleutels nie. Transkripsie — 1 Gemini-versoek; KI-paneelplan — 1 Claude-versoek (sleutels in Instellings).",
-      "ctaHint": "Gebruik dieselfde woord in die onderskrif (“Vaardighede → Onderskrifformule”).",
       "ctaPh": "Tik WOORD in kommentaar",
       "ctaWordPh": "TREND",
       "delConfirm": "Vee uit",

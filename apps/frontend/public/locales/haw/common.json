@@ -16,8 +16,7 @@
     "trends": "Nā ʻano",
     "gallery": "Hale kiʻi media",
     "publisher": "Mea hoʻopuka",
-    "storyboard": "Papa Moʻolelo",
-    "skills": "Mākau"
+    "storyboard": "Papa Moʻolelo"
   },
   "rooms": {
     "title": "Nā lumi unuhi",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "E wehe i ka Google Flow",
       "vpTitle": "Nā wikiō \n→ Google Flow",
       "addTrendTitle": "E wehe i nā 'Trends': e nānā ma ka huaʻōlelo a i ʻole e hoʻopili i kahi loulou wikiō — e ʻike ʻia nā hopena ma aneʻi",
-      "tabSkills": "Mākau",
       "tabStoryboard": "Papa Moʻolelo"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Kulekele Kuki",
       "cookiePrivacyLink": "Kulekele Kuleana",
       "cookieText": "Hoʻohana mākou i nā kuki: pono wale nō no ka hana ʻana o ka pūnaewele (ʻeʻe, ʻōlelo, kumuhana), a, me kāu ʻae, analytical — e hoʻomaikaʻi i ka lawelawe. Nā kikoʻī i kā mākou ",
-      "tabSkillsSub": "Hoʻolaha · kūʻē-kūʻokoʻa · lepe",
       "tabStoryboardSub": "Kiʻi ʻoniʻoni hoʻohui ʻakomi"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Nā hoʻonohonoho kuki"
     },
-    "skills": {
-      "acChanges": "Ma mua → ma hope",
-      "acNeedText": "Hoʻopili i ka kikokikona (liʻiliʻi 20 huapalapala).",
-      "acPh": "Hoʻopili i kāu pou, lepe, a i ʻole palapala ma ʻaneʻi…",
-      "acQuestions": "I ka mea kākau: ",
-      "acRemoved": "(wehe ʻia)",
-      "acRun": "Holo kūʻē-kūʻokoʻa",
-      "acSub": "Wehe i nā kūʻokoʻa i hana ʻia e AI no ka kikokikona ʻoi aku ke kani kanaka. ʻAʻole ia e hana i nā ʻoiaʻiʻo.",
-      "acTitle": "Kūʻē-kūʻokoʻa",
-      "copy": "Kope",
-      "cpCtaNote": "E hoʻohana i ka huaʻōlelo {{w}} ma ka papa CTA hope o kāu Papa Moʻolelo.",
-      "cpHooks": "3 koho lou — kaomi e pani i ka laina mua",
-      "cpLinkPh": "Loulou (koho)",
-      "cpNeedTopic": "E wehewehe i ke kumuhana pou.",
-      "cpRun": "Kākau lepe",
-      "cpSub": "Ke ʻano lepe: lou → ʻike pilikino → ka mea e hoʻoponopono ai → CTA me ka huaʻōlelo. A hiki i 1000 huapalapala.",
-      "cpTitle": "Kāhua lepe",
-      "cpTopicPh": "He aha ka pou e pili ana: kumuhana, huahana, manaʻo nui, ka mea e loaʻa i ka mea nānā…",
-      "cpWordPh": "Huaʻōlelo (a i ʻole e hana ʻo AI i kekahi)",
-      "fvDaysHint": "Hou i nā lā",
-      "fvDaysPh": "lā",
-      "fvEmpty": "ʻAʻohe mea i loaʻa no kēia mau koina — e hoʻolōʻihi i kāu mau kānana.",
-      "fvNeedTopic": "E hoʻokomo i ke kumuhana huli.",
-      "fvRun": "Huli",
-      "fvSub": "E ʻimi i nā wikiō viral ma ke kumuhana a hāʻawi i nā loulou. E ʻimi wale — ʻaʻole e hoʻoiho.",
-      "fvTitle": "E ʻimi i ka hoʻolaha",
-      "fvTopicPh": "Kumuhana a i ʻole niche: \"AI no ka ʻoihana\"",
-      "fvViewsPh": "nā nānā liʻiliʻi",
-      "intro": "ʻEkolu mākau paipu ʻike. Hoʻohana lākou i kāu mau kī mai nā Hoʻonohonoho: huli — TikHub, kikokikona — Claude (Anthropic). Loaʻa pū kēia mau mākau iā Claude ma o kā mākou MCP-connector (scope \"skills:use\").",
-      "views": "nā nānā"
-    },
     "storyboard": {
       "actFail": "Ua hāʻule — e ʻoluʻolu e hoʻāʻo hou.",
       "addPanel": "Papa",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Hoʻokaʻawale ʻia — ʻaʻole e hoʻokomo ʻia i loko o ke wikiō.",
       "chunksN": "{{n}} ʻāpana",
       "costNote": "ʻAʻole hoʻohana ka ʻenekini polokalamu i nā kī waho. Kākau ʻōlelo — 1 noi Gemini; hoʻolālā papa AI — 1 noi Claude (nā kī ma nā Hoʻonohonoho).",
-      "ctaHint": "E hoʻohana i ka huaʻōlelo like ma ka wehewehe (“Nā Mākau → Formula Wehewehe”).",
       "ctaPh": "Kākau HUAʻŌLELO ma nā manaʻo",
       "ctaWordPh": "TREND",
       "delConfirm": "Holoi",

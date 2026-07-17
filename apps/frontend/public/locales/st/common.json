@@ -16,8 +16,7 @@
     "trends": "Mekhoa",
     "gallery": "Laeborari ea media",
     "publisher": "Moephatlalatsi",
-    "storyboard": "Storyboard",
-    "skills": "Bokgoni"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Likamore tsa phetolelo",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Bula Google Flow",
       "vpTitle": "Livideo \n→ Google Flow",
       "addTrendTitle": "Bula 'Trends': hlahloba ka keyword kapa peista sehokelo sa video — liphetho li tla hlaha mona",
-      "tabSkills": "Bokgoni",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Leano la Cookie",
       "cookiePrivacyLink": "Leano la Lekunutu",
       "cookieText": "Re sebelisa li-cookies: tse hlokahalang bakeng sa ts'ebetso ea sebaka (ho kena, puo, sehlooho), le, ka tumello ea hau, tsa tlhahlobo — ho ntlafatsa tšebeletso. Lintlha ho ",
-      "tabSkillsSub": "Ho ata · anti-cliché · sehlooho",
       "tabStoryboardSub": "Auto-montage reel"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Litlhophiso tsa li-cookie"
     },
-    "skills": {
-      "acChanges": "Pele → kamora",
-      "acNeedText": "Manamisa mongolo (bonyane litlhaku tse 20).",
-      "acPh": "Manamisa poso ya hao, sehlooho, kapa script mona…",
-      "acQuestions": "Ho sengoli: ",
-      "acRemoved": "(e tlositswe)",
-      "acRun": "Sebelisa anti-cliché",
-      "acSub": "E tlosa clichés tse entsoeng ke AI bakeng sa mongolo o utloahalang e le oa motho. Ha e iqapetse nnete.",
-      "acTitle": "Anti-cliché",
-      "copy": "Kopa",
-      "cpCtaNote": "Sebelisa lentswe la bohlokwa {{w}} karolong ya ho qetela ya CTA ya Storyboard ya hao.",
-      "cpHooks": "Dikgetho tse 3 tsa ho kgokahanya — tobetsa ho nkela mola wa pele sebaka",
-      "cpLinkPh": "Kgokahanyo (ka boikgethelo)",
-      "cpNeedTopic": "Hlahlisa sehlooho sa poso.",
-      "cpRun": "Ngola sehlooho",
-      "cpSub": "Sebopeho sa sehlooho: hook → boiphihlelo ba motho → seo se se rarollang → CTA ka lentswe la bohlokwa. Ho fihla ho ditlhaku tse 1000.",
-      "cpTitle": "Foromo ya sehlooho",
-      "cpTopicPh": "Seo poso e leng ka sona: sehlooho, sehlahiswa, mohopolo o moholo, seo mmohi a tla se fumana…",
-      "cpWordPh": "Lentswe la bohlokwa (kapa AI e tla le hlahisa)",
-      "fvDaysHint": "Bofreshe ka matsatsi",
-      "fvDaysPh": "matsatsi",
-      "fvEmpty": "Ha ho letho le fumanweng ka ditlhoko tsena — lokolla difilthara tsa hao.",
-      "fvNeedTopic": "Kenya sehlooho sa ho batla.",
-      "fvRun": "Fumana",
-      "fvSub": "E fumana divideo tse atileng ka sehlooho mme e fana ka dikgokahanyo. E fumana feela — ha e jarolle.",
-      "fvTitle": "Fumana ho ata",
-      "fvTopicPh": "Sehlooho kapa niche: \"AI bakeng sa kgwebo\"",
-      "fvViewsPh": "bonyane dipono",
-      "intro": "Bokgoni bo bararo ba phallo ya dikahare. Ba sebedisa dinotlolo tsa hao ho tswa ho Settings: batla — TikHub, ditemana — Claude (Anthropic). Bokgoni bona bo fumaneha hape ho Claude ka sehokelo sa rona sa MCP (scope \"skills:use\").",
-      "views": "dipono"
-    },
     "storyboard": {
       "actFail": "E hlolehile — ka kopo leka hape.",
       "addPanel": "Phanele",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk off — e ke ke ea kenyelletsoa videong.",
       "chunksN": "Likhechana tse {{n}}",
       "costNote": "Enjene ea software ha e sebelise linotlolo tsa kantle. Ho ngola — kopo e le 'ngoe ea Gemini; moralo oa phanele ea AI — kopo e le 'ngoe ea Claude (linotlolo ho Litlhophiso).",
-      "ctaHint": "Sebelisa lentsoe le tšoanang ho caption (“Bokhoni → Foromo ea Caption”).",
       "ctaPh": "Ngola LENTSO ho litlhaloso",
       "ctaWordPh": "TREND",
       "delConfirm": "Hlakola",

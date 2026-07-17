@@ -16,8 +16,7 @@
     "trends": "Tendenze",
     "gallery": "Galleria media",
     "publisher": "Publisher",
-    "storyboard": "Storyboard",
-    "skills": "Skills"
+    "storyboard": "Storyboard"
   },
   "rooms": {
     "title": "Stanze di traduzione",
@@ -2706,7 +2705,6 @@
       "vpOpenFlow": "Apri Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Apri 'Trend': cerca per parola chiave o incolla un link video — i risultati appariranno qui",
-      "tabSkills": "Skills",
       "tabStoryboard": "Storyboard"
     },
     "hotebook": {
@@ -2903,7 +2901,6 @@
       "cookiePolicyLink": "Informativa sui cookie",
       "cookiePrivacyLink": "Informativa sulla privacy",
       "cookieText": "Utilizziamo i cookie: strettamente necessari per il funzionamento del sito (login, lingua, tema) e, con il tuo consenso, analitici — per migliorare il servizio. Dettagli nella nostra ",
-      "tabSkillsSub": "Viralità · anti-cliché · didascalia",
       "tabStoryboardSub": "Reel auto-montaggio"
     },
     "montage": {
@@ -4130,37 +4127,6 @@
       "wikiTitle": "Wiki",
       "footerCookieSettings": "Impostazioni cookie"
     },
-    "skills": {
-      "acChanges": "Prima → dopo",
-      "acNeedText": "Incolla il testo (min. 20 caratteri).",
-      "acPh": "Incolla qui il tuo post, didascalia o script…",
-      "acQuestions": "All'autore: ",
-      "acRemoved": "(rimosso)",
-      "acRun": "Esegui anti-cliché",
-      "acSub": "Rimuove i cliché generati dall'AI per un testo più umano. Non inventa fatti.",
-      "acTitle": "Anti-cliché",
-      "copy": "Copia",
-      "cpCtaNote": "Usa la parola chiave {{w}} nel pannello CTA finale del tuo Storyboard.",
-      "cpHooks": "3 opzioni di hook — clicca per sostituire la prima riga",
-      "cpLinkPh": "Link (opzionale)",
-      "cpNeedTopic": "Descrivi l'argomento del post.",
-      "cpRun": "Scrivi didascalia",
-      "cpSub": "Struttura didascalia: hook → esperienza personale → cosa risolve → CTA con parola chiave. Fino a 1000 caratteri.",
-      "cpTitle": "Formula didascalia",
-      "cpTopicPh": "Di cosa parla il post: argomento, prodotto, idea principale, cosa otterrà lo spettatore…",
-      "cpWordPh": "Parola chiave (o l'AI ne genererà una)",
-      "fvDaysHint": "Freschezza in giorni",
-      "fvDaysPh": "giorni",
-      "fvEmpty": "Nessun risultato per questi criteri — allenta i filtri.",
-      "fvNeedTopic": "Inserisci un argomento di ricerca.",
-      "fvRun": "Trova",
-      "fvSub": "Trova video virali per argomento e fornisce link. Solo trova — non scarica.",
-      "fvTitle": "Trova viralità",
-      "fvTopicPh": "Argomento o nicchia: \"AI per il business\"",
-      "fvViewsPh": "visualizzazioni min.",
-      "intro": "Tre skill per la pipeline di contenuti. Usano le tue chiavi dalle Impostazioni: ricerca — TikHub, testi — Claude (Anthropic). Queste skill sono disponibili anche per Claude tramite il nostro connettore MCP (scope \"skills:use\").",
-      "views": "visualizzazioni"
-    },
     "storyboard": {
       "actFail": "Fallito — riprova.",
       "addPanel": "Pannello",
@@ -4190,7 +4156,6 @@
       "chunkOff": "Chunk disattivato — non sarà incluso nel video.",
       "chunksN": "{{n}} chunk",
       "costNote": "Il motore software non utilizza chiavi esterne. Trascrizione — 1 richiesta Gemini; piano pannello AI — 1 richiesta Claude (chiavi in Impostazioni).",
-      "ctaHint": "Usa la stessa parola nella didascalia (“Skills → Formula didascalia”).",
       "ctaPh": "Digita PAROLA nei commenti",
       "ctaWordPh": "TREND",
       "delConfirm": "Elimina",
