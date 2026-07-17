@@ -1,0 +1,32 @@
+# TrendTraffic
+
+> TrendTraffic is an AI content engine for short-form video. It finds viral trends on TikTok, Instagram, YouTube and X, analyzes them frame by frame, and turns them into UGC videos with AI avatars — then auto-publishes to 9 social networks on a schedule. It works in 108 languages and runs on "bring your own key" providers, making AI generation up to 4× cheaper.
+
+TrendTraffic is a SaaS web app. The marketing site is https://trendtraffic.pro and the application is https://app.trendtraffic.pro. Pricing is a single Premium plan at €49/month with a 7-day free trial.
+
+## What it does
+
+- **Trends**: scan TikTok / Instagram / YouTube / X for viral videos by keyword, by trending, or by AI audience-targeting (micro-niches ranked by real demand); analyze any video by link frame-by-frame with Gemini; track competitor channels with daily metric history.
+- **UGC studio**: build talking-avatar videos in 4 modes — Solo presenter, Dynamic montage, Two-person dialogue, and No-avatar voiceover — with HeyGen avatars, ElevenLabs voices, subtitles, music and multi-format export (9:16 / 16:9 / 1:1 / 4:5).
+- **Storyboard**: auto-edit a "talking" video into a dynamic Reel — transcription → chunks → up to 6 panels per chunk → generation (free ffmpeg engine, Omni Flash API, or Google Flow) → assembly with badge, CTA and subtitles.
+- **Google Flow & Hotebook**: generate Veo videos and use Google NotebookLM through the TrendTraffic browser extension.
+- **Publisher**: schedule posts and auto-chains to TikTok, Instagram, YouTube, X, Facebook, LinkedIn, Threads, Bluesky and Pinterest via Blotato, with AI captions (Claude), weekly slots and a full autopilot conveyor.
+- **MCP connector**: control TrendTraffic from Claude, ChatGPT connectors or n8n via the Model Context Protocol.
+
+## Key pages
+
+- [Home](https://trendtraffic.pro/): product overview and features.
+- [Wiki / Documentation](https://trendtraffic.pro/wiki): step-by-step guides for every section (first launch, trends, UGC studio, storyboard, Google Flow, Hotebook, media files, publisher).
+- [Pricing](https://app.trendtraffic.pro/billing): Premium plan, calculator and services list.
+- [About](https://trendtraffic.pro/about)
+- [Sitemap](https://trendtraffic.pro/sitemap.xml)
+
+## Legal
+
+- [Privacy Policy](https://trendtraffic.pro/privacy)
+- [Terms of Service](https://trendtraffic.pro/terms)
+- [Cookie Policy](https://trendtraffic.pro/cookies)
+
+## Contact
+
+Email: SEO@trendtraffic.pro

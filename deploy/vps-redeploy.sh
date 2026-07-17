@@ -34,7 +34,7 @@ npm ci || npm install
 log "Сборка: shared → backend → frontend"
 npm run build -w @vibevox/shared
 npm run build -w @vibevox/backend
-( cd apps/frontend && { npm run build || npx vite build; } )
+( cd apps/frontend && { npm run build:seo || npm run build || npx vite build; } )
 
 # ── Опциональный upsert переменных в .env (только если переданы скрипту) ──────
 upsert_env(){

@@ -9,6 +9,7 @@ export function AboutPage() {
     <StubPage
       title={t('sec.ttLanding.aboutTitle', 'О проекте')}
       metaTitle={t('sec.ttLanding.aboutMeta', 'О проекте — TrendTraffic')}
+      description={t('sec.ttLanding.aboutDescription', 'TrendTraffic — ИИ-движок контента: находит вирусные тренды в TikTok, Instagram и YouTube, собирает из них UGC-ролики с ИИ-аватарами и публикует по расписанию на 108 языках.')}
     />
   );
 }

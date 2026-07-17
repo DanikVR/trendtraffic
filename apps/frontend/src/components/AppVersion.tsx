@@ -3184,7 +3184,26 @@
  *          UGC-студии. Все тексты — новые ключи sec.ttLanding.sb…/incSb и
  *          sec.billing.pf49Storyboard, прогнаны пивотом ru→en→106 языков.
  *          Файлы: LandingPage, landing.css, BillingPage, locales/*. */
-export const APP_VERSION = '2.5.6';
+/* 2.5.7 — SEO/AI/соцшаринг + скорость (по слову юзера). ДИАГНОЗ (аудит с VPS):
+ *          (1) главный JS-бандл ~1.5МБ отдавался БЕЗ gzip (nginx gzip_types
+ *          закомментирован → только text/html жмётся); (2) все маркетинг-роуты
+ *          отдают ОДИН index.html → соц-скрейперы (без JS) на /wiki,/about,… видят
+ *          мета ЛЕНДИНГА; (3) prerender/sitemap в проде не гонялись (build ≠
+ *          build:full). СДЕЛАНО (фронт+build, деплоится): public/llms.txt (гайд
+ *          для ИИ-краулеров: что за сервис + ключевые URL); StubPage (About) —
+ *          полный Helmet (desc/canonical/OG/Twitter, было только title);
+ *          scripts/seo-marketing.mjs → dist/{route}.html с уникальными
+ *          title/desc/OG/Twitter/canonical + per-page JSON-LD (WebPage/TechArticle
+ *          + BreadcrumbList) для /wiki,/about,/privacy,/terms,/cookies; build:seo
+ *          (sitemap+build+seo:pages) + vps-redeploy фронт → build:seo (свежий
+ *          sitemap каждый деплой). i18n авто-детект браузера ПОДТВЕРЖДЁН (order:
+ *          path→?lang→?lng→localStorage→navigator→htmlTag; nonExplicit ru-RU→ru).
+ *          ⚠️ ТРЕБУЕТ 1 команды nginx от юзера (правка сис-конфига мне запрещена):
+ *          gzip_types (скорость ×3.6) + try_files $uri.html (активация соц-мета).
+ *          Файлы: llms.txt, seo-marketing.mjs, StubPage/AboutPage, package.json,
+ *          deploy/vps-redeploy.sh, AppVersion. */
+
+export const APP_VERSION = '2.5.7';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
