@@ -20,6 +20,8 @@ export interface SbPanel {
   text?: string;
   /** Абсолютная секунда исходника для кадра-превью панели. */
   frameTs?: number;
+  /** /uploads/... — готовый jpg-кадр превью панели (генерится при analyze/plan). */
+  frameUrl?: string;
   /** /uploads/... — картинка для врезки/сплита/мокапа (из Галереи). */
   imageUrl?: string;
   /** Промпт для генеративного движка (Ф3 — Omni/Flow). */
@@ -38,6 +40,8 @@ export interface SbChunk {
   panels: SbPanel[];
   pngUrl?: string;
   renderUrl?: string;
+  /** /uploads/... — филмстрип куска (горизонтальный спрайт кадров ~каждые 0.7с). */
+  stripUrl?: string;
   error?: string;
 }
 

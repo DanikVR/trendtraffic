@@ -14,7 +14,7 @@ import { analyzeVideoVisual } from '../trends/video_insight.js';
 import { createAsset } from '../media/assets.js';
 import {
   sbDir, toUploadsUrl, fromUploadsUrl, normalizeSource, probeDuration,
-  renderChunkProgram, assembleFinal, buildChunkPng,
+  renderChunkProgram, assembleFinal, buildChunkPng, extractPanelFrame, buildFilmstrip,
 } from './ffmpeg.js';
 import { buildPlan, sanitizePanels, templatePanels } from './planner.js';
 import type { StoryboardDoc, SbPlan, SbSettings, SbChunk, SbTranscriptSeg } from './types.js';
@@ -55,7 +55,7 @@ function mapRow(r: any): StoryboardDoc {
 export async function listStoryboards(tenantId: string): Promise<any[]> {
   const r = await pool.query(
     `SELECT id, name, status, source_url, result_url, error, created_at, updated_at,
-            plan#>>'{chunks,0,pngUrl}' AS cover,
+            COALESCE(plan#>>'{chunks,0,pngUrl}', plan#>>'{chunks,0,panels,0,frameUrl}') AS cover,
             jsonb_array_length(COALESCE(plan->'chunks','[]'::jsonb)) AS chunks_count
      FROM storyboards WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 200`,
     [tenantId]
@@ -125,6 +125,7 @@ function sanitizePlan(raw: any): SbPlan {
         panels: [],
         pngUrl: typeof c?.pngUrl === 'string' ? c.pngUrl : undefined,
         renderUrl: typeof c?.renderUrl === 'string' ? c.renderUrl : undefined,
+        stripUrl: typeof c?.stripUrl === 'string' && c.stripUrl.startsWith('/uploads/') ? c.stripUrl : undefined,
         error: typeof c?.error === 'string' ? c.error.slice(0, 300) : undefined,
       };
       chunk.panels = sanitizePanels(Array.isArray(c?.panels) ? c.panels : [], chunk);
@@ -169,6 +170,78 @@ export async function deleteStoryboard(tenantId: string, id: string): Promise<bo
 const workPath = (id: string) => path.join(sbDir(id), 'work.mp4');
 
 /**
+ * Превью для студии: филмстрип на кусок + jpg-кадр на каждую видео-панель.
+ * Имена детерминированы от таймингов → повторный вызов с теми же границами
+ * переиспользует файлы (и браузерный кэш), смена времени даёт новый URL.
+ * Best-effort: сбой одного кадра не валит конвейер.
+ */
+async function generatePreviews(id: string, plan: SbPlan): Promise<void> {
+  const work = workPath(id);
+  if (!fs.existsSync(work)) return;
+  const dir = sbDir(id);
+  const key = (n: number) => String(Math.round(n * 10));
+  for (const chunk of plan.chunks || []) {
+    try {
+      const strip = path.join(dir, `strip-${chunk.idx}-${key(chunk.start)}-${key(chunk.end)}.jpg`);
+      if (!fs.existsSync(strip)) await buildFilmstrip(work, chunk, strip);
+      chunk.stripUrl = toUploadsUrl(strip);
+    } catch (e) { console.warn('[storyboard] филмстрип не собрался:', (e as Error).message); }
+    for (const p of chunk.panels || []) {
+      if (p.imageUrl) { p.frameUrl = undefined; continue; } // картинка панели показывается сама
+      try {
+        const ts = p.frameTs != null ? p.frameTs : chunk.start + (p.start + p.end) / 2;
+        p.frameTs = Math.round(ts * 100) / 100;
+        const f = path.join(dir, `pf-${key(ts)}.jpg`);
+        if (!fs.existsSync(f)) await extractPanelFrame(work, ts, f);
+        p.frameUrl = toUploadsUrl(f);
+      } catch { /* панель останется без превью */ }
+    }
+  }
+}
+
+/** Ленивый бэкфилл превью для проектов, созданных ДО этой фичи (по открытию). */
+const backfilling = new Set<string>();
+export function maybeBackfillPreviews(tenantId: string, id: string, doc: StoryboardDoc): void {
+  if (backfilling.has(id) || busy.has(id)) return;
+  const chunks = doc.plan?.chunks || [];
+  if (!chunks.length || chunks.every((c) => c.stripUrl)) return;
+  if (!fs.existsSync(workPath(id))) return;
+  backfilling.add(id);
+  (async () => {
+    try {
+      const d = await getStoryboard(tenantId, id);
+      if (!d?.plan?.chunks?.length) return;
+      await generatePreviews(id, d.plan);
+      await patch(tenantId, id, { plan: JSON.stringify(d.plan) });
+    } catch (e) {
+      console.warn('[storyboard] бэкфилл превью:', (e as Error).message);
+    } finally {
+      backfilling.delete(id);
+    }
+  })();
+}
+
+/** Сменить кадр панели (клик по филмстрипу): frameTs → новый jpg → сохранение. */
+export async function setPanelFrame(
+  tenantId: string, id: string, chunkIdx: number, panelIdx: number, ts: number
+): Promise<StoryboardDoc> {
+  const doc = await getStoryboard(tenantId, id);
+  if (!doc) throw new Error('Проект не найден');
+  const chunk = doc.plan?.chunks?.find((c) => c.idx === chunkIdx);
+  const panel = chunk?.panels?.[panelIdx];
+  if (!chunk || !panel) throw new Error('Панель не найдена');
+  const work = workPath(id);
+  if (!fs.existsSync(work)) throw new Error('Сначала выполните расшифровку (шаг 2).');
+  const clamped = Math.max(chunk.start, Math.min(chunk.end - 0.05, ts));
+  panel.frameTs = Math.round(clamped * 100) / 100;
+  const f = path.join(sbDir(id), `pf-${String(Math.round(clamped * 10))}.jpg`);
+  if (!fs.existsSync(f)) await extractPanelFrame(work, clamped, f);
+  panel.frameUrl = toUploadsUrl(f);
+  await patch(tenantId, id, { plan: JSON.stringify(doc.plan) });
+  return (await getStoryboard(tenantId, id))!;
+}
+
+/**
  * Шаг «Расшифровка»: нормализация → длительность → Gemini-разбор (речь+сцены,
  * мягкая деградация) → куски по фразам → панели (Claude|шаблон). Фоном.
  */
@@ -203,6 +276,7 @@ export function startAnalyze(tenantId: string, id: string, opts: { skipAi?: bool
         plan.planNote = (plan.planNote || '')
           + (opts.skipAi ? '' : ' Расшифровка недоступна (нет ключа Gemini) — куски нарезаны ровными отрезками.');
       }
+      await generatePreviews(id, plan);
       await patch(tenantId, id, {
         status: 'planned',
         source_duration: duration,
@@ -241,6 +315,7 @@ export function startPlan(tenantId: string, id: string): boolean {
         const prev = old.find((o) => Math.abs(o.start - c.start) < 0.05 && Math.abs(o.end - c.end) < 0.05);
         if (prev) { c.pngUrl = prev.pngUrl; c.renderUrl = prev.renderUrl; c.status = prev.status; c.enabled = prev.enabled; }
       }
+      await generatePreviews(id, plan);
       await patch(tenantId, id, { status: 'planned', plan: JSON.stringify(plan), error: null });
     } catch (e: any) {
       await patch(tenantId, id, { error: String(e?.message || e).slice(0, 400) }).catch(() => {});

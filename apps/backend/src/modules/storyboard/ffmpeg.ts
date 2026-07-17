@@ -377,6 +377,27 @@ export async function assembleFinal(
   try { fs.unlinkSync(joined); } catch {}
 }
 
+/** Jpg-кадр превью панели 270×480 (для карточек студии; input-seek — быстро). */
+export async function extractPanelFrame(work: string, ts: number, out: string): Promise<void> {
+  await runFfmpeg(['-y', '-loglevel', 'error', '-ss', Math.max(0, ts).toFixed(3), '-i', work,
+    '-vf', 'scale=270:480:force_original_aspect_ratio=increase,crop=270:480',
+    '-frames:v', '1', '-q:v', '4', out], 60_000);
+}
+
+/**
+ * Филмстрип куска: горизонтальный спрайт кадров (~каждые 0.7с, 6–16 кадров,
+ * ячейка 90×160). Один jpg — фронт кликом по X переводит позицию в секунду.
+ */
+export async function buildFilmstrip(work: string, chunk: SbChunk, out: string): Promise<number> {
+  const D = Math.max(0.5, chunk.end - chunk.start);
+  const n = Math.max(6, Math.min(16, Math.round(D / 0.7)));
+  const fps = n / D;
+  await runFfmpeg(['-y', '-loglevel', 'error', '-ss', chunk.start.toFixed(3), '-t', D.toFixed(3), '-i', work,
+    '-vf', `fps=${fps.toFixed(4)},scale=90:160:force_original_aspect_ratio=increase,crop=90:160,tile=${n}x1`,
+    '-frames:v', '1', '-q:v', '5', out], 90_000);
+  return n;
+}
+
 /** Кадр 450×800 из work (или картинки панели) + подпись типа → png. */
 async function panelFramePng(
   work: string, p: SbPanel, idx: number, dir: string, font: string | null, chunkStart: number

@@ -15,7 +15,8 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { fromUploadsUrl } from './ffmpeg.js';
 import {
   listStoryboards, createStoryboard, getStoryboard, updateStoryboard, deleteStoryboard,
-  startAnalyze, startPlan, startRenderChunk, startAssemble, makeChunkPng,
+  startAnalyze, startPlan, startRenderChunk, startAssemble, makeChunkPng, setPanelFrame,
+  maybeBackfillPreviews,
 } from './service.js';
 
 const router = Router();
@@ -81,6 +82,8 @@ router.get('/:id', async (req: AuthedRequest, res: Response) => {
   try {
     const doc = await getStoryboard(req.tenantId!, req.params.id);
     if (!doc) return res.status(404).json({ error: 'Проект не найден' });
+    // проекты, созданные до фичи превью, получают кадры/филмстрип фоном при открытии
+    maybeBackfillPreviews(req.tenantId!, req.params.id, doc);
     res.json(doc);
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Ошибка чтения проекта' });
@@ -138,6 +141,21 @@ router.post('/:id/png', async (req: AuthedRequest, res: Response) => {
     res.json(doc);
   } catch (e: any) {
     res.status(400).json({ error: e?.message || 'Не удалось собрать сториборд-PNG' });
+  }
+});
+
+/** POST /:id/panel-frame {chunk, panel, ts} — сменить кадр панели (клик по филмстрипу). */
+router.post('/:id/panel-frame', async (req: AuthedRequest, res: Response) => {
+  const chunk = Number(req.body?.chunk);
+  const panel = Number(req.body?.panel);
+  const ts = Number(req.body?.ts);
+  if (!Number.isInteger(chunk) || !Number.isInteger(panel) || !Number.isFinite(ts)) {
+    return res.status(400).json({ error: 'Укажите кусок, панель и секунду кадра' });
+  }
+  try {
+    res.json(await setPanelFrame(req.tenantId!, req.params.id, chunk, panel, ts));
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Не удалось сменить кадр' });
   }
 });
 

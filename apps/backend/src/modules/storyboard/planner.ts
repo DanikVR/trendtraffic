@@ -105,6 +105,7 @@ export function sanitizePanels(raw: any[], chunk: SbChunk): SbPanel[] {
       end: Math.max(0, Math.min(D, Number(p?.end) || 0)),
       text: typeof p?.text === 'string' ? p.text.slice(0, 160) : undefined,
       frameTs: Number.isFinite(Number(p?.frameTs)) ? Math.max(0, Number(p.frameTs)) : undefined,
+      frameUrl: typeof p?.frameUrl === 'string' && p.frameUrl.startsWith('/uploads/') ? p.frameUrl : undefined,
       imageUrl: typeof p?.imageUrl === 'string' && p.imageUrl.startsWith('/uploads/') ? p.imageUrl : undefined,
       prompt: typeof p?.prompt === 'string' ? p.prompt.slice(0, 500) : undefined,
     }))

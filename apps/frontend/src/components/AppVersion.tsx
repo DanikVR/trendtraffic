@@ -3048,7 +3048,21 @@
  *          ?key=<ключ> для агентов без заголовков. Файлы: McpConnectSnippets.tsx
  *          (нов.), McpConnectorCard.tsx, Section5Mcp.tsx,
  *          locales/{en,ru}/common.json, AppVersion. */
-export const APP_VERSION = '2.4.4';
+/* 2.4.5 — СТОРИБОРД: наглядная раскадровка (раунд 2 по фидбэку юзера).
+ *          (1) Превью в каждой панели: живой jpg-кадр из видео (генерится на
+ *          бэке при analyze/plan, статикой из uploads/storyboard), картинка
+ *          Галереи у врезки/сплита/мокапа, у финала — CTA-плашка поверх кадра.
+ *          (2) Титры — wysiwyg: карточка рисует подложку цвета стиль-пресета
+ *          (зеркало styleColors) и текст сразу как в ролике.
+ *          (3) Филмстрип куска: спрайт кадров ~каждые 0.7с (tile) + цветная
+ *          полоса границ панелей; клик по плёнке = POST /panel-frame → кадр
+ *          выбранной панели. Выбор панели — клик по карточке/полосе.
+ *          (4) Ленивый бэкфилл превью для проектов, созданных до фичи
+ *          (maybeBackfillPreviews при GET /:id + одноразовый рефетч фронта).
+ *          (5) Мини-плеер исходника на шаге «Расшифровка»; обложка карточки
+ *          списка = кадр первой панели (COALESCE с pngUrl).
+ *          Файлы: storyboard/{ffmpeg,service,router,planner,types}, Studio. */
+export const APP_VERSION = '2.4.5';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

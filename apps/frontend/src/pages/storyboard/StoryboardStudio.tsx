@@ -22,8 +22,8 @@ import { useAppStore } from '../../store/useAppStore';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 
 type PanelType = 'speaker' | 'title' | 'cutaway' | 'split' | 'mockup' | 'final';
-interface SbPanel { type: PanelType; start: number; end: number; text?: string; frameTs?: number; imageUrl?: string; prompt?: string }
-interface SbChunk { idx: number; start: number; end: number; enabled: boolean; status: string; panels: SbPanel[]; pngUrl?: string; renderUrl?: string; error?: string }
+interface SbPanel { type: PanelType; start: number; end: number; text?: string; frameTs?: number; frameUrl?: string; imageUrl?: string; prompt?: string }
+interface SbChunk { idx: number; start: number; end: number; enabled: boolean; status: string; panels: SbPanel[]; pngUrl?: string; renderUrl?: string; stripUrl?: string; error?: string }
 interface SbDoc {
   id: string; name: string; status: string;
   sourceUrl?: string | null; sourceDuration?: number | null;
@@ -49,6 +49,15 @@ const STYLES = [
   { key: 'bold', ru: 'Дерзкий' },
 ];
 
+/** Цвета стиль-пресетов для wysiwyg-превью титров (зеркало styleColors бэка). */
+const STYLE_COLORS: Record<string, { bg: string; fg: string; accent: string }> = {
+  clean: { bg: '#0b0e1a', fg: '#ffffff', accent: '#818cf8' },
+  neon: { bg: '#0a0018', fg: '#ffffff', accent: '#22d3ee' },
+  paper: { bg: '#f5f0e6', fg: '#1a1a1a', accent: '#d97706' },
+  terminal: { bg: '#02120a', fg: '#34d399', accent: '#34d399' },
+  bold: { bg: '#18040a', fg: '#ffffff', accent: '#fb7185' },
+};
+
 export default function StoryboardStudio() {
   const { t } = useTranslation('common');
   const { id } = useParams<{ id: string }>();
@@ -64,6 +73,8 @@ export default function StoryboardStudio() {
   const [acting, setActing] = useState<string | null>(null);
   const [imgPickFor, setImgPickFor] = useState<number | null>(null);
   const [renderQueue, setRenderQueue] = useState<number[]>([]);
+  const [selectedPanel, setSelectedPanel] = useState(0);
+  const backfillTried = useRef(false);
   const [savedTick, setSavedTick] = useState(0);
   const autostarted = useRef(false);
   const stepInited = useRef(false);
@@ -108,6 +119,20 @@ export default function StoryboardStudio() {
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.busy?.stage, doc?.busy?.chunk, doc?.status]);
+
+  // Смена активного куска — сбрасываем выбранную панель
+  useEffect(() => { setSelectedPanel(0); }, [activeChunk]);
+
+  // Проекты, созданные до фичи превью: сервер бэкфилит кадры при открытии —
+  // один раз перечитываем документ через 5с, чтобы плёнка/кадры появились.
+  useEffect(() => {
+    if (backfillTried.current || !chunks.length || doc?.busy) return;
+    if (chunks.every((c) => c.stripUrl)) return;
+    backfillTried.current = true;
+    const tm = setTimeout(() => { void load(); }, 5000);
+    return () => clearTimeout(tm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chunks, doc?.busy]);
 
   // После расшифровки — перескок на шаг 3
   const prevChunks = useRef(0);
@@ -295,9 +320,16 @@ export default function StoryboardStudio() {
           {step === 2 && (
             <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
               <div className="text-[13px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.storyboard.trTitle', 'Расшифровка и нарезка по фразам')}</div>
-              <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                {t('sec.storyboard.trIntro', 'Gemini смотрит видео целиком: дословная речь с таймкодами + реальные сцены. Затем ролик режется на куски до 8 секунд по концам фраз, и на каждый строится раскадровка.')}
-              </p>
+              <div className="flex gap-3 items-start">
+                {doc.sourceUrl && (
+                  <video src={doc.sourceUrl} controls playsInline preload="metadata"
+                    className="rounded-xl flex-shrink-0 hidden sm:block"
+                    style={{ width: 128, aspectRatio: '9/16', background: '#000' }} />
+                )}
+                <p className="text-[12px] flex-1" style={{ color: 'var(--text-secondary)' }}>
+                  {t('sec.storyboard.trIntro', 'Gemini смотрит видео целиком: дословная речь с таймкодами + реальные сцены. Затем ролик режется на куски до 8 секунд по концам фраз, и на каждый строится раскадровка.')}
+                </p>
+              </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <button type="button" disabled={!!doc.busy || !!acting}
                   onClick={() => act('analyze', () => fetch(`/api/storyboard/${id}/analyze`, { method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' }, body: '{}' }))}
@@ -370,10 +402,99 @@ export default function StoryboardStudio() {
                   </button>
                 </div>
 
+                {/* Филмстрип куска: цветная полоса = границы панелей, клик по плёнке = кадр выбранной панели */}
+                {chunk.stripUrl && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex" style={{ gap: 2 }}>
+                      {chunk.panels.map((p, pi) => (
+                        <button key={pi} type="button" onClick={() => setSelectedPanel(pi)}
+                          title={`${pi + 1} · ${t(`sec.storyboard.pt_${p.type}`, PANEL_TYPES.find((x) => x.key === p.type)?.ru || p.type)}`}
+                          style={{ flex: Math.max(0.2, p.end - p.start), height: 6, borderRadius: 3, border: 'none', cursor: 'pointer',
+                                   background: pi === selectedPanel ? 'var(--brand)' : 'var(--border-strong)', padding: 0 }} />
+                      ))}
+                    </div>
+                    <div
+                      style={{ position: 'relative', cursor: 'crosshair' }}
+                      title={t('sec.storyboard.stripClick', 'Клик — кадр для панели {{n}}', { n: selectedPanel + 1 })}
+                      onClick={(e) => {
+                        if (doc.busy || acting) return;
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                        const ts = chunk.start + frac * (chunk.end - chunk.start);
+                        void act('frame', () => fetch(`/api/storyboard/${id}/panel-frame`, {
+                          method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ chunk: chunk.idx, panel: selectedPanel, ts }),
+                        }));
+                      }}>
+                      <img src={chunk.stripUrl} alt="" style={{ width: '100%', borderRadius: 8, display: 'block', border: '1px solid var(--border-subtle)', opacity: acting === 'frame' ? 0.6 : 1 }} />
+                      {acting === 'frame' && (
+                        <span className="absolute inset-0 flex items-center justify-center"><Loader2 size={16} className="animate-spin" style={{ color: '#fff' }} /></span>
+                      )}
+                    </div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      {t('sec.storyboard.stripHint', 'Плёнка куска. Клик по кадру — назначить его выбранной панели (сейчас: {{n}}). Панель выбирается кликом по карточке или цветной полосе.', { n: selectedPanel + 1 })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }}>
                   {chunk.panels.map((p, pi) => (
-                    <div key={pi} className="rounded-xl p-2.5 flex flex-col gap-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
-                      <div className="flex items-center gap-1.5">
+                    <div key={pi} onClick={() => setSelectedPanel(pi)}
+                      className="rounded-xl p-2 flex flex-col gap-1.5"
+                      style={{ background: 'var(--bg-tertiary)', border: pi === selectedPanel ? '1.5px solid var(--brand)' : '1px solid var(--border-subtle)', cursor: 'pointer' }}>
+                      {/* Превью панели: wysiwyg-титр / картинка / живой кадр из видео */}
+                      {(() => {
+                        const sc = STYLE_COLORS[doc.settings?.style || 'clean'] || STYLE_COLORS.clean;
+                        const isImgType = p.type === 'cutaway' || p.type === 'split' || p.type === 'mockup';
+                        if (p.type === 'title') {
+                          return (
+                            <div className="rounded-lg relative overflow-hidden flex items-center justify-center" style={{ aspectRatio: '9/13', background: sc.bg }}>
+                              <span style={{ position: 'absolute', left: 8, top: '22%', bottom: '22%', width: 3, borderRadius: 2, background: sc.accent }} />
+                              <span className="px-3 text-center" style={{ color: sc.fg, fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, wordBreak: 'break-word' }}>
+                                {p.text || t('sec.storyboard.titlePh', 'Текст титра (коротко)')}
+                              </span>
+                            </div>
+                          );
+                        }
+                        if (isImgType) {
+                          return (
+                            <button type="button"
+                              onClick={(e) => { e.stopPropagation(); setSelectedPanel(pi); setImgPickFor(pi); }}
+                              className="rounded-lg relative overflow-hidden flex flex-col items-center justify-center gap-1"
+                              style={{ aspectRatio: '9/13', background: '#000', border: '1px dashed var(--border-strong)', cursor: 'pointer', padding: 0 }}
+                              title={t('sec.storyboard.pickImg', 'Картинка из Галереи (скрин, фото, график)')}>
+                              {p.imageUrl ? (
+                                <img src={p.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                              ) : p.frameUrl ? (
+                                <img src={p.frameUrl} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.75 }} />
+                              ) : (
+                                <ImageIcon size={16} style={{ color: 'var(--text-muted)' }} />
+                              )}
+                              <span className="absolute bottom-1 left-1 right-1 text-[9px] px-1.5 py-0.5 rounded text-center" style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
+                                {p.imageUrl ? t('sec.storyboard.imgSet', 'клик — сменить картинку') : t('sec.storyboard.noImg', 'клик — картинка из Галереи')}
+                              </span>
+                            </button>
+                          );
+                        }
+                        return (
+                          <div className="rounded-lg relative overflow-hidden flex items-center justify-center" style={{ aspectRatio: '9/13', background: '#000' }}>
+                            {p.frameUrl
+                              ? <img src={p.frameUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                              : <Film size={16} style={{ color: 'var(--text-muted)' }} />}
+                            {p.frameTs != null && (
+                              <span className="absolute bottom-1 left-1 text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
+                                {t('sec.storyboard.frameAt', 'кадр {{s}}с', { s: p.frameTs.toFixed(1) })}
+                              </span>
+                            )}
+                            {p.type === 'final' && (
+                              <span className="absolute bottom-5 left-2 right-2 text-[9.5px] px-1.5 py-1 rounded text-center" style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', lineHeight: 1.3 }}>
+                                {p.text || t('sec.storyboard.ctaPh', 'Пиши СЛОВО в комментариях')}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <select value={p.type} onChange={(e) => setPanel(pi, (x) => { x.type = e.target.value as PanelType; })}
                           className="text-[11px] font-600 rounded-lg px-1.5 py-1 outline-none flex-1 min-w-0" style={inputStyle}>
                           {PANEL_TYPES.map((pt) => (
@@ -382,16 +503,6 @@ export default function StoryboardStudio() {
                         </select>
                         <span className="text-[10px] tabular-nums flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{fmtT(p.start)}–{fmtT(p.end)}</span>
                       </div>
-                      {(p.type === 'cutaway' || p.type === 'split' || p.type === 'mockup') && (
-                        <button type="button" onClick={() => setImgPickFor(pi)}
-                          className="rounded-lg flex items-center justify-center relative overflow-hidden"
-                          style={{ height: 74, background: '#000', border: '1px dashed var(--border-strong)', cursor: 'pointer' }}
-                          title={t('sec.storyboard.pickImg', 'Картинка из Галереи (скрин, фото, график)')}>
-                          {p.imageUrl
-                            ? <img src={p.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                            : <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)' }}><ImageIcon size={12} /> {t('sec.storyboard.noImg', 'без картинки — кадр из видео')}</span>}
-                        </button>
-                      )}
                       {(p.type === 'title' || p.type === 'split' || p.type === 'final') && (
                         <textarea value={p.text || ''} rows={2}
                           onChange={(e) => setPanel(pi, (x) => { x.text = e.target.value.slice(0, 160); })}

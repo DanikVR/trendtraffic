@@ -278,7 +278,19 @@
       "snippetCode": "Claude Code — én kommando",
       "snippetHint": "Windows: Claude Desktop-konfigurationen er i %APPDATA%\\Claude\\claude_desktop_config.json. Genstart Claude Desktop efter indsættelse. Finjuster nøgle-tilladelser i Enterprise Settings → MCP.",
       "confirmDelete": "Slet nøgle?",
-      "confirmDeleteBody": "Claude, der er forbundet via denne nøgle, mister adgangen til kontoen. Denne handling kan ikke fortrydes."
+      "confirmDeleteBody": "Claude, der er forbundet via denne nøgle, mister adgangen til kontoen. Denne handling kan ikke fortrydes.",
+      "way1Title": "Method 1 — in the Claude app",
+      "way1Badge": "recommended, no terminal",
+      "way1Name": "Name",
+      "way1Step1": "Bottom left, click your profile and open settings",
+      "way1Step2": "In the left column, choose “Connectors”",
+      "way1Step3": "Top right: “Add”, then “Add custom connector”",
+      "way1Step4": "Paste the name and URL above, leave the OAuth fields empty, click “Add”",
+      "way1Step5": "In a new chat, type: check the connection with TrendTraffic",
+      "way2Title": "Method 2 — Claude Desktop (file)",
+      "way2Download": "Download MCP for Claude",
+      "way2NeedKey": "Create a key first — it goes into the file",
+      "way3Title": "Method 3 — Claude Code (one command)"
     }
   },
   "toneMenu": {
@@ -4244,7 +4256,11 @@
       "trNoAiHint": "Без ключа Gemini: ровные куски по 8с, панели шаблоном",
       "trRedo": "Расшифровать заново",
       "trRun": "Расшифровать и раскадровать",
-      "trTitle": "Расшифровка и нарезка по фразам"
+      "trTitle": "Расшифровка и нарезка по фразам",
+      "frameAt": "кадр {{s}}с",
+      "imgSet": "клик — сменить картинку",
+      "stripClick": "Клик — кадр для панели {{n}}",
+      "stripHint": "Плёнка куска. Клик по кадру — назначить его выбранной панели (сейчас: {{n}}). Панель выбирается кликом по карточке или цветной полосе."
     }
   }
 }
