@@ -75,8 +75,8 @@ export function LegalDocPage({ doc }: { doc: LegalDocKey }) {
         <meta property="og:site_name" content="TrendTraffic" />
       </Helmet>
 
-      {/* Подложка-анимация лендинга: без секций-якорей живёт на фолбэк-таймлайне */}
-      <Constellation started posRef={posRef} />
+      {/* Подложка-анимация лендинга в ambient-режиме: фигуры видимы всю прокрутку */}
+      <Constellation started posRef={posRef} ambient />
       <TTNav minimal />
 
       <div ref={pageRef} className="ttl-page">

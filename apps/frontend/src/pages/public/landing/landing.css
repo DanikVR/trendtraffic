@@ -281,7 +281,7 @@
   position: relative;
   border-radius: 24px;
   aspect-ratio: 4 / 3;
-  background: rgba(255, 255, 255, 0.035);
+  background: #0b0b0d; /* непрозрачный: частицы-подложка не просвечивают */
   outline: 1px solid rgba(255, 255, 255, 0.1);
   outline-offset: -1px;
   overflow: hidden;
@@ -354,7 +354,9 @@
 /* ── Секция Claude · MCP ── */
 .ttl-mcp-panel {
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.035);
+  /* НЕПРОЗРАЧНЫЙ фон (тот же тон, что rgba(255,255,255,0.035) поверх чёрного):
+     частицы-подложка не должны просвечивать сквозь карточку — они живут ПОД контентом */
+  background: #0b0b0d;
   border: 1px solid rgba(255, 255, 255, 0.09);
   padding: clamp(26px, 4vw, 44px);
   display: grid;
@@ -388,13 +390,13 @@
   color: var(--ttl-bone);
 }
 .ttl-mcp-user {
-  background: rgba(128, 82, 255, 0.14);
+  background: #120b24; /* = rgba(128,82,255,0.14) поверх чёрного, но непрозрачно */
   border: 1px solid rgba(128, 82, 255, 0.26);
   justify-self: end;
   border-bottom-right-radius: 6px;
 }
 .ttl-mcp-ai {
-  background: rgba(217, 119, 87, 0.10);
+  background: #160d0a; /* = rgba(217,119,87,0.10) поверх чёрного, но непрозрачно */
   border: 1px solid rgba(217, 119, 87, 0.28);
   justify-self: start;
   border-bottom-left-radius: 6px;
@@ -553,8 +555,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
   padding: 20px 24px;
-  background: rgba(10, 10, 12, 0.55);
-  backdrop-filter: blur(6px);
+  background: #0c0c0f; /* непрозрачный: частицы-подложка не просвечивают */
 }
 .ttl-legal-toc-title { letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 12px; }
 .ttl-legal-toc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }

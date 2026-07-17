@@ -132,11 +132,18 @@ function genChaos(n: number): Vec3[] {
 }
 
 export function Constellation({
-  started, posRef,
+  started, posRef, ambient = false,
 }: {
   started: boolean;
   /** Текущий ВИЗУАЛЬНЫЙ скролл (лерпнутый cur плавного скролла или window.scrollY). */
   posRef: { current: number };
+  /**
+   * Ambient-режим (правовые страницы): таймлайн строится от долей полной
+   * прокрутки, фигуры собраны ВСЮ дорогу (play→стрелка→play→стрелка) с
+   * короткими морф-вспышками между — без длинных тусклых фаз «хаоса»,
+   * якорных секций лендинга (#how/#savings/…) не требуется.
+   */
+  ambient?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const startedRef = useRef(started);
@@ -184,6 +191,19 @@ export function Constellation({
     /** Опорные точки таймлайна из реальных позиций секций (transform-независимо). */
     const measure = () => {
       const pos = posRef.current;
+      if (ambient) {
+        const vh = H;
+        const total = Math.max(document.body.scrollHeight - vh, vh);
+        const side = narrow ? 0.5 : 0.72;
+        const side2 = narrow ? 0.5 : 0.70;
+        keys = [
+          { at: 0,            shape: 'play',  ax: side,  ay: narrow ? 0.42 : 0.52, s: 1.04 },
+          { at: total * 0.35, shape: 'arrow', ax: side2, ay: 0.48, s: 1.02 },
+          { at: total * 0.70, shape: 'play',  ax: side,  ay: 0.50, s: 1.00 },
+          { at: total + vh,   shape: 'arrow', ax: side2, ay: 0.46, s: 1.05 },
+        ];
+        return;
+      }
       const top = (id: string, fallback: number) => {
         const el = document.getElementById(id);
         return el ? el.getBoundingClientRect().top + pos : fallback;
@@ -350,7 +370,7 @@ export function Constellation({
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMouse);
     };
-  }, [posRef]);
+  }, [posRef, ambient]);
 
   return (
     <div className="ttl-fx" aria-hidden="true">
