@@ -296,21 +296,8 @@ export async function renderChunkProgram(
     tmp.push(videoOnly);
     await concatFiles(parts, videoOnly);
 
-    // оригинальный звук куска (если в work есть аудиодорожка)
-    const audio = path.join(dir, `audio-${chunk.idx}-${randomUUID().slice(0, 8)}.m4a`);
-    let hasAudio = true;
-    try {
-      await runFfmpeg(['-y', '-loglevel', 'error', '-ss', chunk.start.toFixed(3), '-t', D.toFixed(3),
-        '-i', work, '-vn', '-c:a', 'aac', '-b:a', '160k', audio]);
-      tmp.push(audio);
-    } catch { hasAudio = false; }
-
-    if (hasAudio) {
-      await runFfmpeg(['-y', '-loglevel', 'error', '-i', videoOnly, '-i', audio,
-        '-map', '0:v:0', '-map', '1:a:0', '-c', 'copy', '-shortest', '-movflags', '+faststart', outPath]);
-    } else {
-      fs.copyFileSync(videoOnly, outPath);
-    }
+    // поверх — оригинальный звук куска (речь сохраняется)
+    await muxChunkAudio(videoOnly, work, chunk, outPath, dir);
     return outPath;
   } finally {
     for (const p of tmp) { try { fs.unlinkSync(p); } catch {} }
@@ -375,6 +362,53 @@ export async function assembleFinal(
     fs.copyFileSync(joined, outPath);
   }
   try { fs.unlinkSync(joined); } catch {}
+}
+
+/** Полноразмерный jpg-кадр 1080×1920 (стартовый кадр для Omni image-to-video). */
+export async function extractFrameFull(work: string, ts: number, out: string): Promise<void> {
+  await runFfmpeg(['-y', '-loglevel', 'error', '-ss', Math.max(0, ts).toFixed(3), '-i', work,
+    '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+    '-frames:v', '1', '-q:v', '3', out], 60_000);
+}
+
+/** Точная вырезка куска из work (перекод, со звуком) — исходник для Flow/референсов. */
+export async function cutChunkExact(work: string, chunk: SbChunk, out: string): Promise<void> {
+  const D = Math.max(0.5, chunk.end - chunk.start);
+  try {
+    await runFfmpeg(['-y', '-loglevel', 'error', '-ss', chunk.start.toFixed(3), '-t', D.toFixed(3), '-i', work,
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-c:a', 'aac', '-movflags', '+faststart', out], 300_000);
+  } catch {
+    await runFfmpeg(['-y', '-loglevel', 'error', '-ss', chunk.start.toFixed(3), '-t', D.toFixed(3), '-i', work,
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-an', '-movflags', '+faststart', out], 300_000);
+  }
+}
+
+/** Привести произвольный клип к формату куска: 1080×1920@30, длительность ровно D, без звука. */
+export async function fitClipToChunk(input: string, durSec: number, out: string): Promise<void> {
+  const vf = 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30,format=yuv420p';
+  await runFfmpeg(['-y', '-loglevel', 'error', '-i', input, '-t', durSec.toFixed(3),
+    '-vf', vf, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-an', '-movflags', '+faststart', out], 600_000);
+}
+
+/** Поверх видео-дорожки куска — ОРИГИНАЛЬНЫЙ звук этого куска из work (речь сохраняется). */
+export async function muxChunkAudio(videoOnly: string, work: string, chunk: SbChunk, outPath: string, dir: string): Promise<void> {
+  const D = Math.max(0.5, chunk.end - chunk.start);
+  const audio = path.join(dir, `audio-${chunk.idx}-${randomUUID().slice(0, 8)}.m4a`);
+  let hasAudio = true;
+  try {
+    await runFfmpeg(['-y', '-loglevel', 'error', '-ss', chunk.start.toFixed(3), '-t', D.toFixed(3),
+      '-i', work, '-vn', '-c:a', 'aac', '-b:a', '160k', audio]);
+  } catch { hasAudio = false; }
+  try {
+    if (hasAudio) {
+      await runFfmpeg(['-y', '-loglevel', 'error', '-i', videoOnly, '-i', audio,
+        '-map', '0:v:0', '-map', '1:a:0', '-c', 'copy', '-shortest', '-movflags', '+faststart', outPath]);
+    } else {
+      fs.copyFileSync(videoOnly, outPath);
+    }
+  } finally {
+    try { fs.unlinkSync(audio); } catch {}
+  }
 }
 
 /** Jpg-кадр превью панели 270×480 (для карточек студии; input-seek — быстро). */

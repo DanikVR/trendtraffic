@@ -16,7 +16,7 @@ import { fromUploadsUrl } from './ffmpeg.js';
 import {
   listStoryboards, createStoryboard, getStoryboard, updateStoryboard, deleteStoryboard,
   startAnalyze, startPlan, startRenderChunk, startAssemble, makeChunkPng, setPanelFrame,
-  maybeBackfillPreviews,
+  maybeBackfillPreviews, prepareFlowChunk, attachRenderChunk,
 } from './service.js';
 
 const router = Router();
@@ -166,6 +166,29 @@ router.post('/:id/render', async (req: AuthedRequest, res: Response) => {
   const ok = startRenderChunk(req.tenantId!, req.params.id, chunk);
   if (!ok) return res.status(409).json({ error: 'Уже идёт операция — дождитесь завершения.' });
   res.json({ ok: true });
+});
+
+/** POST /:id/prepare-flow {chunk} — материалы для Flow: mp4 куска + PNG + промпт. */
+router.post('/:id/prepare-flow', async (req: AuthedRequest, res: Response) => {
+  const chunk = Number(req.body?.chunk);
+  if (!Number.isInteger(chunk) || chunk < 0) return res.status(400).json({ error: 'Укажите номер куска' });
+  try {
+    res.json(await prepareFlowChunk(req.tenantId!, req.params.id, chunk));
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Не удалось подготовить материалы' });
+  }
+});
+
+/** POST /:id/attach-render {chunk, fileUrl} — прикрепить готовый клип (Flow) как рендер куска. */
+router.post('/:id/attach-render', async (req: AuthedRequest, res: Response) => {
+  const chunk = Number(req.body?.chunk);
+  const fileUrl = typeof req.body?.fileUrl === 'string' ? req.body.fileUrl : '';
+  if (!Number.isInteger(chunk) || chunk < 0 || !fileUrl) return res.status(400).json({ error: 'Укажите кусок и файл из Галереи' });
+  try {
+    res.json(await attachRenderChunk(req.tenantId!, req.params.id, chunk, fileUrl));
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Не удалось прикрепить клип' });
+  }
 });
 
 /** POST /:id/assemble — финальная склейка готовых кусков → Галерея (фон). */

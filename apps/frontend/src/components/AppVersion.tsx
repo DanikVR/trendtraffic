@@ -3067,7 +3067,25 @@
  *          174206.png). Живой ключ в оранжевом боксе ЗАМАЗАН Pillow-ом,
  *          старый mcp-connector.png удалён (ссылка → /wiki-shots/mcp.png).
  *          Файлы: WikiPage.tsx, public/wiki-shots/mcp.png, AppVersion. */
-export const APP_VERSION = '2.4.6';
+/* 2.4.7 — СТОРИБОРД: генеративные движки (раунды 2–3 по фидбэку юзера).
+ *          (1) Omni Flash API: ОДНА генерация на кусок — стартовый кадр куска
+ *          (реальный спикер, extractFrameFull 1080×1920) «оживает» по
+ *          посекундному промпту из панелей (buildChunkPrompt, стиль-хинты);
+ *          выход ~10с 720p → fitClipToChunk (1080×1920@30, ровно D) →
+ *          muxChunkAudio (ОРИГИНАЛЬНЫЙ голос куска поверх). ≈$1/кусок
+ *          ($0.10/с, ключ Gemini тенанта). Interactions API V2V не умеет —
+ *          поэтому image-to-video, а не рестайл. storyboard/omni.ts.
+ *          (2) Flow-расширение (полуавтомат v1): POST /prepare-flow — кусок
+ *          mp4 со звуком (cutChunkExact, кэш по границам) + PNG-сториборд +
+ *          промпт кнопкой «Скопировать»; юзер генерит в Google Flow на своей
+ *          подписке, расширение сохраняет клип «В галерею», кнопка
+ *          «Прикрепить результат» (GalleryPicker) → POST /attach-render →
+ *          fit+mux оригинальный голос → кусок done. Полный автомат (DataTransfer
+ *          в UI Flow) — следующий шаг с живой отладкой.
+ *          (3) Радио движков активны все три, с подсказками цены; тексты шага
+ *          «Генерация» per-engine; замок «сначала кусок 1» действует везде.
+ *          Файлы: storyboard/{omni,ffmpeg,service,router}, StoryboardStudio. */
+export const APP_VERSION = '2.4.7';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

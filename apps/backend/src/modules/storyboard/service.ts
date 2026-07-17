@@ -15,7 +15,9 @@ import { createAsset } from '../media/assets.js';
 import {
   sbDir, toUploadsUrl, fromUploadsUrl, normalizeSource, probeDuration,
   renderChunkProgram, assembleFinal, buildChunkPng, extractPanelFrame, buildFilmstrip,
+  cutChunkExact, fitClipToChunk, muxChunkAudio,
 } from './ffmpeg.js';
+import { renderChunkOmni, buildChunkPrompt } from './omni.js';
 import { buildPlan, sanitizePanels, templatePanels } from './planner.js';
 import type { StoryboardDoc, SbPlan, SbSettings, SbChunk, SbTranscriptSeg } from './types.js';
 
@@ -357,7 +359,13 @@ export function startRenderChunk(tenantId: string, id: string, chunkIdx: number)
       await patch(tenantId, id, { status: 'rendering', plan: JSON.stringify(plan) });
 
       const isLast = chunk.idx === (plan.chunks.length - 1);
-      const out = await renderChunkProgram(work, chunk, sbDir(id), { style: doc.settings?.style, isLastChunk: isLast });
+      const engine = doc.settings?.engine || 'program';
+      if (engine === 'flow') {
+        throw new Error('Движок Flow — полуавтомат: скачайте материалы куска и прикрепите готовый клип кнопками на карточке.');
+      }
+      const out = engine === 'omni'
+        ? await renderChunkOmni(tenantId, work, chunk, sbDir(id), { style: doc.settings?.style, ctaWord: doc.settings?.ctaWord })
+        : await renderChunkProgram(work, chunk, sbDir(id), { style: doc.settings?.style, isLastChunk: isLast });
       chunk.renderUrl = toUploadsUrl(out);
       chunk.status = 'done';
       await patch(tenantId, id, { status: 'planned', plan: JSON.stringify(plan), error: null });
@@ -374,6 +382,77 @@ export function startRenderChunk(tenantId: string, id: string, chunkIdx: number)
     }
   })();
   return true;
+}
+
+/**
+ * Движок Flow, шаг 1 (полуавтомат): подготовить материалы куска — вырезанный
+ * mp4 (со звуком), PNG-сториборд и посекундный промпт. Файлы — статикой из uploads.
+ */
+export async function prepareFlowChunk(
+  tenantId: string, id: string, chunkIdx: number
+): Promise<{ chunkUrl: string; pngUrl: string | null; prompt: string }> {
+  const doc = await getStoryboard(tenantId, id);
+  if (!doc) throw new Error('Проект не найден');
+  const chunk = doc.plan?.chunks?.find((c) => c.idx === chunkIdx);
+  if (!chunk) throw new Error('Кусок не найден');
+  const work = workPath(id);
+  if (!fs.existsSync(work)) throw new Error('Сначала выполните расшифровку (шаг 2).');
+
+  const dir = sbDir(id);
+  const key = (n: number) => String(Math.round(n * 10));
+  const src = path.join(dir, `flowsrc-${chunk.idx}-${key(chunk.start)}-${key(chunk.end)}.mp4`);
+  if (!fs.existsSync(src)) await cutChunkExact(work, chunk, src);
+
+  if (!chunk.pngUrl) {
+    try {
+      const png = await buildChunkPng(work, chunk, dir);
+      chunk.pngUrl = toUploadsUrl(png);
+      await patch(tenantId, id, { plan: JSON.stringify(doc.plan) });
+    } catch { /* PNG опционален для Flow */ }
+  }
+  return {
+    chunkUrl: toUploadsUrl(src),
+    pngUrl: chunk.pngUrl || null,
+    prompt: buildChunkPrompt(chunk, doc.settings?.style, doc.settings?.ctaWord),
+  };
+}
+
+/**
+ * Движок Flow, шаг 2: прикрепить готовый клип (из Галереи, папка Google Flow) как
+ * рендер куска — формат 1080×1920@30, длина куска, поверх ОРИГИНАЛЬНЫЙ звук.
+ */
+export async function attachRenderChunk(
+  tenantId: string, id: string, chunkIdx: number, fileUrl: string
+): Promise<StoryboardDoc> {
+  if (!setBusy(id, 'attach', chunkIdx)) throw new Error('Уже идёт операция — дождитесь завершения.');
+  try {
+    const doc = await getStoryboard(tenantId, id);
+    if (!doc) throw new Error('Проект не найден');
+    const chunk = doc.plan?.chunks?.find((c) => c.idx === chunkIdx);
+    if (!chunk) throw new Error('Кусок не найден');
+    const abs = fromUploadsUrl(fileUrl);
+    if (!abs || !fs.existsSync(abs)) throw new Error('Файл не найден — выберите клип из Галереи.');
+    const work = workPath(id);
+    if (!fs.existsSync(work)) throw new Error('Сначала выполните расшифровку (шаг 2).');
+
+    const dir = sbDir(id);
+    const D = Math.max(0.5, chunk.end - chunk.start);
+    const fitted = path.join(dir, `attach-fit-${chunk.idx}-${randomUUID().slice(0, 8)}.mp4`);
+    const outPath = path.join(dir, `chunk-${chunk.idx}.mp4`);
+    try {
+      await fitClipToChunk(abs, D, fitted);
+      await muxChunkAudio(fitted, work, chunk, outPath, dir);
+    } finally {
+      try { fs.unlinkSync(fitted); } catch { /* best-effort */ }
+    }
+    chunk.renderUrl = toUploadsUrl(outPath);
+    chunk.status = 'done';
+    chunk.error = undefined;
+    await patch(tenantId, id, { status: 'planned', plan: JSON.stringify(doc.plan), error: null });
+    return (await getStoryboard(tenantId, id))!;
+  } finally {
+    clearBusy(id);
+  }
 }
 
 /** Финальная сборка: включённые куски со статусом done → ролик в Галерею. Фоном. */

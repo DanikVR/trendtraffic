@@ -16,7 +16,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Loader2, Check, Play, RefreshCw, Sparkles, Image as ImageIcon,
-  Plus, Trash2, AlertTriangle, Download, Film, LayoutGrid, Wand2, Lock,
+  Plus, Trash2, AlertTriangle, Download, Film, LayoutGrid, Wand2, Lock, Copy, Paperclip,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
@@ -74,6 +74,9 @@ export default function StoryboardStudio() {
   const [imgPickFor, setImgPickFor] = useState<number | null>(null);
   const [renderQueue, setRenderQueue] = useState<number[]>([]);
   const [selectedPanel, setSelectedPanel] = useState(0);
+  const [flowMats, setFlowMats] = useState<Record<number, { chunkUrl: string; pngUrl: string | null; prompt: string }>>({});
+  const [attachFor, setAttachFor] = useState<number | null>(null);
+  const [promptCopied, setPromptCopied] = useState<number | null>(null);
   const backfillTried = useRef(false);
   const [savedTick, setSavedTick] = useState(0);
   const autostarted = useRef(false);
@@ -221,7 +224,27 @@ export default function StoryboardStudio() {
   const stageRu = busyStage === 'analyze' ? t('sec.storyboard.busyAnalyze', 'расшифровка и раскадровка')
     : busyStage === 'plan' ? t('sec.storyboard.busyPlan', 'ИИ-режиссёр планирует панели')
     : busyStage === 'render' ? t('sec.storyboard.busyRender', 'рендер куска {{n}}', { n: (doc?.busy?.chunk ?? 0) + 1 })
+    : busyStage === 'attach' ? t('sec.storyboard.busyAttach', 'прикрепляю клип к куску {{n}}', { n: (doc?.busy?.chunk ?? 0) + 1 })
     : busyStage === 'assemble' ? t('sec.storyboard.busyAssemble', 'финальная сборка') : null;
+
+  /** Материалы Flow для куска (mp4+PNG+промпт) — храним ответ, чтобы показать ссылки. */
+  const prepFlow = async (chunkIdx: number) => {
+    if (acting) return;
+    setActing(`prep${chunkIdx}`); setNote(null);
+    try {
+      const r = await fetch(`/api/storyboard/${id}/prepare-flow`, {
+        method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chunk: chunkIdx }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) setNote(d?.error || t('sec.storyboard.actFail', 'Не получилось — попробуйте ещё раз.'));
+      else setFlowMats((p) => ({ ...p, [chunkIdx]: d }));
+    } catch {
+      setNote(t('sec.storyboard.netFail', 'Сеть недоступна — попробуйте ещё раз.'));
+    } finally {
+      setActing(null);
+    }
+  };
 
   const steps = [
     { n: 1, label: t('sec.storyboard.step1', 'Источник'), ok: !!doc?.sourceUrl },
@@ -557,7 +580,11 @@ export default function StoryboardStudio() {
             <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
               <div className="text-[13px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.storyboard.genTitle', 'Генерация кусков')}</div>
               <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                {t('sec.storyboard.genIntro', 'Дисциплина конвейера: сначала кусок 1. Проверьте результат — остальные разблокируются. Программный движок монтирует по панелям: наезды, титры, врезки, сплит-экран.')}
+                {(doc.settings?.engine || 'program') === 'omni'
+                  ? t('sec.storyboard.genIntroOmni', 'Движок Omni Flash: одна генерация на кусок — стартовый кадр «оживает» по промпту панелей, поверх кладётся ваш оригинальный голос. Стоимость ≈$1/кусок (~10с × $0.10) с ключа Gemini. Сначала кусок 1!')
+                  : (doc.settings?.engine || 'program') === 'flow'
+                  ? t('sec.storyboard.genIntroFlow', 'Движок Flow (полуавтомат): скачайте материалы куска, сгенерируйте в Google Flow (Omni Flash, 9:16, «сохрани оригинальный звук»), сохраните клип «В галерею» расширением — и прикрепите его здесь. Голос куска мы наложим сами.')
+                  : t('sec.storyboard.genIntro', 'Дисциплина конвейера: сначала кусок 1. Проверьте результат — остальные разблокируются. Программный движок монтирует по панелям: наезды, титры, врезки, сплит-экран.')}
               </p>
               <div className="flex flex-col gap-2">
                 {chunks.map((c) => {
@@ -579,19 +606,57 @@ export default function StoryboardStudio() {
                       {c.renderUrl && (
                         <video src={c.renderUrl} controls playsInline className="rounded-lg" style={{ height: 130, aspectRatio: '9/16', background: '#000' }} />
                       )}
-                      <button type="button" disabled={!!doc.busy || !!acting || locked || !c.enabled}
-                        onClick={() => act(`render${c.idx}`, () => fetch(`/api/storyboard/${id}/render`, { method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ chunk: c.idx }) }))}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-700 disabled:opacity-50"
-                        style={c.idx === 0 && c.status !== 'done' ? btnPrimary : btnGhost}
-                        title={locked ? t('sec.storyboard.lockedHint', 'Сначала сгенерируйте и проверьте кусок 1') : undefined}>
-                        {isBusy ? <Loader2 size={13} className="animate-spin" /> : locked ? <Lock size={12} /> : c.status === 'done' ? <RefreshCw size={12} /> : <Play size={12} />}
-                        {c.status === 'done' ? t('sec.storyboard.reRender', 'Перегенерить') : t('sec.storyboard.render', 'Сгенерировать')}
-                      </button>
+                      {(doc.settings?.engine || 'program') !== 'flow' ? (
+                        <button type="button" disabled={!!doc.busy || !!acting || locked || !c.enabled}
+                          onClick={() => act(`render${c.idx}`, () => fetch(`/api/storyboard/${id}/render`, { method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ chunk: c.idx }) }))}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-700 disabled:opacity-50"
+                          style={c.idx === 0 && c.status !== 'done' ? btnPrimary : btnGhost}
+                          title={locked ? t('sec.storyboard.lockedHint', 'Сначала сгенерируйте и проверьте кусок 1') : undefined}>
+                          {isBusy ? <Loader2 size={13} className="animate-spin" /> : locked ? <Lock size={12} /> : c.status === 'done' ? <RefreshCw size={12} /> : <Play size={12} />}
+                          {c.status === 'done' ? t('sec.storyboard.reRender', 'Перегенерить') : t('sec.storyboard.render', 'Сгенерировать')}
+                        </button>
+                      ) : (
+                        <div className="flex flex-col gap-1.5" style={{ minWidth: 200 }}>
+                          <button type="button" disabled={!!doc.busy || !!acting || locked || !c.enabled}
+                            onClick={() => void prepFlow(c.idx)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-700 disabled:opacity-50" style={btnGhost}
+                            title={locked ? t('sec.storyboard.lockedHint', 'Сначала сгенерируйте и проверьте кусок 1') : undefined}>
+                            {acting === `prep${c.idx}` ? <Loader2 size={13} className="animate-spin" /> : locked ? <Lock size={12} /> : <Download size={12} />}
+                            {t('sec.storyboard.flowMats', 'Материалы для Flow')}
+                          </button>
+                          {flowMats[c.idx] && (
+                            <div className="flex flex-col gap-1 text-[10.5px]">
+                              <a href={flowMats[c.idx].chunkUrl} download
+                                className="px-2.5 py-1.5 rounded-lg" style={{ ...btnGhost, textDecoration: 'none', textAlign: 'center' }}>
+                                ⬇ {t('sec.storyboard.flowChunkFile', 'Кусок (mp4 со звуком)')}
+                              </a>
+                              {flowMats[c.idx].pngUrl && (
+                                <a href={flowMats[c.idx].pngUrl!} target="_blank" rel="noreferrer"
+                                  className="px-2.5 py-1.5 rounded-lg" style={{ ...btnGhost, textDecoration: 'none', textAlign: 'center' }}>
+                                  🖼 {t('sec.storyboard.flowPngFile', 'PNG-сториборд')}
+                                </a>
+                              )}
+                              <button type="button"
+                                onClick={() => { void navigator.clipboard?.writeText(flowMats[c.idx].prompt).then(() => { setPromptCopied(c.idx); setTimeout(() => setPromptCopied(null), 1600); }); }}
+                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg" style={btnGhost}>
+                                {promptCopied === c.idx ? <Check size={11} style={{ color: '#34d399' }} /> : <Copy size={11} />}
+                                {promptCopied === c.idx ? t('sec.storyboard.flowPromptCopied', 'Промпт скопирован') : t('sec.storyboard.flowPromptCopy', 'Скопировать промпт')}
+                              </button>
+                            </div>
+                          )}
+                          <button type="button" disabled={!!doc.busy || !!acting || locked || !c.enabled}
+                            onClick={() => setAttachFor(c.idx)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-700 disabled:opacity-50"
+                            style={c.idx === 0 && c.status !== 'done' ? btnPrimary : btnGhost}>
+                            <Paperclip size={12} /> {t('sec.storyboard.flowAttach', 'Прикрепить результат')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-              {chunk0Done && chunks.some((c) => c.enabled && c.status !== 'done') && (
+              {(doc.settings?.engine || 'program') !== 'flow' && chunk0Done && chunks.some((c) => c.enabled && c.status !== 'done') && (
                 <button type="button" disabled={!!doc.busy || !!acting || renderQueue.length > 0}
                   onClick={() => setRenderQueue(chunks.filter((c) => c.enabled && c.status !== 'done').map((c) => c.idx))}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-700 self-start disabled:opacity-50" style={btnPrimary}>
@@ -655,15 +720,21 @@ export default function StoryboardStudio() {
             <div>
               <div className="text-[10px] font-700 uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('sec.storyboard.setEngine', 'Движок')}</div>
               <div className="flex flex-col gap-1.5 text-[12px]">
-                <label className="inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                  <input type="radio" checked readOnly /> {t('sec.storyboard.engProgram', 'Программный (ffmpeg)')}
-                </label>
-                <label className="inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }} title={t('sec.storyboard.engSoon', 'Скоро')}>
-                  <input type="radio" disabled /> Omni Flash API <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)' }}>{t('sec.storyboard.soon', 'скоро')}</span>
-                </label>
-                <label className="inline-flex items-center gap-2" style={{ color: 'var(--text-muted)' }} title={t('sec.storyboard.engSoon', 'Скоро')}>
-                  <input type="radio" disabled /> Flow-{t('sec.storyboard.engExt', 'расширение')} <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)' }}>{t('sec.storyboard.soon', 'скоро')}</span>
-                </label>
+                {([
+                  { key: 'program', label: t('sec.storyboard.engProgram', 'Программный (ffmpeg)'), hint: t('sec.storyboard.engProgramHint', 'бесплатно, без ключей') },
+                  { key: 'omni', label: 'Omni Flash API', hint: t('sec.storyboard.engOmniHint', '≈$1/кусок, ключ Gemini') },
+                  { key: 'flow', label: `Flow-${t('sec.storyboard.engExt', 'расширение')}`, hint: t('sec.storyboard.engFlowHint', 'полуавтомат, подписка Flow') },
+                ] as { key: string; label: string; hint: string }[]).map((e) => (
+                  <label key={e.key} className="inline-flex items-start gap-2 cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                    <input type="radio" name="sb-engine" className="mt-0.5"
+                      checked={(doc.settings?.engine || 'program') === e.key}
+                      onChange={() => patchLocal((d) => { d.settings = { ...d.settings, engine: e.key as any }; })} />
+                    <span>
+                      {e.label}
+                      <span className="block text-[10px]" style={{ color: 'var(--text-muted)' }}>{e.hint}</span>
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
             <div>
@@ -690,6 +761,25 @@ export default function StoryboardStudio() {
           </div>
         </div>
       </div>
+
+      {/* Пикер клипа Flow: прикрепить результат генерации как рендер куска */}
+      <GalleryPicker
+        open={attachFor != null}
+        onClose={() => setAttachFor(null)}
+        onPick={(g: GalleryPickItem) => {
+          const ci = attachFor; setAttachFor(null);
+          if (ci != null) {
+            void act(`attach${ci}`, () => fetch(`/api/storyboard/${id}/attach-render`, {
+              method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chunk: ci, fileUrl: g.fileUrl }),
+            }));
+          }
+        }}
+        token={token}
+        title={t('sec.storyboard.attachTitle', 'Клип из Flow для куска')}
+        note={t('sec.storyboard.attachNote', 'Выберите клип, сохранённый расширением из Google Flow («В галерею»). Мы приведём его к формату куска и наложим оригинальный голос.')}
+        onlyType="video"
+      />
 
       {/* Пикер картинки для панели (врезка/сплит/мокап) */}
       <GalleryPicker
