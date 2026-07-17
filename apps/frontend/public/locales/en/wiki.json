@@ -10,6 +10,7 @@
     "examples": "Practical examples",
     "whereToGetKey": "Where to get the key",
     "openInSettings": "Open in settings",
+    "openInApp": "Open in the app",
     "noResultsTitle": "Nothing found",
     "noResultsBody": "No articles match “{{q}}”. Try a shorter or different term — for example “key”, “trend” or “avatar”.",
     "resultsOne": "1 result for “{{q}}”",
@@ -164,7 +165,8 @@
             "The “Add” tile — send a prompt or reference into the generation queue.",
             "Finished Veo videos arrive in the Gallery and Media files by themselves.",
             "“Reconnect” on the banner — if the extension connection drops."
-          ]
+          ],
+          "keyLabel": "Open Google Flow"
         }
       }
     },
@@ -181,7 +183,8 @@
             "Click a notebook — it opens in NotebookLM, and you work right there.",
             "Generate an audio or video overview — it arrives in Media files by itself.",
             "“Refresh” updates the list; a spinner on a card means generation is running."
-          ]
+          ],
+          "keyLabel": "Open NotebookLM"
         }
       }
     },
@@ -198,6 +201,130 @@
             "“Select all” → “Download” — grab a batch of files at once.",
             "“Publish” — send a clip to the Publisher (social networks).",
             "The “Analytics” sub-filter — saved video breakdowns (.md + subtitles)."
+          ]
+        }
+      }
+    },
+    "ugc": {
+      "title": "UGC studio",
+      "excerpt": "Talking-avatar clips: 4 video modes, formats, subtitles, music and templates.",
+      "lead": "The <b>UGC studio</b> assembles clips with a talking person: an avatar (HeyGen) + a voice (ElevenLabs) + your footage + subtitles. Open it from the Gallery: the <b>UGC</b> tab → the “Add” tile (or click a saved clip’s card — its scenario continues right where you left off). Steps are on the left, a live preview of every format is on the right: you can drag and resize the avatar right on the frame. An approximate build price is shown in the header before you start.",
+      "sections": {
+        "overview": {
+          "title": "How the studio is organised",
+          "body": "<p>The build goes step by step: <b>1 Video mode → 2 Avatar → 3 Voice and text → 4 Video → 5 Subtitles → 6 Music → 7 Overlay</b>. Formats are multi-select: <b>9:16</b> (TikTok/Reels/Shorts), <b>16:9</b> (YouTube), <b>1:1</b> and <b>4:5</b> (Instagram/Facebook feed) — one run produces a file for every selected format, and the avatar position is tuned per format.</p><p>The <b>“Trend analysis”</b> block plugs a breakdown from Analytics (trend DNA) into the build — tick what to reuse: the script, the trend’s video in your footage, the subtitle style, the montage direction. Header buttons: <b>Save</b>, <b>Template</b> (upserted on exit — the trend autopilot runs on it) and <b>Brand kit</b>. At the bottom of the panel is the “READY TO BUILD” checklist: what is still missing before the <b>“Create video”</b> button. Rendering runs on the server — you can close the window; the finished clip appears on the UGC tab and in Media files.</p>",
+          "examples": [
+            "Gallery → UGC → “Add” — a new build; click a clip’s card to continue its scenario.",
+            "Tick 9:16 and 16:9 together — you get a TikTok file and a YouTube file in one run.",
+            "Attach a “Trend analysis” — the script and subtitles are built from the viral video’s DNA.",
+            "Press “Exit” — the clip is saved and its template updated (the trend autopilot can run on it)."
+          ]
+        },
+        "solo": {
+          "title": "Mode 1 — Solo presenter",
+          "body": "<p>The avatar speaks the entire script, with your footage alongside. The simplest option. Avatar source: <b>“Ready-made avatars”</b> (generate 3 from a text description or pick from your collection/gallery), <b>“My photo”</b> (HeyGen animates the portrait: lips and expressions sync with the voice; you can also pick a ready look from your HeyGen account) or <b>“Pre-recorded video”</b> — an already-shot clip of a talking person (HeyGen and ElevenLabs are not involved).</p><p>Layout: the avatar goes <b>top / bottom / as a small overlay</b> — then just drag and resize it on the preview (the position is remembered per format). Options: <b>“Cut out avatar background (AI)”</b> — only the person’s silhouette stays on screen; <b>“Avatar over inserts”</b> — the presenter stays visible while a media insert plays. Face rendering: a <b>HeyGen API key</b> (Settings → Generation, ~$3/min) or a <b>HeyGen subscription via the extension</b>. “Series languages”: Claude translates the script, ElevenLabs voices it — a separate finished clip per language.</p>",
+          "examples": [
+            "Describe the avatar (“25-year-old woman, casual”) → “Generate 3 avatars” → pick the best one.",
+            "“My photo” — upload a full-face portrait: HeyGen animates it and syncs the lips with the voiceover.",
+            "Drag the avatar into a corner and shrink it — the classic “talking head over a screencast” look.",
+            "Enable “Cut out avatar background (AI)” — the presenter’s silhouette sits right on top of your video, no rectangle.",
+            "Add series languages (e.g. en+es+de) — one script produces three localised clips."
+          ]
+        },
+        "retention": {
+          "title": "Mode 2 — Dynamic montage",
+          "body": "<p>Shots change every few seconds over a single voice track — viewers watch to the end. Works with <b>“My photo”</b> only. Montage intensity: <b>Economy</b> (~2 paid close-ups — the hook and the call to action), <b>Balance</b> (~3 — hook, action, CTA) and <b>Premium</b> (~4 — maximum face time, livelier and pricier).</p><p>The AI builds the shot plan from your text: <b>Hook → Bridge → Cutaway → Action → Call to action</b>. Purple segments are paid close-ups (HeyGen Avatar IV), “$0” segments are face-off shots (b-roll). Click a segment to preview the shot. Batch: add several B-roll videos — you get several clips while the avatar is paid for once.</p>",
+          "examples": [
+            "Start with “Balance” — the sweet spot of price and liveliness (~$2–3 per clip).",
+            "Paste your text — the AI decides where a close-up goes and where a $0 cutaway is enough.",
+            "Click the plan segments under the preview to see how each shot will look.",
+            "Upload 4 different B-rolls — you get 4 clips with one voiceover and one avatar payment."
+          ]
+        },
+        "dialogue": {
+          "title": "Mode 3 — Two-person dialogue",
+          "body": "<p>Two people talk with their own faces. You need <b>two photos</b> (Speaker A and Speaker B) and a <b>recording of a two-voice conversation</b>: switch to “My recording” and press “Transcribe speech” — the service splits the lines into voices A/B (diarisation).</p><p><b>Engagement</b>: “Calm” (almost always one speaker on screen — the cheapest), “Balance” (a close-up of the speaker; both in frame on reactions and peaks), “Lively” (more “both in frame” scenes and inserts — more dynamic and pricier). The AI builds the dialogue plan: A closeup / Both in frame (the reaction is a static photo, $0) / B closeup / Background + face (a cut-out silhouette over media). The “Cut out background” option puts the speakers’ silhouettes over your footage.</p>",
+          "examples": [
+            "Upload two portraits (A and B) and a conversation recording — “Transcribe speech” splits the lines by voice.",
+            "Record the dialogue on your phone’s voice recorder — any recording with two audible voices works.",
+            "“Balance” engagement: both faces appear on reactions — lively without overpaying.",
+            "“Both in frame” scenes use a static reaction photo — those shots are free ($0)."
+          ]
+        },
+        "voiceover": {
+          "title": "Mode 4 — No avatar — voiceover",
+          "body": "<p>Your video + a voice: an AI-written script (voiced by ElevenLabs) or your own recording used as is. HeyGen is not involved — nearly free. A video is required (from the Gallery or a photo slideshow); media inserts per line are optional. Your own recording goes through loudness normalisation (loudnorm). “Series languages” work here too: one script — several localised clips.</p>",
+          "examples": [
+            "A screencast + an AI voiceover from a brief — a ready tutorial without filming a face.",
+            "Paste your text and press “Use my text as is” — the lines go to voiceover without AI processing.",
+            "Record the voice yourself — loudnorm evens out the recording volume.",
+            "A photo slideshow + a voice + word-by-word subtitles — the cheapest clip format."
+          ]
+        },
+        "steps": {
+          "title": "Steps 4–7: footage, subtitles, music, overlay",
+          "body": "<p><b>Video</b>: a clip from the Gallery or a <b>photo slideshow</b> (one photo — a static frame, several — looping through); Fill/Fit framing; “keep video sound”. <b>Intro and outro</b> — bumpers from the gallery, glued as is (a 2–10s logo intro, a “subscribe” outro).</p><p><b>Subtitles</b>: Word by word / Karaoke / Plain text / Off; position bottom/centre/top; the “style preferences” field (colour, font, outline) — with a live preview on the frame. <b>Music</b> plays softly under the voice (volume %, optionally only the first N seconds). <b>Overlay</b> — a transparent PNG per format (logo, frame, caption); subtitles are drawn above the overlay. <b>Progress bar</b> — a thin timer at the top of the frame: shows the video is short and keeps viewers to the end.</p>",
+          "examples": [
+            "Several product photos → “Photo slideshow” — footage without any filming.",
+            "“Word by word” subtitles + the wish “yellow, bold, with outline” — the style shows up right on the preview.",
+            "Add a 2–3s logo intro bumper and a “subscribe” outro.",
+            "A PNG frame with your logo for 9:16 + the progress bar — a branded look for every clip."
+          ]
+        }
+      }
+    },
+    "publisher": {
+      "title": "Publisher — auto-posting",
+      "excerpt": "Posts and chains to 9 social networks via Blotato: schedule, auto-series, AI captions.",
+      "lead": "The <b>Publisher</b> sends clips to 9 networks: TikTok, Instagram, YouTube, X (Twitter), Facebook, LinkedIn, Threads, Bluesky, Pinterest. The provider is <b>Blotato</b> on the bring-your-own-key model: posts go through your own Blotato account. Inside the tab: <b>Feed · Calendar · My schedule · Analytics</b> plus the “New post” studio.",
+      "sections": {
+        "setup": {
+          "keyLabel": "Blotato dashboard — connect networks",
+          "title": "Connecting (one time)",
+          "body": "<p>1) Paste your <b>Blotato key</b> in Settings → the <b>Generation</b> tab (the Blotato card; “Check” calls the API live). 2) Connect your social accounts <b>in the Blotato dashboard</b> (my.blotato.com/settings) — the network tiles in the Publisher open exactly the right dashboard page. 3) Connected accounts appear in the Publisher as toggles — choose where each post or chain goes.</p>",
+          "examples": [
+            "Settings → Generation → Blotato: paste the key and press “Check”.",
+            "Click the TikTok tile in the Publisher — the TikTok connection page of the Blotato dashboard opens.",
+            "Connect several accounts of one network — each appears as its own toggle."
+          ]
+        },
+        "post": {
+          "title": "“New post” — a one-off publication",
+          "body": "<p>The post studio: <b>media from the Gallery</b>, text with <b>per-network limit counters</b> (X 280, Bluesky 300, TikTok/Instagram 2200, YouTube/Facebook 5000…), text tabs <b>“All” + a per-platform version ✎</b>, a <b>thread</b> for X/Threads/Bluesky (an empty line = the next thread post).</p><p><b>✦ AI caption</b> (Claude): pick a tone — you get A/B variants, per-network versions, hashtags and a YouTube title; if the clip has a breakdown, the AI uses its DNA. There are <b>text templates</b>. Platform options: TikTok privacy + the “AI-generated” flag, YouTube privacy + “notify subscribers”, Instagram type (Reel), Pinterest boards. <b>“When”</b>: Now / Date-time / <b>Next slot</b> (the nearest window of “My schedule”).</p>",
+          "examples": [
+            "Pick a clip → “✦ AI caption” with the “engaging” tone → A/B variants with hashtags.",
+            "Open the ✎ tab for X — shorten the text to the 280 limit; other networks keep the full version.",
+            "An empty line in the thread field — that’s how a post thread is built for X/Threads/Bluesky.",
+            "The “Next slot” mode — the post takes the nearest window of your schedule by itself."
+          ]
+        },
+        "slots": {
+          "title": "“My schedule” — slots",
+          "body": "<p>Slots are your weekly posting grid: <b>day of week + time</b> (entered and shown in local time, stored in UTC). Slots are the backbone of auto-posting: <b>chains</b> and the <b>“Next slot”</b> mode fill them. Series are laid out up to <b>35 days</b> ahead — enough for a month-long series.</p>",
+          "examples": [
+            "Set Mon/Wed/Fri 19:00 — a standard 3-posts-a-week grid.",
+            "Add several slots per day (9:00 and 19:00) — chains fill both windows.",
+            "A series of 12 clips with 3 slots a week stretches a month ahead (35-day horizon)."
+          ]
+        },
+        "chains": {
+          "title": "Chains: manual series and the autopilot",
+          "body": "<p><b>Manual series</b>: tick several finished clips in the Gallery → “Publish N” → the series is laid out over the free slots of your schedule right away. Caption per clip: AI (tone and language), a fixed text or the file name.</p><p><b>Auto chain</b>: once a minute the scheduler takes a fresh <b>unpublished</b> autopilot clip (the “Auto” sub-filter of the UGC tab) → generates a caption with the Post engine (without a Claude key a fallback kicks in — the chain never stalls) → puts it into the nearest free slot. Settings: a <b>daily cap</b> (default 3), a <b>format filter</b> (a 9:16 chain posts only vertical clips — to TikTok/Reels; a 16:9 chain only horizontal — to YouTube: they never compete for files), auto-pause after <b>3 fails in a row</b>, per-chain status counters.</p><p><b>The full conveyor</b>: Trends (scheduled auto-analysis) → a UGC template → “Auto” clips → an auto chain → social networks. Set it up once — content ships itself.</p>",
+          "examples": [
+            "Multi-select 10 clips in the Gallery → “Publish 10” — a month-long series over your slots.",
+            "Create 2 auto chains: 9:16 → TikTok+Reels and 16:9 → YouTube — the files never overlap.",
+            "Daily cap = 2 — the chain won’t flood the feed even if the autopilot produced more.",
+            "3 fails in a row — the chain pauses itself and shows the last error.",
+            "Enable auto-analysis in Trends + attach a UGC template + enable the chain — the conveyor is ready."
+          ]
+        },
+        "feed": {
+          "title": "Feed, calendar, retries, analytics",
+          "body": "<p><b>Feed</b> — all posts with statuses and links to what got published. Failed submissions go to <b>auto-retries</b> (backoff 2 → 4 → 8 minutes, up to 3 attempts); in-flight statuses refresh in the background even when the tab is closed. <b>Calendar</b> — the whole week: move or cancel scheduled posts. <b>Analytics</b> — X/Instagram/Facebook/Threads/Bluesky metrics from Blotato; for TikTok and YouTube use the “Channels” tab of Trends.</p>",
+          "examples": [
+            "A post failed on a network hiccup — leave it: the retry re-sends in 2–8 minutes.",
+            "In the calendar, drag a post to another day or cancel it before it goes out.",
+            "Watch X/IG/FB reach right in the Publisher; TikTok/YouTube — in “Channels”."
           ]
         }
       }

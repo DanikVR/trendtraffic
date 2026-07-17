@@ -69,6 +69,18 @@ const ARTICLES: WikiArticleMeta[] = [
     ],
   },
   {
+    id: 'ugc',
+    category: 'app',
+    sections: [
+      { id: 'overview', tab: 'UGC', image: '/wiki-shots/ugc-tab.png', open: G('ugc') },
+      { id: 'solo', tab: 'UGC', image: '/wiki-shots/ugc-solo.png', open: G('ugc') },
+      { id: 'retention', tab: 'UGC', image: '/wiki-shots/ugc-montage.png', open: G('ugc') },
+      { id: 'dialogue', tab: 'UGC', image: '/wiki-shots/ugc-dialogue.png', open: G('ugc') },
+      { id: 'voiceover', tab: 'UGC', open: G('ugc') },
+      { id: 'steps', tab: 'UGC', image: '/wiki-shots/ugc-steps.png', open: G('ugc') },
+    ],
+  },
+  {
     id: 'google-flow',
     category: 'app',
     sections: [
@@ -87,6 +99,17 @@ const ARTICLES: WikiArticleMeta[] = [
     category: 'app',
     sections: [
       { id: 'use', tab: 'Media files', image: '/wiki-shots/media-files.png', open: G('reference') },
+    ],
+  },
+  {
+    id: 'publisher',
+    category: 'app',
+    sections: [
+      { id: 'setup', tab: 'Publisher', open: G('publisher'), keyHref: 'https://my.blotato.com/settings' },
+      { id: 'post', tab: 'Publisher', open: G('publisher') },
+      { id: 'slots', tab: 'Publisher', open: G('publisher') },
+      { id: 'chains', tab: 'Publisher', open: G('publisher') },
+      { id: 'feed', tab: 'Publisher', open: G('publisher') },
     ],
   },
 ];
@@ -326,7 +349,9 @@ export function WikiPage() {
                               )}
                               {s.open && (
                                 <a className="ttl-wiki-link ttl-wiki-link-open" href={s.open} target="_blank" rel="noreferrer noopener">
-                                  {t('ui.openInSettings', 'Open in settings')} <ArrowUpRight size={13} />
+                                  {s.open.includes('/gallery')
+                                    ? t('ui.openInApp', 'Открыть в приложении')
+                                    : t('ui.openInSettings', 'Открыть в настройках')} <ArrowUpRight size={13} />
                                 </a>
                               )}
                             </div>
