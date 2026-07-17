@@ -53,6 +53,7 @@ import notebooklmExtRouter, { INGEST_LIMIT as NLM_INGEST_LIMIT } from './modules
 import heygenExtRouter, { INGEST_LIMIT as HEYGEN_INGEST_LIMIT } from './modules/heygen-ext/router.js';
 import videoEditRouter from './modules/video_edit/router.js';
 import storyboardRouter from './modules/storyboard/router.js';
+import { startStoryboardFlowWatcher } from './modules/storyboard/service.js';
 import skillsRouter from './modules/skills/router.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
@@ -292,6 +293,8 @@ const server = app.listen(PORT, () => {
   startTrendAutopilot();
   // 6.6 Публикатор: авто-цепочки (auto-ugc → слот), авторетраи, фоновый статус-синк
   startPublisherScheduler();
+  // 6.7 Сториборд: вотчер Flow-автомата (done-задачи → куски, автосборка ролика)
+  startStoryboardFlowWatcher();
 });
 
 export { app, server };

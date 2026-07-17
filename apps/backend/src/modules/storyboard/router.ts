@@ -16,7 +16,7 @@ import { fromUploadsUrl } from './ffmpeg.js';
 import {
   listStoryboards, createStoryboard, getStoryboard, updateStoryboard, deleteStoryboard,
   startAnalyze, startPlan, startRenderChunk, startAssemble, makeChunkPng, setPanelFrame,
-  maybeBackfillPreviews, prepareFlowChunk, attachRenderChunk,
+  maybeBackfillPreviews, prepareFlowChunk, attachRenderChunk, queueFlowChunks, getFlowQueueMap,
 } from './service.js';
 
 const router = Router();
@@ -84,7 +84,11 @@ router.get('/:id', async (req: AuthedRequest, res: Response) => {
     if (!doc) return res.status(404).json({ error: 'Проект не найден' });
     // проекты, созданные до фичи превью, получают кадры/филмстрип фоном при открытии
     maybeBackfillPreviews(req.tenantId!, req.params.id, doc);
-    res.json(doc);
+    // Flow-автомат: статусы задач очереди по кускам (для бейджей студии)
+    const flowQueue = (doc.settings as any)?.engine === 'flow'
+      ? await getFlowQueueMap(req.tenantId!, req.params.id)
+      : undefined;
+    res.json(flowQueue ? { ...doc, flowQueue } : doc);
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Ошибка чтения проекта' });
   }
@@ -176,6 +180,26 @@ router.post('/:id/prepare-flow', async (req: AuthedRequest, res: Response) => {
     res.json(await prepareFlowChunk(req.tenantId!, req.params.id, chunk));
   } catch (e: any) {
     res.status(400).json({ error: e?.message || 'Не удалось подготовить материалы' });
+  }
+});
+
+/** POST /:id/flow-queue {chunks: number[]|'all'} — Flow-АВТОМАТ: поставить куски в очередь
+ *  расширения (оно само зальёт референсы, вставит промпт, сгенерит и вернёт клип). */
+router.post('/:id/flow-queue', async (req: AuthedRequest, res: Response) => {
+  try {
+    const doc = await getStoryboard(req.tenantId!, req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Проект не найден' });
+    const all = (doc.plan?.chunks || []).filter((c) => c.enabled && c.status !== 'done').map((c) => c.idx);
+    const chunks: number[] = req.body?.chunks === 'all'
+      ? all
+      : (Array.isArray(req.body?.chunks) ? req.body.chunks.map(Number).filter(Number.isInteger) : []);
+    if (!chunks.length) return res.status(400).json({ error: 'Нет кусков для отправки (все уже готовы?).' });
+    const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0] || req.protocol || 'https';
+    const base = String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || `${proto}://${req.get('host')}`);
+    const r = await queueFlowChunks(req.tenantId!, req.params.id, chunks, base);
+    res.json({ ok: true, ...r });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Не удалось поставить в очередь Flow' });
   }
 });
 

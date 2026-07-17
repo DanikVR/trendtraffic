@@ -3095,7 +3095,19 @@
  *          якорем w-<article>. Тексты — en+ru wiki.json. Файлы: WikiPage.tsx,
  *          landing.css, locales/{en,ru}/wiki.json, public/wiki-shots/*.png,
  *          AppVersion. */
-export const APP_VERSION = '2.4.8';
+/* 2.4.9 — СТОРИБОРД: Flow-АВТОМАТ (раунд 4). Куски → ГОТОВАЯ очередь
+ *          flow_ext_tasks (references=[кусок.mp4, сториборд.png] абс-URL,
+ *          settings.storyboardId/chunkIdx) — расширение САМО заливает референсы
+ *          (DataTransfer), вставляет промпт, жмёт генерацию и возвращает клип
+ *          (/ingest). Вотчер (тик 15с) прикрепляет done-задачи к кускам
+ *          (fit 1080×1920 + оригинальный голос), failed → пометка на куске;
+ *          АВТОСБОРКА ролика, когда все включённые куски готовы (галочка,
+ *          дефолт вкл) — большой ролик = очередь из N кусков ≤8с (лимит Flow).
+ *          UI: «Автомат: отправить все куски в Flow», пер-кусок «В Flow
+ *          (автомат)» + бейджи очереди (в очереди/генерится/ошибка), поллинг
+ *          6с пока очередь активна; ручной полуавтомат остался как фолбэк.
+ *          Файлы: storyboard/{service,router,types}, server.ts, Studio. */
+export const APP_VERSION = '2.4.9';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

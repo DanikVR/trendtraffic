@@ -152,6 +152,7 @@ export async function updateStoryboard(
       badgeText: typeof s.badgeText === 'string' ? s.badgeText.slice(0, 40) : undefined,
       subtitles: !!s.subtitles,
       ctaWord: typeof s.ctaWord === 'string' ? s.ctaWord.slice(0, 24) : undefined,
+      autoAssemble: s.autoAssemble !== false,
     };
     fields.settings = JSON.stringify(settings);
   }
@@ -455,7 +456,146 @@ export async function attachRenderChunk(
   }
 }
 
-/** Финальная сборка: включённые куски со статусом done → ролик в Галерею. Фоном. */
+// ════════════════════════════════════════════════════════════════════════════
+// FLOW-АВТОМАТ: куски → очередь flow_ext_tasks → расширение генерит в Google Flow
+// → вотчер прикрепляет результаты → (опц.) автосборка готового ролика.
+// Переиспользуем ГОТОВУЮ инфраструктуру flow-ext (enqueue/tasks/ingest в расширении):
+// связка со сторибордом — settings JSONB задачи {storyboardId, chunkIdx}.
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface FlowQueueEntry { taskId: string; status: string; note?: string | null }
+
+/** Активные/последние задачи Flow этого сториборда: {chunkIdx → задача}. */
+export async function getFlowQueueMap(tenantId: string, storyboardId: string): Promise<Record<number, FlowQueueEntry>> {
+  try {
+    const r = await pool.query(
+      `SELECT id, status, note, settings FROM flow_ext_tasks
+        WHERE tenant_id = $1 AND settings->>'storyboardId' = $2
+        ORDER BY created_at ASC`,
+      [tenantId, storyboardId]
+    );
+    const map: Record<number, FlowQueueEntry> = {};
+    for (const row of r.rows as any[]) {
+      const idx = Number(row.settings?.chunkIdx);
+      if (!Number.isInteger(idx)) continue;
+      map[idx] = { taskId: row.id, status: row.status, note: row.note }; // последняя по времени побеждает
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Поставить куски в очередь Flow-автомата. Материалы (mp4+PNG+промпт) готовятся
+ * здесь же; references — АБСОЛЮТНЫЕ URL (расширение качает байты из background).
+ * Куски уже ≤8с — лимит генерации Flow; большой ролик = много задач по очереди.
+ */
+export async function queueFlowChunks(
+  tenantId: string, id: string, chunkIdxs: number[], baseUrl: string
+): Promise<{ queued: number; skipped: number }> {
+  const doc = await getStoryboard(tenantId, id);
+  if (!doc) throw new Error('Проект не найден');
+  const existing = await getFlowQueueMap(tenantId, id);
+  const abs = (u: string) => (/^https?:\/\//i.test(u) ? u : baseUrl.replace(/\/+$/, '') + u);
+
+  let queued = 0, skipped = 0;
+  for (const idx of chunkIdxs) {
+    const chunk = doc.plan?.chunks?.find((c) => c.idx === idx);
+    if (!chunk || !chunk.enabled) { skipped++; continue; }
+    const cur = existing[idx];
+    if (cur && (cur.status === 'queued' || cur.status === 'running')) { skipped++; continue; }
+
+    const mats = await prepareFlowChunk(tenantId, id, idx);
+    const prompt = mats.prompt
+      + '\nФормат 9:16, 1080p. Первый референс — видео-кусок: сохрани его речь, лицо и движение спикера, '
+      + 'смонтируй по режиссуре выше. Второй референс — сториборд-план кадров.';
+    const refs = [abs(mats.chunkUrl), ...(mats.pngUrl ? [abs(mats.pngUrl)] : [])];
+    await pool.query(
+      `INSERT INTO flow_ext_tasks (id, tenant_id, flow_id, prompt, refs, settings, title)
+       VALUES ($1,$2,NULL,$3,$4,$5,$6)`,
+      [randomUUID(), tenantId, prompt, JSON.stringify(refs),
+        JSON.stringify({ storyboardId: id, chunkIdx: idx, aspect: '9:16', source: 'storyboard' }),
+        `Сториборд «${doc.name}» — кусок ${idx + 1}`.slice(0, 200)]
+    );
+    queued++;
+  }
+  return { queued, skipped };
+}
+
+/** Прикрепить результат задачи Flow к куску (fit + оригинальный голос) — ядро вотчера. */
+async function attachFlowTask(tenantId: string, sbId: string, chunkIdx: number, fileUrl: string): Promise<void> {
+  await attachRenderChunk(tenantId, sbId, chunkIdx, fileUrl);
+}
+
+let flowWatcherStarted = false;
+/**
+ * Вотчер Flow-автомата (тик 15с): done-задачи сториборда → прикрепить клип к куску;
+ * failed → пометить кусок; когда ВСЕ включённые куски готовы и в настройках
+ * autoAssemble — запустить финальную сборку. Обработанные задачи помечаются
+ * settings.handled, чтобы не трогать их повторно.
+ */
+export function startStoryboardFlowWatcher(): void {
+  if (flowWatcherStarted) return;
+  flowWatcherStarted = true;
+  const tick = async () => {
+    try {
+      const r = await pool.query(
+        `SELECT id, tenant_id, status, note, file_url, settings FROM flow_ext_tasks
+          WHERE settings->>'storyboardId' IS NOT NULL
+            AND settings->>'handled' IS NULL
+            AND status IN ('done','failed')
+          ORDER BY updated_at ASC
+          LIMIT 10`
+      );
+      for (const row of r.rows as any[]) {
+        const sbId = String(row.settings?.storyboardId || '');
+        const chunkIdx = Number(row.settings?.chunkIdx);
+        const tenantId = String(row.tenant_id);
+        if (!sbId || !Number.isInteger(chunkIdx)) continue;
+        try {
+          if (row.status === 'done' && row.file_url) {
+            await attachFlowTask(tenantId, sbId, chunkIdx, String(row.file_url));
+          } else {
+            const doc = await getStoryboard(tenantId, sbId);
+            const chunk = doc?.plan?.chunks?.find((c) => c.idx === chunkIdx);
+            if (doc && chunk) {
+              chunk.status = 'failed';
+              chunk.error = `Flow: ${String(row.note || 'генерация не удалась').slice(0, 260)}`;
+              await patch(tenantId, sbId, { plan: JSON.stringify(doc.plan) });
+            }
+          }
+          await pool.query(
+            `UPDATE flow_ext_tasks SET settings = settings || '{"handled":true}'::jsonb, updated_at = now() WHERE id = $1`,
+            [row.id]
+          );
+          // Автосборка большого ролика: все включённые куски готовы → собрать без участия юзера.
+          if (row.status === 'done') {
+            const doc = await getStoryboard(tenantId, sbId);
+            const auto = (doc?.settings as any)?.autoAssemble !== false;
+            const enabled = (doc?.plan?.chunks || []).filter((c) => c.enabled);
+            if (doc && auto && enabled.length && enabled.every((c) => c.status === 'done') && doc.status !== 'done' && !getBusy(sbId)) {
+              startAssemble(tenantId, sbId);
+            }
+          }
+        } catch (e: any) {
+          // busy («Уже идёт операция») и прочее — не помечаем handled, вернёмся следующим тиком
+          const msg = String(e?.message || e);
+          if (!/Уже идёт операция/.test(msg)) {
+            console.warn('[storyboard] flow-вотчер, задача', row.id, ':', msg);
+            await pool.query(
+              `UPDATE flow_ext_tasks SET settings = settings || '{"handled":true}'::jsonb, note=$2, updated_at = now() WHERE id = $1`,
+              [row.id, `attach: ${msg}`.slice(0, 400)]
+            ).catch(() => {});
+          }
+        }
+      }
+    } catch { /* тик best-effort */ }
+  };
+  setInterval(tick, 15_000);
+  setTimeout(tick, 5_000);
+  console.log('[storyboard] Flow-вотчер запущен (тик 15с)');
+}
 export function startAssemble(tenantId: string, id: string): boolean {
   if (!setBusy(id, 'assemble')) return false;
   (async () => {

@@ -28,9 +28,11 @@ interface SbDoc {
   id: string; name: string; status: string;
   sourceUrl?: string | null; sourceDuration?: number | null;
   plan: { transcript?: { start: number; end: number; text: string }[]; chunks?: SbChunk[]; planSource?: string; planNote?: string };
-  settings: { style?: string; engine?: string; badgeText?: string; subtitles?: boolean; ctaWord?: string };
+  settings: { style?: string; engine?: string; badgeText?: string; subtitles?: boolean; ctaWord?: string; autoAssemble?: boolean };
   resultUrl?: string | null; error?: string | null;
   busy?: { stage: string; chunk?: number } | null;
+  /** Flow-автомат: статусы задач очереди по кускам (queued/running/done/failed). */
+  flowQueue?: Record<number, { taskId: string; status: string; note?: string | null }>;
 }
 
 const PANEL_TYPES: { key: PanelType; ru: string }[] = [
@@ -115,13 +117,14 @@ export default function StoryboardStudio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Поллинг, пока идёт фоновая операция
+  // Поллинг: фоновая операция ИЛИ активная очередь Flow-автомата (генерации идут минутами)
+  const flowActive = Object.values(doc?.flowQueue || {}).some((q) => q.status === 'queued' || q.status === 'running');
   useEffect(() => {
-    if (!doc?.busy && doc?.status !== 'analyzing' && doc?.status !== 'rendering') return;
-    const iv = setInterval(() => { void load(); }, 2500);
+    if (!doc?.busy && doc?.status !== 'analyzing' && doc?.status !== 'rendering' && !flowActive) return;
+    const iv = setInterval(() => { void load(); }, flowActive && !doc?.busy ? 6000 : 2500);
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc?.busy?.stage, doc?.busy?.chunk, doc?.status]);
+  }, [doc?.busy?.stage, doc?.busy?.chunk, doc?.status, flowActive]);
 
   // Смена активного куска — сбрасываем выбранную панель
   useEffect(() => { setSelectedPanel(0); }, [activeChunk]);
@@ -583,9 +586,32 @@ export default function StoryboardStudio() {
                 {(doc.settings?.engine || 'program') === 'omni'
                   ? t('sec.storyboard.genIntroOmni', 'Движок Omni Flash: одна генерация на кусок — стартовый кадр «оживает» по промпту панелей, поверх кладётся ваш оригинальный голос. Стоимость ≈$1/кусок (~10с × $0.10) с ключа Gemini. Сначала кусок 1!')
                   : (doc.settings?.engine || 'program') === 'flow'
-                  ? t('sec.storyboard.genIntroFlow', 'Движок Flow (полуавтомат): скачайте материалы куска, сгенерируйте в Google Flow (Omni Flash, 9:16, «сохрани оригинальный звук»), сохраните клип «В галерею» расширением — и прикрепите его здесь. Голос куска мы наложим сами.')
+                  ? t('sec.storyboard.genIntroFlow2', 'Движок Flow — АВТОМАТ: откройте labs.google → Flow в браузере с расширением TrendTraffic и нажмите кнопку ниже. Расширение само зальёт кусок и сториборд, вставит промпт, сгенерирует и вернёт клип — кусок за куском, хоть на длинный ролик (лимит Flow ~8с/клип, поэтому и режем по 8с). Голос оригинала наложим сами. Ручной режим — кнопки на карточках.')
                   : t('sec.storyboard.genIntro', 'Дисциплина конвейера: сначала кусок 1. Проверьте результат — остальные разблокируются. Программный движок монтирует по панелям: наезды, титры, врезки, сплит-экран.')}
               </p>
+              {(doc.settings?.engine || 'program') === 'flow' && (
+                <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button type="button" disabled={!!acting || chunks.every((c) => !c.enabled || c.status === 'done')}
+                      onClick={() => act('flowAll', () => fetch(`/api/storyboard/${id}/flow-queue`, { method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks: 'all' }) }))}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-700 disabled:opacity-50" style={btnPrimary}>
+                      {acting === 'flowAll' ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                      {t('sec.storyboard.flowQueueAll', 'Автомат: отправить все куски в Flow')}
+                    </button>
+                    <label className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                      <input type="checkbox" checked={doc.settings?.autoAssemble !== false}
+                        onChange={(e) => patchLocal((d) => { d.settings = { ...d.settings, autoAssemble: e.target.checked }; })} />
+                      {t('sec.storyboard.autoAssemble', 'Автосборка ролика, когда все куски готовы')}
+                    </label>
+                  </div>
+                  {flowActive && (
+                    <div className="text-[11px] inline-flex items-center gap-1.5" style={{ color: 'var(--brand)' }}>
+                      <Loader2 size={12} className="animate-spin" />
+                      {t('sec.storyboard.flowActiveHint', 'Очередь Flow работает — держите вкладку labs.google/…/flow открытой. Статусы обновляются сами.')}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex flex-col gap-2">
                 {chunks.map((c) => {
                   const locked = c.idx > 0 && !chunk0Done;
@@ -617,6 +643,28 @@ export default function StoryboardStudio() {
                         </button>
                       ) : (
                         <div className="flex flex-col gap-1.5" style={{ minWidth: 200 }}>
+                          {(() => {
+                            const q = doc.flowQueue?.[c.idx];
+                            if (!q || c.status === 'done') return null;
+                            const txt = q.status === 'queued' ? t('sec.storyboard.fqQueued', 'в очереди Flow')
+                              : q.status === 'running' ? t('sec.storyboard.fqRunning', 'генерится в Flow…')
+                              : q.status === 'failed' ? `${t('sec.storyboard.fqFailed', 'Flow: ошибка')}${q.note ? ` — ${q.note}` : ''}`
+                              : q.status;
+                            return (
+                              <span className="inline-flex items-center gap-1.5 text-[10.5px] px-2 py-1 rounded-lg"
+                                style={{ background: q.status === 'failed' ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)', color: q.status === 'failed' ? '#f87171' : 'var(--brand)' }}>
+                                {(q.status === 'queued' || q.status === 'running') && <Loader2 size={11} className="animate-spin" />}
+                                {txt}
+                              </span>
+                            );
+                          })()}
+                          <button type="button" disabled={!!acting || !c.enabled || (doc.flowQueue?.[c.idx]?.status === 'queued' || doc.flowQueue?.[c.idx]?.status === 'running')}
+                            onClick={() => act(`fq${c.idx}`, () => fetch(`/api/storyboard/${id}/flow-queue`, { method: 'POST', headers: { ...auth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks: [c.idx] }) }))}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-700 disabled:opacity-50"
+                            style={c.idx === 0 && c.status !== 'done' ? btnPrimary : btnGhost}>
+                            {acting === `fq${c.idx}` ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={12} />}
+                            {c.status === 'done' ? t('sec.storyboard.fqAgain', 'В Flow ещё раз') : t('sec.storyboard.fqAuto', 'В Flow (автомат)')}
+                          </button>
                           <button type="button" disabled={!!doc.busy || !!acting || locked || !c.enabled}
                             onClick={() => void prepFlow(c.idx)}
                             className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-700 disabled:opacity-50" style={btnGhost}

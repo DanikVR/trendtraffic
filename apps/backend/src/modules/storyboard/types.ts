@@ -70,6 +70,8 @@ export interface SbSettings {
   subtitles?: boolean;
   /** Кодовое слово CTA финала (= кодовое слово подписи из «формулы-подписи»). */
   ctaWord?: string;
+  /** Flow-автомат: собрать ролик автоматически, когда все куски готовы (дефолт true). */
+  autoAssemble?: boolean;
 }
 
 export type SbStatus = 'draft' | 'analyzing' | 'planned' | 'rendering' | 'done' | 'failed';
