@@ -1173,7 +1173,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:14.010Z",
+    "pivotAt": "2026-07-17T18:57:34.964Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: hata",
       "fqQueued": "Flow kuyruğunda",
       "fqRunning": "Flow'da oluşturuluyor…",
-      "genIntroFlow2": "Flow motoru — OTOMATİK: tarayıcınızda TrendTraffic uzantısıyla labs.google → Flow'u açın ve aşağıdaki düğmeye tıklayın. Uzantı, parçayı ve storyboard'u otomatik olarak yükleyecek, istemi ekleyecek, oluşturacak ve klibi geri döndürecek — parça parça, uzun bir video için bile (Flow limiti ~8s/klip, bu yüzden 8s'ye kesiyoruz). Orijinal sesi biz üzerine yerleştireceğiz. Manuel mod — kartlardaki düğmeler."
+      "genIntroFlow2": "Flow motoru — OTOMATİK: tarayıcınızda TrendTraffic uzantısıyla labs.google → Flow'u açın ve aşağıdaki düğmeye tıklayın. Uzantı, parçayı ve storyboard'u otomatik olarak yükleyecek, istemi ekleyecek, oluşturacak ve klibi geri döndürecek — parça parça, uzun bir video için bile (Flow limiti ~8s/klip, bu yüzden 8s'ye kesiyoruz). Orijinal sesi biz üzerine yerleştireceğiz. Manuel mod — kartlardaki düğmeler.",
+      "pt_speaker": "Konuşmacı Yakın Çekim",
+      "pt_title": "Tam Ekran Başlık",
+      "pt_cutaway": "Ara Çekim",
+      "pt_split": "Bölünmüş Ekran",
+      "pt_mockup": "Maket",
+      "pt_final": "Final + CTA",
+      "style_clean": "Temiz",
+      "style_neon": "Neon",
+      "style_paper": "Kağıt",
+      "style_terminal": "Terminal",
+      "style_bold": "Kalın"
     }
   }
 }

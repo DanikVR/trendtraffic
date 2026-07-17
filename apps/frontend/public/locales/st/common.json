@@ -1191,7 +1191,7 @@
     "geminiFixCount": 166,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:07.700Z",
+    "pivotAt": "2026-07-17T18:57:33.100Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: phoso",
       "fqQueued": "ho Flow queue",
       "fqRunning": "e hlahisa ho Flow…",
-      "genIntroFlow2": "Enjene ea Flow — KA BOEONA: bula labs.google → Flow ho sebatli sa hau ka katoloso ea TrendTraffic 'me u tobetse konopo e ka tlase. Katoloso e tla kenya chunk le storyboard ka boeona, e kenye prompt, e hlahise, 'me e khutlise sekotwana — chunk ka chunk, le bakeng sa video e telele (Flow limit ~8s/clip, ke ka lebaka leo re khaolang ho 8s). Re tla beha lentsoe la pele holim'a sona ka borona. Mokhoa oa letsoho — likonopo likareteng."
+      "genIntroFlow2": "Enjene ea Flow — KA BOEONA: bula labs.google → Flow ho sebatli sa hau ka katoloso ea TrendTraffic 'me u tobetse konopo e ka tlase. Katoloso e tla kenya chunk le storyboard ka boeona, e kenye prompt, e hlahise, 'me e khutlise sekotwana — chunk ka chunk, le bakeng sa video e telele (Flow limit ~8s/clip, ke ka lebaka leo re khaolang ho 8s). Re tla beha lentsoe la pele holim'a sona ka borona. Mokhoa oa letsoho — likonopo likareteng.",
+      "pt_speaker": "Sebui se haufi",
+      "pt_title": "Sehlooho se tletseng skrine",
+      "pt_cutaway": "Ho khaola",
+      "pt_split": "Skrine se arotsoeng",
+      "pt_mockup": "Mockup",
+      "pt_final": "Qetello + CTA",
+      "style_clean": "E hloekile",
+      "style_neon": "Neon",
+      "style_paper": "Pampiri",
+      "style_terminal": "Terminal",
+      "style_bold": "E teteaneng"
     }
   }
 }

@@ -1173,7 +1173,7 @@
     "geminiFixCount": 44,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:22.786Z",
+    "pivotAt": "2026-07-17T18:57:25.282Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: エラー",
       "fqQueued": "Flowキュー内",
       "fqRunning": "Flowで生成中…",
-      "genIntroFlow2": "Flowエンジン — 自動: ブラウザでTrendTraffic拡張機能を使ってlabs.google → Flowを開き、以下のボタンをクリックしてください。拡張機能が自動的にチャンクとストーリーボードをアップロードし、プロンプトを挿入し、生成し、クリップを返します — 長いビデオでもチャンクごとに（Flowの制限は約8秒/クリップなので、8秒にカットしています）。元の音声は弊社でオーバーレイします。手動モード — カード上のボタン。"
+      "genIntroFlow2": "Flowエンジン — 自動: ブラウザでTrendTraffic拡張機能を使ってlabs.google → Flowを開き、以下のボタンをクリックしてください。拡張機能が自動的にチャンクとストーリーボードをアップロードし、プロンプトを挿入し、生成し、クリップを返します — 長いビデオでもチャンクごとに（Flowの制限は約8秒/クリップなので、8秒にカットしています）。元の音声は弊社でオーバーレイします。手動モード — カード上のボタン。",
+      "pt_speaker": "スピーカーのクローズアップ",
+      "pt_title": "全画面タイトル",
+      "pt_cutaway": "カットアウェイ",
+      "pt_split": "分割画面",
+      "pt_mockup": "モックアップ",
+      "pt_final": "最終 + CTA",
+      "style_clean": "クリーン",
+      "style_neon": "ネオン",
+      "style_paper": "ペーパー",
+      "style_terminal": "ターミナル",
+      "style_bold": "ボールド"
     }
   }
 }

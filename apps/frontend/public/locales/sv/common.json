@@ -1173,7 +1173,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:05.504Z",
+    "pivotAt": "2026-07-17T18:57:33.511Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: fel",
       "fqQueued": "i Flow-kö",
       "fqRunning": "genererar i Flow…",
-      "genIntroFlow2": "Flow-motor — AUTOMATISK: öppna labs.google → Flow i din webbläsare med TrendTraffic-tillägget och klicka på knappen nedan. Tillägget laddar automatiskt upp segmentet och storyboarden, infogar prompten, genererar och returnerar klippet — segment för segment, även för en lång video (Flow-gräns ~8s/klipp, vilket är anledningen till att vi klipper till 8s). Vi lägger över originalljudet själva. Manuellt läge — knappar på kort."
+      "genIntroFlow2": "Flow-motor — AUTOMATISK: öppna labs.google → Flow i din webbläsare med TrendTraffic-tillägget och klicka på knappen nedan. Tillägget laddar automatiskt upp segmentet och storyboarden, infogar prompten, genererar och returnerar klippet — segment för segment, även för en lång video (Flow-gräns ~8s/klipp, vilket är anledningen till att vi klipper till 8s). Vi lägger över originalljudet själva. Manuellt läge — knappar på kort.",
+      "pt_speaker": "Närbild talare",
+      "pt_title": "Titel i helskärm",
+      "pt_cutaway": "Klipp",
+      "pt_split": "Delad skärm",
+      "pt_mockup": "Mockup",
+      "pt_final": "Slutlig + CTA",
+      "style_clean": "Ren",
+      "style_neon": "Neon",
+      "style_paper": "Papper",
+      "style_terminal": "Terminal",
+      "style_bold": "Fet"
     }
   }
 }

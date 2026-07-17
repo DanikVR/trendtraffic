@@ -1191,7 +1191,7 @@
     "geminiFixCount": 93,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:00.480Z",
+    "pivotAt": "2026-07-17T18:57:32.544Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: sese",
       "fqQueued": "i le Flow queue",
       "fqRunning": "fa'atupuina i Flow…",
-      "genIntroFlow2": "Flow engine — OTOMETI: tatala labs.google → Flow i lau su'esu'ega ma le TrendTraffic extension ma kiliki le fa'amau i lalo. O le extension o le a otometi lava ona lafoina le vaega ma le storyboard, fa'aofi le prompt, fa'atupu, ma toe fa'afo'i le clip — vaega i lea vaega, e o'o lava i se vitio umi (Flow limit ~8s/clip, o le mafua'aga lea tatou te tipi ai i le 8s). O le a matou fa'aopoopoina le leo muamua e matou lava. Faiga tusi lesona — fa'amau i luga o kata."
+      "genIntroFlow2": "Flow engine — OTOMETI: tatala labs.google → Flow i lau su'esu'ega ma le TrendTraffic extension ma kiliki le fa'amau i lalo. O le extension o le a otometi lava ona lafoina le vaega ma le storyboard, fa'aofi le prompt, fa'atupu, ma toe fa'afo'i le clip — vaega i lea vaega, e o'o lava i se vitio umi (Flow limit ~8s/clip, o le mafua'aga lea tatou te tipi ai i le 8s). O le a matou fa'aopoopoina le leo muamua e matou lava. Faiga tusi lesona — fa'amau i luga o kata.",
+      "pt_speaker": "Fa'alatalata i le failauga",
+      "pt_title": "Ulutala atoa le lau",
+      "pt_cutaway": "Vavae ese",
+      "pt_split": "Lau vaeluaina",
+      "pt_mockup": "Fa'ata'ita'iga",
+      "pt_final": "Fa'ai'uga + Vala'au e Fai",
+      "style_clean": "Mama",
+      "style_neon": "Moli susulu",
+      "style_paper": "Pepa",
+      "style_terminal": "Terminal",
+      "style_bold": "Mata'itusi mafiafia"
     }
   }
 }

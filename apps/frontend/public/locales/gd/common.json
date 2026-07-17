@@ -1191,7 +1191,7 @@
     "geminiFixCount": 78,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:11.872Z",
+    "pivotAt": "2026-07-17T18:57:22.654Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: mearachd",
       "fqQueued": "ann an ciudha Flow",
       "fqRunning": "a' gineadh ann an Flow…",
-      "genIntroFlow2": "Einnsean Flow — FÈIN-GHNÌOMHACH: fosgail labs.google → Flow sa bhrobhsair agad leis an leudachadh TrendTraffic agus cliog air a' phutan gu h-ìosal. Luchdaichidh an leudachadh suas an earrann agus an clàr-sgeulachd gu fèin-ghluasadach, cuiridh e a-steach an prompt, gineadh e, agus tillidh e a' chriomag — earrann air earrann, eadhon airson bhidio fhada (crìoch Flow ~8s/criomag, is e sin as coireach gun gearr sinn gu 8s). Cuiridh sinn thairis an guth tùsail sinn fhìn. Modh làimhe — putanan air cairtean."
+      "genIntroFlow2": "Einnsean Flow — FÈIN-GHNÌOMHACH: fosgail labs.google → Flow sa bhrobhsair agad leis an leudachadh TrendTraffic agus cliog air a' phutan gu h-ìosal. Luchdaichidh an leudachadh suas an earrann agus an clàr-sgeulachd gu fèin-ghluasadach, cuiridh e a-steach an prompt, gineadh e, agus tillidh e a' chriomag — earrann air earrann, eadhon airson bhidio fhada (crìoch Flow ~8s/criomag, is e sin as coireach gun gearr sinn gu 8s). Cuiridh sinn thairis an guth tùsail sinn fhìn. Modh làimhe — putanan air cairtean.",
+      "pt_speaker": "Neach-labhairt dlùth",
+      "pt_title": "Tiotal làn-sgrìn",
+      "pt_cutaway": "Gearradh-a-mach",
+      "pt_split": "Sgrìn roinnte",
+      "pt_mockup": "Mockup",
+      "pt_final": "Deireannach + CTA",
+      "style_clean": "Glain",
+      "style_neon": "Neon",
+      "style_paper": "Pàipear",
+      "style_terminal": "Terminal",
+      "style_bold": "Dàna"
     }
   }
 }

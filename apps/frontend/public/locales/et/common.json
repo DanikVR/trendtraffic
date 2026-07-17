@@ -1173,7 +1173,7 @@
     "geminiFixCount": 77,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:02.795Z",
+    "pivotAt": "2026-07-17T18:57:21.338Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: viga",
       "fqQueued": "Flow järjekorras",
       "fqRunning": "genereerimine Flow's…",
-      "genIntroFlow2": "Flow mootor – AUTOMAATNE: ava labs.google → Flow oma brauseris TrendTrafficu laiendusega ja klõpsa allolevat nuppu. Laiendus laadib automaatselt üles tüki ja stsenaariumi, sisestab viiba, genereerib ja tagastab klipi – tüki haaval, isegi pika video puhul (Flow piirang ~8s/klipp, mistõttu lõikame 8s-ks). Me lisame algse hääle ise. Käsitsi režiim – nupud kaartidel."
+      "genIntroFlow2": "Flow mootor – AUTOMAATNE: ava labs.google → Flow oma brauseris TrendTrafficu laiendusega ja klõpsa allolevat nuppu. Laiendus laadib automaatselt üles tüki ja stsenaariumi, sisestab viiba, genereerib ja tagastab klipi – tüki haaval, isegi pika video puhul (Flow piirang ~8s/klipp, mistõttu lõikame 8s-ks). Me lisame algse hääle ise. Käsitsi režiim – nupud kaartidel.",
+      "pt_speaker": "Kõneleja lähivõte",
+      "pt_title": "Täisekraani pealkiri",
+      "pt_cutaway": "Vahekaader",
+      "pt_split": "Jagatud ekraan",
+      "pt_mockup": "Makett",
+      "pt_final": "Lõpp + CTA",
+      "style_clean": "Puhas",
+      "style_neon": "Neoon",
+      "style_paper": "Paber",
+      "style_terminal": "Terminal",
+      "style_bold": "Julge"
     }
   }
 }

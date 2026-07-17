@@ -1173,7 +1173,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:19.390Z",
+    "pivotAt": "2026-07-17T18:57:36.278Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: lỗi",
       "fqQueued": "trong hàng đợi Flow",
       "fqRunning": "đang tạo trong Flow…",
-      "genIntroFlow2": "Công cụ Flow — TỰ ĐỘNG: mở labs.google → Flow trong trình duyệt của bạn với tiện ích mở rộng TrendTraffic và nhấp vào nút bên dưới. Tiện ích mở rộng sẽ tự động tải lên đoạn và bảng phân cảnh, chèn lời nhắc, tạo và trả về clip — từng đoạn một, ngay cả đối với một video dài (giới hạn Flow ~8 giây/clip, đó là lý do tại sao chúng tôi cắt thành 8 giây). Chúng tôi sẽ tự lồng tiếng gốc. Chế độ thủ công — các nút trên thẻ."
+      "genIntroFlow2": "Công cụ Flow — TỰ ĐỘNG: mở labs.google → Flow trong trình duyệt của bạn với tiện ích mở rộng TrendTraffic và nhấp vào nút bên dưới. Tiện ích mở rộng sẽ tự động tải lên đoạn và bảng phân cảnh, chèn lời nhắc, tạo và trả về clip — từng đoạn một, ngay cả đối với một video dài (giới hạn Flow ~8 giây/clip, đó là lý do tại sao chúng tôi cắt thành 8 giây). Chúng tôi sẽ tự lồng tiếng gốc. Chế độ thủ công — các nút trên thẻ.",
+      "pt_speaker": "Người nói cận cảnh",
+      "pt_title": "Tiêu đề toàn màn hình",
+      "pt_cutaway": "Cảnh cắt",
+      "pt_split": "Chia đôi màn hình",
+      "pt_mockup": "Bản mô phỏng",
+      "pt_final": "Cuối cùng + CTA",
+      "style_clean": "Sạch",
+      "style_neon": "Neon",
+      "style_paper": "Giấy",
+      "style_terminal": "Thiết bị đầu cuối",
+      "style_bold": "In đậm"
     }
   }
 }

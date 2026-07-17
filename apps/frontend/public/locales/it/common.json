@@ -1191,7 +1191,7 @@
     "geminiFixCount": 123,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:22.412Z",
+    "pivotAt": "2026-07-17T18:57:25.420Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: errore",
       "fqQueued": "in coda Flow",
       "fqRunning": "generazione in Flow…",
-      "genIntroFlow2": "Motore Flow — AUTOMATICO: apri labs.google → Flow nel tuo browser con l'estensione TrendTraffic e clicca il pulsante qui sotto. L'estensione caricherà automaticamente il segmento e lo storyboard, inserirà il prompt, genererà e restituirà la clip — segmento per segmento, anche per un video lungo (limite Flow ~8s/clip, ecco perché tagliamo a 8s). Sovrapporremo noi la voce originale. Modalità manuale — pulsanti sulle schede."
+      "genIntroFlow2": "Motore Flow — AUTOMATICO: apri labs.google → Flow nel tuo browser con l'estensione TrendTraffic e clicca il pulsante qui sotto. L'estensione caricherà automaticamente il segmento e lo storyboard, inserirà il prompt, genererà e restituirà la clip — segmento per segmento, anche per un video lungo (limite Flow ~8s/clip, ecco perché tagliamo a 8s). Sovrapporremo noi la voce originale. Modalità manuale — pulsanti sulle schede.",
+      "pt_speaker": "Primo piano speaker",
+      "pt_title": "Titolo a schermo intero",
+      "pt_cutaway": "Stacco",
+      "pt_split": "Schermo diviso",
+      "pt_mockup": "Mockup",
+      "pt_final": "Finale + CTA",
+      "style_clean": "Pulito",
+      "style_neon": "Neon",
+      "style_paper": "Carta",
+      "style_terminal": "Terminale",
+      "style_bold": "Grassetto"
     }
   }
 }

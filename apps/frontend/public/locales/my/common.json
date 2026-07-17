@@ -1173,7 +1173,7 @@
     "geminiFixCount": 52,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:48.371Z",
+    "pivotAt": "2026-07-17T18:57:29.350Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: အမှား",
       "fqQueued": "Flow queue တွင်",
       "fqRunning": "Flow တွင် ထုတ်လုပ်နေသည်…",
-      "genIntroFlow2": "Flow engine — အလိုအလျောက်- သင်၏ browser တွင် TrendTraffic extension ဖြင့် labs.google → Flow ကိုဖွင့်ပြီး အောက်ပါခလုတ်ကို နှိပ်ပါ။ extension သည် chunk နှင့် storyboard ကို အလိုအလျောက် အပ်လုဒ်လုပ်မည်၊ prompt ကို ထည့်သွင်းမည်၊ ထုတ်လုပ်မည်၊ ပြီးနောက် ကလစ်ကို ပြန်ပေးမည် — chunk တစ်ခုချင်းစီ၊ ဗီဒီယိုရှည်များအတွက်ပင် (Flow ကန့်သတ်ချက် ~8s/clip၊ ထို့ကြောင့် ကျွန်ုပ်တို့သည် 8s သို့ ဖြတ်တောက်သည်)။ ကျွန်ုပ်တို့သည် မူရင်းအသံကို ကိုယ်တိုင် ထပ်ဆင့်ပေးပါမည်။ Manual mode — ကတ်များပေါ်ရှိ ခလုတ်များ။"
+      "genIntroFlow2": "Flow engine — အလိုအလျောက်- သင်၏ browser တွင် TrendTraffic extension ဖြင့် labs.google → Flow ကိုဖွင့်ပြီး အောက်ပါခလုတ်ကို နှိပ်ပါ။ extension သည် chunk နှင့် storyboard ကို အလိုအလျောက် အပ်လုဒ်လုပ်မည်၊ prompt ကို ထည့်သွင်းမည်၊ ထုတ်လုပ်မည်၊ ပြီးနောက် ကလစ်ကို ပြန်ပေးမည် — chunk တစ်ခုချင်းစီ၊ ဗီဒီယိုရှည်များအတွက်ပင် (Flow ကန့်သတ်ချက် ~8s/clip၊ ထို့ကြောင့် ကျွန်ုပ်တို့သည် 8s သို့ ဖြတ်တောက်သည်)။ ကျွန်ုပ်တို့သည် မူရင်းအသံကို ကိုယ်တိုင် ထပ်ဆင့်ပေးပါမည်။ Manual mode — ကတ်များပေါ်ရှိ ခလုတ်များ။",
+      "pt_speaker": "စပီကာကို အနီးကပ်ရိုက်",
+      "pt_title": "မျက်နှာပြင်အပြည့် ခေါင်းစဉ်",
+      "pt_cutaway": "ဖြတ်တောက်ရိုက်ကူးမှု",
+      "pt_split": "မျက်နှာပြင်ခွဲ",
+      "pt_mockup": "ပုံစံတူ",
+      "pt_final": "နောက်ဆုံး + CTA",
+      "style_clean": "သန့်ရှင်း",
+      "style_neon": "နီယွန်",
+      "style_paper": "စက္ကူ",
+      "style_terminal": "တာမီနယ်",
+      "style_bold": "ထူ"
     }
   }
 }

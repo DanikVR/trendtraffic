@@ -1173,7 +1173,7 @@
     "geminiFixCount": 34,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:20.889Z",
+    "pivotAt": "2026-07-17T18:57:36.066Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: xato",
       "fqQueued": "Flow navbatida",
       "fqRunning": "Flow'da yaratilmoqda…",
-      "genIntroFlow2": "Flow dvigateli — AVTOMATIK: brauzeringizda TrendTraffic kengaytmasi bilan labs.google → Flow'ni oching va quyidagi tugmani bosing. Kengaytma avtomatik ravishda bo'lak va hikoya taxtasini yuklaydi, promptni kiritadi, yaratadi va klipni qaytaradi — bo'lakma-bo'lak, hatto uzun video uchun ham (Flow chegarasi ~8s/klip, shuning uchun biz 8s gacha kesamiz). Biz asl ovozni o'zimiz ustiga qo'yamiz. Qo'lda rejim — kartalardagi tugmalar."
+      "genIntroFlow2": "Flow dvigateli — AVTOMATIK: brauzeringizda TrendTraffic kengaytmasi bilan labs.google → Flow'ni oching va quyidagi tugmani bosing. Kengaytma avtomatik ravishda bo'lak va hikoya taxtasini yuklaydi, promptni kiritadi, yaratadi va klipni qaytaradi — bo'lakma-bo'lak, hatto uzun video uchun ham (Flow chegarasi ~8s/klip, shuning uchun biz 8s gacha kesamiz). Biz asl ovozni o'zimiz ustiga qo'yamiz. Qo'lda rejim — kartalardagi tugmalar.",
+      "pt_speaker": "Spiker yaqin planda",
+      "pt_title": "To'liq ekranli sarlavha",
+      "pt_cutaway": "Kesish",
+      "pt_split": "Ekranni bo'lish",
+      "pt_mockup": "Maket",
+      "pt_final": "Yakuniy + CTA",
+      "style_clean": "Toza",
+      "style_neon": "Neon",
+      "style_paper": "Qog'oz",
+      "style_terminal": "Terminal",
+      "style_bold": "Qalin"
     }
   }
 }

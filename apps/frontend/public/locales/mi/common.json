@@ -1173,7 +1173,7 @@
     "geminiFixCount": 26,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:38.977Z",
+    "pivotAt": "2026-07-17T18:57:28.036Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Rere: hapa",
       "fqQueued": "kei te rārangi Rere",
       "fqRunning": "e whakaputa ana i te Rere…",
-      "genIntroFlow2": "Miihini Rere — Aunoa: whakatuwheratia labs.google → Rere i tō pūtirotiro me te toronga TrendTraffic, ka pāwhiri i te pātene i raro. Ka tukuna aunoa e te toronga te wāhanga me te papakupu, ka whakauru i te akiaki, ka whakaputa, ka whakahoki mai i te topenga — wāhanga mā te wāhanga, ahakoa he ataata roa (tepe Rere ~8s/topenga, nō reira ka tapahia ki te 8s). Mā mātou anō e whakakikoruatia te reo taketake. Aratau ā-ringa — ngā pātene i runga i ngā kāri."
+      "genIntroFlow2": "Miihini Rere — Aunoa: whakatuwheratia labs.google → Rere i tō pūtirotiro me te toronga TrendTraffic, ka pāwhiri i te pātene i raro. Ka tukuna aunoa e te toronga te wāhanga me te papakupu, ka whakauru i te akiaki, ka whakaputa, ka whakahoki mai i te topenga — wāhanga mā te wāhanga, ahakoa he ataata roa (tepe Rere ~8s/topenga, nō reira ka tapahia ki te 8s). Mā mātou anō e whakakikoruatia te reo taketake. Aratau ā-ringa — ngā pātene i runga i ngā kāri.",
+      "pt_speaker": "Kaikorero tata",
+      "pt_title": "Taitara mata-katoa",
+      "pt_cutaway": "Tapahi",
+      "pt_split": "Mata wehe",
+      "pt_mockup": "Tauira",
+      "pt_final": "Whakamutunga + CTA",
+      "style_clean": "Ma",
+      "style_neon": "Neon",
+      "style_paper": "Pepapātuhi",
+      "style_terminal": "Kāpeka",
+      "style_bold": "Mātotoru"
     }
   }
 }

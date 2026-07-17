@@ -1173,7 +1173,7 @@
     "geminiFixCount": 31,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:55.269Z",
+    "pivotAt": "2026-07-17T18:57:19.542Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: error",
       "fqQueued": "a la cua de Flow",
       "fqRunning": "generant a Flow…",
-      "genIntroFlow2": "Motor Flow — AUTOMÀTIC: obre labs.google → Flow al teu navegador amb l'extensió TrendTraffic i clica el botó de sota. L'extensió pujarà automàticament el tros i el storyboard, inserirà el prompt, generarà i retornarà el clip — tros a tros, fins i tot per a un vídeo llarg (límit de Flow ~8s/clip, per això tallem a 8s). Nosaltres superposarem la veu original. Mode manual — botons a les targetes."
+      "genIntroFlow2": "Motor Flow — AUTOMÀTIC: obre labs.google → Flow al teu navegador amb l'extensió TrendTraffic i clica el botó de sota. L'extensió pujarà automàticament el tros i el storyboard, inserirà el prompt, generarà i retornarà el clip — tros a tros, fins i tot per a un vídeo llarg (límit de Flow ~8s/clip, per això tallem a 8s). Nosaltres superposarem la veu original. Mode manual — botons a les targetes.",
+      "pt_speaker": "Primer pla orador",
+      "pt_title": "Títol a pantalla completa",
+      "pt_cutaway": "Tall",
+      "pt_split": "Pantalla dividida",
+      "pt_mockup": "Maqueta",
+      "pt_final": "Final + CTA",
+      "style_clean": "Net",
+      "style_neon": "Neó",
+      "style_paper": "Paper",
+      "style_terminal": "Terminal",
+      "style_bold": "Negreta"
     }
   }
 }

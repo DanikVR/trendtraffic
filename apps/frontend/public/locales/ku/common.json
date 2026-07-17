@@ -1191,7 +1191,7 @@
     "geminiFixCount": 116,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:31.247Z",
+    "pivotAt": "2026-07-17T18:57:26.797Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: xeletî",
       "fqQueued": "di rêza Flow de ye",
       "fqRunning": "di Flow de tê çêkirin…",
-      "genIntroFlow2": "Motora Flow — OTOMATÎK: labs.google → Flow di geroka xwe de bi pêveka TrendTraffic veke û bişkoja jêrîn bitikîne. Pêvek dê bixweber perçe û storyboardê bar bike, promptê têxe, çêke, û klîpê vegerîne — perçe bi perçe, heta ji bo vîdyoyek dirêj (sînora Flow ~8s/klîp, ji ber vê yekê em heta 8s dibirin). Em ê dengê orîjînal bi xwe lê zêde bikin. Moda destanî — bişkokên li ser qertan."
+      "genIntroFlow2": "Motora Flow — OTOMATÎK: labs.google → Flow di geroka xwe de bi pêveka TrendTraffic veke û bişkoja jêrîn bitikîne. Pêvek dê bixweber perçe û storyboardê bar bike, promptê têxe, çêke, û klîpê vegerîne — perçe bi perçe, heta ji bo vîdyoyek dirêj (sînora Flow ~8s/klîp, ji ber vê yekê em heta 8s dibirin). Em ê dengê orîjînal bi xwe lê zêde bikin. Moda destanî — bişkokên li ser qertan.",
+      "pt_speaker": "Axaftvan ji nêz ve",
+      "pt_title": "Sernavê tev-dîmenderî",
+      "pt_cutaway": "Qutkirin",
+      "pt_split": "Dîmendera dabeşkirî",
+      "pt_mockup": "Mockup",
+      "pt_final": "Dawî + CTA",
+      "style_clean": "Paqij",
+      "style_neon": "Neon",
+      "style_paper": "Kaxez",
+      "style_terminal": "Termînal",
+      "style_bold": "Stûr"
     }
   }
 }

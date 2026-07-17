@@ -1173,7 +1173,7 @@
     "geminiFixCount": 34,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:23.139Z",
+    "pivotAt": "2026-07-17T18:57:36.067Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: impazamo",
       "fqQueued": "kumgca weFlow",
       "fqRunning": "iyenza kwiFlow…",
-      "genIntroFlow2": "Injini yeFlow — EYAHLANGANISA NGOKUZENZEKELAYO: vula i-labs.google → Flow kwibrawuza yakho nge-TrendTraffic extension kwaye ucofe iqhosha elingezantsi. I-extension iya kulayisha ngokuzenzekelayo ingceba kunye nebali elibonwayo, ifake iprompt, yenze, kwaye ibuyise ikliphu — ingceba ngengceba, nokuba yividiyo ende (umda weFlow ~8s/kliphu, yiyo loo nto sisika ukuya kwi-8s). Siza kubeka ilizwi lokuqala phezu kwayo thina. Imo yencwadana — amaqhosha kumakhadi."
+      "genIntroFlow2": "Injini yeFlow — EYAHLANGANISA NGOKUZENZEKELAYO: vula i-labs.google → Flow kwibrawuza yakho nge-TrendTraffic extension kwaye ucofe iqhosha elingezantsi. I-extension iya kulayisha ngokuzenzekelayo ingceba kunye nebali elibonwayo, ifake iprompt, yenze, kwaye ibuyise ikliphu — ingceba ngengceba, nokuba yividiyo ende (umda weFlow ~8s/kliphu, yiyo loo nto sisika ukuya kwi-8s). Siza kubeka ilizwi lokuqala phezu kwayo thina. Imo yencwadana — amaqhosha kumakhadi.",
+      "pt_speaker": "Isithethi esisondeleyo",
+      "pt_title": "Isihloko esigcwele isikrini",
+      "pt_cutaway": "Ukusika",
+      "pt_split": "Isikrini esahluliweyo",
+      "pt_mockup": "Imodeli",
+      "pt_final": "Okokugqibela + CTA",
+      "style_clean": "Ecocekileyo",
+      "style_neon": "I-Neon",
+      "style_paper": "Iphepha",
+      "style_terminal": "Itheminali",
+      "style_bold": "Etyebileyo"
     }
   }
 }

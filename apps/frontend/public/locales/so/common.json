@@ -1173,7 +1173,7 @@
     "geminiFixCount": 31,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:03.420Z",
+    "pivotAt": "2026-07-17T18:57:32.541Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: khalad",
       "fqQueued": "safka Flow",
       "fqRunning": "ku samaynaya Flow…",
-      "genIntroFlow2": "Mashiinka Flow — AUTOMATIC: ka fur labs.google → Flow biraawsarkaaga oo leh kordhinta TrendTraffic oo guji badhanka hoose. Kordhinta ayaa si toos ah u soo gelin doonta chunk-ka iyo storyboard-ka, gelin doonta prompt-ka, samayn doonta, oo soo celin doonta clip-ka — chunk-ka chunk, xitaa fiidiyow dheer (xadka Flow ~8s/clip, taas oo ah sababta aan u jarayno 8s). Waxaan dul saari doonaa codka asalka ah annaga. Habka gacanta — badhamada kaararka."
+      "genIntroFlow2": "Mashiinka Flow — AUTOMATIC: ka fur labs.google → Flow biraawsarkaaga oo leh kordhinta TrendTraffic oo guji badhanka hoose. Kordhinta ayaa si toos ah u soo gelin doonta chunk-ka iyo storyboard-ka, gelin doonta prompt-ka, samayn doonta, oo soo celin doonta clip-ka — chunk-ka chunk, xitaa fiidiyow dheer (xadka Flow ~8s/clip, taas oo ah sababta aan u jarayno 8s). Waxaan dul saari doonaa codka asalka ah annaga. Habka gacanta — badhamada kaararka.",
+      "pt_speaker": "Hadliye dhow",
+      "pt_title": "Cinwaan shaashad buuxda",
+      "pt_cutaway": "Goyn",
+      "pt_split": "Shaashad kala qaybsan",
+      "pt_mockup": "Mockup",
+      "pt_final": "Ugu dambayn + CTA",
+      "style_clean": "Nadiif",
+      "style_neon": "Neon",
+      "style_paper": "Waraaq",
+      "style_terminal": "Terminal",
+      "style_bold": "Geesinimo"
     }
   }
 }

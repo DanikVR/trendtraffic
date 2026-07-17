@@ -1191,7 +1191,7 @@
     "geminiFixCount": 250,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:02.227Z",
+    "pivotAt": "2026-07-17T18:57:21.754Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow : erreur",
       "fqQueued": "en file d'attente Flow",
       "fqRunning": "génération en cours dans Flow…",
-      "genIntroFlow2": "Moteur Flow — AUTOMATIQUE : ouvrez labs.google → Flow dans votre navigateur avec l'extension TrendTraffic et cliquez sur le bouton ci-dessous. L'extension téléchargera automatiquement le morceau et le storyboard, insérera le prompt, générera et renverra le clip — morceau par morceau, même pour une longue vidéo (limite Flow ~8s/clip, c'est pourquoi nous coupons à 8s). Nous superposerons nous-mêmes la voix originale. Mode manuel — boutons sur les cartes."
+      "genIntroFlow2": "Moteur Flow — AUTOMATIQUE : ouvrez labs.google → Flow dans votre navigateur avec l'extension TrendTraffic et cliquez sur le bouton ci-dessous. L'extension téléchargera automatiquement le morceau et le storyboard, insérera le prompt, générera et renverra le clip — morceau par morceau, même pour une longue vidéo (limite Flow ~8s/clip, c'est pourquoi nous coupons à 8s). Nous superposerons nous-mêmes la voix originale. Mode manuel — boutons sur les cartes.",
+      "pt_speaker": "Gros plan orateur",
+      "pt_title": "Titre plein écran",
+      "pt_cutaway": "Séquence coupée",
+      "pt_split": "Écran partagé",
+      "pt_mockup": "Maquette",
+      "pt_final": "Final + CTA",
+      "style_clean": "Épuré",
+      "style_neon": "Néon",
+      "style_paper": "Papier",
+      "style_terminal": "Terminal",
+      "style_bold": "Gras"
     }
   }
 }

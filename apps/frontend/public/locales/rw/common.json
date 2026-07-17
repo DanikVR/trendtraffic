@@ -1191,7 +1191,7 @@
     "geminiFixCount": 105,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:56.833Z",
+    "pivotAt": "2026-07-17T18:57:31.078Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: ikosa",
       "fqQueued": "muri Flow queue",
       "fqRunning": "ikora muri Flow…",
-      "genIntroFlow2": "Flow engine — YIKORA: fungura labs.google → Flow muri browser yawe hamwe na TrendTraffic extension hanyuma ukande buto iri munsi. Extension izikora ipakiye chunk na storyboard, ishyiremo prompt, ikore, kandi isubize clip — chunk kuri chunk, ndetse no kuri videwo ndende (Flow limit ~8s/clip, niyo mpamvu ducira kuri 8s). Tuzahuriza ijwi ry'umwimerere ubwacu. Uburyo bwa manual — buto kuri karita."
+      "genIntroFlow2": "Flow engine — YIKORA: fungura labs.google → Flow muri browser yawe hamwe na TrendTraffic extension hanyuma ukande buto iri munsi. Extension izikora ipakiye chunk na storyboard, ishyiremo prompt, ikore, kandi isubize clip — chunk kuri chunk, ndetse no kuri videwo ndende (Flow limit ~8s/clip, niyo mpamvu ducira kuri 8s). Tuzahuriza ijwi ry'umwimerere ubwacu. Uburyo bwa manual — buto kuri karita.",
+      "pt_speaker": "Umwanya w'uvuga",
+      "pt_title": "Umutwe wuzuye",
+      "pt_cutaway": "Igice cy'inyongera",
+      "pt_split": "Mice ibiri",
+      "pt_mockup": "Igerageza",
+      "pt_final": "Iherezo + CTA",
+      "style_clean": "Isukuye",
+      "style_neon": "Neon",
+      "style_paper": "Impapuro",
+      "style_terminal": "Terminal",
+      "style_bold": "Iby'ingenzi"
     }
   }
 }

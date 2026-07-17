@@ -1173,7 +1173,7 @@
     "geminiFixCount": 27,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:30.688Z",
+    "pivotAt": "2026-07-17T18:57:26.732Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: error",
       "fqQueued": "in serie Flow",
       "fqRunning": "generans in Flow…",
-      "genIntroFlow2": "Machina Flow — AUTOMATICA: aperi labs.google → Flow in navigatro tuo cum extensione TrendTraffic et preme bullam infra. Extensio automatice partem et tabulam fabulae imponet, promptum inseret, generabit, et clipeum reddet — partem per partem, etiam pro longo video (limen Flow ~8s/clipeum, quare ad 8s secamus). Vocem originalem ipsi superimponemus. Modus manualis — bullae in chartis."
+      "genIntroFlow2": "Machina Flow — AUTOMATICA: aperi labs.google → Flow in navigatro tuo cum extensione TrendTraffic et preme bullam infra. Extensio automatice partem et tabulam fabulae imponet, promptum inseret, generabit, et clipeum reddet — partem per partem, etiam pro longo video (limen Flow ~8s/clipeum, quare ad 8s secamus). Vocem originalem ipsi superimponemus. Modus manualis — bullae in chartis.",
+      "pt_speaker": "Orator propinquus",
+      "pt_title": "Titulus totum tegumentum",
+      "pt_cutaway": "Intermissio",
+      "pt_split": "Scissum tegumentum",
+      "pt_mockup": "Exemplar",
+      "pt_final": "Finis + CTA",
+      "style_clean": "Mundus",
+      "style_neon": "Neon",
+      "style_paper": "Chartaceus",
+      "style_terminal": "Terminalis",
+      "style_bold": "Audax"
     }
   }
 }

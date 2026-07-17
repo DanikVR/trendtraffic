@@ -1191,7 +1191,7 @@
     "geminiFixCount": 78,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:17.725Z",
+    "pivotAt": "2026-07-17T18:57:24.038Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: erè",
       "fqQueued": "nan fil Flow",
       "fqRunning": "ap jenere nan Flow…",
-      "genIntroFlow2": "Motè Flow — OTOMATIK: louvri labs.google → Flow nan navigatè ou a ak ekstansyon TrendTraffic la epi klike sou bouton ki anba a. Ekstansyon an pral otomatikman telechaje moso a ak storyboard la, mete envite a, jenere, epi retounen clip la — moso pa moso, menm pou yon videyo long (limit Flow ~8s/clip, se poutèt sa nou koupe a 8s). Nou pral sipèpoze vwa orijinal la tèt nou. Mòd manyèl — bouton sou kat yo."
+      "genIntroFlow2": "Motè Flow — OTOMATIK: louvri labs.google → Flow nan navigatè ou a ak ekstansyon TrendTraffic la epi klike sou bouton ki anba a. Ekstansyon an pral otomatikman telechaje moso a ak storyboard la, mete envite a, jenere, epi retounen clip la — moso pa moso, menm pou yon videyo long (limit Flow ~8s/clip, se poutèt sa nou koupe a 8s). Nou pral sipèpoze vwa orijinal la tèt nou. Mòd manyèl — bouton sou kat yo.",
+      "pt_speaker": "Oratè an premye plan",
+      "pt_title": "Tit tout ekran",
+      "pt_cutaway": "Koupe",
+      "pt_split": "Ekran divize",
+      "pt_mockup": "Makèt",
+      "pt_final": "Final + CTA",
+      "style_clean": "Pwòp",
+      "style_neon": "Neyon",
+      "style_paper": "Papye",
+      "style_terminal": "Tèminal",
+      "style_bold": "Gras"
     }
   }
 }

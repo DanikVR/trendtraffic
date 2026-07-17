@@ -1191,7 +1191,7 @@
     "geminiFixCount": 141,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:17.171Z",
+    "pivotAt": "2026-07-17T18:57:23.969Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: greška",
       "fqQueued": "u Flow redu",
       "fqRunning": "generiranje u Flowu…",
-      "genIntroFlow2": "Flow engine — AUTOMATSKI: otvorite labs.google → Flow u svom pregledniku s TrendTraffic proširenjem i kliknite gumb ispod. Proširenje će automatski prenijeti isječak i storyboard, umetnuti prompt, generirati i vratiti isječak — isječak po isječak, čak i za dugi video (Flow ograničenje ~8s/isječak, zato režemo na 8s). Sami ćemo prekriti originalni glas. Ručni način — gumbi na karticama."
+      "genIntroFlow2": "Flow engine — AUTOMATSKI: otvorite labs.google → Flow u svom pregledniku s TrendTraffic proširenjem i kliknite gumb ispod. Proširenje će automatski prenijeti isječak i storyboard, umetnuti prompt, generirati i vratiti isječak — isječak po isječak, čak i za dugi video (Flow ograničenje ~8s/isječak, zato režemo na 8s). Sami ćemo prekriti originalni glas. Ručni način — gumbi na karticama.",
+      "pt_speaker": "Krupni plan govornika",
+      "pt_title": "Naslov preko cijelog zaslona",
+      "pt_cutaway": "Umetnuti kadar",
+      "pt_split": "Podijeljeni zaslon",
+      "pt_mockup": "Maketa",
+      "pt_final": "Završno + CTA",
+      "style_clean": "Čisto",
+      "style_neon": "Neon",
+      "style_paper": "Papir",
+      "style_terminal": "Terminal",
+      "style_bold": "Podebljano"
     }
   }
 }

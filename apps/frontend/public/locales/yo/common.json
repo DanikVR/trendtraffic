@@ -1173,7 +1173,7 @@
     "geminiFixCount": 59,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:27.510Z",
+    "pivotAt": "2026-07-17T18:57:36.628Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: aṣiṣe",
       "fqQueued": "ninu isinyi Flow",
       "fqRunning": "nṣe ipilẹṣẹ ni Flow…",
-      "genIntroFlow2": "Ẹrọ Flow — ADAṢE: ṣii labs.google → Flow ninu aṣawakiri rẹ pẹlu itẹsiwaju TrendTraffic ki o tẹ bọtini isalẹ. Itẹsiwaju naa yoo gbe abala ati storyboard soke laifọwọyi, fi iṣiṣẹda sii, ṣe ipilẹṣẹ, ati da agekuru naa pada — abala nipasẹ abala, paapaa fun fidio gigun (opin Flow ~8s/agekuru, eyi ni idi ti a fi ge si 8s). A yoo fi ohun atilẹba si ori rẹ funrarawa. Ipo Afọwọṣe — awọn bọtini lori awọn kaadi."
+      "genIntroFlow2": "Ẹrọ Flow — ADAṢE: ṣii labs.google → Flow ninu aṣawakiri rẹ pẹlu itẹsiwaju TrendTraffic ki o tẹ bọtini isalẹ. Itẹsiwaju naa yoo gbe abala ati storyboard soke laifọwọyi, fi iṣiṣẹda sii, ṣe ipilẹṣẹ, ati da agekuru naa pada — abala nipasẹ abala, paapaa fun fidio gigun (opin Flow ~8s/agekuru, eyi ni idi ti a fi ge si 8s). A yoo fi ohun atilẹba si ori rẹ funrarawa. Ipo Afọwọṣe — awọn bọtini lori awọn kaadi.",
+      "pt_speaker": "Agbọrọsọ sunmọ",
+      "pt_title": "Akọle iboju kikun",
+      "pt_cutaway": "Gige kuro",
+      "pt_split": "Iboju pipin",
+      "pt_mockup": "Apẹrẹ",
+      "pt_final": "Ipari + CTA",
+      "style_clean": "Mọ",
+      "style_neon": "Neon",
+      "style_paper": "Iwe",
+      "style_terminal": "Ebute",
+      "style_bold": "Lile"
     }
   }
 }

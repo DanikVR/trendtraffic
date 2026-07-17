@@ -1173,7 +1173,7 @@
     "geminiFixCount": 23,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:55.587Z",
+    "pivotAt": "2026-07-17T18:57:20.294Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: sayop",
       "fqQueued": "sa Flow queue",
       "fqRunning": "nag-generate sa Flow…",
-      "genIntroFlow2": "Flow engine — AWtomatiko: ablihi ang labs.google → Flow sa imong browser gamit ang TrendTraffic extension ug i-klik ang button sa ubos. Ang extension awtomatikong mag-upload sa chunk ug storyboard, mag-insert sa prompt, mag-generate, ug magbalik sa clip — chunk by chunk, bisan alang sa taas nga video (Flow limit ~8s/clip, mao nga giputol namo ngadto sa 8s). Kami mismo ang mo-overlay sa orihinal nga tingog. Manual mode — mga button sa mga card."
+      "genIntroFlow2": "Flow engine — AWtomatiko: ablihi ang labs.google → Flow sa imong browser gamit ang TrendTraffic extension ug i-klik ang button sa ubos. Ang extension awtomatikong mag-upload sa chunk ug storyboard, mag-insert sa prompt, mag-generate, ug magbalik sa clip — chunk by chunk, bisan alang sa taas nga video (Flow limit ~8s/clip, mao nga giputol namo ngadto sa 8s). Kami mismo ang mo-overlay sa orihinal nga tingog. Manual mode — mga button sa mga card.",
+      "pt_speaker": "Close-up speaker",
+      "pt_title": "Full-screen title",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Split screen",
+      "pt_mockup": "Mockup",
+      "pt_final": "Final + CTA",
+      "style_clean": "Limpyo",
+      "style_neon": "Neon",
+      "style_paper": "Papel",
+      "style_terminal": "Terminal",
+      "style_bold": "Bold"
     }
   }
 }

@@ -1173,7 +1173,7 @@
     "geminiFixCount": 56,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:02.285Z",
+    "pivotAt": "2026-07-17T18:57:20.918Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: eraro",
       "fqQueued": "en Flow-vico",
       "fqRunning": "generante en Flow…",
-      "genIntroFlow2": "Flow-motoro — AŬTOMATA: malfermu labs.google → Flow en via retumilo kun la etendaĵo TrendTraffic kaj alklaku la suban butonon. La etendaĵo aŭtomate alŝutos la pecon kaj rakontotabulon, enigos la petotekston, generos, kaj resendos la klipon — pecon post peco, eĉ por longa video (Flow-limo ~8s/klipo, tial ni tranĉas al 8s). Ni mem supermetos la originalan voĉon. Mana reĝimo — butonoj sur kartoj."
+      "genIntroFlow2": "Flow-motoro — AŬTOMATA: malfermu labs.google → Flow en via retumilo kun la etendaĵo TrendTraffic kaj alklaku la suban butonon. La etendaĵo aŭtomate alŝutos la pecon kaj rakontotabulon, enigos la petotekston, generos, kaj resendos la klipon — pecon post peco, eĉ por longa video (Flow-limo ~8s/klipo, tial ni tranĉas al 8s). Ni mem supermetos la originalan voĉon. Mana reĝimo — butonoj sur kartoj.",
+      "pt_speaker": "Proksim-plana parolanto",
+      "pt_title": "Tutekrana titolo",
+      "pt_cutaway": "For-tranĉo",
+      "pt_split": "Disigita ekrano",
+      "pt_mockup": "Maketo",
+      "pt_final": "Fina + CTA",
+      "style_clean": "Pura",
+      "style_neon": "Neono",
+      "style_paper": "Papero",
+      "style_terminal": "Terminalo",
+      "style_bold": "Aŭdaca"
     }
   }
 }

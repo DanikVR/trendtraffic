@@ -1173,7 +1173,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:16.226Z",
+    "pivotAt": "2026-07-17T18:57:23.966Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: yuam kev",
       "fqQueued": "hauv Flow queue",
       "fqRunning": "generating hauv Flow…",
-      "genIntroFlow2": "Flow engine — AUTOMATIC: qhib labs.google → Flow hauv koj tus browser nrog TrendTraffic extension thiab nyem lub pob hauv qab no. Qhov txuas ntxiv yuav cia li upload cov chunk thiab storyboard, ntxig cov lus qhia, tsim, thiab xa rov qab cov clip — chunk los ntawm chunk, txawm tias rau cov yeeb yaj kiab ntev (Flow limit ~8s/clip, yog vim li cas peb thiaj li txiav mus rau 8s). Peb yuav overlay lub suab qub peb tus kheej. Hom kev qhia — cov nyees khawm ntawm daim npav."
+      "genIntroFlow2": "Flow engine — AUTOMATIC: qhib labs.google → Flow hauv koj tus browser nrog TrendTraffic extension thiab nyem lub pob hauv qab no. Qhov txuas ntxiv yuav cia li upload cov chunk thiab storyboard, ntxig cov lus qhia, tsim, thiab xa rov qab cov clip — chunk los ntawm chunk, txawm tias rau cov yeeb yaj kiab ntev (Flow limit ~8s/clip, yog vim li cas peb thiaj li txiav mus rau 8s). Peb yuav overlay lub suab qub peb tus kheej. Hom kev qhia — cov nyees khawm ntawm daim npav.",
+      "pt_speaker": "Tus hais lus ze",
+      "pt_title": "Npe puv npo",
+      "pt_cutaway": "Txiav tawm",
+      "pt_split": "Faib npo",
+      "pt_mockup": "Qauv",
+      "pt_final": "Kawg + CTA",
+      "style_clean": "Huv si",
+      "style_neon": "Xim ci",
+      "style_paper": "Daim ntawv",
+      "style_terminal": "Terminal",
+      "style_bold": "Sau ntawv tuab"
     }
   }
 }

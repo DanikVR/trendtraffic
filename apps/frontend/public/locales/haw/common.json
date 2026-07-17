@@ -1173,7 +1173,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:11.998Z",
+    "pivotAt": "2026-07-17T18:57:23.280Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: hewa",
       "fqQueued": "i ka pila Flow",
       "fqRunning": "ke hana nei ma Flow…",
-      "genIntroFlow2": "Mīkini Flow — MAʻALAHI: e wehe i labs.google → Flow ma kāu polokalamu kele pūnaewele me ka hoʻonui TrendTraffic a kaomi i ke pihi ma lalo. E hoʻouka maʻalahi ka hoʻonui i ka ʻāpana a me ka papa moʻolelo, e hoʻokomo i ka prompt, e hana, a e hoʻihoʻi i ke kiʻi — ʻāpana ma ka ʻāpana, ʻoiai no kahi wikiō lōʻihi (ka palena Flow ~8s/kiʻi, ʻo ia ke kumu i ʻoki ai mākou i 8s). E hoʻopili mākou i ka leo kumu iā mākou iho. Ke ʻano lima — nā pihi ma nā kāleka."
+      "genIntroFlow2": "Mīkini Flow — MAʻALAHI: e wehe i labs.google → Flow ma kāu polokalamu kele pūnaewele me ka hoʻonui TrendTraffic a kaomi i ke pihi ma lalo. E hoʻouka maʻalahi ka hoʻonui i ka ʻāpana a me ka papa moʻolelo, e hoʻokomo i ka prompt, e hana, a e hoʻihoʻi i ke kiʻi — ʻāpana ma ka ʻāpana, ʻoiai no kahi wikiō lōʻihi (ka palena Flow ~8s/kiʻi, ʻo ia ke kumu i ʻoki ai mākou i 8s). E hoʻopili mākou i ka leo kumu iā mākou iho. Ke ʻano lima — nā pihi ma nā kāleka.",
+      "pt_speaker": "Leo kokoke",
+      "pt_title": "Poʻo inoa piha",
+      "pt_cutaway": "ʻOkiʻoki",
+      "pt_split": "Māhele pale",
+      "pt_mockup": "Hoʻohālike",
+      "pt_final": "Hope + CTA",
+      "style_clean": "Maʻemaʻe",
+      "style_neon": "Neon",
+      "style_paper": "Pepapila",
+      "style_terminal": "Kikowaena",
+      "style_bold": "Mānoanoa"
     }
   }
 }

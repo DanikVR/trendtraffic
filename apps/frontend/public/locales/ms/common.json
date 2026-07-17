@@ -1191,7 +1191,7 @@
     "geminiFixCount": 119,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:42.407Z",
+    "pivotAt": "2026-07-17T18:57:28.808Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: ralat",
       "fqQueued": "dalam barisan Flow",
       "fqRunning": "menjana dalam Flow…",
-      "genIntroFlow2": "Enjin Flow — AUTOMATIK: buka labs.google → Flow dalam pelayar anda dengan sambungan TrendTraffic dan klik butang di bawah. Sambungan akan memuat naik cacahan dan papan cerita secara automatik, memasukkan gesaan, menjana, dan mengembalikan klip — cacahan demi cacahan, walaupun untuk video panjang (had Flow ~8s/klip, sebab itu kami potong kepada 8s). Kami akan menindih suara asal sendiri. Mod manual — butang pada kad."
+      "genIntroFlow2": "Enjin Flow — AUTOMATIK: buka labs.google → Flow dalam pelayar anda dengan sambungan TrendTraffic dan klik butang di bawah. Sambungan akan memuat naik cacahan dan papan cerita secara automatik, memasukkan gesaan, menjana, dan mengembalikan klip — cacahan demi cacahan, walaupun untuk video panjang (had Flow ~8s/klip, sebab itu kami potong kepada 8s). Kami akan menindih suara asal sendiri. Mod manual — butang pada kad.",
+      "pt_speaker": "Pembesar suara dekat",
+      "pt_title": "Tajuk skrin penuh",
+      "pt_cutaway": "Potongan",
+      "pt_split": "Skrin pisah",
+      "pt_mockup": "Mockup",
+      "pt_final": "Akhir + CTA",
+      "style_clean": "Bersih",
+      "style_neon": "Neon",
+      "style_paper": "Kertas",
+      "style_terminal": "Terminal",
+      "style_bold": "Tebal"
     }
   }
 }

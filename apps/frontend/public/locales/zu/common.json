@@ -1173,7 +1173,7 @@
     "geminiFixCount": 108,
     "geminiSourceHash": "8b2847303d250145",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:28.196Z",
+    "pivotAt": "2026-07-17T18:57:37.109Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "I-Flow: iphutha",
       "fqQueued": "kulayini we-Flow",
       "fqRunning": "iyakhiqiza ku-Flow…",
-      "genIntroFlow2": "Injini ye-Flow — OKUZENZAKALELAYO: vula i-labs.google → Flow kusiphequluli sakho ngesandiso se-TrendTraffic bese uchofoza inkinobho engezansi. Isandiso sizolayisha ngokuzenzakalelayo ingxenye ne-storyboard, sifake i-prompt, sikhiqize, bese sibuyisela isiqeshana — ingxenye ngengxenye, ngisho nevidiyo ende (umkhawulo we-Flow ~8s/isiqeshana, yingakho sisika sibe ngu-8s). Sizobeka izwi langempela phezu kwaso. Imodi yemanuwali — izinkinobho kumakhadi."
+      "genIntroFlow2": "Injini ye-Flow — OKUZENZAKALELAYO: vula i-labs.google → Flow kusiphequluli sakho ngesandiso se-TrendTraffic bese uchofoza inkinobho engezansi. Isandiso sizolayisha ngokuzenzakalelayo ingxenye ne-storyboard, sifake i-prompt, sikhiqize, bese sibuyisela isiqeshana — ingxenye ngengxenye, ngisho nevidiyo ende (umkhawulo we-Flow ~8s/isiqeshana, yingakho sisika sibe ngu-8s). Sizobeka izwi langempela phezu kwaso. Imodi yemanuwali — izinkinobho kumakhadi.",
+      "pt_speaker": "Isikhulumi esiseduze",
+      "pt_title": "Isihloko esigcwele isikrini",
+      "pt_cutaway": "Ukusika",
+      "pt_split": "Isikrini esihlukanisiwe",
+      "pt_mockup": "Imodeli",
+      "pt_final": "Okokugcina + CTA",
+      "style_clean": "Okuhlanzekile",
+      "style_neon": "I-Neon",
+      "style_paper": "Iphepha",
+      "style_terminal": "Itheminali",
+      "style_bold": "Okugqamile"
     }
   }
 }

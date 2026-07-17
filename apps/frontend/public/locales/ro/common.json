@@ -1191,7 +1191,7 @@
     "geminiFixCount": 157,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:51.789Z",
+    "pivotAt": "2026-07-17T18:57:31.079Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: eroare",
       "fqQueued": "în coada Flow",
       "fqRunning": "generare în Flow…",
-      "genIntroFlow2": "Motor Flow — AUTOMAT: deschide labs.google → Flow în browserul tău cu extensia TrendTraffic și apasă butonul de mai jos. Extensia va încărca automat fragmentul și storyboard-ul, va insera promptul, va genera și va returna clipul — fragment cu fragment, chiar și pentru un videoclip lung (limita Flow ~8s/clip, de aceea tăiem la 8s). Vom suprapune noi vocea originală. Mod manual — butoane pe carduri."
+      "genIntroFlow2": "Motor Flow — AUTOMAT: deschide labs.google → Flow în browserul tău cu extensia TrendTraffic și apasă butonul de mai jos. Extensia va încărca automat fragmentul și storyboard-ul, va insera promptul, va genera și va returna clipul — fragment cu fragment, chiar și pentru un videoclip lung (limita Flow ~8s/clip, de aceea tăiem la 8s). Vom suprapune noi vocea originală. Mod manual — butoane pe carduri.",
+      "pt_speaker": "Gros-plan vorbitor",
+      "pt_title": "Titlu pe tot ecranul",
+      "pt_cutaway": "Insert",
+      "pt_split": "Ecran divizat",
+      "pt_mockup": "Machetă",
+      "pt_final": "Final + CTA",
+      "style_clean": "Curat",
+      "style_neon": "Neon",
+      "style_paper": "Hârtie",
+      "style_terminal": "Terminal",
+      "style_bold": "Îndrăzneț"
     }
   }
 }

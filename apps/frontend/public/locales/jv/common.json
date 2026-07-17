@@ -1191,7 +1191,7 @@
     "geminiFixCount": 73,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:23.786Z",
+    "pivotAt": "2026-07-17T18:57:25.347Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: kesalahan",
       "fqQueued": "ing antrian Flow",
       "fqRunning": "nggawe ing Flow…",
-      "genIntroFlow2": "Mesin Flow — OTOMATIS: bukak labs.google → Flow ing browser sampeyan kanthi ekstensi TrendTraffic lan klik tombol ing ngisor iki. Ekstensi bakal kanthi otomatis ngunggah potongan lan storyboard, nyisipake prompt, ngasilake, lan ngasilake klip — potongan demi potongan, sanajan kanggo video dawa (watesan Flow ~8s/klip, mula kita motong nganti 8s). Kita bakal overlay swara asli dhewe. Mode manual — tombol ing kertu."
+      "genIntroFlow2": "Mesin Flow — OTOMATIS: bukak labs.google → Flow ing browser sampeyan kanthi ekstensi TrendTraffic lan klik tombol ing ngisor iki. Ekstensi bakal kanthi otomatis ngunggah potongan lan storyboard, nyisipake prompt, ngasilake, lan ngasilake klip — potongan demi potongan, sanajan kanggo video dawa (watesan Flow ~8s/klip, mula kita motong nganti 8s). Kita bakal overlay swara asli dhewe. Mode manual — tombol ing kertu.",
+      "pt_speaker": "Speaker close-up",
+      "pt_title": "Judul sak layar",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Layar pisah",
+      "pt_mockup": "Mockup",
+      "pt_final": "Pungkasan + CTA",
+      "style_clean": "Resik",
+      "style_neon": "Neon",
+      "style_paper": "Kertas",
+      "style_terminal": "Terminal",
+      "style_bold": "Kandel"
     }
   }
 }

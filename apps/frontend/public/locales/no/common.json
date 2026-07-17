@@ -1173,7 +1173,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:45.571Z",
+    "pivotAt": "2026-07-17T18:57:29.218Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: feil",
       "fqQueued": "i Flow-kø",
       "fqRunning": "genererer i Flow…",
-      "genIntroFlow2": "Flow-motor — AUTOMATISK: åpne labs.google → Flow i nettleseren din med TrendTraffic-utvidelsen og klikk på knappen nedenfor. Utvidelsen vil automatisk laste opp klippet og storyboardet, sette inn prompten, generere og returnere klippet — klipp for klipp, selv for en lang video (Flow-grense ~8s/klipp, derfor kutter vi til 8s). Vi legger over den originale stemmen selv. Manuell modus — knapper på kort."
+      "genIntroFlow2": "Flow-motor — AUTOMATISK: åpne labs.google → Flow i nettleseren din med TrendTraffic-utvidelsen og klikk på knappen nedenfor. Utvidelsen vil automatisk laste opp klippet og storyboardet, sette inn prompten, generere og returnere klippet — klipp for klipp, selv for en lang video (Flow-grense ~8s/klipp, derfor kutter vi til 8s). Vi legger over den originale stemmen selv. Manuell modus — knapper på kort.",
+      "pt_speaker": "Nærbilde av foredragsholder",
+      "pt_title": "Tittel i fullskjerm",
+      "pt_cutaway": "Klipp",
+      "pt_split": "Delt skjerm",
+      "pt_mockup": "Mockup",
+      "pt_final": "Endelig + CTA",
+      "style_clean": "Rent",
+      "style_neon": "Neon",
+      "style_paper": "Papir",
+      "style_terminal": "Terminal",
+      "style_bold": "Fet"
     }
   }
 }

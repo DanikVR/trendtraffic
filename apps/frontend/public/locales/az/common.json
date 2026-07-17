@@ -1173,7 +1173,7 @@
     "geminiFixCount": 30,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:50.268Z",
+    "pivotAt": "2026-07-17T18:57:18.650Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: xəta",
       "fqQueued": "Flow növbəsində",
       "fqRunning": "Flow-da yaradılır…",
-      "genIntroFlow2": "Flow mühərriki — AVTOMATİK: brauzerinizdə TrendTraffic uzantısı ilə labs.google → Flow-u açın və aşağıdakı düyməyə klikləyin. Uzantı avtomatik olaraq hissəni və ssenari taxtasını yükləyəcək, sorğunu daxil edəcək, yaradacaq və klipi qaytaracaq — hissə-hissə, hətta uzun video üçün (Flow limiti ~8s/klip, buna görə də 8s-ə kəsirik). Orijinal səsi özümüz üst-üstə qoyacağıq. Əl rejimi — kartlardakı düymələr."
+      "genIntroFlow2": "Flow mühərriki — AVTOMATİK: brauzerinizdə TrendTraffic uzantısı ilə labs.google → Flow-u açın və aşağıdakı düyməyə klikləyin. Uzantı avtomatik olaraq hissəni və ssenari taxtasını yükləyəcək, sorğunu daxil edəcək, yaradacaq və klipi qaytaracaq — hissə-hissə, hətta uzun video üçün (Flow limiti ~8s/klip, buna görə də 8s-ə kəsirik). Orijinal səsi özümüz üst-üstə qoyacağıq. Əl rejimi — kartlardakı düymələr.",
+      "pt_speaker": "Spiker yaxın plan",
+      "pt_title": "Tam ekran başlığı",
+      "pt_cutaway": "Kəsmə",
+      "pt_split": "Bölünmüş ekran",
+      "pt_mockup": "Maket",
+      "pt_final": "Son + CTA",
+      "style_clean": "Təmiz",
+      "style_neon": "Neon",
+      "style_paper": "Kağız",
+      "style_terminal": "Terminal",
+      "style_bold": "Qalın"
     }
   }
 }

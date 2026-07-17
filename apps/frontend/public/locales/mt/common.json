@@ -1173,7 +1173,7 @@
     "geminiFixCount": 19,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:44.328Z",
+    "pivotAt": "2026-07-17T18:57:29.419Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: żball",
       "fqQueued": "fil-kju tal-Flow",
       "fqRunning": "qiegħed jiġġenera f'Flow…",
-      "genIntroFlow2": "Magna Flow — AWTOMATIKA: iftaħ labs.google → Flow fil-browser tiegħek bl-estensjoni TrendTraffic u kklikkja l-buttuna hawn taħt. L-estensjoni awtomatikament ittella' l-biċċa u l-storyboard, iddaħħal il-prompt, tiġġenera, u tirritorna l-clip — biċċa biċċa, anki għal video twil (limitu ta' Flow ~8s/clip, hu għalhekk li naqtgħu sa 8s). Aħna npoġġu l-vuċi oriġinali aħna stess. Mod manwali — buttuni fuq il-karti."
+      "genIntroFlow2": "Magna Flow — AWTOMATIKA: iftaħ labs.google → Flow fil-browser tiegħek bl-estensjoni TrendTraffic u kklikkja l-buttuna hawn taħt. L-estensjoni awtomatikament ittella' l-biċċa u l-storyboard, iddaħħal il-prompt, tiġġenera, u tirritorna l-clip — biċċa biċċa, anki għal video twil (limitu ta' Flow ~8s/clip, hu għalhekk li naqtgħu sa 8s). Aħna npoġġu l-vuċi oriġinali aħna stess. Mod manwali — buttuni fuq il-karti.",
+      "pt_speaker": "Speaker mill-qrib",
+      "pt_title": "Titlu fuq skrin sħiħ",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Skrin maqsum",
+      "pt_mockup": "Mockup",
+      "pt_final": "Finali + CTA",
+      "style_clean": "Nadif",
+      "style_neon": "Neon",
+      "style_paper": "Karta",
+      "style_terminal": "Terminal",
+      "style_bold": "Qawwi"
     }
   }
 }

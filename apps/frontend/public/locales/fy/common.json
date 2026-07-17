@@ -1191,7 +1191,7 @@
     "geminiFixCount": 68,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:05.238Z",
+    "pivotAt": "2026-07-17T18:57:22.235Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: flater",
       "fqQueued": "yn Flow-wachtrige",
       "fqRunning": "generearje yn Flow…",
-      "genIntroFlow2": "Flow-motor — AUTOMATYSK: iepenje labs.google → Flow yn jo browser mei de TrendTraffic-útwreiding en klik op de knop hjirûnder. De útwreiding sil it stik en storyboard automatysk uploade, de prompt ynfoegje, generearje en de klip weromjaan — stik foar stik, sels foar in lange fideo (Flow-limyt ~8s/klip, dêrom knippe wy nei 8s). Wy sille de orizjinele stim sels oerlizze. Hânmjittige modus — knoppen op kaarten."
+      "genIntroFlow2": "Flow-motor — AUTOMATYSK: iepenje labs.google → Flow yn jo browser mei de TrendTraffic-útwreiding en klik op de knop hjirûnder. De útwreiding sil it stik en storyboard automatysk uploade, de prompt ynfoegje, generearje en de klip weromjaan — stik foar stik, sels foar in lange fideo (Flow-limyt ~8s/klip, dêrom knippe wy nei 8s). Wy sille de orizjinele stim sels oerlizze. Hânmjittige modus — knoppen op kaarten.",
+      "pt_speaker": "Sprekker tichtby",
+      "pt_title": "Folskermtitel",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Dield skerm",
+      "pt_mockup": "Mockup",
+      "pt_final": "Finale + CTA",
+      "style_clean": "Skjin",
+      "style_neon": "Neon",
+      "style_paper": "Papier",
+      "style_terminal": "Terminal",
+      "style_bold": "Fet"
     }
   }
 }

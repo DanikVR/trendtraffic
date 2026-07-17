@@ -1173,7 +1173,7 @@
     "geminiFixCount": 37,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:12.615Z",
+    "pivotAt": "2026-07-17T18:57:34.549Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: error",
       "fqQueued": "nasa Flow queue",
       "fqRunning": "nag-ge-generate sa Flow…",
-      "genIntroFlow2": "Flow engine — AUTOMATIC: buksan ang labs.google → Flow sa iyong browser gamit ang TrendTraffic extension at i-click ang button sa ibaba. Awtomatikong ia-upload ng extension ang chunk at storyboard, ipapasok ang prompt, mag-ge-generate, at ibabalik ang clip — chunk by chunk, kahit para sa mahabang video (limitasyon ng Flow ~8s/clip, kaya pinutol namin sa 8s). Kami mismo ang mag-o-overlay ng orihinal na boses. Manual mode — mga button sa mga card."
+      "genIntroFlow2": "Flow engine — AUTOMATIC: buksan ang labs.google → Flow sa iyong browser gamit ang TrendTraffic extension at i-click ang button sa ibaba. Awtomatikong ia-upload ng extension ang chunk at storyboard, ipapasok ang prompt, mag-ge-generate, at ibabalik ang clip — chunk by chunk, kahit para sa mahabang video (limitasyon ng Flow ~8s/clip, kaya pinutol namin sa 8s). Kami mismo ang mag-o-overlay ng orihinal na boses. Manual mode — mga button sa mga card.",
+      "pt_speaker": "Close-up speaker",
+      "pt_title": "Full-screen title",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Split screen",
+      "pt_mockup": "Mockup",
+      "pt_final": "Final + CTA",
+      "style_clean": "Clean",
+      "style_neon": "Neon",
+      "style_paper": "Paper",
+      "style_terminal": "Terminal",
+      "style_bold": "Bold"
     }
   }
 }

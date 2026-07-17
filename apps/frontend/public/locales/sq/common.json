@@ -1191,7 +1191,7 @@
     "geminiFixCount": 141,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:04.650Z",
+    "pivotAt": "2026-07-17T18:57:32.622Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: gabim",
       "fqQueued": "në radhën e Flow",
       "fqRunning": "duke gjeneruar në Flow…",
-      "genIntroFlow2": "Motorri Flow — AUTOMATIK: hapni labs.google → Flow në shfletuesin tuaj me shtesën TrendTraffic dhe klikoni butonin më poshtë. Shtesa do të ngarkojë automatikisht copën dhe storyboard-in, do të fusë kërkesën, do të gjenerojë dhe do të kthejë klipin — copë pas cope, edhe për një video të gjatë (limiti i Flow ~8s/klip, prandaj ne presim në 8s). Ne do të mbivendosim zërin origjinal vetë. Modaliteti manual — butona në karta."
+      "genIntroFlow2": "Motorri Flow — AUTOMATIK: hapni labs.google → Flow në shfletuesin tuaj me shtesën TrendTraffic dhe klikoni butonin më poshtë. Shtesa do të ngarkojë automatikisht copën dhe storyboard-in, do të fusë kërkesën, do të gjenerojë dhe do të kthejë klipin — copë pas cope, edhe për një video të gjatë (limiti i Flow ~8s/klip, prandaj ne presim në 8s). Ne do të mbivendosim zërin origjinal vetë. Modaliteti manual — butona në karta.",
+      "pt_speaker": "Folës nga afër",
+      "pt_title": "Titull në ekran të plotë",
+      "pt_cutaway": "Pamje e ndërmjetme",
+      "pt_split": "Ekran i ndarë",
+      "pt_mockup": "Maket",
+      "pt_final": "Përfundimtare + CTA",
+      "style_clean": "E pastër",
+      "style_neon": "Neon",
+      "style_paper": "Letër",
+      "style_terminal": "Terminal",
+      "style_bold": "E theksuar"
     }
   }
 }

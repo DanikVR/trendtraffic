@@ -1191,7 +1191,7 @@
     "geminiFixCount": 192,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:51.283Z",
+    "pivotAt": "2026-07-17T18:57:30.521Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: erro",
       "fqQueued": "na fila do Flow",
       "fqRunning": "gerando no Flow…",
-      "genIntroFlow2": "Motor Flow — AUTOMÁTICO: abra labs.google → Flow no seu navegador com a extensão TrendTraffic e clique no botão abaixo. A extensão fará o upload automático do segmento e do storyboard, inserirá o prompt, gerará e retornará o clipe — segmento por segmento, mesmo para um vídeo longo (limite do Flow ~8s/clipe, por isso cortamos para 8s). Nós sobreporemos a voz original. Modo manual — botões nos cartões."
+      "genIntroFlow2": "Motor Flow — AUTOMÁTICO: abra labs.google → Flow no seu navegador com a extensão TrendTraffic e clique no botão abaixo. A extensão fará o upload automático do segmento e do storyboard, inserirá o prompt, gerará e retornará o clipe — segmento por segmento, mesmo para um vídeo longo (limite do Flow ~8s/clipe, por isso cortamos para 8s). Nós sobreporemos a voz original. Modo manual — botões nos cartões.",
+      "pt_speaker": "Close-up do orador",
+      "pt_title": "Título em tela cheia",
+      "pt_cutaway": "Corte",
+      "pt_split": "Tela dividida",
+      "pt_mockup": "Mockup",
+      "pt_final": "Final + CTA",
+      "style_clean": "Limpo",
+      "style_neon": "Neon",
+      "style_paper": "Papel",
+      "style_terminal": "Terminal",
+      "style_bold": "Negrito"
     }
   }
 }

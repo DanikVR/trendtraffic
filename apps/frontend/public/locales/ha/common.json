@@ -1173,7 +1173,7 @@
     "geminiFixCount": 20,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:10.567Z",
+    "pivotAt": "2026-07-17T18:57:23.001Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: kuskure",
       "fqQueued": "a cikin jeren Flow",
       "fqRunning": "ana samarwa a Flow…",
-      "genIntroFlow2": "Injin Flow — ATOMATIK: buɗe labs.google → Flow a cikin burauzarku tare da tsawo na TrendTraffic kuma danna maɓallin da ke ƙasa. Tsawo zai ɗora gutsure da labarin gani ta atomatik, shigar da umarni, samarwa, da dawo da shirin — gutsure-gutsure, ko da don bidiyo mai tsawo (iyakar Flow ~8s/shirye, shi ya sa muka yanke zuwa 8s). Za mu sanya muryar asali da kanmu. Yanayin hannu — maɓallai a kan katunan."
+      "genIntroFlow2": "Injin Flow — ATOMATIK: buɗe labs.google → Flow a cikin burauzarku tare da tsawo na TrendTraffic kuma danna maɓallin da ke ƙasa. Tsawo zai ɗora gutsure da labarin gani ta atomatik, shigar da umarni, samarwa, da dawo da shirin — gutsure-gutsure, ko da don bidiyo mai tsawo (iyakar Flow ~8s/shirye, shi ya sa muka yanke zuwa 8s). Za mu sanya muryar asali da kanmu. Yanayin hannu — maɓallai a kan katunan.",
+      "pt_speaker": "Mai magana kusa",
+      "pt_title": "Cikakken take",
+      "pt_cutaway": "Yanke",
+      "pt_split": "Raba allo",
+      "pt_mockup": "Misali",
+      "pt_final": "Karshe + CTA",
+      "style_clean": "Mai tsafta",
+      "style_neon": "Neon",
+      "style_paper": "Takarda",
+      "style_terminal": "Terminal",
+      "style_bold": "Mai kauri"
     }
   }
 }

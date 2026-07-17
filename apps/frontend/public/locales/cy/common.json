@@ -1191,7 +1191,7 @@
     "geminiFixCount": 65,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:57.013Z",
+    "pivotAt": "2026-07-17T18:57:19.949Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: gwall",
       "fqQueued": "mewn ciw Flow",
       "fqRunning": "yn cynhyrchu yn Flow…",
-      "genIntroFlow2": "Injan Flow — AWTO: agorwch labs.google → Flow yn eich porwr gyda'r estyniad TrendTraffic a chliciwch y botwm isod. Bydd yr estyniad yn uwchlwytho'r darn a'r stori-fwrdd yn awtomatig, yn mewnosod yr anogwr, yn cynhyrchu, ac yn dychwelyd y clip — darn fesul darn, hyd yn oed ar gyfer fideo hir (terfyn Flow ~8s/clip, dyna pam rydym yn torri i 8s). Byddwn yn gorgyffwrdd y llais gwreiddiol ein hunain. Modd llaw — botymau ar gardiau."
+      "genIntroFlow2": "Injan Flow — AWTO: agorwch labs.google → Flow yn eich porwr gyda'r estyniad TrendTraffic a chliciwch y botwm isod. Bydd yr estyniad yn uwchlwytho'r darn a'r stori-fwrdd yn awtomatig, yn mewnosod yr anogwr, yn cynhyrchu, ac yn dychwelyd y clip — darn fesul darn, hyd yn oed ar gyfer fideo hir (terfyn Flow ~8s/clip, dyna pam rydym yn torri i 8s). Byddwn yn gorgyffwrdd y llais gwreiddiol ein hunain. Modd llaw — botymau ar gardiau.",
+      "pt_speaker": "Siardwr agos",
+      "pt_title": "Teitl sgrin lawn",
+      "pt_cutaway": "Torri i ffwrdd",
+      "pt_split": "Sgrin hollt",
+      "pt_mockup": "Model",
+      "pt_final": "Terfynol + CTA",
+      "style_clean": "Glan",
+      "style_neon": "Neon",
+      "style_paper": "Papur",
+      "style_terminal": "Terfynell",
+      "style_bold": "Beiddgar"
     }
   }
 }

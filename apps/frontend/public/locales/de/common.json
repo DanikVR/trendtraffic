@@ -1191,7 +1191,7 @@
     "geminiFixCount": 160,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:56.265Z",
+    "pivotAt": "2026-07-17T18:57:20.222Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: Fehler",
       "fqQueued": "in Flow-Warteschlange",
       "fqRunning": "generiere in Flow…",
-      "genIntroFlow2": "Flow-Engine – AUTOMATISCH: Öffnen Sie labs.google → Flow in Ihrem Browser mit der TrendTraffic-Erweiterung und klicken Sie auf die Schaltfläche unten. Die Erweiterung lädt den Abschnitt und das Storyboard automatisch hoch, fügt den Prompt ein, generiert und gibt den Clip zurück – Abschnitt für Abschnitt, auch für ein langes Video (Flow-Limit ~8s/Clip, deshalb schneiden wir auf 8s). Wir überlagern die Originalstimme selbst. Manueller Modus – Schaltflächen auf Karten."
+      "genIntroFlow2": "Flow-Engine – AUTOMATISCH: Öffnen Sie labs.google → Flow in Ihrem Browser mit der TrendTraffic-Erweiterung und klicken Sie auf die Schaltfläche unten. Die Erweiterung lädt den Abschnitt und das Storyboard automatisch hoch, fügt den Prompt ein, generiert und gibt den Clip zurück – Abschnitt für Abschnitt, auch für ein langes Video (Flow-Limit ~8s/Clip, deshalb schneiden wir auf 8s). Wir überlagern die Originalstimme selbst. Manueller Modus – Schaltflächen auf Karten.",
+      "pt_speaker": "Nahaufnahme Sprecher",
+      "pt_title": "Vollbildtitel",
+      "pt_cutaway": "Schnittbild",
+      "pt_split": "Splitscreen",
+      "pt_mockup": "Mockup",
+      "pt_final": "Final + CTA",
+      "style_clean": "Clean",
+      "style_neon": "Neon",
+      "style_paper": "Paper",
+      "style_terminal": "Terminal",
+      "style_bold": "Bold"
     }
   }
 }

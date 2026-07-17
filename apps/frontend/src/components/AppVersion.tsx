@@ -3133,7 +3133,13 @@
  *          _glossary не тронуты, кириллица в латинице = 0. Раньше EN-юзеры видели
  *          русские инлайн-фолбэки секций storyboard и skills. Только JSON
  *          в public/locales (common.json) — кода не менял. */
-export const APP_VERSION = '2.5.1';
+/* 2.5.2 — I18N-фикс Сториборда: 11 ДИНАМИЧЕСКИХ ключей селекторов переведены на
+ *          108 языков. Типы панелей (pt_speaker…pt_final) и стили (style_clean…
+ *          style_bold) рендерятся через t(`sec.storyboard.pt_${key}`) — harvest
+ *          их не извлекал (шаблонный ключ, не строка-литерал), из-за чего они
+ *          падали на РУССКИЙ инлайн-фолбэк (юзер увидел «Спикер крупно»/«Чистый»
+ *          в англ. UI). Добавил 11 ключей в ru → пивот ru→en→106. */
+export const APP_VERSION = '2.5.2';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

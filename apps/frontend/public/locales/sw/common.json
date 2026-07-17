@@ -1173,7 +1173,7 @@
     "geminiFixCount": 49,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:07.763Z",
+    "pivotAt": "2026-07-17T18:57:33.796Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: hitilafu",
       "fqQueued": "kwenye foleni ya Flow",
       "fqRunning": "inatengeneza katika Flow…",
-      "genIntroFlow2": "Injini ya Flow — KIOTOMATIKI: fungua labs.google → Flow kwenye kivinjari chako na kiendelezi cha TrendTraffic na ubofye kitufe kilicho hapa chini. Kiendelezi kitapakia kiotomatiki sehemu na storyboard, kuingiza prompt, kutengeneza, na kurudisha klipu — sehemu kwa sehemu, hata kwa video ndefu (kikomo cha Flow ~8s/klipu, ndiyo maana tunakata hadi 8s). Tutaweka sauti asili wenyewe. Hali ya mwongozo — vitufe kwenye kadi."
+      "genIntroFlow2": "Injini ya Flow — KIOTOMATIKI: fungua labs.google → Flow kwenye kivinjari chako na kiendelezi cha TrendTraffic na ubofye kitufe kilicho hapa chini. Kiendelezi kitapakia kiotomatiki sehemu na storyboard, kuingiza prompt, kutengeneza, na kurudisha klipu — sehemu kwa sehemu, hata kwa video ndefu (kikomo cha Flow ~8s/klipu, ndiyo maana tunakata hadi 8s). Tutaweka sauti asili wenyewe. Hali ya mwongozo — vitufe kwenye kadi.",
+      "pt_speaker": "Mzungumzaji karibu",
+      "pt_title": "Kichwa skrini nzima",
+      "pt_cutaway": "Kukata",
+      "pt_split": "Skrini iliyogawanywa",
+      "pt_mockup": "Mfano",
+      "pt_final": "Mwisho + CTA",
+      "style_clean": "Safi",
+      "style_neon": "Neon",
+      "style_paper": "Karatasi",
+      "style_terminal": "Kituo",
+      "style_bold": "Ujasiri"
     }
   }
 }

@@ -1191,7 +1191,7 @@
     "geminiFixCount": 174,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:03.979Z",
+    "pivotAt": "2026-07-17T18:57:21.474Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: virhe",
       "fqQueued": "Flow-jonossa",
       "fqRunning": "luodaan Flow'ssa…",
-      "genIntroFlow2": "Flow-moottori – AUTOMAATTINEN: avaa labs.google → Flow selaimessasi TrendTraffic-laajennuksella ja napsauta alla olevaa painiketta. Laajennus lataa automaattisesti palan ja kuvakäsikirjoituksen, lisää kehotteen, luo ja palauttaa leikkeen – pala palalta, jopa pitkälle videolle (Flow-raja ~8s/leike, minkä vuoksi leikkaamme 8s). Päällystämme alkuperäisen äänen itse. Manuaalinen tila – painikkeet korteissa."
+      "genIntroFlow2": "Flow-moottori – AUTOMAATTINEN: avaa labs.google → Flow selaimessasi TrendTraffic-laajennuksella ja napsauta alla olevaa painiketta. Laajennus lataa automaattisesti palan ja kuvakäsikirjoituksen, lisää kehotteen, luo ja palauttaa leikkeen – pala palalta, jopa pitkälle videolle (Flow-raja ~8s/leike, minkä vuoksi leikkaamme 8s). Päällystämme alkuperäisen äänen itse. Manuaalinen tila – painikkeet korteissa.",
+      "pt_speaker": "Puhujan lähikuva",
+      "pt_title": "Koko näytön otsikko",
+      "pt_cutaway": "Leikkauskuva",
+      "pt_split": "Jaettu näyttö",
+      "pt_mockup": "Mallinnus",
+      "pt_final": "Loppu + CTA",
+      "style_clean": "Selkeä",
+      "style_neon": "Neon",
+      "style_paper": "Paperi",
+      "style_terminal": "Pääte",
+      "style_bold": "Lihavoitu"
     }
   }
 }

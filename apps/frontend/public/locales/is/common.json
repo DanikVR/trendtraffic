@@ -1191,7 +1191,7 @@
     "geminiFixCount": 124,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:20.533Z",
+    "pivotAt": "2026-07-17T18:57:24.867Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: villa",
       "fqQueued": "í Flow biðröð",
       "fqRunning": "býr til í Flow…",
-      "genIntroFlow2": "Flow vél — SJÁLFVIRK: opnaðu labs.google → Flow í vafranum þínum með TrendTraffic viðbótinni og smelltu á hnappinn hér fyrir neðan. Viðbótin mun sjálfkrafa hlaða upp bútinum og söguþræðinum, setja inn hvatninguna, búa til og skila bútinum — bút fyrir bút, jafnvel fyrir langt myndband (Flow takmörkun ~8s/bút, þess vegna skerum við í 8s). Við munum leggja yfir upprunalega rödd sjálf. Handvirk stilling — hnappar á kortum."
+      "genIntroFlow2": "Flow vél — SJÁLFVIRK: opnaðu labs.google → Flow í vafranum þínum með TrendTraffic viðbótinni og smelltu á hnappinn hér fyrir neðan. Viðbótin mun sjálfkrafa hlaða upp bútinum og söguþræðinum, setja inn hvatninguna, búa til og skila bútinum — bút fyrir bút, jafnvel fyrir langt myndband (Flow takmörkun ~8s/bút, þess vegna skerum við í 8s). Við munum leggja yfir upprunalega rödd sjálf. Handvirk stilling — hnappar á kortum.",
+      "pt_speaker": "Nærmynd af ræðumanni",
+      "pt_title": "Titill á fullum skjá",
+      "pt_cutaway": "Klippa út",
+      "pt_split": "Skiptur skjár",
+      "pt_mockup": "Fyrirmynd",
+      "pt_final": "Loka + CTA",
+      "style_clean": "Hreinn",
+      "style_neon": "Neon",
+      "style_paper": "Pappír",
+      "style_terminal": "Flugstöð",
+      "style_bold": "Feitletrað"
     }
   }
 }

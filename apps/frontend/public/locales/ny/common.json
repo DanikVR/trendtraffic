@@ -1173,7 +1173,7 @@
     "geminiFixCount": 25,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:50.297Z",
+    "pivotAt": "2026-07-17T18:57:30.180Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: cholakwika",
       "fqQueued": "mu Flow queue",
       "fqRunning": "ikupanga mu Flow…",
-      "genIntroFlow2": "Flow engine — ZOKHA: tsegulani labs.google → Flow mu msakatuli wanu ndi chowonjezera cha TrendTraffic ndikudina batani ili pansipa. Chowonjezera chidzakweza zokha chunk ndi storyboard, kuyika prompt, kupanga, ndikubweza kanema — chunk ndi chunk, ngakhale pa vidiyo yayitali (Flow limit ~8s/clip, ndichifukwa chake timadula mpaka 8s). Tidzayika mawu oyambirira tokha. Njira yamanja — mabatani pa makhadi."
+      "genIntroFlow2": "Flow engine — ZOKHA: tsegulani labs.google → Flow mu msakatuli wanu ndi chowonjezera cha TrendTraffic ndikudina batani ili pansipa. Chowonjezera chidzakweza zokha chunk ndi storyboard, kuyika prompt, kupanga, ndikubweza kanema — chunk ndi chunk, ngakhale pa vidiyo yayitali (Flow limit ~8s/clip, ndichifukwa chake timadula mpaka 8s). Tidzayika mawu oyambirira tokha. Njira yamanja — mabatani pa makhadi.",
+      "pt_speaker": "Woyankhula wapafupi",
+      "pt_title": "Mutu wathunthu",
+      "pt_cutaway": "Kudula",
+      "pt_split": "Chithunzi chogawika",
+      "pt_mockup": "Chitsanzo",
+      "pt_final": "Chomaliza + CTA",
+      "style_clean": "Choyera",
+      "style_neon": "Neon",
+      "style_paper": "Pepa",
+      "style_terminal": "Terminal",
+      "style_bold": "Kulimba mtima"
     }
   }
 }

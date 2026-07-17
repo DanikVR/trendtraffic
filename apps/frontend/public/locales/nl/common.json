@@ -1173,7 +1173,7 @@
     "geminiFixCount": 50,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:44.765Z",
+    "pivotAt": "2026-07-17T18:57:29.566Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: fout",
       "fqQueued": "in Flow-wachtrij",
       "fqRunning": "genereren in Flow…",
-      "genIntroFlow2": "Flow-engine — AUTOMATISCH: open labs.google → Flow in uw browser met de TrendTraffic-extensie en klik op de onderstaande knop. De extensie uploadt automatisch de chunk en het storyboard, voegt de prompt in, genereert en retourneert de clip — chunk voor chunk, zelfs voor een lange video (Flow-limiet ~8s/clip, daarom knippen we tot 8s). We zullen de originele stem zelf eroverheen leggen. Handmatige modus — knoppen op kaarten."
+      "genIntroFlow2": "Flow-engine — AUTOMATISCH: open labs.google → Flow in uw browser met de TrendTraffic-extensie en klik op de onderstaande knop. De extensie uploadt automatisch de chunk en het storyboard, voegt de prompt in, genereert en retourneert de clip — chunk voor chunk, zelfs voor een lange video (Flow-limiet ~8s/clip, daarom knippen we tot 8s). We zullen de originele stem zelf eroverheen leggen. Handmatige modus — knoppen op kaarten.",
+      "pt_speaker": "Close-up spreker",
+      "pt_title": "Titel schermvullend",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Gesplitst scherm",
+      "pt_mockup": "Mockup",
+      "pt_final": "Eind + CTA",
+      "style_clean": "Strak",
+      "style_neon": "Neon",
+      "style_paper": "Papier",
+      "style_terminal": "Terminal",
+      "style_bold": "Vet"
     }
   }
 }

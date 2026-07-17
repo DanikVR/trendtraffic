@@ -1173,7 +1173,7 @@
     "geminiFixCount": 32,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:35.122Z",
+    "pivotAt": "2026-07-17T18:57:27.697Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: klaida",
       "fqQueued": "Flow eilėje",
       "fqRunning": "generuojama Flow…",
-      "genIntroFlow2": "Flow variklis – AUTOMATINIS: atidarykite labs.google → Flow naršyklėje su TrendTraffic išplėtiniu ir spustelėkite žemiau esantį mygtuką. Išplėtimas automatiškai įkels dalį ir siužetinę liniją, įterps užuominą, sugeneruos ir grąžins klipą – dalis po dalies, net ir ilgam vaizdo įrašui (Flow limitas ~8s/klipas, todėl mes pjauname iki 8s). Mes patys uždėsime originalų balsą. Rankinis režimas – mygtukai ant kortelių."
+      "genIntroFlow2": "Flow variklis – AUTOMATINIS: atidarykite labs.google → Flow naršyklėje su TrendTraffic išplėtiniu ir spustelėkite žemiau esantį mygtuką. Išplėtimas automatiškai įkels dalį ir siužetinę liniją, įterps užuominą, sugeneruos ir grąžins klipą – dalis po dalies, net ir ilgam vaizdo įrašui (Flow limitas ~8s/klipas, todėl mes pjauname iki 8s). Mes patys uždėsime originalų balsą. Rankinis režimas – mygtukai ant kortelių.",
+      "pt_speaker": "Artikuliuojantis planas",
+      "pt_title": "Viso ekrano pavadinimas",
+      "pt_cutaway": "Intarpas",
+      "pt_split": "Padalintas ekranas",
+      "pt_mockup": "Maketas",
+      "pt_final": "Pabaiga + CTA",
+      "style_clean": "Švarus",
+      "style_neon": "Neonas",
+      "style_paper": "Popierius",
+      "style_terminal": "Terminalas",
+      "style_bold": "Ryškus"
     }
   }
 }

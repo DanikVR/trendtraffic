@@ -1173,7 +1173,7 @@
     "geminiFixCount": 22,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:23.697Z",
+    "pivotAt": "2026-07-17T18:57:36.972Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow：错误",
       "fqQueued": "在Flow队列中",
       "fqRunning": "正在Flow中生成…",
-      "genIntroFlow2": "Flow引擎 — 自动：在您的浏览器中打开labs.google → Flow，并安装TrendTraffic扩展程序，然后点击下面的按钮。扩展程序将自动上传片段和故事板，插入提示，生成并返回剪辑 — 逐个片段，即使是长视频（Flow限制约8秒/剪辑，这就是我们剪切到8秒的原因）。我们将自行叠加原始语音。手动模式 — 卡片上的按钮。"
+      "genIntroFlow2": "Flow引擎 — 自动：在您的浏览器中打开labs.google → Flow，并安装TrendTraffic扩展程序，然后点击下面的按钮。扩展程序将自动上传片段和故事板，插入提示，生成并返回剪辑 — 逐个片段，即使是长视频（Flow限制约8秒/剪辑，这就是我们剪切到8秒的原因）。我们将自行叠加原始语音。手动模式 — 卡片上的按钮。",
+      "pt_speaker": "特写演讲者",
+      "pt_title": "全屏标题",
+      "pt_cutaway": "插播画面",
+      "pt_split": "分屏",
+      "pt_mockup": "模型",
+      "pt_final": "最终 + CTA",
+      "style_clean": "简洁",
+      "style_neon": "霓虹",
+      "style_paper": "纸张",
+      "style_terminal": "终端",
+      "style_bold": "粗体"
     }
   }
 }

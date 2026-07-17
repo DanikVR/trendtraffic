@@ -1173,7 +1173,7 @@
     "geminiFixCount": 28,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:10.378Z",
+    "pivotAt": "2026-07-17T18:57:22.437Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: earráid",
       "fqQueued": "i scuaine Flow",
       "fqRunning": "ag gineadh i Flow…",
-      "genIntroFlow2": "Inneall sreafa — Uathoibríoch: oscail labs.google → Flow i do bhrabhsálaí leis an síneadh TrendTraffic agus cliceáil an cnaipe thíos. Uaslódálfaidh an síneadh an mír agus an scéalchlár go huathoibríoch, cuirfidh sé an pras isteach, ginfidh sé, agus cuirfidh sé an gearrthóg ar ais — mír ar mhír, fiú le haghaidh físeán fada (teorainn Flow ~8s/gearrthóg, sin an fáth a ghearrann muid go 8s). Déanfaimid an guth bunaidh a fhorleagan muid féin. Mód láimhe — cnaipí ar chártaí."
+      "genIntroFlow2": "Inneall sreafa — Uathoibríoch: oscail labs.google → Flow i do bhrabhsálaí leis an síneadh TrendTraffic agus cliceáil an cnaipe thíos. Uaslódálfaidh an síneadh an mír agus an scéalchlár go huathoibríoch, cuirfidh sé an pras isteach, ginfidh sé, agus cuirfidh sé an gearrthóg ar ais — mír ar mhír, fiú le haghaidh físeán fada (teorainn Flow ~8s/gearrthóg, sin an fáth a ghearrann muid go 8s). Déanfaimid an guth bunaidh a fhorleagan muid féin. Mód láimhe — cnaipí ar chártaí.",
+      "pt_speaker": "Cainteoir dlúth",
+      "pt_title": "Teideal lánscáileáin",
+      "pt_cutaway": "Gearradh amach",
+      "pt_split": "Scáileán scoilte",
+      "pt_mockup": "Múnla",
+      "pt_final": "Deiridh + CTA",
+      "style_clean": "Glan",
+      "style_neon": "Neon",
+      "style_paper": "Páipéar",
+      "style_terminal": "Críochfort",
+      "style_bold": "Trom"
     }
   }
 }

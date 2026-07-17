@@ -1191,7 +1191,7 @@
     "geminiFixCount": 249,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:50.724Z",
+    "pivotAt": "2026-07-17T18:57:30.381Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: błąd",
       "fqQueued": "w kolejce Flow",
       "fqRunning": "generowanie w Flow…",
-      "genIntroFlow2": "Silnik Flow — AUTOMATYCZNY: otwórz labs.google → Flow w przeglądarce z rozszerzeniem TrendTraffic i kliknij przycisk poniżej. Rozszerzenie automatycznie prześle fragment i storyboard, wstawi prompt, wygeneruje i zwróci klip — fragment po fragmencie, nawet dla długiego wideo (limit Flow ~8s/klip, dlatego tniemy do 8s). Oryginalny głos nałożymy sami. Tryb ręczny — przyciski na kartach."
+      "genIntroFlow2": "Silnik Flow — AUTOMATYCZNY: otwórz labs.google → Flow w przeglądarce z rozszerzeniem TrendTraffic i kliknij przycisk poniżej. Rozszerzenie automatycznie prześle fragment i storyboard, wstawi prompt, wygeneruje i zwróci klip — fragment po fragmencie, nawet dla długiego wideo (limit Flow ~8s/klip, dlatego tniemy do 8s). Oryginalny głos nałożymy sami. Tryb ręczny — przyciski na kartach.",
+      "pt_speaker": "Zbliżenie na mówcę",
+      "pt_title": "Tytuł na pełnym ekranie",
+      "pt_cutaway": "Wstawka",
+      "pt_split": "Podzielony ekran",
+      "pt_mockup": "Makieta",
+      "pt_final": "Finał + CTA",
+      "style_clean": "Czysty",
+      "style_neon": "Neon",
+      "style_paper": "Papier",
+      "style_terminal": "Terminal",
+      "style_bold": "Pogrubiony"
     }
   }
 }

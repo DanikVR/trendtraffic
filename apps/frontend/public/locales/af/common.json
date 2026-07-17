@@ -1191,7 +1191,7 @@
     "geminiFixCount": 82,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:48.891Z",
+    "pivotAt": "2026-07-17T18:57:18.720Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: fout",
       "fqQueued": "in Flow-tou",
       "fqRunning": "besig om in Flow te genereer…",
-      "genIntroFlow2": "Flow-enjin — OUTOMATIES: maak labs.google → Flow in jou blaaier oop met die TrendTraffic-uitbreiding en klik die knoppie hieronder. Die uitbreiding sal outomaties die stuk en storiebord oplaai, die aanwysing invoeg, genereer, en die snit terugstuur — stuk vir stuk, selfs vir 'n lang video (Flow-limiet ~8s/snit, daarom sny ons tot 8s). Ons sal self die oorspronklike stem oortrek. Handmatige modus — knoppies op kaarte."
+      "genIntroFlow2": "Flow-enjin — OUTOMATIES: maak labs.google → Flow in jou blaaier oop met die TrendTraffic-uitbreiding en klik die knoppie hieronder. Die uitbreiding sal outomaties die stuk en storiebord oplaai, die aanwysing invoeg, genereer, en die snit terugstuur — stuk vir stuk, selfs vir 'n lang video (Flow-limiet ~8s/snit, daarom sny ons tot 8s). Ons sal self die oorspronklike stem oortrek. Handmatige modus — knoppies op kaarte.",
+      "pt_speaker": "Spreker-nabyskoot",
+      "pt_title": "Volskerm-titel",
+      "pt_cutaway": "Wegsnit",
+      "pt_split": "Gedeelde skerm",
+      "pt_mockup": "Model",
+      "pt_final": "Finaal + CTA",
+      "style_clean": "Skoon",
+      "style_neon": "Neon",
+      "style_paper": "Papier",
+      "style_terminal": "Terminaal",
+      "style_bold": "Vet"
     }
   }
 }

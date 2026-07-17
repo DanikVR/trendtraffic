@@ -1191,7 +1191,7 @@
     "geminiFixCount": 209,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:01.654Z",
+    "pivotAt": "2026-07-17T18:57:21.408Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: error",
       "fqQueued": "en cola de Flow",
       "fqRunning": "generando en Flow…",
-      "genIntroFlow2": "Motor Flow — AUTOMÁTICO: abre labs.google → Flow en tu navegador con la extensión TrendTraffic y haz clic en el botón de abajo. La extensión subirá automáticamente el fragmento y el guion gráfico, insertará el prompt, generará y devolverá el clip — fragmento por fragmento, incluso para un video largo (límite de Flow ~8s/clip, por eso cortamos a 8s). Nosotros superpondremos la voz original. Modo manual — botones en las tarjetas."
+      "genIntroFlow2": "Motor Flow — AUTOMÁTICO: abre labs.google → Flow en tu navegador con la extensión TrendTraffic y haz clic en el botón de abajo. La extensión subirá automáticamente el fragmento y el guion gráfico, insertará el prompt, generará y devolverá el clip — fragmento por fragmento, incluso para un video largo (límite de Flow ~8s/clip, por eso cortamos a 8s). Nosotros superpondremos la voz original. Modo manual — botones en las tarjetas.",
+      "pt_speaker": "Primer plano del orador",
+      "pt_title": "Título en pantalla completa",
+      "pt_cutaway": "Plano de corte",
+      "pt_split": "Pantalla dividida",
+      "pt_mockup": "Maqueta",
+      "pt_final": "Final + CTA",
+      "style_clean": "Limpio",
+      "style_neon": "Neón",
+      "style_paper": "Papel",
+      "style_terminal": "Terminal",
+      "style_bold": "Negrita"
     }
   }
 }

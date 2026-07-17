@@ -1173,7 +1173,7 @@
     "geminiFixCount": 45,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:14.070Z",
+    "pivotAt": "2026-07-17T18:57:34.345Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: ýalňyşlyk",
       "fqQueued": "Flow nobatynda",
       "fqRunning": "Flow-da döredilýär…",
-      "genIntroFlow2": "Flow hereketlendirijisi — AWTOMATIKI: brauzeriňizde TrendTraffic giňeltmesi bilen labs.google → Flow açyň we aşakdaky düwmä basyň. Giňeltme bölegi we sýužet tagtasyny awtomatiki ýüklär, prompty goýar, döreder we klipi yzyna gaýtaryp berer — bölek-bölek, hatda uzyn wideo üçin hem (Flow çägi ~8s/klip, şonuň üçin 8s kesýäris). Biz asyl sesi özümiz goşarys. El bilen rejim — kartlardaky düwmeler."
+      "genIntroFlow2": "Flow hereketlendirijisi — AWTOMATIKI: brauzeriňizde TrendTraffic giňeltmesi bilen labs.google → Flow açyň we aşakdaky düwmä basyň. Giňeltme bölegi we sýužet tagtasyny awtomatiki ýüklär, prompty goýar, döreder we klipi yzyna gaýtaryp berer — bölek-bölek, hatda uzyn wideo üçin hem (Flow çägi ~8s/klip, şonuň üçin 8s kesýäris). Biz asyl sesi özümiz goşarys. El bilen rejim — kartlardaky düwmeler.",
+      "pt_speaker": "Spiker ýakyndan",
+      "pt_title": "Doly ekran at",
+      "pt_cutaway": "Kesilen",
+      "pt_split": "Bölünen ekran",
+      "pt_mockup": "Maket",
+      "pt_final": "Final + CTA",
+      "style_clean": "Arassa",
+      "style_neon": "Neon",
+      "style_paper": "Kagyzy",
+      "style_terminal": "Terminal",
+      "style_bold": "Galyň"
     }
   }
 }

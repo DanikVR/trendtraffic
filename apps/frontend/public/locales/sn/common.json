@@ -1191,7 +1191,7 @@
     "geminiFixCount": 168,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:39:01.335Z",
+    "pivotAt": "2026-07-17T18:57:32.617Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: kukanganisa",
       "fqQueued": "muFlow queue",
       "fqRunning": "kugadzira muFlow…",
-      "genIntroFlow2": "Flow injini — AUTOMATIC: vhura labs.google → Flow mubrowser yako neTrendTraffic extension uye tinya bhatani riri pazasi. Iyo extension ichangobva kuisa chunk uye storyboard, isa prompt, gadzira, uye dzorera clip — chunk nechunk, kunyange yevhidhiyo refu (Flow limit ~8s/clip, ndosaka tichicheka kuita 8s). Tichaisa izwi rekutanga isu pachedu. Manual mode — mabhatani pamakadhi."
+      "genIntroFlow2": "Flow injini — AUTOMATIC: vhura labs.google → Flow mubrowser yako neTrendTraffic extension uye tinya bhatani riri pazasi. Iyo extension ichangobva kuisa chunk uye storyboard, isa prompt, gadzira, uye dzorera clip — chunk nechunk, kunyange yevhidhiyo refu (Flow limit ~8s/clip, ndosaka tichicheka kuita 8s). Tichaisa izwi rekutanga isu pachedu. Manual mode — mabhatani pamakadhi.",
+      "pt_speaker": "Mutauri ari pedyo",
+      "pt_title": "Musoro unozadza skrini",
+      "pt_cutaway": "Kucheka",
+      "pt_split": "Skrini yakakamurwa",
+      "pt_mockup": "Mufananidzo",
+      "pt_final": "Kupedzisa + CTA",
+      "style_clean": "Yakachena",
+      "style_neon": "Neon",
+      "style_paper": "Pepa",
+      "style_terminal": "Terminal",
+      "style_bold": "Yakakora"
     }
   }
 }

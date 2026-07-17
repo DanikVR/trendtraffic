@@ -1191,7 +1191,7 @@
     "geminiFixCount": 110,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:58.657Z",
+    "pivotAt": "2026-07-17T18:57:31.835Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: napaka",
       "fqQueued": "v čakalni vrsti Flow",
       "fqRunning": "ustvarjanje v Flow…",
-      "genIntroFlow2": "Flow mehanizem – SAMODEJNO: odprite labs.google → Flow v brskalniku z razširitvijo TrendTraffic in kliknite spodnji gumb. Razširitev bo samodejno naložila del in snemalno knjigo, vstavila poziv, ustvarila in vrnila posnetek – del za delom, tudi za dolg video (omejitev Flow ~8s/posnetek, zato režemo na 8s). Izvirni glas bomo prekrivali sami. Ročni način – gumbi na karticah."
+      "genIntroFlow2": "Flow mehanizem – SAMODEJNO: odprite labs.google → Flow v brskalniku z razširitvijo TrendTraffic in kliknite spodnji gumb. Razširitev bo samodejno naložila del in snemalno knjigo, vstavila poziv, ustvarila in vrnila posnetek – del za delom, tudi za dolg video (omejitev Flow ~8s/posnetek, zato režemo na 8s). Izvirni glas bomo prekrivali sami. Ročni način – gumbi na karticah.",
+      "pt_speaker": "Govorec od blizu",
+      "pt_title": "Naslov čez cel zaslon",
+      "pt_cutaway": "Izrez",
+      "pt_split": "Razdeljen zaslon",
+      "pt_mockup": "Maketa",
+      "pt_final": "Končno + CTA",
+      "style_clean": "Čisto",
+      "style_neon": "Neon",
+      "style_paper": "Papir",
+      "style_terminal": "Terminal",
+      "style_bold": "Krepko"
     }
   }
 }

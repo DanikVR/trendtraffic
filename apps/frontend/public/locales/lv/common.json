@@ -1191,7 +1191,7 @@
     "geminiFixCount": 171,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:36.553Z",
+    "pivotAt": "2026-07-17T18:57:27.834Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: kļūda",
       "fqQueued": "Flow rindā",
       "fqRunning": "ģenerē Flow…",
-      "genIntroFlow2": "Flow dzinējs — AUTOMĀTISKI: atveriet labs.google → Flow savā pārlūkprogrammā ar TrendTraffic paplašinājumu un noklikšķiniet uz pogas zemāk. Paplašinājums automātiski augšupielādēs daļu un sižeta lapu, ievietos uzvedni, ģenerēs un atgriezīs klipu — daļu pa daļai, pat garākam video (Flow limits ~8s/klips, tāpēc mēs griežam līdz 8s). Mēs paši pārklāsim oriģinālo balsi. Manuālais režīms — pogas uz kartēm."
+      "genIntroFlow2": "Flow dzinējs — AUTOMĀTISKI: atveriet labs.google → Flow savā pārlūkprogrammā ar TrendTraffic paplašinājumu un noklikšķiniet uz pogas zemāk. Paplašinājums automātiski augšupielādēs daļu un sižeta lapu, ievietos uzvedni, ģenerēs un atgriezīs klipu — daļu pa daļai, pat garākam video (Flow limits ~8s/klips, tāpēc mēs griežam līdz 8s). Mēs paši pārklāsim oriģinālo balsi. Manuālais režīms — pogas uz kartēm.",
+      "pt_speaker": "Tuvplāns runātājs",
+      "pt_title": "Pilnekrāna virsraksts",
+      "pt_cutaway": "Izgriezums",
+      "pt_split": "Dalīts ekrāns",
+      "pt_mockup": "Makets",
+      "pt_final": "Fināls + CTA",
+      "style_clean": "Tīrs",
+      "style_neon": "Neons",
+      "style_paper": "Papīrs",
+      "style_terminal": "Terminālis",
+      "style_bold": "Treknraksts"
     }
   }
 }

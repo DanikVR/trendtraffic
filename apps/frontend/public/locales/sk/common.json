@@ -1191,7 +1191,7 @@
     "geminiFixCount": 173,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:57.913Z",
+    "pivotAt": "2026-07-17T18:57:31.697Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: chyba",
       "fqQueued": "vo fronte Flow",
       "fqRunning": "generuje sa vo Flow…",
-      "genIntroFlow2": "Flow engine — AUTOMATICKY: otvorte labs.google → Flow vo vašom prehliadači s rozšírením TrendTraffic a kliknite na tlačidlo nižšie. Rozšírenie automaticky nahrá úsek a storyboard, vloží výzvu, vygeneruje a vráti klip — úsek po úseku, dokonca aj pre dlhé video (limit Flow ~8s/klip, preto striháme na 8s). Pôvodný hlas prekryjeme sami. Manuálny režim — tlačidlá na kartách."
+      "genIntroFlow2": "Flow engine — AUTOMATICKY: otvorte labs.google → Flow vo vašom prehliadači s rozšírením TrendTraffic a kliknite na tlačidlo nižšie. Rozšírenie automaticky nahrá úsek a storyboard, vloží výzvu, vygeneruje a vráti klip — úsek po úseku, dokonca aj pre dlhé video (limit Flow ~8s/klip, preto striháme na 8s). Pôvodný hlas prekryjeme sami. Manuálny režim — tlačidlá na kartách.",
+      "pt_speaker": "Detailný záber na rečníka",
+      "pt_title": "Titulok na celú obrazovku",
+      "pt_cutaway": "Vsuvka",
+      "pt_split": "Rozdelená obrazovka",
+      "pt_mockup": "Maketa",
+      "pt_final": "Záverečné + CTA",
+      "style_clean": "Čistý",
+      "style_neon": "Neónový",
+      "style_paper": "Papierový",
+      "style_terminal": "Terminálový",
+      "style_bold": "Výrazný"
     }
   }
 }

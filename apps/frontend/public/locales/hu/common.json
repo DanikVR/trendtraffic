@@ -1191,7 +1191,7 @@
     "geminiFixCount": 131,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:18.104Z",
+    "pivotAt": "2026-07-17T18:57:24.245Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: hiba",
       "fqQueued": "Flow sorban",
       "fqRunning": "generálás a Flow-ban…",
-      "genIntroFlow2": "Flow motor — AUTOMATIKUS: nyissa meg a labs.google → Flow-t a böngészőjében a TrendTraffic extensionnel, és kattintson az alábbi gombra. Az extension automatikusan feltölti a darabot és a storyboardot, beilleszti a promptot, generálja és visszaadja a klipet — darabonként, még hosszú videó esetén is (Flow limit ~8 mp/klip, ezért vágjuk 8 mp-re). Az eredeti hangot mi magunk ráhelyezzük. Manuális mód — gombok a kártyákon."
+      "genIntroFlow2": "Flow motor — AUTOMATIKUS: nyissa meg a labs.google → Flow-t a böngészőjében a TrendTraffic extensionnel, és kattintson az alábbi gombra. Az extension automatikusan feltölti a darabot és a storyboardot, beilleszti a promptot, generálja és visszaadja a klipet — darabonként, még hosszú videó esetén is (Flow limit ~8 mp/klip, ezért vágjuk 8 mp-re). Az eredeti hangot mi magunk ráhelyezzük. Manuális mód — gombok a kártyákon.",
+      "pt_speaker": "Előadó közelről",
+      "pt_title": "Teljes képernyős cím",
+      "pt_cutaway": "Kivágás",
+      "pt_split": "Osztott képernyő",
+      "pt_mockup": "Makett",
+      "pt_final": "Végső + CTA",
+      "style_clean": "Tiszta",
+      "style_neon": "Neon",
+      "style_paper": "Papír",
+      "style_terminal": "Terminál",
+      "style_bold": "Félkövér"
     }
   }
 }

@@ -1191,7 +1191,7 @@
     "geminiFixCount": 202,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:27.873Z",
+    "pivotAt": "2026-07-17T18:57:26.385Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: 오류",
       "fqQueued": "Flow 큐에 있음",
       "fqRunning": "Flow에서 생성 중…",
-      "genIntroFlow2": "Flow 엔진 — 자동: TrendTraffic 확장 프로그램이 있는 브라우저에서 labs.google → Flow를 열고 아래 버튼을 클릭하세요. 확장 프로그램이 청크와 스토리보드를 자동으로 업로드하고, 프롬프트를 삽입하고, 생성하고, 클립을 반환합니다 — 긴 동영상이라도 청크별로 (Flow 제한 ~8초/클립, 그래서 8초로 분할합니다). 원본 음성은 저희가 직접 오버레이합니다. 수동 모드 — 카드에 있는 버튼."
+      "genIntroFlow2": "Flow 엔진 — 자동: TrendTraffic 확장 프로그램이 있는 브라우저에서 labs.google → Flow를 열고 아래 버튼을 클릭하세요. 확장 프로그램이 청크와 스토리보드를 자동으로 업로드하고, 프롬프트를 삽입하고, 생성하고, 클립을 반환합니다 — 긴 동영상이라도 청크별로 (Flow 제한 ~8초/클립, 그래서 8초로 분할합니다). 원본 음성은 저희가 직접 오버레이합니다. 수동 모드 — 카드에 있는 버튼.",
+      "pt_speaker": "화자 클로즈업",
+      "pt_title": "전체 화면 제목",
+      "pt_cutaway": "컷어웨이",
+      "pt_split": "분할 화면",
+      "pt_mockup": "목업",
+      "pt_final": "최종 + CTA",
+      "style_clean": "클린",
+      "style_neon": "네온",
+      "style_paper": "페이퍼",
+      "style_terminal": "터미널",
+      "style_bold": "볼드"
     }
   }
 }

@@ -1173,7 +1173,7 @@
     "geminiFixCount": 23,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:37:55.584Z",
+    "pivotAt": "2026-07-17T18:57:19.948Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: errore",
       "fqQueued": "in coda Flow",
       "fqRunning": "generendu in Flow…",
-      "genIntroFlow2": "Mutore Flow — AUTOMATICU: apre labs.google → Flow in u vostru navigatore cù l'estensione TrendTraffic è cliccate u buttone sottu. L'estensione caricherà automaticamente u pezzu è u storyboard, inserisce u prompt, genera, è restituisce u clip — pezzu per pezzu, ancu per un video longu (limite Flow ~8s/clip, hè per quessa chì tagliamu à 8s). Sovrapponemu a voce originale noi stessi. Modu manuale — buttone nantu à e carte."
+      "genIntroFlow2": "Mutore Flow — AUTOMATICU: apre labs.google → Flow in u vostru navigatore cù l'estensione TrendTraffic è cliccate u buttone sottu. L'estensione caricherà automaticamente u pezzu è u storyboard, inserisce u prompt, genera, è restituisce u clip — pezzu per pezzu, ancu per un video longu (limite Flow ~8s/clip, hè per quessa chì tagliamu à 8s). Sovrapponemu a voce originale noi stessi. Modu manuale — buttone nantu à e carte.",
+      "pt_speaker": "Speaker in primu pianu",
+      "pt_title": "Titulu à schermu pienu",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Schermu divisu",
+      "pt_mockup": "Mockup",
+      "pt_final": "Finale + CTA",
+      "style_clean": "Pulitu",
+      "style_neon": "Neon",
+      "style_paper": "Carta",
+      "style_terminal": "Terminal",
+      "style_bold": "Grassetu"
     }
   }
 }

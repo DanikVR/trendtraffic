@@ -1191,7 +1191,7 @@
     "geminiFixCount": 130,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:37.913Z",
+    "pivotAt": "2026-07-17T18:57:27.766Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: hadisoana",
       "fqQueued": "ao anaty filaharana Flow",
       "fqRunning": "mamorona ao amin'ny Flow…",
-      "genIntroFlow2": "Flow engine — AUTOMATIC: sokafy ny labs.google → Flow ao amin'ny navigateur anao miaraka amin'ny fanitarana TrendTraffic ary kitiho ny bokotra etsy ambany. Ny fanitarana dia handefa ho azy ny ampahany sy ny storyboard, hampiditra ny bitsika, hamorona, ary hamerina ny clip — ampahany isaky ny ampahany, na dia ho an'ny horonan-tsary lava aza (fetran'ny Flow ~8s/clip, izany no antony nanapahanay ho 8s). Hovaliantsika ny feo tany am-boalohany. Fomba manual — bokotra eo amin'ny karatra."
+      "genIntroFlow2": "Flow engine — AUTOMATIC: sokafy ny labs.google → Flow ao amin'ny navigateur anao miaraka amin'ny fanitarana TrendTraffic ary kitiho ny bokotra etsy ambany. Ny fanitarana dia handefa ho azy ny ampahany sy ny storyboard, hampiditra ny bitsika, hamorona, ary hamerina ny clip — ampahany isaky ny ampahany, na dia ho an'ny horonan-tsary lava aza (fetran'ny Flow ~8s/clip, izany no antony nanapahanay ho 8s). Hovaliantsika ny feo tany am-boalohany. Fomba manual — bokotra eo amin'ny karatra.",
+      "pt_speaker": "Mpandahateny akaiky",
+      "pt_title": "Lohateny feno efijery",
+      "pt_cutaway": "Fanesorana",
+      "pt_split": "Efijery zaraina",
+      "pt_mockup": "Mockup",
+      "pt_final": "Farany + CTA",
+      "style_clean": "Madio",
+      "style_neon": "Neon",
+      "style_paper": "Taratsy",
+      "style_terminal": "Terminal",
+      "style_bold": "Sahy"
     }
   }
 }

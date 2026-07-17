@@ -1191,7 +1191,7 @@
     "geminiFixCount": 92,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:33.309Z",
+    "pivotAt": "2026-07-17T18:57:27.008Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: Feeler",
       "fqQueued": "an der Flow Queue",
       "fqRunning": "generéiert am Flow…",
-      "genIntroFlow2": "Flow Engine — AUTOMATESCH: labs.google → Flow an Ärem Browser mat der TrendTraffic Extensioun opmaachen an op de Knäppchen hei drënner klicken. D'Extensioun lued automatesch de Chunk an de Storyboard erop, setzt de Prompt an, generéiert an gëtt de Clip zréck — Chunk fir Chunk, och fir e laange Video (Flow Limit ~8s/Clip, dofir schneide mir op 8s). Mir iwwerlageren d'Originalstëmm selwer. Manuelle Modus — Knäppercher op de Kaarten."
+      "genIntroFlow2": "Flow Engine — AUTOMATESCH: labs.google → Flow an Ärem Browser mat der TrendTraffic Extensioun opmaachen an op de Knäppchen hei drënner klicken. D'Extensioun lued automatesch de Chunk an de Storyboard erop, setzt de Prompt an, generéiert an gëtt de Clip zréck — Chunk fir Chunk, och fir e laange Video (Flow Limit ~8s/Clip, dofir schneide mir op 8s). Mir iwwerlageren d'Originalstëmm selwer. Manuelle Modus — Knäppercher op de Kaarten.",
+      "pt_speaker": "Close-up Speaker",
+      "pt_title": "Vollbild Titel",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Split Screen",
+      "pt_mockup": "Mockup",
+      "pt_final": "Final + CTA",
+      "style_clean": "Propper",
+      "style_neon": "Neon",
+      "style_paper": "Pabeier",
+      "style_terminal": "Terminal",
+      "style_bold": "Fett"
     }
   }
 }

@@ -1191,7 +1191,7 @@
     "geminiFixCount": 205,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:20.351Z",
+    "pivotAt": "2026-07-17T18:57:24.867Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: njehie",
       "fqQueued": "na Flow queue",
       "fqRunning": "na-emepụta na Flow…",
-      "genIntroFlow2": "Flow engine — AKPAAKA: mepee labs.google → Flow na ihe nchọgharị gị na ndọtị TrendTraffic wee pịa bọtịnụ dị n'okpuru. Ndọtị ahụ ga-ebugote chunk na storyboard na-akpaghị aka, tinye ngwa ngwa, mepụta, ma weghachi clip ahụ — chunk site na chunk, ọbụlagodi maka vidiyo dị ogologo (Flow limit ~8s/clip, nke mere anyị ji bepụ na 8s). Anyị ga-etinye olu mbụ n'onwe anyị. Ọnọdụ aka — bọtịnụ na kaadị."
+      "genIntroFlow2": "Flow engine — AKPAAKA: mepee labs.google → Flow na ihe nchọgharị gị na ndọtị TrendTraffic wee pịa bọtịnụ dị n'okpuru. Ndọtị ahụ ga-ebugote chunk na storyboard na-akpaghị aka, tinye ngwa ngwa, mepụta, ma weghachi clip ahụ — chunk site na chunk, ọbụlagodi maka vidiyo dị ogologo (Flow limit ~8s/clip, nke mere anyị ji bepụ na 8s). Anyị ga-etinye olu mbụ n'onwe anyị. Ọnọdụ aka — bọtịnụ na kaadị.",
+      "pt_speaker": "Onye na-ekwu okwu nso",
+      "pt_title": "Aha ihuenyo zuru ezu",
+      "pt_cutaway": "Mbelata",
+      "pt_split": "Ihuenyo kewara ekewa",
+      "pt_mockup": "Ihe atụ",
+      "pt_final": "Nke ikpeazụ + CTA",
+      "style_clean": "Dị ọcha",
+      "style_neon": "Neon",
+      "style_paper": "Akwụkwọ",
+      "style_terminal": "Ọdụ ụgbọ mmiri",
+      "style_bold": "Ike"
     }
   }
 }

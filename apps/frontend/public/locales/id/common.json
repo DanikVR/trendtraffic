@@ -1191,7 +1191,7 @@
     "geminiFixCount": 201,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:17.168Z",
+    "pivotAt": "2026-07-17T18:57:24.727Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: error",
       "fqQueued": "dalam antrean Flow",
       "fqRunning": "membuat di Flow…",
-      "genIntroFlow2": "Mesin Flow — OTOMATIS: buka labs.google → Flow di browser Anda dengan ekstensi TrendTraffic dan klik tombol di bawah. Ekstensi akan secara otomatis mengunggah segmen dan storyboard, menyisipkan prompt, membuat, dan mengembalikan klip — segmen demi segmen, bahkan untuk video panjang (batas Flow ~8dtk/klip, itulah mengapa kami memotong hingga 8dtk). Kami akan melapisi suara asli sendiri. Mode manual — tombol pada kartu."
+      "genIntroFlow2": "Mesin Flow — OTOMATIS: buka labs.google → Flow di browser Anda dengan ekstensi TrendTraffic dan klik tombol di bawah. Ekstensi akan secara otomatis mengunggah segmen dan storyboard, menyisipkan prompt, membuat, dan mengembalikan klip — segmen demi segmen, bahkan untuk video panjang (batas Flow ~8dtk/klip, itulah mengapa kami memotong hingga 8dtk). Kami akan melapisi suara asli sendiri. Mode manual — tombol pada kartu.",
+      "pt_speaker": "Pembicara close-up",
+      "pt_title": "Judul layar penuh",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Layar terpisah",
+      "pt_mockup": "Maket",
+      "pt_final": "Akhir + CTA",
+      "style_clean": "Bersih",
+      "style_neon": "Neon",
+      "style_paper": "Kertas",
+      "style_terminal": "Terminal",
+      "style_bold": "Tebal"
     }
   }
 }

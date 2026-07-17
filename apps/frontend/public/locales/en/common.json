@@ -1184,7 +1184,7 @@
     "geminiModel": "gemini-2.5-flash",
     "geminiFixCount": 1,
     "geminiSourceHash": "3bc9c39d12c4ae82",
-    "pivotAt": "2026-07-17T18:36:57.991Z",
+    "pivotAt": "2026-07-17T18:56:58.110Z",
     "pivotSource": "ru",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4276,7 +4276,18 @@
       "fqFailed": "Flow: error",
       "fqQueued": "in Flow queue",
       "fqRunning": "generating in Flow…",
-      "genIntroFlow2": "Flow engine — AUTOMATIC: open labs.google → Flow in your browser with the TrendTraffic extension and click the button below. The extension will automatically upload the chunk and storyboard, insert the prompt, generate, and return the clip — chunk by chunk, even for a long video (Flow limit ~8s/clip, which is why we cut to 8s). We will overlay the original voice ourselves. Manual mode — buttons on cards."
+      "genIntroFlow2": "Flow engine — AUTOMATIC: open labs.google → Flow in your browser with the TrendTraffic extension and click the button below. The extension will automatically upload the chunk and storyboard, insert the prompt, generate, and return the clip — chunk by chunk, even for a long video (Flow limit ~8s/clip, which is why we cut to 8s). We will overlay the original voice ourselves. Manual mode — buttons on cards.",
+      "pt_speaker": "Close-up speaker",
+      "pt_title": "Full-screen title",
+      "pt_cutaway": "Cutaway",
+      "pt_split": "Split screen",
+      "pt_mockup": "Mockup",
+      "pt_final": "Final + CTA",
+      "style_clean": "Clean",
+      "style_neon": "Neon",
+      "style_paper": "Paper",
+      "style_terminal": "Terminal",
+      "style_bold": "Bold"
     }
   }
 }

@@ -1173,7 +1173,7 @@
     "geminiFixCount": 47,
     "geminiSourceHash": "3bc9c39d12c4ae82",
     "needsRefresh": true,
-    "pivotAt": "2026-07-17T18:38:03.616Z",
+    "pivotAt": "2026-07-17T18:57:21.551Z",
     "pivotSource": "en",
     "pivotModel": "gemini-2.5-flash"
   },
@@ -4283,7 +4283,18 @@
       "fqFailed": "Flow: errorea",
       "fqQueued": "Flow ilaran",
       "fqRunning": "Flow-en sortzen…",
-      "genIntroFlow2": "Flow motorra — AUTOMATIKOA: ireki labs.google → Flow zure nabigatzailean TrendTraffic luzapenarekin eta egin klik beheko botoian. Luzapenak automatikoki kargatuko ditu zatia eta storyboard-a, prompt-a txertatuko du, sortuko du eta klipa itzuliko du — zati bakoitza, bideo luze baterako ere (Flow muga ~8s/klip, horregatik mozten dugu 8s-ra). Jatorrizko ahotsa guk geuk gainjarriko dugu. Eskuzko modua — txarteletako botoiak."
+      "genIntroFlow2": "Flow motorra — AUTOMATIKOA: ireki labs.google → Flow zure nabigatzailean TrendTraffic luzapenarekin eta egin klik beheko botoian. Luzapenak automatikoki kargatuko ditu zatia eta storyboard-a, prompt-a txertatuko du, sortuko du eta klipa itzuliko du — zati bakoitza, bideo luze baterako ere (Flow muga ~8s/klip, horregatik mozten dugu 8s-ra). Jatorrizko ahotsa guk geuk gainjarriko dugu. Eskuzko modua — txarteletako botoiak.",
+      "pt_speaker": "Hizlariaren lehen planoa",
+      "pt_title": "Pantaila osoko titulua",
+      "pt_cutaway": "Moztu",
+      "pt_split": "Pantaila zatitua",
+      "pt_mockup": "Maketa",
+      "pt_final": "Amaiera + CTA",
+      "style_clean": "Garbia",
+      "style_neon": "Neon",
+      "style_paper": "Papera",
+      "style_terminal": "Terminala",
+      "style_bold": "Lodia"
     }
   }
 }
