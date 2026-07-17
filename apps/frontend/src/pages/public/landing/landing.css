@@ -255,10 +255,18 @@
 }
 .ttl-hero-note { margin-top: 16px; }
 
-/* Тёмный скроллбар, пока открыт лендинг (Chrome/Edge) */
-body:has(.ttl)::-webkit-scrollbar { width: 10px; background: #000; }
-body:has(.ttl)::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 5px; }
-body:has(.ttl)::-webkit-scrollbar-thumb:hover { background: #2c2c2c; }
+/* Тёмный скроллбар — ТОЛЬКО десктоп: любая ::-webkit-кастомизация на мобиле
+   делает полосу постоянной (ломает автоскрытие оверлейного скроллбара) */
+@media (pointer: fine) and (min-width: 861px) {
+  body:has(.ttl)::-webkit-scrollbar { width: 10px; background: #000; }
+  body:has(.ttl)::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 5px; }
+  body:has(.ttl)::-webkit-scrollbar-thumb:hover { background: #2c2c2c; }
+}
+/* Тач и узкие экраны: полоса прокрутки скрыта полностью (скролл пальцем работает) */
+@media (pointer: coarse), (max-width: 860px) {
+  body:has(.ttl) { scrollbar-width: none; -ms-overflow-style: none; }
+  body:has(.ttl)::-webkit-scrollbar { display: none; width: 0; height: 0; }
+}
 
 /* ── Секции ── */
 .ttl-section { padding-block: clamp(90px, 11vw, 150px); }

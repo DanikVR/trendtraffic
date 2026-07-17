@@ -2799,8 +2799,16 @@
  *          частицы на узких экранах приглушены 0.62→0.48 (текст футера читается
  *          поверх поля). Аудит 390px: переполнений нет, сетки складываются.
  *          Файлы: landing/chrome.tsx, landing/landing.css,
- *          landing/Constellation.tsx, AppVersion. */
-export const APP_VERSION = '2.3.7';
+ *          landing/Constellation.tsx, AppVersion.
+ * 2.3.8 — Лендинг: на мобильных убрана постоянная полоса прокрутки справа —
+ *          кастомный тёмный скроллбар теперь только для десктопа
+ *          (pointer:fine + ширина >860px; любая webkit-кастомизация на тач
+ *          ломает автоскрытие оверлейного скроллбара и полоса торчит всегда);
+ *          на тач/узких экранах скроллбар скрыт полностью (scrollbar-width
+ *          none + display none), скролл пальцем не затронут. Проверено:
+ *          390px → ширина полосы 0, 1280px → тёмная полоса 10px на месте.
+ *          Файлы: landing/landing.css, AppVersion. */
+export const APP_VERSION = '2.3.8';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
