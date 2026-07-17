@@ -15,7 +15,7 @@ export const APP_URL = 'https://app.trendtraffic.pro';
 /* ────────────────────────── Логотип ────────────────────────── */
 
 /** Фирменный логотип (цветной wordmark на тёмном). h — высота в px. */
-export function TTLogo({ h = 30 }: { h?: number }) {
+export function TTLogo({ h = 38 }: { h?: number }) {
   return (
     <img
       className="ttl-logo-img"
@@ -316,7 +316,7 @@ export function TTFooter() {
         <p className="ttl-caption ttl-footer-copy">© Trendtraffic.pro 2026</p>
         <div className="ttl-footer-grid">
           <div>
-            <TTLogo h={40} />
+            <TTLogo h={46} />
             <p className="ttl-body ttl-footer-tagline">
               {t('sec.ttLanding.footerTagline', 'Автоматическое создание трендового видеоконтента с экономией на ИИ.')}
             </p>

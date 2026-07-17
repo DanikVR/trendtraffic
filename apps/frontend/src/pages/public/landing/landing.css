@@ -187,7 +187,7 @@
 }
 /* Узкие экраны: короткая «Начать» в шапке, плотнее отступы — пилюля не переносится */
 @media (max-width: 640px) {
-  .ttl-nav { --ttl-logo-h: 24px; }
+  .ttl-nav { --ttl-logo-h: 32px; }
   .ttl-nav .ttl-btn-full { display: none; }
   .ttl-nav .ttl-btn-short { display: inline; }
   .ttl-nav .ttl-btn { padding: 11px 18px; }

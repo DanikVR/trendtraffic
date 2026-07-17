@@ -2869,7 +2869,18 @@
  *          загрузке»); счётчик как был справа-снизу. Слито с параллельной
  *          v2.3.11 (их cookie-плашка и верхний лого сохранены). Файлы:
  *          landing/chrome.tsx (TTLogo → img), landing/landing.css, AppVersion. */
-export const APP_VERSION = '2.3.13';
+/* 2.3.14 — Мобильный фидбэк владельца (3 пункта): (1) логотип лендинга крупнее —
+ *          шапка 30→38px (мобила 24→32px), футер 40→46px; (2) полоса прокрутки
+ *          на страницах ПРИЛОЖЕНИЯ (рега/логин и все остальные) убрана на тач —
+ *          глобальная ::-webkit-scrollbar-кастомизация index.css завёрнута в
+ *          @media (pointer:fine): на тач она ломала автоскрытие оверлейного
+ *          скроллбара (та же гоча, что на лендинге в 2.3.8); (3) кнопки
+ *          «через Google» на входе/регистрации — ТОЛЬКО значок G (22px,
+ *          по центру): длинная надпись «Зарегистрироваться через Google»
+ *          не влезала на мобильных; полный текст остался в aria-label/title.
+ *          Файлы: landing/chrome.tsx, landing/landing.css, index.css,
+ *          auth/RegisterPage.tsx, auth/LoginPage.tsx, AppVersion. */
+export const APP_VERSION = '2.3.14';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

@@ -178,14 +178,18 @@
     letter-spacing: -0.02em;
   }
 
-  /* ── Скроллбар ── */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 2px;
+  /* ── Скроллбар — кастомный ТОЛЬКО на десктопе: любая ::-webkit-кастомизация
+     на тач-устройствах ломает автоскрытие оверлейного скроллбара, и полоса
+     справа торчит постоянно (фидбэк владельца с телефона) ── */
+  @media (pointer: fine) {
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
   /* ── Focus ring — индиго-акцент ── */
   *:focus-visible {
