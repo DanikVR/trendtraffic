@@ -21,7 +21,7 @@ export function StubPage({ title, metaTitle }: { title: string; metaTitle: strin
 
   return (
     <div className="ttl">
-      <Helmet><title>{metaTitle}</title></Helmet>
+      <Helmet defer={false}><title>{metaTitle}</title></Helmet>
       <TTNav minimal />
       <main className="ttl-wrap ttl-stub-main">
         <FadeUp animate>

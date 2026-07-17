@@ -39,7 +39,7 @@ const DIST_DIR = path.join(ROOT, 'dist');
 const LOCALES_DIR = path.join(ROOT, 'public', 'locales');
 const SOURCE_HTML = path.join(DIST_DIR, 'index.html');
 
-const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://vibevox.app').replace(/\/+$/, '');
+const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://app.trendtraffic.pro').replace(/\/+$/, '');
 const DEFAULT_LANG = 'en';
 
 // Языки с письмом справа налево
@@ -139,7 +139,7 @@ function injectSeo(html, { lang, dir, title, description, keywords, canonical, h
     `<meta property="og:url" content="${escapeHtml(canonical)}">`,
     `<meta property="og:image" content="${escapeHtml(ogImage)}">`,
     `<meta property="og:type" content="website">`,
-    `<meta property="og:site_name" content="VibeVox">`,
+    `<meta property="og:site_name" content="TrendTraffic">`,
   ];
   // вырезаем старые og:* и twitter:*
   out = out.replace(/<meta\s+property="og:[^"]+"[^>]*>\s*/gi, '');
@@ -189,7 +189,7 @@ async function main() {
 
   const langs = await listLocales();
   const enCommon = await loadCommon('en');
-  const ogImage = `${SITE_ORIGIN}/vibevox-logo-light.png`;
+  const ogImage = 'https://trendtraffic.pro/og-image.png';
 
   let generated = 0;
   for (const lang of langs) {

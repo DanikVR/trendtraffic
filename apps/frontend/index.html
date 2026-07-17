@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" dir="ltr" class="dark">
+<html lang="en" dir="ltr" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -20,41 +20,75 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png?v=tt3" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- SEO defaults (динамически перезаписываются SeoMeta через react-helmet-async по локали) -->
-    <title>TrendTraffic — умный видео-маркетинг</title>
-    <meta name="description" content="TrendTraffic — поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео." />
-    <meta name="keywords" content="тренды, вирусные видео, аналитика соцсетей, TikTok, Instagram, YouTube, генерация видео, видео маркетинг, trendtraffic" />
+    <!-- SEO defaults: английский (EN — базовый язык локалей; runtime Helmet/SeoMeta
+         переписывает title/description/canonical по языку пользователя и хосту).
+         Соцскрейперы (Telegram/WhatsApp/Facebook/X) JS не исполняют — читают ЭТОТ блок,
+         поэтому og:image обязан быть АБСОЛЮТНЫМ URL. og:url не задаём статически:
+         index.html общий для trendtraffic.pro и app.trendtraffic.pro — скрейпер
+         возьмёт фактический URL страницы, а runtime-канонику ставит Helmet. -->
+    <title>TrendTraffic — Find Viral Trends, Create AI Videos on Autopilot</title>
+    <meta name="description" content="TrendTraffic finds viral trends on TikTok, Instagram and YouTube, analyzes them frame by frame and builds UGC videos with AI avatars — scheduled publishing in 108 languages, up to 4× cheaper AI." />
+    <meta name="keywords" content="viral trends, trend finder, TikTok trends, Instagram Reels, YouTube Shorts, AI video generator, UGC videos, AI avatars, social media analytics, auto posting, video marketing, trendtraffic" />
     <meta name="author" content="TrendTraffic" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="TrendTraffic — умный видео-маркетинг" />
-    <meta property="og:description" content="Поиск вирусных трендов, аналитика соцсетей, сборка и генерация видео." />
+    <meta property="og:title" content="TrendTraffic — Find Viral Trends, Create AI Videos on Autopilot" />
+    <meta property="og:description" content="Viral trend finder + AI video factory: TikTok, Instagram, YouTube trends, frame-by-frame analytics, UGC videos with AI avatars, scheduled auto-posting. 7-day free trial." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="ru" />
-    <meta property="og:image" content="/vibevox-logo-light.png" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="TrendTraffic" />
+    <meta property="og:image" content="https://trendtraffic.pro/og-image.png" />
+    <meta property="og:image:secure_url" content="https://trendtraffic.pro/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TrendTraffic — viral trends & AI video factory" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="TrendTraffic — умный видео-маркетинг" />
-    <meta name="twitter:description" content="Поиск вирусных трендов, аналитика соцсетей, сборка и генерация видео." />
-    <meta name="twitter:image" content="/vibevox-logo-light.png" />
+    <meta name="twitter:title" content="TrendTraffic — Find Viral Trends, Create AI Videos on Autopilot" />
+    <meta name="twitter:description" content="Viral trend finder + AI video factory: trends, analytics, UGC videos with AI avatars, auto-posting. 7-day free trial." />
+    <meta name="twitter:image" content="https://trendtraffic.pro/og-image.png" />
+    <meta name="twitter:image:alt" content="TrendTraffic — viral trends & AI video factory" />
 
-    <!-- JSON-LD: organization -->
+    <!-- JSON-LD: приложение + организация + сайт -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "TrendTraffic",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "description": "Поиск вирусных трендов и аналитика соцсетей (TikTok, Instagram, YouTube, X), сборка и генерация видео.",
-        "offers": {
-          "@type": "Offer",
-          "price": "49",
-          "priceCurrency": "EUR"
-        }
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://trendtraffic.pro/#app",
+            "name": "TrendTraffic",
+            "url": "https://trendtraffic.pro/",
+            "image": "https://trendtraffic.pro/og-image.png",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "description": "TrendTraffic finds viral trends on TikTok, Instagram and YouTube, analyzes them frame by frame and builds UGC videos with AI avatars — with scheduled publishing and up to 4× cheaper AI.",
+            "offers": {
+              "@type": "Offer",
+              "price": "49",
+              "priceCurrency": "EUR",
+              "url": "https://app.trendtraffic.pro/billing"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://trendtraffic.pro/#org",
+            "name": "TrendTraffic",
+            "url": "https://trendtraffic.pro/",
+            "logo": "https://trendtraffic.pro/vibevox-logo-dark.png",
+            "email": "SEO@trendtraffic.pro"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://trendtraffic.pro/#site",
+            "name": "TrendTraffic",
+            "url": "https://trendtraffic.pro/",
+            "publisher": { "@id": "https://trendtraffic.pro/#org" }
+          }
+        ]
       }
     </script>
     <!-- Быстрое применение темы ДО загрузки React (no flash) -->

@@ -117,10 +117,24 @@ export function LandingPage() {
 
   return (
     <div className="ttl">
-      <Helmet>
+      {/* defer={false} — без rAF: в скрытых вкладках/краулерах иначе теги не применяются */}
+      <Helmet defer={false}>
         <title>{t('sec.ttLanding.pageTitle', 'TrendTraffic — трендовые видео на автопилоте')}</title>
         <meta name="description"
           content={t('sec.ttLanding.pageDescription', 'TrendTraffic находит вирусные тренды в TikTok, Instagram и YouTube, разбирает их по кадрам и собирает UGC-ролики с ИИ-аватарами — с публикацией по расписанию и экономией на ИИ до ×4.')} />
+        {/* Канонический адрес лендинга — корневой домен (тот же контент и на app-хосте /landing) */}
+        <link rel="canonical" href="https://trendtraffic.pro/" />
+        {/* Open Graph / Twitter — для JS-рендерящих краулеров; соцскрейперы берут статику index.html */}
+        <meta property="og:title" content={t('sec.ttLanding.pageTitle', 'TrendTraffic — трендовые видео на автопилоте')} />
+        <meta property="og:description"
+          content={t('sec.ttLanding.pageDescription', 'TrendTraffic находит вирусные тренды в TikTok, Instagram и YouTube, разбирает их по кадрам и собирает UGC-ролики с ИИ-аватарами — с публикацией по расписанию и экономией на ИИ до ×4.')} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://trendtraffic.pro/" />
+        <meta property="og:site_name" content="TrendTraffic" />
+        <meta property="og:image" content="https://trendtraffic.pro/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={t('sec.ttLanding.pageTitle', 'TrendTraffic — трендовые видео на автопилоте')} />
+        <meta name="twitter:image" content="https://trendtraffic.pro/og-image.png" />
       </Helmet>
 
       <Preloader onDone={() => setStarted(true)} />

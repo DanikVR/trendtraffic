@@ -33,7 +33,7 @@ export function LegalLayout({ title, updated, intro, children, metaDescription }
   const { t } = useTranslation('common');
   return (
     <div className="dark relative min-h-screen text-white" style={{ background: '#0A0A0B' }}>
-      <Helmet>
+      <Helmet defer={false}>
         <title>{`${title} — TrendTraffic`}</title>
         <meta name="description" content={metaDescription} />
         <style>{LEGAL_STYLES}</style>

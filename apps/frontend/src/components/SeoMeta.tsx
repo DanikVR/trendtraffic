@@ -56,7 +56,7 @@ export function SeoMeta() {
   const description = t('sec.pub.seoDesc', 'Поиск вирусных трендов в TikTok, Instagram, YouTube и X, аналитика соцсетей, сборка и генерация видео.');
   const keywords = t('sec.pub.seoKeywords', 'тренды, вирусные видео, аналитика соцсетей, TikTok, Instagram, YouTube, генерация видео, видео маркетинг, trendtraffic');
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vibevox.app';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://app.trendtraffic.pro';
   const rawPath = typeof window !== 'undefined' ? window.location.pathname : '/';
   const basePath = stripLangPrefix(rawPath);
 
@@ -64,7 +64,10 @@ export function SeoMeta() {
   const canonicalUrl = urlForLang(origin, lang, basePath);
 
   return (
-    <Helmet>
+    // defer={false} — коммит тегов синхронно, БЕЗ requestAnimationFrame:
+    // в скрытых вкладках и headless-краулерах rAF не тикает, и с дефолтным
+    // defer helmet вообще не применяет теги (SEO-теги обязаны быть надёжными).
+    <Helmet defer={false}>
       <html lang={lang} dir={isRtl ? 'rtl' : 'ltr'} />
       <title>{title}</title>
       <meta name="description" content={description} />
@@ -92,14 +95,14 @@ export function SeoMeta() {
       <meta property="og:type" content="website" />
       <meta property="og:locale" content={lang} />
       <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:image" content={`${origin}/vibevox-logo-light.png`} />
-      <meta property="og:site_name" content="VibeVox" />
+      <meta property="og:image" content={`${origin}/og-image.png`} />
+      <meta property="og:site_name" content="TrendTraffic" />
 
       {/* Twitter card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={`${origin}/vibevox-logo-light.png`} />
+      <meta name="twitter:image" content={`${origin}/og-image.png`} />
 
       {/* Robots */}
       <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />

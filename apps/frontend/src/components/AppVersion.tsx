@@ -2880,7 +2880,34 @@
  *          не влезала на мобильных; полный текст остался в aria-label/title.
  *          Файлы: landing/chrome.tsx, landing/landing.css, index.css,
  *          auth/RegisterPage.tsx, auth/LoginPage.tsx, AppVersion. */
-export const APP_VERSION = '2.3.14';
+/* 2.3.15 — SEO + соцшаринг + доперевод лендинга и /billing на 108 языков.
+ *          (1) SEO: статичный head index.html переписан на EN (базовый язык
+ *          локалей) — title/description/keywords, полный Open Graph с
+ *          АБСОЛЮТНЫМ og:image (соцскрейперы JS не исполняют), Twitter Card,
+ *          JSON-LD @graph (SoftwareApplication+Organization+WebSite);
+ *          robots.txt и sitemap.xml переведены с vibevox.app на
+ *          trendtraffic.pro (+app-хост; sitemap 9 реальных URL вместо
+ *          108-языковых зеркал — /{lang}-роутов в роутере нет); SeoMeta:
+ *          og:site_name VibeVox→TrendTraffic, og:image → /og-image.png.
+ *          (2) Соцшаринг: сгенерирована карточка public/og-image.png 1200×630
+ *          (scripts/gen-og-image.mjs, sharp: wordmark на чёрном void с
+ *          индиго-частицами; запечённая подпись с опечаткой «SMART VIDE
+ *          MARKETING» стёрта поточечно); Helmet лендинга дополнен og:*+canonical,
+ *          BillingPage получил Helmet с локализованными seoTitle/seoDesc.
+ *          (3) i18n: собраны и переведены ВСЕ недостающие ключи — весь лендинг
+ *          sec.ttLanding (~120), карточка MCP settings.mcp (20), cookie-плашка,
+ *          публичный биллинг; пивот ru→нативный EN→106 языков
+ *          (translate-pivot, gemini-2.5-flash), глоссарий пополнен брендами
+ *          TrendTraffic/HeyGen/ElevenLabs/NotebookLM/Claude/MCP и др.
+ *          (4) ФИКС: runtime-Helmet вообще не применял теги в скрытых
+ *          вкладках/headless (rAF не тикает, а helmet коммитит теги на кадре
+ *          rAF) — всем SEO-Helmet добавлен defer={false} (синхронный коммит);
+ *          react-helmet-async откатан 3.0.0 → проверенной 2.0.5 (React 18).
+ *          Файлы: index.html, robots.txt, sitemap.xml+sitemap.mjs, og-image.png,
+ *          gen-og-image.mjs, SeoMeta.tsx, LandingPage.tsx, BillingPage.tsx,
+ *          StubPage.tsx, LegalLayout.tsx, package.json+lock, prerender.mjs,
+ *          _glossary.json, locales (108 common.json), AppVersion. */
+export const APP_VERSION = '2.3.15';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

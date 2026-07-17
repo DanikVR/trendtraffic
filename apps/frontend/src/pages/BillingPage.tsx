@@ -20,6 +20,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import {
   Check, ArrowRight, Crown, Sparkles, TrendingUp, BarChart3, Image as ImageIcon,
@@ -671,6 +672,12 @@ export function BillingPage() {
   // ═══════════════════════════════════════════════
   return (
     <div className="space-y-8 animate-fade-in pb-12">
+      {/* SEO: /billing публичный — свой title/description по локали */}
+      <Helmet defer={false}>
+        <title>{t('sec.billing.seoTitle', 'Тариф Premium €49/мес — TrendTraffic')}</title>
+        <meta name="description"
+          content={t('sec.billing.seoDesc', 'Подписка TrendTraffic Premium за €49/мес: поиск вирусных трендов, аналитика соцсетей, UGC-студия с ИИ-аватарами и автопубликация. 7 дней бесплатно, отмена в один клик.')} />
+      </Helmet>
       {/* Заголовок */}
       <div>
         <h1 className="section-title text-2xl mb-1">{t('sec.billing.pageTitle', 'Тарифы')}</h1>
