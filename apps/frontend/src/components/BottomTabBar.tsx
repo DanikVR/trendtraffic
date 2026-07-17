@@ -27,6 +27,8 @@ import {
   Users,
   Image,
   Send,
+  LayoutTemplate,
+  Sparkles,
 } from 'lucide-react';
 import { AvatarCircle } from './AvatarCircle';
 import { StatusPill } from './StatusPill';
@@ -58,9 +60,11 @@ export function BottomTabBar() {
     ...(FEATURES.sip ? [{ path: '/sip', icon: <Phone size={20} strokeWidth={1.5} />, label: t('moreSheet.sip.label'), sublabel: t('moreSheet.sip.sub'), accent: 'var(--text-secondary)' }] : []),
     { path: '/gallery?tab=trendhub', icon: <TrendingUp size={20} strokeWidth={1.5} />, label: t('nav.trends', 'Тренды'), sublabel: t('sec.misc.tabTrendsSub', 'Разборы и запросы'), accent: '#f59e0b' },
     { path: '/gallery?tab=ugc', icon: <Users size={20} strokeWidth={1.5} />, label: 'UGC', sublabel: t('sec.misc.tabUgcSub', 'Ролики с аватаром'), accent: '#a855f7' },
+    { path: '/gallery?tab=storyboard', icon: <LayoutTemplate size={20} strokeWidth={1.5} />, label: t('nav.storyboard', 'Сториборд'), sublabel: t('sec.misc.tabStoryboardSub', 'Автомонтаж рилса'), accent: '#22d3ee' },
     { path: '/gallery?tab=flow', icon: <Image size={20} strokeWidth={1.5} />, label: 'Google Flow', sublabel: t('sec.misc.tabFlowSub', 'Клипы Veo'), accent: '#4285F4' },
     { path: '/gallery?tab=reference', icon: <Image size={20} strokeWidth={1.5} />, label: t('nav.gallery', 'Медиафайлы'), sublabel: t('sec.misc.tabMediaSub', 'Медиа и аудио'), accent: '#10b981' },
     { path: '/gallery?tab=publisher', icon: <Send size={20} strokeWidth={1.5} />, label: t('nav.publisher', 'Публикатор'), sublabel: t('sec.misc.tabPublisherSub', 'Посты в соцсети'), accent: '#7c5cff' },
+    { path: '/gallery?tab=skills', icon: <Sparkles size={20} strokeWidth={1.5} />, label: t('nav.skills', 'Скиллы'), sublabel: t('sec.misc.tabSkillsSub', 'Виралка · антиклише · подпись'), accent: '#f59e0b' },
     { path: '/settings', icon: <Settings size={20} strokeWidth={1.5} />, label: t('moreSheet.settings.label'), sublabel: t('moreSheet.settings.sub'), accent: 'var(--text-muted)' },
   ];
 

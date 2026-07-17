@@ -23,6 +23,8 @@ import {
   Clapperboard,
   Video,
   Loader2,
+  LayoutTemplate,
+  Sparkles,
 } from 'lucide-react';
 
 // ── Функция переключения темы (глобальная, без re-render всего layout) ──
@@ -57,7 +59,8 @@ export function MainLayout() {
   const iframeFull = pathname.startsWith('/social-extension');
   // Широкая лента (как «Тренды»), но без iframe-h-full: /channels, /gallery, /publisher, /flow.
   const fullBleed = pathname.startsWith('/flow') || pathname.startsWith('/channels')
-    || pathname.startsWith('/gallery') || pathname.startsWith('/publisher') || iframeFull;
+    || pathname.startsWith('/gallery') || pathname.startsWith('/publisher')
+    || pathname.startsWith('/storyboard') || iframeFull;
 
   // ENTERPRISE: видимость Enterprise-пунктов — единый источник истины (хук).
   const isEnterprise = useIsEnterprise();
@@ -97,10 +100,12 @@ export function MainLayout() {
   const galleryNav = [
     { tab: 'trendhub',  icon: TrendingUp,  label: t('nav.trends', 'Тренды') },
     { tab: 'ugc',       icon: Users,       label: 'UGC' },
+    { tab: 'storyboard', icon: LayoutTemplate, label: t('nav.storyboard', 'Сториборд') },
     { tab: 'flow',      icon: Clapperboard, label: 'Google Flow' },
     { tab: 'hotebook',  icon: BookOpen,    label: 'Hotebook' },
     { tab: 'reference', icon: Video,       label: t('nav.gallery', 'Медиафайлы') },
     { tab: 'publisher', icon: Send,        label: t('nav.publisher', 'Публикатор') },
+    { tab: 'skills',    icon: Sparkles,    label: t('nav.skills', 'Скиллы') },
   ];
   // Активная вкладка Галереи — из ?tab= (дефолт 'trendhub'); подсвечиваем пункт сайдбара.
   const { search } = useLocation();

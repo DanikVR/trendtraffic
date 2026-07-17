@@ -2975,7 +2975,24 @@
  *          новый проп ambientTotalRef. Только тёмная тема (палитра частиц
  *          под чёрный фон; MutationObserver на html.dark).
  *          Файлы: BillingPage.tsx, Constellation.tsx, AppVersion. */
-export const APP_VERSION = '2.3.20';
+/* 2.3.21 — СТОРИБОРД + СКИЛЛЫ (механика aicube «рилс-автомонтаж», v1):
+ *          (1) Вкладка «Сториборд» в Галерее + студия /storyboard/:id из 5
+ *          станций: Источник (видео из Галереи/загрузка) → Расшифровка
+ *          (Gemini video_insight: речь+сцены; куски ≤8с по концам фраз) →
+ *          Раскадровка (панели: спикер/титр/врезка/сплит/мокап/финал; Claude-
+ *          режиссёр с шаблонным фолбэком; PNG-сетка на проверку) → Генерация
+ *          (ПРОГРАММНЫЙ ffmpeg-движок: zoompan-наезды, drawtext-титры, vstack-
+ *          сплит; дисциплина «сначала кусок 1»; Omni/Flow — «скоро») → Сборка
+ *          (склейка + бейдж + опц. субтитры → Галерея folder=storyboard).
+ *          Бэк: модуль storyboard (таблица storyboards, busy-реестр, /api/storyboard).
+ *          (2) Вкладка «Скиллы»: найди-виралку (TikHub find-only + честный охват),
+ *          антиклише (11 категорий, Было/Стало), формула-подписи (хук→опыт→CTA
+ *          с кодовым словом, 3 хука) — /api/skills + 3 MCP-тулзы (скоуп skills:use).
+ *          Всё в подписке, генерации на BYO-ключах. i18n: 128 sec.*-ключей
+ *          прогнаны propagate (перевод — следующим прогоном).
+ *          Файлы: modules/storyboard/*, modules/skills/*, StoryboardTab/Studio,
+ *          SkillsTab, GalleryPage, MainLayout, BottomTabBar, router, migrations. */
+export const APP_VERSION = '2.3.21';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

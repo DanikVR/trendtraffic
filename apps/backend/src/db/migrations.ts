@@ -955,6 +955,29 @@ const MIGRATIONS: Migration[] = [
   // UGC-сборка на каждый ассет, format_filter авто-цепочки берёт только свой формат.
   { name: 'media_assets.ugc_format', sql: `ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS ugc_format VARCHAR(8)` },
   { name: 'publisher_chains.format_filter', sql: `ALTER TABLE publisher_chains ADD COLUMN IF NOT EXISTS format_filter VARCHAR(8)` },
+  // СТОРИБОРД: проекты автомонтажа «говорящее видео → раскадровка 6 панелей → рендер».
+  // plan JSONB = { transcript:[{start,end,text}], beats:[{t,desc,intensity}], chunks:[{idx,start,end,
+  //   enabled,status,panels:[{type,start,end,text,frameTs,imageUrl?,prompt?}],pngUrl?,renderUrl?}] }.
+  {
+    name: 'storyboards.table',
+    sql: `CREATE TABLE IF NOT EXISTS storyboards (
+      id UUID PRIMARY KEY,
+      tenant_id VARCHAR(64) NOT NULL,
+      name VARCHAR(200) NOT NULL DEFAULT 'Сториборд',
+      status VARCHAR(24) NOT NULL DEFAULT 'draft',
+      source_asset_id UUID,
+      source_url TEXT,
+      source_duration REAL,
+      plan JSONB NOT NULL DEFAULT '{}',
+      settings JSONB NOT NULL DEFAULT '{}',
+      result_asset_id UUID,
+      result_url TEXT,
+      error TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  { name: 'storyboards.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_storyboards_tenant ON storyboards (tenant_id, created_at DESC)` },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

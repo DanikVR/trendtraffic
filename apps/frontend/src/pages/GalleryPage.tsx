@@ -40,12 +40,14 @@ import { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
 import { PublisherTab, type ChainDraft } from './publisher/PublisherTab';
 import { PublisherStudio } from './publisher/PublisherStudio';
+import { StoryboardTab } from './storyboard/StoryboardTab';
+import { SkillsTab } from './skills/SkillsTab';
 
-type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'reference' | 'publisher';
+type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'storyboard' | 'skills' | 'reference' | 'publisher';
 /** Фильтр внутри вкладки «Медиафайлы»: медиа (изображения+видео, kind=reference), аудио
  *  или «Аналитика» (папка analyzed целиком: видео из «Добавить в галерею» + разбор .md + субтитры .srt). */
 type MediaKind = 'reference' | 'image' | 'audio' | 'analytics';
-const ALL_TABS: Tab[] = ['trendhub', 'ugc', 'flow', 'hotebook', 'reference', 'publisher'];
+const ALL_TABS: Tab[] = ['trendhub', 'ugc', 'storyboard', 'flow', 'hotebook', 'reference', 'publisher', 'skills'];
 
 interface GalleryItem {
   id: string;
@@ -69,10 +71,12 @@ interface GalleryItem {
 const TABS: { key: Tab; label?: string }[] = [
   { key: 'trendhub' },
   { key: 'ugc', label: 'UGC' },
+  { key: 'storyboard' },
   { key: 'flow', label: 'Google Flow' },
   { key: 'hotebook', label: 'Hotebook' },
   { key: 'reference' },
   { key: 'publisher' },
+  { key: 'skills' },
 ];
 
 function tabIcon(key: Tab, size = 15) {
@@ -82,6 +86,8 @@ function tabIcon(key: Tab, size = 15) {
   if (key === 'ugc') return <Users size={size} />;
   if (key === 'trendhub') return <TrendingUp size={size} />;
   if (key === 'publisher') return <Send size={size} />;
+  if (key === 'storyboard') return <LayoutTemplate size={size} />;
+  if (key === 'skills') return <Sparkles size={size} />;
   return <Sparkles size={size} />;
 }
 
@@ -168,6 +174,8 @@ export default function GalleryPage() {
     if (key === 'trendhub') return t('sec.gallery.tabTrends', 'Тренды');
     if (key === 'reference') return t('sec.gallery.tabMedia', 'Медиафайлы');
     if (key === 'publisher') return t('sec.gallery.tabPublisher', 'Публикатор');
+    if (key === 'storyboard') return t('sec.gallery.tabStoryboard', 'Сториборд');
+    if (key === 'skills') return t('sec.gallery.tabSkills', 'Скиллы');
     return fallback || key;
   };
   // Тип артефакта Hotebook → человекочитаемое имя (для бейджей на карточке блокнота).
@@ -423,8 +431,8 @@ export default function GalleryPage() {
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...authHeader() });
 
   const load = async (which: Tab = tab, kindOverride?: MediaKind) => {
-    // «Публикатор» — данные (ключ/аккаунты/лента) грузит сам компонент PublisherTab.
-    if (which === 'publisher') { setItems([]); setLoading(false); setError(null); setSelected(new Set()); return; }
+    // «Публикатор» / «Сториборд» / «Скиллы» — данные грузят сами компоненты вкладок.
+    if (which === 'publisher' || which === 'storyboard' || which === 'skills') { setItems([]); setLoading(false); setError(null); setSelected(new Set()); return; }
     setLoading(true); setError(null); setSelected(new Set());
     try {
       if (which === 'trendhub') {
@@ -1408,7 +1416,9 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Поиск. На «Трендах» поле принимает и ПРЯМУЮ ссылку на видео (TikTok/IG/YouTube). */}
+      {/* Поиск. На «Трендах» поле принимает и ПРЯМУЮ ссылку на видео (TikTok/IG/YouTube).
+          На «Сториборде»/«Скиллах» поиска нет — у вкладок свои формы. */}
+      {tab !== 'storyboard' && tab !== 'skills' && (
       <div className="relative">
         <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
         <input value={query} onChange={(e) => setQuery(e.target.value)}
@@ -1417,6 +1427,7 @@ export default function GalleryPage() {
           className="w-full pl-11 pr-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 transition-shadow"
           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
       </div>
+      )}
       {tab === 'trendhub' && isVideoLink(query) && (
         <button type="button" onClick={() => void addByLink()} disabled={linkBusy}
           className="inline-flex items-center gap-2 text-[13px] font-700 px-4 py-2.5 rounded-xl disabled:opacity-60"
@@ -1441,6 +1452,12 @@ export default function GalleryPage() {
         /* «Публикатор» (Ф1): постинг через Blotato (BYO-ключ) — плитки сетей, лента, студия поста */
         <PublisherTab token={token} reloadKey={pubReload} onNewPost={() => setPubStudio({})}
           chainDraft={pubChainDraft} onChainDraftConsumed={() => setPubChainDraft(null)} />
+      ) : tab === 'storyboard' ? (
+        /* «Сториборд»: проекты автомонтажа (список карточками, студия — /storyboard/:id) */
+        <StoryboardTab />
+      ) : tab === 'skills' ? (
+        /* «Скиллы»: найди-виралку / антиклише / формула-подписи */
+        <SkillsTab />
       ) : tab === 'trendhub' ? (
         renderTrendHub()
       ) : (

@@ -52,6 +52,8 @@ import flowExtRouter, { INGEST_LIMIT as FLOW_INGEST_LIMIT } from './modules/flow
 import notebooklmExtRouter, { INGEST_LIMIT as NLM_INGEST_LIMIT } from './modules/notebooklm-ext/router.js';
 import heygenExtRouter, { INGEST_LIMIT as HEYGEN_INGEST_LIMIT } from './modules/heygen-ext/router.js';
 import videoEditRouter from './modules/video_edit/router.js';
+import storyboardRouter from './modules/storyboard/router.js';
+import skillsRouter from './modules/skills/router.js';
 import enterpriseChatRouter from './modules/enterprise_chat/router.js';
 import mcpRouter from './modules/mcp/router.js';
 import { partnersPublicRouter, partnersAdminRouter } from './modules/partners/router.js';
@@ -220,6 +222,10 @@ app.use('/api/notebooklm', notebooklmRouter);
 // json-лимит для base64-видео/картинок «В галерею», иначе 413).
 // TRENDTRAFFIC: обрезка/нарезка видео (движок редактора-просмотрщика) — JWT внутри роутера
 app.use('/api/video-edit', videoEditRouter);
+// СТОРИБОРД: автомонтаж «говорящее видео → раскадровка → рендер» — JWT + подписка внутри
+app.use('/api/storyboard', storyboardRouter);
+// СКИЛЛЫ: найди-виралку / антиклише / формула-подписи — JWT + подписка внутри
+app.use('/api/skills', skillsRouter);
 // /api/quest-flow смонтирован выше (с увеличенным json-лимитом для base64-медиа)
 app.use('/api/enterprise-chat', enterpriseChatRouter);
 app.use('/api/chatwoot-bridge', express.json(), chatwootBridgeRouter);

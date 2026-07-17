@@ -86,6 +86,8 @@ const GalleryPage = lazyWithRetry(() => import('./pages/GalleryPage'));
 const SocialExtensionPage = lazyWithRetry(() => import('./pages/SocialExtensionPage'));
 // TRENDTRAFFIC: «Каналы» — анализ всех видео канала по ссылке — lazy.
 const ChannelsPage = lazyWithRetry(() => import('./pages/ChannelsPage'));
+// СТОРИБОРД: полноэкранная студия автомонтажа (/storyboard/:id) — lazy.
+const StoryboardStudio = lazyWithRetry(() => import('./pages/storyboard/StoryboardStudio'));
 
 // ============================================================================================
 // Мидлвари защиты роутов
@@ -344,6 +346,15 @@ const APP_ROUTES = [
               </React.Suspense>
             ),
           }] : []),
+          // СТОРИБОРД: студия автомонтажа (список — вкладка Галереи ?tab=storyboard)
+          {
+            path: 'storyboard/:id',
+            element: (
+              <React.Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>…</div>}>
+                <StoryboardStudio />
+              </React.Suspense>
+            ),
+          },
           // Страница /publisher УДАЛЕНА (2026-07-08): Публикатор теперь вкладка внутри Галереи
           // (пока заглушка «скоро»). Роут снят, PublisherPage удалён.
           ...(FEATURES.socialMediaExt ? [{
