@@ -3013,7 +3013,18 @@
  *          403 на листинге каталога вместо index.html). Перенёс скриншоты в
  *          public/wiki-shots/ (src → /wiki-shots/*.png). Файлы: WikiPage.tsx,
  *          public/wiki-shots/*.png, AppVersion. */
-export const APP_VERSION = '2.4.1';
+/* 2.4.2 — вики/MCP: секция переписана под РАБОЧИЙ путь (по фидбэку юзера) —
+ *          карточка «Claude Connector (MCP)» в ОБЫЧНЫХ Настройках (персональный
+ *          ключ в 1 клик со всеми скоупами + готовые сниппеты Claude Desktop
+ *          config и Claude Code one-command; тот же /api/mcp, что и Enterprise →
+ *          MCP — тот остаётся в тексте как «тонкая настройка скоупов»).
+ *          Скриншот секции заменён на кадр карточки Connector из живого
+ *          /settings; ЖИВОЙ КЛЮЧ на кадре ЗАМАЗАН (Pillow: 4 зоны + crop
+ *          красной пометки) — старый mcp.png (Enterprise-вкладка) удалён.
+ *          «Открыть в настройках» ведёт на /settings. Файлы: WikiPage.tsx,
+ *          public/locales/{en,ru}/wiki.json, public/wiki-shots/mcp-connector.png,
+ *          AppVersion. */
+export const APP_VERSION = '2.4.2';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

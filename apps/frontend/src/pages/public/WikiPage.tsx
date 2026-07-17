@@ -48,7 +48,9 @@ const ARTICLES: WikiArticleMeta[] = [
     sections: [
       { id: 'intro', open: ES },
       { id: 'api', tab: 'API', image: '/wiki-shots/api.png', open: `${ES}?section=gemini`, keyHref: 'https://aistudio.google.com/app/apikey' },
-      { id: 'mcp', tab: 'MCP', image: '/wiki-shots/mcp.png', open: `${ES}?section=mcp` },
+      // Рабочий путь MCP — карточка «Claude Connector» в ОБЫЧНЫХ Настройках
+      // (ключ + готовые сниппеты); Enterprise → MCP остаётся для тонкой настройки скоупов.
+      { id: 'mcp', tab: 'Claude Connector (MCP)', image: '/wiki-shots/mcp-connector.png', open: `${APP_URL}/settings` },
       { id: 'tikhub', tab: 'Tikhub', image: '/wiki-shots/tikhub.png', open: `${ES}?section=tikhub`, keyHref: 'https://tikhub.io' },
       { id: 'generation', tab: 'Generation', image: '/wiki-shots/generation.png', open: `${ES}?section=openmontage` },
       { id: 'hotebook', tab: 'Hotebook', open: `${ES}?section=hotebook`, keyHref: 'https://notebooklm.google.com' },

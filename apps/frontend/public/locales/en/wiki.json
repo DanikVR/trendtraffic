@@ -19,7 +19,7 @@
     "readMore": "Read section",
     "categoryLabel": "Topic",
     "articlesCount": "{{n}} articles",
-    "screenshotAlt": "Screenshot of the “{{tab}}” tab in Enterprise settings",
+    "screenshotAlt": "Screenshot of “{{tab}}” in TrendTraffic",
     "helpTitle": "Didn't find an answer?",
     "helpBody": "Write to us and we'll add the topic to the wiki.",
     "backHome": "Back to home"
@@ -57,14 +57,14 @@
           ]
         },
         "mcp": {
-          "title": "MCP — connect external AI agents and CRM",
-          "body": "<p>The <b>MCP</b> tab lets you generate a personal key that connects your TrendTraffic account to any MCP-compatible agent — <b>Claude Desktop</b>, ChatGPT connectors, <b>n8n</b> or a custom agent. The connection URL is <code>app.trendtraffic.pro/api/mcp</code>.</p><p>Pick the <b>scopes</b> the key is allowed to use (read trends, read the gallery, generate images, read the subscription, and more). The raw key is shown <b>only once</b> — copy it right away. It is stored hashed and can be deleted anytime, which instantly cuts off that integration.</p>",
+          "title": "MCP — connect Claude and external AI agents",
+          "body": "<p>The fast path is the <b>“Claude Connector (MCP)”</b> card in your regular account <b>Settings</b>. The “Create personal key” button issues a personal <code>vbvx_mcp_…</code> key with full permissions; the key is shown <b>only once</b> and is already inserted into the ready-made snippets below it: a config for <b>Claude Desktop</b> (claude_desktop_config.json) and a one-line command for <b>Claude Code</b>. Paste it — and the TrendTraffic tools appear right in your Claude chat: trends, gallery, audience, publisher.</p><p>Fine-grained permissions live on the <b>MCP</b> tab of Enterprise settings: separate keys with selectable <b>scopes</b> (read trends, read the gallery, generate images and more) for <b>n8n</b>, ChatGPT connectors or custom agents. The connection URL is <code>app.trendtraffic.pro/api/mcp</code>. Keys are stored hashed; deleting a key instantly cuts off that integration.</p>",
           "examples": [
-            "Create a key labelled “Claude desktop” with read scopes, then paste the URL and key into Claude's MCP settings.",
-            "Ask your agent to list found trends (trends:read) or read your gallery files (media:read).",
-            "Turn on images:generate so the agent can create pictures through your account.",
-            "Automate with n8n: an MCP node reads your publisher schedule (publisher:read).",
-            "Rotate access safely — delete a key and issue a new one; old integrations stop working at once."
+            "Settings → “Claude Connector (MCP)” → “Create personal key”; copy the ready config into claude_desktop_config.json (Windows: %APPDATA%\\Claude\\) and restart Claude Desktop.",
+            "Claude Code — connect with one command: copy the “claude mcp add … trendtraffic …” line from the same card and run it in a terminal.",
+            "Ask Claude: “scan trends in my niche” or “show my latest gallery files” — it acts through your account.",
+            "For n8n or ChatGPT connectors, create a separate key on the Enterprise → MCP tab with only the scopes you need (for example, read-only).",
+            "Rotation: delete a key (trash icon) — the integration stops at once; then issue a new one."
           ]
         },
         "tikhub": {
