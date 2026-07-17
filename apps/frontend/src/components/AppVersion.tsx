@@ -3007,8 +3007,13 @@
  *          не задействован (нет CRM-каналов; FEATURES.video/sip=false). Компонент
  *          Section3QuestFlow оставлен для возможной реактивации.
  *          Файлы: WikiPage.tsx, EnterpriseSettingsPage.tsx, landing.css,
- *          public/locales/{en,ru}/wiki.json, public/wiki/*.png, AppVersion. */
-export const APP_VERSION = '2.4.0';
+ *          public/locales/{en,ru}/wiki.json, public/wiki-shots/*.png, AppVersion. */
+/* 2.4.1 — ФИКС /wiki: скриншоты лежали в public/wiki/ → папка dist/wiki/
+ *          ПЕРЕКРЫВАЛА SPA-маршрут /wiki (nginx: /wiki → 301 /wiki/ →
+ *          403 на листинге каталога вместо index.html). Перенёс скриншоты в
+ *          public/wiki-shots/ (src → /wiki-shots/*.png). Файлы: WikiPage.tsx,
+ *          public/wiki-shots/*.png, AppVersion. */
+export const APP_VERSION = '2.4.1';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
