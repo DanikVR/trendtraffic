@@ -187,6 +187,7 @@
 }
 /* Узкие экраны: короткая «Начать» в шапке, плотнее отступы — пилюля не переносится */
 @media (max-width: 640px) {
+  .ttl-nav { --ttl-logo-h: 24px; }
   .ttl-nav .ttl-btn-full { display: none; }
   .ttl-nav .ttl-btn-short { display: inline; }
   .ttl-nav .ttl-btn { padding: 11px 18px; }
@@ -194,19 +195,8 @@
   .ttl-nav-inner > div:last-child { gap: 14px !important; }
 }
 
-/* ── Логотип ── */
-.ttl-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--ttl-bone);
-}
-.ttl-logo svg { display: block; }
-.ttl-logo-word {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
+/* ── Логотип (фирменный wordmark-имидж) ── */
+.ttl-logo-img { display: block; width: auto; }
 
 /* ── Reveal-маски ── */
 .ttl-mask { display: block; overflow: hidden; }
@@ -498,6 +488,15 @@
   height: 76px;
   display: flex;
   align-items: center;
+}
+/* Крупный фирменный логотип — по центру экрана загрузки */
+.ttl-preloader-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(180px, 30vw, 340px);
+  height: auto;
 }
 .ttl-preloader-count {
   position: absolute;

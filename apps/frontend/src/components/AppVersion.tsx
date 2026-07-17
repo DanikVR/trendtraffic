@@ -2860,7 +2860,16 @@
  *          index.html class="dark" + ранний скрипт + initTheme уже дают dark при
  *          первом заходе. i18n: sec.gallery.addTrendTitle (ru/en). Файлы:
  *          GalleryPage.tsx, locales/{ru,en}/common.json, AppVersion. */
-export const APP_VERSION = '2.3.12';
+/* 2.3.13 — Лендинг: фирменный логотип вместо самодельного знака — цветной
+ *          wordmark (vibevox-logo-dark.png, контент TrendTraffic) в шапке
+ *          (30px, на мобиле 24px через --ttl-logo-h) и футере (40px); на экране
+ *          загрузки К верхнему логотипу (v2.3.11, геометрия хедера) добавлен
+ *          КРУПНЫЙ фирменный логотип ПО ЦЕНТРУ (clamp 180–340px, absolute
+ *          центр — юзер отметил центр экрана на скрине «поставь логотип при
+ *          загрузке»); счётчик как был справа-снизу. Слито с параллельной
+ *          v2.3.11 (их cookie-плашка и верхний лого сохранены). Файлы:
+ *          landing/chrome.tsx (TTLogo → img), landing/landing.css, AppVersion. */
+export const APP_VERSION = '2.3.13';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

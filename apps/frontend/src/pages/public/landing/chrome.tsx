@@ -14,21 +14,16 @@ export const APP_URL = 'https://app.trendtraffic.pro';
 
 /* ────────────────────────── Логотип ────────────────────────── */
 
-export function TTLogo({ big = false }: { big?: boolean }) {
-  const s = big ? 30 : 22;
+/** Фирменный логотип (цветной wordmark на тёмном). h — высота в px. */
+export function TTLogo({ h = 30 }: { h?: number }) {
   return (
-    <span className="ttl-logo">
-      <svg width={s} height={s} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="ttl-lg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#8052ff" />
-            <stop offset="1" stopColor="#15846e" />
-          </linearGradient>
-        </defs>
-        <path d="M5 3.2 L21 12 L5 20.8 Z" fill="url(#ttl-lg)" />
-      </svg>
-      <span className="ttl-logo-word" style={big ? { fontSize: 20 } : undefined}>TrendTraffic</span>
-    </span>
+    <img
+      className="ttl-logo-img"
+      src="/vibevox-logo-dark.png"
+      alt="TrendTraffic"
+      style={{ height: `var(--ttl-logo-h, ${h}px)` }}
+      decoding="async"
+    />
   );
 }
 
@@ -157,12 +152,12 @@ export function Preloader({ onDone }: { onDone: () => void }) {
   if (gone) return null;
   return (
     <div className={`ttl-preloader${done ? ' is-done' : ''}`} aria-hidden="true">
-      {/* Логотип В НАЧАЛЕ экрана (пожелание владельца): та же геометрия, что у
-          логотипа в хедере (.ttl-wrap + строка 76px) — после ухода шторки
-          логотип навигации оказывается ровно на этом же месте. */}
+      {/* Логотип в начале экрана — как у хедера (после шторки нав-лого на том же месте) */}
       <div className="ttl-preloader-brand ttl-wrap">
         <TTLogo />
       </div>
+      {/* И крупный фирменный логотип по центру экрана загрузки */}
+      <img className="ttl-preloader-logo" src="/vibevox-logo-dark.png" alt="" />
       <div className="ttl-preloader-count">{count}</div>
     </div>
   );
@@ -321,7 +316,7 @@ export function TTFooter() {
         <p className="ttl-caption ttl-footer-copy">© Trendtraffic.pro 2026</p>
         <div className="ttl-footer-grid">
           <div>
-            <TTLogo big />
+            <TTLogo h={40} />
             <p className="ttl-body ttl-footer-tagline">
               {t('sec.ttLanding.footerTagline', 'Автоматическое создание трендового видеоконтента с экономией на ИИ.')}
             </p>
