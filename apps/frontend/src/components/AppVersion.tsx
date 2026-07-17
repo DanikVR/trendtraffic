@@ -3125,7 +3125,15 @@
  *          «Открыть в приложении» (ui.openInApp); keyLabel у Flow/Hotebook.
  *          Файлы: WikiPage.tsx, locales/{en,ru}/wiki.json, wiki-shots/ugc-*.png,
  *          AppVersion. */
-export const APP_VERSION = '2.5.0';
+/* 2.5.1 — I18N: раздел «Сториборд» + «Скиллы» переведён на все 108 языков.
+ *          Пивот через нативный английский: ru (инлайн-фолбэки из кода) → en
+ *          (senior product-copywriter промпт, БАЗА) → 106 языков С английского
+ *          (translate-pivot.mjs, Gemini 2.5-flash, thinkingBudget:0). 157 ключей
+ *          × 108 = 16642 перевода; плейсхолдеры {{n}} сохранены, бренды из
+ *          _glossary не тронуты, кириллица в латинице = 0. Раньше EN-юзеры видели
+ *          русские инлайн-фолбэки секций storyboard и skills. Только JSON
+ *          в public/locales (common.json) — кода не менял. */
+export const APP_VERSION = '2.5.1';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
