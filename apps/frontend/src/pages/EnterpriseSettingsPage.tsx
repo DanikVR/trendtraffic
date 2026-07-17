@@ -9,13 +9,15 @@
 
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Workflow, Loader2, Lock, Plug, TrendingUp, Wand2, BookOpen } from 'lucide-react';
+import { Sparkles, Loader2, Lock, Plug, TrendingUp, Wand2, BookOpen } from 'lucide-react';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
 import { AuroraCard } from '../components/AuroraCard';
 
 // Lazy-load каждой секции — стартовая страница лёгкая, тяжёлые формы грузятся по требованию.
 const Section1Gemini = lazy(() => import('./enterprise/Section1Gemini'));
-const Section3QuestFlow = lazy(() => import('./enterprise/Section3QuestFlow'));
+// Section3QuestFlow (вкладка «AI» / ИИ-ассистент) — legacy Quest Flow (диалоги с
+// клиентами/CRM от VibeVox). В TrendTraffic не задействован (нет CRM-каналов),
+// поэтому вкладка скрыта (2026-07-17). Компонент оставлен на случай реактивации.
 const Section5Mcp = lazy(() => import('./enterprise/Section5Mcp'));
 const Section6TikHub = lazy(() => import('./enterprise/Section6TikHub'));
 const Section7OpenMontage = lazy(() => import('./enterprise/Section7OpenMontage'));
@@ -41,13 +43,8 @@ export function EnterpriseSettingsPage() {
       color: '#8B5CF6',
       component: Section1Gemini,
     },
-    {
-      key: 'questflow',
-      label: t('enterprise.tabs.ai', 'AI'),
-      icon: <Workflow size={16} />,
-      color: '#22d3ee',
-      component: Section3QuestFlow,
-    },
+    // Вкладка «AI» (ИИ-ассистент / Quest Flow) убрана 2026-07-17 — legacy VibeVox
+    // (диалоги с клиентами/CRM), в TrendTraffic не используется.
     {
       key: 'mcp',
       label: t('enterprise.tabs.mcp'),

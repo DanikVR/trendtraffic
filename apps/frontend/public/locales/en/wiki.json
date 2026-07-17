@@ -1,0 +1,106 @@
+{
+  "ui": {
+    "kicker": "Documentation",
+    "title": "TrendTraffic Wiki",
+    "subtitle": "Guides, instructions and practical examples for every part of the platform. Search for what you need — or browse the topics below.",
+    "searchPh": "Search the wiki: “Gemini key”, “download a video”, “avatar”, “MCP”…",
+    "searchAria": "Search the wiki",
+    "contents": "Contents",
+    "onThisPage": "On this page",
+    "examples": "Practical examples",
+    "whereToGetKey": "Where to get the key",
+    "openInSettings": "Open in settings",
+    "noResultsTitle": "Nothing found",
+    "noResultsBody": "No articles match “{{q}}”. Try a shorter or different term — for example “key”, “trend” or “avatar”.",
+    "resultsOne": "1 result for “{{q}}”",
+    "resultsMany": "{{n}} results for “{{q}}”",
+    "clearSearch": "Clear search",
+    "inArticle": "in {{article}}",
+    "readMore": "Read section",
+    "categoryLabel": "Topic",
+    "articlesCount": "{{n}} articles",
+    "screenshotAlt": "Screenshot of the “{{tab}}” tab in Enterprise settings",
+    "helpTitle": "Didn't find an answer?",
+    "helpBody": "Write to us and we'll add the topic to the wiki.",
+    "backHome": "Back to home"
+  },
+  "categories": {
+    "start": {
+      "title": "Getting started",
+      "desc": "First steps: connect your keys and switch on the paid features."
+    }
+  },
+  "articles": {
+    "first-launch": {
+      "title": "First launch",
+      "excerpt": "How to connect your keys in Enterprise settings and switch on video, images, voiceover, avatars and trends.",
+      "lead": "TrendTraffic runs on the “bring your own key” model: every paid or cloud step (AI video, images, voiceover, avatars, trend scanning) uses <b>your own</b> provider key, stored encrypted. The free CPU chain (trimming, subtitles, export) needs no keys at all. All keys live in one place — <b>Enterprise settings</b>. Below is what each tab does and how to set it up.",
+      "sections": {
+        "intro": {
+          "title": "What Enterprise settings are and how to open them",
+          "body": "<p>Enterprise settings gather all integrations, keys and AI parameters for your account in one screen. Open it from the <b>gear icon</b> at the bottom of the left sidebar, or go straight to <b>app.trendtraffic.pro/settings/enterprise</b>. The section is available on the <b>Enterprise</b> plan (and to the superadmin).</p><p>Every key is stored <b>encrypted</b> and shown masked (for example <code>AIzaSy…***</code>). You can re-check or delete any key at any time — nothing is used without your action.</p>",
+          "examples": [
+            "Open settings: click the gear icon at the bottom of the left sidebar.",
+            "Don't see the section? It is Enterprise-only — check your plan on the Pricing page (/billing).",
+            "Every card has Save, Check/Validate and Delete — a key never leaves your account and can be removed in one click."
+          ]
+        },
+        "api": {
+          "title": "API — your Google Gemini key",
+          "body": "<p>The <b>API</b> tab holds your personal <b>Google Gemini</b> key from AI Studio. Gemini is the analytical brain of the platform: frame-by-frame video analysis, transcripts, translation and text generation. Your key is used instead of the shared platform key for every Gemini call on your account.</p><p>The same tab also holds <b>Quest Flow API keys</b> (secrets for HTTP blocks), the <b>image-generation model</b> selector (for example Nano Banana or Imagen) and a <b>Telegram bot token</b> for notifications.</p>",
+          "keyLabel": "Get a key in Google AI Studio",
+          "examples": [
+            "Paste the AI Studio key and press “Save and validate” — the status turns to “Active”.",
+            "Analyse a trend video frame by frame (Gallery → open a video → Analysis) — it runs on your Gemini quota.",
+            "Choose “Nano Banana (2.5 Flash Image)” as the image model for generating and editing pictures.",
+            "Create a bot with @BotFather and paste its token — get a Telegram message when auto-runs finish or a key stops working."
+          ]
+        },
+        "mcp": {
+          "title": "MCP — connect external AI agents and CRM",
+          "body": "<p>The <b>MCP</b> tab lets you generate a personal key that connects your TrendTraffic account to any MCP-compatible agent — <b>Claude Desktop</b>, ChatGPT connectors, <b>n8n</b> or a custom agent. The connection URL is <code>app.trendtraffic.pro/api/mcp</code>.</p><p>Pick the <b>scopes</b> the key is allowed to use (read trends, read the gallery, generate images, read the subscription, and more). The raw key is shown <b>only once</b> — copy it right away. It is stored hashed and can be deleted anytime, which instantly cuts off that integration.</p>",
+          "examples": [
+            "Create a key labelled “Claude desktop” with read scopes, then paste the URL and key into Claude's MCP settings.",
+            "Ask your agent to list found trends (trends:read) or read your gallery files (media:read).",
+            "Turn on images:generate so the agent can create pictures through your account.",
+            "Automate with n8n: an MCP node reads your publisher schedule (publisher:read).",
+            "Rotate access safely — delete a key and issue a new one; old integrations stop working at once."
+          ]
+        },
+        "tikhub": {
+          "title": "Tikhub — your Trend key",
+          "body": "<p>The <b>Tikhub</b> tab stores your own <b>TikHub.io</b> key for scanning trends and downloading videos from TikTok, Instagram and YouTube. It is used instead of the shared key, on your own quota. The <b>Validate</b> button calls TikHub live and shows the status and remaining balance.</p>",
+          "keyLabel": "Get a key at TikHub.io",
+          "examples": [
+            "Paste the Trend key and press “Validate” — check the status and your remaining balance.",
+            "Scan trends by region and audience (Gallery → Trends) on your own quota.",
+            "Paste a TikTok / Instagram / YouTube link into Trends search to download and auto-analyse the video.",
+            "Analyse every video of a channel at once (Channels) — powered by the same key."
+          ]
+        },
+        "generation": {
+          "title": "Generation — the extension and render keys",
+          "body": "<p>The <b>Generation</b> tab holds the keys for paid or cloud rendering steps: AI video, images, voiceover and avatars. The <b>free CPU chain</b> (trimming, subtitles, formatting, export) needs no keys.</p><p>At the top is the <b>TrendTraffic browser extension</b> — one extension for both Google Flow (Veo) and NotebookLM. Below it, the <b>AI Director (Anthropic Claude)</b> — the brain behind smart script steps: research, best-moment selection, scripts and news (default Claude Opus). Then the <b>paid providers</b>: FAL.ai, OpenAI, ElevenLabs, HeyGen and more. Each provider card has Save, Check and Delete.</p>",
+          "examples": [
+            "Install the extension (“Download extension”) to unlock free Veo video through Google Flow and the Hotebook block.",
+            "Add an Anthropic Claude key (console.anthropic.com) — it powers scripts, research and news in the smart LLM nodes.",
+            "Add ElevenLabs (voiceover, music, SFX) and HeyGen (avatars) keys for the UGC studio.",
+            "Add FAL.ai (FLUX, Veo, Kling, MiniMax) for AI image and video generation.",
+            "No keys yet? The free CPU chain still trims, subtitles, formats and exports without any provider key."
+          ]
+        },
+        "hotebook": {
+          "title": "Hotebook — Google NotebookLM",
+          "body": "<p>The <b>Hotebook</b> tab connects the Hotebook block to your own <b>Google NotebookLM</b> through the same TrendTraffic extension, running in your browser under your Google login. Each account has its own connection and its own limits. The status shows one of: connected, extension offline, or sign-in needed.</p><p>Tip: use a <b>separate Google account</b> with a Google AI plan — the daily NotebookLM limits (audio / video / chat) are counted per account. The platform never stores your Google cookies; the login stays in your browser.</p>",
+          "keyLabel": "Open NotebookLM",
+          "examples": [
+            "Install the extension, open notebooklm.google.com and sign in — the “TrendTraffic → Hotebook” panel appears.",
+            "Generate audio or video overviews from your sources and pull the results into the Gallery.",
+            "Keep the NotebookLM tab open while the block works — sources, chat and generation run inside it.",
+            "Press “Check” on this tab if the status is stuck — it re-reads the live connection."
+          ]
+        }
+      }
+    }
+  }
+}

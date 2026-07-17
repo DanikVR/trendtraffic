@@ -2992,7 +2992,23 @@
  *          прогнаны propagate (перевод — следующим прогоном).
  *          Файлы: modules/storyboard/*, modules/skills/*, StoryboardTab/Studio,
  *          SkillsTab, GalleryPage, MainLayout, BottomTabBar, router, migrations. */
-export const APP_VERSION = '2.3.21';
+/* 2.4.0 — /wiki: раздел документации «в традициях Википедии» (по фидбэку юзера).
+ *          Была заглушка StubPage — теперь живая страница WikiPage с крупным
+ *          ПОИСКОМ (живой фильтр по секциям + подсветка + сниппеты), «Содержанием»
+ *          сбоку и статьёй «Первый запуск»: разбор ВСЕХ вкладок Enterprise settings
+ *          (API/MCP/Tikhub/Generation/Hotebook) — что делает, где взять ключ
+ *          (внешняя ссылка), «Открыть в настройках» (deep-link ?section=…) и по
+ *          2–5 практических примеров на тему. 4 реальных скриншота настроек в
+ *          public/wiki/*.png. Тексты — новый ленивый i18n-неймспейс `wiki`
+ *          (en — база/фолбэк, ru — для носителей; остальные 106 языков падают на
+ *          en до прогона переводчика). Стиль лендинга «Dala» + фон Constellation.
+ *          ПОПУТНО: убрана вкладка «AI» (ИИ-ассистент / Quest Flow) из Enterprise
+ *          settings — это legacy VibeVox (диалоги с клиентами/CRM), в TrendTraffic
+ *          не задействован (нет CRM-каналов; FEATURES.video/sip=false). Компонент
+ *          Section3QuestFlow оставлен для возможной реактивации.
+ *          Файлы: WikiPage.tsx, EnterpriseSettingsPage.tsx, landing.css,
+ *          public/locales/{en,ru}/wiki.json, public/wiki/*.png, AppVersion. */
+export const APP_VERSION = '2.4.0';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
