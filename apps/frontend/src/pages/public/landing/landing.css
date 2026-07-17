@@ -121,6 +121,8 @@
   transition: filter 0.25s ease, transform 0.25s ease;
   will-change: transform;
 }
+.ttl-btn { white-space: nowrap; }
+.ttl-btn-short { display: none; }
 .ttl-btn:hover { filter: brightness(1.12); transform: translateY(-2px); }
 .ttl-btn:active { transform: translateY(0); }
 .ttl-btn .ttl-btn-arrow { transition: transform 0.25s ease; }
@@ -182,6 +184,14 @@
 .ttl-nav .ttl-btn { padding: 12px 20px; }
 @media (max-width: 860px) {
   .ttl-nav-links { display: none; }
+}
+/* Узкие экраны: короткая «Начать» в шапке, плотнее отступы — пилюля не переносится */
+@media (max-width: 640px) {
+  .ttl-nav .ttl-btn-full { display: none; }
+  .ttl-nav .ttl-btn-short { display: inline; }
+  .ttl-nav .ttl-btn { padding: 11px 18px; }
+  .ttl-nav-inner { gap: 14px; }
+  .ttl-nav-inner > div:last-child { gap: 14px !important; }
 }
 
 /* ── Логотип ── */

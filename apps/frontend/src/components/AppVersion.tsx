@@ -2792,8 +2792,15 @@
  *          (pill) + «Войти» (ghost); «© Trendtraffic.pro 2026» перенесён
  *          В НАЧАЛО футера отдельной строкой (пожелание владельца), нижняя
  *          строка футера — только реквизиты. Файлы: LandingPage.tsx,
- *          landing/chrome.tsx (TTFooter), landing/landing.css, AppVersion. */
-export const APP_VERSION = '2.3.6';
+ *          landing/chrome.tsx (TTFooter), landing/landing.css, AppVersion.
+ * 2.3.7 — Лендинг, мобильная вёрстка: пилюля шапки на экранах ≤640px показывает
+ *          короткое «Начать» (полное «Начать бесплатно» переносилось на 2 строки),
+ *          white-space nowrap на всех pill-кнопках, плотнее отступы навбара;
+ *          частицы на узких экранах приглушены 0.62→0.48 (текст футера читается
+ *          поверх поля). Аудит 390px: переполнений нет, сетки складываются.
+ *          Файлы: landing/chrome.tsx, landing/landing.css,
+ *          landing/Constellation.tsx, AppVersion. */
+export const APP_VERSION = '2.3.7';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

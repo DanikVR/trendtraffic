@@ -315,7 +315,7 @@ export function Constellation({
         const dimChaos = 1 + (p.chaosDim - 1) * chaosW;         // в хаосе большинство гаснет
         let alpha = (0.42 + 0.58 * Math.max(0.12, persp - 0.3)) * twinkle * dimChaos;
         if (!startGate) alpha *= 0.25;
-        if (narrow) alpha *= 0.62;                               // на мобиле — фоновее
+        if (narrow) alpha *= 0.48;                               // на мобиле — фоновее (текст читается поверх)
         ctx.globalAlpha = Math.max(0.04, Math.min(1, alpha));
         ctx.strokeStyle = p.color;
 

@@ -295,7 +295,8 @@ export function TTNav({
             {t('sec.ttLanding.navLogin', 'Войти')}
           </a>
           <a className="ttl-btn" href={`${APP_URL}/auth/register`}>
-            {t('sec.ttLanding.navStart', 'Начать бесплатно')}
+            <span className="ttl-btn-full">{t('sec.ttLanding.navStart', 'Начать бесплатно')}</span>
+            <span className="ttl-btn-short">{t('sec.ttLanding.navStartShort', 'Начать')}</span>
           </a>
         </div>
       </div>
