@@ -10,10 +10,11 @@
  */
 
 import { toolsForScopes, toToolSpec, getTool, type McpToolContext } from './registry.js';
-import './tools.js'; // side-effect: регистрация инструментов в реестре
+import './tools.js';    // side-effect: регистрация инструментов Фазы 0 (CRM/Quest Flow)
+import './tools_tt.js'; // side-effect: регистрация инструментов Фазы 1 (тренды/галерея/студия/публикатор)
 
 const PROTOCOL_VERSION = '2025-06-18';
-const SERVER_INFO = { name: 'VibeVox', version: '1.0.0' };
+const SERVER_INFO = { name: 'TrendTraffic', version: '1.1.0' };
 
 interface JsonRpcMessage {
   jsonrpc?: string;

@@ -18,6 +18,7 @@ import { AuroraButton } from '../components/AuroraButton';
 import { AuroraInput } from '../components/AuroraInput';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { StatusPill } from '../components/StatusPill';
+import { McpConnectorCard } from '../components/McpConnectorCard';
 import { APP_VERSION } from '../components/AppVersion';
 import { useAppStore } from '../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
@@ -600,6 +601,9 @@ export function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* ── Коннектор Claude (MCP) — индивидуальный ключ учётки ── */}
+      <McpConnectorCard />
 
       {/* Прочие настройки */}
       <AuroraCard className="overflow-hidden">

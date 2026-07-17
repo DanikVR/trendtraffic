@@ -365,6 +365,57 @@
   .ttl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* ── Секция Claude · MCP ── */
+.ttl-mcp-panel {
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: clamp(26px, 4vw, 44px);
+  display: grid;
+  gap: clamp(22px, 3vw, 34px);
+}
+.ttl-mcp-brand { display: flex; align-items: center; gap: 14px; }
+.ttl-mcp-word {
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ttl-bone);
+}
+.ttl-mcp-chip {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 119, 87, 0.5);
+  color: #d97757;
+}
+.ttl-mcp-chat { display: grid; gap: 10px; }
+.ttl-mcp-msg {
+  font-size: 14px;
+  font-weight: 200;
+  line-height: 1.55;
+  padding: 12px 16px;
+  border-radius: 16px;
+  max-width: 92%;
+  color: var(--ttl-bone);
+}
+.ttl-mcp-user {
+  background: rgba(128, 82, 255, 0.14);
+  border: 1px solid rgba(128, 82, 255, 0.26);
+  justify-self: end;
+  border-bottom-right-radius: 6px;
+}
+.ttl-mcp-ai {
+  background: rgba(217, 119, 87, 0.10);
+  border: 1px solid rgba(217, 119, 87, 0.28);
+  justify-self: start;
+  border-bottom-left-radius: 6px;
+  color: var(--ttl-mist);
+}
+.ttl-mcp-note { margin-top: 26px; }
+
 /* ── Тариф ── */
 .ttl-price-amount {
   font-size: clamp(64px, 10vw, 140px);

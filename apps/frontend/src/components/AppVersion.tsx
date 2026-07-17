@@ -2807,8 +2807,34 @@
  *          на тач/узких экранах скроллбар скрыт полностью (scrollbar-width
  *          none + display none), скролл пальцем не затронут. Проверено:
  *          390px → ширина полосы 0, 1280px → тёмная полоса 10px на месте.
- *          Файлы: landing/landing.css, AppVersion. */
-export const APP_VERSION = '2.3.8';
+ *          Файлы: landing/landing.css, AppVersion.
+ * 2.3.9 — MCP-коннектор для Claude. Бэк: 8 новых MCP-тулз ядра сервиса
+ *          (list_trend_videos, scan_trends, suggest_audience, list_gallery,
+ *          list_flows, list_publisher_schedule, list_publisher_chains,
+ *          get_subscription) + 7 скоупов; serverInfo → TrendTraffic 1.1.0;
+ *          доступ по-прежнему через feature_gate (Premium=Enterprise), гейт
+ *          не менялся. Настройки: карточка «Коннектор Claude (MCP)» —
+ *          ИНДИВИДУАЛЬНЫЙ ключ каждой учётки (создание в 1 клик со всеми
+ *          скоупами, показ один раз) + готовые сниппеты подключения с этим
+ *          ключом: Claude Desktop (mcp-remote, http-only) и Claude Code;
+ *          без подписки — приглашение на /billing. /billing: пункт MCP в
+ *          фичах Premium + 7-я группа «MCP-коннектор» в полном перечне.
+ *          Лендинг: секция id=mcp «Ваш аккаунт — в чате Claude» — солнышко
+ *          Claude (#D97757, ClaudeLogo.tsx), чат-примеры команд. Файлы:
+ *          backend mcp/tools_tt.ts (нов)+scopes+server, ClaudeLogo (нов),
+ *          McpConnectorCard (нов), SettingsPage, BillingPage, LandingPage,
+ *          landing.css, AppVersion.
+ * 2.3.10 — /billing ПУБЛИЧНЫЙ (просьба владельца: «не нужно регистрироваться»):
+ *          роут вынесен из-под RequireAuth в отдельный BillingChrome —
+ *          авторизованным прежний LayoutSwitcher с сайдбаром, анонимам
+ *          PublicBillingShell (топбар: лого → trendtraffic.pro, «Войти»,
+ *          «Начать бесплатно»). Аноним видит витрину: карточки тарифов,
+ *          калькулятор, сравнение, полный перечень; скрыты «Ваш тариф» и
+ *          «Промокод» (требуют аккаунт); CTA оплаты ведут на /auth/register
+ *          (после регистрации RequirePaid сам возвращает на /billing).
+ *          Файлы: router.tsx (BillingChrome + публичный роут),
+ *          PublicBillingShell (нов), BillingPage (isAnon), AppVersion. */
+export const APP_VERSION = '2.3.10';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

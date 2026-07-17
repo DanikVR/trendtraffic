@@ -18,6 +18,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 // Страницы общего пользования
 import { RoomPage }      from './pages/RoomPage';
 import { BillingPage }   from './pages/BillingPage';
+import { PublicBillingShell } from './components/PublicBillingShell';
 import { SipPage }       from './pages/SipPage';
 import { SettingsPage }  from './pages/SettingsPage';
 // TenantPromptPage удалена в v1.0.4 — её UI заменён Section2Prompt внутри
@@ -177,6 +178,17 @@ function LayoutSwitcher() {
   return isMiniApp ? <MiniAppLayout /> : <MainLayout />;
 }
 
+/**
+ * BillingChrome — обёртка ПУБЛИЧНОГО роута /billing (v2.3.8: страница тарифов
+ * доступна без регистрации). Авторизованным отдаёт обычный LayoutSwitcher
+ * (сайдбар, как раньше), анонимам — PublicBillingShell (топбар «Войти/Начать»).
+ * Сам BillingPage — index-ребёнок роута, попадает в <Outlet/> обеих обёрток.
+ */
+function BillingChrome() {
+  const token = useAppStore((s) => s.token);
+  return token ? <LayoutSwitcher /> : <PublicBillingShell />;
+}
+
 /** Дружелюбный экран ошибки роутера (вместо dev «Hey developer»). */
 function RouteErrorElement() {
   // Частая причина — устаревший lazy-чанк после деплоя (хеши сменились, а вкладка старая).
@@ -269,6 +281,15 @@ const APP_ROUTES = [
     element: <RoomPage />,
   }] : []),
 
+  // ПУБЛИЧНЫЕ тарифы (v2.3.8): /billing доступен БЕЗ регистрации — витрина цен.
+  // Авторизованным BillingChrome возвращает прежний LayoutSwitcher (сайдбар).
+  {
+    path: '/billing',
+    element: <BillingChrome />,
+    errorElement: <RouteErrorElement />,
+    children: [{ index: true, element: <BillingPage /> }],
+  },
+
   // Защищенные системные страницы (требуют токен)
   {
     path: '/',
@@ -286,10 +307,6 @@ const APP_ROUTES = [
             // Домашняя = список видео-комнат. Если video выключен — редирект на fallback.
             index: true,
             element: FEATURES.video ? <RoomPage /> : <Navigate to={HOME_ROUTE_WHEN_NO_VIDEO} replace />,
-          },
-          {
-            path: 'billing',
-            element: <BillingPage />,
           },
           ...(FEATURES.sip ? [{
             path: 'sip',

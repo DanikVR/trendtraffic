@@ -19,6 +19,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Check, ArrowRight, Crown, Sparkles, TrendingUp, BarChart3, Image as ImageIcon,
@@ -29,6 +30,7 @@ import {
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { ClaudeLogo } from '../components/ClaudeLogo';
 import { useAppStore } from '../store/useAppStore';
 import { showToast } from '../components/Toast';
 
@@ -417,6 +419,18 @@ function FeatureGroupsSection() {
         t('sec.billing.fg49G6I6', 'Статусы постов, история, авто-ретраи, аналитика опубликованного'),
       ],
     },
+    {
+      icon: <ClaudeLogo size={16} />,
+      title: t('sec.billing.fg49G7T', 'MCP-коннектор — Claude управляет сервисом'),
+      items: [
+        t('sec.billing.fg49G7I1', 'Персональный MCP-ключ у каждой учётки — создаётся в Настройках в один клик, с готовыми сниппетами подключения'),
+        t('sec.billing.fg49G7I2', 'Claude Desktop и Claude Code подключаются за минуту (Streamable HTTP + Bearer-ключ)'),
+        t('sec.billing.fg49G7I3', 'Команды из чата: сканировать тренды по нише и региону, подсказать ЦА и ключевики, показать галерею и сценарии UGC'),
+        t('sec.billing.fg49G7I4', 'Публикатор под контролем: слоты расписания, свободные времена, цепочки автопубликации'),
+        t('sec.billing.fg49G7I5', 'Права по скоупам: «читающий» и «действующий» ключи можно разделить; ключ отзывается в один клик'),
+        t('sec.billing.fg49G7I6', 'Работает и с другими MCP-клиентами: ChatGPT-коннекторы, n8n, свои агенты'),
+      ],
+    },
   ];
   return (
     <div className="space-y-3">
@@ -449,7 +463,10 @@ function FeatureGroupsSection() {
 // ═════════════════════════════════════════════
 export function BillingPage() {
   const { t } = useTranslation('common');
+  const navigate = useNavigate();
   const { subscriptionTier, subscriptionTierName, token, refreshBilling } = useAppStore();
+  // v2.3.8: /billing публичный — аноним видит витрину тарифов; оплату начинаем с регистрации.
+  const isAnon = !token;
   // null = простой; 'paid' = оформляет сразу; 'trial' = оформляет 7-дневный триал.
   const [checkoutMode, setCheckoutMode] = useState<null | 'paid' | 'trial'>(null);
   const checkoutLoading = checkoutMode !== null;
@@ -464,6 +481,7 @@ export function BillingPage() {
     { icon: <Bot size={14} />, text: t('sec.billing.pf49Autopilot', 'Автопилот: тренд → автоанализ → автосборка UGC → публикация по расписанию, без вашего участия') },
     { icon: <ImageIcon size={14} />, text: t('sec.billing.pf49Gallery', 'Галерея-хаб + скачивание видео без водяного знака (TikTok, Instagram, X)') },
     { icon: <Plug size={14} />, text: t('sec.billing.pf49Byo', 'Альтернатива подпискам — свои API-ключи: Veo, FAL/Kling, Runway, OpenAI, ElevenLabs, HeyGen, Claude') },
+    { icon: <ClaudeLogo size={14} />, text: t('sec.billing.pf49Mcp', 'MCP-коннектор для Claude: управляйте сервисом из чата ИИ — тренды, ЦА, галерея, публикатор; персональный ключ в Настройках') },
     { icon: <Tags size={14} />, text: t('sec.billing.pf49Promo', 'Промокоды и реферальная система') },
   ];
 
@@ -623,6 +641,9 @@ export function BillingPage() {
   // ── Stripe Checkout (Premium) ──
   // trial=true → 7 дней бесплатно с обязательным подтверждением карты; списание €49 после.
   const handleCheckout = async (trial = false) => {
+    // Аноним: сначала бесплатная регистрация — после входа неоплаченного
+    // RequirePaid сам вернёт на /billing, и оплата продолжится в один клик.
+    if (isAnon) { navigate('/auth/register'); return; }
     setCheckoutMode(trial ? 'trial' : 'paid');
     try {
       const res = await fetch('/api/billing/checkout', {
@@ -658,7 +679,8 @@ export function BillingPage() {
         </p>
       </div>
 
-      {/* Текущий тариф + управление подпиской (здесь же кнопка отмены) */}
+      {/* Текущий тариф + управление подпиской — только авторизованным (аноним видит витрину) */}
+      {!isAnon && (
       <AuroraCard className="p-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
@@ -720,8 +742,10 @@ export function BillingPage() {
           </div>
         )}
       </AuroraCard>
+      )}
 
-      {/* Промокод */}
+      {/* Промокод — только авторизованным (валидация требует аккаунт; скидка применяется при оплате) */}
+      {!isAnon && (
       <AuroraCard className="p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-2">
           <Tags size={14} strokeWidth={1.5} style={{ color: 'var(--text-muted)' }} />
@@ -754,6 +778,7 @@ export function BillingPage() {
         {promoError && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{promoError}</p>}
         <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('sec.billing.promoHint', 'Скидка применится к подписке Premium при оплате.')}</p>
       </AuroraCard>
+      )}
 
       {/* Карточки тарифов */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

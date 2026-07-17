@@ -20,6 +20,7 @@ import {
   APP_URL, TTNav, TTFooter, Preloader, RevealLines, FadeUp, useSmoothScroll,
 } from './landing/chrome';
 import { Constellation } from './landing/Constellation';
+import { ClaudeLogo } from '../../components/ClaudeLogo';
 import './landing/landing.css';
 
 function Arrow() {
@@ -293,6 +294,56 @@ export function LandingPage() {
                     <div className="ttl-stat-l">{s.l}</div>
                   </FadeUp>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ══════════ CLAUDE · MCP ══════════ */}
+          <section className="ttl-section" id="mcp">
+            <div className="ttl-wrap">
+              <div className="ttl-cols">
+                <div>
+                  <FadeUp>
+                    <p className="ttl-label">{t('sec.ttLanding.mcpLabel', 'Интеграция · MCP')}</p>
+                  </FadeUp>
+                  <RevealLines
+                    className="ttl-h"
+                    lines={[
+                      t('sec.ttLanding.mcpTitleL1', 'Ваш аккаунт —'),
+                      t('sec.ttLanding.mcpTitleL2', 'в чате Claude.'),
+                    ]}
+                  />
+                  <FadeUp delay={0.15}>
+                    <p className="ttl-body">
+                      {t('sec.ttLanding.mcpBody', 'TrendTraffic — это ещё и MCP-сервер. Создайте персональный ключ в Настройках, вставьте его в Claude — и ассистент сам сканирует тренды, подсказывает аудиторию и ключевики, показывает галерею и расписание публикаций. Простыми фразами, без вкладок.')}
+                    </p>
+                  </FadeUp>
+                  <FadeUp delay={0.25}>
+                    <p className="ttl-caption ttl-mcp-note">
+                      {t('sec.ttLanding.mcpNote', 'Внутри тарифа Premium · индивидуальный ключ у каждой учётки · Claude Desktop и Claude Code')}
+                    </p>
+                  </FadeUp>
+                </div>
+                <FadeUp delay={0.1}>
+                  <div className="ttl-mcp-panel">
+                    <div className="ttl-mcp-brand">
+                      <ClaudeLogo size={44} />
+                      <span className="ttl-mcp-word">Claude</span>
+                      <span className="ttl-mcp-chip">MCP</span>
+                    </div>
+                    <div className="ttl-mcp-chat">
+                      <div className="ttl-mcp-msg ttl-mcp-user">
+                        {t('sec.ttLanding.mcpEx1', 'Просканируй тренды по нише «уход за кожей» в регионе US')}
+                      </div>
+                      <div className="ttl-mcp-msg ttl-mcp-user">
+                        {t('sec.ttLanding.mcpEx2', 'Подскажи ЦА и ключевики для моего продукта')}
+                      </div>
+                      <div className="ttl-mcp-msg ttl-mcp-ai">
+                        {t('sec.ttLanding.mcpEx3', 'Нашёл 12 роликов, топ-3 по вовлечённости уже в Галерее. Ближайший свободный слот публикации — завтра в 09:00.')}
+                      </div>
+                    </div>
+                  </div>
+                </FadeUp>
               </div>
             </div>
           </section>
