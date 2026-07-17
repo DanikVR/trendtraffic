@@ -1,8 +1,11 @@
 /**
  * Express router для MCP (Model Context Protocol).
  *
- * 1. Протокол (Bearer MCP-ключ, без JWT):
+ * 1. Протокол (MCP-ключ, без JWT):
  *    POST /api/mcp            — JSON-RPC эндпоинт для внешних агентов/CRM
+ *      Ключ: Authorization: Bearer <vbvx_mcp_…> (Claude Desktop/Code, n8n)
+ *      ИЛИ ?key=<vbvx_mcp_…> в URL — для «Add custom connector» в приложении
+ *      Claude (кастом-коннекторы не умеют слать заголовки, OAuth не требуем).
  *    GET  /api/mcp            — 405 (SSE/GET пока не поддержан)
  *
  * 2. Управление ключами (JWT + Enterprise):
@@ -35,10 +38,18 @@ const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL
 // 1. MCP PROTOCOL (Bearer MCP-ключ)
 // ============================================================================
 
-router.post('/', async (req: Request, res: Response) => {
+/** Ключ протокола: заголовок Bearer ИЛИ ?key= в URL (кастом-коннектор Claude). */
+function extractRawKey(req: Request): string {
   const auth = req.headers.authorization || '';
-  const rawKey = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!rawKey) return res.status(401).json({ error: 'Authorization: Bearer <vbvx_mcp_...> обязателен' });
+  if (auth.startsWith('Bearer ')) return auth.slice(7).trim();
+  const q = req.query?.key;
+  if (typeof q === 'string' && q.trim()) return q.trim();
+  return '';
+}
+
+router.post('/', async (req: Request, res: Response) => {
+  const rawKey = extractRawKey(req);
+  if (!rawKey) return res.status(401).json({ error: 'Передайте MCP-ключ: Authorization: Bearer <vbvx_mcp_...> или ?key=<vbvx_mcp_...> в URL' });
 
   const ident = await verifyKey(rawKey);
   if (!ident) return res.status(401).json({ error: 'Невалидный или отозванный MCP-ключ' });

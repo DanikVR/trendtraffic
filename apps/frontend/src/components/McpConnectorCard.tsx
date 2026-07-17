@@ -12,7 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Copy, Check, Loader2, Trash2, AlertCircle, KeyRound, Zap,
+  Plus, Copy, Check, Loader2, Trash2, AlertCircle, KeyRound, Zap, Download,
 } from 'lucide-react';
 import { AuroraCard } from './AuroraCard';
 import { AuroraButton } from './AuroraButton';
@@ -47,6 +47,24 @@ function desktopSnippet(url: string, rawKey: string): string {
 
 function codeSnippet(url: string, rawKey: string): string {
   return `claude mcp add --transport http trendtraffic ${url} --header "Authorization: Bearer ${rawKey}"`;
+}
+
+/** URL для «Add custom connector» в приложении Claude: ключ прямо в URL
+ *  (кастом-коннекторы не умеют слать заголовки; бэкенд принимает ?key=). */
+function connectorUrl(url: string, rawKey: string): string {
+  return `${url}?key=${rawKey}`;
+}
+
+/** «Скачать MCP для Claude» — готовый файл конфига Claude Desktop с ключом. */
+function downloadDesktopConfig(url: string, rawKey: string): void {
+  const blob = new Blob([desktopSnippet(url, rawKey)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'claude_desktop_config.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
 }
 
 export function McpConnectorCard() {
@@ -260,15 +278,82 @@ export function McpConnectorCard() {
         )}
       </div>
 
-      {/* Сниппеты подключения */}
+      {/* ── Способ 1 — приложение Claude (Add custom connector), без терминала ── */}
+      <div className="rounded-xl p-3.5 mb-3" style={{ background: 'rgba(217,119,87,0.06)', border: '1px solid rgba(217,119,87,0.25)' }}>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs font-700" style={{ color: 'var(--text-primary)' }}>
+            {t('settings.mcp.way1Title', 'Способ 1 — в приложении Claude')}
+          </span>
+          <span className="text-[10px] font-700 px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}>
+            {t('settings.mcp.way1Badge', 'рекомендуется, без терминала')}
+          </span>
+        </div>
+
+        {/* Два поля для формы «Add custom connector» */}
+        <div className="space-y-1.5 mb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] w-16 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+              {t('settings.mcp.way1Name', 'Название')}
+            </span>
+            <code className="flex-1 text-xs px-3 py-2 rounded-lg truncate"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', fontFamily: 'ui-monospace, monospace' }}>
+              TrendTraffic
+            </code>
+            <CopyBtn text="TrendTraffic" field="cname" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] w-16 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>URL</span>
+            <code className="flex-1 text-xs px-3 py-2 rounded-lg truncate"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', fontFamily: 'ui-monospace, monospace' }}>
+              {connectorUrl(mcpUrl, snippetKey)}
+            </code>
+            <CopyBtn text={connectorUrl(mcpUrl, snippetKey)} field="curl" />
+          </div>
+        </div>
+
+        <ol className="space-y-1 mb-1" style={{ margin: 0, paddingInlineStart: 0, listStyle: 'none' }}>
+          {[
+            t('settings.mcp.way1Step1', 'Внизу слева нажмите на профиль и откройте настройки'),
+            t('settings.mcp.way1Step2', 'В колонке слева выберите «Connectors»'),
+            t('settings.mcp.way1Step3', 'Справа вверху: «Add», затем «Add custom connector»'),
+            t('settings.mcp.way1Step4', 'Вставьте название и URL выше, поля OAuth оставьте пустыми, нажмите «Add»'),
+            t('settings.mcp.way1Step5', 'В новом чате напишите: проверь связь с TrendTraffic'),
+          ].map((s, i) => (
+            <li key={i} className="flex items-start gap-2 text-[11.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              <span className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-700 mt-[1px]"
+                    style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}>{i + 1}</span>
+              <span>{s}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* ── Способ 2 — Claude Desktop: скачать готовый файл конфига ── */}
       <div className="space-y-3">
         <div>
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
             <label className="text-xs font-600 uppercase tracking-wider"
                    style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-              {t('settings.mcp.snippetDesktop', 'Claude Desktop — claude_desktop_config.json')}
+              {t('settings.mcp.way2Title', 'Способ 2 — Claude Desktop (файл)')}
             </label>
-            <CopyBtn text={desktopSnippet(mcpUrl, snippetKey)} field="desktop" />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => downloadDesktopConfig(mcpUrl, snippetKey)}
+                disabled={!justCreated}
+                title={justCreated ? undefined : t('settings.mcp.way2NeedKey', 'Сначала создайте ключ — он попадёт в файл')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-700 transition-colors"
+                style={{
+                  background: justCreated ? '#D97757' : 'var(--bg-tertiary)',
+                  border: '1px solid ' + (justCreated ? '#D97757' : 'var(--border-medium)'),
+                  color: justCreated ? '#fff' : 'var(--text-muted)',
+                  cursor: justCreated ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <Download size={13} /> {t('settings.mcp.way2Download', 'Скачать MCP для Claude')}
+              </button>
+              <CopyBtn text={desktopSnippet(mcpUrl, snippetKey)} field="desktop" />
+            </div>
           </div>
           <pre className="text-[11px] px-3 py-2.5 rounded-xl overflow-x-auto leading-relaxed"
                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', fontFamily: 'ui-monospace, monospace', margin: 0 }}>
@@ -280,7 +365,7 @@ export function McpConnectorCard() {
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-600 uppercase tracking-wider"
                    style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-              {t('settings.mcp.snippetCode', 'Claude Code — одна команда')}
+              {t('settings.mcp.way3Title', 'Способ 3 — Claude Code (одна команда)')}
             </label>
             <CopyBtn text={codeSnippet(mcpUrl, snippetKey)} field="code" />
           </div>

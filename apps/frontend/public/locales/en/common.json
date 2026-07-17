@@ -275,6 +275,18 @@
       "snippetDesktop": "Claude Desktop — claude_desktop_config.json",
       "snippetCode": "Claude Code — one command",
       "snippetHint": "Windows: Claude Desktop config is in %APPDATA%\\Claude\\claude_desktop_config.json. Restart Claude Desktop after pasting. Fine-tune key permissions in Enterprise Settings → MCP.",
+      "way1Title": "Method 1 — in the Claude app",
+      "way1Badge": "recommended, no terminal",
+      "way1Name": "Name",
+      "way1Step1": "Bottom left, click your profile and open settings",
+      "way1Step2": "In the left column, choose “Connectors”",
+      "way1Step3": "Top right: “Add”, then “Add custom connector”",
+      "way1Step4": "Paste the name and URL above, leave the OAuth fields empty, click “Add”",
+      "way1Step5": "In a new chat, type: check the connection with TrendTraffic",
+      "way2Title": "Method 2 — Claude Desktop (file)",
+      "way2Download": "Download MCP for Claude",
+      "way2NeedKey": "Create a key first — it goes into the file",
+      "way3Title": "Method 3 — Claude Code (one command)",
       "confirmDelete": "Delete key?",
       "confirmDeleteBody": "Claude connected via this key will lose access to the account. This action is irreversible."
     }

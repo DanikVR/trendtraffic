@@ -3024,7 +3024,20 @@
  *          «Открыть в настройках» ведёт на /settings. Файлы: WikiPage.tsx,
  *          public/locales/{en,ru}/wiki.json, public/wiki-shots/mcp-connector.png,
  *          AppVersion. */
-export const APP_VERSION = '2.4.2';
+/* 2.4.3 — MCP как в магазине VibeVox (по слову юзера «чтобы был именно такой
+ *          метод»): (1) БЭК: /api/mcp принимает ключ и в URL — ?key=vbvx_mcp_…
+ *          (кастом-коннекторы Claude «Add custom connector» не умеют слать
+ *          заголовки; Bearer остаётся для Desktop/Code/n8n). (2) Карточка
+ *          «Claude Connector (MCP)» в /settings: НОВЫЙ «Способ 1 — в приложении
+ *          Claude (рекомендуется, без терминала)» — два копируемых поля
+ *          (Название + URL-с-ключом) и 5 шагов (профиль → Connectors → Add
+ *          custom connector → OAuth пустые → «проверь связь с TrendTraffic»);
+ *          кнопка «Скачать MCP для Claude» (готовый claude_desktop_config.json,
+ *          активна после создания ключа); прежние сниппеты стали Способами 2–3.
+ *          (3) Вики: секция MCP переписана под этот метод (en+ru). Ключи
+ *          settings.mcp.way* добавлены в en+ru common.json. Файлы: mcp/router.ts,
+ *          McpConnectorCard.tsx, locales/{en,ru}/{common,wiki}.json, AppVersion. */
+export const APP_VERSION = '2.4.3';
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */

@@ -276,6 +276,18 @@
       "snippetDesktop": "Claude Desktop — claude_desktop_config.json",
       "snippetCode": "Claude Code — одна команда",
       "snippetHint": "Windows: конфиг Claude Desktop лежит в %APPDATA%\\Claude\\claude_desktop_config.json. После вставки перезапустите Claude Desktop. Тонкая настройка прав ключа — в Настройках Enterprise → MCP.",
+      "way1Title": "Способ 1 — в приложении Claude",
+      "way1Badge": "рекомендуется, без терминала",
+      "way1Name": "Название",
+      "way1Step1": "Внизу слева нажмите на профиль и откройте настройки",
+      "way1Step2": "В колонке слева выберите «Connectors»",
+      "way1Step3": "Справа вверху: «Add», затем «Add custom connector»",
+      "way1Step4": "Вставьте название и URL выше, поля OAuth оставьте пустыми, нажмите «Add»",
+      "way1Step5": "В новом чате напишите: проверь связь с TrendTraffic",
+      "way2Title": "Способ 2 — Claude Desktop (файл)",
+      "way2Download": "Скачать MCP для Claude",
+      "way2NeedKey": "Сначала создайте ключ — он попадёт в файл",
+      "way3Title": "Способ 3 — Claude Code (одна команда)",
       "confirmDelete": "Удалить ключ?",
       "confirmDeleteBody": "Подключённый через этот ключ Claude перестанет видеть аккаунт. Действие необратимо."
     }
