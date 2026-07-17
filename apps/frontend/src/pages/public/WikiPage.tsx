@@ -128,6 +128,30 @@ const ARTICLES: WikiArticleMeta[] = [
 /** Порядок категорий в «Содержании» (для группировки статей). */
 const CATEGORY_ORDER = ['start', 'app'];
 
+/** Реальные размеры скриншотов (width/height на <img>): браузер резервирует
+ *  место ДО загрузки — без этого lazy-картинки выше цели «дорастали» после
+ *  прыжка к якорю и сдвигали подзаголовок с экрана. */
+const SHOT_DIMS: Record<string, [number, number]> = {
+  '/wiki-shots/api.png': [1555, 1118],
+  '/wiki-shots/generation.png': [1565, 1116],
+  '/wiki-shots/google-flow.png': [1569, 1118],
+  '/wiki-shots/hotebook.png': [1565, 1121],
+  '/wiki-shots/mcp.png': [1558, 1118],
+  '/wiki-shots/media-files.png': [1571, 1118],
+  '/wiki-shots/storyboard-board.png': [1568, 1116],
+  '/wiki-shots/storyboard-tab.png': [1560, 1112],
+  '/wiki-shots/tikhub.png': [1564, 1117],
+  '/wiki-shots/trends-analytics.png': [1563, 1115],
+  '/wiki-shots/trends-audience.png': [1564, 1116],
+  '/wiki-shots/trends-channels.png': [1567, 1119],
+  '/wiki-shots/trends-search.png': [1566, 1115],
+  '/wiki-shots/ugc-dialogue.png': [1565, 1122],
+  '/wiki-shots/ugc-montage.png': [1568, 1123],
+  '/wiki-shots/ugc-solo.png': [1561, 1119],
+  '/wiki-shots/ugc-steps.png': [1565, 1118],
+  '/wiki-shots/ugc-tab.png': [1563, 1117],
+};
+
 /* ── Хелперы ── */
 
 const stripHtml = (s: string) => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -154,7 +178,7 @@ function Highlight({ text, term }: { text: string; term: string }) {
 export function WikiPage() {
   const { t, ready, i18n } = useTranslation('wiki');
   const pageRef = useRef<HTMLDivElement>(null);
-  const { scrollToId, posRef } = useSmoothScroll(pageRef);
+  const { posRef } = useSmoothScroll(pageRef);
   const [query, setQuery] = useState('');
 
   // Страница на чистом чёрном (как лендинг) — красим body на время визита.
@@ -202,10 +226,35 @@ export function WikiPage() {
 
   const metaTitle = ready ? `${t('ui.title')} — TrendTraffic` : 'Wiki — TrendTraffic';
 
+  /**
+   * Точный переход к якорю. Общий scrollToId кладёт цель на -8px (под фикс-шапку),
+   * а ленивые скриншоты выше цели после прыжка меняли высоту — подзаголовок уезжал.
+   * Здесь: свой отступ под шапку (92px, как scroll-margin-top секций) + корректирующие
+   * проходы (позиция пересчитывается, когда докатились картинки/шрифты).
+   */
+  const scrollToTarget = (id: string) => {
+    const NAV_OFFSET = 92;
+    const jump = () => {
+      const node = document.getElementById(id);
+      const page = pageRef.current;
+      if (!node) return;
+      if (!page) { node.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      // Смещение внутри контента — не зависит от фазы lerp-анимации.
+      const top = node.getBoundingClientRect().top - page.getBoundingClientRect().top - NAV_OFFSET;
+      const fine = window.matchMedia('(pointer: fine)').matches;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Лерп-скролл сам анимирует догон — ему нужен мгновенный target; на таче — натив smooth.
+      window.scrollTo({ top: Math.max(0, top), behavior: fine && !reduced ? 'auto' : 'smooth' });
+    };
+    jump();
+    window.setTimeout(jump, 300);
+    window.setTimeout(jump, 900);
+  };
+
   const openResult = (artId: string, secId: string) => {
     setQuery('');
     // Ждём перерисовку статьи, затем скроллим к секции.
-    requestAnimationFrame(() => requestAnimationFrame(() => scrollToId(anchorId(artId, secId))));
+    requestAnimationFrame(() => requestAnimationFrame(() => scrollToTarget(anchorId(artId, secId))));
   };
 
   return (
@@ -303,14 +352,14 @@ export function WikiPage() {
                       const multi = art.sections.length > 1;
                       return (
                         <div key={art.id} className="ttl-wiki-toc-art">
-                          <button type="button" className="ttl-wiki-toc-artbtn" onClick={() => scrollToId(`w-${art.id}`)}>
+                          <button type="button" className="ttl-wiki-toc-artbtn" onClick={() => scrollToTarget(`w-${art.id}`)}>
                             {t(`articles.${art.id}.title`)}
                           </button>
                           {multi && (
                             <ul>
                               {art.sections.map((s) => (
                                 <li key={s.id}>
-                                  <button type="button" onClick={() => scrollToId(anchorId(art.id, s.id))}>
+                                  <button type="button" onClick={() => scrollToTarget(anchorId(art.id, s.id))}>
                                     {t(`articles.${art.id}.sections.${s.id}.title`)}
                                   </button>
                                 </li>
@@ -346,6 +395,7 @@ export function WikiPage() {
                           {s.image && (
                             <figure className="ttl-wiki-shot">
                               <img src={s.image} alt={t('ui.screenshotAlt', { tab: s.tab || '' })}
+                                   width={SHOT_DIMS[s.image]?.[0]} height={SHOT_DIMS[s.image]?.[1]}
                                    loading="lazy" decoding="async" />
                             </figure>
                           )}

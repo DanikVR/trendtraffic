@@ -3162,7 +3162,19 @@
  *          субтитры, автосборка). 2 скрина юзера (Content/Storyboard) →
  *          wiki-shots/storyboard-{tab,board}.png. Файлы: WikiPage.tsx,
  *          locales/{en,ru}/wiki.json, AppVersion. */
-export const APP_VERSION = '2.5.4';
+/* 2.5.5 — вики: ФИКС точности перехода к ПОДЗАГОЛОВКУ из «Содержания» (фидбэк
+ *          юзера: заголовок статьи вставал ровно, подзаголовок — нет). Две
+ *          причины: (1) lazy-скриншоты без width/height — после прыжка к якорю
+ *          картинки ВЫШЕ цели дорастали и сдвигали её (у заголовков статей выше
+ *          обычно всё было загружено); (2) общий scrollToId клал цель на -8px —
+ *          под фикс-шапку TTNav. Решение: SHOT_DIMS (реальные размеры всех 18
+ *          скринов → width/height на <img>, место резервируется до загрузки,
+ *          заодно убит CLS) + локальный scrollToTarget: отступ 92px под шапку,
+ *          мгновенный target для lerp / smooth на таче, корректирующие проходы
+ *          300/900мс (пересчёт после доката картинок/шрифтов). Подключён к
+ *          кнопкам статей И подзаголовков «Содержания» и к результатам поиска.
+ *          Файлы: WikiPage.tsx, AppVersion. */
+export const APP_VERSION = '2.5.5';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
