@@ -287,6 +287,33 @@ export async function composeSlideshow(opts: {
 }
 
 /**
+ * Автоопределение цвета фона видео-аватара для chroma-key (галочка «Вырезать фон»).
+ * Жёсткий ключ 0x00FF00 мажет на нестандартных оттенках (тёмный/приглушённый зелёный
+ * ИИ-генераций): similarity 0.16 в UV-пространстве до чистого зелёного не дотягивается,
+ * despill оставляет тёмную муть. Берём кадр на 0.3с, верхнюю полосу кадра, усредняем
+ * scale=3:1:flags=area (трети полосы): ЛЕВАЯ и ПРАВАЯ трети — фон (голова может касаться
+ * верха по центру — центр игнорируем). Трети похожи → фон однотонный → его цвет и есть ключ.
+ * Не похожи (фон пёстрый/руки в углу) → null, зовущий падает на 0x00FF00 как раньше.
+ */
+export async function detectAvatarBgColor(videoPath: string): Promise<string | null> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const raw = path.join(RENDERS_DIR, `bgprobe-${randomUUID().slice(0, 8)}.raw`);
+  try {
+    await ffmpeg(['-y', '-ss', '0.3', '-i', videoPath, '-frames:v', '1',
+      '-vf', 'crop=iw:h=max(24\\,ih/12):x=0:y=4,scale=3:1:flags=area', '-f', 'rawvideo', '-pix_fmt', 'rgb24', raw], 60_000);
+    const buf = fs.readFileSync(raw);
+    if (buf.length < 9) return null;
+    const px = (i: number) => [buf[i * 3], buf[i * 3 + 1], buf[i * 3 + 2]];
+    const [l, , r] = [px(0), px(1), px(2)];
+    const diff = Math.max(Math.abs(l[0] - r[0]), Math.abs(l[1] - r[1]), Math.abs(l[2] - r[2]));
+    if (diff > 48) return null;   // углы разные — фон не однотонный, автоключ не рискуем
+    const hex = (n: number) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
+    return `0x${hex((l[0] + r[0]) / 2)}${hex((l[1] + r[1]) / 2)}${hex((l[2] + r[2]) / 2)}`;
+  } catch { return null; }
+  finally { try { fs.unlinkSync(raw); } catch { /* */ } }
+}
+
+/**
  * «Видеоряд» из НЕСКОЛЬКИХ клипов: куски [startSec, endSec] каждого идут подряд → один mp4.
  * Кадры вписываются cover-ом в dims (масштаб до заполнения + кроп по центру, как слайдшоу);
  * конвейер дальше видит обычный spec.clip (зациклит/обрежет под голос). Звук клипов сохраняется
@@ -620,7 +647,18 @@ export async function composeUgc(opts: {
   const opaque = opts.avatarKind === 'opaque';
   // Готовое видео на зелёном фоне: вырезаем chroma-key и кладём силуэтом (как альфа), а не боксом.
   const chroma = opaque && opts.avatarChroma ? String(opts.avatarChroma) : null;
-  const chromaChain = chroma ? `,chromakey=${chroma}:0.16:0.06,despill=type=green:mix=0.5:expand=0` : '';
+  // despill чистит отсвет фона на краях силуэта; тип — по доминирующему каналу ключа
+  // (автоключ detectAvatarBgColor может быть и синим/нейтральным — тогда green-despill вредит).
+  const chromaDespill = (() => {
+    if (!chroma) return '';
+    const m = /^0x([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(chroma);
+    if (!m) return ',despill=type=green:mix=0.5:expand=0';
+    const [r, g, b] = [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+    if (g >= r && g >= b && g - Math.min(r, b) > 24) return ',despill=type=green:mix=0.5:expand=0';
+    if (b > g && b > r && b - Math.min(r, g) > 24) return ',despill=type=blue:mix=0.5:expand=0';
+    return '';
+  })();
+  const chromaChain = chroma ? `,chromakey=${chroma}:0.16:0.06${chromaDespill}` : '';
   const avDur = await probeDuration(opts.voicePath);
   if (!(avDur > 0.3)) throw new Error('Голосовая дорожка пустая.');
   const timelineMode = Number(opts.totalDurationSec) > 0.3;

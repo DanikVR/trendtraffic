@@ -27,7 +27,7 @@ import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTal
 import { photoSha, hgKeyFp, getCachedTp, putCachedTp, dropCachedTp } from './tp_cache.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { parseCapWishes } from './cap_wishes.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
@@ -1195,6 +1195,10 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         try {
           j.status = 'готовлю видео-аватар';
           const avatar = await downloadToRenders(abs(avVideoUrl), 'ugcav');
+          // «Вырезать фон»: цвет ключа определяем ПО САМОМУ видео (верхние углы кадра) —
+          // жёсткий 0x00FF00 мажет на нестандартных оттенках зелёного (ИИ-генерации).
+          const chromaColor = cutout ? (await detectAvatarBgColor(avatar.filePath)) || '0x00FF00' : null;
+          if (chromaColor) console.log('[ugc/video] chroma-ключ фона:', chromaColor);
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
@@ -1214,7 +1218,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             j.status = `склейка ${fmt.label} (${made}/${j.total})`;
             let fileUrl = await composeUgc({
               avatarPath: avatar.filePath, avatarKind: 'opaque',
-              avatarChroma: cutout ? '0x00FF00' : null,   // «вырезать фон» → зелёный chroma-key силуэтом
+              avatarChroma: chromaColor,   // «вырезать фон» → chroma-key цветом, найденным по кадру (фолбэк чистый зелёный)
               avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
               voicePath: avatar.filePath, // речь уже в видео — его дорожка = голос
               avatarStartSec: avStart,    // позиция вставки на таймлайне (при видеоряде)

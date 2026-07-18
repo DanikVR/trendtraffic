@@ -1312,7 +1312,7 @@
       "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
       "videoHint": "A pre-recorded video with a talking person — speech and facial expressions are already included. HeyGen and voiceover are not used: fast and no generation costs.",
       "videoCutout": "Cut out background (chromakey)",
-      "videoCutoutHint": "If the video has a green screen, we'll cut it out and overlay the silhouette onto the video.",
+      "videoCutoutHint": "The background color is detected automatically from the top corners of the frame — any solid color works (green, blue…). We cut it out and overlay the silhouette onto the footage.",
       "aiCutout": "Cut out avatar background (AI)",
       "aiCutoutHint": "HeyGen will animate the photo on a green background, the service will remove it — only the person's silhouette will remain on screen, without the rectangle.",
       "hgLooksEmpty": "No photo avatars in your HeyGen account yet: create a look in the HeyGen studio or upload a photo as usual.",
