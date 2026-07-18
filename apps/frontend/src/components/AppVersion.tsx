@@ -3256,7 +3256,23 @@
  *          Файлы: social-ext/router.ts, custom.js, extract-social-ext-labels.mjs,
  *          translate-pivot.mjs (--file=), TrendAnalyticsPanel.tsx, locales×108. */
 
-export const APP_VERSION = '2.5.9';
+/* 2.5.10 — Обложки «лёгких» разборов в «Выбрать разбор тренда» (UGC-студия) и
+ *          «Тренды → Анализ» (Галерея): у разборов, сохранённых со страницы «Тренды»
+ *          без скачивания видео, dna.meta.cover — подписанная CDN-ссылка TikTok/IG,
+ *          подпись истекает за часы → onError прятал <img>, оставался пустой серый
+ *          квадрат (скрин юзера). Три слоя фикса:
+ *          1) listTrendDNA: LATERAL-джойн source_videos по (tenant, external_id,
+ *             platform) → поле coverUrl = лучшая из dna.meta.cover и обложки того же
+ *             видео в ленте трендов (та самолечится на диск, см. trends/service.ts);
+ *             локальная /uploads/ важнее протухающей CDN (bestAnalysisCover).
+ *          2) healAnalysisCovers: мёртвая ссылка теперь сначала УСЫНОВЛЯЕТ локальную
+ *             обложку из source_videos (adoptSourceCover — чинит запись в БД навсегда,
+ *             ноль внешних запросов), TikHub-воскрешение — только если её нет.
+ *          3) Пикер UgcStudio: Sparkles-подложка лежит ПОД <img>/<video> — битая
+ *             картинка больше не оставляет пустой квадрат; cover = coverUrl || meta.
+ *          Файлы: trends/dna.ts, UgcStudio.tsx, GalleryPage.tsx. */
+
+export const APP_VERSION = '2.5.10';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

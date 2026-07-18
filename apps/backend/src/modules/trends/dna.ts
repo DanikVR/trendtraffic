@@ -477,6 +477,24 @@ async function healAnalysisCovers(tenantId: string, rows: StoredTrendDNA[]): Pro
     await pool.query('UPDATE video_analyses SET dna = $3 WHERE tenant_id = $1 AND id = $2', [tenantId, a.id, JSON.stringify(a.dna)]);
   };
 
+  // Мёртвая ссылка, но то же видео есть в ленте трендов с уже локальной обложкой —
+  // усыновляем её (без скачивания и без TikHub): просто переписываем dna.meta.cover.
+  const adoptSourceCover = async (a: StoredTrendDNA): Promise<boolean> => {
+    if (!a.externalId) return false;
+    const r = await pool.query(
+      `SELECT cover_url FROM source_videos
+       WHERE tenant_id = $1 AND external_id = $2 AND ($3::text IS NULL OR platform = $3)
+         AND cover_url LIKE '/uploads/%'
+       ORDER BY updated_at DESC LIMIT 1`,
+      [tenantId, a.externalId, a.platform || null]
+    );
+    const local = r.rows[0]?.cover_url as string | undefined;
+    if (!local) return false;
+    a.dna!.meta!.cover = local;
+    await pool.query('UPDATE video_analyses SET dna = $3 WHERE tenant_id = $1 AND id = $2', [tenantId, a.id, JSON.stringify(a.dna)]);
+    return true;
+  };
+
   const CONC = 4;
   try {
     for (let i = 0; i < targets.length; i += CONC) {
@@ -485,7 +503,10 @@ async function healAnalysisCovers(tenantId: string, rows: StoredTrendDNA[]): Pro
         try {
           await persist(a, a.dna!.meta!.cover!); // живая ссылка — просто кэшируем
           return;
-        } catch { /* ссылка мертва (подпись истекла) — пробуем воскресить через TikHub */ }
+        } catch { /* ссылка мертва (подпись истекла) — пробуем усыновить/воскресить */ }
+        try {
+          if (await adoptSourceCover(a)) return;
+        } catch { /* БД шумит — идём в TikHub-ветку */ }
         if (tikhubBudget <= 0) { analysisCoverNextTry.set(a.id!, now + ANALYSIS_COVER_DEAD_MS); return; }
         tikhubBudget--;
         try {
@@ -500,27 +521,51 @@ async function healAnalysisCovers(tenantId: string, rows: StoredTrendDNA[]): Pro
   }
 }
 
+/** Лучшая обложка разбора: локальная (стабильная) важнее протухающей CDN-ссылки. */
+function bestAnalysisCover(dnaCover?: string, svCover?: string): string | undefined {
+  const isLocal = (u?: string) => !!u && u.startsWith('/uploads/');
+  if (isLocal(dnaCover)) return dnaCover;
+  if (isLocal(svCover)) return svCover;
+  return dnaCover || svCover || undefined;
+}
+
 /**
  * Все сохранённые анализы тенанта — раздел «Тренды → Анализ» в Галерее.
  * Джойним media_assets: если видео сохранено в Галерею, отдаём его файл (превью/плеер).
+ * Джойним source_videos (то же видео в ленте трендов): его cover_url самолечится на диск
+ * (см. trends/service.ts), поэтому служит фолбэком обложки «лёгким» разборам, у которых
+ * dna.meta.cover — мёртвая CDN-подпись или отсутствует вовсе.
  */
-export async function listTrendDNA(tenantId: string, limit = 100): Promise<Array<StoredTrendDNA & { fileUrl?: string; title?: string }>> {
+export async function listTrendDNA(tenantId: string, limit = 100): Promise<Array<StoredTrendDNA & { fileUrl?: string; title?: string; coverUrl?: string }>> {
   try {
     const r = await pool.query(
       `SELECT va.id, va.media_asset_id, va.source_video_id, va.platform, va.external_id, va.source_url,
-              va.dna, va.model, va.created_at, ma.file_url AS ma_file_url, ma.original_name AS ma_name
+              va.dna, va.model, va.created_at, ma.file_url AS ma_file_url, ma.original_name AS ma_name,
+              sv.cover_url AS sv_cover
        FROM video_analyses va
        LEFT JOIN media_assets ma ON ma.id = va.media_asset_id AND ma.tenant_id = va.tenant_id
+       LEFT JOIN LATERAL (
+         SELECT s.cover_url FROM source_videos s
+         WHERE s.tenant_id = va.tenant_id AND s.external_id = va.external_id
+           AND (va.platform IS NULL OR s.platform = va.platform)
+           AND s.cover_url IS NOT NULL
+         ORDER BY (s.cover_url LIKE '/uploads/%') DESC, s.updated_at DESC
+         LIMIT 1
+       ) sv ON TRUE
        WHERE va.tenant_id = $1
        ORDER BY va.created_at DESC
        LIMIT $2`,
       [tenantId, Math.max(1, Math.min(300, limit))]
     );
-    const rows = r.rows.map((row: any) => ({
-      ...mapRow(row),
-      fileUrl: row.ma_file_url || undefined,
-      title: row.ma_name || undefined,
-    }));
+    const rows = r.rows.map((row: any) => {
+      const mapped = mapRow(row);
+      return {
+        ...mapped,
+        fileUrl: row.ma_file_url || undefined,
+        title: row.ma_name || undefined,
+        coverUrl: bestAnalysisCover(mapped.dna?.meta?.cover, row.sv_cover || undefined),
+      };
+    });
     // В фоне закэшировать ещё живые обложки старых разборов — чтобы не протухли назавтра.
     void healAnalysisCovers(tenantId, rows);
     return rows;

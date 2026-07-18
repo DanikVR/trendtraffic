@@ -1678,20 +1678,23 @@ export default function UgcStudio(p: UgcStudioProps) {
               <div className="space-y-1.5">
                 {anaList.map((a) => {
                   const dna = a?.dna || {};
-                  const cover = dna?.meta?.cover as string | undefined;
+                  // coverUrl с бэка = лучшая из dna.meta.cover и обложки того же видео в ленте
+                  // трендов (самолечится на диск) — «лёгкие» разборы больше не остаются пустыми.
+                  const cover = (a.coverUrl as string | undefined) || (dna?.meta?.cover as string | undefined);
                   return (
                     <button key={a.id} onClick={() => applyAnalysis(a)} className="w-full text-left rounded-xl p-2 flex items-center gap-2.5"
                       style={{ background: 'var(--bg-primary)', border: `1px solid ${ugc.analysis?.id === String(a.id) ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
-                      {/* Обложка видео — так проще узнать тренд, чем по имени файла tiktok-…mp4 */}
-                      <span className="rounded-lg overflow-hidden flex-shrink-0" style={{ width: 46, height: 62, background: 'var(--bg-tertiary)' }}>
+                      {/* Обложка видео — так проще узнать тренд, чем по имени файла tiktok-…mp4.
+                          Искры лежат ПОД медиа: битая картинка/недогруженное видео не оставляют
+                          пустой серый квадрат. */}
+                      <span className="relative rounded-lg overflow-hidden flex-shrink-0" style={{ width: 46, height: 62, background: 'var(--bg-tertiary)' }}>
+                        <span className="absolute inset-0 flex items-center justify-center" style={{ color: ACC }}><Sparkles size={17} /></span>
                         {a.fileUrl ? (
-                          <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                          <video src={`${a.fileUrl}#t=0.1`} poster={coverSrc(cover) || undefined} muted playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover" />
                         ) : cover ? (
-                          <img src={coverSrc(cover)} alt="" loading="lazy" className="w-full h-full object-cover"
+                          <img src={coverSrc(cover)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        ) : (
-                          <span className="w-full h-full flex items-center justify-center" style={{ color: ACC }}><Sparkles size={17} /></span>
-                        )}
+                        ) : null}
                       </span>
                       <span className="flex-1 min-w-0 space-y-0.5">
                         <span className="flex items-center gap-2">

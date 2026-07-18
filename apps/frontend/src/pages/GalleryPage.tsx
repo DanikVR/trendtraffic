@@ -140,6 +140,7 @@ interface TrendAnalysisItem {
   platform?: string;
   dna: any;
   fileUrl?: string;  // видео в Галерее (если сохранено)
+  coverUrl?: string; // лучшая обложка: dna.meta.cover или обложка того же видео из ленты трендов
   title?: string;
   createdAt?: string;
 }
@@ -1037,7 +1038,7 @@ export default function GalleryPage() {
           <div className={CARD_GRID}>
             {renderAddTile('trendhub')}
             {fAn.map((a) => {
-              const cover = a.dna?.meta?.cover as string | undefined;
+              const cover = a.coverUrl || (a.dna?.meta?.cover as string | undefined);
               const title = anTitle(a);
               const openDna = () => setAnalysis({ title, dna: a.dna || {} });
               const anSel = selected.has(`an:${a.id}`);
