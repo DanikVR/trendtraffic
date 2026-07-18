@@ -38,6 +38,8 @@ const MODEL = getArg('model', 'gemini-2.5-flash');
 const CONCURRENCY = Math.max(1, parseInt(getArg('concurrency', '8'), 10));
 const CHUNK = Math.max(10, parseInt(getArg('chunk', '60'), 10));
 const REFRESH_ALL = args.includes('--refresh-all');
+// Файл локали: common.json по умолчанию; social-ext.json — подписи рехостнутого расширения.
+const FILE = getArg('file', 'common.json');
 
 const LANG_NAMES = {
   af: 'Afrikaans', sq: 'Albanian', am: 'Amharic', ar: 'Arabic', hy: 'Armenian',
@@ -167,7 +169,7 @@ async function appendProgress(line) {
 
 async function translateLang({ apiKey, lang, srcFlat, srcName, preserveList }) {
   const langName = LANG_NAMES[lang] || lang;
-  const targetPath = path.join(LOCALES_DIR, lang, 'common.json');
+  const targetPath = path.join(LOCALES_DIR, lang, FILE);
   let target = {};
   try { target = JSON.parse(await fs.readFile(targetPath, 'utf-8')); } catch { /* new file */ }
   const targetFlat = flatten(target);
@@ -230,7 +232,7 @@ async function main() {
   const apiKey = await loadApiKey();
   if (!apiKey) { console.error('❌ GEMINI_API_KEY not found'); process.exit(1); }
 
-  const srcObj = JSON.parse(await fs.readFile(path.join(LOCALES_DIR, SOURCE, 'common.json'), 'utf-8'));
+  const srcObj = JSON.parse(await fs.readFile(path.join(LOCALES_DIR, SOURCE, FILE), 'utf-8'));
   const srcFlat = flatten(srcObj);
   const srcName = LANG_NAMES[SOURCE] || SOURCE;
   const glossary = JSON.parse(await fs.readFile(path.join(LOCALES_DIR, '_glossary.json'), 'utf-8'));
@@ -241,7 +243,7 @@ async function main() {
   if (TARGETS) langs = allDirs.filter((l) => TARGETS.includes(l));
 
   console.log(`🤖 Model: ${MODEL} | source: ${SOURCE} (${srcName}) | concurrency: ${CONCURRENCY} | refreshAll: ${REFRESH_ALL}`);
-  console.log(`📖 ${SOURCE}/common.json: ${Object.keys(srcFlat).length} keys`);
+  console.log(`📖 ${SOURCE}/${FILE}: ${Object.keys(srcFlat).length} keys`);
   console.log(`🌐 Target languages (${langs.length}): ${langs.join(',')}`);
   await appendProgress(`START source=${SOURCE} targets=${langs.length} keys=${Object.keys(srcFlat).length} refreshAll=${REFRESH_ALL}`);
 

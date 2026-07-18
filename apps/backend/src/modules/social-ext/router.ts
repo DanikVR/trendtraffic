@@ -247,30 +247,70 @@ function languageLabel(code: string): string {
 function langDirective(code: string): string | null {
   const c = (code || '').trim().toLowerCase();
   if (!c || c.startsWith('en')) return null;
-  return `IMPORTANT: write every human-readable string value of your answer in ${languageLabel(c)}. `
+  return `IMPORTANT: every string VALUE of your answer MUST be written in ${languageLabel(c)}. `
     + 'Keep JSON keys, field names and enum values (e.g. low/mid/high) in English. '
     + 'Do not add any note about the language.';
 }
 
-/** Подмешивает директиву о языке в тело запроса по форме конкретного провайдера. */
+/**
+ * У промптов расширения ЕСТЬ СВОЯ языковая строка, и она идёт ПОСЛЕДНЕЙ:
+ *   «- IMPORTANT: Every string VALUE in the JSON MUST be written in English.»
+ * (бандл подставляет язык из своей карты всего на 8 языков, иначе English).
+ * Просто добавить свою директиву мало — эта строка конкретнее и перебивает её,
+ * поэтому ПЕРЕПИСЫВАЕМ в ней сам язык. Возвращает true, если строка нашлась.
+ */
+// Узко по формулировке бандла: в промпт уходят описание и комментарии видео,
+// и широкий шаблон вроде /written in .../ переписал бы текст самих комментариев.
+const BUNDLE_LANG_RE = /((?:MUST|must) be written in )([^.]{1,60})(\.)/g;
+function rewriteBundleLang(text: string, langName: string): { text: string; hit: boolean } {
+  let hit = false;
+  const out = text.replace(BUNDLE_LANG_RE, (_m, a: string, _lang: string, c: string) => {
+    hit = true;
+    return `${a}${langName}${c}`;
+  });
+  return { text: out, hit };
+}
+
+/** Подмешивает язык в тело запроса по форме конкретного провайдера. */
 function injectLangDirective(host: string, body: any, code: string): void {
   const dir = langDirective(code);
   if (!dir || !body || typeof body !== 'object') return;
+  const langName = languageLabel(code);
   try {
     if (host === 'generativelanguage.googleapis.com') {
-      // Gemini: первый текстовый part первого user-контента = системный промпт расширения.
-      // Директиву ставим ПЕРЕД ним (текст до inline_data — рекомендованный порядок).
       if (!Array.isArray(body.contents) || !body.contents.length) return;
       const first = body.contents.find((c: any) => c && (c.role === 'user' || !c.role)) || body.contents[0];
       if (!first) return;
       if (!Array.isArray(first.parts)) first.parts = [];
-      first.parts.unshift({ text: dir });
+      let hit = false;
+      for (const p of first.parts) {
+        if (p && typeof p.text === 'string') {
+          const r = rewriteBundleLang(p.text, langName);
+          if (r.hit) { p.text = r.text; hit = true; }
+        }
+      }
+      // Своя директива — В КОНЕЦ (последняя инструкция весомее) и только если
+      // родной строки не нашлось: иначе рискуем противоречить уже переписанной.
+      if (!hit) first.parts.push({ text: dir });
     } else if (host === 'api.anthropic.com') {
-      if (typeof body.system === 'string') body.system = `${dir}\n\n${body.system}`;
-      else if (Array.isArray(body.system)) body.system.unshift({ type: 'text', text: dir });
-      else body.system = dir;
+      if (typeof body.system === 'string') {
+        const r = rewriteBundleLang(body.system, langName);
+        body.system = r.hit ? r.text : `${body.system}\n\n${dir}`;
+      } else if (Array.isArray(body.system)) {
+        body.system.push({ type: 'text', text: dir });
+      } else {
+        body.system = dir;
+      }
     } else if (host === 'api.openai.com') {
-      if (Array.isArray(body.messages)) body.messages.unshift({ role: 'system', content: dir });
+      if (!Array.isArray(body.messages)) return;
+      let hit = false;
+      for (const m of body.messages) {
+        if (m && typeof m.content === 'string') {
+          const r = rewriteBundleLang(m.content, langName);
+          if (r.hit) { m.content = r.text; hit = true; }
+        }
+      }
+      if (!hit) body.messages.push({ role: 'system', content: dir });
     }
   } catch (err) {
     console.warn('[social-ext] injectLangDirective:', (err as Error).message);

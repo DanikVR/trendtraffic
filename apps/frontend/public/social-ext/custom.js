@@ -365,64 +365,73 @@
     }
   }
 
-  // ── Подписи разделов аналитики → язык интерфейса ─────────────────────────────
-  // Бандл расширения переведён только на en/zh/ja/ko, приложение — на 108 языков.
-  // Бандл не правим: подменяем ТЕКСТОВЫЕ УЗЛЫ известных подписей (иконки и разметка
-  // не трогаются), оригинал кладём в data-tt-en — по нему матчеры выше продолжают
-  // находить кнопки/заголовки по-английски. Переводы берём из локалей приложения
-  // (/locales/<lng>/common.json → sec.socialExtLabels); нет ключа — остаётся EN.
-  var LABEL_KEYS = {
-    // Вкладки
-    'Info': 'info', 'Comments': 'comments', 'Analysis': 'analysis', 'Deep Analysis': 'deepAnalysis',
-    // Разбор вирусности
-    'Viral Breakdown': 'viralBreakdown', 'Analyze Viral Factors': 'analyzeViral',
-    'Reverse-engineering virality...': 'analyzingViral',
-    'Hook Type': 'hookType', 'Why It Works': 'whyItWorks', 'Target Audience': 'targetAudience',
-    'Viral Factors': 'viralFactors', 'Copy-ready Script Draft': 'scriptDraft', 'How to Adapt': 'howToAdapt',
-    // Контент-анализ видео
-    'Video Content Analysis': 'videoAnalysis', 'Analyze Video Content': 'analyzeVideo',
-    'Watching and analyzing video...': 'analyzingVideo',
-    'Summary': 'summary', 'Scene Beats': 'sceneBeats', 'Hook Analysis': 'hookAnalysis',
-    'Visual Style': 'visualStyle', 'Audio & Dialogue': 'audioDialogue',
-    'Why It Resonates': 'whyResonates', 'How to Replicate': 'howToReplicate',
-    "The video file will be sent to Google's Gemini API for analysis.": 'videoPrivacy',
-    // Сводка и профиль
-    'AI Executive Summary': 'execSummary', 'Generate Executive Summary': 'genExecSummary',
-    'Executive Summary': 'execSummaryTitle', 'Data Insights': 'dataInsights',
-    'Growth Suggestions': 'growthSuggestions', 'Risks & Anomalies': 'risksAnomalies',
-    'AI Profile Breakdown': 'profileBreakdown', 'Analyze Profile': 'analyzeProfile',
-    'Persona Tags': 'personaTags', 'Content Style': 'contentStyle', 'Target Fans': 'targetFans',
-    // Общие
-    'Run Full Analysis': 'runFullAnalysis', 'Regenerate': 'regenerate',
-    'Music': 'music', 'Metrics': 'metrics', 'Media': 'media', 'Audio': 'audio',
-    'Cover variants': 'coverVariants', 'Quality variants': 'qualityVariants',
-    'Fake Views Detection': 'fakeViews',
-    'Download video': 'downloadVideo', 'Download cover': 'downloadCover'
-  };
-
-  var labelDict = null;    // key → перевод; null = переводить нечем (EN или не загружено)
+  // ── Подписи расширения → язык интерфейса ─────────────────────────────────────
+  // Бандл переведён только на en/ja/ko/zh, приложение — на 108 языков. Бандл не
+  // правим: подменяем ТЕКСТОВЫЕ УЗЛЫ (иконки и разметка не трогаются). Словарь —
+  // ВСЕ 845 строк UI расширения, вынутые из его же бандла скриптом
+  // scripts/extract-social-ext-labels.mjs в /locales/<lng>/social-ext.json.
+  // Грузим два файла (en = ключ→англ., целевой = ключ→перевод) и строим карту
+  // «английская строка → перевод». Нет строки в словаре — остаётся английский.
+  //
+  // На узле храним ДВА атрибута:
+  //   data-tt-en — оригинал (по нему ищут текстовые матчеры выше);
+  //   data-tt-tr — что мы записали (по нему узнаём узел при СМЕНЕ языка и
+  //                перекрашиваем его в новый перевод, а не оставляем старый).
+  var labelDict = null;    // англ. строка → перевод; null = переводить нечем
   var labelDictLang = '';  // язык, для которого словарь уже запрашивали
+  var LOCALE_EN = null;    // ключ → англ. строка (кэш, грузится один раз)
 
   function uiLang() {
     try { return (localStorage.getItem('i18nextLng') || navigator.language || 'en').toLowerCase(); } catch (e) { return 'en'; }
   }
 
   // Подпись НАШЕЙ кнопки на языке интерфейса (en — дефолт из аргумента).
-  function tr(key, en) { return (labelDict && labelDict[key]) || en; }
+  // Наши ключи лежат в том же файле под префиксом tt.*.
+  function tr(key, en) { return (labelDict && labelDict['@@tt.' + key]) || en; }
+
+  // Пивот-переводчик сохраняет локали ВЛОЖЕННЫМ деревом, а скрипт извлечения —
+  // плоскими точечными ключами. Разворачиваем оба формата в плоский вид.
+  function flattenDict(obj, prefix, out) {
+    out = out || {}; prefix = prefix || '';
+    for (var k in obj) {
+      var v = obj[k], key = prefix ? prefix + '.' + k : k;
+      if (typeof v === 'string') out[key] = v;
+      else if (v && typeof v === 'object') flattenDict(v, key, out);
+    }
+    return out;
+  }
+  function fetchLocale(lng) {
+    return fetch('/locales/' + encodeURIComponent(lng) + '/social-ext.json', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
 
   function loadLabelDict() {
-    var lng = uiLang();
+    var lng = uiLang().split('-')[0] || 'en';
     if (labelDictLang === lng) return; // уже запрашивали для этого языка
     labelDictLang = lng;
-    labelDict = null;
-    if (!lng || lng.indexOf('en') === 0) return; // подписи бандла и так английские
-    fetch('/locales/' + encodeURIComponent(lng.split('-')[0]) + '/common.json', { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        var d = j && j.sec && j.sec.socialExtLabels;
-        if (d && typeof d === 'object') { labelDict = d; schedule(); }
-      })
-      .catch(function () { /* нет локали — остаётся английский */ });
+    var needEn = LOCALE_EN ? Promise.resolve(LOCALE_EN) : fetchLocale('en');
+    // Для английского целевой словарь = сам английский: тождественная карта
+    // возвращает УЖЕ ПЕРЕВЕДЁННЫЕ узлы обратно в оригинал (иначе при переключении
+    // на EN подписи застряли бы на прежнем языке).
+    var needTgt = lng === 'en' ? needEn : fetchLocale(lng);
+    Promise.all([needEn, needTgt]).then(function (res) {
+      var en = res[0] && flattenDict(res[0]), tgt = res[1] && flattenDict(res[1]);
+      if (!en || !tgt) return; // нет словаря — оставляем как есть
+      LOCALE_EN = en;
+      if (labelDictLang !== lng) return; // язык успел смениться ещё раз
+      var map = {};
+      for (var k in en) {
+        var src = en[k], dst = tgt[k];
+        if (typeof src !== 'string' || typeof dst !== 'string') continue;
+        src = src.trim(); dst = dst.trim();
+        if (!src || !dst) continue;
+        map[src] = dst;
+        map['@@' + k] = dst; // доступ по ключу — для наших кнопок (tr)
+      }
+      labelDict = map;
+      schedule();
+    });
   }
 
   function translateLabels(doc) {
@@ -432,26 +441,29 @@
     var jobs = [], node;
     while ((node = walker.nextNode())) {
       var raw = node.nodeValue || '';
-      var en = raw.trim();
-      if (!en || en.length > 200) continue;
-      var key = LABEL_KEYS[en];
-      if (!key) continue;
-      var tr = labelDict[key];
-      if (!tr || tr === en) continue;
+      var cur = raw.trim();
+      if (!cur || cur.length > 300) continue;
       var parent = node.parentElement;
       if (!parent) continue;
-      // Кнопка/заголовок-обёртка (текст может лежать в span внутри) — пометим и её,
-      // иначе матчеры по кнопке увидят уже переведённый textContent.
+      // Узел уже переведён? Тогда исходник — в data-tt-en (нужно при смене языка).
+      var prevTr = parent.getAttribute('data-tt-en') ? parent.getAttribute('data-tt-tr') : null;
+      var en = (prevTr && cur === prevTr) ? parent.getAttribute('data-tt-en') : cur;
+      var val = labelDict[en];
+      if (!val || val === cur) continue;
       var host = parent.closest ? parent.closest('button,h1,h2,h3,h4,h5,[role="tab"]') : null;
-      if (host && (host.textContent || '').trim() !== en) host = null;
-      jobs.push({ node: node, raw: raw, en: en, tr: tr, parent: parent, host: host });
+      if (host && (host.textContent || '').trim() !== cur) host = null;
+      jobs.push({ node: node, raw: raw, cur: cur, en: en, val: val, parent: parent, host: host });
     }
     for (var i = 0; i < jobs.length; i++) {
       var j = jobs[i];
-      j.node.nodeValue = j.raw.replace(j.en, j.tr);
+      j.node.nodeValue = j.raw.replace(j.cur, j.val);
       try {
         j.parent.setAttribute('data-tt-en', j.en);
-        if (j.host && j.host !== j.parent) j.host.setAttribute('data-tt-en', j.en);
+        j.parent.setAttribute('data-tt-tr', j.val);
+        if (j.host && j.host !== j.parent) {
+          j.host.setAttribute('data-tt-en', j.en);
+          j.host.setAttribute('data-tt-tr', j.val);
+        }
       } catch (e) { /* тихо */ }
     }
   }

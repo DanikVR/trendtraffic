@@ -264,6 +264,23 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
+  // Смена языка интерфейса → переводим уже показанный разбор на новый язык.
+  // Сам разбор НЕ пересобираем (это лишний вызов ИИ) — только перевод текстов.
+  useEffect(() => {
+    const target = analysisLang();
+    if (!breakdown) return;
+    if (target === 'en') { setBdTranslated(null); setBdShowLang('en'); return; } // назад к оригиналу
+    if (bdTranslated && bdShowLang === target) return; // уже переведено на текущий язык (сделал runBreakdown)
+    let alive = true;
+    const myReq = bdReqRef.current;
+    setBdTranslating(true);
+    fetchTranslated(breakdown, target)
+      .then((tr) => { if (alive && bdReqRef.current === myReq) { setBdTranslated(tr); setBdShowLang(target); } })
+      .catch(() => { /* остаётся текущий показ */ })
+      .finally(() => { if (alive) setBdTranslating(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language, breakdown]);
   // Клик «Аналитика» на карточке тренда → подставить ссылку (+ обложку) и сразу запустить анализ.
   useEffect(() => {
     if (initialUrl && initialUrl.trim()) { setUrl(initialUrl); setCardCover(initialCover || null); setBulkRows(null); analyze(initialUrl); }

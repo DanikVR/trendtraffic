@@ -3228,7 +3228,35 @@
  *          Файлы: social-ext/router.ts, chrome-polyfill.js, custom.js,
  *          trends/{dna,analytics,router}.ts, TrendAnalyticsPanel.tsx, locales×108. */
 
-export const APP_VERSION = '2.5.8';
+/* 2.5.9 — «Тренды → Аналитика»: ДОВОДКА ПЕРЕВОДА (фидбэк юзера по 4 скринам).
+ *          1) КОРЕНЬ, почему тексты ИИ остались английскими: у промптов бандла
+ *             ЕСТЬ СВОЯ языковая строка, и она ПОСЛЕДНЯЯ —
+ *             «- IMPORTANT: Every string VALUE in the JSON MUST be written in
+ *             English.» (бандл знает всего 8 языков, остальное → English). Моя
+ *             директива стояла спереди и перебивалась. Теперь ai-прокси ПЕРЕПИСЫВАЕТ
+ *             язык В САМОЙ этой строке (узкий шаблон /MUST be written in X./ —
+ *             широкий задел бы тексты комментариев, которые тоже уходят в промпт).
+ *             Проверено A/B на живом Gemini: было «Intrigue-based Question», стало
+ *             «Вопрос/Провокация».
+ *          2) ПОДПИСЕЙ было 51 (моя ручная выборка) — юзер показал десятки
+ *             непереведённых (Инфо: ENGAGEMENT/CAPTIONS/AUDIO & VIDEO QUALITY,
+ *             Комментарии: AUTHOR/Likes/Export CSV, CLASSIFICATION/PERMISSIONS/
+ *             MODERATION). Теперь берём ВЕСЬ словарь UI расширения из его же бандла
+ *             (scripts/extract-social-ext-labels.mjs → 845 строк) в отдельный файл
+ *             локали social-ext.json (НЕ в common.json — тот грузится на каждой
+ *             странице). ja/ko/zh взяты РОДНЫЕ из бандла, остальные — пивотом.
+ *          3) СМЕНА ЯЗЫКА НА ЛЕТУ: на узле храним data-tt-en (оригинал, по нему
+ *             ищут матчеры) + data-tt-tr (что записали) — по второму узнаём узел и
+ *             перекрашиваем в новый язык; переключение на EN возвращает оригинал
+ *             (тождественная карта). Нативная панель: эффект на i18n.language
+ *             дописывает перевод уже показанного разбора, не пересобирая его.
+ *          ⚠️ Уже сгенерированный ИИ-текст на прежнем языке не переводится сам:
+ *             расширение кэширует разборы на 24 ч, новый язык — по «Пересобрать»
+ *             или на следующем анализе (иначе молча жгли бы кредиты API).
+ *          Файлы: social-ext/router.ts, custom.js, extract-social-ext-labels.mjs,
+ *          translate-pivot.mjs (--file=), TrendAnalyticsPanel.tsx, locales×108. */
+
+export const APP_VERSION = '2.5.9';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
