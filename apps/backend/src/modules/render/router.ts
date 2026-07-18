@@ -1199,9 +1199,14 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
           const bmp = await dlBumpers();
-          // Врезки медиа реплик: длительность ролика задаёт видео-аватар (его дорожка = голос).
           const Dav = await mediaDuration(avatar.filePath);
-          const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(Dav)) : [];
+          // Вставка по таймлайну: при видеоряде длину ролика задаёт ОН (склеенный пре-шагом),
+          // аватар появляется в [avatarVideoStartSec, +Dav] (хвост за концом продлевает ролик).
+          // Без видеоряда — как раньше: длина = длине видео-аватара.
+          const clipTotal = clip ? await mediaDuration(clip.filePath) : 0;
+          const avStart = clipTotal > 0.3 ? Math.max(0, Math.min(3600, Number(spec.avatarVideoStartSec) || 0)) : 0;
+          const totalD = clipTotal > 0.3 ? Math.max(clipTotal, avStart + Dav) : Dav;
+          const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(totalD)) : [];
           let made = 0;
 
           for (const fmt of outFormats) {
@@ -1211,7 +1216,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               avatarPath: avatar.filePath, avatarKind: 'opaque',
               avatarChroma: cutout ? '0x00FF00' : null,   // «вырезать фон» → зелёный chroma-key силуэтом
               avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
-              voicePath: avatar.filePath, // речь уже в видео — его дорожка задаёт длину и звук
+              voicePath: avatar.filePath, // речь уже в видео — его дорожка = голос
+              avatarStartSec: avStart,    // позиция вставки на таймлайне (при видеоряде)
+              totalDurationSec: clipTotal > 0.3 ? clipTotal : undefined, // длину задаёт видеоряд
               clipPath: clip?.filePath || null,
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
               clipMuted: spec.clipMuted !== false,

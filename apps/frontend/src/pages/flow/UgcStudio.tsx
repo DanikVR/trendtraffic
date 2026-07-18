@@ -269,6 +269,13 @@ export default function UgcStudio(p: UgcStudioProps) {
   // Клик по клипу (тумба в панели или сегмент на таймлайне) → наш VideoViewer (обрезка/склейка).
   // Сохранение НЕразрушающее: новый файл замещает клип, обрезка дорожки сбрасывается.
   const [clipEditIdx, setClipEditIdx] = useState<number | null>(null);
+  // Клик по сегменту «Аватар» (готовое видео) → тот же VideoViewer для видео-аватара.
+  const [avatarEdit, setAvatarEdit] = useState(false);
+  // Таймлайн живёт не только с репликами: видеоряд (обрезка клипов) и сегмент видео-аватара
+  // редактируются на дорожках и ДО генерации текста / без него («Готовое видео» текста не имеет).
+  // (mode/isVideoAv объявлены ниже — здесь считаем от спеки напрямую.)
+  const hasTimeline = ugc.script.length > 0 || ugc.clips.length > 0
+    || (!ugc.noAvatar && !ugc.dialogueEnabled && ugc.retentionPreset === 'off' && ugc.avatarSource === 'video' && !!ugc.avatarVideoUrl);
 
   /* ── высота дока таймлайна: ручка над доком, тянется вверх/вниз (просьба юзера «двигать больше»).
      Во время жеста высоту пишем прямо в DOM (без re-render на каждый move), в стейт и localStorage —
@@ -902,15 +909,24 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.videoHeading')}</div>
                 {ugc.avatarVideoUrl ? (
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <video src={`${ugc.avatarVideoUrl}#t=0.1`} muted playsInline preload="metadata" className="rounded-md object-cover flex-shrink-0" style={{ width: 52, height: 68, background: '#000' }} />
-                    <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.avatarVideoName || undefined}>{ugc.avatarVideoName || t('ugc.avatar.videoChosenName')}</span>
+                    <video src={`${ugc.avatarVideoUrl}#t=0.1`} muted playsInline preload="metadata" className="rounded-md object-cover flex-shrink-0" style={{ width: 52, height: 68, background: '#000' }}
+                      onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0 && Math.abs((ugc.avatarVideoDurationSec || 0) - d) > 0.05) ugcMutate((u) => ({ ...u, avatarVideoDurationSec: Math.round(d * 10) / 10 })); }} />
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <div className="text-[11px]" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.avatarVideoName || undefined}>{ugc.avatarVideoName || t('ugc.avatar.videoChosenName')}</div>
+                      {Number(ugc.avatarVideoDurationSec) > 0 && (
+                        <div className="text-[10px] font-650" style={{ color: ACC, fontVariantNumeric: 'tabular-nums' }}>{mmss(ugc.avatarVideoDurationSec as number)}</div>
+                      )}
+                    </div>
                     <button onClick={() => p.openUgcPick('avatarVideo')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, avatarVideoUrl: null, avatarVideoName: null, result: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, avatarVideoUrl: null, avatarVideoName: null, avatarVideoDurationSec: null, avatarVideoStartSec: 0, result: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                   </div>
                 ) : (
                   <EmptySlot icon={<Video size={14} />} title={t('ugc.avatar.videoEmptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('avatarVideo')} />
                 )}
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.videoHint')}</p>
+                {ugc.avatarVideoUrl && ugc.clips.length > 0 && (
+                  <p className="text-[10px]" style={{ color: '#f59e0b' }}>{t('ugc.avatar.videoTimelineHint', 'Длину ролика задаёт видеоряд. Когда аватар появится в кадре и заговорит — двигайте оранжевый сегмент «Аватар» на таймлайне внизу; клик по нему — обрезка в редакторе.')}</p>
+                )}
                 <label className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
                   <input type="checkbox" checked={ugc.avatarVideoCutout} onChange={(e) => ugcMutate((u) => ({ ...u, avatarVideoCutout: e.target.checked }))} style={{ accentColor: ACC, width: 15, height: 15 }} />
                   <span className="text-[11px] font-600 flex-1" style={{ color: 'var(--text-secondary)' }}>{t('ugc.avatar.videoCutout')}</span>
@@ -1547,7 +1563,7 @@ export default function UgcStudio(p: UgcStudioProps) {
           />
         )}
         {/* ручка высоты дока: тянуть вверх/вниз, двойной клик — сброс */}
-        {ugc.script.length > 0 && (
+        {hasTimeline && (
           <div
             onPointerDown={dragDock} onDoubleClick={dockReset}
             title={t('ugc.timeline.dragResize', 'Потяните вверх/вниз — высота таймлайна; двойной клик — как было')}
@@ -1558,15 +1574,19 @@ export default function UgcStudio(p: UgcStudioProps) {
           </div>
         )}
         <div ref={dockRef} className="px-3.5 py-2" style={{ maxHeight: dockH, overflowY: 'auto' }}>
-          {ugc.script.length > 0 ? (
+          {hasTimeline ? (
             <>
               <div className="flex items-center gap-2 mb-1">
                 <b className="text-[12px]" style={{ color: 'var(--text-primary)' }}>{t('ugc.timeline.title')}</b>
-                <span className="text-[10.5px]" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{t('ugc.lines.count', { count: ugc.script.length, sec: Math.round(p.ugcScriptSec()) })}</span>
+                {ugc.script.length > 0 && (
+                  <span className="text-[10.5px]" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{t('ugc.lines.count', { count: ugc.script.length, sec: Math.round(p.ugcScriptSec()) })}</span>
+                )}
+                {ugc.script.length > 0 && (
                 <button onClick={() => setLinesOpen((o) => !o)} className="ml-auto text-[10.5px] font-700 px-2.5 py-1 rounded-lg"
                   style={{ background: linesOpen ? 'rgba(168,85,247,.14)' : 'var(--bg-tertiary)', color: linesOpen ? ACC : 'var(--text-secondary)', border: `1px solid ${linesOpen ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>
                   {linesOpen ? t('ugc.timeline.hideLines') : t('ugc.timeline.showLines')}
                 </button>
+                )}
               </div>
               {/* Громкости и скорость — у дорожек, к которым относятся (просьба юзера «% на дорожках») */}
               <div className="flex items-center gap-x-4 gap-y-1 flex-wrap mb-1.5 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -1617,6 +1637,16 @@ export default function UgcStudio(p: UgcStudioProps) {
                   onOpen: (i) => setClipEditIdx(i),
                   onDuration: setClipDuration,
                   speedPct: ugc.clipSpeedPct,
+                } : undefined}
+                overlayTrack={isVideoAv && ugc.avatarVideoUrl && ugc.clips.length > 0 ? {
+                  label: t('ugc.timeline.avatarLabel', 'Аватар'),
+                  name: ugc.avatarVideoName || t('ugc.avatar.videoChosenName'),
+                  url: ugc.avatarVideoUrl,
+                  startSec: ugc.avatarVideoStartSec,
+                  durationSec: ugc.avatarVideoDurationSec || undefined,
+                  onMove: (s) => ugcMutate((u) => ({ ...u, avatarVideoStartSec: s })),
+                  onOpen: () => setAvatarEdit(true),
+                  onDuration: (d) => ugcMutate((u) => ({ ...u, avatarVideoDurationSec: d })),
                 } : undefined}
               />
             </>
@@ -1921,6 +1951,21 @@ export default function UgcStudio(p: UgcStudioProps) {
               ? { url: r.fileUrl, name: `${c.name} · ${t('ugc.video.editedSuffix', 'обрезано')}`, durationSec: undefined, trimStart: undefined, trimEnd: undefined }
               : c)));
             setClipEditIdx(null);
+          }}
+        />
+      )}
+
+      {/* Видео-аватар в редакторе (клик по сегменту «Аватар» на таймлайне): обрезка/нарезка,
+          новый файл замещает аватара, длительность перечитается из метаданных. */}
+      {avatarEdit && ugc.avatarVideoUrl && (
+        <VideoViewer
+          open
+          url={ugc.avatarVideoUrl}
+          title={ugc.avatarVideoName || t('ugc.avatar.videoChosenName')}
+          onClose={() => setAvatarEdit(false)}
+          onSaved={(r) => {
+            ugcMutate((u) => ({ ...u, avatarVideoUrl: r.fileUrl, avatarVideoName: `${u.avatarVideoName || t('ugc.avatar.videoChosenName')} · ${t('ugc.video.editedSuffix', 'обрезано')}`, avatarVideoDurationSec: null, result: null }));
+            setAvatarEdit(false);
           }}
         />
       )}

@@ -1309,6 +1309,7 @@
       "videoHeading": "Pre-recorded video avatar",
       "videoChosenName": "video chosen",
       "videoEmptyTitle": "Avatar video not uploaded",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
       "videoHint": "A pre-recorded video with a talking person — speech and facial expressions are already included. HeyGen and voiceover are not used: fast and no generation costs.",
       "videoCutout": "Cut out background (chromakey)",
       "videoCutoutHint": "If the video has a green screen, we'll cut it out and overlay the silhouette onto the video.",
@@ -1477,6 +1478,7 @@
       "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
       "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
       "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar",
       "hideLines": "Hide dialogue ▾",
       "showLines": "Show dialogue ▴",
       "empty": "Dialogue will appear here after 'Generate text' or 'Transcribe speech' — a timeline with voice tracks, cuts, and media."
@@ -2421,6 +2423,7 @@
       "clipSegTip": "click — open in editor; drag the edges to trim the clip",
       "clipTrimL": "Trim clip start",
       "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor",
       "hintAuto": "auto (Claude)",
       "hintBgLeft": "background · face left",
       "hintBgRight": "background · face right",

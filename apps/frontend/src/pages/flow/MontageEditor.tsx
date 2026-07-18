@@ -540,7 +540,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     if (ugcPick === 'clip') ugcMutate((u) => syncClips(u, [...u.clips, { url: g.url, name: g.name }].slice(0, 12)));
     else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name, heygenLookId: null }));
     else if (ugcPick === 'photoB') ugcMutate((u) => ({ ...u, photoBUrl: g.url, photoBName: g.name }));
-    else if (ugcPick === 'avatarVideo') ugcMutate((u) => ({ ...u, avatarVideoUrl: g.url, avatarVideoName: g.name, result: null }));
+    else if (ugcPick === 'avatarVideo') ugcMutate((u) => ({ ...u, avatarVideoUrl: g.url, avatarVideoName: g.name, avatarVideoDurationSec: null, result: null }));
     else if (ugcPick === 'recording') ugcMutate((u) => (
       // Новая запись → старый разбор (реплики) и готовый ролик больше не относятся к ней: сбрасываем.
       u.recordingUrl === g.url ? { ...u, recordingUrl: g.url, recordingName: g.name }

@@ -59,6 +59,10 @@ export interface UgcSpec {
   // (речь+мимика внутри). Идёт прямо в композит (composeUgc), HeyGen/ElevenLabs НЕ участвуют.
   avatarVideoUrl: string | null; avatarVideoName: string | null;
   avatarVideoCutout: boolean;                               // зелёный фон → вырезать (chroma-key), силуэт поверх видеоряда
+  // Вставка видео-аватара ПО ТАЙМЛАЙНУ (при заданном видеоряде): позиция в ВЫХОДНЫХ секундах —
+  // аватар появляется и говорит с этого места; длину ролика задаёт видеоряд (хвост продлевает).
+  avatarVideoStartSec: number;
+  avatarVideoDurationSec: number | null;                    // из метаданных (ширина сегмента на дорожке)
   // ИИ-вырезка фона аватара в соло («Моё фото»/«Коллекция»): HeyGen оживляет фото на ЗЕЛЁНОМ
   // фоне (bgColor), рендер делает chroma-key → поверх кадра остаётся только силуэт человека.
   avatarCutout: boolean;
@@ -139,6 +143,7 @@ export const UGC_DEFAULT: UgcSpec = {
   photoUrl: null, photoName: null,
   heygenLookId: null,
   avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
+  avatarVideoStartSec: 0, avatarVideoDurationSec: null,
   avatarCutout: false,
   avatarOverInserts: false,
   faceProvider: 'heygen_api',

@@ -607,6 +607,13 @@ export async function composeUgc(opts: {
   // Аватар ПОВЕРХ врезок: врезки кладутся на фон ДО аватара (ведущий остаётся в кадре);
   // false/нет = врезка перекрывает аватара на время реплики (как раньше). Только overlay-режим.
   avatarOverInserts?: boolean;
+  // Вставка видео-аватара ПО ТАЙМЛАЙНУ (только «Готовое видео», overlay-режим):
+  // totalDurationSec — длина ролика от ВИДЕОРЯДА; аватар появляется и говорит в
+  // [avatarStartSec, avatarStartSec+его длина], вне окна — только видеоряд.
+  // Хвост аватара за концом видеоряда продлевает ролик. Без totalDurationSec — как раньше
+  // (длина = длине аватара, avatarStartSec игнорируется).
+  avatarStartSec?: number;
+  totalDurationSec?: number;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
@@ -614,9 +621,15 @@ export async function composeUgc(opts: {
   // Готовое видео на зелёном фоне: вырезаем chroma-key и кладём силуэтом (как альфа), а не боксом.
   const chroma = opaque && opts.avatarChroma ? String(opts.avatarChroma) : null;
   const chromaChain = chroma ? `,chromakey=${chroma}:0.16:0.06,despill=type=green:mix=0.5:expand=0` : '';
-  const D = await probeDuration(opts.voicePath);
-  if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  const avDur = await probeDuration(opts.voicePath);
+  if (!(avDur > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  const timelineMode = Number(opts.totalDurationSec) > 0.3;
+  const avStart = timelineMode ? Math.max(0, Number(opts.avatarStartSec) || 0) : 0;
+  const D = timelineMode ? Math.max(opts.totalDurationSec as number, avStart + avDur) : avDur;
   const Ds = (D + 0.2).toFixed(2);
+  // Сдвиг кадров аватара к avStart (в конце цепочки, после fps) + окно показа на оверлее.
+  const avShift = avStart > 0.01 ? `,setpts=PTS-STARTPTS+${avStart.toFixed(2)}/TB` : '';
+  const avEnable = timelineMode ? `:enable='between(t,${avStart.toFixed(2)},${(avStart + avDur + 0.05).toFixed(2)})'` : '';
 
   // Кастомная позиция аватара (драг на превью) задана → рендерим оверлеем в ЛЮБОЙ раскладке
   // (видео во весь кадр + аватар боксом): раскладка «сверху»/«снизу» = лишь стартовая позиция,
@@ -667,25 +680,25 @@ export async function composeUgc(opts: {
       // сдвигает видимую часть. 0.5 = центр (по умолчанию), 0 = верх, 1 = низ.
       const oy = Math.min(1, Math.max(0, Number.isFinite(Number(rect.oy)) ? Number(rect.oy) : 0.5));
       if (opaque && !chroma) {
-        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30[av]`);
-        parts.push(`${bgTag}[av]overlay=${bx}:${by}:eof_action=pass[vmain]`);
+        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30${avShift}[av]`);
+        parts.push(`${bgTag}[av]overlay=${bx}:${by}:eof_action=pass${avEnable}[vmain]`);
       } else {
         // Силуэт (альфа-webm ИЛИ вырезанное chroma-key видео): вписываем по высоте бокса, центр по X, прижат к низу.
-        parts.push(`[0:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p[av]`);
-        parts.push(`${bgTag}[av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass[vmain]`);
+        parts.push(`[0:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p${avShift}[av]`);
+        parts.push(`${bgTag}[av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass${avEnable}[vmain]`);
       }
     } else {
       const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
       if (opaque && !chroma) {
         // HeyGen: непрозрачный PiP-бокс (со своим фоном), cover-кроп в вертикальный прямоугольник.
         const bw = 360, bh = 640;
-        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30[av]`);
-        parts.push(`${bgTag}[av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh},setsar=1,fps=30${avShift}[av]`);
+        parts.push(`${bgTag}[av]overlay=${x}:H-h-48:eof_action=pass${avEnable}[vmain]`);
       } else {
         // sr-capture (альфа) ИЛИ вырезанное chroma-key видео: прозрачный силуэт (виден только человек).
         const aH = 720;
-        parts.push(`[0:v]scale=-2:${aH}:flags=lanczos${chromaChain},format=yuva420p[av]`);
-        parts.push(`${bgTag}[av]overlay=${x}:H-h-48:eof_action=pass[vmain]`);
+        parts.push(`[0:v]scale=-2:${aH}:flags=lanczos${chromaChain},format=yuva420p${avShift}[av]`);
+        parts.push(`${bgTag}[av]overlay=${x}:H-h-48:eof_action=pass${avEnable}[vmain]`);
       }
     }
   } else {
@@ -720,9 +733,13 @@ export async function composeUgc(opts: {
 
   // Звук: голос + опц. клип + опц. музыка (normalize=0 — без выравнивания громкостей).
   // Громкости — из ручек студии (% над таймлайном); дефолты сохраняют прежнее звучание.
+  // Вставка по таймлайну: голос аватара задерживается до avStart (adelay) и добивается
+  // тишиной (apad) до конца видеоряда — amix duration=first не режет хвост, -t Ds закрывает.
   const vv = Math.max(0, Math.min(2, Number.isFinite(opts.voiceVolumePct) ? (opts.voiceVolumePct as number) / 100 : 1));
   const cvol = Math.max(0, Math.min(2, Number.isFinite(opts.clipVolumePct) ? (opts.clipVolumePct as number) / 100 : 0.9));
-  const aIns: string[] = [`[${voiceIdx}:a]${vv !== 1 ? `volume=${vv.toFixed(2)}` : 'anull'}[a_v]`];
+  const avDelay = avStart > 0.01 ? `adelay=${Math.round(avStart * 1000)}:all=1,` : '';
+  const avPad = timelineMode && D > avStart + avDur + 0.05 ? ',apad' : '';
+  const aIns: string[] = [`[${voiceIdx}:a]${avDelay}${vv !== 1 ? `volume=${vv.toFixed(2)}` : 'anull'}${avPad}[a_v]`];
   const mixTags: string[] = ['[a_v]'];
   if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=${cvol.toFixed(2)}[a_c]`); mixTags.push('[a_c]'); }
   if (musicIdx >= 0) {
@@ -732,8 +749,8 @@ export async function composeUgc(opts: {
   }
   let aTag = '[a_v]';
   if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
-  // Фильтр голоса нужен при миксе И при vv≠1 (иначе мапим сырую дорожку без фильтров).
-  const aFiltered = mixTags.length > 1 || vv !== 1;
+  // Фильтр голоса нужен при миксе, vv≠1, задержке или добивке (иначе сырая дорожка без фильтров).
+  const aFiltered = mixTags.length > 1 || vv !== 1 || !!avDelay || !!avPad;
   parts.push(...(aFiltered ? aIns : []));
 
   const fc = parts.join(';');

@@ -12,7 +12,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles, Film } from 'lucide-react';
+import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles, Film, UserRound } from 'lucide-react';
 import { PodLine, PodAnim, POD_ANIMS, DlgMediaHint, DLG_MEDIA_HINTS } from './dialogueTypes';
 
 interface Props {
@@ -44,6 +44,18 @@ interface Props {
     onDuration?: (i: number, sec: number) => void;
     speedPct?: number;   // скорость воспроизведения видеоряда (50–200): сегменты на дорожке ужимаются/растягиваются
   };
+  // UGC «Готовое видео»: сегмент видео-аватара на СВОЕЙ дорожке — тащится по времени
+  // (когда аватар появится в кадре и заговорит), клик — редактор (VideoViewer).
+  overlayTrack?: {
+    label: string;
+    name: string;
+    url: string;
+    startSec: number;
+    durationSec?: number;
+    onMove: (startSec: number) => void;
+    onOpen: () => void;
+    onDuration?: (sec: number) => void;
+  };
 }
 
 /* Пределы масштаба: до 2000 px/сек — иначе плотные реплики (диаризация речи режет
@@ -51,7 +63,7 @@ interface Props {
 const MIN_PPS = 2;
 const MAX_PPS = 2000;
 
-export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6', clipTrack }: Props) {
+export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6', clipTrack, overlayTrack }: Props) {
   const { t } = useTranslation('common');
   /* Подписи значений из dialogueTypes — локализуются здесь, у точки рендера. */
   const POD_ANIM_LABELS: Record<PodAnim, string> = {
@@ -359,10 +371,43 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     el.addEventListener('pointercancel', onUp);
   };
 
-  if (!dialogue.length) return null;
+  /* ── сегмент видео-аватара: драг по времени (локальный override, коммит на pointerup);
+     без сдвига (<3px) отпускание считается кликом → onOpen (редактор). */
+  const [ovDragStart, setOvDragStart] = useState<number | null>(null);
+  const beginOvDrag = (e: React.PointerEvent) => {
+    if (!overlayTrack || e.button !== 0) return;
+    e.preventDefault();
+    const el = e.currentTarget as HTMLElement;
+    try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
+    const x0 = e.clientX; const s0 = Math.max(0, overlayTrack.startSec || 0);
+    let last = s0; let moved = false;
+    const onMove = (ev: PointerEvent) => {
+      if (Math.abs(ev.clientX - x0) > 3) moved = true;
+      last = Math.max(0, Math.round((s0 + (ev.clientX - x0) / tlPpsRef.current) * 20) / 20);
+      if (moved) setOvDragStart(last);
+    };
+    const onUp = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
+      setOvDragStart(null);
+      if (moved) { overlayTrack.onMove(last); dirty(); }
+      else overlayTrack.onOpen();
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+  };
+
+  // Таймлайн живёт и БЕЗ реплик, если есть видеоряд или сегмент аватара (UGC «Готовое видео»);
+  // подкаст/«Комментатор» этих пропсов не передают — для них поведение прежнее.
+  if (!dialogue.length && !(clipTrack && clipTrack.clips.length) && !overlayTrack) return null;
   const arr = dialogue;
   const clipsTotal = clipTrack ? clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0) : 0;
-  const total = Math.max(3, clipsTotal, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+  const ovStart = overlayTrack ? (ovDragStart ?? Math.max(0, overlayTrack.startSec || 0)) : 0;
+  const ovDur = overlayTrack ? Math.max(0.5, overlayTrack.durationSec || 5) : 0;
+  const total = Math.max(3, clipsTotal, ovStart + ovDur, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
   const W = Math.ceil(total) * tlPps + 40;
   const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
   const phLeft = 32 + tlPlayhead * tlPps;
@@ -434,6 +479,28 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
               </div>
             );
           })()}
+          {/* Дорожка «Аватар» (готовое видео со звуком): тащить = когда появится в кадре, клик = редактор */}
+          {overlayTrack && (
+            <div style={{ position: 'relative', height: 26, marginTop: 2 }}>
+              <span style={{ position: 'absolute', left: 7, top: 6 }} title={overlayTrack.label}><UserRound size={11} style={{ color: '#f59e0b' }} /></span>
+              <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
+                <div
+                  onPointerDown={beginOvDrag}
+                  title={`${overlayTrack.name} · ${tlMmss(ovDur)} — ${t('sec.dialogue.avatarSegTip', 'тащите по времени — когда аватар появится и заговорит; клик — открыть в редакторе')}`}
+                  style={{ position: 'absolute', left: ovStart * tlPps, width: Math.max(10, ovDur * tlPps - 2), top: 2, height: 22, borderRadius: 6,
+                    background: 'linear-gradient(180deg, rgba(251,191,36,0.95), rgba(217,119,6,0.95))', color: '#fff',
+                    fontSize: 9, lineHeight: '22px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                    cursor: 'grab', userSelect: 'none', touchAction: 'none', padding: '0 8px',
+                    border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
+                  <span style={{ pointerEvents: 'none' }}>{overlayTrack.label}: {overlayTrack.name} · {tlMmss(ovStart)}→{tlMmss(ovStart + ovDur)}</span>
+                  {!(Number(overlayTrack.durationSec) > 0) && overlayTrack.onDuration && (
+                    <video src={overlayTrack.url} muted preload="metadata" style={{ display: 'none' }}
+                      onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) overlayTrack.onDuration!(Math.round(d * 10) / 10); }} />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {(['A', 'B'] as const).map((trk) => (
             <div key={trk} style={{ position: 'relative', height: 34, marginTop: 4 }}>
               <span style={{ position: 'absolute', left: 6, top: 9, fontSize: 10, fontWeight: 700, color: trk === 'A' ? accentA : accentB }}>{trk}</span>
@@ -473,11 +540,13 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       </div>
       <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('sec.dialogue.helpLine', '▶ — играть с бегунка; тащи клипы по времени, ВВЕРХ/ВНИЗ — на дорожку другого голоса; бегунок ведёшь и ✂ режет по нему; −/+/вместить или Ctrl+колесо — масштаб (зум держит точку под бегунком/курсором). Клик по клипу открывает реплику ниже. Наложение A/B = одновременно.')}</p>
 
-      {/* Реплики */}
+      {/* Реплики (без реплик — таймлайн живёт ради дорожек видеоряда/аватара, блок скрыт) */}
+      {arr.length > 0 && (
       <button onClick={() => setDialogOpen((o) => !o)} className="w-full flex items-center justify-between text-[11px] font-600 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
         <span>{t('sec.dialogue.linesToggle', 'Реплики ({{n}}) — открыть/свернуть', { n: arr.length })}</span><span>{dialogOpen ? '▾' : '▸'}</span>
       </button>
-      {dialogOpen && (
+      )}
+      {arr.length > 0 && dialogOpen && (
         <div className="space-y-1.5" style={{ maxHeight: 300, overflowY: 'auto' }}>
           {arr.map((l, i) => (
             <div key={i} id={`dl-${i}`} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: `1px solid ${selLine === i ? accentA : 'var(--border-medium)'}` }}>
