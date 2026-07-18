@@ -307,8 +307,15 @@ export async function detectAvatarBgColor(videoPath: string): Promise<string | n
     const [l, , r] = [px(0), px(1), px(2)];
     const diff = Math.max(Math.abs(l[0] - r[0]), Math.abs(l[1] - r[1]), Math.abs(l[2] - r[2]));
     if (diff > 48) return null;   // углы разные — фон не однотонный, автоключ не рискуем
+    const [ar, ag, ab] = [(l[0] + r[0]) / 2, (l[1] + r[1]) / 2, (l[2] + r[2]) / 2];
+    // ТОЛЬКО насыщенный зелёный/синий ключ: нейтральный (серый/белый) цвет в UV-метрике
+    // близок к коже — chromakey с ним СЪЕДАЕТ ЛИЦО (живой инцидент). Не хромакейный фон →
+    // null → фолбэк чистый зелёный (не вырежет, но и не испортит).
+    const greenish = ag >= ar && ag >= ab && ag - Math.max(ar, ab) > 25;
+    const blueish = ab > ag && ab > ar && ab - Math.max(ar, ag) > 25;
+    if (!greenish && !blueish) return null;
     const hex = (n: number) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
-    return `0x${hex((l[0] + r[0]) / 2)}${hex((l[1] + r[1]) / 2)}${hex((l[2] + r[2]) / 2)}`;
+    return `0x${hex(ar)}${hex(ag)}${hex(ab)}`;
   } catch { return null; }
   finally { try { fs.unlinkSync(raw); } catch { /* */ } }
 }
@@ -554,8 +561,16 @@ function overlayExtras(o: {
 
 /** Приклеить заставки как есть (нормализация только кадра/фпс/аудио-формата): интро + ролик + аутро.
  *  Перекодировка одним проходом concat-фильтром; у заставок без звука подставляется тишина. */
+/** Переход на стыках ролик↔заставки: 5 xfade-пресетов + кастомный «аватар-зум»
+ *  (в конце кадр наезжает на бокс аватара и растворяется в заставку; в начале —
+ *  стартуем внутри бокса и отъезжаем). 'none' = жёсткая склейка, как раньше. */
+export type BumperTransition = 'none' | 'fade' | 'zoom' | 'slide' | 'circle' | 'blur' | 'avatarzoom';
+
 export async function concatBumpers(opts: {
   mainPath: string; introPath?: string | null; outroPath?: string | null; dims?: FrameDims;
+  transition?: BumperTransition;
+  // Бокс аватара (доли кадра) для 'avatarzoom' — есть в ветках соло/видео; нет → обычный зум.
+  avatarRect?: { x: number; y: number; w: number; h: number } | null;
 }): Promise<string> {
   const { introPath, outroPath } = opts;
   if (!introPath && !outroPath) return opts.mainPath;
@@ -566,11 +581,34 @@ export async function concatBumpers(opts: {
     : opts.mainPath;
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
   const segs = [introPath, mainPath, outroPath].filter((p): p is string => !!p);
+  const tr: BumperTransition | null = opts.transition && opts.transition !== 'none' ? opts.transition : null;
   const inputs: string[] = []; const parts: string[] = []; const refs: string[] = [];
+  const durs: number[] = [];
+  const mainIdx = introPath ? 1 : 0;
+  // «Аватар-зум»: панч-анимация НА ОСНОВНОМ сегменте — zoompan (z по покадровому it:
+  // в начале Z→1 «отъезд из бокса аватара», в конце 1→Z «наезд»), центр = центр бокса.
+  // НЕ crop: у crop размеры окна считаются ОДИН раз при инициализации — по t не анимируются
+  // (пойман синтетикой: панч молча не применялся). Запятые в выражении — ВНУТРИ кавычек,
+  // без backslash-эскейпа. zoompan сам зажимает x/y в кадр.
+  let punch = '';
+  if (tr === 'avatarzoom' && opts.avatarRect) {
+    const r = opts.avatarRect;
+    const Z = Math.min(4, Math.max(1.3, Math.max(1 / Math.max(0.08, r.w), 1 / Math.max(0.08, r.h)))).toFixed(3);
+    const cx = (r.x + r.w / 2).toFixed(4), cy = (r.y + r.h / 2).toFixed(4);
+    const dm = await probeDuration(mainPath);
+    const AZ = 0.6;
+    const zHead = `(${Z}-(${Z}-1)*min(it/${AZ},1))`;
+    const zTail = `(1+(${Z}-1)*min(max((it-${(dm - AZ).toFixed(2)})/${AZ},0),1))`;
+    const zExpr = introPath && outroPath
+      ? `if(lt(it,${(dm / 2).toFixed(2)}),${zHead},${zTail})`
+      : (introPath ? zHead : zTail);
+    punch = `,zoompan=z='${zExpr}':x='iw*${cx}-(iw/zoom)/2':y='ih*${cy}-(ih/zoom)/2':d=1:s=${W}x${H}:fps=30,setsar=1`;
+  }
   for (let i = 0; i < segs.length; i++) {
     inputs.push('-i', segs[i]);
     const dur = await probeDuration(segs[i]);
-    parts.push(`[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,format=yuv420p[v${i}]`);
+    durs.push(Math.max(0.2, dur));
+    parts.push(`[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=30,format=yuv420p${i === mainIdx ? punch : ''}[v${i}]`);
     if (await hasAudioStream(segs[i])) {
       // apad+atrim: аудио сегмента точно = длине его видео — иначе разница длин дорожек
       // сдвигала бы синхрон всего, что идёт после бампера.
@@ -580,7 +618,26 @@ export async function concatBumpers(opts: {
     }
     refs.push(`[v${i}][a${i}]`);
   }
-  parts.push(`${refs.join('')}concat=n=${segs.length}:v=1:a=1[vc][ac]`);
+  if (!tr) {
+    parts.push(`${refs.join('')}concat=n=${segs.length}:v=1:a=1[vc][ac]`);
+  } else {
+    // xfade-стыки: offset = конец предыдущего минус длительность перехода (накопительно).
+    const XF: Record<Exclude<BumperTransition, 'none'>, string> = {
+      fade: 'fade', zoom: 'zoomin', slide: 'slideleft', circle: 'circleopen', blur: 'hblur',
+      avatarzoom: punch ? 'fade' : 'zoomin',   // с панчем достаточно короткого fade; без rect — обычный зум
+    };
+    const TDraw = tr === 'avatarzoom' ? 0.25 : 0.5;
+    const TD = Math.max(0.1, Math.min(TDraw, Math.min(...durs) / 2 - 0.05));
+    let vTag = '[v0]'; let aTag = '[a0]'; let acc = durs[0];
+    for (let i = 1; i < segs.length; i++) {
+      const last = i === segs.length - 1;
+      const vOut = last ? '[vc]' : `[xv${i}]`;
+      const aOut = last ? '[ac]' : `[xa${i}]`;
+      parts.push(`${vTag}[v${i}]xfade=transition=${XF[tr]}:duration=${TD.toFixed(2)}:offset=${Math.max(0, acc - TD).toFixed(2)}${vOut}`);
+      parts.push(`${aTag}[a${i}]acrossfade=d=${TD.toFixed(2)}${aOut}`);
+      vTag = vOut; aTag = aOut; acc = acc - TD + durs[i];
+    }
+  }
   const out = `ugc-bmp-${randomUUID().slice(0, 8)}.mp4`;
   const outPath = path.join(RENDERS_DIR, out);
   await ffmpeg(['-y', ...inputs, '-filter_complex', parts.join(';'), '-map', '[vc]', '-map', '[ac]',
@@ -641,6 +698,10 @@ export async function composeUgc(opts: {
   // (длина = длине аватара, avatarStartSec игнорируется).
   avatarStartSec?: number;
   totalDurationSec?: number;
+  // Обрезка видео-аватара краями сегмента на таймлайне (СЕКУНДЫ ИСХОДНИКА):
+  // -ss/-t входными опциями на видео И на голос (это один файл — режем одинаково).
+  avatarTrimStart?: number;
+  avatarTrimEnd?: number;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
@@ -659,8 +720,13 @@ export async function composeUgc(opts: {
     return '';
   })();
   const chromaChain = chroma ? `,chromakey=${chroma}:0.16:0.06${chromaDespill}` : '';
-  const avDur = await probeDuration(opts.voicePath);
-  if (!(avDur > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  const avFull = await probeDuration(opts.voicePath);
+  if (!(avFull > 0.3)) throw new Error('Голосовая дорожка пустая.');
+  // Обрезка аватара краями сегмента: [avTs, avTe] в секундах исходника.
+  const avTs = Math.max(0, Math.min(Number(opts.avatarTrimStart) || 0, avFull - 0.3));
+  const avTe = Number(opts.avatarTrimEnd) > avTs + 0.3 ? Math.min(Number(opts.avatarTrimEnd), avFull) : avFull;
+  const avDur = avTe - avTs;
+  const avCut: string[] = avTs > 0.01 || avTe < avFull - 0.05 ? ['-ss', avTs.toFixed(2), '-t', avDur.toFixed(2)] : [];
   const timelineMode = Number(opts.totalDurationSec) > 0.3;
   const avStart = timelineMode ? Math.max(0, Number(opts.avatarStartSec) || 0) : 0;
   const D = timelineMode ? Math.max(opts.totalDurationSec as number, avStart + avDur) : avDur;
@@ -677,11 +743,11 @@ export async function composeUgc(opts: {
 
   // Входы. Для альфа-webm: -c:v libvpx-vp9 ДО -i (нативный vp9-декодер роняет альфу).
   // Для непрозрачного mp4 (HeyGen) — обычный декод.
-  const inputs: string[] = opaque ? ['-i', opts.avatarPath] : ['-c:v', 'libvpx-vp9', '-i', opts.avatarPath];
+  const inputs: string[] = opaque ? [...avCut, '-i', opts.avatarPath] : ['-c:v', 'libvpx-vp9', ...avCut, '-i', opts.avatarPath];
   let idx = 1;
   let clipIdx = -1;
   if (opts.clipPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.clipPath); clipIdx = idx++; }
-  const voiceIdx = idx++; inputs.push('-i', opts.voicePath);
+  const voiceIdx = idx++; inputs.push(...avCut, '-i', opts.voicePath);
   let musicIdx = -1;
   // Музыка: зациклена; играет весь ролик ЛИБО первые musicDurationSec (короче ролика), хвост гасим afade.
   const musT = Math.min(

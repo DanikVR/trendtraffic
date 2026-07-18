@@ -918,7 +918,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                       )}
                     </div>
                     <button onClick={() => p.openUgcPick('avatarVideo')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                    <button onClick={() => ugcMutate((u) => ({ ...u, avatarVideoUrl: null, avatarVideoName: null, avatarVideoDurationSec: null, avatarVideoStartSec: 0, result: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                    <button onClick={() => ugcMutate((u) => ({ ...u, avatarVideoUrl: null, avatarVideoName: null, avatarVideoDurationSec: null, avatarVideoStartSec: 0, avatarVideoTrimStart: 0, avatarVideoTrimEnd: null, result: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                   </div>
                 ) : (
                   <EmptySlot icon={<Video size={14} />} title={t('ugc.avatar.videoEmptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('avatarVideo')} />
@@ -1282,6 +1282,29 @@ export default function UgcStudio(p: UgcStudioProps) {
               ))}
             </div>
             <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.bumpers.hint')}</p>
+            {/* Переход на стыках ролик↔заставки: 5 xfade-пресетов + «аватар-зум» (панч в бокс) */}
+            {(ugc.intro || ugc.outro) && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.bumpers.transitionLabel', 'Переход:')}</span>
+                  {([
+                    ['none', t('ugc.bumpers.trNone', 'Без')],
+                    ['fade', t('ugc.bumpers.trFade', 'Затухание')],
+                    ['zoom', t('ugc.bumpers.trZoom', 'Зум')],
+                    ['slide', t('ugc.bumpers.trSlide', 'Свайп')],
+                    ['circle', t('ugc.bumpers.trCircle', 'Круг')],
+                    ['blur', t('ugc.bumpers.trBlur', 'Размытие')],
+                    ['avatarzoom', t('ugc.bumpers.trAvatarZoom', 'Аватар-зум')],
+                  ] as [UgcSpec['bumperTransition'], string][]).map(([v, lbl]) => (
+                    <button key={v} onClick={() => ugcMutate((u) => ({ ...u, bumperTransition: v }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
+                      style={{ background: ugc.bumperTransition === v ? ACC : 'var(--bg-secondary)', color: ugc.bumperTransition === v ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.bumperTransition === v ? ACC : 'var(--border-medium)'}`, cursor: 'pointer' }}>{lbl}</button>
+                  ))}
+                </div>
+                {ugc.bumperTransition === 'avatarzoom' && (
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.bumpers.avatarZoomHint', 'В конце кадр наезжает на аватара и растворяется в заставку; в начале — наоборот, отъезжает из него. Если аватара в кадре нет — обычный зум.')}</p>
+                )}
+              </div>
+            )}
           </Sec>
 
           {/* 5. Субтитры */}
@@ -1644,9 +1667,12 @@ export default function UgcStudio(p: UgcStudioProps) {
                   url: ugc.avatarVideoUrl,
                   startSec: ugc.avatarVideoStartSec,
                   durationSec: ugc.avatarVideoDurationSec || undefined,
+                  trimStart: ugc.avatarVideoTrimStart || undefined,
+                  trimEnd: ugc.avatarVideoTrimEnd || undefined,
                   onMove: (s) => ugcMutate((u) => ({ ...u, avatarVideoStartSec: s })),
                   onOpen: () => setAvatarEdit(true),
-                  onDuration: (d) => ugcMutate((u) => ({ ...u, avatarVideoDurationSec: d })),
+                  onDuration: (d) => ugcMutate((u) => ({ ...u, avatarVideoDurationSec: d, ...(Number(u.avatarVideoTrimEnd) > d ? { avatarVideoTrimEnd: d } : {}) })),
+                  onTrim: (patch) => ugcMutate((u) => ({ ...u, ...(patch.trimStart !== undefined ? { avatarVideoTrimStart: patch.trimStart } : {}), ...(patch.trimEnd !== undefined ? { avatarVideoTrimEnd: patch.trimEnd } : {}) })),
                 } : undefined}
               />
             </>
@@ -1964,7 +1990,7 @@ export default function UgcStudio(p: UgcStudioProps) {
           title={ugc.avatarVideoName || t('ugc.avatar.videoChosenName')}
           onClose={() => setAvatarEdit(false)}
           onSaved={(r) => {
-            ugcMutate((u) => ({ ...u, avatarVideoUrl: r.fileUrl, avatarVideoName: `${u.avatarVideoName || t('ugc.avatar.videoChosenName')} · ${t('ugc.video.editedSuffix', 'обрезано')}`, avatarVideoDurationSec: null, result: null }));
+            ugcMutate((u) => ({ ...u, avatarVideoUrl: r.fileUrl, avatarVideoName: `${u.avatarVideoName || t('ugc.avatar.videoChosenName')} · ${t('ugc.video.editedSuffix', 'обрезано')}`, avatarVideoDurationSec: null, avatarVideoTrimStart: 0, avatarVideoTrimEnd: null, result: null }));
             setAvatarEdit(false);
           }}
         />

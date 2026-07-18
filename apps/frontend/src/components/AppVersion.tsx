@@ -3228,6 +3228,28 @@
  *          Файлы: social-ext/router.ts, chrome-polyfill.js, custom.js,
  *          trends/{dna,analytics,router}.ts, TrendAnalyticsPanel.tsx, locales×108. */
 
+/* 2.6.4 — UGC: переходы у заставок, обрезка аватара краями, хромакей не ест лицо.
+ *          Три запроса юзера одним сообщением:
+ *          1) ПЕРЕХОДЫ на стыках ролик↔заставки — чипы в секции «Заставки»
+ *             (spec.bumperTransition): Затухание/Зум/Свайп/Круг/Размытие (xfade
+ *             fade/zoomin/slideleft/circleopen/hblur + acrossfade звука, TD 0.5с,
+ *             зажат по короткому сегменту) и «АВАТАР-ЗУМ»: в конце кадр НАЕЗЖАЕТ
+ *             на бокс аватара (анимированный crop-панч по avatarRect, Z до ×4,
+ *             0.6с) и растворяется в заставку (fade 0.25), в начале — отъезд из
+ *             бокса; без rect (озвучка/диалог/монтаж) — обычный zoomin. concat-
+ *             Bumpers: transition+avatarRect, 5 вызовов роутера (rect у веток
+ *             видео/фото). 'none' = жёсткая склейка как раньше.
+ *          2) Сегмент «Аватар» на таймлайне ОБРЕЗАЕТСЯ КРАЯМИ (как клипы):
+ *             spec.avatarVideoTrimStart/TrimEnd (секунды исходника) → ручки на
+ *             сегменте (overlayTrack.onTrim), composeUgc режет -ss/-t ВХОДНЫМИ
+ *             опциями и видео, и голос (один файл), Dav везде эффективная.
+ *          3) ФИКС «хромакей удалил лицо»: detectAvatarBgColor теперь отдаёт
+ *             ТОЛЬКО насыщенный зелёный/синий цвет (G или B доминирует >25) —
+ *             нейтральный (серый/белый) ключ в UV-метрике близок к коже и
+ *             chromakey съедал лицо; не-хромакейный фон → фолбэк 0x00FF00.
+ *          Файлы: podcast_compose.ts (concatBumpers/composeUgc/detect),
+ *          render/router.ts, ugcTypes.ts, UgcStudio.tsx, DialogueTimeline.tsx,
+ *          MontageEditor.tsx, locales ru+en (+9 ugc.bumpers.*). */
 /* 2.6.3 — ФИКС «зелёный фон не вырезался» у готового видео-аватара (скрин юзера).
  *          КОРЕНЬ: chroma-key был жёстко 0x00FF00:0.16 — нестандартный оттенок
  *          зелёного (тёмный/приглушённый, типичный для ИИ-генераций) в UV-метрике
@@ -3352,7 +3374,7 @@
  *             картинка больше не оставляет пустой квадрат; cover = coverUrl || meta.
  *          Файлы: trends/dna.ts, UgcStudio.tsx, GalleryPage.tsx. */
 
-export const APP_VERSION = '2.6.3';
+export const APP_VERSION = '2.6.4';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

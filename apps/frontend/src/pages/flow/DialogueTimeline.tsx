@@ -52,9 +52,13 @@ interface Props {
     url: string;
     startSec: number;
     durationSec?: number;
+    // Обрезка краями сегмента (СЕКУНДЫ ИСХОДНИКА, как у клипов видеоряда):
+    trimStart?: number;
+    trimEnd?: number;
     onMove: (startSec: number) => void;
     onOpen: () => void;
     onDuration?: (sec: number) => void;
+    onTrim?: (patch: { trimStart?: number; trimEnd?: number }) => void;
   };
 }
 
@@ -372,8 +376,39 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   };
 
   /* ── сегмент видео-аватара: драг по времени (локальный override, коммит на pointerup);
-     без сдвига (<3px) отпускание считается кликом → onOpen (редактор). */
+     без сдвига (<3px) отпускание считается кликом → onOpen (редактор).
+     Края сегмента — обрезка trimStart/trimEnd (секунды исходника), как у клипов видеоряда. */
   const [ovDragStart, setOvDragStart] = useState<number | null>(null);
+  const [ovTrimOv, setOvTrimOv] = useState<{ trimStart?: number; trimEnd?: number } | null>(null);
+  const beginOvTrim = (e: React.PointerEvent, side: 'l' | 'r') => {
+    if (!overlayTrack?.onTrim) return;
+    e.preventDefault(); e.stopPropagation();
+    const dur = overlayTrack.durationSec || 0; if (!(dur > 0)) return;
+    const el = e.currentTarget as HTMLElement;
+    try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
+    const x0 = e.clientX;
+    const ts0 = overlayTrack.trimStart || 0;
+    const te0 = (Number(overlayTrack.trimEnd) > 0) ? Math.min(overlayTrack.trimEnd as number, dur) : dur;
+    let last: { trimStart?: number; trimEnd?: number } | null = null;
+    const onMove = (ev: PointerEvent) => {
+      const dsec = (ev.clientX - x0) / tlPpsRef.current;
+      last = side === 'l'
+        ? { trimStart: Math.round(Math.min(Math.max(0, ts0 + dsec), te0 - 0.3) * 10) / 10 }
+        : { trimEnd: Math.round(Math.min(Math.max(ts0 + 0.3, te0 + dsec), dur) * 10) / 10 };
+      setOvTrimOv(last);
+    };
+    const onUp = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
+      setOvTrimOv(null);
+      if (last) { overlayTrack.onTrim!(last); dirty(); }
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+  };
   const beginOvDrag = (e: React.PointerEvent) => {
     if (!overlayTrack || e.button !== 0) return;
     e.preventDefault();
@@ -406,7 +441,10 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const arr = dialogue;
   const clipsTotal = clipTrack ? clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0) : 0;
   const ovStart = overlayTrack ? (ovDragStart ?? Math.max(0, overlayTrack.startSec || 0)) : 0;
-  const ovDur = overlayTrack ? Math.max(0.5, overlayTrack.durationSec || 5) : 0;
+  const ovFull = overlayTrack ? (overlayTrack.durationSec || 5) : 0;
+  const ovTs = (ovTrimOv?.trimStart ?? overlayTrack?.trimStart) || 0;
+  const ovTeRaw = ovTrimOv?.trimEnd ?? overlayTrack?.trimEnd;
+  const ovDur = overlayTrack ? Math.max(0.3, ((Number(ovTeRaw) > 0 ? Math.min(Number(ovTeRaw), ovFull) : ovFull) - ovTs)) : 0;
   const total = Math.max(3, clipsTotal, ovStart + ovDur, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
   const W = Math.ceil(total) * tlPps + 40;
   const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
@@ -493,6 +531,16 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                     cursor: 'grab', userSelect: 'none', touchAction: 'none', padding: '0 8px',
                     border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
                   <span style={{ pointerEvents: 'none' }}>{overlayTrack.label}: {overlayTrack.name} · {tlMmss(ovStart)}→{tlMmss(ovStart + ovDur)}</span>
+                  {/* ручки обрезки по краям (секунды исходника) — когда известна длительность */}
+                  {Number(overlayTrack.durationSec) > 0 && overlayTrack.onTrim && (['l', 'r'] as const).map((side) => (
+                    <span key={side}
+                      onClick={(ev) => ev.stopPropagation()}
+                      onPointerDown={(ev) => { ev.stopPropagation(); beginOvTrim(ev, side); }}
+                      title={side === 'l' ? t('sec.dialogue.clipTrimL', 'Обрезать начало клипа') : t('sec.dialogue.clipTrimR', 'Обрезать конец клипа')}
+                      style={{ position: 'absolute', [side === 'l' ? 'left' : 'right']: 0, top: 0, bottom: 0, width: 9,
+                        cursor: 'ew-resize', background: 'rgba(255,255,255,0.3)', touchAction: 'none',
+                        borderRadius: side === 'l' ? '6px 0 0 6px' : '0 6px 6px 0' }} />
+                  ))}
                   {!(Number(overlayTrack.durationSec) > 0) && overlayTrack.onDuration && (
                     <video src={overlayTrack.url} muted preload="metadata" style={{ display: 'none' }}
                       onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) overlayTrack.onDuration!(Math.round(d * 10) / 10); }} />

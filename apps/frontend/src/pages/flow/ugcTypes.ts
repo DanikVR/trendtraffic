@@ -63,6 +63,9 @@ export interface UgcSpec {
   // аватар появляется и говорит с этого места; длину ролика задаёт видеоряд (хвост продлевает).
   avatarVideoStartSec: number;
   avatarVideoDurationSec: number | null;                    // из метаданных (ширина сегмента на дорожке)
+  // Обрезка видео-аватара краями сегмента (СЕКУНДЫ ИСХОДНИКА, как у клипов видеоряда):
+  avatarVideoTrimStart: number;
+  avatarVideoTrimEnd: number | null;
   // ИИ-вырезка фона аватара в соло («Моё фото»/«Коллекция»): HeyGen оживляет фото на ЗЕЛЁНОМ
   // фоне (bgColor), рендер делает chroma-key → поверх кадра остаётся только силуэт человека.
   avatarCutout: boolean;
@@ -115,6 +118,8 @@ export interface UgcSpec {
   // Заставки до/после (приклеиваются как есть) и верхний PNG-слой на каждый формат:
   intro: { url: string; name: string } | null;
   outro: { url: string; name: string } | null;
+  // Переход на стыках ролик↔заставки: 5 xfade-пресетов + «аватар-зум» (панч в бокс аватара).
+  bumperTransition: 'none' | 'fade' | 'zoom' | 'slide' | 'circle' | 'blur' | 'avatarzoom';
   layers: Partial<Record<UgcFormat, { url: string; name: string }>>;
   // Позиция аватара per-format (драг на превью); {} = дефолт раскладки.
   avatarRects: Partial<Record<UgcFormat, UgcAvatarRect>>;
@@ -144,6 +149,7 @@ export const UGC_DEFAULT: UgcSpec = {
   heygenLookId: null,
   avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
   avatarVideoStartSec: 0, avatarVideoDurationSec: null,
+  avatarVideoTrimStart: 0, avatarVideoTrimEnd: null,
   avatarCutout: false,
   avatarOverInserts: false,
   faceProvider: 'heygen_api',
@@ -171,6 +177,7 @@ export const UGC_DEFAULT: UgcSpec = {
   langs: ['ru'],
   intro: null,
   outro: null,
+  bumperTransition: 'none',
   layers: {},
   avatarRects: {},
   templateId: null,

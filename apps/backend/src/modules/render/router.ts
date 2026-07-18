@@ -27,7 +27,7 @@ import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTal
 import { photoSha, hgKeyFp, getCachedTp, putCachedTp, dropCachedTp } from './tp_cache.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, type BumperTransition, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { parseCapWishes } from './cap_wishes.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
@@ -670,6 +670,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       .map((k) => ({ key: k, dims: UGC_FORMATS[k], label: FMT_LABEL[k] }));
     // Музыка: играть первые N секунд (иначе весь ролик) — общий парс для всех веток.
     const musicDurSec: number | null = Number(spec.music?.durationSec) > 0 ? Number(spec.music.durationSec) : null;
+    // Переход на стыках ролик↔заставки (чипы в секции «Заставки»); 'none' = склейка как раньше.
+    const bumperTr: BumperTransition = (['fade', 'zoom', 'slide', 'circle', 'blur', 'avatarzoom'] as BumperTransition[])
+      .includes(spec.bumperTransition) ? spec.bumperTransition : 'none';
     // Верхний PNG-слой (свой на каждый формат) + полоса прогресса + заставки до/после.
     const layerUrlFor = (key: UgcFormatKey): string => String(spec.layers?.[key]?.url || '');
     const progressBar = !!spec.progressBar;
@@ -908,7 +911,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';
-                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr });
               }
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
@@ -1052,7 +1055,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             });
             if (bmp.intro || bmp.outro) {
               j.status = 'приклеиваю заставки';
-              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr });
             }
             const asset = await createAsset(j.tenantId!, {
               kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC-диалог (${engagement})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
@@ -1156,7 +1159,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';
-                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr });
               }
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
@@ -1203,7 +1206,12 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
           const bmp = await dlBumpers();
-          const Dav = await mediaDuration(avatar.filePath);
+          const DavFull = await mediaDuration(avatar.filePath);
+          // Обрезка аватара краями сегмента (секунды исходника) → эффективная длительность.
+          const avTs = Math.max(0, Math.min(Number(spec.avatarVideoTrimStart) || 0, Math.max(0, DavFull - 0.3)));
+          const avTeRaw = Number(spec.avatarVideoTrimEnd);
+          const avTe = avTeRaw > avTs + 0.3 ? Math.min(avTeRaw, DavFull) : DavFull;
+          const Dav = avTe - avTs;
           // Вставка по таймлайну: при видеоряде длину ролика задаёт ОН (склеенный пре-шагом),
           // аватар появляется в [avatarVideoStartSec, +Dav] (хвост за концом продлевает ролик).
           // Без видеоряда — как раньше: длина = длине видео-аватара.
@@ -1223,6 +1231,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               voicePath: avatar.filePath, // речь уже в видео — его дорожка = голос
               avatarStartSec: avStart,    // позиция вставки на таймлайне (при видеоряде)
               totalDurationSec: clipTotal > 0.3 ? clipTotal : undefined, // длину задаёт видеоряд
+              avatarTrimStart: avTs, avatarTrimEnd: avTe < DavFull - 0.05 ? avTe : undefined, // обрезка краями сегмента
               clipPath: clip?.filePath || null,
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
               clipMuted: spec.clipMuted !== false,
@@ -1239,7 +1248,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             });
             if (bmp.intro || bmp.outro) {
               j.status = 'приклеиваю заставки';
-              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr, avatarRect: avatarRectFor(fmt.key) });
             }
             const asset = await createAsset(j.tenantId!, {
               kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
@@ -1336,7 +1345,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';
-                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims });
+                fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr, avatarRect: avatarRectFor(fmt.key) });
               }
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
