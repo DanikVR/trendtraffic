@@ -425,6 +425,9 @@ const ugcJobs = new Map<string, {
   tenantId?: string; status: string; error?: string; fileUrl?: string; assetId?: string | null; ts: number;
   results?: { url: string; name: string }[]; total?: number; note?: string;
 }>();
+// Очередь тяжёлых сборок «Готового видео» (matting + ffmpeg): по одной за раз,
+// параллельные рендеры на слабом VPS душат друг друга до таймаута.
+let ugcVideoChain: Promise<void> = Promise.resolve();
 
 /** Реплики с таймкодами для планировщика удержания: если у скрипта нет валидных таймкодов
  *  (генерация текста), раскидываем по длине пропорционально длине текста. */
@@ -1205,8 +1208,15 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
       res.json({ jobId });
 
-      void (async () => {
+      // Сборки «Готового видео» идут ПО ОДНОЙ (очередь): параллельные ffmpeg-рендеры
+      // на 2 vCPU душат друг друга до таймаута. Живой инцидент 18.07: двойной запуск →
+      // два ugcclip-*.mp4 в одну минуту → обе сборки ползли и умерли по «ffmpeg: таймаут»
+      // (та же сборка в одиночку на том же VPS собирается за ~17с).
+      const waitTurn = ugcVideoChain;
+      const job = (async () => {
         const j = ugcJobs.get(jobId)!;
+        const qt = setTimeout(() => { j.status = 'в очереди за предыдущей сборкой…'; }, 400);
+        try { await waitTurn; } finally { clearTimeout(qt); }
         try {
           j.status = 'готовлю видео-аватар';
           const avatar = await downloadToRenders(abs(avVideoUrl), 'ugcav');
@@ -1287,6 +1297,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           console.warn('[ugc/build video] FAILED:', j.error);
         }
       })();
+      // Хвост очереди: следующая сборка стартует после этой (ошибки живут в самом job).
+      ugcVideoChain = job.then(() => undefined, () => undefined);
       return;
     }
 

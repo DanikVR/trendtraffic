@@ -177,6 +177,8 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const tlRafRef = useRef<number | null>(null);
   const tlRafPrevRef = useRef<number | null>(null);
   const tlCtxRef = useRef<AudioContext | null>(null);
+  // Плей ведёт превью: троттленный (0.25с) эмит позиции в onPlayheadScrub — хост листает кадр.
+  const tlEmitRef = useRef(-1);
   const tlBufRef = useRef<AudioBuffer | null>(null);
   const tlBufUrlRef = useRef<string | null>(null);
   const tlSrcsRef = useRef<AudioBufferSourceNode[]>([]);
@@ -348,7 +350,10 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
         const c = tlCtxRef.current; if (!c) return;
         const cur = from + (c.currentTime - t0);
         if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
-        if (cur >= 0) { tlMediaSync(cur); setTlPlayhead(cur); }
+        if (cur >= 0) {
+          tlMediaSync(cur); setTlPlayhead(cur);
+          if (Math.abs(cur - tlEmitRef.current) >= 0.25) { tlEmitRef.current = cur; scrubRef.current?.(cur); }
+        }
         tlRafRef.current = requestAnimationFrame(tick);
       };
       tlRafRef.current = requestAnimationFrame(tick);
@@ -362,6 +367,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
       tlMediaSync(cur);
       setTlPlayhead(cur);
+      if (Math.abs(cur - tlEmitRef.current) >= 0.25) { tlEmitRef.current = cur; scrubRef.current?.(cur); }
       tlRafRef.current = requestAnimationFrame(tick);
     };
     tlRafRef.current = requestAnimationFrame(tick);

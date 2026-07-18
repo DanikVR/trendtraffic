@@ -7,10 +7,10 @@
  * каждый план кадра (крупный / пополам / врезка $0 / фон+лицо). Полоса — иллюстрация
  * типового плана пресета; точное распределение по фразам делает ИИ на сборке.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound, Move, Maximize2, MoveVertical, Image as ImageIcon } from 'lucide-react';
-import { avatarDefaultRect, avatarVideoBgModeOf, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
+import { avatarDefaultRect, avatarVideoBgModeOf, clipEffDur, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
 import type { LineRect } from './dialogueTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
@@ -102,6 +102,9 @@ export interface UgcPreviewProps {
   onLineRect?: (index: number, rect: LineRect | null) => void;
   // Тумблер «Аватар поверх врезки» (соло): врезка под аватаром — ведущий остаётся в кадре.
   onAvatarOverInserts?: (v: boolean) => void;
+  // Живой скраб с таймлайна ДО готового ролика: превью листает видеоряд на эту секунду
+  // и показывает/прячет видео-аватар по его окну на дорожке.
+  scrub?: { t: number; k: number } | null;
 }
 
 /* Розовый — акцент врезок (медиа реплик), чтобы не путать с фиолетовым боксом аватара. */
@@ -117,7 +120,7 @@ const AV_DEF: Record<'left' | 'right', UgcAvatarRect> = {
 
 const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
-export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect, onLineRect, onAvatarOverInserts }: UgcPreviewProps) {
+export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect, onLineRect, onAvatarOverInserts, scrub }: UgcPreviewProps) {
   const { t } = useTranslation('common');
   const avatarImg = ugc.avatarSource === 'collection' ? ugc.avatarUrl
     : ugc.avatarSource === 'video' ? ugc.avatarVideoUrl   // готовое видео-аватар → показываем первый кадр видео
@@ -128,6 +131,48 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const isSolo = mode === 'solo';
   // ИИ-вырезка фона в соло: «Готовое видео» — свой хромакей-чекбокс, фото/коллекция — avatarCutout.
   const soloCutout = ugc.avatarSource === 'video' ? avatarVideoBgModeOf(ugc) !== 'keep' : ugc.avatarCutout;
+
+  /* ── живой скраб: бегунок таймлайна (и плей ▶) листает превью, пока готового ролика нет ──
+     Клип видеоряда выбирается по накопленным эффективным длительностям (учёт обрезки и
+     скорости), кадр сикается на нужную секунду ИСХОДНИКА; видео-аватар виден только внутри
+     своего окна [startSec .. startSec+длительность сегмента] и сикается по нему же. */
+  const clipVidRef = useRef<HTMLVideoElement | null>(null);
+  const avVidRef = useRef<HTMLVideoElement | null>(null);
+  const clipSeekRef = useRef<number | null>(null);
+  const [scrubClipUrl, setScrubClipUrl] = useState<string | null>(null);
+  const [avInWindow, setAvInWindow] = useState<boolean | null>(null);   // null = скраба не было
+  useEffect(() => {
+    if (!scrub) return;
+    const tSec = Math.max(0, scrub.t);
+    const spd = Math.min(2, Math.max(0.5, (Number(ugc.clipSpeedPct) || 100) / 100));
+    // клип видеоряда под бегунком
+    let acc = 0; let cur: { url: string; at: number } | null = null;
+    for (const c of ugc.clips) {
+      const eff = clipEffDur(c, ugc.clipSpeedPct);
+      if (tSec < acc + eff) { cur = { url: c.url, at: (c.trimStart || 0) + (tSec - acc) * spd }; break; }
+      acc += eff;
+    }
+    if (cur) {
+      clipSeekRef.current = cur.at;
+      setScrubClipUrl(cur.url);
+      const v = clipVidRef.current;
+      if (v && v.readyState >= 1) { try { v.currentTime = cur.at; } catch { /* до метаданных */ } }
+    }
+    // окно видео-аватара (только «Готовое видео» с видеорядом — иначе он всегда в кадре)
+    if (ugc.avatarSource === 'video' && ugc.avatarVideoUrl) {
+      const st = Math.max(0, Number(ugc.avatarVideoStartSec) || 0);
+      const full = Number(ugc.avatarVideoDurationSec) || 0;
+      const ts = Math.max(0, Number(ugc.avatarVideoTrimStart) || 0);
+      const teRaw = Number(ugc.avatarVideoTrimEnd) || 0;
+      const te = teRaw > ts + 0.2 ? teRaw : (full > 0 ? full : ts + 5);
+      const dur = Math.max(0.3, te - ts);
+      const inWin = ugc.clips.length ? (tSec >= st && tSec < st + dur) : true;
+      setAvInWindow(inWin);
+      const av = avVidRef.current;
+      if (av && inWin && av.readyState >= 1) { try { av.currentTime = ts + (tSec - st); } catch { /* до метаданных */ } }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrub]);
 
   /* ── врезки медиа реплик (соло/«Без аватара»): выбор врезки чипом + драг окна на кадре ──
      insSelRaw: null = авто (первая реплика с медиа), 'off' = скрыто юзером, число = реплика.
@@ -298,9 +343,9 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   );
   // Медиа аватара: обычно <img> (фото/готовый аватар), но для источника «Готовое видео» —
   // <video> с первым кадром (тот же URL — драг-бокс и позиционирование работают одинаково).
-  const avatarMedia = (url: string, className: string, style?: React.CSSProperties) =>
+  const avatarMedia = (url: string, className: string, style?: React.CSSProperties, vref?: React.Ref<HTMLVideoElement>) =>
     isVideoUrl(url)
-      ? <video src={`${url}#t=0.1`} muted playsInline preload="metadata" draggable={false} className={className} style={style} />
+      ? <video ref={vref} src={`${url}#t=0.1`} muted playsInline preload="metadata" draggable={false} className={className} style={style} />
       : <img src={url} alt="" draggable={false} className={className} style={style} />;
   const faceCell = (url: string | null, tag: string, onEmpty: () => void, emptyTitle?: string) => (
     <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden" style={{ background: F.cell }}>
@@ -313,7 +358,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       {ugc.clip ? (
         <>
           {cellTag(tag + (ugc.clipFit === 'contain' ? t('ugc.preview.tagFitContainSuffix') : ''))}
-          <video src={`${ugc.clip.url}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full" style={{ objectFit: ugc.clipFit === 'contain' ? 'contain' : 'cover' }} />
+          <video ref={clipVidRef} src={scrubClipUrl || `${ugc.clip.url}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full" style={{ objectFit: ugc.clipFit === 'contain' ? 'contain' : 'cover' }}
+            onLoadedMetadata={(ev) => { if (scrubClipUrl && clipSeekRef.current != null) { try { ev.currentTarget.currentTime = clipSeekRef.current; } catch { /* */ } } }} />
           <span className="absolute flex items-center justify-center rounded-full" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 32, height: 32, background: 'rgba(0,0,0,.45)', border: '1.5px solid rgba(255,255,255,.75)', pointerEvents: 'none' }}><Play size={14} color="#fff" fill="#fff" /></span>
         </>
       ) : emptyCell(t('ugc.preview.emptyClipTitle'), emptySub || t('ugc.preview.emptyClipSub'), onEmptyClip, emptyArea)}
@@ -339,22 +385,27 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   const overlayAvatar = (rc: UgcAvatarRect, cutout: boolean, url: string | null, onEmpty: () => void, fmt: UgcFormat, draggable = false, mini = false) => {
     const canDrag = draggable && !!onAvatarRect && !!url;   // двигать можно только реальный аватар
     const handle = mini ? 16 : 20;
+    // Живой скраб: вне окна сегмента «Аватар» бокс притушен — видно, что в этот момент
+    // аватара в кадре нет (реальный рендер его тут не покажет).
+    const scrubDim = avInWindow === false && !!url && isVideoUrl(url);
+    const avRef = url && isVideoUrl(url) ? avVidRef : undefined;
     return (
     <div
       onPointerDown={canDrag ? (e) => dragAvatar(e, fmt, 'move') : undefined}
       style={{
         position: 'absolute', zIndex: 4,
         left: `${rc.x * 100}%`, top: `${rc.y * 100}%`, width: `${rc.w * 100}%`, height: `${rc.h * 100}%`,
+        opacity: scrubDim ? 0.18 : 1, transition: 'opacity .15s ease',
         ...(canDrag ? { cursor: 'grab', touchAction: 'none' } : {}),
       }}>
       {url ? (
         cutout ? (
           <div className="w-full h-full" style={{ ...CHECKER, borderRadius: '12px 12px 0 0', padding: 4 }} title={t('ugc.preview.cutoutTooltip')}>
-            {avatarMedia(url, 'w-full h-full object-cover', { borderRadius: '9px 9px 0 0', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` })}
+            {avatarMedia(url, 'w-full h-full object-cover', { borderRadius: '9px 9px 0 0', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` }, avRef)}
             <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 750, letterSpacing: '.04em', textTransform: 'uppercase', color: '#fff', background: ACC, borderRadius: 999, padding: '1.5px 7px', whiteSpace: 'nowrap' }}>{t('ugc.preview.cutoutBadge')}</span>
           </div>
         ) : (
-          avatarMedia(url, 'w-full h-full object-cover', { borderRadius: 10, border: '1px solid rgba(255,255,255,.25)', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` })
+          avatarMedia(url, 'w-full h-full object-cover', { borderRadius: 10, border: '1px solid rgba(255,255,255,.25)', objectPosition: `50% ${(rc.oy ?? 0.5) * 100}%` }, avRef)
         )
       ) : (
         <button onClick={onEmpty} className="w-full h-full flex flex-col items-center justify-center gap-1 text-[9px] font-650"

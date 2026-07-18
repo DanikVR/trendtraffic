@@ -220,6 +220,14 @@ export default function UgcStudio(p: UgcStudioProps) {
   const { ugc, ugcMutate } = p;
   const mode = ugcModeOf(ugc);
   const building = p.ugcBusy === 'render';
+  // Таймер сборки для индикатора (с момента старта/переоткрытия студии).
+  const [buildSec, setBuildSec] = useState(0);
+  useEffect(() => {
+    if (!building) { setBuildSec(0); return; }
+    const t0 = Date.now();
+    const id = window.setInterval(() => setBuildSec(Math.floor((Date.now() - t0) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, [building]);
 
   /* панель «Реплики» над таймлайном; авто-открывается, когда реплики появились впервые */
   const [linesOpen, setLinesOpen] = useState(false);
@@ -235,11 +243,17 @@ export default function UgcStudio(p: UgcStudioProps) {
   const resultVidRef = useRef<HTMLVideoElement | null>(null);
   const [tlFollow, setTlFollow] = useState<{ t: number; k: number } | null>(null);
   const tlDriveRef = useRef<{ t: number; ts: number }>({ t: -1, ts: 0 });
+  // Живой скраб превью ДО готового ролика: бегунок (и плей ▶) листает видеоряд по времени
+  // и показывает/прячет аватар по его окну — превью ведёт себя как будущий ролик.
+  const [liveScrub, setLiveScrub] = useState<{ t: number; k: number } | null>(null);
   const onTimelineScrub = (tSec: number) => {
     const v = resultVidRef.current;
-    if (!v || !Number.isFinite(v.duration) || v.duration <= 0) return;
-    tlDriveRef.current = { t: tSec, ts: Date.now() };
-    try { v.currentTime = Math.max(0, Math.min(tSec, v.duration - 0.05)); } catch { /* до метаданных */ }
+    if (v && Number.isFinite(v.duration) && v.duration > 0) {
+      tlDriveRef.current = { t: tSec, ts: Date.now() };
+      try { v.currentTime = Math.max(0, Math.min(tSec, v.duration - 0.05)); } catch { /* до метаданных */ }
+      return;
+    }
+    setLiveScrub((s) => ({ t: tSec, k: (s?.k || 0) + 1 }));
   };
   const onResultVideoTime = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const cur = e.currentTarget.currentTime;
@@ -1586,6 +1600,7 @@ export default function UgcStudio(p: UgcStudioProps) {
               onAvatarRect={(fmt, rect) => ugcMutate((u) => ({ ...u, avatarRects: { ...u.avatarRects, [fmt]: rect } }))}
               onLineRect={(i, rect) => ugcMutate((u) => ({ ...u, script: u.script.map((l, j) => (j === i ? { ...l, rect: rect || undefined } : l)) }))}
               onAvatarOverInserts={(v) => ugcMutate((u) => ({ ...u, avatarOverInserts: v }))}
+              scrub={liveScrub}
             />
           ) : (
           <div className="flex-1 flex items-center justify-center gap-6 flex-wrap px-4 pb-3" style={{ minHeight: 0 }}>
@@ -1641,18 +1656,51 @@ export default function UgcStudio(p: UgcStudioProps) {
             </p>
           )}
 
-          {/* прогресс сборки поверх канваса */}
-          {building && (
+          {/* прогресс сборки поверх канваса: шаги с галочками + таймер + полоса */}
+          {building && (() => {
+            const low = (p.ugcNote || '').toLowerCase();
+            const hasCut = ugc.avatarSource === 'video' && avatarVideoBgModeOf(ugc) !== 'keep';
+            const hasBmp = !!(ugc.intro || ugc.outro);
+            const steps: { label: string; m: string[] }[] = [
+              { label: t('ugc.progress.stQueue', 'Очередь'), m: ['очеред'] },
+              { label: t('ugc.progress.stPrep', 'Подготовка'), m: ['запуск', 'готовлю', 'запускаю'] },
+              ...(hasCut ? [{ label: t('ugc.progress.stCutout', 'Вырезка фона'), m: ['вырезк', 'replicate', 'маск', 'обработ'] }] : []),
+              { label: t('ugc.progress.stCompose', 'Склейка'), m: ['склейка', 'собираю'] },
+              ...(hasBmp ? [{ label: t('ugc.progress.stBumpers', 'Заставки'), m: ['заставк'] }] : []),
+            ];
+            let cur = 0;
+            steps.forEach((s, i) => { if (s.m.some((x) => low.includes(x))) cur = i; });
+            const pct = Math.round(((cur + 0.5) / steps.length) * 100);
+            const mm = Math.floor(buildSec / 60), ss = String(buildSec % 60).padStart(2, '0');
+            return (
             <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--bg-primary) 82%, transparent)', backdropFilter: 'blur(4px)' }}>
               <div className="rounded-2xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', width: 330, boxShadow: '0 14px 34px rgba(0,0,0,.4)' }}>
-                <div className="text-[13px] font-700 mb-0.5 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                  <Loader2 size={15} className="animate-spin" style={{ color: ACC }} /> {t('ugc.progress.title')}
+                <div className="w-full flex items-center justify-between mb-0.5">
+                  <div className="text-[13px] font-700 inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <Loader2 size={15} className="animate-spin" style={{ color: ACC }} /> {t('ugc.progress.title')}
+                  </div>
+                  <span className="text-[11px] font-600" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</span>
                 </div>
-                <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>{t('ugc.progress.note')}</div>
-                {p.ugcNote && <div className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>{p.ugcNote}</div>}
+                <div className="text-[11px] mb-2.5" style={{ color: 'var(--text-muted)' }}>{t('ugc.progress.note')}</div>
+                {/* шаги: пройден ✓ → текущий (спиннер) → впереди (точка) */}
+                <div className="space-y-1 mb-2.5">
+                  {steps.map((s, i) => (
+                    <div key={s.label} className="flex items-center gap-2 text-[11.5px]" style={{ color: i < cur ? 'var(--text-muted)' : i === cur ? 'var(--text-primary)' : 'var(--text-muted)', opacity: i > cur ? 0.55 : 1 }}>
+                      {i < cur ? <CheckCircle2 size={13} style={{ color: '#10b981' }} />
+                        : i === cur ? <Loader2 size={13} className="animate-spin" style={{ color: ACC }} />
+                        : <span style={{ width: 13, textAlign: 'center', lineHeight: '13px' }}>·</span>}
+                      <span style={{ fontWeight: i === cur ? 650 : 500 }}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-full overflow-hidden" style={{ height: 5, background: 'var(--bg-tertiary)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: `linear-gradient(90deg,${ACC},${ACC2})`, transition: 'width .6s ease' }} />
+                </div>
+                {p.ugcNote && <div className="text-[11px] mt-2" style={{ color: 'var(--text-secondary)' }}>{p.ugcNote}</div>}
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 

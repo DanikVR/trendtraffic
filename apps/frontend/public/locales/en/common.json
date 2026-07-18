@@ -1572,7 +1572,12 @@
     },
     "progress": {
       "title": "creating video…",
-      "note": "You can close this window — rendering will continue on the server (~2–5 min)."
+      "note": "You can close this window — rendering will continue on the server (~2–5 min).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "balance",
