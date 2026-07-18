@@ -296,15 +296,19 @@ export async function composeSlideshow(opts: {
 export async function composeClipSequence(opts: {
   parts: { path: string; startSec?: number; endSec?: number }[];
   dims: FrameDims;
+  speed?: number;   // скорость воспроизведения 0.5–2 (setpts + atempo — atempo одной ступенью держит ровно этот диапазон)
 }): Promise<{ fileUrl: string; filePath: string }> {
   const parts = (opts.parts || []).filter((p) => p.path && fs.existsSync(p.path)).slice(0, 12);
   if (!parts.length) throw new Error('видеоряд: нет клипов');
   const { W, H } = opts.dims;
+  const spd = Number.isFinite(opts.speed) && (opts.speed as number) > 0 ? Math.min(2, Math.max(0.5, opts.speed as number)) : 1;
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const name = `clipseq-${randomUUID().slice(0, 8)}.mp4`;
   const outPath = path.join(RENDERS_DIR, name);
 
-  const fit = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30,format=yuv420p`;
+  // setpts — ДО fps (кадры пересэмплируются под новую длительность), atempo — до ресэмпла.
+  const fit = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1${spd !== 1 ? `,setpts=PTS/${spd}` : ''},fps=30,format=yuv420p`;
+  const aSpd = spd !== 1 ? `atempo=${spd},` : '';
   // -ss/-t КАК ВХОДНЫЕ опции (до -i): быстрый seek, читается только нужный кусок.
   const inputs: string[] = [];
   parts.forEach((p) => {
@@ -318,7 +322,7 @@ export async function composeClipSequence(opts: {
 
   let fc = '';
   for (let i = 0; i < n; i++) {
-    fc += `[${i}:v]${fit}[v${i}];[${i}:a]aresample=async=1:first_pts=0,aformat=sample_rates=44100:channel_layouts=stereo[a${i}];`;
+    fc += `[${i}:v]${fit}[v${i}];[${i}:a]${aSpd}aresample=async=1:first_pts=0,aformat=sample_rates=44100:channel_layouts=stereo[a${i}];`;
   }
   fc += parts.map((_, i) => `[v${i}][a${i}]`).join('') + `concat=n=${n}:v=1:a=1[vo][ao]`;
   try {
@@ -328,7 +332,7 @@ export async function composeClipSequence(opts: {
   } catch { /* фолбэк ниже: клип без аудиодорожки */ }
 
   let fcv = '';
-  for (let i = 0; i < n; i++) fcv += `[${i}:v]${fit}[v${i}];`;
+  for (let i = 0; i < n; i++) fcv += `[${i}:v]${fit}[v${i}];`;   // fit уже содержит setpts скорости
   fcv += parts.map((_, i) => `[v${i}]`).join('') + `concat=n=${n}:v=1:a=0[vo]`;
   await ffmpeg(['-y', ...inputs, '-filter_complex', fcv, '-map', '[vo]', '-an',
     '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-movflags', '+faststart', outPath], timeoutMs);
@@ -584,6 +588,8 @@ export async function composeUgc(opts: {
   clipPath?: string | null;
   clipFit: 'cover' | 'contain';
   clipMuted: boolean;
+  clipVolumePct?: number;    // громкость звука клипа 0–200 (деф. 90 — прежний хардкод 0.9)
+  voiceVolumePct?: number;   // громкость голоса 0–200 (деф. 100)
   placement: 'top' | 'bottom' | 'overlay-left' | 'overlay-right';
   musicPath?: string | null; musicVolumePct?: number;
   musicDurationSec?: number | null;   // играть только первые N сек (null/0 = весь ролик); хвост — afade
@@ -713,9 +719,12 @@ export async function composeUgc(opts: {
   }
 
   // Звук: голос + опц. клип + опц. музыка (normalize=0 — без выравнивания громкостей).
-  const aIns: string[] = [`[${voiceIdx}:a]anull[a_v]`];
+  // Громкости — из ручек студии (% над таймлайном); дефолты сохраняют прежнее звучание.
+  const vv = Math.max(0, Math.min(2, Number.isFinite(opts.voiceVolumePct) ? (opts.voiceVolumePct as number) / 100 : 1));
+  const cvol = Math.max(0, Math.min(2, Number.isFinite(opts.clipVolumePct) ? (opts.clipVolumePct as number) / 100 : 0.9));
+  const aIns: string[] = [`[${voiceIdx}:a]${vv !== 1 ? `volume=${vv.toFixed(2)}` : 'anull'}[a_v]`];
   const mixTags: string[] = ['[a_v]'];
-  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=0.9[a_c]`); mixTags.push('[a_c]'); }
+  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=${cvol.toFixed(2)}[a_c]`); mixTags.push('[a_c]'); }
   if (musicIdx >= 0) {
     const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
     const fadeSt = Math.max(0, musT - 1.2);
@@ -723,13 +732,15 @@ export async function composeUgc(opts: {
   }
   let aTag = '[a_v]';
   if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
-  parts.push(...aIns.slice(mixTags.length > 1 ? 0 : 1)); // anull нужен только при миксе
+  // Фильтр голоса нужен при миксе И при vv≠1 (иначе мапим сырую дорожку без фильтров).
+  const aFiltered = mixTags.length > 1 || vv !== 1;
+  parts.push(...(aFiltered ? aIns : []));
 
   const fc = parts.join(';');
   const out = `ugc-${randomUUID().slice(0, 8)}.mp4`;
   const outPath = path.join(RENDERS_DIR, out);
   const args = ['-y', ...inputs, '-filter_complex', fc,
-    '-map', vTag, '-map', mixTags.length > 1 ? aTag : `${voiceIdx}:a`,
+    '-map', vTag, '-map', aFiltered ? aTag : `${voiceIdx}:a`,
     '-t', Ds, '-r', '30', '-pix_fmt', 'yuv420p',
     '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k',
     outPath];
@@ -751,6 +762,8 @@ export async function composeVoiceover(opts: {
   clipPath?: string | null;
   clipFit: 'cover' | 'contain';
   clipMuted: boolean;
+  clipVolumePct?: number;    // громкость звука клипа 0–200 (деф. 90)
+  voiceVolumePct?: number;   // громкость голоса 0–200 (деф. 100)
   voicePath: string;
   loudnorm?: boolean;
   musicPath?: string | null; musicVolumePct?: number; musicDurationSec?: number | null;
@@ -799,19 +812,23 @@ export async function composeVoiceover(opts: {
   }
 
   // Звук: голос (опц. loudnorm — ровная громкость своей записи) + звук клипа + музыка.
-  const voiceF = opts.loudnorm ? 'loudnorm=I=-16:TP=-1.5:LRA=11' : 'anull';
+  // Громкости из ручек студии; volume — ПОСЛЕ loudnorm (иначе нормализация съест ручку).
+  const vv = Math.max(0, Math.min(2, Number.isFinite(opts.voiceVolumePct) ? (opts.voiceVolumePct as number) / 100 : 1));
+  const cvol = Math.max(0, Math.min(2, Number.isFinite(opts.clipVolumePct) ? (opts.clipVolumePct as number) / 100 : 0.9));
+  const voiceF = `${opts.loudnorm ? 'loudnorm=I=-16:TP=-1.5:LRA=11' : 'anull'}${vv !== 1 ? `,volume=${vv.toFixed(2)}` : ''}`;
   const aIns: string[] = [`[${voiceIdx}:a]${voiceF}[a_v]`];
   const mixTags: string[] = ['[a_v]'];
-  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=0.9[a_c]`); mixTags.push('[a_c]'); }
+  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=${cvol.toFixed(2)}[a_c]`); mixTags.push('[a_c]'); }
   if (musicIdx >= 0) {
     const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
     aIns.push(`[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${Math.max(0, musT - 1.2).toFixed(2)}:d=1.2[a_m]`); mixTags.push('[a_m]');
   }
   let aTag = '[a_v]';
   if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
-  // loudnorm требует прогона голоса через фильтр даже без микса.
-  parts.push(...(mixTags.length > 1 || opts.loudnorm ? aIns : []));
-  const mapA = mixTags.length > 1 ? aTag : (opts.loudnorm ? '[a_v]' : `${voiceIdx}:a`);
+  // Фильтр голоса нужен при миксе, loudnorm ИЛИ vv≠1.
+  const aFiltered = mixTags.length > 1 || !!opts.loudnorm || vv !== 1;
+  parts.push(...(aFiltered ? aIns : []));
+  const mapA = mixTags.length > 1 ? aTag : (aFiltered ? '[a_v]' : `${voiceIdx}:a`);
 
   const fc = parts.join(';');
   const out = `ugc-vo-${randomUUID().slice(0, 8)}.mp4`;

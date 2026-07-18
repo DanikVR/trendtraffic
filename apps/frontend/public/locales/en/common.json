@@ -1471,6 +1471,12 @@
     "timeline": {
       "title": "Dialogue timeline",
       "dragResize": "Drag up/down to resize timeline height; double-click to reset",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
       "hideLines": "Hide dialogue ▾",
       "showLines": "Show dialogue ▴",
       "empty": "Dialogue will appear here after 'Generate text' or 'Transcribe speech' — a timeline with voice tracks, cuts, and media."

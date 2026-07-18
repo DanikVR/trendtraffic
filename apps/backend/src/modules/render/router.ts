@@ -747,7 +747,13 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           trimEnd: Number(x?.trimEnd) > 0 ? Number(x?.trimEnd) : 0,
         })).filter((c) => c.url).slice(0, 12)
       : [];
-    const clipsNeedCut = specClips.length > 1 || specClips.some((c) => c.trimStart > 0.05 || c.trimEnd > 0);
+    // Скорость воспроизведения видеоряда ×0.5–×2 (ручка над таймлайном): ≠1 форсит пре-шаг
+    // (setpts+atempo в composeClipSequence) — даже для одного клипа без обрезки.
+    const clipSpeed = (() => {
+      const v = Number(spec.clipSpeedPct);
+      return Number.isFinite(v) && v > 0 ? Math.min(2, Math.max(0.5, v / 100)) : 1;
+    })();
+    const clipsNeedCut = specClips.length > 1 || clipSpeed !== 1 || specClips.some((c) => c.trimStart > 0.05 || c.trimEnd > 0);
     if (specClips.length && !clipsNeedCut) {
       spec.clip = { url: specClips[0].url, name: specClips[0].name };
     } else if (specClips.length) {
@@ -761,7 +767,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       if (!parts.length) return res.status(400).json({ error: 'Ни один клип видеоряда не удалось загрузить — проверьте файлы в Галерее.' });
       const bigClipDims = outFormats.reduce((a, b) => (b.dims.W * b.dims.H > a.dims.W * a.dims.H ? b : a)).dims;
       try {
-        const seq = await composeClipSequence({ parts, dims: bigClipDims });
+        const seq = await composeClipSequence({ parts, dims: bigClipDims, speed: clipSpeed });
         spec.clip = { url: seq.fileUrl, name: `видеоряд · ${parts.length}` };
       } catch (e: any) {
         return res.status(400).json({ error: `Не удалось склеить видеоряд: ${String(e?.message || e).slice(0, 200)}` });
@@ -888,6 +894,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 clipPath: clip?.filePath || null,
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
                 clipMuted: spec.clipMuted !== false,
+                clipVolumePct: Number.isFinite(Number(spec.clipVolumePct)) ? Number(spec.clipVolumePct) : undefined,
+                voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
                 voicePath: voice.filePath,
                 loudnorm: loudnormOn,
                 musicPath: music?.filePath || null,
@@ -1207,6 +1215,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               clipPath: clip?.filePath || null,
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
               clipMuted: spec.clipMuted !== false,
+                clipVolumePct: Number.isFinite(Number(spec.clipVolumePct)) ? Number(spec.clipVolumePct) : undefined,
+                voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
               placement: placement as any,
               avatarRect: avatarRectFor(fmt.key),   // кастом ИЛИ дефолт раскладки (== превью)
               musicPath: music?.filePath || null,
@@ -1302,6 +1312,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 clipPath: clip?.filePath || null,
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
                 clipMuted: spec.clipMuted !== false,
+                clipVolumePct: Number.isFinite(Number(spec.clipVolumePct)) ? Number(spec.clipVolumePct) : undefined,
+                voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
                 placement: placement as any,
                 avatarRect: avatarRectFor(fmt.key),   // соло всегда оверлеем: кастом ИЛИ дефолт раскладки (== превью)
                 musicPath: music?.filePath || null,

@@ -37,9 +37,12 @@ export function avatarDefaultRect(placement: UgcSpec['placement']): UgcAvatarRec
 // durationSec — узнаётся из метаданных при показе; trimStart/trimEnd — обрезка
 // в СЕКУНДАХ ИСХОДНИКА (абсолютные позиции), правится на дорожке таймлайна.
 export interface UgcClipItem { url: string; name: string; durationSec?: number; trimStart?: number; trimEnd?: number }
-/** Эффективная длительность клипа с учётом обрезки (фолбэк 5с, пока метаданные не загрузились). */
-export const clipEffDur = (c: UgcClipItem): number =>
-  Math.max(0.3, (Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0 ? (c.trimEnd as number) : (c.durationSec || 5)) - (c.trimStart || 0));
+/** Эффективная длительность клипа с учётом обрезки И скорости воспроизведения
+ *  (speedPct — общий spec.clipSpeedPct; фолбэк 5с, пока метаданные не загрузились). */
+export const clipEffDur = (c: UgcClipItem, speedPct = 100): number => {
+  const spd = Math.min(2, Math.max(0.5, (Number(speedPct) || 100) / 100));
+  return Math.max(0.3, ((Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0 ? (c.trimEnd as number) : (c.durationSec || 5)) - (c.trimStart || 0)) / spd);
+};
 /** Замена clips с синхронизацией legacy-поля clip (= первый клип): его читают превью,
  *  обложки шаблонов и старый путь бэкенда — не рассинхронизировать. */
 export const syncClips = (u: UgcSpec, clips: UgcClipItem[]): UgcSpec =>
@@ -77,6 +80,12 @@ export interface UgcSpec {
   // (бэкенд собирает слайдшоу-клип пре-шагом /ugc/build; при заданном clip игнорируется).
   clipImages: { url: string; name: string }[];
   clipFit: 'cover' | 'contain'; clipMuted: boolean;
+  // Громкость звука видеоряда в % (0–200, деф. 90 — прежний хардкод 0.9) — микс solo/озвучки.
+  clipVolumePct: number;
+  // Громкость озвучки (голос аватара/TTS/запись) в % (0–200, деф. 100).
+  voiceVolumePct: number;
+  // Скорость воспроизведения видеоряда в % (50–200 = ×0.5…×2, atempo-диапазон); ≠100 → пре-шаг.
+  clipSpeedPct: number;
   subtitles: UgcSubtitles;                                  // титры (переиспользуем блок субтитров)
   music: { url: string; name: string; volumePct: number; durationSec?: number | null } | null;   // durationSec: играть первые N сек (null = весь ролик)
   platforms: string[];
@@ -137,6 +146,7 @@ export const UGC_DEFAULT: UgcSpec = {
   source: 'gen', brief: '', script: [],
   recordingUrl: null, recordingName: null,
   clip: null, clips: [], clipImages: [], clipFit: 'cover', clipMuted: true,
+  clipVolumePct: 90, voiceVolumePct: 100, clipSpeedPct: 100,
   subtitles: { style: 'word', pos: 'bottom', wishes: '' },
   music: null,
   platforms: ['tiktok', 'reels', 'shorts'],

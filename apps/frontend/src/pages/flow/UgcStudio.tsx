@@ -1184,7 +1184,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                 )}
                 {ugc.clips.length > 1 && (
                   <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                    {t('ugc.video.multiHint', 'Несколько видео идут друг за другом · всего {{dur}}. Обрезка — на дорожке «Видеоряд» таймлайна внизу.', { dur: mmss(ugc.clips.reduce((s, c) => s + clipEffDur(c), 0)) })}
+                    {t('ugc.video.multiHint', 'Несколько видео идут друг за другом · всего {{dur}}. Обрезка — на дорожке «Видеоряд» таймлайна внизу.', { dur: mmss(ugc.clips.reduce((s, c) => s + clipEffDur(c, ugc.clipSpeedPct), 0)) })}
                   </p>
                 )}
               </div>
@@ -1568,6 +1568,37 @@ export default function UgcStudio(p: UgcStudioProps) {
                   {linesOpen ? t('ugc.timeline.hideLines') : t('ugc.timeline.showLines')}
                 </button>
               </div>
+              {/* Громкости и скорость — у дорожек, к которым относятся (просьба юзера «% на дорожках») */}
+              <div className="flex items-center gap-x-4 gap-y-1 flex-wrap mb-1.5 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                {ugc.clips.length > 0 && (
+                  <>
+                    <label className="inline-flex items-center gap-1.5" title={ugc.clipMuted ? t('ugc.timeline.clipSoundOff', 'Звук видеоряда выключен — галочка «звук из видео» в шаге «Видеоряд»') : t('ugc.timeline.clipSound', 'Громкость звука видеоряда')}
+                      style={ugc.clipMuted ? { opacity: 0.45 } : undefined}>
+                      <span style={{ color: '#10b981', fontWeight: 650 }}>{t('ugc.common.footage')}</span>
+                      <input type="range" min={0} max={200} step={5} value={ugc.clipVolumePct} disabled={ugc.clipMuted}
+                        onChange={(e) => ugcMutate((u) => ({ ...u, clipVolumePct: Number(e.target.value) }))}
+                        style={{ width: 76, accentColor: '#10b981' }} />
+                      <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 32 }}>{ugc.clipMuted ? t('ugc.timeline.mutedShort', 'выкл') : `${ugc.clipVolumePct}%`}</span>
+                    </label>
+                    <span className="inline-flex items-center gap-1" title={t('ugc.timeline.clipSpeed', 'Скорость воспроизведения видеоряда (×0.5–×2): видео уско­ряется/замедляется, дорожка пересчитывается')}>
+                      {[50, 75, 100, 125, 150, 200].map((s) => (
+                        <button key={s} onClick={() => ugcMutate((u) => ({ ...u, clipSpeedPct: s }))}
+                          className="px-1.5 py-0.5 rounded-md font-650"
+                          style={{ fontSize: 10, background: ugc.clipSpeedPct === s ? '#10b981' : 'var(--bg-tertiary)', color: ugc.clipSpeedPct === s ? '#fff' : 'var(--text-muted)', border: `1px solid ${ugc.clipSpeedPct === s ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                          ×{(s / 100).toString().replace('.', ',')}
+                        </button>
+                      ))}
+                    </span>
+                  </>
+                )}
+                <label className="inline-flex items-center gap-1.5" title={t('ugc.timeline.voiceVol', 'Громкость озвучки (голос аватара / TTS / запись)')}>
+                  <span style={{ color: ACC, fontWeight: 650 }}>{t('ugc.timeline.voiceLabel', 'Озвучка')}</span>
+                  <input type="range" min={0} max={200} step={5} value={ugc.voiceVolumePct}
+                    onChange={(e) => ugcMutate((u) => ({ ...u, voiceVolumePct: Number(e.target.value) }))}
+                    style={{ width: 76, accentColor: ACC }} />
+                  <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 32 }}>{ugc.voiceVolumePct}%</span>
+                </label>
+              </div>
               <DialogueTimeline
                 dialogue={ugc.script}
                 setDialogue={(updater) => ugcMutate((u) => ({ ...u, script: updater(u.script) }))}
@@ -1585,6 +1616,7 @@ export default function UgcStudio(p: UgcStudioProps) {
                   onTrim: (i, patch) => ugcMutate((u) => syncClips(u, u.clips.map((c, j) => (j === i ? { ...c, ...patch } : c)))),
                   onOpen: (i) => setClipEditIdx(i),
                   onDuration: setClipDuration,
+                  speedPct: ugc.clipSpeedPct,
                 } : undefined}
               />
             </>

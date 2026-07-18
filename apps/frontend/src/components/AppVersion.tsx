@@ -3228,6 +3228,25 @@
  *          Файлы: social-ext/router.ts, chrome-polyfill.js, custom.js,
  *          trends/{dna,analytics,router}.ts, TrendAnalyticsPanel.tsx, locales×108. */
 
+/* 2.6.1 — UGC-студия: громкости дорожек + скорость видеоряда (фидбэк по v2.6.0).
+ *          Строка ручек НАД таймлайном (юзер: «% на громкости… и скорость до 2 раз»):
+ *          1) «Видеоряд» — слайдер громкости звука клипов 0–200% (spec.clipVolumePct,
+ *             деф. 90 = прежний хардкод volume=0.9; при выключенной галочке «звук
+ *             из видео» слайдер погашен) + чипы скорости ×0,5…×2 (spec.clipSpeedPct
+ *             50–200 — РОВНО диапазон одной ступени atempo). Скорость ≠×1 форсит
+ *             пре-шаг composeClipSequence (setpts=PTS/spd до fps + atempo) даже для
+ *             одного клипа; дорожка «Видеоряд» и суммарная длительность в панели
+ *             пересчитываются (clipEffDur(speedPct); px дорожки = выходные секунды,
+ *             драг обрезки домножает на скорость — trim в секундах исходника).
+ *          2) «Озвучка» — слайдер 0–200% (spec.voiceVolumePct, деф. 100): голос
+ *             аватара (соло — аудио HeyGen-mp4) или TTS/запись («Без аватара»).
+ *             В composeUgc/composeVoiceover volume-фильтр на голосовой вход
+ *             (ПОСЛЕ loudnorm — иначе нормализация съела бы ручку); при 100% и без
+ *             микса путь прежний (сырая дорожка без фильтров). Диалог/Монтаж ручку
+ *             озвучки пока не читают (звук клипа там и раньше не мешался).
+ *          Файлы: ugcTypes.ts, UgcStudio.tsx, DialogueTimeline.tsx,
+ *          podcast_compose.ts (composeUgc/composeVoiceover/composeClipSequence),
+ *          render/router.ts, locales ru+en (+6 ugc.timeline.*). */
 /* 2.6.0 — UGC-студия: «Видеоряд» из НЕСКОЛЬКИХ видео + дорожка на таймлайне.
  *          1) Видеорядов может быть много (до 12): панель «Видеоряд» — список
  *             клипов, у каждого СРАЗУ видна длительность (у обрезанного — взятый
@@ -3291,7 +3310,7 @@
  *             картинка больше не оставляет пустой квадрат; cover = coverUrl || meta.
  *          Файлы: trends/dna.ts, UgcStudio.tsx, GalleryPage.tsx. */
 
-export const APP_VERSION = '2.6.0';
+export const APP_VERSION = '2.6.1';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

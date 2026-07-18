@@ -42,6 +42,7 @@ interface Props {
     onTrim: (i: number, patch: { trimStart?: number; trimEnd?: number }) => void;
     onOpen: (i: number) => void;
     onDuration?: (i: number, sec: number) => void;
+    speedPct?: number;   // скорость воспроизведения видеоряда (50–200): сегменты на дорожке ужимаются/растягиваются
   };
 }
 
@@ -319,11 +320,12 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
      Во время жеста значение живёт в локальном override (без коммита в спеку на каждый move),
      на pointerup — один onTrim. Захват указателя — жест не срывается за пределами ручки. */
   const [clipDragOv, setClipDragOv] = useState<{ i: number; trimStart?: number; trimEnd?: number } | null>(null);
+  const clipSpd = Math.min(2, Math.max(0.5, (Number(clipTrack?.speedPct) || 100) / 100));
   const clipEff = (c: NonNullable<Props['clipTrack']>['clips'][number], i: number): number => {
     const o = clipDragOv && clipDragOv.i === i ? clipDragOv : null;
     const ts = o?.trimStart ?? c.trimStart ?? 0;
     const te = (o?.trimEnd ?? ((Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0) ? (c.trimEnd as number) : 0)) || c.durationSec || 5;
-    return Math.max(0.3, te - ts);
+    return Math.max(0.3, (te - ts) / clipSpd);
   };
   const beginClipTrim = (e: React.PointerEvent, i: number, side: 'l' | 'r') => {
     if (!clipTrack) return;
@@ -337,7 +339,8 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     const te0 = (Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0) ? Math.min(c.trimEnd as number, dur) : dur;
     let last: { trimStart?: number; trimEnd?: number } | null = null;
     const onMove = (ev: PointerEvent) => {
-      const dsec = (ev.clientX - x0) / tlPpsRef.current;
+      // px дорожки = ВЫХОДНЫЕ секунды; trim — секунды ИСХОДНИКА → домножаем на скорость.
+      const dsec = ((ev.clientX - x0) / tlPpsRef.current) * clipSpd;
       last = side === 'l'
         ? { trimStart: Math.round(Math.min(Math.max(0, ts0 + dsec), te0 - 0.3) * 10) / 10 }
         : { trimEnd: Math.round(Math.min(Math.max(ts0 + 0.3, te0 + dsec), dur) * 10) / 10 };
