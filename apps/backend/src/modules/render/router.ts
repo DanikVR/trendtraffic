@@ -1308,6 +1308,14 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
           const bmp = await dlBumpers();
+          // Позиция аватара на таймлайне (как у «Готового видео», v2.6.2): реплики двигаются
+          // по дорожке (tStart при драге; start — таймкоды разбора) — аватар появляется и
+          // говорит с ПЕРВОЙ реплики, длину ролика задаёт видеоряд. Без видеоряда — как раньше.
+          const clipTotal = clip ? await mediaDuration(clip.filePath) : 0;
+          const lineStarts = script
+            .map((l: any) => (Number.isFinite(l?.tStart) ? Number(l.tStart) : (Number.isFinite(l?.start) ? Number(l.start) : 0)))
+            .filter((v: number) => Number.isFinite(v));
+          const avStart = clipTotal > 0.3 && lineStarts.length ? Math.max(0, Math.min(3600, Math.min(...lineStarts))) : 0;
           let made = 0; const skippedLangs: string[] = [];
 
           for (const lang of langs) {
@@ -1333,8 +1341,11 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             const avatarPath = heads[0];
             if (!avatarPath) throw new Error('HeyGen не отдал видео');
             // Врезки медиа реплик: таймкоды разбора ИЛИ пропорция по тексту на длину аватара (=голоса).
+            // При вставке аватара по таймлайну врезки И титры сдвигаются к avStart (окно голоса).
             const Dav = await mediaDuration(avatarPath);
-            const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(Dav)) : [];
+            const insertsRaw = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(Dav)) : [];
+            const inserts = avStart > 0.01 ? insertsRaw.map((i) => ({ ...i, t0: i.t0 + avStart, t1: i.t1 + avStart })) : insertsRaw;
+            const capsShifted = avStart > 0.01 ? captions.map((c) => ({ ...c, t0: c.t0 + avStart, t1: c.t1 + avStart })) : captions;
 
             for (let f = 0; f < outFormats.length; f++) {
               const fmt = outFormats[f];
@@ -1345,6 +1356,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 avatarChroma: avatarCutoutOn ? '0x00FF00' : null,   // ИИ-вырезка фона → силуэт
                 avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
                 voicePath: avatarPath, // голос уже в mp4 HeyGen — берём его аудио
+                avatarStartSec: avStart,    // аватар появляется с первой реплики таймлайна
+                totalDurationSec: clipTotal > 0.3 ? clipTotal : undefined, // длину задаёт видеоряд
                 clipPath: clip?.filePath || null,
                 clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
                 clipMuted: spec.clipMuted !== false,
@@ -1357,7 +1370,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 musicDurationSec: musicDurSec,
                 inserts: inserts as UgcInsert[],
                 layerPath: layers[fmt.key] || null, progressBar,
-                captions, capStyle: captions.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
+                captions: capsShifted, capStyle: capsShifted.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';
