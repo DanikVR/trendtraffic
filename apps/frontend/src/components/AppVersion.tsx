@@ -3203,7 +3203,32 @@
  *          Файлы: llms.txt, seo-marketing.mjs, StubPage/AboutPage, package.json,
  *          deploy/vps-redeploy.sh, AppVersion. */
 
-export const APP_VERSION = '2.5.7';
+/* 2.5.8 — «Тренды → Аналитика» ГОВОРИТ НА ЯЗЫКЕ ИНТЕРФЕЙСА (по слову юзера:
+ *          «все аналитические данные автоматически на язык интерфейса»).
+ *          1) ТЕКСТЫ РАЗБОРА (главное): промпты рехостнутого TikHub-расширения
+ *             зашиты по-английски → сам бандл НЕ правим, а chrome-polyfill шлёт
+ *             X-TT-Lang (localStorage i18nextLng), и ai-прокси подмешивает в тело
+ *             запроса директиву «пиши значения на <язык>» по форме провайдера
+ *             (Gemini contents.parts / Anthropic system / OpenAI messages).
+ *             Ключи JSON остаются английскими — по ним бандл раскладывает поля.
+ *          2) ПОДПИСИ разделов (Viral Breakdown/Hook Type/вкладки/…): бандл знает
+ *             только en/zh/ja/ko → custom.js подменяет текстовые узлы переводом из
+ *             локалей приложения (sec.socialExtLabels, 51 ключ × 108 языков), а
+ *             оригинал кладёт в data-tt-en — по нему текстовые матчеры (авто-анализ,
+ *             перехват «Download video», перестановка блоков, sticky-вкладки)
+ *             продолжают находить узлы по-английски. Проверено стендом: 10/10.
+ *          3) Наши кнопки в расширении были ЖЁСТКО по-русски («⬇ Скачать аудио»
+ *             и т.п.) — теперь тоже из локалей (ownDownload…, ownOpenLink, ownCopyLink).
+ *          4) Нативная панель (X/YouTube/Reddit): разбор по-прежнему собирается и
+ *             сохраняется на EN (в таком виде идёт в работу/TrendFlow), но перевод
+ *             на язык интерфейса стартует АВТОМАТИЧЕСКИ и показывается одним
+ *             состоянием (без мелькания английского); кнопка переключает на
+ *             оригинал. Языки больше не ru/en: код → Intl.DisplayNames, все 108.
+ *          5) Тональность комментариев (overall/themes) — тоже на языке интерфейса.
+ *          Файлы: social-ext/router.ts, chrome-polyfill.js, custom.js,
+ *          trends/{dna,analytics,router}.ts, TrendAnalyticsPanel.tsx, locales×108. */
+
+export const APP_VERSION = '2.5.8';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

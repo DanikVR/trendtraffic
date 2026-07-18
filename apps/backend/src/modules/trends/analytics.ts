@@ -422,7 +422,17 @@ function parseJsonLoose(txt: string): any {
   if (!m) return null;
   try { return JSON.parse(m[0]); } catch { return null; }
 }
-export async function analyzeCommentsSentiment(tenantId: string, comments: string[]): Promise<SentimentResult> {
+/** Английское имя языка для инструкции модели (ru → Russian) — все 108 локалей без таблицы. */
+function sentimentLangName(code: string): string {
+  const c = (code || '').toLowerCase().slice(0, 2);
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(c) || c;
+  } catch {
+    return c;
+  }
+}
+
+export async function analyzeCommentsSentiment(tenantId: string, comments: string[], lang?: string): Promise<SentimentResult> {
   const clean = (comments || []).map((c) => String(c || '').trim()).filter(Boolean).slice(0, 150);
   if (clean.length === 0) throw new Error('Нет комментариев для анализа.');
   const apiKey = await resolveAnthropicKey(tenantId);
@@ -431,13 +441,16 @@ export async function analyzeCommentsSentiment(tenantId: string, comments: strin
   const Anthropic = mod.default || mod.Anthropic || mod;
   const client = new Anthropic({ apiKey });
   const sample = clean.map((c, i) => `${i + 1}. ${c.slice(0, 200)}`).join('\n');
+  // Вывод — на языке интерфейса (фронт передаёт lang); цитаты комментариев не переводим.
+  const langName = sentimentLangName(lang || 'ru');
   const system =
     'Ты — аналитик аудитории соцсетей. По списку комментариев оцени тональность и темы. ' +
+    `Значения полей overall и themes пиши на языке: ${langName}. ` +
     'Отвечай СТРОГО одним JSON-объектом без пояснений и без markdown.';
   const user =
     `Комментарии (${clean.length}):\n${sample}\n\n` +
     'Верни JSON: {"positive": <0-100>, "negative": <0-100>, "neutral": <0-100>, ' +
-    '"overall": "<1-2 предложения вывода на русском>", ' +
+    `"overall": "<1-2 предложения вывода на языке ${langName}>", ` +
     '"themes": ["<3-6 ключевых тем/запросов аудитории>"], ' +
     '"topPositive": ["<до 3 ярких позитивных комментариев дословно>"], ' +
     '"topNegative": ["<до 3 ярких негативных/критичных комментариев дословно>"]}. ' +

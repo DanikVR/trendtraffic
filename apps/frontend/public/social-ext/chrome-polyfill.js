@@ -15,6 +15,8 @@
  *  4. tabs/permissions/sidePanel/i18n/downloads — заглушки/нативные эквиваленты.
  *  5. fetch к api.tikhub.io|dev → same-origin /api/social-ext/proxy с JWT приложения
  *     (из localStorage['vibevox_token']). Прочие запросы — без изменений.
+ *  6. К AI-запросам добавляем X-TT-Lang (язык интерфейса) — ai-прокси подмешивает
+ *     в промпт «пиши значения на этом языке», иначе разбор всегда приходит на EN.
  *
  * Это НАШ адаптер; код самого расширения не правится.
  */
@@ -35,8 +37,12 @@
     'douyinpic.com', 'douyincdn.com', 'douyinstatic.com', 'cdninstagram.com', 'fbcdn.net', 'twimg.com',
     'hdslb.com', 'biliimg.com', 'bilivideo.com'];
   var TOKEN_KEY = 'vibevox_token';
+  var LANG_KEY = 'i18nextLng';            // язык интерфейса приложения (i18next)
   var SETTINGS_KEY = 'sx_local_settings'; // localStorage-ключ объекта settings
   function appToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  // Язык интерфейса → ai-прокси (он подмешает в промпт «отвечай на этом языке»).
+  // Промпты бандла зашиты по-английски, сам бандл мы не правим.
+  function appLang() { try { return (localStorage.getItem(LANG_KEY) || navigator.language || '').slice(0, 8); } catch (e) { return ''; } }
   function readSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (e) { return {}; } }
   // «Облако» по умолчанию: ai.apiKey пуст/плейсхолдер → AI идёт через наш ai-прокси (ключ Enterprise).
   function aiIsCloud() { var s = readSettings(); return !s.ai || !s.ai.apiKey || s.ai.apiKey === AI_PLACEHOLDER; }
@@ -316,11 +322,12 @@
         var url = (typeof input === 'string') ? input : (input && input.url ? input.url : String(input));
         var u = new URL(url, location.href);
         var host = u.hostname;
-        var proxied = null, mediaGet = false;
+        var proxied = null, mediaGet = false, isAi = false;
         if (TIKHUB_HOSTS[host]) {
           proxied = PROXY_PREFIX + u.pathname + u.search;
         } else if (AI_HOSTS[host] && aiIsCloud()) {
           proxied = AI_PROXY_PREFIX + '/' + host + u.pathname + u.search;
+          isAi = true;
         } else if (isCdnHost(host)) {
           proxied = MEDIA_PREFIX + '?url=' + encodeURIComponent(u.href);
           mediaGet = true;
@@ -334,6 +341,7 @@
           if (input && typeof input === 'object' && input.url) {
             var headers = new Headers(input.headers || {});
             headers.set('Authorization', 'Bearer ' + token);
+            if (isAi && appLang()) headers.set('X-TT-Lang', appLang());
             var hasBody = input.method && ['GET', 'HEAD'].indexOf(input.method.toUpperCase()) < 0;
             var reqInit = { method: input.method || 'GET', headers: headers, mode: 'same-origin', credentials: 'same-origin', cache: input.cache, redirect: input.redirect };
             if (hasBody) { reqInit.body = input.body; reqInit.duplex = 'half'; }
@@ -342,6 +350,7 @@
           init = init ? Object.assign({}, init) : {};
           var h = new Headers((init && init.headers) || {});
           h.set('Authorization', 'Bearer ' + token);
+          if (isAi && appLang()) h.set('X-TT-Lang', appLang());
           init.headers = h; init.mode = 'same-origin'; init.credentials = 'same-origin';
           return _fetch(proxied, init);
         }

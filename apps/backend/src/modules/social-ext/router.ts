@@ -227,6 +227,56 @@ export { mediaRouter };
 
 const AI_HOSTS = new Set(['generativelanguage.googleapis.com', 'api.openai.com', 'api.anthropic.com']);
 
+// ── Язык выдачи ИИ = язык интерфейса ────────────────────────────────────────
+// Промпты рехостнутого расширения зашиты по-английски, поэтому разборы приходили
+// на английском независимо от языка приложения. Бандл не правим — подмешиваем
+// директиву о языке в тело запроса здесь (polyfill присылает язык в X-TT-Lang).
+// Ключи JSON обязаны остаться английскими: по ним бандл раскладывает поля разбора.
+
+/** Английское название языка по коду (ru → Russian). Даёт все 108 локалей без таблицы. */
+function languageLabel(code: string): string {
+  const c = (code || '').toLowerCase().slice(0, 2);
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(c) || c;
+  } catch {
+    return c;
+  }
+}
+
+/** Директива о языке ответа. null — для английского (промпты и так английские). */
+function langDirective(code: string): string | null {
+  const c = (code || '').trim().toLowerCase();
+  if (!c || c.startsWith('en')) return null;
+  return `IMPORTANT: write every human-readable string value of your answer in ${languageLabel(c)}. `
+    + 'Keep JSON keys, field names and enum values (e.g. low/mid/high) in English. '
+    + 'Do not add any note about the language.';
+}
+
+/** Подмешивает директиву о языке в тело запроса по форме конкретного провайдера. */
+function injectLangDirective(host: string, body: any, code: string): void {
+  const dir = langDirective(code);
+  if (!dir || !body || typeof body !== 'object') return;
+  try {
+    if (host === 'generativelanguage.googleapis.com') {
+      // Gemini: первый текстовый part первого user-контента = системный промпт расширения.
+      // Директиву ставим ПЕРЕД ним (текст до inline_data — рекомендованный порядок).
+      if (!Array.isArray(body.contents) || !body.contents.length) return;
+      const first = body.contents.find((c: any) => c && (c.role === 'user' || !c.role)) || body.contents[0];
+      if (!first) return;
+      if (!Array.isArray(first.parts)) first.parts = [];
+      first.parts.unshift({ text: dir });
+    } else if (host === 'api.anthropic.com') {
+      if (typeof body.system === 'string') body.system = `${dir}\n\n${body.system}`;
+      else if (Array.isArray(body.system)) body.system.unshift({ type: 'text', text: dir });
+      else body.system = dir;
+    } else if (host === 'api.openai.com') {
+      if (Array.isArray(body.messages)) body.messages.unshift({ role: 'system', content: dir });
+    }
+  } catch (err) {
+    console.warn('[social-ext] injectLangDirective:', (err as Error).message);
+  }
+}
+
 const aiRouter = Router();
 aiRouter.use(requireAuth);
 aiRouter.use(proxyLimiter);
@@ -277,7 +327,13 @@ aiRouter.all('/*', async (req: AuthedRequest, res: Response) => {
   const method = (req.method || 'GET').toUpperCase();
   const hasBody = method !== 'GET' && method !== 'HEAD' && req.body && Object.keys(req.body).length > 0;
   let body: string | undefined;
-  if (hasBody) { body = JSON.stringify(req.body); headers['Content-Type'] = 'application/json'; }
+  if (hasBody) {
+    // Разбор приходит на языке интерфейса (заголовок ставит chrome-polyfill).
+    const uiLang = typeof req.headers['x-tt-lang'] === 'string' ? (req.headers['x-tt-lang'] as string) : '';
+    if (uiLang) injectLangDirective(host, req.body, uiLang);
+    body = JSON.stringify(req.body);
+    headers['Content-Type'] = 'application/json';
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60000);

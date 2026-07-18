@@ -23,6 +23,9 @@
  *  • Авто-анализ: после «Анализировать» (set-url от родителя) сами открываем
  *    вкладку Analysis и жмём «Analyze Viral Factors» / «Analyze Video Content» /
  *    «Run Full Analysis» — разборы стартуют сразу, без кликов пользователя.
+ *  • Язык: подписи разделов переводим на язык интерфейса из локалей приложения
+ *    (sec.socialExtLabels), оригинал храним в data-tt-en — по нему ищут матчеры.
+ *    Сами тексты разбора приходят на нужном языке из ai-прокси (X-TT-Lang).
  */
 (function () {
   'use strict';
@@ -40,14 +43,24 @@
     }
   }
 
+  // Есть ли внутри узла кнопки-вкладки с такими (английскими) подписями.
+  function hasTabButtons(el, names) {
+    var bs = el.querySelectorAll('button'), seen = {}, found = 0;
+    for (var i = 0; i < bs.length; i++) {
+      var tx = enText(bs[i]);
+      if (names.indexOf(tx) >= 0 && !seen[tx]) { seen[tx] = 1; found++; }
+    }
+    return found >= names.length;
+  }
+
   function stickyTabs(doc) {
     var btns = doc.querySelectorAll('button');
     var info = null;
-    for (var i = 0; i < btns.length; i++) { if (btns[i].textContent.trim() === 'Info') { info = btns[i]; break; } }
+    for (var i = 0; i < btns.length; i++) { if (enText(btns[i]) === 'Info') { info = btns[i]; break; } }
     if (!info) return;
     var tb = info;
     for (var j = 0; j < 6 && tb; j++) {
-      if (tb.tagName === 'DIV' && /Comments/.test(tb.textContent) && /Analysis/.test(tb.textContent)) break;
+      if (tb.tagName === 'DIV' && hasTabButtons(tb, ['Comments', 'Analysis'])) break;
       tb = tb.parentElement;
     }
     if (!tb || tb.tagName !== 'DIV') return;
@@ -73,15 +86,23 @@
     }
   }
 
+  // Английский текст узла: после перевода подписей (translateLabels) оригинал лежит
+  // в data-tt-en — все матчеры ниже ищут по-английски независимо от языка интерфейса.
+  function enText(el) {
+    if (!el) return '';
+    var a = el.getAttribute && el.getAttribute('data-tt-en');
+    return a || (el.textContent || '').trim();
+  }
+
   function h4ByText(doc, text) {
     var hs = doc.querySelectorAll('h4');
-    for (var i = 0; i < hs.length; i++) { if (hs[i].textContent.trim() === text) return hs[i]; }
+    for (var i = 0; i < hs.length; i++) { if (enText(hs[i]) === text) return hs[i]; }
     return null;
   }
 
   function buttonByText(doc, text) {
     var bs = doc.querySelectorAll('button');
-    for (var i = 0; i < bs.length; i++) { if (bs[i].textContent.trim() === text) return bs[i]; }
+    for (var i = 0; i < bs.length; i++) { if (enText(bs[i]) === text) return bs[i]; }
     return null;
   }
 
@@ -140,12 +161,14 @@
     var card = hMusic;
     for (var i = 0; i < 5 && card.parentElement; i++) { card = card.parentElement; if (/rounded-xl/.test((card.className || '').toString())) break; }
     if (!card) card = hMusic.parentElement;
-    if (!card || card.querySelector('[data-tt-music]')) return; // уже добавили
+    if (!card) return;
+    var was = card.querySelector('[data-tt-music] button');
+    if (was) { was.textContent = '⬇ ' + tr('ownDownload', 'Download'); return; } // уже добавили — только подпись
     var row = doc.createElement('div');
     row.setAttribute('data-tt-music', '1');
     row.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
     var b = doc.createElement('button');
-    b.type = 'button'; b.textContent = '⬇ Скачать';
+    b.type = 'button'; b.textContent = '⬇ ' + tr('ownDownload', 'Download');
     b.style.cssText = 'flex:1;padding:9px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;'
       + 'border:1px solid #6366f1;background:#6366f1;color:#fff;';
     b.onclick = postMusicDownload;
@@ -173,13 +196,15 @@
 
     // (2) Кнопка «Скачать аудио» в той же строке.
     var row = dlBtn.parentElement;
-    if (!row || row.querySelector('[data-tt-audio]')) return; // уже добавили
+    if (!row) return;
+    var wasAudio = row.querySelector('[data-tt-audio]');
+    if (wasAudio) { wasAudio.textContent = '⬇ ' + tr('ownDownloadAudio', 'Download audio'); return; } // уже добавили
     var coverBtn = buttonByText(doc, 'Download cover');
     var audio = doc.createElement('button');
     audio.type = 'button';
     audio.setAttribute('data-tt-audio', '1');
     audio.className = (coverBtn || dlBtn).className; // стиль 1:1 с нативной кнопкой
-    audio.textContent = '⬇ Скачать аудио';
+    audio.textContent = '⬇ ' + tr('ownDownloadAudio', 'Download audio');
     audio.onclick = postMusicDownload;
     // Строка была 2-колоночной (grid-cols-2) — расширяем до 3 равных колонок.
     try { row.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important'); } catch (e) {}
@@ -216,7 +241,7 @@
   function igCardByH4(doc, matchRe) {
     var hs = doc.querySelectorAll('h4');
     for (var i = 0; i < hs.length; i++) {
-      if (matchRe.test((hs[i].textContent || '').trim())) {
+      if (matchRe.test(enText(hs[i]))) {
         var card = hs[i];
         for (var j = 0; j < 4 && card.parentElement; j++) {
           card = card.parentElement;
@@ -250,8 +275,11 @@
   // читаем В МОМЕНТ КЛИКА (из бейджа) — при листании карусели качается тот, что виден.
   function igMediaButton(doc) {
     var card = igCardByH4(doc, /^media/i);
-    if (!card || !isIgMediaCard(card) || card.querySelector('[data-tt-ig-media]')) return;
-    var b = igDlButton(doc, '⬇ Скачать медиа (макс. качество)');
+    if (!card || !isIgMediaCard(card)) return;
+    var label = '⬇ ' + tr('ownDownloadMedia', 'Download media (max quality)');
+    var was = card.querySelector('[data-tt-ig-media]');
+    if (was) { was.textContent = label; return; }
+    var b = igDlButton(doc, label);
     b.setAttribute('data-tt-ig-media', '1');
     b.onclick = function () { var idx = igCurrentIndex(card); postIg('media', idx < 0 ? 0 : idx); };
     card.appendChild(b);
@@ -260,8 +288,11 @@
   // AUDIO: кнопка «Скачать аудио» (оригинальный звук; лицензионный трек может быть недоступен).
   function igAudioButton(doc) {
     var card = igCardByH4(doc, /^audio$/i);
-    if (!card || card.querySelector('[data-tt-ig-audio]')) return;
-    var b = igDlButton(doc, '⬇ Скачать аудио');
+    if (!card) return;
+    var label = '⬇ ' + tr('ownDownloadAudio', 'Download audio');
+    var was = card.querySelector('[data-tt-ig-audio]');
+    if (was) { was.textContent = label; return; }
+    var b = igDlButton(doc, label);
     b.setAttribute('data-tt-ig-audio', '1');
     b.onclick = function () { postIg('audio', 0); };
     card.appendChild(b);
@@ -324,13 +355,104 @@
       var fname = qvFilename(res, type);
       var wrap = doc.createElement('div');
       wrap.style.cssText = 'display:flex;gap:6px;margin-left:auto;flex-shrink:0;';
-      wrap.appendChild(qvIconBtn(doc, '↗', 'Открыть по ссылке',
+      wrap.appendChild(qvIconBtn(doc, '↗', tr('ownOpenLink', 'Open link'),
         (function (u) { return function () { try { window.open(u, '_blank', 'noopener'); } catch (e) {} }; })(url)));
-      wrap.appendChild(qvIconBtn(doc, '⬇', 'Скачать',
+      wrap.appendChild(qvIconBtn(doc, '⬇', tr('ownDownload', 'Download'),
         (function (u, f) { return function () { postMediaUrl(u, f); }; })(url, fname)));
-      wrap.appendChild(qvIconBtn(doc, '⧉', 'Скопировать ссылку',
+      wrap.appendChild(qvIconBtn(doc, '⧉', tr('ownCopyLink', 'Copy link'),
         (function (u) { return function () { try { navigator.clipboard.writeText(u); } catch (e) {} }; })(url)));
       row.appendChild(wrap);
+    }
+  }
+
+  // ── Подписи разделов аналитики → язык интерфейса ─────────────────────────────
+  // Бандл расширения переведён только на en/zh/ja/ko, приложение — на 108 языков.
+  // Бандл не правим: подменяем ТЕКСТОВЫЕ УЗЛЫ известных подписей (иконки и разметка
+  // не трогаются), оригинал кладём в data-tt-en — по нему матчеры выше продолжают
+  // находить кнопки/заголовки по-английски. Переводы берём из локалей приложения
+  // (/locales/<lng>/common.json → sec.socialExtLabels); нет ключа — остаётся EN.
+  var LABEL_KEYS = {
+    // Вкладки
+    'Info': 'info', 'Comments': 'comments', 'Analysis': 'analysis', 'Deep Analysis': 'deepAnalysis',
+    // Разбор вирусности
+    'Viral Breakdown': 'viralBreakdown', 'Analyze Viral Factors': 'analyzeViral',
+    'Reverse-engineering virality...': 'analyzingViral',
+    'Hook Type': 'hookType', 'Why It Works': 'whyItWorks', 'Target Audience': 'targetAudience',
+    'Viral Factors': 'viralFactors', 'Copy-ready Script Draft': 'scriptDraft', 'How to Adapt': 'howToAdapt',
+    // Контент-анализ видео
+    'Video Content Analysis': 'videoAnalysis', 'Analyze Video Content': 'analyzeVideo',
+    'Watching and analyzing video...': 'analyzingVideo',
+    'Summary': 'summary', 'Scene Beats': 'sceneBeats', 'Hook Analysis': 'hookAnalysis',
+    'Visual Style': 'visualStyle', 'Audio & Dialogue': 'audioDialogue',
+    'Why It Resonates': 'whyResonates', 'How to Replicate': 'howToReplicate',
+    "The video file will be sent to Google's Gemini API for analysis.": 'videoPrivacy',
+    // Сводка и профиль
+    'AI Executive Summary': 'execSummary', 'Generate Executive Summary': 'genExecSummary',
+    'Executive Summary': 'execSummaryTitle', 'Data Insights': 'dataInsights',
+    'Growth Suggestions': 'growthSuggestions', 'Risks & Anomalies': 'risksAnomalies',
+    'AI Profile Breakdown': 'profileBreakdown', 'Analyze Profile': 'analyzeProfile',
+    'Persona Tags': 'personaTags', 'Content Style': 'contentStyle', 'Target Fans': 'targetFans',
+    // Общие
+    'Run Full Analysis': 'runFullAnalysis', 'Regenerate': 'regenerate',
+    'Music': 'music', 'Metrics': 'metrics', 'Media': 'media', 'Audio': 'audio',
+    'Cover variants': 'coverVariants', 'Quality variants': 'qualityVariants',
+    'Fake Views Detection': 'fakeViews',
+    'Download video': 'downloadVideo', 'Download cover': 'downloadCover'
+  };
+
+  var labelDict = null;    // key → перевод; null = переводить нечем (EN или не загружено)
+  var labelDictLang = '';  // язык, для которого словарь уже запрашивали
+
+  function uiLang() {
+    try { return (localStorage.getItem('i18nextLng') || navigator.language || 'en').toLowerCase(); } catch (e) { return 'en'; }
+  }
+
+  // Подпись НАШЕЙ кнопки на языке интерфейса (en — дефолт из аргумента).
+  function tr(key, en) { return (labelDict && labelDict[key]) || en; }
+
+  function loadLabelDict() {
+    var lng = uiLang();
+    if (labelDictLang === lng) return; // уже запрашивали для этого языка
+    labelDictLang = lng;
+    labelDict = null;
+    if (!lng || lng.indexOf('en') === 0) return; // подписи бандла и так английские
+    fetch('/locales/' + encodeURIComponent(lng.split('-')[0]) + '/common.json', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var d = j && j.sec && j.sec.socialExtLabels;
+        if (d && typeof d === 'object') { labelDict = d; schedule(); }
+      })
+      .catch(function () { /* нет локали — остаётся английский */ });
+  }
+
+  function translateLabels(doc) {
+    if (!labelDict || !doc.body) return;
+    // Собираем ПЕРЕД правкой: мутация во время обхода ломает TreeWalker.
+    var walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null);
+    var jobs = [], node;
+    while ((node = walker.nextNode())) {
+      var raw = node.nodeValue || '';
+      var en = raw.trim();
+      if (!en || en.length > 200) continue;
+      var key = LABEL_KEYS[en];
+      if (!key) continue;
+      var tr = labelDict[key];
+      if (!tr || tr === en) continue;
+      var parent = node.parentElement;
+      if (!parent) continue;
+      // Кнопка/заголовок-обёртка (текст может лежать в span внутри) — пометим и её,
+      // иначе матчеры по кнопке увидят уже переведённый textContent.
+      var host = parent.closest ? parent.closest('button,h1,h2,h3,h4,h5,[role="tab"]') : null;
+      if (host && (host.textContent || '').trim() !== en) host = null;
+      jobs.push({ node: node, raw: raw, en: en, tr: tr, parent: parent, host: host });
+    }
+    for (var i = 0; i < jobs.length; i++) {
+      var j = jobs[i];
+      j.node.nodeValue = j.raw.replace(j.en, j.tr);
+      try {
+        j.parent.setAttribute('data-tt-en', j.en);
+        if (j.host && j.host !== j.parent) j.host.setAttribute('data-tt-en', j.en);
+      } catch (e) { /* тихо */ }
     }
   }
 
@@ -415,7 +537,7 @@
   function tabButtonByText(doc, names) {
     var bs = doc.querySelectorAll('button');
     for (var i = 0; i < bs.length; i++) {
-      if (names.indexOf(bs[i].textContent.trim()) >= 0) return bs[i];
+      if (names.indexOf(enText(bs[i])) >= 0) return bs[i];
     }
     return null;
   }
@@ -453,6 +575,7 @@
       igAudioButton(document);
       enhanceQualityVariants(document);
       autoAnalyze(document);
+      translateLabels(document); // последним: матчеры выше работают по data-tt-en
     } catch (e) { /* тихо */ }
   }
 
@@ -464,8 +587,14 @@
       var obs = new MutationObserver(schedule);
       obs.observe(document.documentElement, { childList: true, subtree: true });
     } catch (e) {}
-    // Смена темы в приложении (другой документ) → storage-событие здесь.
-    try { window.addEventListener('storage', function (e) { if (!e || !e.key || e.key === 'vibevox_theme') syncTheme(); }); } catch (e) {}
+    // Смена темы/языка в приложении (другой документ) → storage-событие здесь.
+    try {
+      window.addEventListener('storage', function (e) {
+        if (!e || !e.key || e.key === 'vibevox_theme') syncTheme();
+        if (!e || !e.key || e.key === 'i18nextLng') { loadLabelDict(); schedule(); }
+      });
+    } catch (e) {}
+    loadLabelDict();
     // Новая ссылка от родителя → свежий цикл авто-анализа (по одному разу на URL).
     try {
       window.addEventListener('message', function (ev) {

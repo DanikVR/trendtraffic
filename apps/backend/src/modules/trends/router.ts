@@ -116,7 +116,8 @@ router.get('/analyze/detect', (req: AuthedRequest, res: Response) => {
 router.post('/analyze/sentiment', async (req: AuthedRequest, res: Response) => {
   try {
     const comments = Array.isArray(req.body?.comments) ? req.body.comments : [];
-    const result = await analyzeCommentsSentiment(req.tenantId!, comments);
+    const lang = typeof req.body?.lang === 'string' ? req.body.lang : undefined;
+    const result = await analyzeCommentsSentiment(req.tenantId!, comments, lang);
     res.json(result);
   } catch (err: any) {
     const msg = err?.message || 'Ошибка анализа тональности';

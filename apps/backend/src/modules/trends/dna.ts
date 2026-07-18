@@ -205,9 +205,16 @@ export interface GenerateDNAInput {
   lang?: string;
 }
 
-// Имя языка для инструкции модели. Известные — по-английски (надёжно); прочие — сам код
-// (Claude понимает BCP-47). Так «сейчас 2 языка» легко расширяется до 108 без правок кода.
-const DNA_LANG_NAMES: Record<string, string> = { ru: 'Russian', en: 'English' };
+// Имя языка для инструкции модели: ru → Russian. Intl.DisplayNames покрывает все 108
+// локалей приложения без таблицы; неизвестный код уходит моделью как есть (она понимает BCP-47).
+function dnaLangName(code: string): string {
+  const c = (code || '').toLowerCase().slice(0, 2);
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(c) || c;
+  } catch {
+    return c;
+  }
+}
 
 /**
  * Генерирует TrendDNA из данных анализа. Бросает понятную ошибку при отсутствии
@@ -237,8 +244,7 @@ export async function generateTrendDNA(tenantId: string, input: GenerateDNAInput
 
   // По умолчанию отчёт СОБИРАЕТСЯ на английском (и дальше в работу идёт на английском);
   // перевод — по кнопке «Перевести» через translateTrendDNA.
-  const langCode = (input.lang || 'en').toLowerCase().slice(0, 2);
-  const langName = DNA_LANG_NAMES[langCode] || langCode;
+  const langName = dnaLangName(input.lang || 'en');
   const system =
     'Ты — аналитик вирусного короткого видео (TikTok/Reels/Shorts). По метаданным, описанию ' +
     'и комментариям реконструируй «рецепт успеха» ролика: разбор вирусности и контент-анализ. ' +
@@ -569,8 +575,7 @@ export async function deleteTrendDNABulk(tenantId: string, ids: string[]): Promi
 export async function translateTrendDNA(tenantId: string, dna: any, lang: string): Promise<any> {
   const apiKey = await resolveAnthropicKey(tenantId);
   if (!apiKey) throw new Error('Ключ Claude не задан (Enterprise → Генерация → ИИ-режиссёр).');
-  const langCode = (lang || 'ru').toLowerCase().slice(0, 2);
-  const langName = DNA_LANG_NAMES[langCode] || langCode;
+  const langName = dnaLangName(lang || 'ru');
   const payload = {
     hookType: dna?.hookType || '', whyItWorks: dna?.whyItWorks || '', targetAudience: dna?.targetAudience || '',
     viralFactors: Array.isArray(dna?.viralFactors) ? dna.viralFactors : [], copyReadyScript: dna?.copyReadyScript || '',

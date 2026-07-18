@@ -44,13 +44,13 @@ function fmt(n?: number): string {
   return String(n);
 }
 
-// Язык отчёта аналитики = язык интерфейса/браузера (i18next → navigator). Пока ru/en —
-// задел под 108 языков: расширяется добавлением веток и переводов в бэкенде/лейблах.
-function analysisLang(): 'en' | 'ru' {
+// Язык отчёта аналитики = язык интерфейса/браузера (i18next → navigator). Двухбуквенный
+// код: бэкенд разворачивает его в название языка (Intl.DisplayNames) — работают все 108 локалей.
+function analysisLang(): string {
   try {
-    const l = (localStorage.getItem('i18nextLng') || navigator.language || 'ru').toLowerCase();
-    return l.startsWith('en') ? 'en' : 'ru';
-  } catch { return 'ru'; }
+    const l = (localStorage.getItem('i18nextLng') || navigator.language || 'en').toLowerCase();
+    return l.split('-')[0] || 'en';
+  } catch { return 'en'; }
 }
 
 // Подпись блока ответа (переводится при каждом вызове — на текущем языке интерфейса).
@@ -179,10 +179,24 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
   const [bdLoading, setBdLoading] = useState(false);
   const [bdError, setBdError] = useState<string | null>(null);
   const bdReqRef = useRef(0); // токен запроса: применяем только результат последнего анализа
-  // Перевод разбора (кнопка «Перевести»): разбор всегда собирается на английском, перевод — по клику.
+  // Разбор собирается на английском (в таком виде уходит в работу/TrendFlow), а показываем
+  // его на языке интерфейса: перевод стартует автоматически сразу после сборки. Кнопка
+  // рядом с заголовком переключает показ обратно на оригинал (EN) и назад.
   const [bdTranslated, setBdTranslated] = useState<TrendDNA | null>(null);
-  const [bdShowLang, setBdShowLang] = useState<'en' | 'ru'>('en');
+  const [bdShowLang, setBdShowLang] = useState<string>('en');
   const [bdTranslating, setBdTranslating] = useState(false);
+
+  // Один путь перевода для авто-показа и для кнопки.
+  const fetchTranslated = async (dna: TrendDNA, lang: string): Promise<TrendDNA> => {
+    const res = await fetch('/api/trends/analyze/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ dna, lang }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    return data.dna as TrendDNA;
+  };
 
   const analyze = async (override?: string) => {
     const u = (override ?? url).trim();
@@ -213,6 +227,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
     const myReq = ++bdReqRef.current;
     setBdLoading(true); setBdError(null); setBreakdown(null);
     setBdTranslated(null); setBdShowLang('en'); // новый разбор — сбрасываем перевод
+    let dna: TrendDNA | null = null;
     try {
       const res = await fetch('/api/trends/analyze/breakdown', {
         method: 'POST',
@@ -222,12 +237,24 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      if (bdReqRef.current === myReq) setBreakdown((data.dna as TrendDNA) || null);
+      dna = (data.dna as TrendDNA) || null;
     } catch (e: any) {
-      if (bdReqRef.current === myReq) setBdError(e instanceof TypeError ? t('sec.tanalytics.serverDownShort', 'Сервер недоступен.') : (e?.message || t('sec.tanalytics.bdFailed', 'Не удалось собрать разбор')));
-    } finally {
-      if (bdReqRef.current === myReq) setBdLoading(false);
+      if (bdReqRef.current === myReq) { setBdError(e instanceof TypeError ? t('sec.tanalytics.serverDownShort', 'Сервер недоступен.') : (e?.message || t('sec.tanalytics.bdFailed', 'Не удалось собрать разбор'))); setBdLoading(false); }
+      return;
     }
+
+    // Автоперевод на язык интерфейса — пользователь сразу видит разбор на своём языке.
+    // Крутилку держим до конца перевода и показываем результат ОДНИМ состоянием, иначе
+    // на секунду мелькает английский оригинал. Сбой перевода не ломает разбор: остаётся EN.
+    const target = analysisLang();
+    let translated: TrendDNA | null = null;
+    if (dna && target !== 'en' && bdReqRef.current === myReq) {
+      try { translated = await fetchTranslated(dna, target); } catch { /* тихо — покажем оригинал */ }
+    }
+    if (bdReqRef.current !== myReq) return;
+    setBreakdown(dna);
+    if (translated) { setBdTranslated(translated); setBdShowLang(target); }
+    setBdLoading(false);
   };
 
   // Авто-запуск разбора в фоне, как только готов анализ ВИДЕО (без кнопки). Аккаунты — пропускаем.
@@ -294,7 +321,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
       const res = await fetch('/api/trends/analyze/sentiment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ comments: comments.map((c) => c.text) }),
+        body: JSON.stringify({ comments: comments.map((c) => c.text), lang: analysisLang() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -326,14 +353,7 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
     if (bdTranslated) { setBdShowLang(bdTarget); return; }             // уже переведено — просто показать
     setBdTranslating(true); setBdError(null);
     try {
-      const res = await fetch('/api/trends/analyze/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ dna: breakdown, lang: bdTarget }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      setBdTranslated(data.dna as TrendDNA); setBdShowLang(bdTarget);
+      setBdTranslated(await fetchTranslated(breakdown, bdTarget)); setBdShowLang(bdTarget);
     } catch (e: any) { setBdError(e?.message || t('sec.tanalytics.translateFailed', 'Не удалось перевести')); }
     finally { setBdTranslating(false); }
   };
