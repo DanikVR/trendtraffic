@@ -1208,7 +1208,11 @@
       "voiceoverAi": "≈ $0.1–0.3 за ролик",
       "voiceoverFree": "$0 — своё аудио и видео",
       "videoFree": "$0 — готовое видео, без HeyGen",
-      "langsSuffix": " · языков: {{count}}"
+      "langsSuffix": " · языков: {{count}}",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}} сек{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} зн.{{langs}}",
+      "calcLangsPart": " × {{n}} яз.",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Готовность к сборке",

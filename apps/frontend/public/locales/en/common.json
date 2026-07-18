@@ -1218,7 +1218,11 @@
       "voiceoverAi": "≈ $0.1–0.3 per clip",
       "voiceoverFree": "$0 — your own audio and video",
       "videoFree": "$0 — ready video, no HeyGen",
-      "langsSuffix": " · languages: {{count}}"
+      "langsSuffix": " · languages: {{count}}",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Ready to build",

@@ -23,7 +23,7 @@ import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { VideoViewer } from '../../components/VideoViewer';
-import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf, syncClips, clipEffDur, avatarVideoBgModeOf } from './ugcTypes';
+import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf, syncClips, clipEffDur, avatarVideoBgModeOf, estimateUgcCost } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 import { SUPPORTED_LANGUAGES } from '../../config/i18n';
 import { useTranslation } from 'react-i18next';
@@ -356,8 +356,22 @@ export default function UgcStudio(p: UgcStudioProps) {
   const langsActive = !isVideoAv && ugc.source === 'gen' && (mode === 'solo' || mode === 'voiceover');
   const extraLangsCount = langsActive ? ugc.langs.filter((l) => l !== 'ru').length : 0;
 
-  /* ── смета (ориентиры из докки UGC_AVATARS.md) ── */
-  const costBase = mode === 'voiceover'
+  /* ── смета: живой расчёт по длительности голоса и символам (estimateUgcCost) там, где
+     затраты детерминированы; иначе — прежние ориентиры из докки UGC_AVATARS.md ── */
+  const costCalc = estimateUgcCost(ugc, p.ugcScriptSec());
+  const fmtUsd = (v: number) => (v >= 10 ? `$${Math.round(v)}` : `$${(Math.ceil(v * 100) / 100).toFixed(2)}`);
+  const costBase = costCalc
+    ? (mode === 'voiceover'
+      ? t('ugc.cost.calcTts', '≈{{sum}} — ElevenLabs, {{chars}} зн.{{langs}}', {
+        sum: fmtUsd(costCalc.usd), chars: costCalc.chars,
+        langs: costCalc.langs > 1 ? t('ugc.cost.calcLangsPart', ' × {{n}} яз.', { n: costCalc.langs }) : '',
+      })
+      : t('ugc.cost.calcHeygen', '≈{{sum}} — Avatar IV {{sec}} сек{{langs}}{{tts}}', {
+        sum: fmtUsd(costCalc.usd), sec: costCalc.heygenSec,
+        langs: costCalc.langs > 1 ? t('ugc.cost.calcLangsPart', ' × {{n}} яз.', { n: costCalc.langs }) : '',
+        tts: costCalc.ttsUsd >= 0.005 ? t('ugc.cost.calcTtsPart', ' + TTS {{sum}}', { sum: fmtUsd(costCalc.ttsUsd) }) : '',
+      }))
+    : mode === 'voiceover'
     ? (ugc.source === 'gen' ? t('ugc.cost.voiceoverAi') : t('ugc.cost.voiceoverFree'))
     : mode === 'retention'
       ? ({ off: '', eco: t('ugc.cost.perClip1_2'), bal: t('ugc.cost.perClip2_3'), prem: t('ugc.cost.perClip3_5') }[ugc.retentionPreset])
@@ -368,7 +382,8 @@ export default function UgcStudio(p: UgcStudioProps) {
   const costExtra = (mode === 'retention' && ugc.retentionBrolls.length > 1
     ? t('ugc.cost.seriesSuffix', { count: ugc.retentionBrolls.length })
     : (ugc.formats.length > 1 ? t('ugc.cost.filesSuffix') : ''))
-    + (extraLangsCount > 0 ? t('ugc.cost.langsSuffix', { count: extraLangsCount + 1 }) : '');
+    // языки уже В ЧИСЛЕ расчёта (× N яз.) — суффикс «языков: N» только для ориентиров
+    + (!costCalc && extraLangsCount > 0 ? t('ugc.cost.langsSuffix', { count: extraLangsCount + 1 }) : '');
 
   const scrollToSec = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 

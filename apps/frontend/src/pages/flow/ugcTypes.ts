@@ -206,3 +206,35 @@ export type UgcPickTarget =
 export type UgcMode = 'solo' | 'retention' | 'dialogue' | 'voiceover';
 export const ugcModeOf = (u: UgcSpec): UgcMode =>
   u.noAvatar ? 'voiceover' : u.dialogueEnabled ? 'dialogue' : (u.retentionPreset !== 'off' ? 'retention' : 'solo');
+
+/* ── Калькулятор затрат API (смета в топбаре) ──
+ * Считаем ТОЛЬКО детерминированные пути — по фактической длительности голоса и символам:
+ *  · соло «Моё фото»/«Коллекция» по API: HeyGen Avatar IV на ВСЮ длину голоса,
+ *    и на КАЖДЫЙ язык серии заново (бэкенд рендерит аватара per-language!) + TTS;
+ *  · «Диалог двоих»: сегменты обоих спикеров суммарно ≈ длине разобранной записи;
+ *  · «Без аватара» с ИИ-текстом: только ElevenLabs по символам × языки.
+ * null = не считаем числом (готовое видео $0, подписка, «Монтаж» — долю лицевых
+ * сегментов решает ИИ-режиссёр на сервере, заранее неизвестна → остаются ориентиры). */
+export const HEYGEN_IV_USD_PER_MIN = 3;      // Avatar IV pay-as-you-go (прайс HeyGen 07.2026)
+export const ELEVEN_USD_PER_1K_CHARS = 0.2;  // ElevenLabs multilingual v2, ориентир Creator-тарифа
+export interface UgcCostCalc { usd: number; heygenUsd: number; ttsUsd: number; heygenSec: number; langs: number; chars: number }
+export function estimateUgcCost(u: UgcSpec, voiceSec: number): UgcCostCalc | null {
+  if (!(voiceSec > 0)) return null;
+  const mode = ugcModeOf(u);
+  const isVideoAv = mode === 'solo' && u.avatarSource === 'video';
+  const chars = u.script.reduce((s, l) => s + (l.text || '').trim().length, 0);
+  // Серия языков — только ИИ-текст в соло/озвучке (зеркало langsActive в студии); ru всегда в счёте.
+  const langs = !isVideoAv && u.source === 'gen' && (mode === 'solo' || mode === 'voiceover')
+    ? new Set(['ru', ...u.langs]).size : 1;
+  const ttsUsd = u.source === 'gen' && chars > 0 ? (chars / 1000) * ELEVEN_USD_PER_1K_CHARS * langs : 0;
+  if (mode === 'voiceover') return u.source === 'gen' ? { usd: ttsUsd, heygenUsd: 0, ttsUsd, heygenSec: 0, langs, chars } : null;
+  if (mode === 'dialogue') {
+    const h = (voiceSec / 60) * HEYGEN_IV_USD_PER_MIN;
+    return { usd: h, heygenUsd: h, ttsUsd: 0, heygenSec: Math.round(voiceSec), langs: 1, chars };
+  }
+  if (mode === 'solo' && !isVideoAv && u.faceProvider === 'heygen_api') {
+    const h = (voiceSec / 60) * HEYGEN_IV_USD_PER_MIN * langs;
+    return { usd: h + ttsUsd, heygenUsd: h, ttsUsd, heygenSec: Math.round(voiceSec), langs, chars };
+  }
+  return null;
+}
