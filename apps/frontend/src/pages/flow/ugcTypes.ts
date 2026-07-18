@@ -48,6 +48,12 @@ export const clipEffDur = (c: UgcClipItem, speedPct = 100): number => {
 export const syncClips = (u: UgcSpec, clips: UgcClipItem[]): UgcSpec =>
   ({ ...u, clips, clip: clips.length ? { url: clips[0].url, name: clips[0].name } : null });
 
+/** Эффективный режим фона «Готового видео»: легаси-спеки без avatarVideoBgMode
+ *  трактуем по старой галочке avatarVideoCutout (true = хромакей). */
+export const avatarVideoBgModeOf = (u: UgcSpec): 'keep' | 'chroma' | 'ai' =>
+  u.avatarVideoBgMode === 'ai' || u.avatarVideoBgMode === 'chroma' || u.avatarVideoBgMode === 'keep'
+    ? u.avatarVideoBgMode : (u.avatarVideoCutout ? 'chroma' : 'keep');
+
 export interface UgcSpec {
   avatarSource: UgcAvatarSource;
   avatarId: string | null;                                  // выбранный из коллекции
@@ -58,7 +64,11 @@ export interface UgcSpec {
   // Готовое видео-аватар (avatarSource='video'): уже готовый ролик с говорящим человеком
   // (речь+мимика внутри). Идёт прямо в композит (composeUgc), HeyGen/ElevenLabs НЕ участвуют.
   avatarVideoUrl: string | null; avatarVideoName: string | null;
-  avatarVideoCutout: boolean;                               // зелёный фон → вырезать (chroma-key), силуэт поверх видеоряда
+  avatarVideoCutout: boolean;                               // legacy-галочка «хромакей» (= bgMode 'chroma'); поддерживаем для старых шаблонов/бэка
+  // Режим фона готового видео: 'keep' = оставить, 'chroma' = хромакей (однотонный фон,
+  // цвет по кадру), 'ai' = ИИ-матинг ЛЮБОГО фона (RobustVideoMatting на GPU-воркере).
+  // '' = не задан (легаси-спека) → режим выводится из avatarVideoCutout (avatarVideoBgModeOf).
+  avatarVideoBgMode: '' | 'keep' | 'chroma' | 'ai';
   // Вставка видео-аватара ПО ТАЙМЛАЙНУ (при заданном видеоряде): позиция в ВЫХОДНЫХ секундах —
   // аватар появляется и говорит с этого места; длину ролика задаёт видеоряд (хвост продлевает).
   avatarVideoStartSec: number;
@@ -147,7 +157,7 @@ export const UGC_DEFAULT: UgcSpec = {
   avatarUrl: null, avatarName: null, avatarProvider: 'gallery',
   photoUrl: null, photoName: null,
   heygenLookId: null,
-  avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false,
+  avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false, avatarVideoBgMode: '',
   avatarVideoStartSec: 0, avatarVideoDurationSec: null,
   avatarVideoTrimStart: 0, avatarVideoTrimEnd: null,
   avatarCutout: false,

@@ -89,6 +89,10 @@ export interface SystemConfig {
 
   /** URL Hotebook-воркера (обёртка notebooklm-py по Tailscale, напр. http://100.x:8801). */
   notebookWorkerUrl?: string;
+
+  /** URL матинг-воркера (ИИ-вырезка фона видео, RobustVideoMatting на GPU-ПК по Tailscale,
+   *  напр. http://100.x:8801). Пусто → «ИИ-вырезка» в UGC-студии отвечает понятной ошибкой. */
+  mattingWorkerUrl?: string;
 }
 
 /** Дефолтная модель Gemini Live (используется, если в админке ничего не выбрано). */
@@ -270,6 +274,11 @@ export function getNotebookWorkerUrl(): string {
   return String(get('notebookWorkerUrl', 'NOTEBOOKLM_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
 }
 
+/** URL матинг-воркера (ИИ-вырезка фона видео на GPU-ПК). Пусто → фича не настроена. */
+export function getMattingWorkerUrl(): string {
+  return String(get('mattingWorkerUrl', 'MATTING_WORKER_URL', '') || '').trim().replace(/\/+$/, '');
+}
+
 /** Telegram Bot API Token */
 export function getTelegramToken(): string {
   return get('telegramToken', 'TELEGRAM_BOT_TOKEN');
@@ -437,6 +446,9 @@ export function getSettingsForClient(): Record<string, any> {
 
     // Hotebook-воркер (Tailscale-адрес; не секрет).
     notebookWorkerUrl: getNotebookWorkerUrl(),
+
+    // Матинг-воркер (ИИ-вырезка фона видео; Tailscale-адрес, не секрет).
+    mattingWorkerUrl: getMattingWorkerUrl(),
   };
 }
 
@@ -478,6 +490,8 @@ export function saveSettings(incoming: Partial<SystemConfig>): void {
     { key: 'voiceMale', envFallback: 'GEMINI_VOICE_MALE' },
     // Hotebook-воркер (не секрет, Tailscale).
     { key: 'notebookWorkerUrl', envFallback: 'NOTEBOOKLM_WORKER_URL' },
+    // Матинг-воркер (не секрет, Tailscale).
+    { key: 'mattingWorkerUrl', envFallback: 'MATTING_WORKER_URL' },
   ];
 
   for (const { key, envFallback } of fieldMap) {

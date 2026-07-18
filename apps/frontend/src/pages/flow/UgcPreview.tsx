@@ -10,7 +10,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound, Move, Maximize2, MoveVertical, Image as ImageIcon } from 'lucide-react';
-import { avatarDefaultRect, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
+import { avatarDefaultRect, avatarVideoBgModeOf, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
 import type { LineRect } from './dialogueTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
@@ -127,7 +127,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
   // раскладка = стартовая позиция). В «Монтаже»/«Диалоге» — свои фиксированные планы.
   const isSolo = mode === 'solo';
   // ИИ-вырезка фона в соло: «Готовое видео» — свой хромакей-чекбокс, фото/коллекция — avatarCutout.
-  const soloCutout = ugc.avatarSource === 'video' ? ugc.avatarVideoCutout : ugc.avatarCutout;
+  const soloCutout = ugc.avatarSource === 'video' ? avatarVideoBgModeOf(ugc) !== 'keep' : ugc.avatarCutout;
 
   /* ── врезки медиа реплик (соло/«Без аватара»): выбор врезки чипом + драг окна на кадре ──
      insSelRaw: null = авто (первая реплика с медиа), 'off' = скрыто юзером, число = реплика.

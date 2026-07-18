@@ -23,7 +23,7 @@ import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { VideoViewer } from '../../components/VideoViewer';
-import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf, syncClips, clipEffDur } from './ugcTypes';
+import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf, syncClips, clipEffDur, avatarVideoBgModeOf } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 import { SUPPORTED_LANGUAGES } from '../../config/i18n';
 import { useTranslation } from 'react-i18next';
@@ -927,11 +927,24 @@ export default function UgcStudio(p: UgcStudioProps) {
                 {ugc.avatarVideoUrl && ugc.clips.length > 0 && (
                   <p className="text-[10px]" style={{ color: '#f59e0b' }}>{t('ugc.avatar.videoTimelineHint', 'Длину ролика задаёт видеоряд. Когда аватар появится в кадре и заговорит — двигайте оранжевый сегмент «Аватар» на таймлайне внизу; клик по нему — обрезка в редакторе.')}</p>
                 )}
-                <label className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                  <input type="checkbox" checked={ugc.avatarVideoCutout} onChange={(e) => ugcMutate((u) => ({ ...u, avatarVideoCutout: e.target.checked }))} style={{ accentColor: ACC, width: 15, height: 15 }} />
-                  <span className="text-[11px] font-600 flex-1" style={{ color: 'var(--text-secondary)' }}>{t('ugc.avatar.videoCutout')}</span>
-                </label>
-                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.avatar.videoCutoutHint')}</p>
+                {/* Фон готового видео: оставить / хромакей / ИИ-матинг любого фона (GPU-воркер).
+                    Пишем и legacy-галочку avatarVideoCutout (= 'chroma') — её читают старые шаблоны/бэк. */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-700 uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '.04em' }}>{t('ugc.avatar.bgHeading')}</div>
+                  {(['keep', 'chroma', 'ai'] as const).map((m) => (
+                    <label key={m} className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer" style={{ background: 'var(--bg-secondary)', border: `1px solid ${avatarVideoBgModeOf(ugc) === m ? ACC : 'var(--border-medium)'}` }}>
+                      <input type="radio" name="ugc-av-bg" checked={avatarVideoBgModeOf(ugc) === m}
+                        onChange={() => ugcMutate((u) => ({ ...u, avatarVideoBgMode: m, avatarVideoCutout: m === 'chroma' }))}
+                        style={{ accentColor: ACC, width: 14, height: 14 }} />
+                      <span className="text-[11px] font-600 flex-1" style={{ color: 'var(--text-secondary)' }}>
+                        {m === 'keep' ? t('ugc.avatar.bgKeep') : m === 'chroma' ? t('ugc.avatar.videoCutout') : t('ugc.avatar.bgAi')}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  {avatarVideoBgModeOf(ugc) === 'ai' ? t('ugc.avatar.bgAiHint') : avatarVideoBgModeOf(ugc) === 'chroma' ? t('ugc.avatar.videoCutoutHint') : t('ugc.avatar.bgKeepHint')}
+                </p>
               </div>
             ) : (
               <div className="space-y-2">

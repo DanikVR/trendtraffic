@@ -3373,8 +3373,19 @@
  *          3) Пикер UgcStudio: Sparkles-подложка лежит ПОД <img>/<video> — битая
  *             картинка больше не оставляет пустой квадрат; cover = coverUrl || meta.
  *          Файлы: trends/dna.ts, UgcStudio.tsx, GalleryPage.tsx. */
+/* 2.6.5 — UGC-студия, «Готовое видео»: ИИ-ВЫРЕЗКА ЛЮБОГО ФОНА (комната, улица — не только
+ *          хромакей). Галочка хромакея стала выбором из трёх: оставить фон / хромакей /
+ *          ИИ-вырезка (spec.avatarVideoBgMode, legacy avatarVideoCutout = хромакей).
+ *          Считает НОВЫЙ матинг-воркер matting-worker/ (RobustVideoMatting mobilenetv3,
+ *          GPU-ПК в WSL, порт 8801, async job+poll по урокам старого /avatar; инференс
+ *          без av/pims — ffmpeg-пайпы rawvideo→RVM→RGBA→libvpx-vp9) → webm VP9 с альфой →
+ *          composeUgc как avatarKind='alpha' (готовый контракт), звук из исходника.
+ *          Бэкенд: render/matting.ts (клиент job+poll, человеческие ошибки), ветка video
+ *          в render/router.ts, конфиг mattingWorkerUrl (env MATTING_WORKER_URL).
+ *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
+ *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
-export const APP_VERSION = '2.6.4';
+export const APP_VERSION = '2.6.5';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

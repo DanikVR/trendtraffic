@@ -33,6 +33,7 @@ import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type Ret
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
+import { mattingCutout } from './matting.js';
 
 // Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
 const omniJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
@@ -1188,6 +1189,12 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       const avVideoUrl = String(spec.avatarVideoUrl || '');
       if (!avVideoUrl) return res.status(400).json({ error: 'Загрузите готовое видео-аватар (вкладка «Готовое видео»).' });
       const cutout = !!spec.avatarVideoCutout;
+      // Режим фона: 'chroma' = хромакей (однотонный фон, цвет по кадру), 'ai' = матинг на
+      // GPU-воркере (ЛЮБОЙ фон → webm с альфой), 'keep' = оставить как есть.
+      // Легаси-спеки без avatarVideoBgMode: галочка cutout означала хромакей.
+      const bgModeRaw = String(spec.avatarVideoBgMode || '');
+      const bgMode: 'keep' | 'chroma' | 'ai' =
+        bgModeRaw === 'ai' ? 'ai' : bgModeRaw === 'chroma' ? 'chroma' : bgModeRaw === 'keep' ? 'keep' : (cutout ? 'chroma' : 'keep');
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
       ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
@@ -1198,10 +1205,19 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         try {
           j.status = 'готовлю видео-аватар';
           const avatar = await downloadToRenders(abs(avVideoUrl), 'ugcav');
-          // «Вырезать фон»: цвет ключа определяем ПО САМОМУ видео (верхние углы кадра) —
+          // «Вырезать фон», хромакей: цвет ключа определяем ПО САМОМУ видео (верхние углы) —
           // жёсткий 0x00FF00 мажет на нестандартных оттенках зелёного (ИИ-генерации).
-          const chromaColor = cutout ? (await detectAvatarBgColor(avatar.filePath)) || '0x00FF00' : null;
+          const chromaColor = bgMode === 'chroma' ? (await detectAvatarBgColor(avatar.filePath)) || '0x00FF00' : null;
           if (chromaColor) console.log('[ugc/video] chroma-ключ фона:', chromaColor);
+          // ИИ-вырезка: матинг-воркер отдаёт webm с альфой → в композит силуэтом (kind='alpha');
+          // звук всё равно берём из ИСХОДНИКА (voicePath) — webm без аудио.
+          let avatarVideoPath = avatar.filePath;
+          let avatarKind: 'opaque' | 'alpha' = 'opaque';
+          if (bgMode === 'ai') {
+            j.status = 'ИИ-вырезка фона (GPU)…';
+            avatarVideoPath = await mattingCutout({ videoUrl: abs(avVideoUrl), onStatus: (s) => { j.status = s; } });
+            avatarKind = 'alpha';
+          }
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
           const music = spec.music?.url ? await downloadToRenders(abs(String(spec.music.url)), 'ugcmusic') : null;
           const layers = await dlLayers();
@@ -1225,7 +1241,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
             made++;
             j.status = `склейка ${fmt.label} (${made}/${j.total})`;
             let fileUrl = await composeUgc({
-              avatarPath: avatar.filePath, avatarKind: 'opaque',
+              avatarPath: avatarVideoPath, avatarKind,   // ИИ-вырезка → webm с альфой, иначе исходник opaque
               avatarChroma: chromaColor,   // «вырезать фон» → chroma-key цветом, найденным по кадру (фолбэк чистый зелёный)
               avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
               voicePath: avatar.filePath, // речь уже в видео — его дорожка = голос
