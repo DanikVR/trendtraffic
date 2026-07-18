@@ -33,7 +33,7 @@ import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type Ret
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
-import { mattingCutout } from './matting.js';
+import { mattingCutout, MATTING_NO_KEY_MSG } from './matting.js';
 
 // Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
 const omniJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
@@ -1195,6 +1195,11 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       const bgModeRaw = String(spec.avatarVideoBgMode || '');
       const bgMode: 'keep' | 'chroma' | 'ai' =
         bgModeRaw === 'ai' ? 'ai' : bgModeRaw === 'chroma' ? 'chroma' : bgModeRaw === 'keep' ? 'keep' : (cutout ? 'chroma' : 'keep');
+      // ИИ-вырезка считается на Replicate по BYO-ключу тенанта — без ключа отказываем
+      // СРАЗУ (синхронный 400 под кнопкой), а не после запуска джоба.
+      if (bgMode === 'ai' && !(await getEffectiveProviderKey(req.tenantId!, 'replicate'))) {
+        return res.status(400).json({ error: MATTING_NO_KEY_MSG });
+      }
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
       ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
@@ -1209,13 +1214,16 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           // жёсткий 0x00FF00 мажет на нестандартных оттенках зелёного (ИИ-генерации).
           const chromaColor = bgMode === 'chroma' ? (await detectAvatarBgColor(avatar.filePath)) || '0x00FF00' : null;
           if (chromaColor) console.log('[ugc/video] chroma-ключ фона:', chromaColor);
-          // ИИ-вырезка: матинг-воркер отдаёт webm с альфой → в композит силуэтом (kind='alpha');
-          // звук всё равно берём из ИСХОДНИКА (voicePath) — webm без аудио.
+          // ИИ-вырезка (Replicate, ключ тенанта): маска → alphamerge с исходником → webm
+          // с альфой → в композит силуэтом (kind='alpha'); звук берём из ИСХОДНИКА (voicePath).
           let avatarVideoPath = avatar.filePath;
           let avatarKind: 'opaque' | 'alpha' = 'opaque';
           if (bgMode === 'ai') {
-            j.status = 'ИИ-вырезка фона (GPU)…';
-            avatarVideoPath = await mattingCutout({ videoUrl: abs(avVideoUrl), onStatus: (s) => { j.status = s; } });
+            j.status = 'ИИ-вырезка фона (Replicate)…';
+            avatarVideoPath = await mattingCutout({
+              tenantId: j.tenantId!, videoUrl: abs(avVideoUrl), origPath: avatar.filePath,
+              onStatus: (s) => { j.status = s; },
+            });
             avatarKind = 'alpha';
           }
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;

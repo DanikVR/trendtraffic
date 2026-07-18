@@ -3411,7 +3411,21 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
-export const APP_VERSION = '2.6.6';
+/* 2.6.7 — ИИ-вырезка фона видео-аватара переведена НА REPLICATE (по просьбе: всё по API,
+ *          домашний ПК не нужен). Новый провайдер «Replicate» в Настройки → Генерация
+ *          (BYO-ключ, реальная проверка GET /v1/account); рендер: matting.ts →
+ *          arielreplicate/robust_video_matting (version резолвится по API и кэшируется,
+ *          output_type='alpha-mask') → маска + исходник → локальный alphamerge → webm
+ *          VP9 с альфой (контракт avatarKind='alpha' не менялся; без зелёных ореолов —
+ *          маска ложится на оригинал). Без ключа: сборка отвечает 400 СРАЗУ (пре-флайт),
+ *          а под опцией «ИИ-вырезка» в студии — кнопка «Подключить Replicate API»
+ *          (новая вкладка /settings/enterprise?section=openmontage) + «Проверить снова».
+ *          mattingWorkerUrl удалён из systemConfig (мёртвый конфиг); matting-worker/ в
+ *          репо помечен standalone-запасным (README), GPU-ПК больше не в цепочке прода.
+ *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
+ *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
+
+export const APP_VERSION = '2.6.7';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

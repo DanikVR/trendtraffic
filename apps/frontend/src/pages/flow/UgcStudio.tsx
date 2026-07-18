@@ -410,6 +410,27 @@ export default function UgcStudio(p: UgcStudioProps) {
     loadVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ugc.source, elVoices, p.token]);
+  /* ── Подключение Replicate (ИИ-вырезка фона «Готового видео») ──
+     Статус ключа — из Настройки → Генерация (provider-keys). Не подключён → под опцией
+     «ИИ-вырезка» кнопка ведёт к подключению (новая вкладка, студия не закрывается). */
+  const [repConnected, setRepConnected] = useState<boolean | null>(null);
+  const [repChecking, setRepChecking] = useState(false);
+  const checkReplicate = () => {
+    setRepChecking(true);
+    void fetch('/api/tenant-settings/provider-keys', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } })
+      .then((r) => r.json())
+      .then((d) => {
+        const rep = Array.isArray(d?.providers) ? d.providers.find((x: any) => x?.id === 'replicate') : null;
+        setRepConnected(rep ? !!rep.hasKey : null);
+      })
+      .catch(() => setRepConnected(null))
+      .finally(() => setRepChecking(false));
+  };
+  useEffect(() => {
+    if (ugc.avatarSource !== 'video' || repConnected !== null) return;
+    checkReplicate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ugc.avatarSource, repConnected, p.token]);
   /* ── Готовые луки/фото-аватары аккаунта HeyGen (вкл. натренированные Personal Model) ──
      Список — по кнопке (GET heygen-avatars, нужен API-ключ HeyGen); выбор фиксируется через
      POST heygen-avatar-pick: превью скачивается к нам (подписанные URL HeyGen протухают),
@@ -960,6 +981,24 @@ export default function UgcStudio(p: UgcStudioProps) {
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                   {avatarVideoBgModeOf(ugc) === 'ai' ? t('ugc.avatar.bgAiHint') : avatarVideoBgModeOf(ugc) === 'chroma' ? t('ugc.avatar.videoCutoutHint') : t('ugc.avatar.bgKeepHint')}
                 </p>
+                {/* Replicate не подключён → кнопка к подключению (новая вкладка, студия остаётся). */}
+                {avatarVideoBgModeOf(ugc) === 'ai' && repConnected === false && (
+                  <div className="p-2 rounded-lg space-y-1.5" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)' }}>
+                    <p className="text-[10px]" style={{ color: '#f59e0b' }}>{t('ugc.avatar.bgAiNoKey')}</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => window.open('/settings/enterprise?section=openmontage', '_blank')}
+                        className="flex-1 py-1.5 rounded-lg text-[11px] font-700 inline-flex items-center justify-center gap-1.5"
+                        style={{ background: ACC, color: '#fff', border: 'none', cursor: 'pointer' }}>
+                        {t('ugc.avatar.bgAiConnect')}
+                      </button>
+                      <button onClick={checkReplicate} disabled={repChecking}
+                        className="py-1.5 px-2 rounded-lg text-[11px] inline-flex items-center justify-center disabled:opacity-60"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                        {repChecking ? <Loader2 size={12} className="animate-spin" /> : t('ugc.avatar.bgAiRecheck')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2">

@@ -75,6 +75,10 @@ export const PROVIDERS: ProviderDef[] = [
     verify: (k) => tryVerify('ElevenLabs', () => ping('https://api.elevenlabs.io/v1/user', { headers: { 'xi-api-key': k } })) },
   { id: 'heygen', label: 'HeyGen (аватары, видео-шлюз)', group: 'paid', help: 'https://app.heygen.com/settings/api',
     verify: (k) => tryVerify('HeyGen', () => ping('https://api.heygen.com/v2/user/remaining_quota', { headers: { 'X-Api-Key': k } })) },
+  // ИИ-вырезка фона видео-аватара (UGC «Готовое видео»): RobustVideoMatting на Replicate.
+  // Проверка реальная: GET /v1/account → 200 = токен активен (бесплатный whoami).
+  { id: 'replicate', label: 'Replicate (ИИ-вырезка фона видео)', group: 'paid', help: 'https://replicate.com/account/api-tokens',
+    verify: (k) => tryVerify('Replicate', () => ping('https://api.replicate.com/v1/account', { headers: { Authorization: `Bearer ${k}` } })) },
 
   // Публикатор (вкладка Галереи): BYO-аккаунт Blotato у каждого тенанта — свой ключ,
   // свои подключённые соцсети (подключаются в кабинете my.blotato.com, API для этого нет).

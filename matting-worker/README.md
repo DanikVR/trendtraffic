@@ -1,5 +1,12 @@
 # Matting Worker — ИИ-вырезка фона видео (RobustVideoMatting)
 
+> **⚠️ Статус: standalone-запасной путь, ПРОДОМ НЕ ИСПОЛЬЗУЕТСЯ.** С v2.6.6 ИИ-вырезка
+> в UGC-студии считается через Replicate по BYO-ключу тенанта (`render/matting.ts`,
+> провайдер `replicate` в Настройки → Генерация) — домашний ПК не нужен. Этот воркер
+> остаётся рабочим (systemd `trendtraffic-matting` на GPU-ПК, порт 8801) на случай
+> возврата к локальному расчёту: тогда в `matting.ts` вернуть клиент воркера
+> (git-история v2.6.5) и `mattingWorkerUrl` в systemConfig.
+
 Вырезает **любой** фон (комната, улица) из видео-аватара UGC-студии — не только
 однотонный хромакей. Модель: [RobustVideoMatting](https://github.com/PeterL1n/RobustVideoMatting)
 (mobilenetv3, рекуррентная — длина клипа не ограничена VRAM). Считается на GPU-ПК
