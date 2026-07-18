@@ -29,7 +29,7 @@ import DialogueTimeline from './DialogueTimeline';
 import type { PodLine } from './dialogueTypes';
 import UgcStudio from './UgcStudio';
 import { HotebookStudio } from './HotebookStudio';
-import { UGC_DEFAULT, type UgcSpec, type UgcPickTarget } from './ugcTypes';
+import { UGC_DEFAULT, syncClips, type UgcSpec, type UgcPickTarget } from './ugcTypes';
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
 type CloudId = 'omni' | 'plan' | 'editor' | 'ugc' | 'hotebook' | 'flow';
@@ -474,7 +474,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       const tplSpec = { ...ugc, buildJobId: null, result: null, results: [], __flowId: flowId };
       const tplName = (name || '').trim() || t('sec.montage.ugcTemplateName', 'UGC-ролик');
       // Пустой ролик в шаблоны не пишем (чтобы «зашёл-вышел» не плодил мусор); существующий — обновляем всегда.
-      const hasContent = !!(ugc.avatarUrl || ugc.photoUrl || ugc.script.length || ugc.clip || ugc.clipImages.length || (ugc.brief || '').trim());
+      const hasContent = !!(ugc.avatarUrl || ugc.photoUrl || ugc.script.length || ugc.clip || ugc.clips.length || ugc.clipImages.length || (ugc.brief || '').trim());
       if (!ugc.templateId && !hasContent) { setCloudPanel(null); return; }
       if (ugc.templateId) {
         // Обновляем существующий шаблон ролика (имя + спека).
@@ -536,7 +536,8 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     v.src = url;
   });
   const pickUgcItem = (g: { url: string; name: string; type: 'video' | 'audio' | 'image' }) => {
-    if (ugcPick === 'clip') ugcMutate((u) => ({ ...u, clip: { url: g.url, name: g.name } }));
+    // «Видеоряд»: выбор ДОБАВЛЯЕТ клип в конец (их может быть несколько — идут друг за другом).
+    if (ugcPick === 'clip') ugcMutate((u) => syncClips(u, [...u.clips, { url: g.url, name: g.name }].slice(0, 12)));
     else if (ugcPick === 'photo') ugcMutate((u) => ({ ...u, photoUrl: g.url, photoName: g.name, heygenLookId: null }));
     else if (ugcPick === 'photoB') ugcMutate((u) => ({ ...u, photoBUrl: g.url, photoBName: g.name }));
     else if (ugcPick === 'avatarVideo') ugcMutate((u) => ({ ...u, avatarVideoUrl: g.url, avatarVideoName: g.name, result: null }));
@@ -670,7 +671,7 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     const useVideo = !useVoiceover && ugc.avatarSource === 'video';
     const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     if (useVoiceover) {
-      if (!ugc.clip && !ugc.clipImages.length) { fail(t('sec.montage.needBaseVideo', 'Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.')); return; }
+      if (!ugc.clip && !ugc.clips.length && !ugc.clipImages.length) { fail(t('sec.montage.needBaseVideo', 'Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.')); return; }
     } else if (useVideo) {
       if (!ugc.avatarVideoUrl) { fail(t('sec.montage.needAvatarVideo', 'Загрузите готовое видео-аватар (вкладка «Готовое видео»).')); return; }
     } else if (useDialogue) {
@@ -884,6 +885,10 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
               avatarProvider: 'gallery',
               script: Array.isArray(uu.script) ? uu.script : [],
               subtitles: { ...UGC_DEFAULT.subtitles, ...(uu.subtitles || {}) },
+              // Видеоряд: новые сценарии хранят clips[]; старые — одиночный clip → мигрируем в массив.
+              clips: Array.isArray(uu.clips)
+                ? uu.clips.filter((x: any) => x && typeof x.url === 'string')
+                : (uu.clip && typeof uu.clip.url === 'string' ? [{ url: uu.clip.url, name: uu.clip.name || t('sec.montage.videoFb', 'видео') }] : []),
               clipImages: Array.isArray(uu.clipImages) ? uu.clipImages.filter((x: any) => x && typeof x.url === 'string') : [],
               analysisUse: { ...UGC_DEFAULT.analysisUse, ...(uu.analysisUse || {}) },
               // Кастомные позиции аватара-оверлея (драг на превью) — старые сценарии их не имеют.

@@ -1404,7 +1404,12 @@
       "photosCount_other": "{{count}} photos — loop through",
       "photosVsVideo": "Both video and photos selected — video will be used (photos ignored).",
       "photosCount_few": "{{count}} photos — loop through",
-      "photosCount_many": "{{count}} photos — loop through"
+      "photosCount_many": "{{count}} photos — loop through",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "Subtitles",
@@ -2407,6 +2412,9 @@
       "gestureStrong": "strong",
       "gestureWeak": "weak",
       "helpLine": "▶ — play from cursor; drag clips to adjust timing, UP/DOWN — move to another voice track; ✂ cuts at cursor; −/+/fit or Ctrl+scroll — zoom (zoom keeps cursor point centered). Click a clip to open the line below. A/B overlay = simultaneous.",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
       "hintAuto": "auto (Claude)",
       "hintBgLeft": "background · face left",
       "hintBgRight": "background · face right",

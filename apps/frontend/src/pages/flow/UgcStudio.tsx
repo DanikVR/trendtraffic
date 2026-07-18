@@ -22,7 +22,8 @@ import UgcPreview from './UgcPreview';
 import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
-import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf } from './ugcTypes';
+import { VideoViewer } from '../../components/VideoViewer';
+import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf, syncClips, clipEffDur } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 import { SUPPORTED_LANGUAGES } from '../../config/i18n';
 import { useTranslation } from 'react-i18next';
@@ -259,6 +260,16 @@ export default function UgcStudio(p: UgcStudioProps) {
     ugcMutate((u) => ({ ...u, script: lines }));
   };
 
+  /* ── «Видеоряд» из нескольких клипов: длительность у каждого, обрезка, редактор ── */
+  const mmss = (s: number): string => { const m = Math.floor(s / 60); const ss = Math.floor(s % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
+  // Длительность из метаданных <video> панели (единожды на клип); заодно зажимаем trimEnd.
+  const setClipDuration = (i: number, d: number) => ugcMutate((u) => syncClips(u, u.clips.map((c, j) =>
+    j === i ? { ...c, durationSec: d, ...(Number.isFinite(c.trimEnd) && (c.trimEnd as number) > d ? { trimEnd: d } : {}) } : c)));
+  const removeClip = (i: number) => ugcMutate((u) => syncClips(u, u.clips.filter((_, j) => j !== i)));
+  // Клик по клипу (тумба в панели или сегмент на таймлайне) → наш VideoViewer (обрезка/склейка).
+  // Сохранение НЕразрушающее: новый файл замещает клип, обрезка дорожки сбрасывается.
+  const [clipEditIdx, setClipEditIdx] = useState<number | null>(null);
+
   /* ── высота дока таймлайна: ручка над доком, тянется вверх/вниз (просьба юзера «двигать больше»).
      Во время жеста высоту пишем прямо в DOM (без re-render на каждый move), в стейт и localStorage —
      на pointerup. Двойной клик по ручке — сброс к дефолту. */
@@ -323,7 +334,7 @@ export default function UgcStudio(p: UgcStudioProps) {
     : mode === 'dialogue'
     ? ugc.script.length > 0
     : (ugc.script.length > 0 || (ugc.source === 'diarize' && !!ugc.recordingUrl));
-  const hasFootage = !!ugc.clip || ugc.clipImages.length > 0;   // видео ИЛИ фото-слайдшоу
+  const hasFootage = ugc.clips.length > 0 || !!ugc.clip || ugc.clipImages.length > 0;   // видео ИЛИ фото-слайдшоу
   const videoOk = mode === 'retention' ? (hasFootage || ugc.retentionBrolls.length > 0) : (mode === 'voiceover' ? hasFootage : true);
   const checks: { label: string; ok: boolean; hint: string; miss: string }[] = [
     ...(mode !== 'voiceover' ? [{ label: ugc.avatarSource === 'collection' ? t('ugc.checklist.avatarChosen') : ugc.avatarSource === 'video' ? t('ugc.checklist.videoAvatarChosen') : t('ugc.checklist.photoChosen'), ok: avatarOk, hint: t('ugc.checklist.step', { n: 2 }), miss: ugc.avatarSource === 'collection' ? t('ugc.checklist.missAvatar') : ugc.avatarSource === 'video' ? t('ugc.checklist.missVideoAvatar') : t('ugc.checklist.missPhoto') }] : []),
@@ -520,8 +531,11 @@ export default function UgcStudio(p: UgcStudioProps) {
           fileUrl: a.fileUrl || null,
         },
       };
-      // Галочки применяются сразу: видео тренда → Видеоряд, стиль титров → пожелания.
-      if (u.analysisUse.video && a.fileUrl) next.clip = { url: a.fileUrl, name: title };
+      // Галочки применяются сразу: видео тренда → ПЕРВЫМ клипом Видеоряда, стиль титров → пожелания.
+      if (u.analysisUse.video && a.fileUrl) {
+        const rest = u.clips.filter((c) => c.url !== a.fileUrl);
+        Object.assign(next, syncClips(next, [{ url: a.fileUrl, name: title }, ...rest].slice(0, 12)));
+      }
       if (u.analysisUse.subtitles && dna.visualStyle && !u.subtitles.wishes.trim()) {
         next.subtitles = { ...u.subtitles, wishes: String(dna.visualStyle).slice(0, 180) };
       }
@@ -535,8 +549,11 @@ export default function UgcStudio(p: UgcStudioProps) {
     const on = !u.analysisUse[k];
     const next: UgcSpec = { ...u, analysisUse: { ...u.analysisUse, [k]: on } };
     if (k === 'video') {
-      if (on && u.analysis?.fileUrl) next.clip = { url: u.analysis.fileUrl, name: u.analysis.title || t('sec.ugc.trendFallbackName', 'тренд') };
-      if (!on && u.analysis?.fileUrl && u.clip?.url === u.analysis.fileUrl) next.clip = null;
+      if (on && u.analysis?.fileUrl) {
+        const rest = u.clips.filter((c) => c.url !== u.analysis!.fileUrl);
+        Object.assign(next, syncClips(next, [{ url: u.analysis.fileUrl, name: u.analysis.title || t('sec.ugc.trendFallbackName', 'тренд') }, ...rest].slice(0, 12)));
+      }
+      if (!on && u.analysis?.fileUrl) Object.assign(next, syncClips(next, u.clips.filter((c) => c.url !== u.analysis!.fileUrl)));
     }
     if (k === 'subtitles') {
       const styleWish = (u.analysis?.visualStyle || '').slice(0, 180);
@@ -783,11 +800,11 @@ export default function UgcStudio(p: UgcStudioProps) {
                   <button onClick={() => ugcMutate((u) => {
                     // Убрали разбор — откатываем и его следы (если поля не правились руками).
                     const styleWish = (u.analysis?.visualStyle || '').slice(0, 180);
-                    return {
+                    const cleaned = u.analysis?.fileUrl ? u.clips.filter((c) => c.url !== u.analysis!.fileUrl) : u.clips;
+                    return syncClips({
                       ...u, analysis: null,
-                      clip: u.analysis?.fileUrl && u.clip?.url === u.analysis.fileUrl ? null : u.clip,
                       subtitles: styleWish && u.subtitles.wishes === styleWish ? { ...u.subtitles, wishes: '' } : u.subtitles,
-                    };
+                    }, cleaned);
                   })} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
                 </div>
                 {/* Галочки: что именно подмешивать. Каждая включается/выключается независимо. */}
@@ -1132,12 +1149,44 @@ export default function UgcStudio(p: UgcStudioProps) {
 
           {/* 4. Видеоряд */}
           <Sec n={4} title={t('ugc.video.title')} sub={t('ugc.video.sub')} done={hasFootage || (mode === 'retention' && ugc.retentionBrolls.length > 0)}>
-            {ugc.clip ? (
-              <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                <video src={`${ugc.clip.url}#t=0.1`} muted className="rounded-lg flex-shrink-0" style={{ width: 44, height: 78, objectFit: 'cover', background: 'var(--bg-tertiary)' }} />
-                <span className="text-[11px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={ugc.clip.name}>{ugc.clip.name}</span>
-                <button onClick={() => p.openUgcPick('clip')} className="text-[11px] px-2 py-1 rounded-md flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: ACC, border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('ugc.common.replace')}</button>
-                <button onClick={() => ugcMutate((u) => ({ ...u, clip: null }))} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+            {ugc.clips.length ? (
+              <div className="space-y-1.5">
+                {ugc.clips.map((c, i) => {
+                  const hasDur = Number.isFinite(c.durationSec) && (c.durationSec as number) > 0;
+                  const trimmed = (c.trimStart || 0) > 0.05 || (hasDur && Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0 && (c.trimEnd as number) < (c.durationSec as number) - 0.05);
+                  return (
+                    <div key={c.url + i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                      {ugc.clips.length > 1 && <span className="text-[10px] font-700 flex-shrink-0" style={{ color: 'var(--text-muted)', width: 11, textAlign: 'center' }}>{i + 1}</span>}
+                      <video src={`${c.url}#t=0.1`} muted preload="metadata"
+                        onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0 && Math.abs((c.durationSec || 0) - d) > 0.05) setClipDuration(i, Math.round(d * 10) / 10); }}
+                        onClick={() => setClipEditIdx(i)} title={t('ugc.video.editClip', 'Открыть в редакторе — обрезка/нарезка')}
+                        className="rounded-lg flex-shrink-0" style={{ width: 44, height: 78, objectFit: 'cover', background: 'var(--bg-tertiary)', cursor: 'pointer' }} />
+                      <div className="flex-1 min-w-0 space-y-0.5">
+                        <div className="text-[11px]" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={c.name}>{c.name}</div>
+                        {/* время ролика — сразу возле него; у обрезанного видно взятый кусок */}
+                        <div className="text-[10px] font-650" style={{ color: ACC, fontVariantNumeric: 'tabular-nums' }}>
+                          {hasDur
+                            ? (trimmed
+                              ? t('ugc.video.durTrimmed', '{{from}}–{{to}} из {{full}}', { from: mmss(c.trimStart || 0), to: mmss((Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0 ? c.trimEnd : c.durationSec) as number), full: mmss(c.durationSec as number) })
+                              : mmss(c.durationSec as number))
+                            : '…'}
+                        </div>
+                      </div>
+                      <button onClick={() => removeClip(i)} title={t('ugc.common.remove')} className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={14} /></button>
+                    </div>
+                  );
+                })}
+                {ugc.clips.length < 12 && (
+                  <button onClick={() => p.openUgcPick('clip')} className="w-full py-1.5 rounded-lg text-[11px] font-650 inline-flex items-center justify-center gap-1.5"
+                    style={{ background: 'var(--bg-secondary)', color: ACC, border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+                    <Plus size={12} /> {t('ugc.video.addMore', 'Добавить видео')}
+                  </button>
+                )}
+                {ugc.clips.length > 1 && (
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    {t('ugc.video.multiHint', 'Несколько видео идут друг за другом · всего {{dur}}. Обрезка — на дорожке «Видеоряд» таймлайна внизу.', { dur: mmss(ugc.clips.reduce((s, c) => s + clipEffDur(c), 0)) })}
+                  </p>
+                )}
               </div>
             ) : (
               <EmptySlot icon={<Video size={14} />} title={t('ugc.video.emptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('clip')} />
@@ -1530,6 +1579,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                 externalPlayhead={tlFollow}
                 accentA={ACC}
                 accentB={ACC2}
+                clipTrack={ugc.clips.length ? {
+                  label: t('ugc.common.footage'),
+                  clips: ugc.clips,
+                  onTrim: (i, patch) => ugcMutate((u) => syncClips(u, u.clips.map((c, j) => (j === i ? { ...c, ...patch } : c)))),
+                  onOpen: (i) => setClipEditIdx(i),
+                  onDuration: setClipDuration,
+                } : undefined}
               />
             </>
           ) : (
@@ -1818,6 +1874,24 @@ export default function UgcStudio(p: UgcStudioProps) {
         onCancel={() => p.setUgcDelAvatar(null)}
         onConfirm={() => { if (p.ugcDelAvatar) void p.doDelUgcAvatar(p.ugcDelAvatar); }}
       />
+
+      {/* Клип «Видеоряда» в нашем редакторе (обрезка/нарезка, VideoViewer): клик по тумбе панели
+          или по сегменту дорожки таймлайна. Сохранение НЕразрушающее — новый файл замещает клип
+          (обрезка дорожки сбрасывается, длительность перечитается из метаданных). */}
+      {clipEditIdx != null && ugc.clips[clipEditIdx] && (
+        <VideoViewer
+          open
+          url={ugc.clips[clipEditIdx].url}
+          title={ugc.clips[clipEditIdx].name}
+          onClose={() => setClipEditIdx(null)}
+          onSaved={(r) => {
+            ugcMutate((u) => syncClips(u, u.clips.map((c, j) => j === clipEditIdx
+              ? { url: r.fileUrl, name: `${c.name} · ${t('ugc.video.editedSuffix', 'обрезано')}`, durationSec: undefined, trimStart: undefined, trimEnd: undefined }
+              : c)));
+            setClipEditIdx(null);
+          }}
+        />
+      )}
     </div>
   );
 }

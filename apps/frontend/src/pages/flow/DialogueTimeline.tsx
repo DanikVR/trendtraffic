@@ -12,7 +12,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles } from 'lucide-react';
+import { Play, Pause, Scissors, Minus, Plus, Image as ImageIcon, X, Combine, Sparkles, Film } from 'lucide-react';
 import { PodLine, PodAnim, POD_ANIMS, DlgMediaHint, DLG_MEDIA_HINTS } from './dialogueTypes';
 
 interface Props {
@@ -33,6 +33,16 @@ interface Props {
   externalPlayhead?: { t: number; k: number } | null;
   accentA?: string;
   accentB?: string;
+  // UGC-студия: дорожка «Видеоряд» НАД голосами — фоновые клипы идут подряд (склейка при сборке).
+  // Края сегмента = обрезка (trimStart/trimEnd в СЕКУНДАХ ИСХОДНИКА), клик по сегменту — редактор.
+  // onDuration: метаданные клипа догрузились (скрытый probe) — хост запоминает durationSec.
+  clipTrack?: {
+    label: string;
+    clips: { url: string; name: string; durationSec?: number; trimStart?: number; trimEnd?: number }[];
+    onTrim: (i: number, patch: { trimStart?: number; trimEnd?: number }) => void;
+    onOpen: (i: number) => void;
+    onDuration?: (i: number, sec: number) => void;
+  };
 }
 
 /* Пределы масштаба: до 2000 px/сек — иначе плотные реплики (диаризация речи режет
@@ -40,7 +50,7 @@ interface Props {
 const MIN_PPS = 2;
 const MAX_PPS = 2000;
 
-export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6' }: Props) {
+export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6', clipTrack }: Props) {
   const { t } = useTranslation('common');
   /* Подписи значений из dialogueTypes — локализуются здесь, у точки рендера. */
   const POD_ANIM_LABELS: Record<PodAnim, string> = {
@@ -305,9 +315,51 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasLines]);
 
+  /* ── дорожка «Видеоряд»: обрезка краёв сегмента драгом ──
+     Во время жеста значение живёт в локальном override (без коммита в спеку на каждый move),
+     на pointerup — один onTrim. Захват указателя — жест не срывается за пределами ручки. */
+  const [clipDragOv, setClipDragOv] = useState<{ i: number; trimStart?: number; trimEnd?: number } | null>(null);
+  const clipEff = (c: NonNullable<Props['clipTrack']>['clips'][number], i: number): number => {
+    const o = clipDragOv && clipDragOv.i === i ? clipDragOv : null;
+    const ts = o?.trimStart ?? c.trimStart ?? 0;
+    const te = (o?.trimEnd ?? ((Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0) ? (c.trimEnd as number) : 0)) || c.durationSec || 5;
+    return Math.max(0.3, te - ts);
+  };
+  const beginClipTrim = (e: React.PointerEvent, i: number, side: 'l' | 'r') => {
+    if (!clipTrack) return;
+    e.preventDefault(); e.stopPropagation();
+    const c = clipTrack.clips[i];
+    const dur = c.durationSec || 0; if (!(dur > 0)) return;
+    const el = e.currentTarget as HTMLElement;
+    try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
+    const x0 = e.clientX;
+    const ts0 = c.trimStart || 0;
+    const te0 = (Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0) ? Math.min(c.trimEnd as number, dur) : dur;
+    let last: { trimStart?: number; trimEnd?: number } | null = null;
+    const onMove = (ev: PointerEvent) => {
+      const dsec = (ev.clientX - x0) / tlPpsRef.current;
+      last = side === 'l'
+        ? { trimStart: Math.round(Math.min(Math.max(0, ts0 + dsec), te0 - 0.3) * 10) / 10 }
+        : { trimEnd: Math.round(Math.min(Math.max(ts0 + 0.3, te0 + dsec), dur) * 10) / 10 };
+      setClipDragOv({ i, ...last });
+    };
+    const onUp = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
+      setClipDragOv(null);
+      if (last) { clipTrack.onTrim(i, last); dirty(); }
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+  };
+
   if (!dialogue.length) return null;
   const arr = dialogue;
-  const total = Math.max(3, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+  const clipsTotal = clipTrack ? clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0) : 0;
+  const total = Math.max(3, clipsTotal, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
   const W = Math.ceil(total) * tlPps + 40;
   const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
   const phLeft = 32 + tlPlayhead * tlPps;
@@ -336,6 +388,49 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
               <span key={k} style={{ position: 'absolute', left: s * tlPps, top: 1, fontSize: 8, color: 'var(--text-muted)' }}>{tlMmss(s)}</span>
             ); })}
           </div>
+          {/* Дорожка «Видеоряд» (фон кадра): клипы подряд, края = обрезка, клик = редактор */}
+          {clipTrack && clipTrack.clips.length > 0 && (() => {
+            let acc = 0;
+            return (
+              <div style={{ position: 'relative', height: 26, marginTop: 2 }}>
+                <span style={{ position: 'absolute', left: 7, top: 6 }} title={clipTrack.label}><Film size={11} style={{ color: '#10b981' }} /></span>
+                <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
+                  {clipTrack.clips.map((c, i) => {
+                    const eff = clipEff(c, i);
+                    const left = acc * tlPps; acc += eff;
+                    const w = Math.max(8, eff * tlPps - 2);
+                    const hasDur = Number.isFinite(c.durationSec) && (c.durationSec as number) > 0;
+                    const showText = w >= 46;
+                    return (
+                      <div key={c.url + i}
+                        onClick={() => clipTrack.onOpen(i)}
+                        title={`${c.name} · ${tlMmss(eff)} — ${t('sec.dialogue.clipSegTip', 'клик — открыть в редакторе; потяните края — обрезка клипа')}`}
+                        style={{ position: 'absolute', left, width: w, top: 2, height: 22, borderRadius: 6,
+                          background: 'linear-gradient(180deg, rgba(52,211,153,0.95), rgba(5,150,105,0.95))', color: '#fff',
+                          fontSize: 9, lineHeight: '22px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                          cursor: 'pointer', userSelect: 'none', touchAction: 'none', padding: showText ? '0 11px' : 0,
+                          border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
+                        {showText && <span style={{ pointerEvents: 'none' }}>{clipTrack.clips.length > 1 ? `${i + 1}. ` : ''}{c.name} · {tlMmss(eff)}</span>}
+                        {hasDur && (['l', 'r'] as const).map((side) => (
+                          <span key={side}
+                            onClick={(ev) => ev.stopPropagation()}
+                            onPointerDown={(ev) => beginClipTrim(ev, i, side)}
+                            title={side === 'l' ? t('sec.dialogue.clipTrimL', 'Обрезать начало клипа') : t('sec.dialogue.clipTrimR', 'Обрезать конец клипа')}
+                            style={{ position: 'absolute', [side === 'l' ? 'left' : 'right']: 0, top: 0, bottom: 0, width: 9,
+                              cursor: 'ew-resize', background: 'rgba(255,255,255,0.3)', touchAction: 'none',
+                              borderRadius: side === 'l' ? '6px 0 0 6px' : '0 6px 6px 0' }} />
+                        ))}
+                        {!hasDur && clipTrack.onDuration && (
+                          <video src={c.url} muted preload="metadata" style={{ display: 'none' }}
+                            onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) clipTrack.onDuration!(i, Math.round(d * 10) / 10); }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           {(['A', 'B'] as const).map((trk) => (
             <div key={trk} style={{ position: 'relative', height: 34, marginTop: 4 }}>
               <span style={{ position: 'absolute', left: 6, top: 9, fontSize: 10, fontWeight: 700, color: trk === 'A' ? accentA : accentB }}>{trk}</span>

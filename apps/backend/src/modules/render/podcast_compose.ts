@@ -286,6 +286,55 @@ export async function composeSlideshow(opts: {
   return { fileUrl: `/uploads/renders/${name}`, filePath: outPath, durationSec: imgs.length * per + fade };
 }
 
+/**
+ * «Видеоряд» из НЕСКОЛЬКИХ клипов: куски [startSec, endSec] каждого идут подряд → один mp4.
+ * Кадры вписываются cover-ом в dims (масштаб до заполнения + кроп по центру, как слайдшоу);
+ * конвейер дальше видит обычный spec.clip (зациклит/обрежет под голос). Звук клипов сохраняется
+ * (concat v+a); если у какого-то клипа нет аудиодорожки — фолбэк video-only (звук уйдёт,
+ * зато склейка не падает; паттерн mergeNormalized из video_edit).
+ */
+export async function composeClipSequence(opts: {
+  parts: { path: string; startSec?: number; endSec?: number }[];
+  dims: FrameDims;
+}): Promise<{ fileUrl: string; filePath: string }> {
+  const parts = (opts.parts || []).filter((p) => p.path && fs.existsSync(p.path)).slice(0, 12);
+  if (!parts.length) throw new Error('видеоряд: нет клипов');
+  const { W, H } = opts.dims;
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const name = `clipseq-${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(RENDERS_DIR, name);
+
+  const fit = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30,format=yuv420p`;
+  // -ss/-t КАК ВХОДНЫЕ опции (до -i): быстрый seek, читается только нужный кусок.
+  const inputs: string[] = [];
+  parts.forEach((p) => {
+    const ss = Math.max(0, Number(p.startSec) || 0);
+    if (ss > 0.01) inputs.push('-ss', ss.toFixed(2));
+    if (Number.isFinite(p.endSec) && (p.endSec as number) > ss + 0.05) inputs.push('-t', ((p.endSec as number) - ss).toFixed(2));
+    inputs.push('-i', p.path);
+  });
+  const n = parts.length;
+  const timeoutMs = 300_000 + n * 60_000;
+
+  let fc = '';
+  for (let i = 0; i < n; i++) {
+    fc += `[${i}:v]${fit}[v${i}];[${i}:a]aresample=async=1:first_pts=0,aformat=sample_rates=44100:channel_layouts=stereo[a${i}];`;
+  }
+  fc += parts.map((_, i) => `[v${i}][a${i}]`).join('') + `concat=n=${n}:v=1:a=1[vo][ao]`;
+  try {
+    await ffmpeg(['-y', ...inputs, '-filter_complex', fc, '-map', '[vo]', '-map', '[ao]',
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-c:a', 'aac', '-movflags', '+faststart', outPath], timeoutMs);
+    return { fileUrl: `/uploads/renders/${name}`, filePath: outPath };
+  } catch { /* фолбэк ниже: клип без аудиодорожки */ }
+
+  let fcv = '';
+  for (let i = 0; i < n; i++) fcv += `[${i}:v]${fit}[v${i}];`;
+  fcv += parts.map((_, i) => `[v${i}]`).join('') + `concat=n=${n}:v=1:a=0[vo]`;
+  await ffmpeg(['-y', ...inputs, '-filter_complex', fcv, '-map', '[vo]', '-an',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-movflags', '+faststart', outPath], timeoutMs);
+  return { fileUrl: `/uploads/renders/${name}`, filePath: outPath };
+}
+
 /** Нарезать кусок аудио [t0,t1] в WAV в uploads/renders (публичный URL для HeyGen). */
 export async function sliceAudioToRenders(inputPath: string, t0: number, t1: number, prefix = 'ugcseg'): Promise<{ fileUrl: string; filePath: string }> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });

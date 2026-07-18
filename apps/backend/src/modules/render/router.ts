@@ -27,7 +27,7 @@ import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTal
 import { photoSha, hgKeyFp, getCachedTp, putCachedTp, dropCachedTp } from './tp_cache.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, UGC_FORMATS, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { parseCapWishes } from './cap_wishes.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
@@ -735,6 +735,38 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
         t1 = Math.min(Math.max(t1, t0 + 0.8), D + 0.2);
         return { url: ins.url, isVideo: ins.isVideo, rect: ins.rect, t0, t1 };
       }).filter((x) => x.t1 > x.t0 + 0.15);
+    // «Видеоряд» из НЕСКОЛЬКИХ клипов (spec.clips, с обрезкой trimStart/trimEnd в секундах
+    // исходника): куски склеиваются пре-шагом в ОДИН клип → дальше ВСЕ 4 ветки видят обычный
+    // spec.clip. Один клип без обрезки — passthrough как раньше (без перекодирования).
+    // Битые файлы пропускаем; совсем пусто → честный 400.
+    const specClips: { url: string; name: string; trimStart: number; trimEnd: number }[] = Array.isArray(spec.clips)
+      ? (spec.clips as any[]).map((x) => ({
+          url: String(x?.url || ''),
+          name: String(x?.name || 'видео'),
+          trimStart: Math.max(0, Number(x?.trimStart) || 0),
+          trimEnd: Number(x?.trimEnd) > 0 ? Number(x?.trimEnd) : 0,
+        })).filter((c) => c.url).slice(0, 12)
+      : [];
+    const clipsNeedCut = specClips.length > 1 || specClips.some((c) => c.trimStart > 0.05 || c.trimEnd > 0);
+    if (specClips.length && !clipsNeedCut) {
+      spec.clip = { url: specClips[0].url, name: specClips[0].name };
+    } else if (specClips.length) {
+      const parts: { path: string; startSec?: number; endSec?: number }[] = [];
+      for (const c of specClips) {
+        try {
+          const dl = await downloadToRenders(abs(c.url), 'ugcclip');
+          parts.push({ path: dl.filePath, startSec: c.trimStart || undefined, endSec: c.trimEnd || undefined });
+        } catch { /* один битый клип не должен ронять весь запуск */ }
+      }
+      if (!parts.length) return res.status(400).json({ error: 'Ни один клип видеоряда не удалось загрузить — проверьте файлы в Галерее.' });
+      const bigClipDims = outFormats.reduce((a, b) => (b.dims.W * b.dims.H > a.dims.W * a.dims.H ? b : a)).dims;
+      try {
+        const seq = await composeClipSequence({ parts, dims: bigClipDims });
+        spec.clip = { url: seq.fileUrl, name: `видеоряд · ${parts.length}` };
+      } catch (e: any) {
+        return res.status(400).json({ error: `Не удалось склеить видеоряд: ${String(e?.message || e).slice(0, 200)}` });
+      }
+    }
     // «Видеоряд из фото»: изображения → слайдшоу-клип (1 фото = статичный кадр,
     // несколько = перелистывание по кругу с кроссфейдом), дальше ВЕСЬ конвейер
     // (все 4 ветки) видит обычный spec.clip — ветки не трогаем. Видео приоритетнее фото.

@@ -3228,6 +3228,25 @@
  *          Файлы: social-ext/router.ts, chrome-polyfill.js, custom.js,
  *          trends/{dna,analytics,router}.ts, TrendAnalyticsPanel.tsx, locales×108. */
 
+/* 2.6.0 — UGC-студия: «Видеоряд» из НЕСКОЛЬКИХ видео + дорожка на таймлайне.
+ *          1) Видеорядов может быть много (до 12): панель «Видеоряд» — список
+ *             клипов, у каждого СРАЗУ видна длительность (у обрезанного — взятый
+ *             кусок «0:05–0:21 из 0:37»); «Добавить видео» дописывает в конец.
+ *             Один клип = как раньше (passthrough без перекодирования), несколько
+ *             идут ДРУГ ЗА ДРУГОМ: бэкенд склеивает их пре-шагом (composeClipSequence,
+ *             cover-fit в крупнейший формат, звук сохраняется, фолбэк video-only)
+ *             в один spec.clip — все 4 ветки сборки не тронуты. Спека: clips[]
+ *             (UgcClipItem {url,name,durationSec,trimStart,trimEnd}), legacy clip
+ *             = clips[0] (превью/обложки/старые сценарии; миграция при загрузке).
+ *          2) Таймлайн реплик: НОВАЯ дорожка «Видеоряд» (зелёная, над голосами) —
+ *             клипы подряд; потянуть края сегмента = обрезка (trimStart/trimEnd
+ *             в секундах исходника, коммит на pointerup), клик по сегменту ИЛИ
+ *             тумбе панели = наш VideoViewer (нарезка/склейка, сохранение
+ *             неразрушающее — новый файл замещает клип). Медиа реплик (врезки
+ *             над текстом) — ДРУГАЯ функция, работает параллельно, не тронута.
+ *          Файлы: ugcTypes.ts, UgcStudio.tsx, DialogueTimeline.tsx, MontageEditor.tsx,
+ *          render/router.ts (пре-шаг), podcast_compose.ts (composeClipSequence),
+ *          locales ru+en (+5 ugc.video.*, +3 sec.dialogue.clip*). */
 /* 2.5.9 — «Тренды → Аналитика»: ДОВОДКА ПЕРЕВОДА (фидбэк юзера по 4 скринам).
  *          1) КОРЕНЬ, почему тексты ИИ остались английскими: у промптов бандла
  *             ЕСТЬ СВОЯ языковая строка, и она ПОСЛЕДНЯЯ —
@@ -3272,7 +3291,7 @@
  *             картинка больше не оставляет пустой квадрат; cover = coverUrl || meta.
  *          Файлы: trends/dna.ts, UgcStudio.tsx, GalleryPage.tsx. */
 
-export const APP_VERSION = '2.5.10';
+export const APP_VERSION = '2.6.0';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

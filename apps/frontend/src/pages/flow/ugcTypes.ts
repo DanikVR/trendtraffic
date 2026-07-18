@@ -33,6 +33,18 @@ export function avatarDefaultRect(placement: UgcSpec['placement']): UgcAvatarRec
     default: return { x: 0.04, y: 0.58, w: 0.44, h: 0.40 };
   }
 }
+// Клип «Видеоряда» (их может быть несколько — идут друг за другом):
+// durationSec — узнаётся из метаданных при показе; trimStart/trimEnd — обрезка
+// в СЕКУНДАХ ИСХОДНИКА (абсолютные позиции), правится на дорожке таймлайна.
+export interface UgcClipItem { url: string; name: string; durationSec?: number; trimStart?: number; trimEnd?: number }
+/** Эффективная длительность клипа с учётом обрезки (фолбэк 5с, пока метаданные не загрузились). */
+export const clipEffDur = (c: UgcClipItem): number =>
+  Math.max(0.3, (Number.isFinite(c.trimEnd) && (c.trimEnd as number) > 0 ? (c.trimEnd as number) : (c.durationSec || 5)) - (c.trimStart || 0));
+/** Замена clips с синхронизацией legacy-поля clip (= первый клип): его читают превью,
+ *  обложки шаблонов и старый путь бэкенда — не рассинхронизировать. */
+export const syncClips = (u: UgcSpec, clips: UgcClipItem[]): UgcSpec =>
+  ({ ...u, clips, clip: clips.length ? { url: clips[0].url, name: clips[0].name } : null });
+
 export interface UgcSpec {
   avatarSource: UgcAvatarSource;
   avatarId: string | null;                                  // выбранный из коллекции
@@ -57,7 +69,10 @@ export interface UgcSpec {
   brief: string;
   script: PodLine[];                                        // реплики (один аватар)
   recordingUrl: string | null; recordingName: string | null;
-  clip: { url: string; name: string } | null;              // вторая половина — видео
+  clip: { url: string; name: string } | null;              // legacy: = clips[0] (превью/обложки/старые сценарии)
+  // Видеоряд: НЕСКОЛЬКО видео подряд (бэкенд склеивает пре-шагом → один clip).
+  // Один клип без обрезки идёт как раньше, без перекодирования.
+  clips: UgcClipItem[];
   // Видеоряд из ФОТО: одно = статичный кадр, несколько = перелистывание по кругу
   // (бэкенд собирает слайдшоу-клип пре-шагом /ugc/build; при заданном clip игнорируется).
   clipImages: { url: string; name: string }[];
@@ -121,7 +136,7 @@ export const UGC_DEFAULT: UgcSpec = {
   placement: 'top', voice: 'female',
   source: 'gen', brief: '', script: [],
   recordingUrl: null, recordingName: null,
-  clip: null, clipImages: [], clipFit: 'cover', clipMuted: true,
+  clip: null, clips: [], clipImages: [], clipFit: 'cover', clipMuted: true,
   subtitles: { style: 'word', pos: 'bottom', wishes: '' },
   music: null,
   platforms: ['tiktok', 'reels', 'shorts'],
