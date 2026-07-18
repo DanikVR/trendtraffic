@@ -43,6 +43,10 @@ interface Props {
     onOpen: (i: number) => void;
     onDuration?: (i: number, sec: number) => void;
     speedPct?: number;   // скорость воспроизведения видеоряда (50–200): сегменты на дорожке ужимаются/растягиваются
+    muted?: boolean;     // «звук из видео» выключен — при плее таймлайна дорожка молчит
+    volumePct?: number;  // громкость звука видеоряда (ручка над таймлайном), для плея
+    // ✂ по бегунку: разрезать клип i на два сегмента в точке srcSec (СЕКУНДЫ ИСХОДНИКА)
+    onSplit?: (i: number, srcSec: number) => void;
   };
   // UGC «Готовое видео»: сегмент видео-аватара на СВОЕЙ дорожке — тащится по времени
   // (когда аватар появится в кадре и заговорит), клик — редактор (VideoViewer).
@@ -59,6 +63,15 @@ interface Props {
     onOpen: () => void;
     onDuration?: (sec: number) => void;
     onTrim?: (patch: { trimStart?: number; trimEnd?: number }) => void;
+    volumePct?: number;  // громкость озвучки (ручка над таймлайном), для плея
+  };
+  // Заставки «до/после»: показываем на таймлайне, где они приклеятся при сборке.
+  // Интро рисуется штриховым маркером у нуля (клеится ПЕРЕД роликом), концовка — сплошным
+  // сегментом ПОСЛЕ контента (и участвует в плее своим звуком).
+  bumperTrack?: {
+    intro?: { name: string; url: string; durationSec?: number } | null;
+    outro?: { name: string; url: string; durationSec?: number } | null;
+    onDuration?: (which: 'intro' | 'outro', sec: number) => void;
   };
 }
 
@@ -67,7 +80,7 @@ interface Props {
 const MIN_PPS = 2;
 const MAX_PPS = 2000;
 
-export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6', clipTrack, overlayTrack }: Props) {
+export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, onDirty, onPickImage, onOmni, showGestures, dialogueMode, hideMediaPlan, onPlayheadScrub, externalPlayhead, accentA = '#ec4899', accentB = '#8b5cf6', clipTrack, overlayTrack, bumperTrack }: Props) {
   const { t } = useTranslation('common');
   /* Подписи значений из dialogueTypes — локализуются здесь, у точки рендера. */
   const POD_ANIM_LABELS: Record<PodAnim, string> = {
@@ -172,7 +185,22 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const cutAtPlayhead = () => {
     const arr = dialogue;
     const idx = arr.findIndex((l, i) => { const t = lineT(l, i, arr); return tlPlayhead > t + 0.1 && tlPlayhead < t + lineDur(l) - 0.1; });
-    if (idx >= 0) splitLineAt(idx, tlPlayhead);
+    if (idx >= 0) { splitLineAt(idx, tlPlayhead); return; }
+    // Бегунок вне реплик → режем клип ВИДЕОРЯДА под ним на два независимых сегмента
+    // (точка реза переводится из выходных секунд дорожки в секунды исходника).
+    if (clipTrack?.onSplit) {
+      let acc = 0;
+      for (let i = 0; i < clipTrack.clips.length; i++) {
+        const c = clipTrack.clips[i]; const eff = clipEff(c, i);
+        if (tlPlayhead > acc + 0.25 && tlPlayhead < acc + eff - 0.25) {
+          const srcCut = (c.trimStart || 0) + (tlPlayhead - acc) * clipSpd;
+          clipTrack.onSplit(i, Math.round(srcCut * 20) / 20);
+          dirty();
+          return;
+        }
+        acc += eff;
+      }
+    }
   };
   const fitTimeline = () => {
     const arr = dialogue;
@@ -197,9 +225,73 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     setTlPps(next);
   };
   const tlStopSources = () => { for (const s of tlSrcsRef.current) { try { s.stop(); } catch { /* тихо */ } } tlSrcsRef.current = []; };
+
+  /* ── медиа-звук таймлайна: видеоряд и озвучка (аватар/концовка) играют ВМЕСТЕ с бегунком.
+     Каждому сегменту — свой <audio> (src = сам ролик: браузер играет аудиодорожку mp4/webm);
+     элементы создаются и «разблокируются» в жесте клика ▶, старт/пауза — в общем rAF-тике
+     по окну сегмента [winStart..winEnd] (выходные секунды дорожки). */
+  const tlMediaRef = useRef<{ url: string; winStart: number; winEnd: number; srcOff: number; rate: number; vol: number; el: HTMLAudioElement; active: boolean }[]>([]);
+  const tlMediaStop = () => {
+    for (const m of tlMediaRef.current) { try { m.el.pause(); m.el.removeAttribute('src'); m.el.load(); } catch { /* тихо */ } }
+    tlMediaRef.current = [];
+  };
+  const tlMediaSegs = (contentTotal: number): { url: string; winStart: number; winEnd: number; srcOff: number; rate: number; vol: number }[] => {
+    const out: { url: string; winStart: number; winEnd: number; srcOff: number; rate: number; vol: number }[] = [];
+    const v01 = (pct: number | undefined, def: number) => Math.min(1, Math.max(0, (Number.isFinite(Number(pct)) ? Number(pct) : def) / 100));
+    if (clipTrack && !clipTrack.muted) {
+      const vol = v01(clipTrack.volumePct, 90);
+      if (vol > 0.01) {
+        let acc = 0;
+        clipTrack.clips.forEach((c, i) => {
+          const eff = clipEff(c, i);
+          out.push({ url: c.url, winStart: acc, winEnd: acc + eff, srcOff: c.trimStart || 0, rate: clipSpd, vol });
+          acc += eff;
+        });
+      }
+    }
+    if (overlayTrack) {
+      const vol = v01(overlayTrack.volumePct, 100);
+      const full = overlayTrack.durationSec || 5;
+      const ts = overlayTrack.trimStart || 0;
+      const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
+      const st = Math.max(0, overlayTrack.startSec || 0);
+      if (vol > 0.01) out.push({ url: overlayTrack.url, winStart: st, winEnd: st + Math.max(0.3, te - ts), srcOff: ts, rate: 1, vol });
+    }
+    // Концовка приклеена ПОСЛЕ контента — на дорожке и в плее живёт своим звуком.
+    const oD = bumperTrack?.outro ? Number(bumperTrack.outro.durationSec) || 0 : 0;
+    if (bumperTrack?.outro && oD > 0) out.push({ url: bumperTrack.outro.url, winStart: contentTotal, winEnd: contentTotal + oD, srcOff: 0, rate: 1, vol: 1 });
+    return out;
+  };
+  const tlMediaSync = (cur: number) => {
+    for (const m of tlMediaRef.current) {
+      const on = cur >= m.winStart && cur < m.winEnd - 0.05;
+      if (on && !m.active) {
+        m.active = true;
+        try { m.el.currentTime = m.srcOff + (cur - m.winStart) * m.rate; } catch { /* сик до метаданных — некритично */ }
+        m.el.playbackRate = m.rate;
+        m.el.volume = m.vol;
+        m.el.play().catch(() => { /* авто-плей заблокирован — бегунок едет без этой дорожки */ });
+      } else if (!on && m.active) { m.active = false; m.el.pause(); }
+    }
+  };
+  /* Полная длина контента БЕЗ концовки (для окон плея; без драг-оверрайдов — плей вне жестов). */
+  const contentTotalNow = (): number => {
+    const arr = dialogue;
+    let clips = 0;
+    if (clipTrack) clipTrack.clips.forEach((c, i) => { clips += clipEff(c, i); });
+    let ov = 0;
+    if (overlayTrack) {
+      const full = overlayTrack.durationSec || 5;
+      const ts = overlayTrack.trimStart || 0;
+      const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
+      ov = Math.max(0, overlayTrack.startSec || 0) + Math.max(0.3, te - ts);
+    }
+    return Math.max(1, clips, ov, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+  };
+
   const tlStop = () => {
     tlPlaySeqRef.current++;
-    setTlPlaying(false); tlStopSources();
+    setTlPlaying(false); tlStopSources(); tlMediaStop();
     if (tlRafRef.current != null) { cancelAnimationFrame(tlRafRef.current); tlRafRef.current = null; }
     tlRafPrevRef.current = null;
   };
@@ -215,9 +307,21 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     tlStop();
     const seq = tlPlaySeqRef.current;
     const arr = dialogue;
-    const total = Math.max(1, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+    const contentTotal = contentTotalNow();
+    const outroD = bumperTrack?.outro ? Number(bumperTrack.outro.durationSec) || 0 : 0;
+    const total = Math.max(1, contentTotal + outroD);
     let from = tlPlayhead; if (from >= total - 0.05) { from = 0; setTlPlayhead(0); }
     setTlPlaying(true);
+    // Медиа-дорожки (видеоряд/озвучка/концовка): создаём и «разблокируем» СЕЙЧАС — в жесте клика,
+    // иначе авто-плей заблокирует старт сегмента, до которого бегунок доедет позже.
+    tlMediaRef.current = tlMediaSegs(contentTotal).map((seg) => {
+      const el = new Audio(seg.url);
+      el.preload = 'auto';
+      el.volume = seg.vol;
+      const m = { ...seg, el, active: false };
+      try { const p = el.play(); p?.then(() => { if (!m.active) el.pause(); }).catch(() => { /* тихо */ }); } catch { /* тихо */ }
+      return m;
+    });
     let buf: AudioBuffer | null = null;
     try { buf = await tlLoadBuffer(); } catch { buf = null; }
     const ctx = tlCtxRef.current;
@@ -244,7 +348,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
         const c = tlCtxRef.current; if (!c) return;
         const cur = from + (c.currentTime - t0);
         if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
-        if (cur >= 0) setTlPlayhead(cur);
+        if (cur >= 0) { tlMediaSync(cur); setTlPlayhead(cur); }
         tlRafRef.current = requestAnimationFrame(tick);
       };
       tlRafRef.current = requestAnimationFrame(tick);
@@ -256,6 +360,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       if (tlRafPrevRef.current == null) tlRafPrevRef.current = ts;
       const cur = from + (ts - tlRafPrevRef.current) / 1000;
       if (cur >= total) { setTlPlayhead(total); tlStop(); return; }
+      tlMediaSync(cur);
       setTlPlayhead(cur);
       tlRafRef.current = requestAnimationFrame(tick);
     };
@@ -445,7 +550,11 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const ovTs = (ovTrimOv?.trimStart ?? overlayTrack?.trimStart) || 0;
   const ovTeRaw = ovTrimOv?.trimEnd ?? overlayTrack?.trimEnd;
   const ovDur = overlayTrack ? Math.max(0.3, ((Number(ovTeRaw) > 0 ? Math.min(Number(ovTeRaw), ovFull) : ovFull) - ovTs)) : 0;
-  const total = Math.max(3, clipsTotal, ovStart + ovDur, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+  const contentTotal = Math.max(3, clipsTotal, ovStart + ovDur, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+  // Концовка приклеивается ПОСЛЕ контента — дорожка и линейка продлеваются на её длину.
+  const introD = bumperTrack?.intro ? (Number(bumperTrack.intro.durationSec) || 0) : 0;
+  const outroD = bumperTrack?.outro ? (Number(bumperTrack.outro.durationSec) || 0) : 0;
+  const total = contentTotal + outroD;
   const W = Math.ceil(total) * tlPps + 40;
   const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
   const phLeft = 32 + tlPlayhead * tlPps;
@@ -460,7 +569,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
         </span>
         <div className="inline-flex items-center gap-1.5">
           <button onClick={tlTogglePlay} title={tlPlaying ? t('sec.dialogue.pause', 'Пауза') : t('sec.dialogue.playFromCursor', 'Воспроизвести с бегунка')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: tlPlaying ? '#10b981' : 'var(--bg-tertiary)', color: tlPlaying ? '#fff' : '#10b981', border: `1px solid ${tlPlaying ? '#10b981' : 'var(--border-medium)'}`, cursor: 'pointer' }}>{tlPlaying ? <Pause size={13} /> : <Play size={13} />}</button>
-          <button onClick={cutAtPlayhead} title={t('sec.dialogue.cutAtCursor', 'Разрезать по бегунку (✂)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
+          <button onClick={cutAtPlayhead} title={t('sec.dialogue.cutAtCursor2', 'Разрезать по бегунку: реплику или клип видеоряда (✂)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Scissors size={13} /></button>
           <button onClick={() => zoomAt(tlPpsRef.current / 1.4)} title={t('sec.dialogue.zoomOut', 'Уменьшить масштаб (Ctrl+колесо)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Minus size={13} /></button>
           <button onClick={() => zoomAt(tlPpsRef.current * 1.4)} title={t('sec.dialogue.zoomIn', 'Увеличить масштаб (Ctrl+колесо)')} className="w-6 h-6 rounded-lg inline-flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Plus size={13} /></button>
           <button onClick={fitTimeline} title={t('sec.dialogue.fitAll', 'Вместить всё')} className="text-[10px] font-600 px-2 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>{t('sec.dialogue.fitBtn', 'вместить')}</button>
@@ -474,6 +583,43 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
               <span key={k} style={{ position: 'absolute', left: s * tlPps, top: 1, fontSize: 8, color: 'var(--text-muted)' }}>{tlMmss(s)}</span>
             ); })}
           </div>
+          {/* Дорожка «Заставки»: интро — штриховой маркер у нуля (клеится ПЕРЕД роликом),
+              концовка — сплошной сегмент ПОСЛЕ контента (двигать нельзя — только показ) */}
+          {bumperTrack && (bumperTrack.intro || bumperTrack.outro) && (
+            <div style={{ position: 'relative', height: 22, marginTop: 2 }}>
+              <span style={{ position: 'absolute', left: 7, top: 4 }} title={t('sec.dialogue.bumpersRow', 'Заставки')}><Sparkles size={11} style={{ color: '#94a3b8' }} /></span>
+              <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
+                {bumperTrack.intro && (
+                  <div
+                    title={`${t('sec.dialogue.bumperBefore', 'Заставка: приклеится ПЕРЕД роликом')}: ${bumperTrack.intro.name}${introD ? ' · ' + tlMmss(introD) : ''}`}
+                    style={{ position: 'absolute', left: 0, width: Math.max(30, (introD || 2) * tlPps - 2), top: 2, height: 18, borderRadius: 5,
+                      background: 'rgba(100,116,139,0.28)', color: 'var(--text-secondary)', fontSize: 9, lineHeight: '16px',
+                      overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', padding: '0 6px', userSelect: 'none',
+                      border: '1px dashed rgba(148,163,184,0.8)' }}>
+                    ◁ {t('sec.dialogue.bumperBeforeShort', 'До')}: {bumperTrack.intro.name}{introD ? ` · ${tlMmss(introD)}` : ''}
+                    {!introD && bumperTrack.onDuration && (
+                      <video src={bumperTrack.intro.url} muted preload="metadata" style={{ display: 'none' }}
+                        onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) bumperTrack.onDuration!('intro', Math.round(d * 10) / 10); }} />
+                    )}
+                  </div>
+                )}
+                {bumperTrack.outro && (
+                  <div
+                    title={`${t('sec.dialogue.bumperAfter', 'Заставка: приклеится ПОСЛЕ ролика')}: ${bumperTrack.outro.name}${outroD ? ' · ' + tlMmss(outroD) : ''}`}
+                    style={{ position: 'absolute', left: contentTotal * tlPps, width: Math.max(30, (outroD || 2) * tlPps - 2), top: 2, height: 18, borderRadius: 5,
+                      background: 'linear-gradient(180deg, rgba(148,163,184,0.9), rgba(100,116,139,0.9))', color: '#fff', fontSize: 9, lineHeight: '18px',
+                      overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', padding: '0 6px', userSelect: 'none',
+                      border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
+                    {t('sec.dialogue.bumperAfterShort', 'После')}: {bumperTrack.outro.name}{outroD ? ` · ${tlMmss(outroD)}` : ''} ▷
+                    {!outroD && bumperTrack.onDuration && (
+                      <video src={bumperTrack.outro.url} muted preload="metadata" style={{ display: 'none' }}
+                        onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) bumperTrack.onDuration!('outro', Math.round(d * 10) / 10); }} />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {/* Дорожка «Видеоряд» (фон кадра): клипы подряд, края = обрезка, клик = редактор */}
           {clipTrack && clipTrack.clips.length > 0 && (() => {
             let acc = 0;

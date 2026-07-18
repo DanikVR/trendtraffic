@@ -271,6 +271,19 @@ export default function UgcStudio(p: UgcStudioProps) {
   const [clipEditIdx, setClipEditIdx] = useState<number | null>(null);
   // Клик по сегменту «Аватар» (готовое видео) → тот же VideoViewer для видео-аватара.
   const [avatarEdit, setAvatarEdit] = useState(false);
+  // Длительности заставок (по url) — для дорожки «Заставки» на таймлайне; probe скрытым <video>.
+  const [bumperDur, setBumperDur] = useState<Record<string, number>>({});
+  // ✂ по бегунку: клип видеоряда i режется в точке srcSec (секунды исходника) на два
+  // независимых сегмента — дальше каждый обрезается/редактируется отдельно.
+  const splitClipAt = (i: number, srcSec: number) => ugcMutate((u) => {
+    const c = u.clips[i];
+    if (!c || u.clips.length >= 12) return u;   // бэкенд клеит максимум 12 кусков
+    const ts = c.trimStart || 0;
+    const te = Number(c.trimEnd) > 0 ? (c.trimEnd as number) : (c.durationSec || 0);
+    if (!(srcSec > ts + 0.2) || (te > 0 && !(srcSec < te - 0.2))) return u;
+    const cut = Math.round(srcSec * 20) / 20;
+    return syncClips(u, [...u.clips.slice(0, i), { ...c, trimEnd: cut }, { ...c, trimStart: cut }, ...u.clips.slice(i + 1)]);
+  });
   // Таймлайн живёт не только с репликами: видеоряд (обрезка клипов) и сегмент видео-аватара
   // редактируются на дорожках и ДО генерации текста / без него («Готовое видео» текста не имеет).
   // (mode/isVideoAv объявлены ниже — здесь считаем от спеки напрямую.)
@@ -1727,6 +1740,9 @@ export default function UgcStudio(p: UgcStudioProps) {
                   onOpen: (i) => setClipEditIdx(i),
                   onDuration: setClipDuration,
                   speedPct: ugc.clipSpeedPct,
+                  muted: ugc.clipMuted,
+                  volumePct: ugc.clipVolumePct,
+                  onSplit: splitClipAt,
                 } : undefined}
                 overlayTrack={isVideoAv && ugc.avatarVideoUrl && ugc.clips.length > 0 ? {
                   label: t('ugc.timeline.avatarLabel', 'Аватар'),
@@ -1740,6 +1756,15 @@ export default function UgcStudio(p: UgcStudioProps) {
                   onOpen: () => setAvatarEdit(true),
                   onDuration: (d) => ugcMutate((u) => ({ ...u, avatarVideoDurationSec: d, ...(Number(u.avatarVideoTrimEnd) > d ? { avatarVideoTrimEnd: d } : {}) })),
                   onTrim: (patch) => ugcMutate((u) => ({ ...u, ...(patch.trimStart !== undefined ? { avatarVideoTrimStart: patch.trimStart } : {}), ...(patch.trimEnd !== undefined ? { avatarVideoTrimEnd: patch.trimEnd } : {}) })),
+                  volumePct: ugc.voiceVolumePct,
+                } : undefined}
+                bumperTrack={(ugc.intro || ugc.outro) ? {
+                  intro: ugc.intro ? { name: ugc.intro.name, url: ugc.intro.url, durationSec: bumperDur[ugc.intro.url] } : null,
+                  outro: ugc.outro ? { name: ugc.outro.name, url: ugc.outro.url, durationSec: bumperDur[ugc.outro.url] } : null,
+                  onDuration: (which, sec) => {
+                    const u = which === 'intro' ? ugc.intro?.url : ugc.outro?.url;
+                    if (u) setBumperDur((m) => (m[u] === sec ? m : { ...m, [u]: sec }));
+                  },
                 } : undefined}
               />
             </>
