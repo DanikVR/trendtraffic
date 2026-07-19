@@ -48,6 +48,16 @@ export const clipEffDur = (c: UgcClipItem, speedPct = 100): number => {
 export const syncClips = (u: UgcSpec, clips: UgcClipItem[]): UgcSpec =>
   ({ ...u, clips, clip: clips.length ? { url: clips[0].url, name: clips[0].name } : null });
 
+/** Пакет «ролик на каждое видео»: одна задача сборки на выбранный видеоряд.
+ *  status — 'queued' до ответа сервера, дальше строка статуса бэка как есть (или done/failed). */
+export interface UgcBatchJob {
+  url: string; name: string;
+  jobId: string | null;
+  status: string;
+  resultUrl?: string; error?: string;
+  clipSec?: number; startSec?: number;   // длина видеоряда и посчитанный старт аватара — видно в панели
+}
+
 /** Эффективный режим фона «Готового видео»: легаси-спеки без avatarVideoBgMode
  *  трактуем по старой галочке avatarVideoCutout (true = хромакей). */
 export const avatarVideoBgModeOf = (u: UgcSpec): 'keep' | 'chroma' | 'ai' =>

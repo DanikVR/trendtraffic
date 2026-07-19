@@ -29,7 +29,7 @@ import DialogueTimeline from './DialogueTimeline';
 import type { PodLine } from './dialogueTypes';
 import UgcStudio from './UgcStudio';
 import { HotebookStudio } from './HotebookStudio';
-import { UGC_DEFAULT, syncClips, type UgcSpec, type UgcPickTarget } from './ugcTypes';
+import { UGC_DEFAULT, syncClips, type UgcSpec, type UgcPickTarget, type UgcBatchJob } from './ugcTypes';
 
 // Облачные узлы графа (перетаскиваемые): Omni Flash, UGC, Hotebook, Редактор, Google Flow, Контент-план.
 type CloudId = 'omni' | 'plan' | 'editor' | 'ugc' | 'hotebook' | 'flow';
@@ -50,6 +50,8 @@ const cloudLabel = (id: CloudId): string => ({
   hotebook: 'Hotebook',
   flow: 'Google Flow',
 }[id]);
+
+const UGC_BATCH_MAX = 20;         // потолок пакета за раз: сборки идут очередью, 20 роликов ≈ десятки минут
 
 // ── Блок «Hotebook» (Google NotebookLM): источники + чат + студия артефактов ──
 // Настройки генерации повторяют модалки NotebookLM 1:1 (формат-карточки, язык,
@@ -436,6 +438,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
   const [ugcAvLoading, setUgcAvLoading] = useState(false);
   const [ugcAvBrief, setUgcAvBrief] = useState('');
   const [ugcAvNote, setUgcAvNote] = useState<string | null>(null);
+  // Пакет «ролик на каждое видео»: выбранные видеоряды + задачи сборки (см. runUgcBatch).
+  const [ugcBatchOpen, setUgcBatchOpen] = useState(false);              // открыт пикер пакета
+  const [ugcBatchItems, setUgcBatchItems] = useState<{ url: string; name: string }[]>([]);
+  const [ugcBatchAtEnd, setUgcBatchAtEnd] = useState(true);             // аватар — в конце каждого ролика
+  const [ugcBatchJobs, setUgcBatchJobs] = useState<UgcBatchJob[]>([]);
+  const [ugcBatchRunning, setUgcBatchRunning] = useState(false);
+  const [ugcBatchNote, setUgcBatchNote] = useState<string | null>(null);
+  const [ugcBatchMin, setUgcBatchMin] = useState(false);                // панель прогресса свёрнута в пилюлю
   // Фидбэк кнопки «Сохранить» в панели UGC: автосейв делает сохранение «невидимым» — показываем галку.
   const [ugcSavedFlash, setUgcSavedFlash] = useState(false);
   // Аспект готового ролика (из метаданных видео) — плеер под 9:16/16:9, а не пиллар-бокс.
@@ -658,36 +668,39 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       }
     }, 3000);
   };
-  const ugcBuildStart = async () => {
-    // Причина не-старта обязана быть ВИДНА: дублируем её поп-апом под кнопкой «Создать видео».
-    const fail = (text: string) => { setUgcNote(text); setUgcCtaNote({ kind: 'error', text }); };
-    if (ugcBusy) {
-      if (ugcBusy !== 'render') fail(t('sec.montage.busyWait', 'Подождите: идёт другая операция (генерация/разбор) — затем нажмите ещё раз.'));
-      return;
-    }
+  /** Готов ли сценарий к сборке. Возвращает текст проблемы (готовый к показу) или null.
+   *  ОБЩИЙ для кнопки «Создать видео» и для пакета — правила не должны разъезжаться. */
+  const ugcBuildProblem = (): string | null => {
     // «Без аватара — озвучка»: аватар/фото не нужны — только базовое видео и голос (текст/запись).
     const useVoiceover = !!ugc.noAvatar;
     // «Готовое видео-аватар»: свой ролик с говорящим человеком — HeyGen/голос не нужны (речь уже внутри).
     const useVideo = !useVoiceover && ugc.avatarSource === 'video';
     const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     if (useVoiceover) {
-      if (!ugc.clip && !ugc.clips.length && !ugc.clipImages.length) { fail(t('sec.montage.needBaseVideo', 'Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.')); return; }
+      if (!ugc.clip && !ugc.clips.length && !ugc.clipImages.length) return t('sec.montage.needBaseVideo', 'Выберите базовое видео или фото (шаг «Видеоряд») — в этом режиме они основа кадра.');
     } else if (useVideo) {
-      if (!ugc.avatarVideoUrl) { fail(t('sec.montage.needAvatarVideo', 'Загрузите готовое видео-аватар (вкладка «Готовое видео»).')); return; }
+      if (!ugc.avatarVideoUrl) return t('sec.montage.needAvatarVideo', 'Загрузите готовое видео-аватар (вкладка «Готовое видео»).');
     } else if (useDialogue) {
       // Диалог: два фото + разбор записи двух голосов.
-      if (!ugc.photoUrl || !ugc.photoBUrl) { fail(t('sec.montage.needTwoPhotos', 'Для диалога загрузите два фото: «Собеседник A» и «Собеседник B».')); return; }
-      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) { fail(t('sec.montage.needDiarize', 'Для диалога разберите запись двух голосов: вкладка «Моя запись» → «Разобрать речь».')); return; }
-      if (!ugc.script.some((l) => l.text.trim())) { fail(t('sec.montage.needLines', 'Сначала разберите запись — реплик нет.')); return; }
+      if (!ugc.photoUrl || !ugc.photoBUrl) return t('sec.montage.needTwoPhotos', 'Для диалога загрузите два фото: «Собеседник A» и «Собеседник B».');
+      if (!(ugc.source === 'diarize' && ugc.recordingUrl)) return t('sec.montage.needDiarize', 'Для диалога разберите запись двух голосов: вкладка «Моя запись» → «Разобрать речь».');
+      if (!ugc.script.some((l) => l.text.trim())) return t('sec.montage.needLines', 'Сначала разберите запись — реплик нет.');
     } else if (ugc.avatarSource === 'photo') {
-      if (!ugc.photoUrl) { fail(t('sec.montage.needPhoto', 'Загрузите своё фото (портрет анфас) во вкладке «Моё фото».')); return; }
+      if (!ugc.photoUrl) return t('sec.montage.needPhoto', 'Загрузите своё фото (портрет анфас) во вкладке «Моё фото».');
     } else if (!ugc.avatarId) {
-      fail(t('sec.montage.needAvatar', 'Выберите аватара во вкладке «Готовые аватары» или загрузите своё фото («Моё фото»).')); return;
+      return t('sec.montage.needAvatar', 'Выберите аватара во вкладке «Готовые аватары» или загрузите своё фото («Моё фото»).');
     }
     if (!useDialogue && !useVideo) {
       const hasVoice = (ugc.source === 'diarize' && ugc.recordingUrl) || ugc.script.some((l) => l.text.trim());
-      if (!hasVoice) { fail(t('sec.montage.needVoice', 'Нужен голос: разберите запись или сгенерируйте текст.')); return; }
+      if (!hasVoice) return t('sec.montage.needVoice', 'Нужен голос: разберите запись или сгенерируйте текст.');
     }
+    return null;
+  };
+  /** Спека для POST /ugc/build: ветки диалога/удержания + снимок ДНК тренда.
+   *  over — точечная подмена полей (пакет подставляет свой видеоряд и позицию аватара). */
+  const ugcSpecFor = (over?: Partial<UgcSpec> & Record<string, unknown>) => {
+    const useVoiceover = !!ugc.noAvatar;
+    const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
     const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
     // «Использовать анализ»: снимок ДНК тренда для серверной режиссуры (Монтаж).
     // Скрипт/видео/титры анализ влияет ещё НА ЭТАПЕ настройки (генерация текста,
@@ -701,6 +714,21 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
       : useRetention
         ? { ...ugc, analysis: analysisForBuild, retention: { preset: ugc.retentionPreset, brolls: ugc.retentionBrolls } }
         : { ...ugc, analysis: analysisForBuild };
+    return { ...spec, ...(over || {}) };
+  };
+  const ugcBuildStart = async () => {
+    // Причина не-старта обязана быть ВИДНА: дублируем её поп-апом под кнопкой «Создать видео».
+    const fail = (text: string) => { setUgcNote(text); setUgcCtaNote({ kind: 'error', text }); };
+    if (ugcBusy) {
+      if (ugcBusy !== 'render') fail(t('sec.montage.busyWait', 'Подождите: идёт другая операция (генерация/разбор) — затем нажмите ещё раз.'));
+      return;
+    }
+    const problem = ugcBuildProblem();
+    if (problem) { fail(problem); return; }
+    const useVoiceover = !!ugc.noAvatar;
+    const useDialogue = !useVoiceover && ugc.avatarSource === 'photo' && ugc.dialogueEnabled;
+    const useRetention = !useVoiceover && !useDialogue && ugc.avatarSource === 'photo' && ugc.retentionPreset !== 'off';
+    const spec = ugcSpecFor();
     setUgcBusy('render'); setUgcCtaNote(null);
     setUgcNote(useDialogue ? t('sec.montage.startDialogue', 'Запускаю диалог (два аватара)…') : useRetention && ugc.retentionBrolls.length > 1 ? t('sec.montage.startBatch', 'Запускаю батч ({{n}} роликов)…', { n: ugc.retentionBrolls.length }) : t('sec.montage.startBuild', 'Запускаю сборку…'));
     try {
@@ -717,6 +745,105 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, cloudPanel, ugc.buildJobId]);
   useEffect(() => () => { if (ugcPollRef.current) window.clearInterval(ugcPollRef.current); }, []);
+
+  // ── Пакет: N видеорядов → N роликов по ОДНОМУ сценарию ─────────────────────
+  // Меняется ТОЛЬКО видеоряд (и старт аватара, если он должен упираться в конец).
+  // Всё остальное — бокс/фон/титры/заставки/громкости/формат — из текущего сценария.
+  // Задачи ставятся по одной: «Готовое видео» бэкенд собирает очередью (ugcVideoChain).
+  const ugcBatchToggle = (it: { url: string; name: string }) => {
+    setUgcBatchNote(null);
+    setUgcBatchItems((p) => (p.some((x) => x.url === it.url)
+      ? p.filter((x) => x.url !== it.url)
+      : (p.length >= UGC_BATCH_MAX ? p : [...p, it])));
+  };
+  /** Длительность видео по URL — скрытым <video> (как чипы «Видеоряда» узнают своё время).
+   *  Битый/недоступный файл не должен вешать пакет — на таймауте отдаём 0. */
+  const probeDurationSec = (url: string): Promise<number> => new Promise((resolve) => {
+    const v = document.createElement('video');
+    let done = false;
+    const fin = (d: number) => { if (done) return; done = true; v.removeAttribute('src'); resolve(Number.isFinite(d) && d > 0 ? d : 0); };
+    v.preload = 'metadata'; v.muted = true;
+    v.onloadedmetadata = () => fin(v.duration);
+    v.onerror = () => fin(0);
+    window.setTimeout(() => fin(0), 20000);
+    v.src = url;
+  });
+  const runUgcBatch = async () => {
+    if (ugcBatchRunning) return;
+    if (ugcBusy === 'render') { setUgcBatchNote(t('sec.montage.batchBusy', 'Сейчас идёт обычная сборка — дождитесь её конца.')); return; }
+    const problem = ugcBuildProblem();
+    if (problem) { setUgcBatchNote(problem); return; }
+    const items = ugcBatchItems.slice(0, UGC_BATCH_MAX);
+    if (!items.length) return;
+    setUgcBatchRunning(true); setUgcBatchNote(null); setUgcBatchMin(false); setUgcBatchOpen(false);
+    // «Аватар в конце»: старт = длина видеоряда − эффективная длина аватара (обрезка краями учтена).
+    const isVideoAv = !ugc.noAvatar && ugc.avatarSource === 'video' && !!ugc.avatarVideoUrl;
+    const atEnd = isVideoAv && ugcBatchAtEnd;
+    let avDur = 0;
+    if (atEnd) {
+      const full = (ugc.avatarVideoDurationSec && ugc.avatarVideoDurationSec > 0)
+        ? ugc.avatarVideoDurationSec
+        : await probeDurationSec(ugc.avatarVideoUrl || '');
+      const ts = Math.max(0, ugc.avatarVideoTrimStart || 0);
+      const te = (ugc.avatarVideoTrimEnd && ugc.avatarVideoTrimEnd > ts + 0.3) ? ugc.avatarVideoTrimEnd : full;
+      avDur = Math.max(0, te - ts);
+    }
+    const jobs: UgcBatchJob[] = items.map((s) => ({ url: s.url, name: s.name, jobId: null, status: 'queued' }));
+    setUgcBatchJobs(jobs.map((j) => ({ ...j })));
+    try {
+      if (dirty) await save();     // пакет идёт по СОХРАНЁННОМУ сценарию
+      const baseTitle = (name || t('sec.montage.clipFb', 'ролик')).trim();
+      for (let k = 0; k < items.length; k++) {
+        const s = items[k];
+        try {
+          const dur = atEnd ? await probeDurationSec(s.url) : 0;
+          // Длина ролика = видеоряд (strictDuration на бэке), поэтому «в конец» = total − длина аватара.
+          const startSec = (atEnd && dur > 0.5) ? Math.max(0, Math.round((dur - avDur) * 100) / 100) : ugc.avatarVideoStartSec;
+          const spec = ugcSpecFor({
+            clips: [{ url: s.url, name: s.name, trimStart: 0, trimEnd: 0, ...(dur > 0 ? { durationSec: Math.round(dur * 10) / 10 } : {}) }],
+            clip: { url: s.url, name: s.name },
+            avatarVideoStartSec: startSec,
+            avatarVideoExtraSegs: [],     // дубли сегмента считались от ДРУГОГО видеоряда — не переносим
+            title: `${baseTitle} — ${s.name}`.slice(0, 90),
+            buildJobId: null, result: null, results: [],
+          });
+          const r = await fetch('/api/render/ugc/build', { method: 'POST', headers: headers(), body: JSON.stringify({ spec }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok || !d.jobId) throw new Error(d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }));
+          jobs[k] = { ...jobs[k], jobId: d.jobId, status: 'queued', startSec, clipSec: dur };
+        } catch (e: any) {
+          jobs[k] = { ...jobs[k], status: 'failed', error: e?.message || t('sec.montage.error', 'Ошибка') };
+        }
+        setUgcBatchJobs(jobs.map((j) => ({ ...j })));
+      }
+      // Поллинг всех задач разом (сервер собирает по одной — здесь только опрос статусов).
+      const terminal = (j: UgcBatchJob) => j.status === 'done' || j.status === 'failed';
+      for (let i = 0; i < 2400 && pollAliveRef.current; i++) {
+        if (jobs.every(terminal)) break;
+        await new Promise((r) => setTimeout(r, 3000));
+        await Promise.all(jobs.map(async (entry, idx) => {
+          if (!entry.jobId || terminal(entry)) return;
+          try {
+            const r = await fetch(`/api/render/ugc/build/status?job=${encodeURIComponent(entry.jobId)}`, { headers: headers() });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok) { jobs[idx] = { ...entry, status: 'failed', error: d?.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: r.status }) }; return; }
+            if (d.status === 'done') {
+              const first = (Array.isArray(d.results) && d.results.length ? d.results[0]?.url : null) || d.fileUrl || undefined;
+              jobs[idx] = { ...entry, status: 'done', resultUrl: first };
+            } else if (d.status === 'failed') {
+              jobs[idx] = { ...entry, status: 'failed', error: d.error || t('sec.montage.unknownErr', 'неизвестная ошибка') };
+            } else {
+              jobs[idx] = { ...entry, status: String(d.status || '…') };
+            }
+          } catch { /* пропустим тик — сеть моргнула */ }
+        }));
+        setUgcBatchJobs(jobs.map((j) => ({ ...j })));
+      }
+    } finally {
+      setUgcBatchRunning(false);
+    }
+  };
+
   // Скрипт аватара: генерация текста (переиспользуем /podcast/dialogue) → реплики одного спикера.
   // Галочка «Использовать анализ» (блок «Голос и текст»): в бриф подмешивается ДНК тренда —
   // формула успеха + готовый черновик озвучки из разбора, Claude пишет «по мотивам».
@@ -2136,6 +2263,14 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
           ugcPick={ugcPick} setUgcPick={setUgcPick} setUgcLineIdx={setUgcLineIdx}
           openUgcPick={openUgcPick} pickUgcItem={pickUgcItem}
           uploadToGallery={uploadToGallery}
+          ugcBatchOpen={ugcBatchOpen} setUgcBatchOpen={setUgcBatchOpen}
+          ugcBatchItems={ugcBatchItems} ugcBatchToggle={ugcBatchToggle} ugcBatchClear={() => setUgcBatchItems([])}
+          ugcBatchAtEnd={ugcBatchAtEnd} setUgcBatchAtEnd={setUgcBatchAtEnd}
+          ugcBatchJobs={ugcBatchJobs} ugcBatchRunning={ugcBatchRunning} ugcBatchNote={ugcBatchNote}
+          ugcBatchMin={ugcBatchMin} setUgcBatchMin={setUgcBatchMin}
+          ugcBatchMax={UGC_BATCH_MAX}
+          runUgcBatch={() => void runUgcBatch()}
+          ugcBatchDismiss={() => { setUgcBatchJobs([]); setUgcBatchItems([]); }}
           ugcResultAR={ugcResultAR} setUgcResultAR={setUgcResultAR}
           onClose={() => setCloudPanel(null)}
           flowName={name} onRenameFlow={(v) => { setName(v); setDirty(true); }}

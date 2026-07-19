@@ -1682,6 +1682,29 @@
       "save": "Save template",
       "note": "Templates are visible in Gallery → UGC → 'Auto' with auto-generated videos.",
       "defaultName": "My template"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {

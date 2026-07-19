@@ -23,7 +23,7 @@ import UgcLinesPanel from './UgcLinesPanel';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { VideoViewer } from '../../components/VideoViewer';
-import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, ugcModeOf, syncClips, clipEffDur, avatarVideoBgModeOf, estimateUgcCost } from './ugcTypes';
+import { type UgcSpec, type UgcPickTarget, type UgcMode, type UgcFormat, type UgcBatchJob, ugcModeOf, syncClips, clipEffDur, avatarVideoBgModeOf, estimateUgcCost } from './ugcTypes';
 import { parseCapWishes } from './ugcCapWishes';
 import { SUPPORTED_LANGUAGES } from '../../config/i18n';
 import { useTranslation } from 'react-i18next';
@@ -72,6 +72,23 @@ export interface UgcStudioProps {
   openUgcPick: (t: Exclude<UgcPickTarget, 'lineImage'>) => void;
   pickUgcItem: (g: { url: string; name: string; type: 'video' | 'audio' | 'image' }) => void;
   uploadToGallery: (files: FileList | File[], kind?: 'reference' | 'audio') => Promise<GalleryPickItem[]>;
+  /* Пакет «ролик на каждое видео»: один сценарий → N роликов, меняется только видеоряд
+     (и старт аватара, если он должен упираться в конец). Логика — в MontageEditor.runUgcBatch. */
+  ugcBatchOpen: boolean;
+  setUgcBatchOpen: (v: boolean) => void;
+  ugcBatchItems: { url: string; name: string }[];
+  ugcBatchToggle: (it: { url: string; name: string }) => void;
+  ugcBatchClear: () => void;
+  ugcBatchAtEnd: boolean;
+  setUgcBatchAtEnd: (v: boolean) => void;
+  ugcBatchJobs: UgcBatchJob[];
+  ugcBatchRunning: boolean;
+  ugcBatchNote: string | null;
+  ugcBatchMin: boolean;
+  setUgcBatchMin: (v: boolean) => void;
+  ugcBatchMax: number;
+  runUgcBatch: () => void;
+  ugcBatchDismiss: () => void;
   ugcResultAR: number;
   setUgcResultAR: (n: number) => void;
   onClose: () => void;
@@ -1340,6 +1357,20 @@ export default function UgcStudio(p: UgcStudioProps) {
             ) : (
               <EmptySlot icon={<Video size={14} />} title={t('ugc.video.emptyTitle')} sub={t('ugc.video.emptySub')} onClick={() => p.openUgcPick('clip')} />
             )}
+            {/* Пакет: один и тот же сценарий прогоняется по КАЖДОМУ выбранному видео.
+                Меняется только видеоряд (и старт аватара, если он держится конца ролика). */}
+            <div className="space-y-1 pt-0.5">
+              <button onClick={() => p.setUgcBatchOpen(true)} disabled={p.ugcBatchRunning}
+                className="w-full py-1.5 rounded-lg text-[11px] font-650 inline-flex items-center justify-center gap-1.5"
+                style={{ background: 'rgba(168,85,247,.10)', color: ACC, border: `1px solid ${ACC}55`, cursor: p.ugcBatchRunning ? 'default' : 'pointer', opacity: p.ugcBatchRunning ? 0.6 : 1 }}>
+                <Layers size={12} /> {p.ugcBatchRunning
+                  ? t('ugc.batch.running', 'Пакет собирается…')
+                  : t('ugc.batch.btn', 'Пакет: ролик на каждое видео')}
+              </button>
+              <p className="text-[9.5px] leading-tight" style={{ color: 'var(--text-muted)' }}>
+                {t('ugc.batch.btnHint', 'Выберите несколько видео — на каждое соберётся свой ролик по этому же сценарию.')}
+              </p>
+            </div>
             {/* Фото-слайдшоу: 1 фото = статичный кадр, несколько = перелистываются по кругу.
                 Собирается бэкендом в клип пре-шагом сборки; при выбранном видео игнорируется. */}
             {ugc.clipImages.length ? (
@@ -1960,6 +1991,136 @@ export default function UgcStudio(p: UgcStudioProps) {
           ))}
         />
       )}
+
+      {/* ── Пакет: выбор видеорядов (мультивыбор) ── */}
+      {p.ugcBatchOpen && (
+        <GalleryPicker
+          open multi token={p.token}
+          title={t('ugc.batch.pickTitle', 'Пакет: выберите видео')}
+          note={t('ugc.batch.pickNote', 'На каждое видео соберётся свой ролик по текущему сценарию. Максимум {{n}}.', { n: p.ugcBatchMax })}
+          defaultTab="reference"
+          onlyType="video"
+          uploadAccept="video/*"
+          pickedKeys={new Set(p.ugcBatchItems.map((b) => b.url))}
+          onClose={() => p.setUgcBatchOpen(false)}
+          onUpload={(files) => p.uploadToGallery(files, 'reference')}
+          onPick={(it) => p.ugcBatchToggle({ url: it.fileUrl, name: it.title })}
+        />
+      )}
+
+      {/* ── Пакет: подтверждение (до запуска) и прогресс (после) ── */}
+      {!p.ugcBatchOpen && (p.ugcBatchItems.length > 0 || p.ugcBatchJobs.length > 0) && (() => {
+        const jobs = p.ugcBatchJobs;
+        const started = jobs.length > 0;
+        const done = jobs.filter((j) => j.status === 'done').length;
+        const failed = jobs.filter((j) => j.status === 'failed').length;
+        const hasVideoAvatar = isVideoAv && !!ugc.avatarVideoUrl;
+        if (started && p.ugcBatchMin) {
+          return (
+            <button onClick={() => p.setUgcBatchMin(false)}
+              className="fixed rounded-full px-3.5 py-2 text-[11.5px] font-700 inline-flex items-center gap-2"
+              style={{ right: 16, bottom: 16, zIndex: 96, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: `1px solid ${ACC}66`, boxShadow: '0 10px 26px rgba(0,0,0,.35)', cursor: 'pointer' }}>
+              {p.ugcBatchRunning ? <Loader2 size={13} className="animate-spin" style={{ color: ACC }} /> : <CheckCircle2 size={13} style={{ color: '#10b981' }} />}
+              {t('ugc.batch.pill', 'Пакет {{done}}/{{total}}', { done, total: jobs.length })}
+            </button>
+          );
+        }
+        return (
+          <div className="fixed rounded-2xl p-3.5 space-y-2.5"
+            style={{ right: 16, bottom: 16, zIndex: 96, width: 'min(360px, 94vw)', maxHeight: '70vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', boxShadow: '0 14px 34px rgba(0,0,0,.4)' }}>
+            <div className="flex items-center gap-2">
+              <Layers size={14} style={{ color: ACC }} />
+              <b className="text-[12.5px] flex-1" style={{ color: 'var(--text-primary)' }}>
+                {started
+                  ? t('ugc.batch.progressTitle', 'Пакет: {{done}} из {{total}}', { done, total: jobs.length })
+                  : t('ugc.batch.confirmTitle', 'Пакет: {{n}} роликов', { n: p.ugcBatchItems.length })}
+              </b>
+              {started && (
+                <button onClick={() => p.setUgcBatchMin(true)} title={t('ugc.batch.minimize', 'Свернуть')}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>–</button>
+              )}
+              {!p.ugcBatchRunning && (
+                <button onClick={p.ugcBatchDismiss} title={t('ugc.common.remove')}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
+              )}
+            </div>
+
+            {!started && (
+              <>
+                <p className="text-[10.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                  {t('ugc.batch.confirmSub', 'Каждый ролик собирается по ЭТОМУ сценарию — меняется только видеоряд. Сборки идут по очереди.')}
+                </p>
+                {hasVideoAvatar && (
+                  <label className="flex items-start gap-2 p-2 rounded-lg cursor-pointer" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
+                    <input type="checkbox" checked={p.ugcBatchAtEnd} onChange={(e) => p.setUgcBatchAtEnd(e.target.checked)} style={{ marginTop: 2, accentColor: ACC }} />
+                    <span className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                      <b style={{ color: 'var(--text-primary)' }}>{t('ugc.batch.atEnd', 'Аватар — в конце каждого ролика')}</b>
+                      <br />{t('ugc.batch.atEndHint', 'Старт сегмента считается под длину каждого видео. Снимите — аватар останется на той же секунде, что в сценарии.')}
+                    </span>
+                  </label>
+                )}
+                {!hasVideoAvatar && (
+                  <p className="text-[10.5px] leading-snug" style={{ color: '#f59e0b' }}>
+                    <AlertTriangle size={11} className="inline" /> {t('ugc.batch.paidWarn', 'В этом режиме каждый ролик — отдельная генерация речи/аватара (платно ×{{n}}).', { n: p.ugcBatchItems.length })}
+                  </p>
+                )}
+              </>
+            )}
+
+            <div className="space-y-1">
+              {(started ? jobs : p.ugcBatchItems.map((s) => ({ ...s, jobId: null, status: '' } as UgcBatchJob))).map((jb, i) => (
+                <div key={jb.url + i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-medium)' }}>
+                  <span className="text-[10px] font-700 flex-shrink-0" style={{ color: 'var(--text-muted)', width: 14, textAlign: 'center' }}>{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10.5px]" style={{ color: 'var(--text-secondary)', ...NAME_CLAMP }} title={jb.name}>{jb.name}</div>
+                    {started && (
+                      <div className="text-[9.5px]" style={{ color: jb.status === 'failed' ? '#ef4444' : 'var(--text-muted)' }}>
+                        {jb.status === 'done' ? t('ugc.batch.stDone', 'готово')
+                          : jb.status === 'failed' ? (jb.error || t('sec.montage.unknownErr', 'неизвестная ошибка'))
+                            : jb.status === 'queued' ? t('ugc.batch.stQueued', 'в очереди')
+                              : jb.status}
+                        {jb.status !== 'failed' && jb.clipSec ? ` · ${mmss(jb.clipSec)}${jb.startSec != null ? ` · ${t('ugc.batch.avAt', 'аватар с {{t}}', { t: mmss(jb.startSec) })}` : ''}` : ''}
+                      </div>
+                    )}
+                  </div>
+                  {started && (jb.status === 'done'
+                    ? (jb.resultUrl
+                      ? <a href={jb.resultUrl} target="_blank" rel="noreferrer" className="text-[10px] font-700 flex-shrink-0" style={{ color: ACC }}>{t('ugc.batch.open', 'открыть')}</a>
+                      : <CheckCircle2 size={13} style={{ color: '#10b981', flexShrink: 0 }} />)
+                    : jb.status === 'failed'
+                      ? <AlertTriangle size={13} style={{ color: '#ef4444', flexShrink: 0 }} />
+                      : <Loader2 size={13} className="animate-spin" style={{ color: ACC, flexShrink: 0 }} />)}
+                  {!started && (
+                    <button onClick={() => p.ugcBatchToggle({ url: jb.url, name: jb.name })} title={t('ugc.common.remove')}
+                      className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={12} /></button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {p.ugcBatchNote && <p className="text-[10.5px]" style={{ color: '#ef4444' }}>{p.ugcBatchNote}</p>}
+
+            {!started ? (
+              <div className="flex items-center gap-2">
+                <button onClick={() => p.setUgcBatchOpen(true)} className="text-[11px] font-650 px-3 py-2 rounded-lg"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                  {t('ugc.batch.addMore', 'Ещё видео')}
+                </button>
+                <button onClick={p.runUgcBatch} className="flex-1 text-[11.5px] font-700 px-3 py-2 rounded-lg"
+                  style={{ background: ACC, color: '#fff', border: 'none', cursor: 'pointer' }}>
+                  {t('ugc.batch.run', 'Собрать {{n}} роликов', { n: p.ugcBatchItems.length })}
+                </button>
+              </div>
+            ) : (
+              <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                {p.ugcBatchRunning
+                  ? t('ugc.batch.runningHint', 'Идёт сборка — можно свернуть панель и продолжать работу. Готовые ролики появляются в Галерее.')
+                  : t('ugc.batch.doneHint', 'Готово: {{done}} · с ошибкой: {{failed}}. Все ролики — в Галерее, вкладка UGC.', { done, failed })}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Бренд-кит: применить/сохранить набор оформления ── */}
       {brandOpen && (
