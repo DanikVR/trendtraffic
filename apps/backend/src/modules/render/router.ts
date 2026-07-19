@@ -27,7 +27,7 @@ import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTal
 import { photoSha, hgKeyFp, getCachedTp, putCachedTp, dropCachedTp } from './tp_cache.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, type BumperTransition, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, overlayAvatarOnVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, type BumperTransition, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { parseCapWishes } from './cap_wishes.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
@@ -1255,6 +1255,14 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           // аватара за концом обрезается; без видеоряда длину задаёт сам аватар.
           const totalD = clipTotal > 0.3 ? clipTotal : Dav;
           const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(totalD)) : [];
+          // Сегмент «Аватар» уезжает ЗА конец видеоряда (на концовку-заставку): тогда аватар
+          // кладём ФИНАЛЬНЫМ проходом ПОВЕРХ ролика с приклеенными заставками (окно — в секундах
+          // финального видео, интро сдвигает на свою длину), а его голос МИКСУЕТСЯ со звуком
+          // заставки. Внутри composeUgc аватар при этом «выключен» (окно уведено за -t: кадры
+          // вне диапазона, голос-тишина) — граф не трогаем, индексы входов целы.
+          const bmpExists = !!(bmp.intro || bmp.outro);
+          const avBeyond = bmpExists && clipTotal > 0.3 && avStart + Dav > clipTotal + 0.05;
+          const introD = avBeyond && bmp.intro ? await mediaDuration(bmp.intro) : 0;
           let made = 0;
 
           for (const fmt of outFormats) {
@@ -1265,7 +1273,8 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               avatarChroma: chromaColor,   // «вырезать фон» → chroma-key цветом, найденным по кадру (фолбэк чистый зелёный)
               avatarOverInserts: !!spec.avatarOverInserts, // аватар поверх врезок (врезки под ведущим)
               voicePath: avatar.filePath, // речь уже в видео — его дорожка = голос
-              avatarStartSec: avStart,    // позиция вставки на таймлайне (при видеоряде)
+              // при финальном проходе окно уводится за конец (-t его отрежет), голос глушится
+              avatarStartSec: avBeyond ? totalD + Dav + 30 : avStart,
               totalDurationSec: clipTotal > 0.3 ? clipTotal : undefined, // длину задаёт видеоряд
               strictDuration: true,       // СТРОГО: хвост аватара за концом видеоряда обрезается
               avatarTrimStart: avTs, avatarTrimEnd: avTe < DavFull - 0.05 ? avTe : undefined, // обрезка краями сегмента
@@ -1273,7 +1282,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',
               clipMuted: spec.clipMuted !== false,
                 clipVolumePct: Number.isFinite(Number(spec.clipVolumePct)) ? Number(spec.clipVolumePct) : undefined,
-                voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
+                voiceVolumePct: avBeyond ? 0 : (Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined),
               placement: placement as any,
               avatarRect: avatarRectFor(fmt.key),   // кастом ИЛИ дефолт раскладки (== превью)
               musicPath: music?.filePath || null,
@@ -1283,9 +1292,21 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               layerPath: layers[fmt.key] || null, progressBar,
               captions, capStyle: captions.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
             });
-            if (bmp.intro || bmp.outro) {
+            if (bmpExists) {
               j.status = 'приклеиваю заставки';
-              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr, avatarRect: avatarRectFor(fmt.key) });
+              fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr, avatarRect: avBeyond ? null : avatarRectFor(fmt.key) });
+            }
+            if (avBeyond) {
+              // Финальный проход: аватар поверх готового (интро сдвигает координаты; переходы
+              // xfade укорачивают стыки на ~0.25–0.5с — сдвигом пренебрегаем).
+              j.status = 'кладу аватара на заставку';
+              fileUrl = await overlayAvatarOnVideo({
+                basePath: fileUrl, avatarPath: avatarVideoPath, avatarKind, avatarChroma: chromaColor,
+                voicePath: avatar.filePath, startSec: introD + avStart,
+                avatarTrimStart: avTs, avatarTrimEnd: avTe < DavFull - 0.05 ? avTe : undefined,
+                voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
+                avatarRect: avatarRectFor(fmt.key), dims: fmt.dims,
+              });
             }
             const asset = await createAsset(j.tenantId!, {
               kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
@@ -1434,12 +1455,12 @@ router.get('/ugc/build/status', (req: AuthedRequest, res: Response) => {
 /** GET /ugc/build/active — идущие сборки ТЕКУЩЕГО тенанта (для фоновых индикаторов:
  *  значок-спиннер в сайдбаре/на вкладке UGC и карточка «Создаём видео…» в Галерее). */
 router.get('/ugc/build/active', (req: AuthedRequest, res: Response) => {
-  const jobs: { job: string; status: string }[] = [];
+  const jobs: { job: string; status: string; ts: number }[] = [];
   for (const [id, j] of ugcJobs) {
     if (j.tenantId !== req.tenantId) continue;
     if (j.status === 'done' || j.status === 'failed') continue;
     if (Date.now() - j.ts > 3 * 3600_000) continue;   // осиротевшие не показываем
-    jobs.push({ job: id, status: j.status });
+    jobs.push({ job: id, status: j.status, ts: j.ts });
   }
   res.json({ count: jobs.length, jobs });
 });

@@ -24,16 +24,22 @@ function ffmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
   return new Promise((resolve, reject) => {
     const ff = spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'ignore', 'pipe'] });
     let err = '';
-    // Сторожок зависания: ffmpeg при работе постоянно пишет stats в stderr (frame=… раз в
-    // ~0.5с). Тишина 90с = граф встал (живой инцидент: стоп-кадр возле перемотки клипа —
-    // процесс висел до полного таймаута 600с). Убиваем сразу с внятной ошибкой.
+    // Сторожок зависания: у ВСТАВШЕГО графа ffmpeg продолжает печатать stats с ТЕМ ЖЕ
+    // time= (тишины нет!) — поэтому следим за ДВИЖЕНИЕМ time=/размера, а не за активностью.
+    // 120с без движения = граф встал (живые инциденты: перемотка/стыки) → SIGKILL сразу.
     let lastBeat = Date.now();
-    ff.stderr.on('data', (d) => { err += d.toString(); lastBeat = Date.now(); if (err.length > 20_000) err = err.slice(-10_000); });
+    let lastMark = '';
+    ff.stderr.on('data', (d) => {
+      const s = d.toString(); err += s; if (err.length > 20_000) err = err.slice(-10_000);
+      const m = /(?:time=)\s*([0-9:.]+)[\s\S]*?$/.exec(s);
+      const mark = m ? m[1] : (/[A-Za-z]/.test(s) ? s.slice(-80) : lastMark);   // до старта stats — любая новая строка
+      if (mark !== lastMark) { lastMark = mark; lastBeat = Date.now(); }
+    });
     const stall = setInterval(() => {
-      if (Date.now() - lastBeat > 90_000) {
+      if (Date.now() - lastBeat > 120_000) {
         clearInterval(stall); clearTimeout(timer);
         try { ff.kill('SIGKILL'); } catch { /* */ }
-        reject(new Error('ffmpeg завис (нет прогресса 90с) — попробуйте ещё раз'));
+        reject(new Error('ffmpeg завис (нет прогресса 120с) — попробуйте ещё раз'));
       }
     }, 15_000);
     const timer = setTimeout(() => { clearInterval(stall); try { ff.kill('SIGKILL'); } catch { /* */ } reject(new Error('ffmpeg: таймаут')); }, timeoutMs);
@@ -891,6 +897,93 @@ export async function composeUgc(opts: {
   } finally {
     if (assPath) { try { fs.unlinkSync(assPath); } catch { /* */ } }
   }
+  return `/uploads/renders/${out}`;
+}
+
+/**
+ * Финальный проход «аватар ПОВЕРХ готового видео» (уже с приклеенными заставками):
+ * позволяет положить сегмент «Аватар» и на заставку (до/после) — окно показа задаётся
+ * в СЕКУНДАХ ФИНАЛЬНОГО ролика. Голос аватара МИКСУЕТСЯ со звуком базы (заставка/клип
+ * продолжают звучать под ним). Длина базы не меняется: хвост за концом обрезается.
+ * Цепочки бокса/хромакея/альфы — зеркальны composeUgc (кастомный rect).
+ */
+export async function overlayAvatarOnVideo(opts: {
+  basePath: string;             // склеенный ролик (обычно после concatBumpers); принимает и '/uploads/renders/…'
+  avatarPath: string;
+  avatarKind?: 'alpha' | 'opaque';
+  avatarChroma?: string | null;
+  voicePath: string;            // звук аватара (для альфа-webm — исходник)
+  startSec: number;             // где появится аватар, СЕКУНДЫ ФИНАЛЬНОГО ролика
+  avatarTrimStart?: number;
+  avatarTrimEnd?: number;
+  voiceVolumePct?: number;
+  avatarRect?: { x: number; y: number; w: number; h: number; oy?: number } | null;
+  dims?: FrameDims;
+}): Promise<string> {
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const basePath = opts.basePath.startsWith('/uploads/renders/')
+    ? path.join(RENDERS_DIR, path.basename(opts.basePath))
+    : opts.basePath;
+  const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
+  const baseD = await probeDuration(basePath);
+  if (!(baseD > 0.3)) throw new Error('База для наложения аватара пустая.');
+  const opaque = (opts.avatarKind || 'opaque') === 'opaque';
+  const chroma = opaque && opts.avatarChroma ? String(opts.avatarChroma) : null;
+  // despill по доминирующему каналу ключа — зеркально composeUgc (синий ключ green-despill портит).
+  const chromaDespill = (() => {
+    if (!chroma) return '';
+    const m = /^0x([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(chroma);
+    if (!m) return ',despill=type=green:mix=0.5:expand=0';
+    const [rr, gg, bb] = [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+    if (gg >= rr && gg >= bb && gg - Math.min(rr, bb) > 24) return ',despill=type=green:mix=0.5:expand=0';
+    if (bb > gg && bb > rr && bb - Math.min(rr, gg) > 24) return ',despill=type=blue:mix=0.5:expand=0';
+    return '';
+  })();
+  const chromaChain = chroma ? `,chromakey=${chroma}:0.16:0.06${chromaDespill}` : '';
+  const avFull = await probeDuration(opts.voicePath);
+  if (!(avFull > 0.3)) throw new Error('Дорожка аватара пустая.');
+  const avTs = Math.max(0, Math.min(Number(opts.avatarTrimStart) || 0, avFull - 0.3));
+  const avTe = Number(opts.avatarTrimEnd) > avTs + 0.3 ? Math.min(Number(opts.avatarTrimEnd), avFull) : avFull;
+  const avDur = avTe - avTs;
+  const avCut: string[] = avTs > 0.01 || avTe < avFull - 0.05 ? ['-ss', avTs.toFixed(2), '-t', avDur.toFixed(2)] : [];
+  const st = Math.max(0, Math.min(Number(opts.startSec) || 0, baseD - 0.2));
+  const avShift = st > 0.01 ? `,setpts=PTS-STARTPTS+${st.toFixed(2)}/TB` : '';
+  const avEnable = `:enable='between(t,${st.toFixed(2)},${(st + avDur + 0.05).toFixed(2)})'`;
+  const inputs: string[] = ['-i', basePath];
+  inputs.push(...(opaque ? [] : ['-c:v', 'libvpx-vp9']), ...avCut, '-i', opts.avatarPath);
+  const voiceIdx = 2; inputs.push(...avCut, '-i', opts.voicePath);
+  const r = opts.avatarRect || { x: 0.55, y: 0.55, w: 0.4, h: 0.3 };
+  const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
+  const bw = even(W * r.w), bh = even(H * r.h);
+  const bx = Math.round(W * r.x), by = Math.round(H * r.y);
+  const oy = Math.min(1, Math.max(0, Number.isFinite(Number(r.oy)) ? Number(r.oy) : 0.5));
+  const parts: string[] = [];
+  if (opaque && !chroma) {
+    parts.push(`[1:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30${avShift}[av]`);
+    parts.push(`[0:v][av]overlay=${bx}:${by}:eof_action=pass${avEnable}[vout]`);
+  } else {
+    parts.push(`[1:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p${avShift}[av]`);
+    parts.push(`[0:v][av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass${avEnable}[vout]`);
+  }
+  // Звук: база (заставки/клип звучат как были) + голос аватара В НАЛОЖЕНИЕ с его позиции.
+  // ⚠️ ЖИВЫЕ ГРАБЛИ этого графа: adelay ломает таймстемпы (без нормализации amix то
+  // обрубал звук на первых кадрах при -t, то вис бесконечно с распуханием памяти, то
+  // писал mp4 с битой длительностью дорожки). РАБОЧАЯ ФОРМА, проверенная замерами:
+  // явные aresample+aformat, asetpts=N/SR/TB ПОСЛЕ adelay и ПОСЛЕ amix, оба входа
+  // apad+atrim ровно в длину базы, duration=longest.
+  const vv = Math.max(0, Math.min(2, Number.isFinite(opts.voiceVolumePct) ? (opts.voiceVolumePct as number) / 100 : 1));
+  const avDelay = st > 0.01 ? `adelay=${Math.round(st * 1000)}:all=1,asetpts=N/SR/TB,` : '';
+  const aLen = baseD.toFixed(2);
+  const AFMT = 'aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo';
+  parts.push(`[${voiceIdx}:a]${AFMT},${avDelay}${vv !== 1 ? `volume=${vv.toFixed(2)}` : 'anull'},apad,atrim=0:${aLen}[a_v]`);
+  parts.push(`[0:a]${AFMT},asetpts=N/SR/TB,apad,atrim=0:${aLen}[a_b]`);
+  parts.push(`[a_v][a_b]amix=inputs=2:normalize=0:duration=longest:dropout_transition=0,asetpts=N/SR/TB[aout]`);
+  const out = `ugc-avov-${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(RENDERS_DIR, out);
+  await ffmpeg(['-y', ...inputs, '-filter_complex', parts.join(';'),
+    '-map', '[vout]', '-map', '[aout]', '-t', (baseD + 0.05).toFixed(2), '-r', '30', '-pix_fmt', 'yuv420p',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-c:a', 'aac', '-b:a', '192k', outPath],
+    Math.max(600_000, Math.round(baseD * 9000) + 180_000));
   return `/uploads/renders/${out}`;
 }
 

@@ -259,9 +259,15 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       const st = Math.max(0, overlayTrack.startSec || 0);
       if (vol > 0.01) out.push({ url: overlayTrack.url, winStart: st, winEnd: st + Math.max(0.3, te - ts), srcOff: ts, rate: 1, vol });
     }
-    // Концовка приклеена ПОСЛЕ контента — на дорожке и в плее живёт своим звуком.
+    // Концовка приклеена ПОСЛЕ видеоряда — на дорожке и в плее живёт своим звуком
+    // (якорь от видеоряда: аватар, лежащий на концовке, её не сдвигает).
     const oD = bumperTrack?.outro ? Number(bumperTrack.outro.durationSec) || 0 : 0;
-    if (bumperTrack?.outro && oD > 0) out.push({ url: bumperTrack.outro.url, winStart: contentTotal, winEnd: contentTotal + oD, srcOff: 0, rate: 1, vol: 1 });
+    if (bumperTrack?.outro && oD > 0) {
+      let clips = 0;
+      if (clipTrack) clipTrack.clips.forEach((c, i) => { clips += clipEff(c, i); });
+      const at = clipTrack && clipTrack.clips.length ? clips : contentTotal;
+      out.push({ url: bumperTrack.outro.url, winStart: at, winEnd: at + oD, srcOff: 0, rate: 1, vol: 1 });
+    }
     return out;
   };
   const tlMediaSync = (cur: number) => {
@@ -311,7 +317,10 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     const arr = dialogue;
     const contentTotal = contentTotalNow();
     const outroD = bumperTrack?.outro ? Number(bumperTrack.outro.durationSec) || 0 : 0;
-    const total = Math.max(1, contentTotal + outroD);
+    let clipsNow = 0;
+    if (clipTrack) clipTrack.clips.forEach((c, i) => { clipsNow += clipEff(c, i); });
+    const outroAtNow = clipTrack && clipTrack.clips.length ? clipsNow : contentTotal;
+    const total = Math.max(1, contentTotal, outroAtNow + outroD);
     let from = tlPlayhead; if (from >= total - 0.05) { from = 0; setTlPlayhead(0); }
     setTlPlaying(true);
     // Медиа-дорожки (видеоряд/озвучка/концовка): создаём и «разблокируем» СЕЙЧАС — в жесте клика,
@@ -526,15 +535,16 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     const el = e.currentTarget as HTMLElement;
     try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
     const x0 = e.clientX; const s0 = Math.max(0, overlayTrack.startSec || 0);
-    // Сегмент живёт В ГРАНИЦАХ видеоряда: конец ролика задаёт видеоряд, хвост аватара
-    // за концом обрезается рендером — драг не даёт увезти сегмент за конец.
+    // Сегмент живёт в границах ролика: видеоряд + КОНЦОВКА-заставка (аватар можно положить
+    // и на неё — рендер докладывает его финальным проходом). Дальше конца — нельзя.
     let maxStart = Number.POSITIVE_INFINITY;
     if (clipTrack && clipTrack.clips.length) {
       const clipsTotal = clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0);
+      const outroD = bumperTrack?.outro ? (Number(bumperTrack.outro.durationSec) || 0) : 0;
       const full = overlayTrack.durationSec || 5;
       const ts = overlayTrack.trimStart || 0;
       const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
-      maxStart = Math.max(0, clipsTotal - Math.max(0.3, te - ts));
+      maxStart = Math.max(0, clipsTotal + outroD - Math.max(0.3, te - ts));
     }
     let last = s0; let moved = false;
     const onMove = (ev: PointerEvent) => {
@@ -567,10 +577,12 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   const ovTeRaw = ovTrimOv?.trimEnd ?? overlayTrack?.trimEnd;
   const ovDur = overlayTrack ? Math.max(0.3, ((Number(ovTeRaw) > 0 ? Math.min(Number(ovTeRaw), ovFull) : ovFull) - ovTs)) : 0;
   const contentTotal = Math.max(3, clipsTotal, ovStart + ovDur, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
-  // Концовка приклеивается ПОСЛЕ контента — дорожка и линейка продлеваются на её длину.
+  // Концовка приклеивается ПОСЛЕ видеоряда (аватар МОЖЕТ лежать на ней — её якорь
+  // считается от видеоряда, а не от contentTotal, иначе чип уезжал бы за аватаром).
   const introD = bumperTrack?.intro ? (Number(bumperTrack.intro.durationSec) || 0) : 0;
   const outroD = bumperTrack?.outro ? (Number(bumperTrack.outro.durationSec) || 0) : 0;
-  const total = contentTotal + outroD;
+  const outroAt = clipTrack && clipTrack.clips.length ? clipsTotal : contentTotal;
+  const total = Math.max(contentTotal, outroAt + outroD);
   const W = Math.ceil(total) * tlPps + 40;
   const step = tlPps >= 40 ? 1 : tlPps >= 22 ? 2 : tlPps >= 11 ? 5 : 10;
   const phLeft = 32 + tlPlayhead * tlPps;
@@ -622,7 +634,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                 {bumperTrack.outro && (
                   <div
                     title={`${t('sec.dialogue.bumperAfter', 'Заставка: приклеится ПОСЛЕ ролика')}: ${bumperTrack.outro.name}${outroD ? ' · ' + tlMmss(outroD) : ''}`}
-                    style={{ position: 'absolute', left: contentTotal * tlPps, width: Math.max(30, (outroD || 2) * tlPps - 2), top: 2, height: 18, borderRadius: 5,
+                    style={{ position: 'absolute', left: outroAt * tlPps, width: Math.max(30, (outroD || 2) * tlPps - 2), top: 2, height: 18, borderRadius: 5,
                       background: 'linear-gradient(180deg, rgba(148,163,184,0.9), rgba(100,116,139,0.9))', color: '#fff', fontSize: 9, lineHeight: '18px',
                       overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', padding: '0 6px', userSelect: 'none',
                       border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>

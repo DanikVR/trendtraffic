@@ -508,6 +508,13 @@ export default function GalleryPage() {
     prevUgcBuildsRef.current = ugcBuilds.count;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ugcBuilds.count]);
+  // Секундный тик для таймера на карточке сборки (идёт только пока есть активные сборки).
+  const [buildNow, setBuildNow] = useState(Date.now());
+  useEffect(() => {
+    if (!ugcBuilds.count) return;
+    const id = window.setInterval(() => setBuildNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [ugcBuilds.count]);
 
   // Пока на Hotebook есть активные генерации — опрашиваем; спиннер «генерится» на КАРТОЧКЕ блокнота
   // (nb.generating из /notebooks), поэтому на каждом тике обновляем и список блокнотов; при завершении
@@ -1625,15 +1632,35 @@ export default function GalleryPage() {
             ))}
             {/* UGC · «Ролики»: идущие сборки — карточка со спиннером и серверным статусом (сборка на
                 сервере продолжается и после выхода из студии; по завершении список перезагрузится сам). */}
-            {tab === 'ugc' && ugcSub === 'rolls' && ugcBuilds.jobs.map((b) => (
-              <div key={`build-${b.job}`} className={cardCls(false)} style={CARD_STYLE}>
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2 text-center">
-                  <Loader2 size={22} className="animate-spin" style={{ color: '#a855f7' }} />
-                  <b className="text-[11px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.ugcBuilding', 'Создаём видео…')}</b>
-                  <span className="text-[10px] leading-tight line-clamp-2" style={{ color: 'var(--text-muted)' }}>{b.status}</span>
+            {tab === 'ugc' && ugcSub === 'rolls' && ugcBuilds.jobs.map((b) => {
+              // Полная информация о процессе: шаг по серверному статусу, таймер, полоса.
+              const low = (b.status || '').toLowerCase();
+              const STEPS: [string, string[]][] = [
+                [t('ugc.progress.stQueue', 'Очередь'), ['очеред']],
+                [t('ugc.progress.stPrep', 'Подготовка'), ['запуск', 'готовлю', 'запускаю']],
+                [t('ugc.progress.stCutout', 'Вырезка фона'), ['вырезк', 'replicate', 'маск', 'обработ', 'прогрева']],
+                [t('ugc.progress.stCompose', 'Склейка'), ['склейка', 'собираю']],
+                [t('ugc.progress.stBumpers', 'Заставки'), ['заставк', 'аватара на заставку']],
+              ];
+              let cur = 1;
+              STEPS.forEach(([, m], i) => { if (m.some((x) => low.includes(x))) cur = i; });
+              const sec = b.ts ? Math.max(0, Math.floor((buildNow - b.ts) / 1000)) : 0;
+              const mm = Math.floor(sec / 60), ss = String(sec % 60).padStart(2, '0');
+              return (
+                <div key={`build-${b.job}`} className={cardCls(false)} style={CARD_STYLE}>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center">
+                    <Loader2 size={22} className="animate-spin" style={{ color: '#a855f7' }} />
+                    <b className="text-[11px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.ugcBuilding', 'Создаём видео…')}</b>
+                    {b.ts ? <span className="text-[10px] font-600" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</span> : null}
+                    <span className="text-[9.5px] font-600" style={{ color: '#a855f7' }}>{STEPS[cur][0]} · {cur + 1}/{STEPS.length}</span>
+                    <span className="text-[9.5px] leading-tight line-clamp-3" style={{ color: 'var(--text-muted)' }}>{b.status}</span>
+                    <div className="w-full rounded-full overflow-hidden mt-0.5" style={{ height: 4, background: 'var(--bg-primary)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.round(((cur + 0.5) / STEPS.length) * 100)}%`, background: 'linear-gradient(90deg,#a855f7,#c084fc)', transition: 'width .6s ease' }} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {/* UGC · «Ролики»: сохранённые ролики карточками с превью; клик → продолжить в студии (тот же сценарий). */}
             {tab === 'ugc' && ugcSub === 'rolls' && ugcTpls.map((k) => {
               const spec = k.spec || {};
