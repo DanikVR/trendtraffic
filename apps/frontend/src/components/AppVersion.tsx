@@ -3411,6 +3411,27 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.20 — ПУБЛИКАТОР: массовая обработка выделенного + папки Черновики/Опубликовать/
+ *          Опубликованные/Ошибки. Юзер: «выделить 20 роликов, чтобы все обработались,
+ *          описание трендовое и хэштеги ОТДЕЛЬНО под YouTube Shorts, Instagram, TikTok,
+ *          и появились в Публикаторе по папкам».
+ *          1) Галерея (Медиафайлы И UGC): кнопка «В Публикатор (N)» → окно
+ *             PublisherBulkModal (выбор аккаунтов, тон, галочка ИИ) → фоновая задача
+ *             POST /drafts/bulk (+опрос /drafts/bulk/status с прогрессом).
+ *          2) Пост-движок: ОДИН вызов Claude на ролик пишет СВОЙ текст под каждую сеть
+ *             (промпт с манерой площадки: TikTok коротко-разговорно, Instagram эмоции +
+ *             сохранить/переслать, YouTube описание Shorts + обязательный youtubeTitle);
+ *             хэштеги отдельным массивом, режутся по сети (YT 5, X/Bluesky 3, LinkedIn 0).
+ *             Контекст — ДНК тренда ролика; без ключа Claude — фолбэк из названия.
+ *          3) Новый статус строки 'draft': в Blotato НЕ уходит, слоты не занимает,
+ *             статус-синк и авторетраи её не видят. Публикация — отдельным шагом
+ *             POST /drafts/publish (группа = ролик = один слот на все свои сети),
+ *             правка текста PATCH /drafts/:id, удаление пачкой POST /posts/delete-bulk.
+ *          4) Лента Публикатора: счётчики стали ПАПКАМИ-фильтрами, у «Черновиков» —
+ *             мультивыбор, правка текста на каждую сеть, «Запланировать по слотам» /
+ *             «Опубликовать сейчас» / «Удалить».
+ *          Файлы: publisher/{service.ts,router.ts}, PublisherTab.tsx,
+ *          PublisherBulkModal.tsx (новый), GalleryPage.tsx, локали ru+en. */
 /* 2.6.19 — ФИКС: сохранённое из аналитики аудио ложится РЯДОМ с видео ролика.
  *          Юзер: «не сохранилось в галерею». По факту сохранялось — но в
  *          «Медиафайлы → Аудио», а юзер искал рядом с роликом (в «Аналитике»,
@@ -3622,7 +3643,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.19';
+export const APP_VERSION = '2.6.20';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

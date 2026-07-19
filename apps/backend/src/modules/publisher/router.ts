@@ -29,7 +29,8 @@ import {
   tenantBlotatoKey, submitPost, resubmitRow, syncPendingTenant,
   listSlots, addSlots, removeSlot, nextFreeSlotTimes,
   listChains, createManualChain, cancelChain,
-  generateCaptions, type TargetInput,
+  generateCaptions, createDrafts, publishDrafts, updateDraft, deleteRows,
+  type TargetInput, type BulkDraftItem,
 } from './service.js';
 
 const router = Router();
@@ -154,7 +155,7 @@ router.get('/posts', async (req: AuthedRequest, res: Response) => {
     const limit = Math.min(Number(req.query.limit) || 200, 400);
     const r = await pool.query(
       `SELECT id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
-              mode, scheduled_at, submission_id, status, post_url, error, retries, next_retry_at, created_at
+              target, mode, scheduled_at, submission_id, status, post_url, error, retries, next_retry_at, created_at
        FROM publisher_posts WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2`,
       [tId, limit]
     );
@@ -215,6 +216,96 @@ router.delete('/posts/:id', async (req: AuthedRequest, res: Response) => {
     }
     await pool.query(`DELETE FROM publisher_posts WHERE id = $1`, [row.id]);
     res.json({ ok: true, deleted: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить' }); }
+});
+
+// ── Черновики: массовая обработка выделенного в Галерее ──────────────────────
+// Генерация подписей идёт по ролику (один вызов Claude на ролик отдаёт версии под все
+// сети), 20 роликов = десятки секунд — поэтому ЗАДАЧА В ФОНЕ + опрос статуса,
+// как в UGC-сборках. Карта в памяти процесса: перезапуск = задача потеряна (черновики
+// при этом уже в БД — лента их покажет).
+interface DraftJob {
+  tenantId: string;
+  status: 'running' | 'done' | 'failed';
+  done: number; total: number; note?: string;
+  groups?: number; rows?: number; errors?: string[]; error?: string;
+  ts: number;
+}
+const draftJobs = new Map<string, DraftJob>();
+function sweepDraftJobs() {
+  const now = Date.now();
+  for (const [id, j] of draftJobs) if (now - j.ts > 2 * 3600_000) draftJobs.delete(id);
+}
+
+/** POST /drafts/bulk — { items:[{assetId?,mediaUrl?,title?}], targets:[...], ai?, tone?, language? } → { jobId } */
+router.post('/drafts/bulk', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const items = (Array.isArray(b.items) ? b.items : []) as BulkDraftItem[];
+    const targets = (Array.isArray(b.targets) ? b.targets : []) as TargetInput[];
+    if (!items.length) return res.status(400).json({ error: 'Не выбраны ролики' });
+    if (!targets.length) return res.status(400).json({ error: 'Не выбраны аккаунты соцсетей' });
+    // Ключ Blotato для черновиков НЕ нужен — он понадобится только при публикации.
+    const jobId = `pdraft${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    sweepDraftJobs();
+    draftJobs.set(jobId, { tenantId: req.tenantId!, status: 'running', done: 0, total: items.length, ts: Date.now() });
+    res.status(202).json({ jobId, total: items.length });
+
+    void (async () => {
+      const j = draftJobs.get(jobId)!;
+      try {
+        const out = await createDrafts({
+          tenantId: req.tenantId!, baseUrl: absBase(req), items, targets,
+          ai: b.ai !== false, tone: b.tone, language: b.language,
+          onProgress: (done, total, note) => { j.done = done; j.total = total; j.note = note; j.ts = Date.now(); },
+        });
+        j.status = 'done'; j.groups = out.groups; j.rows = out.rows; j.errors = out.errors; j.ts = Date.now();
+      } catch (e: any) {
+        j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400); j.ts = Date.now();
+      }
+    })();
+  } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось запустить обработку' }); }
+});
+
+/** GET /drafts/bulk/status?job=… — прогресс массовой обработки. */
+router.get('/drafts/bulk/status', (req: AuthedRequest, res: Response) => {
+  const j = draftJobs.get(String(req.query.job || ''));
+  if (!j || j.tenantId !== req.tenantId) return res.status(404).json({ error: 'Задача не найдена (возможно, сервер перезапускался — проверьте папку «Черновики»).' });
+  res.json({ status: j.status, done: j.done, total: j.total, note: j.note, groups: j.groups, rows: j.rows, errors: j.errors, error: j.error });
+});
+
+/** POST /drafts/publish — { ids:[rowId], mode:'slot'|'now'|'time', scheduledAt? } */
+router.post('/drafts/publish', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const out = await publishDrafts({
+      tenantId: req.tenantId!, baseUrl: absBase(req),
+      ids: Array.isArray(b.ids) ? b.ids : [],
+      mode: (b.mode === 'now' || b.mode === 'time') ? b.mode : 'slot',
+      scheduledAt: b.scheduledAt,
+    });
+    res.json(out);
+  } catch (e: any) {
+    const msg = e?.message || 'Не удалось опубликовать черновики';
+    res.status(/Ключ Blotato/.test(msg) ? 409 : 400).json({ error: msg });
+  }
+});
+
+/** PATCH /drafts/:id — правка текста черновика (и заголовка YouTube). */
+router.patch('/drafts/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const out = await updateDraft(req.tenantId!, String(req.params.id), { text: b.text, title: b.title });
+    if (!out.ok) return res.status(400).json({ error: out.error });
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить' }); }
+});
+
+/** POST /posts/delete-bulk — { ids:[...] } удалить пачкой (кроме запланированных). */
+router.post('/posts/delete-bulk', async (req: AuthedRequest, res: Response) => {
+  try {
+    const ids = Array.isArray((req.body || {}).ids) ? (req.body as any).ids : [];
+    res.json(await deleteRows(req.tenantId!, ids));
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось удалить' }); }
 });
 

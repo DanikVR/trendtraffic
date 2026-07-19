@@ -39,8 +39,9 @@ import { useUgcActiveBuilds } from '../hooks/useUgcActiveBuilds';
 import { TT_EXT_VERSION } from '../components/AppVersion';
 import { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
-import { PublisherTab, type ChainDraft } from './publisher/PublisherTab';
+import { PublisherTab, type ChainDraft, type PubFolder } from './publisher/PublisherTab';
 import { PublisherStudio } from './publisher/PublisherStudio';
+import { PublisherBulkModal, type BulkItem } from './publisher/PublisherBulkModal';
 import { StoryboardTab } from './storyboard/StoryboardTab';
 
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'storyboard' | 'reference' | 'publisher';
@@ -209,6 +210,10 @@ export default function GalleryPage() {
   const [pubReload, setPubReload] = useState(0);
   // Мультивыбор → «Опубликовать (N)»: черновик серии для цепочки Публикатора (Ф2/Ф3).
   const [pubChainDraft, setPubChainDraft] = useState<ChainDraft | null>(null);
+  // Мультивыбор → «В Публикатор (N)»: массовая генерация описаний/хэштегов под каждую сеть
+  // (окно PublisherBulkModal) → посты падают в папку «Черновики».
+  const [pubBulk, setPubBulk] = useState<BulkItem[] | null>(null);
+  const [pubFolder, setPubFolder] = useState<PubFolder | null>(null);
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -1219,6 +1224,21 @@ export default function GalleryPage() {
     if (ugcSub === 'auto') return autoUgc.map((v) => `media:${v.id}`);
     return kits.map((k) => `kit:${k.id}`);
   }, [tab, ugcSub, ugcTpls, filtered, autoUgc, kits]);
+  /** Выбранные видео/картинки → элементы для Публикатора. Ключи выбора двух видов:
+   *  голый id («Медиафайлы») и `media:<id>` (вкладка UGC) — принимаем оба. */
+  const selectedPublishItems = (): BulkItem[] => {
+    const out: BulkItem[] = [];
+    const seen = new Set<string>();
+    for (const v of [...displayItems, ...autoUgc]) {
+      if (v.mediaType !== 'video' && v.mediaType !== 'image') continue;
+      if (!(selected.has(v.id) || selected.has(`media:${v.id}`))) continue;
+      if (seen.has(v.id)) continue;
+      seen.add(v.id);
+      out.push({ assetId: v.id, mediaUrl: v.fileUrl, title: v.title });
+    }
+    return out;
+  };
+  const openPubBulk = () => { const its = selectedPublishItems(); if (its.length) setPubBulk(its); };
   const ugcAllSelected = ugcSelectableKeys.length > 0 && ugcSelectableKeys.every((k) => selected.has(k));
   const toggleSelectAllUGC = () => setSelected(ugcAllSelected ? new Set() : new Set(ugcSelectableKeys));
   const ugcSelCount = ugcSelectableKeys.filter((k) => selected.has(k)).length;
@@ -1474,7 +1494,8 @@ export default function GalleryPage() {
       ) : tab === 'publisher' ? (
         /* «Публикатор» (Ф1): постинг через Blotato (BYO-ключ) — плитки сетей, лента, студия поста */
         <PublisherTab token={token} reloadKey={pubReload} onNewPost={() => setPubStudio({})}
-          chainDraft={pubChainDraft} onChainDraftConsumed={() => setPubChainDraft(null)} />
+          chainDraft={pubChainDraft} onChainDraftConsumed={() => setPubChainDraft(null)}
+          openFolder={pubFolder} onOpenFolderConsumed={() => setPubFolder(null)} />
       ) : tab === 'storyboard' ? (
         /* «Сториборд»: проекты автомонтажа (список карточками, студия — /storyboard/:id) */
         <StoryboardTab />
@@ -1559,6 +1580,12 @@ export default function GalleryPage() {
                 style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', cursor: 'pointer' }}>
                 <Send size={15} /> {t('sec.gallery.btnPublish', 'Опубликовать')}{selectedCount > 0 ? ` (${selectedCount})` : ''}
               </button>
+              <button type="button" onClick={openPubBulk} disabled={selectedCount === 0}
+                title={t('sec.gallery.bulkPubTitle', 'В Публикатор: ИИ напишет описание и хэштеги под каждую сеть, посты лягут в «Черновики»')}
+                className="inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
+                style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer' }}>
+                <Sparkles size={15} /> {t('sec.gallery.bulkPub', 'В Публикатор')}{selectedCount > 0 ? ` (${selectedCount})` : ''}
+              </button>
               <button type="button" onClick={downloadSelected} disabled={selectedCount === 0} title={t('sec.gallery.dlSelectedTitle', 'Скачать выбранные на устройство')}
                 className="inline-flex items-center gap-1.5 text-[13px] font-700 px-2.5 py-2 rounded-xl transition-transform hover:scale-105 disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
                 style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', cursor: 'pointer' }}>
@@ -1595,6 +1622,15 @@ export default function GalleryPage() {
                   {busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
                   {t('sec.gallery.btnDelete', 'Удалить')}{ugcSelCount > 0 ? ` · ${ugcSelCount}` : ''}
                 </button>
+                {/* Готовые ролики → в Публикатор пачкой: тексты под каждую сеть пишет ИИ. */}
+                {ugcSub !== 'kits' && (
+                  <button type="button" onClick={openPubBulk} disabled={ugcSelCount === 0}
+                    title={t('sec.gallery.bulkPubTitle', 'В Публикатор: ИИ напишет описание и хэштеги под каждую сеть, посты лягут в «Черновики»')}
+                    className="ml-auto inline-flex items-center gap-1.5 text-[13px] font-600 px-2.5 py-2 rounded-xl transition-colors disabled:opacity-40 flex-shrink-0 whitespace-nowrap"
+                    style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer' }}>
+                    <Sparkles size={15} /> {t('sec.gallery.bulkPub', 'В Публикатор')}{ugcSelCount > 0 ? ` (${ugcSelCount})` : ''}
+                  </button>
+                )}
               </>}
             </div>
           )}
@@ -1949,6 +1985,19 @@ export default function GalleryPage() {
 
       {/* Блок TrendFlow ПОВЕРХ Галереи: закрыл — вернулся в этот же раздел (+ обновляем его) */}
       {blockReq && <FlowBlockOverlay req={blockReq} onClose={() => { setBlockReq(null); void load(); }} />}
+
+      {/* Массовая обработка выделенного → черновики постов с текстами под каждую сеть */}
+      {pubBulk && (
+        <PublisherBulkModal
+          token={token}
+          items={pubBulk}
+          onClose={() => setPubBulk(null)}
+          onDone={() => {
+            setPubBulk(null); setSelected(new Set());
+            setPubFolder('drafts'); setPubReload((n) => n + 1); setTab('publisher');
+          }}
+        />
+      )}
 
       {/* Публикатор: полноэкранная студия поста (из «Новый пост» или кнопки на карточке).
           После успешной отправки — во вкладку «Публикатор» со свежей лентой. */}

@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Send, RefreshCw, Loader2, ExternalLink, Plus, Check, Clock, RotateCcw, Trash2,
   Ban, KeyRound, AlertTriangle, Link2, CalendarDays, ListChecks, BarChart3, Timer,
-  ChevronLeft, ChevronRight, Zap, X, Sparkles,
+  ChevronLeft, ChevronRight, Zap, X, Sparkles, FileEdit, CheckSquare, Square,
 } from 'lucide-react';
 import { ConfirmModal } from '../../components/ConfirmModal';
 
@@ -66,6 +66,8 @@ export function PlatformMark({ platform, size = 26 }: { platform: string; size?:
 export interface PubPostRow {
   id: string; group_id: string; chain_id?: string | null; asset_id?: string | null; media_url?: string | null; text?: string | null;
   platform: string; account_id: string; account_name?: string | null; mode: string;
+  /** Платформенные опции поста (JSONB): у YouTube здесь title, у FB pageId и т.п. */
+  target?: Record<string, any> | null;
   scheduled_at?: string | null; status: string; post_url?: string | null; error?: string | null;
   retries?: number; next_retry_at?: string | null; created_at: string;
 }
@@ -83,6 +85,12 @@ export interface ChainDraft { items: { assetId?: string; mediaUrl?: string; titl
 
 type KeyState = 'loading' | 'none' | 'bad' | 'ok';
 type SubTab = 'feed' | 'calendar' | 'schedule' | 'analytics';
+/** Папки ленты: черновики (в соцсети НЕ ушли) · очередь · опубликованные · ошибки. */
+export type PubFolder = 'drafts' | 'queue' | 'published' | 'failed';
+const FOLDER_OF: Record<string, PubFolder> = {
+  draft: 'drafts', scheduled: 'queue', submitted: 'queue',
+  published: 'published', failed: 'failed', canceled: 'failed',
+};
 
 const CHAIN_FMT_LABEL: Record<string, string> = { '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' };
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Пн..Вс (JS getDay)
@@ -104,13 +112,16 @@ function localToSlot(dowLocal: number, hh: number, mm: number): { dow: number; h
 }
 const fmtDT = (iso: string) => new Date(iso).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainDraftConsumed }: {
+export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainDraftConsumed, openFolder, onOpenFolderConsumed }: {
   token: string | null;
   reloadKey: number;
   onNewPost: () => void;
   /** Черновик серии из мультивыбора Галереи («Опубликовать N») — открывает форму цепочки. */
   chainDraft?: ChainDraft | null;
   onChainDraftConsumed?: () => void;
+  /** Открыть ленту сразу на нужной папке (после массовой обработки — «Черновики»). */
+  openFolder?: PubFolder | null;
+  onOpenFolderConsumed?: () => void;
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('common');
@@ -134,6 +145,12 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   const [err, setErr] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
+  // Папки ленты + работа с черновиками (мультивыбор, правка текста, публикация пачкой).
+  const [folder, setFolder] = useState<PubFolder>('queue');
+  const [draftSel, setDraftSel] = useState<Set<string>>(new Set());
+  const [draftBusy, setDraftBusy] = useState(false);
+  const [draftEdit, setDraftEdit] = useState<{ id: string; text: string } | null>(null);
+  const [draftNote, setDraftNote] = useState<string | null>(null);
 
   // Ф2: слоты + цепочки
   const [slots, setSlots] = useState<SlotRow[]>([]);
@@ -213,6 +230,25 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
 
   useEffect(() => { void loadAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [reloadKey]);
 
+  // Первая загрузка: если черновики есть, а очередь пуста — открываем «Черновики»
+  // (иначе человек видит пустую папку и думает, что обработка не сработала).
+  const folderAutoRef = useRef(false);
+  useEffect(() => {
+    if (folderAutoRef.current || !posts.length) return;
+    folderAutoRef.current = true;
+    const drafts = posts.filter((p) => p.status === 'draft').length;
+    const queued = posts.filter((p) => p.status === 'scheduled' || p.status === 'submitted').length;
+    if (drafts > 0 && queued === 0) setFolder('drafts');
+  }, [posts]);
+
+  // Пришли из Галереи после массовой обработки — открыть нужную папку ленты.
+  useEffect(() => {
+    if (!openFolder) return;
+    setSub('feed'); setFolder(openFolder); setDraftSel(new Set());
+    onOpenFolderConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openFolder]);
+
   // Черновик серии из Галереи → открыть форму ручной цепочки
   useEffect(() => {
     if (chainDraft && chainDraft.items?.length) {
@@ -238,17 +274,77 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyState, pendingCount > 0]);
 
+  // Лента группируется по ролику (group_id) ВНУТРИ выбранной папки: ролик с двумя
+  // опубликованными сетями и одной упавшей виден и в «Опубликованных», и в «Ошибках»
+  // — каждая карточка показывает только свои строки.
   const groups = useMemo(() => {
     const map = new Map<string, PubPostRow[]>();
-    for (const p of posts) { const arr = map.get(p.group_id) || []; arr.push(p); map.set(p.group_id, arr); }
+    for (const p of posts) {
+      if (FOLDER_OF[p.status] !== folder) continue;
+      const arr = map.get(p.group_id) || []; arr.push(p); map.set(p.group_id, arr);
+    }
     return Array.from(map.values());
-  }, [posts]);
+  }, [posts, folder]);
 
   const counts = useMemo(() => ({
+    drafts: posts.filter((p) => p.status === 'draft').length,
     queued: posts.filter((p) => p.status === 'scheduled' || p.status === 'submitted').length,
     published: posts.filter((p) => p.status === 'published').length,
-    failed: posts.filter((p) => p.status === 'failed').length,
+    failed: posts.filter((p) => p.status === 'failed' || p.status === 'canceled').length,
   }), [posts]);
+
+  // ── Черновики: выбор, правка текста, публикация пачкой ──────────────────────
+  const draftIdsVisible = useMemo(() => groups.flatMap((rows) => rows.map((r) => r.id)), [groups]);
+  const toggleDraft = (id: string) => setDraftSel((s) => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const toggleDraftGroup = (rows: PubPostRow[]) => setDraftSel((s) => {
+    const n = new Set(s);
+    const all = rows.every((r) => n.has(r.id));
+    for (const r of rows) { all ? n.delete(r.id) : n.add(r.id); }
+    return n;
+  });
+  const allDraftsSelected = draftIdsVisible.length > 0 && draftIdsVisible.every((id) => draftSel.has(id));
+  const saveDraftText = async (id: string, text: string) => {
+    try {
+      const r = await fetch(`/api/publisher/drafts/${id}`, { method: 'PATCH', headers: jsonHeaders(), body: JSON.stringify({ text }) });
+      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errSaveDraft', 'Не удалось сохранить черновик'));
+      else await loadPosts(true);
+    } catch { setErr(t('sec.publisher.errSaveDraft', 'Не удалось сохранить черновик')); }
+  };
+  const publishDraftSel = async (mode: 'slot' | 'now') => {
+    if (draftBusy || !draftSel.size) return;
+    setDraftBusy(true); setDraftNote(null); setErr(null);
+    try {
+      const r = await fetch('/api/publisher/drafts/publish', {
+        method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ids: [...draftSel], mode }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setErr(d.error || t('sec.publisher.errPublishDrafts', 'Не удалось отправить черновики')); return; }
+      setDraftSel(new Set());
+      setDraftNote(mode === 'slot'
+        ? t('sec.publisher.draftsScheduled', 'Запланировано: {{ok}} · ошибок: {{failed}}. Смотрите папку «Опубликовать» и Календарь.', { ok: d.ok, failed: d.failed })
+        : t('sec.publisher.draftsSentNow', 'Отправлено сейчас: {{ok}} · ошибок: {{failed}}.', { ok: d.ok, failed: d.failed }));
+      setFolder(d.ok > 0 ? 'queue' : 'failed');
+      await loadPosts(true);
+    } catch (e: any) { setErr(e?.message || t('sec.publisher.errPublishDrafts', 'Не удалось отправить черновики')); }
+    finally { setDraftBusy(false); }
+  };
+  const deleteSelected = () => {
+    if (!draftSel.size) return;
+    setConfirm({
+      title: t('sec.publisher.delSelTitle', 'Удалить выбранные?'),
+      message: t('sec.publisher.delSelMsg', 'Будет удалено записей: {{n}}. Сами видео в Галерее останутся.', { n: draftSel.size }),
+      onConfirm: async () => {
+        setConfirm(null); setDraftBusy(true);
+        try {
+          await fetch('/api/publisher/posts/delete-bulk', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ids: [...draftSel] }) });
+          setDraftSel(new Set());
+          await loadPosts(true);
+        } finally { setDraftBusy(false); }
+      },
+    });
+  };
 
   const byPlatform = useMemo(() => {
     const m = new Map<string, PubAccount[]>();
@@ -382,6 +478,9 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     }
     if (row.status === 'canceled') {
       return <span className={base} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}><Ban size={11} /> {t('sec.publisher.stCanceled', 'отменён')}</span>;
+    }
+    if (row.status === 'draft') {
+      return <span className={base} style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}><FileEdit size={11} /> {t('sec.publisher.stDraft', 'черновик')}</span>;
     }
     const when = row.scheduled_at ? fmtDT(row.scheduled_at) : t('sec.publisher.stPublishing', 'публикуется…');
     return <span className={base} style={{ background: 'rgba(245,158,11,0.13)', color: '#f59e0b' }}><Clock size={11} /> {when}</span>;
@@ -783,22 +882,75 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   );
 
   // ── Лента ──────────────────────────────────────────────────────────────────
+  const isDrafts = folder === 'drafts';
   const renderFeed = () => (
-    postsLoading ? (
+    <div className="space-y-2.5">
+      {/* Панель действий над выбранными черновиками */}
+      {isDrafts && groups.length > 0 && (
+        <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+          <button type="button" onClick={() => setDraftSel(allDraftsSelected ? new Set() : new Set(draftIdsVisible))}
+            className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+            {allDraftsSelected ? <CheckSquare size={13} /> : <Square size={13} />}
+            {allDraftsSelected ? t('sec.publisher.unselectAll', 'Снять выбор') : t('sec.publisher.selectAll', 'Выбрать всё')}
+          </button>
+          <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+            {t('sec.publisher.draftsSelected', 'Выбрано: {{n}}', { n: draftSel.size })}
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            <button type="button" onClick={deleteSelected} disabled={!draftSel.size || draftBusy}
+              className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
+              style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: draftSel.size ? 'pointer' : 'default', opacity: draftSel.size ? 1 : 0.5 }}>
+              <Trash2 size={13} /> {t('sec.publisher.delete', 'Удалить')}
+            </button>
+            <button type="button" onClick={() => void publishDraftSel('now')} disabled={!draftSel.size || draftBusy}
+              className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: draftSel.size ? 'pointer' : 'default', opacity: draftSel.size ? 1 : 0.5 }}>
+              <Zap size={13} /> {t('sec.publisher.publishNow', 'Опубликовать сейчас')}
+            </button>
+            <button type="button" onClick={() => void publishDraftSel('slot')} disabled={!draftSel.size || draftBusy}
+              className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3.5 py-1.5 rounded-lg"
+              style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: draftSel.size ? 'pointer' : 'default', opacity: draftSel.size ? 1 : 0.5 }}>
+              {draftBusy ? <Loader2 size={14} className="animate-spin" /> : <Clock size={14} />}
+              {t('sec.publisher.scheduleBySlots', 'Запланировать по слотам')}
+            </button>
+          </div>
+          {slots.length === 0 && (
+            <p className="text-[11px] w-full" style={{ color: '#f59e0b' }}>
+              <AlertTriangle size={11} className="inline" /> {t('sec.publisher.noSlotsHint', 'В «Моём расписании» нет слотов — планировать некуда. Добавьте времена или публикуйте сейчас.')}
+            </p>
+          )}
+        </div>
+      )}
+      {draftNote && (
+        <p className="text-[12px] rounded-lg px-3 py-2" style={{ background: 'rgba(16,185,129,0.10)', color: '#10b981' }}>{draftNote}</p>
+      )}
+      {postsLoading ? (
       <div className="py-10 text-center"><Loader2 size={22} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
     ) : groups.length === 0 ? (
       <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)' }}>
-        <p className="text-sm font-600 mb-1" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.feedEmptyTitle', 'Пока ни одного поста')}</p>
+        <p className="text-sm font-600 mb-1" style={{ color: 'var(--text-primary)' }}>
+          {isDrafts ? t('sec.publisher.draftsEmptyTitle', 'Черновиков нет') : t('sec.publisher.feedEmptyTitle', 'Пока ни одного поста')}
+        </p>
         <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          {t('sec.publisher.feedEmptyA', 'Нажмите «Новый пост» или кнопку')} <Send size={11} className="inline" /> {t('sec.publisher.feedEmptyB', 'на карточке любого видео в Галерее.')}
+          {isDrafts
+            ? t('sec.publisher.draftsEmptySub', 'Выделите ролики в Галерее и нажмите «В Публикатор» — описания и хэштеги напишет ИИ, а посты лягут сюда.')
+            : <>{t('sec.publisher.feedEmptyA', 'Нажмите «Новый пост» или кнопку')} <Send size={11} className="inline" /> {t('sec.publisher.feedEmptyB', 'на карточке любого видео в Галерее.')}</>}
         </p>
       </div>
     ) : (
       <div className="flex flex-col gap-2">
         {groups.map((rows) => {
           const first = rows[0];
+          const groupChecked = isDrafts && rows.every((r) => draftSel.has(r.id));
           return (
-            <div key={first.group_id} className="rounded-xl p-3 flex gap-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+            <div key={first.group_id} className="rounded-xl p-3 flex gap-3" style={{ background: 'var(--bg-secondary)', border: `1px solid ${groupChecked ? 'var(--brand)' : 'var(--border-medium)'}` }}>
+              {isDrafts && (
+                <button type="button" onClick={() => toggleDraftGroup(rows)} title={t('sec.publisher.pickGroup', 'Выбрать ролик целиком')}
+                  className="flex-shrink-0 self-start mt-0.5" style={{ background: 'transparent', border: 'none', color: groupChecked ? 'var(--brand)' : 'var(--text-muted)', cursor: 'pointer' }}>
+                  {groupChecked ? <CheckSquare size={16} /> : <Square size={16} />}
+                </button>
+              )}
               <div className="w-[44px] h-[72px] rounded-lg overflow-hidden flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
                 {first.media_url && (/\.(png|jpe?g|webp|gif)(\?|$)/i.test(first.media_url)
                   ? <img src={first.media_url} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -842,12 +994,65 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                     ))}
                   </div>
                 )}
+                {/* Черновик: свой текст под каждую сеть — видно и правится прямо здесь */}
+                {isDrafts && (
+                  <div className="mt-2 space-y-1.5">
+                    {rows.map((row) => {
+                      const editing = draftEdit?.id === row.id;
+                      const ytTitle = row.platform === 'youtube' ? String((row as any).target?.title || '') : '';
+                      return (
+                        <div key={`tx-${row.id}`} className="rounded-lg p-2" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <button type="button" onClick={() => toggleDraft(row.id)} title={t('sec.publisher.pickOne', 'Выбрать эту сеть')}
+                              style={{ background: 'transparent', border: 'none', color: draftSel.has(row.id) ? 'var(--brand)' : 'var(--text-muted)', cursor: 'pointer', lineHeight: 0 }}>
+                              {draftSel.has(row.id) ? <CheckSquare size={13} /> : <Square size={13} />}
+                            </button>
+                            <span className="text-[11px] font-700" style={{ color: 'var(--text-secondary)' }}>
+                              {PLATFORM_META[row.platform]?.label || row.platform}
+                            </span>
+                            {ytTitle && <span className="text-[10.5px] truncate" style={{ color: 'var(--text-muted)' }} title={ytTitle}>· {ytTitle}</span>}
+                            {row.platform === 'youtube' && !ytTitle && <span className="text-[10.5px]" style={{ color: '#f59e0b' }}>· {t('sec.publisher.ytNoTitle', 'нет заголовка')}</span>}
+                            <button type="button" onClick={() => setDraftEdit(editing ? null : { id: row.id, text: row.text || '' })}
+                              title={t('sec.publisher.editText', 'Править текст')}
+                              className="ml-auto w-6 h-6 rounded-md flex items-center justify-center"
+                              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                              <FileEdit size={12} />
+                            </button>
+                          </div>
+                          {editing ? (
+                            <div className="space-y-1.5">
+                              <textarea value={draftEdit!.text} onChange={(e) => setDraftEdit({ id: row.id, text: e.target.value })}
+                                rows={5} className="w-full text-[12px] rounded-lg p-2"
+                                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+                              <div className="flex items-center gap-2">
+                                <button type="button" onClick={async () => { const d = draftEdit!; setDraftEdit(null); await saveDraftText(d.id, d.text); }}
+                                  className="text-[12px] font-700 px-3 py-1.5 rounded-lg"
+                                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                                  {t('sec.publisher.save', 'Сохранить')}
+                                </button>
+                                <button type="button" onClick={() => setDraftEdit(null)} className="text-[12px] px-2 py-1.5 rounded-lg"
+                                  style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                                  {t('sec.publisher.cancel', 'Отмена')}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[11.5px] whitespace-pre-wrap" style={{ color: 'var(--text-secondary)', maxHeight: 96, overflow: 'hidden' }}>
+                              {row.text || t('sec.publisher.noText', 'Без текста')}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
       </div>
-    )
+    )}
+    </div>
   );
 
   // ── Основной экран ─────────────────────────────────────────────────────────
@@ -909,18 +1114,24 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         )}
       </div>
 
-      {/* Стат-карточки + саб-вкладки */}
+      {/* Папки ленты (они же счётчики — клик переключает) + саб-вкладки */}
       <div className="flex items-center gap-2.5 flex-wrap">
-        {[
-          { v: counts.queued, l: t('sec.publisher.statQueued', 'в очереди'), c: '#f59e0b' },
-          { v: counts.published, l: t('sec.publisher.statPublished', 'опубликовано'), c: '#10b981' },
-          { v: counts.failed, l: t('sec.publisher.statFailed', 'ошибки'), c: counts.failed > 0 ? '#ef4444' : 'var(--text-muted)' },
-        ].map((s, i) => (
-          <div key={i} className="rounded-xl px-4 py-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-            <span className="text-base font-700 tabular-nums mr-1.5" style={{ color: s.c }}>{s.v}</span>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{s.l}</span>
-          </div>
-        ))}
+        {([
+          { k: 'drafts' as PubFolder, v: counts.drafts, l: t('sec.publisher.folderDrafts', 'Черновики'), c: 'var(--brand)' },
+          { k: 'queue' as PubFolder, v: counts.queued, l: t('sec.publisher.folderQueue', 'Опубликовать'), c: '#f59e0b' },
+          { k: 'published' as PubFolder, v: counts.published, l: t('sec.publisher.folderPublished', 'Опубликованные'), c: '#10b981' },
+          { k: 'failed' as PubFolder, v: counts.failed, l: t('sec.publisher.folderFailed', 'Ошибки'), c: counts.failed > 0 ? '#ef4444' : 'var(--text-muted)' },
+        ]).map((s) => {
+          const active = sub === 'feed' && folder === s.k;
+          return (
+            <button key={s.k} type="button" onClick={() => { setSub('feed'); setFolder(s.k); setDraftSel(new Set()); setDraftNote(null); }}
+              className="rounded-xl px-4 py-2 text-left"
+              style={{ background: active ? 'rgba(99,102,241,0.10)' : 'var(--bg-secondary)', border: `1px solid ${active ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+              <span className="text-base font-700 tabular-nums mr-1.5" style={{ color: s.c }}>{s.v}</span>
+              <span className="text-[11px]" style={{ color: active ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.l}</span>
+            </button>
+          );
+        })}
         <div className="inline-flex gap-1 p-1 rounded-xl ml-auto" style={{ background: 'var(--bg-tertiary)' }}>
           {([['feed', t('sec.publisher.tabFeed', 'Лента'), <ListChecks key="f" size={13} />], ['calendar', t('sec.publisher.tabCalendar', 'Календарь'), <CalendarDays key="c" size={13} />], ['schedule', t('sec.publisher.tabSchedule', 'Моё расписание'), <Clock key="s" size={13} />], ['analytics', t('sec.publisher.tabAnalytics', 'Аналитика'), <BarChart3 key="a" size={13} />]] as [SubTab, string, React.ReactNode][]).map(([k, l, ic]) => (
             <button key={k} type="button" onClick={() => setSub(k)}

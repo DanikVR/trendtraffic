@@ -451,11 +451,15 @@ export async function generateCaptions(args: {
     `Платформы: ${platforms.join(', ') || 'tiktok, instagram'}.\n` +
     (ctx.length ? `Контекст:\n${ctx.join('\n')}\n` : '') +
     'Правила: первая строка — хук; без кавычек-ёлочек вокруг всего текста; эмодзи умеренно; ' +
-    'хэштеги НЕ вставляй в base — отдай отдельным массивом (5–8: смесь широких и нишевых, с #). ' +
-    'Для twitter/threads/bluesky — короткая версия в лимит (280/500/300); для linkedin — без хэштегов, деловой тон; ' +
-    'для youtube — заголовок до 90 символов в поле youtubeTitle.\n' +
-    'Формат ответа: {"variants":[{"base":"…","hashtags":["#…"],"platforms":{"twitter":"…","linkedin":"…"},"youtubeTitle":"…"}]} ' +
-    `— в platforms клади ТОЛЬКО платформы, где текст отличается от base, из списка: ${platforms.join(', ')}.`;
+    'хэштеги НЕ вставляй в base — отдай отдельным массивом (5–8: смесь широких и нишевых, с #).\n' +
+    'ПОД КАЖДУЮ СЕТЬ — СВОЙ текст (не копия base), с её манерой:\n' +
+    '· tiktok — разговорно и коротко (1–3 строки), хук в первых 3 словах, вопрос или спор в конце;\n' +
+    '· instagram — чуть длиннее и эмоциональнее (2–4 строки), призыв сохранить/переслать;\n' +
+    '· youtube — описание Shorts: 2–3 предложения по сути ролика + что смотреть дальше; ' +
+    'ОБЯЗАТЕЛЬНО поле youtubeTitle — цепкий заголовок до 90 символов без кликбейта-обмана;\n' +
+    '· twitter/threads/bluesky — уложись в лимит (280/500/300); linkedin — деловой тон, БЕЗ хэштегов.\n' +
+    'Формат ответа: {"variants":[{"base":"…","hashtags":["#…"],"platforms":{"tiktok":"…","instagram":"…","youtube":"…"},"youtubeTitle":"…"}]} ' +
+    `— в platforms заполни ВСЕ запрошенные площадки: ${platforms.join(', ')}.`;
 
   const mod: any = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default || mod.Anthropic || mod;
@@ -481,6 +485,196 @@ export async function generateCaptions(args: {
   })).filter((v: CaptionVariant) => v.base);
   if (!variants.length) throw new Error('ИИ вернул неразборчивый ответ — повторите.');
   return { variants, model: DEFAULT_DIRECTOR_MODEL, usedDna: !!dna };
+}
+
+// ── Черновики: массовая обработка выделенного в Галерее (папка «Черновики») ──
+// Статус 'draft' = строка есть у нас, но в Blotato НЕ ушла: submission_id/scheduled_at
+// пустые, слоты такими строками НЕ занимаются (nextFreeSlotTimes смотрит только
+// scheduled/submitted), статус-синк и авторетраи их не видят. Публикация — отдельным
+// шагом (publishDrafts): один ролик = одна группа = один слот на все свои платформы.
+
+/** Текст подписи под КОНКРЕТНУЮ платформу из варианта Пост-движка. */
+function captionForPlatform(v: CaptionVariant, platform: string): string {
+  const own = v.platforms?.[platform];
+  const body = (own && own.trim()) ? own.trim() : v.base;
+  // LinkedIn — деловой тон без хэштегов (так же просим и у Claude в промпте).
+  if (platform === 'linkedin' || !v.hashtags.length) return body;
+  // YouTube: теги живут в описании, 3–5 достаточно; короткие сети — тоже не мусорим.
+  const limit = platform === 'youtube' ? 5 : (platform === 'twitter' || platform === 'bluesky') ? 3 : 8;
+  return [body, v.hashtags.slice(0, limit).join(' ')].filter(Boolean).join('\n\n');
+}
+
+export interface BulkDraftItem { assetId?: string; mediaUrl?: string; title?: string }
+export interface BulkDraftArgs {
+  tenantId: string;
+  baseUrl?: string;
+  items: BulkDraftItem[];
+  targets: TargetInput[];          // по аккаунту на платформу (TikTok/IG/YouTube и др.)
+  ai?: boolean;                    // писать подписи Claude (иначе фолбэк из названия + ключевиков ДНК)
+  tone?: string; language?: string;
+  onProgress?: (done: number, total: number, note?: string) => void;
+}
+
+/** Массовая обработка: N роликов × M платформ → строки-черновики со СВОИМ текстом на сеть. */
+export async function createDrafts(args: BulkDraftArgs): Promise<{ groups: number; rows: number; errors: string[] }> {
+  const items = (args.items || []).slice(0, 50);
+  const targets = (args.targets || []).filter((t) => t?.accountId && t?.platform);
+  if (!items.length) throw new Error('Не выбраны ролики');
+  if (!targets.length) throw new Error('Не выбраны аккаунты соцсетей');
+  const errors: string[] = [];
+  let groups = 0; let rows = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    args.onProgress?.(i, items.length, item.title || '');
+    let media: { fileUrl: string; title: string };
+    try { media = await resolveMedia(args.tenantId, item); }
+    catch (e: any) { errors.push(`${item.title || 'ролик'}: ${e?.message || 'файл не найден'}`); continue; }
+
+    const platforms = [...new Set(targets.map((t) => String(t.platform).toLowerCase()))];
+    const title = item.title || media.title || 'Новое видео';
+    // Подписи: один вызов Claude на ролик отдаёт версии под все выбранные сети.
+    let variant: CaptionVariant | null = null;
+    if (args.ai !== false) {
+      try {
+        const g = await generateCaptions({
+          tenantId: args.tenantId, title, assetId: item.assetId, platforms,
+          tone: args.tone, language: args.language, count: 1,
+        });
+        variant = g.variants[0] || null;
+      } catch (e: any) {
+        errors.push(`${title}: подпись без ИИ (${e?.message || 'ошибка Claude'})`);
+      }
+    }
+    if (!variant) {
+      let dna: any = null;
+      if (item.assetId) { try { const s: any = await getTrendDNAByAsset(args.tenantId, item.assetId); dna = s?.dna || s; } catch { /* без ДНК */ } }
+      variant = { base: fallbackCaption(title, dna), hashtags: [], platforms: {} };
+    }
+
+    const groupId = randomUUID();
+    for (const t of targets) {
+      const platform = String(t.platform).toLowerCase();
+      const opts: Record<string, any> = { ...(t.options || {}) };
+      // YouTube требует заголовок: берём от Пост-движка, иначе имя ролика.
+      if (platform === 'youtube' && !opts.title) opts.title = (variant.youtubeTitle || title).slice(0, 100);
+      const text = captionForPlatform(variant, platform);
+      await pool.query(
+        `INSERT INTO publisher_posts
+           (id, tenant_id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
+            target, mode, scheduled_at, submission_id, status, error, retries, next_retry_at)
+         VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,$8,$9,$10,'slot',NULL,NULL,'draft',NULL,0,NULL)`,
+        [randomUUID(), args.tenantId, groupId, item.assetId || null, media.fileUrl || null, text,
+         platform, String(t.accountId), opts.accountName || null, JSON.stringify(opts)]
+      );
+      rows++;
+    }
+    groups++;
+    args.onProgress?.(i + 1, items.length, title);
+  }
+  return { groups, rows, errors };
+}
+
+/** Публикация черновиков: группа (=ролик) целиком уходит в один слот/время. */
+export async function publishDrafts(args: {
+  tenantId: string; baseUrl?: string; ids: string[];
+  mode: 'now' | 'time' | 'slot'; scheduledAt?: string;
+}): Promise<{ ok: number; failed: number; groups: number; firstAt?: string; lastAt?: string }> {
+  const key = await tenantBlotatoKey(args.tenantId);
+  if (!key) throw new Error('Ключ Blotato не задан (Настройки → Ключи → Blotato)');
+  const ids = (args.ids || []).map(String).filter(Boolean).slice(0, 200);
+  if (!ids.length) throw new Error('Не выбраны черновики');
+  const r = await pool.query(
+    `SELECT * FROM publisher_posts WHERE tenant_id = $1 AND status = 'draft' AND id = ANY($2::uuid[])
+     ORDER BY created_at ASC`, [args.tenantId, ids]);
+  const list = r.rows as any[];
+  if (!list.length) throw new Error('Черновики не найдены (возможно, уже опубликованы)');
+
+  // Группируем по ролику: все сети одного ролика уходят в ОДНО время.
+  const byGroup = new Map<string, any[]>();
+  for (const row of list) { const a = byGroup.get(row.group_id) || []; a.push(row); byGroup.set(row.group_id, a); }
+  const groupIds = [...byGroup.keys()];
+
+  let times: (string | undefined)[] = [];
+  if (args.mode === 'slot') {
+    const slots = await nextFreeSlotTimes(args.tenantId, groupIds.length, Date.now() + 60_000);
+    if (slots.length < groupIds.length) {
+      throw new Error(`Свободных слотов ${slots.length}, а роликов ${groupIds.length} — добавьте времена в «Моё расписание».`);
+    }
+    times = slots.map((d) => d.toISOString());
+  } else if (args.mode === 'time') {
+    if (!args.scheduledAt || Number.isNaN(Date.parse(args.scheduledAt))) throw new Error('Некорректное время публикации');
+    times = groupIds.map(() => new Date(args.scheduledAt!).toISOString());
+  } else {
+    times = groupIds.map(() => undefined);
+  }
+
+  const base = args.baseUrl || publicBase();
+  let ok = 0; let failed = 0;
+  for (let gi = 0; gi < groupIds.length; gi++) {
+    const when = times[gi];
+    for (const row of byGroup.get(groupIds[gi])!) {
+      const platform = String(row.platform) as BlotatoPlatform;
+      const opts = (typeof row.target === 'object' && row.target) ? row.target : {};
+      const pre = (BLOTATO_PLATFORMS as readonly string[]).includes(platform)
+        ? targetPrecheck(platform, opts) : `Платформа не поддерживается: ${platform}`;
+      if (pre) {
+        failed++;
+        await pool.query(`UPDATE publisher_posts SET status='failed', error=$2, updated_at=NOW() WHERE id=$1`, [row.id, pre]);
+        continue;
+      }
+      try {
+        const out = await createPost(key, {
+          accountId: String(row.account_id), platform, text: row.text || '',
+          mediaUrls: row.media_url ? [absUrl(base, row.media_url)] : [],
+          target: buildTarget(platform, opts, (row.text || 'Video').split('\n')[0].slice(0, 100)),
+          scheduledTime: when,
+        });
+        await pool.query(
+          `UPDATE publisher_posts SET submission_id=$2, status=$3, mode=$4, scheduled_at=$5, error=NULL, updated_at=NOW() WHERE id=$1`,
+          [row.id, out.submissionId, when ? 'scheduled' : 'submitted', args.mode, when || null]
+        );
+        ok++;
+      } catch (e: any) {
+        const msg = e instanceof BlotatoError ? e.message : (e?.message || 'Ошибка Blotato');
+        await pool.query(
+          `UPDATE publisher_posts SET status='failed', error=$2, mode=$3, scheduled_at=$4, next_retry_at=$5, updated_at=NOW() WHERE id=$1`,
+          [row.id, msg, args.mode, when || null, isRetriable(e) ? new Date(Date.now() + 2 * 60_000) : null]
+        );
+        failed++;
+      }
+      await sleep(350);   // лимит Blotato 30 постов/мин
+    }
+  }
+  const stamps = times.filter(Boolean) as string[];
+  return { ok, failed, groups: groupIds.length, firstAt: stamps[0], lastAt: stamps[stamps.length - 1] };
+}
+
+/** Правка черновика (текст поста и заголовок YouTube) до публикации. */
+export async function updateDraft(tenantId: string, id: string, patch: { text?: string; title?: string })
+  : Promise<{ ok: boolean; error?: string }> {
+  const r = await pool.query(`SELECT * FROM publisher_posts WHERE id=$1 AND tenant_id=$2`, [id, tenantId]);
+  const row = r.rows[0];
+  if (!row) return { ok: false, error: 'Черновик не найден' };
+  if (row.status !== 'draft') return { ok: false, error: 'Править можно только черновик' };
+  const text = patch.text != null ? String(patch.text).slice(0, 5000) : row.text;
+  const opts = (typeof row.target === 'object' && row.target) ? { ...row.target } : {};
+  if (patch.title != null) opts.title = String(patch.title).slice(0, 100);
+  await pool.query(`UPDATE publisher_posts SET text=$2, target=$3, updated_at=NOW() WHERE id=$1`,
+    [row.id, text, JSON.stringify(opts)]);
+  return { ok: true };
+}
+
+/** Удаление пачкой. «В полёте» (scheduled/submitted) НЕ трогаем: их надо снимать в Blotato
+ *  через DELETE /posts/:id, иначе потеряем связь с уже отправленной публикацией. */
+export async function deleteRows(tenantId: string, ids: string[]): Promise<{ deleted: number; skipped: number }> {
+  const list = (ids || []).map(String).filter(Boolean).slice(0, 400);
+  if (!list.length) return { deleted: 0, skipped: 0 };
+  const r = await pool.query(
+    `DELETE FROM publisher_posts
+     WHERE tenant_id=$1 AND id = ANY($2::uuid[]) AND status NOT IN ('scheduled','submitted') RETURNING id`,
+    [tenantId, list]);
+  return { deleted: r.rowCount || 0, skipped: list.length - (r.rowCount || 0) };
 }
 
 /** Фолбэк-подпись без ИИ (авто-цепочки не должны стоять из-за отсутствия ключа Claude). */
