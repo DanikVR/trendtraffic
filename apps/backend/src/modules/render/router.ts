@@ -106,7 +106,8 @@ router.post('/podcast/dialogue', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /podcast/diarize — разобрать запись подкаста на 2 голоса (Gemini, тенант-ключом). */
+/** POST /podcast/diarize — разобрать запись на голоса (Gemini, тенант-ключом).
+ *  Сколько голосов (1 или 2) определяет модель → ответ несёт speakers[{id,gender}]. */
 router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
   try {
     const recordingUrl = typeof req.body?.recordingUrl === 'string' ? req.body.recordingUrl : '';
@@ -130,7 +131,7 @@ router.post('/podcast/diarize', async (req: AuthedRequest, res: Response) => {
     if (!g.lines.length) {
       return res.status(502).json({ error: 'Gemini не смог разобрать запись — попробуйте другую запись или повторите.' });
     }
-    res.json({ lines: g.lines, tracks: [], note: g.note });
+    res.json({ lines: g.lines, tracks: [], speakers: g.speakers, note: g.note });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка разбора записи' });
   }

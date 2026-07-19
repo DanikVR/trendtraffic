@@ -868,20 +868,41 @@ export default function MontageEditor({ flowId, onBack, isNew, initialCloud, sol
     } catch (e: any) { setUgcNote(e?.message || t('sec.montage.genTextFail', 'Не удалось сгенерировать текст.')); }
     finally { setUgcBusy(null); }
   };
-  // Разбор записи → реплики (переиспользуем /podcast/diarize). В режиме «Диалоги» СОХРАНЯЕМ
-  // спикеров A/B (два собеседника); иначе (1 аватар) схлопываем всё в спикера A.
+  // Разбор записи → реплики (/podcast/diarize). Сколько голосов — решает РАЗБОР, а не режим:
+  // один голос → всё на дорожку A; два → реплики ложатся на A и B, и режим сам переключается
+  // на «Диалог двоих». Раньше вне диалога спикер B молча схлопывался в A — второй собеседник
+  // пропадал, хотя разбор его нашёл.
   const ugcRunDiarize = async () => {
     if (ugcBusy || !ugc.recordingUrl) return;
     setUgcBusy('diarize'); setUgcNote(null);
     try {
-      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(), body: JSON.stringify({ recordingUrl: ugc.recordingUrl, hostAVoice: ugc.voice }) });
+      // Подсказку пола шлём только в уже включённом диалоге (там голоса заданы осознанно).
+      // В соло ugc.voice — это голос будущего ролика, а не пол говорящего на записи:
+      // как подсказка он сбивал бы разбор.
+      const body: Record<string, unknown> = { recordingUrl: ugc.recordingUrl };
+      if (ugc.dialogueEnabled) body.hostAVoice = ugc.voice;
+      const res = await fetch('/api/render/podcast/diarize', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || t('sec.montage.errN', 'Ошибка {{n}}', { n: res.status }));
-      const keepAB = ugc.dialogueEnabled;
-      const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: (keepAB && l.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l.text || ''), start: Number(l.start), end: Number(l.end) })).filter((l: PodLine) => l.text.trim()) : [];
-      const speakers = new Set(lines.map((l) => l.speaker));
-      ugcMutate((u) => ({ ...u, script: lines }));
-      setUgcNote(d.note || t('sec.montage.diarizeOk', 'Разобрано: {{n}} реплик{{ab}}.', { n: lines.length, ab: keepAB && speakers.size > 1 ? t('sec.montage.diarizeAB', ' (два голоса A/B)') : '' }));
+      // Разметку A/B сохраняем ВСЕГДА — сколько голосов, решил разбор, а не текущий режим.
+      const lines: PodLine[] = Array.isArray(d.lines) ? d.lines.map((l: any) => ({ speaker: (l.speaker === 'B' ? 'B' : 'A') as 'A' | 'B', text: String(l.text || ''), start: Number(l.start), end: Number(l.end) })).filter((l: PodLine) => l.text.trim()) : [];
+      const twoVoices = lines.some((l) => l.speaker === 'A') && lines.some((l) => l.speaker === 'B');
+      ugcMutate((u) => {
+        const next: UgcSpec = { ...u, script: lines, source: 'diarize' };
+        // Нашли два голоса — включаем «Диалог двоих»: дорожка B рендерится только в этом
+        // режиме, иначе реплики B молча схлопнулись бы в A (и второй собеседник пропал).
+        if (twoVoices && !u.dialogueEnabled) {
+          next.dialogueEnabled = true;
+          next.noAvatar = false;
+          next.retentionPreset = 'off';
+          next.avatarSource = 'photo';
+        }
+        return next;
+      });
+      setUgcNote(t('sec.montage.diarizeOk', 'Разобрано: {{n}} реплик{{ab}}.', {
+        n: lines.length,
+        ab: twoVoices ? t('sec.montage.diarizeAB', ' (два голоса A/B)') : '',
+      }) + (twoVoices ? ` · ${t('ugc.mode.title')}: ${t('ugc.mode.dialogue')}` : ''));
     } catch (e: any) { setUgcNote(e?.message || t('sec.montage.diarizeFail', 'Не удалось разобрать запись.')); }
     finally { setUgcBusy(null); }
   };
