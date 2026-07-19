@@ -1262,7 +1262,17 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           // вне диапазона, голос-тишина) — граф не трогаем, индексы входов целы.
           const bmpExists = !!(bmp.intro || bmp.outro);
           const avBeyond = bmpExists && clipTotal > 0.3 && avStart + Dav > clipTotal + 0.05;
-          const introD = avBeyond && bmp.intro ? await mediaDuration(bmp.intro) : 0;
+          // ДУБЛИ аватара по таймлайну (spec.avatarVideoExtraSegs, до 4): каждый кладётся
+          // отдельным финальным проходом поверх готового ролика (свои позиция и обрезка).
+          const extraSegs: { startSec: number; trimStart?: number; trimEnd?: number }[] =
+            (Array.isArray(spec.avatarVideoExtraSegs) ? spec.avatarVideoExtraSegs : [])
+              .map((s: any) => ({
+                startSec: Math.max(0, Math.min(3600, Number(s?.startSec) || 0)),
+                trimStart: Number(s?.trimStart) > 0 ? Number(s.trimStart) : undefined,
+                trimEnd: Number(s?.trimEnd) > 0 ? Number(s.trimEnd) : undefined,
+              }))
+              .slice(0, 4);
+          const introD = (avBeyond || extraSegs.length) && bmp.intro ? await mediaDuration(bmp.intro) : 0;
           let made = 0;
 
           for (const fmt of outFormats) {
@@ -1304,6 +1314,18 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 basePath: fileUrl, avatarPath: avatarVideoPath, avatarKind, avatarChroma: chromaColor,
                 voicePath: avatar.filePath, startSec: introD + avStart,
                 avatarTrimStart: avTs, avatarTrimEnd: avTe < DavFull - 0.05 ? avTe : undefined,
+                voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
+                avatarRect: avatarRectFor(fmt.key), dims: fmt.dims,
+              });
+            }
+            // Дубли аватара: по одному проходу на сегмент (позиция — секунды таймлайна + интро).
+            for (let sIdx = 0; sIdx < extraSegs.length; sIdx++) {
+              const s = extraSegs[sIdx];
+              j.status = `кладу дубль аватара (${sIdx + 1}/${extraSegs.length})`;
+              fileUrl = await overlayAvatarOnVideo({
+                basePath: fileUrl, avatarPath: avatarVideoPath, avatarKind, avatarChroma: chromaColor,
+                voicePath: avatar.filePath, startSec: introD + s.startSec,
+                avatarTrimStart: s.trimStart, avatarTrimEnd: s.trimEnd,
                 voiceVolumePct: Number.isFinite(Number(spec.voiceVolumePct)) ? Number(spec.voiceVolumePct) : undefined,
                 avatarRect: avatarRectFor(fmt.key), dims: fmt.dims,
               });

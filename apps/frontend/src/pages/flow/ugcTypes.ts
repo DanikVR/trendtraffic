@@ -76,6 +76,9 @@ export interface UgcSpec {
   // Обрезка видео-аватара краями сегмента (СЕКУНДЫ ИСХОДНИКА, как у клипов видеоряда):
   avatarVideoTrimStart: number;
   avatarVideoTrimEnd: number | null;
+  // ДОПОЛНИТЕЛЬНЫЕ сегменты того же видео-аватара (дубли по таймлайну, до 4): каждый —
+  // своя позиция и обрезка; рендер кладёт их финальными проходами поверх готового ролика.
+  avatarVideoExtraSegs: { startSec: number; trimStart?: number; trimEnd?: number }[];
   // ИИ-вырезка фона аватара в соло («Моё фото»/«Коллекция»): HeyGen оживляет фото на ЗЕЛЁНОМ
   // фоне (bgColor), рендер делает chroma-key → поверх кадра остаётся только силуэт человека.
   avatarCutout: boolean;
@@ -160,6 +163,7 @@ export const UGC_DEFAULT: UgcSpec = {
   avatarVideoUrl: null, avatarVideoName: null, avatarVideoCutout: false, avatarVideoBgMode: '',
   avatarVideoStartSec: 0, avatarVideoDurationSec: null,
   avatarVideoTrimStart: 0, avatarVideoTrimEnd: null,
+  avatarVideoExtraSegs: [],
   avatarCutout: false,
   avatarOverInserts: false,
   faceProvider: 'heygen_api',

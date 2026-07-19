@@ -47,6 +47,8 @@ interface Props {
     volumePct?: number;  // громкость звука видеоряда (ручка над таймлайном), для плея
     // ✂ по бегунку: разрезать клип i на два сегмента в точке srcSec (СЕКУНДЫ ИСХОДНИКА)
     onSplit?: (i: number, srcSec: number) => void;
+    // ⧉ на чипе: продублировать клип i (копия встаёт следом)
+    onDuplicate?: (i: number) => void;
   };
   // UGC «Готовое видео»: сегмент видео-аватара на СВОЕЙ дорожке — тащится по времени
   // (когда аватар появится в кадре и заговорит), клик — редактор (VideoViewer).
@@ -64,6 +66,13 @@ interface Props {
     onDuration?: (sec: number) => void;
     onTrim?: (patch: { trimStart?: number; trimEnd?: number }) => void;
     volumePct?: number;  // громкость озвучки (ручка над таймлайном), для плея
+    // ДУБЛИ сегмента (то же видео, свои позиция/обрезка) — рендер кладёт их финальными проходами.
+    extra?: { startSec: number; trimStart?: number; trimEnd?: number }[];
+    onExtraMove?: (i: number, startSec: number) => void;
+    onExtraTrim?: (i: number, patch: { trimStart?: number; trimEnd?: number }) => void;
+    onExtraRemove?: (i: number) => void;
+    // ⧉ на чипе: продублировать сегмент idx (-1 = главный) — копия встаёт следом за ним
+    onDuplicate?: (idx: number) => void;
   };
   // Заставки «до/после»: показываем на таймлайне, где они приклеятся при сборке.
   // Интро рисуется штриховым маркером у нуля (клеится ПЕРЕД роликом), концовка — сплошным
@@ -133,6 +142,17 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     const b: PodLine = { ...l, text: words.slice(cw).join(' '), tStart: Math.round((t + off) * 20) / 20, image: undefined, imageName: undefined, anim: undefined, ...(hasTC ? { start: mid } : {}) };
     mutate((p) => [...p.slice(0, i), a, b, ...p.slice(i + 1)]);
     setSelLine((s) => (s != null && s > i ? s + 1 : s));
+  };
+  /* ⧉ дубль реплики: копия ставится СЛЕДОМ на таймлайне (tStart = конец оригинала);
+     start/end (кусок записи) сохраняются — копия проиграет тот же фрагмент позже. */
+  const duplicateLine = (i: number) => {
+    mutate((p) => {
+      const l = p[i]; if (!l) return p;
+      const t0 = lineT(l, i, p); const d = lineDur(l);
+      const copy: PodLine = { ...l, tStart: Math.round((t0 + d) * 20) / 20 };
+      return [...p.slice(0, i + 1), copy, ...p.slice(i + 1)];
+    });
+    setSelLine(i + 1);
   };
   const mergeLineDown = (i: number) => {
     mutate((p) => {
@@ -253,11 +273,13 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     }
     if (overlayTrack) {
       const vol = v01(overlayTrack.volumePct, 100);
-      const full = overlayTrack.durationSec || 5;
-      const ts = overlayTrack.trimStart || 0;
-      const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
-      const st = Math.max(0, overlayTrack.startSec || 0);
-      if (vol > 0.01) out.push({ url: overlayTrack.url, winStart: st, winEnd: st + Math.max(0.3, te - ts), srcOff: ts, rate: 1, vol });
+      if (vol > 0.01) {
+        // главный сегмент + дубли: каждый играет свой кусок исходника в своём окне
+        for (const idx of [-1, ...(overlayTrack.extra || []).map((_, i) => i)]) {
+          const { start, ts, te } = ovSegRaw(idx);
+          out.push({ url: overlayTrack.url, winStart: start, winEnd: start + Math.max(0.3, te - ts), srcOff: ts, rate: 1, vol });
+        }
+      }
     }
     // Концовка приклеена ПОСЛЕ видеоряда — на дорожке и в плее живёт своим звуком
     // (якорь от видеоряда: аватар, лежащий на концовке, её не сдвигает).
@@ -289,10 +311,10 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     if (clipTrack) clipTrack.clips.forEach((c, i) => { clips += clipEff(c, i); });
     let ov = 0;
     if (overlayTrack) {
-      const full = overlayTrack.durationSec || 5;
-      const ts = overlayTrack.trimStart || 0;
-      const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
-      ov = Math.max(0, overlayTrack.startSec || 0) + Math.max(0.3, te - ts);
+      for (const idx of [-1, ...(overlayTrack.extra || []).map((_, i) => i)]) {
+        const { start, ts, te } = ovSegRaw(idx);
+        ov = Math.max(ov, start + Math.max(0.3, te - ts));
+      }
     }
     return Math.max(1, clips, ov, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
   };
@@ -495,27 +517,37 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     el.addEventListener('pointercancel', onUp);
   };
 
-  /* ── сегмент видео-аватара: драг по времени (локальный override, коммит на pointerup);
-     без сдвига (<3px) отпускание считается кликом → onOpen (редактор).
-     Края сегмента — обрезка trimStart/trimEnd (секунды исходника), как у клипов видеоряда. */
-  const [ovDragStart, setOvDragStart] = useState<number | null>(null);
-  const [ovTrimOv, setOvTrimOv] = useState<{ trimStart?: number; trimEnd?: number } | null>(null);
-  const beginOvTrim = (e: React.PointerEvent, side: 'l' | 'r') => {
-    if (!overlayTrack?.onTrim) return;
+  /* ── сегменты видео-аватара (главный + дубли): драг по времени (локальный override,
+     коммит на pointerup); без сдвига (<3px) отпускание = клик → onOpen (редактор).
+     Края сегмента — обрезка trimStart/trimEnd (секунды исходника). idx: -1 = главный,
+     0..N — дубли (extra). */
+  const [ovDragStart, setOvDragStart] = useState<{ idx: number; start: number } | null>(null);
+  const [ovTrimOv, setOvTrimOv] = useState<{ idx: number; trimStart?: number; trimEnd?: number } | null>(null);
+  // Комитнутые параметры сегмента idx (без драг-оверрайдов).
+  const ovSegRaw = (idx: number): { start: number; ts: number; te: number } => {
+    const full = overlayTrack?.durationSec || 5;
+    const seg = idx < 0
+      ? { startSec: overlayTrack?.startSec || 0, trimStart: overlayTrack?.trimStart, trimEnd: overlayTrack?.trimEnd }
+      : (overlayTrack?.extra?.[idx] || { startSec: 0 });
+    const ts = Math.max(0, Number(seg.trimStart) || 0);
+    const te = Number(seg.trimEnd) > 0 ? Math.min(Number(seg.trimEnd), full) : full;
+    return { start: Math.max(0, Number(seg.startSec) || 0), ts, te };
+  };
+  const beginOvTrim = (e: React.PointerEvent, side: 'l' | 'r', idx: number) => {
+    if (!overlayTrack || (idx < 0 ? !overlayTrack.onTrim : !overlayTrack.onExtraTrim)) return;
     e.preventDefault(); e.stopPropagation();
     const dur = overlayTrack.durationSec || 0; if (!(dur > 0)) return;
     const el = e.currentTarget as HTMLElement;
     try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
     const x0 = e.clientX;
-    const ts0 = overlayTrack.trimStart || 0;
-    const te0 = (Number(overlayTrack.trimEnd) > 0) ? Math.min(overlayTrack.trimEnd as number, dur) : dur;
+    const { ts: ts0, te: te0 } = ovSegRaw(idx);
     let last: { trimStart?: number; trimEnd?: number } | null = null;
     const onMove = (ev: PointerEvent) => {
       const dsec = (ev.clientX - x0) / tlPpsRef.current;
       last = side === 'l'
         ? { trimStart: Math.round(Math.min(Math.max(0, ts0 + dsec), te0 - 0.3) * 10) / 10 }
         : { trimEnd: Math.round(Math.min(Math.max(ts0 + 0.3, te0 + dsec), dur) * 10) / 10 };
-      setOvTrimOv(last);
+      setOvTrimOv({ idx, ...last });
     };
     const onUp = () => {
       el.removeEventListener('pointermove', onMove);
@@ -523,34 +555,33 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       el.removeEventListener('pointercancel', onUp);
       try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
       setOvTrimOv(null);
-      if (last) { overlayTrack.onTrim!(last); dirty(); }
+      if (last) { (idx < 0 ? overlayTrack.onTrim!(last) : overlayTrack.onExtraTrim!(idx, last)); dirty(); }
     };
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onUp);
   };
-  const beginOvDrag = (e: React.PointerEvent) => {
+  const beginOvDrag = (e: React.PointerEvent, idx: number) => {
     if (!overlayTrack || e.button !== 0) return;
+    if (idx >= 0 && !overlayTrack.onExtraMove) return;
     e.preventDefault();
     const el = e.currentTarget as HTMLElement;
     try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
-    const x0 = e.clientX; const s0 = Math.max(0, overlayTrack.startSec || 0);
+    const x0 = e.clientX;
+    const { start: s0, ts, te } = ovSegRaw(idx);
     // Сегмент живёт в границах ролика: видеоряд + КОНЦОВКА-заставка (аватар можно положить
     // и на неё — рендер докладывает его финальным проходом). Дальше конца — нельзя.
     let maxStart = Number.POSITIVE_INFINITY;
     if (clipTrack && clipTrack.clips.length) {
       const clipsTotal = clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0);
       const outroD = bumperTrack?.outro ? (Number(bumperTrack.outro.durationSec) || 0) : 0;
-      const full = overlayTrack.durationSec || 5;
-      const ts = overlayTrack.trimStart || 0;
-      const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
       maxStart = Math.max(0, clipsTotal + outroD - Math.max(0.3, te - ts));
     }
     let last = s0; let moved = false;
     const onMove = (ev: PointerEvent) => {
       if (Math.abs(ev.clientX - x0) > 3) moved = true;
       last = Math.min(maxStart, Math.max(0, Math.round((s0 + (ev.clientX - x0) / tlPpsRef.current) * 20) / 20));
-      if (moved) setOvDragStart(last);
+      if (moved) setOvDragStart({ idx, start: last });
     };
     const onUp = () => {
       el.removeEventListener('pointermove', onMove);
@@ -558,7 +589,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
       el.removeEventListener('pointercancel', onUp);
       try { el.releasePointerCapture(e.pointerId); } catch { /* */ }
       setOvDragStart(null);
-      if (moved) { overlayTrack.onMove(last); dirty(); }
+      if (moved) { (idx < 0 ? overlayTrack.onMove(last) : overlayTrack.onExtraMove!(idx, last)); dirty(); }
       else overlayTrack.onOpen();
     };
     el.addEventListener('pointermove', onMove);
@@ -571,12 +602,18 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
   if (!dialogue.length && !(clipTrack && clipTrack.clips.length) && !overlayTrack) return null;
   const arr = dialogue;
   const clipsTotal = clipTrack ? clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0) : 0;
-  const ovStart = overlayTrack ? (ovDragStart ?? Math.max(0, overlayTrack.startSec || 0)) : 0;
-  const ovFull = overlayTrack ? (overlayTrack.durationSec || 5) : 0;
-  const ovTs = (ovTrimOv?.trimStart ?? overlayTrack?.trimStart) || 0;
-  const ovTeRaw = ovTrimOv?.trimEnd ?? overlayTrack?.trimEnd;
-  const ovDur = overlayTrack ? Math.max(0.3, ((Number(ovTeRaw) > 0 ? Math.min(Number(ovTeRaw), ovFull) : ovFull) - ovTs)) : 0;
-  const contentTotal = Math.max(3, clipsTotal, ovStart + ovDur, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
+  // Сегменты аватара для отрисовки: главный (idx −1) + дубли, с учётом драг/трим-оверрайдов.
+  const ovSegs = overlayTrack
+    ? [-1, ...(overlayTrack.extra || []).map((_, i) => i)].map((idx) => {
+        const raw = ovSegRaw(idx);
+        const start = ovDragStart?.idx === idx ? ovDragStart.start : raw.start;
+        const ts = ovTrimOv?.idx === idx && ovTrimOv.trimStart !== undefined ? ovTrimOv.trimStart : raw.ts;
+        const te = ovTrimOv?.idx === idx && ovTrimOv.trimEnd !== undefined ? ovTrimOv.trimEnd : raw.te;
+        return { idx, start, dur: Math.max(0.3, te - ts) };
+      })
+    : [];
+  const ovMaxEnd = ovSegs.reduce((m, s) => Math.max(m, s.start + s.dur), 0);
+  const contentTotal = Math.max(3, clipsTotal, ovMaxEnd, ...arr.map((l, i) => lineT(l, i, arr) + lineDur(l)));
   // Концовка приклеивается ПОСЛЕ видеоряда (аватар МОЖЕТ лежать на ней — её якорь
   // считается от видеоряда, а не от contentTotal, иначе чип уезжал бы за аватаром).
   const introD = bumperTrack?.intro ? (Number(bumperTrack.intro.durationSec) || 0) : 0;
@@ -671,6 +708,15 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                           cursor: 'pointer', userSelect: 'none', touchAction: 'none', padding: showText ? '0 11px' : 0,
                           border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
                         {showText && <span style={{ pointerEvents: 'none' }}>{clipTrack.clips.length > 1 ? `${i + 1}. ` : ''}{c.name} · {tlMmss(eff)}</span>}
+                        {/* ⧉ — продублировать клип (копия встаёт следом на дорожке) */}
+                        {clipTrack.onDuplicate && w >= 60 && clipTrack.clips.length < 12 && (
+                          <span
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={(ev) => { ev.stopPropagation(); clipTrack.onDuplicate!(i); dirty(); }}
+                            title={t('sec.dialogue.dupClip', 'Дублировать клип (копия следом)')}
+                            style={{ position: 'absolute', right: 11, top: 3, width: 15, height: 15, lineHeight: '14px',
+                              textAlign: 'center', fontSize: 10, borderRadius: 4, background: 'rgba(0,0,0,0.35)', cursor: 'pointer' }}>⧉</span>
+                        )}
                         {hasDur && (['l', 'r'] as const).map((side) => (
                           <span key={side}
                             onClick={(ev) => ev.stopPropagation()}
@@ -691,35 +737,60 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
               </div>
             );
           })()}
-          {/* Дорожка «Аватар» (готовое видео со звуком): тащить = когда появится в кадре, клик = редактор */}
+          {/* Дорожка «Аватар» (готовое видео со звуком): главный сегмент + дубли (⧉).
+              Тащить = когда появится в кадре, клик = редактор, ✕ на дубле = убрать. */}
           {overlayTrack && (
             <div style={{ position: 'relative', height: 26, marginTop: 2 }}>
               <span style={{ position: 'absolute', left: 7, top: 6 }} title={overlayTrack.label}><UserRound size={11} style={{ color: '#f59e0b' }} /></span>
               <div style={{ position: 'absolute', left: 32, right: 0, top: 0, bottom: 0 }}>
-                <div
-                  onPointerDown={beginOvDrag}
-                  title={`${overlayTrack.name} · ${tlMmss(ovDur)} — ${t('sec.dialogue.avatarSegTip', 'тащите по времени — когда аватар появится и заговорит; клик — открыть в редакторе')}`}
-                  style={{ position: 'absolute', left: ovStart * tlPps, width: Math.max(10, ovDur * tlPps - 2), top: 2, height: 22, borderRadius: 6,
-                    background: 'linear-gradient(180deg, rgba(251,191,36,0.95), rgba(217,119,6,0.95))', color: '#fff',
-                    fontSize: 9, lineHeight: '22px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                    cursor: 'grab', userSelect: 'none', touchAction: 'none', padding: '0 8px',
-                    border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
-                  <span style={{ pointerEvents: 'none' }}>{overlayTrack.label}: {overlayTrack.name} · {tlMmss(ovStart)}→{tlMmss(ovStart + ovDur)}</span>
-                  {/* ручки обрезки по краям (секунды исходника) — когда известна длительность */}
-                  {Number(overlayTrack.durationSec) > 0 && overlayTrack.onTrim && (['l', 'r'] as const).map((side) => (
-                    <span key={side}
-                      onClick={(ev) => ev.stopPropagation()}
-                      onPointerDown={(ev) => { ev.stopPropagation(); beginOvTrim(ev, side); }}
-                      title={side === 'l' ? t('sec.dialogue.clipTrimL', 'Обрезать начало клипа') : t('sec.dialogue.clipTrimR', 'Обрезать конец клипа')}
-                      style={{ position: 'absolute', [side === 'l' ? 'left' : 'right']: 0, top: 0, bottom: 0, width: 9,
-                        cursor: 'ew-resize', background: 'rgba(255,255,255,0.3)', touchAction: 'none',
-                        borderRadius: side === 'l' ? '6px 0 0 6px' : '0 6px 6px 0' }} />
-                  ))}
-                  {!(Number(overlayTrack.durationSec) > 0) && overlayTrack.onDuration && (
-                    <video src={overlayTrack.url} muted preload="metadata" style={{ display: 'none' }}
-                      onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) overlayTrack.onDuration!(Math.round(d * 10) / 10); }} />
-                  )}
-                </div>
+                {ovSegs.map((sg) => {
+                  const canTrim = Number(overlayTrack.durationSec) > 0 && (sg.idx < 0 ? !!overlayTrack.onTrim : !!overlayTrack.onExtraTrim);
+                  const w = Math.max(10, sg.dur * tlPps - 2);
+                  return (
+                  <div key={sg.idx}
+                    onPointerDown={(e) => beginOvDrag(e, sg.idx)}
+                    title={`${overlayTrack.name} · ${tlMmss(sg.dur)} — ${t('sec.dialogue.avatarSegTip', 'тащите по времени — когда аватар появится и заговорит; клик — открыть в редакторе')}`}
+                    style={{ position: 'absolute', left: sg.start * tlPps, width: w, top: 2, height: 22, borderRadius: 6,
+                      background: sg.idx < 0 ? 'linear-gradient(180deg, rgba(251,191,36,0.95), rgba(217,119,6,0.95))' : 'linear-gradient(180deg, rgba(251,191,36,0.75), rgba(217,119,6,0.75))',
+                      color: '#fff', fontSize: 9, lineHeight: '22px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                      cursor: 'grab', userSelect: 'none', touchAction: 'none', padding: '0 8px',
+                      border: sg.idx < 0 ? '1px solid rgba(255,255,255,0.2)' : '1px dashed rgba(255,255,255,0.45)', boxShadow: '0 1px 3px rgba(0,0,0,0.28)' }}>
+                    <span style={{ pointerEvents: 'none' }}>{overlayTrack.label}{sg.idx >= 0 ? ` ⧉${sg.idx + 2}` : `: ${overlayTrack.name}`} · {tlMmss(sg.start)}→{tlMmss(sg.start + sg.dur)}</span>
+                    {/* ⧉ — продублировать сегмент (копия следом) */}
+                    {overlayTrack.onDuplicate && w >= 60 && (
+                      <span
+                        onPointerDown={(ev) => ev.stopPropagation()}
+                        onClick={(ev) => { ev.stopPropagation(); overlayTrack.onDuplicate!(sg.idx); dirty(); }}
+                        title={t('sec.dialogue.dupSeg', 'Дублировать сегмент (копия следом)')}
+                        style={{ position: 'absolute', right: sg.idx >= 0 && overlayTrack.onExtraRemove ? 24 : 11, top: 3, width: 15, height: 15, lineHeight: '14px',
+                          textAlign: 'center', fontSize: 10, borderRadius: 4, background: 'rgba(0,0,0,0.35)', cursor: 'pointer' }}>⧉</span>
+                    )}
+                    {/* ✕ — убрать дубль */}
+                    {sg.idx >= 0 && overlayTrack.onExtraRemove && w >= 44 && (
+                      <span
+                        onPointerDown={(ev) => ev.stopPropagation()}
+                        onClick={(ev) => { ev.stopPropagation(); overlayTrack.onExtraRemove!(sg.idx); dirty(); }}
+                        title={t('sec.dialogue.delSeg', 'Убрать дубль')}
+                        style={{ position: 'absolute', right: 11, top: 3, width: 15, height: 15, lineHeight: '13px',
+                          textAlign: 'center', fontSize: 10, borderRadius: 4, background: 'rgba(0,0,0,0.35)', cursor: 'pointer' }}>✕</span>
+                    )}
+                    {/* ручки обрезки по краям (секунды исходника) — когда известна длительность */}
+                    {canTrim && (['l', 'r'] as const).map((side) => (
+                      <span key={side}
+                        onClick={(ev) => ev.stopPropagation()}
+                        onPointerDown={(ev) => { ev.stopPropagation(); beginOvTrim(ev, side, sg.idx); }}
+                        title={side === 'l' ? t('sec.dialogue.clipTrimL', 'Обрезать начало клипа') : t('sec.dialogue.clipTrimR', 'Обрезать конец клипа')}
+                        style={{ position: 'absolute', [side === 'l' ? 'left' : 'right']: 0, top: 0, bottom: 0, width: 9,
+                          cursor: 'ew-resize', background: 'rgba(255,255,255,0.3)', touchAction: 'none',
+                          borderRadius: side === 'l' ? '6px 0 0 6px' : '0 6px 6px 0' }} />
+                    ))}
+                    {sg.idx < 0 && !(Number(overlayTrack.durationSec) > 0) && overlayTrack.onDuration && (
+                      <video src={overlayTrack.url} muted preload="metadata" style={{ display: 'none' }}
+                        onLoadedMetadata={(ev) => { const d = ev.currentTarget.duration; if (Number.isFinite(d) && d > 0) overlayTrack.onDuration!(Math.round(d * 10) / 10); }} />
+                    )}
+                  </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -791,6 +862,7 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
                 {onOmni && (
                   <button onClick={() => onOmni(i)} title={t('sec.dialogue.omniForLine', 'Сгенерировать Omni-клип на эту фразу')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#6366f1', border: '1px solid var(--border-medium)', cursor: 'pointer' }}><Sparkles size={13} /></button>
                 )}
+                <button onClick={() => duplicateLine(i)} title={t('sec.dialogue.dupLine', 'Дублировать реплику (копия следом на таймлайне)')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: accentA, border: '1px solid var(--border-medium)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>⧉</button>
                 <button onClick={() => lineDel(i)} title={t('sec.dialogue.deleteLine', 'Удалить реплику')} className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5" style={{ background: 'var(--bg-secondary)', color: '#ef4444', border: 'none', cursor: 'pointer' }}><X size={13} /></button>
               </div>
               {showGestures && (

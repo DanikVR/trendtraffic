@@ -1791,6 +1791,11 @@ export default function UgcStudio(p: UgcStudioProps) {
                   muted: ugc.clipMuted,
                   volumePct: ugc.clipVolumePct,
                   onSplit: splitClipAt,
+                  onDuplicate: (i) => ugcMutate((u) => {
+                    const c = u.clips[i];
+                    if (!c || u.clips.length >= 12) return u;   // лимит склейки бэкенда
+                    return syncClips(u, [...u.clips.slice(0, i + 1), { ...c }, ...u.clips.slice(i + 1)]);
+                  }),
                 } : undefined}
                 overlayTrack={isVideoAv && ugc.avatarVideoUrl && ugc.clips.length > 0 ? {
                   label: t('ugc.timeline.avatarLabel', 'Аватар'),
@@ -1805,6 +1810,25 @@ export default function UgcStudio(p: UgcStudioProps) {
                   onDuration: (d) => ugcMutate((u) => ({ ...u, avatarVideoDurationSec: d, ...(Number(u.avatarVideoTrimEnd) > d ? { avatarVideoTrimEnd: d } : {}) })),
                   onTrim: (patch) => ugcMutate((u) => ({ ...u, ...(patch.trimStart !== undefined ? { avatarVideoTrimStart: patch.trimStart } : {}), ...(patch.trimEnd !== undefined ? { avatarVideoTrimEnd: patch.trimEnd } : {}) })),
                   volumePct: ugc.voiceVolumePct,
+                  // Дубли сегмента (рендер кладёт их финальными проходами; до 4)
+                  extra: ugc.avatarVideoExtraSegs || [],
+                  onExtraMove: (i, s) => ugcMutate((u) => ({ ...u, avatarVideoExtraSegs: (u.avatarVideoExtraSegs || []).map((x, j) => (j === i ? { ...x, startSec: s } : x)) })),
+                  onExtraTrim: (i, patch) => ugcMutate((u) => ({ ...u, avatarVideoExtraSegs: (u.avatarVideoExtraSegs || []).map((x, j) => (j === i ? { ...x, ...(patch.trimStart !== undefined ? { trimStart: patch.trimStart } : {}), ...(patch.trimEnd !== undefined ? { trimEnd: patch.trimEnd } : {}) } : x)) })),
+                  onExtraRemove: (i) => ugcMutate((u) => ({ ...u, avatarVideoExtraSegs: (u.avatarVideoExtraSegs || []).filter((_, j) => j !== i) })),
+                  onDuplicate: (idx) => ugcMutate((u) => {
+                    const ex = u.avatarVideoExtraSegs || [];
+                    if (ex.length >= 4) return u;   // лимит финальных проходов бэкенда
+                    const full = u.avatarVideoDurationSec || 5;
+                    const src = idx < 0
+                      ? { startSec: u.avatarVideoStartSec || 0, trimStart: u.avatarVideoTrimStart || undefined, trimEnd: u.avatarVideoTrimEnd || undefined }
+                      : ex[idx];
+                    if (!src) return u;
+                    const ts = Math.max(0, Number(src.trimStart) || 0);
+                    const te = Number(src.trimEnd) > 0 ? Math.min(Number(src.trimEnd), full) : full;
+                    const dur = Math.max(0.3, te - ts);
+                    const copy = { startSec: Math.round(((Number(src.startSec) || 0) + dur) * 20) / 20, trimStart: src.trimStart, trimEnd: src.trimEnd };
+                    return { ...u, avatarVideoExtraSegs: [...ex, copy] };
+                  }),
                 } : undefined}
                 bumperTrack={(ugc.intro || ugc.outro) ? {
                   intro: ugc.intro ? { name: ugc.intro.name, url: ugc.intro.url, durationSec: bumperDur[ugc.intro.url] } : null,

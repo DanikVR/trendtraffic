@@ -3411,6 +3411,19 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.13 — Дублирование по таймлайну: клипы, реплики и сегмент «Аватар» (⧉).
+ *          Просьба юзера: «дублировать все медиафайлы и тексты по таймлайну».
+ *          1) КЛИП видеоряда: кнопка ⧉ на чипе — копия встаёт следом (лимит 12).
+ *          2) РЕПЛИКА: кнопка ⧉ в редакторе реплики — копия следом на таймлайне
+ *             (tStart = конец оригинала; кусок записи start/end сохраняется).
+ *          3) СЕГМЕНТ «Аватар»: ⧉ на чипе — ДУБЛЬ (spec.avatarVideoExtraSegs, до 4):
+ *             штрихованный чип «⧉2», тащится/обрезается/удаляется (✕) отдельно;
+ *             рендер кладёт каждый дубль СВОИМ финальным проходом
+ *             (overlayAvatarOnVideo из v2.6.12 — работает и на заставке, голос
+ *             миксуется); плей и живой скраб превью знают все окна сегментов.
+ *          Файлы: ugcTypes.ts (+avatarVideoExtraSegs), render/router.ts,
+ *          DialogueTimeline.tsx (сегментно-индексированные драг/трим),
+ *          UgcStudio.tsx, UgcPreview.tsx, locales ru+en (+4 ключа). */
 /* 2.6.12 — Аватар ложится и на КОНЦОВКУ-заставку + подробный процесс на карточке.
  *          Юзер: «аватар можно наложить и на заставку до/после; аудио заставки
  *          должно накладываться» + «на карточке в Галерее — информация о процессе».
@@ -3515,7 +3528,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.12';
+export const APP_VERSION = '2.6.13';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

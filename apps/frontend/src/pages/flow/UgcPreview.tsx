@@ -158,18 +158,25 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       const v = clipVidRef.current;
       if (v && v.readyState >= 1) { try { v.currentTime = cur.at; } catch { /* до метаданных */ } }
     }
-    // окно видео-аватара (только «Готовое видео» с видеорядом — иначе он всегда в кадре)
+    // окна видео-аватара: главный сегмент + дубли (виден, если бегунок в ЛЮБОМ из окон)
     if (ugc.avatarSource === 'video' && ugc.avatarVideoUrl) {
-      const st = Math.max(0, Number(ugc.avatarVideoStartSec) || 0);
       const full = Number(ugc.avatarVideoDurationSec) || 0;
-      const ts = Math.max(0, Number(ugc.avatarVideoTrimStart) || 0);
-      const teRaw = Number(ugc.avatarVideoTrimEnd) || 0;
-      const te = teRaw > ts + 0.2 ? teRaw : (full > 0 ? full : ts + 5);
-      const dur = Math.max(0.3, te - ts);
-      const inWin = ugc.clips.length ? (tSec >= st && tSec < st + dur) : true;
+      const segs = [
+        { startSec: Number(ugc.avatarVideoStartSec) || 0, trimStart: Number(ugc.avatarVideoTrimStart) || 0, trimEnd: Number(ugc.avatarVideoTrimEnd) || 0 },
+        ...(ugc.avatarVideoExtraSegs || []),
+      ];
+      let hit: { st: number; ts: number } | null = null;
+      for (const s of segs) {
+        const st = Math.max(0, Number(s.startSec) || 0);
+        const ts = Math.max(0, Number(s.trimStart) || 0);
+        const teRaw = Number(s.trimEnd) || 0;
+        const te = teRaw > ts + 0.2 ? teRaw : (full > 0 ? full : ts + 5);
+        if (tSec >= st && tSec < st + Math.max(0.3, te - ts)) { hit = { st, ts }; break; }
+      }
+      const inWin = ugc.clips.length ? !!hit : true;
       setAvInWindow(inWin);
       const av = avVidRef.current;
-      if (av && inWin && av.readyState >= 1) { try { av.currentTime = ts + (tSec - st); } catch { /* до метаданных */ } }
+      if (av && hit && av.readyState >= 1) { try { av.currentTime = hit.ts + (tSec - hit.st); } catch { /* до метаданных */ } }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrub]);
