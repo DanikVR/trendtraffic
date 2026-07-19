@@ -46,7 +46,7 @@ import { StoryboardTab } from './storyboard/StoryboardTab';
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'storyboard' | 'reference' | 'publisher';
 /** Фильтр внутри вкладки «Медиафайлы»: медиа (изображения+видео, kind=reference), аудио
  *  или «Аналитика» (папка analyzed целиком: видео из «Добавить в галерею» + разбор .md + субтитры .srt). */
-type MediaKind = 'reference' | 'image' | 'audio' | 'analytics';
+type MediaKind = 'reference' | 'image' | 'audio' | 'analytics' | 'text';
 const ALL_TABS: Tab[] = ['trendhub', 'ugc', 'storyboard', 'flow', 'hotebook', 'reference', 'publisher'];
 
 interface GalleryItem {
@@ -198,7 +198,7 @@ export default function GalleryPage() {
   useEffect(() => { if (urlTab !== tab) setTabState(urlTab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlTab]);
   // Подфильтр «Медиафайлов» тоже синхронизирован с ?kind= — плашка «Добавлено…» в «Тренды →
   // Аналитика» ведёт прямо в /gallery?tab=reference&kind=analytics.
-  const KINDS: MediaKind[] = ['reference', 'image', 'audio', 'analytics'];
+  const KINDS: MediaKind[] = ['reference', 'image', 'audio', 'analytics', 'text'];
   const urlKind = (() => { const k = searchParams.get('kind') as MediaKind | null; return k && KINDS.includes(k) ? k : null; })();
   const [mediaKind, setMediaKind] = useState<MediaKind>(urlKind || 'reference'); // фильтр внутри «Медиафайлов»
   const setKind = (k: MediaKind) => { setMediaKind(k); setSearchParams((prev) => { prev.set('kind', k); return prev; }, { replace: true }); };
@@ -457,6 +457,7 @@ export default function GalleryPage() {
         const FOLDER_TABS: Partial<Record<Tab, string>> = { hotebook: 'hotebook', ugc: 'ugc' };
         const qsMedia = FOLDER_TABS[which] ? `folder=${FOLDER_TABS[which]}`
           : (which === 'reference' && mk === 'analytics') ? 'folder=analyzed'
+          : (which === 'reference' && mk === 'text') ? 'folder=text'
           : `kind=${mk === 'audio' ? 'audio' : 'reference'}`;
         const res = await fetch(`/api/trends/media?${qsMedia}`, { headers: jsonHeaders() });
         if (res.ok) {
@@ -625,6 +626,10 @@ export default function GalleryPage() {
         // Подраздел «Аналитика» пополняется из «Тренды → Аналитика» («Добавить в галерею»), а не загрузкой файлов.
         if (which === 'reference' && mediaKind === 'analytics') {
           return { label: addLabel, hint: t('sec.gallery.addHintAnalytics', 'Открыть «Тренды → Аналитика»: «Добавить в галерею» сложит сюда видео + разбор + субтитры'), run: () => navigate('/social-extension?tab=analytics&from=gallery') };
+        }
+        // «Текст» пополняется расшифровками речи из «Тренды → Аналитика», а не загрузкой файлов.
+        if (which === 'reference' && mediaKind === 'text') {
+          return { label: addLabel, hint: t('sec.gallery.addHintText', 'Открыть «Тренды → Аналитика»: «Расшифровать речь» → «В Галерею» сложит текст сюда'), run: () => navigate('/social-extension?tab=analytics&from=gallery') };
         }
         return { label: addLabel, hint: t('sec.gallery.addHintMedia', 'Загрузить фото, видео или аудио — файлы разложатся по «Видео»/«Аудио»'), run: () => mediaInputRef.current?.click() };
     }
@@ -1145,6 +1150,7 @@ export default function GalleryPage() {
   const displayItems = useMemo(() => {
     if (tab !== 'reference') return filtered;
     if (mediaKind === 'analytics') return filtered; // папка analyzed целиком: видео + разбор + субтитры
+    if (mediaKind === 'text') return filtered;      // папка text целиком: транскрибации и переводы (.txt)
     if (mediaKind === 'image') return filtered.filter((v) => v.mediaType === 'image');
     if (mediaKind === 'audio') return filtered.filter((v) => v.mediaType === 'audio');
     return filtered.filter((v) => v.mediaType !== 'image' && v.mediaType !== 'audio'); // Видео/файлы
@@ -1518,7 +1524,7 @@ export default function GalleryPage() {
           {tab === 'reference' && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
               <div className="inline-flex gap-1 p-1 rounded-xl flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
-                {([['reference', t('sec.gallery.kindVideo', 'Видео'), <Video key="v" size={14} />], ['image', t('sec.gallery.kindImage', 'Изображение'), <ImageIcon key="i" size={14} />], ['audio', t('sec.gallery.kindAudio', 'Аудио'), <Music key="a" size={14} />], ['analytics', t('sec.gallery.kindAnalytics', 'Аналитика'), <BarChart3 key="an" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
+                {([['reference', t('sec.gallery.kindVideo', 'Видео'), <Video key="v" size={14} />], ['image', t('sec.gallery.kindImage', 'Изображение'), <ImageIcon key="i" size={14} />], ['audio', t('sec.gallery.kindAudio', 'Аудио'), <Music key="a" size={14} />], ['analytics', t('sec.gallery.kindAnalytics', 'Аналитика'), <BarChart3 key="an" size={14} />], ['text', t('sec.gallery.kindText', 'Текст'), <FileText key="tx" size={14} />]] as [MediaKind, string, React.ReactNode][]).map(([k, lbl, ic]) => (
                   <button key={k} type="button" onClick={() => { setKind(k); setSelected(new Set()); }}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-600 transition-all whitespace-nowrap"
                     style={{ background: mediaKind === k ? 'var(--brand)' : 'transparent', color: mediaKind === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
@@ -1908,6 +1914,7 @@ export default function GalleryPage() {
                 : mediaKind === 'audio' ? t('sec.gallery.emptyAudio', 'Пока пусто. Загрузите аудио плиткой «+ Добавить» — аудиофайлы лягут сюда.')
                 : mediaKind === 'image' ? t('sec.gallery.emptyImages', 'Пока пусто. Загрузите изображения плиткой «+ Добавить» — картинки лягут сюда.')
                 : mediaKind === 'analytics' ? t('sec.gallery.emptyAnalytics', 'Пока пусто. «Тренды → Аналитика» → «Добавить в галерею»: сюда лягут видео, файл разбора (.md) и субтитры (.srt).')
+                : mediaKind === 'text' ? t('sec.gallery.emptyText', 'Пока пусто. «Тренды → Аналитика» → «Расшифровать речь» → «В Галерею»: сюда лягут расшифровки и переводы. Их можно подставить в озвучку UGC-студии.')
                 : t('sec.gallery.emptyMedia', 'Пока пусто. Загрузите фото/видео плиткой «+ Добавить»; здесь же появляется всё, что производят блоки.')}
             </p>
           )}

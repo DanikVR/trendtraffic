@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../config/i18n';
 import { AuroraCard } from '../components/AuroraCard';
 import { AuroraButton } from '../components/AuroraButton';
+import { SUPPORTED_LANGUAGES } from '../config/i18n';
 
 interface Block { ok: boolean; error?: string; data?: any; }
 interface NormComment { author?: string; text: string; likes?: number; replies?: number; }
@@ -309,6 +310,82 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
 
   // Открыть полную аналитику одной строки из списка.
   const openOne = (u: string, cover?: string) => { setUrl(u); setCardCover(cover || null); analyze(u); };
+
+  /* ── Транскрибация речи ролика: текст → опц. перевод → в Галерею («Текст») ──
+     Расшифровка по кнопке (качает видео и слушает аудио — не бесплатно по времени),
+     перевод — отдельным шагом на выбранный язык, оригинал остаётся под рукой. */
+  const [trLoading, setTrLoading] = useState(false);
+  const [trErr, setTrErr] = useState<string | null>(null);
+  const [trText, setTrText] = useState<string | null>(null);      // оригинал (язык ролика)
+  const [trLang, setTrLang] = useState<string | null>(null);      // ISO-код языка оригинала
+  const [trTranslated, setTrTranslated] = useState<string | null>(null);
+  const [trShowOrig, setTrShowOrig] = useState(true);
+  const [trTargetLang, setTrTargetLang] = useState<string>(analysisLang());
+  const [trTranslating, setTrTranslating] = useState(false);
+  const [trSaving, setTrSaving] = useState(false);
+  const [trSavedName, setTrSavedName] = useState<string | null>(null);
+  const trShown = trShowOrig ? trText : (trTranslated || trText);
+
+  // Новый ролик — сбрасываем расшифровку (иначе покажем чужой текст).
+  useEffect(() => {
+    setTrText(null); setTrTranslated(null); setTrErr(null); setTrLang(null);
+    setTrShowOrig(true); setTrSavedName(null);
+  }, [result]);
+
+  const runTranscribe = async () => {
+    if (trLoading) return;
+    setTrLoading(true); setTrErr(null); setTrSavedName(null);
+    try {
+      const res = await fetch('/api/trends/analyze/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setTrText(String(data.text || '')); setTrLang(data.language || null);
+      setTrTranslated(null); setTrShowOrig(true);
+    } catch (e: any) {
+      setTrErr(e instanceof TypeError ? t('sec.tanalytics.serverDownShort', 'Сервер недоступен.') : (e?.message || t('sec.tanalytics.trFailed', 'Не удалось расшифровать речь')));
+    } finally { setTrLoading(false); }
+  };
+
+  const runTranslateTranscript = async () => {
+    if (!trText || trTranslating) return;
+    setTrTranslating(true); setTrErr(null);
+    try {
+      const res = await fetch('/api/trends/analyze/transcribe/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ text: trText, lang: trTargetLang }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setTrTranslated(String(data.text || '')); setTrShowOrig(false); setTrSavedName(null);
+    } catch (e: any) {
+      setTrErr(e?.message || t('sec.tanalytics.trTranslateFailed', 'Не удалось перевести'));
+    } finally { setTrTranslating(false); }
+  };
+
+  // В Галерею уходит ТО, что сейчас на экране (оригинал или перевод) — что видишь, то и сохраняешь.
+  const saveTranscript = async () => {
+    if (!trShown || trSaving) return;
+    setTrSaving(true); setTrErr(null);
+    try {
+      const suffix = trShowOrig ? (trLang ? ` (${trLang})` : '') : ` (${trTargetLang})`;
+      const name = `${t('sec.tanalytics.trFileName', 'Транскрибация')} — ${result?.detected.platform || 'video'}${suffix}`;
+      const res = await fetch('/api/trends/analyze/transcribe/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ text: trShown, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setTrSavedName(data?.asset?.originalName || name);
+    } catch (e: any) {
+      setTrErr(e?.message || t('sec.tanalytics.trSaveFailed', 'Не удалось сохранить текст'));
+    } finally { setTrSaving(false); }
+  };
 
   // Скачать проанализированное видео в Галерею (как «Скачать» в трендах).
   const saveToGallery = async () => {
@@ -635,6 +712,96 @@ export default function TrendAnalyticsPanel({ token, initialUrl, initialCover, b
                     {bdList(L(t('sec.tanalytics.bdReplicate', 'Как повторить'), 'How to replicate'), shownBreakdown.howToReplicate)}
                   </div>
                 </div>
+              )}
+            </AuroraCard>
+          )}
+
+          {/* Транскрибация речи ролика → перевод → в Галерею («Текст») → в озвучку UGC */}
+          {isVideo && (
+            <AuroraCard className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <FileText size={16} style={{ color: 'var(--brand)' }} />
+                <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.tanalytics.trTitle', 'Транскрибация речи')}</span>
+                {trLang && trText && <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>{t('sec.tanalytics.trLang', 'язык: {{l}}', { l: trLang })}</span>}
+                <div className="flex-1" />
+                {!trText && (
+                  <AuroraButton size="sm" onClick={runTranscribe} disabled={trLoading}
+                    icon={trLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}>
+                    {trLoading ? t('sec.tanalytics.trRunning', 'Слушаю ролик…') : t('sec.tanalytics.trRun', 'Расшифровать речь')}
+                  </AuroraButton>
+                )}
+                {trText && (
+                  <button onClick={runTranscribe} disabled={trLoading} className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-1 rounded-lg disabled:opacity-50"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                    {trLoading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />} {t('sec.tanalytics.trRedo', 'Заново')}
+                  </button>
+                )}
+              </div>
+
+              {!trText && !trLoading && !trErr && (
+                <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {t('sec.tanalytics.trHint', 'Расшифрую речь из ролика, при желании переведу на нужный язык и сохраню в Галерею («Текст») — оттуда текст можно подставить в озвучку UGC-студии.')}
+                </p>
+              )}
+
+              {trErr && (
+                <div className="flex items-start gap-2 text-[12px] rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
+                  <XCircle size={14} className="mt-[2px] flex-shrink-0" /><span>{trErr}</span>
+                </div>
+              )}
+
+              {trText && (
+                <>
+                  {/* Переключатель оригинал/перевод — виден только когда перевод уже есть */}
+                  {trTranslated && (
+                    <div className="inline-flex gap-1 p-1 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                      {([[true, t('sec.tanalytics.trOrig', 'Оригинал')], [false, t('sec.tanalytics.trTrans', 'Перевод')]] as [boolean, string][]).map(([orig, label]) => (
+                        <button key={String(orig)} onClick={() => { setTrShowOrig(orig); setTrSavedName(null); }}
+                          className="text-[11px] font-600 px-2.5 py-1 rounded-md"
+                          style={{ background: trShowOrig === orig ? 'var(--brand)' : 'transparent', color: trShowOrig === orig ? 'var(--brand-contrast)' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <textarea readOnly value={trShown || ''} rows={7}
+                    className="w-full text-[13px] leading-snug rounded-xl p-3"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Выбор языка перевода — все языки интерфейса */}
+                    <select value={trTargetLang} onChange={(e) => setTrTargetLang(e.target.value)}
+                      className="text-[12px] px-2 py-1.5 rounded-lg"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                      {SUPPORTED_LANGUAGES.map((l) => (
+                        <option key={l.code} value={l.code}>{l.nativeName}</option>
+                      ))}
+                    </select>
+                    <button onClick={runTranslateTranscript} disabled={trTranslating}
+                      className="inline-flex items-center gap-1 text-[12px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                      {trTranslating ? <Loader2 size={13} className="animate-spin" /> : <Languages size={13} />}
+                      {t('sec.tanalytics.trTranslateBtn', 'Перевести')}
+                    </button>
+                    <div className="flex-1" />
+                    <button onClick={() => downloadFile('transcript.txt', trShown || '', 'text/plain;charset=utf-8')}
+                      className="inline-flex items-center gap-1 text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                      <Download size={13} /> .txt
+                    </button>
+                    <AuroraButton size="sm" onClick={saveTranscript} disabled={trSaving || !!trSavedName}
+                      icon={trSaving ? <Loader2 size={14} className="animate-spin" /> : trSavedName ? <CheckCircle2 size={14} /> : <Download size={14} />}>
+                      {trSaving ? t('sec.tanalytics.trSaving', 'Сохраняю…') : trSavedName ? t('sec.tanalytics.trSaved', 'В Галерее') : t('sec.tanalytics.trSave', 'В Галерею («Текст»)')}
+                    </AuroraButton>
+                  </div>
+
+                  {trSavedName && (
+                    <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                      {t('sec.tanalytics.trSavedHint', '«{{n}}» — в Галерее, вкладка «Медиафайлы» → «Текст». Оттуда текст можно подставить в озвучку UGC-студии.', { n: trSavedName })}
+                    </p>
+                  )}
+                </>
               )}
             </AuroraCard>
           )}

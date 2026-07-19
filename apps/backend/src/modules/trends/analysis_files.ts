@@ -17,7 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
-import { createAsset, ANALYZED_FOLDER, type MediaAsset } from '../media/assets.js';
+import { createAsset, ANALYZED_FOLDER, TEXT_FOLDER, type MediaAsset } from '../media/assets.js';
 import type { TrendDNA, TranscriptSegment, SceneBeat } from './dna.js';
 
 const __dirname_local = path.dirname(fileURLToPath(import.meta.url));
@@ -121,7 +121,7 @@ export interface AnalysisArtifacts { doc: MediaAsset | null; subtitles: MediaAss
 /** Записать текст в uploads/analysis и зарегистрировать ассетом папки «Из анализа». */
 async function saveTextAsset(
   tenantId: string,
-  args: { text: string; ext: 'md' | 'srt'; originalName: string; mime: string },
+  args: { text: string; ext: 'md' | 'srt' | 'txt'; originalName: string; mime: string; folder?: string },
 ): Promise<MediaAsset | null> {
   const name = `tt-${randomUUID()}.${args.ext}`;
   const filePath = path.join(OUTPUT_DIR, name);
@@ -131,10 +131,36 @@ async function saveTextAsset(
     originalName: args.originalName,
     fileUrl: `/uploads/analysis/${name}`, filePath, mime: args.mime,
     size: Buffer.byteLength(args.text, 'utf8'),
-    folder: ANALYZED_FOLDER,
+    folder: args.folder || ANALYZED_FOLDER,
   });
   if (!asset) { try { fs.unlinkSync(filePath); } catch { /* noop */ } }
   return asset;
+}
+
+/** Прочитать сохранённый текстовый ассет по его fileUrl (`/uploads/analysis/<файл>`).
+ *  Путь к папке живёт здесь же, где запись — иначе он разъезжается между модулями. */
+export function readTextAssetFile(fileUrl: string): string | null {
+  const name = path.basename(String(fileUrl || ''));
+  if (!name) return null;
+  const filePath = path.join(OUTPUT_DIR, name);
+  try { return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : null; }
+  catch { return null; }
+}
+
+/**
+ * Текст в раздел Галереи «Текст» (папка TEXT_FOLDER): транскрибация речи ролика и её
+ * переводы. Отдельная папка — чтобы тексты не мешались в «Медиафайлах» и их было видно
+ * пикеру озвучки. Бросает при сбое записи (вызов идёт по кнопке — юзеру нужен ответ).
+ */
+export async function saveTranscriptAsset(
+  tenantId: string,
+  args: { text: string; name: string },
+): Promise<MediaAsset | null> {
+  return saveTextAsset(tenantId, {
+    text: args.text, ext: 'txt', mime: 'text/plain; charset=utf-8',
+    originalName: args.name.endsWith('.txt') ? args.name : `${args.name}.txt`,
+    folder: TEXT_FOLDER,
+  });
 }
 
 /**

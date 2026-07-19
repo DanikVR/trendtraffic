@@ -15,7 +15,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Loader2, Save, Wand2, Sparkles, Plus, RefreshCw, X,
   Mic, Paperclip, Scissors, Music, Video, Type, Layers, UserRound, ImagePlus,
-  Pencil, Undo2, Redo2, AlertTriangle, CheckCircle2,
+  Pencil, Undo2, Redo2, AlertTriangle, CheckCircle2, FileText,
 } from 'lucide-react';
 import DialogueTimeline from './DialogueTimeline';
 import UgcPreview from './UgcPreview';
@@ -287,6 +287,38 @@ export default function UgcStudio(p: UgcStudioProps) {
   const [avatarEdit, setAvatarEdit] = useState(false);
   // Длительности заставок (по url) — для дорожки «Заставки» на таймлайне; probe скрытым <video>.
   const [bumperDur, setBumperDur] = useState<Record<string, number>>({});
+
+  /* ── «Взять текст из Галереи»: раздел «Текст» (расшифровки речи и переводы) → в поле брифа.
+     Список — /trends/media?folder=text, содержимое — /trends/texts/:id (файл лежит на диске). */
+  const [textPick, setTextPick] = useState(false);
+  const [textList, setTextList] = useState<{ id: string; originalName?: string }[] | null>(null);
+  const [textBusy, setTextBusy] = useState(false);
+  const [textPickNote, setTextPickNote] = useState<{ text: string; err?: boolean } | null>(null);
+  useEffect(() => {
+    if (!textPick) return;
+    setTextList(null);
+    void (async () => {
+      try {
+        const r = await fetch('/api/trends/media?folder=text', { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } });
+        const d = await r.json().catch(() => ({}));
+        setTextList(r.ok && Array.isArray(d.assets) ? d.assets : []);
+      } catch { setTextList([]); }
+    })();
+  }, [textPick]);
+  const takeGalleryText = async (id: string, name?: string) => {
+    if (textBusy) return;
+    setTextBusy(true);
+    try {
+      const r = await fetch(`/api/trends/texts/${encodeURIComponent(id)}`, { headers: { ...(p.token ? { Authorization: `Bearer ${p.token}` } : {}) } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !String(d.text || '').trim()) throw new Error(d?.error || t('ugc.voice.textEmpty', 'Текст пуст.'));
+      ugcMutate((u) => ({ ...u, brief: String(d.text) }));
+      setTextPick(false);
+      setTextPickNote({ text: t('ugc.voice.textTaken', 'Текст «{{n}}» подставлен — жмите «Использовать как есть» или «Сгенерировать текст».', { n: name || d.name || '' }) });
+    } catch (e: any) {
+      setTextPickNote({ text: e?.message || t('ugc.voice.textFailed', 'Не удалось взять текст.'), err: true });
+    } finally { setTextBusy(false); }
+  };
   // ✂ по бегунку: клип видеоряда i режется в точке srcSec (секунды исходника) на два
   // независимых сегмента — дальше каждый обрезается/редактируется отдельно.
   const splitClipAt = (i: number, srcSec: number) => ugcMutate((u) => {
@@ -1199,6 +1231,13 @@ export default function UgcStudio(p: UgcStudioProps) {
                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
                   <Type size={13} /> {t('ugc.voice.useAsIs')}
                 </button>
+                {/* Текст из Галереи («Текст»): расшифровки речи и их переводы → сразу в поле выше */}
+                <button onClick={() => setTextPick(true)} disabled={p.ugcBusy === 'dialogue'}
+                  className="w-full py-2 rounded-xl text-[12px] font-650 inline-flex items-center justify-center gap-2 disabled:opacity-40"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1.5px dashed var(--border-strong)', cursor: 'pointer' }}>
+                  <FileText size={13} /> {t('ugc.voice.fromGallery', 'Взять текст из Галереи')}
+                </button>
+                {textPickNote && <p className="text-[10px]" style={{ color: textPickNote.err ? '#ef4444' : 'var(--text-muted)' }}>{textPickNote.text}</p>}
                 <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.voice.useAsIsHint')}</p>
               </div>
             ) : (
@@ -2130,6 +2169,36 @@ export default function UgcStudio(p: UgcStudioProps) {
       {/* Клип «Видеоряда» в нашем редакторе (обрезка/нарезка, VideoViewer): клик по тумбе панели
           или по сегменту дорожки таймлайна. Сохранение НЕразрушающее — новый файл замещает клип
           (обрезка дорожки сбрасывается, длительность перечитается из метаданных). */}
+      {/* Выбор текста из Галереи (раздел «Текст») для озвучки */}
+      {textPick && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={() => setTextPick(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl w-full max-w-md p-4 space-y-3"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', maxHeight: '75vh', overflowY: 'auto' }}>
+            <div className="flex items-center gap-2">
+              <FileText size={16} style={{ color: ACC }} />
+              <b className="text-[13px]" style={{ color: 'var(--text-primary)' }}>{t('ugc.voice.pickTextTitle', 'Текст из Галереи')}</b>
+              <div className="flex-1" />
+              <button onClick={() => setTextPick(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            {textList === null && <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--text-muted)' }}><Loader2 size={13} className="animate-spin" /> {t('ugc.common.loading', 'Загружаю…')}</div>}
+            {textList?.length === 0 && (
+              <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                {t('ugc.voice.noTexts', 'Пока нет сохранённых текстов. «Тренды → Аналитика» → «Расшифровать речь» → «В Галерею».')}
+              </p>
+            )}
+            {textList?.map((a) => (
+              <button key={a.id} onClick={() => takeGalleryText(a.id, a.originalName)} disabled={textBusy}
+                className="w-full text-left px-3 py-2 rounded-xl text-[12px] flex items-center gap-2 disabled:opacity-50"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                <FileText size={13} className="flex-shrink-0" style={{ color: ACC }} />
+                <span className="flex-1 min-w-0" style={NAME_CLAMP}>{a.originalName || t('ugc.voice.textFallback', 'текст')}</span>
+                {textBusy && <Loader2 size={12} className="animate-spin flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {clipEditIdx != null && ugc.clips[clipEditIdx] && (
         <VideoViewer
           open

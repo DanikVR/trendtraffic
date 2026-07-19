@@ -614,6 +614,27 @@ export async function deleteTrendDNABulk(tenantId: string, ids: string[]): Promi
 }
 
 /**
+ * Перевод ПЛОСКОГО текста (транскрибация речи ролика и т.п.) на язык `lang`.
+ * Тот же Claude, что и у перевода ДНК; возвращает только переведённый текст.
+ */
+export async function translatePlainText(tenantId: string, text: string, lang: string): Promise<string> {
+  const apiKey = await resolveAnthropicKey(tenantId);
+  if (!apiKey) throw new Error('Ключ Claude не задан (Enterprise → Генерация → ИИ-режиссёр).');
+  const langName = dnaLangName(lang || 'ru');
+  const system = `You are a professional translator. Translate the user's text into ${langName}. Preserve line breaks and paragraph structure. Return ONLY the translated text — no explanations, no quotes, no markdown fences.`;
+  const mod: any = await import('@anthropic-ai/sdk');
+  const Anthropic = mod.default || mod.Anthropic || mod;
+  const client = new Anthropic({ apiKey });
+  const res = await client.messages.create({
+    model: DEFAULT_DIRECTOR_MODEL, max_tokens: 6000,
+    system, messages: [{ role: 'user', content: text.slice(0, 24_000) }],
+  });
+  const out = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('').trim();
+  if (!out) throw new Error('Не удалось перевести — повторите.');
+  return out;
+}
+
+/**
  * Переводит текстовые поля готовой ДНК на язык `lang` (кнопка «Перевести»). Сам разбор
  * НЕ пересобирается — только перевод значений; keywords/meta/quality/тайминги не трогаем.
  */

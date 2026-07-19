@@ -1369,7 +1369,14 @@
       "loudnormTitle": "Level voice volume",
       "loudnormSub": "Quiet parts boosted, loud parts smoothed for professional sound.",
       "recordingEmptyTitle": "No recording uploaded yet",
-      "recordingEmptySub": "audio or video from Gallery"
+      "recordingEmptySub": "audio or video from Gallery",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} line · ~{{sec}} sec",
@@ -1587,7 +1594,8 @@
       "hide": "Hide",
       "cancel": "Cancel",
       "footage": "Footage",
-      "avatar": "Avatar"
+      "avatar": "Avatar",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "Intro & outro (optional)",
@@ -2753,7 +2761,10 @@
       "vpManual": "Google Flow only accepts videos manually — via the 'Downloads' section. Flow does not support automatic video insertion (images only).",
       "vpOpenFlow": "Open Google Flow",
       "vpTitle": "Videos \n→ Google Flow",
-      "tabStoryboard": "Storyboard"
+      "tabStoryboard": "Storyboard",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here"
     },
     "hotebook": {
       "addUrlTitle": "Add link",
@@ -3698,7 +3709,24 @@
       "urlRequired": "Enter a link to a video, post, or account.",
       "videoPost": "Video / post",
       "views": "Views",
-      "ytOff": "YouTube analysis unavailable — YouTube is only for trend search."
+      "ytOff": "YouTube analysis unavailable — YouTube is only for trend search.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "Analyze selected",

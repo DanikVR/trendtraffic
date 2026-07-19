@@ -18,16 +18,17 @@ import { randomUUID } from 'crypto';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { scanTrends, listRecentVideos, getVideo, setVideoStatus, deleteVideo, deleteVideos, listScanQueries, deleteScanQueries, addVideoByUrl, type TrendKind } from './service.js';
 import { analyzeUrl, detectUrl, analyzeCommentsSentiment, analyzeBulk } from './analytics.js';
-import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, saveTrendDNAAuto } from './dna.js';
+import { generateTrendDNA, saveTrendDNA, getTrendDNAByAsset, listTrendDNA, applyVisualInsight, deleteTrendDNA, deleteTrendDNABulk, translateTrendDNA, translatePlainText, saveTrendDNAAuto } from './dna.js';
+import { transcribeVideoAudio } from '../quest_flow/transcribe.js';
 import { buildAudienceMap, suggestAudience } from './audience.js';
 import { analyzeVideoVisual } from './video_insight.js';
-import { saveAnalysisArtifacts } from './analysis_files.js';
+import { saveAnalysisArtifacts, saveTranscriptAsset, readTextAssetFile } from './analysis_files.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
 import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
-import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, type MediaKind } from '../media/assets.js';
+import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, TEXT_FOLDER, type MediaKind } from '../media/assets.js';
 
 const router = Router();
 
@@ -196,9 +197,28 @@ router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
   }
 });
 
-/** POST /analyze/save — { url } → скачать проанализированное видео в Галерею.
- *  TikTok — no-watermark play_addr; X/Twitter — лучший mp4-вариант твита;
- *  YouTube — потоки get_video_streams_v2 + подпись + склейка ffmpeg (1080p H.264+AAC). */
+/**
+ * Прямые mp4-ссылки проанализированного видео по площадке (TikTok — no-watermark
+ * play_addr; X — лучший вариант твита). YouTube отключён (подпись потоков TikHub
+ * ненадёжна, см. YT_OFF), остальные площадки здесь пока не скачиваются.
+ * Общий шаг для «Скачать в Галерею» и транскрибации — чтобы правила были в одном месте.
+ */
+async function resolveAnalyzedVideoUrls(
+  key: string, platform: string, videoId: string, srcUrl: string,
+): Promise<{ urls: string[]; referer: string } | { error: string; status: number }> {
+  if (platform === 'tiktok') {
+    const one = await fetchOneVideo(key, videoId);
+    return { urls: one.ok ? extractDownloadUrls(one.data) : [], referer: srcUrl };
+  }
+  if (platform === 'twitter') {
+    const one = await fetchTweetDetail(key, videoId);
+    return { urls: one.ok ? extractTwitterVideoUrls(one.data) : [], referer: 'https://x.com/' };
+  }
+  if (platform === 'youtube') return { error: 'Скачивание YouTube недоступно.', status: 400 };
+  return { error: 'Скачивание пока поддержано для TikTok и X.', status: 400 };
+}
+
+/** POST /analyze/save — { url } → скачать проанализированное видео в Галерею. */
 router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
   try {
     const url = typeof req.body?.url === 'string' ? req.body.url : '';
@@ -207,27 +227,10 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
     const key = await getEffectiveTikHubKey(req.tenantId!);
     if (!key) return res.status(400).json({ error: 'Ключ Trend не задан.' });
 
-    // Скачиваем по площадке: TikTok/X — прямой mp4; YouTube — потоки+склейка ffmpeg.
-    let file;
-    if (d.platform === 'tiktok' || d.platform === 'twitter') {
-      let urls: string[] = [];
-      let referer = url;
-      if (d.platform === 'tiktok') {
-        const one = await fetchOneVideo(key, String(d.videoId));
-        urls = one.ok ? extractDownloadUrls(one.data) : [];
-      } else {
-        const one = await fetchTweetDetail(key, String(d.videoId));
-        urls = one.ok ? extractTwitterVideoUrls(one.data) : [];
-        referer = 'https://x.com/';
-      }
-      if (urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео (для постов-картинок без видео скачивание недоступно).' });
-      file = await downloadVideoToDisk(urls, { referer });
-    } else if (d.platform === 'youtube') {
-      // YouTube-скачивание отключено (подпись потоков TikHub ненадёжна, см. YT_OFF).
-      return res.status(400).json({ error: 'Скачивание YouTube недоступно.' });
-    } else {
-      return res.status(400).json({ error: 'Скачивание в Галерею пока поддержано для TikTok и X.' });
-    }
+    const src = await resolveAnalyzedVideoUrls(key, d.platform, String(d.videoId), url);
+    if ('error' in src) return res.status(src.status).json({ error: src.error });
+    if (src.urls.length === 0) return res.status(502).json({ error: 'Не удалось получить прямую ссылку на видео (для постов-картинок без видео скачивание недоступно).' });
+    const file = await downloadVideoToDisk(src.urls, { referer: src.referer });
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video', originalName: `${d.platform}-${d.videoId}.mp4`,
       fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime || 'video/mp4', size: file.size,
@@ -261,6 +264,79 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
     res.json({ ok: true, asset, fileUrl: file.mediaUrl, analyzing: true });
   } catch (err: any) {
     res.status(err?.status || 502).json({ error: err?.message || 'Ошибка скачивания' });
+  }
+});
+
+/**
+ * POST /analyze/transcribe — { url } → расшифровка речи ролика.
+ * Качаем видео во временный файл → ffmpeg вынимает аудио → Gemini расшифровывает →
+ * файл сразу удаляем (Галерею не засоряем: сохранение текста — отдельная кнопка).
+ */
+router.post('/analyze/transcribe', async (req: AuthedRequest, res: Response) => {
+  let tmpPath: string | null = null;
+  try {
+    const url = typeof req.body?.url === 'string' ? req.body.url : '';
+    const d = detectUrl(url);
+    if (!d || d.type !== 'video') return res.status(400).json({ error: 'Нужна ссылка на видео/пост.' });
+    const key = await getEffectiveTikHubKey(req.tenantId!);
+    if (!key) return res.status(400).json({ error: 'Ключ Trend не задан.' });
+
+    const src = await resolveAnalyzedVideoUrls(key, d.platform, String(d.videoId), url);
+    if ('error' in src) return res.status(src.status).json({ error: `${src.error} Транскрибация доступна для TikTok и X.` });
+    if (src.urls.length === 0) return res.status(502).json({ error: 'Не удалось получить видео (у постов-картинок речи нет).' });
+
+    const file = await downloadVideoToDisk(src.urls, { referer: src.referer });
+    tmpPath = file.filePath;
+    const r = await transcribeVideoAudio(req.tenantId!, file.filePath);
+    if (!r) return res.status(422).json({ error: 'Не удалось разобрать речь: в ролике нет звуковой дорожки, либо она слишком длинная/тихая.' });
+    if (!r.text.trim()) return res.status(422).json({ error: 'В ролике не распознана речь (музыка или тишина).' });
+    res.json({ text: r.text, language: r.language, dialect: r.dialect });
+  } catch (err: any) {
+    res.status(err?.status || 502).json({ error: err?.message || 'Ошибка транскрибации' });
+  } finally {
+    if (tmpPath) { try { fs.unlinkSync(tmpPath); } catch { /* временный файл мог не создаться */ } }
+  }
+});
+
+/** POST /analyze/transcribe/translate — { text, lang } → перевод расшифровки на выбранный язык. */
+router.post('/analyze/transcribe/translate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+    const lang = typeof req.body?.lang === 'string' ? req.body.lang : '';
+    if (!text) return res.status(400).json({ error: 'Передайте text.' });
+    if (!lang) return res.status(400).json({ error: 'Укажите lang.' });
+    res.json({ text: await translatePlainText(req.tenantId!, text, lang) });
+  } catch (err: any) {
+    const msg = err?.message || 'Ошибка перевода';
+    res.status(/ключ|Передайте|Укажите|перевести/i.test(msg) ? 400 : 502).json({ error: msg });
+  }
+});
+
+/** POST /analyze/transcribe/save — { text, name? } → .txt в раздел Галереи «Текст». */
+router.post('/analyze/transcribe/save', async (req: AuthedRequest, res: Response) => {
+  try {
+    const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+    if (!text) return res.status(400).json({ error: 'Нечего сохранять — текст пуст.' });
+    const name = String(req.body?.name || '').trim().slice(0, 90) || 'Транскрибация';
+    const asset = await saveTranscriptAsset(req.tenantId!, { text, name });
+    if (!asset) return res.status(500).json({ error: 'Не удалось сохранить текст в Галерею.' });
+    res.json({ ok: true, asset });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка сохранения текста' });
+  }
+});
+
+/** GET /texts — содержимое сохранённого текста (раздел «Текст») для подстановки в озвучку. */
+router.get('/texts/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const items = await listFolder(req.tenantId!, TEXT_FOLDER);
+    const a = items.find((x) => x.id === req.params.id);
+    if (!a) return res.status(404).json({ error: 'Текст не найден.' });
+    const text = readTextAssetFile(String(a.fileUrl || ''));
+    if (text == null) return res.status(404).json({ error: 'Файл текста не найден на диске.' });
+    res.json({ text, name: a.originalName || 'Текст' });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Ошибка чтения текста' });
   }
 });
 

@@ -3411,6 +3411,27 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.16 — Транскрибация речи ролика → перевод → Галерея «Текст» → озвучка UGC.
+ *          Просьба юзера: «в аналитику добавь транскрибацию текста + перевод, чтобы
+ *          сохранялось в Галерею под новым разделом „Текст“ и его можно было добавить
+ *          в озвучку». Собрано ИЗ ГОТОВЫХ КИРПИЧЕЙ, без новых движков:
+ *          · BE `POST /analyze/transcribe { url }` — качает ролик во временный файл
+ *            (общий помощник resolveAnalyzedVideoUrls, вынут из /analyze/save),
+ *            transcribeVideoAudio (ffmpeg→WAV 16кГц→Gemini) → { text, language,
+ *            dialect }; файл сразу удаляется. TikTok/X (там же, где «Скачать»).
+ *          · BE `/analyze/transcribe/translate { text, lang }` → translatePlainText
+ *            (новый, в dna.ts — тот же Claude, что и перевод ДНК, но плоский текст).
+ *          · BE `/analyze/transcribe/save { text, name }` → .txt в uploads/analysis,
+ *            ассет в НОВОЙ папке TEXT_FOLDER='text'; listAssets её исключает (иначе
+ *            тексты сыпались бы в «Медиафайлы→Видео»). `GET /texts/:id` — содержимое.
+ *          · FE секция «Транскрибация речи» в аналитике: расшифровка, язык, выбор
+ *            языка перевода (все 108), переключатель Оригинал/Перевод, .txt,
+ *            «В Галерею» (сохраняется ТО, что на экране).
+ *          · FE подраздел «Текст» в Галерее (Медиафайлы → Текст).
+ *          · FE «Взять текст из Галереи» в блоке озвучки UGC → подставляет в бриф,
+ *            дальше «Использовать как есть»/«Сгенерировать текст» как раньше.
+ *          Файлы: trends/{router,dna,analysis_files}.ts, media/assets.ts,
+ *          TrendAnalyticsPanel.tsx, GalleryPage.tsx, UgcStudio.tsx, locales ru+en. */
 /* 2.6.15 — ФИКС «смех исчез после прозрачности» + кэш ИИ-вырезки (Replicate 1 раз).
  *          1) КОРЕНЬ пропавшего голоса аватара: «грязная» аудио-дорожка видеоряда
  *             (HE-AAC инстаграм-клип со смещёнными таймстемпами) травила amix в
@@ -3555,7 +3576,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.15';
+export const APP_VERSION = '2.6.16';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
