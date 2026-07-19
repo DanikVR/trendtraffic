@@ -1251,7 +1251,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           // Без видеоряда — как раньше: длина = длине видео-аватара.
           const clipTotal = clip ? await mediaDuration(clip.filePath) : 0;
           const avStart = clipTotal > 0.3 ? Math.max(0, Math.min(3600, Number(spec.avatarVideoStartSec) || 0)) : 0;
-          const totalD = clipTotal > 0.3 ? Math.max(clipTotal, avStart + Dav) : Dav;
+          // Длина ролика СТРОГО = видеоряд (просьба юзера: конец не сдвигается) — хвост
+          // аватара за концом обрезается; без видеоряда длину задаёт сам аватар.
+          const totalD = clipTotal > 0.3 ? clipTotal : Dav;
           const inserts = insertLines.length && Dav > 0.5 ? await dlInserts(resolveInserts(totalD)) : [];
           let made = 0;
 
@@ -1265,6 +1267,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               voicePath: avatar.filePath, // речь уже в видео — его дорожка = голос
               avatarStartSec: avStart,    // позиция вставки на таймлайне (при видеоряде)
               totalDurationSec: clipTotal > 0.3 ? clipTotal : undefined, // длину задаёт видеоряд
+              strictDuration: true,       // СТРОГО: хвост аватара за концом видеоряда обрезается
               avatarTrimStart: avTs, avatarTrimEnd: avTe < DavFull - 0.05 ? avTe : undefined, // обрезка краями сегмента
               clipPath: clip?.filePath || null,
               clipFit: spec.clipFit === 'contain' ? 'contain' : 'cover',

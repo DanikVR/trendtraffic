@@ -24,10 +24,21 @@ function ffmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
   return new Promise((resolve, reject) => {
     const ff = spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'ignore', 'pipe'] });
     let err = '';
-    ff.stderr.on('data', (d) => { err += d.toString(); });
-    const timer = setTimeout(() => { try { ff.kill('SIGKILL'); } catch { /* */ } reject(new Error('ffmpeg: таймаут')); }, timeoutMs);
-    ff.on('error', (e) => { clearTimeout(timer); reject(new Error(`ffmpeg недоступен: ${e.message}`)); });
-    ff.on('close', (code) => { clearTimeout(timer); code === 0 ? resolve() : reject(new Error(`ffmpeg код ${code}: ${err.slice(-350)}`)); });
+    // Сторожок зависания: ffmpeg при работе постоянно пишет stats в stderr (frame=… раз в
+    // ~0.5с). Тишина 90с = граф встал (живой инцидент: стоп-кадр возле перемотки клипа —
+    // процесс висел до полного таймаута 600с). Убиваем сразу с внятной ошибкой.
+    let lastBeat = Date.now();
+    ff.stderr.on('data', (d) => { err += d.toString(); lastBeat = Date.now(); if (err.length > 20_000) err = err.slice(-10_000); });
+    const stall = setInterval(() => {
+      if (Date.now() - lastBeat > 90_000) {
+        clearInterval(stall); clearTimeout(timer);
+        try { ff.kill('SIGKILL'); } catch { /* */ }
+        reject(new Error('ffmpeg завис (нет прогресса 90с) — попробуйте ещё раз'));
+      }
+    }, 15_000);
+    const timer = setTimeout(() => { clearInterval(stall); try { ff.kill('SIGKILL'); } catch { /* */ } reject(new Error('ffmpeg: таймаут')); }, timeoutMs);
+    ff.on('error', (e) => { clearInterval(stall); clearTimeout(timer); reject(new Error(`ffmpeg недоступен: ${e.message}`)); });
+    ff.on('close', (code) => { clearInterval(stall); clearTimeout(timer); code === 0 ? resolve() : reject(new Error(`ffmpeg код ${code}: ${err.slice(-350)}`)); });
   });
 }
 
@@ -698,6 +709,10 @@ export async function composeUgc(opts: {
   // (длина = длине аватара, avatarStartSec игнорируется).
   avatarStartSec?: number;
   totalDurationSec?: number;
+  // Жёсткая длина ролика = totalDurationSec («Готовое видео»): хвост аватара за концом
+  // видеоряда ОБРЕЗАЕТСЯ, конец ролика не сдвигается. Без флага — прежнее поведение
+  // (хвост продлевает ролик — нужно HeyGen-веткам: речь не должна обрываться).
+  strictDuration?: boolean;
   // Обрезка видео-аватара краями сегмента на таймлайне (СЕКУНДЫ ИСХОДНИКА):
   // -ss/-t входными опциями на видео И на голос (это один файл — режем одинаково).
   avatarTrimStart?: number;
@@ -729,7 +744,9 @@ export async function composeUgc(opts: {
   const avCut: string[] = avTs > 0.01 || avTe < avFull - 0.05 ? ['-ss', avTs.toFixed(2), '-t', avDur.toFixed(2)] : [];
   const timelineMode = Number(opts.totalDurationSec) > 0.3;
   const avStart = timelineMode ? Math.max(0, Number(opts.avatarStartSec) || 0) : 0;
-  const D = timelineMode ? Math.max(opts.totalDurationSec as number, avStart + avDur) : avDur;
+  const D = timelineMode
+    ? (opts.strictDuration ? (opts.totalDurationSec as number) : Math.max(opts.totalDurationSec as number, avStart + avDur))
+    : avDur;
   const Ds = (D + 0.2).toFixed(2);
   // Сдвиг кадров аватара к avStart (в конце цепочки, после fps) + окно показа на оверлее.
   const avShift = avStart > 0.01 ? `,setpts=PTS-STARTPTS+${avStart.toFixed(2)}/TB` : '';
@@ -746,7 +763,11 @@ export async function composeUgc(opts: {
   const inputs: string[] = opaque ? [...avCut, '-i', opts.avatarPath] : ['-c:v', 'libvpx-vp9', ...avCut, '-i', opts.avatarPath];
   let idx = 1;
   let clipIdx = -1;
-  if (opts.clipPath) { inputs.push('-stream_loop', '-1', '-t', Ds, '-i', opts.clipPath); clipIdx = idx++; }
+  // Клип БЕЗ -stream_loop: перемотка зацикленного входа флакично ДЕДЛОЧИЛА граф (живой
+  // инцидент: стоп возле конца клипа, процесс висел до таймаута; одиночный репро — секунды).
+  // Короткий клип теперь ЗАМИРАЕТ на последнем кадре (tpad clone в цепочке [bg]) — стабильно,
+  // и визуально честнее скачка на начало.
+  if (opts.clipPath) { inputs.push('-i', opts.clipPath); clipIdx = idx++; }
   const voiceIdx = idx++; inputs.push(...avCut, '-i', opts.voicePath);
   let musicIdx = -1;
   // Музыка: зациклена; играет весь ролик ЛИБО первые musicDurationSec (короче ролика), хвост гасим afade.
@@ -766,7 +787,7 @@ export async function composeUgc(opts: {
   const insertsUnderAvatar = overlayMode && !!opts.avatarOverInserts && !!(opts.inserts && opts.inserts.length);
   if (overlayMode) {
     // Фон: клип во весь кадр (или тёмный фон), аватар маленьким поверх снизу слева/справа.
-    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30[bg]`);
+    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(W, H)},setsar=1,fps=30,tpad=stop=-1:stop_mode=clone[bg]`);
     else parts.push(`color=c=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`);
     let bgTag = '[bg]';
     // Врезки ПОД аватаром: кладём их на фон до наложения аватара — ведущий остаётся в кадре.
@@ -817,7 +838,7 @@ export async function composeUgc(opts: {
       parts.push(`[0:v]scale=-2:${ch}:flags=lanczos${chromaChain},format=yuva420p[av]`);
       parts.push(`[abg][av]overlay=(W-w)/2:0:eof_action=pass[ahalf]`);
     }
-    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(cw, ch)},setsar=1,fps=30[chalf]`);
+    if (clipIdx >= 0) parts.push(`[${clipIdx}:v]${fit(cw, ch)},setsar=1,fps=30,tpad=stop=-1:stop_mode=clone[chalf]`);
     else parts.push(`color=c=0x161a24:s=${cw}x${ch}:r=30:d=${Ds}[chalf]`);
     parts.push(opts.placement === 'top' ? stack('ahalf', 'chalf', 'vmain') : stack('chalf', 'ahalf', 'vmain'));
   }

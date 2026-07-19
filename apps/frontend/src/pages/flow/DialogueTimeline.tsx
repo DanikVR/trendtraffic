@@ -526,10 +526,20 @@ export default function DialogueTimeline({ dialogue, setDialogue, recordingUrl, 
     const el = e.currentTarget as HTMLElement;
     try { el.setPointerCapture(e.pointerId); } catch { /* некритично */ }
     const x0 = e.clientX; const s0 = Math.max(0, overlayTrack.startSec || 0);
+    // Сегмент живёт В ГРАНИЦАХ видеоряда: конец ролика задаёт видеоряд, хвост аватара
+    // за концом обрезается рендером — драг не даёт увезти сегмент за конец.
+    let maxStart = Number.POSITIVE_INFINITY;
+    if (clipTrack && clipTrack.clips.length) {
+      const clipsTotal = clipTrack.clips.reduce((s, c, i) => s + clipEff(c, i), 0);
+      const full = overlayTrack.durationSec || 5;
+      const ts = overlayTrack.trimStart || 0;
+      const te = Number(overlayTrack.trimEnd) > 0 ? Math.min(Number(overlayTrack.trimEnd), full) : full;
+      maxStart = Math.max(0, clipsTotal - Math.max(0.3, te - ts));
+    }
     let last = s0; let moved = false;
     const onMove = (ev: PointerEvent) => {
       if (Math.abs(ev.clientX - x0) > 3) moved = true;
-      last = Math.max(0, Math.round((s0 + (ev.clientX - x0) / tlPpsRef.current) * 20) / 20);
+      last = Math.min(maxStart, Math.max(0, Math.round((s0 + (ev.clientX - x0) / tlPpsRef.current) * 20) / 20));
       if (moved) setOvDragStart(last);
     };
     const onUp = () => {
