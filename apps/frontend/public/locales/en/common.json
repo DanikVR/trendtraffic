@@ -2640,6 +2640,7 @@
       "flowSentToast": "Sent to Google Flow — switch to the Flow tab.",
       "flowSlow": "Flow is slow to respond. Open labs.google/flow, sign in to Google, and click 'Refresh'.",
       "foundCount": "Found: {{n}}",
+      "ugcBuilding": "creating video…",
       "generating": "generating",
       "hbTypeAudio": "audio summary",
       "hbTypeFlashcards": "flashcards",

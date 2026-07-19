@@ -47,6 +47,7 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { PWAInstallPrompt, usePWAInstall } from '../components/PWAInstallPrompt';
 import { useAppStore }   from '../store/useAppStore';
 import { useIsEnterprise } from '../hooks/useIsEnterprise';
+import { useUgcActiveBuilds } from '../hooks/useUgcActiveBuilds';
 import { FEATURES }      from '../config/features';
 
 export function MainLayout() {
@@ -68,6 +69,8 @@ export function MainLayout() {
   // раздела крутится спиннер — видно с любого экрана, даже уйдя из Галереи.
   const [hbGen, setHbGen] = useState(0);
   const [flowGen, setFlowGen] = useState(0);
+  // UGC: фоновые сборки роликов (юзер вышел из студии — сборка идёт на сервере).
+  const ugcGen = useUgcActiveBuilds().count;
   useEffect(() => {
     if (!token || !isEnterprise) { setHbGen(0); setFlowGen(0); return; }
     let alive = true;
@@ -181,13 +184,13 @@ export function MainLayout() {
           {galleryNav.map((item) => {
             const Icon = item.icon;
             const isActive = curGalleryTab === item.tab;
-            const generating = (item.tab === 'hotebook' && hbGen > 0) || (item.tab === 'flow' && flowGen > 0);
+            const generating = (item.tab === 'hotebook' && hbGen > 0) || (item.tab === 'flow' && flowGen > 0) || (item.tab === 'ugc' && ugcGen > 0);
             return (
               <button
                 key={item.tab}
                 type="button"
                 onClick={() => navigate(`/gallery?tab=${item.tab}`)}
-                title={generating ? t('sec.misc.navGenerating', '{{label}} — идёт генерация ({{n}})', { label: item.label, n: item.tab === 'flow' ? flowGen : hbGen }) : item.label}
+                title={generating ? t('sec.misc.navGenerating', '{{label}} — идёт генерация ({{n}})', { label: item.label, n: item.tab === 'flow' ? flowGen : item.tab === 'ugc' ? ugcGen : hbGen }) : item.label}
                 aria-label={item.label}
                 className="relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 no-select"
                 style={isActive
@@ -198,7 +201,7 @@ export function MainLayout() {
                 {generating && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
                     style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
-                    <Loader2 size={11} className="animate-spin" style={{ color: item.tab === 'flow' ? '#6366f1' : '#22d3ee' }} />
+                    <Loader2 size={11} className="animate-spin" style={{ color: item.tab === 'flow' ? '#6366f1' : item.tab === 'ugc' ? '#a855f7' : '#22d3ee' }} />
                   </span>
                 )}
               </button>

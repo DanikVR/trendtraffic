@@ -35,6 +35,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { VideoViewer } from '../components/VideoViewer';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { useAppStore } from '../store/useAppStore';
+import { useUgcActiveBuilds } from '../hooks/useUgcActiveBuilds';
 import { TT_EXT_VERSION } from '../components/AppVersion';
 import { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import { FlowBlockOverlay, type FlowBlockRequest } from '../components/FlowBlockOverlay';
@@ -497,6 +498,16 @@ export default function GalleryPage() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(tab); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab, mediaKind]);
+
+  // Фоновые сборки UGC (юзер вышел из студии): спиннер на вкладке + карточка «Создаём видео…»
+  // в сетке «Ролики»; когда сборка кончилась — перезагружаем вкладку (готовый ролик появился).
+  const ugcBuilds = useUgcActiveBuilds();
+  const prevUgcBuildsRef = useRef(0);
+  useEffect(() => {
+    if (prevUgcBuildsRef.current > 0 && ugcBuilds.count === 0 && tab === 'ugc') void load('ugc');
+    prevUgcBuildsRef.current = ugcBuilds.count;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ugcBuilds.count]);
 
   // Пока на Hotebook есть активные генерации — опрашиваем; спиннер «генерится» на КАРТОЧКЕ блокнота
   // (nb.generating из /notebooks), поэтому на каждом тике обновляем и список блокнотов; при завершении
@@ -1407,6 +1418,8 @@ export default function GalleryPage() {
                 {tb.key === 'hotebook' && hbJobs.length > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#22d3ee' }} />}
                 {/* Идёт генерация в Google Flow (наблюдает расширение) — спиннер на вкладке. */}
                 {tb.key === 'flow' && flowGenTotal > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#6366f1' }} />}
+                {/* Фоновая сборка UGC-ролика — спиннер на вкладке, пока сервер собирает. */}
+                {tb.key === 'ugc' && ugcBuilds.count > 0 && <Loader2 size={13} className="animate-spin" style={{ color: active ? 'var(--brand-contrast)' : '#a855f7' }} />}
               </button>
             );
           })}
@@ -1607,6 +1620,17 @@ export default function GalleryPage() {
                       <ExternalLink size={13} />
                     </a>
                   </div>
+                </div>
+              </div>
+            ))}
+            {/* UGC · «Ролики»: идущие сборки — карточка со спиннером и серверным статусом (сборка на
+                сервере продолжается и после выхода из студии; по завершении список перезагрузится сам). */}
+            {tab === 'ugc' && ugcSub === 'rolls' && ugcBuilds.jobs.map((b) => (
+              <div key={`build-${b.job}`} className={cardCls(false)} style={CARD_STYLE}>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2 text-center">
+                  <Loader2 size={22} className="animate-spin" style={{ color: '#a855f7' }} />
+                  <b className="text-[11px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.ugcBuilding', 'Создаём видео…')}</b>
+                  <span className="text-[10px] leading-tight line-clamp-2" style={{ color: 'var(--text-muted)' }}>{b.status}</span>
                 </div>
               </div>
             ))}

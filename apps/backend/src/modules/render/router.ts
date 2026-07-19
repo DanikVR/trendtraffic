@@ -1431,6 +1431,19 @@ router.get('/ugc/build/status', (req: AuthedRequest, res: Response) => {
   res.json({ status: j.status, error: j.error, fileUrl: j.fileUrl, assetId: j.assetId, results: j.results, total: j.total, note: j.note });
 });
 
+/** GET /ugc/build/active — идущие сборки ТЕКУЩЕГО тенанта (для фоновых индикаторов:
+ *  значок-спиннер в сайдбаре/на вкладке UGC и карточка «Создаём видео…» в Галерее). */
+router.get('/ugc/build/active', (req: AuthedRequest, res: Response) => {
+  const jobs: { job: string; status: string }[] = [];
+  for (const [id, j] of ugcJobs) {
+    if (j.tenantId !== req.tenantId) continue;
+    if (j.status === 'done' || j.status === 'failed') continue;
+    if (Date.now() - j.ts > 3 * 3600_000) continue;   // осиротевшие не показываем
+    jobs.push({ job: id, status: j.status });
+  }
+  res.json({ count: jobs.length, jobs });
+});
+
 // ── «Комментатор»: единая дорожка = голос, полноэкранный визуал на сегмент (Ken Burns/Omni/видео) ──
 const commentatorJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; error?: string; ts: number }>();
 

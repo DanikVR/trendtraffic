@@ -2630,6 +2630,7 @@
       "flowSentToast": "Отправлено в Google Flow — переключитесь на вкладку Flow.",
       "flowSlow": "Flow долго отвечает. Откройте labs.google/flow, войдите в Google и нажмите «Обновить».",
       "foundCount": "Найдено: {{n}}",
+      "ugcBuilding": "Создаём видео…",
       "generating": "генерится",
       "hbTypeAudio": "Аудиопересказ",
       "hbTypeFlashcards": "Карточки",

@@ -3411,6 +3411,19 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.11 — Фоновые сборки UGC видны из любого экрана (просьба юзера: «выхожу из
+ *          студии — значки должны крутиться, пока видео генерится»).
+ *          Новая лёгкая ручка GET /ugc/build/active (идущие сборки тенанта из
+ *          in-memory ugcJobs) + хук useUgcActiveBuilds (полл 8с, пауза при
+ *          скрытой вкладке). Индикаторы: (1) спиннер на пункте UGC в сайдбаре
+ *          (тот же паттерн, что Hotebook/Flow), (2) спиннер на вкладке UGC в
+ *          Галерее, (3) карточка «Создаём видео…» с серверным статусом в сетке
+ *          «Ролики»; по завершении сборки вкладка перезагружается сама.
+ *          Параллельные запуски НЕ конфликтуют: сборки «Готового видео» идут
+ *          через очередь v2.6.9 (вторая ждёт со статусом «в очереди…»), у
+ *          каждого сценария свой jobId/поллинг.
+ *          Файлы: render/router.ts (+ручка), hooks/useUgcActiveBuilds.ts (новый),
+ *          MainLayout.tsx, GalleryPage.tsx, locales ru+en (+1 ключ). */
 /* 2.6.10 — «Готовое видео»: конец ролика не сдвигается + фикс стоп-кадра ffmpeg.
  *          Юзер: «двигаю дорожку со звуком — отодвигается видеоряд; звук должны
  *          подкладывать в границы видео; видео не создалось: ffmpeg таймаут».
@@ -3477,7 +3490,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.10';
+export const APP_VERSION = '2.6.11';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
