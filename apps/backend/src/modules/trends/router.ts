@@ -25,7 +25,8 @@ import { analyzeVideoVisual } from './video_insight.js';
 import { saveAnalysisArtifacts, saveTranscriptAsset, readTextAssetFile } from './analysis_files.js';
 import { listWatches, createWatch, updateWatch, deleteWatch, listRuns, runWatchNow, tenantAllowsAutopilot, MIN_INTERVAL_MINUTES } from './autopilot.js';
 import { downloadVideoToDisk, downloadYoutubeToDisk } from '../media/store_video.js';
-import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls } from '../tikhub/tikhub_client.js';
+import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVideoUrls, fetchInstagramPostInfo, extractInstagramMeta } from '../tikhub/tikhub_client.js';
+import { REFERER_BY_PLATFORM } from './ingest.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, TEXT_FOLDER, type MediaKind } from '../media/assets.js';
@@ -199,8 +200,8 @@ router.post('/analyze/bulk', async (req: AuthedRequest, res: Response) => {
 
 /**
  * Прямые mp4-ссылки проанализированного видео по площадке (TikTok — no-watermark
- * play_addr; X — лучший вариант твита). YouTube отключён (подпись потоков TikHub
- * ненадёжна, см. YT_OFF), остальные площадки здесь пока не скачиваются.
+ * play_addr; X — лучший вариант твита; Instagram — video_url поста, как в ingest).
+ * YouTube отключён (подпись потоков TikHub ненадёжна, см. YT_OFF).
  * Общий шаг для «Скачать в Галерею» и транскрибации — чтобы правила были в одном месте.
  */
 async function resolveAnalyzedVideoUrls(
@@ -214,8 +215,13 @@ async function resolveAnalyzedVideoUrls(
     const one = await fetchTweetDetail(key, videoId);
     return { urls: one.ok ? extractTwitterVideoUrls(one.data) : [], referer: 'https://x.com/' };
   }
+  if (platform === 'instagram') {
+    const info = await fetchInstagramPostInfo(key, videoId);
+    const v = info.ok ? extractInstagramMeta(info.data).videoUrl : null;
+    return { urls: v ? [v] : [], referer: REFERER_BY_PLATFORM.instagram };
+  }
   if (platform === 'youtube') return { error: 'Скачивание YouTube недоступно.', status: 400 };
-  return { error: 'Скачивание пока поддержано для TikTok и X.', status: 400 };
+  return { error: 'Скачивание пока поддержано для TikTok, Instagram и X.', status: 400 };
 }
 
 /** POST /analyze/save — { url } → скачать проанализированное видео в Галерею. */
@@ -282,7 +288,7 @@ router.post('/analyze/transcribe', async (req: AuthedRequest, res: Response) => 
     if (!key) return res.status(400).json({ error: 'Ключ Trend не задан.' });
 
     const src = await resolveAnalyzedVideoUrls(key, d.platform, String(d.videoId), url);
-    if ('error' in src) return res.status(src.status).json({ error: `${src.error} Транскрибация доступна для TikTok и X.` });
+    if ('error' in src) return res.status(src.status).json({ error: `${src.error} Транскрибация доступна для TikTok, Instagram и X.` });
     if (src.urls.length === 0) return res.status(502).json({ error: 'Не удалось получить видео (у постов-картинок речи нет).' });
 
     const file = await downloadVideoToDisk(src.urls, { referer: src.referer });
