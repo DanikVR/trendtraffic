@@ -316,9 +316,9 @@ export default function SocialExtensionPage() {
           setGalleryNote({
             ok: true,
             text: t('sec.socialext.igAudioSaved', 'Аудио скачано и сохранено в Галерею как «{{n}}» ✓', { n: d?.name || `instagram-${sc}.mp3` }),
-            link: { label: t('sec.socialext.igAudioLink', 'Открыть: Галерея → Медиафайлы → Аудио'), to: '/gallery?tab=reference&kind=audio' },
+            link: { label: t('sec.socialext.igAudioLink2', 'Открыть: Галерея → Медиафайлы → Аналитика'), to: '/gallery?tab=reference&kind=analytics' },
           });
-          setTimeout(() => setGalleryNote(null), 12000);
+          setTimeout(() => setGalleryNote(null), 30000);
           return;
         } catch (e: any) {
           // Файл уже у пользователя — сообщаем, но не считаем всю операцию провальной.

@@ -33,7 +33,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
-import { createAsset } from '../media/assets.js';
+import { createAsset, ANALYZED_FOLDER } from '../media/assets.js';
 
 // Папка аудио Галереи — та же, куда кладёт загрузка в «Медиафайлы → Аудио».
 const __se_dir = path.dirname(fileURLToPath(import.meta.url));
@@ -719,6 +719,9 @@ manifestRouter.post('/audio-to-gallery', async (req: AuthedRequest, res: Respons
     const asset = await createAsset(req.tenantId!, {
       kind: 'audio', mediaType: 'audio', originalName: `${base}.mp3`,
       fileUrl: `/uploads/audio/${fileName}`, filePath, mime: 'audio/mpeg', size: buf.length,
+      // Папка «Из анализа»: звук ложится РЯДОМ с видео того же ролика (и .md/.srt),
+      // а не отдельно в «Аудио» — иначе пара с одинаковым именем разъезжается по разделам.
+      folder: ANALYZED_FOLDER,
     });
     if (!asset) { try { fs.unlinkSync(filePath); } catch { /* noop */ } return res.status(500).json({ error: 'Не удалось сохранить аудио в Галерею.' }); }
     res.json({ ok: true, asset, name: `${base}.mp3`, title: audio.title || null });

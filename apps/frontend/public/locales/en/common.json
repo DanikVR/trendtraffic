@@ -3660,7 +3660,8 @@
       "videoFail": "Failed to download video",
       "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
       "igAudioLink": "Open: Gallery → Media → Audio",
-      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}"
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "Account",

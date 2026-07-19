@@ -3411,6 +3411,18 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.19 — ФИКС: сохранённое из аналитики аудио ложится РЯДОМ с видео ролика.
+ *          Юзер: «не сохранилось в галерею». По факту сохранялось — но в
+ *          «Медиафайлы → Аудио», а юзер искал рядом с роликом (в «Аналитике»,
+ *          куда кладётся видео + .md + .srt). Теперь трек уходит в ту же папку
+ *          ANALYZED_FOLDER: пара `instagram-<code>.mp4` + `.mp3` лежит вместе;
+ *          плашка успеха ведёт в «Медиафайлы → Аналитика» и живёт 30с.
+ *          ⚠️ Диагностика раунда: мои «живые тесты» шли под тенантом
+ *          l7610482@gmail.com, а юзер работает под infra@bazegroups.com —
+ *          сохранённого ассета я не видел и решил, что не сохранилось.
+ *          ПРАВИЛО: проверяя жалобу «не сохранилось», сверять tenant_id ассета
+ *          с тенантом ЮЗЕРА, а не своего тестового аккаунта.
+ *          Файлы: social-ext/router.ts, SocialExtensionPage.tsx, locales. */
 /* 2.6.18 — ФИКС: секции транскрибации не было видно + аудио сохраняется в Галерею.
  *          Фидбэк юзера по v2.6.16:
  *          1) «нет такой секции» — КОРЕНЬ: для TikTok/Instagram аналитика идёт в
@@ -3610,7 +3622,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.18';
+export const APP_VERSION = '2.6.19';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
