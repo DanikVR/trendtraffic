@@ -3411,6 +3411,23 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.18 — ФИКС: секции транскрибации не было видно + аудио сохраняется в Галерею.
+ *          Фидбэк юзера по v2.6.16:
+ *          1) «нет такой секции» — КОРЕНЬ: для TikTok/Instagram аналитика идёт в
+ *             iframe рехостнутого расширения (SocialExtensionPage), а секцию я
+ *             положил в НАТИВНУЮ панель (TrendAnalyticsPanel — она только для
+ *             X/YouTube/Reddit). Транскрибация вынесена в общий компонент
+ *             components/TranscribePanel.tsx и подключена в ОБЕ панели: в
+ *             расширении — в левую колонку под «Добавить в галерею» (compact),
+ *             в нативной — под разбором вирусности. Дублирования кода нет.
+ *          2) «Скачать аудио» теперь И качает на устройство, И кладёт трек в
+ *             Галерею («Аудио») ПОД ИМЕНЕМ РОЛИКА: видео `instagram-<code>.mp4`,
+ *             звук `instagram-<code>.mp3` — лежат парой. Новая ручка
+ *             POST /api/social-ext/ig-manifest/audio-to-gallery: CDN-ссылку наружу
+ *             не отдаём, качаем сами (тот же allow-list и Referer, что у прокси).
+ *             Сбой сохранения не рушит скачивание — файл у юзера уже есть.
+ *          Файлы: components/TranscribePanel.tsx (новый), TrendAnalyticsPanel.tsx,
+ *          SocialExtensionPage.tsx, social-ext/router.ts, locales ru+en. */
 /* 2.6.16 — Транскрибация речи ролика → перевод → Галерея «Текст» → озвучка UGC.
  *          Просьба юзера: «в аналитику добавь транскрибацию текста + перевод, чтобы
  *          сохранялось в Галерею под новым разделом „Текст“ и его можно было добавить
@@ -3593,7 +3610,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.17';
+export const APP_VERSION = '2.6.18';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

@@ -22,6 +22,7 @@ import { useAppStore } from '../store/useAppStore';
 import TrendSearch, { coverSrc, type StoredVideo } from '../components/TrendSearch';
 import AudienceTargetPanel from '../components/AudienceTargetPanel';
 import TrendAnalyticsPanel from './TrendAnalyticsPanel';
+import TranscribePanel from '../components/TranscribePanel';
 import ChannelsPage from './ChannelsPage';
 
 type Tab = 'search' | 'audience' | 'analytics' | 'channels';
@@ -51,6 +52,17 @@ function isAnalyzableUrl(u?: string | null): boolean {
   const s = (u || '').trim();
   return /^https?:\/\//i.test(s)
     || /\b(?:tiktok\.com|douyin\.com|instagram\.com|bilibili\.com|youtube\.com|youtu\.be|x\.com|twitter\.com|reddit\.com|redd\.it)\b/i.test(s);
+}
+
+/** Метка площадки по ссылке — идёт в имя сохранённого текста. */
+function detectPlatformLabel(u?: string | null): string {
+  const s = (u || '').toLowerCase();
+  if (/instagram\.com/.test(s)) return 'instagram';
+  if (/tiktok\.com/.test(s)) return 'tiktok';
+  if (/douyin\.com/.test(s)) return 'douyin';
+  if (/(?:twitter\.com|x\.com)/.test(s)) return 'x';
+  if (/bilibili\.com/.test(s)) return 'bilibili';
+  return 'video';
 }
 
 /** Скачать blob как файл на устройство. */
@@ -290,7 +302,30 @@ export default function SocialExtensionPage() {
       const sc = manifest.shortcode || 'instagram';
       if (kind === 'audio') {
         if (!manifest.audio?.url) throw new Error(t('sec.socialext.igNoAudio', 'У этого трека нет файла для скачивания (лицензионная музыка).'));
-        await streamViaMediaProxy(manifest.audio.url, `instagram-audio-${sc}.mp3`);
+        // Звук уходит и на устройство, и в Галерею — под ИМЕНЕМ РОЛИКА (instagram-<code>.mp3),
+        // чтобы в «Аудио» он лежал парой к видео и был виден пикеру студии.
+        await streamViaMediaProxy(manifest.audio.url, `instagram-${sc}.mp3`);
+        try {
+          const res = await fetch('/api/social-ext/ig-manifest/audio-to-gallery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ url: appliedRef.current }),
+          });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+          setGalleryNote({
+            ok: true,
+            text: t('sec.socialext.igAudioSaved', 'Аудио скачано и сохранено в Галерею как «{{n}}» ✓', { n: d?.name || `instagram-${sc}.mp3` }),
+            link: { label: t('sec.socialext.igAudioLink', 'Открыть: Галерея → Медиафайлы → Аудио'), to: '/gallery?tab=reference&kind=audio' },
+          });
+          setTimeout(() => setGalleryNote(null), 12000);
+          return;
+        } catch (e: any) {
+          // Файл уже у пользователя — сообщаем, но не считаем всю операцию провальной.
+          setGalleryNote({ ok: true, text: t('sec.socialext.igAudioNoGallery', 'Аудио скачано ✓ В Галерею сохранить не вышло: {{e}}', { e: e?.message || '—' }) });
+          setTimeout(() => setGalleryNote(null), 9000);
+          return;
+        }
       } else {
         const arr = Array.isArray(manifest.items) ? manifest.items : [];
         const item = arr[index] || arr[0];
@@ -298,7 +333,8 @@ export default function SocialExtensionPage() {
         const ext = item.type === 'video' ? 'mp4' : 'jpg';
         await streamViaMediaProxy(item.url, `instagram-${sc}-${(index || 0) + 1}.${ext}`);
       }
-      setGalleryNote({ ok: true, text: kind === 'audio' ? t('sec.socialext.igAudioDone', 'Аудио скачано ✓') : t('sec.socialext.igMediaDone', 'Медиа скачано ✓') });
+      // Сюда доходит только ветка 'media' — у 'audio' свой выход выше (там же сохранение в Галерею).
+      setGalleryNote({ ok: true, text: t('sec.socialext.igMediaDone', 'Медиа скачано ✓') });
       setTimeout(() => setGalleryNote(null), 5000);
     } catch (e: any) {
       setGalleryNote({ ok: false, text: e?.message || t('sec.socialext.dlFail', 'Не удалось скачать') });
@@ -491,6 +527,11 @@ export default function SocialExtensionPage() {
                 icon={adding ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}>
                 {t('sec.socialext.addToGalleryBtn', 'Добавить в галерею')}
               </AuroraButton>
+              {/* Транскрибация речи разбираемого ролика — работает и для площадок iframe-
+                  расширения (оно звук не расшифровывает), и для нативной панели. */}
+              {isAnalyzableUrl(appliedUrl) && (
+                <TranscribePanel token={token} url={appliedUrl} platform={detectPlatformLabel(appliedUrl)} compact />
+              )}
               {galleryNote && (
                 <div className="text-[12px] font-600" style={{ color: galleryNote.ok ? '#10b981' : '#ef4444' }}>
                   {galleryNote.text}

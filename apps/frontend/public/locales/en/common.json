@@ -3657,7 +3657,10 @@
       "tabSearch": "Search",
       "urlPh": "Video / post URL…",
       "videoDone": "Video downloaded ✓",
-      "videoFail": "Failed to download video"
+      "videoFail": "Failed to download video",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}"
     },
     "tanalytics": {
       "account": "Account",

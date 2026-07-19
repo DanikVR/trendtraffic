@@ -29,6 +29,15 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import { detectUrl } from '../trends/analytics.js';
 import { ingestTrendVideo, REFERER_BY_PLATFORM } from '../trends/ingest.js';
 import { extractDownloadUrls, fetchOneVideo, tikhubGet } from '../tikhub/tikhub_client.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { randomUUID } from 'crypto';
+import { createAsset } from '../media/assets.js';
+
+// Папка аудио Галереи — та же, куда кладёт загрузка в «Медиафайлы → Аудио».
+const __se_dir = path.dirname(fileURLToPath(import.meta.url));
+const AUDIO_DIR = path.resolve(__se_dir, '../../../../uploads/audio');
 
 const TIKHUB_BASE = (process.env.TIKHUB_BASE_URL || 'https://api.tikhub.io').replace(/\/+$/, '');
 const UA = 'TrendTraffic/1.0';
@@ -668,6 +677,53 @@ manifestRouter.post('/', async (req: AuthedRequest, res: Response) => {
     res.json({ ok: true, platform: 'instagram', shortcode: det.videoId, audio: extractIgAudio(post), items: media });
   } catch (err: any) {
     res.status(502).json({ error: err?.message || 'Не удалось собрать манифест медиа.' });
+  }
+});
+
+/**
+ * POST /api/social-ext/ig-manifest/audio-to-gallery { url } — оригинальный звук поста
+ * в Галерею («Аудио») под ИМЕНЕМ РОЛИКА: видео сохраняется как `instagram-<code>.mp4`,
+ * трек — как `instagram-<code>.mp3`, чтобы пара видно лежала рядом.
+ * CDN-ссылку наружу не отдаём: качаем сами (тот же allow-list и Referer, что у прокси).
+ */
+manifestRouter.post('/audio-to-gallery', async (req: AuthedRequest, res: Response) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  if (!url) return res.status(400).json({ error: 'Передайте ссылку в поле url.' });
+  const det = detectUrl(url);
+  if (det?.platform !== 'instagram' || !det.videoId) {
+    return res.status(422).json({ error: 'Сохранение аудио поддержано для Instagram.' });
+  }
+  const key = await getEffectiveTikHubKey(req.tenantId);
+  if (!key) return res.status(402).json({ error: 'Задайте свой TikHub API ключ в настройках.' });
+  try {
+    const r = await tikhubGet<any>(key, `/api/v1/instagram/v3/get_post_info_by_code?code=${encodeURIComponent(det.videoId)}`);
+    if (!r.ok) return res.status(502).json({ error: r.error || 'Не удалось получить пост Instagram.' });
+    const items = r.data?.data?.items ?? r.data?.items ?? [];
+    const post = Array.isArray(items) ? items[0] : null;
+    const audio = post ? extractIgAudio(post) : null;
+    if (!audio?.url) return res.status(422).json({ error: 'У этого трека нет файла для скачивания (лицензионная музыка).' });
+
+    const target = new URL(audio.url);
+    if (!hostAllowed(target.hostname)) return res.status(400).json({ error: 'Хост аудио не разрешён.' });
+    const up = await fetch(target.toString(), { headers: { 'User-Agent': UA, Referer: refererFor(target.hostname), Accept: '*/*' } });
+    if (!up.ok) return res.status(502).json({ error: `Источник вернул HTTP ${up.status}` });
+    const buf = Buffer.from(await up.arrayBuffer());
+    if (!buf.length) return res.status(502).json({ error: 'Пустой аудиофайл.' });
+
+    // Имя = имя ролика, но .mp3 (видео ingest сохраняет как `<платформа>-<id>.mp4`).
+    const base = `instagram-${det.videoId}`;
+    const fileName = `aud-${randomUUID()}.mp3`;
+    fs.mkdirSync(AUDIO_DIR, { recursive: true });
+    const filePath = path.join(AUDIO_DIR, fileName);
+    fs.writeFileSync(filePath, buf);
+    const asset = await createAsset(req.tenantId!, {
+      kind: 'audio', mediaType: 'audio', originalName: `${base}.mp3`,
+      fileUrl: `/uploads/audio/${fileName}`, filePath, mime: 'audio/mpeg', size: buf.length,
+    });
+    if (!asset) { try { fs.unlinkSync(filePath); } catch { /* noop */ } return res.status(500).json({ error: 'Не удалось сохранить аудио в Галерею.' }); }
+    res.json({ ok: true, asset, name: `${base}.mp3`, title: audio.title || null });
+  } catch (err: any) {
+    res.status(502).json({ error: err?.message || 'Не удалось сохранить аудио.' });
   }
 });
 
