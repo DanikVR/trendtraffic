@@ -868,18 +868,24 @@ export async function composeUgc(opts: {
   // тишиной (apad) до конца видеоряда — amix duration=first не режет хвост, -t Ds закрывает.
   const vv = Math.max(0, Math.min(2, Number.isFinite(opts.voiceVolumePct) ? (opts.voiceVolumePct as number) / 100 : 1));
   const cvol = Math.max(0, Math.min(2, Number.isFinite(opts.clipVolumePct) ? (opts.clipVolumePct as number) / 100 : 0.9));
-  const avDelay = avStart > 0.01 ? `adelay=${Math.round(avStart * 1000)}:all=1,` : '';
+  const avDelay = avStart > 0.01 ? `adelay=${Math.round(avStart * 1000)}:all=1,asetpts=N/SR/TB,` : '';
   const avPad = timelineMode && D > avStart + avDur + 0.05 ? ',apad' : '';
-  const aIns: string[] = [`[${voiceIdx}:a]${avDelay}${vv !== 1 ? `volume=${vv.toFixed(2)}` : 'anull'}${avPad}[a_v]`];
+  // ⚠️ ЖИВЫЕ ГРАБЛИ: без нормализации входов amix ломался от «грязных» дорожек — HE-AAC
+  // инстаграм-клип со смещёнными таймстемпами давал mp4 с битой аудио-длительностью
+  // (сики мертвы) и ГЛУШИЛ голос аватара; adelay без asetpts ломал pts (виз/обрубки).
+  // Рецепт как в overlayAvatarOnVideo: явные aresample+aformat + asetpts=N/SR/TB на
+  // КАЖДОМ входе (после adelay) и после amix.
+  const AFMT = 'aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=N/SR/TB';
+  const aIns: string[] = [`[${voiceIdx}:a]${AFMT},${avDelay}${vv !== 1 ? `volume=${vv.toFixed(2)}` : 'anull'}${avPad}[a_v]`];
   const mixTags: string[] = ['[a_v]'];
-  if (clipAudio) { aIns.push(`[${clipIdx}:a]volume=${cvol.toFixed(2)}[a_c]`); mixTags.push('[a_c]'); }
+  if (clipAudio) { aIns.push(`[${clipIdx}:a]${AFMT},volume=${cvol.toFixed(2)}[a_c]`); mixTags.push('[a_c]'); }
   if (musicIdx >= 0) {
     const vol = Math.max(0, Math.min(1.5, (Number.isFinite(opts.musicVolumePct) ? (opts.musicVolumePct as number) : 20) / 100));
     const fadeSt = Math.max(0, musT - 1.2);
-    aIns.push(`[${musicIdx}:a]volume=${vol.toFixed(2)},afade=t=out:st=${fadeSt.toFixed(2)}:d=1.2[a_m]`); mixTags.push('[a_m]');
+    aIns.push(`[${musicIdx}:a]${AFMT},volume=${vol.toFixed(2)},afade=t=out:st=${fadeSt.toFixed(2)}:d=1.2[a_m]`); mixTags.push('[a_m]');
   }
   let aTag = '[a_v]';
-  if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0[aout]`); aTag = '[aout]'; }
+  if (mixTags.length > 1) { aIns.push(`${mixTags.join('')}amix=inputs=${mixTags.length}:normalize=0:duration=first:dropout_transition=0,asetpts=N/SR/TB[aout]`); aTag = '[aout]'; }
   // Фильтр голоса нужен при миксе, vv≠1, задержке или добивке (иначе сырая дорожка без фильтров).
   const aFiltered = mixTags.length > 1 || vv !== 1 || !!avDelay || !!avPad;
   parts.push(...(aFiltered ? aIns : []));

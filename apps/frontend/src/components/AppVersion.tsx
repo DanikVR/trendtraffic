@@ -3411,6 +3411,22 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.15 — ФИКС «смех исчез после прозрачности» + кэш ИИ-вырезки (Replicate 1 раз).
+ *          1) КОРЕНЬ пропавшего голоса аватара: «грязная» аудио-дорожка видеоряда
+ *             (HE-AAC инстаграм-клип со смещёнными таймстемпами) травила amix в
+ *             composeUgc — на ffmpeg VPS выход получал битую длительность аудио
+ *             (сики мертвы) и ГОЛОС АВАТАРА ГЛОХ; вчерашний клип был «чистым»,
+ *             поэтому работало. Диагноз: точная спека из БД → репро на VPS →
+ *             бисекция (clipMuted=true возвращал голос). ФИКС: нормализация
+ *             КАЖДОГО аудио-входа (aresample+aformat+asetpts=N/SR/TB, после
+ *             adelay тоже) + asetpts после amix — рецепт overlayAvatarOnVideo.
+ *             Синтетика A–F ALL PASS, репро юзер-сценария на VPS — голос жив.
+ *          2) КЭШ ИИ-ВЫРЕЗКИ: таблица ugc_matting_cache (tenant + sha256 байтов
+ *             исходника → путь готового альфа-webm, паттерн heygen_talking_photos);
+ *             тот же аватар в ЛЮБОМ ролике вырезается один раз — статус
+ *             «беру готовую из кэша (Replicate не тратим)»; пропавший с диска
+ *             файл = промах, fail-open при ошибках БД.
+ *          Файлы: podcast_compose.ts, matting_cache.ts (новый), render/router.ts. */
 /* 2.6.14 — Параллельные сборки различимы: имя ролика на каждой карточке.
  *          Юзер: «если в фоне генерятся два и более видео — на всех показывать,
  *          что сейчас делает». Карточки «Создаём видео…» в Галерее и так по одной
@@ -3539,7 +3555,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.14';
+export const APP_VERSION = '2.6.15';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

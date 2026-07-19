@@ -34,6 +34,7 @@ import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, t
 import { generateOmniVideo, editOmniVideo, OMNI_VIDEO_USD_PER_SEC } from './video_gen.js';
 import { extractFrame } from './frame_extract.js';
 import { mattingCutout, MATTING_NO_KEY_MSG } from './matting.js';
+import { fileSha256, getCachedMatting, putCachedMatting } from './matting_cache.js';
 
 // Задачи генерации/правки видео Omni Flash (в памяти): jobId → статус/результат (+ interactionId для чат-правок).
 const omniJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; interactionId?: string; seconds?: number; costUsd?: number; assetId?: string | null; error?: string; ts: number }>();
@@ -1231,10 +1232,21 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
           let avatarKind: 'opaque' | 'alpha' = 'opaque';
           if (bgMode === 'ai') {
             j.status = 'ИИ-вырезка фона (Replicate)…';
-            avatarVideoPath = await mattingCutout({
-              tenantId: j.tenantId!, videoUrl: abs(avVideoUrl), origPath: avatar.filePath,
-              onStatus: (s) => { j.status = s; },
-            });
+            // ЭКОНОМИЯ: тот же исходник (sha256 байтов) уже вырезали — берём готовый
+            // альфа-webm из кэша, Replicate не дёргаем (кэш переживает пересборки и
+            // работает между разными роликами с тем же аватаром).
+            const sha = await fileSha256(avatar.filePath).catch(() => null);
+            const cached = sha ? await getCachedMatting(j.tenantId!, sha) : null;
+            if (cached) {
+              j.status = 'ИИ-вырезка: беру готовую из кэша (Replicate не тратим)';
+              avatarVideoPath = cached;
+            } else {
+              avatarVideoPath = await mattingCutout({
+                tenantId: j.tenantId!, videoUrl: abs(avVideoUrl), origPath: avatar.filePath,
+                onStatus: (s) => { j.status = s; },
+              });
+              if (sha) void putCachedMatting(j.tenantId!, sha, avatarVideoPath);
+            }
             avatarKind = 'alpha';
           }
           const clip = spec.clip?.url ? await downloadToRenders(abs(String(spec.clip.url)), 'ugcclip') : null;
