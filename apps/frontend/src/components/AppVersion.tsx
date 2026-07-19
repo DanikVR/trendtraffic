@@ -3411,6 +3411,17 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.14 — Параллельные сборки различимы: имя ролика на каждой карточке.
+ *          Юзер: «если в фоне генерятся два и более видео — на всех показывать,
+ *          что сейчас делает». Карточки «Создаём видео…» в Галерее и так по одной
+ *          на сборку со СВОИМ статусом/таймером/шагом/полосой (v2.6.12) — но были
+ *          безликие. Теперь: у задачи сборки есть name (titlePrefix спеки или
+ *          фолбэк ветки, все 5 веток) → отдаётся в /ugc/build/active → на карточке
+ *          под заголовком; тултип пункта UGC в сайдбаре перечисляет до 4 сборок
+ *          «имя — статус» построчно. Вторая сборка в очереди честно показывает
+ *          «в очереди за предыдущей сборкой…» со своим таймером.
+ *          Файлы: render/router.ts, useUgcActiveBuilds.ts, GalleryPage.tsx,
+ *          MainLayout.tsx. */
 /* 2.6.13 — Дублирование по таймлайну: клипы, реплики и сегмент «Аватар» (⧉).
  *          Просьба юзера: «дублировать все медиафайлы и тексты по таймлайну».
  *          1) КЛИП видеоряда: кнопка ⧉ на чипе — копия встаёт следом (лимит 12).
@@ -3528,7 +3539,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.13';
+export const APP_VERSION = '2.6.14';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

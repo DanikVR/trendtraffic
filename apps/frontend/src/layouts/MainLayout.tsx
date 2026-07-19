@@ -70,7 +70,12 @@ export function MainLayout() {
   const [hbGen, setHbGen] = useState(0);
   const [flowGen, setFlowGen] = useState(0);
   // UGC: фоновые сборки роликов (юзер вышел из студии — сборка идёт на сервере).
-  const ugcGen = useUgcActiveBuilds().count;
+  const ugcBuilds = useUgcActiveBuilds();
+  const ugcGen = ugcBuilds.count;
+  // Тултип пункта UGC: что сейчас делает КАЖДАЯ сборка (имя ролика + статус).
+  const ugcGenTip = ugcBuilds.jobs.slice(0, 4)
+    .map((b) => `${b.name ? b.name + ' — ' : ''}${b.status}`)
+    .join('\n');
   useEffect(() => {
     if (!token || !isEnterprise) { setHbGen(0); setFlowGen(0); return; }
     let alive = true;
@@ -190,7 +195,10 @@ export function MainLayout() {
                 key={item.tab}
                 type="button"
                 onClick={() => navigate(`/gallery?tab=${item.tab}`)}
-                title={generating ? t('sec.misc.navGenerating', '{{label}} — идёт генерация ({{n}})', { label: item.label, n: item.tab === 'flow' ? flowGen : item.tab === 'ugc' ? ugcGen : hbGen }) : item.label}
+                title={generating
+                  ? t('sec.misc.navGenerating', '{{label}} — идёт генерация ({{n}})', { label: item.label, n: item.tab === 'flow' ? flowGen : item.tab === 'ugc' ? ugcGen : hbGen })
+                    + (item.tab === 'ugc' && ugcGenTip ? `\n${ugcGenTip}` : '')
+                  : item.label}
                 aria-label={item.label}
                 className="relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 no-select"
                 style={isActive

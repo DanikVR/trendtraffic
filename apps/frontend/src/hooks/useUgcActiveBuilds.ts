@@ -14,7 +14,7 @@ import { useAppStore } from '../store/useAppStore';
 
 export interface UgcActiveBuilds {
   count: number;
-  jobs: { job: string; status: string; ts?: number }[];
+  jobs: { job: string; status: string; ts?: number; name?: string }[];
 }
 
 export function useUgcActiveBuilds(pollMs = 8000): UgcActiveBuilds {

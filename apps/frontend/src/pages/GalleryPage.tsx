@@ -1651,6 +1651,8 @@ export default function GalleryPage() {
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center">
                     <Loader2 size={22} className="animate-spin" style={{ color: '#a855f7' }} />
                     <b className="text-[11px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.ugcBuilding', 'Создаём видео…')}</b>
+                    {/* какой это ролик — при 2+ параллельных сборках карточки различимы */}
+                    {b.name && <span className="text-[10px] font-600 leading-tight line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{b.name}</span>}
                     {b.ts ? <span className="text-[10px] font-600" style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</span> : null}
                     <span className="text-[9.5px] font-600" style={{ color: '#a855f7' }}>{STEPS[cur][0]} · {cur + 1}/{STEPS.length}</span>
                     <span className="text-[9.5px] leading-tight line-clamp-3" style={{ color: 'var(--text-muted)' }}>{b.status}</span>

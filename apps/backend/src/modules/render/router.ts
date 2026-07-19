@@ -424,6 +424,7 @@ router.delete('/ugc/avatars/:id', async (req: AuthedRequest, res: Response) => {
 const ugcJobs = new Map<string, {
   tenantId?: string; status: string; error?: string; fileUrl?: string; assetId?: string | null; ts: number;
   results?: { url: string; name: string }[]; total?: number; note?: string;
+  name?: string;   // имя ролика (titlePrefix/фолбэк ветки) — для карточек фоновых сборок в Галерее
 }>();
 // Очередь тяжёлых сборок «Готового видео» (matting + ffmpeg): по одной за раз,
 // параллельные рендеры на слабом VPS душат друг друга до таймаута.
@@ -843,7 +844,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       const langs = useRecording ? ['ru'] : voiceLangs;
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length * langs.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, name: nameFor('UGC — озвучка без аватара'), status: 'запуск', ts: Date.now(), total: outFormats.length * langs.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -958,7 +959,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, name: nameFor('UGC-диалог'), status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -1098,7 +1099,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
 
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: brolls.length * outFormats.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, name: nameFor('UGC-удержание'), status: 'запуск', ts: Date.now(), total: brolls.length * outFormats.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -1205,7 +1206,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       }
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, name: nameFor('UGC — готовое видео'), status: 'запуск', ts: Date.now(), total: outFormats.length, results: [] });
       res.json({ jobId });
 
       // Сборки «Готового видео» идут ПО ОДНОЙ (очередь): параллельные ffmpeg-рендеры
@@ -1364,7 +1365,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       const langs = useRecording ? ['ru'] : voiceLangs;
       const jobId = `ugc${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       sweepJobs(ugcJobs);
-      ugcJobs.set(jobId, { tenantId: req.tenantId, status: 'запуск', ts: Date.now(), total: outFormats.length * langs.length, results: [] });
+      ugcJobs.set(jobId, { tenantId: req.tenantId, name: nameFor('UGC — своё фото'), status: 'запуск', ts: Date.now(), total: outFormats.length * langs.length, results: [] });
       res.json({ jobId });
 
       void (async () => {
@@ -1477,12 +1478,12 @@ router.get('/ugc/build/status', (req: AuthedRequest, res: Response) => {
 /** GET /ugc/build/active — идущие сборки ТЕКУЩЕГО тенанта (для фоновых индикаторов:
  *  значок-спиннер в сайдбаре/на вкладке UGC и карточка «Создаём видео…» в Галерее). */
 router.get('/ugc/build/active', (req: AuthedRequest, res: Response) => {
-  const jobs: { job: string; status: string; ts: number }[] = [];
+  const jobs: { job: string; status: string; ts: number; name?: string }[] = [];
   for (const [id, j] of ugcJobs) {
     if (j.tenantId !== req.tenantId) continue;
     if (j.status === 'done' || j.status === 'failed') continue;
     if (Date.now() - j.ts > 3 * 3600_000) continue;   // осиротевшие не показываем
-    jobs.push({ job: id, status: j.status, ts: j.ts });
+    jobs.push({ job: id, status: j.status, ts: j.ts, name: j.name });
   }
   res.json({ count: jobs.length, jobs });
 });
