@@ -26,7 +26,13 @@ const MEDIA_REQUIRED = new Set(['tiktok', 'instagram', 'youtube', 'pinterest']);
 /** Треды поддерживают эти сети (additionalPosts). */
 const THREAD_PLATFORMS = ['twitter', 'threads', 'bluesky'];
 
-interface StudioInitial { assetId?: string; mediaUrl?: string; title?: string }
+interface StudioInitial {
+  assetId?: string; mediaUrl?: string; title?: string;
+  /** Дата из календаря (ISO): композер сразу встаёт в режим «Дата и время». */
+  at?: string;
+  /** Открыть выбор ролика из Галереи сразу — сценарий «кликнул день → взял видео». */
+  pick?: boolean;
+}
 interface TargetResult { platform: string; ok: boolean; error?: string }
 interface CaptionVariant { base: string; hashtags: string[]; platforms: Record<string, string>; youtubeTitle?: string }
 interface TemplateRow { id: number; name: string; text: string }
@@ -41,7 +47,9 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
 
   const [media, setMedia] = useState<StudioInitial | null>(initial.mediaUrl ? initial : null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // initial.pick — пришли «за роликом» (клик по дню календаря): открываем Галерею сразу,
+  // но только если медиа ещё не выбрано, иначе перекроем уже готовый пост.
+  const [pickerOpen, setPickerOpen] = useState(!!initial.pick && !initial.mediaUrl && !initial.assetId);
   const [mediaNote, setMediaNote] = useState<string | null>(null);
   const [text, setText] = useState('');
   /**
@@ -78,8 +86,14 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const [subs, setSubs] = useState<Record<string, { id: string; name: string }[]>>({});
   const [boards, setBoards] = useState<Record<string, { id: string; name: string }[]>>({});
 
-  const [mode, setMode] = useState<'now' | 'time' | 'slot'>('now');
-  const [when, setWhen] = useState<string>('');
+  // Пришли из календаря по клику на день — сразу «Дата и время» с этой датой.
+  const [mode, setMode] = useState<'now' | 'time' | 'slot'>(initial.at ? 'time' : 'now');
+  const [when, setWhen] = useState<string>(() => {
+    if (!initial.at) return '';
+    const d = new Date(initial.at);
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  });
   const [slotNext, setSlotNext] = useState<string | null | 'none'>(null);
 
   // Ф3: Пост-движок

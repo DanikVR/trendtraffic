@@ -125,7 +125,8 @@ const fmtDT = (iso: string) => new Date(iso).toLocaleString([], { day: '2-digit'
 export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainDraftConsumed, openFolder, onOpenFolderConsumed }: {
   token: string | null;
   reloadKey: number;
-  onNewPost: () => void;
+  /** Открыть композер. С `at` — сразу на эту дату, с `pick` — сразу выбрать ролик в Галерее. */
+  onNewPost: (opts?: { at?: string; pick?: boolean }) => void;
   /** Черновик серии из мультивыбора Галереи («Опубликовать N») — открывает форму цепочки. */
   chainDraft?: ChainDraft | null;
   onChainDraftConsumed?: () => void;
@@ -550,6 +551,12 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     const inMonth = days.filter((d) => d.getMonth() === view.getMonth());
     const monthCount = inMonth.reduce((n, d) => n + byDay(d).length, 0);
 
+    /** Клик по свободному месту дня — «взять ролик из Галереи на эту дату» (12:00 по умолчанию). */
+    const newPostOn = (d: Date) => {
+      const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0);
+      onNewPost({ at: at.toISOString(), pick: true });
+    };
+
     const navBtn: React.CSSProperties = {
       background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)',
       color: 'var(--text-secondary)', cursor: 'pointer',
@@ -590,7 +597,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                 const isToday = sameDay(now, d);
                 const otherMonth = d.getMonth() !== view.getMonth();
                 return (
-                  <div key={i} className="rounded-lg p-1.5 flex flex-col gap-1"
+                  <div key={i} className="group/day rounded-lg p-1.5 flex flex-col gap-1"
                     style={{
                       background: otherMonth ? 'var(--bg-primary)' : 'var(--bg-secondary)',
                       border: `1px solid ${isToday ? 'var(--brand)' : 'var(--border-medium)'}`,
@@ -602,6 +609,13 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                         <span className="text-[9.5px] px-1 rounded" style={{ background: 'rgba(99,102,241,0.14)', color: 'var(--brand)' }}>{items.length}</span>
                       )}
                     </div>
+                    {/* Свободное место дня — кнопка «взять ролик из Галереи на эту дату».
+                        Растягивается на остаток ячейки, поэтому кликается вся пустая площадь. */}
+                    <button type="button" onClick={() => newPostOn(d)} title={t('sec.publisher.newPostOnDay', 'Новый пост на {{date}}: выбрать ролик из Галереи', { date: d.toLocaleDateString() })}
+                      className="order-last flex-1 min-h-[24px] rounded-md flex items-center justify-center opacity-0 group-hover/day:opacity-100 focus:opacity-100 transition-opacity"
+                      style={{ background: 'rgba(99,102,241,0.10)', border: '1px dashed var(--brand)', color: 'var(--brand)', cursor: 'pointer' }}>
+                      <Plus size={14} />
+                    </button>
                     {items.map((p) => (
                       <div key={p.id}>
                         {moveId === p.id ? (
@@ -974,7 +988,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     ) : (
       <div className={CARD_GRID}>
         {/* Плитка «+» — как в Трендах: первым делом добавить новый пост */}
-        <button type="button" onClick={onNewPost} title={t('sec.publisher.newPostHint', 'Собрать пост: медиа из Галереи, текст под каждую сеть, дата')}
+        <button type="button" onClick={() => onNewPost()} title={t('sec.publisher.newPostHint', 'Собрать пост: медиа из Галереи, текст под каждую сеть, дата')}
           className="rounded-xl flex flex-col items-center justify-center gap-2 p-2 text-center transition-colors hover:border-[var(--border-stronger)]"
           style={{ aspectRatio: '9 / 16', background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
           <span className="relative w-11 h-11 rounded-full flex items-center justify-center animate-attract" style={{ boxShadow: '0 0 18px rgba(99,102,241,0.45)' }}>
@@ -1092,7 +1106,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
               <RefreshCw size={13} className={accLoading ? 'animate-spin' : ''} /> {t('sec.publisher.refresh', 'Обновить')}
             </button>
-            <button type="button" onClick={onNewPost}
+            <button type="button" onClick={() => onNewPost()}
               className="inline-flex items-center gap-1.5 text-[13px] font-700 px-3.5 py-1.5 rounded-lg"
               style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
               <Plus size={15} /> {t('sec.publisher.newPost', 'Новый пост')}

@@ -206,7 +206,7 @@ export default function GalleryPage() {
   useEffect(() => { if (urlKind && urlKind !== mediaKind) setMediaKind(urlKind); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlKind]);
   const [blockReq, setBlockReq] = useState<FlowBlockRequest | null>(null); // блок TrendFlow поверх Галереи
   // Публикатор: полноэкранная студия поста (initial = медиа с карточки) + счётчик перезагрузки ленты.
-  const [pubStudio, setPubStudio] = useState<{ assetId?: string; mediaUrl?: string; title?: string } | null>(null);
+  const [pubStudio, setPubStudio] = useState<{ assetId?: string; mediaUrl?: string; title?: string; at?: string; pick?: boolean } | null>(null);
   const [pubReload, setPubReload] = useState(0);
   // Мультивыбор → «Опубликовать (N)»: черновик серии для цепочки Публикатора (Ф2/Ф3).
   const [pubChainDraft, setPubChainDraft] = useState<ChainDraft | null>(null);
@@ -1493,7 +1493,7 @@ export default function GalleryPage() {
         <div className="py-16 text-center"><Loader2 size={24} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
       ) : tab === 'publisher' ? (
         /* «Публикатор» (Ф1): постинг через Blotato (BYO-ключ) — плитки сетей, лента, студия поста */
-        <PublisherTab token={token} reloadKey={pubReload} onNewPost={() => setPubStudio({})}
+        <PublisherTab token={token} reloadKey={pubReload} onNewPost={(o) => setPubStudio(o || {})}
           chainDraft={pubChainDraft} onChainDraftConsumed={() => setPubChainDraft(null)}
           openFolder={pubFolder} onOpenFolderConsumed={() => setPubFolder(null)} />
       ) : tab === 'storyboard' ? (

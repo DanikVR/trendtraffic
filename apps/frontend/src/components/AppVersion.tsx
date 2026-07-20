@@ -3411,6 +3411,21 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.31 — ПУБЛИКАТОР: календарь стал интерактивным — клик по дню берёт ролик из Галереи.
+ *          Юзер: «нажимаешь день — берёшь с Галереи готовый ролик; если у ролика нет
+ *          описания, открывается поп-ап нового поста, где сразу задаём описание, время,
+ *          сети».
+ *          В свободной части каждого дня — кнопка «+» (появляется на наведении, чтобы не
+ *          рябило в пустом месяце). Клик → композер открывается СРАЗУ с выбором ролика из
+ *          Галереи (GalleryPicker) и датой этого дня, 12:00 по умолчанию, режим «Дата и
+ *          время». Дальше пишется описание (или «Сгенерировать A/B»), выбираются сети —
+ *          и «Через Blotato», и «Вручную».
+ *          Механика: StudioInitial получил `at` (ISO-дата) и `pick` (открыть Галерею
+ *          сразу); onNewPost в PublisherTab стал принимать эти опции, GalleryPage их
+ *          прокидывает в PublisherStudio.
+ *          ⚠️ tsc поймал настоящую ошибку: onNewPost стоял прямо в onClick в двух местах —
+ *          в опции прилетал бы объект события. Обёрнуто в () => onNewPost().
+ *          Файлы: PublisherTab.tsx, PublisherStudio.tsx, GalleryPage.tsx. tsc 0, vite 0. */
 /* 2.6.30 — ПУБЛИКАТОР: календарь на МЕСЯЦ + копирование поста в другие сети.
  *          Юзер: «календарь на целый месяц, сверху перелистывать месяцы; посты копировать
  *          и в копии сразу менять соцсети».
@@ -3822,7 +3837,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.30';
+export const APP_VERSION = '2.6.31';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
