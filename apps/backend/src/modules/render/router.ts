@@ -27,7 +27,7 @@ import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTal
 import { photoSha, hgKeyFp, getCachedTp, putCachedTp, dropCachedTp } from './tp_cache.js';
 import { enqueueHeygenHeads, waitHeygenHeads, type HeadSpec } from '../heygen-ext/router.js';
 import { elevenTTS } from './podcast_voice.js';
-import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, overlayAvatarOnVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, type BumperTransition, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
+import { composeCommentator, composeUgc, composeVoiceover, composeRetentionVideo, composeDialogueVideo, composeSlideshow, composeClipSequence, concatBumpers, overlayAvatarOnVideo, buildDialogueVoice, sliceAudioToRenders, mediaDuration, downloadToRenders, detectAvatarBgColor, UGC_FORMATS, AVATAR_PIP_RECT, type BumperTransition, type UgcCaption, type RetComposeSeg, type DlgComposeSeg, type DlgVoicePart, type FrameDims, type UgcFormatKey, type UgcInsert } from './podcast_compose.js';
 import { parseCapWishes } from './cap_wishes.js';
 import { getRetentionPreset, planWindows, planRetention, applyIvBudget, type RetLine, type RetSegment } from './retention.js';
 import { planDialogue, applyDlgBudget, scoreDialogueHeuristic, type DlgLineIn, type DlgEngagement } from './dialogue.js';
@@ -642,6 +642,9 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       return { x: 0.04, y: 0.58, w: 0.44, h: 0.40, oy: 0.5 };   // overlay-left и дефолт
     };
     const avatarRectFor = (k: UgcFormatKey) => avatarRects[k] || defaultAvatarRect(placement);
+    // «Динамичный монтаж» и «Диалог двоих»: бокс тот же (avatarRects, драг на превью), но дефолт
+    // другой — маленький PiP в углу, а не бокс раскладки. ЗЕРКАЛО фронта: ugcTypes.avatarRectOf.
+    const avatarPipRectFor = (k: UgcFormatKey) => avatarRects[k] || AVATAR_PIP_RECT;
     const isPhoto = spec.avatarSource === 'photo';
     // Готовый лук из аккаунта HeyGen (вкл. натренированные Personal Model): сопровождает
     // photoUrl (фронт кладёт превью лука в «Моё фото») — рендер идёт по id, без upload.
@@ -1062,6 +1065,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               musicDurationSec: musicDurSec,
               layerPath: layers[fmt.key] || null, progressBar,
               captions: caps, capStyle: caps.length ? capStyle : 'none', capPos, capWish, dims: fmt.dims,
+              avatarRect: avatarPipRectFor(fmt.key),   // PiP-сегменты диалога — по боксу с превью
             });
             if (bmp.intro || bmp.outro) {
               j.status = 'приклеиваю заставки';
@@ -1166,6 +1170,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 musicDurationSec: musicDurSec,
                 layerPath: layers[fmt.key] || null, progressBar,
                 captions: caps, capStyle: caps.length ? capStyleR : 'none', capPos, capWish, dims: fmt.dims,
+                avatarRect: avatarPipRectFor(fmt.key),   // PiP-сегменты монтажа — по боксу с превью
               });
               if (bmp.intro || bmp.outro) {
                 j.status = 'приклеиваю заставки';

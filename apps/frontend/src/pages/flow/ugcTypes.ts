@@ -33,6 +33,11 @@ export function avatarDefaultRect(placement: UgcSpec['placement']): UgcAvatarRec
     default: return { x: 0.04, y: 0.58, w: 0.44, h: 0.40 };
   }
 }
+/** Дефолтный PiP-бокс аватара в «Динамичном монтаже» и «Диалоге двоих» (доли кадра).
+ *  Повторяет прежний зашитый в бэкенде PiP 360×640 в правом нижнем углу 1080×1920, но в
+ *  ДОЛЯХ — поэтому одинаково ложится на 9:16 / 16:9 / 1:1 / 4:5 (в пикселях он на ландшафте
+ *  разъезжался). Дальше двигается драгом на превью, как в соло. ТА ЖЕ логика в бэкенде. */
+export const AVATAR_PIP_RECT: UgcAvatarRect = { x: 0.637, y: 0.6417, w: 0.3333, h: 0.3333, oy: 0.5 };
 // Клип «Видеоряда» (их может быть несколько — идут друг за другом):
 // durationSec — узнаётся из метаданных при показе; trimStart/trimEnd — обрезка
 // в СЕКУНДАХ ИСХОДНИКА (абсолютные позиции), правится на дорожке таймлайна.
@@ -220,6 +225,12 @@ export type UgcPickTarget =
 export type UgcMode = 'solo' | 'retention' | 'dialogue' | 'voiceover';
 export const ugcModeOf = (u: UgcSpec): UgcMode =>
   u.noAvatar ? 'voiceover' : u.dialogueEnabled ? 'dialogue' : (u.retentionPreset !== 'off' ? 'retention' : 'solo');
+
+/** ЕДИНЫЙ источник координат аватара для формата: кастом (драг на превью) ИЛИ дефолт режима.
+ *  Соло — бокс раскладки, «Монтаж»/«Диалог» — PiP-бокс. Рендер обязан считать ТО ЖЕ САМОЕ
+ *  (render/router.ts::avatarRectFor), иначе превью разъезжается с роликом. */
+export const avatarRectOf = (u: UgcSpec, fmt: UgcFormat): UgcAvatarRect =>
+  u.avatarRects?.[fmt] || (ugcModeOf(u) === 'solo' ? avatarDefaultRect(u.placement) : AVATAR_PIP_RECT);
 
 /* ── Калькулятор затрат API (смета в топбаре) ──
  * Считаем ТОЛЬКО детерминированные пути — по фактической длительности голоса и символам:

@@ -1631,13 +1631,14 @@ export default function UgcStudio(p: UgcStudioProps) {
                 {(ugc.placement === 'overlay-left' || ugc.placement === 'overlay-right') && (
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('ugc.layout.overlayHint')}</span>
                 )}
-                {hasAvatarRects && (
-                  <button onClick={() => ugcMutate((u) => ({ ...u, avatarRects: {} }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
-                    {t('ugc.layout.resetAvatar')}
-                  </button>
-                )}
               </>
+            )}
+            {/* Сброс позиции — во ВСЕХ режимах с аватаром: бокс двигается и в «Монтаже»/«Диалоге» (PiP). */}
+            {hasAvatarRects && mode !== 'voiceover' && (
+              <button onClick={() => ugcMutate((u) => ({ ...u, avatarRects: {} }))} className="text-[10px] font-600 px-2 py-1 rounded-md"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                {t('ugc.layout.resetAvatar')}
+              </button>
             )}
             {ugc.formats.length > 1 && (
               <span className="text-[10.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>{t('ugc.format.filesPerRun', { count: ugc.formats.length })}</span>

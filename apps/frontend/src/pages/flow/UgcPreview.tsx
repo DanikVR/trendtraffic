@@ -10,7 +10,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, UserRound, Move, Maximize2, MoveVertical, Image as ImageIcon } from 'lucide-react';
-import { avatarDefaultRect, avatarVideoBgModeOf, clipEffDur, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
+import { avatarRectOf, avatarVideoBgModeOf, clipEffDur, type UgcAvatarRect, type UgcFormat, type UgcMode, type UgcSpec } from './ugcTypes';
 import type { LineRect } from './dialogueTypes';
 import { parseCapWishes } from './ugcCapWishes';
 
@@ -112,12 +112,6 @@ const INS = '#ec4899';
 /* Стартовое окно врезки при переключении «весь кадр → окном» (доли кадра). */
 const INSERT_DEF: LineRect = { x: 0.06, y: 0.26, w: 0.88, h: 0.44 };
 
-/* Дефолтные прямоугольники аватара-оверлея (совпадают с прежним статичным CSS: 44%×42%, низ, отступ 4%). */
-const AV_DEF: Record<'left' | 'right', UgcAvatarRect> = {
-  left: { x: 0.04, y: 0.58, w: 0.44, h: 0.42 },
-  right: { x: 0.52, y: 0.58, w: 0.44, h: 0.42 },
-};
-
 const isVideoUrl = (u?: string | null): boolean => !!u && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(u);
 
 export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, onEmptyClip, onOpenLines, onAvatarRect, onLineRect, onAvatarOverInserts, scrub }: UgcPreviewProps) {
@@ -201,7 +195,7 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
      локальный rect, коммит в спеку одним ugcMutate на pointerup (не спамим автосейв). */
   const [liveRect, setLiveRect] = useState<{ fmt: UgcFormat; rect: UgcAvatarRect } | null>(null);
   const rectFor = (fmt: UgcFormat): UgcAvatarRect =>
-    (liveRect?.fmt === fmt ? liveRect.rect : null) || ugc.avatarRects?.[fmt] || avatarDefaultRect(ugc.placement);
+    (liveRect?.fmt === fmt ? liveRect.rect : null) || avatarRectOf(ugc, fmt);
   const clamp01 = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
   // kind: 'move' — двигать бокс по кадру; 'size' — размер за уголок; 'pan' — двигать КАРТИНКУ
   // вверх-вниз ВНУТРИ бокса (object-position Y): выбрать видимую часть аватара (лицо/плечи).
@@ -533,7 +527,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
           {lineMediaCell(t('ugc.preview.tagLineMediaBg'))}
-          {overlayAvatar(AV_DEF.left, ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar, fmt)}
+          {/* тот же перетаскиваемый бокс, что в соло: рендер PiP-сегментов диалога берёт ЭТИ координаты */}
+          {overlayAvatar(rectFor(fmt), ugc.dialogueCutout, ugc.photoUrl, onEmptyAvatar, fmt, true, mini)}
         </div>
       );
       return full(lineMediaCell(t('ugc.preview.tagCutawayNoFace')));
@@ -548,7 +543,8 @@ export default function UgcPreview({ ugc, mode, onEmptyAvatar, onEmptyPhotoB, on
       if (view === 'pip') return (
         <div className="absolute inset-0 flex">
           {clipCell(t('ugc.common.footage'))}
-          {overlayAvatar(AV_DEF.left, false, avatarImg, onEmptyAvatar, fmt)}
+          {/* тот же перетаскиваемый бокс, что в соло: рендер PiP-сегментов монтажа берёт ЭТИ координаты */}
+          {overlayAvatar(rectFor(fmt), false, avatarImg, onEmptyAvatar, fmt, true, mini)}
         </div>
       );
       return full(clipCell(t('ugc.preview.tagCutawayNoFace')));

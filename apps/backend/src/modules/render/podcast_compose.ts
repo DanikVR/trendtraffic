@@ -504,6 +504,28 @@ export const UGC_FORMATS: Record<UgcFormatKey, FrameDims> = {
   '4x5':  { W: 1080, H: 1350 },   // Instagram/Facebook лента
 };
 
+/** Бокс аватара: доли кадра 0..1 (драг на превью студии) → пиксели + фильтр cover-кропа ВНУТРЬ бокса.
+ *  Повторяет ровно то, что рисует превью (`object-fit: cover; object-position: 50% oy%`), поэтому
+ *  ролик встаёт пиксель в пиксель туда, куда аватар поставили мышкой. ЕДИНСТВЕННЫЙ способ считать
+ *  позицию аватара во всех режимах и форматах — не дублировать формулу по композиторам.
+ *  ⚠️ Раньше силуэтные ветки (альфа/chroma-key) брали от бокса только ВЫСОТУ (`scale=-2:bh`),
+ *  ширину — из пропорций исходника, и прижимали силуэт к низу по центру. Из-за этого «вырезка
+ *  фона (ИИ)» уезжала от бокса тем сильнее, чем больше пропорции бокса расходились с видео HeyGen. */
+/** Дефолтный PiP-бокс аватара в «Динамичном монтаже» и «Диалоге двоих» (доли кадра).
+ *  Повторяет прежние зашитые 360×640 px в правом нижнем углу 1080×1920, но в долях — поэтому
+ *  одинаково ложится на все форматы. ⚠️ ЗЕРКАЛО фронта: ugcTypes.ts::AVATAR_PIP_RECT. */
+export const AVATAR_PIP_RECT = { x: 0.637, y: 0.6417, w: 0.3333, h: 0.3333, oy: 0.5 };
+
+export function avatarBox(W: number, H: number, r: { x: number; y: number; w: number; h: number; oy?: number }) {
+  const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);   // чётные — требование yuv420p
+  const bw = even(W * r.w), bh = even(H * r.h);
+  const bx = Math.round(W * r.x), by = Math.round(H * r.y);
+  // oy — вертикальный object-position картинки внутри бокса: 0 = верх, 0.5 = центр (деф.), 1 = низ.
+  const oy = Math.min(1, Math.max(0, Number.isFinite(Number(r.oy)) ? Number(r.oy) : 0.5));
+  const cover = `scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)}`;
+  return { bw, bh, bx, by, oy, cover };
+}
+
 /** Разложить кадр на 2 ячейки: портрет → верх/низ (vstack), ландшафт → лево/право (hstack).
  *  Ячейки всегда ЧЁТНЫЕ (yuv420p: crop нечётной высоты молча режет пиксель — 4:5 выходил 1348
  *  вместо 1350). Если сумма чётных ячеек < кадра (H/2 нечётно, как у 1080×1350) — stack
@@ -803,21 +825,16 @@ export async function composeUgc(opts: {
     }
     const rect = opts.avatarRect;
     if (rect) {
-      // Кастомная позиция с превью: бокс в долях кадра → пиксели (чётные — yuv420p).
-      const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
-      const bw = even(W * rect.w), bh = even(H * rect.h);
-      const bx = Math.round(W * rect.x), by = Math.round(H * rect.y);
-      // oy — вертикальный object-position картинки внутри бокса (как в превью): при cover-кропе
-      // сдвигает видимую часть. 0.5 = центр (по умолчанию), 0 = верх, 1 = низ.
-      const oy = Math.min(1, Math.max(0, Number.isFinite(Number(rect.oy)) ? Number(rect.oy) : 0.5));
+      // Кастомная позиция с превью: бокс в долях кадра → пиксели, cover-кроп внутрь бокса.
+      const { bx, by, cover } = avatarBox(W, H, rect);
       if (opaque && !chroma) {
-        parts.push(`[0:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30${avShift}[av]`);
-        parts.push(`${bgTag}[av]overlay=${bx}:${by}:eof_action=pass${avEnable}[vmain]`);
+        parts.push(`[0:v]${cover},setsar=1,fps=30${avShift}[av]`);
       } else {
-        // Силуэт (альфа-webm ИЛИ вырезанное chroma-key видео): вписываем по высоте бокса, центр по X, прижат к низу.
-        parts.push(`[0:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p${avShift}[av]`);
-        parts.push(`${bgTag}[av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass${avEnable}[vmain]`);
+        // Силуэт (альфа-webm ИЛИ вырезанное chroma-key видео) — ТОТ ЖЕ бокс, что у непрозрачного:
+        // иначе «вырезка фона» игнорировала ширину бокса и прижималась к низу (расход с превью).
+        parts.push(`[0:v]${cover}${chromaChain},format=yuva420p,setsar=1${avShift}[av]`);
       }
+      parts.push(`${bgTag}[av]overlay=${bx}:${by}:eof_action=pass${avEnable}[vmain]`);
     } else {
       const x = opts.placement === 'overlay-left' ? '32' : `W-w-32`;
       if (opaque && !chroma) {
@@ -959,18 +976,13 @@ export async function overlayAvatarOnVideo(opts: {
   inputs.push(...(opaque ? [] : ['-c:v', 'libvpx-vp9']), ...avCut, '-i', opts.avatarPath);
   const voiceIdx = 2; inputs.push(...avCut, '-i', opts.voicePath);
   const r = opts.avatarRect || { x: 0.55, y: 0.55, w: 0.4, h: 0.3 };
-  const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
-  const bw = even(W * r.w), bh = even(H * r.h);
-  const bx = Math.round(W * r.x), by = Math.round(H * r.y);
-  const oy = Math.min(1, Math.max(0, Number.isFinite(Number(r.oy)) ? Number(r.oy) : 0.5));
+  const { bx, by, cover } = avatarBox(W, H, r);
   const parts: string[] = [];
-  if (opaque && !chroma) {
-    parts.push(`[1:v]scale=${bw}:${bh}:force_original_aspect_ratio=increase:flags=lanczos,crop=${bw}:${bh}:(iw-${bw})/2:(ih-${bh})*${oy.toFixed(4)},setsar=1,fps=30${avShift}[av]`);
-    parts.push(`[0:v][av]overlay=${bx}:${by}:eof_action=pass${avEnable}[vout]`);
-  } else {
-    parts.push(`[1:v]scale=-2:${bh}:flags=lanczos${chromaChain},format=yuva420p${avShift}[av]`);
-    parts.push(`[0:v][av]overlay=x='${bx}+(${bw}-w)/2':y='${by}+${bh}-h':eof_action=pass${avEnable}[vout]`);
-  }
+  // Тот же бокс, что в composeUgc: и непрозрачный аватар, и силуэт (альфа/chroma-key)
+  // cover-кропятся ВНУТРЬ бокса — координаты совпадают с превью и с основной склейкой.
+  if (opaque && !chroma) parts.push(`[1:v]${cover},setsar=1,fps=30${avShift}[av]`);
+  else parts.push(`[1:v]${cover}${chromaChain},format=yuva420p,setsar=1${avShift}[av]`);
+  parts.push(`[0:v][av]overlay=${bx}:${by}:eof_action=pass${avEnable}[vout]`);
   // Звук: база (заставки/клип звучат как были) + голос аватара В НАЛОЖЕНИЕ с его позиции.
   // ⚠️ ЖИВЫЕ ГРАБЛИ этого графа: adelay ломает таймстемпы (без нормализации amix то
   // обрубал звук на первых кадрах при -t, то вис бесконечно с распуханием памяти, то
@@ -1114,10 +1126,15 @@ export async function composeRetentionVideo(opts: {
   capPos: 'bottom' | 'center' | 'top';
   capWish?: UgcCapWish | null;
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
+  // Бокс аватара для сегментов-PiP (доли кадра, драг на превью студии) — общий с соло.
+  // Раскладки во весь кадр/половину (closeup, split, twoshot, media-full) — техники показа,
+  // бокс к ним не применяется.
+  avatarRect?: { x: number; y: number; w: number; h: number; oy?: number } | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
   const { landscape, cw, ch, stack } = orientCells(W, H);
+  const pipRect = opts.avatarRect || AVATAR_PIP_RECT;
   const AVR = 1080 / 1920; // аватар HeyGen всегда портрет
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
@@ -1160,8 +1177,11 @@ export async function composeRetentionVideo(opts: {
         else bg = `color=0x0d0f16:s=${W}x${H}:r=30:d=${Ds}[bg]`;
         ins.push('-i', s.avatarPath);
         const avIdx = broll ? 1 : 0;
-        const pv = `[${avIdx}:v]${cover(360, 640)},fps=30,${freeze}[pv]`;
-        await ffmpeg(['-y', ...ins, '-filter_complex', `${bg};${pv};[bg][pv]overlay=W-w-32:H-h-48[v]`, '-map', '[v]', ...enc], 300_000);
+        // PiP по боксу с превью (доли кадра, per-format) — как в соло. Раньше здесь были зашиты
+        // 360×640 px в углу: на 16:9 / 1:1 / 4:5 портретный бокс в абсолютных пикселях разъезжался.
+        const { bx, by, cover: avCover } = avatarBox(W, H, pipRect);
+        const pv = `[${avIdx}:v]${avCover},setsar=1,fps=30,${freeze}[pv]`;
+        await ffmpeg(['-y', ...ins, '-filter_complex', `${bg};${pv};[bg][pv]overlay=${bx}:${by}[v]`, '-map', '[v]', ...enc], 300_000);
       }
       clips.push(clip);
     }
@@ -1295,10 +1315,15 @@ export async function composeDialogueVideo(opts: {
   capPos: 'bottom' | 'center' | 'top';
   capWish?: UgcCapWish | null;
   dims?: FrameDims;             // 9:16 (портрет, деф.) или 16:9 (ландшафт)
+  // Бокс аватара для сегментов-PiP (доли кадра, драг на превью студии) — общий с соло.
+  // Раскладки во весь кадр/половину (closeup, split, twoshot, media-full) — техники показа,
+  // бокс к ним не применяется.
+  avatarRect?: { x: number; y: number; w: number; h: number; oy?: number } | null;
 }): Promise<string> {
   fs.mkdirSync(RENDERS_DIR, { recursive: true });
   const W = opts.dims?.W || 1080, H = opts.dims?.H || 1920;
   const { landscape, cw, ch, stack } = orientCells(W, H);
+  const pipRect = opts.avatarRect || AVATAR_PIP_RECT;
   const AVR = 1080 / 1920; // аватар HeyGen всегда портрет
   const D = await probeDuration(opts.voicePath);
   if (!(D > 0.3)) throw new Error('Голосовая дорожка пустая.');
@@ -1351,11 +1376,14 @@ export async function composeDialogueVideo(opts: {
         await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${placeFilter(0, cw, ch, r, 'm')};${faceCover(1, cw, ch, 'a')};${stack('m', 'a', 'v')}`, '-map', '[v]', ...enc], 300_000);
       } else if ((s.layout === 'media-bg-left' || s.layout === 'media-bg-right') && s.mediaPath) {
         const r = await mediaRatio(s.mediaPath);
-        const x = s.layout === 'media-bg-left' ? '48' : 'W-w-48';
+        // PiP по боксу с превью (доли кадра, per-format) — как в соло. Раньше здесь были зашиты
+        // 360×640 px и отступы 48/140: на 16:9 / 1:1 / 4:5 бокс уезжал, и превью его не показывало.
+        // Планировщик всё ещё чередует media-bg-left/right, но координата теперь одна — с превью.
+        const { bx, by, cover: avCover } = avatarBox(W, H, pipRect);
         // Вырезка фона: если аватар отрендерен на однотонном фоне (avatarChroma) — chroma-key + despill →
         // силуэт человека поверх медиа; иначе непрозрачный бокс со своим фоном (как раньше).
         const key = s.avatarChroma ? `,chromakey=${s.avatarChroma}:0.16:0.06,despill=type=green:mix=0.5:expand=0` : '';
-        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${placeFilter(0, W, H, r, 'bg')};[1:v]scale=360:640:force_original_aspect_ratio=increase:flags=lanczos,crop=360:640,setsar=1,fps=30,${freeze}${key}[pv];[bg][pv]overlay=${x}:H-h-140[v]`, '-map', '[v]', ...enc], 300_000);
+        await ffmpeg(['-y', ...mediaIn(), '-i', s.avatarPath!, '-filter_complex', `${placeFilter(0, W, H, r, 'bg')};[1:v]${avCover},setsar=1,fps=30,${freeze}${key}[pv];[bg][pv]overlay=${bx}:${by}[v]`, '-map', '[v]', ...enc], 300_000);
       } else {
         // фолбэк: тёмный кадр
         await ffmpeg(['-y', '-f', 'lavfi', '-t', Ds, '-i', `color=0x0d0f16:s=${W}x${H}:r=30`, '-vf', 'fps=30', ...enc], 120_000);
