@@ -122,6 +122,16 @@ function localToSlot(dowLocal: number, hh: number, mm: number): { dow: number; h
 }
 const fmtDT = (iso: string) => new Date(iso).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
+/**
+ * «Сейчас» в формате input[type=datetime-local] — подставляем в min у всех полей даты:
+ * опубликовать задним числом нельзя, и браузер не даст выбрать прошедшее время.
+ */
+export const nowLocalInput = (): string => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
 export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainDraftConsumed, openFolder, onOpenFolderConsumed }: {
   token: string | null;
   reloadKey: number;
@@ -557,9 +567,15 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     const inMonth = days.filter((d) => d.getMonth() === view.getMonth());
     const monthCount = inMonth.reduce((n, d) => n + byDay(d).length, 0);
 
+    /** Начало сегодняшнего дня: всё, что раньше — опубликовать уже нельзя. */
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     /** Клик по свободному месту дня — «взять ролик из Галереи на эту дату» (12:00 по умолчанию). */
     const newPostOn = (d: Date) => {
-      const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0);
+      const noon = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0);
+      // Сегодня полдень может быть уже позади — тогда ближайший час вперёд, а не в прошлое.
+      const at = noon.getTime() <= Date.now() ? new Date(Date.now() + 3600_000) : noon;
+      at.setSeconds(0, 0);
       onNewPost({ at: at.toISOString(), pick: true });
     };
 
@@ -602,12 +618,15 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                 const items = byDay(d);
                 const isToday = sameDay(now, d);
                 const otherMonth = d.getMonth() !== view.getMonth();
+                // Прошедший день: опубликовать назад нельзя, поэтому «+» не показываем.
+                // Уже стоящие там посты остаются видны — это история, а не план.
+                const isPast = d.getTime() < todayStart.getTime();
                 return (
                   <div key={i} className="group/day rounded-lg p-1.5 flex flex-col gap-1"
                     style={{
-                      background: otherMonth ? 'var(--bg-primary)' : 'var(--bg-secondary)',
+                      background: (otherMonth || isPast) ? 'var(--bg-primary)' : 'var(--bg-secondary)',
                       border: `1px solid ${isToday ? 'var(--brand)' : 'var(--border-medium)'}`,
-                      minHeight: 96, opacity: otherMonth ? 0.55 : 1,
+                      minHeight: 96, opacity: otherMonth ? 0.55 : isPast ? 0.6 : 1,
                     }}>
                     <div className="text-[11px] font-700 flex items-center justify-between" style={{ color: isToday ? 'var(--brand)' : 'var(--text-muted)' }}>
                       <span>{d.getDate()}</span>
@@ -616,17 +635,20 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                       )}
                     </div>
                     {/* Свободное место дня — кнопка «взять ролик из Галереи на эту дату».
-                        Растягивается на остаток ячейки, поэтому кликается вся пустая площадь. */}
-                    <button type="button" onClick={() => newPostOn(d)} title={t('sec.publisher.newPostOnDay', 'Новый пост на {{date}}: выбрать ролик из Галереи', { date: d.toLocaleDateString() })}
-                      className="order-last flex-1 min-h-[24px] rounded-md flex items-center justify-center opacity-0 group-hover/day:opacity-100 focus:opacity-100 transition-opacity"
-                      style={{ background: 'rgba(99,102,241,0.10)', border: '1px dashed var(--brand)', color: 'var(--brand)', cursor: 'pointer' }}>
-                      <Plus size={14} />
-                    </button>
+                        Растягивается на остаток ячейки, поэтому кликается вся пустая площадь.
+                        В прошедших днях её нет: опубликовать задним числом невозможно. */}
+                    {!isPast && (
+                      <button type="button" onClick={() => newPostOn(d)} title={t('sec.publisher.newPostOnDay', 'Новый пост на {{date}}: выбрать ролик из Галереи', { date: d.toLocaleDateString() })}
+                        className="order-last flex-1 min-h-[24px] rounded-md flex items-center justify-center opacity-0 group-hover/day:opacity-100 focus:opacity-100 transition-opacity"
+                        style={{ background: 'rgba(99,102,241,0.10)', border: '1px dashed var(--brand)', color: 'var(--brand)', cursor: 'pointer' }}>
+                        <Plus size={14} />
+                      </button>
+                    )}
                     {items.map((p) => (
                       <div key={p.id}>
                         {moveId === p.id ? (
                           <div className="space-y-1">
-                            <input type="datetime-local" value={moveVal} onChange={(e) => setMoveVal(e.target.value)}
+                            <input type="datetime-local" min={nowLocalInput()} value={moveVal} onChange={(e) => setMoveVal(e.target.value)}
                               className="w-full rounded-md px-1 py-0.5 text-[10px]"
                               style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                             <div className="flex gap-1">
@@ -1109,11 +1131,17 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
               календарём. Разворачиваются, когда сеть действительно надо подключить. */}
           <button type="button" onClick={() => setNetsOpen((v) => !v)}
             title={netsOpen ? t('sec.publisher.hideNets', 'Свернуть соцсети') : t('sec.publisher.showNets', 'Показать соцсети — подключить или проверить')}
-            className="inline-flex items-center gap-1.5 text-sm font-700"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}>
-            {netsOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            className="inline-flex items-center gap-2 text-[13px] font-700 px-3 py-1.5 rounded-lg"
+            style={{
+              background: netsOpen ? 'rgba(99,102,241,0.10)' : 'var(--bg-secondary)',
+              border: `1px solid ${netsOpen ? 'var(--brand)' : 'var(--border-medium)'}`,
+              color: 'var(--text-primary)', cursor: 'pointer',
+            }}>
+            {netsOpen ? <ChevronDown size={15} style={{ color: 'var(--brand)' }} /> : <ChevronRight size={15} style={{ color: 'var(--brand)' }} />}
             {t('sec.publisher.socialNets', 'Соцсети')}
-            <span className="text-[11.5px] font-600" style={{ color: connectedCount ? '#10b981' : 'var(--text-muted)' }}>
+            {/* Счётчик — плашкой: сразу видно, что сети вообще есть и сколько подключено */}
+            <span className="text-[11px] font-700 px-1.5 py-0.5 rounded-md"
+              style={{ background: connectedCount ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.16)', color: connectedCount ? '#10b981' : '#f59e0b' }}>
               {t('sec.publisher.netsCount', '{{n}} из {{total}}', { n: connectedCount, total: PLATFORM_ORDER.length })}
             </span>
           </button>

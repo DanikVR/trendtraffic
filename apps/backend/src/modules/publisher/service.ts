@@ -231,6 +231,10 @@ export async function submitPost(args: SubmitArgs): Promise<SubmitResult> {
   let scheduledTime: string | undefined;
   if (args.mode === 'time') {
     if (!args.scheduledAt || Number.isNaN(Date.parse(args.scheduledAt))) throw new Error('Некорректное время публикации');
+    // Задним числом опубликовать нельзя. Минута форы — на дорогу от кнопки до сервера.
+    if (Date.parse(args.scheduledAt) < Date.now() - 60_000) {
+      throw new Error('Время публикации уже прошло — выберите будущую дату');
+    }
     scheduledTime = new Date(args.scheduledAt).toISOString();
   } else if (args.mode === 'slot') {
     const [slot] = await nextFreeSlotTimes(tenantId, 1, Date.now() + 60_000);
@@ -709,6 +713,10 @@ export async function publishDrafts(args: {
     times = slots.map((d) => d.toISOString());
   } else if (args.mode === 'time') {
     if (!args.scheduledAt || Number.isNaN(Date.parse(args.scheduledAt))) throw new Error('Некорректное время публикации');
+    // Задним числом опубликовать нельзя. Минута форы — на дорогу от кнопки до сервера.
+    if (Date.parse(args.scheduledAt) < Date.now() - 60_000) {
+      throw new Error('Время публикации уже прошло — выберите будущую дату');
+    }
     times = groupIds.map(() => new Date(args.scheduledAt!).toISOString());
   } else {
     times = groupIds.map(() => undefined);

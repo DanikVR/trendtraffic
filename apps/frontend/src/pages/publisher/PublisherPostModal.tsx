@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { downloadMedia } from '../../components/chat/MediaLightbox';
-import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, type PubPostRow } from './PublisherTab';
+import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, nowLocalInput, type PubPostRow } from './PublisherTab';
 
 /** Имя файла без запрещённых символов — иначе браузер молча срежет расширение. */
 const safeName = (s: string) => (s || 'post').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -365,7 +365,7 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
                   })}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <input type="datetime-local" value={copyWhen} onChange={(e) => setCopyWhen(e.target.value)}
+                  <input type="datetime-local" min={nowLocalInput()} value={copyWhen} onChange={(e) => setCopyWhen(e.target.value)}
                     className="rounded-lg px-2 py-[6px] text-[12.5px] flex-1"
                     style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minWidth: 190 }} />
                   <button type="button" onClick={duplicate} disabled={busy || !copyPlatforms.size} style={btn('#6366f1')}>
@@ -392,7 +392,7 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
                     </span>
                     <div className="flex items-center gap-2 flex-wrap">
                       <input
-                        type="datetime-local" value={when} disabled={busy} autoFocus={dateOpen && !when}
+                        type="datetime-local" min={nowLocalInput()} value={when} disabled={busy} autoFocus={dateOpen && !when}
                         onChange={(e) => void saveDate(e.target.value)}
                         className="rounded-lg px-2 py-[6px] text-[12.5px] flex-1"
                         style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minWidth: 190 }}

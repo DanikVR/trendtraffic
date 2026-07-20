@@ -14,7 +14,7 @@ import {
   AlertTriangle, ChevronDown, RefreshCw, ExternalLink, Sparkles, Save, ListPlus, Pin,
 } from 'lucide-react';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
-import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, BLOTATO_SETTINGS_URL, type PubAccount } from './PublisherTab';
+import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, BLOTATO_SETTINGS_URL, nowLocalInput, type PubAccount } from './PublisherTab';
 
 /** Практические лимиты подписи по сетям (для счётчиков; жёсткую валидацию делает сама сеть). */
 const TEXT_LIMITS: Record<string, number> = {
@@ -682,7 +682,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                   ))}
                 </div>
                 {mode === 'time' && (
-                  <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)}
+                  <input type="datetime-local" min={nowLocalInput()} value={when} onChange={(e) => setWhen(e.target.value)}
                     className="block rounded-xl px-3 py-2 text-[13px]"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                 )}
