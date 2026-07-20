@@ -22,7 +22,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 
 type PanelType = 'speaker' | 'title' | 'cutaway' | 'split' | 'mockup' | 'final';
-interface SbPanel { type: PanelType; start: number; end: number; text?: string; frameTs?: number; frameUrl?: string; imageUrl?: string; prompt?: string }
+interface SbPanel { type: PanelType; start: number; end: number; text?: string; frameTs?: number; frameUrl?: string; imageUrl?: string; imageGen?: boolean; prompt?: string }
 interface SbChunk { idx: number; start: number; end: number; enabled: boolean; status: string; panels: SbPanel[]; pngUrl?: string; renderUrl?: string; stripUrl?: string; error?: string }
 interface SbDoc {
   id: string; name: string; status: string;
@@ -587,6 +587,8 @@ export default function StoryboardStudio() {
                   ? t('sec.storyboard.genIntroOmni', 'Движок Omni Flash: одна генерация на кусок — стартовый кадр «оживает» по промпту панелей, поверх кладётся ваш оригинальный голос. Стоимость ≈$1/кусок (~10с × $0.10) с ключа Gemini. Сначала кусок 1!')
                   : (doc.settings?.engine || 'program') === 'flow'
                   ? t('sec.storyboard.genIntroFlow2', 'Движок Flow — АВТОМАТ: откройте labs.google → Flow в браузере с расширением TrendTraffic и нажмите кнопку ниже. Расширение само зальёт кусок и сториборд, вставит промпт, сгенерирует и вернёт клип — кусок за куском, хоть на длинный ролик (лимит Flow ~8с/клип, поэтому и режем по 8с). Голос оригинала наложим сами. Ручной режим — кнопки на карточках.')
+                  : (doc.settings?.engine || 'program') === 'hybrid'
+                  ? t('sec.storyboard.genIntroHybrid', 'Движок «Спикер + ИИ-врезки»: вы в кадре — живое видео, лицо настоящее и губы попадают в речь. ИИ рисует только врезки (Nano Banana), титры печатаются шрифтом и не «плывут». Стоимость ≈$0.04 за врезку (~$0.1/кусок) с ключа Gemini. Сначала кусок 1!')
                   : t('sec.storyboard.genIntro', 'Дисциплина конвейера: сначала кусок 1. Проверьте результат — остальные разблокируются. Программный движок монтирует по панелям: наезды, титры, врезки, сплит-экран.')}
               </p>
               {(doc.settings?.engine || 'program') === 'flow' && (
@@ -630,7 +632,7 @@ export default function StoryboardStudio() {
                         </div>
                       </div>
                       {c.renderUrl && (
-                        <video src={c.renderUrl} controls playsInline className="rounded-lg" style={{ height: 130, aspectRatio: '9/16', background: '#000' }} />
+                        <video key={c.renderUrl} src={c.renderUrl} controls playsInline className="rounded-lg" style={{ height: 130, aspectRatio: '9/16', background: '#000' }} />
                       )}
                       {(doc.settings?.engine || 'program') !== 'flow' ? (
                         <button type="button" disabled={!!doc.busy || !!acting || locked || !c.enabled}
@@ -733,7 +735,7 @@ export default function StoryboardStudio() {
               </button>
               {doc.resultUrl && (
                 <div className="flex flex-col gap-2">
-                  <video src={doc.resultUrl} controls playsInline className="rounded-xl" style={{ maxWidth: 260, aspectRatio: '9/16', background: '#000' }} />
+                  <video key={doc.resultUrl} src={doc.resultUrl} controls playsInline className="rounded-xl" style={{ maxWidth: 260, aspectRatio: '9/16', background: '#000' }} />
                   <div className="flex items-center gap-2 flex-wrap">
                     <button type="button" onClick={() => navigate('/gallery?tab=reference')}
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-700" style={btnGhost}>
@@ -771,6 +773,7 @@ export default function StoryboardStudio() {
                 {([
                   { key: 'program', label: t('sec.storyboard.engProgram', 'Программный (ffmpeg)'), hint: t('sec.storyboard.engProgramHint', 'бесплатно, без ключей') },
                   { key: 'omni', label: 'Omni Flash API', hint: t('sec.storyboard.engOmniHint', '≈$1/кусок, ключ Gemini') },
+                  { key: 'hybrid', label: t('sec.storyboard.engHybrid', 'Спикер + ИИ-врезки'), hint: t('sec.storyboard.engHybridHint', 'вы в кадре живьём, ИИ рисует врезки · ≈$0.1/кусок') },
                   { key: 'flow', label: `Flow-${t('sec.storyboard.engExt', 'расширение')}`, hint: t('sec.storyboard.engFlowHint', 'полуавтомат, подписка Flow') },
                 ] as { key: string; label: string; hint: string }[]).map((e) => (
                   <label key={e.key} className="inline-flex items-start gap-2 cursor-pointer" style={{ color: 'var(--text-primary)' }}>
@@ -833,7 +836,7 @@ export default function StoryboardStudio() {
       <GalleryPicker
         open={imgPickFor != null}
         onClose={() => setImgPickFor(null)}
-        onPick={(g: GalleryPickItem) => { const pi = imgPickFor; setImgPickFor(null); if (pi != null) setPanel(pi, (x) => { x.imageUrl = g.fileUrl; }); }}
+        onPick={(g: GalleryPickItem) => { const pi = imgPickFor; setImgPickFor(null); if (pi != null) setPanel(pi, (x) => { x.imageUrl = g.fileUrl; x.imageGen = false; }); }}
         token={token}
         title={t('sec.storyboard.imgPickTitle', 'Картинка панели')}
         note={t('sec.storyboard.imgPickNote', 'Скрин статистики, фото продукта, график — попадёт во врезку/сплит/мокап этой панели.')}

@@ -4414,7 +4414,10 @@
       "style_paper": "Paper",
       "style_terminal": "Terminal",
       "style_bold": "Bold",
-      "ctaHintV2": "Use the same code word in your post caption."
+      "ctaHintV2": "Use the same code word in your post caption.",
+      "engHybrid": "Speaker + AI cutaways",
+      "engHybridHint": "you stay on camera, AI draws the cutaways · ≈$0.1/chunk",
+      "genIntroHybrid": "«Speaker + AI cutaways» engine: you stay on camera — real footage, real face, lips in sync with speech. AI only draws the cutaways (Nano Banana); titles are typed with a font and never warp. Cost ≈$0.04 per cutaway (~$0.1/chunk) on your Gemini key. Start with chunk 1!"
     },
     "pubBulk": {
       "title": "To Publisher: {{n}} clips",

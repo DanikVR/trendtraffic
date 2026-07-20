@@ -19,6 +19,7 @@ import {
   cutChunkExact, fitClipToChunk, muxChunkAudio,
 } from './ffmpeg.js';
 import { renderChunkOmni, buildChunkPrompt } from './omni.js';
+import { renderChunkHybrid } from './hybrid.js';
 import { buildPlan, sanitizePanels, templatePanels } from './planner.js';
 import type { StoryboardDoc, SbPlan, SbSettings, SbChunk, SbTranscriptSeg } from './types.js';
 
@@ -149,7 +150,7 @@ export async function updateStoryboard(
     const s = a.settings;
     const settings: SbSettings = {
       style: typeof s.style === 'string' ? s.style.slice(0, 24) : undefined,
-      engine: ['program', 'omni', 'flow'].includes(s.engine) ? s.engine : 'program',
+      engine: ['program', 'omni', 'hybrid', 'flow'].includes(s.engine) ? s.engine : 'program',
       badgeText: typeof s.badgeText === 'string' ? s.badgeText.slice(0, 40) : undefined,
       subtitles: !!s.subtitles,
       ctaWord: typeof s.ctaWord === 'string' ? s.ctaWord.slice(0, 24) : undefined,
@@ -172,6 +173,15 @@ export async function deleteStoryboard(tenantId: string, id: string): Promise<bo
 
 // ── Конвейер ──────────────────────────────────────────────────────────────────
 const workPath = (id: string) => path.join(sbDir(id), 'work.mp4');
+
+/**
+ * URL готового куска с cache-buster'ом. Имя файла детерминированное
+ * (chunk-<idx>.mp4), а /uploads отдаётся с Cache-Control на неделю — без ?v=
+ * перегенерация не видна: браузер показывает старый клип из кэша.
+ */
+function versionedUrl(absPath: string): string {
+  return `${toUploadsUrl(absPath)}?v=${Date.now()}`;
+}
 
 /**
  * Превью для студии: филмстрип на кусок + jpg-кадр на каждую видео-панель.
@@ -367,8 +377,12 @@ export function startRenderChunk(tenantId: string, id: string, chunkIdx: number)
       }
       const out = engine === 'omni'
         ? await renderChunkOmni(tenantId, work, chunk, sbDir(id), { style: doc.settings?.style, ctaWord: doc.settings?.ctaWord })
-        : await renderChunkProgram(work, chunk, sbDir(id), { style: doc.settings?.style, isLastChunk: isLast });
-      chunk.renderUrl = toUploadsUrl(out);
+        : engine === 'hybrid'
+          ? await renderChunkHybrid(tenantId, work, chunk, sbDir(id), {
+              style: doc.settings?.style, isLastChunk: isLast, transcript: plan?.transcript,
+            })
+          : await renderChunkProgram(work, chunk, sbDir(id), { style: doc.settings?.style, isLastChunk: isLast });
+      chunk.renderUrl = versionedUrl(out);
       chunk.status = 'done';
       await patch(tenantId, id, { status: 'planned', plan: JSON.stringify(plan), error: null });
     } catch (e: any) {
@@ -447,7 +461,7 @@ export async function attachRenderChunk(
     } finally {
       try { fs.unlinkSync(fitted); } catch { /* best-effort */ }
     }
-    chunk.renderUrl = toUploadsUrl(outPath);
+    chunk.renderUrl = versionedUrl(outPath);
     chunk.status = 'done';
     chunk.error = undefined;
     await patch(tenantId, id, { status: 'planned', plan: JSON.stringify(doc.plan), error: null });

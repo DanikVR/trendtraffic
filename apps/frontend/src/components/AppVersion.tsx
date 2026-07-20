@@ -3435,6 +3435,26 @@
  *          scripts/translate-new-keys.mjs, locales/* (108), _glossary.json.
  *          tsc 0×2, тесты 4/4, {{name}} цел во всех локалях. */
 
+/* 2.6.36 — СТОРИБОРД: движок «Спикер + ИИ-врезки» + перегенерация наконец видна.
+ *          1) БАГ «перегенерить ничего не делает» (разбор по логам прода): рендер
+ *             ОТРАБАТЫВАЛ (Omni, 48с, файл на диске новый), но имя куска
+ *             детерминированное — chunk-<idx>.mp4, а /uploads отдаётся с
+ *             Cache-Control: public, max-age=604800. URL не менялся → React не
+ *             перемонтировал <video> → браузер играл старый клип из кэша неделю.
+ *             Лечение: renderUrl получает ?v=<ts> (versionedUrl), key={src} на
+ *             обоих плеерах, fromUploadsUrl режет ?query (иначе сборка не найдёт файл).
+ *          2) ЧЕТВЁРТЫЙ ДВИЖОК 'hybrid' — «Спикер + ИИ-врезки»: спикер НЕ
+ *             генерируется (лицо настоящее, губы попадают в речь), ИИ рисует только
+ *             врезки/сплиты/мокапы/фон титра (Nano Banana gemini-3.1-flash-image,
+ *             фолбэк 2.5), поверх — программный кен-бёрнс и drawtext-титры.
+ *             ≈$0.04/картинка (~$0.1/кусок) против ~$1/кусок у Omni.
+ *             Картинки пишутся в план (imageGen=true): видны в раскадровке,
+ *             заменяются своими из Галереи; при перегенерации перерисовываются
+ *             только ИИ-шные, пользовательские не трогаются.
+ *          3) Панель 'title' научилась фону-картинке (cover+зум+затемнение 45%).
+ *          Файлы: storyboard/{hybrid.ts,service.ts,ffmpeg.ts,planner.ts,types.ts},
+ *          StoryboardStudio.tsx, локали ru+en. tsc 0×2. */
+
 /* 2.6.34 — ГАЛЕРЕЯ: иконки ПРОИСХОЖДЕНИЯ файла + фильтр по источникам.
  *          Юзер: «на обложках обозначения, откуда файл: UGC / Сториборд / Google Flow /
  *          аналитика. Сразу сортировка по иконкам. Если сняли в Google Flow, потом
@@ -3911,7 +3931,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.35';
+export const APP_VERSION = '2.6.36';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

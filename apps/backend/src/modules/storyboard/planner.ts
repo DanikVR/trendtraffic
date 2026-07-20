@@ -107,6 +107,7 @@ export function sanitizePanels(raw: any[], chunk: SbChunk): SbPanel[] {
       frameTs: Number.isFinite(Number(p?.frameTs)) ? Math.max(0, Number(p.frameTs)) : undefined,
       frameUrl: typeof p?.frameUrl === 'string' && p.frameUrl.startsWith('/uploads/') ? p.frameUrl : undefined,
       imageUrl: typeof p?.imageUrl === 'string' && p.imageUrl.startsWith('/uploads/') ? p.imageUrl : undefined,
+      imageGen: !!p?.imageGen,
       prompt: typeof p?.prompt === 'string' ? p.prompt.slice(0, 500) : undefined,
     }))
     .filter((p) => p.end - p.start >= 0.25)

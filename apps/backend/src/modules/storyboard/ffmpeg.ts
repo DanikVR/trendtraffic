@@ -43,10 +43,12 @@ export function toUploadsUrl(absPath: string): string {
   return `/uploads/${rel}`;
 }
 
-/** /uploads/... → абсолютный путь (с защитой от выхода за uploads). */
+/** /uploads/... → абсолютный путь (с защитой от выхода за uploads).
+ *  Хвост ?v=… (cache-buster превью) отбрасывается — на диске его нет. */
 export function fromUploadsUrl(fileUrl: string): string | null {
   if (!fileUrl || !fileUrl.startsWith('/uploads/')) return null;
-  const abs = path.resolve(UPLOADS_ROOT, fileUrl.slice('/uploads/'.length));
+  const clean = fileUrl.split(/[?#]/)[0];
+  const abs = path.resolve(UPLOADS_ROOT, clean.slice('/uploads/'.length));
   if (abs !== UPLOADS_ROOT && !abs.startsWith(UPLOADS_ROOT + path.sep)) return null;
   return abs;
 }
@@ -179,6 +181,15 @@ export async function renderPanel(
     case 'title': {
       if (!font) break; // ниже — фолбэк «спикер»
       const tf = writeTextFile(opts.dir, wrapText(p.text || '', 14, 6));
+      if (imgOk) {
+        // титр на картинке-фоне (гибрид): кен-бёрнс + затемнение, чтобы текст читался
+        await runFfmpeg(['-y', '-loglevel', 'error',
+          '-loop', '1', '-framerate', '30', '-t', D, '-i', img!,
+          '-vf', `${coverImg},${zoomFilter(1.0, 0.0012, 1.18)},`
+            + `drawbox=x=0:y=0:w=iw:h=ih:color=black@0.45:t=fill,${drawTitle(tf, font, 'white')},format=yuv420p`,
+          ...OUT_V, '-t', D, outPath]);
+        return;
+      }
       await runFfmpeg(['-y', '-loglevel', 'error',
         '-f', 'lavfi', '-t', D, '-i', `color=c=${colors.bg}:s=1080x1920:r=30`,
         '-vf', `drawbox=x=80:y=h/2-260:w=14:h=520:color=${colors.accent}@0.9:t=fill,${drawTitle(tf, font, colors.fg)}`,

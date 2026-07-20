@@ -24,6 +24,9 @@ export interface SbPanel {
   frameUrl?: string;
   /** /uploads/... — картинка для врезки/сплита/мокапа (из Галереи). */
   imageUrl?: string;
+  /** imageUrl нарисован ИИ (движок «Спикер + ИИ-врезки»), а не выбран юзером —
+   *  такие перерисовываются при перегенерации куска, пользовательские не трогаем. */
+  imageGen?: boolean;
   /** Промпт для генеративного движка (Ф3 — Omni/Flow). */
   prompt?: string;
 }
@@ -58,7 +61,7 @@ export interface SbPlan {
   planNote?: string;
 }
 
-export type SbEngine = 'program' | 'omni' | 'flow';
+export type SbEngine = 'program' | 'omni' | 'hybrid' | 'flow';
 
 export interface SbSettings {
   /** Стиль-пресет (влияет на цвет титров/подложек и промпты Ф3). */
